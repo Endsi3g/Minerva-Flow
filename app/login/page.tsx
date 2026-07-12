@@ -1,7 +1,7 @@
 import { LogoMark } from "@/components/shell/Logo";
-import { Card } from "@/components/ui/Card";
+import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
-import { Field, Input } from "@/components/ui/Input";
+import { Field, Input } from "@/components/minerva/FormField";
 import Link from "next/link";
 
 function DoorIllustration() {

@@ -1,13 +1,13 @@
 "use client";
 
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
-import { Tabs } from "@/components/ui/Tabs";
-import { Table, THead, Th, Tr, Td } from "@/components/ui/Table";
-import { Field, Input, Select } from "@/components/ui/Input";
+import { Avatar } from "@/components/minerva/PersonAvatar";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
+import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
+import { Field, Input, Select } from "@/components/minerva/FormField";
 import { restaurants, connections, team } from "@/lib/mock-data";
 import { roleLabels } from "@/lib/app-context";
 import type { ConnectionStatus, ConnectionType, Role } from "@/lib/types";
@@ -24,7 +24,6 @@ import {
   PenSquare,
   ShieldCheck,
 } from "lucide-react";
-import { useState } from "react";
 
 const typeIcon: Record<ConnectionType, typeof Landmark> = {
   banque: Landmark,
@@ -65,25 +64,33 @@ const rolePermissions: Record<Role, { icon: typeof Eye; text: string }> = {
 };
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState("restaurants");
-
   return (
     <div>
       <PageHeader eyebrow="Configuration" title="Settings" />
 
-      <div className="mb-6">
-        <Tabs
-          tabs={[
-            { id: "restaurants", label: "Restaurants" },
-            { id: "roles", label: "Rôles & équipe" },
-            { id: "integrations", label: "Intégrations" },
-          ]}
-          active={tab}
-          onChange={setTab}
-        />
-      </div>
+      <Tabs defaultValue="restaurants">
+        <TabsList className="mb-6 h-auto rounded-full border border-mv-border bg-mv-cream-soft p-1">
+          <TabsTrigger
+            value="restaurants"
+            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
+          >
+            Restaurants
+          </TabsTrigger>
+          <TabsTrigger
+            value="roles"
+            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
+          >
+            Rôles & équipe
+          </TabsTrigger>
+          <TabsTrigger
+            value="integrations"
+            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
+          >
+            Intégrations
+          </TabsTrigger>
+        </TabsList>
 
-      {tab === "restaurants" && (
+        <TabsContent value="restaurants">
         <div className="space-y-4">
           <div className="flex justify-end">
             <Button size="sm">
@@ -114,9 +121,9 @@ export default function SettingsPage() {
             ))}
           </div>
         </div>
-      )}
+        </TabsContent>
 
-      {tab === "roles" && (
+        <TabsContent value="roles">
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
           <div className="xl:col-span-8">
             <div className="mb-4 flex justify-end">
@@ -197,9 +204,9 @@ export default function SettingsPage() {
             </Card>
           </div>
         </div>
-      )}
+        </TabsContent>
 
-      {tab === "integrations" && (
+        <TabsContent value="integrations">
         <div className="space-y-4">
           <div className="flex justify-end">
             <Button size="sm">
@@ -264,7 +271,8 @@ export default function SettingsPage() {
             </div>
           </Card>
         </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

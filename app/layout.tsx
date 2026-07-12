@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Fraunces, Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,11 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "Minerva Flow",
   description: "Le cockpit de revenus pour restaurants et cafés.",
+};
+
+export const viewport: Viewport = {
+  colorScheme: "light",
+  themeColor: "#F5F1E6",
 };
 
 export default function RootLayout({

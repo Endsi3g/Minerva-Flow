@@ -1,11 +1,11 @@
 "use client";
 
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Input";
-import { Table, THead, Th, Tr, Td } from "@/components/ui/Table";
+import { Select } from "@/components/minerva/FormField";
+import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CreateCampaignModal } from "@/components/forms/CreateCampaignModal";
 import { campaigns } from "@/lib/mock-data";

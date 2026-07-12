@@ -1,76 +1,116 @@
-import { cn } from "@/lib/utils";
-import type { ReactNode, TdHTMLAttributes, ThHTMLAttributes } from "react";
+"use client"
 
-export function Table({ children }: { children: ReactNode }) {
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-mv-border bg-mv-surface shadow-mv-sm">
-      <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-        {children}
-      </table>
+    <div
+      data-slot="table-container"
+      className="relative w-full overflow-x-auto"
+    >
+      <table
+        data-slot="table"
+        className={cn("w-full caption-bottom text-sm", className)}
+        {...props}
+      />
     </div>
-  );
+  )
 }
 
-export function THead({ children }: { children: ReactNode }) {
+function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
-    <thead>
-      <tr className="border-b border-mv-border bg-mv-cream-soft">{children}</tr>
-    </thead>
-  );
+    <thead
+      data-slot="table-header"
+      className={cn("[&_tr]:border-b", className)}
+      {...props}
+    />
+  )
 }
 
-export function Th({
-  children,
-  className,
-  ...rest
-}: ThHTMLAttributes<HTMLTableCellElement>) {
+function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
   return (
-    <th
+    <tbody
+      data-slot="table-body"
+      className={cn("[&_tr:last-child]:border-0", className)}
+      {...props}
+    />
+  )
+}
+
+function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
+  return (
+    <tfoot
+      data-slot="table-footer"
       className={cn(
-        "px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint",
+        "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
         className
       )}
-      {...rest}
-    >
-      {children}
-    </th>
-  );
+      {...props}
+    />
+  )
 }
 
-export function Tr({
-  children,
-  className,
-  onClick,
-  active,
-}: {
-  children: ReactNode;
-  className?: string;
-  onClick?: () => void;
-  active?: boolean;
-}) {
+function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   return (
     <tr
-      onClick={onClick}
+      data-slot="table-row"
       className={cn(
-        "border-b border-mv-border-soft last:border-0 transition-colors",
-        onClick && "cursor-pointer hover:bg-mv-green-tint/60",
-        active && "bg-mv-green-tint",
+        "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
         className
       )}
-    >
-      {children}
-    </tr>
-  );
+      {...props}
+    />
+  )
 }
 
-export function Td({
-  children,
-  className,
-  ...rest
-}: TdHTMLAttributes<HTMLTableCellElement>) {
+function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
-    <td className={cn("px-4 py-3.5 align-middle text-[13.5px] text-mv-ink", className)} {...rest}>
-      {children}
-    </td>
-  );
+    <th
+      data-slot="table-head"
+      className={cn(
+        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+  return (
+    <td
+      data-slot="table-cell"
+      className={cn(
+        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function TableCaption({
+  className,
+  ...props
+}: React.ComponentProps<"caption">) {
+  return (
+    <caption
+      data-slot="table-caption"
+      className={cn("mt-4 text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  )
+}
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
 }

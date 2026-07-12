@@ -1,7 +1,7 @@
 "use client";
 
 import { useApp, roleLabels } from "@/lib/app-context";
-import { Avatar } from "@/components/ui/Avatar";
+import { Avatar } from "@/components/minerva/PersonAvatar";
 import { cn } from "@/lib/utils";
 import { ChevronDown, LogOut, User, Check, Bell } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

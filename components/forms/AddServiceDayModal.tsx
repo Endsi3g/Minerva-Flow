@@ -2,7 +2,7 @@
 
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, Select, Textarea } from "@/components/ui/Input";
+import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 

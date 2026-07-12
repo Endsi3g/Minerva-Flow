@@ -1,12 +1,12 @@
 "use client";
 
-import { Card, CardHeader } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
+import { Avatar } from "@/components/minerva/PersonAvatar";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 import { FlowBars } from "@/components/charts/FlowBars";
-import { Table, THead, Th, Tr, Td } from "@/components/ui/Table";
+import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { useApp, useCurrentRestaurant, roleLabels } from "@/lib/app-context";
 import type { ReportDef } from "@/lib/reports";
 import type { Campaign, FlowLine } from "@/lib/types";

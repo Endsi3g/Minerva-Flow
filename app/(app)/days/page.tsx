@@ -1,10 +1,10 @@
 "use client";
 
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Table, THead, Th, Tr, Td } from "@/components/ui/Table";
+import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { MonthCalendar } from "@/components/charts/MonthCalendar";
 import { AddServiceDayModal } from "@/components/forms/AddServiceDayModal";
 import { serviceDays, heatmapMonth } from "@/lib/mock-data";

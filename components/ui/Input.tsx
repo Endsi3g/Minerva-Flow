@@ -1,84 +1,20 @@
-import { cn } from "@/lib/utils";
-import type {
-  InputHTMLAttributes,
-  SelectHTMLAttributes,
-  TextareaHTMLAttributes,
-} from "react";
+import * as React from "react"
+import { Input as InputPrimitive } from "@base-ui/react/input"
 
-const fieldBase =
-  "w-full rounded-lg border border-mv-border bg-mv-surface px-3 text-sm text-mv-ink placeholder:text-mv-ink-faint outline-none transition-colors focus:border-mv-green focus:ring-2 focus:ring-mv-green/15";
+import { cn } from "@/lib/utils"
 
-export function Input({
-  className,
-  ...rest
-}: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={cn(fieldBase, "h-10", className)} {...rest} />;
-}
-
-export function Textarea({
-  className,
-  ...rest
-}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
-    <textarea
-      className={cn(fieldBase, "min-h-24 py-2.5 leading-relaxed", className)}
-      {...rest}
+    <InputPrimitive
+      type={type}
+      data-slot="input"
+      className={cn(
+        "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
     />
-  );
+  )
 }
 
-export function Select({
-  className,
-  children,
-  ...rest
-}: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      className={cn(
-        fieldBase,
-        "h-10 appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22 fill=%22%23565F52%22><path d=%22M5.5 7.5l4.5 4.5 4.5-4.5%22 stroke=%22%23565F52%22 stroke-width=%221.4%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>')] bg-[length:16px] bg-[right_10px_center] bg-no-repeat pr-9",
-        className
-      )}
-      {...rest}
-    >
-      {children}
-    </select>
-  );
-}
-
-export function Label({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <label
-      className={cn(
-        "mb-1.5 block text-[12px] font-semibold text-mv-ink-soft",
-        className
-      )}
-    >
-      {children}
-    </label>
-  );
-}
-
-export function Field({
-  label,
-  children,
-  hint,
-}: {
-  label: string;
-  children: React.ReactNode;
-  hint?: string;
-}) {
-  return (
-    <div>
-      <Label>{label}</Label>
-      {children}
-      {hint && <p className="mt-1 text-[12px] text-mv-ink-faint">{hint}</p>}
-    </div>
-  );
-}
+export { Input }
