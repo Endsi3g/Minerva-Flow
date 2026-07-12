@@ -2,31 +2,11 @@
 
 import { LogoMark } from "./Logo";
 import { useApp } from "@/lib/app-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { restaurants } from "@/lib/mock-data";
 import { reports, reportGroups } from "@/lib/reports";
 import { cn } from "@/lib/utils";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarRail,
-  SidebarSeparator,
-} from "@/components/ui/sidebar";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { motion, AnimatePresence } from "motion/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +31,9 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Role } from "@/lib/types";
 
+const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const;
+const SIDEBAR_WIDTH = 256;
+
 type NavItem = {
   href: string;
   label: string;
@@ -66,6 +49,40 @@ const nav: NavItem[] = [
   { href: "/campaigns", label: "Campaigns", icon: Megaphone, roles: ["owner", "consultant"] },
   { href: "/maps", label: "Maps", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
 ];
+
+function NavLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+  onNavigate,
+}: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+  onNavigate?: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={cn(
+        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all duration-150",
+        active
+          ? "bg-mv-green text-mv-cream-soft font-semibold"
+          : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
+      )}
+    >
+      <Icon
+        size={16}
+        strokeWidth={active ? 2.2 : 1.5}
+        className={cn("shrink-0 transition-all duration-150", active ? "text-mv-lime" : "opacity-60")}
+      />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
 
 function TeamSwitcher() {
   const { restaurantId, setRestaurantId } = useApp();
@@ -102,161 +119,218 @@ function TeamSwitcher() {
   );
 }
 
+function CollapsibleSection({
+  label,
+  isCollapsed,
+  onToggle,
+  children,
+}: {
+  label: string;
+  isCollapsed: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center justify-between rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-mv-ink-faint transition-colors hover:text-mv-ink"
+      >
+        <span>{label}</span>
+        <ChevronDown
+          size={12}
+          className={cn("transition-transform duration-200", isCollapsed && "-rotate-90")}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {!isCollapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-0.5 py-0.5">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function AppSidebar() {
   const pathname = usePathname();
-  const { role, restaurantId, setRestaurantId } = useApp();
+  const { role, restaurantId, setRestaurantId, sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const isMobile = useIsMobile();
   const items = nav.filter((n) => n.roles.includes(role));
-  const [openGroup, setOpenGroup] = useState<string | null>("Revenue");
+
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  function toggleGroup(id: string) {
+    setCollapsedGroups((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
+  }
+
+  function closeMobile() {
+    if (isMobile) setSidebarCollapsed(true);
+  }
 
   return (
-    <Sidebar collapsible="offcanvas">
-      <SidebarHeader>
-        <TeamSwitcher />
-      </SidebarHeader>
+    <>
+      {isMobile && !sidebarCollapsed && (
+        <div
+          onClick={() => setSidebarCollapsed(true)}
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+        />
+      )}
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => {
-                const active = pathname.startsWith(item.href);
-                const Icon = item.icon;
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      render={<Link href={item.href} />}
-                      isActive={active}
-                      className={cn(
-                        active && "bg-mv-green text-mv-cream-soft hover:bg-mv-green hover:text-mv-cream-soft"
-                      )}
-                    >
-                      <Icon size={16} strokeWidth={2.2} className={active ? "text-mv-lime" : ""} />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <motion.aside
+        animate={
+          isMobile
+            ? { x: sidebarCollapsed ? -SIDEBAR_WIDTH : 0, width: SIDEBAR_WIDTH }
+            : { width: sidebarCollapsed ? 0 : SIDEBAR_WIDTH, x: 0 }
+        }
+        initial={false}
+        transition={SPRING}
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col overflow-hidden border-r border-mv-border bg-mv-cream-soft md:static md:relative",
+          sidebarCollapsed && "md:border-r-0"
+        )}
+        style={{ minWidth: 0 }}
+      >
+        <motion.div
+          className="flex h-full w-64 min-w-64 flex-col"
+          animate={
+            isMobile
+              ? { x: 0, opacity: 1 }
+              : { x: sidebarCollapsed ? -48 : 0, opacity: sidebarCollapsed ? 0 : 1 }
+          }
+          transition={SPRING}
+        >
+          <div className="flex h-12 items-center border-b border-mv-border px-3">
+            <TeamSwitcher />
+          </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Restaurants</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {restaurants.map((r) => (
-                <SidebarMenuItem key={r.id}>
-                  <SidebarMenuButton
-                    onClick={() => setRestaurantId(r.id)}
-                    isActive={r.id === restaurantId}
-                  >
-                    <span
-                      className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] text-[9px] font-bold text-white"
-                      style={{ background: r.color }}
-                    >
-                      {r.city[0]}
-                    </span>
-                    <span>{r.city}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+          <div className="flex-1 space-y-4 overflow-y-auto px-2.5 py-3">
+            <div className="space-y-0.5">
+              {items.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  active={pathname.startsWith(item.href)}
+                  onNavigate={closeMobile}
+                />
               ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Metrics</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {reportGroups.map((group) => {
-                const groupReports = reports.filter((r) => r.group === group);
-                const isOpen = openGroup === group;
-                return (
-                  <Collapsible
-                    key={group}
-                    open={isOpen}
-                    onOpenChange={(v) => setOpenGroup(v ? group : null)}
-                  >
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger
-                        render={
-                          <SidebarMenuButton>
-                            <ChevronDown
-                              size={14}
-                              className={cn("transition-transform", !isOpen && "-rotate-90")}
-                            />
-                            <span>{group}</span>
-                          </SidebarMenuButton>
-                        }
-                      />
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {groupReports.map((r) => (
-                            <SidebarMenuSubItem key={r.slug}>
-                              <SidebarMenuSubButton
-                                render={<Link href={`/reports/${r.slug}`} />}
-                                isActive={pathname === `/reports/${r.slug}`}
-                              >
-                                <span>{r.label}</span>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter>
-        {role === "owner" && (
-          <>
-            <SidebarSeparator />
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  render={<Link href="/settings" />}
-                  isActive={pathname.startsWith("/settings")}
+            <CollapsibleSection
+              label="Restaurants"
+              isCollapsed={collapsedGroups["restaurants"] ?? false}
+              onToggle={() => toggleGroup("restaurants")}
+            >
+              {restaurants.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => {
+                    setRestaurantId(r.id);
+                    closeMobile();
+                  }}
                   className={cn(
-                    pathname.startsWith("/settings") &&
-                      "bg-mv-green text-mv-cream-soft hover:bg-mv-green hover:text-mv-cream-soft"
+                    "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium transition-colors",
+                    r.id === restaurantId
+                      ? "bg-mv-ink/[0.06] text-mv-ink"
+                      : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
                   )}
                 >
-                  <Settings
-                    size={16}
-                    strokeWidth={2.2}
-                    className={pathname.startsWith("/settings") ? "text-mv-lime" : ""}
-                  />
-                  <span>Settings</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </>
-        )}
+                  <span
+                    className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] text-[9px] font-bold text-white"
+                    style={{ background: r.color }}
+                  >
+                    {r.city[0]}
+                  </span>
+                  <span className="truncate">{r.city}</span>
+                </button>
+              ))}
+            </CollapsibleSection>
 
-        <div className="rounded-xl bg-mv-green-tint p-3.5">
-          <div className="mb-2 flex items-center gap-2">
-            <Database size={14} className="text-mv-green-dark" />
-            <p className="font-display text-[13px] font-medium text-mv-green-darker">
-              Données de démonstration
-            </p>
+            <div className="space-y-2">
+              <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-mv-ink-faint">
+                Metrics
+              </p>
+              {reportGroups.map((group) => {
+                const groupReports = reports.filter((r) => r.group === group);
+                const hasActiveChild = groupReports.some(
+                  (r) => pathname === `/reports/${r.slug}`
+                );
+                const isCollapsed = hasActiveChild
+                  ? false
+                  : (collapsedGroups[group] ?? true);
+                return (
+                  <CollapsibleSection
+                    key={group}
+                    label={group}
+                    isCollapsed={isCollapsed}
+                    onToggle={() => toggleGroup(group)}
+                  >
+                    {groupReports.map((r) => {
+                      const active = pathname === `/reports/${r.slug}`;
+                      return (
+                        <Link
+                          key={r.slug}
+                          href={`/reports/${r.slug}`}
+                          onClick={closeMobile}
+                          className={cn(
+                            "block truncate rounded-md py-1.5 pl-6 pr-2.5 text-[12.5px] font-medium transition-colors",
+                            active
+                              ? "bg-mv-green-tint text-mv-green-dark font-semibold"
+                              : "text-mv-ink-faint hover:bg-mv-ink/[0.06] hover:text-mv-ink"
+                          )}
+                        >
+                          {r.label}
+                        </Link>
+                      );
+                    })}
+                  </CollapsibleSection>
+                );
+              })}
+            </div>
           </div>
-          <p className="mb-3 text-[12px] leading-relaxed text-mv-green-dark/80">
-            Connectez Supabase pour brancher vos vraies données de revenus.
-          </p>
-          <Link
-            href="/settings"
-            className="flex h-8 w-full items-center justify-center rounded-lg bg-mv-green-darker text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-green-dark"
-          >
-            Continuer la configuration
-          </Link>
-        </div>
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
+
+          <div className="border-t border-mv-border p-2.5">
+            {role === "owner" && (
+              <div className="mb-1.5">
+                <NavLink
+                  href="/settings"
+                  label="Settings"
+                  icon={Settings}
+                  active={pathname.startsWith("/settings")}
+                  onNavigate={closeMobile}
+                />
+              </div>
+            )}
+
+            <div className="rounded-xl bg-mv-green-tint p-3.5">
+              <div className="mb-2 flex items-center gap-2">
+                <Database size={14} className="text-mv-green-dark" />
+                <p className="font-display text-[13px] font-medium text-mv-green-darker">
+                  Données de démonstration
+                </p>
+              </div>
+              <p className="mb-3 text-[12px] leading-relaxed text-mv-green-dark/80">
+                Connectez Supabase pour brancher vos vraies données de revenus.
+              </p>
+              <Link
+                href="/settings"
+                onClick={closeMobile}
+                className="flex h-8 w-full items-center justify-center rounded-lg bg-mv-green-darker text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-green-dark"
+              >
+                Continuer la configuration
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </motion.aside>
+    </>
   );
 }
