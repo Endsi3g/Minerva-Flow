@@ -20,6 +20,8 @@ export function LogoMark({ size = 32 }: { size?: number }) {
         a
       </text>
       <path
+        className="mv-leaf-breathe"
+        style={{ transformOrigin: "26.5px 16.5px" }}
         d="M23 12.5C23 12.5 30 10.5 30.5 16.5C31 22.5 24 21 23 17.5C22.3 15 23 12.5 23 12.5Z"
         fill="#DFFF5F"
       />

@@ -56,7 +56,7 @@ export default function OverviewPage() {
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="mv-animate-in lg:col-span-2">
           <Card className="h-full">
             <CardHeader
               eyebrow="Revenus"
@@ -75,7 +75,8 @@ export default function OverviewPage() {
         <div className="flex flex-col gap-4">
           <Link
             href="/reports/journees"
-            className="group flex-1 rounded-2xl border border-mv-border bg-mv-surface p-5 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
+            style={{ animationDelay: "80ms" }}
+            className="group mv-animate-in flex-1 rounded-2xl border border-mv-border bg-mv-surface p-5 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
           >
             <div className="flex items-start justify-between">
               <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
@@ -99,7 +100,8 @@ export default function OverviewPage() {
 
           <Link
             href="/reports/campagnes"
-            className="group flex-1 rounded-2xl border border-mv-border bg-mv-surface p-5 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
+            style={{ animationDelay: "140ms" }}
+            className="group mv-animate-in flex-1 rounded-2xl border border-mv-border bg-mv-surface p-5 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
           >
             <div className="flex items-start justify-between">
               <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
@@ -137,11 +139,12 @@ export default function OverviewPage() {
             </Link>
           </div>
           <div className="space-y-3">
-            {programs.slice(0, 4).map((p) => (
+            {programs.slice(0, 4).map((p, i) => (
               <Link
                 key={p.id}
                 href={`/programs?id=${p.id}`}
-                className="block rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
+                style={{ animationDelay: `${i * 60}ms` }}
+                className="mv-animate-in block rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-display text-[15px] font-medium text-mv-ink">{p.name}</p>
@@ -155,7 +158,7 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <div className="flex flex-col xl:col-span-4">
+        <div className="mv-animate-in flex flex-col xl:col-span-4" style={{ animationDelay: "100ms" }}>
           <Card className="flex h-full flex-col">
             <CardHeader
               eyebrow="Journées de service"
@@ -168,14 +171,15 @@ export default function OverviewPage() {
           </Card>
         </div>
 
-        <div className="xl:col-span-3">
+        <div className="mv-animate-in xl:col-span-3" style={{ animationDelay: "160ms" }}>
           <Card className="xl:sticky xl:top-6">
             <CardHeader title="Alertes" description={`${alerts.length} à examiner`} />
             <div className="space-y-3">
-              {alerts.map((a) => (
+              {alerts.map((a, i) => (
                 <div
                   key={a.id}
-                  className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5"
+                  style={{ animationDelay: `${220 + i * 50}ms` }}
+                  className="mv-animate-in rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5"
                 >
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <Badge tone={severityTone[a.severity]} dot>
