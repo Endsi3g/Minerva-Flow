@@ -6,6 +6,12 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 
 export type Period = "jour" | "semaine" | "mois" | "custom";
 
+export type AuthUser = {
+  id: string;
+  email: string;
+  fullName: string;
+};
+
 type AppState = {
   role: Role;
   setRole: (r: Role) => void;
@@ -15,11 +21,18 @@ type AppState = {
   setPeriod: (p: Period) => void;
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (v: boolean) => void;
+  authUser: AuthUser | null;
 };
 
 const AppContext = createContext<AppState | null>(null);
 
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider({
+  children,
+  authUser = null,
+}: {
+  children: ReactNode;
+  authUser?: AuthUser | null;
+}) {
   const [role, setRole] = useState<Role>("owner");
   const [restaurantId, setRestaurantId] = useState(currentRestaurantId);
   const [period, setPeriod] = useState<Period>("mois");
@@ -35,8 +48,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPeriod,
       sidebarCollapsed,
       setSidebarCollapsed,
+      authUser,
     }),
-    [role, restaurantId, period, sidebarCollapsed]
+    [role, restaurantId, period, sidebarCollapsed, authUser]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

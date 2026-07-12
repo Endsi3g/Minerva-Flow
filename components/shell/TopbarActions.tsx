@@ -1,9 +1,11 @@
 "use client";
 
 import { useApp, roleLabels } from "@/lib/app-context";
-import { Avatar } from "@/components/minerva/PersonAvatar";
+import { CurrentUserAvatar } from "@/components/minerva/CurrentUserAvatar";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 import { ChevronDown, LogOut, User, Check, Bell } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Period } from "@/lib/app-context";
 import type { Role } from "@/lib/types";
@@ -50,10 +52,19 @@ function PeriodFilter() {
 }
 
 function UserMenu() {
-  const { role, setRole } = useApp();
+  const { role, setRole, authUser } = useApp();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useClickOutside(() => setOpen(false));
-  const name = "Camille Andrieu";
+  const name = authUser?.fullName || "Camille Andrieu";
+  const email = authUser?.email || "quebecsaas@gmail.com";
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -61,7 +72,7 @@ function UserMenu() {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-mv-ink/5"
       >
-        <Avatar name={name} size={30} />
+        <CurrentUserAvatar size={30} />
         <span className="hidden text-left leading-tight md:block">
           <span className="block text-[13px] font-semibold text-mv-ink">{name}</span>
           <span className="block text-[11.5px] text-mv-ink-faint">{roleLabels[role]}</span>
@@ -72,7 +83,7 @@ function UserMenu() {
         <div className="mv-animate-in absolute right-0 top-12 z-40 w-64 rounded-xl border border-mv-border bg-mv-surface p-1.5 shadow-mv-lg">
           <div className="px-2.5 py-2">
             <p className="text-[13px] font-semibold text-mv-ink">{name}</p>
-            <p className="text-[12px] text-mv-ink-faint">quebecsaas@gmail.com</p>
+            <p className="text-[12px] text-mv-ink-faint">{email}</p>
           </div>
           <div className="border-t border-mv-border-soft px-2.5 py-2">
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
@@ -100,7 +111,10 @@ function UserMenu() {
             <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft">
               <User size={15} /> Profil
             </button>
-            <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-red hover:bg-mv-red-bg">
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-red hover:bg-mv-red-bg"
+            >
               <LogOut size={15} /> Se déconnecter
             </button>
           </div>

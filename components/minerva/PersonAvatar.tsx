@@ -1,4 +1,4 @@
-import { Avatar as ShadcnAvatar, AvatarFallback } from "@/components/ui/Avatar";
+import { Avatar as ShadcnAvatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
 
 // Deliberately excludes the Minerva brand green (#167F5B/#0E5A40) so a
@@ -22,10 +22,12 @@ export function Avatar({
   name,
   size = 32,
   className,
+  src,
 }: {
   name: string;
   size?: number;
   className?: string;
+  src?: string | null;
 }) {
   const initials = name
     .split(" ")
@@ -40,6 +42,7 @@ export function Avatar({
       className={cn("shrink-0 after:border-transparent", className)}
       style={{ width: size, height: size }}
     >
+      {src && <AvatarImage src={src} alt={name} />}
       <AvatarFallback
         className="font-semibold text-mv-cream-soft"
         style={{ background: color, fontSize: size * 0.38 }}

@@ -1,8 +1,13 @@
+"use client";
+
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/minerva/FormField";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
 
 function DoorIllustration() {
   return (
@@ -30,19 +35,61 @@ function DoorIllustration() {
   );
 }
 
-function OAuthButton({ label, icon }: { label: string; icon: React.ReactNode }) {
+function OAuthButton({
+  label,
+  icon,
+  onClick,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+}) {
   return (
-    <Link
-      href="/onboarding"
+    <button
+      type="button"
+      onClick={onClick}
       className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-mv-border bg-mv-surface text-[13px] font-semibold text-mv-ink transition-colors hover:bg-mv-cream-soft"
     >
       {icon}
       {label}
-    </Link>
+    </button>
   );
 }
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleLogin(e: FormEvent) {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      router.push("/overview");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleOAuth(provider: "google" | "apple" | "azure") {
+    setError(null);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}/auth/confirm?next=/overview` },
+    });
+    if (error) setError(error.message);
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-mv-cream px-6 py-10">
       <div className="mb-6 flex items-center gap-2.5">
@@ -54,10 +101,7 @@ export default function LoginPage() {
 
       <Card padded={false} className="w-full max-w-3xl overflow-hidden">
         <div className="grid md:grid-cols-2">
-          <form
-            action="/onboarding"
-            className="flex flex-col justify-center gap-4 p-8"
-          >
+          <form onSubmit={handleLogin} className="flex flex-col justify-center gap-4 p-8">
             <div>
               <h1 className="font-display text-[22px] font-medium text-mv-ink">
                 Bon retour
@@ -68,14 +112,36 @@ export default function LoginPage() {
             </div>
 
             <Field label="Email">
-              <Input type="email" placeholder="vous@restaurant.fr" required />
+              <Input
+                type="email"
+                placeholder="vous@restaurant.fr"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </Field>
             <Field label="Mot de passe">
-              <Input type="password" required />
+              <div className="flex items-center justify-between">
+                <span />
+                <Link
+                  href="/forgot-password"
+                  className="text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                >
+                  Mot de passe oublié ?
+                </Link>
+              </div>
+              <Input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </Field>
 
-            <Button type="submit" className="mt-1 w-full">
-              Se connecter
+            {error && <p className="text-[12.5px] text-mv-red">{error}</p>}
+
+            <Button type="submit" className="mt-1 w-full" disabled={isLoading}>
+              {isLoading ? "Connexion…" : "Se connecter"}
             </Button>
 
             <div className="flex items-center gap-3 py-1">
@@ -87,6 +153,7 @@ export default function LoginPage() {
             <div className="flex gap-2">
               <OAuthButton
                 label="Google"
+                onClick={() => handleOAuth("google")}
                 icon={
                   <svg width="15" height="15" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -98,6 +165,7 @@ export default function LoginPage() {
               />
               <OAuthButton
                 label="Apple"
+                onClick={() => handleOAuth("apple")}
                 icon={
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M16.365 1.43c0 1.14-.462 2.15-1.213 2.9-.83.85-2.18 1.51-3.37 1.42-.15-1.09.44-2.24 1.16-2.98.82-.86 2.23-1.5 3.42-1.34zM20.6 17.36c-.51 1.18-.76 1.7-1.42 2.75-.92 1.46-2.22 3.28-3.83 3.29-1.43.02-1.8-.93-3.73-.92-1.94.01-2.34.94-3.77.92-1.61-.02-2.84-1.66-3.76-3.12C1.62 16.9.94 12.85 2.4 10.09c.99-1.9 2.79-3.1 4.73-3.13 1.5-.02 2.9.99 3.82.99.92 0 2.61-1.22 4.41-1.04.75.03 2.85.3 4.2 2.26-.11.07-2.5 1.44-2.47 4.31.03 3.43 3.03 4.57 3.06 4.58-.02.07-.48 1.6-1.55 3.3z" />
@@ -106,6 +174,7 @@ export default function LoginPage() {
               />
               <OAuthButton
                 label="Microsoft"
+                onClick={() => handleOAuth("azure")}
                 icon={
                   <svg width="15" height="15" viewBox="0 0 24 24">
                     <rect x="2" y="2" width="9.2" height="9.2" fill="#F25022" />
@@ -118,7 +187,10 @@ export default function LoginPage() {
             </div>
 
             <p className="text-center text-[12.5px] text-mv-ink-faint">
-              Pas encore de compte ? <span className="font-semibold text-mv-green-dark">Créer un compte</span>
+              Pas encore de compte ?{" "}
+              <Link href="/sign-up" className="font-semibold text-mv-green-dark hover:underline">
+                Créer un compte
+              </Link>
             </p>
           </form>
 
