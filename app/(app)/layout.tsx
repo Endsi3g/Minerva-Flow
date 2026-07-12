@@ -1,19 +1,29 @@
 import { AppProvider } from "@/lib/app-context";
-import { Sidebar } from "@/components/shell/Sidebar";
-import { Topbar } from "@/components/shell/Topbar";
+import { AppSidebar } from "@/components/shell/AppSidebar";
+import { AppBreadcrumb } from "@/components/shell/AppBreadcrumb";
+import { TopbarActions } from "@/components/shell/TopbarActions";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AppProvider>
-      <div className="flex h-screen overflow-hidden">
-        <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar />
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="bg-mv-cream">
+          <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-mv-border bg-mv-cream-soft px-4">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="mr-1 data-vertical:h-5" />
+              <AppBreadcrumb />
+            </div>
+            <TopbarActions />
+          </header>
           <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-8 lg:py-7">
             <div className="mx-auto max-w-[1400px]">{children}</div>
           </main>
-        </div>
-      </div>
+        </SidebarInset>
+      </SidebarProvider>
     </AppProvider>
   );
 }

@@ -5,7 +5,6 @@ import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
 import { ChevronDown, LogOut, User, Check, Bell } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 import type { Period } from "@/lib/app-context";
 import type { Role } from "@/lib/types";
 
@@ -15,17 +14,6 @@ const periods: { id: Period; label: string }[] = [
   { id: "mois", label: "Mois" },
   { id: "custom", label: "Personnalisé" },
 ];
-
-const crumbLabels: Record<string, string> = {
-  overview: "Overview",
-  programs: "Programs",
-  days: "Days",
-  finance: "Finance",
-  campaigns: "Campaigns",
-  maps: "Maps",
-  settings: "Settings",
-  reports: "Reports",
-};
 
 function useClickOutside(onOutside: () => void) {
   const ref = useRef<HTMLDivElement>(null);
@@ -37,31 +25,6 @@ function useClickOutside(onOutside: () => void) {
     return () => document.removeEventListener("mousedown", handler);
   }, [onOutside]);
   return ref;
-}
-
-function Breadcrumb() {
-  const pathname = usePathname();
-  const segments = pathname.split("/").filter(Boolean);
-  const crumbs = segments
-    .filter((s) => crumbLabels[s] || segments.indexOf(s) === segments.length - 1)
-    .map((s) => crumbLabels[s] ?? s);
-
-  return (
-    <div className="flex items-center gap-1.5 text-[13.5px] font-semibold text-mv-ink">
-      {crumbs.length === 0 ? (
-        <span>Overview</span>
-      ) : (
-        crumbs.map((c, i) => (
-          <span key={i} className="flex items-center gap-1.5">
-            {i > 0 && <span className="text-mv-ink-faint">/</span>}
-            <span className={i === crumbs.length - 1 ? "text-mv-ink" : "text-mv-ink-faint"}>
-              {c}
-            </span>
-          </span>
-        ))
-      )}
-    </div>
-  );
 }
 
 function PeriodFilter() {
@@ -147,19 +110,16 @@ function UserMenu() {
   );
 }
 
-export function Topbar() {
+export function TopbarActions() {
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-mv-border bg-mv-cream-soft px-6">
-      <Breadcrumb />
-      <div className="flex items-center gap-3">
-        <PeriodFilter />
-        <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-mv-border bg-mv-surface text-mv-ink-soft transition-colors hover:bg-mv-cream-soft">
-          <Bell size={16} />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-mv-red" />
-        </button>
-        <div className="h-6 w-px bg-mv-border" />
-        <UserMenu />
-      </div>
-    </header>
+    <div className="flex items-center gap-3">
+      <PeriodFilter />
+      <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-mv-border bg-mv-surface text-mv-ink-soft transition-colors hover:bg-mv-cream-soft">
+        <Bell size={16} />
+        <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-mv-red" />
+      </button>
+      <div className="h-6 w-px bg-mv-border" />
+      <UserMenu />
+    </div>
   );
 }

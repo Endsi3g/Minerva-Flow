@@ -4,8 +4,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ContributionHeatmap } from "@/components/charts/ContributionHeatmap";
 import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
-import { programs, alerts, kpis, heatmapMonth } from "@/lib/mock-data";
-import { revenueTrend, margeTrend } from "@/lib/reports";
+import { MiniSparkline } from "@/components/charts/MiniSparkline";
+import { programs, alerts, kpis, heatmapMonth, campaigns } from "@/lib/mock-data";
+import { revenueTrend, margeTrend, joursTrend } from "@/lib/reports";
 import { formatDate, formatDateFull } from "@/lib/utils";
 import { CalendarCheck2, Megaphone, ArrowUpRight, ArrowRight } from "lucide-react";
 import type { ProgramStatus } from "@/lib/types";
@@ -24,6 +25,19 @@ const statusLabel: Record<ProgramStatus, string> = {
 };
 
 const severityTone = { haute: "red", moyenne: "amber", basse: "neutral" } as const;
+
+const joursSparkData = joursTrend.map((d) => ({ date: d.date, value: d.revenue }));
+
+const campagnesSparkData = (() => {
+  let cumulative = 0;
+  return [...campaigns]
+    .filter((c) => c.status === "active")
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))
+    .map((c) => {
+      cumulative += c.estimatedRevenue;
+      return { date: c.startDate, value: cumulative };
+    });
+})();
 
 export default function OverviewPage() {
   const heat = heatmapMonth(2026, 6);
@@ -74,7 +88,10 @@ export default function OverviewPage() {
             <p className="mt-3 font-display text-[28px] font-medium leading-none text-mv-ink">
               {kpis.serviceDaysCount}
             </p>
-            <p className="mt-2.5 flex items-center gap-1 text-[12.5px] font-semibold text-mv-green-dark">
+            <div className="mt-2">
+              <MiniSparkline id="jours" data={joursSparkData} color="var(--mv-amber)" />
+            </div>
+            <p className="mt-1 flex items-center gap-1 text-[12.5px] font-semibold text-mv-green-dark">
               Voir le rapport
               <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
             </p>
@@ -95,7 +112,10 @@ export default function OverviewPage() {
             <p className="mt-3 font-display text-[28px] font-medium leading-none text-mv-ink">
               {kpis.activeCampaigns}
             </p>
-            <p className="mt-2.5 flex items-center gap-1 text-[12.5px] font-semibold text-mv-green-dark">
+            <div className="mt-2">
+              <MiniSparkline id="campagnes" data={campagnesSparkData} color="var(--mv-red)" />
+            </div>
+            <p className="mt-1 flex items-center gap-1 text-[12.5px] font-semibold text-mv-green-dark">
               Voir le rapport
               <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
             </p>
@@ -135,14 +155,16 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <div className="space-y-6 xl:col-span-4">
-          <Card>
+        <div className="flex flex-col xl:col-span-4">
+          <Card className="flex h-full flex-col">
             <CardHeader
               eyebrow="Journées de service"
               title="Heatmap du mois"
               description={formatDateFull("2026-07-01").split(" ").slice(1).join(" ")}
             />
-            <ContributionHeatmap data={heat} />
+            <div className="min-h-0 flex-1">
+              <ContributionHeatmap data={heat} />
+            </div>
           </Card>
         </div>
 

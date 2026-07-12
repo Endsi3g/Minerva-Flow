@@ -14,42 +14,31 @@ export function ContributionHeatmap({
   const min = Math.min(...revenues);
   const max = Math.max(...revenues);
 
-  const weeks: (typeof data[number] | null)[][] = [];
-  let week: (typeof data[number] | null)[] = new Array(data[0]?.dow ?? 0).fill(null);
-  for (const d of data) {
-    week.push(d);
-    if (week.length === 7) {
-      weeks.push(week);
-      week = [];
-    }
-  }
-  if (week.length) {
-    while (week.length < 7) week.push(null);
-    weeks.push(week);
-  }
+  const firstDow = data[0] ? (data[0].dow === 0 ? 6 : data[0].dow - 1) : 0;
+  const cells: (typeof data[number] | null)[] = [
+    ...new Array(firstDow).fill(null),
+    ...data,
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
 
   return (
-    <div>
-      <div className="flex gap-[3px]">
-        {weeks.map((w, wi) => (
-          <div key={wi} className="flex flex-col gap-[3px]">
-            {w.map((d, di) =>
-              d ? (
-                <div
-                  key={di}
-                  onMouseEnter={() => setHover(d)}
-                  onMouseLeave={() => setHover(null)}
-                  className="h-3.5 w-3.5 rounded-[3px] transition-transform hover:scale-125"
-                  style={{ background: bucketFor(d.revenue, min, max) }}
-                />
-              ) : (
-                <div key={di} className="h-3.5 w-3.5" />
-              )
-            )}
-          </div>
-        ))}
+    <div className="flex h-full flex-col">
+      <div className="grid flex-1 grid-cols-7 gap-1.5">
+        {cells.map((d, i) =>
+          d ? (
+            <div
+              key={i}
+              onMouseEnter={() => setHover(d)}
+              onMouseLeave={() => setHover(null)}
+              className="min-h-[15px] w-full rounded-[4px] opacity-90 transition-all hover:opacity-100 hover:ring-2 hover:ring-mv-green/40"
+              style={{ background: bucketFor(d.revenue, min, max) }}
+            />
+          ) : (
+            <div key={i} />
+          )
+        )}
       </div>
-      <div className="mt-3 flex items-center justify-between">
+      <div className="mt-3 flex items-center justify-between border-t border-mv-border-soft pt-3">
         <div className="h-4 text-[12px] text-mv-ink-soft">
           {hover ? (
             <>
