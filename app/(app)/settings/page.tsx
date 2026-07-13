@@ -8,9 +8,10 @@ import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { Field, Input, Select } from "@/components/minerva/FormField";
-import { restaurants, connections, team } from "@/lib/mock-data";
+import { Switch } from "@/components/ui/Switch";
+import { restaurants, connections, team, alertRules } from "@/lib/mock-data";
 import { roleLabels } from "@/lib/app-context";
-import type { ConnectionStatus, ConnectionType, Role } from "@/lib/types";
+import type { AlertRule, ConnectionStatus, ConnectionType, Role } from "@/lib/types";
 import {
   Plus,
   MapPin,
@@ -23,7 +24,14 @@ import {
   Eye,
   PenSquare,
   ShieldCheck,
+  Bell,
+  TrendingDown,
+  TrendingUp,
+  CalendarX,
+  PlugZap,
+  Users,
 } from "lucide-react";
+import { useState } from "react";
 
 const typeIcon: Record<ConnectionType, typeof Landmark> = {
   banque: Landmark,
@@ -63,6 +71,75 @@ const rolePermissions: Record<Role, { icon: typeof Eye; text: string }> = {
   consultant: { icon: Eye, text: "Lecture des données et rédaction de notes / plans d'action." },
 };
 
+const ruleIcon: Record<AlertRule["type"], typeof TrendingDown> = {
+  revenue_drop: TrendingDown,
+  expense_spike: TrendingUp,
+  missing_day_input: CalendarX,
+  broken_sync: PlugZap,
+  reservation_anomaly: Users,
+};
+
+function AlertRulesTab() {
+  const [rules, setRules] = useState<AlertRule[]>(alertRules);
+
+  function update(id: string, patch: Partial<AlertRule>) {
+    setRules((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  }
+
+  return (
+    <div className="space-y-3">
+      {rules.map((rule) => {
+        const Icon = ruleIcon[rule.type];
+        return (
+          <Card key={rule.id} className={!rule.enabled ? "opacity-60" : undefined}>
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-cream-soft text-mv-ink-soft">
+                <Icon size={16} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-display text-[15px] font-medium text-mv-ink">{rule.label}</p>
+                  <Switch
+                    checked={rule.enabled}
+                    onCheckedChange={(checked: boolean) => update(rule.id, { enabled: checked })}
+                    className="data-checked:bg-mv-green"
+                  />
+                </div>
+                <p className="mt-1 text-[12.5px] leading-relaxed text-mv-ink-soft">
+                  {rule.description}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-semibold text-mv-ink-faint">Seuil</span>
+                    <Input
+                      type="number"
+                      value={rule.threshold}
+                      disabled={!rule.enabled}
+                      onChange={(e) => update(rule.id, { threshold: Number(e.target.value) })}
+                      className="h-8 w-20 text-[13px]"
+                    />
+                    <span className="text-[12px] text-mv-ink-faint">{rule.unit}</span>
+                  </div>
+                  <label className="flex items-center gap-2 text-[12px] font-semibold text-mv-ink-soft">
+                    <Switch
+                      size="sm"
+                      checked={rule.notify}
+                      disabled={!rule.enabled}
+                      onCheckedChange={(checked: boolean) => update(rule.id, { notify: checked })}
+                      className="data-checked:bg-mv-green"
+                    />
+                    <Bell size={13} /> Notifier
+                  </label>
+                </div>
+              </div>
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <div>
@@ -87,6 +164,12 @@ export default function SettingsPage() {
             className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
           >
             Intégrations
+          </TabsTrigger>
+          <TabsTrigger
+            value="alertes"
+            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
+          >
+            Règles d&apos;alertes
           </TabsTrigger>
         </TabsList>
 
@@ -271,6 +354,10 @@ export default function SettingsPage() {
             </div>
           </Card>
         </div>
+        </TabsContent>
+
+        <TabsContent value="alertes">
+          <AlertRulesTab />
         </TabsContent>
       </Tabs>
     </div>

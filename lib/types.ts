@@ -101,3 +101,42 @@ export type TeamMember = {
   restaurantIds: string[];
   status: "actif" | "invite";
 };
+
+export type TransactionDirection = "in" | "out";
+
+export type FinancialTransaction = {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  direction: TransactionDirection;
+  category: string;
+  sourceAccount: string;
+  programId: string | null;
+  reviewed: boolean;
+};
+
+export type ExpenseCategory = {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  transactionCount: number;
+};
+
+export type AlertRuleType =
+  | "revenue_drop"
+  | "expense_spike"
+  | "missing_day_input"
+  | "broken_sync"
+  | "reservation_anomaly";
+
+export type AlertRule = {
+  id: string;
+  type: AlertRuleType;
+  label: string;
+  description: string;
+  threshold: number;
+  unit: "%" | "jours" | "count";
+  enabled: boolean;
+  notify: boolean;
+};
