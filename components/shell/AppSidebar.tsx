@@ -21,6 +21,7 @@ import {
   Megaphone,
   Settings,
   Map as MapIcon,
+  Sparkles,
   ChevronDown,
   Check,
   Database,
@@ -48,6 +49,7 @@ const nav: NavItem[] = [
   { href: "/finance", label: "Finance", icon: Wallet, roles: ["owner"] },
   { href: "/campaigns", label: "Campaigns", icon: Megaphone, roles: ["owner", "consultant"] },
   { href: "/maps", label: "Maps", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
+  { href: "/assistant", label: "Assistant", icon: Sparkles, roles: ["owner", "staff", "consultant"] },
 ];
 
 function NavLink({

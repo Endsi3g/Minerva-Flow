@@ -130,6 +130,24 @@ export type AlertRuleType =
   | "broken_sync"
   | "reservation_anomaly";
 
+export type RecommendationStatus =
+  | "nouvelle"
+  | "planifiee"
+  | "en_cours"
+  | "ignoree"
+  | "terminee";
+
+export type Recommendation = {
+  id: string;
+  diagnosis: string;
+  suggestedAction: string;
+  relatedMetric?: string;
+  relatedProgramId?: string | null;
+  relatedCampaignId?: string | null;
+  status: RecommendationStatus;
+  source: "regles" | "ia";
+};
+
 export type AlertRule = {
   id: string;
   type: AlertRuleType;

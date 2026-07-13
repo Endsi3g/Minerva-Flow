@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/Button";
 import { ContributionHeatmap } from "@/components/charts/ContributionHeatmap";
 import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
 import { MiniSparkline } from "@/components/charts/MiniSparkline";
-import { programs, alerts, kpis, heatmapMonth, campaigns } from "@/lib/mock-data";
+import { RecommendationsPanel } from "@/components/minerva/RecommendationsPanel";
+import { programs, kpis, heatmapMonth, campaigns } from "@/lib/mock-data";
 import { revenueTrend, margeTrend, joursTrend } from "@/lib/reports";
+import { computeAlerts } from "@/lib/engine/alerts";
+import { computeRecommendations } from "@/lib/engine/recommendations";
 import { formatDate, formatDateFull } from "@/lib/utils";
 import { CalendarCheck2, Megaphone, ArrowUpRight, ArrowRight } from "lucide-react";
 import type { ProgramStatus } from "@/lib/types";
@@ -41,6 +44,8 @@ const campagnesSparkData = (() => {
 
 export default function OverviewPage() {
   const heat = heatmapMonth(2026, 6);
+  const alerts = computeAlerts();
+  const recommendations = computeRecommendations();
 
   return (
     <div>
@@ -198,6 +203,10 @@ export default function OverviewPage() {
             </div>
           </Card>
         </div>
+      </div>
+
+      <div className="mv-animate-in mt-6" style={{ animationDelay: "260ms" }}>
+        <RecommendationsPanel initial={recommendations} />
       </div>
     </div>
   );
