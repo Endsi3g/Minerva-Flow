@@ -4,15 +4,31 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { cn } from "@/lib/utils";
+import type { RushLevel, ServiceSource } from "@/lib/types";
+import type { CreateServiceDayResult } from "@/app/(app)/days/actions";
 import { useState } from "react";
 
 const eventOptions = ["Promo", "Changement de menu", "Soirée spéciale", "Événement privé"];
-const anomalyOptions = [
-  { id: "", label: "Aucune" },
+
+const rushLevelOptions: { id: RushLevel; label: string }[] = [
+  { id: "calme", label: "Calme" },
+  { id: "normal", label: "Normal" },
   { id: "rush", label: "Rush" },
-  { id: "creux", label: "Creux inhabituel" },
-  { id: "probleme", label: "Problème opérationnel" },
+  { id: "debordement", label: "Débordement" },
 ];
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export type AddServiceDayInput = {
+  date: string;
+  revenue: number;
+  mainSource: ServiceSource;
+  rushLevel: RushLevel;
+  events: string[];
+  notes: string;
+};
 
 export function AddServiceDayModal({
   open,
@@ -21,41 +37,103 @@ export function AddServiceDayModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit?: () => void;
+  onSubmit: (input: AddServiceDayInput) => Promise<CreateServiceDayResult>;
 }) {
+  const [date, setDate] = useState(todayIso());
+  const [revenue, setRevenue] = useState("");
+  const [mainSource, setMainSource] = useState<ServiceSource>("salle");
+  const [rushLevel, setRushLevel] = useState<RushLevel>("normal");
   const [events, setEvents] = useState<string[]>([]);
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggleEvent(e: string) {
     setEvents((prev) => (prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]));
   }
 
+  function reset() {
+    setDate(todayIso());
+    setRevenue("");
+    setMainSource("salle");
+    setRushLevel("normal");
+    setEvents([]);
+    setNotes("");
+    setError(null);
+  }
+
+  function handleClose() {
+    if (submitting) return;
+    reset();
+    onClose();
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    const parsedRevenue = Number(revenue);
+    if (!date || !Number.isFinite(parsedRevenue)) {
+      setError("La date et le revenu sont requis.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const result = await onSubmit({
+        date,
+        revenue: parsedRevenue,
+        mainSource,
+        rushLevel,
+        events,
+        notes,
+      });
+      if (result.ok) {
+        reset();
+        onClose();
+      } else {
+        setError(result.error);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title="Ajouter une journée de service"
       description="Encodez le revenu, les événements et les observations du service."
       width={620}
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit?.();
-          onClose();
-        }}
-        className="space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <Field label="Date">
-            <Input type="date" defaultValue="2026-07-11" required />
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
           </Field>
           <Field label="Revenu du jour">
-            <Input type="number" placeholder="2 450" required />
+            <Input
+              type="number"
+              step="0.01"
+              placeholder="2 450"
+              value={revenue}
+              onChange={(e) => setRevenue(e.target.value)}
+              required
+            />
           </Field>
         </div>
 
         <Field label="Source principale">
-          <Select defaultValue="salle">
+          <Select
+            value={mainSource}
+            onChange={(e) => setMainSource(e.target.value as ServiceSource)}
+          >
             <option value="salle">Sur place</option>
             <option value="livraison">Livraison</option>
             <option value="reservation">Réservation en ligne</option>
@@ -82,25 +160,36 @@ export function AddServiceDayModal({
           </div>
         </Field>
 
-        <Field label="Anomalie observée">
-          <Select defaultValue="">
-            {anomalyOptions.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.label}
+        <Field label="Niveau d'activité">
+          <Select
+            value={rushLevel}
+            onChange={(e) => setRushLevel(e.target.value as RushLevel)}
+          >
+            {rushLevelOptions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label}
               </option>
             ))}
           </Select>
         </Field>
 
         <Field label="Notes libres" hint="Ambiance, incidents, ruptures de stock…">
-          <Textarea placeholder="Ex : terrasse pleine dès 19h, rupture sur le tartare…" />
+          <Textarea
+            placeholder="Ex : terrasse pleine dès 19h, rupture sur le tartare…"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </Field>
 
+        {error && <p className="text-[12.5px] font-medium text-mv-red">{error}</p>}
+
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={handleClose} disabled={submitting}>
             Annuler
           </Button>
-          <Button type="submit">Enregistrer la journée</Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Enregistrement…" : "Enregistrer la journée"}
+          </Button>
         </div>
       </form>
     </Modal>

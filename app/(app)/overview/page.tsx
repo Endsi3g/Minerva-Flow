@@ -2,17 +2,23 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ContributionHeatmap } from "@/components/charts/ContributionHeatmap";
 import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
 import { MiniSparkline } from "@/components/charts/MiniSparkline";
 import { RecommendationsPanel } from "@/components/minerva/RecommendationsPanel";
-import { programs, kpis, heatmapMonth, campaigns } from "@/lib/mock-data";
-import { revenueTrend, margeTrend, joursTrend } from "@/lib/reports";
+import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
+import { getPrograms } from "@/lib/data/programs";
+import { getServiceDays } from "@/lib/data/service-days";
+import { getCampaigns } from "@/lib/data/campaigns";
+import { getFinancialTransactions, getConnections } from "@/lib/data/finance";
+import { getAlertRules } from "@/lib/data/alerts";
+import { revenueTrend, margeTrend, joursTrend, type ReportData } from "@/lib/reports";
 import { computeAlerts } from "@/lib/engine/alerts";
 import { computeRecommendations } from "@/lib/engine/recommendations";
 import { formatDate, formatDateFull } from "@/lib/utils";
-import { CalendarCheck2, Megaphone, ArrowUpRight, ArrowRight } from "lucide-react";
-import type { ProgramStatus } from "@/lib/types";
+import { CalendarCheck2, Megaphone, ArrowUpRight, ArrowRight, Store } from "lucide-react";
+import type { AlertSeverity, ProgramStatus, ServiceDay } from "@/lib/types";
 import Link from "next/link";
 
 const statusTone: Record<ProgramStatus, "green" | "amber" | "neutral"> = {
@@ -27,25 +33,94 @@ const statusLabel: Record<ProgramStatus, string> = {
   termine: "Terminé",
 };
 
-const severityTone = { haute: "red", moyenne: "amber", basse: "neutral" } as const;
+const severityTone: Record<AlertSeverity, "red" | "amber" | "neutral"> = {
+  critique: "red",
+  important: "amber",
+  info: "neutral",
+};
 
-const joursSparkData = joursTrend.map((d) => ({ date: d.date, value: d.revenue }));
+const severityLabel: Record<AlertSeverity, string> = {
+  critique: "Priorité haute",
+  important: "À surveiller",
+  info: "Info",
+};
 
-const campagnesSparkData = (() => {
-  let cumulative = 0;
-  return [...campaigns]
-    .filter((c) => c.status === "active")
+/** First/last ISO date of the current calendar month. */
+function currentMonthRange(now = new Date()) {
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const from = new Date(year, month, 1).toISOString().slice(0, 10);
+  const to = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+  return { from, to, year, month };
+}
+
+/** Full calendar-month grid for the heatmap, backed by real service_days (0 for days with no entry). */
+function monthHeat(serviceDays: ServiceDay[], year: number, month: number) {
+  const byDate = new Map(serviceDays.map((d) => [d.date, d.revenue]));
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const out: { date: string; revenue: number; dow: number }[] = [];
+  for (let i = 1; i <= daysInMonth; i++) {
+    const date = new Date(year, month, i);
+    const iso = date.toISOString().slice(0, 10);
+    out.push({ date: iso, revenue: byDate.get(iso) ?? 0, dow: date.getDay() });
+  }
+  return out;
+}
+
+export default async function OverviewPage() {
+  const restaurantId = await getCurrentRestaurantId();
+
+  if (!restaurantId) {
+    return (
+      <div>
+        <PageHeader eyebrow="Vue globale" title="Overview" />
+        <EmptyState
+          icon={Store}
+          title="Aucun restaurant configuré"
+          description="Créez ou rejoignez un restaurant pour voir votre tableau de bord."
+          action={
+            <Button href="/onboarding" size="sm">
+              Configurer un restaurant
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
+  const { from, to, year, month } = currentMonthRange();
+
+  const [serviceDays, programs, campaigns, financialTransactions, connections, alertRules] =
+    await Promise.all([
+      getServiceDays(restaurantId, { from, to }),
+      getPrograms(restaurantId),
+      getCampaigns(restaurantId),
+      getFinancialTransactions(restaurantId, { from, to }),
+      getConnections(restaurantId),
+      getAlertRules(restaurantId),
+    ]);
+
+  const reportData: ReportData = { serviceDays, programs, campaigns, financialTransactions };
+
+  const revTrend = revenueTrend(reportData);
+  const margTrend = margeTrend(reportData);
+  const joursTr = joursTrend(reportData);
+
+  const alerts = computeAlerts({ serviceDays, connections, alertRules, financialTransactions });
+  const recommendations = computeRecommendations({ campaigns, programs, serviceDays, alerts });
+
+  const joursSparkData = joursTr.map((d) => ({ date: d.date, value: d.revenue }));
+
+  const activeCampaigns = campaigns.filter((c) => c.status === "active");
+  const campagnesSparkData = [...activeCampaigns]
     .sort((a, b) => a.startDate.localeCompare(b.startDate))
-    .map((c) => {
-      cumulative += c.estimatedRevenue;
-      return { date: c.startDate, value: cumulative };
-    });
-})();
+    .reduce<{ date: string; value: number }[]>((acc, c) => {
+      const previous = acc.at(-1)?.value ?? 0;
+      acc.push({ date: c.startDate, value: previous + c.estimatedRevenue });
+      return acc;
+    }, []);
 
-export default function OverviewPage() {
-  const heat = heatmapMonth(2026, 6);
-  const alerts = computeAlerts();
-  const recommendations = computeRecommendations();
+  const heat = monthHeat(serviceDays, year, month);
 
   return (
     <div>
@@ -70,8 +145,8 @@ export default function OverviewPage() {
             />
             <UnifiedTrendChart
               series={[
-                { key: "revenu", slug: "revenu", label: "Revenu total", color: "var(--mv-green)", data: revenueTrend },
-                { key: "marge", slug: "marge", label: "Marge estimée", color: "var(--mv-lime-dark)", data: margeTrend },
+                { key: "revenu", slug: "revenu", label: "Revenu total", color: "var(--mv-green)", data: revTrend },
+                { key: "marge", slug: "marge", label: "Marge estimée", color: "var(--mv-lime-dark)", data: margTrend },
               ]}
             />
           </Card>
@@ -92,7 +167,7 @@ export default function OverviewPage() {
               </div>
             </div>
             <p className="mt-3 font-display text-[28px] font-medium leading-none text-mv-ink">
-              {kpis.serviceDaysCount}
+              {serviceDays.length}
             </p>
             <div className="mt-2">
               <MiniSparkline id="jours" data={joursSparkData} color="var(--mv-amber)" />
@@ -117,7 +192,7 @@ export default function OverviewPage() {
               </div>
             </div>
             <p className="mt-3 font-display text-[28px] font-medium leading-none text-mv-ink">
-              {kpis.activeCampaigns}
+              {activeCampaigns.length}
             </p>
             <div className="mt-2">
               <MiniSparkline id="campagnes" data={campagnesSparkData} color="var(--mv-red)" />
@@ -143,24 +218,30 @@ export default function OverviewPage() {
               Tout voir <ArrowUpRight size={13} />
             </Link>
           </div>
-          <div className="space-y-3">
-            {programs.slice(0, 4).map((p, i) => (
-              <Link
-                key={p.id}
-                href={`/programs?id=${p.id}`}
-                style={{ animationDelay: `${i * 60}ms` }}
-                className="mv-animate-in block rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-display text-[15px] font-medium text-mv-ink">{p.name}</p>
-                  <Badge tone={statusTone[p.status]}>{statusLabel[p.status]}</Badge>
-                </div>
-                <p className="mt-1 text-[12px] text-mv-ink-faint">
-                  {formatDate(p.startDate)} — {formatDate(p.endDate)}
-                </p>
-              </Link>
-            ))}
-          </div>
+          {programs.length === 0 ? (
+            <p className="text-[12.5px] text-mv-ink-faint">
+              Aucun programme de revenus pour l&apos;instant.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {programs.slice(0, 4).map((p, i) => (
+                <Link
+                  key={p.id}
+                  href={`/programs?id=${p.id}`}
+                  style={{ animationDelay: `${i * 60}ms` }}
+                  className="mv-animate-in block rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-display text-[15px] font-medium text-mv-ink">{p.name}</p>
+                    <Badge tone={statusTone[p.status]}>{statusLabel[p.status]}</Badge>
+                  </div>
+                  <p className="mt-1 text-[12px] text-mv-ink-faint">
+                    {formatDate(p.startDate)} — {formatDate(p.endDate)}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mv-animate-in flex flex-col xl:col-span-4" style={{ animationDelay: "100ms" }}>
@@ -168,7 +249,7 @@ export default function OverviewPage() {
             <CardHeader
               eyebrow="Journées de service"
               title="Heatmap du mois"
-              description={formatDateFull("2026-07-01").split(" ").slice(1).join(" ")}
+              description={formatDateFull(from).split(" ").slice(1).join(" ")}
             />
             <div className="min-h-0 flex-1">
               <ContributionHeatmap data={heat} />
@@ -179,28 +260,28 @@ export default function OverviewPage() {
         <div className="mv-animate-in xl:col-span-3" style={{ animationDelay: "160ms" }}>
           <Card className="xl:sticky xl:top-6">
             <CardHeader title="Alertes" description={`${alerts.length} à examiner`} />
-            <div className="space-y-3">
-              {alerts.map((a, i) => (
-                <div
-                  key={a.id}
-                  style={{ animationDelay: `${220 + i * 50}ms` }}
-                  className="mv-animate-in rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5"
-                >
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <Badge tone={severityTone[a.severity]} dot>
-                      {a.severity === "haute"
-                        ? "Priorité haute"
-                        : a.severity === "moyenne"
-                        ? "À surveiller"
-                        : "Info"}
-                    </Badge>
-                    <span className="text-[11px] text-mv-ink-faint">{formatDate(a.date)}</span>
+            {alerts.length === 0 ? (
+              <p className="text-[12.5px] text-mv-ink-faint">Rien à signaler pour l&apos;instant.</p>
+            ) : (
+              <div className="space-y-3">
+                {alerts.map((a, i) => (
+                  <div
+                    key={a.id}
+                    style={{ animationDelay: `${220 + i * 50}ms` }}
+                    className="mv-animate-in rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5"
+                  >
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <Badge tone={severityTone[a.severity]} dot>
+                        {severityLabel[a.severity]}
+                      </Badge>
+                      <span className="text-[11px] text-mv-ink-faint">{formatDate(a.date)}</span>
+                    </div>
+                    <p className="text-[13px] font-semibold leading-snug text-mv-ink">{a.title}</p>
+                    <p className="mt-0.5 text-[12.5px] leading-snug text-mv-ink-soft">{a.detail}</p>
                   </div>
-                  <p className="text-[13px] font-semibold leading-snug text-mv-ink">{a.title}</p>
-                  <p className="mt-0.5 text-[12.5px] leading-snug text-mv-ink-soft">{a.detail}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
       </div>

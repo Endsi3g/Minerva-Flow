@@ -8,10 +8,10 @@ import { Select } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RevenueChart } from "@/components/charts/RevenueChart";
-import { programs, campaigns } from "@/lib/mock-data";
+import { CreateProgramModal } from "@/components/forms/CreateProgramModal";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import type { Program, ProgramStatus, ProgramType } from "@/lib/types";
+import type { Campaign, Program, ProgramStatus, ProgramType } from "@/lib/types";
 import { LineChart, Plus, MessageSquare } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -42,24 +42,35 @@ const statusLabel: Record<ProgramStatus, string> = {
   termine: "Terminé",
 };
 
-export function ProgramsView() {
-  const { role, restaurantId } = useApp();
+export function ProgramsView({
+  restaurantId,
+  programs,
+  campaigns,
+}: {
+  restaurantId: string | null;
+  programs: Program[];
+  campaigns: Campaign[];
+}) {
+  const { role } = useApp();
   const searchParams = useSearchParams();
   const initialId = searchParams.get("id");
 
   const [typeFilter, setTypeFilter] = useState<"all" | ProgramType>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | ProgramStatus>("all");
   const [selectedId, setSelectedId] = useState<string | null>(initialId);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const canCreate =
+    Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
 
   const filtered = useMemo(
     () =>
       programs.filter(
         (p) =>
-          p.restaurantId === restaurantId &&
           (typeFilter === "all" || p.type === typeFilter) &&
           (statusFilter === "all" || p.status === statusFilter)
       ),
-    [typeFilter, statusFilter, restaurantId]
+    [programs, typeFilter, statusFilter]
   );
 
   const selected: Program | undefined = programs.find((p) => p.id === selectedId);
@@ -74,8 +85,8 @@ export function ProgramsView() {
         title="Programs"
         description="Chaque source de revenu récurrente ou saisonnière — brunchs, soirées, périodes spéciales — avec sa performance."
         action={
-          role === "owner" && (
-            <Button size="sm">
+          canCreate && (
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus size={15} /> Nouveau programme
             </Button>
           )
@@ -271,6 +282,15 @@ export function ProgramsView() {
           </div>
         )}
       </div>
+
+      {restaurantId && (
+        <CreateProgramModal
+          restaurantId={restaurantId}
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onCreated={(program) => setSelectedId(program.id)}
+        />
+      )}
     </div>
   );
 }

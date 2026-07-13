@@ -1,8 +1,13 @@
-import { computeAlerts } from "@/lib/engine/alerts";
-import { campaigns, programs, serviceDays } from "@/lib/mock-data";
-import type { Recommendation } from "@/lib/types";
+import type { Alert, Campaign, Program, Recommendation, ServiceDay } from "@/lib/types";
 
 const weekdayNames = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+
+export type ComputeRecommendationsInput = {
+  campaigns: Campaign[];
+  programs: Program[];
+  serviceDays: ServiceDay[];
+  alerts: Alert[];
+};
 
 /**
  * Rule-based recommendation engine — the always-available fallback.
@@ -10,11 +15,17 @@ const weekdayNames = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendre
  * (an alert, a margin figure, a campaign ratio) so it never overstates
  * confidence. This is what powers the Recommendations panel until an
  * AI Gateway key is configured (see lib/ai/recommendations.ts for the
- * AI-enhanced version, which starts from these same signals).
+ * AI-enhanced version, which starts from these same signals). `alerts`
+ * is computed by lib/engine/alerts.ts and passed in rather than
+ * recomputed here.
  */
-export function computeRecommendations(): Recommendation[] {
+export function computeRecommendations({
+  campaigns,
+  programs,
+  serviceDays,
+  alerts,
+}: ComputeRecommendationsInput): Recommendation[] {
   const recs: Recommendation[] = [];
-  const alerts = computeAlerts();
 
   // From revenue-drop alerts: suggest testing an activation on that weekday.
   const dropAlert = alerts.find((a) => a.id.startsWith("revenue-drop"));

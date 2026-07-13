@@ -1,28 +1,41 @@
-import {
-  serviceDays,
-  connections,
-  alertRules,
-  financialTransactions,
-} from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
-import type { Alert, AlertSeverity } from "@/lib/types";
+import type {
+  Alert,
+  AlertRule,
+  AlertSeverity,
+  Connection,
+  FinancialTransaction,
+  ServiceDay,
+} from "@/lib/types";
 
 function dayOfWeek(iso: string) {
   return new Date(iso + "T00:00:00").getDay();
 }
 
 function severityFor(pctOver: number): AlertSeverity {
-  if (pctOver >= 50) return "haute";
-  if (pctOver >= 25) return "moyenne";
-  return "basse";
+  if (pctOver >= 50) return "critique";
+  if (pctOver >= 25) return "important";
+  return "info";
 }
+
+export type ComputeAlertsInput = {
+  serviceDays: ServiceDay[];
+  connections: Connection[];
+  alertRules: AlertRule[];
+  financialTransactions: FinancialTransaction[];
+};
 
 /**
  * Rule-based alert engine. Scans the current data against the restaurant's
  * configured alert_rules and produces Alert objects — no LLM involved, this
  * runs entirely deterministically so alerts stay explainable and free.
  */
-export function computeAlerts(): Alert[] {
+export function computeAlerts({
+  serviceDays,
+  connections,
+  alertRules,
+  financialTransactions,
+}: ComputeAlertsInput): Alert[] {
   const rules = Object.fromEntries(alertRules.map((r) => [r.type, r]));
   const alerts: Alert[] = [];
 
@@ -71,7 +84,7 @@ export function computeAlerts(): Alert[] {
         alerts.push({
           id: `expense-spike-${t.id}`,
           title: `Pic de dépense — ${t.category}`,
-          detail: `${formatDate(t.date)} : "${t.description}" (${Math.abs(t.amount)} €) dépasse de ${Math.round(overPct)}% la moyenne de cette catégorie.`,
+          detail: `${formatDate(t.date)} : "${t.description}" (${Math.abs(t.amount)} $) dépasse de ${Math.round(overPct)}% la moyenne de cette catégorie.`,
           severity: severityFor(overPct),
           date: t.date,
         });
@@ -92,7 +105,7 @@ export function computeAlerts(): Alert[] {
         id: "missing-day-input",
         title: "Journées sans saisie",
         detail: `Aucune journée renseignée depuis ${daysSince} jour${daysSince > 1 ? "s" : ""} (dernière saisie : ${formatDate(latest.date)}).`,
-        severity: daysSince >= missingRule.threshold * 2 ? "haute" : "moyenne",
+        severity: daysSince >= missingRule.threshold * 2 ? "critique" : "important",
         date: latest.date,
       });
     }
@@ -107,7 +120,7 @@ export function computeAlerts(): Alert[] {
           id: `broken-sync-${c.id}`,
           title: `Connexion "${c.name}" en erreur`,
           detail: c.detail ?? "La synchronisation a échoué — reconnectez ce compte.",
-          severity: "haute",
+          severity: "critique",
           date: new Date().toISOString().slice(0, 10),
         });
       }

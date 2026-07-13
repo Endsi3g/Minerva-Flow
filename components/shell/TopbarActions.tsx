@@ -4,11 +4,10 @@ import { useApp, roleLabels } from "@/lib/app-context";
 import { CurrentUserAvatar } from "@/components/minerva/CurrentUserAvatar";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { ChevronDown, LogOut, User, Check, Bell } from "lucide-react";
+import { ChevronDown, LogOut, User, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Period } from "@/lib/app-context";
-import type { Role } from "@/lib/types";
 
 const periods: { id: Period; label: string }[] = [
   { id: "jour", label: "Jour" },
@@ -52,7 +51,7 @@ function PeriodFilter() {
 }
 
 function UserMenu() {
-  const { role, setRole, authUser } = useApp();
+  const { role, authUser } = useApp();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useClickOutside(() => setOpen(false));
@@ -86,26 +85,10 @@ function UserMenu() {
             <p className="text-[12px] text-mv-ink-faint">{email}</p>
           </div>
           <div className="border-t border-mv-border-soft px-2.5 py-2">
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              Rôle (démo)
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+              Rôle
             </p>
-            <div className="space-y-0.5">
-              {(Object.keys(roleLabels) as Role[]).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setRole(r)}
-                  className={cn(
-                    "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-[12.5px] font-medium",
-                    role === r
-                      ? "bg-mv-green-tint text-mv-green-dark"
-                      : "text-mv-ink-soft hover:bg-mv-cream-soft"
-                  )}
-                >
-                  {roleLabels[r]}
-                  {role === r && <Check size={13} />}
-                </button>
-              ))}
-            </div>
+            <p className="mt-1 text-[12.5px] font-medium text-mv-ink-soft">{roleLabels[role]}</p>
           </div>
           <div className="mt-1 border-t border-mv-border-soft pt-1.5">
             <button className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft">

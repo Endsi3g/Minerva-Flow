@@ -8,7 +8,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { getReport } from "@/lib/reports";
+import { reportDefs } from "@/lib/reports";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -33,7 +33,7 @@ export function AppBreadcrumb() {
   }
 
   if (segments[0] === "reports" && segments[1]) {
-    const report = getReport(segments[1]);
+    const report = reportDefs.find((r) => r.slug === segments[1]);
     return (
       <Breadcrumb>
         <BreadcrumbList className="[&_*]:uppercase [&_*]:tracking-wide">

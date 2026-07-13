@@ -1,11 +1,12 @@
 -- Minerva Flow — initial schema
 -- Multi-tenant: every business table is scoped by restaurant_id and gated
 -- through restaurant_members (the join table between auth.users and restaurants).
+-- Market: Québec (CAD, America/Montreal, civic-address format).
 
 create extension if not exists "pgcrypto";
 
 -- ── enums ──────────────────────────────────────────────────────────────
-create type member_role as enum ('owner', 'staff', 'consultant');
+create type member_role as enum ('owner', 'manager', 'staff', 'consultant');
 create type member_status as enum ('active', 'invited');
 create type program_status as enum ('planifie', 'actif', 'termine');
 create type campaign_status as enum ('planifiee', 'active', 'terminee');
@@ -49,11 +50,15 @@ create table restaurants (
   name text not null,
   address text,
   city text,
-  timezone text not null default 'Europe/Paris',
-  currency text not null default 'EUR',
+  province text not null default 'QC',
+  postal_code text,
+  timezone text not null default 'America/Montreal',
+  currency text not null default 'CAD',
   service_model text not null default 'restaurant', -- cafe | restaurant | hybrid
   operating_days int[] not null default '{0,1,2,3,4,5,6}',
   color text not null default '#167F5B',
+  lng double precision,
+  lat double precision,
   created_at timestamptz not null default now()
 );
 
@@ -71,7 +76,7 @@ create index idx_restaurant_members_user on restaurant_members (user_id);
 create index idx_restaurant_members_restaurant on restaurant_members (restaurant_id);
 
 -- helper: is the current user a member of this restaurant, with at-least this role?
-create function is_restaurant_member(target_restaurant_id uuid, min_roles member_role[] default array['owner','staff','consultant']::member_role[])
+create function is_restaurant_member(target_restaurant_id uuid, min_roles member_role[] default array['owner','manager','staff','consultant']::member_role[])
 returns boolean
 language sql
 security definer
@@ -86,6 +91,23 @@ as $$
       and m.role = any(min_roles)
   );
 $$;
+
+-- ── activity log ───────────────────────────────────────────────────────
+-- Powers the Profil "activité" list and the Équipe per-person activity view.
+create table activity_log (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  actor_id uuid not null references auth.users (id) on delete cascade,
+  action_type text not null, -- e.g. day_added, alert_resolved, campaign_created, program_updated
+  entity_type text,
+  entity_id uuid,
+  description text not null,
+  metadata jsonb not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+create index idx_activity_log_restaurant on activity_log (restaurant_id, created_at desc);
+create index idx_activity_log_actor on activity_log (actor_id, created_at desc);
 
 -- ── service days ───────────────────────────────────────────────────────
 create table service_days (
@@ -253,6 +275,7 @@ create index idx_notes_entity on notes (entity_type, entity_id);
 alter table profiles enable row level security;
 alter table restaurants enable row level security;
 alter table restaurant_members enable row level security;
+alter table activity_log enable row level security;
 alter table service_days enable row level security;
 alter table revenue_programs enable row level security;
 alter table campaigns enable row level security;
@@ -268,86 +291,114 @@ alter table notes enable row level security;
 create policy "profiles_self_select" on profiles for select using (id = auth.uid());
 create policy "profiles_self_update" on profiles for update using (id = auth.uid());
 
--- restaurants: visible to members; only owners can update restaurant settings
+-- restaurants: visible to members; owner + manager can update restaurant settings
 create policy "restaurants_member_select" on restaurants for select
   using (is_restaurant_member(id));
-create policy "restaurants_owner_update" on restaurants for update
-  using (is_restaurant_member(id, array['owner']::member_role[]));
+create policy "restaurants_manage_update" on restaurants for update
+  using (is_restaurant_member(id, array['owner','manager']::member_role[]));
 create policy "restaurants_owner_insert" on restaurants for insert
   with check (true); -- creation happens via a server action that immediately inserts the owner membership
 
 -- restaurant_members: members can see the roster of restaurants they belong to;
--- only owners can add/change/remove members
+-- owner + manager can add/change/remove members (Équipe page)
 create policy "members_select" on restaurant_members for select
   using (is_restaurant_member(restaurant_id));
-create policy "members_owner_write" on restaurant_members for insert
-  with check (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
-create policy "members_owner_update" on restaurant_members for update
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
-create policy "members_owner_delete" on restaurant_members for delete
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
+create policy "members_manage_write" on restaurant_members for insert
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+create policy "members_manage_update" on restaurant_members for update
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+create policy "members_manage_delete" on restaurant_members for delete
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
--- service_days: members read; owner + staff write
+-- activity_log: members read the restaurant's log; any active member can log their own actions
+create policy "activity_log_select" on activity_log for select
+  using (is_restaurant_member(restaurant_id));
+create policy "activity_log_insert" on activity_log for insert
+  with check (actor_id = auth.uid() and is_restaurant_member(restaurant_id));
+
+-- service_days: members read; owner/manager/staff write, owner/manager delete
 create policy "service_days_select" on service_days for select
   using (is_restaurant_member(restaurant_id));
 create policy "service_days_write" on service_days for insert
-  with check (is_restaurant_member(restaurant_id, array['owner','staff']::member_role[]));
+  with check (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
 create policy "service_days_update" on service_days for update
-  using (is_restaurant_member(restaurant_id, array['owner','staff']::member_role[]));
+  using (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
 create policy "service_days_delete" on service_days for delete
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
--- revenue_programs: members read; owner + staff write, owner delete
+-- revenue_programs: members read; owner/manager/staff write, owner/manager delete
 create policy "programs_select" on revenue_programs for select
   using (is_restaurant_member(restaurant_id));
 create policy "programs_write" on revenue_programs for insert
-  with check (is_restaurant_member(restaurant_id, array['owner','staff']::member_role[]));
+  with check (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
 create policy "programs_update" on revenue_programs for update
-  using (is_restaurant_member(restaurant_id, array['owner','staff']::member_role[]));
+  using (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
 create policy "programs_delete" on revenue_programs for delete
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
--- campaigns: members read; owner + consultant write (consultants propose campaigns/plans)
+-- campaigns: members read; owner/manager/consultant write (consultants propose campaigns/plans), owner/manager delete
 create policy "campaigns_select" on campaigns for select
   using (is_restaurant_member(restaurant_id));
 create policy "campaigns_write" on campaigns for insert
-  with check (is_restaurant_member(restaurant_id, array['owner','consultant']::member_role[]));
+  with check (is_restaurant_member(restaurant_id, array['owner','manager','consultant']::member_role[]));
 create policy "campaigns_update" on campaigns for update
-  using (is_restaurant_member(restaurant_id, array['owner','consultant']::member_role[]));
+  using (is_restaurant_member(restaurant_id, array['owner','manager','consultant']::member_role[]));
 create policy "campaigns_delete" on campaigns for delete
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
--- finance tables: owner-only (staff/consultant do not see financial detail by default, per PRD open question — conservative default)
-create policy "expense_categories_owner" on expense_categories for all
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]))
-  with check (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
+-- finance tables: owner + manager only (staff/consultant do not see financial detail)
+create policy "expense_categories_manage" on expense_categories for all
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
-create policy "transactions_owner" on financial_transactions for all
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]))
-  with check (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
+create policy "transactions_manage" on financial_transactions for all
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
-create policy "connections_owner" on connections for all
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]))
-  with check (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
+create policy "connections_manage" on connections for all
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
-create policy "alert_rules_owner" on alert_rules for all
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]))
-  with check (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
+create policy "alert_rules_manage" on alert_rules for all
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
--- alerts: members read; owner can update status; system (service role) inserts
+-- alerts: members read; owner/manager update status; system (service role) inserts
 create policy "alerts_select" on alerts for select
   using (is_restaurant_member(restaurant_id));
 create policy "alerts_update" on alerts for update
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
--- recommendations: members read; owner updates status
+-- recommendations: members read; owner/manager update status
 create policy "recommendations_select" on recommendations for select
   using (is_restaurant_member(restaurant_id));
 create policy "recommendations_update" on recommendations for update
-  using (is_restaurant_member(restaurant_id, array['owner']::member_role[]));
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
 -- notes: any member can read and add notes
 create policy "notes_select" on notes for select
   using (is_restaurant_member(restaurant_id));
 create policy "notes_insert" on notes for insert
   with check (is_restaurant_member(restaurant_id));
+
+-- ── storage: avatar photos ───────────────────────────────────────────────
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+create policy "avatars_public_read" on storage.objects for select
+  using (bucket_id = 'avatars');
+create policy "avatars_owner_write" on storage.objects for insert
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "avatars_owner_update" on storage.objects for update
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "avatars_owner_delete" on storage.objects for delete
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ── realtime ───────────────────────────────────────────────────────────
+alter publication supabase_realtime add table service_days;
+alter publication supabase_realtime add table alerts;
+alter publication supabase_realtime add table activity_log;
+alter publication supabase_realtime add table financial_transactions;
+alter publication supabase_realtime add table revenue_programs;
+alter publication supabase_realtime add table campaigns;

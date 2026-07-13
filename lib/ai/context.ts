@@ -1,6 +1,7 @@
 import { computeAlerts } from "@/lib/engine/alerts";
 import { computeRecommendations } from "@/lib/engine/recommendations";
 import {
+  alertRules,
   campaigns,
   connections,
   inflows,
@@ -18,8 +19,13 @@ import { formatCurrency, formatDate } from "@/lib/utils";
  * instead of hallucinating them.
  */
 export function buildDataSnapshot() {
-  const alerts = computeAlerts();
-  const baseRecommendations = computeRecommendations();
+  const alerts = computeAlerts({
+    serviceDays,
+    connections,
+    alertRules,
+    financialTransactions: [],
+  });
+  const baseRecommendations = computeRecommendations({ campaigns, programs, serviceDays, alerts });
 
   const recentDays = [...serviceDays]
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -84,5 +90,11 @@ Réponds toujours en français, de façon concise et opérationnelle. Base-toi u
 }
 
 export function ruleBasedFallback() {
-  return computeRecommendations();
+  const alerts = computeAlerts({
+    serviceDays,
+    connections,
+    alertRules,
+    financialTransactions: [],
+  });
+  return computeRecommendations({ campaigns, programs, serviceDays, alerts });
 }

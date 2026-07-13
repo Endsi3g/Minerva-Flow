@@ -3,8 +3,7 @@
 import { LogoMark } from "./Logo";
 import { useApp } from "@/lib/app-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { restaurants } from "@/lib/mock-data";
-import { reports, reportGroups } from "@/lib/reports";
+import { reportDefs, reportGroups } from "@/lib/reports";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -48,7 +47,7 @@ const nav: NavItem[] = [
   { href: "/finance", label: "Finance", icon: Wallet, roles: ["owner"] },
   { href: "/campaigns", label: "Campagnes", icon: Megaphone, roles: ["owner", "consultant"] },
   { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
-  { href: "/assistant", label: "Assistant", icon: Sparkles, roles: ["owner", "staff", "consultant"] },
+  { href: "/assistant", label: "Assistant", icon: Sparkles, roles: ["owner", "manager", "staff", "consultant"] },
 ];
 
 const groupLabels: Record<string, string> = {
@@ -93,7 +92,7 @@ function NavLink({
 }
 
 function TeamSwitcher() {
-  const { restaurantId, setRestaurantId } = useApp();
+  const { restaurantId, setRestaurantId, restaurants } = useApp();
   const current = restaurants.find((r) => r.id === restaurantId) ?? restaurants[0];
 
   return (
@@ -169,7 +168,8 @@ function CollapsibleSection({
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { role, restaurantId, setRestaurantId, sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { role, restaurantId, setRestaurantId, restaurants, sidebarCollapsed, setSidebarCollapsed } =
+    useApp();
   const isMobile = useIsMobile();
   const items = nav.filter((n) => n.roles.includes(role));
 
@@ -267,7 +267,7 @@ export function AppSidebar() {
                 Métriques
               </p>
               {reportGroups.map((group) => {
-                const groupReports = reports.filter((r) => r.group === group);
+                const groupReports = reportDefs.filter((r) => r.group === group);
                 const hasActiveChild = groupReports.some(
                   (r) => pathname === `/reports/${r.slug}`
                 );

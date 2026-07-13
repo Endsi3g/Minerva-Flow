@@ -1,0 +1,84 @@
+import { cn } from "@/lib/utils";
+import { Bot, FileText } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import type { Components } from "react-markdown";
+import type { ChatAttachment } from "@/lib/types";
+
+const markdownComponents: Components = {
+  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+  strong: ({ children }) => <strong className="font-semibold text-mv-ink">{children}</strong>,
+  a: ({ children, href }) => (
+    <a href={href} target="_blank" rel="noreferrer" className="text-mv-green-dark underline">
+      {children}
+    </a>
+  ),
+  ul: ({ children }) => <ul className="mb-2 list-disc space-y-1 pl-4 last:mb-0">{children}</ul>,
+  ol: ({ children }) => <ol className="mb-2 list-decimal space-y-1 pl-4 last:mb-0">{children}</ol>,
+  code: ({ children }) => (
+    <code className="rounded bg-mv-ink/[0.06] px-1 py-0.5 font-mono text-[12px]">{children}</code>
+  ),
+  table: ({ children }) => (
+    <div className="mb-2 overflow-x-auto rounded-lg border border-mv-border-soft">
+      <table className="w-full text-[12.5px]">{children}</table>
+    </div>
+  ),
+  th: ({ children }) => (
+    <th className="border-b border-mv-border-soft bg-mv-cream-soft px-2 py-1.5 text-left font-semibold text-mv-ink-faint">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => <td className="border-b border-mv-border-soft px-2 py-1.5">{children}</td>,
+};
+
+function AttachmentChip({ attachment }: { attachment: ChatAttachment }) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-2.5 py-1.5 text-[12px] text-mv-ink-soft">
+      <FileText size={13} className="shrink-0 text-mv-ink-faint" />
+      <span className="max-w-[160px] truncate">{attachment.fileName}</span>
+    </div>
+  );
+}
+
+export function MessageBubble({
+  role,
+  text,
+  attachments,
+}: {
+  role: "user" | "assistant";
+  text: string;
+  attachments?: ChatAttachment[];
+}) {
+  return (
+    <div className={cn("flex gap-2.5", role === "user" ? "justify-end" : "justify-start")}>
+      {role === "assistant" && (
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+          <Bot size={14} />
+        </div>
+      )}
+      <div className="flex max-w-[80%] flex-col gap-1.5">
+        <div
+          className={cn(
+            "mv-scale-in rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed",
+            role === "user" ? "bg-mv-green text-mv-cream-soft" : "bg-mv-cream-soft text-mv-ink"
+          )}
+        >
+          {role === "assistant" ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {text}
+            </ReactMarkdown>
+          ) : (
+            <span className="whitespace-pre-wrap">{text}</span>
+          )}
+        </div>
+        {attachments && attachments.length > 0 && (
+          <div className={cn("flex flex-wrap gap-1.5", role === "user" && "justify-end")}>
+            {attachments.map((a) => (
+              <AttachmentChip key={a.id} attachment={a} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -1,23 +1,17 @@
 import { AppProvider } from "@/lib/app-context";
 import { AppShell } from "@/components/shell/AppShell";
-import { createClient } from "@/lib/supabase/server";
+import { getAppSessionData } from "@/lib/data/session";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const authUser = user
-    ? {
-        id: user.id,
-        email: user.email ?? "",
-        fullName: (user.user_metadata?.full_name as string | undefined) ?? user.email ?? "",
-      }
-    : null;
+  const { authUser, restaurants, role, initialRestaurantId } = await getAppSessionData();
 
   return (
-    <AppProvider authUser={authUser}>
+    <AppProvider
+      authUser={authUser}
+      role={role}
+      restaurants={restaurants}
+      initialRestaurantId={initialRestaurantId}
+    >
       <AppShell>{children}</AppShell>
     </AppProvider>
   );
