@@ -4,10 +4,17 @@ import { AppSidebar } from "@/components/shell/AppSidebar";
 import { AppBreadcrumb } from "@/components/shell/AppBreadcrumb";
 import { TopbarActions } from "@/components/shell/TopbarActions";
 import { useApp } from "@/lib/app-context";
+import { cn } from "@/lib/utils";
 import { PanelLeft } from "lucide-react";
+import { usePathname } from "next/navigation";
+
+// Full-bleed routes render edge-to-edge, without the shared page padding/max-width.
+const FULL_BLEED_ROUTES = ["/maps"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const pathname = usePathname();
+  const isFullBleed = FULL_BLEED_ROUTES.some((r) => pathname.startsWith(r));
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-mv-cream">
@@ -27,8 +34,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <TopbarActions />
         </header>
-        <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-8 lg:py-7">
-          <div className="mx-auto max-w-[1400px]">{children}</div>
+        <main
+          className={cn(
+            "flex-1 overflow-y-auto",
+            isFullBleed ? "flex flex-col" : "px-6 py-6 lg:px-8 lg:py-7"
+          )}
+        >
+          {isFullBleed ? children : <div className="mx-auto max-w-[1400px]">{children}</div>}
         </main>
       </div>
     </div>

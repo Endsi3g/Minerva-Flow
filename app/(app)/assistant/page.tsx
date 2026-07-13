@@ -1,21 +1,24 @@
 "use client";
 
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Card } from "@/components/minerva/PageCard";
-import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/minerva/FormField";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Bot, KeyRound, Send, Sparkles } from "lucide-react";
+import { computeAlerts } from "@/lib/engine/alerts";
+import { kpis, programs } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/utils";
+import { ArrowUp, Bot, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const SUGGESTIONS = [
-  "Pourquoi le revenu a-t-il baissé mercredi ?",
-  "Quel programme a la meilleure marge en ce moment ?",
-  "Quelles alertes dois-je traiter en priorité ?",
+  "Pourquoi le revenu a baissé mercredi ?",
+  "Quel programme a la meilleure marge ?",
+  "Quelles alertes traiter en priorité ?",
   "Résume ma semaine en 3 points.",
 ];
+
+const severityTone = { haute: "red", moyenne: "amber", basse: "neutral" } as const;
 
 export default function AssistantPage() {
   const [input, setInput] = useState("");
@@ -23,60 +26,41 @@ export default function AssistantPage() {
     transport: new DefaultChatTransport({ api: "/api/ai/chat" }),
   });
 
-  const notConfigured = Boolean(error);
   const isLoading = status === "submitted" || status === "streaming";
+  const alerts = computeAlerts().slice(0, 4);
+  const activePrograms = programs.filter((p) => p.status === "actif").slice(0, 3);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim() || notConfigured) return;
+    if (!input.trim()) return;
     sendMessage({ text: input });
     setInput("");
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <PageHeader
-        eyebrow="Minerva AI"
-        title="Assistant"
-        description="Posez une question sur vos revenus, vos journées de service ou vos campagnes — les réponses s'appuient sur vos données réelles."
-      />
-
-      {notConfigured && (
-        <Card className="mb-4 flex items-center gap-3 border-mv-amber bg-mv-amber-bg">
-          <KeyRound size={18} className="shrink-0 text-mv-amber" />
-          <p className="text-[13px] leading-relaxed text-mv-ink">
-            L&apos;assistant n&apos;est pas encore configuré. Ajoutez{" "}
-            <code className="rounded bg-mv-ink/10 px-1 py-0.5 font-mono text-[12px]">
-              AI_GATEWAY_API_KEY
-            </code>{" "}
-            dans <code className="rounded bg-mv-ink/10 px-1 py-0.5 font-mono text-[12px]">.env.local</code>{" "}
-            pour l&apos;activer — aucune autre modification n&apos;est nécessaire.
-          </p>
-        </Card>
-      )}
-
-      <Card className="flex flex-1 flex-col overflow-hidden">
-        <div className="flex-1 space-y-4 overflow-y-auto px-1 py-2">
+    <div className="flex h-full min-h-0 gap-6">
+      {/* Chat — left */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex-1 space-y-4 overflow-y-auto py-2">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 py-10 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
-                <Sparkles size={22} />
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+                <Sparkles size={20} />
               </div>
               <div>
-                <p className="font-display text-[16px] font-medium text-mv-ink">
+                <p className="font-display text-[17px] font-medium text-mv-ink">
                   Que voulez-vous savoir ?
                 </p>
                 <p className="mt-1 text-[13px] text-mv-ink-soft">
-                  Quelques idées pour commencer :
+                  Les réponses s&apos;appuient sur vos données réelles.
                 </p>
               </div>
               <div className="flex max-w-md flex-wrap justify-center gap-2">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
-                    onClick={() => !notConfigured && sendMessage({ text: s })}
-                    disabled={notConfigured}
-                    className="rounded-full border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-cream-soft disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => sendMessage({ text: s })}
+                    className="rounded-full border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-cream-soft"
                   >
                     {s}
                   </button>
@@ -116,24 +100,87 @@ export default function AssistantPage() {
           )}
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-3 flex items-center gap-2 border-t border-mv-border-soft pt-3"
-        >
+        <form onSubmit={handleSubmit} className="mt-3 flex items-center gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              notConfigured ? "Assistant non configuré…" : "Posez votre question…"
-            }
-            disabled={notConfigured}
+            placeholder="Posez votre question…"
             className="flex-1"
           />
-          <Button type="submit" disabled={notConfigured || !input.trim() || isLoading} size="icon">
-            <Send size={15} />
-          </Button>
+          <button
+            type="submit"
+            disabled={!input.trim() || isLoading}
+            aria-label="Envoyer"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink disabled:pointer-events-none disabled:opacity-40"
+          >
+            <ArrowUp size={16} />
+          </button>
         </form>
-      </Card>
+        {error && (
+          <p className="mt-2 text-[12px] text-mv-ink-faint">
+            Une erreur est survenue — réessayez dans un instant.
+          </p>
+        )}
+      </div>
+
+      {/* Context canvas — right */}
+      <aside className="hidden w-72 shrink-0 flex-col gap-5 overflow-y-auto border-l border-mv-border-soft pl-6 lg:flex">
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            Contexte
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg bg-mv-cream-soft p-2.5">
+              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">Revenu</p>
+              <p className="font-display text-[15px] font-medium text-mv-ink">
+                {formatCurrency(kpis.totalRevenue)}
+              </p>
+            </div>
+            <div className="rounded-lg bg-mv-cream-soft p-2.5">
+              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">Marge</p>
+              <p className="font-display text-[15px] font-medium text-mv-ink">
+                {formatCurrency(kpis.estimatedMargin)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            Alertes actives
+          </p>
+          <div className="space-y-2">
+            {alerts.length === 0 ? (
+              <p className="text-[12px] text-mv-ink-faint">Aucune alerte.</p>
+            ) : (
+              alerts.map((a) => (
+                <div key={a.id} className="rounded-lg border border-mv-border-soft p-2.5">
+                  <Badge tone={severityTone[a.severity]} dot className="mb-1">
+                    {a.title}
+                  </Badge>
+                  <p className="text-[11.5px] leading-snug text-mv-ink-soft">{a.detail}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            Programmes actifs
+          </p>
+          <div className="space-y-1.5">
+            {activePrograms.map((p) => (
+              <div key={p.id} className="flex items-center justify-between text-[12.5px]">
+                <span className="truncate text-mv-ink-soft">{p.name}</span>
+                <span className="shrink-0 font-semibold text-mv-ink">
+                  {formatCurrency(p.revenue)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }

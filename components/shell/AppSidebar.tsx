@@ -24,7 +24,6 @@ import {
   Sparkles,
   ChevronDown,
   Check,
-  Database,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -43,14 +42,21 @@ type NavItem = {
 };
 
 const nav: NavItem[] = [
-  { href: "/overview", label: "Overview", icon: LayoutGrid, roles: ["owner", "staff", "consultant"] },
-  { href: "/programs", label: "Programs", icon: LineChart, roles: ["owner", "consultant"] },
-  { href: "/days", label: "Days", icon: CalendarDays, roles: ["owner", "staff"] },
+  { href: "/overview", label: "Aperçu", icon: LayoutGrid, roles: ["owner", "staff", "consultant"] },
+  { href: "/programs", label: "Programmes", icon: LineChart, roles: ["owner", "consultant"] },
+  { href: "/days", label: "Journées", icon: CalendarDays, roles: ["owner", "staff"] },
   { href: "/finance", label: "Finance", icon: Wallet, roles: ["owner"] },
-  { href: "/campaigns", label: "Campaigns", icon: Megaphone, roles: ["owner", "consultant"] },
-  { href: "/maps", label: "Maps", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
+  { href: "/campaigns", label: "Campagnes", icon: Megaphone, roles: ["owner", "consultant"] },
+  { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
   { href: "/assistant", label: "Assistant", icon: Sparkles, roles: ["owner", "staff", "consultant"] },
 ];
+
+const groupLabels: Record<string, string> = {
+  Revenue: "Revenu",
+  Service: "Service",
+  Finance: "Finance",
+  Campagnes: "Campagnes",
+};
 
 function NavLink({
   href,
@@ -258,7 +264,7 @@ export function AppSidebar() {
 
             <div className="space-y-2">
               <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                Metrics
+                Métriques
               </p>
               {reportGroups.map((group) => {
                 const groupReports = reports.filter((r) => r.group === group);
@@ -271,7 +277,7 @@ export function AppSidebar() {
                 return (
                   <CollapsibleSection
                     key={group}
-                    label={group}
+                    label={groupLabels[group] ?? group}
                     isCollapsed={isCollapsed}
                     onToggle={() => toggleGroup(group)}
                   >
@@ -299,38 +305,17 @@ export function AppSidebar() {
             </div>
           </div>
 
-          <div className="border-t border-mv-border p-2.5">
-            {role === "owner" && (
-              <div className="mb-1.5">
-                <NavLink
-                  href="/settings"
-                  label="Settings"
-                  icon={Settings}
-                  active={pathname.startsWith("/settings")}
-                  onNavigate={closeMobile}
-                />
-              </div>
-            )}
-
-            <div className="rounded-xl bg-mv-green-tint p-3.5">
-              <div className="mb-2 flex items-center gap-2">
-                <Database size={14} className="text-mv-green-dark" />
-                <p className="font-display text-[13px] font-medium text-mv-green-darker">
-                  Données de démonstration
-                </p>
-              </div>
-              <p className="mb-3 text-[12px] leading-relaxed text-mv-green-dark/80">
-                Connectez Supabase pour brancher vos vraies données de revenus.
-              </p>
-              <Link
+          {role === "owner" && (
+            <div className="border-t border-mv-border p-2.5">
+              <NavLink
                 href="/settings"
-                onClick={closeMobile}
-                className="flex h-8 w-full items-center justify-center rounded-lg bg-mv-green-darker text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-green-dark"
-              >
-                Continuer la configuration
-              </Link>
+                label="Paramètres"
+                icon={Settings}
+                active={pathname.startsWith("/settings")}
+                onNavigate={closeMobile}
+              />
             </div>
-          </div>
+          )}
         </motion.div>
       </motion.aside>
     </>

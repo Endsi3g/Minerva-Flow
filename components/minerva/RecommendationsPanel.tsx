@@ -11,18 +11,15 @@ import { useState } from "react";
 export function RecommendationsPanel({ initial }: { initial: Recommendation[] }) {
   const [recommendations, setRecommendations] = useState(initial);
   const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
 
   async function enhanceWithAi() {
     setLoading(true);
-    setNotice(null);
     try {
       const res = await fetch("/api/ai/recommendations", { method: "POST" });
       const data = await res.json();
       setRecommendations(data.recommendations ?? initial);
-      if (data.message) setNotice(data.message);
     } catch {
-      setNotice("La génération IA a échoué — recommandations calculées par les règles conservées.");
+      // keep the current (rule-based) recommendations if the request fails
     } finally {
       setLoading(false);
     }
@@ -39,7 +36,6 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
           </Button>
         }
       />
-      {notice && <p className="mb-3 text-[12px] text-mv-ink-faint">{notice}</p>}
       {recommendations.length === 0 ? (
         <p className="text-[12.5px] text-mv-ink-faint">
           Rien à signaler pour l&apos;instant — tout va bien.

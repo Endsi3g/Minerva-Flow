@@ -9,32 +9,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-function DoorIllustration() {
-  return (
-    <svg width="120" height="150" viewBox="0 0 180 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="18" y="200" width="144" height="4" rx="2" fill="var(--mv-border)" />
-      <rect x="34" y="14" width="86" height="188" rx="3" fill="var(--mv-surface)" stroke="var(--mv-ink)" strokeWidth="2" />
-      <path d="M120 16 C120 16 158 20 160 100 C162 160 128 198 120 200 L120 16 Z" fill="var(--mv-ink)" />
-      <path
-        d="M126 26 C126 26 154 32 156 100 C158 152 132 188 126 192 L126 26 Z"
-        fill="url(#doorNight)"
-      />
-      <circle cx="140" cy="60" r="1.6" fill="var(--mv-lime)" />
-      <circle cx="148" cy="90" r="1.2" fill="var(--mv-lime)" />
-      <circle cx="136" cy="120" r="1.8" fill="var(--mv-lime)" />
-      <circle cx="146" cy="150" r="1.2" fill="var(--mv-lime)" />
-      <circle cx="139" cy="42" r="1.2" fill="var(--mv-cream-soft)" />
-      <circle cx="98" cy="108" r="2.5" fill="var(--mv-ink)" />
-      <defs>
-        <linearGradient id="doorNight" x1="126" y1="26" x2="156" y2="192" gradientUnits="userSpaceOnUse">
-          <stop stopColor="var(--mv-green-darker)" />
-          <stop offset="1" stopColor="var(--mv-ink)" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
 function OAuthButton({
   label,
   icon,
@@ -99,9 +73,9 @@ export default function LoginPage() {
         </span>
       </div>
 
-      <Card padded={false} className="w-full max-w-3xl overflow-hidden">
-        <div className="grid md:grid-cols-2">
-          <form onSubmit={handleLogin} className="flex flex-col justify-center gap-4 p-8">
+      <Card padded={false} className="w-full max-w-md overflow-hidden">
+        <div>
+          <form onSubmit={handleLogin} className="flex flex-col gap-4 p-8">
             <div>
               <h1 className="font-display text-[22px] font-medium text-mv-ink">
                 Bon retour
@@ -193,15 +167,6 @@ export default function LoginPage() {
               </Link>
             </p>
           </form>
-
-          <div className="hidden flex-col items-center justify-center gap-4 border-l border-mv-border bg-mv-cream-soft p-8 md:flex">
-            <DoorIllustration />
-            <p className="text-center font-display text-[16px] font-medium leading-snug text-mv-ink">
-              Le cockpit de revenus
-              <br />
-              pour restaurants et cafés
-            </p>
-          </div>
         </div>
       </Card>
 
