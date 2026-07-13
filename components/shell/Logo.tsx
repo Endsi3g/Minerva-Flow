@@ -1,21 +1,13 @@
 export function LogoMark({ size = 32 }: { size?: number }) {
   return (
-    <svg
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/icon-512.png"
+      alt="Minerva"
       width={size}
       height={size}
-      viewBox="0 0 256 256"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect width="256" height="256" rx="56" fill="#059669" />
-      <path
-        d="M 52 196 L 52 60 L 128 156 L 204 60 L 204 196"
-        stroke="white"
-        strokeWidth="30"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </svg>
+      style={{ width: size, height: size }}
+    />
   );
 }
 

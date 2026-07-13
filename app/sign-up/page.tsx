@@ -48,13 +48,18 @@ export default function SignUpPage() {
     setIsLoading(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { emailRedirectTo: `${window.location.origin}/auth/confirm?next=/overview` },
       });
       if (error) throw error;
-      router.push("/sign-up-success");
+      if (data.session) {
+        router.push("/overview");
+        router.refresh();
+      } else {
+        router.push("/sign-up-success");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
