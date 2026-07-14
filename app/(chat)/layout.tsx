@@ -7,10 +7,15 @@ import type { Role } from "@/lib/types";
 const ALLOWED_ROLES: Role[] = ["owner", "manager", "staff", "consultant"];
 
 export default async function ChatLayout({ children }: { children: React.ReactNode }) {
-  const { authUser, restaurants, role, initialRestaurantId } = await getAppSessionData();
+  const { authUser, restaurants, role, initialRestaurantId, onboardingCompleted } =
+    await getAppSessionData();
 
   if (!authUser || !ALLOWED_ROLES.includes(role)) {
     redirect("/overview");
+  }
+
+  if (!onboardingCompleted) {
+    redirect("/onboarding");
   }
 
   return (
@@ -20,7 +25,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
       restaurants={restaurants}
       initialRestaurantId={initialRestaurantId}
     >
-      <div className="h-screen w-full overflow-hidden bg-mv-cream pb-16 md:pb-0">{children}</div>
+      <div className="h-screen w-full overflow-hidden bg-mv-cream pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">{children}</div>
       <MobileTabBar />
     </AppProvider>
   );

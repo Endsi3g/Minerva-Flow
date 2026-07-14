@@ -21,6 +21,7 @@ import {
   Settings,
   Map as MapIcon,
   Sparkles,
+  Users,
   ChevronDown,
   Check,
   type LucideIcon,
@@ -46,6 +47,7 @@ const nav: NavItem[] = [
   { href: "/days", label: "Journées", icon: CalendarDays, roles: ["owner", "staff"] },
   { href: "/finance", label: "Finance", icon: Wallet, roles: ["owner"] },
   { href: "/campaigns", label: "Campagnes", icon: Megaphone, roles: ["owner", "consultant"] },
+  { href: "/collaborateurs", label: "Collaborateurs", icon: Users, roles: ["owner", "manager"] },
   { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
   { href: "/assistant", label: "Assistant", icon: Sparkles, roles: ["owner", "manager", "staff", "consultant"] },
 ];

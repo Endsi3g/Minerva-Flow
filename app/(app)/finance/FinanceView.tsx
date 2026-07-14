@@ -114,7 +114,7 @@ function OverviewTab({ transactions }: { transactions: FinancialTransaction[] })
   const totalOut = monthTransactions
     .filter((t) => t.direction === "out")
     .reduce((s, t) => s + t.amount, 0);
-  const net = totalIn - totalOut;
+  const net = totalIn + totalOut;
 
   const inflows = useMemo(() => computeFlowLines(monthTransactions, "in"), [monthTransactions]);
   const outflows = useMemo(() => computeFlowLines(monthTransactions, "out"), [monthTransactions]);

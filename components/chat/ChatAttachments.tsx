@@ -41,11 +41,13 @@ export function ChatAttachments({
   conversationId,
   attachments,
   onChange,
+  children,
 }: {
   restaurantId: string;
   conversationId: string;
   attachments: PreparedAttachment[];
   onChange: (next: PreparedAttachment[]) => void;
+  children?: (open: () => void, loading: boolean) => React.ReactNode;
 }) {
   const [sessionId] = useState(() => crypto.randomUUID());
   const path = `${restaurantId}/${conversationId}/${sessionId}`;
@@ -121,7 +123,10 @@ export function ChatAttachments({
               <AttachmentActions>
                 <AttachmentAction
                   aria-label={`Retirer ${a.fileName}`}
-                  onClick={() => removeAttachment(a.fileName)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeAttachment(a.fileName);
+                  }}
                 >
                   <X />
                 </AttachmentAction>
@@ -147,18 +152,7 @@ export function ChatAttachments({
         </AttachmentGroup>
       )}
 
-      <button
-        type="button"
-        onClick={upload.open}
-        disabled={upload.loading}
-        aria-label="Joindre un fichier"
-        className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-full text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink",
-          upload.loading && "pointer-events-none opacity-50"
-        )}
-      >
-        {upload.loading ? <Loader2 size={16} className="animate-spin" /> : <Paperclip size={16} />}
-      </button>
+      {children?.(upload.open, upload.loading)}
     </div>
   );
 }

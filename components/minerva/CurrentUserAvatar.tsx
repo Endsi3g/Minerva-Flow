@@ -22,5 +22,9 @@ export function CurrentUserAvatar({
   const liveImage = useCurrentUserImage();
 
   const name = authUser?.fullName || liveName;
-  return <Avatar name={name} size={size} className={className} src={liveImage} />;
+  // authUser.avatarUrl wins so /profil's updateAuthUser() reflects here
+  // immediately after an upload, without waiting on the live session
+  // lookup (which only fires once, on mount).
+  const src = authUser?.avatarUrl ?? liveImage;
+  return <Avatar name={name} size={size} className={className} src={src} />;
 }

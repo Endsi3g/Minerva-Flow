@@ -2,7 +2,8 @@ import { generateText, Output } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AI_MODEL, isAiConfigured } from "@/lib/ai/config";
-import { buildDataSnapshot, ruleBasedFallback } from "@/lib/ai/context";
+import { buildRestaurantDataSnapshot, ruleBasedFallback } from "@/lib/ai/context";
+import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 
 const recommendationSchema = z.object({
   recommendations: z.array(
@@ -15,17 +16,22 @@ const recommendationSchema = z.object({
 });
 
 export async function POST() {
+  const restaurantId = await getCurrentRestaurantId();
+  if (!restaurantId) {
+    return NextResponse.json({ source: "regles", recommendations: [] });
+  }
+
   if (!isAiConfigured()) {
     return NextResponse.json({
       source: "regles",
-      recommendations: ruleBasedFallback(),
+      recommendations: await ruleBasedFallback(restaurantId),
       message:
         "Clé AI Gateway absente (AI_GATEWAY_API_KEY) — recommandations calculées par les règles uniquement.",
     });
   }
 
   try {
-    const snapshot = buildDataSnapshot();
+    const snapshot = await buildRestaurantDataSnapshot(restaurantId);
     const { output } = await generateText({
       model: AI_MODEL,
       output: Output.object({ schema: recommendationSchema }),
@@ -48,7 +54,7 @@ export async function POST() {
     console.error("AI recommendations failed, falling back to rules:", error);
     return NextResponse.json({
       source: "regles",
-      recommendations: ruleBasedFallback(),
+      recommendations: await ruleBasedFallback(restaurantId),
       message: "La génération IA a échoué — recommandations calculées par les règles.",
     });
   }

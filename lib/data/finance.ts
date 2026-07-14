@@ -307,3 +307,32 @@ export async function getConnections(restaurantId: string): Promise<Connection[]
   if (error || !data) return [];
   return (data as ConnectionRow[]).map(mapConnection);
 }
+
+export async function createConnection(
+  restaurantId: string,
+  input: { name: string; type: ConnectionType }
+): Promise<Connection | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("connections")
+    .insert({
+      restaurant_id: restaurantId,
+      name: input.name,
+      type: input.type,
+      status: "attente",
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) return null;
+
+  await logActivity({
+    restaurantId,
+    actionType: "connection.create",
+    entityType: "connection",
+    entityId: data.id,
+    description: `A ajouté l'intégration "${input.name}"`,
+  });
+
+  return mapConnection(data as ConnectionRow);
+}

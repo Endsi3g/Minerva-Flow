@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import {
   Map,
   MapControls,
@@ -9,13 +10,14 @@ import {
   MarkerLabel,
   MarkerPopup,
   MapClusterLayer,
+  useMap,
 } from "@/components/ui/map";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency } from "@/lib/utils";
 import { getAdConversionsAction } from "./actions";
-import type { AdConversion } from "@/lib/types";
+import type { AdConversion, Restaurant } from "@/lib/types";
 import { useEffect, useMemo, useState } from "react";
-import { MapPinned, Megaphone } from "lucide-react";
+import { MapPinned, Megaphone, LocateFixed, Navigation } from "lucide-react";
 
 const revenueByRestaurant: Record<string, { revenue: number; delta: number }> = {
   r1: { revenue: 78700, delta: 8.4 },
@@ -31,6 +33,77 @@ const filters: { id: FilterMode; label: string }[] = [
   { id: "payant", label: "Payant" },
 ];
 
+function RestaurantMarker({
+  restaurant,
+  stats,
+  active,
+  onSelect,
+}: {
+  restaurant: Restaurant & { lng: number; lat: number };
+  stats: { revenue: number; delta: number };
+  active: boolean;
+  onSelect: () => void;
+}) {
+  const { map } = useMap();
+
+  function handleCenter() {
+    map?.flyTo({ center: [restaurant.lng, restaurant.lat], zoom: 14 });
+  }
+
+  function handleDirections() {
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${restaurant.lat},${restaurant.lng}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
+
+  return (
+    <MapMarker longitude={restaurant.lng} latitude={restaurant.lat}>
+      <MarkerContent>
+        <button
+          onClick={onSelect}
+          className="flex size-6 cursor-pointer items-center justify-center rounded-full border-2 border-white text-[11px] font-bold text-white shadow-lg transition-transform hover:scale-110"
+          style={{
+            background: restaurant.color,
+            outline: active ? "3px solid var(--mv-lime)" : "none",
+          }}
+        >
+          {restaurant.city[0]}
+        </button>
+        <MarkerLabel position="bottom">{restaurant.city}</MarkerLabel>
+      </MarkerContent>
+      <MarkerPopup className="w-64 p-4">
+        <p className="font-display text-[15px] font-medium text-mv-ink">{restaurant.name}</p>
+        <p className="mt-0.5 text-[12px] text-mv-ink-faint">
+          {restaurant.address}, {restaurant.city}
+        </p>
+        <div className="mt-3 flex items-center justify-between rounded-lg bg-mv-cream-soft p-2.5">
+          <div>
+            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Revenu (mois)</p>
+            <p className="font-display text-[16px] font-medium text-mv-green-dark">
+              {formatCurrency(stats.revenue)}
+            </p>
+          </div>
+          <Badge tone={stats.delta >= 0 ? "green" : "red"}>
+            {stats.delta >= 0 ? "↑" : "↓"} {Math.abs(stats.delta).toFixed(1)}%
+          </Badge>
+        </div>
+        <div className="mt-3 flex gap-1.5">
+          <Button variant="secondary" size="sm" className="flex-1" onClick={handleCenter}>
+            <LocateFixed data-icon="inline-start" />
+            Centrer
+          </Button>
+          <Button variant="secondary" size="sm" className="flex-1" onClick={handleDirections}>
+            <Navigation data-icon="inline-start" />
+            Itinéraire
+          </Button>
+        </div>
+      </MarkerPopup>
+    </MapMarker>
+  );
+}
+
 function EstablishmentsMode() {
   const { restaurantId, setRestaurantId, restaurants } = useApp();
   const geoRestaurants = restaurants.filter(
@@ -45,37 +118,13 @@ function EstablishmentsMode() {
           const stats = revenueByRestaurant[r.id] ?? { revenue: 0, delta: 0 };
           const active = r.id === restaurantId;
           return (
-            <MapMarker key={r.id} longitude={r.lng} latitude={r.lat}>
-              <MarkerContent>
-                <button
-                  onClick={() => setRestaurantId(r.id)}
-                  className="flex size-6 cursor-pointer items-center justify-center rounded-full border-2 border-white text-[11px] font-bold text-white shadow-lg transition-transform hover:scale-110"
-                  style={{ background: r.color, outline: active ? "3px solid var(--mv-lime)" : "none" }}
-                >
-                  {r.city[0]}
-                </button>
-                <MarkerLabel position="bottom">{r.city}</MarkerLabel>
-              </MarkerContent>
-              <MarkerPopup className="w-64 p-4">
-                <p className="font-display text-[15px] font-medium text-mv-ink">{r.name}</p>
-                <p className="mt-0.5 text-[12px] text-mv-ink-faint">
-                  {r.address}, {r.city}
-                </p>
-                <div className="mt-3 flex items-center justify-between rounded-lg bg-mv-cream-soft p-2.5">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">
-                      Revenu (mois)
-                    </p>
-                    <p className="font-display text-[16px] font-medium text-mv-green-dark">
-                      {formatCurrency(stats.revenue)}
-                    </p>
-                  </div>
-                  <Badge tone={stats.delta >= 0 ? "green" : "red"}>
-                    {stats.delta >= 0 ? "↑" : "↓"} {Math.abs(stats.delta).toFixed(1)}%
-                  </Badge>
-                </div>
-              </MarkerPopup>
-            </MapMarker>
+            <RestaurantMarker
+              key={r.id}
+              restaurant={r}
+              stats={stats}
+              active={active}
+              onSelect={() => setRestaurantId(r.id)}
+            />
           );
         })}
       </Map>

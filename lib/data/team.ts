@@ -117,7 +117,7 @@ export async function inviteTeamMember(
     actionType: "team.invite",
     entityType: "restaurant_member",
     entityId: data.id,
-    description: "A invité un membre de l'équipe",
+    description: "A invité un collaborateur",
   });
 
   const row = data as MembershipRow;
@@ -144,7 +144,7 @@ export async function updateTeamMemberRole(
     actionType: "team.update_role",
     entityType: "restaurant_member",
     entityId: membershipId,
-    description: `A mis à jour le rôle d'un membre en "${role}"`,
+    description: `A mis à jour le rôle d'un collaborateur en "${role}"`,
   });
 
   return true;
@@ -168,7 +168,7 @@ export async function removeTeamMember(
     actionType: "team.remove",
     entityType: "restaurant_member",
     entityId: membershipId,
-    description: "A retiré un membre de l'équipe",
+    description: "A retiré un collaborateur",
   });
 
   return true;

@@ -1,3 +1,5 @@
+import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
+import { LiveAlertsPanel } from "@/components/minerva/LiveAlertsPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -12,13 +14,13 @@ import { getPrograms } from "@/lib/data/programs";
 import { getServiceDays } from "@/lib/data/service-days";
 import { getCampaigns } from "@/lib/data/campaigns";
 import { getFinancialTransactions, getConnections } from "@/lib/data/finance";
-import { getAlertRules } from "@/lib/data/alerts";
+import { getAlertRules, getAlerts } from "@/lib/data/alerts";
 import { revenueTrend, margeTrend, joursTrend, type ReportData } from "@/lib/reports";
 import { computeAlerts } from "@/lib/engine/alerts";
 import { computeRecommendations } from "@/lib/engine/recommendations";
 import { formatDate, formatDateFull } from "@/lib/utils";
 import { CalendarCheck2, Megaphone, ArrowUpRight, ArrowRight, Store } from "lucide-react";
-import type { AlertSeverity, ProgramStatus, ServiceDay } from "@/lib/types";
+import type { ProgramStatus, ServiceDay } from "@/lib/types";
 import Link from "next/link";
 
 const statusTone: Record<ProgramStatus, "green" | "amber" | "neutral"> = {
@@ -31,18 +33,6 @@ const statusLabel: Record<ProgramStatus, string> = {
   actif: "Actif",
   planifie: "Planifié",
   termine: "Terminé",
-};
-
-const severityTone: Record<AlertSeverity, "red" | "amber" | "neutral"> = {
-  critique: "red",
-  important: "amber",
-  info: "neutral",
-};
-
-const severityLabel: Record<AlertSeverity, string> = {
-  critique: "Priorité haute",
-  important: "À surveiller",
-  info: "Info",
 };
 
 /** First/last ISO date of the current calendar month. */
@@ -90,7 +80,7 @@ export default async function OverviewPage() {
 
   const { from, to, year, month } = currentMonthRange();
 
-  const [serviceDays, programs, campaigns, financialTransactions, connections, alertRules] =
+  const [serviceDays, programs, campaigns, financialTransactions, connections, alertRules, tableAlerts] =
     await Promise.all([
       getServiceDays(restaurantId, { from, to }),
       getPrograms(restaurantId),
@@ -98,6 +88,7 @@ export default async function OverviewPage() {
       getFinancialTransactions(restaurantId, { from, to }),
       getConnections(restaurantId),
       getAlertRules(restaurantId),
+      getAlerts(restaurantId),
     ]);
 
   const reportData: ReportData = { serviceDays, programs, campaigns, financialTransactions };
@@ -108,6 +99,14 @@ export default async function OverviewPage() {
 
   const alerts = computeAlerts({ serviceDays, connections, alertRules, financialTransactions });
   const recommendations = computeRecommendations({ campaigns, programs, serviceDays, alerts });
+
+  // Rule-engine alerts (recomputed every render) plus any unreviewed rows
+  // already persisted in `alerts` (e.g. from the AI assistant or future
+  // background jobs) — the combined list seeds the live-updating panel.
+  const unreadTableAlerts = tableAlerts.filter((a) => a.status === "nouvelle");
+  const combinedAlerts = [...alerts, ...unreadTableAlerts].sort((a, b) =>
+    b.date.localeCompare(a.date)
+  );
 
   const joursSparkData = joursTr.map((d) => ({ date: d.date, value: d.revenue }));
 
@@ -124,6 +123,7 @@ export default async function OverviewPage() {
 
   return (
     <div>
+      <LiveKpiSync restaurantId={restaurantId} />
       <PageHeader
         eyebrow="Vue globale"
         title="Overview"
@@ -258,31 +258,7 @@ export default async function OverviewPage() {
         </div>
 
         <div className="mv-animate-in xl:col-span-3" style={{ animationDelay: "160ms" }}>
-          <Card className="xl:sticky xl:top-6">
-            <CardHeader title="Alertes" description={`${alerts.length} à examiner`} />
-            {alerts.length === 0 ? (
-              <p className="text-[12.5px] text-mv-ink-faint">Rien à signaler pour l&apos;instant.</p>
-            ) : (
-              <div className="space-y-3">
-                {alerts.map((a, i) => (
-                  <div
-                    key={a.id}
-                    style={{ animationDelay: `${220 + i * 50}ms` }}
-                    className="mv-animate-in rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5"
-                  >
-                    <div className="mb-1.5 flex items-center justify-between gap-2">
-                      <Badge tone={severityTone[a.severity]} dot>
-                        {severityLabel[a.severity]}
-                      </Badge>
-                      <span className="text-[11px] text-mv-ink-faint">{formatDate(a.date)}</span>
-                    </div>
-                    <p className="text-[13px] font-semibold leading-snug text-mv-ink">{a.title}</p>
-                    <p className="mt-0.5 text-[12.5px] leading-snug text-mv-ink-soft">{a.detail}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+          <LiveAlertsPanel restaurantId={restaurantId} initial={combinedAlerts} />
         </div>
       </div>
 

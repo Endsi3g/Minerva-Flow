@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
-const playfairDisplayHeading = Playfair_Display({subsets:['latin'],variable:'--font-heading'});
+const playfairDisplayHeading = Playfair_Display({ subsets: ['latin'], variable: '--font-heading' });
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -24,18 +24,23 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Minerva Flow",
-  description: "Le cockpit de revenus pour restaurants et cafés.",
+  title: "flow by Minerva",
+  description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
+  icons: {
+    icon: "/icon-512.png",
+    shortcut: "/icon-512.png",
+    apple: "/icon-512.png",
+  },
   openGraph: {
-    title: "Minerva Flow",
-    description: "Le cockpit de revenus pour restaurants et cafés.",
+    title: "flow by Minerva",
+    description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
     type: "website",
     locale: "fr_FR",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Minerva Flow",
-    description: "Le cockpit de revenus pour restaurants et cafés.",
+    title: "Flow by Minerva",
+    description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
   },
 };
 

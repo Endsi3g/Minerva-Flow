@@ -9,6 +9,7 @@ export type AppSessionData = {
   restaurants: Restaurant[];
   role: Role;
   initialRestaurantId: string;
+  onboardingCompleted: boolean;
 };
 
 /**
@@ -31,9 +32,17 @@ export async function getAppSessionData(): Promise<AppSessionData> {
       }
     : null;
 
-  const [restaurants, membership] = await Promise.all([
+  const [restaurants, membership, onboardingCompleted] = await Promise.all([
     getUserRestaurants(),
     getCurrentMembership(),
+    user
+      ? supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("id", user.id)
+          .maybeSingle()
+          .then(({ data }) => (data as { onboarding_completed: boolean } | null)?.onboarding_completed ?? true)
+      : Promise.resolve(true),
   ]);
 
   return {
@@ -41,5 +50,6 @@ export async function getAppSessionData(): Promise<AppSessionData> {
     restaurants,
     role: membership?.role ?? "staff",
     initialRestaurantId: membership?.restaurantId ?? restaurants[0]?.id ?? "",
+    onboardingCompleted,
   };
 }

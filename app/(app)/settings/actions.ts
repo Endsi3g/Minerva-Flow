@@ -7,7 +7,21 @@ import {
   getUserCompanies,
   getCompanyRestaurants,
 } from "@/lib/data/companies";
-import type { Company, Restaurant } from "@/lib/types";
+import {
+  createRestaurant,
+  updateRestaurant,
+  type RestaurantInput,
+} from "@/lib/data/restaurants";
+import { getConnections, createConnection } from "@/lib/data/finance";
+import { getAlertRules, upsertAlertRule } from "@/lib/data/alerts";
+import type {
+  AlertRule,
+  AlertRuleType,
+  Company,
+  Connection,
+  ConnectionType,
+  Restaurant,
+} from "@/lib/types";
 
 export async function getCompaniesWithRestaurantsAction(): Promise<
   { company: Company; restaurants: Restaurant[] }[]
@@ -35,4 +49,46 @@ export async function assignRestaurantToCompanyAction(
   const ok = await assignRestaurantToCompany(restaurantId, companyId);
   if (ok) revalidatePath("/settings");
   return ok;
+}
+
+export async function createRestaurantAction(input: RestaurantInput): Promise<Restaurant | null> {
+  const restaurant = await createRestaurant(input);
+  if (restaurant) revalidatePath("/settings");
+  return restaurant;
+}
+
+export async function updateRestaurantAction(
+  id: string,
+  patch: Partial<RestaurantInput>
+): Promise<Restaurant | null> {
+  const restaurant = await updateRestaurant(id, patch);
+  if (restaurant) revalidatePath("/settings");
+  return restaurant;
+}
+
+export async function getConnectionsAction(restaurantId: string): Promise<Connection[]> {
+  return getConnections(restaurantId);
+}
+
+export async function createConnectionAction(
+  restaurantId: string,
+  input: { name: string; type: ConnectionType }
+): Promise<Connection | null> {
+  const connection = await createConnection(restaurantId, input);
+  if (connection) revalidatePath("/settings");
+  return connection;
+}
+
+export async function getAlertRulesAction(restaurantId: string): Promise<AlertRule[]> {
+  return getAlertRules(restaurantId);
+}
+
+export async function upsertAlertRuleAction(
+  restaurantId: string,
+  type: AlertRuleType,
+  patch: { threshold?: number; enabled?: boolean; notify?: boolean }
+): Promise<AlertRule | null> {
+  const rule = await upsertAlertRule(restaurantId, type, patch);
+  if (rule) revalidatePath("/settings");
+  return rule;
 }

@@ -4,11 +4,13 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { getReport, reportDefs, trendFor, breakdownFor, campaignsForReport, type ReportData } from "@/lib/reports";
 import { notFound } from "next/navigation";
 import { ReportView } from "./ReportView";
+import { DynamicReportView } from "./DynamicReportView";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getServiceDays } from "@/lib/data/service-days";
 import { getPrograms } from "@/lib/data/programs";
 import { getCampaigns } from "@/lib/data/campaigns";
 import { getFinancialTransactions } from "@/lib/data/finance";
+import { createClient } from "@/lib/supabase/server";
 import { Store } from "lucide-react";
 
 export function generateStaticParams() {
@@ -38,6 +40,30 @@ export default async function ReportPage({
           }
         />
       </div>
+    );
+  }
+
+  // Handle dynamic AI-generated reports
+  if (slug.startsWith("dynamic-")) {
+    const reportId = slug.replace("dynamic-", "");
+    const supabase = await createClient();
+    const { data: artifact } = await supabase
+      .from("chat_artifacts")
+      .select("*")
+      .eq("id", reportId)
+      .eq("restaurant_id", restaurantId)
+      .maybeSingle();
+
+    if (!artifact) notFound();
+
+    return (
+      <DynamicReportView
+        reportId={artifact.id}
+        initialTitle={artifact.title}
+        type={artifact.type}
+        data={artifact.data}
+        createdAt={artifact.created_at}
+      />
     );
   }
 

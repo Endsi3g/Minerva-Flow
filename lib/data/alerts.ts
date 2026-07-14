@@ -75,6 +75,25 @@ export async function updateAlertStatus(
   return mapAlert(data as AlertRow);
 }
 
+/** Marks every "nouvelle" alert for this restaurant as "revue" (bulk "tout marquer lu"). */
+export async function markAllAlertsReviewed(restaurantId: string): Promise<void> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("alerts")
+    .update({ status: "revue" })
+    .eq("restaurant_id", restaurantId)
+    .eq("status", "nouvelle")
+    .select("id");
+
+  if (error || !data || data.length === 0) return;
+
+  await logActivity({
+    restaurantId,
+    actionType: "alert.bulk_review",
+    description: `A marqué ${data.length} alerte${data.length > 1 ? "s" : ""} comme revue${data.length > 1 ? "s" : ""}`,
+  });
+}
+
 // alert_rules only persists id/threshold/enabled/notify per rule_type — the
 // label/description/unit shown in Settings are stable per rule type, so
 // they live here rather than in the database.

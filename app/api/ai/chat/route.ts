@@ -2,8 +2,9 @@ import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AI_MODEL, isAiConfigured } from "@/lib/ai/config";
-import { buildDataSnapshot, buildRestaurantDataSnapshot } from "@/lib/ai/context";
+import { buildRestaurantDataSnapshot } from "@/lib/ai/context";
 import { saveArtifact, saveAttachment, saveMessage } from "@/lib/data/chat";
+import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 
 const trendPointSchema = z.object({ date: z.string(), value: z.number() });
 
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
 
   const {
     messages,
-    restaurantId,
+    restaurantId: bodyRestaurantId,
     conversationId,
     attachments,
   }: {
@@ -85,6 +86,7 @@ export async function POST(req: Request) {
     attachments?: PendingAttachment[];
   } = await req.json();
 
+  const restaurantId = bodyRestaurantId ?? (await getCurrentRestaurantId()) ?? undefined;
   const canPersist = Boolean(restaurantId && conversationId);
   const lastMessage = messages[messages.length - 1];
 
@@ -117,9 +119,9 @@ export async function POST(req: Request) {
     }
   }
 
-  const system = canPersist
-    ? await buildRestaurantDataSnapshot(restaurantId!)
-    : buildDataSnapshot();
+  const system = restaurantId
+    ? await buildRestaurantDataSnapshot(restaurantId)
+    : "Tu es l'assistant de Minerva Flow. Aucun établissement n'est encore associé à ce compte — invite l'utilisateur à en créer un avant de pouvoir répondre sur ses données.";
 
   const result = streamText({
     model: AI_MODEL,

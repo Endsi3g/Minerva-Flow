@@ -1,3 +1,4 @@
+import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getFinancialTransactions, getExpenseCategories, getConnections } from "@/lib/data/finance";
 import { FinanceView } from "./FinanceView";
@@ -16,10 +17,13 @@ export default async function FinancePage() {
   ]);
 
   return (
-    <FinanceView
-      transactions={transactions}
-      expenseCategories={expenseCategories}
-      connections={connections}
-    />
+    <>
+      <LiveKpiSync restaurantId={restaurantId} />
+      <FinanceView
+        transactions={transactions}
+        expenseCategories={expenseCategories}
+        connections={connections}
+      />
+    </>
   );
 }

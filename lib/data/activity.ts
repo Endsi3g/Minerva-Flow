@@ -53,15 +53,18 @@ async function namesByUserId(
 
 export async function getActivityLog(
   restaurantId: string,
-  limit = 30
+  options?: { limit?: number; actorId?: string }
 ): Promise<ActivityLogEntry[]> {
+  const { limit = 30, actorId } = options ?? {};
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("activity_log")
     .select("*")
-    .eq("restaurant_id", restaurantId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .eq("restaurant_id", restaurantId);
+
+  if (actorId) query = query.eq("actor_id", actorId);
+
+  const { data, error } = await query.order("created_at", { ascending: false }).limit(limit);
 
   if (error || !data) return [];
 
