@@ -14,6 +14,7 @@ import { roleLabels } from "@/lib/app-context";
 import { ReferralSettingsTab } from "@/components/chat/ReferralSettingsTab";
 import { CompaniesTab } from "@/components/minerva/CompaniesTab";
 import { AdPlatformsCard } from "@/components/minerva/AdPlatformsCard";
+import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
 import type { AlertRule, ConnectionStatus, ConnectionType, Role } from "@/lib/types";
 import {
   Plus,
@@ -312,7 +313,10 @@ export default function SettingsPage() {
 
         <TabsContent value="integrations">
         <div className="space-y-4">
-          <AdPlatformsCard />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <AdPlatformsCard />
+            <GoogleWorkspaceCard />
+          </div>
           <div className="flex justify-end">
             <Button size="sm">
               <Plus size={15} /> Ajouter une intégration

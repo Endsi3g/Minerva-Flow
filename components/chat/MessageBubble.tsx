@@ -4,6 +4,16 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import type { ChatAttachment } from "@/lib/types";
+import { Message, MessageAvatar, MessageContent } from "@/components/ui/message";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
+import {
+  Attachment,
+  AttachmentGroup,
+  AttachmentMedia,
+  AttachmentContent,
+  AttachmentTitle,
+  AttachmentDescription,
+} from "@/components/ui/attachment";
 
 const markdownComponents: Components = {
   p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -33,10 +43,15 @@ const markdownComponents: Components = {
 
 function AttachmentChip({ attachment }: { attachment: ChatAttachment }) {
   return (
-    <div className="flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-2.5 py-1.5 text-[12px] text-mv-ink-soft">
-      <FileText size={13} className="shrink-0 text-mv-ink-faint" />
-      <span className="max-w-[160px] truncate">{attachment.fileName}</span>
-    </div>
+    <Attachment size="sm">
+      <AttachmentMedia>
+        <FileText />
+      </AttachmentMedia>
+      <AttachmentContent>
+        <AttachmentTitle>{attachment.fileName}</AttachmentTitle>
+        <AttachmentDescription>{attachment.mimeType}</AttachmentDescription>
+      </AttachmentContent>
+    </Attachment>
   );
 }
 
@@ -49,36 +64,42 @@ export function MessageBubble({
   text: string;
   attachments?: ChatAttachment[];
 }) {
+  const align = role === "user" ? "end" : "start";
+
   return (
-    <div className={cn("flex gap-2.5", role === "user" ? "justify-end" : "justify-start")}>
+    <Message align={align}>
       {role === "assistant" && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
-          <Bot size={14} />
-        </div>
+        <MessageAvatar>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+            <Bot size={14} />
+          </div>
+        </MessageAvatar>
       )}
-      <div className="flex max-w-[80%] flex-col gap-1.5">
-        <div
-          className={cn(
-            "mv-scale-in rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed",
-            role === "user" ? "bg-mv-green text-mv-cream-soft" : "bg-mv-cream-soft text-mv-ink"
-          )}
-        >
-          {role === "assistant" ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {text}
-            </ReactMarkdown>
-          ) : (
-            <span className="whitespace-pre-wrap">{text}</span>
-          )}
-        </div>
+      <MessageContent>
+        <Bubble align={align} variant="ghost">
+          <BubbleContent
+            className={cn(
+              "mv-scale-in rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed",
+              role === "user" ? "bg-mv-green text-mv-cream-soft" : "bg-mv-cream-soft text-mv-ink"
+            )}
+          >
+            {role === "assistant" ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                {text}
+              </ReactMarkdown>
+            ) : (
+              <span className="whitespace-pre-wrap">{text}</span>
+            )}
+          </BubbleContent>
+        </Bubble>
         {attachments && attachments.length > 0 && (
-          <div className={cn("flex flex-wrap gap-1.5", role === "user" && "justify-end")}>
+          <AttachmentGroup className={cn(role === "user" && "justify-end")}>
             {attachments.map((a) => (
               <AttachmentChip key={a.id} attachment={a} />
             ))}
-          </div>
+          </AttachmentGroup>
         )}
-      </div>
-    </div>
+      </MessageContent>
+    </Message>
   );
 }

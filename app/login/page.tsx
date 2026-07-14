@@ -68,7 +68,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-mv-cream px-6 py-10">
       <div className="mb-6 flex items-center gap-2.5">
         <LogoMark size={30} />
-        <span className="font-display text-[17px] font-medium text-mv-ink">
+        <span className="font-sans text-[17px] font-medium text-mv-ink">
           Minerva <span className="text-mv-green-dark">Flow</span>
         </span>
       </div>

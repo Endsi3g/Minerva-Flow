@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Fraunces, Inter, Playfair_Display } from "next/font/
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 
 const playfairDisplayHeading = Playfair_Display({subsets:['latin'],variable:'--font-heading'});
 
@@ -25,6 +26,17 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "Minerva Flow",
   description: "Le cockpit de revenus pour restaurants et cafés.",
+  openGraph: {
+    title: "Minerva Flow",
+    description: "Le cockpit de revenus pour restaurants et cafés.",
+    type: "website",
+    locale: "fr_FR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Minerva Flow",
+    description: "Le cockpit de revenus pour restaurants et cafés.",
+  },
 };
 
 export const viewport: Viewport = {
@@ -41,6 +53,7 @@ export default function RootLayout({
     <html lang="fr" className={cn("h-full", jakarta.variable, fraunces.variable, "font-sans", inter.variable, playfairDisplayHeading.variable)}>
       <body className="min-h-full bg-mv-cream text-mv-ink antialiased">
         <TooltipProvider delay={150}>{children}</TooltipProvider>
+        <Toaster />
       </body>
     </html>
   );

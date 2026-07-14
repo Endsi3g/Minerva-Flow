@@ -11,9 +11,13 @@ import { useApp, useCurrentRestaurant, roleLabels } from "@/lib/app-context";
 import type { ReportDef } from "@/lib/reports";
 import type { Campaign, FlowLine } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { ChevronLeft, Star, Filter, Share2, Clock, Store, Plus } from "lucide-react";
+import { ChevronLeft, Star, Filter, Share2, Clock, Store, Plus, FileSpreadsheet, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { exportReportAction } from "@/app/(app)/reports/actions";
+import { getGoogleWorkspaceStatusAction } from "@/app/(app)/settings/google-workspace-actions";
+import { GOOGLE_SCOPES } from "@/lib/google/config";
 
 const periodLabel: Record<string, string> = {
   jour: "Aujourd'hui",
@@ -33,9 +37,34 @@ export function ReportView({
   breakdown: FlowLine[];
   campaigns: Campaign[];
 }) {
-  const { period, role } = useApp();
+  const { period, role, restaurantId } = useApp();
   const restaurant = useCurrentRestaurant();
   const [starred, setStarred] = useState(false);
+  const [sheetsEnabled, setSheetsEnabled] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    getGoogleWorkspaceStatusAction(restaurantId).then(({ connection }) => {
+      setSheetsEnabled(Boolean(connection?.grantedScopes.includes(GOOGLE_SCOPES.sheets)));
+    });
+  }, [restaurantId]);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const url = await exportReportAction(report.slug);
+      if (url) {
+        toast.success("Rapport exporté vers Google Sheets.", {
+          action: { label: "Ouvrir", onClick: () => window.open(url, "_blank") },
+        });
+      } else {
+        toast.error("L'export a échoué — réessayez.");
+      }
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div>
@@ -64,6 +93,12 @@ export function ReportView({
           <Button size="sm" variant="secondary">
             <Filter size={14} /> Filter
           </Button>
+          {sheetsEnabled && (
+            <Button size="sm" variant="secondary" onClick={handleExport} disabled={exporting}>
+              {exporting ? <Loader2 size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />}
+              Exporter vers Sheets
+            </Button>
+          )}
           <Button size="sm" variant="secondary">
             <Share2 size={14} /> Share
           </Button>

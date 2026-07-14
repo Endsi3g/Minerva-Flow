@@ -43,6 +43,12 @@ const buttonVariants = cva(
 type ButtonBaseProps = VariantProps<typeof buttonVariants> & {
   className?: string
   children?: React.ReactNode
+  // Only meaningful in button mode (Base UI's polymorphic composition,
+  // e.g. <Button render={<ComboboxTrigger />} />) — declared on the shared
+  // base so the ButtonAsLink | ButtonAsButton union stays uniform for
+  // components (InputGroupButton, etc.) that pass `render` generically.
+  render?: React.ComponentProps<typeof ButtonPrimitive>["render"]
+  disabled?: boolean
 }
 
 type ButtonAsLink = ButtonBaseProps & {

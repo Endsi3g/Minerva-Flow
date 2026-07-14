@@ -8,7 +8,10 @@ export function isMetaAdsConfigured() {
 }
 
 export function isGoogleAdsConfigured() {
-  return Boolean(process.env.GOOGLE_ADS_CLIENT_ID && process.env.GOOGLE_ADS_CLIENT_SECRET);
+  // Shares the same Google OAuth app (GOOGLE_CLIENT_ID/SECRET) as every
+  // other Google integration (Gmail, Drive, Sheets, Calendar, etc.) — one
+  // Google Cloud project, different scopes per feature.
+  return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 
 export function oauthRedirectUri(provider: "meta" | "google", origin: string) {

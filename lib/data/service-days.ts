@@ -1,7 +1,29 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
+import { hasGoogleScope } from "@/lib/data/google-connections";
 import { formatDateFull } from "@/lib/utils";
+import { after } from "next/server";
 import type { Anomaly, RushLevel, ServiceDay, ServiceSource } from "@/lib/types";
+
+/**
+ * Background Calendar sync, scheduled via next/server's after() so it keeps
+ * running past the response (a bare fire-and-forget promise can get killed
+ * mid-flight once the serverless function returns) — never allowed to fail
+ * the caller's write. Only runs when the restaurant has granted the
+ * calendar scope.
+ */
+function syncCalendarInBackground(restaurantId: string, serviceDay: ServiceDay) {
+  after(async () => {
+    try {
+      const enabled = await hasGoogleScope(restaurantId, "calendar");
+      if (!enabled) return;
+      const { syncServiceDayEvent } = await import("@/lib/google/calendar");
+      await syncServiceDayEvent(restaurantId, serviceDay);
+    } catch (err) {
+      console.error("Calendar sync failed:", err);
+    }
+  });
+}
 
 type ServiceDayRow = {
   id: string;
@@ -168,7 +190,9 @@ export async function createServiceDay(
 
   const row = data as ServiceDayRow;
   const names = await namesByUserId(supabase, [row.created_by]);
-  return mapServiceDay(row, names.get(row.created_by ?? "") ?? "—");
+  const serviceDay = mapServiceDay(row, names.get(row.created_by ?? "") ?? "—");
+  syncCalendarInBackground(restaurantId, serviceDay);
+  return serviceDay;
 }
 
 export async function updateServiceDay(
@@ -211,7 +235,9 @@ export async function updateServiceDay(
 
   const row = data as ServiceDayRow;
   const names = await namesByUserId(supabase, [row.created_by]);
-  return mapServiceDay(row, names.get(row.created_by ?? "") ?? "—");
+  const serviceDay = mapServiceDay(row, names.get(row.created_by ?? "") ?? "—");
+  syncCalendarInBackground(restaurantId, serviceDay);
+  return serviceDay;
 }
 
 export async function deleteServiceDay(restaurantId: string, id: string): Promise<boolean> {

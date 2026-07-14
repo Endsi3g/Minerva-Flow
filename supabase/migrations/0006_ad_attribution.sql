@@ -5,7 +5,7 @@
 -- read vault.decrypted_secrets; RLS on ad_platform_connections itself
 -- still gates who can see that a connection exists at all.
 
-create extension if not exists "pgsodium" schema pgsodium;
+create extension if not exists "pgsodium";
 create extension if not exists "supabase_vault";
 
 create type ad_provider as enum ('meta', 'google');

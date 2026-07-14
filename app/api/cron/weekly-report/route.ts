@@ -11,7 +11,9 @@ import {
   type WeeklyReportData,
 } from "@/lib/data/weekly-reports";
 import { broadcastNotification } from "@/lib/data/notifications";
-import { formatCurrency } from "@/lib/utils";
+import { hasGoogleScope, getGoogleConnection } from "@/lib/data/google-connections";
+import { sendReportEmail } from "@/lib/google/gmail";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 /** Monday-Sunday range of the week immediately before the current one. */
 function previousWeekRange(now = new Date()) {
@@ -46,6 +48,7 @@ export async function GET(req: Request) {
 
   const { from, to, weekStart } = previousWeekRange();
   const restaurantIds = await getAllActiveRestaurantIds();
+  const origin = new URL(req.url).origin;
 
   const results = await Promise.all(
     restaurantIds.map(async (restaurantId) => {
@@ -86,7 +89,32 @@ export async function GET(req: Request) {
         link: "/reports",
       });
 
-      return { restaurantId, status: "generated" };
+      // Gmail is a bonus channel on top of the in-app notification, never a
+      // replacement — failures here must not affect the notification above.
+      let emailSent = false;
+      if (await hasGoogleScope(restaurantId, "gmail")) {
+        const connection = await getGoogleConnection(restaurantId);
+        if (connection?.connectedEmail) {
+          const rows = data.metrics
+            .map(
+              (m) =>
+                `<tr><td style="padding:4px 12px">${m.label}</td><td style="padding:4px 12px;text-align:right">${
+                  m.unit === "currency" ? formatCurrency(m.value) : m.value
+                }</td><td style="padding:4px 12px;text-align:right;color:${m.wowDelta >= 0 ? "#0E5A40" : "#B5473A"}">${
+                  m.wowDelta >= 0 ? "+" : ""
+                }${m.wowDelta.toFixed(1)}%</td></tr>`
+            )
+            .join("");
+          const html = `<div style="font-family:sans-serif;max-width:480px"><h2>Rapport hebdomadaire — semaine du ${formatDate(weekStart)}</h2><table style="border-collapse:collapse;width:100%">${rows}</table><p><a href="${origin}/reports">Voir le détail dans Minerva Flow</a></p></div>`;
+          emailSent = await sendReportEmail(restaurantId, {
+            to: connection.connectedEmail,
+            subject: `Minerva Flow — rapport de la semaine du ${formatDate(weekStart)}`,
+            html,
+          });
+        }
+      }
+
+      return { restaurantId, status: "generated", emailSent };
     })
   );
 

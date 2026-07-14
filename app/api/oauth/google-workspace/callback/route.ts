@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
-import { oauthRedirectUri } from "@/lib/ad-platforms/config";
+import { googleWorkspaceRedirectUri } from "@/lib/google/config";
 import { verifyOAuthState } from "@/lib/ad-platforms/state";
-import { saveAdPlatformTokens } from "@/lib/data/ad-platforms";
+import { saveGoogleTokens } from "@/lib/data/google-connections";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+
+/**
+ * Decodes the `email` claim out of Google's id_token (JWT). No signature
+ * verification needed — this token comes straight from Google's token
+ * endpoint over a server-to-server HTTPS call, not from an untrusted
+ * client, so there's nothing to verify against a forged token here.
+ */
+function decodeEmailFromIdToken(idToken: string): string | undefined {
+  try {
+    const payload = idToken.split(".")[1];
+    const json = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return typeof json.email === "string" ? json.email : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -12,13 +28,13 @@ export async function GET(req: Request) {
   const settingsUrl = new URL("/settings", url.origin);
 
   if (!code || !state) {
-    settingsUrl.searchParams.set("ads_error", "google_missing_params");
+    settingsUrl.searchParams.set("google_error", "missing_params");
     return NextResponse.redirect(settingsUrl);
   }
 
   const verified = verifyOAuthState(state);
   if (!verified) {
-    settingsUrl.searchParams.set("ads_error", "google_invalid_state");
+    settingsUrl.searchParams.set("google_error", "invalid_state");
     return NextResponse.redirect(settingsUrl);
   }
 
@@ -28,14 +44,14 @@ export async function GET(req: Request) {
     body: new URLSearchParams({
       client_id: process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirect_uri: oauthRedirectUri("google", url.origin),
+      redirect_uri: googleWorkspaceRedirectUri(url.origin),
       code,
       grant_type: "authorization_code",
     }),
   });
 
   if (!tokenRes.ok) {
-    settingsUrl.searchParams.set("ads_error", "google_token_exchange_failed");
+    settingsUrl.searchParams.set("google_error", "token_exchange_failed");
     return NextResponse.redirect(settingsUrl);
   }
 
@@ -43,21 +59,25 @@ export async function GET(req: Request) {
     access_token?: string;
     refresh_token?: string;
     expires_in?: number;
+    scope?: string;
+    id_token?: string;
   };
 
   if (!tokenData.access_token) {
-    settingsUrl.searchParams.set("ads_error", "google_no_access_token");
+    settingsUrl.searchParams.set("google_error", "no_access_token");
     return NextResponse.redirect(settingsUrl);
   }
 
-  await saveAdPlatformTokens(verified.restaurantId, "google", {
+  await saveGoogleTokens(verified.restaurantId, {
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token,
     expiresAt: tokenData.expires_in
       ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
       : undefined,
+    connectedEmail: tokenData.id_token ? decodeEmailFromIdToken(tokenData.id_token) : undefined,
+    scopes: tokenData.scope ? tokenData.scope.split(" ") : [],
   });
 
-  settingsUrl.searchParams.set("ads_connected", "google");
+  settingsUrl.searchParams.set("google_connected", "1");
   return NextResponse.redirect(settingsUrl);
 }

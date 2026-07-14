@@ -153,3 +153,42 @@ export async function getAdConversions(
   if (error || !data) return [];
   return (data as ConversionRow[]).map(mapConversion);
 }
+
+export type NewAdConversion = {
+  channel: AdChannel;
+  city: string | null;
+  convertedOnline: boolean;
+  revenue: number;
+};
+
+/**
+ * Server-only (service role) — replaces today's synced conversions for a
+ * restaurant (delete + insert scoped to today) so re-running the sync cron
+ * doesn't duplicate rows. Used by app/api/cron/sync-analytics/route.ts.
+ */
+export async function replaceTodayAdConversions(
+  restaurantId: string,
+  conversions: NewAdConversion[]
+): Promise<void> {
+  const admin = createAdminClient();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  await admin
+    .from("ad_conversions")
+    .delete()
+    .eq("restaurant_id", restaurantId)
+    .gte("occurred_at", todayStart.toISOString());
+
+  if (conversions.length === 0) return;
+
+  await admin.from("ad_conversions").insert(
+    conversions.map((c) => ({
+      restaurant_id: restaurantId,
+      channel: c.channel,
+      city: c.city,
+      converted_online: c.convertedOnline,
+      revenue: c.revenue,
+    }))
+  );
+}

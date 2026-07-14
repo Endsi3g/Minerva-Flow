@@ -3,8 +3,19 @@
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { FileText, Loader2, Paperclip, X } from "lucide-react";
+import { FileText, Loader2, Paperclip } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import {
+  Attachment,
+  AttachmentGroup,
+  AttachmentMedia,
+  AttachmentContent,
+  AttachmentTitle,
+  AttachmentDescription,
+  AttachmentActions,
+  AttachmentAction,
+} from "@/components/ui/attachment";
 
 export type PreparedAttachment = {
   path: string;
@@ -88,30 +99,52 @@ export function ChatAttachments({
     onChange(attachments.filter((a) => a.fileName !== fileName));
   }
 
+  // Files still uploading or that failed — not yet in `attachments` (which
+  // only holds successfully prepared ones with a signed URL).
+  const pendingFiles = upload.files.filter((f) => !upload.successes.includes(f.name));
+
   return (
     <div {...upload.getRootProps()}>
       <input {...upload.getInputProps()} />
 
-      {attachments.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-1.5">
+      {(attachments.length > 0 || pendingFiles.length > 0) && (
+        <AttachmentGroup className="mb-2">
           {attachments.map((a) => (
-            <div
-              key={a.path}
-              className="flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-2.5 py-1.5 text-[12px] text-mv-ink-soft"
-            >
-              <FileText size={13} className="shrink-0 text-mv-ink-faint" />
-              <span className="max-w-[140px] truncate">{a.fileName}</span>
-              <button
-                type="button"
-                onClick={() => removeAttachment(a.fileName)}
-                aria-label={`Retirer ${a.fileName}`}
-                className="text-mv-ink-faint hover:text-mv-ink"
-              >
-                <X size={12} />
-              </button>
-            </div>
+            <Attachment key={a.path} size="sm" state="done">
+              <AttachmentMedia>
+                <FileText />
+              </AttachmentMedia>
+              <AttachmentContent>
+                <AttachmentTitle>{a.fileName}</AttachmentTitle>
+                <AttachmentDescription>{a.mimeType}</AttachmentDescription>
+              </AttachmentContent>
+              <AttachmentActions>
+                <AttachmentAction
+                  aria-label={`Retirer ${a.fileName}`}
+                  onClick={() => removeAttachment(a.fileName)}
+                >
+                  <X />
+                </AttachmentAction>
+              </AttachmentActions>
+            </Attachment>
           ))}
-        </div>
+          {pendingFiles.map((f) => {
+            const hasError = f.errors.length > 0;
+            return (
+              <Attachment key={f.name} size="sm" state={hasError ? "error" : "uploading"}>
+                <AttachmentMedia>
+                  <FileText />
+                </AttachmentMedia>
+                <AttachmentContent>
+                  <AttachmentTitle>{f.name}</AttachmentTitle>
+                  <AttachmentDescription>
+                    {hasError ? f.errors[0]?.message ?? "Échec du téléversement" : "Envoi en cours…"}
+                  </AttachmentDescription>
+                </AttachmentContent>
+              </Attachment>
+            );
+          })}
+        </AttachmentGroup>
       )}
 
       <button
