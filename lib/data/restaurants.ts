@@ -15,6 +15,7 @@ type RestaurantRow = {
   color: string | null;
   lng: number | null;
   lat: number | null;
+  company_id: string | null;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -32,6 +33,7 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     color: row.color ?? "var(--mv-green)",
     lng: row.lng,
     lat: row.lat,
+    companyId: row.company_id,
   };
 }
 

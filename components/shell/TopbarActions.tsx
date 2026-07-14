@@ -2,11 +2,18 @@
 
 import { useApp, roleLabels } from "@/lib/app-context";
 import { CurrentUserAvatar } from "@/components/minerva/CurrentUserAvatar";
-import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn, formatRelativeTime } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { ChevronDown, LogOut, User, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import {
+  getNotificationsAction,
+  markNotificationReadAction,
+  markAllNotificationsReadAction,
+} from "@/app/(app)/notifications-actions";
+import type { Notification } from "@/lib/data/notifications";
 import type { Period } from "@/lib/app-context";
 
 const periods: { id: Period; label: string }[] = [
@@ -107,14 +114,98 @@ function UserMenu() {
   );
 }
 
+function NotificationBell() {
+  const { restaurantId } = useApp();
+  const router = useRouter();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [open, setOpen] = useState(false);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  async function refresh() {
+    if (!restaurantId) return;
+    setNotifications(await getNotificationsAction(restaurantId));
+  }
+
+  useEffect(() => {
+    refresh();
+  }, [restaurantId]);
+
+  async function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) refresh();
+  }
+
+  async function handleClick(n: Notification) {
+    if (!n.read) {
+      await markNotificationReadAction(n.id);
+      setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+    }
+    setOpen(false);
+    if (n.link) router.push(n.link);
+  }
+
+  async function handleMarkAllRead() {
+    if (!restaurantId) return;
+    await markAllNotificationsReadAction(restaurantId);
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  }
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger
+        render={
+          <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-mv-border bg-mv-surface text-mv-ink-soft transition-colors hover:bg-mv-cream-soft">
+            <Bell size={16} />
+            {unreadCount > 0 && (
+              <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-mv-red" />
+            )}
+          </button>
+        }
+      />
+      <PopoverContent className="w-80 p-0" sideOffset={8} align="end">
+        <div className="flex items-center justify-between border-b border-mv-border-soft px-3 py-2.5">
+          <p className="text-[13px] font-semibold text-mv-ink">Notifications</p>
+          {unreadCount > 0 && (
+            <button
+              onClick={handleMarkAllRead}
+              className="text-[11.5px] font-medium text-mv-green-dark hover:underline"
+            >
+              Tout marquer lu
+            </button>
+          )}
+        </div>
+        <div className="max-h-80 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <p className="px-3 py-4 text-center text-[12.5px] text-mv-ink-faint">
+              Aucune notification.
+            </p>
+          ) : (
+            notifications.map((n) => (
+              <button
+                key={n.id}
+                onClick={() => handleClick(n)}
+                className={cn(
+                  "flex w-full flex-col gap-0.5 border-b border-mv-border-soft px-3 py-2.5 text-left transition-colors last:border-0 hover:bg-mv-cream-soft",
+                  !n.read && "bg-mv-green-tint/40"
+                )}
+              >
+                <p className="text-[12.5px] font-semibold text-mv-ink">{n.title}</p>
+                {n.body && <p className="text-[12px] text-mv-ink-soft">{n.body}</p>}
+                <p className="text-[10.5px] text-mv-ink-faint">{formatRelativeTime(n.createdAt)}</p>
+              </button>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function TopbarActions() {
   return (
     <div className="flex items-center gap-3">
       <PeriodFilter />
-      <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-mv-border bg-mv-surface text-mv-ink-soft transition-colors hover:bg-mv-cream-soft">
-        <Bell size={16} />
-        <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-mv-red" />
-      </button>
+      <NotificationBell />
       <div className="h-6 w-px bg-mv-border" />
       <UserMenu />
     </div>

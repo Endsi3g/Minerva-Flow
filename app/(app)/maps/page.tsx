@@ -8,10 +8,14 @@ import {
   MarkerContent,
   MarkerLabel,
   MarkerPopup,
+  MapClusterLayer,
 } from "@/components/ui/map";
-import { restaurants } from "@/lib/mock-data";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency } from "@/lib/utils";
+import { getAdConversionsAction } from "./actions";
+import type { AdConversion } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
+import { MapPinned, Megaphone } from "lucide-react";
 
 const revenueByRestaurant: Record<string, { revenue: number; delta: number }> = {
   r1: { revenue: 78700, delta: 8.4 },
@@ -19,15 +23,26 @@ const revenueByRestaurant: Record<string, { revenue: number; delta: number }> = 
   r3: { revenue: 42950, delta: -2.3 },
 };
 
-export default function MapsPage() {
-  const { restaurantId, setRestaurantId } = useApp();
+type FilterMode = "tous" | "organique" | "payant";
+
+const filters: { id: FilterMode; label: string }[] = [
+  { id: "tous", label: "Tout" },
+  { id: "organique", label: "Organique" },
+  { id: "payant", label: "Payant" },
+];
+
+function EstablishmentsMode() {
+  const { restaurantId, setRestaurantId, restaurants } = useApp();
+  const geoRestaurants = restaurants.filter(
+    (r): r is typeof r & { lng: number; lat: number } => r.lng !== null && r.lat !== null
+  );
 
   return (
-    <div className="relative flex-1">
+    <>
       <Map center={[3.8, 46.2]} zoom={5.2} theme="light">
-        <MapControls position="top-right" showZoom showFullscreen />
-        {restaurants.map((r) => {
-          const stats = revenueByRestaurant[r.id];
+        <MapControls position="bottom-right" showZoom showFullscreen />
+        {geoRestaurants.map((r) => {
+          const stats = revenueByRestaurant[r.id] ?? { revenue: 0, delta: 0 };
           const active = r.id === restaurantId;
           return (
             <MapMarker key={r.id} longitude={r.lng} latitude={r.lat}>
@@ -71,7 +86,7 @@ export default function MapsPage() {
         </p>
         <div className="space-y-2">
           {restaurants.map((r) => {
-            const stats = revenueByRestaurant[r.id];
+            const stats = revenueByRestaurant[r.id] ?? { revenue: 0, delta: 0 };
             const active = r.id === restaurantId;
             return (
               <button
@@ -101,6 +116,151 @@ export default function MapsPage() {
           })}
         </div>
       </div>
+    </>
+  );
+}
+
+const clusterColorsByFilter: Record<FilterMode, [string, string, string]> = {
+  tous: ["#94a3b8", "#3b82f6", "#1d4ed8"],
+  organique: ["#a7f3d0", "#34d399", "#059669"],
+  payant: ["#fecaca", "#f87171", "#dc2626"],
+};
+
+function AttributionMode() {
+  const { restaurantId, restaurants } = useApp();
+  const current = restaurants.find((r) => r.id === restaurantId);
+  const [filter, setFilter] = useState<FilterMode>("tous");
+  const [conversions, setConversions] = useState<AdConversion[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    setLoading(true);
+    getAdConversionsAction(restaurantId).then((data) => {
+      setConversions(data);
+      setLoading(false);
+    });
+  }, [restaurantId]);
+
+  const filtered = useMemo(() => {
+    if (filter === "tous") return conversions;
+    if (filter === "organique") return conversions.filter((c) => c.channel === "organic");
+    return conversions.filter((c) => c.channel === "meta" || c.channel === "google");
+  }, [conversions, filter]);
+
+  const geoConversions = filtered.filter(
+    (c): c is AdConversion & { lng: number; lat: number } => c.lng !== null && c.lat !== null
+  );
+
+  const geoJson = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: geoConversions.map((c) => ({
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },
+        properties: { id: c.id, channel: c.channel, city: c.city, revenue: c.revenue },
+      })),
+    }),
+    [geoConversions]
+  );
+
+  const onlineShare =
+    filtered.length > 0
+      ? Math.round((filtered.filter((c) => c.convertedOnline).length / filtered.length) * 100)
+      : 0;
+
+  return (
+    <>
+      <Map
+        blank
+        center={current?.lng && current?.lat ? [current.lng, current.lat] : [3.8, 46.2]}
+        zoom={current?.lng ? 9 : 5.2}
+        theme="light"
+      >
+        <MapControls position="bottom-right" showZoom showFullscreen />
+        {geoConversions.length > 0 && (
+          <MapClusterLayer data={geoJson} clusterColors={clusterColorsByFilter[filter]} />
+        )}
+      </Map>
+
+      <div className="absolute left-4 top-4 z-10 w-64 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+          Attribution publicitaire
+        </p>
+        <div className="mb-3 flex items-center rounded-lg border border-mv-border bg-mv-cream-soft p-0.5">
+          {filters.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={
+                filter === f.id
+                  ? "flex-1 rounded-md bg-mv-surface px-2 py-1.5 text-[12px] font-semibold text-mv-ink shadow-mv-sm"
+                  : "flex-1 rounded-md px-2 py-1.5 text-[12px] font-semibold text-mv-ink-soft"
+              }
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <p className="text-[12.5px] text-mv-ink-faint">Chargement…</p>
+        ) : conversions.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <Megaphone size={20} className="text-mv-ink-faint" />
+            <p className="text-[12.5px] text-mv-ink-soft">
+              Connectez Meta Ads ou Google Ads dans Paramètres → Intégrations pour voir d&apos;où
+              viennent vos clients.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="rounded-lg bg-mv-cream-soft p-2.5">
+              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">Conversions</p>
+              <p className="font-display text-[16px] font-medium text-mv-ink">{filtered.length}</p>
+            </div>
+            <div className="rounded-lg bg-mv-cream-soft p-2.5">
+              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">
+                Achats en ligne
+              </p>
+              <p className="font-display text-[16px] font-medium text-mv-ink">{onlineShare}%</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+export default function MapsPage() {
+  const [mode, setMode] = useState<"establishments" | "attribution">("establishments");
+
+  return (
+    <div className="relative flex-1">
+      <div className="absolute right-4 top-4 z-10 flex items-center rounded-lg border border-mv-border bg-mv-surface/95 p-0.5 shadow-mv-lg backdrop-blur-sm">
+        <button
+          onClick={() => setMode("establishments")}
+          className={
+            mode === "establishments"
+              ? "flex items-center gap-1.5 rounded-md bg-mv-green px-2.5 py-1.5 text-[12px] font-semibold text-mv-cream-soft"
+              : "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft"
+          }
+        >
+          <MapPinned size={13} /> Établissements
+        </button>
+        <button
+          onClick={() => setMode("attribution")}
+          className={
+            mode === "attribution"
+              ? "flex items-center gap-1.5 rounded-md bg-mv-green px-2.5 py-1.5 text-[12px] font-semibold text-mv-cream-soft"
+              : "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft"
+          }
+        >
+          <Megaphone size={13} /> Attribution
+        </button>
+      </div>
+
+      {mode === "establishments" ? <EstablishmentsMode /> : <AttributionMode />}
     </div>
   );
 }

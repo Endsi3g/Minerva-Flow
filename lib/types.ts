@@ -14,6 +14,22 @@ export type Restaurant = {
   color: string;
   lng: number | null;
   lat: number | null;
+  companyId?: string | null;
+};
+
+export type Company = {
+  id: string;
+  name: string;
+  createdAt: string;
+};
+
+export type CompanyMember = {
+  id: string;
+  companyId: string;
+  userId: string;
+  role: Role;
+  status: "actif" | "invite";
+  createdAt: string;
 };
 
 export type ActivityLogEntry = {
@@ -239,7 +255,7 @@ export type ChatAttachment = {
   createdAt: string;
 };
 
-export type ArtifactType = "table" | "chart" | "summary";
+export type ArtifactType = "table" | "chart" | "summary" | "comparison";
 
 export type ChatArtifact = {
   id: string;
@@ -271,6 +287,33 @@ export type Referral = {
   createdAt: string;
   activatedAt: string | null;
   rewardedAt: string | null;
+};
+
+export type AdProvider = "meta" | "google";
+export type AdConnectionStatus = "connecte" | "erreur" | "attente";
+export type AdChannel = "organic" | "meta" | "google";
+
+export type AdPlatformConnection = {
+  id: string;
+  restaurantId: string;
+  provider: AdProvider;
+  externalAccountId: string | null;
+  expiresAt: string | null;
+  status: AdConnectionStatus;
+  createdAt: string;
+};
+
+export type AdConversion = {
+  id: string;
+  restaurantId: string;
+  adPlatformConnectionId: string | null;
+  channel: AdChannel;
+  city: string | null;
+  lng: number | null;
+  lat: number | null;
+  convertedOnline: boolean;
+  revenue: number | null;
+  occurredAt: string;
 };
 
 export type ReferralReward = {

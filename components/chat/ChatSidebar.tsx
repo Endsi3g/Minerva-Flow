@@ -12,7 +12,7 @@ import type { ChatConversation } from "@/lib/types";
 import { PanelLeft, Plus, Share2, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const;
 const CHAT_SIDEBAR_WIDTH = 280;
@@ -32,6 +32,12 @@ export function ChatSidebar({
   const [collapsed, setCollapsed] = useState(false);
   const [isPending, startTransition] = useTransition();
   const members = useChatPresence(restaurantId, authUser);
+
+  // Auto-collapse once on mobile (limited screen space) — user can still
+  // expand it manually afterwards without it snapping shut again.
+  useEffect(() => {
+    if (isMobile) setCollapsed(true);
+  }, [isMobile]);
 
   function handleNewConversation() {
     startTransition(async () => {

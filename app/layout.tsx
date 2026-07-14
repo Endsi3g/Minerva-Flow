@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className={cn("h-full", jakarta.variable, fraunces.variable, "font-sans", inter.variable, playfairDisplayHeading.variable)}>
       <body className="min-h-full bg-mv-cream text-mv-ink antialiased">
-        <TooltipProvider delayDuration={150}>{children}</TooltipProvider>
+        <TooltipProvider delay={150}>{children}</TooltipProvider>
       </body>
     </html>
   );

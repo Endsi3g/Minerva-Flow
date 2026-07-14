@@ -132,14 +132,19 @@ create policy "chat_artifacts_select" on chat_artifacts for select
 create policy "chat_artifacts_insert" on chat_artifacts for insert
   with check (is_restaurant_member(restaurant_id));
 
--- referrals: code management is owner/manager only (billing-adjacent);
--- referrals/rewards are created and transitioned server-side only (service role) —
--- at sign-up time the referred user has no restaurant_members row yet on the
--- referrer's restaurant, so is_restaurant_member() can never pass for a
+-- referrals: any active member can see/share the restaurant's referral code
+-- (the "P" button in the chat sidebar is reachable by all roles), but only
+-- owner/manager can create or change it (billing-adjacent). Referrals/rewards
+-- are created and transitioned server-side only (service role) — at sign-up
+-- time the referred user has no restaurant_members row yet on the referrer's
+-- restaurant, so is_restaurant_member() can never pass for a
 -- client-authenticated insert here, by design.
-create policy "referral_codes_manage" on referral_codes for all
-  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
+create policy "referral_codes_select" on referral_codes for select
+  using (is_restaurant_member(restaurant_id));
+create policy "referral_codes_insert" on referral_codes for insert
   with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+create policy "referral_codes_update" on referral_codes for update
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
 create policy "referrals_select" on referrals for select
   using (exists (

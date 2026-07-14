@@ -2,16 +2,56 @@ import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AI_MODEL, isAiConfigured } from "@/lib/ai/config";
-import { buildDataSnapshot } from "@/lib/ai/context";
+import { buildDataSnapshot, buildRestaurantDataSnapshot } from "@/lib/ai/context";
 import { saveArtifact, saveAttachment, saveMessage } from "@/lib/data/chat";
+
+const trendPointSchema = z.object({ date: z.string(), value: z.number() });
+
+const comparisonDataSchema = z.object({
+  charts: z
+    .array(
+      z.object({
+        title: z.string(),
+        seriesA: z.object({ label: z.string(), points: z.array(trendPointSchema) }),
+        seriesB: z.object({ label: z.string(), points: z.array(trendPointSchema) }),
+      })
+    )
+    .describe("Un ou plusieurs graphiques à deux courbes comparant deux séries dans le temps."),
+  metrics: z
+    .array(
+      z.object({
+        label: z.string(),
+        value: z.number(),
+        unit: z.enum(["currency", "percent", "count"]),
+        momDelta: z.number().describe("Variation en % par rapport à la période précédente."),
+        reportSlug: z
+          .string()
+          .optional()
+          .describe("Slug de /reports/[slug] correspondant, si pertinent, pour rendre la ligne cliquable."),
+      })
+    )
+    .describe("Table de métriques clés avec valeur et delta, façon 'Key metrics'."),
+  summary: z.array(z.string()).describe("Points clés narratifs, 2-4 puces courtes."),
+  prediction: z
+    .object({
+      label: z.string(),
+      points: z.array(trendPointSchema),
+      method: z.literal("trend"),
+    })
+    .optional()
+    .describe(
+      "Projection de tendance simple (régression linéaire, pas un vrai modèle ML) — utilise les valeurs de prévision déjà fournies dans le contexte quand disponibles, ne jamais inventer de chiffres."
+    ),
+});
 
 const artifactSchema = z.object({
   title: z.string().describe("Titre court du rapport, ex: « Marge par programme »."),
-  type: z.enum(["table", "chart", "summary"]),
+  type: z.enum(["table", "chart", "summary", "comparison"]),
   data: z.union([
     z.object({ columns: z.array(z.string()), rows: z.array(z.array(z.union([z.string(), z.number()]))) }),
     z.object({ points: z.array(z.object({ label: z.string(), value: z.number() })) }),
     z.object({ text: z.string() }),
+    comparisonDataSchema,
   ]),
 });
 
@@ -77,14 +117,20 @@ export async function POST(req: Request) {
     }
   }
 
+  const system = canPersist
+    ? await buildRestaurantDataSnapshot(restaurantId!)
+    : buildDataSnapshot();
+
   const result = streamText({
     model: AI_MODEL,
-    system: buildDataSnapshot(),
+    system,
     messages: await convertToModelMessages(messages),
     tools: {
       createArtifact: {
         description:
-          "Génère un rapport visuel (tableau, graphique ou résumé) affiché dans le panneau Canvas, à partir des données du restaurant déjà fournies dans le contexte.",
+          "Génère un rapport visuel affiché dans le panneau Canvas, à partir des données du restaurant déjà fournies dans le contexte. " +
+          "Utilise ce tool proactivement dès que tu annonces un rapport à l'utilisateur (ex: « Voici le rapport... », « Je vais analyser... », « Regardons l'évolution de... ») — ne réponds pas seulement en texte quand un visuel serait plus clair. " +
+          "Types disponibles : 'table' (données tabulaires simples), 'chart' (une seule série), 'summary' (texte formaté), et 'comparison' (le type le plus riche : graphiques à deux courbes + table de métriques clés avec delta + résumé en puces + prévision de tendance optionnelle) — préfère 'comparison' pour toute demande d'analyse ou de comparaison de métriques.",
         inputSchema: artifactSchema,
         execute: async (artifact) => {
           if (canPersist) {

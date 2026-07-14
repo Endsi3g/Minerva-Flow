@@ -11,6 +11,9 @@ import { Field, Input, Select } from "@/components/minerva/FormField";
 import { Switch } from "@/components/ui/Switch";
 import { restaurants, connections, team, alertRules } from "@/lib/mock-data";
 import { roleLabels } from "@/lib/app-context";
+import { ReferralSettingsTab } from "@/components/chat/ReferralSettingsTab";
+import { CompaniesTab } from "@/components/minerva/CompaniesTab";
+import { AdPlatformsCard } from "@/components/minerva/AdPlatformsCard";
 import type { AlertRule, ConnectionStatus, ConnectionType, Role } from "@/lib/types";
 import {
   Plus,
@@ -20,10 +23,12 @@ import {
   CreditCard,
   Bike,
   Mail,
+  CalendarCheck2,
   RefreshCw,
   Eye,
   PenSquare,
   ShieldCheck,
+  UserCog,
   Bell,
   TrendingDown,
   TrendingUp,
@@ -38,6 +43,7 @@ const typeIcon: Record<ConnectionType, typeof Landmark> = {
   pos: CreditCard,
   livraison: Bike,
   email: Mail,
+  reservation: CalendarCheck2,
 };
 
 const typeLabel: Record<ConnectionType, string> = {
@@ -45,6 +51,7 @@ const typeLabel: Record<ConnectionType, string> = {
   pos: "Point de vente",
   livraison: "Livraison",
   email: "Email",
+  reservation: "Réservations",
 };
 
 const statusTone: Record<ConnectionStatus, "green" | "red" | "amber"> = {
@@ -61,12 +68,14 @@ const statusLabel: Record<ConnectionStatus, string> = {
 
 const roleTone: Record<Role, "green" | "lime" | "amber"> = {
   owner: "green",
+  manager: "green",
   staff: "lime",
   consultant: "amber",
 };
 
 const rolePermissions: Record<Role, { icon: typeof Eye; text: string }> = {
   owner: { icon: ShieldCheck, text: "Accès complet : configuration, finance, équipe, tous les modules." },
+  manager: { icon: UserCog, text: "Gère l'équipe, les finances et les intégrations, sans les réglages du compte." },
   staff: { icon: PenSquare, text: "Encode les journées de service : notes, événements, anomalies." },
   consultant: { icon: Eye, text: "Lecture des données et rédaction de notes / plans d'action." },
 };
@@ -170,6 +179,18 @@ export default function SettingsPage() {
             className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
           >
             Règles d&apos;alertes
+          </TabsTrigger>
+          <TabsTrigger
+            value="parrainage"
+            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
+          >
+            Parrainage
+          </TabsTrigger>
+          <TabsTrigger
+            value="entreprises"
+            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
+          >
+            Entreprises
           </TabsTrigger>
         </TabsList>
 
@@ -291,6 +312,7 @@ export default function SettingsPage() {
 
         <TabsContent value="integrations">
         <div className="space-y-4">
+          <AdPlatformsCard />
           <div className="flex justify-end">
             <Button size="sm">
               <Plus size={15} /> Ajouter une intégration
@@ -358,6 +380,14 @@ export default function SettingsPage() {
 
         <TabsContent value="alertes">
           <AlertRulesTab />
+        </TabsContent>
+
+        <TabsContent value="parrainage">
+          <ReferralSettingsTab />
+        </TabsContent>
+
+        <TabsContent value="entreprises">
+          <CompaniesTab />
         </TabsContent>
       </Tabs>
     </div>

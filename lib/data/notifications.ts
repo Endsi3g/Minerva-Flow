@@ -1,0 +1,107 @@
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export type Notification = {
+  id: string;
+  restaurantId: string;
+  userId: string | null;
+  type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read: boolean;
+  createdAt: string;
+};
+
+type NotificationRow = {
+  id: string;
+  restaurant_id: string;
+  user_id: string | null;
+  type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read: boolean;
+  created_at: string;
+};
+
+function mapNotification(row: NotificationRow): Notification {
+  return {
+    id: row.id,
+    restaurantId: row.restaurant_id,
+    userId: row.user_id,
+    type: row.type,
+    title: row.title,
+    body: row.body,
+    link: row.link,
+    read: row.read,
+    createdAt: row.created_at,
+  };
+}
+
+/** Notifications for the current signed-in user within a restaurant, newest first. */
+export async function getNotifications(restaurantId: string, limit = 20): Promise<Notification[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+  return (data as NotificationRow[]).map(mapNotification);
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase.from("notifications").update({ read: true }).eq("id", id);
+}
+
+export async function markAllNotificationsRead(restaurantId: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from("notifications")
+    .update({ read: true })
+    .eq("restaurant_id", restaurantId)
+    .eq("user_id", user.id)
+    .eq("read", false);
+}
+
+/**
+ * Server-only (service role) — used by the weekly-report cron route to fan
+ * out one notification row per active member, bypassing RLS since there is
+ * no authenticated request context in a cron invocation.
+ */
+export async function broadcastNotification(input: {
+  restaurantId: string;
+  userIds: string[];
+  type: string;
+  title: string;
+  body?: string;
+  link?: string;
+}): Promise<void> {
+  if (input.userIds.length === 0) return;
+  const admin = createAdminClient();
+  await admin.from("notifications").insert(
+    input.userIds.map((userId) => ({
+      restaurant_id: input.restaurantId,
+      user_id: userId,
+      type: input.type,
+      title: input.title,
+      body: input.body ?? null,
+      link: input.link ?? null,
+    }))
+  );
+}

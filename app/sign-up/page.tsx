@@ -7,7 +7,7 @@ import { Field, Input } from "@/components/minerva/FormField";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 function OAuthButton({
   label,
@@ -37,6 +37,12 @@ export default function SignUpPage() {
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) setReferralCode(ref);
+  }, []);
 
   async function handleSignUp(e: FormEvent) {
     e.preventDefault();
@@ -51,7 +57,12 @@ export default function SignUpPage() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/auth/confirm?next=/overview` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/overview`,
+          // Stashed for later redemption once a restaurant-creation flow
+          // exists — see lib/data/referrals.ts for the current gap.
+          data: referralCode ? { referral_code: referralCode } : undefined,
+        },
       });
       if (error) throw error;
       if (data.session) {
