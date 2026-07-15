@@ -19,8 +19,20 @@ import { DefaultChatTransport, type FileUIPart } from "ai";
 import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
 import { Bot, PanelLeft, Sparkles } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/lib/app-context";
+
+async function notifyAssistantDone() {
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  if (!("serviceWorker" in navigator)) return;
+  const registration = await navigator.serviceWorker.ready;
+  registration.showNotification("Réponse prête", {
+    body: "L'assistant a terminé de répondre.",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    tag: "assistant-response",
+  });
+}
 
 const SUGGESTIONS = [
   "Pourquoi le revenu a baissé mercredi ?",
@@ -59,6 +71,18 @@ export function AssistantChatView({
 
   const isLoading = status === "submitted" || status === "streaming";
   const hasAnyMessages = initialMessages.length > 0 || messages.length > 0;
+
+  // Sound + native notification when a response finishes while the tab/app
+  // isn't in view — mirrors what any chat app does instead of dinging while
+  // you're already watching it stream.
+  const prevStatusRef = useRef(status);
+  useEffect(() => {
+    const wasLoading = prevStatusRef.current === "submitted" || prevStatusRef.current === "streaming";
+    if (wasLoading && status === "ready" && document.hidden) {
+      notifyAssistantDone();
+    }
+    prevStatusRef.current = status;
+  }, [status]);
 
   // Sync initialArtifact when conversation changes
   useEffect(() => {

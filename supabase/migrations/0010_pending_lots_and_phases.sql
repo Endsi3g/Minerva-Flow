@@ -569,4 +569,37 @@ alter table service_days add column if not exists revenue_synced_at timestamptz;
 
 alter table pos_connections add column if not exists last_synced_at timestamptz;
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Notifications push natives (Web Push)
+-- ═══════════════════════════════════════════════════════════════════════
+
+-- Un abonnement par appareil/navigateur — un même utilisateur peut avoir
+-- plusieurs abonnements actifs (téléphone + ordinateur). L'endpoint est la
+-- clé naturelle : le navigateur en génère un nouveau si l'ancien expire.
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  restaurant_id uuid references restaurants (id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_push_subscriptions_user on push_subscriptions (user_id);
+
+alter table push_subscriptions enable row level security;
+
+drop policy if exists "push_subscriptions_select_own" on push_subscriptions;
+create policy "push_subscriptions_select_own" on push_subscriptions for select
+  using (user_id = auth.uid());
+
+drop policy if exists "push_subscriptions_insert_own" on push_subscriptions;
+create policy "push_subscriptions_insert_own" on push_subscriptions for insert
+  with check (user_id = auth.uid());
+
+drop policy if exists "push_subscriptions_delete_own" on push_subscriptions;
+create policy "push_subscriptions_delete_own" on push_subscriptions for delete
+  using (user_id = auth.uid());
+
 commit;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripeClient } from "@/lib/stripe/config";
 import { upsertSubscription, getSubscriptionByStripeCustomerId } from "@/lib/data/subscriptions";
+import { notifyRestaurantOwners } from "@/lib/data/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type Stripe from "stripe";
 
@@ -45,11 +46,55 @@ export async function POST(req: Request) {
           currentPeriodEnd: new Date(subscription.items.data[0]?.current_period_end * 1000).toISOString(),
         });
         await applyUnappliedReferralReward(restaurantId, customerId);
+        await notifyRestaurantOwners({
+          restaurantId,
+          type: "billing.subscription_activated",
+          title: "Abonnement activé",
+          body: "Votre abonnement Minerva Flow est maintenant actif. Merci de votre confiance !",
+          link: "/billing",
+        });
       }
       break;
     }
 
-    case "customer.subscription.updated":
+    case "customer.subscription.updated": {
+      const subscription = event.data.object as Stripe.Subscription;
+      const previousStatus = (event.data.previous_attributes as { status?: string } | undefined)?.status;
+      const customerId =
+        typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+      const existing = await getSubscriptionByStripeCustomerId(customerId);
+      if (existing) {
+        await upsertSubscription({
+          restaurantId: existing.restaurantId,
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: subscription.id,
+          status: subscription.status,
+          currentPeriodEnd: subscription.items.data[0]
+            ? new Date(subscription.items.data[0].current_period_end * 1000).toISOString()
+            : null,
+        });
+
+        if (subscription.status === "past_due" && previousStatus !== "past_due") {
+          await notifyRestaurantOwners({
+            restaurantId: existing.restaurantId,
+            type: "billing.payment_past_due",
+            title: "Problème de paiement",
+            body: "Votre dernier paiement a échoué. Mettez à jour votre méthode de paiement pour éviter une interruption de service.",
+            link: "/billing",
+          });
+        } else if (subscription.status === "active" && previousStatus === "past_due") {
+          await notifyRestaurantOwners({
+            restaurantId: existing.restaurantId,
+            type: "billing.payment_recovered",
+            title: "Paiement régularisé",
+            body: "Votre abonnement est de nouveau actif — merci d'avoir mis à jour votre méthode de paiement.",
+            link: "/billing",
+          });
+        }
+      }
+      break;
+    }
+
     case "customer.subscription.deleted": {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId =
@@ -65,6 +110,72 @@ export async function POST(req: Request) {
             ? new Date(subscription.items.data[0].current_period_end * 1000).toISOString()
             : null,
         });
+        await notifyRestaurantOwners({
+          restaurantId: existing.restaurantId,
+          type: "billing.subscription_canceled",
+          title: "Abonnement annulé",
+          body: "Votre abonnement Minerva Flow a été annulé.",
+          link: "/billing",
+        });
+      }
+      break;
+    }
+
+    case "customer.subscription.trial_will_end": {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customerId =
+        typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+      const existing = await getSubscriptionByStripeCustomerId(customerId);
+      if (existing) {
+        await notifyRestaurantOwners({
+          restaurantId: existing.restaurantId,
+          type: "billing.trial_ending",
+          title: "Votre essai gratuit se termine bientôt",
+          body: "Ajoutez une méthode de paiement pour continuer à utiliser Minerva Flow sans interruption.",
+          link: "/billing",
+        });
+      }
+      break;
+    }
+
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+      if (customerId) {
+        const existing = await getSubscriptionByStripeCustomerId(customerId);
+        if (existing) {
+          await notifyRestaurantOwners({
+            restaurantId: existing.restaurantId,
+            type: "billing.invoice_payment_failed",
+            title: "Échec du paiement de la facture",
+            body: "Le paiement de votre dernière facture a échoué. Vérifiez votre méthode de paiement.",
+            link: "/billing",
+          });
+        }
+      }
+      break;
+    }
+
+    case "invoice.payment_succeeded": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+      // Skip the very first invoice — checkout.session.completed already
+      // sends an "abonnement activé" notification for that one.
+      if (customerId && invoice.billing_reason !== "subscription_create") {
+        const existing = await getSubscriptionByStripeCustomerId(customerId);
+        if (existing) {
+          const amount = (invoice.amount_paid / 100).toLocaleString("fr-CA", {
+            style: "currency",
+            currency: invoice.currency ?? "cad",
+          });
+          await notifyRestaurantOwners({
+            restaurantId: existing.restaurantId,
+            type: "billing.invoice_payment_succeeded",
+            title: "Paiement reçu",
+            body: `Votre paiement de ${amount} a été traité avec succès.`,
+            link: "/billing",
+          });
+        }
       }
       break;
     }

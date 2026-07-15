@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendPushToUsers } from "@/lib/push/send";
 
 export type Notification = {
   id: string;
@@ -104,6 +105,8 @@ export async function broadcastNotification(input: {
       link: input.link ?? null,
     }))
   );
+
+  await sendPushToUsers(input.userIds, { title: input.title, body: input.body, link: input.link });
 }
 
 /**
@@ -140,6 +143,42 @@ export async function notifyAllUsers(input: {
 
   if (inserts.length === 0) return;
   await admin.from("notifications").insert(inserts);
+
+  await sendPushToUsers(Array.from(restaurantIdByUser.keys()), {
+    title: input.title,
+    body: input.body,
+    link: input.link,
+  });
+}
+
+/**
+ * Notifies only the restaurant's owners — used for billing events (Stripe),
+ * which staff/consultants don't need to see.
+ */
+export async function notifyRestaurantOwners(input: {
+  restaurantId: string;
+  type: string;
+  title: string;
+  body?: string;
+  link?: string;
+}): Promise<void> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("restaurant_members")
+    .select("user_id")
+    .eq("restaurant_id", input.restaurantId)
+    .eq("role", "owner")
+    .eq("status", "active");
+
+  const userIds = ((data as { user_id: string }[]) ?? []).map((m) => m.user_id);
+  await broadcastNotification({
+    restaurantId: input.restaurantId,
+    userIds,
+    type: input.type,
+    title: input.title,
+    body: input.body,
+    link: input.link,
+  });
 }
 
 /**

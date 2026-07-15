@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { ServiceWorkerManager } from "@/components/pwa/ServiceWorkerManager";
 
 const playfairDisplayHeading = Playfair_Display({ subsets: ['latin'], variable: '--font-heading' });
 
@@ -42,11 +43,17 @@ export const metadata: Metadata = {
     title: "Flow par Minerva",
     description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Minerva Flow",
+  },
 };
 
 export const viewport: Viewport = {
   colorScheme: "light",
   themeColor: "#F5F1E6",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -59,6 +66,7 @@ export default function RootLayout({
       <body className="min-h-full bg-mv-cream text-mv-ink antialiased">
         <TooltipProvider delay={150}>{children}</TooltipProvider>
         <Toaster />
+        <ServiceWorkerManager />
       </body>
     </html>
   );

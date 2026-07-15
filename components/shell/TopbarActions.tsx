@@ -21,6 +21,7 @@ import {
 } from "@/app/(app)/alerts-actions";
 import type { Notification } from "@/lib/data/notifications";
 import type { Alert, AlertSeverity } from "@/lib/types";
+import { PushNotificationToggle } from "@/components/pwa/PushNotificationToggle";
 
 const alertSeverityTone: Record<AlertSeverity, "red" | "amber" | "neutral"> = {
   critique: "red",
@@ -241,6 +242,7 @@ function NotificationBell() {
             </button>
           )}
         </div>
+        <PushNotificationToggle restaurantId={restaurantId} />
         <div className="max-h-80 overflow-y-auto">
           {alerts.length === 0 && notifications.length === 0 ? (
             <p className="px-3 py-4 text-center text-[12.5px] text-mv-ink-faint">
