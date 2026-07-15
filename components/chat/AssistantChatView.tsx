@@ -18,7 +18,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type FileUIPart } from "ai";
 import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
-import { Bot, Sparkles } from "lucide-react";
+import { Bot, PanelLeft, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const SUGGESTIONS = [
@@ -44,6 +44,7 @@ export function AssistantChatView({
   defaultContext: CanvasContextData;
 }) {
   const [shareOpen, setShareOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentArtifact, setCurrentArtifact] = useState<ChatArtifact | null>(initialArtifact);
   const [activeMobileView, setActiveMobileView] = useState<"chat" | "canvas">("chat");
 
@@ -118,9 +119,20 @@ export function AssistantChatView({
         conversations={conversations}
         activeConversationId={conversationId}
         onShare={() => setShareOpen(true)}
+        collapsed={sidebarCollapsed}
+        onCollapse={setSidebarCollapsed}
       />
 
       <div className="flex flex-1 min-w-0 overflow-hidden relative">
+        {sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            aria-label="Afficher la barre latérale"
+            className="absolute left-2 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+          >
+            <PanelLeft size={16} />
+          </button>
+        )}
         {/* Left Column: Chat Area */}
         <div
           className={cn(

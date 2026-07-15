@@ -105,7 +105,7 @@ function UserMenu() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useClickOutside(() => setOpen(false));
-  const name = authUser?.fullName || "Camille Andrieu";
+  const name = authUser?.fullName || authUser?.email || "";
   const email = authUser?.email || "quebecsaas@gmail.com";
 
   async function handleLogout() {

@@ -7,7 +7,7 @@ import { Field, Input } from "@/components/minerva/FormField";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 function OAuthButton({
   label,
@@ -36,6 +36,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get("inviteToken");
+    if (token) setInviteToken(token);
+  }, []);
+
+  const postLoginPath = inviteToken ? `/invite/${inviteToken}` : "/overview";
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -45,7 +53,7 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      router.push("/overview");
+      router.push(postLoginPath);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
@@ -59,7 +67,7 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/confirm?next=/overview` },
+      options: { redirectTo: `${window.location.origin}/auth/confirm?next=${postLoginPath}` },
     });
     if (error) setError(error.message);
   }
@@ -172,9 +180,14 @@ export default function LoginPage() {
 
       <p className="mt-6 max-w-md text-center text-[12px] leading-relaxed text-mv-ink-faint">
         En continuant, vous acceptez nos{" "}
-        <span className="underline underline-offset-2">Conditions d&apos;utilisation</span>,{" "}
-        <span className="underline underline-offset-2">Politique de confidentialité</span> et{" "}
-        <span className="underline underline-offset-2">Accord de protection des données</span>.
+        <Link href="/legal/terms" className="underline underline-offset-2 hover:text-mv-ink">
+          Conditions d&apos;utilisation
+        </Link>{" "}
+        et notre{" "}
+        <Link href="/legal/privacy" className="underline underline-offset-2 hover:text-mv-ink">
+          Politique de confidentialité
+        </Link>
+        .
       </p>
     </div>
   );

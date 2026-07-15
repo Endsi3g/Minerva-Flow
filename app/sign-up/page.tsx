@@ -38,11 +38,17 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const ref = new URLSearchParams(window.location.search).get("ref");
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
     if (ref) setReferralCode(ref);
+    const token = params.get("inviteToken");
+    if (token) setInviteToken(token);
   }, []);
+
+  const postSignupPath = inviteToken ? `/invite/${inviteToken}` : "/overview";
 
   async function handleSignUp(e: FormEvent) {
     e.preventDefault();
@@ -58,7 +64,7 @@ export default function SignUpPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm?next=/overview`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=${postSignupPath}`,
           // Stashed for later redemption once a restaurant-creation flow
           // exists — see lib/data/referrals.ts for the current gap.
           data: referralCode ? { referral_code: referralCode } : undefined,
@@ -66,7 +72,7 @@ export default function SignUpPage() {
       });
       if (error) throw error;
       if (data.session) {
-        router.push("/overview");
+        router.push(postSignupPath);
         router.refresh();
       } else {
         router.push("/sign-up-success");
@@ -83,7 +89,7 @@ export default function SignUpPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/confirm?next=/overview` },
+      options: { redirectTo: `${window.location.origin}/auth/confirm?next=${postSignupPath}` },
     });
     if (error) setError(error.message);
   }
@@ -195,9 +201,14 @@ export default function SignUpPage() {
 
       <p className="mt-6 max-w-md text-center text-[12px] leading-relaxed text-mv-ink-faint">
         En continuant, vous acceptez nos{" "}
-        <span className="underline underline-offset-2">Conditions d&apos;utilisation</span>,{" "}
-        <span className="underline underline-offset-2">Politique de confidentialité</span> et{" "}
-        <span className="underline underline-offset-2">Accord de protection des données</span>.
+        <Link href="/legal/terms" className="underline underline-offset-2 hover:text-mv-ink">
+          Conditions d&apos;utilisation
+        </Link>{" "}
+        et notre{" "}
+        <Link href="/legal/privacy" className="underline underline-offset-2 hover:text-mv-ink">
+          Politique de confidentialité
+        </Link>
+        .
       </p>
     </div>
   );

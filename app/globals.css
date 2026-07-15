@@ -257,6 +257,15 @@ body {
 
 /* Minerva Flow is light-mode only — no .dark overrides on purpose. */
 
+/* Used by pages with a "Télécharger en PDF" button (e.g. /guide) that
+   triggers window.print() — hides the app chrome (sidebar, topbar, mobile
+   tab bar) so only the page content ends up in the printed/PDF output. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

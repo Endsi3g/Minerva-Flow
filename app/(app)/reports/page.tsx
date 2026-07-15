@@ -11,7 +11,7 @@ import { getFinancialTransactions } from "@/lib/data/finance";
 import { buildReports, reportGroups, type ReportData } from "@/lib/reports";
 import { formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
-import { Store } from "lucide-react";
+import { Sparkles, Store } from "lucide-react";
 import Link from "next/link";
 
 const groupLabels: Record<string, string> = {
@@ -71,7 +71,15 @@ export default async function ReportsIndexPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Vue globale" title="Rapports" />
+      <PageHeader
+        eyebrow="Vue globale"
+        title="Rapports"
+        action={
+          <Button href="/reports/ai-review" size="sm" variant="secondary">
+            <Sparkles size={14} /> Revue IA
+          </Button>
+        }
+      />
       <div className="space-y-8">
         {/* Dynamic AI-Generated Reports */}
         {dynamicReports.length > 0 && (

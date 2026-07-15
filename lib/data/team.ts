@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
+import { broadcastNotification } from "@/lib/data/notifications";
 import type { Role, TeamMember } from "@/lib/types";
 
 type MembershipRow = {
@@ -131,13 +132,15 @@ export async function updateTeamMemberRole(
   role: Role
 ): Promise<boolean> {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("restaurant_members")
     .update({ role })
     .eq("restaurant_id", restaurantId)
-    .eq("id", membershipId);
+    .eq("id", membershipId)
+    .select("user_id")
+    .single();
 
-  if (error) return false;
+  if (error || !data) return false;
 
   await logActivity({
     restaurantId,
@@ -145,6 +148,15 @@ export async function updateTeamMemberRole(
     entityType: "restaurant_member",
     entityId: membershipId,
     description: `A mis à jour le rôle d'un collaborateur en "${role}"`,
+  });
+
+  await broadcastNotification({
+    restaurantId,
+    userIds: [data.user_id],
+    type: "team.role_changed",
+    title: "Votre rôle a changé",
+    body: `Votre nouveau rôle : ${role}.`,
+    link: "/profil",
   });
 
   return true;

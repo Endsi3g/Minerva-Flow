@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
-import type { Campaign, CampaignChannel, CampaignStatus, CampaignType } from "@/lib/types";
+import { notifyRestaurant } from "@/lib/data/notifications";
+import type { Campaign, CampaignAsset, CampaignChannel, CampaignStatus, CampaignType } from "@/lib/types";
 
 type CampaignRow = {
   id: string;
@@ -196,6 +197,15 @@ export async function createCampaign(
     description: `A créé la campagne "${input.name}"`,
   });
 
+  await notifyRestaurant({
+    restaurantId,
+    type: "campaign.created",
+    title: "Nouvelle campagne créée",
+    body: input.name,
+    link: `/campaigns?id=${data.id}`,
+    excludeUserId: user?.id,
+  });
+
   return mapCampaign(data as CampaignRow, []);
 }
 
@@ -236,7 +246,94 @@ export async function updateCampaign(
     description: `A modifié la campagne "${data.name}"`,
   });
 
+  if (patch.status === "active" || patch.status === "terminee") {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    await notifyRestaurant({
+      restaurantId,
+      type: patch.status === "active" ? "campaign.started" : "campaign.ended",
+      title: patch.status === "active" ? "Campagne démarrée" : "Campagne terminée",
+      body: data.name,
+      link: `/campaigns?id=${id}`,
+      excludeUserId: user?.id,
+    });
+  }
+
   return getCampaign(restaurantId, id);
+}
+
+export async function getCampaignAssets(campaignId: string): Promise<CampaignAsset[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("campaign_assets")
+    .select("*")
+    .eq("campaign_id", campaignId)
+    .order("created_at", { ascending: true });
+
+  if (error || !data) return [];
+
+  return (
+    data as {
+      id: string;
+      campaign_id: string;
+      storage_path: string;
+      file_name: string;
+      mime_type: string;
+      size_bytes: number;
+      kind: "image" | "file";
+      created_at: string;
+    }[]
+  ).map((row) => ({
+    id: row.id,
+    campaignId: row.campaign_id,
+    storagePath: row.storage_path,
+    fileName: row.file_name,
+    mimeType: row.mime_type,
+    sizeBytes: row.size_bytes,
+    kind: row.kind,
+    createdAt: row.created_at,
+  }));
+}
+
+export type SaveCampaignAssetInput = {
+  campaignId: string;
+  restaurantId: string;
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  kind: "image" | "file";
+};
+
+export async function saveCampaignAsset(input: SaveCampaignAssetInput): Promise<CampaignAsset | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("campaign_assets")
+    .insert({
+      campaign_id: input.campaignId,
+      restaurant_id: input.restaurantId,
+      storage_path: input.storagePath,
+      file_name: input.fileName,
+      mime_type: input.mimeType,
+      size_bytes: input.sizeBytes,
+      kind: input.kind,
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    campaignId: data.campaign_id,
+    storagePath: data.storage_path,
+    fileName: data.file_name,
+    mimeType: data.mime_type,
+    sizeBytes: data.size_bytes,
+    kind: data.kind,
+    createdAt: data.created_at,
+  };
 }
 
 export async function deleteCampaign(restaurantId: string, id: string): Promise<boolean> {

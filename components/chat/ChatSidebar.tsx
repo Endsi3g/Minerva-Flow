@@ -12,7 +12,7 @@ import type { ChatConversation } from "@/lib/types";
 import { PanelLeft, Plus, Share2, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useTransition } from "react";
 
 const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const;
 const CHAT_SIDEBAR_WIDTH = 280;
@@ -21,22 +21,26 @@ export function ChatSidebar({
   conversations,
   activeConversationId,
   onShare,
+  collapsed,
+  onCollapse,
 }: {
   conversations: ChatConversation[];
   activeConversationId: string | null;
   onShare: () => void;
+  collapsed: boolean;
+  onCollapse: (collapsed: boolean) => void;
 }) {
   const { restaurantId, authUser } = useApp();
   const isMobile = useIsMobile();
   const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
   const [isPending, startTransition] = useTransition();
   const members = useChatPresence(restaurantId, authUser);
 
   // Auto-collapse once on mobile (limited screen space) — user can still
   // expand it manually afterwards without it snapping shut again.
   useEffect(() => {
-    if (isMobile) setCollapsed(true);
+    if (isMobile) onCollapse(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobile]);
 
   function handleNewConversation() {
@@ -67,7 +71,7 @@ export function ChatSidebar({
             <LogoMark size={24} />
           </Link>
           <button
-            onClick={() => setCollapsed(true)}
+            onClick={() => onCollapse(true)}
             aria-label="Réduire la barre latérale"
             className="flex h-8 w-8 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
           >
@@ -101,7 +105,7 @@ export function ChatSidebar({
               >
                 <MessageSquare
                   size={14}
-                  className={cn("shrink-0", active ? "text-mv-lime" : "opacity-60")}
+                  className={cn("shrink-0", active ? "text-mv-cream-soft" : "opacity-60")}
                 />
                 <span className="truncate">{c.title || "Nouvelle conversation"}</span>
               </Link>
@@ -141,16 +145,6 @@ export function ChatSidebar({
           </div>
         </div>
       </motion.div>
-
-      {collapsed && (
-        <button
-          onClick={() => setCollapsed(false)}
-          aria-label="Afficher la barre latérale"
-          className="absolute left-2 top-3 flex h-8 w-8 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
-        >
-          <PanelLeft size={16} />
-        </button>
-      )}
     </motion.aside>
   );
 }

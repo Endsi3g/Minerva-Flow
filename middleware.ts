@@ -37,7 +37,12 @@ export async function middleware(request: NextRequest) {
   ];
   const isAuthRoute =
     publicRoutes.includes(request.nextUrl.pathname) ||
-    request.nextUrl.pathname.startsWith("/auth/");
+    request.nextUrl.pathname.startsWith("/auth/") ||
+    // Invite links and shared report links must be viewable before login —
+    // the page itself checks auth state and prompts to sign in when needed.
+    request.nextUrl.pathname.startsWith("/invite/") ||
+    request.nextUrl.pathname.startsWith("/r/") ||
+    request.nextUrl.pathname.startsWith("/legal/");
 
   if (!user && !isAuthRoute && request.nextUrl.pathname !== "/") {
     const url = request.nextUrl.clone();

@@ -1,75 +1,67 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useState, useTransition } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, Select } from "@/components/minerva/FormField";
+import { Field, Select } from "@/components/minerva/FormField";
 import { roleLabels } from "@/lib/app-context";
-import type { Role, TeamMember } from "@/lib/types";
+import { createInviteLinkAction } from "@/app/(app)/collaborateurs/actions";
+import type { Role } from "@/lib/types";
+import { Check, Copy } from "lucide-react";
 
 const invitableRoles: Role[] = ["manager", "staff", "consultant"];
 
 export function InviteMemberModal({
   open,
   onClose,
-  onInvited,
+  restaurantId,
 }: {
   open: boolean;
   onClose: () => void;
-  onInvited?: (member: TeamMember) => void;
+  restaurantId: string;
 }) {
+  const [role, setRole] = useState<Role>("staff");
+  const [link, setLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function handleGenerate() {
     setError(null);
-
-    const form = new FormData(e.currentTarget);
-    const email = String(form.get("email") ?? "").trim();
-    const role = String(form.get("role") ?? "staff") as Role;
-
-    if (!email) {
-      setError("L'adresse courriel est requise.");
-      return;
-    }
-
     startTransition(async () => {
-      try {
-        const res = await fetch("/api/collaborateurs/invite", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, role }),
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error ?? "Impossible d'inviter cette personne.");
-          return;
-        }
-
-        onInvited?.(data.member as TeamMember);
-        onClose();
-      } catch {
-        setError("Une erreur réseau est survenue. Réessayez.");
+      const invite = await createInviteLinkAction(restaurantId, role);
+      if (!invite) {
+        setError("Impossible de générer le lien. Réessayez.");
+        return;
       }
+      setLink(`${window.location.origin}/invite/${invite.token}`);
     });
+  }
+
+  async function handleCopy() {
+    if (!link) return;
+    await navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleClose() {
+    setLink(null);
+    setError(null);
+    setRole("staff");
+    onClose();
   }
 
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title="Inviter un collaborateur"
-      description="Une invitation sera envoyée par courriel pour rejoindre l'établissement."
+      description="Générez un lien à partager — valide 7 jours, le rôle est déjà attribué."
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Adresse courriel">
-          <Input type="email" name="email" placeholder="prenom@exemple.com" required />
-        </Field>
-
+      <div className="space-y-4">
         <Field label="Rôle">
-          <Select name="role" defaultValue="staff">
+          <Select value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={Boolean(link)}>
             {invitableRoles.map((r) => (
               <option key={r} value={r}>
                 {roleLabels[r]}
@@ -80,15 +72,35 @@ export function InviteMemberModal({
 
         {error && <p className="text-[12.5px] text-mv-red">{error}</p>}
 
+        {link && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-3 py-2">
+              <p className="flex-1 truncate text-[12.5px] text-mv-ink-soft">{link}</p>
+              <button
+                onClick={handleCopy}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                aria-label="Copier le lien"
+              >
+                {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
+              </button>
+            </div>
+            <p className="text-[11.5px] text-mv-ink-faint">
+              Valide 7 jours. Partagez-le par le canal de votre choix (SMS, WhatsApp, etc.).
+            </p>
+          </div>
+        )}
+
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
-            Annuler
+          <Button type="button" variant="ghost" onClick={handleClose}>
+            Fermer
           </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? "Envoi…" : "Envoyer l'invitation"}
-          </Button>
+          {!link && (
+            <Button onClick={handleGenerate} disabled={isPending}>
+              {isPending ? "Génération…" : "Générer le lien"}
+            </Button>
+          )}
         </div>
-      </form>
+      </div>
     </Modal>
   );
 }

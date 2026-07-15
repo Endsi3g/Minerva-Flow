@@ -53,7 +53,7 @@ export async function assignRestaurantToCompanyAction(
 
 export async function createRestaurantAction(input: RestaurantInput): Promise<Restaurant | null> {
   const restaurant = await createRestaurant(input);
-  if (restaurant) revalidatePath("/settings");
+  if (restaurant) revalidatePath("/workspace");
   return restaurant;
 }
 
@@ -62,7 +62,7 @@ export async function updateRestaurantAction(
   patch: Partial<RestaurantInput>
 ): Promise<Restaurant | null> {
   const restaurant = await updateRestaurant(id, patch);
-  if (restaurant) revalidatePath("/settings");
+  if (restaurant) revalidatePath("/workspace");
   return restaurant;
 }
 

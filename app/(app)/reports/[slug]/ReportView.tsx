@@ -3,19 +3,33 @@
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/minerva/PersonAvatar";
+import { CurrentUserAvatar } from "@/components/minerva/CurrentUserAvatar";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 import { FlowBars } from "@/components/charts/FlowBars";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
-import { useApp, useCurrentRestaurant, roleLabels } from "@/lib/app-context";
+import { Field, Input } from "@/components/minerva/FormField";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import type { ReportDef } from "@/lib/reports";
 import type { Campaign, FlowLine } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { ChevronLeft, Star, Filter, Share2, Clock, Store, Plus, FileSpreadsheet, Loader2 } from "lucide-react";
+import {
+  ChevronLeft,
+  Star,
+  Filter,
+  Share2,
+  Clock,
+  Store,
+  Plus,
+  FileSpreadsheet,
+  Loader2,
+  Check,
+  Copy,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { exportReportAction } from "@/app/(app)/reports/actions";
+import { exportReportAction, getReportDataAction, shareReportAction } from "@/app/(app)/reports/actions";
 import { getGoogleWorkspaceStatusAction } from "@/app/(app)/settings/google-workspace-actions";
 import { GOOGLE_SCOPES } from "@/lib/google/config";
 
@@ -37,11 +51,23 @@ export function ReportView({
   breakdown: FlowLine[];
   campaigns: Campaign[];
 }) {
-  const { period, role, restaurantId } = useApp();
+  const { period, restaurantId } = useApp();
   const restaurant = useCurrentRestaurant();
   const [starred, setStarred] = useState(false);
   const [sheetsEnabled, setSheetsEnabled] = useState(false);
   const [exporting, setExporting] = useState(false);
+
+  const [view, setView] = useState({ report, trend, breakdown });
+  const [range, setRange] = useState<{ from: string; to: string } | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [fromDraft, setFromDraft] = useState("");
+  const [toDraft, setToDraft] = useState("");
+  const [filtering, setFiltering] = useState(false);
+
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -53,7 +79,7 @@ export function ReportView({
   async function handleExport() {
     setExporting(true);
     try {
-      const url = await exportReportAction(report.slug);
+      const url = await exportReportAction(view.report.slug);
       if (url) {
         toast.success("Rapport exporté vers Google Sheets.", {
           action: { label: "Ouvrir", onClick: () => window.open(url, "_blank") },
@@ -64,6 +90,51 @@ export function ReportView({
     } finally {
       setExporting(false);
     }
+  }
+
+  async function handleApplyFilter() {
+    if (!fromDraft || !toDraft) return;
+    setFiltering(true);
+    try {
+      const result = await getReportDataAction(report.slug, { from: fromDraft, to: toDraft });
+      if (result) {
+        setView(result);
+        setRange({ from: fromDraft, to: toDraft });
+        setFilterOpen(false);
+      } else {
+        toast.error("Impossible d'appliquer ce filtre.");
+      }
+    } finally {
+      setFiltering(false);
+    }
+  }
+
+  function handleResetFilter() {
+    setView({ report, trend, breakdown });
+    setRange(null);
+    setFromDraft("");
+    setToDraft("");
+    setFilterOpen(false);
+  }
+
+  async function handleShareOpenChange(next: boolean) {
+    setShareOpen(next);
+    if (!next || shareLink) return;
+    setSharing(true);
+    try {
+      const token = await shareReportAction(report.slug, range ?? undefined);
+      setShareLink(token ? `${window.location.origin}/r/${token}` : null);
+      if (!token) toast.error("Impossible de générer le lien de partage.");
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function handleCopyShareLink() {
+    if (!shareLink) return;
+    await navigator.clipboard.writeText(shareLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
@@ -82,26 +153,83 @@ export function ReportView({
               size={13}
               className={starred ? "fill-mv-lime-dark text-mv-lime-dark" : ""}
             />
-            {report.label}
+            {view.report.label}
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex -space-x-2">
-            <Avatar name="Camille Andrieu" size={26} className="ring-2 ring-mv-cream" />
-            <Avatar name={roleLabels[role]} size={26} className="ring-2 ring-mv-cream" />
-          </div>
-          <Button size="sm" variant="secondary">
-            <Filter size={14} /> Filter
-          </Button>
+          <CurrentUserAvatar size={26} className="ring-2 ring-mv-cream" />
+
+          <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+            <PopoverTrigger
+              render={
+                <Button size="sm" variant={range ? "primary" : "secondary"}>
+                  <Filter size={14} /> {range ? "Filtré" : "Filter"}
+                </Button>
+              }
+            />
+            <PopoverContent align="end" className="w-72">
+              <p className="text-[12.5px] font-semibold text-mv-ink">Filtrer par période</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Du">
+                  <Input type="date" value={fromDraft} onChange={(e) => setFromDraft(e.target.value)} />
+                </Field>
+                <Field label="Au">
+                  <Input type="date" value={toDraft} onChange={(e) => setToDraft(e.target.value)} />
+                </Field>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-1">
+                {range && (
+                  <Button size="sm" variant="ghost" onClick={handleResetFilter}>
+                    Réinitialiser
+                  </Button>
+                )}
+                <Button size="sm" onClick={handleApplyFilter} disabled={!fromDraft || !toDraft || filtering}>
+                  {filtering ? "Application…" : "Appliquer"}
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           {sheetsEnabled && (
             <Button size="sm" variant="secondary" onClick={handleExport} disabled={exporting}>
               {exporting ? <Loader2 size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />}
               Exporter vers Sheets
             </Button>
           )}
-          <Button size="sm" variant="secondary">
-            <Share2 size={14} /> Share
-          </Button>
+
+          <Popover open={shareOpen} onOpenChange={handleShareOpenChange}>
+            <PopoverTrigger
+              render={
+                <Button size="sm" variant="secondary">
+                  <Share2 size={14} /> Share
+                </Button>
+              }
+            />
+            <PopoverContent align="end" className="w-80">
+              <p className="text-[12.5px] font-semibold text-mv-ink">Lien public en lecture seule</p>
+              {sharing ? (
+                <p className="text-[12.5px] text-mv-ink-faint">Génération…</p>
+              ) : shareLink ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-2.5 py-2">
+                    <p className="flex-1 truncate text-[12px] text-mv-ink-soft">{shareLink}</p>
+                    <button
+                      onClick={handleCopyShareLink}
+                      aria-label="Copier le lien"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                    >
+                      {copied ? <Check size={13} className="text-mv-green-dark" /> : <Copy size={13} />}
+                    </button>
+                  </div>
+                  <p className="text-[11.5px] text-mv-ink-faint">
+                    Un instantané des chiffres actuels, consultable sans connexion.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-[12.5px] text-mv-red">Échec de la génération du lien.</p>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -117,7 +245,7 @@ export function ReportView({
       </button>
 
       <h1 className="mb-5 font-display text-[32px] font-medium tracking-tight text-mv-ink">
-        {report.label}
+        {view.report.label}
       </h1>
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -137,7 +265,7 @@ export function ReportView({
           Résumé
         </h2>
         <p className="max-w-3xl text-[14px] leading-relaxed text-mv-ink-soft">
-          {report.summary}
+          {view.report.summary}
         </p>
       </div>
 
@@ -145,37 +273,35 @@ export function ReportView({
         <div className="lg:col-span-7">
           <div className="relative rounded-2xl border-2 border-mv-green bg-mv-surface p-5 shadow-mv-md">
             <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              {report.label}
+              {view.report.label}
             </p>
-            <p className="mt-1 text-[11.5px] text-mv-ink-faint">{periodLabel[period]}</p>
+            <p className="mt-1 text-[11.5px] text-mv-ink-faint">
+              {range ? `${formatDate(range.from)} — ${formatDate(range.to)}` : periodLabel[period]}
+            </p>
             <p className="mt-4 font-display text-[42px] font-medium leading-none text-mv-ink">
-              {report.unit === "currency" ? formatCurrency(report.value) : report.value}
+              {view.report.unit === "currency" ? formatCurrency(view.report.value) : view.report.value}
             </p>
-            {report.delta !== undefined && (
-              <Badge tone={report.delta >= 0 ? "green" : "red"} className="mt-3">
-                {report.delta >= 0 ? "↑" : "↓"} {Math.abs(report.delta).toFixed(1)}% vs période précédente
+            {view.report.delta !== undefined && (
+              <Badge tone={view.report.delta >= 0 ? "green" : "red"} className="mt-3">
+                {view.report.delta >= 0 ? "↑" : "↓"} {Math.abs(view.report.delta).toFixed(1)}% vs période précédente
               </Badge>
             )}
-            {trend.length > 0 && (
+            {view.trend.length > 0 && (
               <div className="mt-4">
-                <RevenueChart data={trend} height={140} />
+                <RevenueChart data={view.trend} height={140} />
               </div>
             )}
             <div className="absolute -bottom-3 -left-3">
-              <Avatar
-                name={roleLabels[role]}
-                size={30}
-                className="ring-2 ring-mv-cream shadow-mv-sm"
-              />
+              <CurrentUserAvatar size={30} className="ring-2 ring-mv-cream shadow-mv-sm" />
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-5">
-          {breakdown.length > 0 ? (
+          {view.breakdown.length > 0 ? (
             <Card className="h-full">
               <CardHeader title="Répartition" description="Sur la période sélectionnée" />
-              <FlowBars lines={breakdown} tone={report.slug === "sorties" ? "ink" : "green"} />
+              <FlowBars lines={view.breakdown} tone={view.report.slug === "sorties" ? "ink" : "green"} />
             </Card>
           ) : campaigns.length > 0 ? (
             <Card className="h-full">
@@ -211,12 +337,12 @@ export function ReportView({
         </div>
       </div>
 
-      {report.kind === "trend" && trend.length > 0 && (
+      {view.report.kind === "trend" && view.trend.length > 0 && (
         <div className="mt-6">
           <Card>
             <CardHeader
               eyebrow="Détail"
-              title={`${report.label} — jour par jour`}
+              title={`${view.report.label} — jour par jour`}
               description="Chaque point correspond à une journée de service"
             />
             <Table>
@@ -225,7 +351,7 @@ export function ReportView({
                 <Th className="text-right">Valeur</Th>
               </THead>
               <tbody>
-                {[...trend]
+                {[...view.trend]
                   .sort((a, b) => b.date.localeCompare(a.date))
                   .slice(0, 8)
                   .map((d) => (

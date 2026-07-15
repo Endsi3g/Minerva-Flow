@@ -105,3 +105,38 @@ export async function broadcastNotification(input: {
     }))
   );
 }
+
+/**
+ * Notifies every active member of a restaurant (optionally excluding the
+ * actor who triggered the event, so people don't get notified about their
+ * own action). Thin wrapper around broadcastNotification for the common
+ * "something happened in this restaurant" case — invites, campaigns, etc.
+ */
+export async function notifyRestaurant(input: {
+  restaurantId: string;
+  type: string;
+  title: string;
+  body?: string;
+  link?: string;
+  excludeUserId?: string;
+}): Promise<void> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("restaurant_members")
+    .select("user_id")
+    .eq("restaurant_id", input.restaurantId)
+    .eq("status", "active");
+
+  const userIds = ((data as { user_id: string }[]) ?? [])
+    .map((m) => m.user_id)
+    .filter((id) => id !== input.excludeUserId);
+
+  await broadcastNotification({
+    restaurantId: input.restaurantId,
+    userIds,
+    type: input.type,
+    title: input.title,
+    body: input.body,
+    link: input.link,
+  });
+}

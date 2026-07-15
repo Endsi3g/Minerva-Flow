@@ -17,6 +17,41 @@ export type Restaurant = {
   companyId?: string | null;
 };
 
+export type Employee = {
+  id: string;
+  restaurantId: string;
+  linkedUserId: string | null;
+  fullName: string;
+  roleTitle: string;
+  hourlyWage: number | null;
+  active: boolean;
+  createdAt: string;
+};
+
+export type EmployeeShift = {
+  id: string;
+  employeeId: string;
+  shiftDate: string;
+  hoursWorked: number;
+  wasLate: boolean;
+  notes: string | null;
+  createdAt: string;
+};
+
+export type EmployeeReview = {
+  id: string;
+  employeeId: string;
+  periodStart: string;
+  periodEnd: string;
+  rating: number;
+  strengths: string | null;
+  improvements: string | null;
+  attributedRevenue: number | null;
+  raiseRecommended: boolean;
+  reviewerName: string;
+  createdAt: string;
+};
+
 export type Company = {
   id: string;
   name: string;
@@ -109,6 +144,17 @@ export type Connection = {
   status: ConnectionStatus;
   lastSync: string;
   detail?: string;
+};
+
+export type CampaignAsset = {
+  id: string;
+  campaignId: string;
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  kind: "image" | "file";
+  createdAt: string;
 };
 
 export type CampaignType = "post" | "email" | "promo";

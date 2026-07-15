@@ -14,16 +14,10 @@ import {
 } from "@/components/ui/map";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency } from "@/lib/utils";
-import { getAdConversionsAction } from "./actions";
+import { getAdConversionsAction, getRevenueByRestaurantAction } from "./actions";
 import type { AdConversion, Restaurant } from "@/lib/types";
 import { useEffect, useMemo, useState } from "react";
 import { MapPinned, Megaphone, LocateFixed, Navigation } from "lucide-react";
-
-const revenueByRestaurant: Record<string, { revenue: number; delta: number }> = {
-  r1: { revenue: 78700, delta: 8.4 },
-  r2: { revenue: 61200, delta: 4.1 },
-  r3: { revenue: 42950, delta: -2.3 },
-};
 
 type FilterMode = "tous" | "organique" | "payant";
 
@@ -109,10 +103,19 @@ function EstablishmentsMode() {
   const geoRestaurants = restaurants.filter(
     (r): r is typeof r & { lng: number; lat: number } => r.lng !== null && r.lat !== null
   );
+  const [revenueByRestaurant, setRevenueByRestaurant] = useState<
+    Record<string, { revenue: number; delta: number }>
+  >({});
+
+  useEffect(() => {
+    const ids = restaurants.map((r) => r.id);
+    if (ids.length === 0) return;
+    getRevenueByRestaurantAction(ids).then(setRevenueByRestaurant);
+  }, [restaurants]);
 
   return (
     <>
-      <Map center={[3.8, 46.2]} zoom={5.2} theme="light">
+      <Map center={[-73.5673, 45.5017]} zoom={11} theme="light">
         <MapControls position="bottom-right" showZoom showFullscreen />
         {geoRestaurants.map((r) => {
           const stats = revenueByRestaurant[r.id] ?? { revenue: 0, delta: 0 };
@@ -222,8 +225,8 @@ function AttributionMode() {
     <>
       <Map
         blank
-        center={current?.lng && current?.lat ? [current.lng, current.lat] : [3.8, 46.2]}
-        zoom={current?.lng ? 9 : 5.2}
+        center={current?.lng && current?.lat ? [current.lng, current.lat] : [-73.5673, 45.5017]}
+        zoom={current?.lng ? 9 : 11}
         theme="light"
       >
         <MapControls position="bottom-right" showZoom showFullscreen />

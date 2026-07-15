@@ -19,15 +19,19 @@ import {
   Wallet,
   Megaphone,
   Settings,
+  Settings2,
   Map as MapIcon,
   Sparkles,
   Users,
+  Users2,
+  BookOpen,
+  LifeBuoy,
   ChevronDown,
   Check,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Role } from "@/lib/types";
 
@@ -41,16 +45,61 @@ type NavItem = {
   roles: Role[];
 };
 
-const nav: NavItem[] = [
+// Toujours visibles, hors groupe : les deux pages les plus consultées au quotidien.
+const pinnedNav: NavItem[] = [
   { href: "/overview", label: "Aperçu", icon: LayoutGrid, roles: ["owner", "staff", "consultant"] },
-  { href: "/programs", label: "Programmes", icon: LineChart, roles: ["owner", "consultant"] },
-  { href: "/days", label: "Journées", icon: CalendarDays, roles: ["owner", "staff"] },
-  { href: "/finance", label: "Finance", icon: Wallet, roles: ["owner"] },
-  { href: "/campaigns", label: "Campagnes", icon: Megaphone, roles: ["owner", "consultant"] },
-  { href: "/collaborateurs", label: "Collaborateurs", icon: Users, roles: ["owner", "manager"] },
-  { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
   { href: "/assistant", label: "Assistant", icon: Sparkles, roles: ["owner", "manager", "staff", "consultant"] },
 ];
+
+type NavGroup = {
+  id: string;
+  label: string;
+  items: NavItem[];
+};
+
+const navGroups: NavGroup[] = [
+  {
+    id: "operations",
+    label: "Opérations",
+    items: [
+      { href: "/days", label: "Journées", icon: CalendarDays, roles: ["owner", "staff"] },
+      { href: "/programs", label: "Programmes", icon: LineChart, roles: ["owner", "consultant"] },
+    ],
+  },
+  {
+    id: "croissance",
+    label: "Croissance",
+    items: [
+      { href: "/campaigns", label: "Campagnes", icon: Megaphone, roles: ["owner", "consultant"] },
+      { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
+    ],
+  },
+  {
+    id: "equipe",
+    label: "Équipe",
+    items: [
+      { href: "/collaborateurs", label: "Collaborateurs", icon: Users, roles: ["owner", "manager"] },
+      { href: "/employees", label: "Employés", icon: Users2, roles: ["owner", "manager"] },
+    ],
+  },
+  {
+    id: "finance",
+    label: "Finance",
+    items: [{ href: "/finance", label: "Finance", icon: Wallet, roles: ["owner"] }],
+  },
+];
+
+const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
+
+const settingsGroup: NavGroup = {
+  id: "parametres",
+  label: "Paramètres",
+  items: [
+    { href: "/settings", label: "Paramètres", icon: Settings, roles: ["owner"] },
+    { href: "/guide", label: "Guide", icon: BookOpen, roles: allRoles },
+    { href: "/support", label: "Aide & Support", icon: LifeBuoy, roles: allRoles },
+  ],
+};
 
 const groupLabels: Record<string, string> = {
   Revenue: "Revenu",
@@ -86,7 +135,7 @@ function NavLink({
       <Icon
         size={16}
         strokeWidth={active ? 2.2 : 1.5}
-        className={cn("shrink-0 transition-all duration-150", active ? "text-mv-lime" : "opacity-60")}
+        className={cn("shrink-0 transition-all duration-150", active ? "text-mv-cream-soft" : "opacity-60")}
       />
       <span className="truncate">{label}</span>
     </Link>
@@ -95,6 +144,7 @@ function NavLink({
 
 function TeamSwitcher() {
   const { restaurantId, setRestaurantId, restaurants } = useApp();
+  const router = useRouter();
   const current = restaurants.find((r) => r.id === restaurantId) ?? restaurants[0];
 
   return (
@@ -123,6 +173,14 @@ function TeamSwitcher() {
             {r.id === restaurantId && <Check size={15} className="text-mv-green-dark" />}
           </DropdownMenuItem>
         ))}
+        <div className="my-1 border-t border-mv-border-soft" />
+        <DropdownMenuItem
+          onClick={() => router.push("/workspace")}
+          className="flex items-center gap-2.5 text-mv-ink-soft"
+        >
+          <Settings2 size={15} className="shrink-0" />
+          <span className="text-[13px] font-semibold">Gérer le workspace</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -170,10 +228,16 @@ function CollapsibleSection({
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { role, restaurantId, setRestaurantId, restaurants, sidebarCollapsed, setSidebarCollapsed } =
-    useApp();
+  const { role, sidebarCollapsed, setSidebarCollapsed } = useApp();
   const isMobile = useIsMobile();
-  const items = nav.filter((n) => n.roles.includes(role));
+  const pinnedItems = pinnedNav.filter((n) => n.roles.includes(role));
+  const visibleGroups = navGroups
+    .map((group) => ({ ...group, items: group.items.filter((n) => n.roles.includes(role)) }))
+    .filter((group) => group.items.length > 0);
+  const visibleSettingsGroup = {
+    ...settingsGroup,
+    items: settingsGroup.items.filter((n) => n.roles.includes(role)),
+  };
 
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   function toggleGroup(id: string) {
@@ -222,7 +286,7 @@ export function AppSidebar() {
 
           <div className="flex-1 space-y-4 overflow-y-auto px-2.5 py-3">
             <div className="space-y-0.5">
-              {items.map((item) => (
+              {pinnedItems.map((item) => (
                 <NavLink
                   key={item.href}
                   href={item.href}
@@ -234,35 +298,29 @@ export function AppSidebar() {
               ))}
             </div>
 
-            <CollapsibleSection
-              label="Restaurants"
-              isCollapsed={collapsedGroups["restaurants"] ?? false}
-              onToggle={() => toggleGroup("restaurants")}
-            >
-              {restaurants.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => {
-                    setRestaurantId(r.id);
-                    closeMobile();
-                  }}
-                  className={cn(
-                    "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium transition-colors",
-                    r.id === restaurantId
-                      ? "bg-mv-ink/[0.06] text-mv-ink"
-                      : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
-                  )}
+            {visibleGroups.map((group) => {
+              const hasActiveChild = group.items.some((item) => pathname.startsWith(item.href));
+              const isCollapsed = hasActiveChild ? false : (collapsedGroups[group.id] ?? false);
+              return (
+                <CollapsibleSection
+                  key={group.id}
+                  label={group.label}
+                  isCollapsed={isCollapsed}
+                  onToggle={() => toggleGroup(group.id)}
                 >
-                  <span
-                    className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] text-[9px] font-bold text-white"
-                    style={{ background: r.color }}
-                  >
-                    {r.city[0]}
-                  </span>
-                  <span className="truncate">{r.city}</span>
-                </button>
-              ))}
-            </CollapsibleSection>
+                  {group.items.map((item) => (
+                    <NavLink
+                      key={item.href}
+                      href={item.href}
+                      label={item.label}
+                      icon={item.icon}
+                      active={pathname.startsWith(item.href)}
+                      onNavigate={closeMobile}
+                    />
+                  ))}
+                </CollapsibleSection>
+              );
+            })}
 
             <div className="space-y-2">
               <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-mv-ink-faint">
@@ -307,15 +365,28 @@ export function AppSidebar() {
             </div>
           </div>
 
-          {role === "owner" && (
+          {visibleSettingsGroup.items.length > 0 && (
             <div className="border-t border-mv-border p-2.5">
-              <NavLink
-                href="/settings"
-                label="Paramètres"
-                icon={Settings}
-                active={pathname.startsWith("/settings")}
-                onNavigate={closeMobile}
-              />
+              <CollapsibleSection
+                label={visibleSettingsGroup.label}
+                isCollapsed={
+                  visibleSettingsGroup.items.some((item) => pathname.startsWith(item.href))
+                    ? false
+                    : (collapsedGroups[visibleSettingsGroup.id] ?? false)
+                }
+                onToggle={() => toggleGroup(visibleSettingsGroup.id)}
+              >
+                {visibleSettingsGroup.items.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                  />
+                ))}
+              </CollapsibleSection>
             </div>
           )}
         </motion.div>

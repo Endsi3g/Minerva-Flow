@@ -169,7 +169,7 @@ export function CollaborateursView({
       )}
 
       {restaurantId && (
-        <InviteMemberModal open={inviteOpen} onClose={() => setInviteOpen(false)} onInvited={() => router.refresh()} />
+        <InviteMemberModal restaurantId={restaurantId} open={inviteOpen} onClose={() => setInviteOpen(false)} />
       )}
 
       {restaurantId && (

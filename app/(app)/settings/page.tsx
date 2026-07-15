@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Modal } from "@/components/ui/Modal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import { Field, Input, Select } from "@/components/minerva/FormField";
 import { Switch } from "@/components/ui/Switch";
@@ -14,24 +13,13 @@ import { CompaniesTab } from "@/components/minerva/CompaniesTab";
 import { AdPlatformsCard } from "@/components/minerva/AdPlatformsCard";
 import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
 import {
-  createRestaurantAction,
-  updateRestaurantAction,
   getConnectionsAction,
   createConnectionAction,
   getAlertRulesAction,
   upsertAlertRuleAction,
 } from "@/app/(app)/settings/actions";
-import type {
-  AlertRule,
-  Connection,
-  ConnectionStatus,
-  ConnectionType,
-  Restaurant,
-} from "@/lib/types";
+import type { AlertRule, Connection, ConnectionStatus, ConnectionType } from "@/lib/types";
 import {
-  Plus,
-  MapPin,
-  Clock,
   Landmark,
   CreditCard,
   Bike,
@@ -176,148 +164,6 @@ function AlertRulesTab() {
   );
 }
 
-function RestaurantFormFields({
-  values,
-  onChange,
-}: {
-  values: { name: string; address: string; city: string; timezone: string };
-  onChange: (patch: Partial<{ name: string; address: string; city: string; timezone: string }>) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      <Field label="Nom de l'établissement">
-        <Input
-          value={values.name}
-          onChange={(e) => onChange({ name: e.target.value })}
-          placeholder="Ex : Minerva — Vieux-Port"
-        />
-      </Field>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Adresse">
-          <Input value={values.address} onChange={(e) => onChange({ address: e.target.value })} />
-        </Field>
-        <Field label="Ville">
-          <Input value={values.city} onChange={(e) => onChange({ city: e.target.value })} />
-        </Field>
-      </div>
-      <Field label="Fuseau horaire">
-        <Input
-          value={values.timezone}
-          onChange={(e) => onChange({ timezone: e.target.value })}
-          placeholder="Ex : America/Montreal"
-        />
-      </Field>
-    </div>
-  );
-}
-
-function RestaurantsTab() {
-  const { restaurants, setRestaurantId } = useApp();
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editing, setEditing] = useState<Restaurant | null>(null);
-  const [form, setForm] = useState({ name: "", address: "", city: "", timezone: "America/Montreal" });
-  const [saving, setSaving] = useState(false);
-
-  function openCreate() {
-    setForm({ name: "", address: "", city: "", timezone: "America/Montreal" });
-    setCreateOpen(true);
-  }
-
-  function openEdit(r: Restaurant) {
-    setEditing(r);
-    setForm({ name: r.name, address: r.address, city: r.city, timezone: r.timezone });
-  }
-
-  async function handleCreate() {
-    if (!form.name.trim()) return;
-    setSaving(true);
-    const created = await createRestaurantAction(form);
-    setSaving(false);
-    if (created) {
-      toast.success("Établissement ajouté.");
-      setCreateOpen(false);
-      setRestaurantId(created.id);
-    } else {
-      toast.error("L'ajout de l'établissement a échoué.");
-    }
-  }
-
-  async function handleUpdate() {
-    if (!editing || !form.name.trim()) return;
-    setSaving(true);
-    const updated = await updateRestaurantAction(editing.id, form);
-    setSaving(false);
-    if (updated) {
-      toast.success("Établissement modifié.");
-      setEditing(null);
-    } else {
-      toast.error("La modification a échoué.");
-    }
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button size="sm" onClick={openCreate}>
-          <Plus size={15} /> Ajouter un établissement
-        </Button>
-      </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {restaurants.map((r) => (
-          <Card key={r.id}>
-            <div className="mb-3 flex items-center gap-2.5">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} />
-              <h3 className="font-display text-[16px] font-medium text-mv-ink">{r.name}</h3>
-            </div>
-            <div className="space-y-1.5 text-[13px] text-mv-ink-soft">
-              <p className="flex items-center gap-2">
-                <MapPin size={14} className="text-mv-ink-faint" /> {r.address || "—"}
-                {r.city ? `, ${r.city}` : ""}
-              </p>
-              <p className="flex items-center gap-2">
-                <Clock size={14} className="text-mv-ink-faint" /> {r.timezone}
-              </p>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <Button size="sm" variant="secondary" className="flex-1" onClick={() => openEdit(r)}>
-                Modifier
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <Modal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        title="Ajouter un établissement"
-        description="Créez un nouveau restaurant à gérer dans Minerva Flow."
-      >
-        <div className="space-y-4">
-          <RestaurantFormFields values={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
-          <Button className="w-full" onClick={handleCreate} disabled={!form.name.trim() || saving}>
-            {saving ? "Création…" : "Créer l'établissement"}
-          </Button>
-        </div>
-      </Modal>
-
-      <Modal
-        open={Boolean(editing)}
-        onClose={() => setEditing(null)}
-        title="Modifier l'établissement"
-        description={editing?.name}
-      >
-        <div className="space-y-4">
-          <RestaurantFormFields values={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
-          <Button className="w-full" onClick={handleUpdate} disabled={!form.name.trim() || saving}>
-            {saving ? "Enregistrement…" : "Enregistrer"}
-          </Button>
-        </div>
-      </Modal>
-    </div>
-  );
-}
-
 function IntegrationsTab() {
   const { restaurantId } = useApp();
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -439,14 +285,8 @@ export default function SettingsPage() {
     <div>
       <PageHeader eyebrow="Configuration" title="Settings" />
 
-      <Tabs defaultValue="restaurants">
+      <Tabs defaultValue="integrations">
         <TabsList className="mb-6 h-auto rounded-full border border-mv-border bg-mv-cream-soft p-1">
-          <TabsTrigger
-            value="restaurants"
-            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
-          >
-            Restaurants
-          </TabsTrigger>
           <TabsTrigger
             value="integrations"
             className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
@@ -472,10 +312,6 @@ export default function SettingsPage() {
             Entreprises
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="restaurants">
-          <RestaurantsTab />
-        </TabsContent>
 
         <TabsContent value="integrations">
           <IntegrationsTab />

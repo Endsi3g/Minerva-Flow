@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/shell/AppSidebar";
 import { AppBreadcrumb } from "@/components/shell/AppBreadcrumb";
 import { TopbarActions } from "@/components/shell/TopbarActions";
 import { MobileTabBar } from "@/components/shell/MobileTabBar";
+import { WorkspaceSetupBanner } from "@/components/shell/WorkspaceSetupBanner";
 import { useApp } from "@/lib/app-context";
 import { cn } from "@/lib/utils";
 import { PanelLeft } from "lucide-react";
@@ -19,11 +20,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-mv-cream">
-      <div className="hidden md:flex">
+      <div className="no-print hidden md:flex">
         <AppSidebar />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-mv-border bg-mv-cream-soft px-4">
+        <header className="no-print flex h-16 shrink-0 items-center justify-between gap-4 border-b border-mv-border bg-mv-cream-soft px-4">
           <div className="hidden items-center gap-2 md:flex">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -46,10 +47,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             isFullBleed ? "flex flex-col" : "px-6 py-6 lg:px-8 lg:py-7"
           )}
         >
-          {isFullBleed ? children : <div className="mx-auto max-w-[1400px]">{children}</div>}
+          {isFullBleed ? (
+            children
+          ) : (
+            <div className="mx-auto max-w-[1400px]">
+              {!pathname.startsWith("/workspace") && <WorkspaceSetupBanner />}
+              {children}
+            </div>
+          )}
         </main>
       </div>
-      <MobileTabBar />
+      <div className="no-print">
+        <MobileTabBar />
+      </div>
     </div>
   );
 }

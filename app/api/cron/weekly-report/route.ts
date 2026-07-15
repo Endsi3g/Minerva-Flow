@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { getServiceDays } from "@/lib/data/service-days";
 import { getPrograms } from "@/lib/data/programs";
 import { getCampaigns } from "@/lib/data/campaigns";
-import { getFinancialTransactions } from "@/lib/data/finance";
+import { getFinancialTransactions, getConnections } from "@/lib/data/finance";
+import { getAlertRules } from "@/lib/data/alerts";
+import { computeAlerts } from "@/lib/engine/alerts";
 import { buildReports, type ReportData } from "@/lib/reports";
 import {
   getAllActiveRestaurantIds,
@@ -14,6 +16,9 @@ import { broadcastNotification } from "@/lib/data/notifications";
 import { hasGoogleScope, getGoogleConnection } from "@/lib/data/google-connections";
 import { sendReportEmail } from "@/lib/google/gmail";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { generateAiReview } from "@/lib/ai/review";
+import { saveAiReview } from "@/lib/data/ai-reviews";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /** Monday-Sunday range of the week immediately before the current one. */
 function previousWeekRange(now = new Date()) {
@@ -88,6 +93,60 @@ export async function GET(req: Request) {
           : "Consultez votre rapport de la semaine dernière.",
         link: "/reports",
       });
+
+      // Weekly digest of rule-engine alerts — computeAlerts() is a pure,
+      // on-the-fly function (nothing persists to `alerts`), so this is the
+      // one place they get surfaced as a notification rather than only
+      // showing up live on /overview when someone happens to look.
+      const [connections, alertRules] = await Promise.all([
+        getConnections(restaurantId),
+        getAlertRules(restaurantId),
+      ]);
+      const urgentAlerts = computeAlerts({
+        serviceDays,
+        connections,
+        alertRules,
+        financialTransactions,
+      }).filter((a) => a.severity === "critique" || a.severity === "important");
+
+      if (urgentAlerts.length > 0) {
+        await broadcastNotification({
+          restaurantId,
+          userIds,
+          type: "alert.weekly_digest",
+          title:
+            urgentAlerts.length === 1 ? urgentAlerts[0].title : `${urgentAlerts.length} alertes à surveiller`,
+          body: urgentAlerts[0].detail,
+          link: "/overview",
+        });
+      }
+
+      // Automatic AI review of the week — reuses the reports already
+      // computed above, so it stays consistent with the numbers shown
+      // elsewhere. Uses the admin client: a cron run has no user session,
+      // so the RLS-scoped client can't satisfy ai_reviews' insert policy.
+      const aiReview = await generateAiReview(
+        "ce restaurant",
+        `${formatDate(from)} — ${formatDate(to)}`,
+        reports
+      );
+      if (aiReview) {
+        const admin = createAdminClient();
+        const saved = await saveAiReview(
+          { restaurantId, periodStart: from, periodEnd: to, source: "auto", metrics: reports, review: aiReview },
+          admin
+        );
+        if (saved) {
+          await broadcastNotification({
+            restaurantId,
+            userIds,
+            type: "ai_review.generated",
+            title: "Revue IA de la semaine disponible",
+            body: aiReview.strengths[0] ?? "Consultez l'analyse de la semaine.",
+            link: `/reports/ai-review/${saved.id}`,
+          });
+        }
+      }
 
       // Gmail is a bonus channel on top of the in-app notification, never a
       // replacement — failures here must not affect the notification above.

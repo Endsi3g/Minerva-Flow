@@ -10,7 +10,7 @@ import type { ReactNode, ThHTMLAttributes, TdHTMLAttributes } from "react";
 
 export function Table({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-mv-border bg-mv-surface shadow-mv-sm">
+    <div className="overflow-x-auto rounded-2xl border border-mv-border bg-mv-surface shadow-mv-sm">
       <ShadcnTable className="min-w-[720px]">{children}</ShadcnTable>
     </div>
   );

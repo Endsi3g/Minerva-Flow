@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { CreateCampaignModal } from "@/components/forms/CreateCampaignModal";
+import { updateCampaignStatusAction, getCampaignAssetsAction } from "@/app/(app)/campaigns/actions";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import type { Campaign, CampaignChannel, CampaignStatus, CampaignType } from "@/lib/types";
-import { Megaphone, Plus, Camera, Mail, Store, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import type { Campaign, CampaignAsset, CampaignChannel, CampaignStatus, CampaignType } from "@/lib/types";
+import { Megaphone, Plus, Camera, Mail, Store, Users, FileText } from "lucide-react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 const typeLabel: Record<CampaignType, string> = {
   post: "Post",
@@ -49,13 +50,32 @@ export function CampaignsView({
   campaigns: Campaign[];
 }) {
   const { role } = useApp();
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<"all" | CampaignStatus>("all");
   const [channelFilter, setChannelFilter] = useState<"all" | CampaignChannel>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const canCreate =
     Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "consultant");
+
+  const [assets, setAssets] = useState<(CampaignAsset & { url: string | null })[]>([]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setAssets([]);
+      return;
+    }
+    getCampaignAssetsAction(selectedId).then(setAssets);
+  }, [selectedId]);
+
+  function handleStatusChange(status: "active" | "terminee") {
+    if (!restaurantId || !selectedId) return;
+    startTransition(async () => {
+      await updateCampaignStatusAction(restaurantId, selectedId, status);
+      router.refresh();
+    });
+  }
 
   const filtered = useMemo(
     () =>
@@ -77,7 +97,7 @@ export function CampaignsView({
         description="Posts, emails et promotions — et leur corrélation avec les revenus qui suivent."
         action={
           canCreate && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Button size="sm" href="/campaigns/new">
               <Plus size={15} /> Nouvelle campagne
             </Button>
           )
@@ -123,7 +143,7 @@ export function CampaignsView({
               description="Ajustez les filtres ou créez une nouvelle campagne."
               action={
                 canCreate && (
-                  <Button size="sm" onClick={() => setCreateOpen(true)}>
+                  <Button size="sm" href="/campaigns/new">
                     <Plus size={15} /> Nouvelle campagne
                   </Button>
                 )
@@ -187,6 +207,20 @@ export function CampaignsView({
                   {selected.description}
                 </p>
 
+                {canCreate && selected.status !== "terminee" && (
+                  <div className="mt-3">
+                    {selected.status === "planifiee" ? (
+                      <Button size="sm" variant="secondary" disabled={isPending} onClick={() => handleStatusChange("active")}>
+                        Démarrer la campagne
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="secondary" disabled={isPending} onClick={() => handleStatusChange("terminee")}>
+                        Terminer la campagne
+                      </Button>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-mv-cream-soft p-3">
                   <div>
                     <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Visites</p>
@@ -233,6 +267,39 @@ export function CampaignsView({
                 )}
               </Card>
 
+              {assets.length > 0 && (
+                <Card>
+                  <CardHeader title="Pièces jointes" description={`${assets.length} fichier(s)`} />
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {assets.map((a) =>
+                      a.kind === "image" && a.url ? (
+                        <a
+                          key={a.id}
+                          href={a.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="aspect-square overflow-hidden rounded-lg border border-mv-border bg-mv-cream-soft"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={a.url} alt={a.fileName} className="h-full w-full object-cover" />
+                        </a>
+                      ) : (
+                        <a
+                          key={a.id}
+                          href={a.url ?? undefined}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="col-span-2 flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-2.5 py-2 text-[12px] text-mv-ink-soft hover:bg-mv-surface sm:col-span-4"
+                        >
+                          <FileText size={14} className="shrink-0 text-mv-ink-faint" />
+                          <span className="truncate">{a.fileName}</span>
+                        </a>
+                      )
+                    )}
+                  </div>
+                </Card>
+              )}
+
               <Card>
                 <CardHeader title="Notes du consultant" description={`${selected.notes.length} note(s)`} />
                 {selected.notes.length === 0 ? (
@@ -256,14 +323,6 @@ export function CampaignsView({
         )}
       </div>
 
-      {canCreate && restaurantId && (
-        <CreateCampaignModal
-          restaurantId={restaurantId}
-          open={createOpen}
-          onClose={() => setCreateOpen(false)}
-          onCreated={(campaign) => setSelectedId(campaign.id)}
-        />
-      )}
     </div>
   );
 }

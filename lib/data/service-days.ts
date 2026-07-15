@@ -91,6 +91,58 @@ async function namesByUserId(
   return map;
 }
 
+/** First/last ISO date of the calendar month containing `date`. */
+function monthRange(date: Date) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  return {
+    from: new Date(year, month, 1).toISOString().slice(0, 10),
+    to: new Date(year, month + 1, 0).toISOString().slice(0, 10),
+  };
+}
+
+/**
+ * Current-month revenue per restaurant (with % delta vs the previous
+ * month), summed straight from `service_days` — used by the establishments
+ * map to annotate markers with real figures instead of placeholder data.
+ */
+export async function getRevenueByRestaurant(
+  restaurantIds: string[]
+): Promise<Record<string, { revenue: number; delta: number }>> {
+  const result: Record<string, { revenue: number; delta: number }> = {};
+  if (restaurantIds.length === 0) return result;
+
+  const now = new Date();
+  const current = monthRange(now);
+  const previous = monthRange(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("service_days")
+    .select("restaurant_id, date, revenue")
+    .in("restaurant_id", restaurantIds)
+    .gte("date", previous.from)
+    .lte("date", current.to);
+
+  const rows = (data as { restaurant_id: string; date: string; revenue: number }[]) ?? [];
+  const currentByRestaurant = new Map<string, number>();
+  const previousByRestaurant = new Map<string, number>();
+
+  for (const row of rows) {
+    const bucket = row.date >= current.from ? currentByRestaurant : previousByRestaurant;
+    bucket.set(row.restaurant_id, (bucket.get(row.restaurant_id) ?? 0) + row.revenue);
+  }
+
+  for (const id of restaurantIds) {
+    const revenue = currentByRestaurant.get(id) ?? 0;
+    const previousRevenue = previousByRestaurant.get(id) ?? 0;
+    const delta = previousRevenue > 0 ? ((revenue - previousRevenue) / previousRevenue) * 100 : 0;
+    result[id] = { revenue, delta };
+  }
+
+  return result;
+}
+
 export async function getServiceDays(
   restaurantId: string,
   range?: { from?: string; to?: string }
