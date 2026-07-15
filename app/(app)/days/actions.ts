@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
-import { createServiceDay, bulkImportServiceDays, type ServiceDayInput } from "@/lib/data/service-days";
+import {
+  createServiceDay,
+  updateServiceDay,
+  deleteServiceDay,
+  bulkImportServiceDays,
+  type ServiceDayInput,
+} from "@/lib/data/service-days";
 import type { ServiceDay } from "@/lib/types";
 
 export type CreateServiceDayResult =
@@ -37,6 +43,37 @@ export async function createServiceDayAction(
   revalidatePath("/overview");
 
   return { ok: true, day };
+}
+
+export async function updateServiceDayAction(
+  id: string,
+  patch: Partial<ServiceDayInput>
+): Promise<CreateServiceDayResult> {
+  const membership = await getCurrentMembership();
+  if (!membership) return { ok: false, error: "Vous devez être connecté et rattaché à un restaurant." };
+  if (membership.role !== "owner" && membership.role !== "staff") {
+    return { ok: false, error: "Vous n'avez pas les droits pour modifier une journée." };
+  }
+
+  const day = await updateServiceDay(membership.restaurantId, id, patch);
+  if (!day) return { ok: false, error: "Impossible de modifier la journée. Réessayez." };
+
+  revalidatePath("/days");
+  revalidatePath("/overview");
+  return { ok: true, day };
+}
+
+export async function deleteServiceDayAction(id: string): Promise<boolean> {
+  const membership = await getCurrentMembership();
+  if (!membership) return false;
+  if (membership.role !== "owner" && membership.role !== "staff") return false;
+
+  const ok = await deleteServiceDay(membership.restaurantId, id);
+  if (ok) {
+    revalidatePath("/days");
+    revalidatePath("/overview");
+  }
+  return ok;
 }
 
 /**

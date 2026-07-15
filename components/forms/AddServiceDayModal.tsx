@@ -4,9 +4,9 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { cn } from "@/lib/utils";
-import type { RushLevel, ServiceSource } from "@/lib/types";
+import type { RushLevel, ServiceSource, ServiceDay } from "@/lib/types";
 import type { CreateServiceDayResult } from "@/app/(app)/days/actions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const eventOptions = ["Promo", "Changement de menu", "Soirée spéciale", "Événement privé"];
 
@@ -34,10 +34,12 @@ export function AddServiceDayModal({
   open,
   onClose,
   onSubmit,
+  editingDay,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (input: AddServiceDayInput) => Promise<CreateServiceDayResult>;
+  editingDay?: ServiceDay | null;
 }) {
   const [date, setDate] = useState(todayIso());
   const [revenue, setRevenue] = useState("");
@@ -48,18 +50,35 @@ export function AddServiceDayModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function toggleEvent(e: string) {
-    setEvents((prev) => (prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]));
+  function reset() {
+    if (editingDay) {
+      setDate(editingDay.date);
+      setRevenue(String(editingDay.revenue));
+      setMainSource(editingDay.mainSource);
+      setRushLevel(editingDay.rushLevel ?? "normal");
+      setEvents(editingDay.events);
+      setNotes(editingDay.notes ?? "");
+    } else {
+      setDate(todayIso());
+      setRevenue("");
+      setMainSource("salle");
+      setRushLevel("normal");
+      setEvents([]);
+      setNotes("");
+    }
+    setError(null);
   }
 
-  function reset() {
-    setDate(todayIso());
-    setRevenue("");
-    setMainSource("salle");
-    setRushLevel("normal");
-    setEvents([]);
-    setNotes("");
-    setError(null);
+  // Re-populate whenever the modal opens (or which day it's editing changes) —
+  // this component stays mounted across opens/closes, so a plain useState
+  // initializer would only ever run once.
+  useEffect(() => {
+    if (open) reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editingDay?.id]);
+
+  function toggleEvent(e: string) {
+    setEvents((prev) => (prev.includes(e) ? prev.filter((x) => x !== e) : [...prev, e]));
   }
 
   function handleClose() {
@@ -103,7 +122,7 @@ export function AddServiceDayModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title="Ajouter une journée de service"
+      title={editingDay ? "Modifier la journée de service" : "Ajouter une journée de service"}
       description="Encodez le revenu, les événements et les observations du service."
       width={620}
     >
@@ -188,7 +207,7 @@ export function AddServiceDayModal({
             Annuler
           </Button>
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Enregistrement…" : "Enregistrer la journée"}
+            {submitting ? "Enregistrement…" : editingDay ? "Enregistrer les modifications" : "Enregistrer la journée"}
           </Button>
         </div>
       </form>

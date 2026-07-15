@@ -2,6 +2,37 @@ import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import type { Restaurant } from "@/lib/types";
 
+/**
+ * Free, no-key geocoding (OpenStreetMap Nominatim) so an establishment's
+ * address turns into a map pin — best-effort, never blocks the save.
+ * Nominatim's usage policy requires a descriptive User-Agent and no more
+ * than ~1 req/s, both fine for this low-volume, on-save use.
+ */
+async function geocodeAddress(address: string, city: string, province?: string): Promise<{ lng: number; lat: number } | null> {
+  const query = [address, city, province, "Canada"].filter(Boolean).join(", ");
+  if (!query.trim()) return null;
+
+  try {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("q", query);
+    url.searchParams.set("format", "json");
+    url.searchParams.set("limit", "1");
+
+    const res = await fetch(url.toString(), {
+      headers: { "User-Agent": "Minerva-Flow/1.0 (contact: quebecsaas@gmail.com)" },
+    });
+    if (!res.ok) return null;
+
+    const results = (await res.json()) as { lon: string; lat: string }[];
+    const first = results[0];
+    if (!first) return null;
+
+    return { lng: Number(first.lon), lat: Number(first.lat) };
+  } catch {
+    return null;
+  }
+}
+
 type RestaurantRow = {
   id: string;
   name: string;
@@ -98,6 +129,8 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
   } = await supabase.auth.getUser();
   if (!user || !input.name.trim()) return null;
 
+  const coords = input.address && input.city ? await geocodeAddress(input.address, input.city, input.province) : null;
+
   const { data, error } = await supabase
     .from("restaurants")
     .insert({
@@ -107,6 +140,8 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
       province: input.province || undefined,
       timezone: input.timezone || undefined,
       color: input.color || undefined,
+      lng: coords?.lng ?? null,
+      lat: coords?.lat ?? null,
     })
     .select("*")
     .single();
@@ -146,6 +181,16 @@ export async function updateRestaurant(
   if (patch.province !== undefined) dbPatch.province = patch.province;
   if (patch.timezone !== undefined) dbPatch.timezone = patch.timezone;
   if (patch.color !== undefined) dbPatch.color = patch.color;
+
+  // Re-geocode whenever the address changed — this is the only place a
+  // restaurant's map pin (lng/lat) gets populated.
+  if ((patch.address !== undefined || patch.city !== undefined) && patch.address && patch.city) {
+    const coords = await geocodeAddress(patch.address, patch.city, patch.province);
+    if (coords) {
+      dbPatch.lng = coords.lng;
+      dbPatch.lat = coords.lat;
+    }
+  }
 
   const { data, error } = await supabase
     .from("restaurants")

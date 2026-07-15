@@ -9,13 +9,19 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { MonthCalendar } from "@/components/charts/MonthCalendar";
 import { AddServiceDayModal, type AddServiceDayInput } from "@/components/forms/AddServiceDayModal";
 import { ImportServiceDaysModal } from "@/components/forms/ImportServiceDaysModal";
-import { createServiceDayAction, type CreateServiceDayResult } from "./actions";
+import {
+  createServiceDayAction,
+  updateServiceDayAction,
+  deleteServiceDayAction,
+  type CreateServiceDayResult,
+} from "./actions";
 import { useApp } from "@/lib/app-context";
 import { useRouter } from "next/navigation";
 import { formatCurrency, formatDateFull, formatDateWeekday } from "@/lib/utils";
 import type { Anomaly, ServiceDay, ServiceSource } from "@/lib/types";
-import { Plus, Upload, ShoppingBag, Truck, CalendarCheck, CalendarCheck2 } from "lucide-react";
+import { Plus, Upload, ShoppingBag, Truck, CalendarCheck, CalendarCheck2, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 const sourceLabel: Record<ServiceSource, string> = {
   salle: "Sur place",
@@ -56,6 +62,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
   const router = useRouter();
   const [days, setDays] = useState<ServiceDay[]>(initialServiceDays);
   const [open, setOpen] = useState(false);
+  const [editingDay, setEditingDay] = useState<ServiceDay | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
 
@@ -79,14 +86,23 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
   const canEdit = role === "owner" || role === "staff";
 
   async function handleSubmit(input: AddServiceDayInput): Promise<CreateServiceDayResult> {
-    const result = await createServiceDayAction(input);
+    const result = editingDay ? await updateServiceDayAction(editingDay.id, input) : await createServiceDayAction(input);
     if (result.ok) {
       setDays((prev) => {
-        const withoutSameDate = prev.filter((d) => d.date !== result.day.date);
+        const withoutSameId = prev.filter((d) => d.id !== result.day.id);
+        const withoutSameDate = withoutSameId.filter((d) => d.date !== result.day.date);
         return [...withoutSameDate, result.day].sort((a, b) => (a.date < b.date ? 1 : -1));
       });
+      setEditingDay(null);
     }
     return result;
+  }
+
+  async function handleDelete(day: ServiceDay) {
+    if (!window.confirm(`Supprimer la journée du ${formatDateWeekday(day.date)} ?`)) return;
+    const ok = await deleteServiceDayAction(day.id);
+    if (ok) setDays((prev) => prev.filter((d) => d.id !== day.id));
+    else toast.error("La suppression a échoué.");
   }
 
   return (
@@ -159,6 +175,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
             <Th>Événements</Th>
             <Th>Notes</Th>
             <Th>Statut</Th>
+            {canEdit && <Th className="text-right"></Th>}
           </THead>
           <tbody>
             {(selectedDate ? days.filter((d) => d.date === selectedDate) : days).map((d) => {
@@ -195,6 +212,26 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
                       <Badge tone="neutral">Normal</Badge>
                     )}
                   </Td>
+                  {canEdit && (
+                    <Td className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => setEditingDay(d)}
+                          aria-label="Modifier"
+                          className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(d)}
+                          aria-label="Supprimer"
+                          className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-red/10 hover:text-mv-red"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </Td>
+                  )}
                 </Tr>
               );
             })}
@@ -203,7 +240,15 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
         </>
       )}
 
-      <AddServiceDayModal open={open} onClose={() => setOpen(false)} onSubmit={handleSubmit} />
+      <AddServiceDayModal
+        open={open || Boolean(editingDay)}
+        onClose={() => {
+          setOpen(false);
+          setEditingDay(null);
+        }}
+        onSubmit={handleSubmit}
+        editingDay={editingDay}
+      />
       <ImportServiceDaysModal
         open={importOpen}
         onClose={() => setImportOpen(false)}

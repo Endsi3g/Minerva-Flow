@@ -23,7 +23,6 @@ import {
   FileText,
   Map as MapIcon,
   Send as SendIcon,
-  Compass as CompassIcon,
   Search as SearchIcon,
   Settings,
   CreditCard,
@@ -35,6 +34,8 @@ import {
   CalendarClock,
   CalendarDays,
   Truck,
+  Wallet,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -70,7 +71,8 @@ const mainNavItems: NavItem[] = [
 const favorites = [
   { href: "/maps", label: "Rapport des villes", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
   { href: "/campaigns?channel=Email", label: "Envoi hebdomadaire", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
-  { href: "/programs", label: "Initiatives", icon: CompassIcon, color: "#3182CE", roles: ["owner"] },
+  { href: "/finance", label: "Finance", icon: Wallet, color: "#3182CE", roles: ["owner", "manager"] },
+  { href: "/data", label: "Données", icon: Database, color: "#DD6B20", roles: ["owner", "manager", "consultant"] },
   { href: "/collaborateurs", label: "Utilisateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
 ];
 

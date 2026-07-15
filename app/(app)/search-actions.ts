@@ -35,6 +35,7 @@ export async function searchEverythingAction(
     { title: "Horaire", subtitle: "Planification des quarts de l'équipe", href: "/horaire" },
     { title: "Fournisseurs", subtitle: "Commandes et répertoire de fournisseurs", href: "/fournisseurs" },
     { title: "Finance", subtitle: "Analyse des transactions et revenus", href: "/finance" },
+    { title: "Données", subtitle: "Vue combinée des transactions et journées", href: "/data" },
     { title: "Paramètres", subtitle: "Configuration de la succursale", href: "/settings" },
     { title: "Facturation", subtitle: "Gestion de l'abonnement et de la facturation", href: "/billing" },
     { title: "Guide", subtitle: "Centre d'aide et documentation", href: "/guide" },

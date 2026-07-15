@@ -76,9 +76,14 @@ export default async function ReportsIndexPage() {
         eyebrow="Vue globale"
         title="Rapports"
         action={
-          <Button href="/reports/ai-review" size="sm" variant="secondary">
-            <Sparkles size={14} /> Revue IA
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button href="/finance" size="sm" variant="secondary">
+              Ajouter une dépense
+            </Button>
+            <Button href="/reports/ai-review" size="sm" variant="secondary">
+              <Sparkles size={14} /> Revue IA
+            </Button>
+          </div>
         }
       />
       <div className="space-y-8">
