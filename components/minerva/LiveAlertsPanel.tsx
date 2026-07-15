@@ -7,6 +7,10 @@ import { formatDate } from "@/lib/utils";
 import type { Alert, AlertSeverity } from "@/lib/types";
 import { useEffect, useState } from "react";
 
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+
 const severityTone: Record<AlertSeverity, "red" | "amber" | "neutral"> = {
   critique: "red",
   important: "amber",
@@ -58,9 +62,11 @@ function mapAlertRow(row: AlertRow): Alert {
 export function LiveAlertsPanel({
   restaurantId,
   initial,
+  className,
 }: {
   restaurantId: string;
   initial: Alert[];
+  className?: string;
 }) {
   const [alerts, setAlerts] = useState(initial);
 
@@ -91,11 +97,20 @@ export function LiveAlertsPanel({
   }, [restaurantId]);
 
   return (
-    <Card className="xl:sticky xl:top-6">
-      <CardHeader title="Alertes" description={`${alerts.length} à examiner`} />
-      {alerts.length === 0 ? (
-        <p className="text-[12.5px] text-mv-ink-faint">Rien à signaler pour l&apos;instant.</p>
-      ) : (
+    <Card className={cn("flex flex-col h-full xl:sticky xl:top-6", className)}>
+      <CardHeader
+        title="Alertes"
+        description={`${alerts.length} à examiner`}
+        action={
+          <Link href="/settings?tab=alertes" className="text-mv-green-dark hover:text-mv-green transition-colors">
+            <ArrowRight size={16} />
+          </Link>
+        }
+      />
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {alerts.length === 0 ? (
+          <p className="text-[12.5px] text-mv-ink-faint">Rien à signaler pour l&apos;instant.</p>
+        ) : (
         <div className="space-y-3">
           {alerts.map((a, i) => (
             <div
@@ -115,6 +130,7 @@ export function LiveAlertsPanel({
           ))}
         </div>
       )}
+      </div>
     </Card>
   );
 }

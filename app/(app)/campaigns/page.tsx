@@ -5,17 +5,18 @@ import { CampaignsView } from "./CampaignsView";
 export default async function CampaignsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ id?: string }>;
+  searchParams: Promise<{ id?: string; channel?: string }>;
 }) {
   const restaurantId = await getCurrentRestaurantId();
   const campaigns = restaurantId ? await getCampaigns(restaurantId) : [];
-  const { id } = await searchParams;
+  const { id, channel } = await searchParams;
 
   return (
     <CampaignsView
       restaurantId={restaurantId}
       campaigns={campaigns}
       initialSelectedId={id}
+      initialChannel={channel}
     />
   );
 }

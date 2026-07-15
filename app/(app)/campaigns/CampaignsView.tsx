@@ -47,15 +47,21 @@ export function CampaignsView({
   restaurantId,
   campaigns,
   initialSelectedId,
+  initialChannel,
 }: {
   restaurantId: string | null;
   campaigns: Campaign[];
   initialSelectedId?: string;
+  initialChannel?: string;
 }) {
   const { role } = useApp();
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<"all" | CampaignStatus>("all");
-  const [channelFilter, setChannelFilter] = useState<"all" | CampaignChannel>("all");
+  const [channelFilter, setChannelFilter] = useState<"all" | CampaignChannel>(
+    initialChannel && ["Instagram", "Email", "En salle", "Facebook"].includes(initialChannel)
+      ? (initialChannel as CampaignChannel)
+      : "all"
+  );
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId || null);
   const [isPending, startTransition] = useTransition();
 

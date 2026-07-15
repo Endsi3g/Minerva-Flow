@@ -65,9 +65,9 @@ const mainNavItems: NavItem[] = [
 
 // Favorites section
 const favorites = [
-  { href: "/reports/revenu", label: "Rapport des villes", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
-  { href: "/campaigns", label: "Envoi hebdomadaire", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
-  { href: "/finance", label: "Initiatives", icon: CompassIcon, color: "#3182CE", roles: ["owner"] },
+  { href: "/maps", label: "Rapport des villes", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
+  { href: "/campaigns?channel=Email", label: "Envoi hebdomadaire", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
+  { href: "/programs", label: "Initiatives", icon: CompassIcon, color: "#3182CE", roles: ["owner"] },
   { href: "/collaborateurs", label: "Utilisateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
 ];
 
@@ -349,17 +349,6 @@ export function AppSidebar() {
 
           {/* Settings Section Flat/Collapsible List at the bottom */}
           <div className="border-t border-mv-border p-2.5 space-y-1.5">
-            {/* Standalone settings item */}
-            {hasSettingsAccess && (
-              <NavLink
-                href="/settings"
-                label="Paramètres"
-                icon={Settings}
-                active={pathname.startsWith("/settings")}
-                onNavigate={closeMobile}
-              />
-            )}
-
             {/* Collapsible Paramètres et plus */}
             {visibleSettingsItems.length > 0 && (
               <CollapsibleSection
@@ -377,6 +366,17 @@ export function AppSidebar() {
                   />
                 ))}
               </CollapsibleSection>
+            )}
+
+            {/* Standalone settings item */}
+            {hasSettingsAccess && (
+              <NavLink
+                href="/settings"
+                label="Paramètres"
+                icon={Settings}
+                active={pathname.startsWith("/settings")}
+                onNavigate={closeMobile}
+              />
             )}
           </div>
         </motion.div>

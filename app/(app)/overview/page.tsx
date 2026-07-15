@@ -253,6 +253,11 @@ export default async function OverviewPage() {
               eyebrow="Journées de service"
               title="Heatmap du mois"
               description={formatDateFull(from).split(" ").slice(1).join(" ")}
+              action={
+                <Link href="/days" className="text-mv-green-dark hover:text-mv-green transition-colors">
+                  <ArrowRight size={16} />
+                </Link>
+              }
             />
             <div className="min-h-0 flex-1">
               <ContributionHeatmap data={heat} />
@@ -260,8 +265,8 @@ export default async function OverviewPage() {
           </Card>
         </div>
 
-        <div className="mv-animate-in xl:col-span-3" style={{ animationDelay: "160ms" }}>
-          <LiveAlertsPanel restaurantId={restaurantId} initial={combinedAlerts} />
+        <div className="mv-animate-in flex flex-col xl:col-span-3 h-full" style={{ animationDelay: "160ms" }}>
+          <LiveAlertsPanel restaurantId={restaurantId} initial={combinedAlerts} className="h-full" />
         </div>
       </div>
 

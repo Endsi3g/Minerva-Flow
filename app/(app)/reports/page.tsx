@@ -71,7 +71,7 @@ export default async function ReportsIndexPage() {
     }));
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl w-full">
       <PageHeader
         eyebrow="Vue globale"
         title="Rapports"
@@ -84,14 +84,14 @@ export default async function ReportsIndexPage() {
       <div className="space-y-8">
         {/* Dynamic AI-Generated Reports */}
         {dynamicReports.length > 0 && (
-          <div>
+          <div className="mv-animate-in" style={{ animationDelay: "60ms" }}>
             <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
               Analyses &amp; Rapports IA
             </p>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {dynamicReports.map((r) => (
                 <Link key={r.id} href={`/reports/dynamic-${r.id}`}>
-                  <Card className="transition-shadow hover:shadow-mv-md h-full flex flex-col justify-between">
+                  <Card className="transition-all duration-300 ease-out hover:shadow-mv-md hover:-translate-y-0.5 h-full flex flex-col justify-between">
                     <div>
                       <p className="font-display text-[15px] font-semibold text-mv-ink">{r.title}</p>
                       <p className="mt-1.5 text-[12.5px] text-mv-ink-soft">
@@ -109,18 +109,18 @@ export default async function ReportsIndexPage() {
           </div>
         )}
 
-        {reportGroups.map((group) => {
+        {reportGroups.map((group, groupIdx) => {
           const groupReports = reports.filter((r) => r.group === group);
           if (groupReports.length === 0) return null;
           return (
-            <div key={group}>
+            <div key={group} className="mv-animate-in" style={{ animationDelay: `${(groupIdx + 1) * 80}ms` }}>
               <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
                 {groupLabels[group] ?? group}
               </p>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {groupReports.map((r) => (
                   <Link key={r.slug} href={`/reports/${r.slug}`}>
-                    <Card className="transition-shadow hover:shadow-mv-md">
+                    <Card className="transition-all duration-300 ease-out hover:shadow-mv-md hover:-translate-y-0.5">
                       <p className="font-display text-[15px] font-medium text-mv-ink">{r.label}</p>
                       <div className="mt-2 flex items-end justify-between">
                         <p className="font-display text-[22px] font-medium text-mv-ink">

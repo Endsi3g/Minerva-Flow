@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 
 const typeIcon: Record<ConnectionType, typeof Landmark> = {
   banque: Landmark,
@@ -283,11 +284,14 @@ function IntegrationsTab() {
 }
 
 export default function SettingsPage() {
+  const searchParams = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "integrations";
+
   return (
     <div>
       <PageHeader eyebrow="Configuration" title="Settings" />
 
-      <Tabs defaultValue="integrations">
+      <Tabs key={defaultTab} defaultValue={defaultTab}>
         <TabsList className="mb-6 h-auto rounded-full border border-mv-border bg-mv-cream-soft p-1">
           <TabsTrigger
             value="integrations"

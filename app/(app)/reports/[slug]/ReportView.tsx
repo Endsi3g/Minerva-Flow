@@ -138,7 +138,7 @@ export function ReportView({
   }
 
   return (
-    <div>
+    <div className="mx-auto max-w-4xl w-full mv-animate-in">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[13px] text-mv-ink-faint">
           <Link href="/overview" className="flex items-center gap-1 hover:text-mv-ink">
