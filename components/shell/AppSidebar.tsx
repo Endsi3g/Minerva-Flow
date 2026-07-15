@@ -34,6 +34,7 @@ import {
   Users,
   CalendarClock,
   CalendarDays,
+  Truck,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -78,6 +79,7 @@ const favorites = [
 const operationsItems: NavItem[] = [
   { href: "/reservations", label: "Réservations", icon: CalendarClock, roles: allRoles },
   { href: "/horaire", label: "Horaire", icon: CalendarDays, roles: allRoles },
+  { href: "/fournisseurs", label: "Fournisseurs", icon: Truck, roles: ["owner", "manager"] },
 ];
 
 // Sub settings items (without Paramètres/Settings which is standalone)

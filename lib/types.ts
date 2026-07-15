@@ -89,6 +89,40 @@ export type ShiftSchedule = {
   createdAt: string;
 };
 
+export type Supplier = {
+  id: string;
+  restaurantId: string;
+  name: string;
+  contactName: string | null;
+  phone: string | null;
+  email: string | null;
+  category: string | null;
+  createdAt: string;
+};
+
+export type PurchaseOrderStatus = "brouillon" | "envoyee" | "recue" | "annulee";
+
+export type PurchaseOrderItem = {
+  id: string;
+  purchaseOrderId: string;
+  itemName: string;
+  quantity: number;
+  unit: string;
+  unitCost: number;
+};
+
+export type PurchaseOrder = {
+  id: string;
+  restaurantId: string;
+  supplierId: string;
+  status: PurchaseOrderStatus;
+  orderDate: string;
+  expectedDate: string | null;
+  notes: string | null;
+  createdAt: string;
+  items: PurchaseOrderItem[];
+};
+
 export type Company = {
   id: string;
   name: string;

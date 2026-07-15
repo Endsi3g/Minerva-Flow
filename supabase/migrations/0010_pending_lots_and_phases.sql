@@ -697,4 +697,92 @@ create policy "shift_schedules_manage" on shift_schedules for all
   using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
   with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Commandes fournisseurs (module 3 de l'expansion "OS pour restaurants")
+-- ═══════════════════════════════════════════════════════════════════════
+
+do $$ begin
+  create type purchase_order_status as enum ('brouillon', 'envoyee', 'recue', 'annulee');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists suppliers (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  name text not null,
+  contact_name text,
+  phone text,
+  email text,
+  category text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_suppliers_restaurant on suppliers (restaurant_id);
+
+alter table suppliers enable row level security;
+
+drop policy if exists "suppliers_select" on suppliers;
+create policy "suppliers_select" on suppliers for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "suppliers_manage" on suppliers;
+create policy "suppliers_manage" on suppliers for all
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
+create table if not exists purchase_orders (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  supplier_id uuid not null references suppliers (id) on delete cascade,
+  status purchase_order_status not null default 'brouillon',
+  order_date date not null default current_date,
+  expected_date date,
+  notes text,
+  created_by uuid references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_purchase_orders_restaurant on purchase_orders (restaurant_id, order_date desc);
+
+alter table purchase_orders enable row level security;
+
+drop policy if exists "purchase_orders_select" on purchase_orders;
+create policy "purchase_orders_select" on purchase_orders for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "purchase_orders_manage" on purchase_orders;
+create policy "purchase_orders_manage" on purchase_orders for all
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
+create table if not exists purchase_order_items (
+  id uuid primary key default gen_random_uuid(),
+  purchase_order_id uuid not null references purchase_orders (id) on delete cascade,
+  item_name text not null,
+  quantity numeric not null default 1,
+  unit text not null default 'unité',
+  unit_cost numeric not null default 0
+);
+
+create index if not exists idx_purchase_order_items_order on purchase_order_items (purchase_order_id);
+
+alter table purchase_order_items enable row level security;
+
+drop policy if exists "purchase_order_items_select" on purchase_order_items;
+create policy "purchase_order_items_select" on purchase_order_items for select
+  using (exists (
+    select 1 from purchase_orders po
+    where po.id = purchase_order_items.purchase_order_id and is_restaurant_member(po.restaurant_id)
+  ));
+drop policy if exists "purchase_order_items_manage" on purchase_order_items;
+create policy "purchase_order_items_manage" on purchase_order_items for all
+  using (exists (
+    select 1 from purchase_orders po
+    where po.id = purchase_order_items.purchase_order_id
+      and is_restaurant_member(po.restaurant_id, array['owner','manager']::member_role[])
+  ))
+  with check (exists (
+    select 1 from purchase_orders po
+    where po.id = purchase_order_items.purchase_order_id
+      and is_restaurant_member(po.restaurant_id, array['owner','manager']::member_role[])
+  ));
+
 commit;
