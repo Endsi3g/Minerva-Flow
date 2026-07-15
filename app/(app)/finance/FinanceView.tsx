@@ -21,6 +21,7 @@ import { useCsvTransactionImport } from "@/hooks/use-csv-transaction-import";
 import { createCategoryAction, categorizeTransactionsAction, createTransactionAction } from "./actions";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
+import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
 import type {
   Connection,
   ConnectionStatus,
@@ -543,51 +544,16 @@ function TransactionsTab({
   );
 }
 
-function AccountsTab({ connections }: { connections: Connection[] }) {
-  return (
-    <Card>
-      <CardHeader
-        title="Connexions"
-        description="Comptes bancaires, caisses et plateformes reliés à Minerva Flow"
-        action={
-          <Button size="sm" variant="secondary">
-            <Plus size={15} /> Connecter un compte
-          </Button>
-        }
-      />
-      {connections.length === 0 ? (
-        <p className="text-[12.5px] text-mv-ink-faint">Aucune connexion configurée pour l&apos;instant.</p>
-      ) : (
-        <div className="divide-y divide-mv-border-soft">
-          {connections.map((c) => {
-            const Icon = typeIcon[c.type];
-            return (
-              <div key={c.id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mv-cream-soft text-mv-ink-soft">
-                  <Icon size={17} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13.5px] font-semibold text-mv-ink">{c.name}</p>
-                  <p className="text-[12px] text-mv-ink-faint">
-                    {typeLabel[c.type]} · {c.lastSync}
-                  </p>
-                  {c.detail && <p className="mt-0.5 text-[12px] text-mv-red">{c.detail}</p>}
-                </div>
-                <Badge tone={statusTone[c.status]} dot>
-                  {statusLabel[c.status]}
-                </Badge>
-                {c.status === "erreur" && (
-                  <Button size="sm" variant="secondary">
-                    <RefreshCw size={13} /> Reconnecter
-                  </Button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </Card>
-  );
+/**
+ * "Comptes" used to render a fully mocked connections list (no create
+ * path existed anywhere in the codebase — the "Connecter un compte"
+ * button had no onClick). A generic bank-account link needs a real
+ * open-banking API we don't have; Square is the one POS connection that's
+ * actually wired end-to-end, so this tab now shows the real thing instead
+ * of a fake one.
+ */
+function AccountsTab() {
+  return <PosConnectionsCard />;
 }
 
 function CategoriesTab({ expenseCategories }: { expenseCategories: ExpenseCategory[] }) {
@@ -726,7 +692,7 @@ export function FinanceView({
           <TransactionsTab transactions={transactions} expenseCategories={expenseCategories} />
         </TabsContent>
         <TabsContent value="comptes">
-          <AccountsTab connections={connections} />
+          <AccountsTab />
         </TabsContent>
         <TabsContent value="categories">
           <CategoriesTab expenseCategories={expenseCategories} />

@@ -22,6 +22,9 @@ type TransactionRow = {
   program_id: string | null;
   reviewed: boolean;
   created_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+  updated_at: string | null;
 };
 
 function mapTransaction(row: TransactionRow): FinancialTransaction {
@@ -35,7 +38,23 @@ function mapTransaction(row: TransactionRow): FinancialTransaction {
     sourceAccount: row.source_account,
     programId: row.program_id,
     reviewed: row.reviewed,
+    createdBy: row.created_by,
+    updatedBy: row.updated_by,
+    updatedAt: row.updated_at,
   };
+}
+
+export async function getFinancialTransaction(restaurantId: string, id: string): Promise<FinancialTransaction | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("financial_transactions")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapTransaction(data as TransactionRow);
 }
 
 export async function getFinancialTransactions(
@@ -74,6 +93,10 @@ export async function createFinancialTransaction(
   input: TransactionInput
 ): Promise<FinancialTransaction | null> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data, error } = await supabase
     .from("financial_transactions")
     .insert({
@@ -86,6 +109,7 @@ export async function createFinancialTransaction(
       source_account: input.sourceAccount,
       program_id: input.programId ?? null,
       reviewed: input.reviewed ?? false,
+      created_by: user?.id ?? null,
     })
     .select("*")
     .single();
@@ -180,6 +204,9 @@ export async function updateFinancialTransaction(
   patch: Partial<TransactionInput>
 ): Promise<FinancialTransaction | null> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const dbPatch: Record<string, unknown> = {};
   if (patch.date !== undefined) dbPatch.date = patch.date;
@@ -190,6 +217,8 @@ export async function updateFinancialTransaction(
   if (patch.sourceAccount !== undefined) dbPatch.source_account = patch.sourceAccount;
   if (patch.programId !== undefined) dbPatch.program_id = patch.programId;
   if (patch.reviewed !== undefined) dbPatch.reviewed = patch.reviewed;
+  dbPatch.updated_by = user?.id ?? null;
+  dbPatch.updated_at = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("financial_transactions")

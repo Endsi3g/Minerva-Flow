@@ -211,3 +211,25 @@ export async function updateRestaurant(
 
   return mapRestaurant(data as RestaurantRow);
 }
+
+/**
+ * Lazily geocodes a restaurant that has an address but no pin yet — covers
+ * restaurants created/edited before geocoding existed, without requiring
+ * the owner to re-save Workspace. Called from the Maps page on load.
+ */
+export async function geocodeRestaurantIfMissing(restaurantId: string): Promise<{ lng: number; lat: number } | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("restaurants")
+    .select("address, city, province, lng, lat")
+    .eq("id", restaurantId)
+    .maybeSingle();
+
+  if (!data || data.lng !== null || data.lat !== null || !data.address || !data.city) return null;
+
+  const coords = await geocodeAddress(data.address, data.city, data.province);
+  if (!coords) return null;
+
+  await supabase.from("restaurants").update({ lng: coords.lng, lat: coords.lat }).eq("id", restaurantId);
+  return coords;
+}

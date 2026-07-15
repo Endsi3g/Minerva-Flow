@@ -888,4 +888,33 @@ drop policy if exists "schedule_shares_insert" on schedule_shares;
 create policy "schedule_shares_insert" on schedule_shares for insert
   with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Traçabilité des transactions (qui a créé/modifié) + partage de dépense
+-- ═══════════════════════════════════════════════════════════════════════
+
+alter table financial_transactions add column if not exists created_by uuid references auth.users (id);
+alter table financial_transactions add column if not exists updated_by uuid references auth.users (id);
+alter table financial_transactions add column if not exists updated_at timestamptz;
+
+create table if not exists expense_shares (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  transaction_id uuid not null references financial_transactions (id) on delete cascade,
+  token text not null unique,
+  snapshot jsonb not null,
+  created_by uuid not null references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_expense_shares_token on expense_shares (token);
+
+alter table expense_shares enable row level security;
+
+drop policy if exists "expense_shares_select" on expense_shares;
+create policy "expense_shares_select" on expense_shares for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "expense_shares_insert" on expense_shares;
+create policy "expense_shares_insert" on expense_shares for insert
+  with check (is_restaurant_member(restaurant_id));
+
 commit;

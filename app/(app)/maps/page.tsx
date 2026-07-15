@@ -14,9 +14,9 @@ import {
 } from "@/components/ui/map";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency } from "@/lib/utils";
-import { getAdConversionsAction, getRevenueByRestaurantAction } from "./actions";
+import { getAdConversionsAction, getRevenueByRestaurantAction, geocodeRestaurantIfMissingAction } from "./actions";
 import type { AdConversion, Restaurant } from "@/lib/types";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPinned, Megaphone, LocateFixed, Navigation, ChevronRight, X, TrendingUp } from "lucide-react";
 import Link from "next/link";
 
@@ -165,19 +165,53 @@ function GlobalStatsCard({
   );
 }
 
+/** Flies to the current restaurant's pin once, the first time it becomes available (backfilled or not). */
+function FlyToRestaurant({ lng, lat }: { lng: number; lat: number }) {
+  const { map } = useMap();
+  const flown = useRef(false);
+
+  useEffect(() => {
+    if (!map || flown.current) return;
+    flown.current = true;
+    map.flyTo({ center: [lng, lat], zoom: 14 });
+  }, [map, lng, lat]);
+
+  return null;
+}
+
 function EstablishmentsMode() {
   const { restaurantId, setRestaurantId, restaurants } = useApp();
-  const geoRestaurants = restaurants.filter(
-    (r): r is typeof r & { lng: number; lat: number } => r.lng !== null && r.lat !== null
-  );
+  const [backfilled, setBackfilled] = useState<Record<string, { lng: number; lat: number }>>({});
   const [revenueByRestaurant, setRevenueByRestaurant] = useState<
     Record<string, { revenue: number; delta: number }>
   >({});
+
+  const positioned = restaurants.map((r) => ({
+    ...r,
+    lng: r.lng ?? backfilled[r.id]?.lng ?? null,
+    lat: r.lat ?? backfilled[r.id]?.lat ?? null,
+  }));
+  const geoRestaurants = positioned.filter(
+    (r): r is typeof r & { lng: number; lat: number } => r.lng !== null && r.lat !== null
+  );
+  const current = geoRestaurants.find((r) => r.id === restaurantId);
 
   useEffect(() => {
     const ids = restaurants.map((r) => r.id);
     if (ids.length === 0) return;
     getRevenueByRestaurantAction(ids).then(setRevenueByRestaurant);
+  }, [restaurants]);
+
+  // Lazily geocode any restaurant that has an address but never got a pin
+  // (created/edited before geocoding existed) — no need to re-save Workspace.
+  useEffect(() => {
+    for (const r of restaurants) {
+      if (r.lng !== null || r.lat !== null || !r.address || !r.city) continue;
+      geocodeRestaurantIfMissingAction(r.id).then((coords) => {
+        if (coords) setBackfilled((prev) => ({ ...prev, [r.id]: coords }));
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurants]);
 
   const allStats = Object.values(revenueByRestaurant);
@@ -186,8 +220,13 @@ function EstablishmentsMode() {
 
   return (
     <>
-      <Map center={[-73.5673, 45.5017]} zoom={11} theme="light">
+      <Map
+        center={current ? [current.lng, current.lat] : [-73.5673, 45.5017]}
+        zoom={current ? 14 : 11}
+        theme="light"
+      >
         <MapControls position="bottom-right" showZoom showFullscreen />
+        {current && <FlyToRestaurant lng={current.lng} lat={current.lat} />}
         {geoRestaurants.map((r) => {
           const stats = revenueByRestaurant[r.id] ?? { revenue: 0, delta: 0 };
           const active = r.id === restaurantId;

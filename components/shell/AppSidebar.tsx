@@ -35,6 +35,7 @@ import {
   CalendarDays,
   Truck,
   Wallet,
+  TrendingDown,
   Database,
   type LucideIcon,
 } from "lucide-react";
@@ -72,6 +73,7 @@ const favorites = [
   { href: "/maps", label: "Rapport des villes", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
   { href: "/campaigns?channel=Email", label: "Envoi hebdomadaire", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
   { href: "/finance", label: "Finance", icon: Wallet, color: "#3182CE", roles: ["owner", "manager"] },
+  { href: "/depenses", label: "Dépenses", icon: TrendingDown, color: "#B5473A", roles: ["owner", "manager"] },
   { href: "/data", label: "Données", icon: Database, color: "#DD6B20", roles: ["owner", "manager", "consultant"] },
   { href: "/collaborateurs", label: "Utilisateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
 ];

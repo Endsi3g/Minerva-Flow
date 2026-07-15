@@ -2,10 +2,15 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
-import { getFinancialTransactions, getExpenseCategories, getConnections } from "@/lib/data/finance";
-import { getServiceDays } from "@/lib/data/service-days";
-import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
-import { DataTabsView } from "./DataTabsView";
+import { getFinancialTransactions } from "@/lib/data/finance";
+import { getRevenueByRestaurant } from "@/lib/data/service-days";
+import { getEmployees } from "@/lib/data/employees";
+import { getPrograms } from "@/lib/data/programs";
+import { getTeamMembers } from "@/lib/data/team";
+import { getPurchaseOrders } from "@/lib/data/purchase-orders";
+import { getReservationsForDay } from "@/lib/data/reservations";
+import { isoDaysAgo } from "@/lib/utils";
+import { DataOverviewView } from "./DataOverviewView";
 import { Store } from "lucide-react";
 
 export default async function DataPage() {
@@ -29,20 +34,33 @@ export default async function DataPage() {
     );
   }
 
-  const historyFrom = isoDaysAgo(DEFAULT_HISTORY_WINDOW_DAYS);
-  const [transactions, expenseCategories, connections, serviceDays] = await Promise.all([
-    getFinancialTransactions(restaurantId, { from: historyFrom }),
-    getExpenseCategories(restaurantId),
-    getConnections(restaurantId),
-    getServiceDays(restaurantId, { from: historyFrom }),
-  ]);
+  const historyFrom = isoDaysAgo(30);
+  const inThirtyDays = new Date(Date.now() + 30 * 86_400_000).toISOString();
+
+  const [revenueByRestaurant, transactions, employees, programs, members, purchaseOrders, upcomingReservations] =
+    await Promise.all([
+      getRevenueByRestaurant([restaurantId]),
+      getFinancialTransactions(restaurantId, { from: historyFrom }),
+      getEmployees(restaurantId),
+      getPrograms(restaurantId),
+      getTeamMembers(restaurantId),
+      getPurchaseOrders(restaurantId),
+      getReservationsForDay(restaurantId, new Date().toISOString(), inThirtyDays),
+    ]);
+
+  const expensesLast30d = transactions
+    .filter((t) => t.direction === "out")
+    .reduce((sum, t) => sum + t.amount, 0);
 
   return (
-    <DataTabsView
-      transactions={transactions}
-      expenseCategories={expenseCategories}
-      connections={connections}
-      serviceDays={serviceDays}
+    <DataOverviewView
+      revenue={revenueByRestaurant[restaurantId] ?? { revenue: 0, delta: 0 }}
+      expensesLast30d={expensesLast30d}
+      activeEmployeeCount={employees.filter((e) => e.active).length}
+      activeProgramCount={programs.filter((p) => p.status === "actif").length}
+      memberCount={members.length}
+      pendingPurchaseOrderCount={purchaseOrders.filter((o) => o.status === "brouillon" || o.status === "envoyee").length}
+      upcomingReservationCount={upcomingReservations.length}
     />
   );
 }

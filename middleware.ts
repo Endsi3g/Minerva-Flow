@@ -47,6 +47,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/invite/") ||
     pathname.startsWith("/r/") ||
     pathname.startsWith("/h/") ||
+    pathname.startsWith("/e/") ||
     pathname.startsWith("/legal/");
 
   // Server-to-server callers (Vercel Cron, Stripe, Square) never carry a

@@ -298,6 +298,9 @@ export type FinancialTransaction = {
   sourceAccount: string;
   programId: string | null;
   reviewed: boolean;
+  createdBy: string | null;
+  updatedBy: string | null;
+  updatedAt: string | null;
 };
 
 export type ExpenseCategory = {
