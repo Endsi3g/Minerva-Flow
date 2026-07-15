@@ -551,4 +551,22 @@ from (values
 ) as v(title, description, category, published_at)
 where not exists (select 1 from changelog_entries);
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Synchronisation des ventes Square (cron quotidien + webhooks)
+-- ═══════════════════════════════════════════════════════════════════════
+
+-- Distingue une journée saisie à la main d'une journée remplie par une
+-- synchronisation POS — le sync ne doit jamais écraser une saisie manuelle.
+alter table service_days add column if not exists revenue_source text not null default 'manuel';
+
+do $$ begin
+  alter table service_days add constraint service_days_revenue_source_check
+    check (revenue_source in ('manuel', 'square', 'lightspeed', 'clover'));
+exception when duplicate_object then null;
+end $$;
+
+alter table service_days add column if not exists revenue_synced_at timestamptz;
+
+alter table pos_connections add column if not exists last_synced_at timestamptz;
+
 commit;

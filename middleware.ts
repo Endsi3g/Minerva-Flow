@@ -48,7 +48,17 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/r/") ||
     pathname.startsWith("/legal/");
 
-  if (!user && !isAuthRoute && pathname !== "/") {
+  // Server-to-server callers (Vercel Cron, Stripe, Square) never carry a
+  // Supabase session cookie — redirecting them to /login silently turns
+  // their request into an HTML page and the route handler's own auth check
+  // (CRON_SECRET, webhook signature) never even runs. These verify
+  // themselves; the rest of /api/* still relies on the session check below.
+  const isServerCallbackRoute =
+    pathname.startsWith("/api/cron/") ||
+    pathname.startsWith("/api/webhooks/") ||
+    pathname === "/api/stripe/webhook";
+
+  if (!user && !isAuthRoute && !isServerCallbackRoute && pathname !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

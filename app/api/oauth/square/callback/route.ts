@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { squareBaseUrl, posOauthRedirectUri } from "@/lib/pos/config";
 import { verifyOAuthState } from "@/lib/ad-platforms/state";
 import { savePosConnectionTokens } from "@/lib/data/pos-connections";
+import { backfillSquareHistory } from "@/lib/pos/sync";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -54,6 +56,17 @@ export async function GET(req: Request) {
     refreshToken: tokenData.refresh_token,
     expiresAt: tokenData.expires_at,
     externalAccountId: tokenData.merchant_id,
+  });
+
+  // Pulls the last 90 days of Square sales in the background so a newly
+  // connected restaurant sees a full history immediately, without holding
+  // up this redirect for ~90 sequential Square API calls.
+  after(async () => {
+    try {
+      await backfillSquareHistory(verified.restaurantId);
+    } catch (err) {
+      console.error("Square history backfill failed:", err);
+    }
   });
 
   settingsUrl.searchParams.set("pos_connected", "square");

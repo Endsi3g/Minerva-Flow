@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import { hasGoogleScope } from "@/lib/data/google-connections";
 import { formatDateFull } from "@/lib/utils";
@@ -362,4 +363,42 @@ export async function deleteServiceDay(restaurantId: string, id: string): Promis
   });
 
   return true;
+}
+
+/**
+ * Server-only (service role) — writes a POS-synced revenue figure for one
+ * day, used by the sync cron and webhook handler which run without a user
+ * session. Never overwrites a day the owner already filled in by hand:
+ * once revenue_source is "manuel" it stays that way until they delete the
+ * row themselves.
+ */
+export async function upsertSyncedServiceDayRevenue(
+  restaurantId: string,
+  date: string,
+  revenue: number,
+  source: "square"
+): Promise<"synced" | "skipped_manual"> {
+  const admin = createAdminClient();
+
+  const { data: existing } = await admin
+    .from("service_days")
+    .select("revenue_source")
+    .eq("restaurant_id", restaurantId)
+    .eq("date", date)
+    .maybeSingle();
+
+  if (existing && existing.revenue_source === "manuel") return "skipped_manual";
+
+  await admin.from("service_days").upsert(
+    {
+      restaurant_id: restaurantId,
+      date,
+      revenue,
+      revenue_source: source,
+      revenue_synced_at: new Date().toISOString(),
+    },
+    { onConflict: "restaurant_id,date" }
+  );
+
+  return "synced";
 }
