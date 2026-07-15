@@ -112,3 +112,18 @@ export async function deleteShiftSchedule(restaurantId: string, id: string): Pro
     .eq("id", id);
   return !error;
 }
+
+/** Every future shift for one employee, across all weeks — used for the "envoyer l'horaire" panel/email/link. */
+export async function getUpcomingShiftsForEmployee(employeeId: string): Promise<ShiftSchedule[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("shift_schedules")
+    .select("*")
+    .eq("employee_id", employeeId)
+    .gte("shift_date", new Date().toISOString().slice(0, 10))
+    .order("shift_date")
+    .order("start_time");
+
+  if (error || !data) return [];
+  return (data as ShiftScheduleRow[]).map(mapShiftSchedule);
+}

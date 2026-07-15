@@ -15,8 +15,17 @@ import {
 import type { GoogleConnection } from "@/lib/data/google-connections";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Gmail, GoogleSheets, GoogleDrive, GoogleCalendar, GoogleAnalytics } from "@thesvg/react";
 
 const FEATURES: GoogleFeature[] = ["gmail", "sheets", "drive", "calendar", "analytics"];
+
+const FEATURE_ICON: Record<GoogleFeature, typeof Gmail> = {
+  gmail: Gmail,
+  sheets: GoogleSheets,
+  drive: GoogleDrive,
+  calendar: GoogleCalendar,
+  analytics: GoogleAnalytics,
+};
 
 export function GoogleWorkspaceCard() {
   const { restaurantId } = useApp();
@@ -84,11 +93,15 @@ export function GoogleWorkspaceCard() {
                 {connection.connectedEmail ?? "Connecté"}
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {grantedFeatures.map((f) => (
-                  <Badge key={f} tone="green">
-                    {GOOGLE_FEATURE_LABELS[f].title}
-                  </Badge>
-                ))}
+                {grantedFeatures.map((f) => {
+                  const Icon = FEATURE_ICON[f];
+                  return (
+                    <Badge key={f} tone="green">
+                      <Icon width={12} height={12} />
+                      {GOOGLE_FEATURE_LABELS[f].title}
+                    </Badge>
+                  );
+                })}
               </div>
             </div>
             <Button size="sm" variant="secondary" onClick={() => setModalOpen(true)}>

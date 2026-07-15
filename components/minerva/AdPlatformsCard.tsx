@@ -5,9 +5,13 @@ import { Badge } from "@/components/ui/Badge";
 import { useApp } from "@/lib/app-context";
 import { getAdPlatformStatusAction } from "@/app/(app)/settings/ad-platforms-actions";
 import type { AdPlatformConnection, AdProvider } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
+import { Meta, GoogleAds } from "@thesvg/react";
+
+type BrandIcon = ComponentType<{ width?: number; height?: number; className?: string }>;
 
 const providerLabel: Record<AdProvider, string> = { meta: "Meta Ads", google: "Google Ads" };
+const providerIcon: Record<AdProvider, BrandIcon> = { meta: Meta, google: GoogleAds };
 
 function ConnectRow({
   provider,
@@ -18,17 +22,21 @@ function ConnectRow({
   configured: boolean;
   connection?: AdPlatformConnection;
 }) {
+  const Icon = providerIcon[provider];
   return (
     <div className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3.5 py-3">
-      <div>
-        <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
-        <p className="text-[12px] text-mv-ink-faint">
-          {!configured
-            ? "Clés API non configurées"
-            : connection
-              ? `Connecté${connection.externalAccountId ? ` — ${connection.externalAccountId}` : ""}`
-              : "Non connecté"}
-        </p>
+      <div className="flex items-center gap-3">
+        <Icon width={22} height={22} className="shrink-0" />
+        <div>
+          <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
+          <p className="text-[12px] text-mv-ink-faint">
+            {!configured
+              ? "Clés API non configurées"
+              : connection
+                ? `Connecté${connection.externalAccountId ? ` — ${connection.externalAccountId}` : ""}`
+                : "Non connecté"}
+          </p>
+        </div>
       </div>
       {connection ? (
         <Badge tone="green" dot>

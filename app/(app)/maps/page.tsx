@@ -17,7 +17,8 @@ import { formatCurrency } from "@/lib/utils";
 import { getAdConversionsAction, getRevenueByRestaurantAction } from "./actions";
 import type { AdConversion, Restaurant } from "@/lib/types";
 import { useEffect, useMemo, useState } from "react";
-import { MapPinned, Megaphone, LocateFixed, Navigation } from "lucide-react";
+import { MapPinned, Megaphone, LocateFixed, Navigation, ChevronRight, X, TrendingUp } from "lucide-react";
+import Link from "next/link";
 
 type FilterMode = "tous" | "organique" | "payant";
 
@@ -93,8 +94,74 @@ function RestaurantMarker({
             Itinéraire
           </Button>
         </div>
+        <Link
+          href={`/etablissements/${restaurant.id}`}
+          className="mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-mv-border px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+        >
+          Voir la fiche complète <ChevronRight size={13} />
+        </Link>
       </MarkerPopup>
     </MapMarker>
+  );
+}
+
+const GLOBAL_STATS_DISMISS_KEY = "mv-maps-global-stats-dismissed";
+
+function GlobalStatsCard({
+  restaurantCount,
+  totalRevenue,
+  avgDelta,
+}: {
+  restaurantCount: number;
+  totalRevenue: number;
+  avgDelta: number;
+}) {
+  const [dismissed, setDismissed] = useState(true);
+
+  useEffect(() => {
+    setDismissed(localStorage.getItem(GLOBAL_STATS_DISMISS_KEY) === "1");
+  }, []);
+
+  if (dismissed) return null;
+
+  function handleDismiss() {
+    localStorage.setItem(GLOBAL_STATS_DISMISS_KEY, "1");
+    setDismissed(true);
+  }
+
+  return (
+    <div className="absolute bottom-4 left-4 z-10 w-64 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+          Statistiques globales
+        </p>
+        <button
+          onClick={handleDismiss}
+          aria-label="Retirer cette carte"
+          className="rounded-md p-1 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+        >
+          <X size={13} />
+        </button>
+      </div>
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[12px] text-mv-ink-soft">Établissements</span>
+          <span className="text-[13px] font-semibold text-mv-ink">{restaurantCount}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[12px] text-mv-ink-soft">Revenu total (mois)</span>
+          <span className="text-[13px] font-semibold text-mv-ink">{formatCurrency(totalRevenue)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1 text-[12px] text-mv-ink-soft">
+            <TrendingUp size={12} /> Delta moyen
+          </span>
+          <Badge tone={avgDelta >= 0 ? "green" : "red"} className="px-1.5 py-0.5 text-[10px]">
+            {avgDelta >= 0 ? "↑" : "↓"} {Math.abs(avgDelta).toFixed(1)}%
+          </Badge>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -112,6 +179,10 @@ function EstablishmentsMode() {
     if (ids.length === 0) return;
     getRevenueByRestaurantAction(ids).then(setRevenueByRestaurant);
   }, [restaurants]);
+
+  const allStats = Object.values(revenueByRestaurant);
+  const totalRevenue = allStats.reduce((sum, s) => sum + s.revenue, 0);
+  const avgDelta = allStats.length > 0 ? allStats.reduce((sum, s) => sum + s.delta, 0) / allStats.length : 0;
 
   return (
     <>
@@ -168,6 +239,12 @@ function EstablishmentsMode() {
           })}
         </div>
       </div>
+
+      <GlobalStatsCard
+        restaurantCount={geoRestaurants.length}
+        totalRevenue={totalRevenue}
+        avgDelta={avgDelta}
+      />
     </>
   );
 }
@@ -225,8 +302,8 @@ function AttributionMode() {
     <>
       <Map
         blank
-        center={current?.lng && current?.lat ? [current.lng, current.lat] : [-73.5673, 45.5017]}
-        zoom={current?.lng ? 9 : 11}
+        center={current?.lng != null && current?.lat != null ? [current.lng, current.lat] : [-73.5673, 45.5017]}
+        zoom={current?.lng != null ? 9 : 11}
         theme="light"
       >
         <MapControls position="bottom-right" showZoom showFullscreen />

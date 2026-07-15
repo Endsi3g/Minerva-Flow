@@ -3,13 +3,21 @@
 import { revalidatePath } from "next/cache";
 import {
   getShiftSchedulesForWeek,
+  getUpcomingShiftsForEmployee,
   createShiftSchedule,
   updateShiftScheduleStatus,
   deleteShiftSchedule,
   type ShiftScheduleInput,
 } from "@/lib/data/shift-schedules";
 import { notifyRestaurant } from "@/lib/data/notifications";
-import { getEmployees } from "@/lib/data/employees";
+import { getEmployees, getEmployeeById } from "@/lib/data/employees";
+import { getRestaurant } from "@/lib/data/restaurants";
+import { getGoogleConnection } from "@/lib/data/google-connections";
+import { createScheduleShare } from "@/lib/data/schedule-shares";
+import { sendReportEmail } from "@/lib/google/gmail";
+import { GOOGLE_SCOPES } from "@/lib/google/config";
+import { getCurrentMembership } from "@/lib/data/current-restaurant";
+import { formatDate } from "@/lib/utils";
 import type { Employee, ShiftSchedule, ShiftScheduleStatus } from "@/lib/types";
 
 export async function getWeekScheduleAction(
@@ -57,4 +65,82 @@ export async function deleteShiftScheduleAction(restaurantId: string, id: string
   const ok = await deleteShiftSchedule(restaurantId, id);
   if (ok) revalidatePath("/horaire");
   return ok;
+}
+
+export async function getEmployeeUpcomingShiftsAction(employeeId: string): Promise<ShiftSchedule[]> {
+  if (!employeeId) return [];
+  return getUpcomingShiftsForEmployee(employeeId);
+}
+
+function scheduleEmailHtml(employeeName: string, restaurantName: string, shifts: ShiftSchedule[]): string {
+  const rows = shifts
+    .map(
+      (s) =>
+        `<tr><td style="padding:6px 12px;border-bottom:1px solid #eee">${formatDate(s.shiftDate)}</td><td style="padding:6px 12px;border-bottom:1px solid #eee">${s.startTime.slice(0, 5)} – ${s.endTime.slice(0, 5)}</td><td style="padding:6px 12px;border-bottom:1px solid #eee">${s.positionLabel ?? ""}</td></tr>`
+    )
+    .join("");
+
+  return `
+    <div style="font-family:sans-serif;color:#1a1e16">
+      <h2 style="color:#167f5b">Votre horaire — ${restaurantName}</h2>
+      <p>Bonjour ${employeeName}, voici vos prochains quarts :</p>
+      <table style="border-collapse:collapse;width:100%;max-width:480px">
+        <thead><tr><th style="text-align:left;padding:6px 12px">Date</th><th style="text-align:left;padding:6px 12px">Heures</th><th style="text-align:left;padding:6px 12px">Poste</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="3" style="padding:12px">Aucun quart planifié pour l\'instant.</td></tr>'}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+/**
+ * Sends the employee's upcoming shifts by email via the restaurant's
+ * connected Gmail (gmail.send scope) — requires both an hourlyWage-style
+ * contact email on the employee record and Gmail configured in Paramètres.
+ */
+export async function sendScheduleEmailAction(
+  restaurantId: string,
+  employeeId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return { ok: false, error: "Non autorisé." };
+  }
+
+  const [employee, restaurant, connection, shifts] = await Promise.all([
+    getEmployeeById(employeeId),
+    getRestaurant(restaurantId),
+    getGoogleConnection(restaurantId),
+    getUpcomingShiftsForEmployee(employeeId),
+  ]);
+
+  if (!employee?.contactEmail) return { ok: false, error: "Aucun courriel enregistré pour cet employé." };
+  if (!connection?.grantedScopes.includes(GOOGLE_SCOPES.gmail)) {
+    return { ok: false, error: "Gmail n'est pas connecté (Paramètres → Intégrations)." };
+  }
+
+  const sent = await sendReportEmail(restaurantId, {
+    to: employee.contactEmail,
+    subject: `Votre horaire — ${restaurant?.name ?? "Minerva Flow"}`,
+    html: scheduleEmailHtml(employee.fullName, restaurant?.name ?? "", shifts),
+  });
+
+  return sent ? { ok: true } : { ok: false, error: "L'envoi a échoué. Réessayez." };
+}
+
+export async function createScheduleShareLinkAction(
+  restaurantId: string,
+  employeeId: string
+): Promise<string | null> {
+  const [employee, restaurant, shifts] = await Promise.all([
+    getEmployeeById(employeeId),
+    getRestaurant(restaurantId),
+    getUpcomingShiftsForEmployee(employeeId),
+  ]);
+  if (!employee) return null;
+
+  return createScheduleShare(restaurantId, employeeId, {
+    employeeName: employee.fullName,
+    restaurantName: restaurant?.name ?? "",
+    shifts,
+  });
 }

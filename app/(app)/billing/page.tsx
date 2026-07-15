@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { createCheckoutSessionAction, createBillingPortalSessionAction, getBillingStatusAction } from "./actions";
 import { formatDate } from "@/lib/utils";
-import { CreditCard } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Stripe } from "@thesvg/react";
 import { toast } from "sonner";
 
 const statusLabel: Record<string, string> = {
@@ -81,7 +81,7 @@ export default function BillingPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CreditCard size={16} className="text-mv-ink-faint" />
+                  <Stripe width={16} height={16} />
                   <span className="text-[13.5px] font-medium text-mv-ink">Abonnement mensuel</span>
                 </div>
                 <Badge tone={statusTone[status.subscription.status] ?? "neutral"}>

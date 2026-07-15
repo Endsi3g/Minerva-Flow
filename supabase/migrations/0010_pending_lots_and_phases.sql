@@ -862,4 +862,30 @@ alter table employees add column if not exists contact_email text;
 alter table employee_shifts add column if not exists financial_transaction_id uuid
   references financial_transactions (id) on delete set null;
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Partage d'horaire par lien (même schéma que report_shares)
+-- ═══════════════════════════════════════════════════════════════════════
+
+create table if not exists schedule_shares (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  employee_id uuid not null references employees (id) on delete cascade,
+  token text not null unique,
+  snapshot jsonb not null,
+  created_by uuid not null references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_schedule_shares_token on schedule_shares (token);
+create index if not exists idx_schedule_shares_restaurant on schedule_shares (restaurant_id);
+
+alter table schedule_shares enable row level security;
+
+drop policy if exists "schedule_shares_select" on schedule_shares;
+create policy "schedule_shares_select" on schedule_shares for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "schedule_shares_insert" on schedule_shares;
+create policy "schedule_shares_insert" on schedule_shares for insert
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
 commit;

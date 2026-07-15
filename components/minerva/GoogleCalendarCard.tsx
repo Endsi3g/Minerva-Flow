@@ -8,8 +8,8 @@ import {
   getMyUpcomingCalendarEventsAction,
 } from "@/app/(app)/profil/actions";
 import type { UpcomingCalendarEvent } from "@/lib/google/member-calendar";
-import { CalendarDays } from "lucide-react";
 import { useEffect, useState } from "react";
+import { GoogleCalendar } from "@thesvg/react";
 
 function formatEventTime(event: UpcomingCalendarEvent) {
   if (!event.start) return "";
@@ -55,7 +55,7 @@ export function GoogleCalendarCard() {
           href="/api/oauth/google-calendar"
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-mv-ink px-3 py-2 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-ink/90"
         >
-          <CalendarDays size={14} /> Connecter mon Google Calendar
+          <GoogleCalendar width={14} height={14} /> Connecter mon Google Calendar
         </a>
       ) : (
         <div>

@@ -6,14 +6,22 @@ import { useApp } from "@/lib/app-context";
 import { getPosStatusAction, syncPosNowAction } from "@/app/(app)/settings/pos-actions";
 import type { PosConnection, PosProvider } from "@/lib/data/pos-connections";
 import { formatDate } from "@/lib/utils";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Store } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
+import { Square } from "@thesvg/react";
 
 const providerLabel: Record<PosProvider, string> = {
   square: "Square",
   lightspeed: "Lightspeed",
   clover: "Clover",
 };
+
+// Square has an official brand icon in @thesvg/react; Lightspeed/Clover
+// don't (niche POS brands), so they fall back to a generic store icon.
+function ProviderIcon({ provider }: { provider: PosProvider }) {
+  if (provider === "square") return <Square width={22} height={22} className="shrink-0" />;
+  return <Store size={20} className="shrink-0 text-mv-ink-faint" />;
+}
 
 function ConnectRow({
   provider,
@@ -39,9 +47,12 @@ function ConnectRow({
 
   return (
     <div className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3.5 py-3">
-      <div>
-        <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
-        <p className="text-[12px] text-mv-ink-faint">{statusLine()}</p>
+      <div className="flex items-center gap-3">
+        <ProviderIcon provider={provider} />
+        <div>
+          <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
+          <p className="text-[12px] text-mv-ink-faint">{statusLine()}</p>
+        </div>
       </div>
       <div className="flex items-center gap-2">
         {connection && !hasError && (

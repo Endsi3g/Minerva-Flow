@@ -46,6 +46,7 @@ export async function middleware(request: NextRequest) {
     // the page itself checks auth state and prompts to sign in when needed.
     pathname.startsWith("/invite/") ||
     pathname.startsWith("/r/") ||
+    pathname.startsWith("/h/") ||
     pathname.startsWith("/legal/");
 
   // Server-to-server callers (Vercel Cron, Stripe, Square) never carry a

@@ -11,12 +11,16 @@ import {
   createShiftScheduleAction,
   updateShiftScheduleStatusAction,
   deleteShiftScheduleAction,
+  getEmployeeUpcomingShiftsAction,
+  sendScheduleEmailAction,
+  createScheduleShareLinkAction,
 } from "./actions";
 import { useApp } from "@/lib/app-context";
+import { formatDate } from "@/lib/utils";
 import type { Employee, ShiftSchedule, ShiftScheduleStatus } from "@/lib/types";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, X, Mail, Link2, Check, Copy } from "lucide-react";
 import { GoogleCalendarCard } from "@/components/minerva/GoogleCalendarCard";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 const statusTone: Record<ShiftScheduleStatus, "green" | "amber" | "neutral"> = {
@@ -131,6 +135,118 @@ function NewShiftModal({
   );
 }
 
+function EmployeeScheduleModal({
+  restaurantId,
+  employee,
+  open,
+  onClose,
+}: {
+  restaurantId: string;
+  employee: Employee;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [shifts, setShifts] = useState<ShiftSchedule[] | null>(null);
+  const [sending, setSending] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const [link, setLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setShifts(null);
+    setLink(null);
+    getEmployeeUpcomingShiftsAction(employee.id).then(setShifts);
+  }, [open, employee.id]);
+
+  async function handleSendEmail() {
+    setSending(true);
+    try {
+      const result = await sendScheduleEmailAction(restaurantId, employee.id);
+      if (result.ok) toast.success(`Horaire envoyé à ${employee.contactEmail}.`);
+      else toast.error(result.error ?? "L'envoi a échoué.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleCreateLink() {
+    setLinking(true);
+    try {
+      const token = await createScheduleShareLinkAction(restaurantId, employee.id);
+      if (token) setLink(`${window.location.origin}/h/${token}`);
+      else toast.error("La création du lien a échoué.");
+    } finally {
+      setLinking(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!link) return;
+    await navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={employee.fullName} description="Ses prochains quarts, à envoyer ou partager.">
+      <div className="space-y-4">
+        {shifts === null ? (
+          <p className="text-[12.5px] text-mv-ink-faint">Chargement…</p>
+        ) : shifts.length === 0 ? (
+          <p className="text-[12.5px] text-mv-ink-faint">Aucun quart à venir pour cet employé.</p>
+        ) : (
+          <div className="max-h-64 space-y-1.5 overflow-y-auto">
+            {shifts.map((s) => (
+              <div key={s.id} className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2">
+                <span className="text-[12.5px] font-medium text-mv-ink">{formatDate(s.shiftDate)}</span>
+                <span className="text-[12.5px] text-mv-ink-soft">
+                  {formatTime(s.startTime)}–{formatTime(s.endTime)}
+                  {s.positionLabel ? ` · ${s.positionLabel}` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2 border-t border-mv-border-soft pt-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleSendEmail}
+            disabled={sending || !employee.contactEmail}
+          >
+            <Mail size={14} /> {sending ? "Envoi…" : `Envoyer par courriel${employee.contactEmail ? "" : " (aucun courriel enregistré)"}`}
+          </Button>
+
+          {!link ? (
+            <Button variant="secondary" size="sm" onClick={handleCreateLink} disabled={linking}>
+              <Link2 size={14} /> {linking ? "Génération…" : "Générer un lien à partager"}
+            </Button>
+          ) : (
+            <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-3 py-2">
+              <p className="flex-1 truncate text-[12px] text-mv-ink-soft">{link}</p>
+              <button
+                onClick={handleCopy}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                aria-label="Copier le lien"
+              >
+                {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end border-t border-mv-border-soft pt-4">
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Fermer
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function HoraireView({
   restaurantId,
   initialEmployees,
@@ -147,6 +263,7 @@ export function HoraireView({
   const [shifts, setShifts] = useState(initialShifts);
   const [weekStart, setWeekStart] = useState(initialWeekStart);
   const [modalTarget, setModalTarget] = useState<{ employeeId: string; date: string } | null>(null);
+  const [scheduleEmployee, setScheduleEmployee] = useState<Employee | null>(null);
 
   const canManage = role === "owner" || role === "manager";
   const days = weekDates(weekStart);
@@ -219,7 +336,12 @@ export function HoraireView({
               {employees.map((emp) => (
                 <tr key={emp.id} className="border-b border-mv-border-soft last:border-b-0">
                   <td className="sticky left-0 z-10 border-r border-mv-border bg-mv-surface px-3 py-2 font-medium text-mv-ink">
-                    {emp.fullName}
+                    <button
+                      onClick={() => setScheduleEmployee(emp)}
+                      className="text-left transition-colors hover:text-mv-green-dark"
+                    >
+                      {emp.fullName}
+                    </button>
                     <p className="text-[11px] font-normal text-mv-ink-faint">{emp.roleTitle}</p>
                   </td>
                   {days.map((d) => {
@@ -293,6 +415,15 @@ export function HoraireView({
           open={Boolean(modalTarget)}
           onClose={() => setModalTarget(null)}
           onCreated={(s) => setShifts((prev) => [...prev, s])}
+        />
+      )}
+
+      {restaurantId && scheduleEmployee && (
+        <EmployeeScheduleModal
+          restaurantId={restaurantId}
+          employee={scheduleEmployee}
+          open={Boolean(scheduleEmployee)}
+          onClose={() => setScheduleEmployee(null)}
         />
       )}
     </div>

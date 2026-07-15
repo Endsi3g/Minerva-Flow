@@ -206,57 +206,54 @@ export function ProfileView({
         description="Votre photo, votre nom et votre activité récente."
       />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-        <div className="space-y-6 xl:col-span-4">
-          <Card>
-            <div className="flex flex-col items-center gap-3 text-center">
-              <AvatarUploader profile={profile} />
-              <NameEditor profile={profile} />
-              <p className="text-[12.5px] text-mv-ink-faint">{profile.email}</p>
-              {role && <Badge tone={roleTone[role]}>{roleLabels[role]}</Badge>}
-            </div>
-          </Card>
+      {/* Ordre voulu : profil → historique d'activité → capacités → zone sensible */}
+      <div className="max-w-2xl space-y-6">
+        <Card>
+          <div className="flex flex-col items-center gap-3 text-center">
+            <AvatarUploader profile={profile} />
+            <NameEditor profile={profile} />
+            <p className="text-[12.5px] text-mv-ink-faint">{profile.email}</p>
+            {role && <Badge tone={roleTone[role]}>{roleLabels[role]}</Badge>}
+          </div>
+        </Card>
 
-          {role && <RolePermissionsCard eyebrow="Capacités" highlightRole={role} />}
+        <GoogleCalendarCard />
 
-          <GoogleCalendarCard />
-
-          <DeleteAccountCard />
-        </div>
-
-        <div className="xl:col-span-8">
-          <Card>
-            <CardHeader
-              eyebrow="Historique"
-              title="Activité"
-              description="Vos dernières actions dans Minerva Flow."
-            />
-            {activity.length === 0 ? (
-              <p className="text-[12.5px] text-mv-ink-faint">
-                Aucune activité enregistrée pour l&apos;instant.
-              </p>
-            ) : (
-              <div>
-                {activity.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex items-start gap-3 border-b border-mv-border-soft py-3 last:border-0"
-                  >
-                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mv-cream-soft text-mv-ink-soft">
-                      <History size={13} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] text-mv-ink">{entry.description}</p>
-                      <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">
-                        {formatRelativeTime(entry.createdAt)}
-                      </p>
-                    </div>
+        <Card>
+          <CardHeader
+            eyebrow="Historique"
+            title="Activité"
+            description="Vos dernières actions dans Minerva Flow."
+          />
+          {activity.length === 0 ? (
+            <p className="text-[12.5px] text-mv-ink-faint">
+              Aucune activité enregistrée pour l&apos;instant.
+            </p>
+          ) : (
+            <div>
+              {activity.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex items-start gap-3 border-b border-mv-border-soft py-3 last:border-0"
+                >
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mv-cream-soft text-mv-ink-soft">
+                    <History size={13} />
                   </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] text-mv-ink">{entry.description}</p>
+                    <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">
+                      {formatRelativeTime(entry.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {role && <RolePermissionsCard eyebrow="Capacités" highlightRole={role} />}
+
+        <DeleteAccountCard />
       </div>
     </div>
   );
