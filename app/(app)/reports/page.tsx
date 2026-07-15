@@ -9,7 +9,7 @@ import { getPrograms } from "@/lib/data/programs";
 import { getCampaigns } from "@/lib/data/campaigns";
 import { getFinancialTransactions } from "@/lib/data/finance";
 import { buildReports, reportGroups, type ReportData } from "@/lib/reports";
-import { formatCurrency, isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
+import { cn, formatCurrency, isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { Sparkles, Store } from "lucide-react";
 import Link from "next/link";
@@ -112,12 +112,19 @@ export default async function ReportsIndexPage() {
         {reportGroups.map((group, groupIdx) => {
           const groupReports = reports.filter((r) => r.group === group);
           if (groupReports.length === 0) return null;
+          const gridCols =
+            groupReports.length === 1
+              ? "grid-cols-1 max-w-md"
+              : groupReports.length === 2
+                ? "grid-cols-1 md:grid-cols-2 max-w-3xl"
+                : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+
           return (
             <div key={group} className="mv-animate-in" style={{ animationDelay: `${(groupIdx + 1) * 80}ms` }}>
               <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
                 {groupLabels[group] ?? group}
               </p>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className={cn("grid gap-4", gridCols)}>
                 {groupReports.map((r) => (
                   <Link key={r.slug} href={`/reports/${r.slug}`}>
                     <Card className="transition-all duration-300 ease-out hover:shadow-mv-md hover:-translate-y-0.5">

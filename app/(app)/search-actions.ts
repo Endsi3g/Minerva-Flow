@@ -23,10 +23,10 @@ export async function searchEverythingAction(
 
   // 1. Search Navigation
   const navigationItems = [
-    { title: "Accueil", subtitle: "Tableau de bord principal", href: "/overview" },
+    { title: "Overview", subtitle: "Tableau de bord principal", href: "/overview" },
     { title: "Flow AI", subtitle: "Assistant IA conversationnel", href: "/assistant" },
     { title: "Programmes", subtitle: "Gestion des programmes de fidélité et d'opérations", href: "/programs" },
-    { title: "Journées de service", subtitle: "Suivi des performances journalières", href: "/days" },
+    { title: "Journées", subtitle: "Suivi des performances journalières", href: "/days" },
     { title: "Collaborateurs", subtitle: "Gestion de l'équipe et des permissions", href: "/collaborateurs" },
     { title: "Employés", subtitle: "Liste des employés et revues de performance", href: "/employees" },
     { title: "Campagnes", subtitle: "Suivi des campagnes marketing", href: "/campaigns" },

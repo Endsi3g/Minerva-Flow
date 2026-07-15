@@ -286,6 +286,11 @@ function AttributionMode() {
 
 export default function MapsPage() {
   const [mode, setMode] = useState<"establishments" | "attribution">("establishments");
+  const { setSidebarCollapsed } = useApp();
+
+  useEffect(() => {
+    setSidebarCollapsed(true);
+  }, [setSidebarCollapsed]);
 
   return (
     <div className="relative flex-1">

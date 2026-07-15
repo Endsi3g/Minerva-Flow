@@ -20,6 +20,7 @@ import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
 import { Bot, PanelLeft, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useApp } from "@/lib/app-context";
 
 const SUGGESTIONS = [
   "Pourquoi le revenu a baissé mercredi ?",
@@ -43,6 +44,9 @@ export function AssistantChatView({
   initialArtifact: ChatArtifact | null;
   defaultContext: CanvasContextData;
 }) {
+  const { authUser } = useApp();
+  const firstName = authUser?.fullName ? authUser.fullName.split(" ")[0] : "Collaborateur";
+
   const [shareOpen, setShareOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentArtifact, setCurrentArtifact] = useState<ChatArtifact | null>(initialArtifact);
@@ -170,11 +174,11 @@ export function AssistantChatView({
                 <Sparkles size={20} />
               </div>
               <div>
-                <p className="font-display text-[17.5px] font-medium text-mv-ink">
-                  Que voulez-vous savoir ?
+                <p className="font-display text-[18px] font-medium text-mv-ink">
+                  Bonjour {firstName}, voici vos statistiques pour aujourd&apos;hui :
                 </p>
-                <p className="mt-1 text-[13px] text-mv-ink-soft">
-                  Les réponses s&apos;appuient sur vos données réelles.
+                <p className="mt-1.5 text-[13px] text-mv-ink-soft">
+                  Que voulez-vous savoir ? Les réponses s&apos;appuient sur vos données réelles.
                 </p>
               </div>
               <div className="flex max-w-md flex-wrap justify-center gap-2">

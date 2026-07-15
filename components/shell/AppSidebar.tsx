@@ -52,13 +52,13 @@ type NavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
-// Main navigation items flat list (Accueil, Flow AI, Modèle, Métriques, Entités, Rapports, Cartes)
+// Main navigation items flat list (Overview, Flow AI, Programmes, Journées, Employés, Rapports, Cartes)
 const mainNavItems: NavItem[] = [
-  { href: "/overview", label: "Accueil", icon: Home, roles: ["owner", "staff", "consultant"] },
+  { href: "/overview", label: "Overview", icon: Home, roles: ["owner", "staff", "consultant"] },
   { href: "/assistant", label: "Flow AI", icon: MessageSquare, roles: ["owner", "manager", "staff", "consultant"] },
-  { href: "/programs", label: "Modèle", icon: GitCommit, roles: ["owner", "consultant"] },
-  { href: "/days", label: "Métriques", icon: BarChart3, roles: ["owner", "staff"] },
-  { href: "/employees", label: "Entités", icon: Boxes, roles: ["owner", "manager"] },
+  { href: "/programs", label: "Programmes", icon: GitCommit, roles: ["owner", "consultant"] },
+  { href: "/days", label: "Journées", icon: BarChart3, roles: ["owner", "staff"] },
+  { href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
   { href: "/reports", label: "Rapports", icon: FileText, roles: allRoles },
   { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
 ];
