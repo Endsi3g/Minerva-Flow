@@ -23,7 +23,7 @@ export default async function ChangelogPage() {
   const entries = await getChangelogEntries();
 
   return (
-    <div>
+    <div className="mx-auto max-w-2xl w-full">
       <PageHeader
         eyebrow="Paramètres"
         title="Journal des mises à jour"
@@ -33,7 +33,7 @@ export default async function ChangelogPage() {
       {entries.length === 0 ? (
         <EmptyState icon={History} title="Aucune mise à jour publiée pour l'instant" />
       ) : (
-        <div className="max-w-2xl space-y-3">
+        <div className="space-y-3">
           {entries.map((entry) => (
             <Card key={entry.id}>
               <div className="mb-1.5 flex items-center justify-between gap-2">

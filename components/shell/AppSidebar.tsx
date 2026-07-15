@@ -4,7 +4,7 @@ import { LogoMark } from "./Logo";
 import { useApp } from "@/lib/app-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  LayoutGrid,
   ChevronDown,
   Check,
   Home,
@@ -51,27 +52,27 @@ type NavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
-// Main navigation items flat list
+// Main navigation items flat list (Accueil, Flow AI, Modèle, Métriques, Entités, Rapports, Cartes)
 const mainNavItems: NavItem[] = [
-  { href: "/overview", label: "Aperçu", icon: Home, roles: ["owner", "staff", "consultant"] },
-  { href: "/assistant", label: "Assistant", icon: MessageSquare, roles: ["owner", "manager", "staff", "consultant"] },
-  { href: "/programs", label: "Programmes", icon: GitCommit, roles: ["owner", "consultant"] },
-  { href: "/days", label: "Journées", icon: BarChart3, roles: ["owner", "staff"] },
-  { href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
+  { href: "/overview", label: "Accueil", icon: Home, roles: ["owner", "staff", "consultant"] },
+  { href: "/assistant", label: "Flow AI", icon: MessageSquare, roles: ["owner", "manager", "staff", "consultant"] },
+  { href: "/programs", label: "Modèle", icon: GitCommit, roles: ["owner", "consultant"] },
+  { href: "/days", label: "Métriques", icon: BarChart3, roles: ["owner", "staff"] },
+  { href: "/employees", label: "Entités", icon: Boxes, roles: ["owner", "manager"] },
   { href: "/reports", label: "Rapports", icon: FileText, roles: allRoles },
   { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
 ];
 
 // Favorites section
 const favorites = [
-  { href: "/reports/revenu", label: "Revenu total", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
-  { href: "/campaigns", label: "Campagnes", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
-  { href: "/finance", label: "Finance", icon: CompassIcon, color: "#3182CE", roles: ["owner"] },
-  { href: "/collaborateurs", label: "Collaborateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
+  { href: "/reports/revenu", label: "Rapport des villes", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
+  { href: "/campaigns", label: "Envoi hebdomadaire", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
+  { href: "/finance", label: "Initiatives", icon: CompassIcon, color: "#3182CE", roles: ["owner"] },
+  { href: "/collaborateurs", label: "Utilisateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
 ];
 
-const settingsGroupItems: NavItem[] = [
-  { href: "/settings", label: "Paramètres", icon: Settings, roles: ["owner"] },
+// Sub settings items (without Paramètres/Settings which is standalone)
+const subSettingsGroupItems: NavItem[] = [
   { href: "/billing", label: "Facturation", icon: CreditCard, roles: ["owner"] },
   { href: "/guide", label: "Guide", icon: BookOpen, roles: allRoles },
   { href: "/support", label: "Aide & Support", icon: LifeBuoy, roles: allRoles },
@@ -112,6 +113,51 @@ function NavLink({
       />
       <span className="truncate">{label}</span>
     </Link>
+  );
+}
+
+function CollapsibleSection({
+  label,
+  children,
+  defaultOpen = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex w-full items-center justify-between px-2.5 py-1 text-left text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint transition-colors hover:text-mv-ink focus:outline-none"
+      >
+        <span>{label}</span>
+        <motion.span
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="shrink-0"
+        >
+          <ChevronDown size={12} className="opacity-60" />
+        </motion.span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 350, damping: 40 }}
+            className="overflow-hidden space-y-0.5 pl-2 border-l border-mv-border/40 ml-2.5"
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -161,13 +207,14 @@ function TeamSwitcher() {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { role, sidebarCollapsed, setSidebarCollapsed, restaurantId } = useApp();
+  const { role, sidebarCollapsed, setSidebarCollapsed, restaurantId, setRestaurantId, restaurants } = useApp();
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
 
   const visibleMainItems = mainNavItems.filter((n) => n.roles.includes(role));
   const visibleFavorites = favorites.filter((n) => n.roles.includes(role));
-  const visibleSettingsItems = settingsGroupItems.filter((n) => n.roles.includes(role));
+  const visibleSettingsItems = subSettingsGroupItems.filter((n) => n.roles.includes(role));
+  const hasSettingsAccess = ["owner"].includes(role);
 
   function closeMobile() {
     if (isMobile) setSidebarCollapsed(true);
@@ -234,11 +281,54 @@ export function AppSidebar() {
               ))}
             </div>
 
+            {/* Teams / Restaurants Section */}
+            <div className="space-y-1">
+              <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                Équipes
+              </p>
+              <div className="space-y-0.5">
+                {restaurants.map((r) => {
+                  const isCurrent = r.id === restaurantId;
+                  const letter = r.name.replace("Minerva — ", "").charAt(0).toUpperCase();
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => {
+                        setRestaurantId(r.id);
+                        closeMobile();
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium transition-all duration-150",
+                        isCurrent
+                          ? "bg-mv-green/10 text-mv-green-dark font-semibold"
+                          : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
+                      )}
+                    >
+                      <span
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white transition-all"
+                        style={{ backgroundColor: r.color || "#6341F0" }}
+                      >
+                        {letter}
+                      </span>
+                      <span className="truncate">{r.name.replace("Minerva — ", "")}</span>
+                    </button>
+                  );
+                })}
+                <NavLink
+                  href="/workspace"
+                  label="Toutes les équipes"
+                  icon={LayoutGrid}
+                  active={pathname.startsWith("/workspace")}
+                  onNavigate={closeMobile}
+                />
+              </div>
+            </div>
+
             {/* Favorites Section */}
             {visibleFavorites.length > 0 && (
               <div className="space-y-1">
                 <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                  Raccourcis
+                  Favoris
                 </p>
                 <div className="space-y-0.5">
                   {visibleFavorites.map((item) => (
@@ -257,24 +347,38 @@ export function AppSidebar() {
             )}
           </div>
 
-          {/* Settings Section Flat List at the bottom */}
-          {visibleSettingsItems.length > 0 && (
-            <div className="border-t border-mv-border p-2.5 space-y-0.5">
-              <p className="px-2.5 pb-1 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                Paramètres
-              </p>
-              {visibleSettingsItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  href={item.href}
-                  label={item.label}
-                  icon={item.icon}
-                  active={pathname.startsWith(item.href)}
-                  onNavigate={closeMobile}
-                />
-              ))}
-            </div>
-          )}
+          {/* Settings Section Flat/Collapsible List at the bottom */}
+          <div className="border-t border-mv-border p-2.5 space-y-1.5">
+            {/* Standalone settings item */}
+            {hasSettingsAccess && (
+              <NavLink
+                href="/settings"
+                label="Paramètres"
+                icon={Settings}
+                active={pathname.startsWith("/settings")}
+                onNavigate={closeMobile}
+              />
+            )}
+
+            {/* Collapsible Paramètres et plus */}
+            {visibleSettingsItems.length > 0 && (
+              <CollapsibleSection
+                label="Paramètres et plus"
+                defaultOpen={visibleSettingsItems.some((item) => pathname.startsWith(item.href))}
+              >
+                {visibleSettingsItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                  />
+                ))}
+              </CollapsibleSection>
+            )}
+          </div>
         </motion.div>
       </motion.aside>
 
