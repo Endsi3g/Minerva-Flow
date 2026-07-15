@@ -107,6 +107,42 @@ export async function broadcastNotification(input: {
 }
 
 /**
+ * Notifies every active user across every restaurant on the platform —
+ * used for platform-wide announcements (changelog entries) rather than
+ * restaurant-scoped events. `restaurant_id` on the notification row is set
+ * to each user's first active restaurant purely so the existing
+ * restaurant-scoped read path (getNotifications) picks it up; the content
+ * itself isn't restaurant-specific.
+ */
+export async function notifyAllUsers(input: {
+  type: string;
+  title: string;
+  body?: string;
+  link?: string;
+}): Promise<void> {
+  const admin = createAdminClient();
+  const { data } = await admin.from("restaurant_members").select("user_id, restaurant_id").eq("status", "active");
+
+  const rows = (data as { user_id: string; restaurant_id: string }[]) ?? [];
+  const restaurantIdByUser = new Map<string, string>();
+  for (const row of rows) {
+    if (!restaurantIdByUser.has(row.user_id)) restaurantIdByUser.set(row.user_id, row.restaurant_id);
+  }
+
+  const inserts = Array.from(restaurantIdByUser.entries()).map(([userId, restaurantId]) => ({
+    restaurant_id: restaurantId,
+    user_id: userId,
+    type: input.type,
+    title: input.title,
+    body: input.body ?? null,
+    link: input.link ?? null,
+  }));
+
+  if (inserts.length === 0) return;
+  await admin.from("notifications").insert(inserts);
+}
+
+/**
  * Notifies every active member of a restaurant (optionally excluding the
  * actor who triggered the event, so people don't get notified about their
  * own action). Thin wrapper around broadcastNotification for the common
