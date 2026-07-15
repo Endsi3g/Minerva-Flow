@@ -35,16 +35,20 @@ export async function middleware(request: NextRequest) {
     "/update-password",
     "/onboarding",
   ];
+  // skipTrailingSlashRedirect (next.config.ts) means "/login" and "/login/"
+  // are both live, distinct paths — strip the trailing slash before matching
+  // so a request to either form is recognized as the same public route.
+  const pathname = request.nextUrl.pathname.replace(/\/$/, "") || "/";
   const isAuthRoute =
-    publicRoutes.includes(request.nextUrl.pathname) ||
-    request.nextUrl.pathname.startsWith("/auth/") ||
+    publicRoutes.includes(pathname) ||
+    pathname.startsWith("/auth/") ||
     // Invite links and shared report links must be viewable before login —
     // the page itself checks auth state and prompts to sign in when needed.
-    request.nextUrl.pathname.startsWith("/invite/") ||
-    request.nextUrl.pathname.startsWith("/r/") ||
-    request.nextUrl.pathname.startsWith("/legal/");
+    pathname.startsWith("/invite/") ||
+    pathname.startsWith("/r/") ||
+    pathname.startsWith("/legal/");
 
-  if (!user && !isAuthRoute && request.nextUrl.pathname !== "/") {
+  if (!user && !isAuthRoute && pathname !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -55,6 +59,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!monitoring|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!monitoring|ingest|manifest\\.webmanifest|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

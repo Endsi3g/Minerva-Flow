@@ -13,7 +13,7 @@ export default async function DaysPage() {
   if (!restaurantId) {
     return (
       <div>
-        <PageHeader eyebrow="Journées de service" title="Days" />
+        <PageHeader eyebrow="Journées de service" title="Journées" />
         <EmptyState
           icon={Store}
           title="Aucun restaurant configuré"

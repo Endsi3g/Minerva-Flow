@@ -5,6 +5,7 @@ import { AppBreadcrumb } from "@/components/shell/AppBreadcrumb";
 import { TopbarActions } from "@/components/shell/TopbarActions";
 import { MobileTabBar } from "@/components/shell/MobileTabBar";
 import { WorkspaceSetupBanner } from "@/components/shell/WorkspaceSetupBanner";
+import { UpdateBanner } from "@/components/shell/UpdateBanner";
 import { useApp } from "@/lib/app-context";
 import { cn } from "@/lib/utils";
 import { PanelLeft } from "lucide-react";
@@ -51,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             children
           ) : (
             <div className="mx-auto max-w-[1400px]">
+              {!pathname.startsWith("/changelog") && <UpdateBanner />}
               {!pathname.startsWith("/workspace") && <WorkspaceSetupBanner />}
               {children}
             </div>

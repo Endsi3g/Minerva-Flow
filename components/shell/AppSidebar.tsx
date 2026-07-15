@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  LayoutGrid,
   ChevronDown,
   Check,
   Home,
@@ -52,23 +51,23 @@ type NavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
-// Main navigation items flat list (Home, Steep AI, Model, Metrics, Entities, Reports, Maps)
+// Main navigation items flat list
 const mainNavItems: NavItem[] = [
-  { href: "/overview", label: "Home", icon: Home, roles: ["owner", "staff", "consultant"] },
-  { href: "/assistant", label: "Steep AI", icon: MessageSquare, roles: ["owner", "manager", "staff", "consultant"] },
-  { href: "/programs", label: "Model", icon: GitCommit, roles: ["owner", "consultant"] },
-  { href: "/days", label: "Metrics", icon: BarChart3, roles: ["owner", "staff"] },
-  { href: "/employees", label: "Entities", icon: Boxes, roles: ["owner", "manager"] },
-  { href: "/reports", label: "Reports", icon: FileText, roles: allRoles },
-  { href: "/maps", label: "Maps", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
+  { href: "/overview", label: "Aperçu", icon: Home, roles: ["owner", "staff", "consultant"] },
+  { href: "/assistant", label: "Assistant", icon: MessageSquare, roles: ["owner", "manager", "staff", "consultant"] },
+  { href: "/programs", label: "Programmes", icon: GitCommit, roles: ["owner", "consultant"] },
+  { href: "/days", label: "Journées", icon: BarChart3, roles: ["owner", "staff"] },
+  { href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
+  { href: "/reports", label: "Rapports", icon: FileText, roles: allRoles },
+  { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
 ];
 
 // Favorites section
 const favorites = [
-  { href: "/reports/revenu", label: "Cities report", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
-  { href: "/campaigns", label: "Weekly sendout", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
-  { href: "/finance", label: "Initiatives", icon: CompassIcon, color: "#3182CE", roles: ["owner"] },
-  { href: "/collaborateurs", label: "Users", icon: Users, color: "#718096", roles: ["owner", "manager"] },
+  { href: "/reports/revenu", label: "Revenu total", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
+  { href: "/campaigns", label: "Campagnes", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
+  { href: "/finance", label: "Finance", icon: CompassIcon, color: "#3182CE", roles: ["owner"] },
+  { href: "/collaborateurs", label: "Collaborateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
 ];
 
 const settingsGroupItems: NavItem[] = [
@@ -162,7 +161,7 @@ function TeamSwitcher() {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { role, sidebarCollapsed, setSidebarCollapsed, restaurantId, setRestaurantId, restaurants } = useApp();
+  const { role, sidebarCollapsed, setSidebarCollapsed, restaurantId } = useApp();
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -235,54 +234,11 @@ export function AppSidebar() {
               ))}
             </div>
 
-            {/* Teams / Restaurants Section */}
-            <div className="space-y-1">
-              <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                Teams
-              </p>
-              <div className="space-y-0.5">
-                {restaurants.map((r) => {
-                  const isCurrent = r.id === restaurantId;
-                  const letter = r.name.replace("Minerva — ", "").charAt(0).toUpperCase();
-                  return (
-                    <button
-                      key={r.id}
-                      onClick={() => {
-                        setRestaurantId(r.id);
-                        closeMobile();
-                      }}
-                      className={cn(
-                        "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium transition-all duration-150",
-                        isCurrent
-                          ? "bg-mv-green/10 text-mv-green-dark font-semibold"
-                          : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
-                      )}
-                    >
-                      <span
-                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white transition-all"
-                        style={{ backgroundColor: r.color || "#6341F0" }}
-                      >
-                        {letter}
-                      </span>
-                      <span className="truncate">{r.name.replace("Minerva — ", "")}</span>
-                    </button>
-                  );
-                })}
-                <NavLink
-                  href="/workspace"
-                  label="All teams"
-                  icon={LayoutGrid}
-                  active={pathname.startsWith("/workspace")}
-                  onNavigate={closeMobile}
-                />
-              </div>
-            </div>
-
             {/* Favorites Section */}
             {visibleFavorites.length > 0 && (
               <div className="space-y-1">
                 <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                  Favorites
+                  Raccourcis
                 </p>
                 <div className="space-y-0.5">
                   {visibleFavorites.map((item) => (

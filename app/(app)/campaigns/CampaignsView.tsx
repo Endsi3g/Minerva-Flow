@@ -102,7 +102,7 @@ export function CampaignsView({
     <div>
       <PageHeader
         eyebrow="Campagnes & contenu"
-        title="Campaigns"
+        title="Campagnes"
         description="Posts, emails et promotions — et leur corrélation avec les revenus qui suivent."
         action={
           canCreate && (

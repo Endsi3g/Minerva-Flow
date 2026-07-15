@@ -24,7 +24,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "flow by Minerva",
+  title: "Flow par Minerva",
   description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
   icons: {
     icon: "/icon-512.png",
@@ -32,14 +32,14 @@ export const metadata: Metadata = {
     apple: "/icon-512.png",
   },
   openGraph: {
-    title: "flow by Minerva",
+    title: "Flow par Minerva",
     description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
     type: "website",
     locale: "fr_FR",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Flow by Minerva",
+    title: "Flow par Minerva",
     description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
   },
 };

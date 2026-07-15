@@ -15,6 +15,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { motion, AnimatePresence } from "motion/react";
 
 const stepIndicatorVariants = cva("flex items-center justify-center gap-2", {
   variants: {
@@ -240,17 +241,19 @@ function OnboardingRoot({
 
   return (
     <OnboardingContext.Provider value={contextValue}>
-      <div
+      <motion.div
+        layout
+        transition={{ type: "spring", stiffness: 350, damping: 40 }}
         className={cn(
-          "flex flex-col rounded-2xl border border-mv-border bg-mv-surface p-6 shadow-mv-sm",
+          "flex flex-col rounded-2xl border border-mv-border bg-mv-surface p-6 shadow-mv-sm overflow-hidden",
           className
         )}
         data-slot="onboarding"
         data-state={`step-${currentStep}`}
-        {...props}
+        {...(props as any)}
       >
         {children}
-      </div>
+      </motion.div>
     </OnboardingContext.Provider>
   );
 }
@@ -268,14 +271,24 @@ function OnboardingStep({ step, children, className, ...props }: OnboardingStepP
   const { currentStep } = useOnboarding();
   const isActive = currentStep === step;
 
-  if (!isActive) {
-    return null;
-  }
-
   return (
-    <div className={cn(className)} data-slot="onboarding-step" data-state="active" {...props}>
-      {children}
-    </div>
+    <AnimatePresence mode="wait">
+      {isActive && (
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, x: 15 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -15 }}
+          transition={{ duration: 0.2 }}
+          className={cn(className)}
+          data-slot="onboarding-step"
+          data-state="active"
+          {...(props as any)}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
