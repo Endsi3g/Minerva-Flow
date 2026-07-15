@@ -21,7 +21,6 @@ import {
 } from "@/app/(app)/alerts-actions";
 import type { Notification } from "@/lib/data/notifications";
 import type { Alert, AlertSeverity } from "@/lib/types";
-import type { Period } from "@/lib/app-context";
 
 const alertSeverityTone: Record<AlertSeverity, "red" | "amber" | "neutral"> = {
   critique: "red",
@@ -59,12 +58,6 @@ function mapAlertRow(row: AlertRow): Alert {
   };
 }
 
-const periods: { id: Period; label: string }[] = [
-  { id: "jour", label: "Jour" },
-  { id: "semaine", label: "Semaine" },
-  { id: "mois", label: "Mois" },
-  { id: "custom", label: "Personnalisé" },
-];
 
 function useClickOutside(onOutside: () => void) {
   const ref = useRef<HTMLDivElement>(null);
@@ -78,27 +71,6 @@ function useClickOutside(onOutside: () => void) {
   return ref;
 }
 
-function PeriodFilter() {
-  const { period, setPeriod } = useApp();
-  return (
-    <div className="flex h-9 items-center rounded-lg border border-mv-border bg-mv-surface p-0.5">
-      {periods.map((p) => (
-        <button
-          key={p.id}
-          onClick={() => setPeriod(p.id)}
-          className={cn(
-            "rounded-md px-2.5 py-1.5 text-[12.5px] font-semibold transition-colors",
-            period === p.id
-              ? "bg-mv-green text-mv-cream-soft"
-              : "text-mv-ink-soft hover:text-mv-ink"
-          )}
-        >
-          {p.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function UserMenu() {
   const { role, authUser } = useApp();
@@ -327,7 +299,6 @@ function NotificationBell() {
 export function TopbarActions() {
   return (
     <div className="flex items-center gap-3">
-      <PeriodFilter />
       <NotificationBell />
       <div className="h-6 w-px bg-mv-border" />
       <UserMenu />
