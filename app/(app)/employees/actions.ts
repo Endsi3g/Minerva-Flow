@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import {
   createEmployee,
   setEmployeeActive,
+  updateEmployee,
   createEmployeeShift,
   getEmployeeShifts,
   createEmployeeReview,
   getEmployeeReviews,
   type EmployeeInput,
+  type EmployeeUpdateInput,
   type EmployeeShiftInput,
   type EmployeeReviewInput,
 } from "@/lib/data/employees";
@@ -47,12 +49,28 @@ export async function setEmployeeActiveAction(
   return ok;
 }
 
+export async function updateEmployeeAction(
+  restaurantId: string,
+  id: string,
+  patch: EmployeeUpdateInput
+): Promise<Employee | null> {
+  if (!restaurantId || !id) return null;
+  if (!(await requireManager(restaurantId))) return null;
+
+  const employee = await updateEmployee(restaurantId, id, patch);
+  if (employee) revalidatePath("/employees");
+  return employee;
+}
+
 export async function createEmployeeShiftAction(input: EmployeeShiftInput): Promise<EmployeeShift | null> {
   if (!input.employeeId || !input.shiftDate) return null;
   if (!(await requireManager(input.restaurantId))) return null;
 
   const shift = await createEmployeeShift(input);
-  if (shift) revalidatePath("/employees");
+  if (shift) {
+    revalidatePath("/employees");
+    revalidatePath("/finance");
+  }
   return shift;
 }
 

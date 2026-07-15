@@ -25,6 +25,9 @@ export type Employee = {
   roleTitle: string;
   hourlyWage: number | null;
   active: boolean;
+  description: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
   createdAt: string;
 };
 

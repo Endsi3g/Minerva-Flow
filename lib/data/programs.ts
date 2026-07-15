@@ -280,3 +280,42 @@ export async function deleteProgram(restaurantId: string, id: string): Promise<b
 
   return true;
 }
+
+export type ProgramNote = { author: string; date: string; text: string };
+
+export async function createProgramNote(
+  restaurantId: string,
+  programId: string,
+  text: string
+): Promise<ProgramNote | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data, error } = await supabase
+    .from("notes")
+    .insert({
+      restaurant_id: restaurantId,
+      entity_type: "program",
+      entity_id: programId,
+      author_id: user?.id,
+      text,
+    })
+    .select("created_at")
+    .single();
+
+  if (error || !data || !user) return null;
+
+  const names = await namesByUserId(supabase, [user.id]);
+
+  await logActivity({
+    restaurantId,
+    actionType: "program.note_added",
+    entityType: "program",
+    entityId: programId,
+    description: "A ajouté une note à un programme",
+  });
+
+  return { author: names.get(user.id) ?? "—", date: (data.created_at as string).slice(0, 10), text };
+}

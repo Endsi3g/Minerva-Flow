@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { updateTeamMemberRole, removeTeamMember } from "@/lib/data/team";
 import { getActivityLog } from "@/lib/data/activity";
-import { createInviteLink, type RestaurantInvite } from "@/lib/data/invites";
+import { createInviteLink, listInvites, type RestaurantInvite, type InviteListEntry } from "@/lib/data/invites";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import type { ActivityLogEntry, Role } from "@/lib/types";
 
@@ -25,6 +25,15 @@ export async function createInviteLinkAction(
   }
 
   return createInviteLink(restaurantId, role);
+}
+
+export async function listInvitesAction(restaurantId: string): Promise<InviteListEntry[]> {
+  if (!restaurantId) return [];
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return [];
+  }
+  return listInvites(restaurantId);
 }
 
 /**

@@ -7,10 +7,14 @@ export function cn(...inputs: ClassValue[]) {
 
 export const DEFAULT_TIMEZONE = "America/Montreal";
 
+// minimumFractionDigits: 0 keeps whole amounts clean ("45 231 $"), while
+// maximumFractionDigits: 2 preserves cents instead of rounding them away
+// ("16,60 $" must never become "17 $").
 const currencyFormatter = new Intl.NumberFormat("fr-CA", {
   style: "currency",
   currency: "CAD",
-  maximumFractionDigits: 0,
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
 
 export function formatCurrency(value: number) {

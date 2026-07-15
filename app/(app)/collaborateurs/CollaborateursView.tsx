@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
@@ -11,12 +11,14 @@ import { Select } from "@/components/minerva/FormField";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InviteMemberModal } from "@/components/forms/InviteMemberModal";
 import { MemberDetailModal } from "./MemberDetailModal";
-import { updateMemberRoleAction, removeMemberAction } from "./actions";
+import { updateMemberRoleAction, removeMemberAction, listInvitesAction } from "./actions";
 import { useApp, roleLabels } from "@/lib/app-context";
 import { useTeamPresence } from "@/hooks/use-team-presence";
+import { formatRelativeTime } from "@/lib/utils";
 import posthog from "posthog-js";
+import type { InviteListEntry } from "@/lib/data/invites";
 import type { Role, TeamMember } from "@/lib/types";
-import { Plus, Users, Trash2, ChevronRight } from "lucide-react";
+import { Plus, Users, Trash2, ChevronRight, Mail } from "lucide-react";
 import Link from "next/link";
 
 const roleTone: Record<Role, "green" | "lime" | "amber"> = {
@@ -41,8 +43,16 @@ export function CollaborateursView({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [selected, setSelected] = useState<TeamMember | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [invites, setInvites] = useState<InviteListEntry[]>([]);
 
   const canManage = Boolean(restaurantId) && (role === "owner" || role === "manager");
+
+  function refreshInvites() {
+    if (!restaurantId || !canManage) return;
+    listInvitesAction(restaurantId).then(setInvites);
+  }
+
+  useEffect(refreshInvites, [restaurantId, canManage]);
 
   function handleRoleChange(member: TeamMember, next: Role) {
     if (!restaurantId || !member.membershipId) return;
@@ -183,8 +193,44 @@ export function CollaborateursView({
         </Table>
       )}
 
+      {canManage && invites.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-mv-border bg-mv-surface p-5">
+          <p className="mb-3 text-[13px] font-semibold text-mv-ink">Invitations envoyées</p>
+          <div className="space-y-2">
+            {invites.map((invite) => (
+              <div
+                key={invite.id}
+                className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2.5"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Mail size={14} className="text-mv-ink-faint" />
+                  <div>
+                    <p className="text-[12.5px] font-medium text-mv-ink">
+                      {roleLabels[invite.role]} · {formatRelativeTime(invite.createdAt)}
+                    </p>
+                    {invite.redeemedByEmail && (
+                      <p className="text-[11.5px] text-mv-ink-faint">Rejoint par {invite.redeemedByEmail}</p>
+                    )}
+                  </div>
+                </div>
+                <Badge tone={invite.status === "utilisee" ? "green" : invite.status === "expiree" ? "neutral" : "amber"} dot>
+                  {invite.status === "utilisee" ? "A rejoint" : invite.status === "expiree" ? "Expirée" : "En attente"}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {restaurantId && (
-        <InviteMemberModal restaurantId={restaurantId} open={inviteOpen} onClose={() => setInviteOpen(false)} />
+        <InviteMemberModal
+          restaurantId={restaurantId}
+          open={inviteOpen}
+          onClose={() => {
+            setInviteOpen(false);
+            refreshInvites();
+          }}
+        />
       )}
 
       {restaurantId && (

@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/minerva/FormField";
+import { Select, Textarea } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RevenueChart } from "@/components/charts/RevenueChart";
@@ -15,7 +15,7 @@ import type { Campaign, Program, ProgramStatus, ProgramType } from "@/lib/types"
 import { LineChart, Plus, MessageSquare, Trash2 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { updateProgramStatusAction, deleteProgramAction } from "./actions";
+import { updateProgramStatusAction, deleteProgramAction, createProgramNoteAction } from "./actions";
 import { toast } from "sonner";
 
 const typeLabel: Record<ProgramType, string> = {
@@ -63,6 +63,9 @@ export function ProgramsView({
   const [selectedId, setSelectedId] = useState<string | null>(initialId);
   const [createOpen, setCreateOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [addingNote, setAddingNote] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
   const canCreate =
     Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
@@ -75,6 +78,23 @@ export function ProgramsView({
       if (!updated) toast.error("La mise à jour du statut a échoué.");
       router.refresh();
     });
+  }
+
+  async function handleAddNote() {
+    if (!restaurantId || !selectedId || !noteText.trim()) return;
+    setIsSubmittingNote(true);
+    try {
+      const note = await createProgramNoteAction(restaurantId, selectedId, noteText);
+      if (note) {
+        setNoteText("");
+        setAddingNote(false);
+        router.refresh();
+      } else {
+        toast.error("L'ajout de la note a échoué.");
+      }
+    } finally {
+      setIsSubmittingNote(false);
+    }
   }
 
   function handleDelete() {
@@ -305,13 +325,41 @@ export function ProgramsView({
                   title="Notes du consultant"
                   description={`${selected.consultantNotes.length} note(s)`}
                   action={
-                    role === "consultant" && (
-                      <Button size="sm" variant="secondary">
+                    role === "consultant" &&
+                    !addingNote && (
+                      <Button size="sm" variant="secondary" onClick={() => setAddingNote(true)}>
                         <MessageSquare size={14} /> Ajouter
                       </Button>
                     )
                   }
                 />
+                {addingNote && (
+                  <div className="mb-3 space-y-2 rounded-lg border border-mv-border-soft p-3">
+                    <Textarea
+                      value={noteText}
+                      onChange={(e) => setNoteText(e.target.value)}
+                      placeholder="Votre observation sur ce programme…"
+                      rows={3}
+                      autoFocus
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setAddingNote(false);
+                          setNoteText("");
+                        }}
+                        disabled={isSubmittingNote}
+                      >
+                        Annuler
+                      </Button>
+                      <Button size="sm" onClick={handleAddNote} disabled={isSubmittingNote || !noteText.trim()}>
+                        {isSubmittingNote ? "Ajout…" : "Ajouter"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {selected.consultantNotes.length === 0 ? (
                   <p className="text-[12.5px] text-mv-ink-faint">
                     Aucune note pour ce programme pour le moment.

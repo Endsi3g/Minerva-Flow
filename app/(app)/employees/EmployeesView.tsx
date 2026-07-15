@@ -63,6 +63,9 @@ function NewEmployeeModal({
         fullName: String(form.get("fullName") ?? ""),
         roleTitle: String(form.get("roleTitle") ?? "") || "Employé",
         hourlyWage: wage ? Number(wage) : null,
+        description: String(form.get("description") ?? "") || null,
+        contactPhone: String(form.get("contactPhone") ?? "") || null,
+        contactEmail: String(form.get("contactEmail") ?? "") || null,
       });
       if (employee) {
         posthog.capture("employee_created", { role_title: employee.roleTitle, has_wage: employee.hourlyWage !== null });
@@ -87,6 +90,17 @@ function NewEmployeeModal({
         </Field>
         <Field label="Taux horaire ($/h)" hint="Optionnel">
           <Input name="hourlyWage" type="number" step="0.01" min="0" placeholder="Ex : 18.50" />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Téléphone" hint="Optionnel">
+            <Input name="contactPhone" type="tel" placeholder="Ex : 514-555-1234" />
+          </Field>
+          <Field label="Courriel" hint="Optionnel">
+            <Input name="contactEmail" type="email" placeholder="Ex : sam@courriel.com" />
+          </Field>
+        </div>
+        <Field label="Description" hint="Optionnel">
+          <Textarea name="description" placeholder="Ex : disponible les fins de semaine, formation en pâtisserie…" rows={2} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
@@ -297,6 +311,15 @@ export function EmployeeDetail({
         </div>
         {employee.hourlyWage !== null && (
           <p className="mt-2 text-[13px] text-mv-ink-soft">{formatCurrency(employee.hourlyWage)}/h</p>
+        )}
+        {employee.description && (
+          <p className="mt-2 text-[12.5px] leading-relaxed text-mv-ink-soft">{employee.description}</p>
+        )}
+        {(employee.contactPhone || employee.contactEmail) && (
+          <div className="mt-2 space-y-0.5 text-[12.5px] text-mv-ink-soft">
+            {employee.contactPhone && <p>{employee.contactPhone}</p>}
+            {employee.contactEmail && <p>{employee.contactEmail}</p>}
+          </div>
         )}
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-mv-cream-soft p-3">
           <div>

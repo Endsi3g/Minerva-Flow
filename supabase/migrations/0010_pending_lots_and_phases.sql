@@ -847,4 +847,19 @@ drop policy if exists "reservation_platform_connections_select" on reservation_p
 create policy "reservation_platform_connections_select" on reservation_platform_connections for select
   using (is_restaurant_member(restaurant_id));
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Champs employé additionnels (description, coordonnées) + dépense
+-- automatique liée aux quarts travaillés
+-- ═══════════════════════════════════════════════════════════════════════
+
+alter table employees add column if not exists description text;
+alter table employees add column if not exists contact_phone text;
+alter table employees add column if not exists contact_email text;
+
+-- Un quart travaillé génère automatiquement sa dépense de main d'œuvre —
+-- on garde la trace de la transaction générée pour pouvoir la mettre à
+-- jour/supprimer si le quart est corrigé, sans dupliquer.
+alter table employee_shifts add column if not exists financial_transaction_id uuid
+  references financial_transactions (id) on delete set null;
+
 commit;

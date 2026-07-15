@@ -57,13 +57,13 @@ const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
 // Main navigation items flat list (Overview, Flow AI, Programmes, Journées, Employés, Rapports, Cartes)
 const mainNavItems: NavItem[] = [
-  { href: "/overview", label: "Overview", icon: Home, roles: ["owner", "staff", "consultant"] },
-  { href: "/assistant", label: "Flow AI", icon: MessageSquare, roles: ["owner", "manager", "staff", "consultant"] },
-  { href: "/programs", label: "Programmes", icon: GitCommit, roles: ["owner", "consultant"] },
-  { href: "/days", label: "Journées", icon: BarChart3, roles: ["owner", "staff"] },
+  { href: "/overview", label: "Aperçu", icon: Home, roles: allRoles },
+  { href: "/assistant", label: "Flow AI", icon: MessageSquare, roles: allRoles },
+  { href: "/programs", label: "Programmes", icon: GitCommit, roles: allRoles },
+  { href: "/days", label: "Journées", icon: BarChart3, roles: allRoles },
   { href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
   { href: "/reports", label: "Rapports", icon: FileText, roles: allRoles },
-  { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
+  { href: "/maps", label: "Cartes", icon: MapIcon, roles: allRoles },
 ];
 
 // Favorites section
@@ -226,7 +226,7 @@ export function AppSidebar() {
   const visibleFavorites = favorites.filter((n) => n.roles.includes(role));
   const visibleOperationsItems = operationsItems.filter((n) => n.roles.includes(role));
   const visibleSettingsItems = subSettingsGroupItems.filter((n) => n.roles.includes(role));
-  const hasSettingsAccess = ["owner"].includes(role);
+  const hasSettingsAccess = ["owner", "manager"].includes(role);
 
   function closeMobile() {
     if (isMobile) setSidebarCollapsed(true);

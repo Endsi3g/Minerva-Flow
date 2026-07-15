@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import { notifyRestaurant } from "@/lib/data/notifications";
+import { createFinancialTransaction } from "@/lib/data/finance";
 import type { Employee, EmployeeReview, EmployeeShift } from "@/lib/types";
 
 type EmployeeRow = {
@@ -11,6 +12,9 @@ type EmployeeRow = {
   role_title: string;
   hourly_wage: number | null;
   active: boolean;
+  description: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
   created_at: string;
 };
 
@@ -23,6 +27,9 @@ function mapEmployee(row: EmployeeRow): Employee {
     roleTitle: row.role_title,
     hourlyWage: row.hourly_wage,
     active: row.active,
+    description: row.description,
+    contactPhone: row.contact_phone,
+    contactEmail: row.contact_email,
     createdAt: row.created_at,
   };
 }
@@ -43,6 +50,9 @@ export type EmployeeInput = {
   fullName: string;
   roleTitle: string;
   hourlyWage?: number | null;
+  description?: string | null;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
 };
 
 export async function getEmployeeById(id: string): Promise<Employee | null> {
@@ -65,6 +75,9 @@ export async function createEmployee(restaurantId: string, input: EmployeeInput)
       full_name: input.fullName,
       role_title: input.roleTitle,
       hourly_wage: input.hourlyWage ?? null,
+      description: input.description ?? null,
+      contact_phone: input.contactPhone ?? null,
+      contact_email: input.contactEmail ?? null,
       created_by: user?.id,
     })
     .select("*")
@@ -91,6 +104,36 @@ export async function setEmployeeActive(restaurantId: string, id: string, active
     .eq("restaurant_id", restaurantId)
     .eq("id", id);
   return !error;
+}
+
+export type EmployeeUpdateInput = Partial<
+  Pick<EmployeeInput, "fullName" | "roleTitle" | "hourlyWage" | "description" | "contactPhone" | "contactEmail">
+>;
+
+export async function updateEmployee(
+  restaurantId: string,
+  id: string,
+  patch: EmployeeUpdateInput
+): Promise<Employee | null> {
+  const supabase = await createClient();
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.fullName !== undefined) dbPatch.full_name = patch.fullName;
+  if (patch.roleTitle !== undefined) dbPatch.role_title = patch.roleTitle;
+  if (patch.hourlyWage !== undefined) dbPatch.hourly_wage = patch.hourlyWage;
+  if (patch.description !== undefined) dbPatch.description = patch.description;
+  if (patch.contactPhone !== undefined) dbPatch.contact_phone = patch.contactPhone;
+  if (patch.contactEmail !== undefined) dbPatch.contact_email = patch.contactEmail;
+
+  const { data, error } = await supabase
+    .from("employees")
+    .update(dbPatch)
+    .eq("restaurant_id", restaurantId)
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error || !data) return null;
+  return mapEmployee(data as EmployeeRow);
 }
 
 type ShiftRow = {
@@ -136,11 +179,46 @@ export type EmployeeShiftInput = {
   notes?: string | null;
 };
 
+/**
+ * A logged shift automatically books its labor cost as a Finance expense
+ * (category "Main d'œuvre") when the employee has an hourly wage set — so
+ * payroll shows up in reports/expense totals without a separate manual
+ * entry. Best-effort: a failure here never blocks the shift log itself.
+ */
+async function bookLaborExpense(
+  restaurantId: string,
+  employeeId: string,
+  shiftDate: string,
+  hoursWorked: number
+): Promise<string | null> {
+  const employee = await getEmployeeById(employeeId);
+  if (!employee || employee.hourlyWage === null || hoursWorked <= 0) return null;
+
+  const transaction = await createFinancialTransaction(restaurantId, {
+    date: shiftDate,
+    description: `Quart travaillé — ${employee.fullName}`,
+    amount: Math.round(employee.hourlyWage * hoursWorked * 100) / 100,
+    direction: "out",
+    category: "Main d'œuvre",
+    sourceAccount: "Paie",
+    reviewed: true,
+  });
+
+  return transaction?.id ?? null;
+}
+
 export async function createEmployeeShift(input: EmployeeShiftInput): Promise<EmployeeShift | null> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const financialTransactionId = await bookLaborExpense(
+    input.restaurantId,
+    input.employeeId,
+    input.shiftDate,
+    input.hoursWorked
+  );
 
   const { data, error } = await supabase
     .from("employee_shifts")
@@ -152,6 +230,7 @@ export async function createEmployeeShift(input: EmployeeShiftInput): Promise<Em
       was_late: input.wasLate,
       notes: input.notes ?? null,
       created_by: user?.id,
+      financial_transaction_id: financialTransactionId,
     })
     .select("*")
     .single();

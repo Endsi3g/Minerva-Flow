@@ -64,6 +64,45 @@ export async function createInviteLink(restaurantId: string, role: Role): Promis
   return mapInvite(data as InviteRow);
 }
 
+export type InviteListEntry = {
+  id: string;
+  role: Role;
+  createdAt: string;
+  expiresAt: string;
+  status: "en_attente" | "expiree" | "utilisee";
+  redeemedByEmail: string | null;
+};
+
+/** Every invite ever generated for a restaurant, newest first — lets an owner/manager see who has joined vs still pending. */
+export async function listInvites(restaurantId: string): Promise<InviteListEntry[]> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("restaurant_invites")
+    .select("id, role, created_at, expires_at, used_at, used_by")
+    .eq("restaurant_id", restaurantId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  const usedByIds = data.map((r) => r.used_by).filter((id): id is string => Boolean(id));
+  const emailByUserId = new Map<string, string>();
+  if (usedByIds.length > 0) {
+    const { data: profiles } = await admin.from("profiles").select("id, email").in("id", usedByIds);
+    for (const p of (profiles as { id: string; email: string | null }[]) ?? []) {
+      if (p.email) emailByUserId.set(p.id, p.email);
+    }
+  }
+
+  return data.map((row) => ({
+    id: row.id,
+    role: row.role as Role,
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+    status: row.used_at ? "utilisee" : new Date(row.expires_at) <= new Date() ? "expiree" : "en_attente",
+    redeemedByEmail: row.used_by ? (emailByUserId.get(row.used_by) ?? null) : null,
+  }));
+}
+
 export type InviteLookup = {
   restaurantId: string;
   restaurantName: string;

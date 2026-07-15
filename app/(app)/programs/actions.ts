@@ -1,7 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createProgram, updateProgram, deleteProgram, type ProgramInput } from "@/lib/data/programs";
+import {
+  createProgram,
+  updateProgram,
+  deleteProgram,
+  createProgramNote,
+  type ProgramInput,
+  type ProgramNote,
+} from "@/lib/data/programs";
 import type { Program, ProgramStatus } from "@/lib/types";
 
 /**
@@ -36,4 +43,15 @@ export async function deleteProgramAction(restaurantId: string, id: string): Pro
   const ok = await deleteProgram(restaurantId, id);
   if (ok) revalidatePath("/programs");
   return ok;
+}
+
+export async function createProgramNoteAction(
+  restaurantId: string,
+  programId: string,
+  text: string
+): Promise<ProgramNote | null> {
+  if (!text.trim()) return null;
+  const note = await createProgramNote(restaurantId, programId, text.trim());
+  if (note) revalidatePath("/programs");
+  return note;
 }
