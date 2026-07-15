@@ -75,6 +75,20 @@ export type Reservation = {
   createdAt: string;
 };
 
+export type ShiftScheduleStatus = "planifie" | "confirme" | "annule";
+
+export type ShiftSchedule = {
+  id: string;
+  restaurantId: string;
+  employeeId: string;
+  shiftDate: string;
+  startTime: string;
+  endTime: string;
+  positionLabel: string | null;
+  status: ShiftScheduleStatus;
+  createdAt: string;
+};
+
 export type Company = {
   id: string;
   name: string;

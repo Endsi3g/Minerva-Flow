@@ -32,6 +32,7 @@ export async function searchEverythingAction(
     { title: "Campagnes", subtitle: "Suivi des campagnes marketing", href: "/campaigns" },
     { title: "Cartes", subtitle: "Visualisation des cartes et zones de livraison", href: "/maps" },
     { title: "Réservations", subtitle: "Réservations et assignation des tables", href: "/reservations" },
+    { title: "Horaire", subtitle: "Planification des quarts de l'équipe", href: "/horaire" },
     { title: "Finance", subtitle: "Analyse des transactions et revenus", href: "/finance" },
     { title: "Paramètres", subtitle: "Configuration de la succursale", href: "/settings" },
     { title: "Facturation", subtitle: "Gestion de l'abonnement et de la facturation", href: "/billing" },

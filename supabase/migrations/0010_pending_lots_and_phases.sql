@@ -662,4 +662,39 @@ drop policy if exists "reservations_delete" on reservations;
 create policy "reservations_delete" on reservations for delete
   using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Horaire du personnel (module 2 de l'expansion "OS pour restaurants")
+-- ═══════════════════════════════════════════════════════════════════════
+
+do $$ begin
+  create type shift_schedule_status as enum ('planifie', 'confirme', 'annule');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists shift_schedules (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  employee_id uuid not null references employees (id) on delete cascade,
+  shift_date date not null,
+  start_time time not null,
+  end_time time not null,
+  position_label text,
+  status shift_schedule_status not null default 'planifie',
+  created_by uuid references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_shift_schedules_restaurant_date on shift_schedules (restaurant_id, shift_date);
+create index if not exists idx_shift_schedules_employee on shift_schedules (employee_id, shift_date);
+
+alter table shift_schedules enable row level security;
+
+drop policy if exists "shift_schedules_select" on shift_schedules;
+create policy "shift_schedules_select" on shift_schedules for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "shift_schedules_manage" on shift_schedules;
+create policy "shift_schedules_manage" on shift_schedules for all
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
 commit;
