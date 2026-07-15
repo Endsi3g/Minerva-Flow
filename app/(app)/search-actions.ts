@@ -1,0 +1,132 @@
+"use server";
+
+import { getCampaigns } from "@/lib/data/campaigns";
+import { getEmployees } from "@/lib/data/employees";
+import { getPrograms } from "@/lib/data/programs";
+import { getMySupportRequests } from "@/lib/data/support";
+
+export type SearchResult = {
+  id: string;
+  type: "campaign" | "employee" | "program" | "support" | "navigation";
+  title: string;
+  subtitle?: string;
+  href: string;
+};
+
+export async function searchEverythingAction(
+  restaurantId: string | null,
+  query: string
+): Promise<SearchResult[]> {
+  if (!query || query.trim() === "") return [];
+  const normalizedQuery = query.toLowerCase().trim();
+  const results: SearchResult[] = [];
+
+  // 1. Search Navigation
+  const navigationItems = [
+    { title: "Aperçu", subtitle: "Tableau de bord principal", href: "/overview" },
+    { title: "Assistant", subtitle: "Assistant IA conversationnel", href: "/assistant" },
+    { title: "Programmes", subtitle: "Gestion des programmes de fidélité et d'opérations", href: "/programs" },
+    { title: "Journées de service", subtitle: "Suivi des performances journalières", href: "/days" },
+    { title: "Collaborateurs", subtitle: "Gestion de l'équipe et des permissions", href: "/collaborateurs" },
+    { title: "Employés", subtitle: "Liste des employés et revues de performance", href: "/employees" },
+    { title: "Campagnes", subtitle: "Suivi des campagnes marketing", href: "/campaigns" },
+    { title: "Cartes", subtitle: "Visualisation des cartes et zones de livraison", href: "/maps" },
+    { title: "Finance", subtitle: "Analyse des transactions et revenus", href: "/finance" },
+    { title: "Paramètres", subtitle: "Configuration de la succursale", href: "/settings" },
+    { title: "Facturation", subtitle: "Gestion de l'abonnement et de la facturation", href: "/billing" },
+    { title: "Guide", subtitle: "Centre d'aide et documentation", href: "/guide" },
+    { title: "Support", subtitle: "Tickets de support client", href: "/support" },
+    { title: "Nouveautés", subtitle: "Changelog et nouveautés", href: "/changelog" },
+  ];
+
+  for (const item of navigationItems) {
+    if (
+      item.title.toLowerCase().includes(normalizedQuery) ||
+      item.subtitle.toLowerCase().includes(normalizedQuery)
+    ) {
+      results.push({
+        id: item.href,
+        type: "navigation",
+        title: item.title,
+        subtitle: item.subtitle,
+        href: item.href,
+      });
+    }
+  }
+
+  // 2. Search Database Entities (only if restaurantId is provided)
+  if (restaurantId) {
+    const [campaigns, employees, programs, supportRequests] = await Promise.all([
+      getCampaigns(restaurantId).catch(() => []),
+      getEmployees(restaurantId).catch(() => []),
+      getPrograms(restaurantId).catch(() => []),
+      getMySupportRequests().catch(() => []),
+    ]);
+
+    // Campaigns
+    for (const c of campaigns) {
+      if (
+        c.name.toLowerCase().includes(normalizedQuery) ||
+        (c.description && c.description.toLowerCase().includes(normalizedQuery))
+      ) {
+        results.push({
+          id: c.id,
+          type: "campaign",
+          title: c.name,
+          subtitle: `Campagne • ${c.channel} (${c.status})`,
+          href: `/campaigns?id=${c.id}`,
+        });
+      }
+    }
+
+    // Employees
+    for (const e of employees) {
+      if (
+        e.fullName.toLowerCase().includes(normalizedQuery) ||
+        e.roleTitle.toLowerCase().includes(normalizedQuery)
+      ) {
+        results.push({
+          id: e.id,
+          type: "employee",
+          title: e.fullName,
+          subtitle: `Employé • ${e.roleTitle} (${e.active ? "Actif" : "Inactif"})`,
+          href: `/employees?id=${e.id}`,
+        });
+      }
+    }
+
+    // Programs
+    for (const p of programs) {
+      if (
+        p.name.toLowerCase().includes(normalizedQuery) ||
+        (p.description && p.description.toLowerCase().includes(normalizedQuery))
+      ) {
+        results.push({
+          id: p.id,
+          type: "program",
+          title: p.name,
+          subtitle: `Programme • ${p.status}`,
+          href: `/programs`,
+        });
+      }
+    }
+
+    // Support Requests
+    for (const s of supportRequests) {
+      if (
+        s.subject.toLowerCase().includes(normalizedQuery) ||
+        s.message.toLowerCase().includes(normalizedQuery)
+      ) {
+        results.push({
+          id: s.id,
+          type: "support",
+          title: s.subject,
+          subtitle: `Support • Ticket #${s.id.slice(0, 8)} (${s.status})`,
+          href: `/support`,
+        });
+      }
+    }
+  }
+
+  return results;
+}

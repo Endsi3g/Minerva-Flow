@@ -396,13 +396,15 @@ function EmployeeDetail({
 export function EmployeesView({
   restaurantId,
   employees,
+  initialSelectedId,
 }: {
   restaurantId: string | null;
   employees: Employee[];
+  initialSelectedId?: string;
 }) {
   const { role } = useApp();
   const [list, setList] = useState(employees);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId || null);
   const [createOpen, setCreateOpen] = useState(false);
 
   const canManage = Boolean(restaurantId) && (role === "owner" || role === "manager");

@@ -46,15 +46,17 @@ const impactTone = { fort: "green", moyen: "amber", faible: "neutral" } as const
 export function CampaignsView({
   restaurantId,
   campaigns,
+  initialSelectedId,
 }: {
   restaurantId: string | null;
   campaigns: Campaign[];
+  initialSelectedId?: string;
 }) {
   const { role } = useApp();
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<"all" | CampaignStatus>("all");
   const [channelFilter, setChannelFilter] = useState<"all" | CampaignChannel>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId || null);
   const [isPending, startTransition] = useTransition();
 
   const canCreate =

@@ -3,9 +3,8 @@
 import { LogoMark } from "./Logo";
 import { useApp } from "@/lib/app-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { reportDefs, reportGroups } from "@/lib/reports";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,28 +13,32 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutGrid,
-  LineChart,
-  CalendarDays,
-  Wallet,
-  Megaphone,
-  Settings,
-  Settings2,
-  Map as MapIcon,
-  Sparkles,
-  Users,
-  Users2,
-  BookOpen,
-  LifeBuoy,
-  CreditCard,
-  History,
   ChevronDown,
   Check,
+  Home,
+  MessageSquare,
+  GitCommit,
+  BarChart3,
+  Boxes,
+  FileText,
+  Map as MapIcon,
+  Send as SendIcon,
+  Compass as CompassIcon,
+  Search as SearchIcon,
+  Settings,
+  CreditCard,
+  BookOpen,
+  LifeBuoy,
+  History,
+  Settings2,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Role } from "@/lib/types";
+import { SearchDialog } from "./SearchDialog";
 
 const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const;
 const SIDEBAR_WIDTH = 256;
@@ -47,70 +50,34 @@ type NavItem = {
   roles: Role[];
 };
 
-// Toujours visibles, hors groupe : les deux pages les plus consultées au quotidien.
-const pinnedNav: NavItem[] = [
-  { href: "/overview", label: "Aperçu", icon: LayoutGrid, roles: ["owner", "staff", "consultant"] },
-  { href: "/assistant", label: "Assistant", icon: Sparkles, roles: ["owner", "manager", "staff", "consultant"] },
-];
-
-type NavGroup = {
-  id: string;
-  label: string;
-  items: NavItem[];
-};
-
-const navGroups: NavGroup[] = [
-  {
-    id: "operations",
-    label: "Opérations",
-    items: [
-      { href: "/days", label: "Journées", icon: CalendarDays, roles: ["owner", "staff"] },
-      { href: "/programs", label: "Programmes", icon: LineChart, roles: ["owner", "consultant"] },
-    ],
-  },
-  {
-    id: "croissance",
-    label: "Croissance",
-    items: [
-      { href: "/campaigns", label: "Campagnes", icon: Megaphone, roles: ["owner", "consultant"] },
-      { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
-    ],
-  },
-  {
-    id: "equipe",
-    label: "Équipe",
-    items: [
-      { href: "/collaborateurs", label: "Collaborateurs", icon: Users, roles: ["owner", "manager"] },
-      { href: "/employees", label: "Employés", icon: Users2, roles: ["owner", "manager"] },
-    ],
-  },
-  {
-    id: "finance",
-    label: "Finance",
-    items: [{ href: "/finance", label: "Finance", icon: Wallet, roles: ["owner"] }],
-  },
-];
-
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
-const settingsGroup: NavGroup = {
-  id: "parametres",
-  label: "Paramètres",
-  items: [
-    { href: "/settings", label: "Paramètres", icon: Settings, roles: ["owner"] },
-    { href: "/billing", label: "Facturation", icon: CreditCard, roles: ["owner"] },
-    { href: "/guide", label: "Guide", icon: BookOpen, roles: allRoles },
-    { href: "/support", label: "Aide & Support", icon: LifeBuoy, roles: allRoles },
-    { href: "/changelog", label: "Nouveautés", icon: History, roles: allRoles },
-  ],
-};
+// Main navigation items flat list (Home, Steep AI, Model, Metrics, Entities, Reports, Maps)
+const mainNavItems: NavItem[] = [
+  { href: "/overview", label: "Home", icon: Home, roles: ["owner", "staff", "consultant"] },
+  { href: "/assistant", label: "Steep AI", icon: MessageSquare, roles: ["owner", "manager", "staff", "consultant"] },
+  { href: "/programs", label: "Model", icon: GitCommit, roles: ["owner", "consultant"] },
+  { href: "/days", label: "Metrics", icon: BarChart3, roles: ["owner", "staff"] },
+  { href: "/employees", label: "Entities", icon: Boxes, roles: ["owner", "manager"] },
+  { href: "/reports", label: "Reports", icon: FileText, roles: allRoles },
+  { href: "/maps", label: "Maps", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
+];
 
-const groupLabels: Record<string, string> = {
-  Revenue: "Revenu",
-  Service: "Service",
-  Finance: "Finance",
-  Campagnes: "Campagnes",
-};
+// Favorites section
+const favorites = [
+  { href: "/reports/revenu", label: "Cities report", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
+  { href: "/campaigns", label: "Weekly sendout", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
+  { href: "/finance", label: "Initiatives", icon: CompassIcon, color: "#3182CE", roles: ["owner"] },
+  { href: "/collaborateurs", label: "Users", icon: Users, color: "#718096", roles: ["owner", "manager"] },
+];
+
+const settingsGroupItems: NavItem[] = [
+  { href: "/settings", label: "Paramètres", icon: Settings, roles: ["owner"] },
+  { href: "/billing", label: "Facturation", icon: CreditCard, roles: ["owner"] },
+  { href: "/guide", label: "Guide", icon: BookOpen, roles: allRoles },
+  { href: "/support", label: "Aide & Support", icon: LifeBuoy, roles: allRoles },
+  { href: "/changelog", label: "Nouveautés", icon: History, roles: allRoles },
+];
 
 function NavLink({
   href,
@@ -118,12 +85,14 @@ function NavLink({
   icon: Icon,
   active,
   onNavigate,
+  iconColor,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
   active: boolean;
   onNavigate?: () => void;
+  iconColor?: string;
 }) {
   return (
     <Link
@@ -139,7 +108,8 @@ function NavLink({
       <Icon
         size={16}
         strokeWidth={active ? 2.2 : 1.5}
-        className={cn("shrink-0 transition-all duration-150", active ? "text-mv-cream-soft" : "opacity-60")}
+        style={{ color: active ? "currentColor" : iconColor }}
+        className={cn("shrink-0 transition-all duration-150", active ? "text-mv-cream-soft" : !iconColor && "opacity-60")}
       />
       <span className="truncate">{label}</span>
     </Link>
@@ -190,63 +160,15 @@ function TeamSwitcher() {
   );
 }
 
-function CollapsibleSection({
-  label,
-  isCollapsed,
-  onToggle,
-  children,
-}: {
-  label: string;
-  isCollapsed: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <button
-        onClick={onToggle}
-        className="flex w-full items-center justify-between rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-mv-ink-faint transition-colors hover:text-mv-ink"
-      >
-        <span>{label}</span>
-        <ChevronDown
-          size={12}
-          className={cn("transition-transform duration-200", isCollapsed && "-rotate-90")}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {!isCollapsed && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="space-y-0.5 py-0.5">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 export function AppSidebar() {
   const pathname = usePathname();
-  const { role, sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { role, sidebarCollapsed, setSidebarCollapsed, restaurantId, setRestaurantId, restaurants } = useApp();
   const isMobile = useIsMobile();
-  const pinnedItems = pinnedNav.filter((n) => n.roles.includes(role));
-  const visibleGroups = navGroups
-    .map((group) => ({ ...group, items: group.items.filter((n) => n.roles.includes(role)) }))
-    .filter((group) => group.items.length > 0);
-  const visibleSettingsGroup = {
-    ...settingsGroup,
-    items: settingsGroup.items.filter((n) => n.roles.includes(role)),
-  };
+  const [searchOpen, setSearchOpen] = useState(false);
 
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
-  function toggleGroup(id: string) {
-    setCollapsedGroups((prev) => ({ ...prev, [id]: !(prev[id] ?? true) }));
-  }
+  const visibleMainItems = mainNavItems.filter((n) => n.roles.includes(role));
+  const visibleFavorites = favorites.filter((n) => n.roles.includes(role));
+  const visibleSettingsItems = settingsGroupItems.filter((n) => n.roles.includes(role));
 
   function closeMobile() {
     if (isMobile) setSidebarCollapsed(true);
@@ -284,13 +206,24 @@ export function AppSidebar() {
           }
           transition={SPRING}
         >
-          <div className="flex h-12 items-center border-b border-mv-border px-3">
-            <TeamSwitcher />
+          {/* Header block with Logo switcher and search icon */}
+          <div className="flex h-12 items-center justify-between border-b border-mv-border px-3">
+            <div className="flex-1 min-w-0">
+              <TeamSwitcher />
+            </div>
+            <button
+              onClick={() => setSearchOpen(true)}
+              aria-label="Recherche"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink ml-1"
+            >
+              <SearchIcon size={16} />
+            </button>
           </div>
 
-          <div className="flex-1 space-y-4 overflow-y-auto px-2.5 py-3">
+          <div className="flex-1 space-y-5 overflow-y-auto px-2.5 py-3">
+            {/* Main Navigation List */}
             <div className="space-y-0.5">
-              {pinnedItems.map((item) => (
+              {visibleMainItems.map((item) => (
                 <NavLink
                   key={item.href}
                   href={item.href}
@@ -302,99 +235,98 @@ export function AppSidebar() {
               ))}
             </div>
 
-            {visibleGroups.map((group) => {
-              const hasActiveChild = group.items.some((item) => pathname.startsWith(item.href));
-              const isCollapsed = hasActiveChild ? false : (collapsedGroups[group.id] ?? false);
-              return (
-                <CollapsibleSection
-                  key={group.id}
-                  label={group.label}
-                  isCollapsed={isCollapsed}
-                  onToggle={() => toggleGroup(group.id)}
-                >
-                  {group.items.map((item) => (
+            {/* Teams / Restaurants Section */}
+            <div className="space-y-1">
+              <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                Teams
+              </p>
+              <div className="space-y-0.5">
+                {restaurants.map((r) => {
+                  const isCurrent = r.id === restaurantId;
+                  const letter = r.name.replace("Minerva — ", "").charAt(0).toUpperCase();
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => {
+                        setRestaurantId(r.id);
+                        closeMobile();
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium transition-all duration-150",
+                        isCurrent
+                          ? "bg-mv-green/10 text-mv-green-dark font-semibold"
+                          : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
+                      )}
+                    >
+                      <span
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white transition-all"
+                        style={{ backgroundColor: r.color || "#6341F0" }}
+                      >
+                        {letter}
+                      </span>
+                      <span className="truncate">{r.name.replace("Minerva — ", "")}</span>
+                    </button>
+                  );
+                })}
+                <NavLink
+                  href="/workspace"
+                  label="All teams"
+                  icon={LayoutGrid}
+                  active={pathname.startsWith("/workspace")}
+                  onNavigate={closeMobile}
+                />
+              </div>
+            </div>
+
+            {/* Favorites Section */}
+            {visibleFavorites.length > 0 && (
+              <div className="space-y-1">
+                <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                  Favorites
+                </p>
+                <div className="space-y-0.5">
+                  {visibleFavorites.map((item) => (
                     <NavLink
-                      key={item.href}
+                      key={item.label}
                       href={item.href}
                       label={item.label}
                       icon={item.icon}
                       active={pathname.startsWith(item.href)}
                       onNavigate={closeMobile}
+                      iconColor={item.color}
                     />
                   ))}
-                </CollapsibleSection>
-              );
-            })}
-
-            <div className="space-y-2">
-              <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                Métriques
-              </p>
-              {reportGroups.map((group) => {
-                const groupReports = reportDefs.filter((r) => r.group === group);
-                const hasActiveChild = groupReports.some(
-                  (r) => pathname === `/reports/${r.slug}`
-                );
-                const isCollapsed = hasActiveChild
-                  ? false
-                  : (collapsedGroups[group] ?? true);
-                return (
-                  <CollapsibleSection
-                    key={group}
-                    label={groupLabels[group] ?? group}
-                    isCollapsed={isCollapsed}
-                    onToggle={() => toggleGroup(group)}
-                  >
-                    {groupReports.map((r) => {
-                      const active = pathname === `/reports/${r.slug}`;
-                      return (
-                        <Link
-                          key={r.slug}
-                          href={`/reports/${r.slug}`}
-                          onClick={closeMobile}
-                          className={cn(
-                            "block truncate rounded-md py-1.5 pl-6 pr-2.5 text-[12.5px] font-medium transition-colors",
-                            active
-                              ? "bg-mv-green-tint text-mv-green-dark font-semibold"
-                              : "text-mv-ink-faint hover:bg-mv-ink/[0.06] hover:text-mv-ink"
-                          )}
-                        >
-                          {r.label}
-                        </Link>
-                      );
-                    })}
-                  </CollapsibleSection>
-                );
-              })}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {visibleSettingsGroup.items.length > 0 && (
-            <div className="border-t border-mv-border p-2.5">
-              <CollapsibleSection
-                label={visibleSettingsGroup.label}
-                isCollapsed={
-                  visibleSettingsGroup.items.some((item) => pathname.startsWith(item.href))
-                    ? false
-                    : (collapsedGroups[visibleSettingsGroup.id] ?? false)
-                }
-                onToggle={() => toggleGroup(visibleSettingsGroup.id)}
-              >
-                {visibleSettingsGroup.items.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    href={item.href}
-                    label={item.label}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                  />
-                ))}
-              </CollapsibleSection>
+          {/* Settings Section Flat List at the bottom */}
+          {visibleSettingsItems.length > 0 && (
+            <div className="border-t border-mv-border p-2.5 space-y-0.5">
+              <p className="px-2.5 pb-1 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                Paramètres
+              </p>
+              {visibleSettingsItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  active={pathname.startsWith(item.href)}
+                  onNavigate={closeMobile}
+                />
+              ))}
             </div>
           )}
         </motion.div>
       </motion.aside>
+
+      <SearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        restaurantId={restaurantId}
+      />
     </>
   );
 }
