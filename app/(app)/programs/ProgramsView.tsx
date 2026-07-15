@@ -12,9 +12,11 @@ import { CreateProgramModal } from "@/components/forms/CreateProgramModal";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Campaign, Program, ProgramStatus, ProgramType } from "@/lib/types";
-import { LineChart, Plus, MessageSquare } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { LineChart, Plus, MessageSquare, Trash2 } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
+import { updateProgramStatusAction, deleteProgramAction } from "./actions";
+import { toast } from "sonner";
 
 const typeLabel: Record<ProgramType, string> = {
   brunch: "Brunch",
@@ -52,6 +54,7 @@ export function ProgramsView({
   campaigns: Campaign[];
 }) {
   const { role } = useApp();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialId = searchParams.get("id");
 
@@ -59,9 +62,33 @@ export function ProgramsView({
   const [statusFilter, setStatusFilter] = useState<"all" | ProgramStatus>("all");
   const [selectedId, setSelectedId] = useState<string | null>(initialId);
   const [createOpen, setCreateOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const canCreate =
     Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
+  const canManage = role === "owner" || role === "manager";
+
+  function handleStatusChange(status: ProgramStatus) {
+    if (!restaurantId || !selectedId) return;
+    startTransition(async () => {
+      const updated = await updateProgramStatusAction(restaurantId, selectedId, status);
+      if (!updated) toast.error("La mise à jour du statut a échoué.");
+      router.refresh();
+    });
+  }
+
+  function handleDelete() {
+    if (!restaurantId || !selectedId) return;
+    startTransition(async () => {
+      const ok = await deleteProgramAction(restaurantId, selectedId);
+      if (!ok) {
+        toast.error("La suppression a échoué.");
+        return;
+      }
+      setSelectedId(null);
+      router.refresh();
+    });
+  }
 
   const filtered = useMemo(
     () =>
@@ -185,7 +212,32 @@ export function ProgramsView({
               <Card>
                 <div className="mb-1 flex items-center justify-between gap-2">
                   <Badge tone={typeTone[selected.type]}>{typeLabel[selected.type]}</Badge>
-                  <Badge tone={statusTone[selected.status]}>{statusLabel[selected.status]}</Badge>
+                  {canManage ? (
+                    <div className="flex items-center gap-1.5">
+                      <Select
+                        className="h-8 w-auto text-[12px]"
+                        value={selected.status}
+                        disabled={isPending}
+                        onChange={(e) => handleStatusChange(e.target.value as ProgramStatus)}
+                      >
+                        {(Object.keys(statusLabel) as ProgramStatus[]).map((s) => (
+                          <option key={s} value={s}>
+                            {statusLabel[s]}
+                          </option>
+                        ))}
+                      </Select>
+                      <button
+                        onClick={handleDelete}
+                        disabled={isPending}
+                        aria-label="Supprimer le programme"
+                        className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-red/10 hover:text-mv-red disabled:opacity-50"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <Badge tone={statusTone[selected.status]}>{statusLabel[selected.status]}</Badge>
+                  )}
                 </div>
                 <h2 className="font-display text-[19px] font-medium text-mv-ink">
                   {selected.name}

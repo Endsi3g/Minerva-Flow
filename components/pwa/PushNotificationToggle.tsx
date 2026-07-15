@@ -7,6 +7,7 @@ import {
 } from "@/app/(app)/notifications-actions";
 import { Bell, BellOff } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -65,6 +66,8 @@ export function PushNotificationToggle({ restaurantId }: { restaurantId: string 
 
       await subscribeToPushAction(restaurantId, subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } });
       setState("subscribed");
+    } catch {
+      toast.error("L'activation des notifications a échoué. Réessayez.");
     } finally {
       setBusy(false);
     }
@@ -80,6 +83,13 @@ export function PushNotificationToggle({ restaurantId }: { restaurantId: string 
         await subscription.unsubscribe();
       }
       setState("available");
+    } catch {
+      toast.error("La désactivation a échoué. Réessayez.");
+      // Re-derive the real state instead of assuming — a failed unsubscribe
+      // can leave the browser subscription intact even if the server call succeeded.
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      setState(subscription ? "subscribed" : "available");
     } finally {
       setBusy(false);
     }

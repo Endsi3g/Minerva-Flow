@@ -318,7 +318,7 @@ export function ReservationsView({
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-        <div className="xl:col-span-8">
+        <div className="xl:col-span-7">
           {reservations.length === 0 ? (
             <EmptyState
               icon={CalendarClock}
@@ -410,7 +410,7 @@ export function ReservationsView({
         </div>
 
         {canManage && (
-          <div className="xl:col-span-4">
+          <div className="xl:col-span-5">
             <TablesCard restaurantId={restaurantId!} tables={tables} onChange={setTables} />
           </div>
         )}

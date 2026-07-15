@@ -51,7 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {isFullBleed ? (
             children
           ) : (
-            <div className="mx-auto max-w-[1400px]">
+            <div className={cn("mx-auto", sidebarCollapsed ? "max-w-[1800px]" : "max-w-[1600px]")}>
               {!pathname.startsWith("/changelog") && <UpdateBanner />}
               {!pathname.startsWith("/workspace") && <WorkspaceSetupBanner />}
               {children}

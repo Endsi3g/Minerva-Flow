@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createProgram, type ProgramInput } from "@/lib/data/programs";
-import type { Program } from "@/lib/types";
+import { createProgram, updateProgram, deleteProgram, type ProgramInput } from "@/lib/data/programs";
+import type { Program, ProgramStatus } from "@/lib/types";
 
 /**
  * Creates a program for the current restaurant. Authorization is enforced
@@ -20,4 +20,20 @@ export async function createProgramAction(
   const program = await createProgram(restaurantId, input);
   if (program) revalidatePath("/programs");
   return program;
+}
+
+export async function updateProgramStatusAction(
+  restaurantId: string,
+  id: string,
+  status: ProgramStatus
+): Promise<Program | null> {
+  const program = await updateProgram(restaurantId, id, { status });
+  if (program) revalidatePath("/programs");
+  return program;
+}
+
+export async function deleteProgramAction(restaurantId: string, id: string): Promise<boolean> {
+  const ok = await deleteProgram(restaurantId, id);
+  if (ok) revalidatePath("/programs");
+  return ok;
 }

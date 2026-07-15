@@ -21,12 +21,12 @@ import {
 import posthog from "posthog-js";
 import type { Employee, EmployeeReview, EmployeeShift } from "@/lib/types";
 import { useApp } from "@/lib/app-context";
-import { UserPlus, Star, Printer, Users2 } from "lucide-react";
+import { UserPlus, Star, Printer, Users2, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
-function StarRating({ value }: { value: number }) {
+export function StarRating({ value }: { value: number }) {
   return (
     <span className="inline-flex items-center gap-0.5">
       {Array.from({ length: 5 }, (_, i) => (
@@ -101,7 +101,7 @@ function NewEmployeeModal({
   );
 }
 
-function LogShiftForm({
+export function LogShiftForm({
   employeeId,
   restaurantId,
   onLogged,
@@ -162,7 +162,7 @@ function LogShiftForm({
   );
 }
 
-function NewReviewForm({
+export function NewReviewForm({
   employee,
   restaurantId,
   onCreated,
@@ -257,7 +257,7 @@ function NewReviewForm({
   );
 }
 
-function EmployeeDetail({
+export function EmployeeDetail({
   employee,
   restaurantId,
   onToggleActive,
@@ -453,6 +453,7 @@ export function EmployeesView({
                 <Th>Poste</Th>
                 <Th>Taux</Th>
                 <Th>Statut</Th>
+                <Th className="text-right"></Th>
               </THead>
               <tbody>
                 {list.map((e) => (
@@ -462,6 +463,16 @@ export function EmployeesView({
                     <Td className="text-mv-ink-soft">{e.hourlyWage !== null ? `${formatCurrency(e.hourlyWage)}/h` : "—"}</Td>
                     <Td>
                       <Badge tone={e.active ? "green" : "neutral"}>{e.active ? "Actif" : "Inactif"}</Badge>
+                    </Td>
+                    <Td className="text-right">
+                      <Link
+                        href={`/employees/${e.id}`}
+                        onClick={(ev) => ev.stopPropagation()}
+                        aria-label="Voir la fiche complète"
+                        className="inline-flex rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                      >
+                        <ChevronRight size={15} />
+                      </Link>
                     </Td>
                   </Tr>
                 ))}

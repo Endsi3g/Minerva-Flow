@@ -16,7 +16,8 @@ import { useApp, roleLabels } from "@/lib/app-context";
 import { useTeamPresence } from "@/hooks/use-team-presence";
 import posthog from "posthog-js";
 import type { Role, TeamMember } from "@/lib/types";
-import { Plus, Users, Trash2 } from "lucide-react";
+import { Plus, Users, Trash2, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 const roleTone: Record<Role, "green" | "lime" | "amber"> = {
   owner: "green",
@@ -101,6 +102,7 @@ export function CollaborateursView({
             <Th>Rôle</Th>
             <Th>Statut</Th>
             {canManage && <Th className="text-right">Actions</Th>}
+            <Th className="text-right"></Th>
           </THead>
           <tbody>
             {members.map((m) => (
@@ -165,6 +167,16 @@ export function CollaborateursView({
                     )}
                   </Td>
                 )}
+                <Td className="text-right">
+                  <Link
+                    href={`/collaborateurs/${m.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Voir la fiche complète"
+                    className="inline-flex rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                  >
+                    <ChevronRight size={15} />
+                  </Link>
+                </Td>
               </Tr>
             ))}
           </tbody>

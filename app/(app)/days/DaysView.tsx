@@ -113,7 +113,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
         <CardHeader
           eyebrow={monthLabel}
           title="Calendrier des revenus"
-          description="Cliquez sur un jour pour le mettre en évidence dans le tableau ci-dessous."
+          description="Cliquez sur un jour pour filtrer le tableau ci-dessous sur cette journée."
         />
         <MonthCalendar
           data={heat}
@@ -137,7 +137,21 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
           }
         />
       ) : (
-        <Table>
+        <>
+          {selectedDate && (
+            <div className="mb-3 flex items-center gap-2 text-[12.5px]">
+              <span className="text-mv-ink-soft">
+                Filtré sur <strong className="text-mv-ink">{formatDateWeekday(selectedDate)}</strong>
+              </span>
+              <button
+                onClick={() => setSelectedDate(undefined)}
+                className="font-medium text-mv-green-dark hover:underline"
+              >
+                Voir tout le mois
+              </button>
+            </div>
+          )}
+          <Table>
           <THead>
             <Th>Date</Th>
             <Th className="text-right">Revenu</Th>
@@ -147,7 +161,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
             <Th>Statut</Th>
           </THead>
           <tbody>
-            {days.map((d) => {
+            {(selectedDate ? days.filter((d) => d.date === selectedDate) : days).map((d) => {
               const SourceIcon = sourceIcon[d.mainSource];
               return (
                 <Tr key={d.id} active={d.date === selectedDate}>
@@ -186,6 +200,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
             })}
           </tbody>
         </Table>
+        </>
       )}
 
       <AddServiceDayModal open={open} onClose={() => setOpen(false)} onSubmit={handleSubmit} />

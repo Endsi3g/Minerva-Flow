@@ -4,11 +4,12 @@ import { revalidatePath } from "next/cache";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import {
   createExpenseCategory,
+  createFinancialTransaction,
   importFinancialTransactions,
   bulkCategorizeTransactions,
   type TransactionInput,
 } from "@/lib/data/finance";
-import type { ExpenseCategory } from "@/lib/types";
+import type { ExpenseCategory, FinancialTransaction } from "@/lib/types";
 
 /**
  * Every action below derives the restaurant from the current session's
@@ -34,6 +35,17 @@ export async function createCategoryAction(
 
   revalidatePath("/finance");
   return { ok: true, category };
+}
+
+export async function createTransactionAction(
+  input: TransactionInput
+): Promise<FinancialTransaction | null> {
+  if (!input.description.trim() || !input.date) return null;
+
+  const restaurantId = await requireRestaurantId();
+  const transaction = await createFinancialTransaction(restaurantId, { ...input, reviewed: true });
+  if (transaction) revalidatePath("/finance");
+  return transaction;
 }
 
 export async function importTransactionsAction(rows: TransactionInput[]): Promise<number> {

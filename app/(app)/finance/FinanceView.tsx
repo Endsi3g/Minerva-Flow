@@ -6,6 +6,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/minerva/FormField";
+import { Modal } from "@/components/ui/Modal";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import { FlowBars } from "@/components/charts/FlowBars";
@@ -17,8 +18,9 @@ import {
 } from "@/components/ui/dropzone";
 import posthog from "posthog-js";
 import { useCsvTransactionImport } from "@/hooks/use-csv-transaction-import";
-import { createCategoryAction, categorizeTransactionsAction } from "./actions";
+import { createCategoryAction, categorizeTransactionsAction, createTransactionAction } from "./actions";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { toast } from "sonner";
 import type {
   Connection,
   ConnectionStatus,
@@ -44,7 +46,7 @@ import {
   Tag,
   Pencil,
 } from "lucide-react";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 const typeIcon: Record<ConnectionType, typeof Landmark> = {
@@ -251,6 +253,91 @@ function CsvDropzone({ onImported }: { onImported: (count: number) => void }) {
   );
 }
 
+function NewTransactionModal({
+  expenseCategories,
+  open,
+  onClose,
+  onCreated,
+}: {
+  expenseCategories: ExpenseCategory[];
+  open: boolean;
+  onClose: () => void;
+  onCreated: (t: FinancialTransaction) => void;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setIsSubmitting(true);
+    try {
+      const transaction = await createTransactionAction({
+        date: String(form.get("date") ?? ""),
+        description: String(form.get("description") ?? ""),
+        amount: Math.abs(Number(form.get("amount") ?? 0)),
+        direction: form.get("direction") as TransactionDirection,
+        category: String(form.get("category") ?? "") || "Non catégorisé",
+        sourceAccount: String(form.get("sourceAccount") ?? "") || "Manuel",
+      });
+      if (transaction) {
+        onCreated(transaction);
+        onClose();
+      } else {
+        toast.error("L'ajout de la transaction a échoué.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Ajouter une dépense ou une entrée" description="Saisissez une transaction manuellement, sans passer par l'import CSV.">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Date">
+            <Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
+          </Field>
+          <Field label="Type">
+            <Select name="direction" defaultValue="out">
+              <option value="out">Sortie (dépense)</option>
+              <option value="in">Entrée (revenu)</option>
+            </Select>
+          </Field>
+        </div>
+        <Field label="Description">
+          <Input name="description" placeholder="Ex : Achat de farine chez Colabor" required />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Montant ($)">
+            <Input name="amount" type="number" min="0" step="0.01" placeholder="Ex : 84.50" required />
+          </Field>
+          <Field label="Catégorie" hint="Optionnel">
+            <Select name="category" defaultValue="">
+              <option value="">Non catégorisé</option>
+              {expenseCategories.map((c) => (
+                <option key={c.id} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+        <Field label="Compte / méthode" hint="Optionnel">
+          <Input name="sourceAccount" placeholder="Ex : Carte de crédit, comptant…" />
+        </Field>
+        <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Ajout…" : "Ajouter"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 function TransactionsTab({
   transactions,
   expenseCategories,
@@ -266,6 +353,7 @@ function TransactionsTab({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkCategory, setBulkCategory] = useState("");
   const [applyingBulk, setApplyingBulk] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
@@ -362,6 +450,9 @@ function TransactionsTab({
               </Button>
             </>
           )}
+          <Button size="sm" onClick={() => setAddOpen(true)}>
+            <Plus size={14} /> Ajouter une dépense
+          </Button>
           <Button size="sm" variant="secondary" onClick={() => downloadCsv(filtered)}>
             <Download size={14} /> Export CSV
           </Button>
@@ -370,6 +461,13 @@ function TransactionsTab({
           </Button>
         </div>
       </div>
+
+      <NewTransactionModal
+        expenseCategories={expenseCategories}
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onCreated={refresh}
+      />
 
       {filtered.length === 0 ? (
         <EmptyState
