@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getFinancialTransactions, getExpenseCategories, getConnections } from "@/lib/data/finance";
 import { getServiceDays } from "@/lib/data/service-days";
+import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { DataTabsView } from "./DataTabsView";
 import { Store } from "lucide-react";
 
@@ -28,11 +29,12 @@ export default async function DataPage() {
     );
   }
 
+  const historyFrom = isoDaysAgo(DEFAULT_HISTORY_WINDOW_DAYS);
   const [transactions, expenseCategories, connections, serviceDays] = await Promise.all([
-    getFinancialTransactions(restaurantId),
+    getFinancialTransactions(restaurantId, { from: historyFrom }),
     getExpenseCategories(restaurantId),
     getConnections(restaurantId),
-    getServiceDays(restaurantId),
+    getServiceDays(restaurantId, { from: historyFrom }),
   ]);
 
   return (

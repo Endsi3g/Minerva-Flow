@@ -26,6 +26,7 @@ import {
   Users2,
   BookOpen,
   LifeBuoy,
+  CreditCard,
   ChevronDown,
   Check,
   type LucideIcon,
@@ -96,6 +97,7 @@ const settingsGroup: NavGroup = {
   label: "Paramètres",
   items: [
     { href: "/settings", label: "Paramètres", icon: Settings, roles: ["owner"] },
+    { href: "/billing", label: "Facturation", icon: CreditCard, roles: ["owner"] },
     { href: "/guide", label: "Guide", icon: BookOpen, roles: allRoles },
     { href: "/support", label: "Aide & Support", icon: LifeBuoy, roles: allRoles },
   ],

@@ -2,14 +2,34 @@
 
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Textarea } from "@/components/minerva/FormField";
 import { useApp } from "@/lib/app-context";
-import { createSupportRequestAction } from "./actions";
-import type { SupportCategory } from "@/lib/data/support";
+import { createSupportRequestAction, getMySupportRequestsAction } from "./actions";
+import type { SupportCategory, SupportRequest } from "@/lib/data/support";
+import { formatDate } from "@/lib/utils";
 import { CheckCircle2, HelpCircle, Bug, Lightbulb, MessageCircleQuestion } from "lucide-react";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+
+const categoryLabel: Record<SupportCategory, string> = {
+  bug: "Problème",
+  amelioration: "Amélioration",
+  question: "Question",
+};
+
+const statusTone: Record<SupportRequest["status"], "amber" | "green" | "neutral"> = {
+  nouveau: "amber",
+  en_cours: "neutral",
+  resolu: "green",
+};
+
+const statusLabel: Record<SupportRequest["status"], string> = {
+  nouveau: "Envoyé",
+  en_cours: "En cours",
+  resolu: "Résolu",
+};
 
 const categories: { value: SupportCategory; label: string; icon: typeof Bug }[] = [
   { value: "bug", label: "Signaler un problème", icon: Bug },
@@ -22,6 +42,11 @@ export default function SupportPage() {
   const [category, setCategory] = useState<SupportCategory>("bug");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [myTickets, setMyTickets] = useState<SupportRequest[]>([]);
+
+  useEffect(() => {
+    getMySupportRequestsAction().then(setMyTickets);
+  }, []);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -34,7 +59,10 @@ export default function SupportPage() {
         subject: String(form.get("subject") ?? ""),
         message: String(form.get("message") ?? ""),
       });
-      if (ok) setSent(true);
+      if (ok) {
+        setSent(true);
+        getMySupportRequestsAction().then(setMyTickets);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -124,6 +152,37 @@ export default function SupportPage() {
             </div>
           </div>
         </Card>
+
+        {myTickets.length > 0 && (
+          <div>
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+              Vos demandes précédentes
+            </p>
+            <div className="space-y-2">
+              {myTickets.map((t) => (
+                <Card key={t.id}>
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge tone="neutral">{categoryLabel[t.category]}</Badge>
+                      <Badge tone={statusTone[t.status]}>{statusLabel[t.status]}</Badge>
+                    </div>
+                    <span className="text-[11px] text-mv-ink-faint">{formatDate(t.createdAt.slice(0, 10))}</span>
+                  </div>
+                  <p className="text-[13px] font-semibold text-mv-ink">{t.subject}</p>
+                  <p className="mt-1 text-[12.5px] text-mv-ink-soft">{t.message}</p>
+                  {t.adminReply && (
+                    <div className="mt-3 rounded-lg bg-mv-green-tint p-3">
+                      <p className="mb-1 text-[10.5px] font-semibold uppercase text-mv-green-dark">
+                        Réponse de l&apos;équipe
+                      </p>
+                      <p className="text-[12.5px] text-mv-ink">{t.adminReply}</p>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         <p className="text-center text-[11.5px] text-mv-ink-faint">
           <Link href="/legal/terms" className="underline underline-offset-2 hover:text-mv-ink">

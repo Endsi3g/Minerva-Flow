@@ -1,6 +1,10 @@
 "use server";
 
 import { completeOnboarding, updateMyRole } from "@/lib/data/profile";
+import { createClient } from "@/lib/supabase/server";
+import { getPostHogClient } from "@/lib/posthog-server";
+import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
+import { activateReferral } from "@/lib/data/referrals";
 import type { Role } from "@/lib/types";
 
 /**
@@ -18,5 +22,21 @@ export async function setMyRoleAction(restaurantId: string, role: Role): Promise
  * submitting state without racing a server-thrown redirect.
  */
 export async function finishOnboardingAction(): Promise<boolean> {
-  return completeOnboarding();
+  const ok = await completeOnboarding();
+  if (ok) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const posthog = getPostHogClient();
+      posthog.capture({ distinctId: user.id, event: "onboarding_completed" });
+      await posthog.flush();
+
+      const referralCode = user.user_metadata?.referral_code as string | undefined;
+      if (referralCode && user.email) {
+        const restaurantId = await getCurrentRestaurantId();
+        if (restaurantId) await activateReferral(referralCode, user.email, restaurantId);
+      }
+    }
+  }
+  return ok;
 }

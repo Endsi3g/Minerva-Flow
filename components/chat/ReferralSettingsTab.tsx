@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { useApp } from "@/lib/app-context";
 import { formatDate } from "@/lib/utils";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   getReferralModalDataAction,
@@ -32,7 +32,7 @@ export function ReferralSettingsTab() {
   const [summary, setSummary] = useState<{
     pendingCount: number;
     activeCount: number;
-    totalDiscountApplied: number;
+    freeMonthsApplied: number;
   } | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [copied, setCopied] = useState(false);
@@ -55,17 +55,41 @@ export function ReferralSettingsTab() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function shareLink() {
+    if (!link) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Minerva Flow",
+          text: "Je gère mon restaurant avec Minerva Flow — inscris-toi avec mon lien :",
+          url: link,
+        });
+      } catch {
+        // L'utilisateur a annulé le partage — rien à faire.
+      }
+    } else {
+      copyLink();
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-mv-border bg-mv-surface p-5 shadow-mv-sm">
         <p className="mb-1 font-display text-[16px] font-medium text-mv-ink">Programme de parrainage</p>
         <p className="mb-3 text-[13px] text-mv-ink-soft">
-          Partagez ce lien avec d&apos;autres restaurants et cafés — vous obtenez une réduction sur
+          Partagez ce lien avec d&apos;autres restaurants et cafés — vous obtenez un mois gratuit sur
           votre abonnement pour chaque inscription qui devient active.
         </p>
         {code && link ? (
           <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-3 py-2.5">
             <span className="flex-1 truncate text-[13px] text-mv-ink">{link}</span>
+            <button
+              onClick={shareLink}
+              aria-label="Partager le lien"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+            >
+              <Share2 size={14} />
+            </button>
             <button
               onClick={copyLink}
               aria-label="Copier le lien"
@@ -91,9 +115,9 @@ export function ReferralSettingsTab() {
             </div>
             <div className="rounded-lg bg-mv-cream-soft p-2.5 text-center">
               <p className="font-display text-[17px] font-medium text-mv-ink">
-                {summary.totalDiscountApplied}%
+                {summary.freeMonthsApplied}
               </p>
-              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">Réduction</p>
+              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">Mois gratuits</p>
             </div>
           </div>
         )}

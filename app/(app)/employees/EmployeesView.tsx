@@ -18,6 +18,7 @@ import {
   createEmployeeReviewAction,
   getEmployeeReviewsAction,
 } from "./actions";
+import posthog from "posthog-js";
 import type { Employee, EmployeeReview, EmployeeShift } from "@/lib/types";
 import { useApp } from "@/lib/app-context";
 import { UserPlus, Star, Printer, Users2 } from "lucide-react";
@@ -64,6 +65,7 @@ function NewEmployeeModal({
         hourlyWage: wage ? Number(wage) : null,
       });
       if (employee) {
+        posthog.capture("employee_created", { role_title: employee.roleTitle, has_wage: employee.hourlyWage !== null });
         onCreated(employee);
         onClose();
       } else {
@@ -194,6 +196,7 @@ function NewReviewForm({
         employee.fullName
       );
       if (review) {
+        posthog.capture("employee_review_submitted", { rating, raise_recommended: raiseRecommended, has_attributed_revenue: Boolean(revenue) });
         onCreated(review);
         (e.target as HTMLFormElement).reset();
         setRating(3);

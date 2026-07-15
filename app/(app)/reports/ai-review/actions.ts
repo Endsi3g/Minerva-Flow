@@ -12,6 +12,8 @@ import { generateAiReview } from "@/lib/ai/review";
 import { saveAiReview, getAiReviews, getAiReview, type AiReview } from "@/lib/data/ai-reviews";
 import { notifyRestaurant } from "@/lib/data/notifications";
 import { formatDate } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/server";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function getAiReviewsAction(): Promise<AiReview[]> {
   const restaurantId = await getCurrentRestaurantId();
@@ -75,6 +77,18 @@ export async function generateAiReviewAction(range: {
     body: `Analyse de la période du ${periodLabel}.`,
     link: `/reports/ai-review/${saved.id}`,
   });
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: user.id,
+      event: "ai_review_generated",
+      properties: { period_from: range.from, period_to: range.to, source: "manuelle" },
+    });
+    await posthog.flush();
+  }
 
   revalidatePath("/reports/ai-review");
   return { ok: true, reviewId: saved.id };

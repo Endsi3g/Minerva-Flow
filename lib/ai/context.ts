@@ -8,6 +8,7 @@ import { getCampaigns } from "@/lib/data/campaigns";
 import { getAlerts, getAlertRules } from "@/lib/data/alerts";
 import { getConnections, getFinancialTransactions } from "@/lib/data/finance";
 import { simpleTrendForecast } from "@/lib/engine/forecast";
+import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS as CONTEXT_WINDOW_DAYS } from "@/lib/utils";
 import type { Recommendation } from "@/lib/types";
 
 /**
@@ -19,7 +20,7 @@ export async function buildRestaurantDataSnapshot(restaurantId: string): Promise
   const [restaurant, days, restaurantPrograms, restaurantCampaigns, alerts, restaurantConnections] =
     await Promise.all([
       getRestaurant(restaurantId),
-      getServiceDays(restaurantId),
+      getServiceDays(restaurantId, { from: isoDaysAgo(CONTEXT_WINDOW_DAYS) }),
       getPrograms(restaurantId),
       getCampaigns(restaurantId),
       getAlerts(restaurantId),
@@ -70,9 +71,9 @@ export async function buildRestaurantDataSnapshot(restaurantId: string): Promise
 
   return `Tu es l'assistant de Minerva Flow, le cockpit de revenus d'un restaurant. Voici l'état actuel des données du restaurant "${restaurant?.name ?? "—"}"${restaurant?.city ? ` (${restaurant.city})` : ""} :
 
-KPIs :
-- Revenu total (journées enregistrées) : ${formatCurrency(totalRevenue)}
-- Journées de service enregistrées : ${days.length}
+KPIs (13 derniers mois) :
+- Revenu sur la période : ${formatCurrency(totalRevenue)}
+- Journées de service enregistrées sur la période : ${days.length}
 - Campagnes actives : ${restaurantCampaigns.filter((c) => c.status === "active").length}
 
 Journées de service récentes :
@@ -99,11 +100,11 @@ Réponds toujours en français, de façon concise et opérationnelle. Base-toi u
 export async function ruleBasedFallback(restaurantId: string): Promise<Recommendation[]> {
   const [days, restaurantPrograms, restaurantCampaigns, restaurantConnections, transactions, rules] =
     await Promise.all([
-      getServiceDays(restaurantId),
+      getServiceDays(restaurantId, { from: isoDaysAgo(CONTEXT_WINDOW_DAYS) }),
       getPrograms(restaurantId),
       getCampaigns(restaurantId),
       getConnections(restaurantId),
-      getFinancialTransactions(restaurantId),
+      getFinancialTransactions(restaurantId, { from: isoDaysAgo(CONTEXT_WINDOW_DAYS) }),
       getAlertRules(restaurantId),
     ]);
 

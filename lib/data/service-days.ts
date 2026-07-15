@@ -143,6 +143,57 @@ export async function getRevenueByRestaurant(
   return result;
 }
 
+/**
+ * Bulk upsert for historical data import (CSV of past revenue) — one round
+ * trip instead of one insert per row, which matters when a restaurant is
+ * backfilling months or years of history. Reuses the same
+ * (restaurant_id, date) upsert key as createServiceDay so re-importing an
+ * overlapping range safely overwrites rather than duplicates.
+ */
+export async function bulkImportServiceDays(
+  restaurantId: string,
+  inputs: ServiceDayInput[]
+): Promise<number> {
+  if (inputs.length === 0) return 0;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data, error } = await supabase
+    .from("service_days")
+    .upsert(
+      inputs.map((input) => ({
+        restaurant_id: restaurantId,
+        date: input.date,
+        revenue: input.revenue,
+        expenses: input.expenses ?? 0,
+        reservation_count: input.reservationCount ?? 0,
+        main_source: input.mainSource,
+        rush_level: input.rushLevel ?? "normal",
+        events: input.events ?? [],
+        notes: input.notes ?? "",
+        promo_active: input.promoActive ?? false,
+        menu_change: input.menuChange ?? false,
+        reviewed: input.reviewed ?? false,
+        created_by: user?.id,
+      })),
+      { onConflict: "restaurant_id,date" }
+    )
+    .select("id");
+
+  if (error || !data) return 0;
+
+  await logActivity({
+    restaurantId,
+    actionType: "service_day.bulk_import",
+    description: `A importé ${data.length} journée(s) de service depuis un fichier`,
+  });
+
+  return data.length;
+}
+
 export async function getServiceDays(
   restaurantId: string,
   range?: { from?: string; to?: string }

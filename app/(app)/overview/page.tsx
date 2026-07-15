@@ -9,6 +9,7 @@ import { ContributionHeatmap } from "@/components/charts/ContributionHeatmap";
 import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
 import { MiniSparkline } from "@/components/charts/MiniSparkline";
 import { RecommendationsPanel } from "@/components/minerva/RecommendationsPanel";
+import { StartupChecklist } from "@/components/minerva/StartupChecklist";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getPrograms } from "@/lib/data/programs";
 import { getServiceDays } from "@/lib/data/service-days";
@@ -134,6 +135,8 @@ export default async function OverviewPage() {
           </Button>
         }
       />
+
+      <StartupChecklist />
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="mv-animate-in lg:col-span-2">

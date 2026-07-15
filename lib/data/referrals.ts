@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Referral, ReferralCode, ReferralStatus } from "@/lib/types";
 
 type ReferralCodeRow = {
@@ -103,10 +104,59 @@ export async function getReferrals(restaurantId: string): Promise<Referral[]> {
   return (data as ReferralRow[]).map(mapReferral);
 }
 
+/**
+ * Closes the referral loop: called once, from onboarding completion (the
+ * "restaurant-creation flow" the note above was waiting on — every new
+ * signup now always has a restaurant by then, via the 0008 trigger). Looks
+ * up the referral_code stashed in the new user's auth metadata at signup
+ * (see app/sign-up/page.tsx), records the referral as active, and grants
+ * the referrer one free month — applied at their next Stripe billing cycle
+ * (lib/stripe — checks unapplied referral_rewards when a subscription
+ * renews).
+ */
+export async function activateReferral(
+  referralCode: string,
+  referredEmail: string,
+  referredRestaurantId: string
+): Promise<void> {
+  // referrals/referral_rewards have select-only RLS policies (see
+  // 0002_chat_and_referrals.sql) — the referred user has no membership on
+  // the referrer's restaurant, so this always goes through the admin
+  // client, same as every other cross-restaurant write in the app.
+  const admin = createAdminClient();
+
+  const { data: codeRow } = await admin
+    .from("referral_codes")
+    .select("id, restaurant_id")
+    .eq("code", referralCode)
+    .maybeSingle();
+  if (!codeRow) return;
+
+  const { data: referral } = await admin
+    .from("referrals")
+    .insert({
+      referral_code_id: codeRow.id,
+      referred_email: referredEmail,
+      referred_restaurant_id: referredRestaurantId,
+      status: "active",
+      activated_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
+  if (!referral) return;
+
+  await admin.from("referral_rewards").insert({
+    restaurant_id: codeRow.restaurant_id,
+    referral_id: referral.id,
+    reward_type: "free_months",
+    amount: 1,
+  });
+}
+
 export type RewardSummary = {
   pendingCount: number;
   activeCount: number;
-  totalDiscountApplied: number;
+  freeMonthsApplied: number;
 };
 
 /**
@@ -129,7 +179,7 @@ export async function getRewardSummary(restaurantId: string): Promise<RewardSumm
       .select("amount, reward_type, applied")
       .eq("restaurant_id", restaurantId)
       .eq("applied", true)
-      .eq("reward_type", "percent_discount"),
+      .eq("reward_type", "free_months"),
   ]);
 
   const statuses = (referrals.data as { status: ReferralStatus }[] | null) ?? [];
@@ -138,6 +188,6 @@ export async function getRewardSummary(restaurantId: string): Promise<RewardSumm
   return {
     pendingCount: statuses.filter((r) => r.status === "pending").length,
     activeCount: statuses.filter((r) => r.status === "active" || r.status === "rewarded").length,
-    totalDiscountApplied: rewardRows.reduce((sum, r) => sum + r.amount, 0),
+    freeMonthsApplied: rewardRows.reduce((sum, r) => sum + r.amount, 0),
   };
 }

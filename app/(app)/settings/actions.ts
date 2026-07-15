@@ -14,6 +14,8 @@ import {
 } from "@/lib/data/restaurants";
 import { getConnections, createConnection } from "@/lib/data/finance";
 import { getAlertRules, upsertAlertRule } from "@/lib/data/alerts";
+import { createClient } from "@/lib/supabase/server";
+import { getPostHogClient } from "@/lib/posthog-server";
 import type {
   AlertRule,
   AlertRuleType,
@@ -53,7 +55,16 @@ export async function assignRestaurantToCompanyAction(
 
 export async function createRestaurantAction(input: RestaurantInput): Promise<Restaurant | null> {
   const restaurant = await createRestaurant(input);
-  if (restaurant) revalidatePath("/workspace");
+  if (restaurant) {
+    revalidatePath("/workspace");
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const posthog = getPostHogClient();
+      posthog.capture({ distinctId: user.id, event: "restaurant_created", properties: { restaurant_id: restaurant.id } });
+      await posthog.flush();
+    }
+  }
   return restaurant;
 }
 

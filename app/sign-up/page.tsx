@@ -5,6 +5,7 @@ import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/minerva/FormField";
 import { createClient } from "@/lib/supabase/client";
+import posthog from "posthog-js";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -71,6 +72,14 @@ export default function SignUpPage() {
         },
       });
       if (error) throw error;
+      if (data.user) {
+        posthog.identify(data.user.id, { email: data.user.email });
+        posthog.capture("user_signed_up", {
+          method: "email",
+          has_referral: Boolean(referralCode),
+          has_invite: Boolean(inviteToken),
+        });
+      }
       if (data.session) {
         router.push(postSignupPath);
         router.refresh();
@@ -78,6 +87,7 @@ export default function SignUpPage() {
         router.push("/sign-up-success");
       }
     } catch (err) {
+      posthog.captureException(err);
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
     } finally {
       setIsLoading(false);
@@ -86,12 +96,16 @@ export default function SignUpPage() {
 
   async function handleOAuth(provider: "google" | "apple" | "azure") {
     setError(null);
+    posthog.capture("user_signed_up", { method: provider, has_referral: Boolean(referralCode), has_invite: Boolean(inviteToken) });
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/auth/confirm?next=${postSignupPath}` },
     });
-    if (error) setError(error.message);
+    if (error) {
+      posthog.captureException(error);
+      setError(error.message);
+    }
   }
 
   return (

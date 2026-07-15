@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { DaysView } from "./DaysView";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getServiceDays } from "@/lib/data/service-days";
+import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { Store } from "lucide-react";
 
 export default async function DaysPage() {
@@ -27,7 +28,7 @@ export default async function DaysPage() {
     );
   }
 
-  const serviceDays = await getServiceDays(restaurantId);
+  const serviceDays = await getServiceDays(restaurantId, { from: isoDaysAgo(DEFAULT_HISTORY_WINDOW_DAYS) });
 
   return <DaysView initialServiceDays={serviceDays} />;
 }

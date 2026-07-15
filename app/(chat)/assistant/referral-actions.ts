@@ -13,7 +13,7 @@ export async function getReferralModalDataAction(restaurantId: string) {
     code: code?.code ?? null,
     pendingCount: summary.pendingCount,
     activeCount: summary.activeCount,
-    totalDiscountApplied: summary.totalDiscountApplied,
+    freeMonthsApplied: summary.freeMonthsApplied,
   };
 }
 

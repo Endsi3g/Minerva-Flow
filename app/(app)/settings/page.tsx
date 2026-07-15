@@ -12,6 +12,7 @@ import { ReferralSettingsTab } from "@/components/chat/ReferralSettingsTab";
 import { CompaniesTab } from "@/components/minerva/CompaniesTab";
 import { AdPlatformsCard } from "@/components/minerva/AdPlatformsCard";
 import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
+import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
 import {
   getConnectionsAction,
   createConnectionAction,
@@ -200,6 +201,7 @@ function IntegrationsTab() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <AdPlatformsCard />
         <GoogleWorkspaceCard />
+        <PosConnectionsCard />
       </div>
 
       {loading ? (

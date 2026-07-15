@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { getInviteByToken, redeemInvite } from "@/lib/data/invites";
 import { createClient } from "@/lib/supabase/server";
 import { roleLabels } from "@/lib/app-context";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { redirect } from "next/navigation";
 
@@ -11,6 +12,7 @@ const statusMessage: Record<string, string> = {
   not_found: "Ce lien d'invitation n'existe pas ou a été révoqué.",
   expired: "Ce lien d'invitation a expiré. Demandez-en un nouveau au propriétaire.",
   used: "Ce lien d'invitation a déjà été utilisé.",
+  rate_limited: "Trop de tentatives. Réessayez dans quelques minutes.",
 };
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -29,6 +31,19 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
+
+  const ip = await getClientIp();
+  const { allowed } = await checkRateLimit(`invite:${ip}`, { max: 20, windowSeconds: 300 });
+  if (!allowed) {
+    return (
+      <Shell>
+        <XCircle size={32} className="mx-auto mb-3 text-mv-red" />
+        <h1 className="font-display text-[18px] font-medium text-mv-ink">Trop de tentatives</h1>
+        <p className="mt-2 text-[13px] text-mv-ink-soft">{statusMessage.rate_limited}</p>
+      </Shell>
+    );
+  }
+
   const invite = await getInviteByToken(token);
 
   if (invite.status !== "valid") {

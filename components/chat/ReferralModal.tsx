@@ -9,7 +9,7 @@ type ReferralModalData = {
   code: string | null;
   pendingCount: number;
   activeCount: number;
-  totalDiscountApplied: number;
+  freeMonthsApplied: number;
 };
 
 export function ReferralModal({
@@ -46,7 +46,7 @@ export function ReferralModal({
       open={open}
       onClose={onClose}
       title="Parrainez d'autres restaurants"
-      description="Partagez Minerva Flow et obtenez une réduction sur votre abonnement pour chaque restaurant référé qui devient actif."
+      description="Partagez Minerva Flow et obtenez un mois gratuit sur votre abonnement pour chaque restaurant référé qui devient actif."
     >
       {!data ? (
         <p className="text-[13px] text-mv-ink-faint">Chargement…</p>
@@ -83,9 +83,9 @@ export function ReferralModal({
             </div>
             <div className="rounded-lg bg-mv-cream-soft p-2.5 text-center">
               <p className="font-display text-[17px] font-medium text-mv-ink">
-                {data.totalDiscountApplied}%
+                {data.freeMonthsApplied}
               </p>
-              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">Réduction</p>
+              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">Mois gratuits</p>
             </div>
           </div>
         </div>

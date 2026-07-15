@@ -7,6 +7,7 @@ import { getFinancialTransactions, getConnections } from "@/lib/data/finance";
 import { getAlertRules } from "@/lib/data/alerts";
 import { buildReports, type ReportData } from "@/lib/reports";
 import { computeAlerts } from "@/lib/engine/alerts";
+import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { AssistantChatView } from "@/components/chat/AssistantChatView";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
 
@@ -24,14 +25,15 @@ export default async function AssistantConversationPage({
     redirect("/assistant");
   }
 
+  const historyFrom = isoDaysAgo(DEFAULT_HISTORY_WINDOW_DAYS);
   const [conversations, messages, artifact, serviceDays, programs, financialTransactions, connections, alertRules] =
     await Promise.all([
       getConversations(restaurantId),
       getMessages(conversationId),
       getLatestArtifact(conversationId),
-      getServiceDays(restaurantId),
+      getServiceDays(restaurantId, { from: historyFrom }),
       getPrograms(restaurantId),
-      getFinancialTransactions(restaurantId),
+      getFinancialTransactions(restaurantId, { from: historyFrom }),
       getConnections(restaurantId),
       getAlertRules(restaurantId),
     ]);

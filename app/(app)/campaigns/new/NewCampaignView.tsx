@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { CampaignAssets, type PreparedCampaignAsset } from "@/components/campaigns/CampaignAssets";
 import { createCampaignAction, saveCampaignAssetAction } from "@/app/(app)/campaigns/actions";
+import posthog from "posthog-js";
 import type { CampaignChannel, CampaignType } from "@/lib/types";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
@@ -37,6 +38,11 @@ export function NewCampaignView({ restaurantId }: { restaurantId: string }) {
         setError("La création de la campagne a échoué. Réessayez.");
         return;
       }
+      posthog.capture("campaign_created", {
+        campaign_type: campaign.type,
+        campaign_channel: campaign.channel,
+        asset_count: assets.length,
+      });
       await Promise.all(
         assets.map((a) =>
           saveCampaignAssetAction({

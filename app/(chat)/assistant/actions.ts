@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createConversation, renameConversation } from "@/lib/data/chat";
+import { createClient } from "@/lib/supabase/server";
+import { getPostHogClient } from "@/lib/posthog-server";
 import type { ChatConversation } from "@/lib/types";
 
 export async function createConversationAction(
@@ -9,7 +11,16 @@ export async function createConversationAction(
 ): Promise<ChatConversation | null> {
   if (!restaurantId) return null;
   const conversation = await createConversation(restaurantId);
-  if (conversation) revalidatePath("/assistant");
+  if (conversation) {
+    revalidatePath("/assistant");
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const posthog = getPostHogClient();
+      posthog.capture({ distinctId: user.id, event: "ai_conversation_started" });
+      await posthog.flush();
+    }
+  }
   return conversation;
 }
 

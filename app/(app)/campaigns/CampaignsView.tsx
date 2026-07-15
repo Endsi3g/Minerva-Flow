@@ -12,6 +12,7 @@ import { useApp } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Campaign, CampaignAsset, CampaignChannel, CampaignStatus, CampaignType } from "@/lib/types";
 import { Megaphone, Plus, Camera, Mail, Store, Users, FileText } from "lucide-react";
+import posthog from "posthog-js";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
@@ -73,6 +74,12 @@ export function CampaignsView({
     if (!restaurantId || !selectedId) return;
     startTransition(async () => {
       await updateCampaignStatusAction(restaurantId, selectedId, status);
+      posthog.capture("campaign_status_changed", {
+        campaign_id: selectedId,
+        new_status: status,
+        campaign_name: selected?.name,
+        campaign_channel: selected?.channel,
+      });
       router.refresh();
     });
   }

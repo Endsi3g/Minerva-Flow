@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Select } from "@/components/minerva/FormField";
 import { roleLabels } from "@/lib/app-context";
 import { createInviteLinkAction } from "@/app/(app)/collaborateurs/actions";
+import posthog from "posthog-js";
 import type { Role } from "@/lib/types";
 import { Check, Copy } from "lucide-react";
 
@@ -34,6 +35,7 @@ export function InviteMemberModal({
         setError("Impossible de générer le lien. Réessayez.");
         return;
       }
+      posthog.capture("member_invited", { invited_role: role });
       setLink(`${window.location.origin}/invite/${invite.token}`);
     });
   }

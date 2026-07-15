@@ -1,0 +1,72 @@
+[
+  {
+    "event_name": "user_signed_up",
+    "event_description": "Fired when a user successfully creates a new account via email or OAuth.",
+    "file": "app/sign-up/page.tsx"
+  },
+  {
+    "event_name": "user_logged_in",
+    "event_description": "Fired when a user successfully authenticates via email or OAuth.",
+    "file": "app/login/page.tsx"
+  },
+  {
+    "event_name": "onboarding_completed",
+    "event_description": "Fired when a user finishes the onboarding wizard and their profile is marked complete.",
+    "file": "app/onboarding/actions.ts"
+  },
+  {
+    "event_name": "campaign_created",
+    "event_description": "Fired when a new marketing campaign is successfully created.",
+    "file": "app/(app)/campaigns/new/NewCampaignView.tsx"
+  },
+  {
+    "event_name": "campaign_status_changed",
+    "event_description": "Fired when a campaign's status is updated (e.g., started or terminated).",
+    "file": "app/(app)/campaigns/CampaignsView.tsx"
+  },
+  {
+    "event_name": "member_invited",
+    "event_description": "Fired when an owner or manager sends a team member invitation.",
+    "file": "app/(app)/collaborateurs/CollaborateursView.tsx"
+  },
+  {
+    "event_name": "member_role_changed",
+    "event_description": "Fired when a team member's role is updated.",
+    "file": "app/(app)/collaborateurs/CollaborateursView.tsx"
+  },
+  {
+    "event_name": "member_removed",
+    "event_description": "Fired when a collaborator is removed from the restaurant team.",
+    "file": "app/(app)/collaborateurs/CollaborateursView.tsx"
+  },
+  {
+    "event_name": "employee_created",
+    "event_description": "Fired when a new employee record is added to the system.",
+    "file": "app/(app)/employees/EmployeesView.tsx"
+  },
+  {
+    "event_name": "employee_review_submitted",
+    "event_description": "Fired when a performance review is saved for an employee.",
+    "file": "app/(app)/employees/EmployeesView.tsx"
+  },
+  {
+    "event_name": "ai_conversation_started",
+    "event_description": "Fired when the user initiates a new AI assistant conversation.",
+    "file": "app/(chat)/assistant/page.tsx"
+  },
+  {
+    "event_name": "ai_review_generated",
+    "event_description": "Fired when an AI-powered revenue review is successfully generated.",
+    "file": "app/(app)/reports/ai-review/actions.ts"
+  },
+  {
+    "event_name": "transactions_imported",
+    "event_description": "Fired when a CSV file of financial transactions is successfully imported.",
+    "file": "app/(app)/finance/FinanceView.tsx"
+  },
+  {
+    "event_name": "restaurant_created",
+    "event_description": "Fired when a new restaurant is created in the workspace settings.",
+    "file": "app/(app)/settings/actions.ts"
+  }
+]

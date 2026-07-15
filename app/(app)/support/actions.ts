@@ -1,6 +1,6 @@
 "use server";
 
-import { createSupportRequest, type SupportCategory } from "@/lib/data/support";
+import { createSupportRequest, getMySupportRequests, type SupportCategory, type SupportRequest } from "@/lib/data/support";
 
 export async function createSupportRequestAction(input: {
   restaurantId: string | null;
@@ -10,4 +10,8 @@ export async function createSupportRequestAction(input: {
 }): Promise<boolean> {
   if (!input.subject.trim() || !input.message.trim()) return false;
   return createSupportRequest(input);
+}
+
+export async function getMySupportRequestsAction(): Promise<SupportRequest[]> {
+  return getMySupportRequests();
 }

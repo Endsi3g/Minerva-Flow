@@ -8,11 +8,13 @@ import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MonthCalendar } from "@/components/charts/MonthCalendar";
 import { AddServiceDayModal, type AddServiceDayInput } from "@/components/forms/AddServiceDayModal";
+import { ImportServiceDaysModal } from "@/components/forms/ImportServiceDaysModal";
 import { createServiceDayAction, type CreateServiceDayResult } from "./actions";
 import { useApp } from "@/lib/app-context";
+import { useRouter } from "next/navigation";
 import { formatCurrency, formatDateFull, formatDateWeekday } from "@/lib/utils";
 import type { Anomaly, ServiceDay, ServiceSource } from "@/lib/types";
-import { Plus, ShoppingBag, Truck, CalendarCheck, CalendarCheck2 } from "lucide-react";
+import { Plus, Upload, ShoppingBag, Truck, CalendarCheck, CalendarCheck2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const sourceLabel: Record<ServiceSource, string> = {
@@ -51,8 +53,10 @@ function buildHeatmap(days: ServiceDay[], year: number, month: number) {
 
 export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDay[] }) {
   const { role } = useApp();
+  const router = useRouter();
   const [days, setDays] = useState<ServiceDay[]>(initialServiceDays);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
 
   const now = useMemo(() => new Date(), []);
@@ -93,9 +97,14 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
         description="Le calendrier de vos services : niveau de revenu, source principale et notes remontées par l'équipe."
         action={
           canEdit && (
-            <Button size="sm" onClick={() => setOpen(true)}>
-              <Plus size={15} /> Ajouter une journée
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="secondary" onClick={() => setImportOpen(true)}>
+                <Upload size={15} /> Importer un historique
+              </Button>
+              <Button size="sm" onClick={() => setOpen(true)}>
+                <Plus size={15} /> Ajouter une journée
+              </Button>
+            </div>
           )
         }
       />
@@ -180,6 +189,11 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
       )}
 
       <AddServiceDayModal open={open} onClose={() => setOpen(false)} onSubmit={handleSubmit} />
+      <ImportServiceDaysModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => router.refresh()}
+      />
     </div>
   );
 }

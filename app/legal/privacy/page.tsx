@@ -63,10 +63,38 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-2 font-display text-[16px] font-medium text-mv-ink">5. Conservation</h2>
+            <h2 className="mb-2 font-display text-[16px] font-medium text-mv-ink">5. Conservation et suppression</h2>
             <p>
-              Les données sont conservées tant que votre compte est actif. Vous pouvez demander la suppression de
-              votre compte et des données associées via la page{" "}
+              Les données sont conservées tant que votre compte est actif. Vous pouvez supprimer vous-même votre
+              compte et les données associées à tout moment depuis votre page{" "}
+              <Link href="/profil" className="text-mv-green-dark underline underline-offset-2">
+                Profil
+              </Link>{" "}
+              (section « Zone sensible »), ou via la page{" "}
+              <Link href="/support" className="text-mv-green-dark underline underline-offset-2">
+                Aide &amp; Support
+              </Link>{" "}
+              si une suppression assistée est nécessaire (par exemple si vous êtes seul propriétaire d&apos;un
+              établissement).
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-2 font-display text-[16px] font-medium text-mv-ink">6. Vos droits</h2>
+            <p>
+              Vous pouvez à tout moment accéder à vos données, les faire corriger, ou en demander la suppression,
+              conformément à la Loi 25 (Québec) et aux autres lois applicables sur la protection des renseignements
+              personnels.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-2 font-display text-[16px] font-medium text-mv-ink">
+              7. Responsable de la protection des renseignements personnels
+            </h2>
+            <p>
+              Conformément à la Loi 25, un responsable de la protection des renseignements personnels est désigné
+              pour Minerva Flow. Pour exercer vos droits ou signaler une préoccupation, utilisez la page{" "}
               <Link href="/support" className="text-mv-green-dark underline underline-offset-2">
                 Aide &amp; Support
               </Link>
@@ -75,15 +103,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-2 font-display text-[16px] font-medium text-mv-ink">6. Vos droits</h2>
-            <p>
-              Vous pouvez à tout moment accéder à vos données, les faire corriger, ou en demander la suppression,
-              conformément aux lois applicables sur la protection des renseignements personnels.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="mb-2 font-display text-[16px] font-medium text-mv-ink">7. Contact</h2>
+            <h2 className="mb-2 font-display text-[16px] font-medium text-mv-ink">8. Contact</h2>
             <p>
               Pour toute question relative à cette politique, utilisez la page{" "}
               <Link href="/support" className="text-mv-green-dark underline underline-offset-2">

@@ -14,6 +14,7 @@ import { MemberDetailModal } from "./MemberDetailModal";
 import { updateMemberRoleAction, removeMemberAction } from "./actions";
 import { useApp, roleLabels } from "@/lib/app-context";
 import { useTeamPresence } from "@/hooks/use-team-presence";
+import posthog from "posthog-js";
 import type { Role, TeamMember } from "@/lib/types";
 import { Plus, Users, Trash2 } from "lucide-react";
 
@@ -47,6 +48,7 @@ export function CollaborateursView({
     setPendingId(member.id);
     startTransition(async () => {
       await updateMemberRoleAction(restaurantId, member.membershipId!, next);
+      posthog.capture("member_role_changed", { previous_role: member.role, new_role: next });
       setPendingId(null);
       router.refresh();
     });
@@ -58,6 +60,7 @@ export function CollaborateursView({
     setPendingId(member.id);
     startTransition(async () => {
       await removeMemberAction(restaurantId, member.membershipId!);
+      posthog.capture("member_removed", { removed_role: member.role });
       setPendingId(null);
       router.refresh();
     });

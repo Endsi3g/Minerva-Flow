@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AppProvider } from "@/lib/app-context";
 import { getAppSessionData } from "@/lib/data/session";
 import { MobileTabBar } from "@/components/shell/MobileTabBar";
+import { PostHogIdentifier } from "@/components/PostHogIdentifier";
 import type { Role } from "@/lib/types";
 
 const ALLOWED_ROLES: Role[] = ["owner", "manager", "staff", "consultant"];
@@ -25,6 +26,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
       restaurants={restaurants}
       initialRestaurantId={initialRestaurantId}
     >
+      <PostHogIdentifier authUser={authUser} />
       <div className="h-screen w-full overflow-hidden bg-mv-cream pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">{children}</div>
       <MobileTabBar />
     </AppProvider>

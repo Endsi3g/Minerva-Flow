@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/minerva/FormField";
 import { Spinner } from "@/components/ui/spinner";
 import { RolePermissionsCard, roleTone } from "@/components/minerva/RolePermissionsCard";
+import { DeleteAccountCard } from "@/components/minerva/DeleteAccountCard";
 import { roleLabels, useApp } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
 import { updateProfileNameAction } from "./actions";
@@ -216,6 +217,8 @@ export function ProfileView({
           </Card>
 
           {role && <RolePermissionsCard eyebrow="Capacités" highlightRole={role} />}
+
+          <DeleteAccountCard />
         </div>
 
         <div className="xl:col-span-8">

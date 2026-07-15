@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { updateMyProfileField } from "@/lib/data/profile";
+import { deleteMyAccount, type DeleteAccountResult } from "@/lib/data/account-deletion";
 
 export type UpdateProfileResult = { ok: true } | { ok: false; error: string };
 
@@ -21,6 +22,11 @@ export async function updateProfileNameAction(fullName: string): Promise<UpdateP
 
   revalidatePath("/profil");
   return { ok: true };
+}
+
+/** Self-serve deletion (Loi 25 — droit à l'effacement). See lib/data/account-deletion.ts for the ownership guard. */
+export async function deleteMyAccountAction(): Promise<DeleteAccountResult> {
+  return deleteMyAccount();
 }
 
 /**

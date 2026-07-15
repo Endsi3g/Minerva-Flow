@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AppProvider } from "@/lib/app-context";
 import { AppShell } from "@/components/shell/AppShell";
+import { PostHogIdentifier } from "@/components/PostHogIdentifier";
 import { getAppSessionData } from "@/lib/data/session";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       restaurants={restaurants}
       initialRestaurantId={initialRestaurantId}
     >
+      <PostHogIdentifier authUser={authUser} />
       <AppShell>{children}</AppShell>
     </AppProvider>
   );

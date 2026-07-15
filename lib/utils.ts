@@ -44,6 +44,20 @@ const dateWeekdayFormatter = new Intl.DateTimeFormat("fr-CA", {
   timeZone: DEFAULT_TIMEZONE,
 });
 
+/**
+ * Default lookback window for pages/AI context that fetch service days or
+ * financial transactions without a user-picked range — bounds otherwise
+ * unbounded queries to a rolling window instead of a restaurant's full
+ * lifetime of data.
+ */
+export const DEFAULT_HISTORY_WINDOW_DAYS = 400; // ~13 months, enough for a YoY comparison
+
+export function isoDaysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 export function formatDate(iso: string) {
   return dateFormatter.format(new Date(iso + "T00:00:00"));
 }

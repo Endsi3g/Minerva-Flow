@@ -11,6 +11,7 @@ import { getPrograms } from "@/lib/data/programs";
 import { getCampaigns } from "@/lib/data/campaigns";
 import { getFinancialTransactions } from "@/lib/data/finance";
 import { createClient } from "@/lib/supabase/server";
+import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { Store } from "lucide-react";
 
 export function generateStaticParams() {
@@ -67,11 +68,12 @@ export default async function ReportPage({
     );
   }
 
+  const historyFrom = isoDaysAgo(DEFAULT_HISTORY_WINDOW_DAYS);
   const [serviceDays, programs, campaigns, financialTransactions] = await Promise.all([
-    getServiceDays(restaurantId),
+    getServiceDays(restaurantId, { from: historyFrom }),
     getPrograms(restaurantId),
     getCampaigns(restaurantId),
-    getFinancialTransactions(restaurantId),
+    getFinancialTransactions(restaurantId, { from: historyFrom }),
   ]);
 
   const data: ReportData = { serviceDays, programs, campaigns, financialTransactions };

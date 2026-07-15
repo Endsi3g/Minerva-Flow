@@ -15,6 +15,7 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/dropzone";
+import posthog from "posthog-js";
 import { useCsvTransactionImport } from "@/hooks/use-csv-transaction-import";
 import { createCategoryAction, categorizeTransactionsAction } from "./actions";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -175,6 +176,16 @@ function OverviewTab({ transactions }: { transactions: FinancialTransaction[] })
   );
 }
 
+function triggerCsvDownload(csv: string, filename: string) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function downloadCsv(rows: FinancialTransaction[]) {
   const header = ["Date", "Description", "Montant", "Sens", "Catégorie", "Compte", "Revu"];
   const lines = rows.map((t) => [
@@ -187,13 +198,24 @@ function downloadCsv(rows: FinancialTransaction[]) {
     t.reviewed ? "Oui" : "Non",
   ]);
   const csv = [header, ...lines].map((row) => row.join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `transactions-minerva-flow-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  triggerCsvDownload(csv, `transactions-minerva-flow-${new Date().toISOString().slice(0, 10)}.csv`);
+}
+
+/**
+ * QuickBooks Online's "3-column" bank transaction import format — Date,
+ * Description, Amount, with outflows as negative amounts rather than a
+ * separate direction column. No QuickBooks account needed to use this
+ * (it's a plain file format), unlike the POS connections above.
+ */
+function downloadQuickBooksCsv(rows: FinancialTransaction[]) {
+  const header = ["Date", "Description", "Amount"];
+  const lines = rows.map((t) => [
+    t.date,
+    `"${t.description.replace(/"/g, '""')}"`,
+    t.direction === "out" ? -Math.abs(t.amount) : Math.abs(t.amount),
+  ]);
+  const csv = [header, ...lines].map((row) => row.join(",")).join("\n");
+  triggerCsvDownload(csv, `minerva-flow-quickbooks-${new Date().toISOString().slice(0, 10)}.csv`);
 }
 
 function CsvDropzone({ onImported }: { onImported: (count: number) => void }) {
@@ -204,6 +226,7 @@ function CsvDropzone({ onImported }: { onImported: (count: number) => void }) {
     maxFileSize: 5 * 1000 * 1000,
     onImported: (count) => {
       setMessage(`${count} transaction${count > 1 ? "s" : ""} importée${count > 1 ? "s" : ""}.`);
+      posthog.capture("transactions_imported", { transaction_count: count });
       onImported(count);
     },
   });
@@ -341,6 +364,9 @@ function TransactionsTab({
           )}
           <Button size="sm" variant="secondary" onClick={() => downloadCsv(filtered)}>
             <Download size={14} /> Export CSV
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => downloadQuickBooksCsv(filtered)}>
+            <Download size={14} /> Exporter vers QuickBooks
           </Button>
         </div>
       </div>

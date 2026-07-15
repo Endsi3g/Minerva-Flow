@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
-import { createServiceDay, type ServiceDayInput } from "@/lib/data/service-days";
+import { createServiceDay, bulkImportServiceDays, type ServiceDayInput } from "@/lib/data/service-days";
 import type { ServiceDay } from "@/lib/types";
 
 export type CreateServiceDayResult =
@@ -37,4 +37,24 @@ export async function createServiceDayAction(
   revalidatePath("/overview");
 
   return { ok: true, day };
+}
+
+/**
+ * Bulk import backing the "importer un historique" flow on /days — same
+ * authorization rules as a single entry, applied once to the whole batch.
+ */
+export async function importServiceDaysAction(inputs: ServiceDayInput[]): Promise<number> {
+  const membership = await getCurrentMembership();
+  if (!membership) return 0;
+  if (membership.role !== "owner" && membership.role !== "staff") return 0;
+  if (inputs.length === 0) return 0;
+
+  const count = await bulkImportServiceDays(membership.restaurantId, inputs);
+
+  if (count > 0) {
+    revalidatePath("/days");
+    revalidatePath("/overview");
+  }
+
+  return count;
 }

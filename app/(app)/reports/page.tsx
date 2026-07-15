@@ -9,7 +9,7 @@ import { getPrograms } from "@/lib/data/programs";
 import { getCampaigns } from "@/lib/data/campaigns";
 import { getFinancialTransactions } from "@/lib/data/finance";
 import { buildReports, reportGroups, type ReportData } from "@/lib/reports";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { Sparkles, Store } from "lucide-react";
 import Link from "next/link";
@@ -42,11 +42,12 @@ export default async function ReportsIndexPage() {
     );
   }
 
+  const historyFrom = isoDaysAgo(DEFAULT_HISTORY_WINDOW_DAYS);
   const [serviceDays, programs, campaigns, financialTransactions] = await Promise.all([
-    getServiceDays(restaurantId),
+    getServiceDays(restaurantId, { from: historyFrom }),
     getPrograms(restaurantId),
     getCampaigns(restaurantId),
-    getFinancialTransactions(restaurantId),
+    getFinancialTransactions(restaurantId, { from: historyFrom }),
   ]);
 
   const data: ReportData = { serviceDays, programs, campaigns, financialTransactions };
