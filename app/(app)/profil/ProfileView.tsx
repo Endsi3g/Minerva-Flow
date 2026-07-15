@@ -10,6 +10,7 @@ import { Input } from "@/components/minerva/FormField";
 import { Spinner } from "@/components/ui/spinner";
 import { RolePermissionsCard, roleTone } from "@/components/minerva/RolePermissionsCard";
 import { DeleteAccountCard } from "@/components/minerva/DeleteAccountCard";
+import { GoogleCalendarCard } from "@/components/minerva/GoogleCalendarCard";
 import { roleLabels, useApp } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
 import { updateProfileNameAction } from "./actions";
@@ -217,6 +218,8 @@ export function ProfileView({
           </Card>
 
           {role && <RolePermissionsCard eyebrow="Capacités" highlightRole={role} />}
+
+          <GoogleCalendarCard />
 
           <DeleteAccountCard />
         </div>

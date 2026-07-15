@@ -19,7 +19,8 @@ import {
 } from "./actions";
 import { useApp } from "@/lib/app-context";
 import type { Reservation, ReservationStatus, RestaurantTable } from "@/lib/types";
-import { CalendarClock, ChevronLeft, ChevronRight, Plus, Trash2, Users } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Plus, Trash2, Users, Link2 } from "lucide-react";
+import type { ReservationPlatformConnection } from "@/lib/data/reservation-platforms";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -227,16 +228,71 @@ function TablesCard({
   );
 }
 
+const platformLabel: Record<ReservationPlatformConnection["platform"], string> = {
+  opentable: "OpenTable",
+  resy: "Resy",
+  sevenrooms: "SevenRooms",
+};
+
+/**
+ * Purely informational until a real partner account exists — most
+ * reservation platforms require a business partnership to get API access,
+ * not just a self-serve key like Square. See the migration comment on
+ * reservation_platform_connections.
+ */
+function PlatformsCard({ connections }: { connections: ReservationPlatformConnection[] }) {
+  const byPlatform = new Map(connections.map((c) => [c.platform, c]));
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Intégrations"
+        title="Services de réservation"
+        description="Connectez un service externe pour centraliser vos réservations ici."
+      />
+      <div className="space-y-2">
+        {(Object.keys(platformLabel) as ReservationPlatformConnection["platform"][]).map((platform) => {
+          const connected = byPlatform.get(platform);
+          return (
+            <div
+              key={platform}
+              className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3.5 py-2.5"
+            >
+              <div>
+                <p className="text-[13px] font-semibold text-mv-ink">{platformLabel[platform]}</p>
+                <p className="text-[11.5px] text-mv-ink-faint">
+                  {connected ? "Connecté" : "Nécessite un compte partenaire"}
+                </p>
+              </div>
+              {connected ? (
+                <Badge tone="green" dot>
+                  Connecté
+                </Badge>
+              ) : (
+                <span className="flex items-center gap-1.5 rounded-lg bg-mv-ink/[0.06] px-3 py-1.5 text-[12px] font-semibold text-mv-ink-faint">
+                  <Link2 size={12} /> Pas encore disponible
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 export function ReservationsView({
   restaurantId,
   initialTables,
   initialReservations,
   initialDayStart,
+  initialPlatformConnections,
 }: {
   restaurantId: string | null;
   initialTables: RestaurantTable[];
   initialReservations: Reservation[];
   initialDayStart: string;
+  initialPlatformConnections: ReservationPlatformConnection[];
 }) {
   const { role } = useApp();
   const [tables, setTables] = useState(initialTables);
@@ -410,8 +466,9 @@ export function ReservationsView({
         </div>
 
         {canManage && (
-          <div className="xl:col-span-5">
+          <div className="space-y-6 xl:col-span-5">
             <TablesCard restaurantId={restaurantId!} tables={tables} onChange={setTables} />
+            <PlatformsCard connections={initialPlatformConnections} />
           </div>
         )}
       </div>

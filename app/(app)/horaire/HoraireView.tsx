@@ -15,6 +15,7 @@ import {
 import { useApp } from "@/lib/app-context";
 import type { Employee, ShiftSchedule, ShiftScheduleStatus } from "@/lib/types";
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { GoogleCalendarCard } from "@/components/minerva/GoogleCalendarCard";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -278,6 +279,10 @@ export function HoraireView({
           </table>
         </div>
       )}
+
+      <div className="mt-6 max-w-md">
+        <GoogleCalendarCard />
+      </div>
 
       {restaurantId && modalTarget && (
         <NewShiftModal

@@ -785,4 +785,66 @@ create policy "purchase_order_items_manage" on purchase_order_items for all
       and is_restaurant_member(po.restaurant_id, array['owner','manager']::member_role[])
   ));
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Google Calendar personnel (par membre, en lecture seule — distinct de
+-- google_connections qui est la connexion Workspace unique du restaurant)
+-- ═══════════════════════════════════════════════════════════════════════
+
+create table if not exists member_calendar_connections (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  google_email text,
+  access_token_id uuid references vault.secrets (id) on delete set null,
+  refresh_token_id uuid references vault.secrets (id) on delete set null,
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (user_id)
+);
+
+alter table member_calendar_connections enable row level security;
+
+drop policy if exists "member_calendar_connections_select_own" on member_calendar_connections;
+create policy "member_calendar_connections_select_own" on member_calendar_connections for select
+  using (user_id = auth.uid());
+drop policy if exists "member_calendar_connections_delete_own" on member_calendar_connections;
+create policy "member_calendar_connections_delete_own" on member_calendar_connections for delete
+  using (user_id = auth.uid());
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- Scaffold pour services de réservation tiers (OpenTable, Resy, SevenRooms)
+--
+-- La plupart de ces plateformes exigent un partenariat d'affaires, pas
+-- juste une clé API en libre-service comme Square — ce scaffold ne peut
+-- donc pas être branché sur un vrai flux OAuth tant qu'un compte
+-- partenaire n'existe pas pour un fournisseur donné. Il ne fait que
+-- réserver la structure de données pour brancher un provider dès que ces
+-- identifiants existent, même schéma que pos_connections.
+-- ═══════════════════════════════════════════════════════════════════════
+
+do $$ begin
+  create type reservation_platform as enum ('opentable', 'resy', 'sevenrooms');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists reservation_platform_connections (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  platform reservation_platform not null,
+  external_account_id text,
+  access_token_id uuid references vault.secrets (id) on delete set null,
+  refresh_token_id uuid references vault.secrets (id) on delete set null,
+  expires_at timestamptz,
+  status pos_connection_status not null default 'attente',
+  created_by uuid references auth.users (id),
+  created_at timestamptz not null default now(),
+  unique (restaurant_id, platform)
+);
+
+alter table reservation_platform_connections enable row level security;
+
+drop policy if exists "reservation_platform_connections_select" on reservation_platform_connections;
+create policy "reservation_platform_connections_select" on reservation_platform_connections for select
+  using (is_restaurant_member(restaurant_id));
+
 commit;

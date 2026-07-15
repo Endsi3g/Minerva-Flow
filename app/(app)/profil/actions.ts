@@ -4,6 +4,14 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { updateMyProfileField } from "@/lib/data/profile";
 import { deleteMyAccount, type DeleteAccountResult } from "@/lib/data/account-deletion";
+import {
+  getMyCalendarConnection,
+  disconnectMyCalendar,
+  getMemberCalendarAccessToken,
+  type MemberCalendarConnection,
+} from "@/lib/data/member-calendar";
+import { fetchUpcomingEvents, type UpcomingCalendarEvent } from "@/lib/google/member-calendar";
+import { createClient } from "@/lib/supabase/server";
 
 export type UpdateProfileResult = { ok: true } | { ok: false; error: string };
 
@@ -43,4 +51,28 @@ export async function updateProfileAvatarAction(avatarUrl: string): Promise<Upda
 
   revalidatePath("/profil");
   return { ok: true };
+}
+
+export async function getMyCalendarConnectionAction(): Promise<MemberCalendarConnection> {
+  return getMyCalendarConnection();
+}
+
+export async function disconnectMyCalendarAction(): Promise<void> {
+  await disconnectMyCalendar();
+  revalidatePath("/profil");
+  revalidatePath("/horaire");
+}
+
+/** Used by both /profil (connection card) and /horaire (schedule sidebar). */
+export async function getMyUpcomingCalendarEventsAction(): Promise<UpcomingCalendarEvent[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const accessToken = await getMemberCalendarAccessToken(user.id);
+  if (!accessToken) return [];
+
+  return fetchUpcomingEvents(accessToken);
 }

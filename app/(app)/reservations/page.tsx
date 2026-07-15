@@ -1,5 +1,6 @@
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getTables, getReservationsForDay } from "@/lib/data/reservations";
+import { getReservationPlatformConnections } from "@/lib/data/reservation-platforms";
 import { ReservationsView } from "./ReservationsView";
 
 function todayRange() {
@@ -14,9 +15,13 @@ export default async function ReservationsPage() {
   const restaurantId = await getCurrentRestaurantId();
   const { start, end } = todayRange();
 
-  const [tables, reservations] = restaurantId
-    ? await Promise.all([getTables(restaurantId), getReservationsForDay(restaurantId, start, end)])
-    : [[], []];
+  const [tables, reservations, platformConnections] = restaurantId
+    ? await Promise.all([
+        getTables(restaurantId),
+        getReservationsForDay(restaurantId, start, end),
+        getReservationPlatformConnections(restaurantId),
+      ])
+    : [[], [], []];
 
   return (
     <ReservationsView
@@ -24,6 +29,7 @@ export default async function ReservationsPage() {
       initialTables={tables}
       initialReservations={reservations}
       initialDayStart={start}
+      initialPlatformConnections={platformConnections}
     />
   );
 }

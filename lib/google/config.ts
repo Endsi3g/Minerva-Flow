@@ -45,3 +45,12 @@ export function isGoogleConfigured() {
 export function googleWorkspaceRedirectUri(origin: string) {
   return `${origin}/api/oauth/google-workspace/callback`;
 }
+
+// Personal calendar connection is deliberately separate from the Workspace
+// scopes above: any team member can connect their own calendar (read-only),
+// no owner/manager gate, no gmail.send/drive/sheets access.
+export const GOOGLE_CALENDAR_READONLY_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+
+export function memberCalendarRedirectUri(origin: string) {
+  return `${origin}/api/oauth/google-calendar/callback`;
+}
