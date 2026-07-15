@@ -52,6 +52,29 @@ export type EmployeeReview = {
   createdAt: string;
 };
 
+export type RestaurantTable = {
+  id: string;
+  restaurantId: string;
+  label: string;
+  capacity: number;
+  createdAt: string;
+};
+
+export type ReservationStatus = "confirmee" | "annulee" | "honoree" | "no_show";
+
+export type Reservation = {
+  id: string;
+  restaurantId: string;
+  tableId: string | null;
+  guestName: string;
+  guestPhone: string | null;
+  partySize: number;
+  reservationTime: string;
+  status: ReservationStatus;
+  notes: string | null;
+  createdAt: string;
+};
+
 export type Company = {
   id: string;
   name: string;

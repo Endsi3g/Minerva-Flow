@@ -32,6 +32,7 @@ import {
   History,
   Settings2,
   Users,
+  CalendarClock,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -69,6 +70,12 @@ const favorites = [
   { href: "/campaigns?channel=Email", label: "Envoi hebdomadaire", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
   { href: "/programs", label: "Initiatives", icon: CompassIcon, color: "#3182CE", roles: ["owner"] },
   { href: "/collaborateurs", label: "Utilisateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
+];
+
+// Opérations — expansion "OS pour restaurants" (réservations, puis horaire,
+// puis fournisseurs au fur et à mesure qu'ils sont construits).
+const operationsItems: NavItem[] = [
+  { href: "/reservations", label: "Réservations", icon: CalendarClock, roles: allRoles },
 ];
 
 // Sub settings items (without Paramètres/Settings which is standalone)
@@ -213,6 +220,7 @@ export function AppSidebar() {
 
   const visibleMainItems = mainNavItems.filter((n) => n.roles.includes(role));
   const visibleFavorites = favorites.filter((n) => n.roles.includes(role));
+  const visibleOperationsItems = operationsItems.filter((n) => n.roles.includes(role));
   const visibleSettingsItems = subSettingsGroupItems.filter((n) => n.roles.includes(role));
   const hasSettingsAccess = ["owner"].includes(role);
 
@@ -323,6 +331,27 @@ export function AppSidebar() {
                 />
               </div>
             </div>
+
+            {/* Opérations Section */}
+            {visibleOperationsItems.length > 0 && (
+              <div className="space-y-1">
+                <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                  Opérations
+                </p>
+                <div className="space-y-0.5">
+                  {visibleOperationsItems.map((item) => (
+                    <NavLink
+                      key={item.href}
+                      href={item.href}
+                      label={item.label}
+                      icon={item.icon}
+                      active={pathname.startsWith(item.href)}
+                      onNavigate={closeMobile}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Favorites Section */}
             {visibleFavorites.length > 0 && (

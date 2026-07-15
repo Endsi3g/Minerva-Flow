@@ -602,4 +602,64 @@ drop policy if exists "push_subscriptions_delete_own" on push_subscriptions;
 create policy "push_subscriptions_delete_own" on push_subscriptions for delete
   using (user_id = auth.uid());
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Réservations et tables (module 1 de l'expansion "OS pour restaurants")
+-- ═══════════════════════════════════════════════════════════════════════
+
+do $$ begin
+  create type reservation_status as enum ('confirmee', 'annulee', 'honoree', 'no_show');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists restaurant_tables (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  label text not null,
+  capacity int not null default 2,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_restaurant_tables_restaurant on restaurant_tables (restaurant_id);
+
+alter table restaurant_tables enable row level security;
+
+drop policy if exists "restaurant_tables_select" on restaurant_tables;
+create policy "restaurant_tables_select" on restaurant_tables for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "restaurant_tables_manage" on restaurant_tables;
+create policy "restaurant_tables_manage" on restaurant_tables for all
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
+create table if not exists reservations (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  table_id uuid references restaurant_tables (id) on delete set null,
+  guest_name text not null,
+  guest_phone text,
+  party_size int not null default 2,
+  reservation_time timestamptz not null,
+  status reservation_status not null default 'confirmee',
+  notes text,
+  created_by uuid references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_reservations_restaurant_time on reservations (restaurant_id, reservation_time);
+
+alter table reservations enable row level security;
+
+drop policy if exists "reservations_select" on reservations;
+create policy "reservations_select" on reservations for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "reservations_insert" on reservations;
+create policy "reservations_insert" on reservations for insert
+  with check (is_restaurant_member(restaurant_id));
+drop policy if exists "reservations_update" on reservations;
+create policy "reservations_update" on reservations for update
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "reservations_delete" on reservations;
+create policy "reservations_delete" on reservations for delete
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
 commit;

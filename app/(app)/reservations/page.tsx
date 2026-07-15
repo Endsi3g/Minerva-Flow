@@ -1,0 +1,29 @@
+import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
+import { getTables, getReservationsForDay } from "@/lib/data/reservations";
+import { ReservationsView } from "./ReservationsView";
+
+function todayRange() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
+export default async function ReservationsPage() {
+  const restaurantId = await getCurrentRestaurantId();
+  const { start, end } = todayRange();
+
+  const [tables, reservations] = restaurantId
+    ? await Promise.all([getTables(restaurantId), getReservationsForDay(restaurantId, start, end)])
+    : [[], []];
+
+  return (
+    <ReservationsView
+      restaurantId={restaurantId}
+      initialTables={tables}
+      initialReservations={reservations}
+      initialDayStart={start}
+    />
+  );
+}
