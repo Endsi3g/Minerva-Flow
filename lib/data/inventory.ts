@@ -274,3 +274,35 @@ export async function getWasteSummary(
     .map(([itemId, cost]) => ({ itemId, itemName: itemById.get(itemId)!.name, cost }))
     .sort((a, b) => b.cost - a.cost);
 }
+
+/**
+ * Best-effort receiving: purchase_order_items.item_name and
+ * inventory_items.name are both free text with no shared id (no picker UI
+ * exists yet to link them explicitly), so a delivered purchase order is
+ * matched to inventory items by case-insensitive exact name within the
+ * restaurant. Unmatched lines are silently skipped rather than erroring —
+ * this is a convenience, not a guarantee every order line is stocked.
+ */
+export async function receivePurchaseOrderItems(
+  restaurantId: string,
+  items: { itemName: string; quantity: number }[]
+): Promise<number> {
+  if (items.length === 0) return 0;
+  const inventoryItems = await getInventoryItems(restaurantId);
+  const byName = new Map(inventoryItems.map((i) => [i.name.trim().toLowerCase(), i]));
+
+  let matched = 0;
+  for (const item of items) {
+    const match = byName.get(item.itemName.trim().toLowerCase());
+    if (!match) continue;
+    const updated = await logMovement(
+      restaurantId,
+      match.id,
+      "reception",
+      item.quantity,
+      "Réception d'une commande fournisseur"
+    );
+    if (updated) matched++;
+  }
+  return matched;
+}

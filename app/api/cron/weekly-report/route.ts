@@ -19,6 +19,9 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { generateAiReview } from "@/lib/ai/review";
 import { saveAiReview } from "@/lib/data/ai-reviews";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getMenuItems } from "@/lib/data/menu";
+import { getWasteSummary } from "@/lib/data/inventory";
+import { buildMenuWasteContext } from "@/lib/menu-engineering";
 
 /** Monday-Sunday range of the week immediately before the current one. */
 function previousWeekRange(now = new Date()) {
@@ -125,10 +128,17 @@ export async function GET(req: Request) {
       // computed above, so it stays consistent with the numbers shown
       // elsewhere. Uses the admin client: a cron run has no user session,
       // so the RLS-scoped client can't satisfy ai_reviews' insert policy.
+      const [menuItems, wasteSummary] = await Promise.all([
+        getMenuItems(restaurantId),
+        getWasteSummary(restaurantId, { from, to }),
+      ]);
+      const menuWasteContext = buildMenuWasteContext(menuItems, wasteSummary);
+
       const aiReview = await generateAiReview(
         "ce restaurant",
         `${formatDate(from)} — ${formatDate(to)}`,
-        reports
+        reports,
+        menuWasteContext
       );
       if (aiReview) {
         const admin = createAdminClient();

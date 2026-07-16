@@ -349,45 +349,41 @@ export function AppSidebar() {
 
             {/* Opérations Section */}
             {visibleOperationsItems.length > 0 && (
-              <div className="space-y-1">
-                <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                  Opérations
-                </p>
-                <div className="space-y-0.5">
-                  {visibleOperationsItems.map((item) => (
-                    <NavLink
-                      key={item.href}
-                      href={item.href}
-                      label={item.label}
-                      icon={item.icon}
-                      active={pathname.startsWith(item.href)}
-                      onNavigate={closeMobile}
-                    />
-                  ))}
-                </div>
-              </div>
+              <CollapsibleSection
+                label="Opérations"
+                defaultOpen={visibleOperationsItems.some((item) => pathname.startsWith(item.href))}
+              >
+                {visibleOperationsItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                  />
+                ))}
+              </CollapsibleSection>
             )}
 
             {/* Favorites Section */}
             {visibleFavorites.length > 0 && (
-              <div className="space-y-1">
-                <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                  Favoris
-                </p>
-                <div className="space-y-0.5">
-                  {visibleFavorites.map((item) => (
-                    <NavLink
-                      key={item.label}
-                      href={item.href}
-                      label={item.label}
-                      icon={item.icon}
-                      active={pathname.startsWith(item.href)}
-                      onNavigate={closeMobile}
-                      iconColor={item.color}
-                    />
-                  ))}
-                </div>
-              </div>
+              <CollapsibleSection
+                label="Favoris"
+                defaultOpen={visibleFavorites.some((item) => pathname.startsWith(item.href))}
+              >
+                {visibleFavorites.map((item) => (
+                  <NavLink
+                    key={item.label}
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                    iconColor={item.color}
+                  />
+                ))}
+              </CollapsibleSection>
             )}
           </div>
 

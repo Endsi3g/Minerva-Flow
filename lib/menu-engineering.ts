@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/utils";
 import type { MenuItem, MenuQuadrant } from "@/lib/types";
 
 export const quadrantLabel: Record<MenuQuadrant, string> = {
@@ -50,4 +51,39 @@ export function classifyMenuItems(items: MenuItem[]): MenuItemWithQuadrant[] {
 
     return { ...item, margin, marginPct, foodCostPct, quadrant };
   });
+}
+
+/**
+ * Renders a short French text block summarizing menu-quadrant standouts and
+ * waste cost for injection into the AI weekly review prompt (lib/ai/review.ts)
+ * — kept separate from ReportDef since Star/Dog items and waste-per-item
+ * don't fit that trend/breakdown/count shape. Returns undefined when there's
+ * nothing worth mentioning, so callers can skip the section entirely.
+ */
+export function buildMenuWasteContext(
+  menuItems: MenuItem[],
+  wasteSummary: { itemName: string; cost: number }[]
+): string | undefined {
+  const classified = classifyMenuItems(menuItems);
+  const stars = classified.filter((i) => i.quadrant === "etoile").map((i) => i.name);
+  const dogs = classified.filter((i) => i.quadrant === "poids_mort").map((i) => i.name);
+  const totalWaste = wasteSummary.reduce((sum, r) => sum + r.cost, 0);
+  const topWaste = wasteSummary.slice(0, 3);
+
+  const lines: string[] = [];
+  if (stars.length > 0) lines.push(`- Plats étoiles (populaires et rentables) : ${stars.join(", ")}`);
+  if (dogs.length > 0) {
+    lines.push(`- Plats poids morts (peu populaires et peu rentables, candidats au retrait) : ${dogs.join(", ")}`);
+  }
+  if (totalWaste > 0) {
+    lines.push(`- Coût total du gaspillage sur la période : ${formatCurrency(totalWaste)}`);
+    if (topWaste.length > 0) {
+      lines.push(
+        `- Articles les plus gaspillés : ${topWaste.map((w) => `${w.itemName} (${formatCurrency(w.cost)})`).join(", ")}`
+      );
+    }
+  }
+
+  if (lines.length === 0) return undefined;
+  return `Menu et inventaire :\n${lines.join("\n")}`;
 }

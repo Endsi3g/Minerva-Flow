@@ -32,7 +32,8 @@ export type AiReviewResult = {
 export async function generateAiReview(
   restaurantName: string,
   periodLabel: string,
-  reports: ReportDef[]
+  reports: ReportDef[],
+  supplementaryContext?: string
 ): Promise<AiReviewResult | null> {
   if (!isAiConfigured()) return null;
   if (reports.length === 0) return null;
@@ -45,11 +46,13 @@ export async function generateAiReview(
     })
     .join("\n");
 
+  const fullContext = supplementaryContext ? `${metricsSummary}\n\n${supplementaryContext}` : metricsSummary;
+
   try {
     const { output } = await generateText({
       model: AI_MODEL,
       output: Output.object({ schema: aiReviewSchema }),
-      system: `Tu es un consultant en gestion de restaurant. Voici les métriques de "${restaurantName}" pour la période "${periodLabel}" :\n\n${metricsSummary}`,
+      system: `Tu es un consultant en gestion de restaurant. Voici les métriques de "${restaurantName}" pour la période "${periodLabel}" :\n\n${fullContext}`,
       prompt:
         "Rédige une revue de performance concise et actionnable en français, destinée au propriétaire du restaurant. Reste strictement ancré dans les chiffres fournis ci-dessus — n'invente aucune donnée, aucun chiffre qui n'y figure pas.",
     });

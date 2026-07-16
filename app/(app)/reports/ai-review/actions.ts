@@ -9,6 +9,9 @@ import { getFinancialTransactions } from "@/lib/data/finance";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { buildReports, type ReportData } from "@/lib/reports";
 import { generateAiReview } from "@/lib/ai/review";
+import { getMenuItems } from "@/lib/data/menu";
+import { getWasteSummary } from "@/lib/data/inventory";
+import { buildMenuWasteContext } from "@/lib/menu-engineering";
 import { saveAiReview, getAiReviews, getAiReview, type AiReview } from "@/lib/data/ai-reviews";
 import { notifyRestaurant } from "@/lib/data/notifications";
 import { formatDate } from "@/lib/utils";
@@ -43,19 +46,22 @@ export async function generateAiReviewAction(range: {
     return { ok: false, error: "Action réservée aux propriétaires et gérants." };
   }
 
-  const [restaurant, serviceDays, programs, campaigns, financialTransactions] = await Promise.all([
+  const [restaurant, serviceDays, programs, campaigns, financialTransactions, menuItems, wasteSummary] = await Promise.all([
     getRestaurant(restaurantId),
     getServiceDays(restaurantId, range),
     getPrograms(restaurantId),
     getCampaigns(restaurantId),
     getFinancialTransactions(restaurantId, range),
+    getMenuItems(restaurantId),
+    getWasteSummary(restaurantId, range),
   ]);
 
   const data: ReportData = { serviceDays, programs, campaigns, financialTransactions };
   const reports = buildReports(data);
+  const menuWasteContext = buildMenuWasteContext(menuItems, wasteSummary);
 
   const periodLabel = `${formatDate(range.from)} — ${formatDate(range.to)}`;
-  const review = await generateAiReview(restaurant?.name ?? "ce restaurant", periodLabel, reports);
+  const review = await generateAiReview(restaurant?.name ?? "ce restaurant", periodLabel, reports, menuWasteContext);
   if (!review) {
     return { ok: false, error: "La génération IA a échoué (vérifiez la configuration AI Gateway)." };
   }

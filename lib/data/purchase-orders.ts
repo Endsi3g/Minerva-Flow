@@ -68,6 +68,26 @@ export async function getPurchaseOrders(restaurantId: string): Promise<PurchaseO
   return orderRows.map((row) => mapOrder(row, itemRows));
 }
 
+export async function getPurchaseOrder(restaurantId: string, id: string): Promise<PurchaseOrder | null> {
+  const supabase = await createClient();
+  const { data: order, error } = await supabase
+    .from("purchase_orders")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !order) return null;
+  const orderRow = order as PurchaseOrderRow;
+
+  const { data: items } = await supabase
+    .from("purchase_order_items")
+    .select("*")
+    .eq("purchase_order_id", id);
+
+  return mapOrder(orderRow, (items as PurchaseOrderItemRow[]) ?? []);
+}
+
 export type PurchaseOrderItemInput = {
   itemName: string;
   quantity: number;

@@ -44,7 +44,10 @@ export async function createTransactionAction(
 
   const restaurantId = await requireRestaurantId();
   const transaction = await createFinancialTransaction(restaurantId, { ...input, reviewed: true });
-  if (transaction) revalidatePath("/finance");
+  if (transaction) {
+    revalidatePath("/finance");
+    revalidatePath("/depenses");
+  }
   return transaction;
 }
 
