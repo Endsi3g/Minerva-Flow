@@ -1,3 +1,5 @@
+import { canonicalOrigin } from "@/lib/canonical-url";
+
 /**
  * Google Workspace OAuth config — shared GOOGLE_CLIENT_ID/SECRET across
  * every Google feature (Gmail, Sheets, Drive, Calendar, Analytics), same
@@ -43,7 +45,7 @@ export function isGoogleConfigured() {
 }
 
 export function googleWorkspaceRedirectUri(origin: string) {
-  return `${origin}/api/oauth/google-workspace/callback`;
+  return `${canonicalOrigin(origin)}/api/oauth/google-workspace/callback`;
 }
 
 // Personal calendar connection is deliberately separate from the Workspace
@@ -52,5 +54,5 @@ export function googleWorkspaceRedirectUri(origin: string) {
 export const GOOGLE_CALENDAR_READONLY_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 
 export function memberCalendarRedirectUri(origin: string) {
-  return `${origin}/api/oauth/google-calendar/callback`;
+  return `${canonicalOrigin(origin)}/api/oauth/google-calendar/callback`;
 }

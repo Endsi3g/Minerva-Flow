@@ -1,3 +1,5 @@
+import { canonicalOrigin } from "@/lib/canonical-url";
+
 /**
  * Square OAuth config — same "gracefully absent until configured" pattern
  * as lib/ai/config.ts and lib/ad-platforms/config.ts. The connect button
@@ -25,5 +27,5 @@ export function squareBaseUrl(): string {
 }
 
 export function posOauthRedirectUri(provider: "square", origin: string) {
-  return `${origin}/api/oauth/${provider}/callback`;
+  return `${canonicalOrigin(origin)}/api/oauth/${provider}/callback`;
 }

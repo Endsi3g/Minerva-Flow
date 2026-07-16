@@ -276,6 +276,7 @@ export function AppSidebar() {
             <button
               onClick={() => setSearchOpen(true)}
               aria-label="Recherche"
+              title="Rechercher dans l'application (⌘K)"
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink ml-1"
             >
               <SearchIcon size={16} />

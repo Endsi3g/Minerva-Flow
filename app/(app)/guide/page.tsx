@@ -15,6 +15,7 @@ import {
   Sparkles,
   Bell,
   CircleHelp,
+  Plug,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -139,6 +140,77 @@ const sections: Section[] = [
         événements d&apos;équipe (nouveau collaborateur, campagne créée, changement de rôle). Un résumé hebdomadaire
         des points à surveiller est aussi envoyé chaque lundi.
       </p>
+    ),
+  },
+  {
+    icon: Plug,
+    title: "Connecter vos partenaires",
+    body: (
+      <div className="space-y-4">
+        <p>
+          Tous les branchements se font depuis{" "}
+          <Link href="/settings" className="text-mv-green-dark underline">Paramètres → Intégrations</Link>{" "}
+          (ou l&apos;onglet <Link href="/finance" className="text-mv-green-dark underline">Comptes</Link> de Finance
+          pour Square). Chacun est indépendant des autres — inutile de tous les connecter pour utiliser l&apos;app.
+        </p>
+        <div>
+          <p className="font-semibold text-mv-ink">Square (caisse)</p>
+          <p>
+            Cliquez « Connecter », autorisez l&apos;accès sur la page Square qui s&apos;ouvre. Si la page Square
+            se recharge sans rien vous laisser faire : l&apos;adresse de redirection enregistrée dans votre tableau
+            de bord Square développeur doit correspondre exactement à{" "}
+            <code className="rounded bg-mv-cream-soft px-1 py-0.5 text-[12px]">
+              https://minerva-flow.vercel.app/api/oauth/square/callback
+            </code>
+            .
+          </p>
+        </div>
+        <div>
+          <p className="font-semibold text-mv-ink">Google (Gmail, Sheets, Drive, Calendar, Analytics, Ads)</p>
+          <p>
+            Une erreur « redirect_uri_mismatch » veut dire que l&apos;adresse de redirection n&apos;est pas
+            enregistrée dans Google Cloud Console pour votre projet. Trois adresses doivent y être ajoutées
+            (Identifiants → votre client OAuth → URI de redirection autorisés) :
+          </p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[12.5px]">
+            <li>
+              <code className="rounded bg-mv-cream-soft px-1 py-0.5">
+                https://minerva-flow.vercel.app/api/oauth/google/callback
+              </code>{" "}
+              (Google Ads / Analytics, depuis Paramètres)
+            </li>
+            <li>
+              <code className="rounded bg-mv-cream-soft px-1 py-0.5">
+                https://minerva-flow.vercel.app/api/oauth/google-workspace/callback
+              </code>{" "}
+              (Gmail, Sheets, Drive, Calendar, Analytics — connexion Workspace du restaurant)
+            </li>
+            <li>
+              <code className="rounded bg-mv-cream-soft px-1 py-0.5">
+                https://minerva-flow.vercel.app/api/oauth/google-calendar/callback
+              </code>{" "}
+              (calendrier personnel, depuis Profil)
+            </li>
+          </ul>
+          <p className="mt-1.5">
+            Accédez toujours à l&apos;application par{" "}
+            <code className="rounded bg-mv-cream-soft px-1 py-0.5 text-[12px]">minerva-flow.vercel.app</code> —
+            une autre adresse (aperçu, alias secondaire) provoque la même erreur même si tout est bien configuré.
+          </p>
+        </div>
+        <div>
+          <p className="font-semibold text-mv-ink">Meta Ads</p>
+          <p>Même principe que Google Ads — connexion depuis Paramètres → Intégrations, autorisation sur Facebook.</p>
+        </div>
+        <div>
+          <p className="font-semibold text-mv-ink">Pas encore disponibles</p>
+          <p>
+            Stripe (facturation), les réservations tierces (OpenTable, Resy…) et un compte bancaire générique
+            exigent un partenariat d&apos;affaires ou une décision de mise en service — ils s&apos;afficheront
+            « Pas encore disponible » jusqu&apos;à ce moment-là, ce n&apos;est pas une erreur.
+          </p>
+        </div>
+      </div>
     ),
   },
   {

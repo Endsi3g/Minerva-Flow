@@ -30,6 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               aria-label="Basculer la navigation"
+              title={sidebarCollapsed ? "Ouvrir le menu" : "Réduire le menu"}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
             >
               <PanelLeft size={16} />

@@ -67,6 +67,12 @@ export function ProgramsView({
   const [noteText, setNoteText] = useState("");
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
+  // Keep the URL in sync so a program's detail panel is shareable/bookmarkable.
+  function handleSelect(id: string) {
+    setSelectedId(id);
+    router.push(`/programs?id=${id}`, { scroll: false });
+  }
+
   const canCreate =
     Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
   const canManage = role === "owner" || role === "manager";
@@ -194,7 +200,7 @@ export function ProgramsView({
                   const margin =
                     p.revenue > 0 ? Math.round(((p.revenue - p.cost) / p.revenue) * 100) : null;
                   return (
-                    <Tr key={p.id} onClick={() => setSelectedId(p.id)} active={p.id === selectedId}>
+                    <Tr key={p.id} onClick={() => handleSelect(p.id)} active={p.id === selectedId}>
                       <Td className="font-semibold">{p.name}</Td>
                       <Td>
                         <Badge tone={typeTone[p.type]}>{typeLabel[p.type]}</Badge>

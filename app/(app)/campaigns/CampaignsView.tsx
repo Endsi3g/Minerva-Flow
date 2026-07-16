@@ -65,6 +65,14 @@ export function CampaignsView({
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId || null);
   const [isPending, startTransition] = useTransition();
 
+  // Keep the URL in sync with the open campaign so the detail panel is
+  // shareable/bookmarkable (/campaigns?id=...) instead of only reachable
+  // by clicking a row — the server page already reads this param.
+  function handleSelect(id: string) {
+    setSelectedId(id);
+    router.push(`/campaigns?id=${id}`, { scroll: false });
+  }
+
   const canCreate =
     Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "consultant");
 
@@ -177,7 +185,7 @@ export function CampaignsView({
                 {filtered.map((c) => {
                   const Icon = channelIcon[c.channel];
                   return (
-                    <Tr key={c.id} onClick={() => setSelectedId(c.id)} active={c.id === selectedId}>
+                    <Tr key={c.id} onClick={() => handleSelect(c.id)} active={c.id === selectedId}>
                       <Td>
                         <p className="font-semibold text-mv-ink">{c.name}</p>
                         <p className="text-[11.5px] text-mv-ink-faint">{typeLabel[c.type]}</p>

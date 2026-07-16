@@ -1,3 +1,5 @@
+import { canonicalOrigin } from "@/lib/canonical-url";
+
 /**
  * Ad platform OAuth config — same "gracefully absent until configured"
  * pattern as lib/ai/config.ts. The connect buttons in Settings stay
@@ -15,5 +17,5 @@ export function isGoogleAdsConfigured() {
 }
 
 export function oauthRedirectUri(provider: "meta" | "google", origin: string) {
-  return `${origin}/api/oauth/${provider}/callback`;
+  return `${canonicalOrigin(origin)}/api/oauth/${provider}/callback`;
 }
