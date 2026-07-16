@@ -16,7 +16,8 @@ export async function savePushSubscription(
   } = await supabase.auth.getUser();
   if (!user) return false;
 
-  const { error } = await supabase.from("push_subscriptions").upsert(
+  const admin = createAdminClient();
+  const { error } = await admin.from("push_subscriptions").upsert(
     {
       user_id: user.id,
       restaurant_id: restaurantId,
