@@ -917,4 +917,12 @@ drop policy if exists "expense_shares_insert" on expense_shares;
 create policy "expense_shares_insert" on expense_shares for insert
   with check (is_restaurant_member(restaurant_id));
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Suivi de livraison fournisseur (adresse + coordonnées géocodées)
+-- ═══════════════════════════════════════════════════════════════════════
+
+alter table suppliers add column if not exists address text;
+alter table suppliers add column if not exists lng double precision;
+alter table suppliers add column if not exists lat double precision;
+
 commit;

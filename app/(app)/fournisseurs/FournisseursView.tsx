@@ -18,6 +18,7 @@ import {
   deletePurchaseOrderAction,
 } from "./actions";
 import { useApp } from "@/lib/app-context";
+import { DeliveryTrackerCard } from "@/components/minerva/DeliveryTrackerCard";
 import type { PurchaseOrder, PurchaseOrderStatus, Supplier } from "@/lib/types";
 import type { PurchaseOrderItemInput } from "@/lib/data/purchase-orders";
 import { Package, Plus, Trash2, Truck } from "lucide-react";
@@ -64,6 +65,7 @@ function SuppliersCard({
         phone: String(form.get("phone") ?? "") || null,
         email: String(form.get("email") ?? "") || null,
         category: String(form.get("category") ?? "") || null,
+        address: String(form.get("address") ?? "") || null,
       });
       if (supplier) {
         onChange([...suppliers, supplier].sort((a, b) => a.name.localeCompare(b.name)));
@@ -120,6 +122,9 @@ function SuppliersCard({
         </div>
         <Field label="Courriel" hint="Optionnel">
           <Input name="email" type="email" />
+        </Field>
+        <Field label="Adresse" hint="Optionnel — active le suivi de livraison sur une commande">
+          <Input name="address" placeholder="Ex : 850 rue Ontario Est, Montréal" />
         </Field>
         <Button type="submit" size="sm" disabled={isSubmitting} className="w-full">
           <Plus size={14} /> Ajouter
@@ -286,13 +291,16 @@ export function FournisseursView({
   initialSuppliers: Supplier[];
   initialOrders: PurchaseOrder[];
 }) {
-  const { role } = useApp();
+  const { role, restaurants, restaurantId: currentRestaurantId } = useApp();
   const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [orders, setOrders] = useState(initialOrders);
   const [createOpen, setCreateOpen] = useState(false);
+  const [trackingOrder, setTrackingOrder] = useState<PurchaseOrder | null>(null);
 
   const canManage = role === "owner" || role === "manager";
   const suppliersById = new Map(suppliers.map((s) => [s.id, s]));
+  const currentRestaurant = restaurants.find((r) => r.id === currentRestaurantId);
+  const trackingSupplier = trackingOrder ? suppliersById.get(trackingOrder.supplierId) : undefined;
 
   async function handleStatusChange(id: string, status: PurchaseOrderStatus) {
     if (!restaurantId) return;
@@ -376,12 +384,22 @@ export function FournisseursView({
                             </button>
                           )}
                           {o.status === "envoyee" && (
-                            <button
-                              onClick={() => handleStatusChange(o.id, "recue")}
-                              className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
-                            >
-                              Marquer reçue
-                            </button>
+                            <>
+                              {suppliersById.get(o.supplierId)?.lng != null && currentRestaurant?.lng != null && (
+                                <button
+                                  onClick={() => setTrackingOrder(o)}
+                                  className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-ink-soft hover:bg-mv-ink/5"
+                                >
+                                  Voir le trajet
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleStatusChange(o.id, "recue")}
+                                className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
+                              >
+                                Marquer reçue
+                              </button>
+                            </>
                           )}
                           <button
                             onClick={() => handleDelete(o.id)}
@@ -415,6 +433,16 @@ export function FournisseursView({
           onClose={() => setCreateOpen(false)}
           onCreated={(o) => setOrders((prev) => [o, ...prev])}
         />
+      )}
+
+      {trackingOrder && trackingSupplier?.lng != null && trackingSupplier?.lat != null && currentRestaurant?.lng != null && currentRestaurant?.lat != null && (
+        <Modal open onClose={() => setTrackingOrder(null)} title="Suivi de livraison" width={640}>
+          <DeliveryTrackerCard
+            supplierName={trackingSupplier.name}
+            origin={{ lng: trackingSupplier.lng, lat: trackingSupplier.lat }}
+            destination={{ lng: currentRestaurant.lng, lat: currentRestaurant.lat }}
+          />
+        </Modal>
       )}
     </div>
   );

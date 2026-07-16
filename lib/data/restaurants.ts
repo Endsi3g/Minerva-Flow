@@ -1,37 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
+import { geocodeAddress } from "@/lib/geocode";
 import type { Restaurant } from "@/lib/types";
-
-/**
- * Free, no-key geocoding (OpenStreetMap Nominatim) so an establishment's
- * address turns into a map pin — best-effort, never blocks the save.
- * Nominatim's usage policy requires a descriptive User-Agent and no more
- * than ~1 req/s, both fine for this low-volume, on-save use.
- */
-async function geocodeAddress(address: string, city: string, province?: string): Promise<{ lng: number; lat: number } | null> {
-  const query = [address, city, province, "Canada"].filter(Boolean).join(", ");
-  if (!query.trim()) return null;
-
-  try {
-    const url = new URL("https://nominatim.openstreetmap.org/search");
-    url.searchParams.set("q", query);
-    url.searchParams.set("format", "json");
-    url.searchParams.set("limit", "1");
-
-    const res = await fetch(url.toString(), {
-      headers: { "User-Agent": "Minerva-Flow/1.0 (contact: quebecsaas@gmail.com)" },
-    });
-    if (!res.ok) return null;
-
-    const results = (await res.json()) as { lon: string; lat: string }[];
-    const first = results[0];
-    if (!first) return null;
-
-    return { lng: Number(first.lon), lat: Number(first.lat) };
-  } catch {
-    return null;
-  }
-}
 
 type RestaurantRow = {
   id: string;

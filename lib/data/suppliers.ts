@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { geocodeAddress } from "@/lib/geocode";
 import type { Supplier } from "@/lib/types";
 
 type SupplierRow = {
@@ -9,6 +10,9 @@ type SupplierRow = {
   phone: string | null;
   email: string | null;
   category: string | null;
+  address: string | null;
+  lng: number | null;
+  lat: number | null;
   created_at: string;
 };
 
@@ -21,6 +25,9 @@ function mapSupplier(row: SupplierRow): Supplier {
     phone: row.phone,
     email: row.email,
     category: row.category,
+    address: row.address,
+    lng: row.lng,
+    lat: row.lat,
     createdAt: row.created_at,
   };
 }
@@ -43,10 +50,14 @@ export type SupplierInput = {
   phone: string | null;
   email: string | null;
   category: string | null;
+  address?: string | null;
 };
 
 export async function createSupplier(restaurantId: string, input: SupplierInput): Promise<Supplier | null> {
   const supabase = await createClient();
+
+  const coords = input.address ? await geocodeAddress(input.address, "", "Québec") : null;
+
   const { data, error } = await supabase
     .from("suppliers")
     .insert({
@@ -56,6 +67,9 @@ export async function createSupplier(restaurantId: string, input: SupplierInput)
       phone: input.phone,
       email: input.email,
       category: input.category,
+      address: input.address ?? null,
+      lng: coords?.lng ?? null,
+      lat: coords?.lat ?? null,
     })
     .select("*")
     .single();

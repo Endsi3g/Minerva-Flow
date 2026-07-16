@@ -100,6 +100,9 @@ export type Supplier = {
   phone: string | null;
   email: string | null;
   category: string | null;
+  address: string | null;
+  lng: number | null;
+  lat: number | null;
   createdAt: string;
 };
 

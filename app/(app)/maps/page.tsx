@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/map";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency } from "@/lib/utils";
+import { BarListCard } from "@/components/minerva/BarListCard";
 import { getAdConversionsAction, getRevenueByRestaurantAction, geocodeRestaurantIfMissingAction } from "./actions";
 import type { AdConversion, Restaurant } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -284,6 +285,23 @@ function EstablishmentsMode() {
         totalRevenue={totalRevenue}
         avgDelta={avgDelta}
       />
+
+      <BarListCard
+        eyebrow="Classement"
+        title="Établissements par revenu"
+        dismissKey="mv-maps-revenue-bars-dismissed"
+        position="right-4 top-20"
+        rows={(() => {
+          const withRevenue = restaurants.map((r) => ({
+            label: r.city || r.name,
+            revenue: revenueByRestaurant[r.id]?.revenue ?? 0,
+          }));
+          const max = Math.max(1, ...withRevenue.map((r) => r.revenue));
+          return withRevenue
+            .sort((a, b) => b.revenue - a.revenue)
+            .map((r) => ({ label: r.label, value: formatCurrency(r.revenue), fraction: r.revenue / max }));
+        })()}
+      />
     </>
   );
 }
@@ -396,6 +414,27 @@ function AttributionMode() {
           </div>
         )}
       </div>
+
+      <BarListCard
+        eyebrow="Classement"
+        title="Sources d'attribution"
+        dismissKey="mv-maps-attribution-bars-dismissed"
+        position="right-4 top-20"
+        rows={(() => {
+          const channelLabel: Record<string, string> = { organic: "Organique", meta: "Meta Ads", google: "Google Ads" };
+          const counts: Record<string, number> = {};
+          for (const c of conversions) counts[c.channel] = (counts[c.channel] ?? 0) + 1;
+          const entries = Object.entries(counts);
+          const max = Math.max(1, ...entries.map(([, n]) => n));
+          return entries
+            .sort((a, b) => b[1] - a[1])
+            .map(([channel, count]) => ({
+              label: channelLabel[channel] ?? channel,
+              value: String(count),
+              fraction: count / max,
+            }));
+        })()}
+      />
     </>
   );
 }
