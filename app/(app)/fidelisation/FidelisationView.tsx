@@ -12,7 +12,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import type { Customer, LoyaltyReward, LoyaltyTransactionType, ReferralProgram } from "@/lib/types";
 import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
-import { Heart, Plus, Trash2, Gift, Search, Link2, MousePointerClick, Send } from "lucide-react";
+import { Heart, Plus, Trash2, Gift, Search, Link2, MousePointerClick, Send, Copy, Check } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import {
@@ -264,6 +264,43 @@ function NewReferralProgramModal({
   );
 }
 
+function ReferralLinkRow({ tracking }: { tracking: ReferralLinkTracking }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    const url = `${window.location.origin}/p/${tracking.link.code}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2 text-[12.5px]">
+      <div className="min-w-0">
+        <span className="font-medium text-mv-ink">{tracking.customerName}</span>
+        <span className="text-mv-ink-faint"> — {tracking.programName}</span>
+      </div>
+      <div className="flex shrink-0 items-center gap-3 text-mv-ink-soft">
+        <span className="flex items-center gap-1">
+          <MousePointerClick size={12} /> {tracking.link.clicks}
+        </span>
+        <span className="flex items-center gap-1">
+          <Link2 size={12} /> {tracking.link.convertedCount}
+        </span>
+        {tracking.link.rewardClaimedAt && <Badge tone="green">Débloquée</Badge>}
+        <button
+          onClick={handleCopy}
+          aria-label="Copier le lien de parrainage"
+          title="Copier le lien de parrainage"
+          className="text-mv-ink-faint transition-colors hover:text-mv-ink"
+        >
+          {copied ? <Check size={13} className="text-mv-green-dark" /> : <Copy size={13} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ReferralProgramsCard({
   restaurantId,
   programs,
@@ -355,24 +392,7 @@ function ReferralProgramsCard({
             </p>
             <div className="space-y-1.5">
               {links.map((t) => (
-                <div
-                  key={t.link.id}
-                  className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2 text-[12.5px]"
-                >
-                  <div>
-                    <span className="font-medium text-mv-ink">{t.customerName}</span>
-                    <span className="text-mv-ink-faint"> — {t.programName}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-mv-ink-soft">
-                    <span className="flex items-center gap-1">
-                      <MousePointerClick size={12} /> {t.link.clicks}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Link2 size={12} /> {t.link.convertedCount}
-                    </span>
-                    {t.link.rewardClaimedAt && <Badge tone="green">Débloquée</Badge>}
-                  </div>
-                </div>
+                <ReferralLinkRow key={t.link.id} tracking={t} />
               ))}
             </div>
           </div>
