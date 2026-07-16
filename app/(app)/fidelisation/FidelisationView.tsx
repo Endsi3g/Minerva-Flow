@@ -5,13 +5,14 @@ import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Field, Input } from "@/components/minerva/FormField";
+import { Field, Input, Select } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
-import type { Customer, LoyaltyReward, LoyaltyTransactionType } from "@/lib/types";
-import { Heart, Plus, Trash2, Gift, Search } from "lucide-react";
+import type { Customer, LoyaltyReward, LoyaltyTransactionType, ReferralProgram } from "@/lib/types";
+import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
+import { Heart, Plus, Trash2, Gift, Search, Link2, MousePointerClick } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import {
@@ -22,6 +23,9 @@ import {
   createLoyaltyRewardAction,
   deleteLoyaltyRewardAction,
   updateLoyaltyRateAction,
+  createReferralProgramAction,
+  updateReferralProgramActiveAction,
+  deleteReferralProgramAction,
 } from "./actions";
 import { toast } from "sonner";
 
@@ -173,16 +177,223 @@ function RewardsCard({
   );
 }
 
+function NewReferralProgramModal({
+  restaurantId,
+  rewards,
+  open,
+  onClose,
+  onCreated,
+}: {
+  restaurantId: string;
+  rewards: LoyaltyReward[];
+  open: boolean;
+  onClose: () => void;
+  onCreated: (program: ReferralProgram) => void;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setIsSubmitting(true);
+    try {
+      const program = await createReferralProgramAction(restaurantId, {
+        name: String(form.get("name") ?? ""),
+        description: String(form.get("description") ?? "") || null,
+        goalCount: Number(form.get("goalCount") ?? 1),
+        rewardId: String(form.get("rewardId") ?? "") || null,
+        rewardDescription: String(form.get("rewardDescription") ?? "") || null,
+      });
+      if (program) {
+        onCreated(program);
+        onClose();
+        (e.target as HTMLFormElement).reset();
+      } else {
+        toast.error("La création du programme a échoué.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Nouveau programme de parrainage"
+      description="Vos clients partagent un lien ; une fois l'objectif atteint, ils débloquent la récompense."
+    >
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <Field label="Nom">
+          <Input name="name" placeholder="Ex : Amenez un ami" required autoFocus />
+        </Field>
+        <Field label="Description" hint="Optionnel">
+          <Input name="description" placeholder="Ex : valable jusqu'à la fin de l'été" />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Objectif" hint="Nombre de parrainages réussis requis">
+            <Input name="goalCount" type="number" min="1" step="1" defaultValue="1" required />
+          </Field>
+          <Field label="Récompense du catalogue" hint="Optionnel">
+            <Select name="rewardId" defaultValue="">
+              <option value="">—</option>
+              {rewards.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+        <Field label="Ou décrivez la récompense librement" hint="Optionnel — affiché au client">
+          <Input name="rewardDescription" placeholder="Ex : dessert offert" />
+        </Field>
+        <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Création…" : "Créer"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function ReferralProgramsCard({
+  restaurantId,
+  programs,
+  rewards,
+  links,
+  onChange,
+}: {
+  restaurantId: string;
+  programs: ReferralProgram[];
+  rewards: LoyaltyReward[];
+  links: ReferralLinkTracking[];
+  onChange: (programs: ReferralProgram[]) => void;
+}) {
+  const [createOpen, setCreateOpen] = useState(false);
+
+  async function handleToggleActive(program: ReferralProgram) {
+    const ok = await updateReferralProgramActiveAction(restaurantId, program.id, !program.active);
+    if (ok) {
+      onChange(programs.map((p) => (p.id === program.id ? { ...p, active: !p.active } : p)));
+    } else {
+      toast.error("La mise à jour a échoué.");
+    }
+  }
+
+  async function handleDelete(id: string) {
+    const ok = await deleteReferralProgramAction(restaurantId, id);
+    if (ok) onChange(programs.filter((p) => p.id !== id));
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader
+          eyebrow="Parrainage"
+          title="Programmes de parrainage"
+          description="Vos clients partagent un lien depuis leur espace client — suivez qui génère quoi."
+          action={
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus size={14} /> Nouveau programme
+            </Button>
+          }
+        />
+
+        {programs.length === 0 ? (
+          <p className="text-[12.5px] text-mv-ink-faint">Aucun programme de parrainage pour l&apos;instant.</p>
+        ) : (
+          <div className="mb-4 space-y-1.5">
+            {programs.map((p) => (
+              <div key={p.id} className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2">
+                <div>
+                  <p className="text-[13px] font-medium text-mv-ink">{p.name}</p>
+                  <p className="text-[11.5px] text-mv-ink-faint">
+                    Objectif : {p.goalCount} parrainage{p.goalCount > 1 ? "s" : ""}
+                    {p.rewardDescription ? ` — ${p.rewardDescription}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge tone={p.active ? "green" : "neutral"}>{p.active ? "Actif" : "Inactif"}</Badge>
+                  <button
+                    onClick={() => handleToggleActive(p)}
+                    className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-ink-soft hover:bg-mv-ink/5"
+                  >
+                    {p.active ? "Désactiver" : "Activer"}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    aria-label="Supprimer le programme"
+                    className="text-mv-ink-faint transition-colors hover:text-mv-red"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {links.length > 0 && (
+          <div className="border-t border-mv-border-soft pt-3">
+            <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+              Suivi des liens
+            </p>
+            <div className="space-y-1.5">
+              {links.map((t) => (
+                <div
+                  key={t.link.id}
+                  className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2 text-[12.5px]"
+                >
+                  <div>
+                    <span className="font-medium text-mv-ink">{t.customerName}</span>
+                    <span className="text-mv-ink-faint"> — {t.programName}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-mv-ink-soft">
+                    <span className="flex items-center gap-1">
+                      <MousePointerClick size={12} /> {t.link.clicks}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Link2 size={12} /> {t.link.convertedCount}
+                    </span>
+                    {t.link.rewardClaimedAt && <Badge tone="green">Débloquée</Badge>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <NewReferralProgramModal
+        restaurantId={restaurantId}
+        rewards={rewards}
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(program) => onChange([program, ...programs])}
+      />
+    </>
+  );
+}
+
 export function FidelisationView({
   restaurantId,
   initialCustomers,
   initialRewards,
   loyaltyPointsPerDollar,
+  initialReferralPrograms,
+  referralLinks,
 }: {
   restaurantId: string | null;
   initialCustomers: Customer[];
   initialRewards: LoyaltyReward[];
   loyaltyPointsPerDollar: number;
+  initialReferralPrograms: ReferralProgram[];
+  referralLinks: ReferralLinkTracking[];
 }) {
   const { role } = useApp();
   const router = useRouter();
@@ -191,6 +402,7 @@ export function FidelisationView({
 
   const [customers, setCustomers] = useState(initialCustomers);
   const [rewards, setRewards] = useState(initialRewards);
+  const [referralPrograms, setReferralPrograms] = useState(initialReferralPrograms);
   const [rate, setRate] = useState(loyaltyPointsPerDollar);
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(initialId);
@@ -467,8 +679,15 @@ export function FidelisationView({
       </div>
 
       {canManage && (
-        <div className="mt-6">
+        <div className="mt-6 space-y-6">
           <RewardsCard restaurantId={restaurantId!} rewards={rewards} onChange={setRewards} />
+          <ReferralProgramsCard
+            restaurantId={restaurantId!}
+            programs={referralPrograms}
+            rewards={rewards}
+            links={referralLinks}
+            onChange={setReferralPrograms}
+          />
         </div>
       )}
 

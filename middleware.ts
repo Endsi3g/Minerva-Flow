@@ -48,7 +48,12 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/r/") ||
     pathname.startsWith("/h/") ||
     pathname.startsWith("/e/") ||
-    pathname.startsWith("/legal/");
+    pathname.startsWith("/legal/") ||
+    // Customer portal (magic-link login) and public referral links — never
+    // restaurant_members, so they must be reachable before any session
+    // exists; the pages themselves gate on their own auth state.
+    pathname.startsWith("/portal") ||
+    pathname.startsWith("/p/");
 
   // Server-to-server callers (Vercel Cron, Stripe, Square) never carry a
   // Supabase session cookie — redirecting them to /login silently turns

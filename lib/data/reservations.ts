@@ -68,6 +68,9 @@ type ReservationRow = {
   status: ReservationStatus;
   notes: string | null;
   created_at: string;
+  customer_id: string | null;
+  referral_link_id: string | null;
+  is_public_request: boolean;
 };
 
 function mapReservation(row: ReservationRow): Reservation {
@@ -82,6 +85,9 @@ function mapReservation(row: ReservationRow): Reservation {
     status: row.status,
     notes: row.notes,
     createdAt: row.created_at,
+    customerId: row.customer_id,
+    referralLinkId: row.referral_link_id,
+    isPublicRequest: row.is_public_request,
   };
 }
 
@@ -102,6 +108,19 @@ export async function getReservationsForDay(
 
   if (error || !data) return [];
   return (data as ReservationRow[]).map(mapReservation);
+}
+
+export async function getReservation(restaurantId: string, id: string): Promise<Reservation | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("reservations")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapReservation(data as ReservationRow);
 }
 
 export type ReservationInput = {

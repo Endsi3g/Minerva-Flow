@@ -43,3 +43,9 @@ next-env.d.ts
 # Sentry Config File
 .env.sentry-build-plugin
 .env.local
+
+# stray screenshots dropped at the repo root (macOS paste/screencapture),
+# not intentional project assets — real images live under public/
+/image.png
+/image copy*.png
+/screencapture-*.png

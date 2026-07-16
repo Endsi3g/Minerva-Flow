@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import type { Customer, LoyaltyReward, LoyaltyTransaction, LoyaltyTransactionType } from "@/lib/types";
 
-type CustomerRow = {
+export type CustomerRow = {
   id: string;
   restaurant_id: string;
   name: string;
@@ -14,9 +14,10 @@ type CustomerRow = {
   loyalty_points: number;
   last_visit_at: string | null;
   created_at: string;
+  user_id: string | null;
 };
 
-type LoyaltyTransactionRow = {
+export type LoyaltyTransactionRow = {
   id: string;
   restaurant_id: string;
   customer_id: string;
@@ -28,7 +29,7 @@ type LoyaltyTransactionRow = {
   created_at: string;
 };
 
-function mapTransaction(row: LoyaltyTransactionRow): LoyaltyTransaction {
+export function mapTransaction(row: LoyaltyTransactionRow): LoyaltyTransaction {
   return {
     id: row.id,
     restaurantId: row.restaurant_id,
@@ -42,7 +43,7 @@ function mapTransaction(row: LoyaltyTransactionRow): LoyaltyTransaction {
   };
 }
 
-function mapCustomer(row: CustomerRow, transactions: LoyaltyTransaction[]): Customer {
+export function mapCustomer(row: CustomerRow, transactions: LoyaltyTransaction[]): Customer {
   return {
     id: row.id,
     restaurantId: row.restaurant_id,
@@ -56,6 +57,7 @@ function mapCustomer(row: CustomerRow, transactions: LoyaltyTransaction[]): Cust
     lastVisitAt: row.last_visit_at,
     createdAt: row.created_at,
     transactions,
+    userId: row.user_id,
   };
 }
 

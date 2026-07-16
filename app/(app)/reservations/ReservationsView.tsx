@@ -25,6 +25,7 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 const statusLabel: Record<ReservationStatus, string> = {
+  demandee: "Demandée",
   confirmee: "Confirmée",
   annulee: "Annulée",
   honoree: "Honorée",
@@ -32,6 +33,7 @@ const statusLabel: Record<ReservationStatus, string> = {
 };
 
 const statusTone: Record<ReservationStatus, "green" | "amber" | "red" | "neutral"> = {
+  demandee: "amber",
   confirmee: "amber",
   honoree: "green",
   no_show: "red",
@@ -431,6 +433,22 @@ export function ReservationsView({
                     </Td>
                     <Td className="text-right">
                       <div className="flex justify-end gap-1.5">
+                        {r.status === "demandee" && (
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(r.id, "confirmee")}
+                              className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
+                            >
+                              Confirmer
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(r.id, "annulee")}
+                              className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-red hover:bg-mv-red/10"
+                            >
+                              Refuser
+                            </button>
+                          </>
+                        )}
                         {r.status === "confirmee" && (
                           <>
                             <button

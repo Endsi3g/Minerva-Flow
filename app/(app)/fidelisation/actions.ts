@@ -11,7 +11,13 @@ import {
   type CustomerInput,
 } from "@/lib/data/customers";
 import { updateRestaurantAction } from "@/app/(app)/settings/actions";
-import type { Customer, LoyaltyReward } from "@/lib/types";
+import {
+  createReferralProgram,
+  updateReferralProgramActive,
+  deleteReferralProgram,
+  type ReferralProgramInput,
+} from "@/lib/data/referral-programs";
+import type { Customer, LoyaltyReward, ReferralProgram } from "@/lib/types";
 
 export async function createCustomerAction(
   restaurantId: string,
@@ -71,4 +77,30 @@ export async function updateLoyaltyRateAction(restaurantId: string, rate: number
   const restaurant = await updateRestaurantAction(restaurantId, { loyaltyPointsPerDollar: rate });
   if (restaurant) revalidatePath("/fidelisation");
   return Boolean(restaurant);
+}
+
+export async function createReferralProgramAction(
+  restaurantId: string,
+  input: ReferralProgramInput
+): Promise<ReferralProgram | null> {
+  if (!input.name.trim() || !Number.isFinite(input.goalCount) || input.goalCount < 1) return null;
+  const program = await createReferralProgram(restaurantId, input);
+  if (program) revalidatePath("/fidelisation");
+  return program;
+}
+
+export async function updateReferralProgramActiveAction(
+  restaurantId: string,
+  id: string,
+  active: boolean
+): Promise<boolean> {
+  const ok = await updateReferralProgramActive(restaurantId, id, active);
+  if (ok) revalidatePath("/fidelisation");
+  return ok;
+}
+
+export async function deleteReferralProgramAction(restaurantId: string, id: string): Promise<boolean> {
+  const ok = await deleteReferralProgram(restaurantId, id);
+  if (ok) revalidatePath("/fidelisation");
+  return ok;
 }

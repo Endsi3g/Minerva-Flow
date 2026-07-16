@@ -13,6 +13,7 @@ import {
   type ReservationInput,
 } from "@/lib/data/reservations";
 import { notifyRestaurant } from "@/lib/data/notifications";
+import { creditReferralConversion } from "@/lib/data/customer-referrals";
 import type { Reservation, ReservationStatus, RestaurantTable } from "@/lib/types";
 
 export async function getTablesAction(restaurantId: string): Promise<RestaurantTable[]> {
@@ -70,7 +71,13 @@ export async function updateReservationStatusAction(
   status: ReservationStatus
 ): Promise<boolean> {
   const ok = await updateReservationStatus(restaurantId, id, status);
-  if (ok) revalidatePath("/reservations");
+  if (ok) {
+    revalidatePath("/reservations");
+    if (status === "confirmee" || status === "honoree") {
+      await creditReferralConversion(id);
+      revalidatePath("/fidelisation");
+    }
+  }
   return ok;
 }
 

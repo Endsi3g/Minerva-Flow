@@ -1115,4 +1115,154 @@ create policy "inventory_movements_insert" on inventory_movements for insert
       and is_restaurant_member(ii.restaurant_id, array['owner','manager','staff']::member_role[])
   ));
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Portail client (connexion par lien magique) + programmes de parrainage
+-- ═══════════════════════════════════════════════════════════════════════
+
+-- Un client peut maintenant être un vrai utilisateur Supabase Auth (lien
+-- magique, jamais un mot de passe), sans jamais devenir restaurant_members.
+alter table customers add column if not exists user_id uuid references auth.users (id) on delete set null;
+create index if not exists idx_customers_user on customers (user_id);
+
+drop policy if exists "customers_select_own" on customers;
+create policy "customers_select_own" on customers for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "loyalty_transactions_select_own" on loyalty_transactions;
+create policy "loyalty_transactions_select_own" on loyalty_transactions for select
+  using (exists (
+    select 1 from customers c where c.id = loyalty_transactions.customer_id and c.user_id = auth.uid()
+  ));
+
+-- Réservations publiques : un client soumet une "demande" via un lien de
+-- parrainage, jamais auto-confirmée — le staff doit la confirmer.
+alter type reservation_status add value if not exists 'demandee';
+
+create table if not exists referral_programs (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  name text not null,
+  description text,
+  goal_count int not null default 1,
+  reward_id uuid references loyalty_rewards (id) on delete set null,
+  reward_description text,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_referral_programs_restaurant on referral_programs (restaurant_id);
+
+alter table referral_programs enable row level security;
+
+drop policy if exists "referral_programs_select" on referral_programs;
+create policy "referral_programs_select" on referral_programs for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "referral_programs_write" on referral_programs;
+create policy "referral_programs_write" on referral_programs for insert
+  with check (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
+drop policy if exists "referral_programs_update" on referral_programs;
+create policy "referral_programs_update" on referral_programs for update
+  using (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
+drop policy if exists "referral_programs_delete" on referral_programs;
+create policy "referral_programs_delete" on referral_programs for delete
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
+create table if not exists customer_referral_links (
+  id uuid primary key default gen_random_uuid(),
+  referral_program_id uuid not null references referral_programs (id) on delete cascade,
+  customer_id uuid not null references customers (id) on delete cascade,
+  code text not null unique,
+  clicks int not null default 0,
+  converted_count int not null default 0,
+  reward_claimed_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (referral_program_id, customer_id)
+);
+
+create index if not exists idx_customer_referral_links_code on customer_referral_links (code);
+
+alter table customer_referral_links enable row level security;
+
+-- Écritures uniquement via le client admin (le client n'est jamais
+-- restaurant_members, donc aucune policy insert/update/delete pour lui) ;
+-- lecture ouverte au staff du restaurant et au client propriétaire du lien.
+drop policy if exists "customer_referral_links_select" on customer_referral_links;
+create policy "customer_referral_links_select" on customer_referral_links for select
+  using (
+    exists (
+      select 1 from referral_programs rp
+      where rp.id = customer_referral_links.referral_program_id and is_restaurant_member(rp.restaurant_id)
+    )
+    or exists (
+      select 1 from customers c
+      where c.id = customer_referral_links.customer_id and c.user_id = auth.uid()
+    )
+  );
+
+alter table reservations add column if not exists customer_id uuid references customers (id) on delete set null;
+alter table reservations add column if not exists referral_link_id uuid references customer_referral_links (id) on delete set null;
+alter table reservations add column if not exists is_public_request boolean not null default false;
+
+do $$ begin
+  create type referral_conversion_type as enum ('reservation', 'achat');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists customer_referral_conversions (
+  id uuid primary key default gen_random_uuid(),
+  referral_link_id uuid not null references customer_referral_links (id) on delete cascade,
+  conversion_type referral_conversion_type not null,
+  reservation_id uuid references reservations (id) on delete set null,
+  credited_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_customer_referral_conversions_link on customer_referral_conversions (referral_link_id);
+
+alter table customer_referral_conversions enable row level security;
+
+drop policy if exists "customer_referral_conversions_select" on customer_referral_conversions;
+create policy "customer_referral_conversions_select" on customer_referral_conversions for select
+  using (
+    exists (
+      select 1 from customer_referral_links crl
+      join referral_programs rp on rp.id = crl.referral_program_id
+      where crl.id = customer_referral_conversions.referral_link_id and is_restaurant_member(rp.restaurant_id)
+    )
+    or exists (
+      select 1 from customer_referral_links crl
+      join customers c on c.id = crl.customer_id
+      where crl.id = customer_referral_conversions.referral_link_id and c.user_id = auth.uid()
+    )
+  );
+
+-- Un client qui se connecte par lien magique (raw_user_meta_data.is_customer)
+-- ne doit jamais recevoir de faux restaurant "Mon restaurant" — seuls les
+-- vrais comptes propriétaires passent par le provisionnement ci-dessous.
+create or replace function handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  new_restaurant_id uuid;
+begin
+  insert into public.profiles (id, email, full_name)
+  values (new.id, new.email, coalesce(new.raw_user_meta_data ->> 'full_name', new.email));
+
+  if (new.raw_user_meta_data ->> 'is_customer') = 'true' then
+    return new;
+  end if;
+
+  insert into public.restaurants (name)
+  values ('Mon restaurant')
+  returning id into new_restaurant_id;
+
+  insert into public.restaurant_members (restaurant_id, user_id, role, status)
+  values (new_restaurant_id, new.id, 'owner', 'active');
+
+  return new;
+end;
+$$;
+
 commit;

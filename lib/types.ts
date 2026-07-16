@@ -64,7 +64,7 @@ export type RestaurantTable = {
   createdAt: string;
 };
 
-export type ReservationStatus = "confirmee" | "annulee" | "honoree" | "no_show";
+export type ReservationStatus = "confirmee" | "annulee" | "honoree" | "no_show" | "demandee";
 
 export type Reservation = {
   id: string;
@@ -76,6 +76,43 @@ export type Reservation = {
   reservationTime: string;
   status: ReservationStatus;
   notes: string | null;
+  createdAt: string;
+  customerId: string | null;
+  referralLinkId: string | null;
+  isPublicRequest: boolean;
+};
+
+export type ReferralConversionType = "reservation" | "achat";
+
+export type ReferralProgram = {
+  id: string;
+  restaurantId: string;
+  name: string;
+  description: string | null;
+  goalCount: number;
+  rewardId: string | null;
+  rewardDescription: string | null;
+  active: boolean;
+  createdAt: string;
+};
+
+export type CustomerReferralLink = {
+  id: string;
+  referralProgramId: string;
+  customerId: string;
+  code: string;
+  clicks: number;
+  convertedCount: number;
+  rewardClaimedAt: string | null;
+  createdAt: string;
+};
+
+export type CustomerReferralConversion = {
+  id: string;
+  referralLinkId: string;
+  conversionType: ReferralConversionType;
+  reservationId: string | null;
+  creditedAt: string | null;
   createdAt: string;
 };
 
@@ -470,6 +507,7 @@ export type Customer = {
   lastVisitAt: string | null;
   createdAt: string;
   transactions: LoyaltyTransaction[];
+  userId: string | null;
 };
 
 export type LoyaltyReward = {
