@@ -27,7 +27,7 @@ export async function createServiceDayAction(
   if (!membership) {
     return { ok: false, error: "Vous devez être connecté et rattaché à un restaurant." };
   }
-  if (membership.role !== "owner" && membership.role !== "staff") {
+  if (membership.role !== "owner" && membership.role !== "manager" && membership.role !== "staff") {
     return { ok: false, error: "Vous n'avez pas les droits pour ajouter une journée." };
   }
   if (!input.date || !Number.isFinite(input.revenue)) {
@@ -51,7 +51,7 @@ export async function updateServiceDayAction(
 ): Promise<CreateServiceDayResult> {
   const membership = await getCurrentMembership();
   if (!membership) return { ok: false, error: "Vous devez être connecté et rattaché à un restaurant." };
-  if (membership.role !== "owner" && membership.role !== "staff") {
+  if (membership.role !== "owner" && membership.role !== "manager" && membership.role !== "staff") {
     return { ok: false, error: "Vous n'avez pas les droits pour modifier une journée." };
   }
 
@@ -66,7 +66,7 @@ export async function updateServiceDayAction(
 export async function deleteServiceDayAction(id: string): Promise<boolean> {
   const membership = await getCurrentMembership();
   if (!membership) return false;
-  if (membership.role !== "owner" && membership.role !== "staff") return false;
+  if (membership.role !== "owner" && membership.role !== "manager" && membership.role !== "staff") return false;
 
   const ok = await deleteServiceDay(membership.restaurantId, id);
   if (ok) {
@@ -83,7 +83,7 @@ export async function deleteServiceDayAction(id: string): Promise<boolean> {
 export async function importServiceDaysAction(inputs: ServiceDayInput[]): Promise<number> {
   const membership = await getCurrentMembership();
   if (!membership) return 0;
-  if (membership.role !== "owner" && membership.role !== "staff") return 0;
+  if (membership.role !== "owner" && membership.role !== "manager" && membership.role !== "staff") return 0;
   if (inputs.length === 0) return 0;
 
   const count = await bulkImportServiceDays(membership.restaurantId, inputs);

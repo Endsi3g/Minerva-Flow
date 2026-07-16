@@ -83,7 +83,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
     return map;
   }, [days]);
 
-  const canEdit = role === "owner" || role === "staff";
+  const canEdit = role === "owner" || role === "manager" || role === "staff";
 
   async function handleSubmit(input: AddServiceDayInput): Promise<CreateServiceDayResult> {
     const result = editingDay ? await updateServiceDayAction(editingDay.id, input) : await createServiceDayAction(input);
