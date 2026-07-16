@@ -8,7 +8,9 @@ import {
   recordSale,
   type MenuItemInput,
 } from "@/lib/data/menu";
-import type { MenuItem } from "@/lib/types";
+import { createMenuShare, deleteMenuShare } from "@/lib/data/menu-shares";
+import { updateRestaurantAction } from "@/app/(app)/settings/actions";
+import type { MenuItem, MenuShare } from "@/lib/types";
 
 export async function createMenuItemAction(
   restaurantId: string,
@@ -45,4 +47,29 @@ export async function recordSaleAction(
   const item = await recordSale(restaurantId, id, quantity);
   if (item) revalidatePath("/menu");
   return item;
+}
+
+export async function createMenuShareAction(
+  restaurantId: string,
+  input: { title: string; itemIds?: string[] | null }
+): Promise<MenuShare | null> {
+  if (!input.title.trim()) return null;
+  const share = await createMenuShare(restaurantId, input);
+  if (share) revalidatePath("/menu");
+  return share;
+}
+
+export async function deleteMenuShareAction(restaurantId: string, id: string): Promise<boolean> {
+  const ok = await deleteMenuShare(restaurantId, id);
+  if (ok) revalidatePath("/menu");
+  return ok;
+}
+
+export async function updateMenuSettingsAction(
+  restaurantId: string,
+  input: { taxRate?: number; acceptsTips?: boolean }
+): Promise<boolean> {
+  const restaurant = await updateRestaurantAction(restaurantId, input);
+  if (restaurant) revalidatePath("/menu");
+  return Boolean(restaurant);
 }

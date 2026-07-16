@@ -40,6 +40,7 @@ import {
   Heart,
   UtensilsCrossed,
   PackageSearch,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -90,6 +91,7 @@ const operationsItems: NavItem[] = [
   { href: "/horaire", label: "Horaire", icon: CalendarDays, roles: allRoles },
   { href: "/fournisseurs", label: "Fournisseurs", icon: Truck, roles: ["owner", "manager"] },
   { href: "/inventaire", label: "Inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
+  { href: "/commandes", label: "Commandes", icon: ClipboardList, roles: allRoles },
 ];
 
 // Sub settings items (without Paramètres/Settings which is standalone)

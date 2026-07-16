@@ -16,6 +16,8 @@ export type Restaurant = {
   lat: number | null;
   companyId?: string | null;
   loyaltyPointsPerDollar: number;
+  taxRate: number;
+  acceptsTips: boolean;
 };
 
 export type Employee = {
@@ -531,6 +533,47 @@ export type MenuItem = {
   unitsSold: number;
   active: boolean;
   description: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+};
+
+export type OrderStatus = "soumise" | "confirmee" | "en_preparation" | "prete" | "servie" | "annulee";
+
+export type OrderItem = {
+  id: string;
+  orderId: string;
+  menuItemId: string | null;
+  itemName: string;
+  unitPrice: number;
+  quantity: number;
+  notes: string | null;
+};
+
+export type Order = {
+  id: string;
+  restaurantId: string;
+  status: OrderStatus;
+  guestName: string;
+  guestPhone: string | null;
+  subtotal: number;
+  taxAmount: number;
+  tipAmount: number;
+  total: number;
+  paymentMethod: string | null;
+  notes: string | null;
+  customerId: string | null;
+  referralLinkId: string | null;
+  isPublicRequest: boolean;
+  createdAt: string;
+  items: OrderItem[];
+};
+
+export type MenuShare = {
+  id: string;
+  restaurantId: string;
+  token: string;
+  itemIds: string[] | null;
+  title: string;
   createdAt: string;
 };
 

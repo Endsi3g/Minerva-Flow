@@ -19,6 +19,8 @@ type RestaurantRow = {
   lat: number | null;
   company_id: string | null;
   loyalty_points_per_dollar: number;
+  tax_rate: number;
+  accepts_tips: boolean;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -38,6 +40,8 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     lat: row.lat,
     companyId: row.company_id,
     loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
+    taxRate: row.tax_rate ?? 0.14975,
+    acceptsTips: row.accepts_tips ?? true,
   };
 }
 
@@ -86,6 +90,8 @@ export type RestaurantInput = {
   timezone?: string;
   color?: string;
   loyaltyPointsPerDollar?: number;
+  taxRate?: number;
+  acceptsTips?: boolean;
 };
 
 /**
@@ -155,6 +161,8 @@ export async function updateRestaurant(
   if (patch.timezone !== undefined) dbPatch.timezone = patch.timezone;
   if (patch.color !== undefined) dbPatch.color = patch.color;
   if (patch.loyaltyPointsPerDollar !== undefined) dbPatch.loyalty_points_per_dollar = patch.loyaltyPointsPerDollar;
+  if (patch.taxRate !== undefined) dbPatch.tax_rate = patch.taxRate;
+  if (patch.acceptsTips !== undefined) dbPatch.accepts_tips = patch.acceptsTips;
 
   // Re-geocode whenever the address changed — this is the only place a
   // restaurant's map pin (lng/lat) gets populated.

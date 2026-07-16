@@ -68,6 +68,8 @@ export async function getCompanyRestaurants(companyId: string): Promise<Restaura
     lat: row.lat,
     companyId: row.company_id,
     loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
+    taxRate: row.tax_rate ?? 0.14975,
+    acceptsTips: row.accepts_tips ?? true,
   }));
 }
 

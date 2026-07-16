@@ -17,11 +17,20 @@ import {
   quadrantDescription,
   type MenuItemWithQuadrant,
 } from "@/lib/menu-engineering";
-import type { MenuItem, MenuQuadrant } from "@/lib/types";
-import { UtensilsCrossed, Plus, Trash2, TrendingUp, Info, Pencil } from "lucide-react";
+import type { MenuItem, MenuQuadrant, MenuShare } from "@/lib/types";
+import { UtensilsCrossed, Plus, Trash2, TrendingUp, Pencil, Share2, Copy, Check } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
-import { createMenuItemAction, deleteMenuItemAction, recordSaleAction, updateMenuItemAction } from "./actions";
+import {
+  createMenuItemAction,
+  deleteMenuItemAction,
+  recordSaleAction,
+  updateMenuItemAction,
+  createMenuShareAction,
+  deleteMenuShareAction,
+  updateMenuSettingsAction,
+} from "./actions";
 import { notifyError } from "@/lib/notify-error";
+import { MenuImageUpload } from "@/components/menu/MenuImageUpload";
 
 const quadrantTone: Record<MenuQuadrant, "green" | "amber" | "lime" | "neutral"> = {
   etoile: "green",
@@ -44,6 +53,8 @@ function NewMenuItemModal({
   onCreated: (item: MenuItem) => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scopeId, setScopeId] = useState(() => crypto.randomUUID());
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,11 +67,14 @@ function NewMenuItemModal({
         price: Number(form.get("price") ?? 0),
         foodCost: Number(form.get("foodCost") ?? 0),
         description: String(form.get("description") ?? "") || null,
+        imageUrl,
       });
       if (item) {
         onCreated(item);
         onClose();
         (e.target as HTMLFormElement).reset();
+        setImageUrl(null);
+        setScopeId(crypto.randomUUID());
       } else {
         notifyError("L'ajout du plat a échoué.");
       }
@@ -88,6 +102,9 @@ function NewMenuItemModal({
         </div>
         <Field label="Description" hint="Optionnel">
           <Input name="description" />
+        </Field>
+        <Field label="Image" hint="Optionnel — visible sur le menu public">
+          <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} onUploaded={setImageUrl} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
@@ -166,6 +183,7 @@ function EditMenuItemModal({
   onUpdated: (item: MenuItem) => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null | undefined>(undefined);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -178,6 +196,7 @@ function EditMenuItemModal({
         price: Number(form.get("price") ?? 0),
         foodCost: Number(form.get("foodCost") ?? 0),
         description: String(form.get("description") ?? "") || null,
+        imageUrl,
       });
       if (updated) {
         onUpdated(updated);
@@ -209,6 +228,9 @@ function EditMenuItemModal({
         </div>
         <Field label="Description" hint="Optionnel">
           <Input name="description" defaultValue={item.description ?? ""} />
+        </Field>
+        <Field label="Image" hint="Optionnel — visible sur le menu public">
+          <MenuImageUpload restaurantId={restaurantId} scopeId={item.id} currentUrl={item.imageUrl} onUploaded={setImageUrl} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
@@ -287,18 +309,157 @@ function MenuItemRow({
   );
 }
 
+function ShareMenuModal({
+  restaurantId,
+  items,
+  open,
+  onClose,
+  onCreated,
+}: {
+  restaurantId: string;
+  items: MenuItem[];
+  open: boolean;
+  onClose: () => void;
+  onCreated: (share: MenuShare) => void;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mode, setMode] = useState<"full" | "selection">("full");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setIsSubmitting(true);
+    try {
+      const share = await createMenuShareAction(restaurantId, {
+        title: String(form.get("title") ?? "") || "Menu",
+        itemIds: mode === "selection" ? Array.from(selected) : null,
+      });
+      if (share) {
+        onCreated(share);
+        onClose();
+      } else {
+        notifyError("La création du lien a échoué.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Partager le menu" description="Génère un lien public — vos clients peuvent commander directement.">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <Field label="Titre" hint="Affiché sur la page publique">
+          <Input name="title" placeholder="Ex : Menu du soir" defaultValue="Menu" required autoFocus />
+        </Field>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setMode("full")}
+            className={cn(
+              "flex-1 rounded-lg border px-3 py-2 text-[12.5px] font-medium transition-colors",
+              mode === "full" ? "border-mv-green bg-mv-green-tint text-mv-green-dark" : "border-mv-border text-mv-ink-soft"
+            )}
+          >
+            Menu complet
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("selection")}
+            className={cn(
+              "flex-1 rounded-lg border px-3 py-2 text-[12.5px] font-medium transition-colors",
+              mode === "selection" ? "border-mv-green bg-mv-green-tint text-mv-green-dark" : "border-mv-border text-mv-ink-soft"
+            )}
+          >
+            Sélection de plats
+          </button>
+        </div>
+        {mode === "selection" && (
+          <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-mv-border-soft p-2">
+            {items.map((item) => (
+              <label key={item.id} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[12.5px] hover:bg-mv-cream-soft">
+                <input type="checkbox" checked={selected.has(item.id)} onChange={() => toggle(item.id)} />
+                {item.name}
+              </label>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isSubmitting || (mode === "selection" && selected.size === 0)}>
+            {isSubmitting ? "Création…" : "Générer le lien"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function ShareLinkRow({ share, onDeleted }: { share: MenuShare; onDeleted: (id: string) => void }) {
+  const [copied, setCopied] = useState(false);
+  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/m/${share.token}`;
+
+  function handleCopy() {
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
+      <div className="min-w-0">
+        <p className="truncate text-[12.5px] font-medium text-mv-ink">{share.title}</p>
+        <p className="truncate text-[11.5px] text-mv-ink-faint">/m/{share.token}</p>
+      </div>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button onClick={handleCopy} className="text-mv-ink-faint hover:text-mv-ink" aria-label="Copier le lien">
+          {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
+        </button>
+        <button
+          onClick={() => onDeleted(share.id)}
+          className="text-mv-ink-faint hover:text-mv-red"
+          aria-label="Supprimer le lien"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function MenuView({
   restaurantId,
   initialItems,
+  taxRate,
+  acceptsTips,
+  initialShares,
 }: {
   restaurantId: string | null;
   initialItems: MenuItem[];
+  taxRate: number;
+  acceptsTips: boolean;
+  initialShares: MenuShare[];
 }) {
   const { role } = useApp();
   const [items, setItems] = useState(initialItems);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [shares, setShares] = useState(initialShares);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [tax, setTax] = useState(taxRate);
+  const [tips, setTips] = useState(acceptsTips);
 
   const canManage = role === "owner" || role === "manager";
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
@@ -332,6 +493,25 @@ export function MenuView({
     });
   }
 
+  function handleShareDeleted(id: string) {
+    if (!restaurantId) return;
+    deleteMenuShareAction(restaurantId, id).then((ok) => {
+      if (ok) setShares((prev) => prev.filter((s) => s.id !== id));
+    });
+  }
+
+  async function handleTaxBlur() {
+    if (!restaurantId || !canManage) return;
+    await updateMenuSettingsAction(restaurantId, { taxRate: tax });
+  }
+
+  async function handleTipsToggle() {
+    if (!restaurantId || !canManage) return;
+    const next = !tips;
+    setTips(next);
+    await updateMenuSettingsAction(restaurantId, { acceptsTips: next });
+  }
+
   return (
     <div>
       <PageHeader
@@ -339,13 +519,50 @@ export function MenuView({
         title="Ingénierie de menu"
         description="Rentabilité et popularité de chaque plat, classés en 4 catégories classiques."
         action={
-          canCreate && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus size={15} /> Nouveau plat
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            {items.length > 0 && (
+              <Button size="sm" variant="secondary" onClick={() => setShareOpen(true)}>
+                <Share2 size={14} /> Partager le menu
+              </Button>
+            )}
+            {canCreate && (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus size={15} /> Nouveau plat
+              </Button>
+            )}
+          </div>
         }
       />
+
+      {canManage && (
+        <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl bg-mv-cream-soft px-4 py-3">
+          <label className="flex items-center gap-1.5 text-[12.5px] text-mv-ink-soft" title="Taxes appliquées aux commandes en ligne">
+            Taxes :
+            <input
+              type="number"
+              min="0"
+              max="1"
+              step="0.00001"
+              value={tax}
+              onChange={(e) => setTax(Number(e.target.value))}
+              onBlur={handleTaxBlur}
+              className="h-8 w-24 rounded-md border border-mv-border bg-mv-surface px-2 text-[12.5px]"
+            />
+            ({Math.round(tax * 1000) / 10}%)
+          </label>
+          <label className="flex items-center gap-1.5 text-[12.5px] text-mv-ink-soft">
+            <input type="checkbox" checked={tips} onChange={handleTipsToggle} />
+            Accepter le pourboire en ligne
+          </label>
+          {shares.length > 0 && (
+            <div className="w-full space-y-1.5 border-t border-mv-border pt-3">
+              {shares.map((s) => (
+                <ShareLinkRow key={s.id} share={s} onDeleted={handleShareDeleted} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {items.length === 0 ? (
         <EmptyState
@@ -438,6 +655,16 @@ export function MenuView({
           open={Boolean(editingItem)}
           onClose={() => setEditingItem(null)}
           onUpdated={handleUpdated}
+        />
+      )}
+
+      {restaurantId && (
+        <ShareMenuModal
+          restaurantId={restaurantId}
+          items={items.filter((i) => i.active)}
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          onCreated={(share) => setShares((prev) => [share, ...prev])}
         />
       )}
     </div>

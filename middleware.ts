@@ -53,7 +53,8 @@ export async function middleware(request: NextRequest) {
     // restaurant_members, so they must be reachable before any session
     // exists; the pages themselves gate on their own auth state.
     pathname.startsWith("/portal") ||
-    pathname.startsWith("/p/");
+    pathname.startsWith("/p/") ||
+    pathname.startsWith("/m/");
 
   // Server-to-server callers (Vercel Cron, Stripe, Square) never carry a
   // Supabase session cookie — redirecting them to /login silently turns

@@ -7,6 +7,7 @@ import { getMySupportRequests } from "@/lib/data/support";
 import { getCustomers } from "@/lib/data/customers";
 import { getMenuItems } from "@/lib/data/menu";
 import { getInventoryItems } from "@/lib/data/inventory";
+import { getOrdersForDay } from "@/lib/data/orders";
 
 export type SearchResult = {
   id: string;
@@ -18,7 +19,8 @@ export type SearchResult = {
     | "navigation"
     | "customer"
     | "menu_item"
-    | "inventory_item";
+    | "inventory_item"
+    | "order";
   title: string;
   subtitle?: string;
   href: string;
@@ -48,6 +50,7 @@ export async function searchEverythingAction(
     { title: "Fidélisation", subtitle: "Fiches clients, visites et points de fidélité", href: "/fidelisation" },
     { title: "Menu", subtitle: "Ingénierie de menu et rentabilité par plat", href: "/menu" },
     { title: "Inventaire", subtitle: "Quantités en main et suivi du gaspillage", href: "/inventaire" },
+    { title: "Commandes", subtitle: "File de commandes en ligne et cuisine", href: "/commandes" },
     { title: "Finance", subtitle: "Analyse des transactions et revenus", href: "/finance" },
     { title: "Dépenses", subtitle: "Toutes vos sorties d'argent, en détail", href: "/depenses" },
     { title: "Données", subtitle: "Statistiques clés de l'application", href: "/data" },
@@ -75,15 +78,22 @@ export async function searchEverythingAction(
 
   // 2. Search Database Entities (only if restaurantId is provided)
   if (restaurantId) {
-    const [campaigns, employees, programs, supportRequests, customers, menuItems, inventoryItems] = await Promise.all([
-      getCampaigns(restaurantId).catch(() => []),
-      getEmployees(restaurantId).catch(() => []),
-      getPrograms(restaurantId).catch(() => []),
-      getMySupportRequests().catch(() => []),
-      getCustomers(restaurantId).catch(() => []),
-      getMenuItems(restaurantId).catch(() => []),
-      getInventoryItems(restaurantId).catch(() => []),
-    ]);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+
+    const [campaigns, employees, programs, supportRequests, customers, menuItems, inventoryItems, orders] =
+      await Promise.all([
+        getCampaigns(restaurantId).catch(() => []),
+        getEmployees(restaurantId).catch(() => []),
+        getPrograms(restaurantId).catch(() => []),
+        getMySupportRequests().catch(() => []),
+        getCustomers(restaurantId).catch(() => []),
+        getMenuItems(restaurantId).catch(() => []),
+        getInventoryItems(restaurantId).catch(() => []),
+        getOrdersForDay(restaurantId, todayStart.toISOString(), todayEnd.toISOString()).catch(() => []),
+      ]);
 
     // Campaigns
     for (const c of campaigns) {
@@ -177,6 +187,19 @@ export async function searchEverythingAction(
           title: i.name,
           subtitle: `Inventaire • ${i.quantityOnHand} ${i.unit}`,
           href: `/inventaire`,
+        });
+      }
+    }
+
+    // Orders (today)
+    for (const o of orders) {
+      if (o.guestName.toLowerCase().includes(normalizedQuery)) {
+        results.push({
+          id: o.id,
+          type: "order",
+          title: o.guestName,
+          subtitle: `Commande • ${o.status} (${o.total.toFixed(2)}$)`,
+          href: `/commandes`,
         });
       }
     }

@@ -3,6 +3,8 @@ import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapReferralProgram, type ReferralProgramRow } from "@/lib/data/referral-programs";
+import { notifyRestaurant } from "@/lib/data/notifications";
+import { formatCurrency } from "@/lib/utils";
 import type { CustomerReferralLink, ReferralProgram } from "@/lib/types";
 
 export type ReferralLinkTracking = {
@@ -249,4 +251,179 @@ export async function submitPublicReservationRequest(
 export async function creditReferralConversion(reservationId: string): Promise<void> {
   const supabase = await createClient();
   await supabase.rpc("credit_referral_conversion", { p_reservation_id: reservationId });
+}
+
+/** Sibling of creditReferralConversion for orders — see migration for the RPC. */
+export async function creditReferralConversionForOrder(orderId: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase.rpc("credit_referral_conversion_for_order", { p_order_id: orderId });
+}
+
+export type PublicOrderCartLine = {
+  menuItemId: string;
+  quantity: number;
+};
+
+export type PublicOrderGuestInfo = {
+  guestName: string;
+  guestPhone: string | null;
+  paymentMethod: string | null;
+  /** Customer-chosen tip in dollars — everything else is recomputed server-side from real menu prices. */
+  tipAmount: number;
+};
+
+/**
+ * Same shape as submitPublicReservationRequest: identify the visitor via
+ * their already-completed magic-link session, find-or-create their own
+ * customers row, insert the order as 'soumise' (never auto-confirmed —
+ * staff advances it in /commandes), and log an uncredited 'achat'
+ * conversion if a referral code rode along. Prices are always recomputed
+ * from the live menu_items table — a client-submitted cart only supplies
+ * item ids and quantities, never amounts, so a tampered request can't
+ * change what's actually charged.
+ */
+export async function submitPublicOrder(
+  menuToken: string,
+  referralCode: string | null,
+  cart: PublicOrderCartLine[],
+  guestInfo: PublicOrderGuestInfo
+): Promise<boolean> {
+  if (cart.length === 0) return false;
+
+  const session = await createClient();
+  const {
+    data: { user },
+  } = await session.auth.getUser();
+  if (!user?.email) return false;
+
+  const admin = createAdminClient();
+
+  const { data: shareRow } = await admin
+    .from("menu_shares")
+    .select("restaurant_id")
+    .eq("token", menuToken)
+    .maybeSingle();
+  const restaurantId = (shareRow as { restaurant_id: string } | null)?.restaurant_id;
+  if (!restaurantId) return false;
+
+  const { data: restaurantRow } = await admin
+    .from("restaurants")
+    .select("tax_rate, accepts_tips")
+    .eq("id", restaurantId)
+    .maybeSingle();
+  const restaurant = restaurantRow as { tax_rate: number; accepts_tips: boolean } | null;
+  if (!restaurant) return false;
+
+  const { data: menuItemRows } = await admin
+    .from("menu_items")
+    .select("id, name, price")
+    .eq("restaurant_id", restaurantId)
+    .eq("active", true)
+    .in(
+      "id",
+      cart.map((line) => line.menuItemId)
+    );
+  const menuItemById = new Map(
+    ((menuItemRows as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
+  );
+
+  const lineItems = cart
+    .map((line) => {
+      const item = menuItemById.get(line.menuItemId);
+      if (!item || !Number.isFinite(line.quantity) || line.quantity <= 0) return null;
+      return { menuItemId: item.id, itemName: item.name, unitPrice: item.price, quantity: line.quantity };
+    })
+    .filter((l): l is NonNullable<typeof l> => l !== null);
+
+  if (lineItems.length === 0) return false;
+
+  const subtotal = lineItems.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+  const taxAmount = Math.round(subtotal * restaurant.tax_rate * 100) / 100;
+  const tipAmount = restaurant.accepts_tips && Number.isFinite(guestInfo.tipAmount) ? Math.max(0, guestInfo.tipAmount) : 0;
+  const total = subtotal + taxAmount + tipAmount;
+
+  let referralLinkId: string | null = null;
+  if (referralCode) {
+    const { data: linkRow } = await admin
+      .from("customer_referral_links")
+      .select("id")
+      .eq("code", referralCode)
+      .maybeSingle();
+    referralLinkId = (linkRow as { id: string } | null)?.id ?? null;
+  }
+
+  const { data: existingCustomer } = await admin
+    .from("customers")
+    .select("id")
+    .eq("restaurant_id", restaurantId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  let customerId = (existingCustomer as { id: string } | null)?.id ?? null;
+  if (!customerId) {
+    const { data: newCustomer, error: customerError } = await admin
+      .from("customers")
+      .insert({
+        restaurant_id: restaurantId,
+        name: guestInfo.guestName,
+        email: user.email,
+        phone: guestInfo.guestPhone,
+        user_id: user.id,
+      })
+      .select("id")
+      .single();
+    if (customerError || !newCustomer) return false;
+    customerId = (newCustomer as { id: string }).id;
+  }
+
+  const { data: order, error: orderError } = await admin
+    .from("orders")
+    .insert({
+      restaurant_id: restaurantId,
+      status: "soumise",
+      guest_name: guestInfo.guestName,
+      guest_phone: guestInfo.guestPhone,
+      subtotal,
+      tax_amount: taxAmount,
+      tip_amount: tipAmount,
+      total,
+      payment_method: guestInfo.paymentMethod,
+      is_public_request: true,
+      customer_id: customerId,
+      referral_link_id: referralLinkId,
+    })
+    .select("id")
+    .single();
+
+  if (orderError || !order) return false;
+  const orderId = (order as { id: string }).id;
+
+  const { error: itemsError } = await admin.from("order_items").insert(
+    lineItems.map((l) => ({
+      order_id: orderId,
+      menu_item_id: l.menuItemId,
+      item_name: l.itemName,
+      unit_price: l.unitPrice,
+      quantity: l.quantity,
+    }))
+  );
+  if (itemsError) return false;
+
+  if (referralLinkId) {
+    await admin.from("customer_referral_conversions").insert({
+      referral_link_id: referralLinkId,
+      conversion_type: "achat",
+      order_id: orderId,
+    });
+  }
+
+  await notifyRestaurant({
+    restaurantId,
+    type: "order.created",
+    title: "Nouvelle commande en ligne",
+    body: `${guestInfo.guestName} — ${formatCurrency(total)}`,
+    link: "/commandes",
+  });
+
+  return true;
 }

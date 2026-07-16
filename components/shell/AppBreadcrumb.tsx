@@ -25,6 +25,7 @@ const crumbLabels: Record<string, string> = {
   fidelisation: "Fidélisation",
   menu: "Menu",
   inventaire: "Inventaire",
+  commandes: "Commandes",
 };
 
 export function AppBreadcrumb() {

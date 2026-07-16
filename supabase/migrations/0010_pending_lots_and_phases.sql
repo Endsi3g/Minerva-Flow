@@ -1466,4 +1466,187 @@ begin
 end;
 $$;
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Lot B — menu public, commande en ligne (sans paiement réel : le client
+-- compose sa commande et la voit confirmée, mais paie sur place)
+-- ═══════════════════════════════════════════════════════════════════════
+
+alter table restaurants add column if not exists tax_rate numeric(6,5) not null default 0.14975;
+alter table restaurants add column if not exists accepts_tips boolean not null default true;
+alter table menu_items add column if not exists image_url text;
+
+do $$ begin
+  create type order_status as enum ('soumise', 'confirmee', 'en_preparation', 'prete', 'servie', 'annulee');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists orders (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  status order_status not null default 'soumise',
+  guest_name text not null,
+  guest_phone text,
+  subtotal numeric(10,2) not null default 0,
+  tax_amount numeric(10,2) not null default 0,
+  tip_amount numeric(10,2) not null default 0,
+  total numeric(10,2) not null default 0,
+  payment_method text,
+  notes text,
+  customer_id uuid references customers (id) on delete set null,
+  referral_link_id uuid references customer_referral_links (id) on delete set null,
+  is_public_request boolean not null default false,
+  created_by uuid references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_orders_restaurant_created on orders (restaurant_id, created_at desc);
+
+alter table orders enable row level security;
+
+drop policy if exists "orders_select" on orders;
+create policy "orders_select" on orders for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "orders_insert" on orders;
+create policy "orders_insert" on orders for insert
+  with check (is_restaurant_member(restaurant_id));
+drop policy if exists "orders_update" on orders;
+create policy "orders_update" on orders for update
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "orders_delete" on orders;
+create policy "orders_delete" on orders for delete
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
+create table if not exists order_items (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references orders (id) on delete cascade,
+  menu_item_id uuid references menu_items (id) on delete set null,
+  item_name text not null,
+  unit_price numeric(10,2) not null default 0,
+  quantity int not null default 1,
+  notes text
+);
+
+create index if not exists idx_order_items_order on order_items (order_id);
+
+alter table order_items enable row level security;
+
+drop policy if exists "order_items_select" on order_items;
+create policy "order_items_select" on order_items for select
+  using (exists (
+    select 1 from orders o where o.id = order_items.order_id and is_restaurant_member(o.restaurant_id)
+  ));
+drop policy if exists "order_items_manage" on order_items;
+create policy "order_items_manage" on order_items for all
+  using (exists (
+    select 1 from orders o where o.id = order_items.order_id and is_restaurant_member(o.restaurant_id)
+  ))
+  with check (exists (
+    select 1 from orders o where o.id = order_items.order_id and is_restaurant_member(o.restaurant_id)
+  ));
+
+-- Lien de menu public — indépendant d'un lien de parrainage personnel
+-- (customer_referral_links est scoppé à un client précis). Pas
+-- d'instantané : le menu affiché reste à jour avec les prix/disponibilité
+-- réels au moment de la visite, contrairement à report_shares.
+create table if not exists menu_shares (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  token text not null unique,
+  item_ids uuid[],
+  title text not null default 'Menu',
+  created_by uuid references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_menu_shares_token on menu_shares (token);
+
+alter table menu_shares enable row level security;
+
+drop policy if exists "menu_shares_select" on menu_shares;
+create policy "menu_shares_select" on menu_shares for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "menu_shares_insert" on menu_shares;
+create policy "menu_shares_insert" on menu_shares for insert
+  with check (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
+drop policy if exists "menu_shares_delete" on menu_shares;
+create policy "menu_shares_delete" on menu_shares for delete
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
+alter table customer_referral_conversions add column if not exists order_id uuid references orders (id) on delete set null;
+
+-- Jumelle de credit_referral_conversion (réservations) mais pour une
+-- commande — même verrouillage (for update) contre le double-crédit.
+create or replace function credit_referral_conversion_for_order(p_order_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_restaurant_id uuid;
+  v_referral_link_id uuid;
+  v_conversion_id uuid;
+  v_already_credited timestamptz;
+  v_new_count int;
+  v_goal_count int;
+  v_reward_claimed timestamptz;
+begin
+  select restaurant_id, referral_link_id into v_restaurant_id, v_referral_link_id
+  from orders where id = p_order_id;
+
+  if v_restaurant_id is null or not is_restaurant_member(v_restaurant_id) then
+    raise exception 'Non autorisé';
+  end if;
+
+  if v_referral_link_id is null then
+    return;
+  end if;
+
+  select id, credited_at into v_conversion_id, v_already_credited
+  from customer_referral_conversions
+  where order_id = p_order_id
+  for update;
+
+  if v_conversion_id is null or v_already_credited is not null then
+    return;
+  end if;
+
+  update customer_referral_conversions
+  set credited_at = now()
+  where id = v_conversion_id;
+
+  update customer_referral_links
+  set converted_count = converted_count + 1
+  where id = v_referral_link_id
+  returning converted_count, reward_claimed_at into v_new_count, v_reward_claimed;
+
+  select goal_count into v_goal_count
+  from referral_programs
+  where id = (select referral_program_id from customer_referral_links where id = v_referral_link_id);
+
+  if v_new_count >= v_goal_count and v_reward_claimed is null then
+    update customer_referral_links
+    set reward_claimed_at = now()
+    where id = v_referral_link_id;
+  end if;
+end;
+$$;
+
+-- ── storage: images de plats (bucket public, patron "avatars") ──────────
+insert into storage.buckets (id, name, public)
+values ('menu-item-images', 'menu-item-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "menu_item_images_public_read" on storage.objects;
+create policy "menu_item_images_public_read" on storage.objects for select
+  using (bucket_id = 'menu-item-images');
+drop policy if exists "menu_item_images_write" on storage.objects;
+create policy "menu_item_images_write" on storage.objects for insert
+  with check (bucket_id = 'menu-item-images' and is_restaurant_member((storage.foldername(name))[1]::uuid, array['owner','manager','staff']::member_role[]));
+drop policy if exists "menu_item_images_update" on storage.objects;
+create policy "menu_item_images_update" on storage.objects for update
+  using (bucket_id = 'menu-item-images' and is_restaurant_member((storage.foldername(name))[1]::uuid, array['owner','manager','staff']::member_role[]));
+drop policy if exists "menu_item_images_delete" on storage.objects;
+create policy "menu_item_images_delete" on storage.objects for delete
+  using (bucket_id = 'menu-item-images' and is_restaurant_member((storage.foldername(name))[1]::uuid, array['owner','manager']::member_role[]));
+
 commit;

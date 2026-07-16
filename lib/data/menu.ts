@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import type { MenuItem } from "@/lib/types";
 
-type MenuItemRow = {
+export type MenuItemRow = {
   id: string;
   restaurant_id: string;
   name: string;
@@ -12,10 +12,11 @@ type MenuItemRow = {
   units_sold: number;
   active: boolean;
   description: string | null;
+  image_url: string | null;
   created_at: string;
 };
 
-function mapMenuItem(row: MenuItemRow): MenuItem {
+export function mapMenuItem(row: MenuItemRow): MenuItem {
   return {
     id: row.id,
     restaurantId: row.restaurant_id,
@@ -26,6 +27,7 @@ function mapMenuItem(row: MenuItemRow): MenuItem {
     unitsSold: row.units_sold,
     active: row.active,
     description: row.description,
+    imageUrl: row.image_url,
     createdAt: row.created_at,
   };
 }
@@ -50,6 +52,7 @@ export type MenuItemInput = {
   foodCost: number;
   description?: string | null;
   active?: boolean;
+  imageUrl?: string | null;
 };
 
 export async function createMenuItem(restaurantId: string, input: MenuItemInput): Promise<MenuItem | null> {
@@ -64,6 +67,7 @@ export async function createMenuItem(restaurantId: string, input: MenuItemInput)
       food_cost: input.foodCost,
       description: input.description ?? null,
       active: input.active ?? true,
+      image_url: input.imageUrl ?? null,
     })
     .select("*")
     .single();
@@ -94,6 +98,7 @@ export async function updateMenuItem(
   if (patch.foodCost !== undefined) dbPatch.food_cost = patch.foodCost;
   if (patch.description !== undefined) dbPatch.description = patch.description;
   if (patch.active !== undefined) dbPatch.active = patch.active;
+  if (patch.imageUrl !== undefined) dbPatch.image_url = patch.imageUrl;
 
   const { data, error } = await supabase
     .from("menu_items")
