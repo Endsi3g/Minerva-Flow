@@ -113,7 +113,7 @@ export function PortalView({ customer, data }: { customer: Customer; data: Porta
         <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">Espace client</p>
         <h1 className="mb-6 font-display text-[26px] font-medium text-mv-ink">Bonjour {customer.name}</h1>
 
-        <div className="mb-6 grid grid-cols-3 gap-3 rounded-xl bg-mv-surface p-4 shadow-mv-sm">
+        <div className="mb-6 grid grid-cols-2 gap-3 rounded-xl bg-mv-surface p-4 shadow-mv-sm sm:grid-cols-3">
           <div>
             <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Points</p>
             <p className="font-display text-[19px] font-medium text-mv-green-dark">{customer.loyaltyPoints}</p>

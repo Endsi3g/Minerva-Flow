@@ -182,6 +182,37 @@ export async function notifyRestaurantOwners(input: {
 }
 
 /**
+ * Notifies owners and managers only — used for app-error surfacing
+ * (lib/notify-error.ts) so the people who'd act on a recurring failure see
+ * it without paging every staff member for every failed click.
+ */
+export async function notifyRestaurantManagement(input: {
+  restaurantId: string;
+  type: string;
+  title: string;
+  body?: string;
+  link?: string;
+}): Promise<void> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("restaurant_members")
+    .select("user_id")
+    .eq("restaurant_id", input.restaurantId)
+    .in("role", ["owner", "manager"])
+    .eq("status", "active");
+
+  const userIds = ((data as { user_id: string }[]) ?? []).map((m) => m.user_id);
+  await broadcastNotification({
+    restaurantId: input.restaurantId,
+    userIds,
+    type: input.type,
+    title: input.title,
+    body: input.body,
+    link: input.link,
+  });
+}
+
+/**
  * Notifies every active member of a restaurant (optionally excluding the
  * actor who triggered the event, so people don't get notified about their
  * own action). Thin wrapper around broadcastNotification for the common

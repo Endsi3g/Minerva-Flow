@@ -14,7 +14,7 @@ import type { InventoryItem, InventoryMovementType, Supplier } from "@/lib/types
 import { PackageSearch, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { createInventoryItemAction, deleteInventoryItemAction, logMovementAction } from "./actions";
-import { toast } from "sonner";
+import { notifyError } from "@/lib/notify-error";
 
 const movementLabel: Record<InventoryMovementType, string> = {
   reception: "Réception",
@@ -83,7 +83,7 @@ function NewInventoryItemModal({
         onClose();
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error("L'ajout de l'article a échoué.");
+        notifyError("L'ajout de l'article a échoué.");
       }
     } finally {
       setIsSubmitting(false);
@@ -101,7 +101,7 @@ function NewInventoryItemModal({
             <Input name="category" placeholder="Ex : Sec" />
           </Field>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field label="Unité">
             <Input name="unit" placeholder="kg, unité, L…" defaultValue="unité" required />
           </Field>
@@ -171,7 +171,7 @@ function MovementModal({
         onClose();
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error("L'enregistrement du mouvement a échoué.");
+        notifyError("L'enregistrement du mouvement a échoué.");
       }
     } finally {
       setIsSubmitting(false);
@@ -269,11 +269,12 @@ export function InventaireView({
     setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
   }
 
-  function handleDeleted(id: string) {
+  function handleDeleted(id: string, name: string) {
     if (!restaurantId) return;
+    if (!window.confirm(`Retirer "${name}" de l'inventaire ?`)) return;
     deleteInventoryItemAction(restaurantId, id).then((ok) => {
       if (ok) setItems((prev) => prev.filter((i) => i.id !== id));
-      else toast.error("La suppression a échoué.");
+      else notifyError("La suppression a échoué.");
     });
   }
 
@@ -367,7 +368,7 @@ export function InventaireView({
                       )}
                       {canManage && (
                         <button
-                          onClick={() => handleDeleted(item.id)}
+                          onClick={() => handleDeleted(item.id, item.name)}
                           aria-label="Supprimer"
                           className="rounded-md p-1.5 text-mv-ink-faint hover:bg-mv-ink/5 hover:text-mv-red"
                         >

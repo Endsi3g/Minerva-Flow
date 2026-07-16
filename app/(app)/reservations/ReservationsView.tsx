@@ -22,7 +22,7 @@ import type { Reservation, ReservationStatus, RestaurantTable } from "@/lib/type
 import { CalendarClock, ChevronLeft, ChevronRight, Plus, Trash2, Users, Link2 } from "lucide-react";
 import type { ReservationPlatformConnection } from "@/lib/data/reservation-platforms";
 import { useState, type FormEvent } from "react";
-import { toast } from "sonner";
+import { notifyError } from "@/lib/notify-error";
 
 const statusLabel: Record<ReservationStatus, string> = {
   demandee: "Demandée",
@@ -97,7 +97,7 @@ function NewReservationModal({
         onCreated(reservation);
         onClose();
       } else {
-        toast.error("La création de la réservation a échoué.");
+        notifyError("La création de la réservation a échoué.");
       }
     } finally {
       setIsSubmitting(false);
@@ -183,7 +183,7 @@ function TablesCard({
         onChange([...tables, table].sort((a, b) => a.label.localeCompare(b.label)));
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error("L'ajout de la table a échoué.");
+        notifyError("L'ajout de la table a échoué.");
       }
     } finally {
       setIsSubmitting(false);

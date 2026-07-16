@@ -188,7 +188,6 @@ export async function logMovement(
   const item = itemRow as InventoryItemRow;
 
   const delta = type === "reception" || type === "ajustement" ? quantity : -quantity;
-  const newQuantity = Math.max(0, item.quantity_on_hand + delta);
 
   const { error: movementError } = await supabase.from("inventory_movements").insert({
     inventory_item_id: itemId,
@@ -200,14 +199,16 @@ export async function logMovement(
 
   if (movementError) return null;
 
-  const { data: updated, error: updateError } = await supabase
-    .from("inventory_items")
-    .update({ quantity_on_hand: newQuantity })
-    .eq("id", itemId)
-    .select("*")
-    .single();
+  // Atomic increment (see migration) — two concurrent movements on the
+  // same item (e.g. a delivery logged while someone else logs waste) can no
+  // longer overwrite each other's quantity_on_hand change.
+  const { data: rpcRows, error: rpcError } = await supabase.rpc("increment_inventory_quantity", {
+    p_item_id: itemId,
+    p_delta: delta,
+  });
 
-  if (updateError || !updated) return null;
+  if (rpcError || !rpcRows || (rpcRows as InventoryItemRow[]).length === 0) return null;
+  const updated = (rpcRows as InventoryItemRow[])[0];
 
   await logActivity({
     restaurantId,

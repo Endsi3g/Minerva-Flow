@@ -17,6 +17,8 @@ import {
   deleteReferralProgram,
   type ReferralProgramInput,
 } from "@/lib/data/referral-programs";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Customer, LoyaltyReward, ReferralProgram } from "@/lib/types";
 
 export async function createCustomerAction(
@@ -103,4 +105,43 @@ export async function deleteReferralProgramAction(restaurantId: string, id: stri
   const ok = await deleteReferralProgram(restaurantId, id);
   if (ok) revalidatePath("/fidelisation");
   return ok;
+}
+
+/**
+ * Staff-triggered "give this client an easy portal link" — sends a
+ * passwordless sign-in email straight to the customer's own inbox (they
+ * click it, land on /portal already authenticated). Verifies the customer
+ * belongs to restaurantId via the session-scoped client (RLS-backed)
+ * before ever touching the admin client, so staff can't be tricked into
+ * sending a link tied to a customer outside their restaurant.
+ */
+export async function sendPortalLinkAction(
+  restaurantId: string,
+  customerId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { data: customerRow } = await supabase
+    .from("customers")
+    .select("email, name")
+    .eq("restaurant_id", restaurantId)
+    .eq("id", customerId)
+    .maybeSingle();
+
+  const customer = customerRow as { email: string | null; name: string } | null;
+  if (!customer) return { ok: false, error: "Client introuvable." };
+  if (!customer.email) return { ok: false, error: `${customer.name} n'a pas de courriel enregistré.` };
+
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app";
+  const admin = createAdminClient();
+  const { error } = await admin.auth.signInWithOtp({
+    email: customer.email,
+    options: {
+      emailRedirectTo: `${origin}/auth/confirm?next=/portal`,
+      data: { is_customer: true },
+      shouldCreateUser: true,
+    },
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }

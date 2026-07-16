@@ -23,7 +23,7 @@ import type { PurchaseOrder, PurchaseOrderStatus, Supplier } from "@/lib/types";
 import type { PurchaseOrderItemInput } from "@/lib/data/purchase-orders";
 import { Package, Plus, Trash2, Truck } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { toast } from "sonner";
+import { notifyError } from "@/lib/notify-error";
 
 const statusLabel: Record<PurchaseOrderStatus, string> = {
   brouillon: "Brouillon",
@@ -71,7 +71,7 @@ function SuppliersCard({
         onChange([...suppliers, supplier].sort((a, b) => a.name.localeCompare(b.name)));
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error("L'ajout du fournisseur a échoué.");
+        notifyError("L'ajout du fournisseur a échoué.");
       }
     } finally {
       setIsSubmitting(false);
@@ -174,7 +174,7 @@ function NewOrderModal({
         onClose();
         setItems([{ itemName: "", quantity: 1, unit: "unité", unitCost: 0 }]);
       } else {
-        toast.error("La création de la commande a échoué.");
+        notifyError("La création de la commande a échoué.");
       }
     } finally {
       setIsSubmitting(false);

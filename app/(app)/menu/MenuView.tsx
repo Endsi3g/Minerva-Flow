@@ -21,7 +21,7 @@ import type { MenuItem, MenuQuadrant } from "@/lib/types";
 import { UtensilsCrossed, Plus, Trash2, TrendingUp, Info, Pencil } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { createMenuItemAction, deleteMenuItemAction, recordSaleAction, updateMenuItemAction } from "./actions";
-import { toast } from "sonner";
+import { notifyError } from "@/lib/notify-error";
 
 const quadrantTone: Record<MenuQuadrant, "green" | "amber" | "lime" | "neutral"> = {
   etoile: "green",
@@ -62,7 +62,7 @@ function NewMenuItemModal({
         onClose();
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error("L'ajout du plat a échoué.");
+        notifyError("L'ajout du plat a échoué.");
       }
     } finally {
       setIsSubmitting(false);
@@ -124,7 +124,7 @@ function SaleQuickAdd({
         onUpdated(updated);
         setQty("1");
       } else {
-        toast.error("L'enregistrement a échoué.");
+        notifyError("L'enregistrement a échoué.");
       }
     } finally {
       setIsSubmitting(false);
@@ -183,7 +183,7 @@ function EditMenuItemModal({
         onUpdated(updated);
         onClose();
       } else {
-        toast.error("La modification du plat a échoué.");
+        notifyError("La modification du plat a échoué.");
       }
     } finally {
       setIsSubmitting(false);
@@ -237,7 +237,7 @@ function MenuItemRow({
   canCreate: boolean;
   canManage: boolean;
   onUpdated: (item: MenuItem) => void;
-  onDeleted: (id: string) => void;
+  onDeleted: (id: string, name: string) => void;
   onEdit: (item: MenuItem) => void;
 }) {
   return (
@@ -257,7 +257,7 @@ function MenuItemRow({
               <Pencil size={13} />
             </button>
             <button
-              onClick={() => onDeleted(item.id)}
+              onClick={() => onDeleted(item.id, item.name)}
               aria-label="Retirer le plat"
               className="text-mv-ink-faint transition-colors hover:text-mv-red"
             >
@@ -266,7 +266,7 @@ function MenuItemRow({
           </div>
         )}
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-2 text-[12px]">
+      <div className="mt-2 grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-3">
         <div>
           <p className="text-mv-ink-faint">Prix</p>
           <p className="font-medium text-mv-ink">{formatCurrency(item.price)}</p>
@@ -323,11 +323,12 @@ export function MenuView({
     setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
   }
 
-  function handleDeleted(id: string) {
+  function handleDeleted(id: string, name: string) {
     if (!restaurantId) return;
+    if (!window.confirm(`Retirer le plat "${name}" du menu ?`)) return;
     deleteMenuItemAction(restaurantId, id).then((ok) => {
       if (ok) setItems((prev) => prev.filter((i) => i.id !== id));
-      else toast.error("La suppression a échoué.");
+      else notifyError("La suppression a échoué.");
     });
   }
 

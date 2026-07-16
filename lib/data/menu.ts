@@ -113,26 +113,20 @@ export async function deleteMenuItem(restaurantId: string, id: string): Promise<
   return !error;
 }
 
-/** Bumps a menu item's cumulative units_sold counter — the "+ ventes" quick action. */
+/**
+ * Bumps a menu item's cumulative units_sold counter — the "+ ventes" quick
+ * action. Atomic (see migration) so two concurrent sale logs on the same
+ * item can't lose an increment.
+ */
 export async function recordSale(restaurantId: string, id: string, quantity: number): Promise<MenuItem | null> {
   const supabase = await createClient();
-  const { data: current } = await supabase
-    .from("menu_items")
-    .select("units_sold")
-    .eq("restaurant_id", restaurantId)
-    .eq("id", id)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("increment_menu_item_sales", {
+    p_item_id: id,
+    p_quantity: quantity,
+  });
 
-  if (!current) return null;
-
-  const { data, error } = await supabase
-    .from("menu_items")
-    .update({ units_sold: (current as { units_sold: number }).units_sold + quantity })
-    .eq("restaurant_id", restaurantId)
-    .eq("id", id)
-    .select("*")
-    .single();
-
-  if (error || !data) return null;
-  return mapMenuItem(data as MenuItemRow);
+  if (error || !data || (data as MenuItemRow[]).length === 0) return null;
+  const row = (data as MenuItemRow[])[0];
+  if (row.restaurant_id !== restaurantId) return null;
+  return mapMenuItem(row);
 }

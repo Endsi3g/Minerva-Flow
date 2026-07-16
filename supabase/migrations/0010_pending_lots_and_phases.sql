@@ -1265,4 +1265,205 @@ begin
 end;
 $$;
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Incréments atomiques — remplacent les patrons "lire, calculer en JS,
+-- réécrire" qui existaient côté application pour ces compteurs (points de
+-- fidélité, quantité en stock, ventes de menu, clics/conversions de
+-- parrainage) : deux écritures concurrentes sur la même ligne pouvaient en
+-- écraser une silencieusement. Chaque fonction revérifie elle-même
+-- l'autorisation (security definer contourne les RLS) puisqu'un client
+-- authentifié peut appeler ces fonctions RPC directement.
+-- ═══════════════════════════════════════════════════════════════════════
+
+-- Enregistre la ligne du grand livre ET met à jour le solde du client dans
+-- le même aller-retour — une écriture de visite ne peut plus laisser une
+-- transaction sans le solde correspondant (ou l'inverse) en cas d'échec
+-- partiel entre les deux requêtes séparées que faisait l'ancien code.
+create or replace function increment_customer_visit(
+  p_customer_id uuid, p_restaurant_id uuid, p_amount_spent numeric, p_points_delta int, p_note text
+)
+returns setof customers
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_restaurant_id uuid;
+begin
+  select restaurant_id into v_restaurant_id from customers where id = p_customer_id;
+  if v_restaurant_id is null or v_restaurant_id != p_restaurant_id
+     or not is_restaurant_member(v_restaurant_id, array['owner','manager','staff']::member_role[]) then
+    raise exception 'Non autorisé';
+  end if;
+
+  insert into loyalty_transactions (restaurant_id, customer_id, type, amount_spent, points_delta, note, created_by)
+  values (v_restaurant_id, p_customer_id, 'visite', p_amount_spent, p_points_delta, p_note, auth.uid());
+
+  return query
+    update customers
+    set visit_count = visit_count + 1,
+        total_spent = total_spent + p_amount_spent,
+        loyalty_points = loyalty_points + p_points_delta,
+        last_visit_at = now()
+    where id = p_customer_id
+    returning *;
+end;
+$$;
+
+-- Déduit le solde seulement si la clause WHERE (solde suffisant) matche —
+-- retourne 0 ligne sinon, sans jamais enregistrer de transaction d'échange
+-- fantôme pour un échange qui a réellement échoué.
+create or replace function redeem_customer_reward(p_customer_id uuid, p_restaurant_id uuid, p_reward_id uuid)
+returns setof customers
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_restaurant_id uuid;
+  v_points_cost int;
+  v_reward_name text;
+  updated customers%rowtype;
+begin
+  select restaurant_id into v_restaurant_id from customers where id = p_customer_id;
+  if v_restaurant_id is null or v_restaurant_id != p_restaurant_id
+     or not is_restaurant_member(v_restaurant_id, array['owner','manager','staff']::member_role[]) then
+    raise exception 'Non autorisé';
+  end if;
+
+  select points_cost, name into v_points_cost, v_reward_name
+  from loyalty_rewards where id = p_reward_id and restaurant_id = v_restaurant_id;
+
+  if v_points_cost is null then
+    return;
+  end if;
+
+  update customers
+  set loyalty_points = loyalty_points - v_points_cost
+  where id = p_customer_id and loyalty_points >= v_points_cost
+  returning * into updated;
+
+  if not found then
+    return;
+  end if;
+
+  insert into loyalty_transactions (restaurant_id, customer_id, type, points_delta, note, created_by)
+  values (v_restaurant_id, p_customer_id, 'echange', -v_points_cost, 'Échange : ' || v_reward_name, auth.uid());
+
+  return next updated;
+end;
+$$;
+
+create or replace function increment_inventory_quantity(p_item_id uuid, p_delta numeric)
+returns setof inventory_items
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_restaurant_id uuid;
+begin
+  select restaurant_id into v_restaurant_id from inventory_items where id = p_item_id;
+  if v_restaurant_id is null or not is_restaurant_member(v_restaurant_id, array['owner','manager','staff']::member_role[]) then
+    raise exception 'Non autorisé';
+  end if;
+
+  return query
+    update inventory_items
+    set quantity_on_hand = greatest(0, quantity_on_hand + p_delta)
+    where id = p_item_id
+    returning *;
+end;
+$$;
+
+create or replace function increment_menu_item_sales(p_item_id uuid, p_quantity numeric)
+returns setof menu_items
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_restaurant_id uuid;
+begin
+  select restaurant_id into v_restaurant_id from menu_items where id = p_item_id;
+  if v_restaurant_id is null or not is_restaurant_member(v_restaurant_id, array['owner','manager','staff']::member_role[]) then
+    raise exception 'Non autorisé';
+  end if;
+
+  return query
+    update menu_items
+    set units_sold = units_sold + p_quantity
+    where id = p_item_id
+    returning *;
+end;
+$$;
+
+-- Intentionnellement sans vérification d'autorisation : appelée depuis la
+-- page publique /p/[code] par un visiteur anonyme qui suit un lien de
+-- parrainage — c'est le même contournement RLS que le client admin déjà
+-- utilisé pour cette lecture publique.
+create or replace function increment_referral_link_clicks(p_code text)
+returns void
+language sql
+security definer set search_path = public
+as $$
+  update customer_referral_links set clicks = clicks + 1 where code = p_code;
+$$;
+
+-- Toute la logique de crédit (marquer la conversion, incrémenter le
+-- compteur, débloquer la récompense si l'objectif est atteint) tient dans
+-- un seul aller-retour, verrouillé par la ligne de conversion (for update)
+-- pour empêcher un double-crédit si le statut de la réservation change
+-- deux fois rapidement.
+create or replace function credit_referral_conversion(p_reservation_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_restaurant_id uuid;
+  v_referral_link_id uuid;
+  v_conversion_id uuid;
+  v_already_credited timestamptz;
+  v_new_count int;
+  v_goal_count int;
+  v_reward_claimed timestamptz;
+begin
+  select restaurant_id, referral_link_id into v_restaurant_id, v_referral_link_id
+  from reservations where id = p_reservation_id;
+
+  if v_restaurant_id is null or not is_restaurant_member(v_restaurant_id) then
+    raise exception 'Non autorisé';
+  end if;
+
+  if v_referral_link_id is null then
+    return;
+  end if;
+
+  select id, credited_at into v_conversion_id, v_already_credited
+  from customer_referral_conversions
+  where reservation_id = p_reservation_id
+  for update;
+
+  if v_conversion_id is null or v_already_credited is not null then
+    return;
+  end if;
+
+  update customer_referral_conversions
+  set credited_at = now()
+  where id = v_conversion_id;
+
+  update customer_referral_links
+  set converted_count = converted_count + 1
+  where id = v_referral_link_id
+  returning converted_count, reward_claimed_at into v_new_count, v_reward_claimed;
+
+  select goal_count into v_goal_count
+  from referral_programs
+  where id = (select referral_program_id from customer_referral_links where id = v_referral_link_id);
+
+  if v_new_count >= v_goal_count and v_reward_claimed is null then
+    update customer_referral_links
+    set reward_claimed_at = now()
+    where id = v_referral_link_id;
+  end if;
+end;
+$$;
+
 commit;

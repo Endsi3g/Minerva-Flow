@@ -140,12 +140,10 @@ export async function getReferralLandingByCode(code: string): Promise<PublicRefe
   };
 }
 
+/** Atomic increment (see migration) — no auth check by design, called anonymously from the public /p/[code] landing page. */
 export async function recordClick(code: string): Promise<void> {
   const admin = createAdminClient();
-  const { data } = await admin.from("customer_referral_links").select("id, clicks").eq("code", code).maybeSingle();
-  if (!data) return;
-  const row = data as { id: string; clicks: number };
-  await admin.from("customer_referral_links").update({ clicks: row.clicks + 1 }).eq("id", row.id);
+  await admin.rpc("increment_referral_link_clicks", { p_code: code });
 }
 
 export type PublicReservationRequestInput = {
@@ -239,55 +237,16 @@ export async function submitPublicReservationRequest(
 
 /**
  * Called when staff confirms/honors a reservation tied to a referral link
- * (app/(app)/reservations/actions.ts). Credits the conversion once, bumps
- * the link's converted_count, and marks the reward unlocked (display only —
- * staff hands it over manually) once the program's goal is reached.
+ * (app/(app)/reservations/actions.ts). The whole operation — mark the
+ * conversion credited, bump the link's converted_count, unlock the reward
+ * once the program's goal is reached (display only — staff hands it over
+ * manually) — runs atomically in a single SQL function (see migration),
+ * row-locked against a double-credit if the reservation's status is
+ * changed twice in quick succession. Uses the session client (not the
+ * admin client) so the function's internal is_restaurant_member() check
+ * evaluates against the real caller.
  */
 export async function creditReferralConversion(reservationId: string): Promise<void> {
-  const admin = createAdminClient();
-
-  const { data: reservationRow } = await admin
-    .from("reservations")
-    .select("referral_link_id")
-    .eq("id", reservationId)
-    .maybeSingle();
-  const referralLinkId = (reservationRow as { referral_link_id: string | null } | null)?.referral_link_id;
-  if (!referralLinkId) return;
-
-  const { data: conversionRow } = await admin
-    .from("customer_referral_conversions")
-    .select("id, credited_at")
-    .eq("reservation_id", reservationId)
-    .maybeSingle();
-  const conversion = conversionRow as { id: string; credited_at: string | null } | null;
-  if (!conversion || conversion.credited_at) return;
-
-  await admin
-    .from("customer_referral_conversions")
-    .update({ credited_at: new Date().toISOString() })
-    .eq("id", conversion.id);
-
-  const { data: linkRow } = await admin
-    .from("customer_referral_links")
-    .select("id, converted_count, reward_claimed_at, referral_program_id")
-    .eq("id", referralLinkId)
-    .maybeSingle();
-  const link = linkRow as
-    | { id: string; converted_count: number; reward_claimed_at: string | null; referral_program_id: string }
-    | null;
-  if (!link) return;
-
-  const { data: programRow } = await admin
-    .from("referral_programs")
-    .select("goal_count")
-    .eq("id", link.referral_program_id)
-    .maybeSingle();
-  const goalCount = (programRow as { goal_count: number } | null)?.goal_count ?? 1;
-
-  const newCount = link.converted_count + 1;
-  const patch: Record<string, unknown> = { converted_count: newCount };
-  if (newCount >= goalCount && !link.reward_claimed_at) {
-    patch.reward_claimed_at = new Date().toISOString();
-  }
-  await admin.from("customer_referral_links").update(patch).eq("id", link.id);
+  const supabase = await createClient();
+  await supabase.rpc("credit_referral_conversion", { p_reservation_id: reservationId });
 }

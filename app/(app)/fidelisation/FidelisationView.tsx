@@ -12,7 +12,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import type { Customer, LoyaltyReward, LoyaltyTransactionType, ReferralProgram } from "@/lib/types";
 import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
-import { Heart, Plus, Trash2, Gift, Search, Link2, MousePointerClick } from "lucide-react";
+import { Heart, Plus, Trash2, Gift, Search, Link2, MousePointerClick, Send } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import {
@@ -26,8 +26,10 @@ import {
   createReferralProgramAction,
   updateReferralProgramActiveAction,
   deleteReferralProgramAction,
+  sendPortalLinkAction,
 } from "./actions";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/notify-error";
 
 const txLabel: Record<LoyaltyTransactionType, string> = {
   visite: "Visite",
@@ -64,7 +66,7 @@ function NewCustomerModal({
         onClose();
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error("L'ajout du client a échoué.");
+        notifyError("L'ajout du client a échoué.");
       }
     } finally {
       setIsSubmitting(false);
@@ -125,14 +127,15 @@ function RewardsCard({
         onChange([...rewards, reward].sort((a, b) => a.pointsCost - b.pointsCost));
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error("L'ajout de la récompense a échoué.");
+        notifyError("L'ajout de la récompense a échoué.");
       }
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(id: string, name: string) {
+    if (!window.confirm(`Retirer la récompense "${name}" ?`)) return;
     const ok = await deleteLoyaltyRewardAction(restaurantId, id);
     if (ok) onChange(rewards.filter((r) => r.id !== id));
   }
@@ -152,7 +155,7 @@ function RewardsCard({
             <div className="flex items-center gap-2">
               <Badge tone="neutral">{r.pointsCost} pts</Badge>
               <button
-                onClick={() => handleDelete(r.id)}
+                onClick={() => handleDelete(r.id, r.name)}
                 aria-label="Retirer la récompense"
                 className="text-mv-ink-faint transition-colors hover:text-mv-red"
               >
@@ -209,7 +212,7 @@ function NewReferralProgramModal({
         onClose();
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error("La création du programme a échoué.");
+        notifyError("La création du programme a échoué.");
       }
     } finally {
       setIsSubmitting(false);
@@ -281,11 +284,18 @@ function ReferralProgramsCard({
     if (ok) {
       onChange(programs.map((p) => (p.id === program.id ? { ...p, active: !p.active } : p)));
     } else {
-      toast.error("La mise à jour a échoué.");
+      notifyError("La mise à jour a échoué.");
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(id: string, name: string) {
+    if (
+      !window.confirm(
+        `Supprimer le programme "${name}" ? Tous les liens de parrainage et l'historique des conversions de ce programme seront définitivement supprimés.`
+      )
+    ) {
+      return;
+    }
     const ok = await deleteReferralProgramAction(restaurantId, id);
     if (ok) onChange(programs.filter((p) => p.id !== id));
   }
@@ -326,7 +336,7 @@ function ReferralProgramsCard({
                     {p.active ? "Désactiver" : "Activer"}
                   </button>
                   <button
-                    onClick={() => handleDelete(p.id)}
+                    onClick={() => handleDelete(p.id, p.name)}
                     aria-label="Supprimer le programme"
                     className="text-mv-ink-faint transition-colors hover:text-mv-red"
                   >
@@ -408,6 +418,7 @@ export function FidelisationView({
   const [selectedId, setSelectedId] = useState<string | null>(initialId);
   const [createOpen, setCreateOpen] = useState(false);
   const [visitOpen, setVisitOpen] = useState(false);
+  const [sendingPortalLinkFor, setSendingPortalLinkFor] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
@@ -442,7 +453,22 @@ export function FidelisationView({
       setVisitOpen(false);
       (e.target as HTMLFormElement).reset();
     } else {
-      toast.error("L'enregistrement de la visite a échoué.");
+      notifyError("L'enregistrement de la visite a échoué.");
+    }
+  }
+
+  async function handleSendPortalLink(customerId: string, email: string) {
+    if (!restaurantId) return;
+    setSendingPortalLinkFor(customerId);
+    try {
+      const result = await sendPortalLinkAction(restaurantId, customerId);
+      if (result.ok) {
+        toast.success(`Lien envoyé à ${email}.`);
+      } else {
+        notifyError(result.error ?? "L'envoi du lien a échoué.");
+      }
+    } finally {
+      setSendingPortalLinkFor(null);
     }
   }
 
@@ -452,19 +478,20 @@ export function FidelisationView({
     if (updated) {
       setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
     } else {
-      toast.error("L'échange a échoué — solde de points insuffisant ?");
+      notifyError("L'échange a échoué — solde de points insuffisant ?");
     }
   }
 
-  function handleDelete(id: string) {
+  function handleDelete(id: string, name: string) {
     if (!restaurantId) return;
+    if (!window.confirm(`Supprimer la fiche client "${name}" ? Son historique de points et de visites sera perdu.`)) return;
     startTransition(async () => {
       const ok = await deleteCustomerAction(restaurantId, id);
       if (ok) {
         setCustomers((prev) => prev.filter((c) => c.id !== id));
         if (selectedId === id) setSelectedId(null);
       } else {
-        toast.error("La suppression a échoué.");
+        notifyError("La suppression a échoué.");
       }
     });
   }
@@ -571,7 +598,7 @@ export function FidelisationView({
                   <Badge tone="green">{selected.loyaltyPoints} points</Badge>
                   {canManage && (
                     <button
-                      onClick={() => handleDelete(selected.id)}
+                      onClick={() => handleDelete(selected.id, selected.name)}
                       disabled={isPending}
                       aria-label="Supprimer le client"
                       className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-red/10 hover:text-mv-red disabled:opacity-50"
@@ -585,7 +612,7 @@ export function FidelisationView({
                   {[selected.email, selected.phone].filter(Boolean).join(" — ") || "Aucune coordonnée"}
                 </p>
 
-                <div className="mt-4 grid grid-cols-3 gap-3 rounded-xl bg-mv-cream-soft p-3">
+                <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-mv-cream-soft p-3 sm:grid-cols-3">
                   <div>
                     <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Visites</p>
                     <p className="font-display text-[16px] font-medium text-mv-ink">{selected.visitCount}</p>
@@ -607,6 +634,19 @@ export function FidelisationView({
                 {canCreate && (
                   <Button size="sm" onClick={() => setVisitOpen(true)} className="mt-4 w-full">
                     <Plus size={14} /> Enregistrer une visite
+                  </Button>
+                )}
+                {canCreate && selected.email && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleSendPortalLink(selected.id, selected.email!)}
+                    disabled={sendingPortalLinkFor === selected.id}
+                    className="mt-2 w-full"
+                    title="Envoie un lien de connexion sans mot de passe directement au courriel du client"
+                  >
+                    <Send size={14} />
+                    {sendingPortalLinkFor === selected.id ? "Envoi…" : "Envoyer le lien du portail"}
                   </Button>
                 )}
               </Card>

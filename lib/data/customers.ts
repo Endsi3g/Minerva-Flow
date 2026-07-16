@@ -163,9 +163,6 @@ export async function logVisit(
   note?: string | null
 ): Promise<Customer | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const { data: restaurant } = await supabase
     .from("restaurants")
@@ -176,41 +173,20 @@ export async function logVisit(
   const rate = (restaurant as { loyalty_points_per_dollar: number } | null)?.loyalty_points_per_dollar ?? 1;
   const pointsEarned = Math.round(amountSpent * rate);
 
-  const { data: customerRow, error: customerError } = await supabase
-    .from("customers")
-    .select("*")
-    .eq("restaurant_id", restaurantId)
-    .eq("id", customerId)
-    .maybeSingle();
-
-  if (customerError || !customerRow) return null;
-  const customer = customerRow as CustomerRow;
-
-  const { error: txError } = await supabase.from("loyalty_transactions").insert({
-    restaurant_id: restaurantId,
-    customer_id: customerId,
-    type: "visite",
-    amount_spent: amountSpent,
-    points_delta: pointsEarned,
-    note: note ?? null,
-    created_by: user?.id ?? null,
+  // Atomic: the RPC inserts the ledger row and updates the customer's
+  // running totals in one transaction — see migration comment for why a
+  // separate insert-then-update from here was a correctness bug, not just
+  // a race (a mid-flight failure could leave one without the other).
+  const { data: rpcRows, error: rpcError } = await supabase.rpc("increment_customer_visit", {
+    p_customer_id: customerId,
+    p_restaurant_id: restaurantId,
+    p_amount_spent: amountSpent,
+    p_points_delta: pointsEarned,
+    p_note: note ?? null,
   });
 
-  if (txError) return null;
-
-  const { data: updated, error: updateError } = await supabase
-    .from("customers")
-    .update({
-      visit_count: customer.visit_count + 1,
-      total_spent: customer.total_spent + amountSpent,
-      loyalty_points: customer.loyalty_points + pointsEarned,
-      last_visit_at: new Date().toISOString(),
-    })
-    .eq("id", customerId)
-    .select("*")
-    .single();
-
-  if (updateError || !updated) return null;
+  if (rpcError || !rpcRows || (rpcRows as CustomerRow[]).length === 0) return null;
+  const customer = (rpcRows as CustomerRow[])[0];
 
   await logActivity({
     restaurantId,
@@ -226,55 +202,46 @@ export async function logVisit(
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false });
 
-  return mapCustomer(updated as CustomerRow, ((txData as LoyaltyTransactionRow[]) ?? []).map(mapTransaction));
+  return mapCustomer(customer, ((txData as LoyaltyTransactionRow[]) ?? []).map(mapTransaction));
 }
 
-/** Redeems a reward for a customer, deducting points and logging the ledger entry. Fails if the balance is insufficient. */
+/**
+ * Redeems a reward for a customer, deducting points and logging the ledger
+ * entry atomically (see increment_customer_visit comment — same pattern).
+ * Returns null if the reward doesn't exist or the balance is insufficient
+ * at the moment of the write (checked in the same SQL statement as the
+ * deduction, so two concurrent redemptions can't both succeed off a stale
+ * balance read).
+ */
 export async function redeemReward(
   restaurantId: string,
   customerId: string,
   rewardId: string
 ): Promise<Customer | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const [{ data: customerRow }, { data: rewardRow }] = await Promise.all([
-    supabase.from("customers").select("*").eq("restaurant_id", restaurantId).eq("id", customerId).maybeSingle(),
-    supabase.from("loyalty_rewards").select("*").eq("restaurant_id", restaurantId).eq("id", rewardId).maybeSingle(),
-  ]);
-
-  const customer = customerRow as CustomerRow | null;
-  const reward = rewardRow as { id: string; name: string; points_cost: number } | null;
-  if (!customer || !reward || customer.loyalty_points < reward.points_cost) return null;
-
-  const { error: txError } = await supabase.from("loyalty_transactions").insert({
-    restaurant_id: restaurantId,
-    customer_id: customerId,
-    type: "echange",
-    points_delta: -reward.points_cost,
-    note: `Échange : ${reward.name}`,
-    created_by: user?.id ?? null,
+  const { data: rpcRows, error: rpcError } = await supabase.rpc("redeem_customer_reward", {
+    p_customer_id: customerId,
+    p_restaurant_id: restaurantId,
+    p_reward_id: rewardId,
   });
 
-  if (txError) return null;
+  if (rpcError || !rpcRows || (rpcRows as CustomerRow[]).length === 0) return null;
+  const customer = (rpcRows as CustomerRow[])[0];
 
-  const { data: updated, error: updateError } = await supabase
-    .from("customers")
-    .update({ loyalty_points: customer.loyalty_points - reward.points_cost })
-    .eq("id", customerId)
-    .select("*")
-    .single();
-
-  if (updateError || !updated) return null;
+  const { data: rewardRow } = await supabase
+    .from("loyalty_rewards")
+    .select("name, points_cost")
+    .eq("id", rewardId)
+    .maybeSingle();
+  const reward = rewardRow as { name: string; points_cost: number } | null;
 
   await logActivity({
     restaurantId,
     actionType: "customer.redeem",
     entityType: "customer",
     entityId: customerId,
-    description: `A échangé "${reward.name}" pour "${customer.name}" (-${reward.points_cost} pts)`,
+    description: `A échangé "${reward?.name ?? "une récompense"}" pour "${customer.name}"${reward ? ` (-${reward.points_cost} pts)` : ""}`,
   });
 
   const { data: txData } = await supabase
@@ -283,7 +250,7 @@ export async function redeemReward(
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false });
 
-  return mapCustomer(updated as CustomerRow, ((txData as LoyaltyTransactionRow[]) ?? []).map(mapTransaction));
+  return mapCustomer(customer, ((txData as LoyaltyTransactionRow[]) ?? []).map(mapTransaction));
 }
 
 type LoyaltyRewardRow = {

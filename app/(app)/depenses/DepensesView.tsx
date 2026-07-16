@@ -13,7 +13,7 @@ import { createTransactionAction } from "@/app/(app)/finance/actions";
 import { ReceiptText, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { toast } from "sonner";
+import { notifyError } from "@/lib/notify-error";
 
 function NewExpenseModal({
   expenseCategories,
@@ -46,7 +46,7 @@ function NewExpenseModal({
         onClose();
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error("L'ajout de la dépense a échoué.");
+        notifyError("L'ajout de la dépense a échoué.");
       }
     } finally {
       setIsSubmitting(false);

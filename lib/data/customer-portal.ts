@@ -7,23 +7,26 @@ import { mapLink, type CustomerReferralLinkRow } from "@/lib/data/customer-refer
 import type { Customer, CustomerReferralLink, LoyaltyTransaction, ReferralProgram } from "@/lib/types";
 
 /**
- * Finds the customer record for the currently authenticated portal user —
- * uses the session client (not admin) so the customers_select_own RLS
- * policy (auth.uid() = user_id) is the actual source of truth for "is this
- * really their own record", not just an application-level assumption.
+ * Every customer record for the currently authenticated portal user — uses
+ * the session client (not admin) so the customers_select_own RLS policy
+ * (auth.uid() = user_id) is the actual source of truth for "is this really
+ * their own record", not just an application-level assumption. Returns
+ * every restaurant relationship rather than picking one: the same email
+ * can be a loyalty customer at more than one participating restaurant, and
+ * silently showing an arbitrary one would leak the wrong restaurant's data
+ * into view. Callers decide what to do with more than one (see
+ * app/portal/page.tsx for the chooser).
  */
-export async function getCustomerForUser(userId: string): Promise<Customer | null> {
+export async function getCustomersForUser(userId: string): Promise<Customer[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("customers")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: false });
 
-  if (error || !data) return null;
-  return mapCustomer(data as CustomerRow, []);
+  if (error || !data) return [];
+  return (data as CustomerRow[]).map((row) => mapCustomer(row, []));
 }
 
 export type PortalReferralProgress = {
