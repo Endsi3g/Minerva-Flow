@@ -76,7 +76,7 @@ export default function SupportPage() {
         description="Signalez un problème, proposez une amélioration ou posez-nous une question — on lit tout."
       />
 
-      <div className="max-w-2xl space-y-6">
+      <div className="mx-auto max-w-2xl w-full space-y-6">
         <Card>
           {sent ? (
             <div className="flex flex-col items-center py-6 text-center">

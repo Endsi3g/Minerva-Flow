@@ -207,7 +207,7 @@ export function ProfileView({
       />
 
       {/* Ordre voulu : profil → historique d'activité → capacités → zone sensible */}
-      <div className="max-w-2xl space-y-6">
+      <div className="mx-auto max-w-2xl w-full space-y-6">
         <Card>
           <div className="flex flex-col items-center gap-3 text-center">
             <AvatarUploader profile={profile} />

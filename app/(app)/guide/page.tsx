@@ -262,7 +262,7 @@ export default function GuidePage() {
         }
       />
 
-      <div className="max-w-3xl space-y-3">
+      <div className="mx-auto max-w-3xl w-full space-y-3">
         {sections.map((s) => (
           <Card key={s.title} padded={false}>
             <details className="group open:pb-5" open={s === sections[0]}>

@@ -66,7 +66,7 @@ export default function BillingPage() {
         description="Votre abonnement Minerva Flow — un tarif mensuel fixe par établissement."
       />
 
-      <div className="max-w-xl">
+      <div className="mx-auto max-w-xl w-full">
         <Card>
           <CardHeader eyebrow="Abonnement" title="Plan Minerva Flow" />
 

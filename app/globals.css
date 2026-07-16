@@ -166,21 +166,13 @@ body {
   color: var(--mv-ink);
 }
 
-/* thin, warm scrollbars for the cockpit density */
+/* scrollable everywhere, scrollbar visible nowhere */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--mv-ink-mute) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-*::-webkit-scrollbar-thumb {
-  background: var(--mv-ink-mute);
-  border-radius: 8px;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
+  display: none;
 }
 
 @keyframes mv-fade-up {
