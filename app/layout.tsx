@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerManager } from "@/components/pwa/ServiceWorkerManager";
+import { Analytics } from '@vercel/analytics/next';
 
 const playfairDisplayHeading = Playfair_Display({ subsets: ['latin'], variable: '--font-heading' });
 
@@ -67,6 +68,7 @@ export default function RootLayout({
         <TooltipProvider delay={150}>{children}</TooltipProvider>
         <Toaster />
         <ServiceWorkerManager />
+        <Analytics />
       </body>
     </html>
   );
