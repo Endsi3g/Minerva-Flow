@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldContent, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { GOOGLE_FEATURE_LABELS, type GoogleFeature } from "@/lib/google/config";
 import { useState } from "react";
-import { Gmail, GoogleSheets, GoogleDrive, GoogleCalendar, GoogleAnalytics } from "@thesvg/react";
+import { Gmail, GoogleSheets, GoogleDrive, GoogleCalendar, GoogleAnalytics } from "@/components/ui/BrandIcons";
 
 const FEATURES: GoogleFeature[] = ["gmail", "sheets", "drive", "calendar", "analytics"];
 

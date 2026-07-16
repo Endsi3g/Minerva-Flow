@@ -166,6 +166,8 @@ export function ProfileView({
   activity: ActivityLogEntry[];
 }) {
   const [activity, setActivity] = useState<ActivityLogEntry[]>(initialActivity);
+  const [showAllActivities, setShowAllActivities] = useState(false);
+
   // Adjust state during render (not in an effect) when the server gives us
   // a fresh activity list — e.g. after a restaurant switch re-runs the
   // page's server component while this client component stays mounted.
@@ -198,6 +200,8 @@ export function ProfileView({
     );
   }
 
+  const displayedActivity = showAllActivities ? activity : activity.slice(0, 5);
+
   return (
     <div>
       <PageHeader
@@ -206,8 +210,7 @@ export function ProfileView({
         description="Votre photo, votre nom et votre activité récente."
       />
 
-      {/* Ordre voulu : profil → historique d'activité → capacités → zone sensible */}
-      <div className="mx-auto max-w-2xl w-full space-y-6">
+      <div className="w-full space-y-6">
         <Card>
           <div className="flex flex-col items-center gap-3 text-center">
             <AvatarUploader profile={profile} />
@@ -231,22 +234,35 @@ export function ProfileView({
             </p>
           ) : (
             <div>
-              {activity.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="flex items-start gap-3 border-b border-mv-border-soft py-3 last:border-0"
-                >
-                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mv-cream-soft text-mv-ink-soft">
-                    <History size={13} />
+              <div className="divide-y divide-mv-border-soft">
+                {displayedActivity.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-start gap-3 py-3 last:pb-0 first:pt-0"
+                  >
+                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mv-cream-soft text-mv-ink-soft">
+                      <History size={13} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] text-mv-ink">{entry.description}</p>
+                      <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">
+                        {formatRelativeTime(entry.createdAt)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] text-mv-ink">{entry.description}</p>
-                    <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">
-                      {formatRelativeTime(entry.createdAt)}
-                    </p>
-                  </div>
+                ))}
+              </div>
+              {activity.length > 5 && (
+                <div className="mt-3 border-t border-mv-border-soft pt-3 text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllActivities(!showAllActivities)}
+                  >
+                    {showAllActivities ? "Réduire l'historique" : `Afficher tout (${activity.length})`}
+                  </Button>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </Card>

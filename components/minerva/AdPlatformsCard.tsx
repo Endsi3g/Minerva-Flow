@@ -6,7 +6,7 @@ import { useApp } from "@/lib/app-context";
 import { getAdPlatformStatusAction } from "@/app/(app)/settings/ad-platforms-actions";
 import type { AdPlatformConnection, AdProvider } from "@/lib/types";
 import { useEffect, useState, type ComponentType } from "react";
-import { Meta, GoogleAds } from "@thesvg/react";
+import { Meta, GoogleAds } from "@/components/ui/BrandIcons";
 
 type BrandIcon = ComponentType<{ width?: number; height?: number; className?: string }>;
 

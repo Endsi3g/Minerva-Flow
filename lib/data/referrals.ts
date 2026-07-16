@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyRestaurantOwners } from "./notifications";
 import type { Referral, ReferralCode, ReferralStatus } from "@/lib/types";
 
 type ReferralCodeRow = {
@@ -151,6 +152,19 @@ export async function activateReferral(
     reward_type: "free_months",
     amount: 1,
   });
+
+  // Notify the referrer's owners that someone joined their referral!
+  try {
+    await notifyRestaurantOwners({
+      restaurantId: codeRow.restaurant_id,
+      type: "referral.joined",
+      title: "Parrainage réussi ! 🎉",
+      body: `${referredEmail} a rejoint Minerva Flow grâce à votre parrainage. 1 mois gratuit a été appliqué.`,
+      link: "/overview",
+    });
+  } catch (err) {
+    console.error("Failed to notify owners of referral:", err);
+  }
 }
 
 export type RewardSummary = {

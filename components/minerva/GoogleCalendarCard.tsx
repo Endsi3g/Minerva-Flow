@@ -9,7 +9,7 @@ import {
 } from "@/app/(app)/profil/actions";
 import type { UpcomingCalendarEvent } from "@/lib/google/member-calendar";
 import { useEffect, useState } from "react";
-import { GoogleCalendar } from "@thesvg/react";
+import { GoogleCalendar } from "@/components/ui/BrandIcons";
 
 function formatEventTime(event: UpcomingCalendarEvent) {
   if (!event.start) return "";

@@ -189,18 +189,32 @@ body {
   animation: mv-fade-up 0.35s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
 
-@keyframes mv-pulse {
-  0%,
+@keyframes mv-shimmer {
   100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.45;
+    transform: translateX(100%);
   }
 }
 .mv-skeleton {
-  animation: mv-pulse 1.6s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
   background: var(--mv-border-soft);
+}
+.mv-skeleton::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 20%,
+    rgba(255, 255, 255, 0.6) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: mv-shimmer 1.8s infinite;
+  content: "";
 }
 
 @keyframes mv-leaf-breathe {
@@ -267,6 +281,7 @@ body {
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
   .maplibregl-popup-content {
     @apply bg-transparent! shadow-none! p-0! rounded-none!;

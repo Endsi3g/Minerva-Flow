@@ -8,7 +8,7 @@ import type { PosConnection, PosProvider } from "@/lib/data/pos-connections";
 import { formatDate } from "@/lib/utils";
 import { RefreshCw, Store } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
-import { Square } from "@thesvg/react";
+import { Square } from "@/components/ui/BrandIcons";
 
 const providerLabel: Record<PosProvider, string> = {
   square: "Square",

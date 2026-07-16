@@ -166,8 +166,34 @@ function UserMenu() {
   );
 }
 
+type NotificationRow = {
+  id: string;
+  restaurant_id: string;
+  user_id: string | null;
+  type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read: boolean;
+  created_at: string;
+};
+
+function mapNotificationRow(row: NotificationRow): Notification {
+  return {
+    id: row.id,
+    restaurantId: row.restaurant_id,
+    userId: row.user_id,
+    type: row.type,
+    title: row.title,
+    body: row.body,
+    link: row.link,
+    read: row.read,
+    createdAt: row.created_at,
+  };
+}
+
 function NotificationBell() {
-  const { restaurantId } = useApp();
+  const { restaurantId, authUser } = useApp();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -215,6 +241,50 @@ function NotificationBell() {
       supabase.removeChannel(channel);
     };
   }, [restaurantId]);
+
+  // Live notifications — new rows inserted into `notifications` for this restaurant
+  // and this user show up in real-time and trigger browser notifications.
+  useEffect(() => {
+    if (!restaurantId || !authUser) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`topbar-notifications-${restaurantId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        (payload) => {
+          const row = payload.new as NotificationRow;
+          if (row.user_id === authUser.id) {
+            const mapped = mapNotificationRow(row);
+            setNotifications((prev) => [mapped, ...prev]);
+
+            // Request permission / display desktop notification
+            if (Notification.permission === "granted") {
+              const n = new Notification(mapped.title, {
+                body: mapped.body || undefined,
+                icon: "/icon-192.png",
+              });
+              n.onclick = () => {
+                window.focus();
+                if (mapped.link) router.push(mapped.link);
+                n.close();
+              };
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, authUser, router]);
 
   async function handleOpenChange(next: boolean) {
     setOpen(next);

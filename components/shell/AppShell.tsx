@@ -45,8 +45,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
         <main
           className={cn(
-            "flex-1 overflow-y-auto pb-[calc(4rem+24px+env(safe-area-inset-bottom))] md:pb-0",
-            isFullBleed ? "flex flex-col" : "px-6 py-6 lg:px-8 lg:py-7"
+            "flex-1 overflow-y-auto",
+            isFullBleed
+              ? "flex flex-col pb-[calc(4rem+24px+env(safe-area-inset-bottom))] md:pb-0"
+              : "px-6 pt-6 pb-[calc(4rem+24px+env(safe-area-inset-bottom))] md:pb-6 lg:px-8 lg:pt-7 lg:pb-7"
           )}
         >
           {isFullBleed ? (

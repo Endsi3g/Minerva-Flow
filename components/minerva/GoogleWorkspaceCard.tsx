@@ -15,7 +15,7 @@ import {
 import type { GoogleConnection } from "@/lib/data/google-connections";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Gmail, GoogleSheets, GoogleDrive, GoogleCalendar, GoogleAnalytics } from "@thesvg/react";
+import { Gmail, GoogleSheets, GoogleDrive, GoogleCalendar, GoogleAnalytics } from "@/components/ui/BrandIcons";
 
 const FEATURES: GoogleFeature[] = ["gmail", "sheets", "drive", "calendar", "analytics"];
 

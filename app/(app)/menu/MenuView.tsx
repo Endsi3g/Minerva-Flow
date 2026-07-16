@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select } from "@/components/minerva/FormField";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { HelperTooltip } from "@/components/ui/HelperTooltip";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
@@ -394,9 +395,7 @@ export function MenuView({
               <Card key={q}>
                 <div className="mb-3 flex items-center gap-1.5">
                   <Badge tone={quadrantTone[q]}>{quadrantLabel[q]}</Badge>
-                  <span title={quadrantDescription[q]}>
-                    <Info size={13} className="text-mv-ink-faint" />
-                  </span>
+                  <HelperTooltip content={quadrantDescription[q]} />
                 </div>
                 {byQuadrant.get(q)!.length === 0 ? (
                   <p className="text-[12px] text-mv-ink-faint">Aucun plat.</p>

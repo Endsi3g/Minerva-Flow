@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerManager } from "@/components/pwa/ServiceWorkerManager";
-import { Analytics } from '@vercel/analytics/next';
+import { Analytics } from '@vercel/analytics/react';
 
 const playfairDisplayHeading = Playfair_Display({ subsets: ['latin'], variable: '--font-heading' });
 

@@ -64,14 +64,14 @@ const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 const mainNavItems: NavItem[] = [
   { href: "/overview", label: "Aperçu", icon: Home, roles: allRoles },
   { href: "/assistant", label: "Flow AI", icon: MessageSquare, roles: allRoles },
-  { href: "/programs", label: "Programmes", icon: GitCommit, roles: allRoles },
-  { href: "/days", label: "Journées", icon: BarChart3, roles: allRoles },
   { href: "/finance", label: "Finance", icon: Wallet, roles: ["owner", "manager"] },
-  { href: "/fidelisation", label: "Fidélisation", icon: Heart, roles: allRoles },
+  { href: "/days", label: "Journées", icon: BarChart3, roles: allRoles },
+  { href: "/reports", label: "Rapports", icon: FileText, roles: allRoles },
   { href: "/menu", label: "Menu", icon: UtensilsCrossed, roles: allRoles },
   { href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
-  { href: "/reports", label: "Rapports", icon: FileText, roles: allRoles },
+  { href: "/fidelisation", label: "Fidélisation", icon: Heart, roles: allRoles },
   { href: "/maps", label: "Cartes", icon: MapIcon, roles: allRoles },
+  { href: "/programs", label: "Programmes", icon: GitCommit, roles: allRoles },
 ];
 
 // Favorites section
@@ -304,6 +304,25 @@ export function AppSidebar() {
               ))}
             </div>
 
+            {/* Opérations Section */}
+            {visibleOperationsItems.length > 0 && (
+              <CollapsibleSection
+                label="Opérations"
+                defaultOpen={visibleOperationsItems.some((item) => pathname.startsWith(item.href))}
+              >
+                {visibleOperationsItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                  />
+                ))}
+              </CollapsibleSection>
+            )}
+
             {/* Teams / Restaurants Section */}
             <div className="space-y-1">
               <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
@@ -346,25 +365,6 @@ export function AppSidebar() {
                 />
               </div>
             </div>
-
-            {/* Opérations Section */}
-            {visibleOperationsItems.length > 0 && (
-              <CollapsibleSection
-                label="Opérations"
-                defaultOpen={visibleOperationsItems.some((item) => pathname.startsWith(item.href))}
-              >
-                {visibleOperationsItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    href={item.href}
-                    label={item.label}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                  />
-                ))}
-              </CollapsibleSection>
-            )}
 
             {/* Favorites Section */}
             {visibleFavorites.length > 0 && (

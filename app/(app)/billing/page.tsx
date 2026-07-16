@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { createCheckoutSessionAction, createBillingPortalSessionAction, getBillingStatusAction } from "./actions";
 import { formatDate } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { Stripe } from "@thesvg/react";
+import { Stripe } from "@/components/ui/BrandIcons";
 import { toast } from "sonner";
 
 const statusLabel: Record<string, string> = {
