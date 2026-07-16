@@ -192,7 +192,7 @@ function TeamSwitcher() {
         </span>
         <ChevronDown size={14} className="shrink-0 text-mv-ink-faint" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent align="start" className="w-64 max-h-80 overflow-y-auto">
         {restaurants.map((r) => (
           <DropdownMenuItem
             key={r.id}

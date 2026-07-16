@@ -21,6 +21,8 @@ import {
   BookOpen,
   LifeBuoy,
   History,
+  Wallet,
+  TrendingDown,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -47,16 +49,18 @@ type MoreItem = TabItem & { roles: Role[] };
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
 const MORE_ITEMS: MoreItem[] = [
-  { href: "/programs", label: "Programmes", icon: GitCommit, roles: ["owner", "consultant"] },
-  { href: "/days", label: "Journées", icon: BarChart3, roles: ["owner", "staff"] },
+  { href: "/programs", label: "Programmes", icon: GitCommit, roles: allRoles },
+  { href: "/days", label: "Journées", icon: BarChart3, roles: allRoles },
   { href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
-  { href: "/maps", label: "Cartes", icon: MapIcon, roles: ["owner", "staff", "consultant"] },
+  { href: "/maps", label: "Cartes", icon: MapIcon, roles: allRoles },
+  { href: "/finance", label: "Finance", icon: Wallet, roles: ["owner", "manager"] },
+  { href: "/depenses", label: "Dépenses", icon: TrendingDown, roles: ["owner", "manager"] },
   { href: "/reservations", label: "Réservations", icon: CalendarClock, roles: allRoles },
   { href: "/horaire", label: "Horaire", icon: CalendarDays, roles: allRoles },
   { href: "/fournisseurs", label: "Fournisseurs", icon: Truck, roles: ["owner", "manager"] },
   { href: "/collaborateurs", label: "Collaborateurs", icon: Users, roles: ["owner", "manager"] },
   { href: "/profil", label: "Profil", icon: User, roles: allRoles },
-  { href: "/settings", label: "Paramètres", icon: Settings, roles: ["owner"] },
+  { href: "/settings", label: "Paramètres", icon: Settings, roles: ["owner", "manager"] },
   { href: "/billing", label: "Facturation", icon: CreditCard, roles: ["owner"] },
   { href: "/guide", label: "Guide", icon: BookOpen, roles: allRoles },
   { href: "/support", label: "Aide & Support", icon: LifeBuoy, roles: allRoles },

@@ -6,7 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/Badge";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { ChevronDown, LogOut, User, Bell } from "lucide-react";
+import { ChevronDown, LogOut, User, Bell, Gift, Settings } from "lucide-react";
+import { ReferralModal } from "@/components/chat/ReferralModal";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -74,9 +75,10 @@ function useClickOutside(onOutside: () => void) {
 
 
 function UserMenu() {
-  const { role, authUser } = useApp();
+  const { role, authUser, restaurantId } = useApp();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [referralOpen, setReferralOpen] = useState(false);
   const ref = useClickOutside(() => setOpen(false));
   const name = authUser?.fullName || authUser?.email || "";
   const email = authUser?.email || "quebecsaas@gmail.com";
@@ -121,8 +123,32 @@ function UserMenu() {
               }}
               className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft"
             >
-              <User size={15} /> Profil
+              <User size={15} /> Gestion de compte
             </button>
+            {restaurantId && (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  setReferralOpen(true);
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft"
+              >
+                <Gift size={15} /> Parrainage
+              </button>
+            )}
+            {(role === "owner" || role === "manager") && (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  router.push("/settings");
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft"
+              >
+                <Settings size={15} /> Paramètres
+              </button>
+            )}
+          </div>
+          <div className="mt-1 border-t border-mv-border-soft pt-1.5">
             <button
               onClick={handleLogout}
               className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-red hover:bg-mv-red-bg"
@@ -131,6 +157,10 @@ function UserMenu() {
             </button>
           </div>
         </div>
+      )}
+
+      {restaurantId && (
+        <ReferralModal open={referralOpen} onClose={() => setReferralOpen(false)} restaurantId={restaurantId} />
       )}
     </div>
   );
