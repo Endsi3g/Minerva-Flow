@@ -22,6 +22,9 @@ const crumbLabels: Record<string, string> = {
   settings: "Paramètres",
   reports: "Métriques",
   assistant: "Assistant",
+  fidelisation: "Fidélisation",
+  menu: "Menu",
+  inventaire: "Inventaire",
 };
 
 export function AppBreadcrumb() {

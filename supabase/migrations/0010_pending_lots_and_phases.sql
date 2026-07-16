@@ -925,4 +925,194 @@ alter table suppliers add column if not exists address text;
 alter table suppliers add column if not exists lng double precision;
 alter table suppliers add column if not exists lat double precision;
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Fidélisation client (fiches client + registre de points de fidélité)
+-- ═══════════════════════════════════════════════════════════════════════
+
+alter table restaurants add column if not exists loyalty_points_per_dollar numeric(6,2) not null default 1;
+
+create table if not exists customers (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  name text not null,
+  email text,
+  phone text,
+  notes text,
+  visit_count int not null default 0,
+  total_spent numeric(12,2) not null default 0,
+  loyalty_points int not null default 0,
+  last_visit_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_customers_restaurant on customers (restaurant_id, name);
+
+alter table customers enable row level security;
+
+drop policy if exists "customers_select" on customers;
+create policy "customers_select" on customers for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "customers_write" on customers;
+create policy "customers_write" on customers for insert
+  with check (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
+drop policy if exists "customers_update" on customers;
+create policy "customers_update" on customers for update
+  using (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
+drop policy if exists "customers_delete" on customers;
+create policy "customers_delete" on customers for delete
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
+create table if not exists loyalty_rewards (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  name text not null,
+  points_cost int not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_loyalty_rewards_restaurant on loyalty_rewards (restaurant_id);
+
+alter table loyalty_rewards enable row level security;
+
+drop policy if exists "loyalty_rewards_select" on loyalty_rewards;
+create policy "loyalty_rewards_select" on loyalty_rewards for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "loyalty_rewards_manage" on loyalty_rewards;
+create policy "loyalty_rewards_manage" on loyalty_rewards for all
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]))
+  with check (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
+do $$ begin
+  create type loyalty_transaction_type as enum ('visite', 'ajustement', 'echange');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists loyalty_transactions (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  customer_id uuid not null references customers (id) on delete cascade,
+  type loyalty_transaction_type not null,
+  amount_spent numeric(12,2),
+  points_delta int not null default 0,
+  note text,
+  created_by uuid references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_loyalty_transactions_customer on loyalty_transactions (customer_id, created_at desc);
+
+alter table loyalty_transactions enable row level security;
+
+drop policy if exists "loyalty_transactions_select" on loyalty_transactions;
+create policy "loyalty_transactions_select" on loyalty_transactions for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "loyalty_transactions_insert" on loyalty_transactions;
+create policy "loyalty_transactions_insert" on loyalty_transactions for insert
+  with check (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- Ingénierie de menu (rentabilité par plat, classification en quadrant)
+-- ═══════════════════════════════════════════════════════════════════════
+
+create table if not exists menu_items (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  name text not null,
+  category text,
+  price numeric(10,2) not null default 0,
+  food_cost numeric(10,2) not null default 0,
+  units_sold numeric not null default 0,
+  active boolean not null default true,
+  description text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_menu_items_restaurant on menu_items (restaurant_id, category);
+
+alter table menu_items enable row level security;
+
+drop policy if exists "menu_items_select" on menu_items;
+create policy "menu_items_select" on menu_items for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "menu_items_write" on menu_items;
+create policy "menu_items_write" on menu_items for insert
+  with check (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
+drop policy if exists "menu_items_update" on menu_items;
+create policy "menu_items_update" on menu_items for update
+  using (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
+drop policy if exists "menu_items_delete" on menu_items;
+create policy "menu_items_delete" on menu_items for delete
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- Inventaire et gaspillage (quantité en main, seuils de réapprovisionnement,
+-- mouvements — le gaspillage se répercute aussi dans financial_transactions
+-- via lib/data/finance.ts pour apparaître dans Dépenses/Rapports sans
+-- dupliquer l'agrégation par catégorie déjà présente dans lib/reports.ts)
+-- ═══════════════════════════════════════════════════════════════════════
+
+do $$ begin
+  create type inventory_movement_type as enum ('reception', 'utilisation', 'gaspillage', 'ajustement');
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists inventory_items (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid not null references restaurants (id) on delete cascade,
+  name text not null,
+  category text,
+  unit text not null default 'unité',
+  quantity_on_hand numeric not null default 0,
+  par_level numeric,
+  unit_cost numeric(10,2) not null default 0,
+  supplier_id uuid references suppliers (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_inventory_items_restaurant on inventory_items (restaurant_id, category);
+
+alter table inventory_items enable row level security;
+
+drop policy if exists "inventory_items_select" on inventory_items;
+create policy "inventory_items_select" on inventory_items for select
+  using (is_restaurant_member(restaurant_id));
+drop policy if exists "inventory_items_write" on inventory_items;
+create policy "inventory_items_write" on inventory_items for insert
+  with check (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
+drop policy if exists "inventory_items_update" on inventory_items;
+create policy "inventory_items_update" on inventory_items for update
+  using (is_restaurant_member(restaurant_id, array['owner','manager','staff']::member_role[]));
+drop policy if exists "inventory_items_delete" on inventory_items;
+create policy "inventory_items_delete" on inventory_items for delete
+  using (is_restaurant_member(restaurant_id, array['owner','manager']::member_role[]));
+
+create table if not exists inventory_movements (
+  id uuid primary key default gen_random_uuid(),
+  inventory_item_id uuid not null references inventory_items (id) on delete cascade,
+  type inventory_movement_type not null,
+  quantity numeric not null,
+  reason text,
+  created_by uuid references auth.users (id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_inventory_movements_item on inventory_movements (inventory_item_id, created_at desc);
+
+alter table inventory_movements enable row level security;
+
+drop policy if exists "inventory_movements_select" on inventory_movements;
+create policy "inventory_movements_select" on inventory_movements for select
+  using (exists (
+    select 1 from inventory_items ii
+    where ii.id = inventory_movements.inventory_item_id and is_restaurant_member(ii.restaurant_id)
+  ));
+drop policy if exists "inventory_movements_insert" on inventory_movements;
+create policy "inventory_movements_insert" on inventory_movements for insert
+  with check (exists (
+    select 1 from inventory_items ii
+    where ii.id = inventory_movements.inventory_item_id
+      and is_restaurant_member(ii.restaurant_id, array['owner','manager','staff']::member_role[])
+  ));
+
 commit;

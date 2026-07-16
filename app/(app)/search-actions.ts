@@ -4,10 +4,21 @@ import { getCampaigns } from "@/lib/data/campaigns";
 import { getEmployees } from "@/lib/data/employees";
 import { getPrograms } from "@/lib/data/programs";
 import { getMySupportRequests } from "@/lib/data/support";
+import { getCustomers } from "@/lib/data/customers";
+import { getMenuItems } from "@/lib/data/menu";
+import { getInventoryItems } from "@/lib/data/inventory";
 
 export type SearchResult = {
   id: string;
-  type: "campaign" | "employee" | "program" | "support" | "navigation";
+  type:
+    | "campaign"
+    | "employee"
+    | "program"
+    | "support"
+    | "navigation"
+    | "customer"
+    | "menu_item"
+    | "inventory_item";
   title: string;
   subtitle?: string;
   href: string;
@@ -34,6 +45,9 @@ export async function searchEverythingAction(
     { title: "Réservations", subtitle: "Réservations et assignation des tables", href: "/reservations" },
     { title: "Horaire", subtitle: "Planification des quarts de l'équipe", href: "/horaire" },
     { title: "Fournisseurs", subtitle: "Commandes et répertoire de fournisseurs", href: "/fournisseurs" },
+    { title: "Fidélisation", subtitle: "Fiches clients, visites et points de fidélité", href: "/fidelisation" },
+    { title: "Menu", subtitle: "Ingénierie de menu et rentabilité par plat", href: "/menu" },
+    { title: "Inventaire", subtitle: "Quantités en main et suivi du gaspillage", href: "/inventaire" },
     { title: "Finance", subtitle: "Analyse des transactions et revenus", href: "/finance" },
     { title: "Dépenses", subtitle: "Toutes vos sorties d'argent, en détail", href: "/depenses" },
     { title: "Données", subtitle: "Statistiques clés de l'application", href: "/data" },
@@ -61,11 +75,14 @@ export async function searchEverythingAction(
 
   // 2. Search Database Entities (only if restaurantId is provided)
   if (restaurantId) {
-    const [campaigns, employees, programs, supportRequests] = await Promise.all([
+    const [campaigns, employees, programs, supportRequests, customers, menuItems, inventoryItems] = await Promise.all([
       getCampaigns(restaurantId).catch(() => []),
       getEmployees(restaurantId).catch(() => []),
       getPrograms(restaurantId).catch(() => []),
       getMySupportRequests().catch(() => []),
+      getCustomers(restaurantId).catch(() => []),
+      getMenuItems(restaurantId).catch(() => []),
+      getInventoryItems(restaurantId).catch(() => []),
     ]);
 
     // Campaigns
@@ -112,6 +129,54 @@ export async function searchEverythingAction(
           title: p.name,
           subtitle: `Programme • ${p.status}`,
           href: `/programs`,
+        });
+      }
+    }
+
+    // Customers
+    for (const c of customers) {
+      if (
+        c.name.toLowerCase().includes(normalizedQuery) ||
+        (c.email && c.email.toLowerCase().includes(normalizedQuery))
+      ) {
+        results.push({
+          id: c.id,
+          type: "customer",
+          title: c.name,
+          subtitle: `Client • ${c.loyaltyPoints} pts (${c.visitCount} visite${c.visitCount > 1 ? "s" : ""})`,
+          href: `/fidelisation?id=${c.id}`,
+        });
+      }
+    }
+
+    // Menu items
+    for (const m of menuItems) {
+      if (
+        m.name.toLowerCase().includes(normalizedQuery) ||
+        (m.category && m.category.toLowerCase().includes(normalizedQuery))
+      ) {
+        results.push({
+          id: m.id,
+          type: "menu_item",
+          title: m.name,
+          subtitle: `Menu${m.category ? ` • ${m.category}` : ""}`,
+          href: `/menu`,
+        });
+      }
+    }
+
+    // Inventory items
+    for (const i of inventoryItems) {
+      if (
+        i.name.toLowerCase().includes(normalizedQuery) ||
+        (i.category && i.category.toLowerCase().includes(normalizedQuery))
+      ) {
+        results.push({
+          id: i.id,
+          type: "inventory_item",
+          title: i.name,
+          subtitle: `Inventaire • ${i.quantityOnHand} ${i.unit}`,
+          href: `/inventaire`,
         });
       }
     }

@@ -1,0 +1,48 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import {
+  createMenuItem,
+  updateMenuItem,
+  deleteMenuItem,
+  recordSale,
+  type MenuItemInput,
+} from "@/lib/data/menu";
+import type { MenuItem } from "@/lib/types";
+
+export async function createMenuItemAction(
+  restaurantId: string,
+  input: MenuItemInput
+): Promise<MenuItem | null> {
+  if (!input.name.trim()) return null;
+  const item = await createMenuItem(restaurantId, input);
+  if (item) revalidatePath("/menu");
+  return item;
+}
+
+export async function updateMenuItemAction(
+  restaurantId: string,
+  id: string,
+  patch: Partial<MenuItemInput>
+): Promise<MenuItem | null> {
+  const item = await updateMenuItem(restaurantId, id, patch);
+  if (item) revalidatePath("/menu");
+  return item;
+}
+
+export async function deleteMenuItemAction(restaurantId: string, id: string): Promise<boolean> {
+  const ok = await deleteMenuItem(restaurantId, id);
+  if (ok) revalidatePath("/menu");
+  return ok;
+}
+
+export async function recordSaleAction(
+  restaurantId: string,
+  id: string,
+  quantity: number
+): Promise<MenuItem | null> {
+  if (!Number.isFinite(quantity) || quantity <= 0) return null;
+  const item = await recordSale(restaurantId, id, quantity);
+  if (item) revalidatePath("/menu");
+  return item;
+}

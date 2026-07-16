@@ -67,6 +67,7 @@ export async function getCompanyRestaurants(companyId: string): Promise<Restaura
     lng: row.lng,
     lat: row.lat,
     companyId: row.company_id,
+    loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
   }));
 }
 

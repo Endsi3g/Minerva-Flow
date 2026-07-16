@@ -11,7 +11,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { searchEverythingAction, type SearchResult } from "@/app/(app)/search-actions";
-import { Search, Navigation, Megaphone, Users, FolderKanban, LifeBuoy } from "lucide-react";
+import { Search, Navigation, Megaphone, Users, FolderKanban, LifeBuoy, Heart, UtensilsCrossed, PackageSearch } from "lucide-react";
 
 interface SearchDialogProps {
   open: boolean;
@@ -68,6 +68,9 @@ export function SearchDialog({ open, onOpenChange, restaurantId }: SearchDialogP
     employee: "Employés",
     program: "Programmes",
     support: "Tickets de Support",
+    customer: "Clients",
+    menu_item: "Menu",
+    inventory_item: "Inventaire",
   };
 
   const typeIcons: Record<SearchResult["type"], any> = {
@@ -76,6 +79,9 @@ export function SearchDialog({ open, onOpenChange, restaurantId }: SearchDialogP
     employee: Users,
     program: FolderKanban,
     support: LifeBuoy,
+    customer: Heart,
+    menu_item: UtensilsCrossed,
+    inventory_item: PackageSearch,
   };
 
   return (

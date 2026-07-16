@@ -18,6 +18,7 @@ type RestaurantRow = {
   lng: number | null;
   lat: number | null;
   company_id: string | null;
+  loyalty_points_per_dollar: number;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -36,6 +37,7 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     lng: row.lng,
     lat: row.lat,
     companyId: row.company_id,
+    loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
   };
 }
 
@@ -83,6 +85,7 @@ export type RestaurantInput = {
   province?: string;
   timezone?: string;
   color?: string;
+  loyaltyPointsPerDollar?: number;
 };
 
 /**
@@ -151,6 +154,7 @@ export async function updateRestaurant(
   if (patch.province !== undefined) dbPatch.province = patch.province;
   if (patch.timezone !== undefined) dbPatch.timezone = patch.timezone;
   if (patch.color !== undefined) dbPatch.color = patch.color;
+  if (patch.loyaltyPointsPerDollar !== undefined) dbPatch.loyalty_points_per_dollar = patch.loyaltyPointsPerDollar;
 
   // Re-geocode whenever the address changed — this is the only place a
   // restaurant's map pin (lng/lat) gets populated.

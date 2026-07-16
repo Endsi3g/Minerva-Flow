@@ -37,6 +37,9 @@ import {
   Wallet,
   TrendingDown,
   Database,
+  Heart,
+  UtensilsCrossed,
+  PackageSearch,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -63,6 +66,8 @@ const mainNavItems: NavItem[] = [
   { href: "/assistant", label: "Flow AI", icon: MessageSquare, roles: allRoles },
   { href: "/programs", label: "Programmes", icon: GitCommit, roles: allRoles },
   { href: "/days", label: "Journées", icon: BarChart3, roles: allRoles },
+  { href: "/fidelisation", label: "Fidélisation", icon: Heart, roles: allRoles },
+  { href: "/menu", label: "Menu", icon: UtensilsCrossed, roles: allRoles },
   { href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
   { href: "/reports", label: "Rapports", icon: FileText, roles: allRoles },
   { href: "/maps", label: "Cartes", icon: MapIcon, roles: allRoles },
@@ -84,6 +89,7 @@ const operationsItems: NavItem[] = [
   { href: "/reservations", label: "Réservations", icon: CalendarClock, roles: allRoles },
   { href: "/horaire", label: "Horaire", icon: CalendarDays, roles: allRoles },
   { href: "/fournisseurs", label: "Fournisseurs", icon: Truck, roles: ["owner", "manager"] },
+  { href: "/inventaire", label: "Inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
 ];
 
 // Sub settings items (without Paramètres/Settings which is standalone)

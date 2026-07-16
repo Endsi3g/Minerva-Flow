@@ -15,6 +15,7 @@ export type Restaurant = {
   lng: number | null;
   lat: number | null;
   companyId?: string | null;
+  loyaltyPointsPerDollar: number;
 };
 
 export type Employee = {
@@ -440,6 +441,84 @@ export type AdConversion = {
   convertedOnline: boolean;
   revenue: number | null;
   occurredAt: string;
+};
+
+export type LoyaltyTransactionType = "visite" | "ajustement" | "echange";
+
+export type LoyaltyTransaction = {
+  id: string;
+  restaurantId: string;
+  customerId: string;
+  type: LoyaltyTransactionType;
+  amountSpent: number | null;
+  pointsDelta: number;
+  note: string | null;
+  createdBy: string | null;
+  createdAt: string;
+};
+
+export type Customer = {
+  id: string;
+  restaurantId: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  visitCount: number;
+  totalSpent: number;
+  loyaltyPoints: number;
+  lastVisitAt: string | null;
+  createdAt: string;
+  transactions: LoyaltyTransaction[];
+};
+
+export type LoyaltyReward = {
+  id: string;
+  restaurantId: string;
+  name: string;
+  pointsCost: number;
+  active: boolean;
+  createdAt: string;
+};
+
+export type MenuQuadrant = "etoile" | "cheval_bataille" | "enigme" | "poids_mort";
+
+export type MenuItem = {
+  id: string;
+  restaurantId: string;
+  name: string;
+  category: string | null;
+  price: number;
+  foodCost: number;
+  unitsSold: number;
+  active: boolean;
+  description: string | null;
+  createdAt: string;
+};
+
+export type InventoryMovementType = "reception" | "utilisation" | "gaspillage" | "ajustement";
+
+export type InventoryMovement = {
+  id: string;
+  inventoryItemId: string;
+  type: InventoryMovementType;
+  quantity: number;
+  reason: string | null;
+  createdBy: string | null;
+  createdAt: string;
+};
+
+export type InventoryItem = {
+  id: string;
+  restaurantId: string;
+  name: string;
+  category: string | null;
+  unit: string;
+  quantityOnHand: number;
+  parLevel: number | null;
+  unitCost: number;
+  supplierId: string | null;
+  createdAt: string;
 };
 
 export type ReferralReward = {
