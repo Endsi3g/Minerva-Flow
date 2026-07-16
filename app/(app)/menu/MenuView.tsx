@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select } from "@/components/minerva/FormField";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import {
@@ -16,9 +17,9 @@ import {
   type MenuItemWithQuadrant,
 } from "@/lib/menu-engineering";
 import type { MenuItem, MenuQuadrant } from "@/lib/types";
-import { UtensilsCrossed, Plus, Trash2, TrendingUp, Info } from "lucide-react";
+import { UtensilsCrossed, Plus, Trash2, TrendingUp, Info, Pencil } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
-import { createMenuItemAction, deleteMenuItemAction, recordSaleAction } from "./actions";
+import { createMenuItemAction, deleteMenuItemAction, recordSaleAction, updateMenuItemAction } from "./actions";
 import { toast } from "sonner";
 
 const quadrantTone: Record<MenuQuadrant, "green" | "amber" | "lime" | "neutral"> = {
@@ -150,6 +151,77 @@ function SaleQuickAdd({
   );
 }
 
+function EditMenuItemModal({
+  restaurantId,
+  item,
+  open,
+  onClose,
+  onUpdated,
+}: {
+  restaurantId: string;
+  item: MenuItem;
+  open: boolean;
+  onClose: () => void;
+  onUpdated: (item: MenuItem) => void;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setIsSubmitting(true);
+    try {
+      const updated = await updateMenuItemAction(restaurantId, item.id, {
+        name: String(form.get("name") ?? ""),
+        category: String(form.get("category") ?? "") || null,
+        price: Number(form.get("price") ?? 0),
+        foodCost: Number(form.get("foodCost") ?? 0),
+        description: String(form.get("description") ?? "") || null,
+      });
+      if (updated) {
+        onUpdated(updated);
+        onClose();
+      } else {
+        toast.error("La modification du plat a échoué.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Modifier le plat" description="Modifiez le prix, coût ou catégorie.">
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <Field label="Nom">
+          <Input name="name" defaultValue={item.name} placeholder="Ex : Burger classique" required autoFocus />
+        </Field>
+        <Field label="Catégorie" hint="Optionnel">
+          <Input name="category" defaultValue={item.category ?? ""} placeholder="Ex : Plats principaux" />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Prix de vente">
+            <Input name="price" type="number" min="0" step="0.01" defaultValue={item.price} required />
+          </Field>
+          <Field label="Coût des ingrédients">
+            <Input name="foodCost" type="number" min="0" step="0.01" defaultValue={item.foodCost} required />
+          </Field>
+        </div>
+        <Field label="Description" hint="Optionnel">
+          <Input name="description" defaultValue={item.description ?? ""} />
+        </Field>
+        <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Enregistrement…" : "Enregistrer"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 function MenuItemRow({
   item,
   restaurantId,
@@ -157,6 +229,7 @@ function MenuItemRow({
   canManage,
   onUpdated,
   onDeleted,
+  onEdit,
 }: {
   item: MenuItemWithQuadrant;
   restaurantId: string;
@@ -164,6 +237,7 @@ function MenuItemRow({
   canManage: boolean;
   onUpdated: (item: MenuItem) => void;
   onDeleted: (id: string) => void;
+  onEdit: (item: MenuItem) => void;
 }) {
   return (
     <div className="rounded-lg border border-mv-border-soft p-3">
@@ -173,13 +247,22 @@ function MenuItemRow({
           {item.category && <p className="text-[11.5px] text-mv-ink-faint">{item.category}</p>}
         </div>
         {canManage && (
-          <button
-            onClick={() => onDeleted(item.id)}
-            aria-label="Retirer le plat"
-            className="shrink-0 text-mv-ink-faint transition-colors hover:text-mv-red"
-          >
-            <Trash2 size={13} />
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => onEdit(item)}
+              aria-label="Modifier le plat"
+              className="text-mv-ink-faint transition-colors hover:text-mv-green-dark"
+            >
+              <Pencil size={13} />
+            </button>
+            <button
+              onClick={() => onDeleted(item.id)}
+              aria-label="Retirer le plat"
+              className="text-mv-ink-faint transition-colors hover:text-mv-red"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
         )}
       </div>
       <div className="mt-2 grid grid-cols-3 gap-2 text-[12px]">
@@ -214,6 +297,7 @@ export function MenuView({
   const [items, setItems] = useState(initialItems);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
   const canManage = role === "owner" || role === "manager";
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
@@ -277,15 +361,32 @@ export function MenuView({
       ) : (
         <>
           {categories.length > 0 && (
-            <div className="mb-4">
-              <Select className="w-auto" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                <option value="all">Toutes les catégories</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
+            <div className="mb-6 flex flex-wrap gap-2">
+              <button
+                onClick={() => setCategoryFilter("all")}
+                className={cn(
+                  "rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-all duration-200",
+                  categoryFilter === "all"
+                    ? "bg-mv-green text-mv-green-dark shadow-sm"
+                    : "bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-ink/5"
+                )}
+              >
+                Toutes les catégories
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setCategoryFilter(c)}
+                  className={cn(
+                    "rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-all duration-200",
+                    categoryFilter === c
+                      ? "bg-mv-green text-mv-green-dark shadow-sm"
+                      : "bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-ink/5"
+                  )}
+                >
+                  {c}
+                </button>
+              ))}
             </div>
           )}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
@@ -310,6 +411,7 @@ export function MenuView({
                         canManage={canManage}
                         onUpdated={handleUpdated}
                         onDeleted={handleDeleted}
+                        onEdit={setEditingItem}
                       />
                     ))}
                   </div>
@@ -326,6 +428,16 @@ export function MenuView({
           open={createOpen}
           onClose={() => setCreateOpen(false)}
           onCreated={(item) => setItems((prev) => [...prev, item])}
+        />
+      )}
+
+      {restaurantId && editingItem && (
+        <EditMenuItemModal
+          restaurantId={restaurantId}
+          item={editingItem}
+          open={Boolean(editingItem)}
+          onClose={() => setEditingItem(null)}
+          onUpdated={handleUpdated}
         />
       )}
     </div>

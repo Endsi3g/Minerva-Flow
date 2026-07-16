@@ -166,11 +166,18 @@ function TablesCard({
   async function handleAdd(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const label = String(form.get("label") ?? "").trim();
+    const capacity = Number(form.get("capacity") ?? 2);
+    const type = String(form.get("type") ?? "table");
+
     setIsSubmitting(true);
     try {
+      const typeSuffix = type === "bar" ? " (Bar)" : type === "terrasse" ? " (Terrasse)" : " (Table)";
+      const fullLabel = `${label}${typeSuffix}`;
+
       const table = await createTableAction(restaurantId, {
-        label: String(form.get("label") ?? ""),
-        capacity: Number(form.get("capacity") ?? 2),
+        label: fullLabel,
+        capacity,
       });
       if (table) {
         onChange([...tables, table].sort((a, b) => a.label.localeCompare(b.label)));
@@ -215,6 +222,15 @@ function TablesCard({
         <div className="flex-1">
           <Field label="Nom">
             <Input name="label" placeholder="Ex : Table 4" required />
+          </Field>
+        </div>
+        <div className="flex-1">
+          <Field label="Type">
+            <Select name="type" defaultValue="table">
+              <option value="table">Table standard</option>
+              <option value="bar">Comptoir / Bar</option>
+              <option value="terrasse">Terrasse / Extérieur</option>
+            </Select>
           </Field>
         </div>
         <div className="w-20">
@@ -429,42 +445,21 @@ export function ReservationsView({
                       </Select>
                     </Td>
                     <Td>
-                      <Badge tone={statusTone[r.status]}>{statusLabel[r.status]}</Badge>
+                      <Select
+                        value={r.status}
+                        onChange={(e) => handleStatusChange(r.id, e.target.value as ReservationStatus)}
+                        className="w-36 h-8 text-[12px]"
+                        disabled={!canManage}
+                      >
+                        <option value="demandee">En attente</option>
+                        <option value="confirmee">Confirmée</option>
+                        <option value="annulee">Annulée</option>
+                        <option value="honoree">Honorée</option>
+                        <option value="no_show">Non présentée</option>
+                      </Select>
                     </Td>
                     <Td className="text-right">
                       <div className="flex justify-end gap-1.5">
-                        {r.status === "demandee" && (
-                          <>
-                            <button
-                              onClick={() => handleStatusChange(r.id, "confirmee")}
-                              className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
-                            >
-                              Confirmer
-                            </button>
-                            <button
-                              onClick={() => handleStatusChange(r.id, "annulee")}
-                              className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-red hover:bg-mv-red/10"
-                            >
-                              Refuser
-                            </button>
-                          </>
-                        )}
-                        {r.status === "confirmee" && (
-                          <>
-                            <button
-                              onClick={() => handleStatusChange(r.id, "honoree")}
-                              className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
-                            >
-                              Honorée
-                            </button>
-                            <button
-                              onClick={() => handleStatusChange(r.id, "no_show")}
-                              className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-red hover:bg-mv-red/10"
-                            >
-                              No-show
-                            </button>
-                          </>
-                        )}
                         {canManage && (
                           <button
                             onClick={() => handleDelete(r.id)}

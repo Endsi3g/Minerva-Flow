@@ -9,11 +9,13 @@ import {
   deleteShiftSchedule,
   type ShiftScheduleInput,
 } from "@/lib/data/shift-schedules";
-import { notifyRestaurant } from "@/lib/data/notifications";
+import { notifyRestaurant, broadcastNotification } from "@/lib/data/notifications";
 import { getEmployees, getEmployeeById } from "@/lib/data/employees";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { getGoogleConnection } from "@/lib/data/google-connections";
 import { createScheduleShare } from "@/lib/data/schedule-shares";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { sendReportEmail } from "@/lib/google/gmail";
 import { GOOGLE_SCOPES } from "@/lib/google/config";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
@@ -40,8 +42,41 @@ export async function createShiftScheduleAction(
   const shift = await createShiftSchedule(restaurantId, input);
   if (shift) {
     revalidatePath("/horaire");
-    await notifyRestaurant({
+    
+    // Find employee linked user ID
+    const employee = await getEmployeeById(input.employeeId);
+    
+    // Find all active members who are not owners
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("restaurant_members")
+      .select("user_id")
+      .eq("restaurant_id", restaurantId)
+      .eq("status", "active")
+      .neq("role", "owner");
+
+    const recipientIds = new Set<string>();
+    if (data) {
+      for (const m of data as { user_id: string }[]) {
+        recipientIds.add(m.user_id);
+      }
+    }
+    
+    // Also notify the scheduled employee specifically, if they are linked
+    if (employee?.linkedUserId) {
+      recipientIds.add(employee.linkedUserId);
+    }
+
+    // Exclude the user who created the shift schedule (the active user)
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      recipientIds.delete(user.id);
+    }
+
+    await broadcastNotification({
       restaurantId,
+      userIds: Array.from(recipientIds),
       type: "shift.scheduled",
       title: "Nouveau quart planifié",
       body: `${input.shiftDate} — ${input.startTime} à ${input.endTime}`,

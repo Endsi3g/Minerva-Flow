@@ -66,6 +66,7 @@ const mainNavItems: NavItem[] = [
   { href: "/assistant", label: "Flow AI", icon: MessageSquare, roles: allRoles },
   { href: "/programs", label: "Programmes", icon: GitCommit, roles: allRoles },
   { href: "/days", label: "Journées", icon: BarChart3, roles: allRoles },
+  { href: "/finance", label: "Finance", icon: Wallet, roles: ["owner", "manager"] },
   { href: "/fidelisation", label: "Fidélisation", icon: Heart, roles: allRoles },
   { href: "/menu", label: "Menu", icon: UtensilsCrossed, roles: allRoles },
   { href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
@@ -77,7 +78,6 @@ const mainNavItems: NavItem[] = [
 const favorites = [
   { href: "/maps", label: "Rapport des villes", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
   { href: "/campaigns?channel=Email", label: "Envoi hebdomadaire", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
-  { href: "/finance", label: "Finance", icon: Wallet, color: "#3182CE", roles: ["owner", "manager"] },
   { href: "/depenses", label: "Dépenses", icon: TrendingDown, color: "#B5473A", roles: ["owner", "manager"] },
   { href: "/data", label: "Données", icon: Database, color: "#DD6B20", roles: ["owner", "manager", "consultant"] },
   { href: "/collaborateurs", label: "Utilisateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },

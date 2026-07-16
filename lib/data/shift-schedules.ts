@@ -116,11 +116,20 @@ export async function deleteShiftSchedule(restaurantId: string, id: string): Pro
 /** Every future shift for one employee, across all weeks — used for the "envoyer l'horaire" panel/email/link. */
 export async function getUpcomingShiftsForEmployee(employeeId: string): Promise<ShiftSchedule[]> {
   const supabase = await createClient();
+  
+  // Calculate Monday of the current week in local time to avoid timezone offset shifts
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  const mondayIso = monday.toISOString().slice(0, 10);
+
   const { data, error } = await supabase
     .from("shift_schedules")
     .select("*")
     .eq("employee_id", employeeId)
-    .gte("shift_date", new Date().toISOString().slice(0, 10))
+    .gte("shift_date", mondayIso)
     .order("shift_date")
     .order("start_time");
 

@@ -1,20 +1,36 @@
-import { notFound } from "next/navigation";
-import { getEmployeeById } from "@/lib/data/employees";
+import { getEmployeeById, getEmployeeShifts, getEmployeeReviews } from "@/lib/data/employees";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
-import { EmployeeDetailPage } from "./EmployeeDetailPage";
+import { EmployeeDetailView } from "./EmployeeDetailView";
+import { notFound } from "next/navigation";
 
-export default async function EmployeePage({
+export default async function EmployeeDetailPage({
   params,
 }: {
   params: Promise<{ employeeId: string }>;
 }) {
   const { employeeId } = await params;
-  const [employee, restaurantId] = await Promise.all([
+  const restaurantId = await getCurrentRestaurantId();
+
+  if (!restaurantId) {
+    return <div className="p-6 text-mv-ink-soft">Aucun restaurant sélectionné.</div>;
+  }
+
+  const [employee, shifts, reviews] = await Promise.all([
     getEmployeeById(employeeId),
-    getCurrentRestaurantId(),
+    getEmployeeShifts(employeeId),
+    getEmployeeReviews(employeeId),
   ]);
 
-  if (!employee || !restaurantId) notFound();
+  if (!employee || employee.restaurantId !== restaurantId) {
+    notFound();
+  }
 
-  return <EmployeeDetailPage employee={employee} restaurantId={restaurantId} />;
+  return (
+    <EmployeeDetailView
+      employee={employee}
+      initialShifts={shifts}
+      initialReviews={reviews}
+      restaurantId={restaurantId}
+    />
+  );
 }
