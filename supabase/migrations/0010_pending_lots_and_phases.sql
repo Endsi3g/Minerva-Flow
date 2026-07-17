@@ -1419,8 +1419,6 @@ as $$
 declare
   v_restaurant_id uuid;
   v_referral_link_id uuid;
-  v_conversion_id uuid;
-  v_already_credited timestamptz;
   v_new_count int;
   v_goal_count int;
   v_reward_claimed timestamptz;
@@ -1436,18 +1434,16 @@ begin
     return;
   end if;
 
-  select id, credited_at into v_conversion_id, v_already_credited
-  from customer_referral_conversions
-  where reservation_id = p_reservation_id
-  for update;
-
-  if v_conversion_id is null or v_already_credited is not null then
-    return;
-  end if;
-
+  -- The guard lives in the WHERE clause itself, so the lock-acquire and the
+  -- "already credited?" check happen in the same atomic statement instead
+  -- of a separate SELECT ... FOR UPDATE beforehand.
   update customer_referral_conversions
   set credited_at = now()
-  where id = v_conversion_id;
+  where reservation_id = p_reservation_id and credited_at is null;
+
+  if not found then
+    return;
+  end if;
 
   update customer_referral_links
   set converted_count = converted_count + 1
@@ -1584,8 +1580,6 @@ as $$
 declare
   v_restaurant_id uuid;
   v_referral_link_id uuid;
-  v_conversion_id uuid;
-  v_already_credited timestamptz;
   v_new_count int;
   v_goal_count int;
   v_reward_claimed timestamptz;
@@ -1601,18 +1595,13 @@ begin
     return;
   end if;
 
-  select id, credited_at into v_conversion_id, v_already_credited
-  from customer_referral_conversions
-  where order_id = p_order_id
-  for update;
-
-  if v_conversion_id is null or v_already_credited is not null then
-    return;
-  end if;
-
   update customer_referral_conversions
   set credited_at = now()
-  where id = v_conversion_id;
+  where order_id = p_order_id and credited_at is null;
+
+  if not found then
+    return;
+  end if;
 
   update customer_referral_links
   set converted_count = converted_count + 1

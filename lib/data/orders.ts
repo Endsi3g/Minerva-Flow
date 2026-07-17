@@ -89,21 +89,6 @@ export async function getOrdersForDay(restaurantId: string, dayStart: string, da
   return orderRows.map((row) => mapOrder(row, itemRows));
 }
 
-export async function getOrder(restaurantId: string, id: string): Promise<Order | null> {
-  const supabase = await createClient();
-  const { data: orderRow, error } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("restaurant_id", restaurantId)
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error || !orderRow) return null;
-
-  const { data: items } = await supabase.from("order_items").select("*").eq("order_id", id);
-  return mapOrder(orderRow as OrderRow, (items as OrderItemRow[]) ?? []);
-}
-
 export async function updateOrderStatus(restaurantId: string, id: string, status: OrderStatus): Promise<boolean> {
   const supabase = await createClient();
   const { error } = await supabase.from("orders").update({ status }).eq("restaurant_id", restaurantId).eq("id", id);

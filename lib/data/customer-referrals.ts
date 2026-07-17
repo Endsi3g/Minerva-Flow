@@ -1,10 +1,11 @@
 import "server-only";
-import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { generateToken } from "@/lib/tokens";
 import { mapReferralProgram, type ReferralProgramRow } from "@/lib/data/referral-programs";
+import { getRestaurantOrderSettings } from "@/lib/data/menu-shares";
 import { notifyRestaurant } from "@/lib/data/notifications";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, roundToCents } from "@/lib/utils";
 import type { CustomerReferralLink, ReferralProgram } from "@/lib/types";
 
 export type ReferralLinkTracking = {
@@ -96,7 +97,7 @@ export async function getOrCreateReferralLink(
 
   if (existing) return mapLink(existing as CustomerReferralLinkRow);
 
-  const code = randomUUID().replace(/-/g, "").slice(0, 10);
+  const code = generateToken(10);
   const { data, error } = await admin
     .from("customer_referral_links")
     .insert({ referral_program_id: programId, customer_id: customerId, code })
@@ -148,6 +149,45 @@ export async function recordClick(code: string): Promise<void> {
   await admin.rpc("increment_referral_link_clicks", { p_code: code });
 }
 
+/**
+ * Shared by submitPublicReservationRequest and submitPublicOrder: a visitor
+ * authenticated via magic link is never guaranteed to already have a
+ * `customers` row for this specific restaurant (they might be a returning
+ * customer at a different restaurant on the platform, or brand new) — find
+ * their row scoped to (restaurantId, user_id), or create one.
+ */
+async function findOrCreateCustomerForUser(
+  admin: ReturnType<typeof createAdminClient>,
+  restaurantId: string,
+  user: { id: string; email: string },
+  input: { name: string; phone: string | null }
+): Promise<string | null> {
+  const { data: existingCustomer } = await admin
+    .from("customers")
+    .select("id")
+    .eq("restaurant_id", restaurantId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const existingId = (existingCustomer as { id: string } | null)?.id;
+  if (existingId) return existingId;
+
+  const { data: newCustomer, error } = await admin
+    .from("customers")
+    .insert({
+      restaurant_id: restaurantId,
+      name: input.name,
+      email: user.email,
+      phone: input.phone,
+      user_id: user.id,
+    })
+    .select("id")
+    .single();
+
+  if (error || !newCustomer) return null;
+  return (newCustomer as { id: string }).id;
+}
+
 export type PublicReservationRequestInput = {
   guestName: string;
   guestPhone: string | null;
@@ -186,29 +226,13 @@ export async function submitPublicReservationRequest(
   if (!programRow) return false;
   const program = mapReferralProgram(programRow as ReferralProgramRow);
 
-  const { data: existingCustomer } = await admin
-    .from("customers")
-    .select("id")
-    .eq("restaurant_id", program.restaurantId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  let customerId = (existingCustomer as { id: string } | null)?.id ?? null;
-  if (!customerId) {
-    const { data: newCustomer, error: customerError } = await admin
-      .from("customers")
-      .insert({
-        restaurant_id: program.restaurantId,
-        name: input.guestName,
-        email: user.email,
-        phone: input.guestPhone,
-        user_id: user.id,
-      })
-      .select("id")
-      .single();
-    if (customerError || !newCustomer) return false;
-    customerId = (newCustomer as { id: string }).id;
-  }
+  const customerId = await findOrCreateCustomerForUser(
+    admin,
+    program.restaurantId,
+    { id: user.id, email: user.email },
+    { name: input.guestName, phone: input.guestPhone }
+  );
+  if (!customerId) return false;
 
   const { data: reservation, error: reservationError } = await admin
     .from("reservations")
@@ -306,25 +330,35 @@ export async function submitPublicOrder(
   const restaurantId = (shareRow as { restaurant_id: string } | null)?.restaurant_id;
   if (!restaurantId) return false;
 
-  const { data: restaurantRow } = await admin
-    .from("restaurants")
-    .select("tax_rate, accepts_tips")
-    .eq("id", restaurantId)
-    .maybeSingle();
-  const restaurant = restaurantRow as { tax_rate: number; accepts_tips: boolean } | null;
-  if (!restaurant) return false;
+  // These four all depend only on restaurantId (or nothing) — never on each
+  // other's result — so they run concurrently instead of as four sequential
+  // round trips.
+  const [orderSettings, menuItemsResult, referralLinkResult, customerId] = await Promise.all([
+    getRestaurantOrderSettings(admin, restaurantId),
+    admin
+      .from("menu_items")
+      .select("id, name, price")
+      .eq("restaurant_id", restaurantId)
+      .eq("active", true)
+      .in(
+        "id",
+        cart.map((line) => line.menuItemId)
+      ),
+    referralCode
+      ? admin.from("customer_referral_links").select("id").eq("code", referralCode).maybeSingle()
+      : Promise.resolve({ data: null }),
+    findOrCreateCustomerForUser(
+      admin,
+      restaurantId,
+      { id: user.id, email: user.email },
+      { name: guestInfo.guestName, phone: guestInfo.guestPhone }
+    ),
+  ]);
 
-  const { data: menuItemRows } = await admin
-    .from("menu_items")
-    .select("id, name, price")
-    .eq("restaurant_id", restaurantId)
-    .eq("active", true)
-    .in(
-      "id",
-      cart.map((line) => line.menuItemId)
-    );
+  if (!orderSettings || !customerId) return false;
+
   const menuItemById = new Map(
-    ((menuItemRows as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
+    ((menuItemsResult.data as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
   );
 
   const lineItems = cart
@@ -338,43 +372,12 @@ export async function submitPublicOrder(
   if (lineItems.length === 0) return false;
 
   const subtotal = lineItems.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
-  const taxAmount = Math.round(subtotal * restaurant.tax_rate * 100) / 100;
-  const tipAmount = restaurant.accepts_tips && Number.isFinite(guestInfo.tipAmount) ? Math.max(0, guestInfo.tipAmount) : 0;
+  const taxAmount = roundToCents(subtotal * orderSettings.taxRate);
+  const tipAmount =
+    orderSettings.acceptsTips && Number.isFinite(guestInfo.tipAmount) ? Math.max(0, guestInfo.tipAmount) : 0;
   const total = subtotal + taxAmount + tipAmount;
 
-  let referralLinkId: string | null = null;
-  if (referralCode) {
-    const { data: linkRow } = await admin
-      .from("customer_referral_links")
-      .select("id")
-      .eq("code", referralCode)
-      .maybeSingle();
-    referralLinkId = (linkRow as { id: string } | null)?.id ?? null;
-  }
-
-  const { data: existingCustomer } = await admin
-    .from("customers")
-    .select("id")
-    .eq("restaurant_id", restaurantId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  let customerId = (existingCustomer as { id: string } | null)?.id ?? null;
-  if (!customerId) {
-    const { data: newCustomer, error: customerError } = await admin
-      .from("customers")
-      .insert({
-        restaurant_id: restaurantId,
-        name: guestInfo.guestName,
-        email: user.email,
-        phone: guestInfo.guestPhone,
-        user_id: user.id,
-      })
-      .select("id")
-      .single();
-    if (customerError || !newCustomer) return false;
-    customerId = (newCustomer as { id: string }).id;
-  }
+  const referralLinkId = (referralLinkResult.data as { id: string } | null)?.id ?? null;
 
   const { data: order, error: orderError } = await admin
     .from("orders")

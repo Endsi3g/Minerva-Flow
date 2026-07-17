@@ -24,13 +24,10 @@ export default async function PublicMenuPage({
     );
   }
 
-  const landing = await getMenuShareByToken(token);
-  if (!landing) notFound();
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [landing, authResult] = await Promise.all([getMenuShareByToken(token), supabase.auth.getUser()]);
+  if (!landing) notFound();
+  const user = authResult.data.user;
 
   return <MenuOrderFlow token={token} referralCode={ref ?? null} landing={landing} authenticated={Boolean(user)} />;
 }

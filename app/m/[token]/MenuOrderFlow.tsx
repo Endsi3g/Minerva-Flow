@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { requestCustomerMagicLink } from "@/lib/auth/customer-magic-link";
 import { submitPublicOrderAction } from "./actions";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, roundToCents, cn } from "@/lib/utils";
 import type { MenuItem } from "@/lib/types";
 import type { PublicMenuLanding } from "@/lib/data/menu-shares";
 import { Plus, Minus, ShoppingCart, Mail, CheckCircle2 } from "lucide-react";
 
 type CartLine = { item: MenuItem; quantity: number };
+type OrderTotals = { subtotal: number; taxAmount: number; tipAmount: number; total: number };
 
 const TIP_PRESETS = [0, 0.1, 0.15, 0.2];
 
@@ -21,10 +22,7 @@ function CheckoutModal({
   open,
   onClose,
   cartLines,
-  subtotal,
-  taxAmount,
-  tipAmount,
-  total,
+  totals,
   acceptsTips,
   tipPct,
   setTipPct,
@@ -36,10 +34,7 @@ function CheckoutModal({
   open: boolean;
   onClose: () => void;
   cartLines: CartLine[];
-  subtotal: number;
-  taxAmount: number;
-  tipAmount: number;
-  total: number;
+  totals: OrderTotals;
   acceptsTips: boolean;
   tipPct: number | null;
   setTipPct: (v: number | null) => void;
@@ -48,6 +43,7 @@ function CheckoutModal({
   referralCode: string | null;
   onOrdered: () => void;
 }) {
+  const { subtotal, taxAmount, tipAmount, total } = totals;
   const [email, setEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -234,7 +230,8 @@ export function MenuOrderFlow({
 
   useEffect(() => {
     try {
-      localStorage.setItem(`mv-cart-${token}`, JSON.stringify(cart));
+      const nonZero = Object.fromEntries(Object.entries(cart).filter(([, qty]) => qty > 0));
+      localStorage.setItem(`mv-cart-${token}`, JSON.stringify(nonZero));
     } catch {
       // ignore
     }
@@ -256,9 +253,10 @@ export function MenuOrderFlow({
     .map((i) => ({ item: i, quantity: cart[i.id] }));
 
   const subtotal = cartLines.reduce((sum, l) => sum + l.item.price * l.quantity, 0);
-  const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
-  const tipAmount = tipPct != null ? Math.round(subtotal * tipPct * 100) / 100 : 0;
+  const taxAmount = roundToCents(subtotal * taxRate);
+  const tipAmount = tipPct != null ? roundToCents(subtotal * tipPct) : 0;
   const total = subtotal + taxAmount + tipAmount;
+  const totals: OrderTotals = { subtotal, taxAmount, tipAmount, total };
   const itemCount = cartLines.reduce((sum, l) => sum + l.quantity, 0);
 
   function updateQty(itemId: string, delta: number) {
@@ -356,10 +354,7 @@ export function MenuOrderFlow({
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
         cartLines={cartLines}
-        subtotal={subtotal}
-        taxAmount={taxAmount}
-        tipAmount={tipAmount}
-        total={total}
+        totals={totals}
         acceptsTips={acceptsTips}
         tipPct={tipPct}
         setTipPct={setTipPct}

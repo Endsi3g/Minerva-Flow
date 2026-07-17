@@ -1,7 +1,7 @@
 import "server-only";
-import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { generateToken } from "@/lib/tokens";
 import { mapMenuItem, type MenuItemRow } from "@/lib/data/menu";
 import type { MenuItem, MenuShare } from "@/lib/types";
 
@@ -46,7 +46,7 @@ export async function createMenuShare(
     data: { user },
   } = await supabase.auth.getUser();
 
-  const token = randomUUID().replace(/-/g, "");
+  const token = generateToken();
   const { data, error } = await supabase
     .from("menu_shares")
     .insert({
@@ -78,6 +78,21 @@ export type PublicMenuLanding = {
   items: MenuItem[];
 };
 
+/** Shared by getMenuShareByToken and submitPublicOrder (lib/data/customer-referrals.ts) — both need only these two fields via the admin client for a public-facing request. */
+export async function getRestaurantOrderSettings(
+  admin: ReturnType<typeof createAdminClient>,
+  restaurantId: string
+): Promise<{ taxRate: number; acceptsTips: boolean } | null> {
+  const { data } = await admin
+    .from("restaurants")
+    .select("tax_rate, accepts_tips")
+    .eq("id", restaurantId)
+    .maybeSingle();
+  if (!data) return null;
+  const row = data as { tax_rate: number; accepts_tips: boolean };
+  return { taxRate: row.tax_rate, acceptsTips: row.accepts_tips };
+}
+
 /**
  * Public lookup — deliberately not a snapshot (unlike report_shares):
  * prices/availability change, and a shared menu link should always reflect
@@ -90,14 +105,6 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
   if (!shareRow) return null;
   const share = mapMenuShare(shareRow as MenuShareRow);
 
-  const { data: restaurantRow } = await admin
-    .from("restaurants")
-    .select("name, tax_rate, accepts_tips")
-    .eq("id", share.restaurantId)
-    .maybeSingle();
-  if (!restaurantRow) return null;
-  const restaurant = restaurantRow as { name: string; tax_rate: number; accepts_tips: boolean };
-
   let itemsQuery = admin
     .from("menu_items")
     .select("*")
@@ -106,8 +113,15 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
   if (share.itemIds && share.itemIds.length > 0) {
     itemsQuery = itemsQuery.in("id", share.itemIds);
   }
-  const { data: itemRows } = await itemsQuery.order("category").order("name");
-  const items = ((itemRows as MenuItemRow[]) ?? []).map(mapMenuItem);
+
+  const [restaurantResult, itemsResult] = await Promise.all([
+    admin.from("restaurants").select("name, tax_rate, accepts_tips").eq("id", share.restaurantId).maybeSingle(),
+    itemsQuery.order("category").order("name"),
+  ]);
+
+  if (!restaurantResult.data) return null;
+  const restaurant = restaurantResult.data as { name: string; tax_rate: number; accepts_tips: boolean };
+  const items = ((itemsResult.data as MenuItemRow[]) ?? []).map(mapMenuItem);
 
   return {
     share,

@@ -80,6 +80,17 @@ export function formatDelta(value: number) {
   return `${sign}${value.toFixed(1)}%`;
 }
 
+const timeFormatter = new Intl.DateTimeFormat("fr-CA", { hour: "2-digit", minute: "2-digit" });
+
+export function formatTime(iso: string) {
+  return timeFormatter.format(new Date(iso));
+}
+
+/** Rounds to the nearest cent — avoids floating-point drift on money math (tax/tip calculations). */
+export function roundToCents(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 /**
  * Formats a timestamptz as a short French relative time ("il y a 12 min"),
  * used for connection sync status. Falls back to a full date beyond a day.

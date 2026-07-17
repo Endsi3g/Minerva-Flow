@@ -23,6 +23,7 @@ import { CalendarClock, ChevronLeft, ChevronRight, Plus, Trash2, Users, Link2 } 
 import type { ReservationPlatformConnection } from "@/lib/data/reservation-platforms";
 import { useState, type FormEvent } from "react";
 import { notifyError } from "@/lib/notify-error";
+import { formatTime } from "@/lib/utils";
 
 const statusLabel: Record<ReservationStatus, string> = {
   demandee: "Demandée",
@@ -39,10 +40,6 @@ const statusTone: Record<ReservationStatus, "green" | "amber" | "red" | "neutral
   no_show: "red",
   annulee: "neutral",
 };
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" });
-}
 
 function formatDayLabel(dayStart: string) {
   return new Date(dayStart).toLocaleDateString("fr-CA", {

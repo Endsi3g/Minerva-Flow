@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatTime } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import type { Order, OrderStatus } from "@/lib/types";
 import { ClipboardList, RefreshCw, Trash2 } from "lucide-react";
@@ -37,10 +37,6 @@ const nextStatus: Partial<Record<OrderStatus, { status: OrderStatus; label: stri
   en_preparation: { status: "prete", label: "Prête" },
   prete: { status: "servie", label: "Servie" },
 };
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" });
-}
 
 export function CommandesView({
   restaurantId,
