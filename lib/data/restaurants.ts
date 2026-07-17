@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import { geocodeAddress } from "@/lib/geocode";
@@ -17,7 +18,7 @@ type RestaurantRow = {
   color: string | null;
   lng: number | null;
   lat: number | null;
-  company_id: string | null;
+  workspace_id: string | null;
   loyalty_points_per_dollar: number;
   tax_rate: number;
   accepts_tips: boolean;
@@ -38,7 +39,7 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     color: row.color ?? "var(--mv-green)",
     lng: row.lng,
     lat: row.lat,
-    companyId: row.company_id,
+    workspaceId: row.workspace_id,
     loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
     taxRate: row.tax_rate ?? 0.14975,
     acceptsTips: row.accepts_tips ?? true,
@@ -110,6 +111,28 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
 
   const coords = input.address && input.city ? await geocodeAddress(input.address, input.city, input.province) : null;
 
+  // A new establishment joins the creator's CURRENT workspace context
+  // automatically (the restaurant they had selected when clicking "add
+  // establishment") — not an arbitrary one picked from everywhere they
+  // happen to be an owner, which could attach it to the wrong workspace for
+  // an owner spanning multiple. Falls back to workspace-less if there's no
+  // current selection or that restaurant has no workspace yet.
+  const cookieStore = await cookies();
+  const currentRestaurantId = cookieStore.get("mv_restaurant_id")?.value;
+  let workspaceId: string | null = null;
+  if (currentRestaurantId) {
+    const { data: currentMembership } = await supabase
+      .from("restaurant_members")
+      .select("restaurant:restaurants(workspace_id)")
+      .eq("restaurant_id", currentRestaurantId)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    workspaceId =
+      (currentMembership as { restaurant: { workspace_id: string | null } | null } | null)?.restaurant
+        ?.workspace_id ?? null;
+  }
+
   const { data, error } = await supabase
     .from("restaurants")
     .insert({
@@ -121,6 +144,7 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
       color: input.color || undefined,
       lng: coords?.lng ?? null,
       lat: coords?.lat ?? null,
+      workspace_id: workspaceId,
     })
     .select("*")
     .single();

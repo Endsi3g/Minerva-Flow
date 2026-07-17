@@ -5,7 +5,7 @@ import { PostHogIdentifier } from "@/components/PostHogIdentifier";
 import { getAppSessionData } from "@/lib/data/session";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { authUser, restaurants, role, initialRestaurantId, onboardingCompleted } =
+  const { authUser, restaurants, role, sidebarPermissions, initialRestaurantId, onboardingCompleted } =
     await getAppSessionData();
 
   if (authUser && !onboardingCompleted) {
@@ -16,6 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <AppProvider
       authUser={authUser}
       role={role}
+      sidebarPermissions={sidebarPermissions}
       restaurants={restaurants}
       initialRestaurantId={initialRestaurantId}
     >

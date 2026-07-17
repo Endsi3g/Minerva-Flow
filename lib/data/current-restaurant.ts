@@ -28,12 +28,14 @@ export async function getCurrentRestaurantId(): Promise<string | null> {
 export type CurrentMembership = {
   restaurantId: string;
   role: Role;
+  sidebarPermissions: string[] | null;
 };
 
 /**
- * The current user's membership (restaurantId + role) for the current
- * restaurant, resolved via getCurrentRestaurantId(). Returns null if the
- * user isn't signed in or has no active restaurant membership.
+ * The current user's membership (restaurantId + role + sidebar permission
+ * overlay) for the current restaurant, resolved via getCurrentRestaurantId().
+ * Returns null if the user isn't signed in or has no active restaurant
+ * membership.
  */
 export async function getCurrentMembership(): Promise<CurrentMembership | null> {
   const supabase = await createClient();
@@ -47,7 +49,7 @@ export async function getCurrentMembership(): Promise<CurrentMembership | null> 
 
   const { data, error } = await supabase
     .from("restaurant_members")
-    .select("role")
+    .select("role, sidebar_permissions")
     .eq("restaurant_id", restaurantId)
     .eq("user_id", user.id)
     .eq("status", "active")
@@ -55,5 +57,9 @@ export async function getCurrentMembership(): Promise<CurrentMembership | null> 
 
   if (error || !data) return null;
 
-  return { restaurantId, role: data.role as Role };
+  return {
+    restaurantId,
+    role: data.role as Role,
+    sidebarPermissions: (data.sidebar_permissions as string[] | null) ?? null,
+  };
 }

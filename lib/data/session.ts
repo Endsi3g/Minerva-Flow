@@ -8,6 +8,7 @@ export type AppSessionData = {
   authUser: AuthUser | null;
   restaurants: Restaurant[];
   role: Role;
+  sidebarPermissions: string[] | null;
   initialRestaurantId: string;
   onboardingCompleted: boolean;
 };
@@ -49,6 +50,7 @@ export async function getAppSessionData(): Promise<AppSessionData> {
     authUser,
     restaurants,
     role: membership?.role ?? "staff",
+    sidebarPermissions: membership?.sidebarPermissions ?? null,
     initialRestaurantId: membership?.restaurantId ?? restaurants[0]?.id ?? "",
     onboardingCompleted,
   };

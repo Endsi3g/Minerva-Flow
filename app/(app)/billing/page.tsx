@@ -63,7 +63,7 @@ export default function BillingPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Facturation"
-        description="Votre abonnement Minerva Flow — un tarif mensuel fixe par établissement."
+        description="Votre abonnement Minerva Flow — un tarif mensuel fixe par workspace, qui couvre tous vos établissements."
       />
 
       <div className="mx-auto max-w-xl w-full">
@@ -74,7 +74,7 @@ export default function BillingPage() {
             <p className="text-[13px] text-mv-ink-faint">Chargement…</p>
           ) : !status.configured ? (
             <p className="text-[13px] text-mv-ink-soft">
-              La facturation n&apos;est pas encore activée pour votre établissement — vous utilisez Minerva Flow
+              La facturation n&apos;est pas encore activée pour votre workspace — vous utilisez Minerva Flow
               gratuitement pour l&apos;instant.
             </p>
           ) : status.subscription ? (

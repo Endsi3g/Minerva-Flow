@@ -152,6 +152,61 @@ export async function notifyAllUsers(input: {
 }
 
 /**
+ * Notifies every owner of a workspace — used for workspace-level billing
+ * events (Stripe). Each owner's notification row is stamped with their
+ * first active restaurant, the same resolution trick notifyAllUsers uses,
+ * since the notifications table is restaurant-scoped and there is no
+ * workspace-level notifications path yet.
+ */
+export async function notifyWorkspaceOwners(input: {
+  workspaceId: string;
+  type: string;
+  title: string;
+  body?: string;
+  link?: string;
+}): Promise<void> {
+  const admin = createAdminClient();
+  const { data: owners } = await admin
+    .from("workspace_members")
+    .select("user_id")
+    .eq("workspace_id", input.workspaceId)
+    .eq("role", "owner")
+    .eq("status", "active");
+
+  const ownerIds = ((owners as { user_id: string }[]) ?? []).map((m) => m.user_id);
+  if (ownerIds.length === 0) return;
+
+  const { data: memberships } = await admin
+    .from("restaurant_members")
+    .select("user_id, restaurant_id")
+    .in("user_id", ownerIds)
+    .eq("status", "active");
+
+  const seenUsers = new Set<string>();
+  const usersByRestaurant = new Map<string, string[]>();
+  for (const row of (memberships as { user_id: string; restaurant_id: string }[]) ?? []) {
+    if (seenUsers.has(row.user_id)) continue; // only the user's first active restaurant, like notifyAllUsers
+    seenUsers.add(row.user_id);
+    const list = usersByRestaurant.get(row.restaurant_id) ?? [];
+    list.push(row.user_id);
+    usersByRestaurant.set(row.restaurant_id, list);
+  }
+
+  await Promise.all(
+    Array.from(usersByRestaurant.entries()).map(([restaurantId, userIds]) =>
+      broadcastNotification({
+        restaurantId,
+        userIds,
+        type: input.type,
+        title: input.title,
+        body: input.body,
+        link: input.link,
+      })
+    )
+  );
+}
+
+/**
  * Notifies only the restaurant's owners — used for billing events (Stripe),
  * which staff/consultants don't need to see.
  */

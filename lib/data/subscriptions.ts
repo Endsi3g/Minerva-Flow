@@ -3,7 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type Stripe from "stripe";
 
 export type Subscription = {
-  restaurantId: string;
+  // Null only for legacy rows the 0011_workspaces.sql backfill left
+  // unreconciled (a workspace with more than one pre-existing per-restaurant
+  // subscription) — every row written going forward always has one.
+  workspaceId: string | null;
   stripeCustomerId: string;
   stripeSubscriptionId: string | null;
   status: Stripe.Subscription.Status | "incomplete";
@@ -11,7 +14,7 @@ export type Subscription = {
 };
 
 type SubscriptionRow = {
-  restaurant_id: string;
+  workspace_id: string | null;
   stripe_customer_id: string;
   stripe_subscription_id: string | null;
   status: Stripe.Subscription.Status;
@@ -20,7 +23,7 @@ type SubscriptionRow = {
 
 function mapSubscription(row: SubscriptionRow): Subscription {
   return {
-    restaurantId: row.restaurant_id,
+    workspaceId: row.workspace_id,
     stripeCustomerId: row.stripe_customer_id,
     stripeSubscriptionId: row.stripe_subscription_id,
     status: row.status,
@@ -28,38 +31,47 @@ function mapSubscription(row: SubscriptionRow): Subscription {
   };
 }
 
-export async function getSubscription(restaurantId: string): Promise<Subscription | null> {
+export async function getSubscription(workspaceId: string): Promise<Subscription | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("subscriptions")
     .select("*")
-    .eq("restaurant_id", restaurantId)
+    .eq("workspace_id", workspaceId)
     .maybeSingle();
 
   if (error || !data) return null;
   return mapSubscription(data as SubscriptionRow);
 }
 
-/** Called from Stripe webhook handlers — always via the admin client, no user session in that context. */
+/**
+ * Called from Stripe webhook handlers — always via the admin client, no user
+ * session in that context. Requires a resolved workspaceId: a legacy
+ * subscription whose workspace was left ambiguous by the 0011_workspaces.sql
+ * backfill must be manually reconciled (see that migration's runbook) before
+ * it can be written here — upserting with a null workspace_id would silently
+ * insert a duplicate row instead of updating the existing one, since a
+ * unique constraint never matches NULL against NULL.
+ */
 export async function upsertSubscription(input: {
-  restaurantId: string;
+  workspaceId: string;
   stripeCustomerId: string;
   stripeSubscriptionId: string | null;
   status: Stripe.Subscription.Status;
   currentPeriodEnd: string | null;
-}): Promise<void> {
+}): Promise<boolean> {
   const admin = createAdminClient();
-  await admin.from("subscriptions").upsert(
+  const { error } = await admin.from("subscriptions").upsert(
     {
-      restaurant_id: input.restaurantId,
+      workspace_id: input.workspaceId,
       stripe_customer_id: input.stripeCustomerId,
       stripe_subscription_id: input.stripeSubscriptionId,
       status: input.status,
       current_period_end: input.currentPeriodEnd,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "restaurant_id" }
+    { onConflict: "workspace_id" }
   );
+  return !error;
 }
 
 export async function getSubscriptionByStripeCustomerId(

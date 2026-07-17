@@ -34,10 +34,10 @@ export function StartupChecklist() {
 
   const items: ChecklistItem[] = [
     {
-      key: "workspace",
-      label: "Configurer votre workspace",
+      key: "etablissement",
+      label: "Configurer votre établissement",
       description: "Donnez son vrai nom à votre établissement.",
-      href: "/workspace",
+      href: "/etablissement",
       icon: Building2,
       done: restaurant.name !== "Mon restaurant",
     },

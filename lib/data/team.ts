@@ -9,6 +9,7 @@ type MembershipRow = {
   user_id: string;
   role: Role;
   status: "active" | "invited";
+  sidebar_permissions: string[] | null;
 };
 
 type ProfileRow = {
@@ -59,6 +60,7 @@ function toTeamMember(
     restaurantIds,
     status: statusLabel(row.status),
     avatarUrl: profile?.avatar_url ?? null,
+    sidebarPermissions: row.sidebar_permissions ?? null,
   };
 }
 
@@ -70,7 +72,7 @@ export async function getTeamMembers(restaurantId: string): Promise<TeamMember[]
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("restaurant_members")
-    .select("id, restaurant_id, user_id, role, status")
+    .select("id, restaurant_id, user_id, role, status, sidebar_permissions")
     .eq("restaurant_id", restaurantId);
 
   if (error || !data) return [];
@@ -108,7 +110,7 @@ export async function inviteTeamMember(
   const { data, error } = await supabase
     .from("restaurant_members")
     .insert({ restaurant_id: restaurantId, user_id: userId, role, status: "invited" })
-    .select("id, restaurant_id, user_id, role, status")
+    .select("id, restaurant_id, user_id, role, status, sidebar_permissions")
     .single();
 
   if (error || !data) return null;
@@ -157,6 +159,41 @@ export async function updateTeamMemberRole(
     title: "Votre rôle a changé",
     body: `Votre nouveau rôle : ${role}.`,
     link: "/profil",
+  });
+
+  return true;
+}
+
+/**
+ * Sets the sidebar permission overlay for a member's membership at this
+ * restaurant. Purely additive/restrictive — it narrows which of the
+ * role-allowed nav items they see, it never grants beyond what
+ * member_role/RLS already allows. Pass null to remove the restriction
+ * entirely (member sees everything their role allows, including nav items
+ * added later); pass an array to restrict to exactly those keys, including
+ * an empty array to hide everything customizable.
+ */
+export async function updateMemberSidebarPermissions(
+  restaurantId: string,
+  membershipId: string,
+  keys: string[] | null
+): Promise<boolean> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("restaurant_members")
+    .update({ sidebar_permissions: keys })
+    .eq("restaurant_id", restaurantId)
+    .eq("id", membershipId)
+    .select("id");
+
+  if (error || (data?.length ?? 0) === 0) return false;
+
+  await logActivity({
+    restaurantId,
+    actionType: "team.update_sidebar_permissions",
+    entityType: "restaurant_member",
+    entityId: membershipId,
+    description: "A personnalisé l'accès au menu d'un collaborateur",
   });
 
   return true;
