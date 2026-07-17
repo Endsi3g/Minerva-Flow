@@ -42,6 +42,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   const [isLoading, setIsLoading] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [workspaceInviteToken, setWorkspaceInviteToken] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -49,9 +50,15 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     if (ref) setReferralCode(ref);
     const token = params.get("inviteToken");
     if (token) setInviteToken(token);
+    const wToken = params.get("wInviteToken");
+    if (wToken) setWorkspaceInviteToken(wToken);
   }, []);
 
-  const postAuthPath = inviteToken ? `/invite/${inviteToken}` : "/overview";
+  const postAuthPath = workspaceInviteToken
+    ? `/invite/w/${workspaceInviteToken}`
+    : inviteToken
+      ? `/invite/${inviteToken}`
+      : "/overview";
 
   const mapErrorMessage = (msg: string): string => {
     const normalized = msg.toLowerCase();
@@ -102,7 +109,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
           posthog.capture("user_signed_up", {
             method: "email",
             has_referral: Boolean(referralCode),
-            has_invite: Boolean(inviteToken),
+            has_invite: Boolean(inviteToken || workspaceInviteToken),
           });
         }
         if (data.session) {
@@ -125,7 +132,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     posthog.capture(mode === "login" ? "user_logged_in" : "user_signed_up", {
       method: provider,
       has_referral: Boolean(referralCode),
-      has_invite: Boolean(inviteToken),
+      has_invite: Boolean(inviteToken || workspaceInviteToken),
     });
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({

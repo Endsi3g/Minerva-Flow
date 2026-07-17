@@ -12,9 +12,9 @@ const DISMISS_KEY_PREFIX = "mv-workspace-banner-dismissed:";
  * Accounts created before the onboarding wizard existed (migration 0009)
  * were backfilled with onboarding_completed=true and a restaurant literally
  * named "Mon restaurant" — they never see a setup flow. This nudges them
- * toward /workspace without blocking access; dismissing only hides it for
- * the current session (sessionStorage), so it resurfaces on the next login
- * until the restaurant is actually renamed.
+ * toward /etablissement without blocking access; dismissing only hides it
+ * for the current session (sessionStorage), so it resurfaces on the next
+ * login until the restaurant is actually renamed.
  */
 export function WorkspaceSetupBanner() {
   const restaurant = useCurrentRestaurant();
@@ -40,7 +40,7 @@ export function WorkspaceSetupBanner() {
         encore renseignés.
       </p>
       <Link
-        href="/workspace"
+        href="/etablissement"
         className="shrink-0 rounded-lg bg-mv-green px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-green-dark"
       >
         Configurer

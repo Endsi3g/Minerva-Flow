@@ -8,9 +8,15 @@ import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Select } from "@/components/minerva/FormField";
 import { formatRelativeTime } from "@/lib/utils";
-import { getMemberActivityAction, updateMemberRoleAction, removeMemberAction } from "../actions";
+import {
+  getMemberActivityAction,
+  updateMemberRoleAction,
+  updateMemberSidebarPermissionsAction,
+  removeMemberAction,
+} from "../actions";
 import { useActivityLogRealtime, type ActivityLogRow } from "@/hooks/use-activity-log-realtime";
 import { useApp, roleLabels } from "@/lib/app-context";
+import { sidebarNavCatalog } from "@/components/shell/AppSidebar";
 import type { ActivityLogEntry, Role, TeamMember } from "@/lib/types";
 import { ArrowLeft, History, Trash2 } from "lucide-react";
 
@@ -41,8 +47,34 @@ export function MemberDetailPage({
   const [activity, setActivity] = useState<ActivityLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
+  const [accessPending, setAccessPending] = useState(false);
+  const [sidebarPermissions, setSidebarPermissions] = useState<string[] | null>(member.sidebarPermissions);
 
   const canManage = myRole === "owner" || myRole === "manager";
+
+  function toggleNavKey(key: string, checked: boolean) {
+    if (!member.membershipId) return;
+    const current = sidebarPermissions ?? sidebarNavCatalog.map((n) => n.key);
+    const next = checked ? Array.from(new Set([...current, key])) : current.filter((k) => k !== key);
+    setSidebarPermissions(next);
+    setAccessPending(true);
+    startTransition(async () => {
+      await updateMemberSidebarPermissionsAction(restaurantId, member.membershipId!, next);
+      setAccessPending(false);
+      router.refresh();
+    });
+  }
+
+  function resetAccess() {
+    if (!member.membershipId) return;
+    setSidebarPermissions(null);
+    setAccessPending(true);
+    startTransition(async () => {
+      await updateMemberSidebarPermissionsAction(restaurantId, member.membershipId!, null);
+      setAccessPending(false);
+      router.refresh();
+    });
+  }
 
   useEffect(() => {
     getMemberActivityAction(restaurantId, member.id).then((entries) => {
@@ -131,6 +163,44 @@ export function MemberDetailPage({
             </button>
           )}
         </div>
+
+        {canManage && (
+          <div className="rounded-2xl border border-mv-border bg-mv-surface p-5">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-[13px] font-semibold text-mv-ink">Accès au menu</p>
+              {sidebarPermissions !== null && (
+                <button
+                  onClick={resetAccess}
+                  disabled={accessPending}
+                  className="text-[12px] font-medium text-mv-ink-soft hover:underline disabled:opacity-50"
+                >
+                  Réinitialiser (accès complet)
+                </button>
+              )}
+            </div>
+            <p className="mb-3 text-[12px] text-mv-ink-faint">
+              Par défaut, ce collaborateur voit tout ce que son rôle autorise. Décochez une section pour
+              la lui masquer — cela ne peut que restreindre son accès, jamais l&apos;élargir.
+            </p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+              {sidebarNavCatalog.map((item) => {
+                const checked = sidebarPermissions === null || sidebarPermissions.includes(item.key);
+                return (
+                  <label key={item.key} className="flex items-center gap-2 text-[12.5px] text-mv-ink-soft">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={accessPending}
+                      onChange={(e) => toggleNavKey(item.key, e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-mv-border"
+                    />
+                    {item.label}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-5">
           <p className="mb-3 text-[13px] font-semibold text-mv-ink">Activité récente</p>

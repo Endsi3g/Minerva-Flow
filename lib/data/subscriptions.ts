@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type Stripe from "stripe";
 
 export type Subscription = {
-  restaurantId: string;
+  workspaceId: string;
   stripeCustomerId: string;
   stripeSubscriptionId: string | null;
   status: Stripe.Subscription.Status | "incomplete";
@@ -11,7 +11,7 @@ export type Subscription = {
 };
 
 type SubscriptionRow = {
-  restaurant_id: string;
+  workspace_id: string;
   stripe_customer_id: string;
   stripe_subscription_id: string | null;
   status: Stripe.Subscription.Status;
@@ -20,7 +20,7 @@ type SubscriptionRow = {
 
 function mapSubscription(row: SubscriptionRow): Subscription {
   return {
-    restaurantId: row.restaurant_id,
+    workspaceId: row.workspace_id,
     stripeCustomerId: row.stripe_customer_id,
     stripeSubscriptionId: row.stripe_subscription_id,
     status: row.status,
@@ -28,12 +28,12 @@ function mapSubscription(row: SubscriptionRow): Subscription {
   };
 }
 
-export async function getSubscription(restaurantId: string): Promise<Subscription | null> {
+export async function getSubscription(workspaceId: string): Promise<Subscription | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("subscriptions")
     .select("*")
-    .eq("restaurant_id", restaurantId)
+    .eq("workspace_id", workspaceId)
     .maybeSingle();
 
   if (error || !data) return null;
@@ -42,7 +42,7 @@ export async function getSubscription(restaurantId: string): Promise<Subscriptio
 
 /** Called from Stripe webhook handlers — always via the admin client, no user session in that context. */
 export async function upsertSubscription(input: {
-  restaurantId: string;
+  workspaceId: string;
   stripeCustomerId: string;
   stripeSubscriptionId: string | null;
   status: Stripe.Subscription.Status;
@@ -51,14 +51,14 @@ export async function upsertSubscription(input: {
   const admin = createAdminClient();
   await admin.from("subscriptions").upsert(
     {
-      restaurant_id: input.restaurantId,
+      workspace_id: input.workspaceId,
       stripe_customer_id: input.stripeCustomerId,
       stripe_subscription_id: input.stripeSubscriptionId,
       status: input.status,
       current_period_end: input.currentPeriodEnd,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "restaurant_id" }
+    { onConflict: "workspace_id" }
   );
 }
 

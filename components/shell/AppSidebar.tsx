@@ -53,6 +53,7 @@ const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const
 const SIDEBAR_WIDTH = 256;
 
 type NavItem = {
+  key: string;
   href: string;
   label: string;
   icon: LucideIcon;
@@ -63,44 +64,52 @@ const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
 // Main navigation items flat list (Overview, Flow AI, Programmes, Journées, Employés, Rapports, Cartes)
 const mainNavItems: NavItem[] = [
-  { href: "/overview", label: "Aperçu", icon: Home, roles: allRoles },
-  { href: "/assistant", label: "Flow AI", icon: MessageSquare, roles: allRoles },
-  { href: "/finance", label: "Finance", icon: Wallet, roles: ["owner", "manager"] },
-  { href: "/days", label: "Journées", icon: BarChart3, roles: allRoles },
-  { href: "/reports", label: "Rapports", icon: FileText, roles: allRoles },
-  { href: "/menu", label: "Menu", icon: UtensilsCrossed, roles: allRoles },
-  { href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
-  { href: "/fidelisation", label: "Fidélisation", icon: Heart, roles: allRoles },
-  { href: "/maps", label: "Cartes", icon: MapIcon, roles: allRoles },
-  { href: "/programs", label: "Programmes", icon: GitCommit, roles: allRoles },
+  { key: "overview", href: "/overview", label: "Aperçu", icon: Home, roles: allRoles },
+  { key: "assistant", href: "/assistant", label: "Flow AI", icon: MessageSquare, roles: allRoles },
+  { key: "finance", href: "/finance", label: "Finance", icon: Wallet, roles: ["owner", "manager"] },
+  { key: "days", href: "/days", label: "Journées", icon: BarChart3, roles: allRoles },
+  { key: "reports", href: "/reports", label: "Rapports", icon: FileText, roles: allRoles },
+  { key: "menu", href: "/menu", label: "Menu", icon: UtensilsCrossed, roles: allRoles },
+  { key: "employees", href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
+  { key: "fidelisation", href: "/fidelisation", label: "Fidélisation", icon: Heart, roles: allRoles },
+  { key: "maps", href: "/maps", label: "Cartes", icon: MapIcon, roles: allRoles },
+  { key: "programs", href: "/programs", label: "Programmes", icon: GitCommit, roles: allRoles },
 ];
 
 // Favorites section
-const favorites = [
-  { href: "/maps", label: "Rapport des villes", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
-  { href: "/campaigns?channel=Email", label: "Envoi hebdomadaire", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
-  { href: "/depenses", label: "Dépenses", icon: TrendingDown, color: "#B5473A", roles: ["owner", "manager"] },
-  { href: "/data", label: "Données", icon: Database, color: "#DD6B20", roles: ["owner", "manager", "consultant"] },
-  { href: "/collaborateurs", label: "Utilisateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
+const favorites: (NavItem & { color: string })[] = [
+  { key: "fav_maps", href: "/maps", label: "Rapport des villes", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
+  { key: "fav_campaigns_email", href: "/campaigns?channel=Email", label: "Envoi hebdomadaire", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
+  { key: "fav_depenses", href: "/depenses", label: "Dépenses", icon: TrendingDown, color: "#B5473A", roles: ["owner", "manager"] },
+  { key: "fav_data", href: "/data", label: "Données", icon: Database, color: "#DD6B20", roles: ["owner", "manager", "consultant"] },
+  { key: "fav_collaborateurs", href: "/collaborateurs", label: "Utilisateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
 ];
 
 // Opérations — expansion "OS pour restaurants" (réservations, puis horaire,
 // puis fournisseurs au fur et à mesure qu'ils sont construits).
 const operationsItems: NavItem[] = [
-  { href: "/reservations", label: "Réservations", icon: CalendarClock, roles: allRoles },
-  { href: "/horaire", label: "Horaire", icon: CalendarDays, roles: allRoles },
-  { href: "/fournisseurs", label: "Fournisseurs", icon: Truck, roles: ["owner", "manager"] },
-  { href: "/inventaire", label: "Inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
-  { href: "/commandes", label: "Commandes", icon: ClipboardList, roles: allRoles },
+  { key: "reservations", href: "/reservations", label: "Réservations", icon: CalendarClock, roles: allRoles },
+  { key: "horaire", href: "/horaire", label: "Horaire", icon: CalendarDays, roles: allRoles },
+  { key: "fournisseurs", href: "/fournisseurs", label: "Fournisseurs", icon: Truck, roles: ["owner", "manager"] },
+  { key: "inventaire", href: "/inventaire", label: "Inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
+  { key: "commandes", href: "/commandes", label: "Commandes", icon: ClipboardList, roles: allRoles },
 ];
 
 // Sub settings items (without Paramètres/Settings which is standalone)
 const subSettingsGroupItems: NavItem[] = [
-  { href: "/billing", label: "Facturation", icon: CreditCard, roles: ["owner"] },
-  { href: "/guide", label: "Guide", icon: BookOpen, roles: allRoles },
-  { href: "/support", label: "Aide & Support", icon: LifeBuoy, roles: allRoles },
-  { href: "/changelog", label: "Nouveautés", icon: History, roles: allRoles },
+  { key: "billing", href: "/billing", label: "Facturation", icon: CreditCard, roles: ["owner"] },
+  { key: "guide", href: "/guide", label: "Guide", icon: BookOpen, roles: allRoles },
+  { key: "support", href: "/support", label: "Aide & Support", icon: LifeBuoy, roles: allRoles },
+  { key: "changelog", href: "/changelog", label: "Nouveautés", icon: History, roles: allRoles },
 ];
+
+/** All customizable nav item keys/labels, for the per-member sidebar permission editor. */
+export const sidebarNavCatalog: { key: string; label: string }[] = [
+  ...mainNavItems,
+  ...operationsItems,
+  ...favorites.map((f) => ({ key: f.key, href: f.href, label: f.label, icon: f.icon, roles: f.roles })),
+  ...subSettingsGroupItems,
+].map((item) => ({ key: item.key, label: item.label }));
 
 function NavLink({
   href,
@@ -230,14 +239,18 @@ function TeamSwitcher() {
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { role, sidebarCollapsed, setSidebarCollapsed, restaurantId, setRestaurantId, restaurants } = useApp();
+  const { role, sidebarPermissions, sidebarCollapsed, setSidebarCollapsed, restaurantId, setRestaurantId, restaurants } =
+    useApp();
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const visibleMainItems = mainNavItems.filter((n) => n.roles.includes(role));
-  const visibleFavorites = favorites.filter((n) => n.roles.includes(role));
-  const visibleOperationsItems = operationsItems.filter((n) => n.roles.includes(role));
-  const visibleSettingsItems = subSettingsGroupItems.filter((n) => n.roles.includes(role));
+  const allowedByRole = (n: NavItem) =>
+    n.roles.includes(role) && (!sidebarPermissions || sidebarPermissions.includes(n.key));
+
+  const visibleMainItems = mainNavItems.filter(allowedByRole);
+  const visibleFavorites = favorites.filter(allowedByRole);
+  const visibleOperationsItems = operationsItems.filter(allowedByRole);
+  const visibleSettingsItems = subSettingsGroupItems.filter(allowedByRole);
   const hasSettingsAccess = ["owner", "manager"].includes(role);
 
   function closeMobile() {
@@ -359,10 +372,10 @@ export function AppSidebar() {
                   );
                 })}
                 <NavLink
-                  href="/workspace"
+                  href="/etablissement"
                   label="Toutes les équipes"
                   icon={LayoutGrid}
-                  active={pathname.startsWith("/workspace")}
+                  active={pathname.startsWith("/etablissement")}
                   onNavigate={closeMobile}
                 />
               </div>

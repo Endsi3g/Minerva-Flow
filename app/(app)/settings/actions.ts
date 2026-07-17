@@ -2,12 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  createCompany,
-  assignRestaurantToCompany,
-  getUserCompanies,
-  getCompanyRestaurants,
-} from "@/lib/data/companies";
-import {
   createRestaurant,
   updateRestaurant,
   type RestaurantInput,
@@ -19,44 +13,15 @@ import { getPostHogClient } from "@/lib/posthog-server";
 import type {
   AlertRule,
   AlertRuleType,
-  Company,
   Connection,
   ConnectionType,
   Restaurant,
 } from "@/lib/types";
 
-export async function getCompaniesWithRestaurantsAction(): Promise<
-  { company: Company; restaurants: Restaurant[] }[]
-> {
-  const companies = await getUserCompanies();
-  return Promise.all(
-    companies.map(async (company) => ({
-      company,
-      restaurants: await getCompanyRestaurants(company.id),
-    }))
-  );
-}
-
-export async function createCompanyAction(name: string): Promise<Company | null> {
-  if (!name.trim()) return null;
-  const company = await createCompany(name);
-  if (company) revalidatePath("/settings");
-  return company;
-}
-
-export async function assignRestaurantToCompanyAction(
-  restaurantId: string,
-  companyId: string
-): Promise<boolean> {
-  const ok = await assignRestaurantToCompany(restaurantId, companyId);
-  if (ok) revalidatePath("/settings");
-  return ok;
-}
-
 export async function createRestaurantAction(input: RestaurantInput): Promise<Restaurant | null> {
   const restaurant = await createRestaurant(input);
   if (restaurant) {
-    revalidatePath("/workspace");
+    revalidatePath("/etablissement");
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
@@ -73,7 +38,7 @@ export async function updateRestaurantAction(
   patch: Partial<RestaurantInput>
 ): Promise<Restaurant | null> {
   const restaurant = await updateRestaurant(id, patch);
-  if (restaurant) revalidatePath("/workspace");
+  if (restaurant) revalidatePath("/etablissement");
   return restaurant;
 }
 

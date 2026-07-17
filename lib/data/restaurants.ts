@@ -17,7 +17,7 @@ type RestaurantRow = {
   color: string | null;
   lng: number | null;
   lat: number | null;
-  company_id: string | null;
+  workspace_id: string | null;
   loyalty_points_per_dollar: number;
   tax_rate: number;
   accepts_tips: boolean;
@@ -38,7 +38,7 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     color: row.color ?? "var(--mv-green)",
     lng: row.lng,
     lat: row.lat,
-    companyId: row.company_id,
+    workspaceId: row.workspace_id,
     loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
     taxRate: row.tax_rate ?? 0.14975,
     acceptsTips: row.accepts_tips ?? true,
@@ -110,6 +110,20 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
 
   const coords = input.address && input.city ? await geocodeAddress(input.address, input.city, input.province) : null;
 
+  // A new establishment joins the creator's existing workspace automatically
+  // (if they already own one via another restaurant) — otherwise it's
+  // created workspace-less, same as before.
+  const { data: existingOwned } = await supabase
+    .from("restaurant_members")
+    .select("restaurant:restaurants(workspace_id)")
+    .eq("user_id", user.id)
+    .eq("role", "owner")
+    .eq("status", "active");
+  const workspaceId =
+    ((existingOwned as { restaurant: { workspace_id: string | null } | null }[] | null) ?? [])
+      .map((r) => r.restaurant?.workspace_id)
+      .find((id): id is string => Boolean(id)) ?? null;
+
   const { data, error } = await supabase
     .from("restaurants")
     .insert({
@@ -121,6 +135,7 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
       color: input.color || undefined,
       lng: coords?.lng ?? null,
       lat: coords?.lat ?? null,
+      workspace_id: workspaceId,
     })
     .select("*")
     .single();

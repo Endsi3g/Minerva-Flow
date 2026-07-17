@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { updateTeamMemberRole, removeTeamMember } from "@/lib/data/team";
+import { updateTeamMemberRole, removeTeamMember, updateMemberSidebarPermissions } from "@/lib/data/team";
 import { getActivityLog } from "@/lib/data/activity";
 import { createInviteLink, listInvites, type RestaurantInvite, type InviteListEntry } from "@/lib/data/invites";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
@@ -49,6 +49,24 @@ export async function updateMemberRoleAction(
   if (!restaurantId || !membershipId || !role) return false;
 
   const ok = await updateTeamMemberRole(restaurantId, membershipId, role);
+  if (ok) revalidatePath("/collaborateurs");
+  return ok;
+}
+
+/**
+ * Updates a member's sidebar permission overlay (which nav sections they
+ * see, restricted to a subset of what their role already allows).
+ * Authorization is enforced by the restaurant_members RLS update policy
+ * (owner/manager can write).
+ */
+export async function updateMemberSidebarPermissionsAction(
+  restaurantId: string,
+  membershipId: string,
+  keys: string[] | null
+): Promise<boolean> {
+  if (!restaurantId || !membershipId) return false;
+
+  const ok = await updateMemberSidebarPermissions(restaurantId, membershipId, keys);
   if (ok) revalidatePath("/collaborateurs");
   return ok;
 }

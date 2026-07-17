@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripeClient } from "@/lib/stripe/config";
 import { upsertSubscription, getSubscriptionByStripeCustomerId } from "@/lib/data/subscriptions";
-import { notifyRestaurantOwners } from "@/lib/data/notifications";
+import { notifyWorkspaceOwners } from "@/lib/data/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type Stripe from "stripe";
 
@@ -31,23 +31,23 @@ export async function POST(req: Request) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
-      const restaurantId = session.metadata?.restaurantId;
+      const workspaceId = session.metadata?.workspaceId;
       const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
       const subscriptionId =
         typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
 
-      if (restaurantId && customerId && subscriptionId) {
+      if (workspaceId && customerId && subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         await upsertSubscription({
-          restaurantId,
+          workspaceId,
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
           status: subscription.status,
           currentPeriodEnd: new Date(subscription.items.data[0]?.current_period_end * 1000).toISOString(),
         });
-        await applyUnappliedReferralReward(restaurantId, customerId);
-        await notifyRestaurantOwners({
-          restaurantId,
+        await applyUnappliedReferralReward(workspaceId, customerId);
+        await notifyWorkspaceOwners({
+          workspaceId,
           type: "billing.subscription_activated",
           title: "Abonnement activé",
           body: "Votre abonnement Minerva Flow est maintenant actif. Merci de votre confiance !",
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       const existing = await getSubscriptionByStripeCustomerId(customerId);
       if (existing) {
         await upsertSubscription({
-          restaurantId: existing.restaurantId,
+          workspaceId: existing.workspaceId,
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
           status: subscription.status,
@@ -75,16 +75,16 @@ export async function POST(req: Request) {
         });
 
         if (subscription.status === "past_due" && previousStatus !== "past_due") {
-          await notifyRestaurantOwners({
-            restaurantId: existing.restaurantId,
+          await notifyWorkspaceOwners({
+            workspaceId: existing.workspaceId,
             type: "billing.payment_past_due",
             title: "Problème de paiement",
             body: "Votre dernier paiement a échoué. Mettez à jour votre méthode de paiement pour éviter une interruption de service.",
             link: "/billing",
           });
         } else if (subscription.status === "active" && previousStatus === "past_due") {
-          await notifyRestaurantOwners({
-            restaurantId: existing.restaurantId,
+          await notifyWorkspaceOwners({
+            workspaceId: existing.workspaceId,
             type: "billing.payment_recovered",
             title: "Paiement régularisé",
             body: "Votre abonnement est de nouveau actif — merci d'avoir mis à jour votre méthode de paiement.",
@@ -102,7 +102,7 @@ export async function POST(req: Request) {
       const existing = await getSubscriptionByStripeCustomerId(customerId);
       if (existing) {
         await upsertSubscription({
-          restaurantId: existing.restaurantId,
+          workspaceId: existing.workspaceId,
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
           status: subscription.status,
@@ -110,8 +110,8 @@ export async function POST(req: Request) {
             ? new Date(subscription.items.data[0].current_period_end * 1000).toISOString()
             : null,
         });
-        await notifyRestaurantOwners({
-          restaurantId: existing.restaurantId,
+        await notifyWorkspaceOwners({
+          workspaceId: existing.workspaceId,
           type: "billing.subscription_canceled",
           title: "Abonnement annulé",
           body: "Votre abonnement Minerva Flow a été annulé.",
@@ -127,8 +127,8 @@ export async function POST(req: Request) {
         typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
       const existing = await getSubscriptionByStripeCustomerId(customerId);
       if (existing) {
-        await notifyRestaurantOwners({
-          restaurantId: existing.restaurantId,
+        await notifyWorkspaceOwners({
+          workspaceId: existing.workspaceId,
           type: "billing.trial_ending",
           title: "Votre essai gratuit se termine bientôt",
           body: "Ajoutez une méthode de paiement pour continuer à utiliser Minerva Flow sans interruption.",
@@ -144,8 +144,8 @@ export async function POST(req: Request) {
       if (customerId) {
         const existing = await getSubscriptionByStripeCustomerId(customerId);
         if (existing) {
-          await notifyRestaurantOwners({
-            restaurantId: existing.restaurantId,
+          await notifyWorkspaceOwners({
+            workspaceId: existing.workspaceId,
             type: "billing.invoice_payment_failed",
             title: "Échec du paiement de la facture",
             body: "Le paiement de votre dernière facture a échoué. Vérifiez votre méthode de paiement.",
@@ -168,8 +168,8 @@ export async function POST(req: Request) {
             style: "currency",
             currency: invoice.currency ?? "cad",
           });
-          await notifyRestaurantOwners({
-            restaurantId: existing.restaurantId,
+          await notifyWorkspaceOwners({
+            workspaceId: existing.workspaceId,
             type: "billing.invoice_payment_succeeded",
             title: "Paiement reçu",
             body: `Votre paiement de ${amount} a été traité avec succès.`,
@@ -189,16 +189,26 @@ export async function POST(req: Request) {
 
 /**
  * Grants the referrer's free-month reward as a Stripe customer balance
- * credit the first time a restaurant's subscription actually activates —
+ * credit the first time a workspace's subscription actually activates —
  * applying at signup time would be premature (no paying subscription to
- * credit yet).
+ * credit yet). referral_rewards is still restaurant-scoped (out of scope
+ * for the workspace migration), so this resolves across every restaurant
+ * in the workspace rather than a single one.
  */
-async function applyUnappliedReferralReward(restaurantId: string, stripeCustomerId: string) {
+async function applyUnappliedReferralReward(workspaceId: string, stripeCustomerId: string) {
   const admin = createAdminClient();
+  const { data: workspaceRestaurants } = await admin
+    .from("restaurants")
+    .select("id")
+    .eq("workspace_id", workspaceId);
+
+  const restaurantIds = ((workspaceRestaurants as { id: string }[] | null) ?? []).map((r) => r.id);
+  if (restaurantIds.length === 0) return;
+
   const { data: rewards } = await admin
     .from("referral_rewards")
     .select("id, amount")
-    .eq("restaurant_id", restaurantId)
+    .in("restaurant_id", restaurantIds)
     .eq("reward_type", "free_months")
     .eq("applied", false);
 

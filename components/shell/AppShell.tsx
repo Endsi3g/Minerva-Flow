@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ) : (
             <div className={cn("mx-auto", sidebarCollapsed ? "max-w-[1800px]" : "max-w-[1600px]")}>
               {!pathname.startsWith("/changelog") && <UpdateBanner />}
-              {!pathname.startsWith("/workspace") && <WorkspaceSetupBanner />}
+              {!pathname.startsWith("/etablissement") && <WorkspaceSetupBanner />}
               {children}
             </div>
           )}

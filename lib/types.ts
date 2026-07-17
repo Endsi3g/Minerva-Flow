@@ -14,7 +14,7 @@ export type Restaurant = {
   color: string;
   lng: number | null;
   lat: number | null;
-  companyId?: string | null;
+  workspaceId?: string | null;
   loyaltyPointsPerDollar: number;
   taxRate: number;
   acceptsTips: boolean;
@@ -169,15 +169,15 @@ export type PurchaseOrder = {
   items: PurchaseOrderItem[];
 };
 
-export type Company = {
+export type Workspace = {
   id: string;
   name: string;
   createdAt: string;
 };
 
-export type CompanyMember = {
+export type WorkspaceMember = {
   id: string;
-  companyId: string;
+  workspaceId: string;
   userId: string;
   role: Role;
   status: "actif" | "invite";
@@ -327,6 +327,7 @@ export type TeamMember = {
   status: "actif" | "invite";
   avatarUrl?: string | null;
   membershipId?: string;
+  sidebarPermissions: string[] | null;
 };
 
 export type TransactionDirection = "in" | "out";

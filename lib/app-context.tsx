@@ -15,6 +15,7 @@ export type AuthUser = {
 
 type AppState = {
   role: Role;
+  sidebarPermissions: string[] | null;
   restaurantId: string;
   setRestaurantId: (id: string) => void;
   restaurants: Restaurant[];
@@ -32,12 +33,14 @@ export function AppProvider({
   children,
   authUser = null,
   role,
+  sidebarPermissions = null,
   restaurants,
   initialRestaurantId,
 }: {
   children: ReactNode;
   authUser?: AuthUser | null;
   role: Role;
+  sidebarPermissions?: string[] | null;
   restaurants: Restaurant[];
   initialRestaurantId: string;
 }) {
@@ -60,6 +63,7 @@ export function AppProvider({
   const value = useMemo(
     () => ({
       role,
+      sidebarPermissions,
       restaurantId,
       setRestaurantId,
       restaurants,
@@ -70,7 +74,7 @@ export function AppProvider({
       authUser: localAuthUser,
       updateAuthUser,
     }),
-    [role, restaurantId, restaurants, period, sidebarCollapsed, localAuthUser]
+    [role, sidebarPermissions, restaurantId, restaurants, period, sidebarCollapsed, localAuthUser]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
