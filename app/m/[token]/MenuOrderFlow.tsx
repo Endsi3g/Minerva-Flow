@@ -9,9 +9,12 @@ import { Modal } from "@/components/ui/Modal";
 import { requestCustomerMagicLink } from "@/lib/auth/customer-magic-link";
 import { submitPublicOrderAction } from "./actions";
 import { formatCurrency, roundToCents, cn } from "@/lib/utils";
-import type { MenuItem } from "@/lib/types";
+import { InstallAppPrompt } from "@/components/pwa/InstallAppPrompt";
+import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
+import type { MenuItem, Offer } from "@/lib/types";
 import type { PublicMenuLanding } from "@/lib/data/menu-shares";
-import { Plus, Minus, ShoppingCart, Mail, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart } from "lucide-react";
 
 type CartLine = { item: MenuItem; quantity: number };
 type OrderTotals = { subtotal: number; taxAmount: number; tipAmount: number; total: number };
@@ -198,11 +201,13 @@ export function MenuOrderFlow({
   token,
   referralCode,
   landing,
+  offers,
   authenticated,
 }: {
   token: string;
   referralCode: string | null;
   landing: PublicMenuLanding;
+  offers: Offer[];
   authenticated: boolean;
 }) {
   const { restaurantName, items, taxRate, acceptsTips } = landing;
@@ -284,7 +289,40 @@ export function MenuOrderFlow({
         <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">
           {landing.share.title}
         </p>
-        <h1 className="mb-6 font-display text-[26px] font-medium text-mv-ink">{restaurantName}</h1>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+          <h1 className="font-display text-[26px] font-medium text-mv-ink">{restaurantName}</h1>
+          <Link
+            href="/portal"
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3.5 py-2 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-cream-soft hover:text-mv-ink"
+          >
+            <Heart size={14} className="text-mv-green-dark" /> Mes points
+          </Link>
+        </div>
+
+        <InstallAppPrompt />
+        {authenticated && <CustomerPushToggle restaurantId={landing.restaurantId} />}
+
+        {offers.length > 0 && (
+          <div className="mb-8">
+            <p className="mb-2 text-[13px] font-semibold text-mv-ink">Offres en ce moment</p>
+            <div className="space-y-2">
+              {offers.map((offer) => (
+                <Card key={offer.id} className="flex items-center gap-3 border-mv-lime-dark/30 bg-mv-lime-tint">
+                  {offer.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={offer.imageUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-semibold text-mv-ink">{offer.title}</p>
+                    {offer.description && (
+                      <p className="text-[12px] leading-relaxed text-mv-ink-soft">{offer.description}</p>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {items.length === 0 ? (
           <p className="text-[13px] text-mv-ink-faint">Aucun plat disponible pour l&apos;instant.</p>

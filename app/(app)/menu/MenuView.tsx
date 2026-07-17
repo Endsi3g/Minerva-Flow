@@ -5,7 +5,7 @@ import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Field, Input, Select } from "@/components/minerva/FormField";
+import { Field, Input } from "@/components/minerva/FormField";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HelperTooltip } from "@/components/ui/HelperTooltip";
 import { cn } from "@/lib/utils";
@@ -17,9 +17,10 @@ import {
   quadrantDescription,
   type MenuItemWithQuadrant,
 } from "@/lib/menu-engineering";
-import type { MenuItem, MenuQuadrant, MenuShare } from "@/lib/types";
-import { UtensilsCrossed, Plus, Trash2, TrendingUp, Pencil, Share2, Copy, Check } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import type { MenuItem, MenuQuadrant, MenuShare, Offer } from "@/lib/types";
+import { UtensilsCrossed, Plus, Trash2, TrendingUp, Pencil, Share2, Copy, Check, Download, Megaphone, EyeOff } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import QRCode from "qrcode";
 import {
   createMenuItemAction,
   deleteMenuItemAction,
@@ -27,6 +28,9 @@ import {
   updateMenuItemAction,
   createMenuShareAction,
   deleteMenuShareAction,
+  createOfferAction,
+  updateOfferAction,
+  deleteOfferAction,
   updateMenuSettingsAction,
 } from "./actions";
 import { notifyError } from "@/lib/notify-error";
@@ -408,7 +412,12 @@ function ShareMenuModal({
 
 function ShareLinkRow({ share, onDeleted }: { share: MenuShare; onDeleted: (id: string) => void }) {
   const [copied, setCopied] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const url = `${typeof window !== "undefined" ? window.location.origin : ""}/m/${share.token}`;
+
+  useEffect(() => {
+    QRCode.toDataURL(url, { width: 512, margin: 1 }).then(setQrDataUrl).catch(() => setQrDataUrl(null));
+  }, [url]);
 
   function handleCopy() {
     navigator.clipboard.writeText(url);
@@ -416,13 +425,35 @@ function ShareLinkRow({ share, onDeleted }: { share: MenuShare; onDeleted: (id: 
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function handleDownload() {
+    if (!qrDataUrl) return;
+    const a = document.createElement("a");
+    a.href = qrDataUrl;
+    a.download = `qr-${share.title.toLowerCase().replace(/\s+/g, "-")}.png`;
+    a.click();
+  }
+
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
-      <div className="min-w-0">
-        <p className="truncate text-[12.5px] font-medium text-mv-ink">{share.title}</p>
-        <p className="truncate text-[11.5px] text-mv-ink-faint">/m/{share.token}</p>
+      <div className="flex min-w-0 items-center gap-2.5">
+        {qrDataUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={qrDataUrl} alt="" className="h-9 w-9 shrink-0 rounded border border-mv-border-soft" />
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-[12.5px] font-medium text-mv-ink">{share.title}</p>
+          <p className="truncate text-[11.5px] text-mv-ink-faint">/m/{share.token}</p>
+        </div>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
+        <button
+          onClick={handleDownload}
+          disabled={!qrDataUrl}
+          className="text-mv-ink-faint hover:text-mv-ink disabled:opacity-40"
+          aria-label="Télécharger le QR code"
+        >
+          <Download size={14} />
+        </button>
         <button onClick={handleCopy} className="text-mv-ink-faint hover:text-mv-ink" aria-label="Copier le lien">
           {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
         </button>
@@ -438,18 +469,150 @@ function ShareLinkRow({ share, onDeleted }: { share: MenuShare; onDeleted: (id: 
   );
 }
 
+function OfferModal({
+  restaurantId,
+  open,
+  onClose,
+  onCreated,
+}: {
+  restaurantId: string;
+  open: boolean;
+  onClose: () => void;
+  onCreated: (offer: Offer) => void;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scopeId, setScopeId] = useState(() => crypto.randomUUID());
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setIsSubmitting(true);
+    try {
+      const offer = await createOfferAction(restaurantId, {
+        title: String(form.get("title") ?? ""),
+        description: String(form.get("description") ?? "") || null,
+        imageUrl,
+      });
+      if (offer) {
+        onCreated(offer);
+        onClose();
+        (e.target as HTMLFormElement).reset();
+        setImageUrl(null);
+        setScopeId(crypto.randomUUID());
+      } else {
+        notifyError("La création de l'offre a échoué.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Nouvelle offre"
+      description="Visible immédiatement par vos clients sur le menu public — une notification leur est envoyée."
+    >
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <Field label="Titre">
+          <Input name="title" placeholder="Ex : 2 pour 1 sur les burgers" required autoFocus />
+        </Field>
+        <Field label="Description" hint="Optionnel">
+          <Input name="description" placeholder="Ex : Valide tous les mardis soir" />
+        </Field>
+        <Field label="Image" hint="Optionnel — visible sur le menu public">
+          <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} bucket="offer-images" onUploaded={setImageUrl} />
+        </Field>
+        <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Publication…" : "Publier l'offre"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function OfferRow({
+  restaurantId,
+  offer,
+  onUpdated,
+  onDeleted,
+}: {
+  restaurantId: string;
+  offer: Offer;
+  onUpdated: (offer: Offer) => void;
+  onDeleted: (id: string) => void;
+}) {
+  const [pending, setPending] = useState(false);
+
+  async function handleToggleActive() {
+    setPending(true);
+    const updated = await updateOfferAction(restaurantId, offer.id, { active: !offer.active });
+    setPending(false);
+    if (updated) onUpdated(updated);
+    else notifyError("La mise à jour de l'offre a échoué.");
+  }
+
+  function handleDelete() {
+    if (!window.confirm(`Supprimer l'offre "${offer.title}" ?`)) return;
+    deleteOfferAction(restaurantId, offer.id).then((ok) => {
+      if (ok) onDeleted(offer.id);
+      else notifyError("La suppression a échoué.");
+    });
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
+      <div className="flex min-w-0 items-center gap-2.5">
+        {offer.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={offer.imageUrl} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-[12.5px] font-medium text-mv-ink">{offer.title}</p>
+          {offer.description && <p className="truncate text-[11.5px] text-mv-ink-faint">{offer.description}</p>}
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <Badge tone={offer.active ? "green" : "neutral"} dot>
+          {offer.active ? "Active" : "Masquée"}
+        </Badge>
+        <button
+          onClick={handleToggleActive}
+          disabled={pending}
+          className="text-mv-ink-faint hover:text-mv-ink disabled:opacity-50"
+          aria-label={offer.active ? "Masquer l'offre" : "Réactiver l'offre"}
+        >
+          <EyeOff size={14} />
+        </button>
+        <button onClick={handleDelete} className="text-mv-ink-faint hover:text-mv-red" aria-label="Supprimer l'offre">
+          <Trash2 size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function MenuView({
   restaurantId,
   initialItems,
   taxRate,
   acceptsTips,
   initialShares,
+  initialOffers,
 }: {
   restaurantId: string | null;
   initialItems: MenuItem[];
   taxRate: number;
   acceptsTips: boolean;
   initialShares: MenuShare[];
+  initialOffers: Offer[];
 }) {
   const { role } = useApp();
   const [items, setItems] = useState(initialItems);
@@ -458,6 +621,8 @@ export function MenuView({
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [shares, setShares] = useState(initialShares);
   const [shareOpen, setShareOpen] = useState(false);
+  const [offers, setOffers] = useState(initialOffers);
+  const [offerOpen, setOfferOpen] = useState(false);
   const [tax, setTax] = useState(taxRate);
   const [tips, setTips] = useState(acceptsTips);
 
@@ -498,6 +663,14 @@ export function MenuView({
     deleteMenuShareAction(restaurantId, id).then((ok) => {
       if (ok) setShares((prev) => prev.filter((s) => s.id !== id));
     });
+  }
+
+  function handleOfferUpdated(updated: Offer) {
+    setOffers((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+  }
+
+  function handleOfferDeleted(id: string) {
+    setOffers((prev) => prev.filter((o) => o.id !== id));
   }
 
   async function handleTaxBlur() {
@@ -558,6 +731,37 @@ export function MenuView({
             <div className="w-full space-y-1.5 border-t border-mv-border pt-3">
               {shares.map((s) => (
                 <ShareLinkRow key={s.id} share={s} onDeleted={handleShareDeleted} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {canManage && restaurantId && (
+        <div className="mb-6 rounded-xl bg-mv-cream-soft px-4 py-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-mv-ink">
+              <Megaphone size={14} className="text-mv-green-dark" /> Offres clients
+            </p>
+            <Button size="sm" variant="secondary" onClick={() => setOfferOpen(true)}>
+              <Plus size={14} /> Nouvelle offre
+            </Button>
+          </div>
+          {offers.length === 0 ? (
+            <p className="text-[12px] text-mv-ink-faint">
+              Publiez une offre pour la montrer sur votre menu public — vos clients abonnés recevront une
+              notification.
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {offers.map((offer) => (
+                <OfferRow
+                  key={offer.id}
+                  restaurantId={restaurantId}
+                  offer={offer}
+                  onUpdated={handleOfferUpdated}
+                  onDeleted={handleOfferDeleted}
+                />
               ))}
             </div>
           )}
@@ -665,6 +869,15 @@ export function MenuView({
           open={shareOpen}
           onClose={() => setShareOpen(false)}
           onCreated={(share) => setShares((prev) => [share, ...prev])}
+        />
+      )}
+
+      {restaurantId && (
+        <OfferModal
+          restaurantId={restaurantId}
+          open={offerOpen}
+          onClose={() => setOfferOpen(false)}
+          onCreated={(offer) => setOffers((prev) => [offer, ...prev])}
         />
       )}
     </div>

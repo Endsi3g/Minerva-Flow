@@ -5,12 +5,13 @@ import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import { Dropzone, DropzoneContent, DropzoneEmptyState } from "@/components/ui/dropzone";
 import { createClient } from "@/lib/supabase/client";
 
-const BUCKET = "menu-item-images";
+const DEFAULT_BUCKET = "menu-item-images";
 const IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_SIZE = 5 * 1024 * 1024;
 
 /**
- * Single-image dropzone for a menu item — patron identique à
+ * Single-image dropzone for a menu item (or, via the `bucket` prop, any
+ * other restaurant-scoped public image like an offer) — patron identique à
  * components/campaigns/CampaignAssets.tsx (useSupabaseUpload + Dropzone
  * générique), mais un seul fichier auto-upload directement vers une URL
  * publique (bucket public, comme "avatars") au lieu d'une table
@@ -21,15 +22,17 @@ export function MenuImageUpload({
   scopeId,
   currentUrl,
   onUploaded,
+  bucket = DEFAULT_BUCKET,
 }: {
   restaurantId: string;
   scopeId: string;
   currentUrl?: string | null;
   onUploaded: (url: string) => void;
+  bucket?: string;
 }) {
   const path = `${restaurantId}/${scopeId}`;
   const upload = useSupabaseUpload({
-    bucketName: BUCKET,
+    bucketName: bucket,
     path,
     allowedMimeTypes: IMAGE_MIME_TYPES,
     maxFiles: 1,
@@ -51,7 +54,7 @@ export function MenuImageUpload({
     const file = newlyUploaded[0];
     uploadedRef.current.add(file.name);
     const supabase = createClient();
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(`${path}/${file.name}`);
+    const { data } = supabase.storage.from(bucket).getPublicUrl(`${path}/${file.name}`);
     onUploaded(data.publicUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [upload.successes]);

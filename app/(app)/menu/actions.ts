@@ -9,8 +9,9 @@ import {
   type MenuItemInput,
 } from "@/lib/data/menu";
 import { createMenuShare, deleteMenuShare } from "@/lib/data/menu-shares";
+import { createOffer, updateOffer, deleteOffer, type OfferInput } from "@/lib/data/offers";
 import { updateRestaurantAction } from "@/app/(app)/settings/actions";
-import type { MenuItem, MenuShare } from "@/lib/types";
+import type { MenuItem, MenuShare, Offer } from "@/lib/types";
 
 export async function createMenuItemAction(
   restaurantId: string,
@@ -61,6 +62,29 @@ export async function createMenuShareAction(
 
 export async function deleteMenuShareAction(restaurantId: string, id: string): Promise<boolean> {
   const ok = await deleteMenuShare(restaurantId, id);
+  if (ok) revalidatePath("/menu");
+  return ok;
+}
+
+export async function createOfferAction(restaurantId: string, input: OfferInput): Promise<Offer | null> {
+  if (!input.title.trim()) return null;
+  const offer = await createOffer(restaurantId, input);
+  if (offer) revalidatePath("/menu");
+  return offer;
+}
+
+export async function updateOfferAction(
+  restaurantId: string,
+  offerId: string,
+  patch: Partial<OfferInput>
+): Promise<Offer | null> {
+  const offer = await updateOffer(restaurantId, offerId, patch);
+  if (offer) revalidatePath("/menu");
+  return offer;
+}
+
+export async function deleteOfferAction(restaurantId: string, offerId: string): Promise<boolean> {
+  const ok = await deleteOffer(restaurantId, offerId);
   if (ok) revalidatePath("/menu");
   return ok;
 }
