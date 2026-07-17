@@ -54,12 +54,14 @@ export function MemberDetailPage({
 
   function toggleNavKey(key: string, checked: boolean) {
     if (!member.membershipId) return;
-    const current = sidebarPermissions ?? sidebarNavCatalog.map((n) => n.key);
+    const previous = sidebarPermissions;
+    const current = previous ?? sidebarNavCatalog.map((n) => n.key);
     const next = checked ? Array.from(new Set([...current, key])) : current.filter((k) => k !== key);
     setSidebarPermissions(next);
     setAccessPending(true);
     startTransition(async () => {
-      await updateMemberSidebarPermissionsAction(restaurantId, member.membershipId!, next);
+      const ok = await updateMemberSidebarPermissionsAction(restaurantId, member.membershipId!, next);
+      if (!ok) setSidebarPermissions(previous);
       setAccessPending(false);
       router.refresh();
     });
@@ -67,10 +69,12 @@ export function MemberDetailPage({
 
   function resetAccess() {
     if (!member.membershipId) return;
+    const previous = sidebarPermissions;
     setSidebarPermissions(null);
     setAccessPending(true);
     startTransition(async () => {
-      await updateMemberSidebarPermissionsAction(restaurantId, member.membershipId!, null);
+      const ok = await updateMemberSidebarPermissionsAction(restaurantId, member.membershipId!, null);
+      if (!ok) setSidebarPermissions(previous);
       setAccessPending(false);
       router.refresh();
     });

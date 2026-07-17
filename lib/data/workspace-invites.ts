@@ -185,6 +185,13 @@ export async function getInviteByToken(token: string): Promise<WorkspaceInviteLo
  * per restaurant the invite assigns, then marks the invite as used. All
  * writes go through the admin client since the redeemer has no membership
  * yet to pass RLS on the normal user-scoped path.
+ *
+ * The invite is claimed FIRST via a single conditional UPDATE
+ * (`used_at is null and expires_at > now()`, checked via the returned row)
+ * before any membership writes happen — this is what makes concurrent
+ * redemptions of the same token safe: only one caller can ever win that
+ * UPDATE. If the membership writes fail afterward, the claim is rolled back
+ * so the token stays redeemable rather than being silently burned.
  */
 export async function redeemInvite(token: string): Promise<{ ok: boolean; workspaceId?: string }> {
   const supabase = await createClient();
@@ -194,40 +201,68 @@ export async function redeemInvite(token: string): Promise<{ ok: boolean; worksp
   if (!user) return { ok: false };
 
   const admin = createAdminClient();
-  const { data: invite, error } = await admin
+  const { data: claimed, error: claimError } = await admin
     .from("workspace_invites")
-    .select("*")
+    .update({ used_at: new Date().toISOString(), used_by: user.id })
     .eq("token", token)
+    .is("used_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .select("*")
     .maybeSingle();
-  if (error || !invite) return { ok: false };
-  if (invite.used_at || new Date(invite.expires_at) <= new Date()) return { ok: false };
+  if (claimError || !claimed) return { ok: false };
+  const invite = claimed;
+
+  // Never downgrade an already-active member's role via a stale/misdirected invite.
+  const { data: existingWorkspaceMember } = await admin
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", invite.workspace_id)
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+  const workspaceRole = (existingWorkspaceMember as { role: string } | null)?.role ?? invite.role;
 
   const { error: workspaceMemberError } = await admin
     .from("workspace_members")
     .upsert(
-      { workspace_id: invite.workspace_id, user_id: user.id, role: invite.role, status: "active" },
+      { workspace_id: invite.workspace_id, user_id: user.id, role: workspaceRole, status: "active" },
       { onConflict: "workspace_id,user_id" }
     );
-  if (workspaceMemberError) return { ok: false };
 
   const restaurantIds = (invite.restaurant_ids as string[] | null) ?? [];
-  if (restaurantIds.length > 0) {
-    const { error: restaurantMemberError } = await admin.from("restaurant_members").upsert(
+  let restaurantMemberError: unknown = null;
+  if (!workspaceMemberError && restaurantIds.length > 0) {
+    const { data: existingRestaurantMembers } = await admin
+      .from("restaurant_members")
+      .select("restaurant_id, role")
+      .in("restaurant_id", restaurantIds)
+      .eq("user_id", user.id)
+      .eq("status", "active");
+    const existingRoleByRestaurant = new Map(
+      ((existingRestaurantMembers as { restaurant_id: string; role: string }[] | null) ?? []).map((m) => [
+        m.restaurant_id,
+        m.role,
+      ])
+    );
+
+    const result = await admin.from("restaurant_members").upsert(
       restaurantIds.map((restaurantId) => ({
         restaurant_id: restaurantId,
         user_id: user.id,
-        role: invite.role,
+        role: existingRoleByRestaurant.get(restaurantId) ?? invite.role,
         status: "active",
       })),
       { onConflict: "restaurant_id,user_id" }
     );
-    if (restaurantMemberError) return { ok: false };
+    restaurantMemberError = result.error;
   }
 
-  await admin
-    .from("workspace_invites")
-    .update({ used_at: new Date().toISOString(), used_by: user.id })
-    .eq("id", invite.id);
+  if (workspaceMemberError || restaurantMemberError) {
+    // Roll back the claim so the invite stays redeemable instead of being
+    // burned by a failed attempt.
+    await admin.from("workspace_invites").update({ used_at: null, used_by: null }).eq("id", invite.id);
+    return { ok: false };
+  }
 
   for (const restaurantId of restaurantIds) {
     await logActivity({

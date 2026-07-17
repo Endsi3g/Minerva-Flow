@@ -179,13 +179,14 @@ export async function updateMemberSidebarPermissions(
   keys: string[] | null
 ): Promise<boolean> {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("restaurant_members")
     .update({ sidebar_permissions: keys })
     .eq("restaurant_id", restaurantId)
-    .eq("id", membershipId);
+    .eq("id", membershipId)
+    .select("id");
 
-  if (error) return false;
+  if (error || (data?.length ?? 0) === 0) return false;
 
   await logActivity({
     restaurantId,

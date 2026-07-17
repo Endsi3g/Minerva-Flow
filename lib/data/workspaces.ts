@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Role, Workspace, Restaurant } from "@/lib/types";
 
 type WorkspaceRow = {
@@ -186,16 +187,37 @@ export async function createWorkspace(name: string): Promise<Workspace | null> {
   return mapWorkspace(workspace as WorkspaceRow);
 }
 
-/** Links an existing restaurant (that the user owns/manages) to a workspace. */
+/**
+ * Links an existing restaurant (that the user owns/manages) to a workspace
+ * — only if it isn't already attached to one, so a workspace manager can't
+ * reassign a restaurant that's homed in a different workspace out from
+ * under it. Returns false both on a DB error and when no row matched
+ * (restaurant not found, or already assigned elsewhere).
+ */
 export async function assignRestaurantToWorkspace(
   restaurantId: string,
   workspaceId: string
 ): Promise<boolean> {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("restaurants")
     .update({ workspace_id: workspaceId })
-    .eq("id", restaurantId);
+    .eq("id", restaurantId)
+    .is("workspace_id", null)
+    .select("id");
 
-  return !error;
+  return !error && (data?.length ?? 0) > 0;
+}
+
+/**
+ * Compensating cleanup for createWorkspace() when the immediately-following
+ * restaurant assignment fails — otherwise the workspace is left orphaned
+ * (a workspace_members row with no restaurant, invisible in the UI but
+ * cluttering the table) and a retry mints another one. Admin client because
+ * there's no workspaces_delete RLS policy (deleting one's own workspace
+ * isn't a supported end-user action today, only this internal rollback).
+ */
+export async function deleteWorkspace(workspaceId: string): Promise<void> {
+  const admin = createAdminClient();
+  await admin.from("workspaces").delete().eq("id", workspaceId);
 }

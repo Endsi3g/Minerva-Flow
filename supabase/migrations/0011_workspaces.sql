@@ -14,6 +14,17 @@ alter index idx_restaurants_company rename to idx_restaurants_workspace;
 alter index idx_company_members_user rename to idx_workspace_members_user;
 alter index idx_company_members_company rename to idx_workspace_members_workspace;
 
+-- Drop the policies that reference is_company_member() BEFORE dropping the
+-- function itself — Postgres refuses to drop a function that a live policy
+-- still depends on.
+drop policy if exists "companies_select" on workspaces;
+drop policy if exists "companies_update" on workspaces;
+drop policy if exists "companies_insert" on workspaces;
+drop policy if exists "company_members_select" on workspace_members;
+drop policy if exists "company_members_insert" on workspace_members;
+drop policy if exists "company_members_update" on workspace_members;
+drop policy if exists "company_members_delete" on workspace_members;
+
 drop function if exists is_company_member(uuid, member_role[]);
 
 create function is_workspace_member(target_workspace_id uuid, min_roles member_role[] default array['owner','manager','staff','consultant']::member_role[])
@@ -32,9 +43,6 @@ as $$
   );
 $$;
 
-drop policy if exists "companies_select" on workspaces;
-drop policy if exists "companies_update" on workspaces;
-drop policy if exists "companies_insert" on workspaces;
 create policy "workspaces_select" on workspaces for select
   using (is_workspace_member(id));
 create policy "workspaces_update" on workspaces for update
@@ -42,17 +50,23 @@ create policy "workspaces_update" on workspaces for update
 create policy "workspaces_insert" on workspaces for insert
   with check (true); -- creation happens via a server action that immediately inserts the owner membership
 
-drop policy if exists "company_members_select" on workspace_members;
-drop policy if exists "company_members_insert" on workspace_members;
-drop policy if exists "company_members_update" on workspace_members;
-drop policy if exists "company_members_delete" on workspace_members;
 create policy "workspace_members_select" on workspace_members for select
   using (is_workspace_member(workspace_id));
 create policy "workspace_members_insert" on workspace_members for insert
-  with check (is_workspace_member(workspace_id, array['owner','manager']::member_role[]) or user_id = auth.uid());
-  -- the "or user_id = auth.uid()" covers the moment a workspace is first created:
-  -- the creating user has no membership row yet, so they insert their own
-  -- owner row directly (same bootstrap gap as restaurants_owner_insert).
+  with check (
+    is_workspace_member(workspace_id, array['owner','manager']::member_role[])
+    or (
+      -- Bootstrap-only: the creating user may insert their own first
+      -- membership row for a workspace, but ONLY while it has zero members —
+      -- once a workspace has any member, all further inserts must go through
+      -- the owner/manager path above. Without the "zero members" guard,
+      -- any authenticated user could self-appoint as owner of any existing
+      -- workspace by inserting {workspace_id: <target>, user_id: self, role:
+      -- 'owner'} directly.
+      user_id = auth.uid()
+      and not exists (select 1 from workspace_members wm where wm.workspace_id = workspace_id)
+    )
+  );
 create policy "workspace_members_update" on workspace_members for update
   using (is_workspace_member(workspace_id, array['owner','manager']::member_role[]));
 create policy "workspace_members_delete" on workspace_members for delete
@@ -191,6 +205,11 @@ alter table subscriptions add constraint subscriptions_workspace_id_key unique (
 -- restaurant_id and its legacy unique constraint are left in place for now
 -- (audit trail) — drop them in a follow-up migration once every workspace
 -- has been reconciled and the app no longer reads subscriptions by restaurant_id.
+-- It must become nullable now, though: upsertSubscription() only writes
+-- workspace_id going forward, so the very first webhook-driven insert for a
+-- brand-new workspace (no legacy restaurant-level row to conflict with)
+-- would otherwise violate the old NOT NULL constraint.
+alter table subscriptions alter column restaurant_id drop not null;
 
 drop policy if exists "subscriptions_select" on subscriptions;
 create policy "subscriptions_select" on subscriptions for select

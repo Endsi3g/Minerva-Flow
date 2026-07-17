@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentWorkspaceMembership } from "@/lib/data/current-workspace";
-import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
+import { getCurrentRestaurantId, getCurrentMembership } from "@/lib/data/current-restaurant";
 import {
   getWorkspace,
   getWorkspaceMembers,
@@ -10,6 +10,7 @@ import {
   updateWorkspaceName,
   createWorkspace,
   assignRestaurantToWorkspace,
+  deleteWorkspace,
   type WorkspaceMemberWithRestaurants,
 } from "@/lib/data/workspaces";
 import {
@@ -54,11 +55,22 @@ export async function createWorkspaceForCurrentRestaurantAction(name: string): P
   const restaurantId = await getCurrentRestaurantId();
   if (!restaurantId || !name.trim()) return false;
 
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return false;
+  }
+
   const workspace = await createWorkspace(name);
   if (!workspace) return false;
 
   const ok = await assignRestaurantToWorkspace(restaurantId, workspace.id);
-  if (ok) revalidatePath("/workspace");
+  if (ok) {
+    revalidatePath("/workspace");
+  } else {
+    // Assignment failed (e.g. the restaurant got assigned elsewhere in a
+    // race) — don't leave an empty, ownerless-looking workspace behind.
+    await deleteWorkspace(workspace.id);
+  }
   return ok;
 }
 
@@ -84,13 +96,18 @@ export async function assignRestaurantToWorkspaceAction(
   return ok;
 }
 
+// Deliberately excludes "owner" — Role is erased at runtime, so without this
+// allowlist a manager could call this action directly (bypassing the invite
+// modal's own role dropdown) and mint themselves or anyone else a co-owner.
+const INVITABLE_ROLES: Role[] = ["manager", "staff", "consultant"];
+
 export async function createWorkspaceInviteLinkAction(
   workspaceId: string,
   role: Role,
   restaurantIds: string[]
 ): Promise<WorkspaceInvite | null> {
   const membership = await requireWorkspaceManager(workspaceId);
-  if (!membership) return null;
+  if (!membership || !INVITABLE_ROLES.includes(role)) return null;
 
   return createInviteLink(workspaceId, role, restaurantIds);
 }

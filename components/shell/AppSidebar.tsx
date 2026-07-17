@@ -107,7 +107,7 @@ const subSettingsGroupItems: NavItem[] = [
 export const sidebarNavCatalog: { key: string; label: string }[] = [
   ...mainNavItems,
   ...operationsItems,
-  ...favorites.map((f) => ({ key: f.key, href: f.href, label: f.label, icon: f.icon, roles: f.roles })),
+  ...favorites,
   ...subSettingsGroupItems,
 ].map((item) => ({ key: item.key, label: item.label }));
 

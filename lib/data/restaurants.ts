@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import { geocodeAddress } from "@/lib/geocode";
@@ -110,19 +111,27 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
 
   const coords = input.address && input.city ? await geocodeAddress(input.address, input.city, input.province) : null;
 
-  // A new establishment joins the creator's existing workspace automatically
-  // (if they already own one via another restaurant) — otherwise it's
-  // created workspace-less, same as before.
-  const { data: existingOwned } = await supabase
-    .from("restaurant_members")
-    .select("restaurant:restaurants(workspace_id)")
-    .eq("user_id", user.id)
-    .eq("role", "owner")
-    .eq("status", "active");
-  const workspaceId =
-    ((existingOwned as { restaurant: { workspace_id: string | null } | null }[] | null) ?? [])
-      .map((r) => r.restaurant?.workspace_id)
-      .find((id): id is string => Boolean(id)) ?? null;
+  // A new establishment joins the creator's CURRENT workspace context
+  // automatically (the restaurant they had selected when clicking "add
+  // establishment") — not an arbitrary one picked from everywhere they
+  // happen to be an owner, which could attach it to the wrong workspace for
+  // an owner spanning multiple. Falls back to workspace-less if there's no
+  // current selection or that restaurant has no workspace yet.
+  const cookieStore = await cookies();
+  const currentRestaurantId = cookieStore.get("mv_restaurant_id")?.value;
+  let workspaceId: string | null = null;
+  if (currentRestaurantId) {
+    const { data: currentMembership } = await supabase
+      .from("restaurant_members")
+      .select("restaurant:restaurants(workspace_id)")
+      .eq("restaurant_id", currentRestaurantId)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    workspaceId =
+      (currentMembership as { restaurant: { workspace_id: string | null } | null } | null)?.restaurant
+        ?.workspace_id ?? null;
+  }
 
   const { data, error } = await supabase
     .from("restaurants")

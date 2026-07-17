@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStripeClient } from "@/lib/stripe/config";
+import { getStripeClient, stripePriceId } from "@/lib/stripe/config";
 import { upsertSubscription, getSubscriptionByStripeCustomerId } from "@/lib/data/subscriptions";
 import { notifyWorkspaceOwners } from "@/lib/data/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -63,7 +63,11 @@ export async function POST(req: Request) {
       const customerId =
         typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
       const existing = await getSubscriptionByStripeCustomerId(customerId);
-      if (existing) {
+      // A null workspaceId means this Stripe customer maps to a legacy
+      // subscription the 0011_workspaces.sql backfill left ambiguous (see
+      // its runbook) — skip until it's manually reconciled, rather than
+      // upserting a workspace-less duplicate row.
+      if (existing && existing.workspaceId) {
         await upsertSubscription({
           workspaceId: existing.workspaceId,
           stripeCustomerId: customerId,
@@ -100,7 +104,7 @@ export async function POST(req: Request) {
       const customerId =
         typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
       const existing = await getSubscriptionByStripeCustomerId(customerId);
-      if (existing) {
+      if (existing && existing.workspaceId) {
         await upsertSubscription({
           workspaceId: existing.workspaceId,
           stripeCustomerId: customerId,
@@ -126,7 +130,7 @@ export async function POST(req: Request) {
       const customerId =
         typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
       const existing = await getSubscriptionByStripeCustomerId(customerId);
-      if (existing) {
+      if (existing && existing.workspaceId) {
         await notifyWorkspaceOwners({
           workspaceId: existing.workspaceId,
           type: "billing.trial_ending",
@@ -143,7 +147,7 @@ export async function POST(req: Request) {
       const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
       if (customerId) {
         const existing = await getSubscriptionByStripeCustomerId(customerId);
-        if (existing) {
+        if (existing && existing.workspaceId) {
           await notifyWorkspaceOwners({
             workspaceId: existing.workspaceId,
             type: "billing.invoice_payment_failed",
@@ -163,7 +167,7 @@ export async function POST(req: Request) {
       // sends an "abonnement activé" notification for that one.
       if (customerId && invoice.billing_reason !== "subscription_create") {
         const existing = await getSubscriptionByStripeCustomerId(customerId);
-        if (existing) {
+        if (existing && existing.workspaceId) {
           const amount = (invoice.amount_paid / 100).toLocaleString("fr-CA", {
             style: "currency",
             currency: invoice.currency ?? "cad",
@@ -216,7 +220,7 @@ async function applyUnappliedReferralReward(workspaceId: string, stripeCustomerI
   if (unapplied.length === 0) return;
 
   const stripe = getStripeClient();
-  const price = await stripe.prices.retrieve(process.env.STRIPE_PRICE_ID!);
+  const price = await stripe.prices.retrieve(stripePriceId());
   const monthlyAmount = price.unit_amount ?? 0;
 
   for (const reward of unapplied) {

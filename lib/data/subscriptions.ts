@@ -3,7 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type Stripe from "stripe";
 
 export type Subscription = {
-  workspaceId: string;
+  // Null only for legacy rows the 0011_workspaces.sql backfill left
+  // unreconciled (a workspace with more than one pre-existing per-restaurant
+  // subscription) — every row written going forward always has one.
+  workspaceId: string | null;
   stripeCustomerId: string;
   stripeSubscriptionId: string | null;
   status: Stripe.Subscription.Status | "incomplete";
@@ -11,7 +14,7 @@ export type Subscription = {
 };
 
 type SubscriptionRow = {
-  workspace_id: string;
+  workspace_id: string | null;
   stripe_customer_id: string;
   stripe_subscription_id: string | null;
   status: Stripe.Subscription.Status;
@@ -40,16 +43,24 @@ export async function getSubscription(workspaceId: string): Promise<Subscription
   return mapSubscription(data as SubscriptionRow);
 }
 
-/** Called from Stripe webhook handlers — always via the admin client, no user session in that context. */
+/**
+ * Called from Stripe webhook handlers — always via the admin client, no user
+ * session in that context. Requires a resolved workspaceId: a legacy
+ * subscription whose workspace was left ambiguous by the 0011_workspaces.sql
+ * backfill must be manually reconciled (see that migration's runbook) before
+ * it can be written here — upserting with a null workspace_id would silently
+ * insert a duplicate row instead of updating the existing one, since a
+ * unique constraint never matches NULL against NULL.
+ */
 export async function upsertSubscription(input: {
   workspaceId: string;
   stripeCustomerId: string;
   stripeSubscriptionId: string | null;
   status: Stripe.Subscription.Status;
   currentPeriodEnd: string | null;
-}): Promise<void> {
+}): Promise<boolean> {
   const admin = createAdminClient();
-  await admin.from("subscriptions").upsert(
+  const { error } = await admin.from("subscriptions").upsert(
     {
       workspace_id: input.workspaceId,
       stripe_customer_id: input.stripeCustomerId,
@@ -60,6 +71,7 @@ export async function upsertSubscription(input: {
     },
     { onConflict: "workspace_id" }
   );
+  return !error;
 }
 
 export async function getSubscriptionByStripeCustomerId(

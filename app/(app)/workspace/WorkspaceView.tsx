@@ -89,7 +89,7 @@ export function WorkspaceView({ data }: { data: WorkspaceHubData | null }) {
   if (!data) return <NoWorkspaceYet />;
 
   const { workspace, members, restaurants, canManage } = data;
-  const unassigned = myRestaurants.filter((r) => r.workspaceId !== workspace.id);
+  const unassigned = myRestaurants.filter((r) => !r.workspaceId);
 
   async function handleSaveName() {
     if (!nameDraft.trim() || nameDraft === workspace.name) return;

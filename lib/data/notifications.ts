@@ -182,21 +182,28 @@ export async function notifyWorkspaceOwners(input: {
     .in("user_id", ownerIds)
     .eq("status", "active");
 
-  const restaurantIdByUser = new Map<string, string>();
+  const seenUsers = new Set<string>();
+  const usersByRestaurant = new Map<string, string[]>();
   for (const row of (memberships as { user_id: string; restaurant_id: string }[]) ?? []) {
-    if (!restaurantIdByUser.has(row.user_id)) restaurantIdByUser.set(row.user_id, row.restaurant_id);
+    if (seenUsers.has(row.user_id)) continue; // only the user's first active restaurant, like notifyAllUsers
+    seenUsers.add(row.user_id);
+    const list = usersByRestaurant.get(row.restaurant_id) ?? [];
+    list.push(row.user_id);
+    usersByRestaurant.set(row.restaurant_id, list);
   }
 
-  for (const [userId, restaurantId] of restaurantIdByUser.entries()) {
-    await broadcastNotification({
-      restaurantId,
-      userIds: [userId],
-      type: input.type,
-      title: input.title,
-      body: input.body,
-      link: input.link,
-    });
-  }
+  await Promise.all(
+    Array.from(usersByRestaurant.entries()).map(([restaurantId, userIds]) =>
+      broadcastNotification({
+        restaurantId,
+        userIds,
+        type: input.type,
+        title: input.title,
+        body: input.body,
+        link: input.link,
+      })
+    )
+  );
 }
 
 /**
