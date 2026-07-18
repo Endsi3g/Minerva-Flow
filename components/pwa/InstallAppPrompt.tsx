@@ -51,6 +51,7 @@ export function InstallAppPrompt() {
     if (!installEvent) return;
     await installEvent.prompt();
     const { outcome } = await installEvent.userChoice;
+    setInstallEvent(null);
     if (outcome === "accepted") setVisible(false);
   }
 

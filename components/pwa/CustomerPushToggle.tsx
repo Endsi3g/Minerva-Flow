@@ -109,6 +109,14 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
     );
   }
 
+  if (state === "error") {
+    return (
+      <p className="mb-5 text-[11.5px] text-mv-ink-faint">
+        Une erreur est survenue. Réessayez plus tard.
+      </p>
+    );
+  }
+
   return (
     <button
       type="button"

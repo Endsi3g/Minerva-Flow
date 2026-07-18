@@ -42,14 +42,22 @@ export type StoredPushSubscription = {
   auth: string;
 };
 
-/** Server-only (service role) — reads every device subscription for a set of users, used when sending pushes. */
-export async function getPushSubscriptionsForUsers(userIds: string[]): Promise<StoredPushSubscription[]> {
+/**
+ * Server-only (service role) — reads device subscriptions for a set of
+ * users, used when sending pushes. When `restaurantId` is passed, only
+ * devices that subscribed while linked to that restaurant are returned —
+ * a customer with devices subscribed at two different restaurants must not
+ * get a push meant for the other one.
+ */
+export async function getPushSubscriptionsForUsers(
+  userIds: string[],
+  restaurantId?: string
+): Promise<StoredPushSubscription[]> {
   if (userIds.length === 0) return [];
   const admin = createAdminClient();
-  const { data } = await admin
-    .from("push_subscriptions")
-    .select("endpoint, p256dh, auth")
-    .in("user_id", userIds);
+  let query = admin.from("push_subscriptions").select("endpoint, p256dh, auth").in("user_id", userIds);
+  if (restaurantId) query = query.eq("restaurant_id", restaurantId);
+  const { data } = await query;
 
   return (data as StoredPushSubscription[]) ?? [];
 }

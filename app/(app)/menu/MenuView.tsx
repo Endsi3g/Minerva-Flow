@@ -469,40 +469,63 @@ function ShareLinkRow({ share, onDeleted }: { share: MenuShare; onDeleted: (id: 
   );
 }
 
+/** datetime-local inputs work in local time with no timezone — round-trip through ISO for storage. */
+function toDatetimeLocal(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromDatetimeLocal(value: string): string | null {
+  if (!value) return null;
+  return new Date(value).toISOString();
+}
+
 function OfferModal({
   restaurantId,
   open,
+  offer,
   onClose,
-  onCreated,
+  onSaved,
 }: {
   restaurantId: string;
   open: boolean;
+  offer?: Offer | null;
   onClose: () => void;
-  onCreated: (offer: Offer) => void;
+  onSaved: (offer: Offer) => void;
 }) {
+  const isEditing = Boolean(offer);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [scopeId, setScopeId] = useState(() => crypto.randomUUID());
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [scopeId, setScopeId] = useState(() => offer?.id ?? crypto.randomUUID());
+  const [imageUrl, setImageUrl] = useState<string | null>(offer?.imageUrl ?? null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const input = {
+      title: String(form.get("title") ?? ""),
+      description: String(form.get("description") ?? "") || null,
+      imageUrl,
+      startsAt: fromDatetimeLocal(String(form.get("startsAt") ?? "")),
+      endsAt: fromDatetimeLocal(String(form.get("endsAt") ?? "")),
+    };
     setIsSubmitting(true);
     try {
-      const offer = await createOfferAction(restaurantId, {
-        title: String(form.get("title") ?? ""),
-        description: String(form.get("description") ?? "") || null,
-        imageUrl,
-      });
-      if (offer) {
-        onCreated(offer);
+      const saved = offer
+        ? await updateOfferAction(restaurantId, offer.id, input)
+        : await createOfferAction(restaurantId, input);
+      if (saved) {
+        onSaved(saved);
         onClose();
         (e.target as HTMLFormElement).reset();
         setImageUrl(null);
         setScopeId(crypto.randomUUID());
       } else {
-        notifyError("La création de l'offre a échoué.");
+        notifyError(isEditing ? "La modification de l'offre a échoué." : "La création de l'offre a échoué.");
       }
+    } catch {
+      notifyError(isEditing ? "La modification de l'offre a échoué." : "La création de l'offre a échoué.");
     } finally {
       setIsSubmitting(false);
     }
@@ -512,25 +535,33 @@ function OfferModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Nouvelle offre"
+      title={isEditing ? "Modifier l'offre" : "Nouvelle offre"}
       description="Visible immédiatement par vos clients sur le menu public — une notification leur est envoyée."
     >
       <form onSubmit={handleSubmit} className="space-y-3">
         <Field label="Titre">
-          <Input name="title" placeholder="Ex : 2 pour 1 sur les burgers" required autoFocus />
+          <Input name="title" defaultValue={offer?.title} placeholder="Ex : 2 pour 1 sur les burgers" required autoFocus />
         </Field>
         <Field label="Description" hint="Optionnel">
-          <Input name="description" placeholder="Ex : Valide tous les mardis soir" />
+          <Input name="description" defaultValue={offer?.description ?? undefined} placeholder="Ex : Valide tous les mardis soir" />
         </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Début" hint="Optionnel">
+            <Input name="startsAt" type="datetime-local" defaultValue={toDatetimeLocal(offer?.startsAt)} />
+          </Field>
+          <Field label="Fin" hint="Optionnel">
+            <Input name="endsAt" type="datetime-local" defaultValue={toDatetimeLocal(offer?.endsAt)} />
+          </Field>
+        </div>
         <Field label="Image" hint="Optionnel — visible sur le menu public">
-          <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} bucket="offer-images" onUploaded={setImageUrl} />
+          <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} currentUrl={imageUrl} bucket="offer-images" onUploaded={setImageUrl} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Publication…" : "Publier l'offre"}
+            {isSubmitting ? "Enregistrement…" : isEditing ? "Enregistrer" : "Publier l'offre"}
           </Button>
         </div>
       </form>
@@ -538,33 +569,61 @@ function OfferModal({
   );
 }
 
+type OfferStatus = "scheduled" | "active" | "expired" | "hidden";
+
+function getOfferStatus(offer: Offer): { status: OfferStatus; label: string; tone: "green" | "amber" | "neutral" } {
+  if (!offer.active) return { status: "hidden", label: "Masquée", tone: "neutral" };
+  const now = Date.now();
+  if (offer.startsAt && new Date(offer.startsAt).getTime() > now) {
+    return { status: "scheduled", label: "Programmée", tone: "amber" };
+  }
+  if (offer.endsAt && new Date(offer.endsAt).getTime() < now) {
+    return { status: "expired", label: "Expirée", tone: "neutral" };
+  }
+  return { status: "active", label: "Active", tone: "green" };
+}
+
 function OfferRow({
   restaurantId,
   offer,
   onUpdated,
   onDeleted,
+  onEdit,
 }: {
   restaurantId: string;
   offer: Offer;
   onUpdated: (offer: Offer) => void;
   onDeleted: (id: string) => void;
+  onEdit: (offer: Offer) => void;
 }) {
   const [pending, setPending] = useState(false);
+  const { label, tone } = getOfferStatus(offer);
 
   async function handleToggleActive() {
     setPending(true);
-    const updated = await updateOfferAction(restaurantId, offer.id, { active: !offer.active });
-    setPending(false);
-    if (updated) onUpdated(updated);
-    else notifyError("La mise à jour de l'offre a échoué.");
+    try {
+      const updated = await updateOfferAction(restaurantId, offer.id, { active: !offer.active });
+      if (updated) onUpdated(updated);
+      else notifyError("La mise à jour de l'offre a échoué.");
+    } catch {
+      notifyError("La mise à jour de l'offre a échoué.");
+    } finally {
+      setPending(false);
+    }
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!window.confirm(`Supprimer l'offre "${offer.title}" ?`)) return;
-    deleteOfferAction(restaurantId, offer.id).then((ok) => {
+    setPending(true);
+    try {
+      const ok = await deleteOfferAction(restaurantId, offer.id);
       if (ok) onDeleted(offer.id);
       else notifyError("La suppression a échoué.");
-    });
+    } catch {
+      notifyError("La suppression a échoué.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -580,9 +639,16 @@ function OfferRow({
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <Badge tone={offer.active ? "green" : "neutral"} dot>
-          {offer.active ? "Active" : "Masquée"}
+        <Badge tone={tone} dot>
+          {label}
         </Badge>
+        <button
+          onClick={() => onEdit(offer)}
+          className="text-mv-ink-faint hover:text-mv-ink"
+          aria-label="Modifier l'offre"
+        >
+          <Pencil size={13} />
+        </button>
         <button
           onClick={handleToggleActive}
           disabled={pending}
@@ -591,7 +657,12 @@ function OfferRow({
         >
           <EyeOff size={14} />
         </button>
-        <button onClick={handleDelete} className="text-mv-ink-faint hover:text-mv-red" aria-label="Supprimer l'offre">
+        <button
+          onClick={handleDelete}
+          disabled={pending}
+          className="text-mv-ink-faint hover:text-mv-red disabled:opacity-50"
+          aria-label="Supprimer l'offre"
+        >
           <Trash2 size={13} />
         </button>
       </div>
@@ -623,6 +694,7 @@ export function MenuView({
   const [shareOpen, setShareOpen] = useState(false);
   const [offers, setOffers] = useState(initialOffers);
   const [offerOpen, setOfferOpen] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [tax, setTax] = useState(taxRate);
   const [tips, setTips] = useState(acceptsTips);
 
@@ -761,6 +833,7 @@ export function MenuView({
                   offer={offer}
                   onUpdated={handleOfferUpdated}
                   onDeleted={handleOfferDeleted}
+                  onEdit={setEditingOffer}
                 />
               ))}
             </div>
@@ -874,10 +947,18 @@ export function MenuView({
 
       {restaurantId && (
         <OfferModal
+          key={editingOffer?.id ?? "new"}
           restaurantId={restaurantId}
-          open={offerOpen}
-          onClose={() => setOfferOpen(false)}
-          onCreated={(offer) => setOffers((prev) => [offer, ...prev])}
+          open={offerOpen || Boolean(editingOffer)}
+          offer={editingOffer}
+          onClose={() => {
+            setOfferOpen(false);
+            setEditingOffer(null);
+          }}
+          onSaved={(offer) => {
+            if (editingOffer) handleOfferUpdated(offer);
+            else setOffers((prev) => [offer, ...prev]);
+          }}
         />
       )}
     </div>
