@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import {
   Command,
   CommandDialog,
@@ -10,7 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { searchEverythingAction, type SearchResult } from "@/app/(app)/search-actions";
+import { searchEverythingAction, type SearchResult } from "@/app/[locale]/(app)/search-actions";
 import { Search, Navigation, Megaphone, Users, FolderKanban, LifeBuoy, Heart, UtensilsCrossed, PackageSearch, ClipboardList } from "lucide-react";
 
 interface SearchDialogProps {
@@ -20,6 +21,7 @@ interface SearchDialogProps {
 }
 
 export function SearchDialog({ open, onOpenChange, restaurantId }: SearchDialogProps) {
+  const t = useTranslations("shell");
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -63,15 +65,15 @@ export function SearchDialog({ open, onOpenChange, restaurantId }: SearchDialogP
   );
 
   const typeLabels: Record<SearchResult["type"], string> = {
-    navigation: "Navigation",
-    campaign: "Campagnes",
-    employee: "Employés",
-    program: "Programmes",
-    support: "Tickets de Support",
-    customer: "Clients",
-    menu_item: "Menu",
-    inventory_item: "Inventaire",
-    order: "Commandes",
+    navigation: t("searchTypeNavigation"),
+    campaign: t("searchTypeCampaign"),
+    employee: t("searchTypeEmployee"),
+    program: t("searchTypeProgram"),
+    support: t("searchTypeSupport"),
+    customer: t("searchTypeCustomer"),
+    menu_item: t("searchTypeMenuItem"),
+    inventory_item: t("searchTypeInventoryItem"),
+    order: t("searchTypeOrder"),
   };
 
   const typeIcons: Record<SearchResult["type"], any> = {
@@ -90,8 +92,8 @@ export function SearchDialog({ open, onOpenChange, restaurantId }: SearchDialogP
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Recherche globale"
-      description="Recherchez des pages, campagnes, employés ou tickets de support dans l'application..."
+      title={t("searchDialogTitle")}
+      description={t("searchDialogDescription")}
       className="max-w-[550px] border border-mv-border bg-mv-cream-soft shadow-mv-xl"
     >
       <Command className="bg-transparent border-0 shadow-none">
@@ -100,24 +102,24 @@ export function SearchDialog({ open, onOpenChange, restaurantId }: SearchDialogP
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tapez votre recherche..."
+            placeholder={t("searchPlaceholder")}
             className="flex h-9 w-full rounded-md bg-transparent text-[13.5px] font-medium text-mv-ink placeholder:text-mv-ink-faint outline-none disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
         <CommandList className="max-h-[350px] overflow-y-auto px-1 py-2">
           {query && results.length === 0 && !isPending && (
             <CommandEmpty className="py-8 text-center text-[13px] text-mv-ink-faint">
-              Aucun résultat trouvé pour « {query} ».
+              {t("searchNoResults", { query })}
             </CommandEmpty>
           )}
           {isPending && query && (
             <div className="py-8 text-center text-[13px] text-mv-ink-faint">
-              Recherche en cours...
+              {t("searchInProgress")}
             </div>
           )}
           {!query && (
             <div className="py-8 text-center text-[13px] text-mv-ink-faint">
-              Commencez à taper pour rechercher partout dans l&apos;application.
+              {t("searchPrompt")}
             </div>
           )}
 

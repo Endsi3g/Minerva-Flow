@@ -1,10 +1,11 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
-import { getNotificationsAction, markNotificationReadAction } from "@/app/(app)/notifications-actions";
+import { getNotificationsAction, markNotificationReadAction } from "@/app/[locale]/(app)/notifications-actions";
 import type { Notification } from "@/lib/data/notifications";
 import { Sparkles, X } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 /**
@@ -15,6 +16,7 @@ import { useEffect, useState } from "react";
  * on the next login.
  */
 export function UpdateBanner() {
+  const t = useTranslations("shell");
   const { restaurantId } = useApp();
   const [entry, setEntry] = useState<Notification | null>(null);
 
@@ -47,11 +49,11 @@ export function UpdateBanner() {
         onClick={handleDismiss}
         className="shrink-0 rounded-lg bg-mv-green px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-green-dark"
       >
-        Voir les nouveautés
+        {t("viewChangelog")}
       </Link>
       <button
         onClick={handleDismiss}
-        aria-label="Fermer"
+        aria-label={t("close")}
         className="shrink-0 rounded-lg p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
       >
         <X size={15} />

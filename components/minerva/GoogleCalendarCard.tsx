@@ -6,7 +6,7 @@ import {
   getMyCalendarConnectionAction,
   disconnectMyCalendarAction,
   getMyUpcomingCalendarEventsAction,
-} from "@/app/(app)/profil/actions";
+} from "@/app/[locale]/(app)/profil/actions";
 import type { UpcomingCalendarEvent } from "@/lib/google/member-calendar";
 import { useEffect, useState } from "react";
 import { GoogleCalendar } from "@/components/ui/BrandIcons";

@@ -4,7 +4,7 @@ import {
   isPushConfiguredAction,
   subscribeToPushAction,
   unsubscribeFromPushAction,
-} from "@/app/m/[token]/push-actions";
+} from "@/app/[locale]/m/[token]/push-actions";
 import { Bell, BellOff } from "lucide-react";
 import { useEffect, useState } from "react";
 

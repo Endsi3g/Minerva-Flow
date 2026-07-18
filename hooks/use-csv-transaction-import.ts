@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDropzone, type FileError, type FileRejection } from "react-dropzone";
 import { parseTransactionsCsv } from "@/lib/csv-transactions";
-import { importTransactionsAction } from "@/app/(app)/finance/actions";
+import { importTransactionsAction } from "@/app/[locale]/(app)/finance/actions";
 
 interface FileWithPreview extends File {
   preview?: string;

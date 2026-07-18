@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/minerva/FormField";
 import { createClient } from "@/lib/supabase/client";
 import posthog from "posthog-js";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, getPathname, useRouter } from "@/i18n/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState, type FormEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -33,6 +33,8 @@ function OAuthButton({
 }
 
 export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
+  const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [email, setEmail] = useState("");
@@ -59,18 +61,21 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     : inviteToken
       ? `/invite/${inviteToken}`
       : "/overview";
+  // Supabase's emailRedirectTo/redirectTo hit /auth/confirm outside of React,
+  // so they need the locale prefix baked into the `next` param by hand.
+  const localizedPostAuthPath = getPathname({ href: postAuthPath, locale });
 
   const mapErrorMessage = (msg: string): string => {
     const normalized = msg.toLowerCase();
     if (normalized.includes("invalid login credentials")) {
-      return "Le mot de passe n'est pas bon, réessayez.";
+      return t("errorInvalidCredentials");
     }
     if (
       normalized.includes("already registered") ||
       normalized.includes("user already registered") ||
       normalized.includes("already exists")
     ) {
-      return "Votre compte est déjà créé dans l'application, veuillez vous connecter.";
+      return t("errorAlreadyRegistered");
     }
     return msg;
   };
@@ -93,13 +98,13 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
         router.refresh();
       } else {
         if (password !== repeatPassword) {
-          throw new Error("Les mots de passe ne correspondent pas.");
+          throw new Error(t("errorPasswordMismatch"));
         }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/confirm?next=${postAuthPath}`,
+            emailRedirectTo: `${window.location.origin}/auth/confirm?next=${localizedPostAuthPath}`,
             data: referralCode ? { referral_code: referralCode } : undefined,
           },
         });
@@ -121,7 +126,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
       }
     } catch (err) {
       posthog.captureException(err);
-      setError(err instanceof Error ? mapErrorMessage(err.message) : "Une erreur est survenue.");
+      setError(err instanceof Error ? mapErrorMessage(err.message) : t("errorGeneric"));
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +142,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/confirm?next=${postAuthPath}` },
+      options: { redirectTo: `${window.location.origin}/auth/confirm?next=${localizedPostAuthPath}` },
     });
     if (error) {
       posthog.captureException(error);
@@ -149,7 +154,8 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     setError(null);
     const newMode = mode === "login" ? "signup" : "login";
     setMode(newMode);
-    window.history.pushState(null, "", newMode === "login" ? "/login" : "/sign-up");
+    const href = getPathname({ href: newMode === "login" ? "/login" : "/sign-up", locale });
+    window.history.pushState(null, "", href);
   }
 
   return (
@@ -170,27 +176,25 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
           <form onSubmit={handleAuth} className="flex flex-col gap-4 p-8">
             <motion.div layout="position">
               <h1 className="font-display text-[22px] font-medium text-mv-ink">
-                {mode === "login" ? "Bon retour" : "Créer un compte"}
+                {mode === "login" ? t("login.title") : t("signup.title")}
               </h1>
               <p className="mt-1 text-[13px] text-mv-ink-soft">
-                {mode === "login"
-                  ? "Connectez-vous à votre cockpit Minerva Flow."
-                  : "Commencez à piloter votre établissement dès aujourd'hui."}
+                {mode === "login" ? t("login.subtitle") : t("signup.subtitle")}
               </p>
             </motion.div>
 
             <motion.div layout="position" className="space-y-4">
-              <Field label="Email">
+              <Field label={t("emailLabel")}>
                 <Input
                   type="email"
-                  placeholder="vous@restaurant.fr"
+                  placeholder={t("emailPlaceholder")}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </Field>
 
-              <Field label="Mot de passe">
+              <Field label={t("passwordLabel")}>
                 <div className="flex items-center justify-between">
                   <span />
                   {mode === "login" && (
@@ -198,7 +202,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
                       href="/forgot-password"
                       className="text-[11.5px] font-semibold text-mv-green-dark hover:underline"
                     >
-                      Mot de passe oublié ?
+                      {t("forgotPasswordLink")}
                     </Link>
                   )}
                 </div>
@@ -219,7 +223,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
                     exit={{ opacity: 0, height: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Field label="Confirmer le mot de passe">
+                    <Field label={t("confirmPasswordLabel")}>
                       <Input
                         type="password"
                         required
@@ -238,16 +242,16 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading
                   ? mode === "login"
-                    ? "Connexion…"
-                    : "Inscription…"
+                    ? t("submitLoginLoading")
+                    : t("submitSignupLoading")
                   : mode === "login"
-                    ? "Se connecter"
-                    : "S'inscrire"}
+                    ? t("submitLogin")
+                    : t("submitSignup")}
               </Button>
 
               <div className="flex items-center gap-3 py-1">
                 <div className="h-px flex-1 bg-mv-border-soft" />
-                <span className="text-[11.5px] text-mv-ink-faint">ou continuer avec</span>
+                <span className="text-[11.5px] text-mv-ink-faint">{t("orContinueWith")}</span>
                 <div className="h-px flex-1 bg-mv-border-soft" />
               </div>
 
@@ -300,13 +304,13 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
               </div>
 
               <p className="text-center text-[12.5px] text-mv-ink-faint">
-                {mode === "login" ? "Pas encore de compte ? " : "Déjà un compte ? "}
+                {mode === "login" ? t("noAccount") : t("hasAccount")}
                 <button
                   type="button"
                   onClick={toggleMode}
                   className="font-semibold text-mv-green-dark hover:underline focus:outline-none"
                 >
-                  {mode === "login" ? "Créer un compte" : "Se connecter"}
+                  {mode === "login" ? t("createAccount") : t("submitLogin")}
                 </button>
               </p>
             </motion.div>
@@ -315,15 +319,18 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
       </motion.div>
 
       <p className="mt-6 max-w-md text-center text-[12px] leading-relaxed text-mv-ink-faint">
-        En continuant, vous acceptez nos{" "}
-        <Link href="/legal/terms" className="underline underline-offset-2 hover:text-mv-ink">
-          Conditions d&apos;utilisation
-        </Link>{" "}
-        et notre{" "}
-        <Link href="/legal/privacy" className="underline underline-offset-2 hover:text-mv-ink">
-          Politique de confidentialité
-        </Link>
-        .
+        {t.rich("termsAgreement", {
+          terms: (chunks) => (
+            <Link href="/legal/terms" className="underline underline-offset-2 hover:text-mv-ink">
+              {chunks}
+            </Link>
+          ),
+          privacy: (chunks) => (
+            <Link href="/legal/privacy" className="underline underline-offset-2 hover:text-mv-ink">
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
     </div>
   );

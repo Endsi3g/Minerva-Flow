@@ -14,8 +14,8 @@ import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Field, Input } from "@/components/minerva/FormField";
 import { roleLabels } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
-import { updateProfileNameAction } from "@/app/(app)/profil/actions";
-import { setMyRoleAction, finishOnboardingAction } from "@/app/onboarding/actions";
+import { updateProfileNameAction } from "@/app/[locale]/(app)/profil/actions";
+import { setMyRoleAction, finishOnboardingAction } from "@/app/[locale]/onboarding/actions";
 import type { Role } from "@/lib/types";
 
 const FEATURES = [

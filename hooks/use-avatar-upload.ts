@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { updateProfileAvatarAction } from "@/app/(app)/profil/actions";
+import { updateProfileAvatarAction } from "@/app/[locale]/(app)/profil/actions";
 
 const supabase = createClient();
 

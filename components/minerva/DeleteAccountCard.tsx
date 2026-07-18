@@ -3,7 +3,7 @@
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/minerva/FormField";
-import { deleteMyAccountAction } from "@/app/(app)/profil/actions";
+import { deleteMyAccountAction } from "@/app/[locale]/(app)/profil/actions";
 import { createClient } from "@/lib/supabase/client";
 import { AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";

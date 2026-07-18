@@ -3,7 +3,7 @@
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { useApp } from "@/lib/app-context";
-import { getAdPlatformStatusAction } from "@/app/(app)/settings/ad-platforms-actions";
+import { getAdPlatformStatusAction } from "@/app/[locale]/(app)/settings/ad-platforms-actions";
 import type { AdPlatformConnection, AdProvider } from "@/lib/types";
 import { useEffect, useState, type ComponentType } from "react";
 import { Meta, GoogleAds } from "@/components/ui/BrandIcons";

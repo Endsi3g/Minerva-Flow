@@ -1,7 +1,7 @@
 "use client";
 
 import { useCurrentRestaurant } from "@/lib/app-context";
-import { getStartupProgressAction } from "@/app/(app)/overview/actions";
+import { getStartupProgressAction } from "@/app/[locale]/(app)/overview/actions";
 import { cn } from "@/lib/utils";
 import { Check, ChevronDown, Building2, CalendarPlus, UserPlus, Sparkles } from "lucide-react";
 import Link from "next/link";

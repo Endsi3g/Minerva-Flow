@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { cn } from "@/lib/utils";
 import type { RushLevel, ServiceSource, ServiceDay } from "@/lib/types";
-import type { CreateServiceDayResult } from "@/app/(app)/days/actions";
+import type { CreateServiceDayResult } from "@/app/[locale]/(app)/days/actions";
 import { useEffect, useState } from "react";
 
 const eventOptions = ["Promo", "Changement de menu", "Soirée spéciale", "Événement privé"];

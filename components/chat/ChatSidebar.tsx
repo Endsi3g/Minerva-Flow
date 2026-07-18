@@ -7,7 +7,7 @@ import { useChatPresence } from "@/hooks/use-chat-presence";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
-import { createConversationAction } from "@/app/(chat)/assistant/actions";
+import { createConversationAction } from "@/app/[locale]/(chat)/assistant/actions";
 import type { ChatConversation } from "@/lib/types";
 import { PanelLeft, Plus, Share2, MessageSquare } from "lucide-react";
 import Link from "next/link";

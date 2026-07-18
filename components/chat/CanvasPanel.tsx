@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowRight, TrendingDown, TrendingUp, X, Plus, Loader2, BarChart2, Table as TableIcon, Check } from "lucide-react";
 import { useState, useTransition, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
-import { publishReportAction } from "@/app/(app)/reports/actions";
+import { publishReportAction } from "@/app/[locale]/(app)/reports/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";

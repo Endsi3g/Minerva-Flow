@@ -11,7 +11,7 @@ import { GoogleConnectModal } from "@/components/minerva/GoogleConnectModal";
 import {
   getGoogleWorkspaceStatusAction,
   saveGa4PropertyIdAction,
-} from "@/app/(app)/settings/google-workspace-actions";
+} from "@/app/[locale]/(app)/settings/google-workspace-actions";
 import type { GoogleConnection } from "@/lib/data/google-connections";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";

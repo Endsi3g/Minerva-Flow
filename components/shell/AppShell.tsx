@@ -9,12 +9,14 @@ import { UpdateBanner } from "@/components/shell/UpdateBanner";
 import { useApp } from "@/lib/app-context";
 import { cn } from "@/lib/utils";
 import { PanelLeft } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 // Full-bleed routes render edge-to-edge, without the shared page padding/max-width.
 const FULL_BLEED_ROUTES = ["/maps"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("shell");
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const pathname = usePathname();
   const isFullBleed = FULL_BLEED_ROUTES.some((r) => pathname.startsWith(r));
@@ -29,8 +31,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="hidden items-center gap-2 md:flex">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              aria-label="Basculer la navigation"
-              title={sidebarCollapsed ? "Ouvrir le menu" : "Réduire le menu"}
+              aria-label={t("toggleNav")}
+              title={sidebarCollapsed ? t("openMenu") : t("collapseMenu")}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
             >
               <PanelLeft size={16} />

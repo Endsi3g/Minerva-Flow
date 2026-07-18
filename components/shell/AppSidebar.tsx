@@ -43,11 +43,12 @@ import {
   ClipboardList,
   type LucideIcon,
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { Role } from "@/lib/types";
 import { SearchDialog } from "./SearchDialog";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 
 const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const;
 const SIDEBAR_WIDTH = 256;
@@ -55,7 +56,6 @@ const SIDEBAR_WIDTH = 256;
 type NavItem = {
   key: string;
   href: string;
-  label: string;
   icon: LucideIcon;
   roles: Role[];
 };
@@ -64,52 +64,76 @@ const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
 // Main navigation items flat list (Overview, Flow AI, Programmes, Journées, Employés, Rapports, Cartes)
 const mainNavItems: NavItem[] = [
-  { key: "overview", href: "/overview", label: "Aperçu", icon: Home, roles: allRoles },
-  { key: "assistant", href: "/assistant", label: "Flow AI", icon: MessageSquare, roles: allRoles },
-  { key: "finance", href: "/finance", label: "Finance", icon: Wallet, roles: ["owner", "manager"] },
-  { key: "days", href: "/days", label: "Journées", icon: BarChart3, roles: allRoles },
-  { key: "reports", href: "/reports", label: "Rapports", icon: FileText, roles: allRoles },
-  { key: "menu", href: "/menu", label: "Menu", icon: UtensilsCrossed, roles: allRoles },
-  { key: "employees", href: "/employees", label: "Employés", icon: Boxes, roles: ["owner", "manager"] },
-  { key: "fidelisation", href: "/fidelisation", label: "Fidélisation", icon: Heart, roles: allRoles },
-  { key: "maps", href: "/maps", label: "Cartes", icon: MapIcon, roles: allRoles },
-  { key: "programs", href: "/programs", label: "Programmes", icon: GitCommit, roles: allRoles },
+  { key: "overview", href: "/overview", icon: Home, roles: allRoles },
+  { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
+  { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
+  { key: "days", href: "/days", icon: BarChart3, roles: allRoles },
+  { key: "reports", href: "/reports", icon: FileText, roles: allRoles },
+  { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
+  { key: "employees", href: "/employees", icon: Boxes, roles: ["owner", "manager"] },
+  { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
+  { key: "maps", href: "/maps", icon: MapIcon, roles: allRoles },
+  { key: "programs", href: "/programs", icon: GitCommit, roles: allRoles },
 ];
 
 // Favorites section
-const favorites: (NavItem & { color: string })[] = [
-  { key: "fav_maps", href: "/maps", label: "Rapport des villes", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
-  { key: "fav_campaigns_email", href: "/campaigns?channel=Email", label: "Envoi hebdomadaire", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
-  { key: "fav_depenses", href: "/depenses", label: "Dépenses", icon: TrendingDown, color: "#B5473A", roles: ["owner", "manager"] },
-  { key: "fav_data", href: "/data", label: "Données", icon: Database, color: "#DD6B20", roles: ["owner", "manager", "consultant"] },
-  { key: "fav_collaborateurs", href: "/collaborateurs", label: "Utilisateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
+const favorites: (NavItem & { color: string; translationKey: string })[] = [
+  { key: "fav_maps", translationKey: "favMaps", href: "/maps", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
+  { key: "fav_campaigns_email", translationKey: "favCampaignsEmail", href: "/campaigns?channel=Email", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
+  { key: "fav_depenses", translationKey: "favDepenses", href: "/depenses", icon: TrendingDown, color: "#B5473A", roles: ["owner", "manager"] },
+  { key: "fav_data", translationKey: "favData", href: "/data", icon: Database, color: "#DD6B20", roles: ["owner", "manager", "consultant"] },
+  { key: "fav_collaborateurs", translationKey: "favCollaborateurs", href: "/collaborateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
 ];
 
 // Opérations — expansion "OS pour restaurants" (réservations, puis horaire,
 // puis fournisseurs au fur et à mesure qu'ils sont construits).
 const operationsItems: NavItem[] = [
-  { key: "reservations", href: "/reservations", label: "Réservations", icon: CalendarClock, roles: allRoles },
-  { key: "horaire", href: "/horaire", label: "Horaire", icon: CalendarDays, roles: allRoles },
-  { key: "fournisseurs", href: "/fournisseurs", label: "Fournisseurs", icon: Truck, roles: ["owner", "manager"] },
-  { key: "inventaire", href: "/inventaire", label: "Inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
-  { key: "commandes", href: "/commandes", label: "Commandes", icon: ClipboardList, roles: allRoles },
+  { key: "reservations", href: "/reservations", icon: CalendarClock, roles: allRoles },
+  { key: "horaire", href: "/horaire", icon: CalendarDays, roles: allRoles },
+  { key: "fournisseurs", href: "/fournisseurs", icon: Truck, roles: ["owner", "manager"] },
+  { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
+  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
 ];
 
 // Sub settings items (without Paramètres/Settings which is standalone)
 const subSettingsGroupItems: NavItem[] = [
-  { key: "billing", href: "/billing", label: "Facturation", icon: CreditCard, roles: ["owner"] },
-  { key: "guide", href: "/guide", label: "Guide", icon: BookOpen, roles: allRoles },
-  { key: "support", href: "/support", label: "Aide & Support", icon: LifeBuoy, roles: allRoles },
-  { key: "changelog", href: "/changelog", label: "Nouveautés", icon: History, roles: allRoles },
+  { key: "billing", href: "/billing", icon: CreditCard, roles: ["owner"] },
+  { key: "guide", href: "/guide", icon: BookOpen, roles: allRoles },
+  { key: "support", href: "/support", icon: LifeBuoy, roles: allRoles },
+  { key: "changelog", href: "/changelog", icon: History, roles: allRoles },
 ];
 
-/** All customizable nav item keys/labels, for the per-member sidebar permission editor. */
-export const sidebarNavCatalog: { key: string; label: string }[] = [
-  ...mainNavItems,
-  ...operationsItems,
-  ...favorites,
-  ...subSettingsGroupItems,
-].map((item) => ({ key: item.key, label: item.label }));
+const navTranslationKeys: Record<string, string> = {
+  overview: "overview",
+  assistant: "assistant",
+  finance: "finance",
+  days: "days",
+  reports: "reports",
+  menu: "menu",
+  employees: "employees",
+  fidelisation: "fidelisation",
+  maps: "maps",
+  programs: "programs",
+  reservations: "reservations",
+  horaire: "horaire",
+  fournisseurs: "fournisseurs",
+  inventaire: "inventaire",
+  commandes: "commandes",
+  billing: "billing",
+  guide: "guide",
+  support: "support",
+  changelog: "changelog",
+  fav_maps: "favMaps",
+  fav_campaigns_email: "favCampaignsEmail",
+  fav_depenses: "favDepenses",
+  fav_data: "favData",
+  fav_collaborateurs: "favCollaborateurs",
+};
+
+/** All customizable nav item keys, for the per-member sidebar permission editor. */
+export const sidebarNavCatalog: { key: string; translationKey: string }[] = Object.entries(
+  navTranslationKeys
+).map(([key, translationKey]) => ({ key, translationKey }));
 
 function NavLink({
   href,
@@ -194,6 +218,7 @@ function CollapsibleSection({
 }
 
 function TeamSwitcher() {
+  const t = useTranslations("nav");
   const { restaurantId, setRestaurantId, restaurants } = useApp();
   const router = useRouter();
   const current = restaurants.find((r) => r.id === restaurantId) ?? restaurants[0];
@@ -230,7 +255,7 @@ function TeamSwitcher() {
           className="flex items-center gap-2.5 text-mv-ink-soft"
         >
           <Settings2 size={15} className="shrink-0" />
-          <span className="text-[13px] font-semibold">Gérer le workspace</span>
+          <span className="text-[13px] font-semibold">{t("manageWorkspace")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -238,6 +263,7 @@ function TeamSwitcher() {
 }
 
 export function AppSidebar() {
+  const t = useTranslations("nav");
   const pathname = usePathname();
   const { role, sidebarPermissions, sidebarCollapsed, setSidebarCollapsed, restaurantId, setRestaurantId, restaurants } =
     useApp();
@@ -296,8 +322,8 @@ export function AppSidebar() {
             </div>
             <button
               onClick={() => setSearchOpen(true)}
-              aria-label="Recherche"
-              title="Rechercher dans l'application (⌘K)"
+              aria-label={t("searchAria")}
+              title={t("searchTitle")}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink ml-1"
             >
               <SearchIcon size={16} />
@@ -311,7 +337,7 @@ export function AppSidebar() {
                 <NavLink
                   key={item.href}
                   href={item.href}
-                  label={item.label}
+                  label={t(navTranslationKeys[item.key])}
                   icon={item.icon}
                   active={pathname.startsWith(item.href)}
                   onNavigate={closeMobile}
@@ -322,14 +348,14 @@ export function AppSidebar() {
             {/* Opérations Section */}
             {visibleOperationsItems.length > 0 && (
               <CollapsibleSection
-                label="Opérations"
+                label={t("sectionOperations")}
                 defaultOpen={visibleOperationsItems.some((item) => pathname.startsWith(item.href))}
               >
                 {visibleOperationsItems.map((item) => (
                   <NavLink
                     key={item.href}
                     href={item.href}
-                    label={item.label}
+                    label={t(navTranslationKeys[item.key])}
                     icon={item.icon}
                     active={pathname.startsWith(item.href)}
                     onNavigate={closeMobile}
@@ -341,7 +367,7 @@ export function AppSidebar() {
             {/* Teams / Restaurants Section */}
             <div className="space-y-1">
               <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                Équipes
+                {t("sectionTeams")}
               </p>
               <div className="space-y-0.5">
                 {restaurants.map((r) => {
@@ -373,7 +399,7 @@ export function AppSidebar() {
                 })}
                 <NavLink
                   href="/etablissement"
-                  label="Toutes les équipes"
+                  label={t("allTeams")}
                   icon={LayoutGrid}
                   active={pathname.startsWith("/etablissement")}
                   onNavigate={closeMobile}
@@ -384,14 +410,14 @@ export function AppSidebar() {
             {/* Favorites Section */}
             {visibleFavorites.length > 0 && (
               <CollapsibleSection
-                label="Favoris"
+                label={t("sectionFavorites")}
                 defaultOpen={visibleFavorites.some((item) => pathname.startsWith(item.href))}
               >
                 {visibleFavorites.map((item) => (
                   <NavLink
-                    key={item.label}
+                    key={item.key}
                     href={item.href}
-                    label={item.label}
+                    label={t(navTranslationKeys[item.key])}
                     icon={item.icon}
                     active={pathname.startsWith(item.href)}
                     onNavigate={closeMobile}
@@ -407,14 +433,14 @@ export function AppSidebar() {
             {/* Collapsible Paramètres et plus */}
             {visibleSettingsItems.length > 0 && (
               <CollapsibleSection
-                label="Paramètres et plus"
+                label={t("sectionSettingsMore")}
                 defaultOpen={visibleSettingsItems.some((item) => pathname.startsWith(item.href))}
               >
                 {visibleSettingsItems.map((item) => (
                   <NavLink
                     key={item.href}
                     href={item.href}
-                    label={item.label}
+                    label={t(navTranslationKeys[item.key])}
                     icon={item.icon}
                     active={pathname.startsWith(item.href)}
                     onNavigate={closeMobile}
@@ -427,12 +453,14 @@ export function AppSidebar() {
             {hasSettingsAccess && (
               <NavLink
                 href="/settings"
-                label="Paramètres"
+                label={t("settings")}
                 icon={Settings}
                 active={pathname.startsWith("/settings")}
                 onNavigate={closeMobile}
               />
             )}
+
+            <LocaleSwitcher />
           </div>
         </motion.div>
       </motion.aside>
