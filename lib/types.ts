@@ -578,6 +578,18 @@ export type MenuShare = {
   createdAt: string;
 };
 
+export type Offer = {
+  id: string;
+  restaurantId: string;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  active: boolean;
+  startsAt: string | null;
+  endsAt: string | null;
+  createdAt: string;
+};
+
 export type InventoryMovementType = "reception" | "utilisation" | "gaspillage" | "ajustement";
 
 export type InventoryMovement = {

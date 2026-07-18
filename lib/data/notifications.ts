@@ -268,6 +268,35 @@ export async function notifyRestaurantManagement(input: {
 }
 
 /**
+ * Notifies every customer linked to a restaurant (an active `customers` row
+ * with a `user_id`) — used for client-facing events like a new offer.
+ * Unlike broadcastNotification, this does NOT insert a `notifications` row:
+ * that table/its RLS assume a restaurant_members reader, and customers have
+ * no in-app notification inbox — the active-offers list on /m/[token] is
+ * already the source of truth, push is just the "come back" nudge.
+ */
+export async function notifyCustomers(input: {
+  restaurantId: string;
+  type: string;
+  title: string;
+  body?: string;
+  link?: string;
+}): Promise<void> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("customers")
+    .select("user_id")
+    .eq("restaurant_id", input.restaurantId)
+    .not("user_id", "is", null);
+
+  const userIds = ((data as { user_id: string | null }[]) ?? [])
+    .map((c) => c.user_id)
+    .filter((id): id is string => Boolean(id));
+
+  await sendPushToUsers(userIds, { title: input.title, body: input.body, link: input.link });
+}
+
+/**
  * Notifies every active member of a restaurant (optionally excluding the
  * actor who triggered the event, so people don't get notified about their
  * own action). Thin wrapper around broadcastNotification for the common

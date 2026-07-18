@@ -1,4 +1,5 @@
 import { getMenuShareByToken } from "@/lib/data/menu-shares";
+import { getActiveOffersForRestaurant } from "@/lib/data/offers";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
@@ -28,6 +29,15 @@ export default async function PublicMenuPage({
   const [landing, authResult] = await Promise.all([getMenuShareByToken(token), supabase.auth.getUser()]);
   if (!landing) notFound();
   const user = authResult.data.user;
+  const offers = await getActiveOffersForRestaurant(landing.restaurantId);
 
-  return <MenuOrderFlow token={token} referralCode={ref ?? null} landing={landing} authenticated={Boolean(user)} />;
+  return (
+    <MenuOrderFlow
+      token={token}
+      referralCode={ref ?? null}
+      landing={landing}
+      offers={offers}
+      authenticated={Boolean(user)}
+    />
+  );
 }
