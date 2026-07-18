@@ -36,6 +36,14 @@ async function getPrimaryMenuShareLink(restaurantId: string): Promise<string | n
   return `/m/${(fullMenuShare ?? shares[0]).token}`;
 }
 
+/** True when an offer is active AND its start/end window (if any) currently contains `now`. */
+function isEffectivelyLive(offer: { active: boolean; startsAt: string | null; endsAt: string | null }, now = Date.now()): boolean {
+  if (!offer.active) return false;
+  if (offer.startsAt && new Date(offer.startsAt).getTime() > now) return false;
+  if (offer.endsAt && new Date(offer.endsAt).getTime() < now) return false;
+  return true;
+}
+
 function mapOffer(row: OfferRow): Offer {
   return {
     id: row.id,
@@ -93,7 +101,14 @@ export async function getActiveOffersForRestaurant(restaurantId: string): Promis
   return (data as OfferRow[]).map(mapOffer);
 }
 
-/** Creates an offer; if created active, immediately notifies the restaurant's linked customers. */
+/**
+ * Creates an offer; notifies the restaurant's linked customers immediately
+ * only if it's live right now (active, and within its start/end window if
+ * one is set). An offer scheduled for a future startsAt does NOT notify —
+ * there's no delivery-at-future-time scheduler here, so a scheduled offer's
+ * customers simply see it appear on /m/[token] once it goes live, without a
+ * push nudge for that particular moment.
+ */
 export async function createOffer(restaurantId: string, input: OfferInput): Promise<Offer | null> {
   const supabase = await createClient();
   const {
@@ -118,7 +133,7 @@ export async function createOffer(restaurantId: string, input: OfferInput): Prom
   if (error || !data) return null;
   const offer = mapOffer(data as OfferRow);
 
-  if (offer.active) {
+  if (isEffectivelyLive(offer)) {
     await notifyCustomers({
       restaurantId,
       type: "offer.published",
@@ -131,7 +146,7 @@ export async function createOffer(restaurantId: string, input: OfferInput): Prom
   return offer;
 }
 
-/** Updates an offer; notifies customers only on the inactive → active transition (not on every edit). */
+/** Updates an offer; notifies customers only on the not-live → live transition (not on every edit). */
 export async function updateOffer(
   restaurantId: string,
   offerId: string,
@@ -141,11 +156,14 @@ export async function updateOffer(
 
   const { data: existing } = await supabase
     .from("offers")
-    .select("active")
+    .select("active, starts_at, ends_at")
     .eq("restaurant_id", restaurantId)
     .eq("id", offerId)
     .maybeSingle();
-  const wasActive = (existing as { active: boolean } | null)?.active ?? false;
+  const existingRow = existing as { active: boolean; starts_at: string | null; ends_at: string | null } | null;
+  const wasLive = existingRow
+    ? isEffectivelyLive({ active: existingRow.active, startsAt: existingRow.starts_at, endsAt: existingRow.ends_at })
+    : false;
 
   const patch: Record<string, unknown> = {};
   if (input.title !== undefined) patch.title = input.title;
@@ -166,7 +184,7 @@ export async function updateOffer(
   if (error || !data) return null;
   const offer = mapOffer(data as OfferRow);
 
-  if (offer.active && !wasActive) {
+  if (isEffectivelyLive(offer) && !wasLive) {
     await notifyCustomers({
       restaurantId,
       type: "offer.published",

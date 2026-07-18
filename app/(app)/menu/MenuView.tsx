@@ -597,6 +597,14 @@ function OfferRow({
   onEdit: (offer: Offer) => void;
 }) {
   const [pending, setPending] = useState(false);
+  // Forces a re-render once a minute so a scheduled/expired offer's badge
+  // flips at its startsAt/endsAt boundary without waiting on an unrelated
+  // state change to trigger it.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
   const { label, tone } = getOfferStatus(offer);
 
   async function handleToggleActive() {

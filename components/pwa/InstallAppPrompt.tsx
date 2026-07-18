@@ -50,9 +50,9 @@ export function InstallAppPrompt() {
   async function handleInstall() {
     if (!installEvent) return;
     await installEvent.prompt();
-    const { outcome } = await installEvent.userChoice;
+    await installEvent.userChoice;
     setInstallEvent(null);
-    if (outcome === "accepted") setVisible(false);
+    setVisible(false);
   }
 
   if (!visible) return null;

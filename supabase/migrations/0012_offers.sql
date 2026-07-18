@@ -9,7 +9,7 @@
 create table offers (
   id uuid primary key default gen_random_uuid(),
   restaurant_id uuid not null references restaurants (id) on delete cascade,
-  title text not null check (char_length(trim(title)) > 0),
+  title text not null check (title !~ '^[[:space:]]*$'),
   description text,
   image_url text,
   active boolean not null default true,
