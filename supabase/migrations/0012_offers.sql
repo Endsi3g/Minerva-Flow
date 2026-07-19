@@ -9,14 +9,17 @@
 create table offers (
   id uuid primary key default gen_random_uuid(),
   restaurant_id uuid not null references restaurants (id) on delete cascade,
-  title text not null,
+  title text not null check (title !~ '^[[:space:]]*$'),
   description text,
   image_url text,
   active boolean not null default true,
   starts_at timestamptz,
   ends_at timestamptz,
   created_by uuid references auth.users (id),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint offers_window_ordered check (
+    starts_at is null or ends_at is null or starts_at < ends_at
+  )
 );
 
 create index idx_offers_restaurant on offers (restaurant_id, created_at desc);

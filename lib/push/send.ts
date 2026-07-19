@@ -34,11 +34,15 @@ export type PushPayload = {
  * throws: a push failure must not break the notification flow that
  * triggered it (in-app notifications already succeeded by this point).
  */
-export async function sendPushToUsers(userIds: string[], payload: PushPayload): Promise<void> {
+export async function sendPushToUsers(
+  userIds: string[],
+  payload: PushPayload,
+  restaurantId?: string
+): Promise<void> {
   if (!isPushConfigured() || userIds.length === 0) return;
   ensureConfigured();
 
-  const subscriptions = await getPushSubscriptionsForUsers(userIds);
+  const subscriptions = await getPushSubscriptionsForUsers(userIds, restaurantId);
   if (subscriptions.length === 0) return;
 
   const body = JSON.stringify(payload);

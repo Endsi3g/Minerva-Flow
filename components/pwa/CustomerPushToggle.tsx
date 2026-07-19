@@ -28,13 +28,13 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
   const [state, setState] = useState<PushState>("available");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
+  async function refreshState() {
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
       setState("unsupported");
       return;
     }
-
-    isPushConfiguredAction().then(async (configured) => {
+    try {
+      const configured = await isPushConfiguredAction();
       if (!configured) {
         setState("not_configured");
         return;
@@ -46,7 +46,13 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       setState(subscription ? "subscribed" : "available");
-    });
+    } catch {
+      setState("error");
+    }
+  }
+
+  useEffect(() => {
+    refreshState();
   }, []);
 
   async function handleSubscribe() {
@@ -70,10 +76,17 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
         applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
       });
 
-      await subscribeToPushAction(
+      const saved = await subscribeToPushAction(
         restaurantId,
         subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } }
       );
+      if (!saved) {
+        // Server never recorded it — drop the local subscription too so the
+        // browser and server agree, and the user can just retry the button.
+        await subscription.unsubscribe().catch(() => {});
+        setState("available");
+        return;
+      }
       setState("subscribed");
     } catch {
       setState("error");
@@ -106,6 +119,18 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
       <p className="mb-5 text-[11.5px] text-mv-ink-faint">
         Notifications bloquées — activez-les dans les réglages de votre navigateur pour recevoir les offres.
       </p>
+    );
+  }
+
+  if (state === "error") {
+    return (
+      <button
+        type="button"
+        onClick={refreshState}
+        className="mb-5 text-[11.5px] text-mv-ink-faint underline decoration-dotted hover:text-mv-ink"
+      >
+        Une erreur est survenue — touchez pour réessayer.
+      </button>
     );
   }
 

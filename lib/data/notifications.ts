@@ -293,7 +293,7 @@ export async function notifyCustomers(input: {
     .map((c) => c.user_id)
     .filter((id): id is string => Boolean(id));
 
-  await sendPushToUsers(userIds, { title: input.title, body: input.body, link: input.link });
+  await sendPushToUsers(userIds, { title: input.title, body: input.body, link: input.link }, input.restaurantId);
 }
 
 /**
