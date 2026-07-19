@@ -4,7 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
-import { createProgramAction } from "@/app/(app)/programs/actions";
+import { createProgramAction } from "@/app/[locale]/(app)/programs/actions";
 import type { Program, ProgramType } from "@/lib/types";
 
 export function CreateProgramModal({

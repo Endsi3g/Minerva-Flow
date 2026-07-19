@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDropzone, type FileError, type FileRejection } from "react-dropzone";
 import { parseServiceDaysCsv } from "@/lib/csv-service-days";
-import { importServiceDaysAction } from "@/app/(app)/days/actions";
+import { importServiceDaysAction } from "@/app/[locale]/(app)/days/actions";
 
 interface FileWithPreview extends File {
   preview?: string;

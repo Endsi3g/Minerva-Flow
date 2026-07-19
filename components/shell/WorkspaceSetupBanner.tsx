@@ -2,7 +2,8 @@
 
 import { useCurrentRestaurant } from "@/lib/app-context";
 import { X, Store } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 const DEFAULT_NAME = "Mon restaurant";
@@ -17,6 +18,7 @@ const DISMISS_KEY_PREFIX = "mv-workspace-banner-dismissed:";
  * login until the restaurant is actually renamed.
  */
 export function WorkspaceSetupBanner() {
+  const t = useTranslations("shell");
   const restaurant = useCurrentRestaurant();
   const [dismissed, setDismissed] = useState(true);
 
@@ -36,18 +38,17 @@ export function WorkspaceSetupBanner() {
     <div className="mb-5 flex items-center gap-3 rounded-xl border border-mv-lime-dark/30 bg-mv-lime-tint px-4 py-3">
       <Store size={18} className="shrink-0 text-mv-green-dark" />
       <p className="flex-1 text-[13px] font-medium text-mv-ink">
-        Complétez la configuration de votre restaurant — nom, adresse et fuseau horaire ne sont pas
-        encore renseignés.
+        {t("workspaceBannerText")}
       </p>
       <Link
         href="/etablissement"
         className="shrink-0 rounded-lg bg-mv-green px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-green-dark"
       >
-        Configurer
+        {t("configure")}
       </Link>
       <button
         onClick={handleDismiss}
-        aria-label="Fermer"
+        aria-label={t("close")}
         className="shrink-0 rounded-lg p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
       >
         <X size={15} />

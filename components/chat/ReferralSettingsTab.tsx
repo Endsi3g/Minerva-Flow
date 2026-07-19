@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import {
   getReferralModalDataAction,
   getReferralsListAction,
-} from "@/app/(chat)/assistant/referral-actions";
+} from "@/app/[locale]/(chat)/assistant/referral-actions";
 import type { Referral, ReferralStatus } from "@/lib/types";
 
 const statusTone: Record<ReferralStatus, "green" | "amber" | "neutral" | "red"> = {

@@ -3,7 +3,7 @@
 import { Modal } from "@/components/ui/Modal";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getReferralModalDataAction } from "@/app/(chat)/assistant/referral-actions";
+import { getReferralModalDataAction } from "@/app/[locale]/(chat)/assistant/referral-actions";
 
 type ReferralModalData = {
   code: string | null;

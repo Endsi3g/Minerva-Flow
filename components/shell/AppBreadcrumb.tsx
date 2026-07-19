@@ -9,31 +9,32 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { reportDefs } from "@/lib/reports";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
+import { Link, usePathname } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
-const crumbLabels: Record<string, string> = {
-  overview: "Aperçu",
-  programs: "Programmes",
-  days: "Journées",
-  finance: "Finance",
-  campaigns: "Campagnes",
-  maps: "Cartes",
-  settings: "Paramètres",
-  reports: "Métriques",
-  assistant: "Assistant",
-  fidelisation: "Fidélisation",
-  menu: "Menu",
-  inventaire: "Inventaire",
-  commandes: "Commandes",
+const crumbTranslationKeys: Record<string, string> = {
+  overview: "overview",
+  programs: "programs",
+  days: "days",
+  finance: "finance",
+  campaigns: "campaigns",
+  maps: "maps",
+  settings: "settings",
+  reports: "reports",
+  assistant: "assistant",
+  fidelisation: "fidelisation",
+  menu: "menu",
+  inventaire: "inventaire",
+  commandes: "commandes",
 };
 
 export function AppBreadcrumb() {
+  const t = useTranslations("breadcrumb");
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
 
   if (segments.length === 0) {
-    return <BreadcrumbRoot label="Aperçu" />;
+    return <BreadcrumbRoot label={t("overview")} />;
   }
 
   if (segments[0] === "reports" && segments[1]) {
@@ -43,7 +44,7 @@ export function AppBreadcrumb() {
         <BreadcrumbList className="[&_*]:uppercase [&_*]:tracking-wide">
           <BreadcrumbItem>
             <BreadcrumbLink render={<Link href="/overview" />} className="text-[13px] font-semibold">
-              Métriques
+              {t("reports")}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -57,7 +58,8 @@ export function AppBreadcrumb() {
     );
   }
 
-  const label = crumbLabels[segments[0]] ?? segments[0];
+  const translationKey = crumbTranslationKeys[segments[0]];
+  const label = translationKey ? t(translationKey) : segments[0];
   return <BreadcrumbRoot label={label} />;
 }
 

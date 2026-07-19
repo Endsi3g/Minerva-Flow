@@ -3,7 +3,7 @@
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { useApp } from "@/lib/app-context";
-import { getPosStatusAction, syncPosNowAction } from "@/app/(app)/settings/pos-actions";
+import { getPosStatusAction, syncPosNowAction } from "@/app/[locale]/(app)/settings/pos-actions";
 import type { PosConnection, PosProvider } from "@/lib/data/pos-connections";
 import { formatDate } from "@/lib/utils";
 import { RefreshCw, Store } from "lucide-react";

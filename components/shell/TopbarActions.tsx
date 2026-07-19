@@ -8,18 +8,19 @@ import { cn, formatRelativeTime } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { ChevronDown, LogOut, User, Bell, Gift, Settings } from "lucide-react";
 import { ReferralModal } from "@/components/chat/ReferralModal";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import {
   getNotificationsAction,
   markNotificationReadAction,
   markAllNotificationsReadAction,
-} from "@/app/(app)/notifications-actions";
+} from "@/app/[locale]/(app)/notifications-actions";
 import {
   getUnreadAlertsAction,
   markAlertReviewedAction,
   markAllAlertsReviewedAction,
-} from "@/app/(app)/alerts-actions";
+} from "@/app/[locale]/(app)/alerts-actions";
 import type { Notification } from "@/lib/data/notifications";
 import type { Alert, AlertSeverity } from "@/lib/types";
 import { PushNotificationToggle } from "@/components/pwa/PushNotificationToggle";
@@ -75,6 +76,7 @@ function useClickOutside(onOutside: () => void) {
 
 
 function UserMenu() {
+  const t = useTranslations("topbar");
   const { role, authUser, restaurantId } = useApp();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -111,7 +113,7 @@ function UserMenu() {
           </div>
           <div className="border-t border-mv-border-soft px-2.5 py-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              Rôle
+              {t("role")}
             </p>
             <p className="mt-1 text-[12.5px] font-medium text-mv-ink-soft">{roleLabels[role]}</p>
           </div>
@@ -123,7 +125,7 @@ function UserMenu() {
               }}
               className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft"
             >
-              <User size={15} /> Gestion de compte
+              <User size={15} /> {t("accountManagement")}
             </button>
             {restaurantId && (
               <button
@@ -133,7 +135,7 @@ function UserMenu() {
                 }}
                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft"
               >
-                <Gift size={15} /> Parrainage
+                <Gift size={15} /> {t("referral")}
               </button>
             )}
             {(role === "owner" || role === "manager") && (
@@ -144,7 +146,7 @@ function UserMenu() {
                 }}
                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft"
               >
-                <Settings size={15} /> Paramètres
+                <Settings size={15} /> {t("settings")}
               </button>
             )}
           </div>
@@ -153,7 +155,7 @@ function UserMenu() {
               onClick={handleLogout}
               className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-red hover:bg-mv-red-bg"
             >
-              <LogOut size={15} /> Se déconnecter
+              <LogOut size={15} /> {t("logout")}
             </button>
           </div>
         </div>
@@ -193,6 +195,7 @@ function mapNotificationRow(row: NotificationRow): Notification {
 }
 
 function NotificationBell() {
+  const t = useTranslations("topbar");
   const { restaurantId, authUser } = useApp();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -321,7 +324,7 @@ function NotificationBell() {
       <PopoverTrigger
         render={
           <button
-            title="Notifications"
+            title={t("notifications")}
             className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-mv-border bg-mv-surface text-mv-ink-soft transition-colors hover:bg-mv-cream-soft"
           >
             <Bell size={16} />
@@ -335,13 +338,13 @@ function NotificationBell() {
       />
       <PopoverContent className="w-80 p-0" sideOffset={8} align="end">
         <div className="flex items-center justify-between border-b border-mv-border-soft px-3 py-2.5">
-          <p className="text-[13px] font-semibold text-mv-ink">Notifications</p>
+          <p className="text-[13px] font-semibold text-mv-ink">{t("notifications")}</p>
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
               className="text-[11.5px] font-medium text-mv-green-dark hover:underline"
             >
-              Tout marquer lu
+              {t("markAllRead")}
             </button>
           )}
         </div>
@@ -349,14 +352,14 @@ function NotificationBell() {
         <div className="max-h-80 overflow-y-auto">
           {alerts.length === 0 && notifications.length === 0 ? (
             <p className="px-3 py-4 text-center text-[12.5px] text-mv-ink-faint">
-              Aucune notification.
+              {t("noNotifications")}
             </p>
           ) : (
             <>
               {alerts.length > 0 && (
                 <div>
                   <p className="px-3 pt-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                    Alertes
+                    {t("alerts")}
                   </p>
                   {alerts.map((a) => (
                     <button
@@ -367,10 +370,10 @@ function NotificationBell() {
                       <div className="flex items-center justify-between gap-2">
                         <Badge tone={alertSeverityTone[a.severity]} dot>
                           {a.severity === "critique"
-                            ? "Priorité haute"
+                            ? t("priorityHigh")
                             : a.severity === "important"
-                              ? "À surveiller"
-                              : "Info"}
+                              ? t("toWatch")
+                              : t("info")}
                         </Badge>
                       </div>
                       <p className="text-[12.5px] font-semibold text-mv-ink">{a.title}</p>

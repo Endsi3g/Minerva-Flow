@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { logAppErrorAction } from "@/app/(app)/system-actions";
+import { logAppErrorAction } from "@/app/[locale]/(app)/system-actions";
 
 /**
  * Drop-in replacement for `toast.error(message)` that also logs the
