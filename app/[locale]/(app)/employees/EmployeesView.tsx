@@ -23,7 +23,8 @@ import posthog from "posthog-js";
 import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask } from "@/lib/types";
 import { useApp } from "@/lib/app-context";
 import { UserPlus, Star, Printer, Users2, ChevronRight } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -52,6 +53,7 @@ function NewEmployeeModal({
   onClose: () => void;
   onCreated: (e: Employee) => void;
 }) {
+  const t = useTranslations("employees.newEmployee");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -73,7 +75,7 @@ function NewEmployeeModal({
         onCreated(employee);
         onClose();
       } else {
-        toast.error("L'ajout de l'employé a échoué.");
+        toast.error(t("createFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -81,34 +83,34 @@ function NewEmployeeModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Ajouter un employé" description="Nom, poste et taux horaire (optionnel).">
+    <Modal open={open} onClose={onClose} title={t("modalTitle")} description={t("modalDescription")}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Nom complet">
-          <Input name="fullName" placeholder="Ex : Sam Tremblay" required />
+        <Field label={t("fullNameLabel")}>
+          <Input name="fullName" placeholder={t("fullNamePlaceholder")} required />
         </Field>
-        <Field label="Poste">
-          <Input name="roleTitle" placeholder="Ex : Serveur, Cuisinier…" defaultValue="Employé" />
+        <Field label={t("roleLabel")}>
+          <Input name="roleTitle" placeholder={t("rolePlaceholder")} defaultValue="Employé" />
         </Field>
-        <Field label="Taux horaire ($/h)" hint="Optionnel">
-          <Input name="hourlyWage" type="number" step="0.01" min="0" placeholder="Ex : 18.50" />
+        <Field label={t("wageLabel")} hint={t("optional")}>
+          <Input name="hourlyWage" type="number" step="0.01" min="0" placeholder={t("wagePlaceholder")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Téléphone" hint="Optionnel">
-            <Input name="contactPhone" type="tel" placeholder="Ex : 514-555-1234" />
+          <Field label={t("phoneLabel")} hint={t("optional")}>
+            <Input name="contactPhone" type="tel" placeholder={t("phonePlaceholder")} />
           </Field>
-          <Field label="Courriel" hint="Optionnel">
-            <Input name="contactEmail" type="email" placeholder="Ex : sam@courriel.com" />
+          <Field label={t("emailLabel")} hint={t("optional")}>
+            <Input name="contactEmail" type="email" placeholder={t("emailPlaceholder")} />
           </Field>
         </div>
-        <Field label="Description" hint="Optionnel">
-          <Textarea name="description" placeholder="Ex : disponible les fins de semaine, formation en pâtisserie…" rows={2} />
+        <Field label={t("descriptionLabel")} hint={t("optional")}>
+          <Textarea name="description" placeholder={t("descriptionPlaceholder")} rows={2} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Ajout…" : "Ajouter"}
+            {isSubmitting ? t("adding") : t("add")}
           </Button>
         </div>
       </form>
@@ -125,6 +127,8 @@ export function LogShiftForm({
   restaurantId: string;
   onLogged: (s: EmployeeShift) => void;
 }) {
+  const t = useTranslations("employees.shiftForm");
+  const tCommon = useTranslations("employees.newEmployee");
   const [wasLate, setWasLate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -146,7 +150,7 @@ export function LogShiftForm({
         (e.target as HTMLFormElement).reset();
         setWasLate(false);
       } else {
-        toast.error("L'enregistrement du quart a échoué.");
+        toast.error(t("logFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -156,22 +160,22 @@ export function LogShiftForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Date">
+        <Field label={t("dateLabel")}>
           <Input name="shiftDate" type="date" required />
         </Field>
-        <Field label="Heures travaillées">
+        <Field label={t("hoursLabel")}>
           <Input name="hoursWorked" type="number" step="0.25" min="0" required />
         </Field>
       </div>
       <label className="flex items-center gap-2 text-[12.5px] font-medium text-mv-ink-soft">
         <Switch checked={wasLate} onCheckedChange={setWasLate} size="sm" className="data-checked:bg-mv-red" />
-        En retard
+        {t("late")}
       </label>
-      <Field label="Notes" hint="Optionnel">
-        <Input name="notes" placeholder="Ex : a fermé le service" />
+      <Field label={t("notesLabel")} hint={tCommon("optional")}>
+        <Input name="notes" placeholder={t("notesPlaceholder")} />
       </Field>
       <Button size="sm" type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Enregistrement…" : "Enregistrer le quart"}
+        {isSubmitting ? t("saving") : t("save")}
       </Button>
     </form>
   );
@@ -239,6 +243,7 @@ export function NewReviewForm({
   restaurantId: string;
   onCreated: (r: EmployeeReview) => void;
 }) {
+  const t = useTranslations("employees.reviewForm");
   const [rating, setRating] = useState(3);
   const [raiseRecommended, setRaiseRecommended] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -269,9 +274,9 @@ export function NewReviewForm({
         (e.target as HTMLFormElement).reset();
         setRating(3);
         setRaiseRecommended(false);
-        toast.success("Revue publiée.");
+        toast.success(t("publishSuccess"));
       } else {
-        toast.error("La publication de la revue a échoué.");
+        toast.error(t("publishFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -281,31 +286,31 @@ export function NewReviewForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Début de période">
+        <Field label={t("periodStart")}>
           <Input name="periodStart" type="date" required />
         </Field>
-        <Field label="Fin de période">
+        <Field label={t("periodEnd")}>
           <Input name="periodEnd" type="date" required />
         </Field>
       </div>
 
-      <Field label="Note globale">
+      <Field label={t("overallRating")}>
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} type="button" onClick={() => setRating(n)} aria-label={`${n} étoiles`}>
+            <button key={n} type="button" onClick={() => setRating(n)} aria-label={t("starsAria", { n })}>
               <Star size={20} className={n <= rating ? "fill-mv-lime-dark text-mv-lime-dark" : "text-mv-ink-mute"} />
             </button>
           ))}
         </div>
       </Field>
 
-      <Field label="Points forts">
-        <Textarea name="strengths" placeholder="Ce que fait bien cet employé…" rows={3} />
+      <Field label={t("strengths")}>
+        <Textarea name="strengths" placeholder={t("strengthsPlaceholder")} rows={3} />
       </Field>
-      <Field label="Ce qu'il devrait améliorer">
-        <Textarea name="improvements" placeholder="Ce qui mériterait d'être travaillé…" rows={3} />
+      <Field label={t("improvements")}>
+        <Textarea name="improvements" placeholder={t("improvementsPlaceholder")} rows={3} />
       </Field>
-      <Field label="Chiffre d'affaires attribué ($)" hint="Optionnel, basé sur vos données de vente">
+      <Field label={t("attributedRevenue")} hint={t("attributedRevenueHint")}>
         <Input name="attributedRevenue" type="number" step="0.01" min="0" />
       </Field>
       <label className="flex items-center gap-2 text-[12.5px] font-medium text-mv-ink-soft">
@@ -315,11 +320,11 @@ export function NewReviewForm({
           size="sm"
           className="data-checked:bg-mv-green"
         />
-        Augmentation recommandée
+        {t("raiseRecommended")}
       </label>
 
       <Button size="sm" type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Publication…" : "Publier la revue"}
+        {isSubmitting ? t("publishing") : t("publish")}
       </Button>
     </form>
   );
@@ -334,6 +339,9 @@ export function EmployeeDetail({
   restaurantId: string;
   onToggleActive: (id: string, active: boolean) => void;
 }) {
+  const t = useTranslations("employees");
+  const td = useTranslations("employees.detail");
+  const tr = useTranslations("employees.reviewForm");
   const [shifts, setShifts] = useState<EmployeeShift[]>([]);
   const [reviews, setReviews] = useState<EmployeeReview[]>([]);
   const [loading, setLoading] = useState(true);
@@ -361,7 +369,7 @@ export function EmployeeDetail({
             <h2 className="font-display text-[18px] font-medium text-mv-ink">{employee.fullName}</h2>
             <p className="text-[12.5px] text-mv-ink-faint">{employee.roleTitle}</p>
           </div>
-          <Badge tone={employee.active ? "green" : "neutral"}>{employee.active ? "Actif" : "Inactif"}</Badge>
+          <Badge tone={employee.active ? "green" : "neutral"}>{employee.active ? t("active") : t("inactive")}</Badge>
         </div>
         {employee.hourlyWage !== null && (
           <p className="mt-2 text-[13px] text-mv-ink-soft">{formatCurrency(employee.hourlyWage)}/h</p>
@@ -377,11 +385,11 @@ export function EmployeeDetail({
         )}
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-mv-cream-soft p-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Heures (total)</p>
+            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{td("hoursTotal")}</p>
             <p className="font-display text-[16px] font-medium text-mv-ink">{totalHours.toFixed(1)}</p>
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Ponctualité</p>
+            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{td("punctuality")}</p>
             <p className="font-display text-[16px] font-medium text-mv-ink">
               {punctuality === null ? "—" : `${punctuality}%`}
             </p>
@@ -393,25 +401,25 @@ export function EmployeeDetail({
           className="mt-4"
           onClick={() => onToggleActive(employee.id, !employee.active)}
         >
-          {employee.active ? "Marquer inactif" : "Marquer actif"}
+          {employee.active ? td("markInactive") : td("markActive")}
         </Button>
       </Card>
 
       <Card>
-        <CardHeader eyebrow="Quarts" title="Journal des quarts" />
+        <CardHeader eyebrow={td("shiftsEyebrow")} title={td("shiftsTitle")} />
         {loading ? (
-          <p className="text-[12.5px] text-mv-ink-faint">Chargement…</p>
+          <p className="text-[12.5px] text-mv-ink-faint">{td("loading")}</p>
         ) : (
           <div className="mb-4 max-h-40 space-y-1.5 overflow-y-auto">
             {shifts.length === 0 ? (
-              <p className="text-[12.5px] text-mv-ink-faint">Aucun quart enregistré.</p>
+              <p className="text-[12.5px] text-mv-ink-faint">{td("noShifts")}</p>
             ) : (
               shifts.slice(0, 10).map((s) => (
                 <div key={s.id} className="flex items-center justify-between text-[12.5px]">
                   <span className="text-mv-ink-soft">{formatDate(s.shiftDate)}</span>
                   <span className="flex items-center gap-2">
                     <span className="font-medium text-mv-ink">{s.hoursWorked}h</span>
-                    {s.wasLate && <Badge tone="amber">Retard</Badge>}
+                    {s.wasLate && <Badge tone="amber">{td("late")}</Badge>}
                   </span>
                 </div>
               ))
@@ -426,13 +434,13 @@ export function EmployeeDetail({
       </Card>
 
       <Card>
-        <CardHeader eyebrow="Revues" title="Revues de performance" />
+        <CardHeader eyebrow={td("reviewsEyebrow")} title={td("reviewsTitle")} />
         {loading ? (
-          <p className="text-[12.5px] text-mv-ink-faint">Chargement…</p>
+          <p className="text-[12.5px] text-mv-ink-faint">{td("loading")}</p>
         ) : (
           <div className="mb-4 space-y-3">
             {reviews.length === 0 ? (
-              <p className="text-[12.5px] text-mv-ink-faint">Aucune revue pour l&apos;instant.</p>
+              <p className="text-[12.5px] text-mv-ink-faint">{td("noReviews")}</p>
             ) : (
               reviews.map((r) => (
                 <div key={r.id} className="rounded-lg border border-mv-border-soft p-3">
@@ -444,7 +452,7 @@ export function EmployeeDetail({
                   </div>
                   {r.raiseRecommended && (
                     <Badge tone="green" className="mt-1.5">
-                      Augmentation recommandée
+                      {tr("raiseRecommended")}
                     </Badge>
                   )}
                   {r.strengths && <p className="mt-2 text-[12.5px] text-mv-ink-soft">{r.strengths}</p>}
@@ -453,7 +461,7 @@ export function EmployeeDetail({
                     target="_blank"
                     className="mt-2 flex w-fit items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
                   >
-                    <Printer size={12} /> Voir / imprimer
+                    <Printer size={12} /> {td("viewPrint")}
                   </Link>
                 </div>
               ))
@@ -479,6 +487,7 @@ export function EmployeesView({
   employees: Employee[];
   initialSelectedId?: string;
 }) {
+  const t = useTranslations("employees");
   const { role } = useApp();
   const [list, setList] = useState(employees);
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId || null);
@@ -496,13 +505,13 @@ export function EmployeesView({
   return (
     <div>
       <PageHeader
-        eyebrow="Équipe"
-        title="Employés"
-        description="Suivez vos employés, leurs quarts et leurs revues de performance."
+        eyebrow={t("pageEyebrow")}
+        title={t("pageTitle")}
+        description={t("pageDescription")}
         action={
           canManage && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <UserPlus size={15} /> Ajouter un employé
+              <UserPlus size={15} /> {t("addEmployee")}
             </Button>
           )
         }
@@ -513,12 +522,12 @@ export function EmployeesView({
           {list.length === 0 ? (
             <EmptyState
               icon={Users2}
-              title="Aucun employé pour le moment"
-              description="Ajoutez vos employés pour suivre leurs quarts et leurs performances."
+              title={t("emptyTitle")}
+              description={t("emptyDescription")}
               action={
                 canManage && (
                   <Button size="sm" onClick={() => setCreateOpen(true)}>
-                    <UserPlus size={15} /> Ajouter un employé
+                    <UserPlus size={15} /> {t("addEmployee")}
                   </Button>
                 )
               }
@@ -526,10 +535,10 @@ export function EmployeesView({
           ) : (
             <Table>
               <THead>
-                <Th>Employé</Th>
-                <Th>Poste</Th>
-                <Th>Taux</Th>
-                <Th>Statut</Th>
+                <Th>{t("colEmployee")}</Th>
+                <Th>{t("colRole")}</Th>
+                <Th>{t("colRate")}</Th>
+                <Th>{t("colStatus")}</Th>
                 <Th className="text-right"></Th>
               </THead>
               <tbody>
@@ -539,13 +548,13 @@ export function EmployeesView({
                     <Td className="text-mv-ink-soft">{e.roleTitle}</Td>
                     <Td className="text-mv-ink-soft">{e.hourlyWage !== null ? `${formatCurrency(e.hourlyWage)}/h` : "—"}</Td>
                     <Td>
-                      <Badge tone={e.active ? "green" : "neutral"}>{e.active ? "Actif" : "Inactif"}</Badge>
+                      <Badge tone={e.active ? "green" : "neutral"}>{e.active ? t("active") : t("inactive")}</Badge>
                     </Td>
                     <Td className="text-right">
                       <Link
                         href={`/employees/${e.id}`}
                         onClick={(ev) => ev.stopPropagation()}
-                        aria-label="Voir la fiche complète"
+                        aria-label={t("viewFullProfile")}
                         className="inline-flex rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
                       >
                         <ChevronRight size={15} />

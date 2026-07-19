@@ -7,8 +7,10 @@ import { Field, Input } from "@/components/minerva/FormField";
 import { Button } from "@/components/ui/Button";
 import { requestCustomerMagicLink } from "@/lib/auth/customer-magic-link";
 import { Mail } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function PortalLoginPage() {
+  const t = useTranslations("portal.login");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export default function PortalLoginPage() {
       setStatus("sent");
     } else {
       setStatus("error");
-      setError(result.error ?? "Une erreur est survenue.");
+      setError(result.error ?? t("errorGeneric"));
     }
   }
 
@@ -40,32 +42,32 @@ export default function PortalLoginPage() {
               <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
                 <Mail size={18} />
               </div>
-              <p className="font-display text-[17px] font-medium text-mv-ink">Vérifiez vos courriels</p>
+              <p className="font-display text-[17px] font-medium text-mv-ink">{t("checkEmailTitle")}</p>
               <p className="mt-1.5 text-[13px] text-mv-ink-soft">
-                Un lien de connexion a été envoyé à {email}.
+                {t("linkSentTo", { email })}
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="text-center">
-                <p className="font-display text-[19px] font-medium text-mv-ink">Espace client</p>
+                <p className="font-display text-[19px] font-medium text-mv-ink">{t("title")}</p>
                 <p className="mt-1 text-[13px] text-mv-ink-soft">
-                  Entrez votre courriel pour recevoir un lien de connexion.
+                  {t("subtitle")}
                 </p>
               </div>
-              <Field label="Courriel">
+              <Field label={t("emailLabel")}>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="vous@exemple.com"
+                  placeholder={t("emailPlaceholder")}
                   required
                   autoFocus
                 />
               </Field>
               {status === "error" && <p className="text-[12.5px] text-mv-red">{error}</p>}
               <Button type="submit" disabled={status === "sending"} className="w-full">
-                {status === "sending" ? "Envoi…" : "Recevoir le lien"}
+                {status === "sending" ? t("sending") : t("receiveLink")}
               </Button>
             </form>
           )}

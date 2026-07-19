@@ -9,6 +9,7 @@ import type { Incident } from "@/lib/data/incidents";
 import { formatDate } from "@/lib/utils";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 const severityTone: Record<Incident["severity"], "neutral" | "amber" | "red"> = {
   faible: "neutral",
@@ -16,7 +17,14 @@ const severityTone: Record<Incident["severity"], "neutral" | "amber" | "red"> = 
   critique: "red",
 };
 
+const severityTranslationKey: Record<Incident["severity"], "severityLow" | "severityMedium" | "severityHigh"> = {
+  faible: "severityLow",
+  moyenne: "severityMedium",
+  critique: "severityHigh",
+};
+
 export function IncidentsView({ initialIncidents }: { initialIncidents: Incident[] }) {
+  const t = useTranslations("admin.incidents");
   const [incidents, setIncidents] = useState(initialIncidents);
   const [formOpen, setFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,12 +41,12 @@ export function IncidentsView({ initialIncidents }: { initialIncidents: Incident
         affectedUserCount: Number(form.get("affectedUserCount") ?? 0),
       });
       if (ok) {
-        toast.success("Incident enregistré.");
+        toast.success(t("saveSuccess"));
         setFormOpen(false);
         (e.target as HTMLFormElement).reset();
         window.location.reload();
       } else {
-        toast.error("Échec de l'enregistrement.");
+        toast.error(t("saveFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -48,39 +56,39 @@ export function IncidentsView({ initialIncidents }: { initialIncidents: Incident
   return (
     <div className="space-y-4">
       <Button size="sm" variant="secondary" onClick={() => setFormOpen((v) => !v)}>
-        {formOpen ? "Annuler" : "Consigner un incident"}
+        {formOpen ? t("cancel") : t("logIncident")}
       </Button>
 
       {formOpen && (
         <Card>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Field label="Titre">
-              <Input name="title" placeholder="Ex : Accès non autorisé à une table Supabase" required />
+            <Field label={t("titleLabel")}>
+              <Input name="title" placeholder={t("titlePlaceholder")} required />
             </Field>
-            <Field label="Description">
+            <Field label={t("descriptionLabel")}>
               <Textarea name="description" rows={4} required />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Gravité">
+              <Field label={t("severityLabel")}>
                 <Select name="severity" defaultValue="faible">
-                  <option value="faible">Faible</option>
-                  <option value="moyenne">Moyenne</option>
-                  <option value="critique">Critique</option>
+                  <option value="faible">{t("severityLow")}</option>
+                  <option value="moyenne">{t("severityMedium")}</option>
+                  <option value="critique">{t("severityHigh")}</option>
                 </Select>
               </Field>
-              <Field label="Utilisateurs affectés (estimation)">
+              <Field label={t("affectedUsersLabel")}>
                 <Input name="affectedUserCount" type="number" min="0" defaultValue="0" />
               </Field>
             </div>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Enregistrement…" : "Enregistrer l'incident"}
+              {isSubmitting ? t("saving") : t("save")}
             </Button>
           </form>
         </Card>
       )}
 
       {incidents.length === 0 ? (
-        <p className="text-[13px] text-mv-ink-faint">Aucun incident consigné — c'est le but.</p>
+        <p className="text-[13px] text-mv-ink-faint">{t("emptyState")}</p>
       ) : (
         <div className="space-y-2">
           {incidents.map((i) => (
@@ -88,12 +96,12 @@ export function IncidentsView({ initialIncidents }: { initialIncidents: Incident
               <CardHeader
                 eyebrow={formatDate(i.occurredAt.slice(0, 10))}
                 title={i.title}
-                action={<Badge tone={severityTone[i.severity]}>{i.severity}</Badge>}
+                action={<Badge tone={severityTone[i.severity]}>{t(severityTranslationKey[i.severity])}</Badge>}
               />
               <p className="text-[13px] text-mv-ink-soft">{i.description}</p>
               <p className="mt-2 text-[11.5px] text-mv-ink-faint">
-                {i.affectedUserCount} utilisateur(s) affecté(s)
-                {i.resolution ? ` · Résolu : ${i.resolution}` : " · Non résolu"}
+                {t("affectedUsersCount", { count: i.affectedUserCount })}
+                {i.resolution ? t("resolvedSuffix", { resolution: i.resolution }) : t("unresolvedSuffix")}
               </p>
             </Card>
           ))}

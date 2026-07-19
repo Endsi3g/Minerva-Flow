@@ -11,6 +11,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createReportShare } from "@/lib/data/report-shares";
 import type { FlowLine } from "@/lib/types";
+import { getTranslations } from "next-intl/server";
 
 export async function exportReportAction(slug: string): Promise<string | null> {
   const restaurantId = await getCurrentRestaurantId();
@@ -27,12 +28,14 @@ export async function exportReportAction(slug: string): Promise<string | null> {
   const report = getReport(slug, data);
   if (!report) return null;
 
+  const t = await getTranslations("reports");
+  const tDetail = await getTranslations("reportDetail");
   const trend = trendFor(slug, data);
-  const columns = ["Date", "Revenu"];
-  const rows = trend.map((t) => [formatDate(t.date), formatCurrency(t.revenue)]);
+  const columns = [tDetail("colDate"), t("labels.revenu")];
+  const rows = trend.map((point) => [formatDate(point.date), formatCurrency(point.revenue)]);
 
   return exportReportToSheet(restaurantId, {
-    title: `Flow par Minerva — ${report.label} — ${formatDate(new Date().toISOString().slice(0, 10))}`,
+    title: `Flow par Minerva — ${t(`labels.${report.slug}`)} — ${formatDate(new Date().toISOString().slice(0, 10))}`,
     columns,
     rows,
   });

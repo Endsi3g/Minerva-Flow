@@ -12,29 +12,24 @@ import { buildReports, reportGroups, type ReportData } from "@/lib/reports";
 import { cn, formatCurrency, isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { Sparkles, Store } from "lucide-react";
-import Link from "next/link";
-
-const groupLabels: Record<string, string> = {
-  Revenue: "Revenu",
-  Service: "Service",
-  Finance: "Finance",
-  Campagnes: "Campagnes",
-};
+import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 
 export default async function ReportsIndexPage() {
   const restaurantId = await getCurrentRestaurantId();
+  const t = await getTranslations("reports");
 
   if (!restaurantId) {
     return (
       <div>
-        <PageHeader eyebrow="Rapports" title="Rapports" />
+        <PageHeader eyebrow={t("page.title")} title={t("page.title")} />
         <EmptyState
           icon={Store}
-          title="Aucun restaurant configuré"
-          description="Créez ou rejoignez un restaurant pour voir vos rapports."
+          title={t("page.noRestaurantTitle")}
+          description={t("page.noRestaurantDescription")}
           action={
             <Button href="/onboarding" size="sm">
-              Configurer un restaurant
+              {t("page.configureRestaurant")}
             </Button>
           }
         />
@@ -70,18 +65,24 @@ export default async function ReportsIndexPage() {
       createdAt: a.created_at,
     }));
 
+  const reportTypeLabels: Record<string, string> = {
+    comparison: t("page.reportTypeComparison"),
+    chart: t("page.reportTypeChart"),
+    table: t("page.reportTypeTable"),
+  };
+
   return (
     <div className="mx-auto max-w-5xl w-full">
       <PageHeader
-        eyebrow="Vue globale"
-        title="Rapports"
+        eyebrow={t("page.overviewEyebrow")}
+        title={t("page.title")}
         action={
           <div className="flex items-center gap-2">
             <Button href="/finance" size="sm" variant="secondary">
-              Ajouter une dépense
+              {t("page.addExpense")}
             </Button>
             <Button href="/reports/ai-review" size="sm" variant="secondary">
-              <Sparkles size={14} /> Revue IA
+              <Sparkles size={14} /> {t("page.aiReview")}
             </Button>
           </div>
         }
@@ -91,7 +92,7 @@ export default async function ReportsIndexPage() {
         {dynamicReports.length > 0 && (
           <div className="mv-animate-in" style={{ animationDelay: "60ms" }}>
             <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
-              Analyses &amp; Rapports IA
+              {t("page.aiReportsSectionTitle")}
             </p>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {dynamicReports.map((r) => (
@@ -100,11 +101,11 @@ export default async function ReportsIndexPage() {
                     <div>
                       <p className="font-display text-[15px] font-semibold text-mv-ink">{r.title}</p>
                       <p className="mt-1.5 text-[12.5px] text-mv-ink-soft">
-                        Analyse générée à la demande par l&apos;assistant sur la base de vos métriques.
+                        {t("page.aiGeneratedDescription")}
                       </p>
                     </div>
                     <div className="mt-4 flex items-center justify-between border-t border-mv-border/40 pt-2 text-[11px] text-mv-ink-faint shrink-0">
-                      <span>Rapport {r.type === "comparison" ? "comparatif" : r.type === "chart" ? "graphique" : r.type === "table" ? "tableau" : "synthèse"}</span>
+                      <span>{reportTypeLabels[r.type] ?? t("page.reportTypeSynthesis")}</span>
                       <span>{new Date(r.createdAt).toLocaleDateString("fr-CA", { dateStyle: "short" })}</span>
                     </div>
                   </Card>
@@ -127,13 +128,13 @@ export default async function ReportsIndexPage() {
           return (
             <div key={group} className="mv-animate-in" style={{ animationDelay: `${(groupIdx + 1) * 80}ms` }}>
               <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                {groupLabels[group] ?? group}
+                {t(`groupLabels.${group}`)}
               </p>
               <div className={cn("grid gap-4", gridCols)}>
                 {groupReports.map((r) => (
                   <Link key={r.slug} href={`/reports/${r.slug}`}>
                     <Card className="transition-all duration-300 ease-out hover:shadow-mv-md hover:-translate-y-0.5">
-                      <p className="font-display text-[15px] font-medium text-mv-ink">{r.label}</p>
+                      <p className="font-display text-[15px] font-medium text-mv-ink">{t(`labels.${r.slug}`)}</p>
                       <div className="mt-2 flex items-end justify-between">
                         <p className="font-display text-[22px] font-medium text-mv-ink">
                           {r.unit === "currency" ? formatCurrency(r.value) : r.value}
@@ -144,7 +145,9 @@ export default async function ReportsIndexPage() {
                           </Badge>
                         )}
                       </div>
-                      <p className="mt-1.5 line-clamp-2 text-[12.5px] text-mv-ink-soft">{r.summary}</p>
+                      <p className="mt-1.5 line-clamp-2 text-[12.5px] text-mv-ink-soft">
+                        {t(`summaries.${r.slug}`, { count: r.value })}
+                      </p>
                     </Card>
                   </Link>
                 ))}

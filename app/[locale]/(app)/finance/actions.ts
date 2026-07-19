@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import {
   createExpenseCategory,
@@ -26,12 +27,13 @@ async function requireRestaurantId(): Promise<string> {
 export async function createCategoryAction(
   name: string
 ): Promise<{ ok: true; category: ExpenseCategory } | { ok: false; error: string }> {
+  const t = await getTranslations("finance.categories");
   const trimmed = name.trim();
-  if (!trimmed) return { ok: false, error: "Le nom de la catégorie est requis." };
+  if (!trimmed) return { ok: false, error: t("nameRequired") };
 
   const restaurantId = await requireRestaurantId();
   const category = await createExpenseCategory(restaurantId, trimmed);
-  if (!category) return { ok: false, error: "Impossible de créer la catégorie." };
+  if (!category) return { ok: false, error: t("createFailed") };
 
   revalidatePath("/finance");
   return { ok: true, category };

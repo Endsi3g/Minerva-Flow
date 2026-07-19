@@ -48,7 +48,8 @@ import {
   Pencil,
 } from "lucide-react";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 const typeIcon: Record<ConnectionType, typeof Landmark> = {
   banque: Landmark,
@@ -58,24 +59,10 @@ const typeIcon: Record<ConnectionType, typeof Landmark> = {
   reservation: CalendarCheck2,
 };
 
-const typeLabel: Record<ConnectionType, string> = {
-  banque: "Compte bancaire",
-  pos: "Point de vente",
-  livraison: "Plateforme de livraison",
-  email: "Outil email",
-  reservation: "Plateforme de réservation",
-};
-
 const statusTone: Record<ConnectionStatus, "green" | "red" | "amber"> = {
   connecte: "green",
   erreur: "red",
   attente: "amber",
-};
-
-const statusLabel: Record<ConnectionStatus, string> = {
-  connecte: "Connecté",
-  erreur: "Erreur",
-  attente: "En attente",
 };
 
 /** Groups transactions by category into the {label, amount, pct} shape FlowBars expects. */
@@ -107,6 +94,7 @@ function isCurrentMonth(dateIso: string): boolean {
 }
 
 function OverviewTab({ transactions }: { transactions: FinancialTransaction[] }) {
+  const t = useTranslations("finance");
   const monthTransactions = useMemo(
     () => transactions.filter((t) => isCurrentMonth(t.date)),
     [transactions]
@@ -127,24 +115,28 @@ function OverviewTab({ transactions }: { transactions: FinancialTransaction[] })
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row">
         <StatCard
-          label="Entrées"
+          label={t("overview.inflows")}
           value={formatCurrency(totalIn)}
           icon={ArrowDownLeft}
-          sublabel="ce mois-ci"
+          sublabel={t("overview.thisMonth")}
           accent="green"
         />
         <StatCard
-          label="Sorties"
+          label={t("overview.outflows")}
           value={formatCurrency(totalOut)}
           icon={ArrowUpRight}
-          sublabel="ce mois-ci"
+          sublabel={t("overview.thisMonth")}
           accent="ink"
         />
         <StatCard
-          label="Flux net"
+          label={t("overview.netFlow")}
           value={formatCurrency(net)}
           icon={Landmark}
-          sublabel={totalIn > 0 ? `${Math.round((net / totalIn) * 100)}% des entrées` : "ce mois-ci"}
+          sublabel={
+            totalIn > 0
+              ? t("overview.netFlowPctOfInflows", { pct: Math.round((net / totalIn) * 100) })
+              : t("overview.thisMonth")
+          }
           accent="lime"
         />
       </div>
@@ -152,26 +144,26 @@ function OverviewTab({ transactions }: { transactions: FinancialTransaction[] })
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader
-            eyebrow="D'où l'argent vient"
-            title="Entrées de revenu"
-            description="Répartition des sources d'encaissement"
+            eyebrow={t("overview.whereMoneyComesFrom")}
+            title={t("overview.revenueInflows")}
+            description={t("overview.inflowsBreakdown")}
           />
           {inflows.length > 0 ? (
             <FlowBars lines={inflows} tone="green" />
           ) : (
-            <p className="text-[12.5px] text-mv-ink-faint">Aucune entrée ce mois-ci.</p>
+            <p className="text-[12.5px] text-mv-ink-faint">{t("overview.noInflowsThisMonth")}</p>
           )}
         </Card>
         <Card>
           <CardHeader
-            eyebrow="Où l'argent part"
-            title="Sorties de charges"
-            description="Répartition des dépenses courantes"
+            eyebrow={t("overview.whereMoneyGoes")}
+            title={t("overview.expenseOutflows")}
+            description={t("overview.outflowsBreakdown")}
           />
           {outflows.length > 0 ? (
             <FlowBars lines={outflows} tone="ink" />
           ) : (
-            <p className="text-[12.5px] text-mv-ink-faint">Aucune sortie ce mois-ci.</p>
+            <p className="text-[12.5px] text-mv-ink-faint">{t("overview.noOutflowsThisMonth")}</p>
           )}
         </Card>
       </div>
@@ -189,16 +181,38 @@ function triggerCsvDownload(csv: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-function downloadCsv(rows: FinancialTransaction[]) {
-  const header = ["Date", "Description", "Montant", "Sens", "Catégorie", "Compte", "Revu"];
-  const lines = rows.map((t) => [
-    t.date,
-    `"${t.description.replace(/"/g, '""')}"`,
-    t.amount,
-    t.direction === "in" ? "Entrée" : "Sortie",
-    t.category,
-    t.sourceAccount,
-    t.reviewed ? "Oui" : "Non",
+type CsvLabels = {
+  date: string;
+  description: string;
+  amount: string;
+  direction: string;
+  category: string;
+  account: string;
+  reviewed: string;
+  in: string;
+  out: string;
+  yes: string;
+  no: string;
+};
+
+function downloadCsv(rows: FinancialTransaction[], labels: CsvLabels) {
+  const header = [
+    labels.date,
+    labels.description,
+    labels.amount,
+    labels.direction,
+    labels.category,
+    labels.account,
+    labels.reviewed,
+  ];
+  const lines = rows.map((row) => [
+    row.date,
+    `"${row.description.replace(/"/g, '""')}"`,
+    row.amount,
+    row.direction === "in" ? labels.in : labels.out,
+    row.category,
+    row.sourceAccount,
+    row.reviewed ? labels.yes : labels.no,
   ]);
   const csv = [header, ...lines].map((row) => row.join(",")).join("\n");
   triggerCsvDownload(csv, `transactions-minerva-flow-${new Date().toISOString().slice(0, 10)}.csv`);
@@ -222,13 +236,14 @@ function downloadQuickBooksCsv(rows: FinancialTransaction[]) {
 }
 
 function CsvDropzone({ onImported }: { onImported: (count: number) => void }) {
+  const t = useTranslations("finance");
   const [message, setMessage] = useState<string | null>(null);
 
   const props = useCsvTransactionImport({
     maxFiles: 1,
     maxFileSize: 5 * 1000 * 1000,
     onImported: (count) => {
-      setMessage(`${count} transaction${count > 1 ? "s" : ""} importée${count > 1 ? "s" : ""}.`);
+      setMessage(t("importedCount", { count }));
       posthog.capture("transactions_imported", { transaction_count: count });
       onImported(count);
     },
@@ -265,6 +280,7 @@ function NewTransactionModal({
   onClose: () => void;
   onCreated: (t: FinancialTransaction) => void;
 }) {
+  const t = useTranslations("finance.newTransaction");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -284,7 +300,7 @@ function NewTransactionModal({
         onCreated(transaction);
         onClose();
       } else {
-        toast.error("L'ajout de la transaction a échoué.");
+        toast.error(t("createFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -292,29 +308,29 @@ function NewTransactionModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Ajouter une dépense ou une entrée" description="Saisissez une transaction manuellement, sans passer par l'import CSV.">
+    <Modal open={open} onClose={onClose} title={t("modalTitle")} description={t("modalDescription")}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Date">
+          <Field label={t("dateLabel")}>
             <Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
           </Field>
-          <Field label="Type">
+          <Field label={t("typeLabel")}>
             <Select name="direction" defaultValue="out">
-              <option value="out">Sortie (dépense)</option>
-              <option value="in">Entrée (revenu)</option>
+              <option value="out">{t("directionOut")}</option>
+              <option value="in">{t("directionIn")}</option>
             </Select>
           </Field>
         </div>
-        <Field label="Description">
-          <Input name="description" placeholder="Ex : Achat de farine chez Colabor" required />
+        <Field label={t("descriptionLabel")}>
+          <Input name="description" placeholder={t("descriptionPlaceholder")} required />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Montant ($)">
-            <Input name="amount" type="number" min="0" step="0.01" placeholder="Ex : 84.50" required />
+          <Field label={t("amountLabel")}>
+            <Input name="amount" type="number" min="0" step="0.01" placeholder={t("amountPlaceholder")} required />
           </Field>
-          <Field label="Catégorie" hint="Optionnel">
+          <Field label={t("categoryLabel")} hint={t("optional")}>
             <Select name="category" defaultValue="">
-              <option value="">Non catégorisé</option>
+              <option value="">{t("uncategorized")}</option>
               {expenseCategories.map((c) => (
                 <option key={c.id} value={c.name}>
                   {c.name}
@@ -323,15 +339,15 @@ function NewTransactionModal({
             </Select>
           </Field>
         </div>
-        <Field label="Compte / méthode" hint="Optionnel">
-          <Input name="sourceAccount" placeholder="Ex : Carte de crédit, comptant…" />
+        <Field label={t("accountLabel")} hint={t("optional")}>
+          <Input name="sourceAccount" placeholder={t("accountPlaceholder")} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Ajout…" : "Ajouter"}
+            {isSubmitting ? t("adding") : t("add")}
           </Button>
         </div>
       </form>
@@ -346,6 +362,7 @@ function TransactionsTab({
   transactions: FinancialTransaction[];
   expenseCategories: ExpenseCategory[];
 }) {
+  const t = useTranslations("finance");
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [search, setSearch] = useState("");
@@ -403,19 +420,19 @@ function TransactionsTab({
         <div className="relative">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-mv-ink-faint" />
           <Input
-            placeholder="Rechercher une transaction…"
+            placeholder={t("transactions.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-64 pl-8"
           />
         </div>
         <Select className="w-auto" value={direction} onChange={(e) => setDirection(e.target.value as "all" | TransactionDirection)}>
-          <option value="all">Entrées & sorties</option>
-          <option value="in">Entrées seulement</option>
-          <option value="out">Sorties seulement</option>
+          <option value="all">{t("transactions.filterAll")}</option>
+          <option value="in">{t("transactions.filterInOnly")}</option>
+          <option value="out">{t("transactions.filterOutOnly")}</option>
         </Select>
         <Select className="w-auto" value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="all">Toutes les catégories</option>
+          <option value="all">{t("transactions.allCategories")}</option>
           {expenseCategories.map((c) => (
             <option key={c.id} value={c.name}>
               {c.name}
@@ -423,8 +440,8 @@ function TransactionsTab({
           ))}
         </Select>
         <span className="text-[12.5px] text-mv-ink-faint">
-          {filtered.length} transaction{filtered.length > 1 ? "s" : ""}
-          {unreviewedCount > 0 && ` · ${unreviewedCount} à revoir`}
+          {t("transactions.count", { count: filtered.length })}
+          {unreviewedCount > 0 && t("transactions.toReview", { count: unreviewedCount })}
         </span>
         <div className="ml-auto flex items-center gap-2">
           {selected.size > 0 && (
@@ -434,7 +451,7 @@ function TransactionsTab({
                 value={bulkCategory}
                 onChange={(e) => setBulkCategory(e.target.value)}
               >
-                <option value="">Choisir une catégorie…</option>
+                <option value="">{t("transactions.chooseCategory")}</option>
                 {expenseCategories.map((c) => (
                   <option key={c.id} value={c.name}>
                     {c.name}
@@ -447,18 +464,18 @@ function TransactionsTab({
                 disabled={!bulkCategory || applyingBulk}
                 onClick={applyBulkCategory}
               >
-                <Tag size={14} /> Catégoriser ({selected.size})
+                <Tag size={14} /> {t("transactions.categorize", { count: selected.size })}
               </Button>
             </>
           )}
           <Button size="sm" onClick={() => setAddOpen(true)}>
-            <Plus size={14} /> Ajouter une dépense
+            <Plus size={14} /> {t("transactions.addExpense")}
           </Button>
-          <Button size="sm" variant="secondary" onClick={() => downloadCsv(filtered)}>
-            <Download size={14} /> Export CSV
+          <Button size="sm" variant="secondary" onClick={() => downloadCsv(filtered, t.raw("csv"))}>
+            <Download size={14} /> {t("transactions.exportCsv")}
           </Button>
           <Button size="sm" variant="secondary" onClick={() => downloadQuickBooksCsv(filtered)}>
-            <Download size={14} /> Exporter vers QuickBooks
+            <Download size={14} /> {t("transactions.exportQuickBooks")}
           </Button>
         </div>
       </div>
@@ -473,11 +490,11 @@ function TransactionsTab({
       {filtered.length === 0 ? (
         <EmptyState
           icon={ReceiptText}
-          title={transactions.length === 0 ? "Aucune transaction pour l'instant" : "Aucune transaction ne correspond"}
+          title={transactions.length === 0 ? t("transactions.emptyTitleNone") : t("transactions.emptyTitleNoMatch")}
           description={
             transactions.length === 0
-              ? "Importez un relevé CSV ci-dessous pour commencer."
-              : "Essayez d'élargir la recherche ou les filtres."
+              ? t("transactions.emptyDescriptionNone")
+              : t("transactions.emptyDescriptionNoMatch")
           }
         />
       ) : (
@@ -491,39 +508,39 @@ function TransactionsTab({
                 className="h-3.5 w-3.5 rounded accent-mv-green"
               />
             </Th>
-            <Th>Date</Th>
-            <Th>Description</Th>
-            <Th>Catégorie</Th>
-            <Th>Compte</Th>
-            <Th className="text-right">Montant</Th>
-            <Th>Statut</Th>
+            <Th>{t("transactions.colDate")}</Th>
+            <Th>{t("transactions.colDescription")}</Th>
+            <Th>{t("transactions.colCategory")}</Th>
+            <Th>{t("transactions.colAccount")}</Th>
+            <Th className="text-right">{t("transactions.colAmount")}</Th>
+            <Th>{t("transactions.colStatus")}</Th>
           </THead>
           <tbody>
-            {filtered.map((t) => (
-              <Tr key={t.id}>
+            {filtered.map((row) => (
+              <Tr key={row.id}>
                 <Td>
                   <input
                     type="checkbox"
-                    checked={selected.has(t.id)}
-                    onChange={() => toggleOne(t.id)}
+                    checked={selected.has(row.id)}
+                    onChange={() => toggleOne(row.id)}
                     className="h-3.5 w-3.5 rounded accent-mv-green"
                   />
                 </Td>
-                <Td className="text-mv-ink-soft">{formatDate(t.date)}</Td>
-                <Td className="font-medium">{t.description}</Td>
+                <Td className="text-mv-ink-soft">{formatDate(row.date)}</Td>
+                <Td className="font-medium">{row.description}</Td>
                 <Td>
-                  <Badge tone="neutral">{t.category}</Badge>
+                  <Badge tone="neutral">{row.category}</Badge>
                 </Td>
-                <Td className="text-mv-ink-soft">{t.sourceAccount}</Td>
-                <Td className={t.direction === "in" ? "text-right font-semibold text-mv-green-dark" : "text-right font-semibold text-mv-ink"}>
-                  {t.direction === "in" ? "+" : ""}
-                  {formatCurrency(t.amount)}
+                <Td className="text-mv-ink-soft">{row.sourceAccount}</Td>
+                <Td className={row.direction === "in" ? "text-right font-semibold text-mv-green-dark" : "text-right font-semibold text-mv-ink"}>
+                  {row.direction === "in" ? "+" : ""}
+                  {formatCurrency(row.amount)}
                 </Td>
                 <Td>
-                  {t.reviewed ? (
-                    <Badge tone="green">Revue</Badge>
+                  {row.reviewed ? (
+                    <Badge tone="green">{t("transactions.statusReviewed")}</Badge>
                   ) : (
-                    <Badge tone="amber">À revoir</Badge>
+                    <Badge tone="amber">{t("transactions.statusToReview")}</Badge>
                   )}
                 </Td>
               </Tr>
@@ -534,9 +551,9 @@ function TransactionsTab({
 
       <Card className="mt-6">
         <CardHeader
-          eyebrow="Import"
-          title="Importer un relevé CSV"
-          description="Glissez un export de votre banque ou POS pour ajouter des transactions."
+          eyebrow={t("transactions.importEyebrow")}
+          title={t("transactions.importTitle")}
+          description={t("transactions.importDescription")}
         />
         <CsvDropzone onImported={refresh} />
       </Card>
@@ -557,6 +574,7 @@ function AccountsTab() {
 }
 
 function CategoriesTab({ expenseCategories }: { expenseCategories: ExpenseCategory[] }) {
+  const t = useTranslations("finance.categories");
   const router = useRouter();
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -582,15 +600,15 @@ function CategoriesTab({ expenseCategories }: { expenseCategories: ExpenseCatego
         {expenseCategories.length === 0 ? (
           <EmptyState
             icon={Tag}
-            title="Aucune catégorie"
-            description="Ajoutez votre première catégorie de dépense à droite."
+            title={t("emptyTitle")}
+            description={t("emptyDescription")}
           />
         ) : (
           <Table>
             <THead>
-              <Th>Catégorie</Th>
-              <Th>Type</Th>
-              <Th className="text-right">Transactions</Th>
+              <Th>{t("colCategory")}</Th>
+              <Th>{t("colType")}</Th>
+              <Th className="text-right">{t("colTransactions")}</Th>
               <Th className="w-16" />
             </THead>
             <tbody>
@@ -599,7 +617,7 @@ function CategoriesTab({ expenseCategories }: { expenseCategories: ExpenseCatego
                   <Td className="font-medium">{c.name}</Td>
                   <Td>
                     <Badge tone={c.isDefault ? "neutral" : "lime"}>
-                      {c.isDefault ? "Par défaut" : "Personnalisée"}
+                      {c.isDefault ? t("default") : t("custom")}
                     </Badge>
                   </Td>
                   <Td className="text-right text-mv-ink-soft">{c.transactionCount}</Td>
@@ -616,23 +634,22 @@ function CategoriesTab({ expenseCategories }: { expenseCategories: ExpenseCatego
       </div>
       <div className="lg:col-span-4">
         <Card>
-          <CardHeader eyebrow="Nouvelle catégorie" title="Ajouter une catégorie" />
+          <CardHeader eyebrow={t("newEyebrow")} title={t("newTitle")} />
           <div className="flex flex-col gap-3">
-            <Field label="Nom">
+            <Field label={t("nameLabel")}>
               <Input
-                placeholder="Ex : Réparations"
+                placeholder={t("namePlaceholder")}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
               />
             </Field>
             {error && <p className="text-[12px] text-mv-red">{error}</p>}
             <Button disabled={!newName.trim() || creating} onClick={handleCreate}>
-              {creating ? "Ajout…" : "Ajouter"}
+              {creating ? t("adding") : t("add")}
             </Button>
           </div>
           <p className="mt-3 text-[12px] leading-relaxed text-mv-ink-faint">
-            Les catégories permettent de regrouper vos transactions pour analyser où va l'argent.
-            Fusionnez deux catégories en glissant l'une sur l'autre depuis la liste.
+            {t("helperText")}
           </p>
         </Card>
       </div>
@@ -649,12 +666,13 @@ export function FinanceView({
   expenseCategories: ExpenseCategory[];
   connections: Connection[];
 }) {
+  const t = useTranslations("finance");
   return (
     <div>
       <PageHeader
-        eyebrow="Flux financiers"
-        title="Finance"
-        description="D'où vient l'argent, où il part, et l'état de vos connexions bancaires et plateformes."
+        eyebrow={t("pageEyebrow")}
+        title={t("pageTitle")}
+        description={t("pageDescription")}
       />
 
       <Tabs defaultValue="apercu">
@@ -663,25 +681,25 @@ export function FinanceView({
             value="apercu"
             className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
           >
-            Aperçu
+            {t("tabs.overview")}
           </TabsTrigger>
           <TabsTrigger
             value="transactions"
             className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
           >
-            Transactions
+            {t("tabs.transactions")}
           </TabsTrigger>
           <TabsTrigger
             value="comptes"
             className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
           >
-            Comptes & Intégrations
+            {t("tabs.accounts")}
           </TabsTrigger>
           <TabsTrigger
             value="categories"
             className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
           >
-            Catégories
+            {t("tabs.categories")}
           </TabsTrigger>
         </TabsList>
 

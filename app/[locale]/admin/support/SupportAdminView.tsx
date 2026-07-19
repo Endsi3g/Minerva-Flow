@@ -8,12 +8,7 @@ import type { AdminSupportRequest } from "@/lib/data/admin";
 import { formatDate } from "@/lib/utils";
 import { useState } from "react";
 import { toast } from "sonner";
-
-const categoryLabel: Record<string, string> = {
-  bug: "Problème",
-  amelioration: "Amélioration",
-  question: "Question",
-};
+import { useTranslations } from "next-intl";
 
 const statusTone: Record<string, "amber" | "green" | "neutral"> = {
   nouveau: "amber",
@@ -21,13 +16,10 @@ const statusTone: Record<string, "amber" | "green" | "neutral"> = {
   resolu: "green",
 };
 
-const statusLabel: Record<string, string> = {
-  nouveau: "Nouveau",
-  en_cours: "En cours",
-  resolu: "Résolu",
-};
+const knownCategories = new Set(["bug", "amelioration", "question"]);
 
 function TicketCard({ ticket }: { ticket: AdminSupportRequest }) {
+  const t = useTranslations("admin.support");
   const [reply, setReply] = useState(ticket.adminReply ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,8 +28,8 @@ function TicketCard({ ticket }: { ticket: AdminSupportRequest }) {
     setIsSubmitting(true);
     try {
       const ok = await replySupportRequestAction(ticket.id, reply, status);
-      if (ok) toast.success("Réponse envoyée.");
-      else toast.error("Échec de l'envoi.");
+      if (ok) toast.success(t("replySuccess"));
+      else toast.error(t("replyFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -47,8 +39,10 @@ function TicketCard({ ticket }: { ticket: AdminSupportRequest }) {
     <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Badge tone="neutral">{categoryLabel[ticket.category] ?? ticket.category}</Badge>
-          <Badge tone={statusTone[ticket.status]}>{statusLabel[ticket.status]}</Badge>
+          <Badge tone="neutral">
+            {knownCategories.has(ticket.category) ? t(`category.${ticket.category}`) : ticket.category}
+          </Badge>
+          <Badge tone={statusTone[ticket.status]}>{t(`status.${ticket.status}`)}</Badge>
         </div>
         <span className="text-[11.5px] text-mv-ink-faint">{formatDate(ticket.createdAt.slice(0, 10))}</span>
       </div>
@@ -60,15 +54,15 @@ function TicketCard({ ticket }: { ticket: AdminSupportRequest }) {
         <Textarea
           value={reply}
           onChange={(e) => setReply(e.target.value)}
-          placeholder="Votre réponse (visible par le restaurateur)…"
+          placeholder={t("replyPlaceholder")}
           rows={3}
         />
         <div className="mt-2 flex justify-end gap-2">
           <Button size="sm" variant="secondary" disabled={isSubmitting || !reply.trim()} onClick={() => handleReply("en_cours")}>
-            Répondre — en cours
+            {t("replyInProgress")}
           </Button>
           <Button size="sm" disabled={isSubmitting || !reply.trim()} onClick={() => handleReply("resolu")}>
-            Répondre — résolu
+            {t("replyResolved")}
           </Button>
         </div>
       </div>
@@ -77,12 +71,13 @@ function TicketCard({ ticket }: { ticket: AdminSupportRequest }) {
 }
 
 export function SupportAdminView({ tickets }: { tickets: AdminSupportRequest[] }) {
+  const t = useTranslations("admin.support");
   return (
     <div className="space-y-3">
       {tickets.length === 0 ? (
-        <p className="text-[13px] text-mv-ink-faint">Aucun ticket de support pour l&apos;instant.</p>
+        <p className="text-[13px] text-mv-ink-faint">{t("emptyState")}</p>
       ) : (
-        tickets.map((t) => <TicketCard key={t.id} ticket={t} />)
+        tickets.map((ticket) => <TicketCard key={ticket.id} ticket={ticket} />)
       )}
     </div>
   );

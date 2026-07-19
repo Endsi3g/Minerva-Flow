@@ -10,11 +10,14 @@ import { generateAiReviewAction, getAiReviewsAction } from "./actions";
 import type { AiReview } from "@/lib/data/ai-reviews";
 import { formatDate } from "@/lib/utils";
 import { Sparkles, ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export default function AiReviewPage() {
+  const t = useTranslations("aiReview");
+  const tr = useTranslations("reportDetail");
   const [reviews, setReviews] = useState<AiReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState("");
@@ -34,12 +37,12 @@ export default function AiReviewPage() {
     try {
       const result = await generateAiReviewAction({ from, to });
       if (result.ok) {
-        toast.success("Revue IA générée.");
+        toast.success(t("generateSuccess"));
         getAiReviewsAction().then(setReviews);
         setFrom("");
         setTo("");
       } else {
-        toast.error(result.error ?? "La génération a échoué.");
+        toast.error(result.error ?? t("generateFailed"));
       }
     } finally {
       setGenerating(false);
@@ -49,44 +52,44 @@ export default function AiReviewPage() {
   return (
     <div>
       <Link href="/reports" className="mb-3 flex items-center gap-1 text-[13px] text-mv-ink-faint hover:text-mv-ink">
-        <ChevronLeft size={14} /> Rapports
+        <ChevronLeft size={14} /> {tr("breadcrumbReports")}
       </Link>
 
       <PageHeader
-        eyebrow="Rapports"
-        title="Revue IA"
-        description="Une analyse automatique de vos performances — forces, faiblesses et recommandations, générée chaque semaine ou à la demande."
+        eyebrow={t("pageEyebrow")}
+        title={t("pageTitle")}
+        description={t("pageDescription")}
       />
 
       <div className="max-w-3xl space-y-6">
         <Card>
           <CardHeader
-            eyebrow="Génération"
-            title="Générer une revue sur mesure"
-            description="Choisissez une période — l'IA analyse vos données réelles sur cette plage."
+            eyebrow={t("generateEyebrow")}
+            title={t("generateTitle")}
+            description={t("generateDescription")}
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="Du">
+            <Field label={tr("from")}>
               <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
             </Field>
-            <Field label="Au">
+            <Field label={tr("to")}>
               <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
             </Field>
             <div className="flex items-end">
               <Button className="w-full" onClick={handleGenerate} disabled={!from || !to || generating}>
-                <Sparkles size={14} /> {generating ? "Génération…" : "Générer"}
+                <Sparkles size={14} /> {generating ? t("generating") : t("generate")}
               </Button>
             </div>
           </div>
         </Card>
 
         {loading ? (
-          <p className="text-[13px] text-mv-ink-faint">Chargement…</p>
+          <p className="text-[13px] text-mv-ink-faint">{t("loading")}</p>
         ) : reviews.length === 0 ? (
           <EmptyState
             icon={Sparkles}
-            title="Aucune revue IA pour l'instant"
-            description="Générez-en une ci-dessus, ou attendez le résumé automatique du lundi."
+            title={t("emptyTitle")}
+            description={t("emptyDescription")}
           />
         ) : (
           <div className="space-y-2">
@@ -101,11 +104,11 @@ export default function AiReviewPage() {
                     {formatDate(r.periodStart)} — {formatDate(r.periodEnd)}
                   </p>
                   <p className="text-[12px] text-mv-ink-faint">
-                    {r.strengths.length} force(s) · {r.weaknesses.length} point(s) à surveiller
+                    {t("strengthsWeaknessesCount", { strengths: r.strengths.length, weaknesses: r.weaknesses.length })}
                   </p>
                 </div>
                 <Badge tone={r.source === "auto" ? "neutral" : "green"}>
-                  {r.source === "auto" ? "Automatique" : "À la demande"}
+                  {r.source === "auto" ? t("sourceAuto") : t("sourceOnDemand")}
                 </Badge>
               </Link>
             ))}

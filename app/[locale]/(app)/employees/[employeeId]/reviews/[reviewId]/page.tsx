@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Star } from "lucide-react";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { PrintButton } from "./PrintButton";
 
 function StarRow({ value }: { value: number }) {
@@ -27,30 +28,37 @@ export default async function EmployeeReviewPage({
 
   if (!employee || !review || review.employeeId !== employeeId) notFound();
 
+  const t = await getTranslations("reviewPrintPage");
+  const tr = await getTranslations("employees.reviewForm");
+
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader
-        eyebrow="Revue de performance"
+        eyebrow={t("pageEyebrow")}
         title={employee.fullName}
-        description={`${formatDate(review.periodStart)} — ${formatDate(review.periodEnd)} · ${employee.roleTitle}`}
+        description={t("periodRole", {
+          start: formatDate(review.periodStart),
+          end: formatDate(review.periodEnd),
+          role: employee.roleTitle,
+        })}
         action={<PrintButton />}
       />
 
       <Card>
         <div className="flex items-center justify-between">
-          <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">Note globale</p>
+          <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">{tr("overallRating")}</p>
           <StarRow value={review.rating} />
         </div>
 
         {review.raiseRecommended && (
           <Badge tone="green" className="mt-3">
-            Augmentation recommandée
+            {tr("raiseRecommended")}
           </Badge>
         )}
 
         {review.attributedRevenue !== null && (
           <div className="mt-4 rounded-lg bg-mv-cream-soft p-3">
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Chiffre d&apos;affaires attribué</p>
+            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("attributedRevenue")}</p>
             <p className="font-display text-[18px] font-medium text-mv-green-dark">
               {formatCurrency(review.attributedRevenue)}
             </p>
@@ -59,20 +67,20 @@ export default async function EmployeeReviewPage({
 
         {review.strengths && (
           <div className="mt-5">
-            <p className="mb-1 font-display text-[14.5px] font-medium text-mv-ink">Points forts</p>
+            <p className="mb-1 font-display text-[14.5px] font-medium text-mv-ink">{tr("strengths")}</p>
             <p className="text-[13px] leading-relaxed text-mv-ink-soft">{review.strengths}</p>
           </div>
         )}
 
         {review.improvements && (
           <div className="mt-4">
-            <p className="mb-1 font-display text-[14.5px] font-medium text-mv-ink">Pistes d&apos;amélioration</p>
+            <p className="mb-1 font-display text-[14.5px] font-medium text-mv-ink">{t("improvementsTitle")}</p>
             <p className="text-[13px] leading-relaxed text-mv-ink-soft">{review.improvements}</p>
           </div>
         )}
 
         <p className="mt-6 text-[11.5px] text-mv-ink-faint">
-          Évalué·e par {review.reviewerName} · {formatDate(review.createdAt.slice(0, 10))}
+          {t("reviewedBy", { name: review.reviewerName, date: formatDate(review.createdAt.slice(0, 10)) })}
         </p>
       </Card>
     </div>

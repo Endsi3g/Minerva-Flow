@@ -26,19 +26,13 @@ import {
   Check,
   Copy,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { exportReportAction, getReportDataAction, shareReportAction } from "@/app/[locale]/(app)/reports/actions";
 import { getGoogleWorkspaceStatusAction } from "@/app/[locale]/(app)/settings/google-workspace-actions";
 import { GOOGLE_SCOPES } from "@/lib/google/config";
-
-const periodLabel: Record<string, string> = {
-  jour: "Aujourd'hui",
-  semaine: "Cette semaine",
-  mois: "Ce mois-ci",
-  custom: "Personnalisé",
-};
 
 export function ReportView({
   report,
@@ -51,6 +45,9 @@ export function ReportView({
   breakdown: FlowLine[];
   campaigns: Campaign[];
 }) {
+  const t = useTranslations("reportDetail");
+  const tr = useTranslations("reports");
+  const periodLabel = t.raw("periodLabel") as Record<string, string>;
   const { period, restaurantId } = useApp();
   const restaurant = useCurrentRestaurant();
   const [starred, setStarred] = useState(false);
@@ -81,11 +78,11 @@ export function ReportView({
     try {
       const url = await exportReportAction(view.report.slug);
       if (url) {
-        toast.success("Rapport exporté vers Google Sheets.", {
-          action: { label: "Ouvrir", onClick: () => window.open(url, "_blank") },
+        toast.success(t("exportSuccess"), {
+          action: { label: t("open"), onClick: () => window.open(url, "_blank") },
         });
       } else {
-        toast.error("L'export a échoué — réessayez.");
+        toast.error(t("exportFailed"));
       }
     } finally {
       setExporting(false);
@@ -102,7 +99,7 @@ export function ReportView({
         setRange({ from: fromDraft, to: toDraft });
         setFilterOpen(false);
       } else {
-        toast.error("Impossible d'appliquer ce filtre.");
+        toast.error(t("filterFailed"));
       }
     } finally {
       setFiltering(false);
@@ -124,7 +121,7 @@ export function ReportView({
     try {
       const token = await shareReportAction(report.slug, range ?? undefined);
       setShareLink(token ? `${window.location.origin}/r/${token}` : null);
-      if (!token) toast.error("Impossible de générer le lien de partage.");
+      if (!token) toast.error(t("shareLinkFailed"));
     } finally {
       setSharing(false);
     }
@@ -142,7 +139,7 @@ export function ReportView({
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[13px] text-mv-ink-faint">
           <Link href="/overview" className="flex items-center gap-1 hover:text-mv-ink">
-            <ChevronLeft size={14} /> Reports
+            <ChevronLeft size={14} /> {t("breadcrumbReports")}
           </Link>
           <span>/</span>
           <button
@@ -153,7 +150,7 @@ export function ReportView({
               size={13}
               className={starred ? "fill-mv-lime-dark text-mv-lime-dark" : ""}
             />
-            {view.report.label}
+            {tr(`labels.${view.report.slug}`)}
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -163,28 +160,28 @@ export function ReportView({
             <PopoverTrigger
               render={
                 <Button size="sm" variant={range ? "primary" : "secondary"}>
-                  <Filter size={14} /> {range ? "Filtré" : "Filter"}
+                  <Filter size={14} /> {range ? t("filtered") : t("filter")}
                 </Button>
               }
             />
             <PopoverContent align="end" className="w-72">
-              <p className="text-[12.5px] font-semibold text-mv-ink">Filtrer par période</p>
+              <p className="text-[12.5px] font-semibold text-mv-ink">{t("filterByPeriod")}</p>
               <div className="grid grid-cols-2 gap-2">
-                <Field label="Du">
+                <Field label={t("from")}>
                   <Input type="date" value={fromDraft} onChange={(e) => setFromDraft(e.target.value)} />
                 </Field>
-                <Field label="Au">
+                <Field label={t("to")}>
                   <Input type="date" value={toDraft} onChange={(e) => setToDraft(e.target.value)} />
                 </Field>
               </div>
               <div className="flex items-center justify-end gap-2 pt-1">
                 {range && (
                   <Button size="sm" variant="ghost" onClick={handleResetFilter}>
-                    Réinitialiser
+                    {t("reset")}
                   </Button>
                 )}
                 <Button size="sm" onClick={handleApplyFilter} disabled={!fromDraft || !toDraft || filtering}>
-                  {filtering ? "Application…" : "Appliquer"}
+                  {filtering ? t("applying") : t("apply")}
                 </Button>
               </div>
             </PopoverContent>
@@ -193,7 +190,7 @@ export function ReportView({
           {sheetsEnabled && (
             <Button size="sm" variant="secondary" onClick={handleExport} disabled={exporting}>
               {exporting ? <Loader2 size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />}
-              Exporter vers Sheets
+              {t("exportToSheets")}
             </Button>
           )}
 
@@ -201,32 +198,32 @@ export function ReportView({
             <PopoverTrigger
               render={
                 <Button size="sm" variant="secondary">
-                  <Share2 size={14} /> Share
+                  <Share2 size={14} /> {t("share")}
                 </Button>
               }
             />
             <PopoverContent align="end" className="w-80">
-              <p className="text-[12.5px] font-semibold text-mv-ink">Lien public en lecture seule</p>
+              <p className="text-[12.5px] font-semibold text-mv-ink">{t("publicReadOnlyLink")}</p>
               {sharing ? (
-                <p className="text-[12.5px] text-mv-ink-faint">Génération…</p>
+                <p className="text-[12.5px] text-mv-ink-faint">{t("generating")}</p>
               ) : shareLink ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-2.5 py-2">
                     <p className="flex-1 truncate text-[12px] text-mv-ink-soft">{shareLink}</p>
                     <button
                       onClick={handleCopyShareLink}
-                      aria-label="Copier le lien"
+                      aria-label={t("copyLink")}
                       className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
                     >
                       {copied ? <Check size={13} className="text-mv-green-dark" /> : <Copy size={13} />}
                     </button>
                   </div>
                   <p className="text-[11.5px] text-mv-ink-faint">
-                    Un instantané des chiffres actuels, consultable sans connexion.
+                    {t("snapshotNote")}
                   </p>
                 </div>
               ) : (
-                <p className="text-[12.5px] text-mv-red">Échec de la génération du lien.</p>
+                <p className="text-[12.5px] text-mv-red">{t("linkGenerationFailed")}</p>
               )}
             </PopoverContent>
           </Popover>
@@ -236,7 +233,7 @@ export function ReportView({
       <button
         onClick={() => setStarred((v) => !v)}
         className="mb-3"
-        aria-label="Marquer comme favori"
+        aria-label={t("markAsFavorite")}
       >
         <Star
           size={26}
@@ -245,7 +242,7 @@ export function ReportView({
       </button>
 
       <h1 className="mb-5 font-display text-[32px] font-medium tracking-tight text-mv-ink">
-        {view.report.label}
+        {tr(`labels.${view.report.slug}`)}
       </h1>
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -262,10 +259,10 @@ export function ReportView({
 
       <div className="mb-8">
         <h2 className="mb-2 font-display text-[18px] font-medium text-mv-ink">
-          Résumé
+          {t("summary")}
         </h2>
         <p className="max-w-3xl text-[14px] leading-relaxed text-mv-ink-soft">
-          {view.report.summary}
+          {tr(`summaries.${view.report.slug}`, { count: view.report.value })}
         </p>
       </div>
 
@@ -273,7 +270,7 @@ export function ReportView({
         <div className="lg:col-span-7">
           <div className="relative rounded-2xl border-2 border-mv-green bg-mv-surface p-5 shadow-mv-md">
             <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              {view.report.label}
+              {tr(`labels.${view.report.slug}`)}
             </p>
             <p className="mt-1 text-[11.5px] text-mv-ink-faint">
               {range ? `${formatDate(range.from)} — ${formatDate(range.to)}` : periodLabel[period]}
@@ -283,7 +280,7 @@ export function ReportView({
             </p>
             {view.report.delta !== undefined && (
               <Badge tone={view.report.delta >= 0 ? "green" : "red"} className="mt-3">
-                {view.report.delta >= 0 ? "↑" : "↓"} {Math.abs(view.report.delta).toFixed(1)}% vs période précédente
+                {view.report.delta >= 0 ? "↑" : "↓"} {Math.abs(view.report.delta).toFixed(1)}% {t("vsPreviousPeriod")}
               </Badge>
             )}
             {view.trend.length > 0 && (
@@ -300,12 +297,12 @@ export function ReportView({
         <div className="lg:col-span-5">
           {view.breakdown.length > 0 ? (
             <Card className="h-full">
-              <CardHeader title="Répartition" description="Sur la période sélectionnée" />
+              <CardHeader title={t("breakdownTitle")} description={t("breakdownDescription")} />
               <FlowBars lines={view.breakdown} tone={view.report.slug === "sorties" ? "ink" : "green"} />
             </Card>
           ) : campaigns.length > 0 ? (
             <Card className="h-full">
-              <CardHeader title="Campagnes" description={`${campaigns.length} au total`} />
+              <CardHeader title={t("campaignsTitle")} description={t("campaignsTotal", { count: campaigns.length })} />
               <div className="space-y-2">
                 {campaigns.slice(0, 5).map((c) => (
                   <div
@@ -323,14 +320,15 @@ export function ReportView({
             </Card>
           ) : (
             <Card className="h-full">
-              <CardHeader title="Détail" description="Journées marquantes de la période" />
+              <CardHeader title={t("detailTitle")} description={t("notableDaysDescription")} />
               <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
-                Le pic du 10 juillet correspond à la Soirée Jazz ; le creux du 8 juillet est lié à
-                la météo. Voir la page{" "}
-                <Link href="/days" className="text-mv-green-dark underline underline-offset-2">
-                  Days
-                </Link>{" "}
-                pour le détail jour par jour.
+                {t.rich("demoInsight", {
+                  daysLink: (chunks) => (
+                    <Link href="/days" className="text-mv-green-dark underline underline-offset-2">
+                      {chunks}
+                    </Link>
+                  ),
+                })}
               </p>
             </Card>
           )}
@@ -341,14 +339,14 @@ export function ReportView({
         <div className="mt-6">
           <Card>
             <CardHeader
-              eyebrow="Détail"
-              title={`${view.report.label} — jour par jour`}
-              description="Chaque point correspond à une journée de service"
+              eyebrow={t("detailTitle")}
+              title={t("dayByDayTitle", { label: tr(`labels.${view.report.slug}`) })}
+              description={t("dayByDayDescription")}
             />
             <Table>
               <THead>
-                <Th>Date</Th>
-                <Th className="text-right">Valeur</Th>
+                <Th>{t("colDate")}</Th>
+                <Th className="text-right">{t("colValue")}</Th>
               </THead>
               <tbody>
                 {[...view.trend]

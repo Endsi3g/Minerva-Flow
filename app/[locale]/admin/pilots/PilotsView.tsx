@@ -6,6 +6,7 @@ import { updatePilotRequestStatusAction } from "./actions";
 import type { PilotRequest } from "@/lib/data/pilot-requests";
 import { formatDate } from "@/lib/utils";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 const statusTone: Record<PilotRequest["status"], "amber" | "neutral" | "green" | "red"> = {
   nouveau: "amber",
@@ -14,14 +15,8 @@ const statusTone: Record<PilotRequest["status"], "amber" | "neutral" | "green" |
   decline: "red",
 };
 
-const statusLabel: Record<PilotRequest["status"], string> = {
-  nouveau: "Nouveau",
-  contacte: "Contacté",
-  actif: "Actif",
-  decline: "Décliné",
-};
-
 function PilotRow({ pilot }: { pilot: PilotRequest }) {
+  const t = useTranslations("admin.pilots.status");
   const [status, setStatus] = useState(pilot.status);
   const [saving, setSaving] = useState(false);
 
@@ -36,7 +31,7 @@ function PilotRow({ pilot }: { pilot: PilotRequest }) {
     <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <p className="font-display text-[15px] font-medium text-mv-ink">{pilot.restaurantName}</p>
-        <Badge tone={statusTone[status]}>{statusLabel[status]}</Badge>
+        <Badge tone={statusTone[status]}>{t(status)}</Badge>
       </div>
       <p className="text-[12.5px] text-mv-ink-soft">
         {pilot.fullName} · {pilot.email}
@@ -51,9 +46,9 @@ function PilotRow({ pilot }: { pilot: PilotRequest }) {
           onChange={(e) => handleChange(e.target.value as PilotRequest["status"])}
           className="h-8 w-36 text-[12.5px]"
         >
-          {(Object.keys(statusLabel) as PilotRequest["status"][]).map((s) => (
+          {(["nouveau", "contacte", "actif", "decline"] as PilotRequest["status"][]).map((s) => (
             <option key={s} value={s}>
-              {statusLabel[s]}
+              {t(s)}
             </option>
           ))}
         </Select>
@@ -63,8 +58,9 @@ function PilotRow({ pilot }: { pilot: PilotRequest }) {
 }
 
 export function PilotsView({ pilots }: { pilots: PilotRequest[] }) {
+  const t = useTranslations("admin.pilots");
   if (pilots.length === 0) {
-    return <p className="text-[13px] text-mv-ink-faint">Aucune demande d&apos;accès pilote pour l&apos;instant.</p>;
+    return <p className="text-[13px] text-mv-ink-faint">{t("emptyState")}</p>;
   }
 
   return (
