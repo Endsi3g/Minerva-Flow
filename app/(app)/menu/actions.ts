@@ -66,9 +66,16 @@ export async function deleteMenuShareAction(restaurantId: string, id: string): P
   return ok;
 }
 
+function isValidOfferWindow(startsAt?: string | null, endsAt?: string | null): boolean {
+  if (!startsAt || !endsAt) return true;
+  return new Date(startsAt).getTime() < new Date(endsAt).getTime();
+}
+
 export async function createOfferAction(restaurantId: string, input: OfferInput): Promise<Offer | null> {
-  if (!input.title.trim()) return null;
-  const offer = await createOffer(restaurantId, input);
+  const title = input.title.trim();
+  if (!title) return null;
+  if (!isValidOfferWindow(input.startsAt, input.endsAt)) return null;
+  const offer = await createOffer(restaurantId, { ...input, title });
   if (offer) revalidatePath("/menu");
   return offer;
 }
@@ -78,7 +85,10 @@ export async function updateOfferAction(
   offerId: string,
   patch: Partial<OfferInput>
 ): Promise<Offer | null> {
-  const offer = await updateOffer(restaurantId, offerId, patch);
+  if (patch.title !== undefined && !patch.title.trim()) return null;
+  if (!isValidOfferWindow(patch.startsAt, patch.endsAt)) return null;
+  const normalizedPatch = patch.title !== undefined ? { ...patch, title: patch.title.trim() } : patch;
+  const offer = await updateOffer(restaurantId, offerId, normalizedPatch);
   if (offer) revalidatePath("/menu");
   return offer;
 }
