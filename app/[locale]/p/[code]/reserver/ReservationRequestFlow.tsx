@@ -60,7 +60,7 @@ export function ReservationRequestFlow({
         <div className="mb-8 flex items-center justify-center gap-2.5">
           <LogoMark size={28} />
           <span className="font-sans text-[16px] font-medium text-mv-ink">
-            Minerva <span className="text-mv-green-dark">Flow</span>
+            Flow <span className="text-mv-green-dark">par Minerva</span>
           </span>
         </div>
         <Card>

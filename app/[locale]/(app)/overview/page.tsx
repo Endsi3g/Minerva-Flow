@@ -11,6 +11,7 @@ import { MiniSparkline } from "@/components/charts/MiniSparkline";
 import { RecommendationsPanel } from "@/components/minerva/RecommendationsPanel";
 import { StartupChecklist } from "@/components/minerva/StartupChecklist";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
+import { getMyProfile } from "@/lib/data/profile";
 import { getPrograms } from "@/lib/data/programs";
 import { getServiceDays } from "@/lib/data/service-days";
 import { getCampaigns } from "@/lib/data/campaigns";
@@ -19,7 +20,7 @@ import { getAlertRules, getAlerts } from "@/lib/data/alerts";
 import { revenueTrend, margeTrend, joursTrend, type ReportData } from "@/lib/reports";
 import { computeAlerts } from "@/lib/engine/alerts";
 import { computeRecommendations } from "@/lib/engine/recommendations";
-import { formatDate, formatDateFull } from "@/lib/utils";
+import { formatDate, formatDateFull, formatCurrency } from "@/lib/utils";
 import { CalendarCheck2, Megaphone, ArrowUpRight, ArrowRight, Store } from "lucide-react";
 import type { ProgramStatus, ServiceDay } from "@/lib/types";
 import Link from "next/link";
@@ -81,8 +82,9 @@ export default async function OverviewPage() {
 
   const { from, to, year, month } = currentMonthRange();
 
-  const [serviceDays, programs, campaigns, financialTransactions, connections, alertRules, tableAlerts] =
+  const [profile, serviceDays, programs, campaigns, financialTransactions, connections, alertRules, tableAlerts] =
     await Promise.all([
+      getMyProfile(),
       getServiceDays(restaurantId, { from, to }),
       getPrograms(restaurantId),
       getCampaigns(restaurantId),
@@ -97,6 +99,10 @@ export default async function OverviewPage() {
   const revTrend = revenueTrend(reportData);
   const margTrend = margeTrend(reportData);
   const joursTr = joursTrend(reportData);
+
+  const firstName = profile?.fullName?.split(" ")[0] ?? null;
+  const monthMarge = margTrend.reduce((sum, d) => sum + d.revenue, 0);
+  const todayLabel = formatDateFull(new Date().toISOString().slice(0, 10));
 
   const alerts = computeAlerts({ serviceDays, connections, alertRules, financialTransactions });
   const recommendations = computeRecommendations({ campaigns, programs, serviceDays, alerts });
@@ -127,8 +133,8 @@ export default async function OverviewPage() {
       <LiveKpiSync restaurantId={restaurantId} />
       <PageHeader
         eyebrow="Vue globale"
-        title="Overview"
-        description="Le pouls de votre restaurant : survolez une courbe pour l'isoler, cliquez pour ouvrir son rapport détaillé."
+        title={firstName ? `Salutations, ${firstName}` : "Salutations"}
+        description={`Voici votre marge cumulée du mois — ${formatCurrency(monthMarge)} au ${todayLabel}.`}
         action={
           <Button href="/days" variant="secondary" size="sm">
             <CalendarCheck2 size={15} /> Ajouter une journée

@@ -33,7 +33,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
         <div className="mb-8 flex items-center gap-2.5">
           <LogoMark size={28} />
           <span className="font-sans text-[16px] font-medium text-mv-ink">
-            Minerva <span className="text-mv-green-dark">Flow</span>
+            Flow <span className="text-mv-green-dark">par Minerva</span>
           </span>
         </div>
 
@@ -74,7 +74,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
         )}
 
         <p className="mt-8 text-center text-[12px] text-mv-ink-faint">
-          Généré avec Minerva Flow — ce lien ne se met pas à jour automatiquement.
+          Généré avec Flow par Minerva — ce lien ne se met pas à jour automatiquement.
         </p>
       </div>
     </div>

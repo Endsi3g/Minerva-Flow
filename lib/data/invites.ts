@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import { notifyRestaurant } from "@/lib/data/notifications";
+import { deletePhantomDefaultRestaurant } from "@/lib/data/restaurants";
 import type { Role } from "@/lib/types";
 
 const INVITE_TTL_DAYS = 7;
@@ -184,6 +185,8 @@ export async function redeemInvite(token: string): Promise<{ ok: boolean; restau
     link: "/collaborateurs",
     excludeUserId: user.id,
   });
+
+  await deletePhantomDefaultRestaurant(admin, user.id, [invite.restaurant_id]);
 
   return { ok: true, restaurantId: invite.restaurant_id };
 }

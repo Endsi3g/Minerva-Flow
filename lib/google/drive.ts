@@ -1,7 +1,7 @@
 import { getGoogleTokens, updateGoogleConnectionMeta, getGoogleConnection } from "@/lib/data/google-connections";
 
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files";
-const FOLDER_NAME = "Minerva Flow";
+const FOLDER_NAME = "Flow par Minerva";
 
 /**
  * Returns the restaurant's dedicated Drive folder id, creating it on first
@@ -31,7 +31,7 @@ export async function getOrCreateDriveFolder(restaurantId: string): Promise<stri
   return data.id;
 }
 
-/** Moves a Drive file into the restaurant's dedicated Minerva Flow folder. */
+/** Moves a Drive file into the restaurant's dedicated Flow par Minerva folder. */
 export async function moveFileToDriveFolder(
   restaurantId: string,
   fileId: string,

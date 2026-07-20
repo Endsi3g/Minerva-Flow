@@ -105,7 +105,7 @@ export function OnboardingWizard({
 
       <Onboarding.Step step={1}>
         <Onboarding.Header
-          title="Bienvenue sur Minerva Flow"
+          title="Bienvenue sur Flow par Minerva"
           description="Voici un aperçu de ce que vous pourrez faire."
         />
         <FeatureStep />

@@ -21,7 +21,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <div className="mb-6 flex items-center gap-2.5">
         <LogoMark size={30} />
         <span className="font-sans text-[17px] font-medium text-mv-ink">
-          Minerva <span className="text-mv-green-dark">Flow</span>
+          Flow <span className="text-mv-green-dark">par Minerva</span>
         </span>
       </div>
       <Card className="w-full max-w-md text-center">{children}</Card>

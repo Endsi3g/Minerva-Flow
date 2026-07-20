@@ -2,7 +2,7 @@ import { getGoogleTokens, getGoogleConnection, updateGoogleConnectionMeta } from
 import type { ServiceDay } from "@/lib/types";
 
 const CALENDAR_BASE_URL = "https://www.googleapis.com/calendar/v3";
-const CALENDAR_NAME = "Minerva Flow";
+const CALENDAR_NAME = "Flow par Minerva";
 
 /**
  * Returns the restaurant's dedicated Google Calendar id, creating it on

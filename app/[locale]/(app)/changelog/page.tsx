@@ -27,7 +27,7 @@ export default async function ChangelogPage() {
       <PageHeader
         eyebrow="Paramètres"
         title="Journal des mises à jour"
-        description="Tout ce qui change dans Minerva Flow, dans l'ordre où c'est arrivé."
+        description="Tout ce qui change dans Flow par Minerva, dans l'ordre où c'est arrivé."
       />
 
       {entries.length === 0 ? (

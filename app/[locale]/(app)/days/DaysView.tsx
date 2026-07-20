@@ -181,7 +181,12 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
             {(selectedDate ? days.filter((d) => d.date === selectedDate) : days).map((d) => {
               const SourceIcon = sourceIcon[d.mainSource];
               return (
-                <Tr key={d.id} active={d.date === selectedDate}>
+                <Tr
+                  key={d.id}
+                  active={d.date === selectedDate}
+                  onClick={() => router.push(`/days/${d.id}`)}
+                  className="cursor-pointer"
+                >
                   <Td className="font-semibold">{formatDateWeekday(d.date)}</Td>
                   <Td className="text-right font-semibold">{formatCurrency(d.revenue)}</Td>
                   <Td>
@@ -216,14 +221,20 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
                     <Td className="text-right">
                       <div className="flex justify-end gap-1">
                         <button
-                          onClick={() => setEditingDay(d)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingDay(d);
+                          }}
                           aria-label="Modifier"
                           className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
                         >
                           <Pencil size={13} />
                         </button>
                         <button
-                          onClick={() => handleDelete(d)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(d);
+                          }}
                           aria-label="Supprimer"
                           className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-red/10 hover:text-mv-red"
                         >

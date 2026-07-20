@@ -41,6 +41,7 @@ import {
   UtensilsCrossed,
   PackageSearch,
   ClipboardList,
+  UserCircle,
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -90,6 +91,7 @@ const favorites: (NavItem & { color: string; translationKey: string })[] = [
 const operationsItems: NavItem[] = [
   { key: "reservations", href: "/reservations", icon: CalendarClock, roles: allRoles },
   { key: "horaire", href: "/horaire", icon: CalendarDays, roles: allRoles },
+  { key: "monEspace", href: "/mon-espace", icon: UserCircle, roles: allRoles },
   { key: "fournisseurs", href: "/fournisseurs", icon: Truck, roles: ["owner", "manager"] },
   { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
   { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
@@ -116,6 +118,7 @@ const navTranslationKeys: Record<string, string> = {
   programs: "programs",
   reservations: "reservations",
   horaire: "horaire",
+  monEspace: "monEspace",
   fournisseurs: "fournisseurs",
   inventaire: "inventaire",
   commandes: "commandes",

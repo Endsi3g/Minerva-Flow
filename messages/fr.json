@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "Flow par Minerva",
-    "description": "L'application pour la gestions des revenus des restaurants et cafés au Quebec."
+    "description": "L'application pour la gestion des revenus des restaurants et cafés au Québec."
   },
   "locale": {
     "french": "Français",
@@ -26,6 +26,7 @@
     "favCollaborateurs": "Utilisateurs",
     "reservations": "Réservations",
     "horaire": "Horaire",
+    "monEspace": "Mon espace",
     "fournisseurs": "Fournisseurs",
     "inventaire": "Inventaire",
     "commandes": "Commandes",
@@ -104,7 +105,7 @@
   "auth": {
     "login": {
       "title": "Bon retour",
-      "subtitle": "Connectez-vous à votre cockpit Minerva Flow."
+      "subtitle": "Connectez-vous à votre cockpit Flow par Minerva."
     },
     "signup": {
       "title": "Créer un compte",

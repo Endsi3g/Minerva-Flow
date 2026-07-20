@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Minerva Flow";
+export const alt = "Flow par Minerva";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -42,7 +42,7 @@ export default async function OpengraphImage() {
             />
           </div>
           <div style={{ display: "flex", fontSize: 84, fontWeight: 600, color: "#1A1E16" }}>
-            Minerva&nbsp;<span style={{ color: "#0E5A40" }}>Flow</span>
+            Flow&nbsp;<span style={{ color: "#0E5A40" }}>par Minerva</span>
           </div>
         </div>
         <div style={{ display: "flex", marginTop: 28, fontSize: 32, color: "#565F52" }}>

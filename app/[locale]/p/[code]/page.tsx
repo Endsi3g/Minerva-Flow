@@ -32,7 +32,7 @@ export default async function ReferralLandingPage({ params }: { params: Promise<
         <div className="mb-8 flex items-center justify-center gap-2.5">
           <LogoMark size={28} />
           <span className="font-sans text-[16px] font-medium text-mv-ink">
-            Minerva <span className="text-mv-green-dark">Flow</span>
+            Flow <span className="text-mv-green-dark">par Minerva</span>
           </span>
         </div>
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-6 shadow-mv-md">

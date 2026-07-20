@@ -69,7 +69,7 @@ export async function generateMetadata({
     appleWebApp: {
       capable: true,
       statusBarStyle: "default",
-      title: "Minerva Flow",
+      title: "Flow par Minerva",
     },
   };
 }

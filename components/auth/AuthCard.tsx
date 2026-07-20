@@ -100,12 +100,17 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
         if (password !== repeatPassword) {
           throw new Error(t("errorPasswordMismatch"));
         }
+        const signUpMetadata: Record<string, string> = {};
+        if (referralCode) signUpMetadata.referral_code = referralCode;
+        if (inviteToken) signUpMetadata.invite_token = inviteToken;
+        if (workspaceInviteToken) signUpMetadata.workspace_invite_token = workspaceInviteToken;
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/confirm?next=${localizedPostAuthPath}`,
-            data: referralCode ? { referral_code: referralCode } : undefined,
+            data: Object.keys(signUpMetadata).length > 0 ? signUpMetadata : undefined,
           },
         });
         if (error) throw error;
@@ -163,7 +168,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
       <div className="mb-6 flex items-center gap-2.5">
         <LogoMark size={30} />
         <span className="font-sans text-[17px] font-medium text-mv-ink">
-          Minerva <span className="text-mv-green-dark">Flow</span>
+          Flow <span className="text-mv-green-dark">par Minerva</span>
         </span>
       </div>
 

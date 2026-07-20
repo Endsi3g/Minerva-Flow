@@ -59,7 +59,7 @@ export function InviteMemberModal({
       open={open}
       onClose={handleClose}
       title="Inviter un collaborateur"
-      description="Générez un lien à partager — valide 7 jours, le rôle est déjà attribué."
+      description="Générez un lien à partager — valide 7 jours, le rôle est déjà attribué. Si la personne a déjà un compte (par exemple pour un autre établissement), elle sera simplement ajoutée à celui-ci."
     >
       <div className="space-y-4">
         <Field label="Rôle">

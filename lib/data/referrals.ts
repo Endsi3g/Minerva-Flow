@@ -159,7 +159,7 @@ export async function activateReferral(
       restaurantId: codeRow.restaurant_id,
       type: "referral.joined",
       title: "Parrainage réussi ! 🎉",
-      body: `${referredEmail} a rejoint Minerva Flow grâce à votre parrainage. 1 mois gratuit a été appliqué.`,
+      body: `${referredEmail} a rejoint Flow par Minerva grâce à votre parrainage. 1 mois gratuit a été appliqué.`,
       link: "/overview",
     });
   } catch (err) {

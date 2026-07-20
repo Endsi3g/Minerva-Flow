@@ -62,6 +62,20 @@ export async function getEmployeeById(id: string): Promise<Employee | null> {
   return mapEmployee(data as EmployeeRow);
 }
 
+/** The employees row the current logged-in user is linked to, if any. */
+export async function getEmployeeByLinkedUser(restaurantId: string, userId: string): Promise<Employee | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("employees")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .eq("linked_user_id", userId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapEmployee(data as EmployeeRow);
+}
+
 export async function createEmployee(restaurantId: string, input: EmployeeInput): Promise<Employee | null> {
   const supabase = await createClient();
   const {

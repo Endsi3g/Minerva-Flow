@@ -8,7 +8,7 @@ commit `3cb8046` si on veut repartir de cette base plutôt que de zéro.
 
 ## 1. Ce qu'est le produit
 
-Minerva Flow est un cockpit de gestion pour restaurants et cafés indépendants
+Flow par Minerva est un cockpit de gestion pour restaurants et cafés indépendants
 ou petites chaînes (2 à 5 établissements) : suivi du revenu quotidien,
 campagnes marketing, gestion d'équipe, assistant IA, rapports partageables.
 
@@ -29,7 +29,7 @@ campagnes marketing, gestion d'équipe, assistant IA, rapports partageables.
 
 ## 3. Proposition de valeur — le seul message qui compte
 
-**Minerva Flow leur dit ce qui se passe dans leur restaurant avant qu'ils
+**Flow par Minerva leur dit ce qui se passe dans leur restaurant avant qu'ils
 aient à le deviner** — pas juste un tableau de chiffres, une lecture de ce
 qui compte, formulée simplement.
 
