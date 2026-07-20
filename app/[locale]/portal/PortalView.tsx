@@ -5,18 +5,13 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { LogoMark } from "@/components/shell/Logo";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import type { Customer, CustomerReferralLink, LoyaltyTransactionType, ReferralProgram } from "@/lib/types";
+import type { Customer, CustomerReferralLink, ReferralProgram } from "@/lib/types";
 import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-portal";
 import { getOrCreateReferralLinkAction } from "./actions";
 import { Copy, Check, Gift } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
-const txLabel: Record<LoyaltyTransactionType, string> = {
-  visite: "Visite",
-  ajustement: "Ajustement",
-  echange: "Échange",
-};
+import { useTranslations } from "next-intl";
 
 function ReferralProgramCard({
   program,
@@ -27,6 +22,7 @@ function ReferralProgramCard({
   link: CustomerReferralLink | null;
   onLinkCreated: (link: CustomerReferralLink) => void;
 }) {
+  const t = useTranslations("portal.view");
   const [isCreating, setIsCreating] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -35,7 +31,7 @@ function ReferralProgramCard({
     try {
       const created = await getOrCreateReferralLinkAction(program.id);
       if (created) onLinkCreated(created);
-      else toast.error("Impossible de créer votre lien pour l'instant.");
+      else toast.error(t("linkCreateFailed"));
     } finally {
       setIsCreating(false);
     }
@@ -62,7 +58,7 @@ function ReferralProgramCard({
             <button
               onClick={handleCopy}
               className="shrink-0 text-mv-ink-faint hover:text-mv-ink"
-              aria-label="Copier le lien"
+              aria-label={t("copyLinkAria")}
             >
               {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
             </button>
@@ -72,7 +68,7 @@ function ReferralProgramCard({
               <span>
                 {link.convertedCount} / {program.goalCount}
               </span>
-              {link.rewardClaimedAt && <Badge tone="green">Récompense débloquée</Badge>}
+              {link.rewardClaimedAt && <Badge tone="green">{t("rewardUnlocked")}</Badge>}
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-mv-ink/[0.08]">
               <div className="h-full rounded-full bg-mv-green" style={{ width: `${Math.max(4, progress * 100)}%` }} />
@@ -86,7 +82,7 @@ function ReferralProgramCard({
         </div>
       ) : (
         <Button size="sm" onClick={handleGetLink} disabled={isCreating}>
-          {isCreating ? "Création…" : "Obtenir mon lien"}
+          {isCreating ? t("creating") : t("getMyLink")}
         </Button>
       )}
     </Card>
@@ -94,6 +90,7 @@ function ReferralProgramCard({
 }
 
 export function PortalView({ customer, data }: { customer: Customer; data: PortalData }) {
+  const t = useTranslations("portal.view");
   const [programs, setPrograms] = useState<PortalReferralProgress[]>(data.programs);
 
   function handleLinkCreated(programId: string, link: CustomerReferralLink) {
@@ -110,27 +107,27 @@ export function PortalView({ customer, data }: { customer: Customer; data: Porta
           </span>
         </div>
 
-        <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">Espace client</p>
-        <h1 className="mb-6 font-display text-[26px] font-medium text-mv-ink">Bonjour {customer.name}</h1>
+        <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">{t("spaceLabel")}</p>
+        <h1 className="mb-6 font-display text-[26px] font-medium text-mv-ink">{t("greeting", { name: customer.name })}</h1>
 
         <div className="mb-6 grid grid-cols-2 gap-3 rounded-xl bg-mv-surface p-4 shadow-mv-sm sm:grid-cols-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Points</p>
+            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("points")}</p>
             <p className="font-display text-[19px] font-medium text-mv-green-dark">{customer.loyaltyPoints}</p>
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Visites</p>
+            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("visits")}</p>
             <p className="font-display text-[19px] font-medium text-mv-ink">{customer.visitCount}</p>
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Total dépensé</p>
+            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("totalSpent")}</p>
             <p className="font-display text-[19px] font-medium text-mv-ink">{formatCurrency(customer.totalSpent)}</p>
           </div>
         </div>
 
         {programs.length > 0 && (
           <div className="mb-6 space-y-4">
-            <p className="text-[13px] font-semibold text-mv-ink">Programmes de parrainage</p>
+            <p className="text-[13px] font-semibold text-mv-ink">{t("referralProgramsTitle")}</p>
             {programs.map(({ program, link }) => (
               <ReferralProgramCard
                 key={program.id}
@@ -143,26 +140,26 @@ export function PortalView({ customer, data }: { customer: Customer; data: Porta
         )}
 
         <Card>
-          <CardHeader title="Historique" description={`${data.transactions.length} transaction(s)`} />
+          <CardHeader title={t("historyTitle")} description={t("transactionsCount", { count: data.transactions.length })} />
           {data.transactions.length === 0 ? (
-            <p className="text-[12.5px] text-mv-ink-faint">Aucune transaction pour l&apos;instant.</p>
+            <p className="text-[12.5px] text-mv-ink-faint">{t("noTransactions")}</p>
           ) : (
             <div className="space-y-2">
-              {data.transactions.map((t) => (
-                <div key={t.id} className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2.5">
+              {data.transactions.map((tx) => (
+                <div key={tx.id} className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2.5">
                   <div>
-                    <p className="text-[12.5px] font-medium text-mv-ink">{txLabel[t.type]}</p>
-                    <p className="text-[11px] text-mv-ink-faint">{formatDate(t.createdAt)}</p>
+                    <p className="text-[12.5px] font-medium text-mv-ink">{t(`txLabel.${tx.type}`)}</p>
+                    <p className="text-[11px] text-mv-ink-faint">{formatDate(tx.createdAt)}</p>
                   </div>
                   <span
                     className={
-                      t.pointsDelta >= 0
+                      tx.pointsDelta >= 0
                         ? "text-[12.5px] font-semibold text-mv-green-dark"
                         : "text-[12.5px] font-semibold text-mv-red"
                     }
                   >
-                    {t.pointsDelta >= 0 ? "+" : ""}
-                    {t.pointsDelta} pts
+                    {tx.pointsDelta >= 0 ? "+" : ""}
+                    {tx.pointsDelta} {t("pts")}
                   </span>
                 </div>
               ))}

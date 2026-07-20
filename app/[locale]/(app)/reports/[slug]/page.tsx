@@ -13,6 +13,7 @@ import { getFinancialTransactions } from "@/lib/data/finance";
 import { createClient } from "@/lib/supabase/server";
 import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { Store } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 export function generateStaticParams() {
   return reportDefs.map((r) => ({ slug: r.slug }));
@@ -25,18 +26,19 @@ export default async function ReportPage({
 }) {
   const { slug } = await params;
   const restaurantId = await getCurrentRestaurantId();
+  const t = await getTranslations("reports");
 
   if (!restaurantId) {
     return (
       <div>
-        <PageHeader eyebrow="Rapports" title="Rapport" />
+        <PageHeader eyebrow={t("page.title")} title={t("page.title")} />
         <EmptyState
           icon={Store}
-          title="Aucun restaurant configuré"
-          description="Créez ou rejoignez un restaurant pour voir vos rapports."
+          title={t("page.noRestaurantTitle")}
+          description={t("page.noRestaurantDescription")}
           action={
             <Button href="/onboarding" size="sm">
-              Configurer un restaurant
+              {t("page.configureRestaurant")}
             </Button>
           }
         />

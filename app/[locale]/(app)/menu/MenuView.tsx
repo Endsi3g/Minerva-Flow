@@ -13,13 +13,12 @@ import { formatCurrency } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import {
   classifyMenuItems,
-  quadrantLabel,
-  quadrantDescription,
   type MenuItemWithQuadrant,
 } from "@/lib/menu-engineering";
 import type { MenuItem, MenuQuadrant, MenuShare, Offer } from "@/lib/types";
 import { UtensilsCrossed, Plus, Trash2, TrendingUp, Pencil, Share2, Copy, Check, Download, Megaphone, EyeOff } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import QRCode from "qrcode";
 import {
   createMenuItemAction,
@@ -56,6 +55,7 @@ function NewMenuItemModal({
   onClose: () => void;
   onCreated: (item: MenuItem) => void;
 }) {
+  const t = useTranslations("menu.newItem");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scopeId, setScopeId] = useState(() => crypto.randomUUID());
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -80,7 +80,7 @@ function NewMenuItemModal({
         setImageUrl(null);
         setScopeId(crypto.randomUUID());
       } else {
-        notifyError("L'ajout du plat a échoué.");
+        notifyError(t("createFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -88,34 +88,34 @@ function NewMenuItemModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Nouveau plat" description="Prix et coût déterminent sa rentabilité.">
+    <Modal open={open} onClose={onClose} title={t("modalTitle")} description={t("modalDescription")}>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Nom">
-          <Input name="name" placeholder="Ex : Burger classique" required autoFocus />
+        <Field label={t("nameLabel")}>
+          <Input name="name" placeholder={t("namePlaceholder")} required autoFocus />
         </Field>
-        <Field label="Catégorie" hint="Optionnel">
-          <Input name="category" placeholder="Ex : Plats principaux" />
+        <Field label={t("categoryLabel")} hint={t("optional")}>
+          <Input name="category" placeholder={t("categoryPlaceholder")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Prix de vente">
+          <Field label={t("priceLabel")}>
             <Input name="price" type="number" min="0" step="0.01" required />
           </Field>
-          <Field label="Coût des ingrédients">
+          <Field label={t("foodCostLabel")}>
             <Input name="foodCost" type="number" min="0" step="0.01" required />
           </Field>
         </div>
-        <Field label="Description" hint="Optionnel">
+        <Field label={t("descriptionLabel")} hint={t("optional")}>
           <Input name="description" />
         </Field>
-        <Field label="Image" hint="Optionnel — visible sur le menu public">
+        <Field label={t("imageLabel")} hint={t("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} onUploaded={setImageUrl} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Créer"}
+            {isSubmitting ? t("creating") : t("create")}
           </Button>
         </div>
       </form>
@@ -132,6 +132,7 @@ function SaleQuickAdd({
   item: MenuItem;
   onUpdated: (item: MenuItem) => void;
 }) {
+  const t = useTranslations("menu.saleQuickAdd");
   const [qty, setQty] = useState("1");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -145,7 +146,7 @@ function SaleQuickAdd({
         onUpdated(updated);
         setQty("1");
       } else {
-        notifyError("L'enregistrement a échoué.");
+        notifyError(t("recordFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -160,14 +161,14 @@ function SaleQuickAdd({
         value={qty}
         onChange={(e) => setQty(e.target.value)}
         className="h-7 w-14 rounded-md border border-mv-border bg-mv-surface px-2 text-[12px]"
-        aria-label="Quantité vendue"
+        aria-label={t("quantityAria")}
       />
       <button
         onClick={handleAdd}
         disabled={isSubmitting}
         className="flex items-center gap-1 rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10 disabled:opacity-50"
       >
-        <TrendingUp size={12} /> ventes
+        <TrendingUp size={12} /> {t("sales")}
       </button>
     </div>
   );
@@ -186,6 +187,8 @@ function EditMenuItemModal({
   onClose: () => void;
   onUpdated: (item: MenuItem) => void;
 }) {
+  const t = useTranslations("menu.editItem");
+  const tn = useTranslations("menu.newItem");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null | undefined>(undefined);
 
@@ -206,7 +209,7 @@ function EditMenuItemModal({
         onUpdated(updated);
         onClose();
       } else {
-        notifyError("La modification du plat a échoué.");
+        notifyError(t("updateFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -214,34 +217,34 @@ function EditMenuItemModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Modifier le plat" description="Modifiez le prix, coût ou catégorie.">
+    <Modal open={open} onClose={onClose} title={t("modalTitle")} description={t("modalDescription")}>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Nom">
-          <Input name="name" defaultValue={item.name} placeholder="Ex : Burger classique" required autoFocus />
+        <Field label={tn("nameLabel")}>
+          <Input name="name" defaultValue={item.name} placeholder={tn("namePlaceholder")} required autoFocus />
         </Field>
-        <Field label="Catégorie" hint="Optionnel">
-          <Input name="category" defaultValue={item.category ?? ""} placeholder="Ex : Plats principaux" />
+        <Field label={tn("categoryLabel")} hint={tn("optional")}>
+          <Input name="category" defaultValue={item.category ?? ""} placeholder={tn("categoryPlaceholder")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Prix de vente">
+          <Field label={tn("priceLabel")}>
             <Input name="price" type="number" min="0" step="0.01" defaultValue={item.price} required />
           </Field>
-          <Field label="Coût des ingrédients">
+          <Field label={tn("foodCostLabel")}>
             <Input name="foodCost" type="number" min="0" step="0.01" defaultValue={item.foodCost} required />
           </Field>
         </div>
-        <Field label="Description" hint="Optionnel">
+        <Field label={tn("descriptionLabel")} hint={tn("optional")}>
           <Input name="description" defaultValue={item.description ?? ""} />
         </Field>
-        <Field label="Image" hint="Optionnel — visible sur le menu public">
+        <Field label={tn("imageLabel")} hint={tn("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={item.id} currentUrl={item.imageUrl} onUploaded={setImageUrl} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Annuler
+            {tn("cancel")}
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Enregistrement…" : "Enregistrer"}
+            {isSubmitting ? t("saving") : t("save")}
           </Button>
         </div>
       </form>
@@ -266,6 +269,7 @@ function MenuItemRow({
   onDeleted: (id: string, name: string) => void;
   onEdit: (item: MenuItem) => void;
 }) {
+  const t = useTranslations("menu.itemRow");
   return (
     <div className="rounded-lg border border-mv-border-soft p-3">
       <div className="flex items-start justify-between gap-2">
@@ -277,14 +281,14 @@ function MenuItemRow({
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => onEdit(item)}
-              aria-label="Modifier le plat"
+              aria-label={t("editAria")}
               className="text-mv-ink-faint transition-colors hover:text-mv-green-dark"
             >
               <Pencil size={13} />
             </button>
             <button
               onClick={() => onDeleted(item.id, item.name)}
-              aria-label="Retirer le plat"
+              aria-label={t("removeAria")}
               className="text-mv-ink-faint transition-colors hover:text-mv-red"
             >
               <Trash2 size={13} />
@@ -294,17 +298,17 @@ function MenuItemRow({
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-3">
         <div>
-          <p className="text-mv-ink-faint">Prix</p>
+          <p className="text-mv-ink-faint">{t("price")}</p>
           <p className="font-medium text-mv-ink">{formatCurrency(item.price)}</p>
         </div>
         <div>
-          <p className="text-mv-ink-faint">Marge</p>
+          <p className="text-mv-ink-faint">{t("margin")}</p>
           <p className="font-medium text-mv-ink">
             {item.marginPct != null ? `${Math.round(item.marginPct * 100)}%` : "—"}
           </p>
         </div>
         <div>
-          <p className="text-mv-ink-faint">Ventes</p>
+          <p className="text-mv-ink-faint">{t("sales")}</p>
           <p className="font-medium text-mv-ink">{item.unitsSold}</p>
         </div>
       </div>
@@ -326,6 +330,7 @@ function ShareMenuModal({
   onClose: () => void;
   onCreated: (share: MenuShare) => void;
 }) {
+  const t = useTranslations("menu.shareMenu");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mode, setMode] = useState<"full" | "selection">("full");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -352,7 +357,7 @@ function ShareMenuModal({
         onCreated(share);
         onClose();
       } else {
-        notifyError("La création du lien a échoué.");
+        notifyError(t("createFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -360,10 +365,10 @@ function ShareMenuModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Partager le menu" description="Génère un lien public — vos clients peuvent commander directement.">
+    <Modal open={open} onClose={onClose} title={t("modalTitle")} description={t("modalDescription")}>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Titre" hint="Affiché sur la page publique">
-          <Input name="title" placeholder="Ex : Menu du soir" defaultValue="Menu" required autoFocus />
+        <Field label={t("titleLabel")} hint={t("titleHint")}>
+          <Input name="title" placeholder={t("titlePlaceholder")} defaultValue="Menu" required autoFocus />
         </Field>
         <div className="flex gap-2">
           <button
@@ -374,7 +379,7 @@ function ShareMenuModal({
               mode === "full" ? "border-mv-green bg-mv-green-tint text-mv-green-dark" : "border-mv-border text-mv-ink-soft"
             )}
           >
-            Menu complet
+            {t("fullMenu")}
           </button>
           <button
             type="button"
@@ -384,7 +389,7 @@ function ShareMenuModal({
               mode === "selection" ? "border-mv-green bg-mv-green-tint text-mv-green-dark" : "border-mv-border text-mv-ink-soft"
             )}
           >
-            Sélection de plats
+            {t("itemSelection")}
           </button>
         </div>
         {mode === "selection" && (
@@ -399,10 +404,10 @@ function ShareMenuModal({
         )}
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Annuler
+            {t("cancel")}
           </Button>
           <Button type="submit" disabled={isSubmitting || (mode === "selection" && selected.size === 0)}>
-            {isSubmitting ? "Création…" : "Générer le lien"}
+            {isSubmitting ? t("creating") : t("generateLink")}
           </Button>
         </div>
       </form>
@@ -411,6 +416,7 @@ function ShareMenuModal({
 }
 
 function ShareLinkRow({ share, onDeleted }: { share: MenuShare; onDeleted: (id: string) => void }) {
+  const t = useTranslations("menu.shareLink");
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const url = `${typeof window !== "undefined" ? window.location.origin : ""}/m/${share.token}`;
@@ -450,17 +456,17 @@ function ShareLinkRow({ share, onDeleted }: { share: MenuShare; onDeleted: (id: 
           onClick={handleDownload}
           disabled={!qrDataUrl}
           className="text-mv-ink-faint hover:text-mv-ink disabled:opacity-40"
-          aria-label="Télécharger le QR code"
+          aria-label={t("downloadQrAria")}
         >
           <Download size={14} />
         </button>
-        <button onClick={handleCopy} className="text-mv-ink-faint hover:text-mv-ink" aria-label="Copier le lien">
+        <button onClick={handleCopy} className="text-mv-ink-faint hover:text-mv-ink" aria-label={t("copyLinkAria")}>
           {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
         </button>
         <button
           onClick={() => onDeleted(share.id)}
           className="text-mv-ink-faint hover:text-mv-red"
-          aria-label="Supprimer le lien"
+          aria-label={t("deleteLinkAria")}
         >
           <Trash2 size={13} />
         </button>
@@ -495,6 +501,8 @@ function OfferModal({
   onClose: () => void;
   onSaved: (offer: Offer) => void;
 }) {
+  const t = useTranslations("menu.offer");
+  const tn = useTranslations("menu.newItem");
   const isEditing = Boolean(offer);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scopeId, setScopeId] = useState(() => offer?.id ?? crypto.randomUUID());
@@ -522,10 +530,10 @@ function OfferModal({
         setImageUrl(null);
         setScopeId(crypto.randomUUID());
       } else {
-        notifyError(isEditing ? "La modification de l'offre a échoué." : "La création de l'offre a échoué.");
+        notifyError(isEditing ? t("updateFailed") : t("createFailed"));
       }
     } catch {
-      notifyError(isEditing ? "La modification de l'offre a échoué." : "La création de l'offre a échoué.");
+      notifyError(isEditing ? t("updateFailed") : t("createFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -535,33 +543,33 @@ function OfferModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={isEditing ? "Modifier l'offre" : "Nouvelle offre"}
-      description="Visible immédiatement par vos clients sur le menu public — une notification leur est envoyée."
+      title={isEditing ? t("modalTitleEdit") : t("modalTitleNew")}
+      description={t("modalDescription")}
     >
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Titre">
-          <Input name="title" defaultValue={offer?.title} placeholder="Ex : 2 pour 1 sur les burgers" required autoFocus />
+        <Field label={t("titleLabel")}>
+          <Input name="title" defaultValue={offer?.title} placeholder={t("titlePlaceholder")} required autoFocus />
         </Field>
-        <Field label="Description" hint="Optionnel">
-          <Input name="description" defaultValue={offer?.description ?? undefined} placeholder="Ex : Valide tous les mardis soir" />
+        <Field label={tn("descriptionLabel")} hint={tn("optional")}>
+          <Input name="description" defaultValue={offer?.description ?? undefined} placeholder={t("descriptionPlaceholder")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Début" hint="Optionnel">
+          <Field label={t("startsLabel")} hint={tn("optional")}>
             <Input name="startsAt" type="datetime-local" defaultValue={toDatetimeLocal(offer?.startsAt)} />
           </Field>
-          <Field label="Fin" hint="Optionnel">
+          <Field label={t("endsLabel")} hint={tn("optional")}>
             <Input name="endsAt" type="datetime-local" defaultValue={toDatetimeLocal(offer?.endsAt)} />
           </Field>
         </div>
-        <Field label="Image" hint="Optionnel — visible sur le menu public">
+        <Field label={tn("imageLabel")} hint={tn("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} currentUrl={imageUrl} bucket="offer-images" onUploaded={setImageUrl} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Annuler
+            {tn("cancel")}
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Enregistrement…" : isEditing ? "Enregistrer" : "Publier l'offre"}
+            {isSubmitting ? t("saving") : isEditing ? t("save") : t("publish")}
           </Button>
         </div>
       </form>
@@ -571,16 +579,16 @@ function OfferModal({
 
 type OfferStatus = "scheduled" | "active" | "expired" | "hidden";
 
-function getOfferStatus(offer: Offer): { status: OfferStatus; label: string; tone: "green" | "amber" | "neutral" } {
-  if (!offer.active) return { status: "hidden", label: "Masquée", tone: "neutral" };
+function getOfferStatus(offer: Offer): { status: OfferStatus; tone: "green" | "amber" | "neutral" } {
+  if (!offer.active) return { status: "hidden", tone: "neutral" };
   const now = Date.now();
   if (offer.startsAt && new Date(offer.startsAt).getTime() > now) {
-    return { status: "scheduled", label: "Programmée", tone: "amber" };
+    return { status: "scheduled", tone: "amber" };
   }
   if (offer.endsAt && new Date(offer.endsAt).getTime() < now) {
-    return { status: "expired", label: "Expirée", tone: "neutral" };
+    return { status: "expired", tone: "neutral" };
   }
-  return { status: "active", label: "Active", tone: "green" };
+  return { status: "active", tone: "green" };
 }
 
 function OfferRow({
@@ -596,6 +604,8 @@ function OfferRow({
   onDeleted: (id: string) => void;
   onEdit: (offer: Offer) => void;
 }) {
+  const t = useTranslations("menu.offerRow");
+  const tStatus = useTranslations("menu.offerStatus");
   const [pending, setPending] = useState(false);
   // Forces a re-render once a minute so a scheduled/expired offer's badge
   // flips at its startsAt/endsAt boundary without waiting on an unrelated
@@ -605,30 +615,30 @@ function OfferRow({
     const id = setInterval(() => setTick((t) => t + 1), 60_000);
     return () => clearInterval(id);
   }, []);
-  const { label, tone } = getOfferStatus(offer);
+  const { status, tone } = getOfferStatus(offer);
 
   async function handleToggleActive() {
     setPending(true);
     try {
       const updated = await updateOfferAction(restaurantId, offer.id, { active: !offer.active });
       if (updated) onUpdated(updated);
-      else notifyError("La mise à jour de l'offre a échoué.");
+      else notifyError(t("updateFailed"));
     } catch {
-      notifyError("La mise à jour de l'offre a échoué.");
+      notifyError(t("updateFailed"));
     } finally {
       setPending(false);
     }
   }
 
   async function handleDelete() {
-    if (!window.confirm(`Supprimer l'offre "${offer.title}" ?`)) return;
+    if (!window.confirm(t("confirmDelete", { title: offer.title }))) return;
     setPending(true);
     try {
       const ok = await deleteOfferAction(restaurantId, offer.id);
       if (ok) onDeleted(offer.id);
-      else notifyError("La suppression a échoué.");
+      else notifyError(t("deleteFailed"));
     } catch {
-      notifyError("La suppression a échoué.");
+      notifyError(t("deleteFailed"));
     } finally {
       setPending(false);
     }
@@ -648,12 +658,12 @@ function OfferRow({
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <Badge tone={tone} dot>
-          {label}
+          {tStatus(status)}
         </Badge>
         <button
           onClick={() => onEdit(offer)}
           className="text-mv-ink-faint hover:text-mv-ink"
-          aria-label="Modifier l'offre"
+          aria-label={t("editAria")}
         >
           <Pencil size={13} />
         </button>
@@ -661,7 +671,7 @@ function OfferRow({
           onClick={handleToggleActive}
           disabled={pending}
           className="text-mv-ink-faint hover:text-mv-ink disabled:opacity-50"
-          aria-label={offer.active ? "Masquer l'offre" : "Réactiver l'offre"}
+          aria-label={offer.active ? t("hideAria") : t("showAria")}
         >
           <EyeOff size={14} />
         </button>
@@ -669,7 +679,7 @@ function OfferRow({
           onClick={handleDelete}
           disabled={pending}
           className="text-mv-ink-faint hover:text-mv-red disabled:opacity-50"
-          aria-label="Supprimer l'offre"
+          aria-label={t("deleteAria")}
         >
           <Trash2 size={13} />
         </button>
@@ -693,6 +703,8 @@ export function MenuView({
   initialShares: MenuShare[];
   initialOffers: Offer[];
 }) {
+  const t = useTranslations("menu.page");
+  const tq = useTranslations("menu.quadrant");
   const { role } = useApp();
   const [items, setItems] = useState(initialItems);
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -731,10 +743,10 @@ export function MenuView({
 
   function handleDeleted(id: string, name: string) {
     if (!restaurantId) return;
-    if (!window.confirm(`Retirer le plat "${name}" du menu ?`)) return;
+    if (!window.confirm(t("confirmDeleteItem", { name }))) return;
     deleteMenuItemAction(restaurantId, id).then((ok) => {
       if (ok) setItems((prev) => prev.filter((i) => i.id !== id));
-      else notifyError("La suppression a échoué.");
+      else notifyError(t("deleteFailed"));
     });
   }
 
@@ -768,19 +780,19 @@ export function MenuView({
   return (
     <div>
       <PageHeader
-        eyebrow="Menu"
-        title="Ingénierie de menu"
-        description="Rentabilité et popularité de chaque plat, classés en 4 catégories classiques."
+        eyebrow={t("eyebrow")}
+        title={t("title")}
+        description={t("description")}
         action={
           <div className="flex items-center gap-2">
             {items.length > 0 && (
               <Button size="sm" variant="secondary" onClick={() => setShareOpen(true)}>
-                <Share2 size={14} /> Partager le menu
+                <Share2 size={14} /> {t("shareMenu")}
               </Button>
             )}
             {canCreate && (
               <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus size={15} /> Nouveau plat
+                <Plus size={15} /> {t("newItem")}
               </Button>
             )}
           </div>
@@ -789,8 +801,8 @@ export function MenuView({
 
       {canManage && (
         <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl bg-mv-cream-soft px-4 py-3">
-          <label className="flex items-center gap-1.5 text-[12.5px] text-mv-ink-soft" title="Taxes appliquées aux commandes en ligne">
-            Taxes :
+          <label className="flex items-center gap-1.5 text-[12.5px] text-mv-ink-soft" title={t("taxesTooltip")}>
+            {t("taxesLabel")}
             <input
               type="number"
               min="0"
@@ -805,7 +817,7 @@ export function MenuView({
           </label>
           <label className="flex items-center gap-1.5 text-[12.5px] text-mv-ink-soft">
             <input type="checkbox" checked={tips} onChange={handleTipsToggle} />
-            Accepter le pourboire en ligne
+            {t("acceptTipsOnline")}
           </label>
           {shares.length > 0 && (
             <div className="w-full space-y-1.5 border-t border-mv-border pt-3">
@@ -821,16 +833,15 @@ export function MenuView({
         <div className="mb-6 rounded-xl bg-mv-cream-soft px-4 py-3">
           <div className="mb-2 flex items-center justify-between gap-2">
             <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-mv-ink">
-              <Megaphone size={14} className="text-mv-green-dark" /> Offres clients
+              <Megaphone size={14} className="text-mv-green-dark" /> {t("offersTitle")}
             </p>
             <Button size="sm" variant="secondary" onClick={() => setOfferOpen(true)}>
-              <Plus size={14} /> Nouvelle offre
+              <Plus size={14} /> {t("newOffer")}
             </Button>
           </div>
           {offers.length === 0 ? (
             <p className="text-[12px] text-mv-ink-faint">
-              Publiez une offre pour la montrer sur votre menu public — vos clients abonnés recevront une
-              notification.
+              {t("offersEmptyDescription")}
             </p>
           ) : (
             <div className="space-y-1.5">
@@ -852,12 +863,12 @@ export function MenuView({
       {items.length === 0 ? (
         <EmptyState
           icon={UtensilsCrossed}
-          title="Aucun plat"
-          description="Ajoutez vos plats avec leur prix et leur coût pour voir leur rentabilité."
+          title={t("emptyTitle")}
+          description={t("emptyDescription")}
           action={
             canCreate && (
               <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus size={15} /> Nouveau plat
+                <Plus size={15} /> {t("newItem")}
               </Button>
             )
           }
@@ -875,7 +886,7 @@ export function MenuView({
                     : "bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-ink/5"
                 )}
               >
-                Toutes les catégories
+                {t("allCategories")}
               </button>
               {categories.map((c) => (
                 <button
@@ -897,11 +908,11 @@ export function MenuView({
             {quadrantOrder.map((q) => (
               <Card key={q}>
                 <div className="mb-3 flex items-center gap-1.5">
-                  <Badge tone={quadrantTone[q]}>{quadrantLabel[q]}</Badge>
-                  <HelperTooltip content={quadrantDescription[q]} />
+                  <Badge tone={quadrantTone[q]}>{tq(`label.${q}`)}</Badge>
+                  <HelperTooltip content={tq(`description.${q}`)} />
                 </div>
                 {byQuadrant.get(q)!.length === 0 ? (
-                  <p className="text-[12px] text-mv-ink-faint">Aucun plat.</p>
+                  <p className="text-[12px] text-mv-ink-faint">{t("noItemInQuadrant")}</p>
                 ) : (
                   <div className="space-y-2">
                     {byQuadrant.get(q)!.map((item) => (

@@ -1,35 +1,37 @@
 import { getAllRestaurantsForAdmin } from "@/lib/data/admin";
 import { formatDate } from "@/lib/utils";
 import { Store } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 export default async function AdminRestaurantsPage() {
   const restaurants = await getAllRestaurantsForAdmin();
+  const t = await getTranslations("admin.restaurants");
 
   return (
     <div>
-      <h1 className="mb-1 font-display text-[22px] font-medium text-mv-ink">Restaurants</h1>
+      <h1 className="mb-1 font-display text-[22px] font-medium text-mv-ink">{t("pageTitle")}</h1>
       <p className="mb-6 text-[13px] text-mv-ink-soft">
-        {restaurants.length} établissement{restaurants.length > 1 ? "s" : ""} sur la plateforme.
+        {t("countDescription", { count: restaurants.length })}
       </p>
 
       {restaurants.length === 0 ? (
-        <p className="text-[13px] text-mv-ink-faint">Aucun restaurant pour l&apos;instant.</p>
+        <p className="text-[13px] text-mv-ink-faint">{t("emptyState")}</p>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-mv-border bg-mv-surface shadow-mv-sm">
           <table className="w-full text-left text-[13px]">
             <thead>
               <tr className="border-b border-mv-border bg-mv-cream-soft">
                 <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                  Établissement
+                  {t("colName")}
                 </th>
                 <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                  Ville
+                  {t("colCity")}
                 </th>
                 <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                  Membres
+                  {t("colMembers")}
                 </th>
                 <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                  Créé le
+                  {t("colCreatedAt")}
                 </th>
               </tr>
             </thead>

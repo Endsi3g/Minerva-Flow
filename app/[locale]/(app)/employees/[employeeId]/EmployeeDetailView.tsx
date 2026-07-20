@@ -11,7 +11,8 @@ import { LogShiftForm, NewReviewForm, NewTaskForm, StarRating } from "../Employe
 import { setEmployeeActiveAction, setEmployeeTaskStatusAction } from "../actions";
 import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask } from "@/lib/types";
 import { ArrowLeft, Phone, Mail, DollarSign, Calendar, Award, Printer, Clock } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -28,6 +29,10 @@ export function EmployeeDetailView({
   initialTasks: EmployeeTask[];
   restaurantId: string;
 }) {
+  const t = useTranslations("employeeDetail");
+  const te = useTranslations("employees");
+  const td = useTranslations("employees.detail");
+  const tr = useTranslations("employees.reviewForm");
   const { role } = useApp();
   const [employee, setEmployee] = useState(initialEmployee);
   const [shifts, setShifts] = useState(initialShifts);
@@ -47,9 +52,9 @@ export function EmployeeDetailView({
       const ok = await setEmployeeActiveAction(restaurantId, employee.id, nextActive);
       if (ok) {
         setEmployee((prev) => ({ ...prev, active: nextActive }));
-        toast.success(`Employé marqué comme ${nextActive ? "actif" : "inactif"}.`);
+        toast.success(nextActive ? t("toggleSuccessActive") : t("toggleSuccessInactive"));
       } else {
-        toast.error("Impossible de modifier le statut.");
+        toast.error(t("toggleFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -70,17 +75,17 @@ export function EmployeeDetailView({
     <div className="mx-auto max-w-6xl w-full">
       <div className="mb-4">
         <Button href="/employees" variant="ghost" size="sm" className="gap-1.5 text-mv-ink-soft">
-          <ArrowLeft size={14} /> Retour aux employés
+          <ArrowLeft size={14} /> {t("backToEmployees")}
         </Button>
       </div>
 
       <PageHeader
-        eyebrow="Fiche employé"
+        eyebrow={t("pageEyebrow")}
         title={employee.fullName}
-        description={`${employee.roleTitle} · Membre de l'équipe`}
+        description={t("teamMember", { role: employee.roleTitle })}
         action={
           <Badge tone={employee.active ? "green" : "neutral"} className="text-sm px-2.5 py-0.5">
-            {employee.active ? "Actif" : "Inactif"}
+            {employee.active ? te("active") : te("inactive")}
           </Badge>
         }
       />
@@ -89,13 +94,13 @@ export function EmployeeDetailView({
         {/* Left Column: Profile Card & Stats */}
         <div className="md:col-span-4 space-y-6">
           <Card>
-            <CardHeader eyebrow="Profil" title="Informations générales" />
+            <CardHeader eyebrow={t("profileEyebrow")} title={t("profileTitle")} />
             <div className="space-y-4 text-[13px]">
               {employee.hourlyWage !== null && (
                 <div className="flex items-center gap-2.5 text-mv-ink-soft">
                   <DollarSign size={16} className="text-mv-green-dark" />
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Taux horaire</p>
+                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("hourlyRate")}</p>
                     <p className="font-medium text-mv-ink">{formatCurrency(employee.hourlyWage)}/h</p>
                   </div>
                 </div>
@@ -105,7 +110,7 @@ export function EmployeeDetailView({
                 <div className="flex items-center gap-2.5 text-mv-ink-soft">
                   <Phone size={16} className="text-mv-ink-faint" />
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Téléphone</p>
+                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("phone")}</p>
                     <p className="font-medium text-mv-ink">{employee.contactPhone}</p>
                   </div>
                 </div>
@@ -115,7 +120,7 @@ export function EmployeeDetailView({
                 <div className="flex items-center gap-2.5 text-mv-ink-soft">
                   <Mail size={16} className="text-mv-ink-faint" />
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Courriel</p>
+                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("email")}</p>
                     <p className="font-medium text-mv-ink">{employee.contactEmail}</p>
                   </div>
                 </div>
@@ -124,14 +129,14 @@ export function EmployeeDetailView({
               <div className="flex items-center gap-2.5 text-mv-ink-soft">
                 <Calendar size={16} className="text-mv-ink-faint" />
                 <div>
-                  <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Membre depuis</p>
+                  <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("memberSince")}</p>
                   <p className="font-medium text-mv-ink">{formatDate(employee.createdAt.slice(0, 10))}</p>
                 </div>
               </div>
 
               {employee.description && (
                 <div className="border-t border-mv-border-soft pt-3">
-                  <p className="text-[11px] font-semibold uppercase text-mv-ink-faint mb-1">Notes / Bio</p>
+                  <p className="text-[11px] font-semibold uppercase text-mv-ink-faint mb-1">{t("notesBio")}</p>
                   <p className="leading-relaxed text-mv-ink-soft">{employee.description}</p>
                 </div>
               )}
@@ -146,25 +151,25 @@ export function EmployeeDetailView({
                   onClick={handleToggleActive}
                   disabled={isSubmitting}
                 >
-                  {employee.active ? "Désactiver l'employé" : "Activer l'employé"}
+                  {employee.active ? t("deactivate") : t("activate")}
                 </Button>
               </div>
             )}
           </Card>
 
           <Card>
-            <CardHeader eyebrow="Statistiques" title="Performance de présence" />
+            <CardHeader eyebrow={t("statsEyebrow")} title={t("statsTitle")} />
             <div className="grid grid-cols-2 gap-3 mt-2">
               <div className="rounded-xl bg-mv-cream-soft p-3.5 text-center">
                 <Clock size={20} className="mx-auto mb-1 text-mv-ink-soft" />
-                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Heures (total)</p>
+                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{td("hoursTotal")}</p>
                 <p className="mt-0.5 font-display text-[20px] font-medium text-mv-ink">
                   {totalHours.toFixed(1)}h
                 </p>
               </div>
               <div className="rounded-xl bg-mv-cream-soft p-3.5 text-center">
                 <Award size={20} className="mx-auto mb-1 text-mv-green-dark" />
-                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Ponctualité</p>
+                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{td("punctuality")}</p>
                 <p className="mt-0.5 font-display text-[20px] font-medium text-mv-ink">
                   {punctuality === null ? "—" : `${punctuality}%`}
                 </p>
@@ -177,11 +182,11 @@ export function EmployeeDetailView({
         <div className="md:col-span-8 space-y-6">
           {/* Shifts Section */}
           <Card>
-            <CardHeader eyebrow="Journal" title="Historique des quarts" />
+            <CardHeader eyebrow={t("shiftsEyebrow")} title={t("shiftsTitle")} />
             <div className="space-y-4">
               <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                 {shifts.length === 0 ? (
-                  <p className="text-[13px] text-mv-ink-faint py-2">Aucun quart enregistré pour l'instant.</p>
+                  <p className="text-[13px] text-mv-ink-faint py-2">{t("noShiftsYet")}</p>
                 ) : (
                   shifts.map((s) => (
                     <div
@@ -190,8 +195,8 @@ export function EmployeeDetailView({
                     >
                       <span className="font-medium text-mv-ink">{formatDate(s.shiftDate)}</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-mv-green-dark">{s.hoursWorked} heures</span>
-                        {s.wasLate && <Badge tone="red">En retard</Badge>}
+                        <span className="font-semibold text-mv-green-dark">{t("hoursSuffix", { hours: s.hoursWorked })}</span>
+                        {s.wasLate && <Badge tone="red">{t("late")}</Badge>}
                       </div>
                     </div>
                   ))
@@ -200,7 +205,7 @@ export function EmployeeDetailView({
 
               {canManage && (
                 <div className="border-t border-mv-border-soft pt-4">
-                  <h3 className="mb-3 text-[13px] font-bold text-mv-ink">Enregistrer un nouveau quart</h3>
+                  <h3 className="mb-3 text-[13px] font-bold text-mv-ink">{t("logNewShift")}</h3>
                   <LogShiftForm
                     employeeId={employee.id}
                     restaurantId={restaurantId}
@@ -256,47 +261,47 @@ export function EmployeeDetailView({
 
           {/* Performance Reviews Section */}
           <Card>
-            <CardHeader eyebrow="Revues" title="Revues de performance" />
+            <CardHeader eyebrow={td("reviewsEyebrow")} title={td("reviewsTitle")} />
             <div className="space-y-4">
               <div className="space-y-3">
                 {reviews.length === 0 ? (
-                  <p className="text-[13px] text-mv-ink-faint py-2">Aucune revue de performance publiée.</p>
+                  <p className="text-[13px] text-mv-ink-faint py-2">{t("noReviewsYet")}</p>
                 ) : (
                   reviews.map((r) => (
                     <div key={r.id} className="rounded-xl border border-mv-border p-4 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[13px] font-bold text-mv-ink">
-                          Période du {formatDate(r.periodStart)} au {formatDate(r.periodEnd)}
+                          {t("periodRange", { start: formatDate(r.periodStart), end: formatDate(r.periodEnd) })}
                         </p>
                         <StarRating value={r.rating} />
                       </div>
                       {r.raiseRecommended && (
                         <Badge tone="green" className="mt-1">
-                          Augmentation recommandée
+                          {tr("raiseRecommended")}
                         </Badge>
                       )}
                       {r.strengths && (
                         <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
-                          <strong className="text-mv-ink">Forces :</strong> {r.strengths}
+                          <strong className="text-mv-ink">{t("strengthsLabel")}</strong> {r.strengths}
                         </p>
                       )}
                       {r.improvements && (
                         <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
-                          <strong className="text-mv-ink">Axes d'amélioration :</strong> {r.improvements}
+                          <strong className="text-mv-ink">{t("improvementsLabel")}</strong> {r.improvements}
                         </p>
                       )}
                       {r.attributedRevenue !== null && (
                         <p className="text-[12.5px] font-medium text-mv-green-dark">
-                          Chiffre d'affaires généré : {formatCurrency(r.attributedRevenue)}
+                          {t("revenueGenerated", { amount: formatCurrency(r.attributedRevenue) })}
                         </p>
                       )}
                       <div className="flex items-center justify-between border-t border-mv-border-soft pt-2 mt-2">
-                        <span className="text-[11px] text-mv-ink-faint">Par {r.reviewerName}</span>
+                        <span className="text-[11px] text-mv-ink-faint">{t("byReviewer", { name: r.reviewerName })}</span>
                         <Link
                           href={`/employees/${employee.id}/reviews/${r.id}`}
                           className="flex items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
                         >
-                          <Printer size={12} /> Voir / imprimer
+                          <Printer size={12} /> {td("viewPrint")}
                         </Link>
                       </div>
                     </div>
@@ -306,7 +311,7 @@ export function EmployeeDetailView({
 
               {canManage && (
                 <div className="border-t border-mv-border-soft pt-4">
-                  <h3 className="mb-3 text-[13px] font-bold text-mv-ink">Publier une nouvelle revue</h3>
+                  <h3 className="mb-3 text-[13px] font-bold text-mv-ink">{t("publishNewReview")}</h3>
                   <NewReviewForm
                     employee={employee}
                     restaurantId={restaurantId}

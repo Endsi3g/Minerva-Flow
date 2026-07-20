@@ -17,6 +17,7 @@ import { notifyRestaurant } from "@/lib/data/notifications";
 import { formatDate } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { getTranslations } from "next-intl/server";
 
 export async function getAiReviewsAction(): Promise<AiReview[]> {
   const restaurantId = await getCurrentRestaurantId();
@@ -38,12 +39,14 @@ export async function generateAiReviewAction(range: {
   from: string;
   to: string;
 }): Promise<{ ok: boolean; reviewId?: string; error?: string }> {
+  const t = await getTranslations("aiReview");
+  const tCommon = await getTranslations("common");
   const restaurantId = await getCurrentRestaurantId();
-  if (!restaurantId) return { ok: false, error: "Aucun restaurant sélectionné." };
+  if (!restaurantId) return { ok: false, error: tCommon("noRestaurantSelected") };
 
   const membership = await getCurrentMembership();
   if (!membership || !["owner", "manager"].includes(membership.role)) {
-    return { ok: false, error: "Action réservée aux propriétaires et gérants." };
+    return { ok: false, error: t("errorOwnerManagerOnly") };
   }
 
   const [restaurant, serviceDays, programs, campaigns, financialTransactions, menuItems, wasteSummary] = await Promise.all([
@@ -63,7 +66,7 @@ export async function generateAiReviewAction(range: {
   const periodLabel = `${formatDate(range.from)} — ${formatDate(range.to)}`;
   const review = await generateAiReview(restaurant?.name ?? "ce restaurant", periodLabel, reports, menuWasteContext);
   if (!review) {
-    return { ok: false, error: "La génération IA a échoué (vérifiez la configuration AI Gateway)." };
+    return { ok: false, error: t("errorGenerationFailed") };
   }
 
   const saved = await saveAiReview({
@@ -74,13 +77,13 @@ export async function generateAiReviewAction(range: {
     metrics: reports,
     review,
   });
-  if (!saved) return { ok: false, error: "L'enregistrement de la revue a échoué." };
+  if (!saved) return { ok: false, error: t("errorSaveFailed") };
 
   await notifyRestaurant({
     restaurantId,
     type: "ai_review.generated",
-    title: "Revue IA disponible",
-    body: `Analyse de la période du ${periodLabel}.`,
+    title: t("notificationTitle"),
+    body: t("notificationBody", { period: periodLabel }),
     link: `/reports/ai-review/${saved.id}`,
   });
 

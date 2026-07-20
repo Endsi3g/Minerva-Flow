@@ -10,12 +10,7 @@ import { formatDateFull } from "@/lib/utils";
 import { Bell } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-
-const categoryLabel: Record<ChangelogCategory, string> = {
-  fonctionnalite: "Nouveauté",
-  amelioration: "Amélioration",
-  correctif: "Correctif",
-};
+import { useTranslations } from "next-intl";
 
 const categoryTone: Record<ChangelogCategory, "green" | "amber" | "neutral"> = {
   fonctionnalite: "green",
@@ -24,6 +19,7 @@ const categoryTone: Record<ChangelogCategory, "green" | "amber" | "neutral"> = {
 };
 
 export function ChangelogAdminView({ initialEntries }: { initialEntries: ChangelogEntry[] }) {
+  const t = useTranslations("admin.changelog");
   const [entries, setEntries] = useState(initialEntries);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -38,11 +34,11 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
         category: form.get("category") as ChangelogCategory,
       });
       if (ok) {
-        toast.success("Publié — tous les utilisateurs ont été notifiés.");
+        toast.success(t("publishSuccess"));
         (e.target as HTMLFormElement).reset();
         window.location.reload();
       } else {
-        toast.error("Échec de la publication.");
+        toast.error(t("publishFailed"));
       }
     } finally {
       setIsSubmitting(false);
@@ -53,24 +49,24 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
     <div className="space-y-6">
       <Card>
         <div className="mb-3 flex items-center gap-2 text-[12.5px] text-mv-ink-faint">
-          <Bell size={13} /> Publier notifie immédiatement tous les utilisateurs actifs.
+          <Bell size={13} /> {t("notifyHint")}
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Titre">
-            <Input name="title" placeholder="Ex : Export vers QuickBooks" required />
+          <Field label={t("titleLabel")}>
+            <Input name="title" placeholder={t("titlePlaceholder")} required />
           </Field>
-          <Field label="Description">
+          <Field label={t("descriptionLabel")}>
             <Textarea name="description" rows={3} required />
           </Field>
-          <Field label="Catégorie">
+          <Field label={t("categoryLabel")}>
             <Select name="category" defaultValue="fonctionnalite">
-              <option value="fonctionnalite">Nouveauté</option>
-              <option value="amelioration">Amélioration</option>
-              <option value="correctif">Correctif</option>
+              <option value="fonctionnalite">{t("category.fonctionnalite")}</option>
+              <option value="amelioration">{t("category.amelioration")}</option>
+              <option value="correctif">{t("category.correctif")}</option>
             </Select>
           </Field>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Publication…" : "Publier et notifier"}
+            {isSubmitting ? t("publishing") : t("publishAndNotify")}
           </Button>
         </form>
       </Card>
@@ -79,7 +75,7 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
         {entries.map((entry) => (
           <div key={entry.id} className="rounded-xl border border-mv-border bg-mv-surface p-3.5">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <Badge tone={categoryTone[entry.category]}>{categoryLabel[entry.category]}</Badge>
+              <Badge tone={categoryTone[entry.category]}>{t(`category.${entry.category}`)}</Badge>
               <span className="text-[11px] text-mv-ink-faint">
                 {formatDateFull(entry.publishedAt.slice(0, 10))}
               </span>

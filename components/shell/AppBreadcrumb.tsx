@@ -30,6 +30,7 @@ const crumbTranslationKeys: Record<string, string> = {
 
 export function AppBreadcrumb() {
   const t = useTranslations("breadcrumb");
+  const tReports = useTranslations("reports");
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
 
@@ -50,7 +51,7 @@ export function AppBreadcrumb() {
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbPage className="line-clamp-1 text-[13px] font-semibold text-mv-ink">
-              {report?.label ?? segments[1]}
+              {report ? tReports(`labels.${report.slug}`) : segments[1]}
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>

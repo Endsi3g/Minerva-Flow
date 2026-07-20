@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/Button";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ChevronLeft, Trash2, Edit2, Share2, Clock, Check, BarChart2, Table as TableIcon, FileSpreadsheet, Loader2, TrendingUp, TrendingDown } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useState, useTransition, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import { deleteReportAction, renameReportAction } from "@/app/[locale]/(app)/reports/actions";
 import { getGoogleWorkspaceStatusAction } from "@/app/[locale]/(app)/settings/google-workspace-actions";
 import { GOOGLE_SCOPES } from "@/lib/google/config";
@@ -48,6 +49,8 @@ export function DynamicReportView({
   data: any;
   createdAt: string;
 }) {
+  const t = useTranslations("dynamicReport");
+  const tr = useTranslations("reportDetail");
   const router = useRouter();
   const { restaurantId } = useApp();
   const [title, setTitle] = useState(initialTitle);
@@ -67,15 +70,15 @@ export function DynamicReportView({
   }, [restaurantId]);
 
   async function handleDelete() {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce rapport ?")) return;
+    if (!window.confirm(t("confirmDelete"))) return;
     startTransition(async () => {
       const ok = await deleteReportAction(reportId);
       if (ok) {
-        toast.success("Rapport supprimé.");
+        toast.success(t("deleteSuccess"));
         router.push("/reports");
         router.refresh();
       } else {
-        toast.error("Impossible de supprimer le rapport.");
+        toast.error(t("deleteFailed"));
       }
     });
   }
@@ -92,17 +95,17 @@ export function DynamicReportView({
       if (ok) {
         setTitle(next);
         setEditing(false);
-        toast.success("Rapport renommé.");
+        toast.success(t("renameSuccess"));
         router.refresh();
       } else {
-        toast.error("Impossible de renommer le rapport.");
+        toast.error(t("renameFailed"));
       }
     });
   }
 
   // Basic sheets export for custom table/charts
   async function handleExport() {
-    toast.error("Fonctionnalité d'exportation personnalisée en cours d'activation.");
+    toast.error(t("exportComingSoon"));
   }
 
   const wide = type === "comparison";
@@ -113,7 +116,7 @@ export function DynamicReportView({
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-mv-border/40 pb-4">
         <div className="flex items-center gap-1.5 text-[13px] text-mv-ink-faint">
           <Link href="/reports" className="flex items-center gap-1 hover:text-mv-ink transition-colors">
-            <ChevronLeft size={14} /> Rapports
+            <ChevronLeft size={14} /> {tr("breadcrumbReports")}
           </Link>
           <span>/</span>
           <span className="text-mv-ink-soft font-medium truncate max-w-[200px]">{title}</span>
@@ -129,15 +132,15 @@ export function DynamicReportView({
                 autoFocus
               />
               <Button type="submit" size="sm" disabled={isPending}>
-                Enregistrer
+                {t("save")}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)}>
-                Annuler
+                {t("cancel")}
               </Button>
             </form>
           ) : (
             <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
-              <Edit2 size={13} className="mr-1.5" /> Renommer
+              <Edit2 size={13} className="mr-1.5" /> {t("rename")}
             </Button>
           )}
 
@@ -151,12 +154,12 @@ export function DynamicReportView({
                   dangerouslySetInnerHTML={{ __html: googleBrand.svg }}
                 />
               )}
-              Exporter
+              {t("export")}
             </Button>
           )}
 
           <Button size="sm" variant="secondary" className="hover:bg-mv-red-bg hover:text-mv-red" onClick={handleDelete} disabled={isPending}>
-            <Trash2 size={13} className="mr-1.5" /> Supprimer
+            <Trash2 size={13} className="mr-1.5" /> {t("delete")}
           </Button>
         </div>
       </div>
@@ -168,10 +171,10 @@ export function DynamicReportView({
         </h1>
         <div className="flex flex-wrap items-center gap-4 text-[12.5px] text-mv-ink-faint">
           <span className="flex items-center gap-1.5">
-            <Clock size={13} /> Créé le {new Date(createdAt).toLocaleDateString("fr-CA", { dateStyle: "long" })}
+            <Clock size={13} /> {t("createdOn", { date: new Date(createdAt).toLocaleDateString("fr-CA", { dateStyle: "long" }) })}
           </span>
           <span className="bg-mv-green-tint text-mv-green-dark border border-mv-green/10 px-2 py-0.5 rounded-full text-[11px] font-semibold">
-            Rapport Dynamique AI
+            {t("aiDynamicReportBadge")}
           </span>
         </div>
       </div>
@@ -185,7 +188,7 @@ export function DynamicReportView({
               tab === "visual" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint hover:text-mv-ink"
             }`}
           >
-            <BarChart2 size={13} /> Rapport Visuel
+            <BarChart2 size={13} /> {t("visualTab")}
           </button>
           <button
             onClick={() => setTab("data")}
@@ -193,7 +196,7 @@ export function DynamicReportView({
               tab === "data" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint hover:text-mv-ink"
             }`}
           >
-            <TableIcon size={13} /> Données de base
+            <TableIcon size={13} /> {t("dataTab")}
           </button>
         </div>
       )}
@@ -211,6 +214,7 @@ export function DynamicReportView({
 }
 
 function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
+  const t = useTranslations("dynamicReport");
   if (type === "summary") {
     return (
       <div className="bg-mv-surface border border-mv-border/60 p-6 rounded-2xl shadow-mv-sm">
@@ -263,7 +267,7 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
         {data.metrics.length > 0 && (
           <Card className="p-5">
             <p className="mb-3.5 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
-              Indicateurs clés
+              {t("keyMetrics")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {data.metrics.map((m: any) => (
@@ -292,7 +296,7 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
           <Card className="p-5">
             <p className="mb-3 text-[13.5px] font-semibold text-mv-ink">
               {data.prediction.label}{" "}
-              <span className="font-normal text-mv-ink-faint">(estimation)</span>
+              <span className="font-normal text-mv-ink-faint">{t("estimation")}</span>
             </p>
             <MiniLineChart data={data.prediction.points} color="var(--mv-amber)" />
           </Card>
@@ -301,7 +305,7 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
         {data.summary.length > 0 && (
           <Card className="p-5">
             <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
-              Analyse &amp; Synthèse
+              {t("analysisSynthesis")}
             </p>
             <ul className="space-y-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
               {data.summary.map((line: string, i: number) => (
@@ -435,14 +439,15 @@ function MiniLineChart({ data, color = "var(--mv-green)" }: { data: TrendPoint[]
 }
 
 function DynamicArtifactRawData({ type, data }: { type: string; data: any }) {
+  const t = useTranslations("dynamicReport");
   if (type === "chart") {
     return (
       <div className="overflow-hidden rounded-lg border border-mv-border-soft bg-mv-surface">
         <table className="w-full text-[12px]">
           <thead>
             <tr className="border-b border-mv-border-soft bg-mv-cream-soft text-left font-semibold text-mv-ink-faint">
-              <th className="px-3 py-2">Label</th>
-              <th className="px-3 py-2 text-right">Valeur</th>
+              <th className="px-3 py-2">{t("colLabel")}</th>
+              <th className="px-3 py-2 text-right">{t("colValue")}</th>
             </tr>
           </thead>
           <tbody>
@@ -464,9 +469,9 @@ function DynamicArtifactRawData({ type, data }: { type: string; data: any }) {
         <table className="w-full text-[12px]">
           <thead>
             <tr className="border-b border-mv-border-soft bg-mv-cream-soft text-left font-semibold text-mv-ink-faint">
-              <th className="px-3 py-2">Métrique</th>
-              <th className="px-3 py-2 text-right">Valeur</th>
-              <th className="px-3 py-2 text-right">Variation MoM</th>
+              <th className="px-3 py-2">{t("colMetric")}</th>
+              <th className="px-3 py-2 text-right">{t("colValue")}</th>
+              <th className="px-3 py-2 text-right">{t("colMomVariation")}</th>
             </tr>
           </thead>
           <tbody>
@@ -492,5 +497,5 @@ function DynamicArtifactRawData({ type, data }: { type: string; data: any }) {
     );
   }
 
-  return <p className="text-[12.5px] text-mv-ink-faint">Aucune donnée brute disponible.</p>;
+  return <p className="text-[12.5px] text-mv-ink-faint">{t("noRawData")}</p>;
 }
