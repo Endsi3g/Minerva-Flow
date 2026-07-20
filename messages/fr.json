@@ -1,0 +1,53 @@
+{
+  "MonEspace": {
+    "eyebrow": "Mon espace",
+    "title": "Mon espace",
+    "description": "Vos quarts de travail et vos revues de performance.",
+    "noEmployeeRecord": "Aucune fiche employé n'est associée à votre compte pour l'instant. Demandez à votre gestionnaire de vous lier depuis la fiche employé correspondante.",
+    "greeting": "Bonjour, {name}",
+    "greetingFallback": "Bonjour",
+    "subtitle": "{roleTitle} · Vos quarts de travail et vos revues de performance",
+    "totalHours": "Heures (total)",
+    "punctuality": "Ponctualité",
+    "myTasks": "Mes tâches",
+    "myShifts": "Mes quarts de travail",
+    "myReviews": "Mes revues de performance",
+    "noTasks": "Aucune tâche assignée pour l'instant.",
+    "noShifts": "Aucun quart enregistré pour l'instant.",
+    "noReviews": "Aucune revue de performance publiée.",
+    "late": "En retard",
+    "hours": "{count} heures",
+    "raiseRecommended": "Augmentation recommandée",
+    "strengths": "Forces :",
+    "improvements": "Axes d'amélioration :",
+    "attributedRevenue": "Chiffre d'affaires généré : {amount}",
+    "reviewedBy": "Par {name}",
+    "viewPrint": "Voir / imprimer",
+    "periodRange": "Période du {start} au {end}",
+    "taskUpdateFailed": "Impossible de mettre à jour la tâche."
+  },
+  "EmployeeTasks": {
+    "eyebrow": "Suivi",
+    "title": "Tâches assignées",
+    "empty": "Aucune tâche assignée pour l'instant.",
+    "assignNew": "Assigner une nouvelle tâche",
+    "titleLabel": "Titre",
+    "titlePlaceholder": "Ex : Nettoyer la machine à espresso",
+    "descriptionLabel": "Description",
+    "optional": "Optionnel",
+    "submit": "Assigner la tâche",
+    "submitting": "Assignation…",
+    "failed": "L'assignation de la tâche a échoué."
+  },
+  "InviteMemberModal": {
+    "title": "Inviter un collaborateur",
+    "description": "Générez un lien à partager — valide 7 jours, le rôle est déjà attribué. Si la personne a déjà un compte (par exemple pour un autre établissement), elle sera simplement ajoutée à celui-ci.",
+    "roleLabel": "Rôle",
+    "generate": "Générer le lien",
+    "generating": "Génération…",
+    "copy": "Copier le lien",
+    "hint": "Valide 7 jours. Partagez-le par le canal de votre choix (SMS, WhatsApp, etc.).",
+    "close": "Fermer",
+    "genericError": "Impossible de générer le lien. Réessayez."
+  }
+}

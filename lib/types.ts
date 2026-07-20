@@ -58,6 +58,18 @@ export type EmployeeReview = {
   createdAt: string;
 };
 
+export type EmployeeTaskStatus = "a_faire" | "fait";
+
+export type EmployeeTask = {
+  id: string;
+  employeeId: string;
+  title: string;
+  description: string | null;
+  status: EmployeeTaskStatus;
+  completedAt: string | null;
+  createdAt: string;
+};
+
 export type RestaurantTable = {
   id: string;
   restaurantId: string;

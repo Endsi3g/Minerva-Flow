@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerManager } from "@/components/pwa/ServiceWorkerManager";
 import { Analytics } from '@vercel/analytics/react';
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 const playfairDisplayHeading = Playfair_Display({ subsets: ['latin'], variable: '--font-heading' });
 
@@ -27,7 +29,7 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   title: "Flow par Minerva",
-  description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
+  description: "L'application pour la gestion des revenus des restaurants et cafés au Québec.",
   icons: {
     icon: "/icon-512.png",
     shortcut: "/icon-512.png",
@@ -35,19 +37,19 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Flow par Minerva",
-    description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
+    description: "L'application pour la gestion des revenus des restaurants et cafés au Québec.",
     type: "website",
     locale: "fr_FR",
   },
   twitter: {
     card: "summary_large_image",
     title: "Flow par Minerva",
-    description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
+    description: "L'application pour la gestion des revenus des restaurants et cafés au Québec.",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Minerva Flow",
+    title: "Flow par Minerva",
   },
 };
 
@@ -57,18 +59,23 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="fr" className={cn("h-full", jakarta.variable, fraunces.variable, "font-sans", inter.variable, playfairDisplayHeading.variable)}>
+    <html lang={locale} className={cn("h-full", jakarta.variable, fraunces.variable, "font-sans", inter.variable, playfairDisplayHeading.variable)}>
       <body className="min-h-full bg-mv-cream text-mv-ink antialiased">
-        <TooltipProvider delay={150}>{children}</TooltipProvider>
-        <Toaster />
-        <ServiceWorkerManager />
-        <Analytics />
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <TooltipProvider delay={150}>{children}</TooltipProvider>
+          <Toaster />
+          <ServiceWorkerManager />
+          <Analytics />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

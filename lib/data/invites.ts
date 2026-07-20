@@ -185,5 +185,58 @@ export async function redeemInvite(token: string): Promise<{ ok: boolean; restau
     excludeUserId: user.id,
   });
 
+  await deletePhantomDefaultRestaurant(admin, user.id, invite.restaurant_id);
+
   return { ok: true, restaurantId: invite.restaurant_id };
+}
+
+/**
+ * Signup (any auth method) always provisions a default "Mon restaurant" via
+ * handle_new_user(), unless raw_user_meta_data.invite_token was set —
+ * which only the email/password path can do (OAuth carries no custom
+ * metadata). So an employee invited via Google/Apple/Azure still ends up
+ * owning an empty default restaurant alongside the one they just joined.
+ * Clean it up here instead: safe because we only ever delete a restaurant
+ * named exactly "Mon restaurant" where this user is the sole member and
+ * no business data exists on it yet.
+ */
+async function deletePhantomDefaultRestaurant(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  justJoinedRestaurantId: string
+): Promise<void> {
+  const { data: ownedMemberships } = await admin
+    .from("restaurant_members")
+    .select("restaurant_id")
+    .eq("user_id", userId)
+    .eq("role", "owner")
+    .neq("restaurant_id", justJoinedRestaurantId);
+
+  for (const membership of ownedMemberships ?? []) {
+    const restaurantId = membership.restaurant_id as string;
+
+    const [{ data: restaurant }, { count: memberCount }] = await Promise.all([
+      admin.from("restaurants").select("id, name").eq("id", restaurantId).maybeSingle(),
+      admin
+        .from("restaurant_members")
+        .select("id", { count: "exact", head: true })
+        .eq("restaurant_id", restaurantId),
+    ]);
+    if (!restaurant || restaurant.name !== "Mon restaurant" || memberCount !== 1) continue;
+
+    const [menuItems, employees, customers, serviceDays] = await Promise.all([
+      admin.from("menu_items").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId),
+      admin.from("employees").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId),
+      admin.from("customers").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId),
+      admin.from("service_days").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId),
+    ]);
+    const isEmpty =
+      (menuItems.count ?? 0) === 0 &&
+      (employees.count ?? 0) === 0 &&
+      (customers.count ?? 0) === 0 &&
+      (serviceDays.count ?? 0) === 0;
+    if (!isEmpty) continue;
+
+    await admin.from("restaurants").delete().eq("id", restaurantId);
+  }
 }

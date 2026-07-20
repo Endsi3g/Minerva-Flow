@@ -60,8 +60,8 @@ export function ReferralSettingsTab() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Minerva Flow",
-          text: "Je gère mon restaurant avec Minerva Flow — inscris-toi avec mon lien :",
+          title: "Flow par Minerva",
+          text: "Je gère mon restaurant avec Flow par Minerva — inscris-toi avec mon lien :",
           url: link,
         });
       } catch {

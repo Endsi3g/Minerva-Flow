@@ -7,6 +7,7 @@ import { Field, Select } from "@/components/minerva/FormField";
 import { roleLabels } from "@/lib/app-context";
 import { createInviteLinkAction } from "@/app/(app)/collaborateurs/actions";
 import posthog from "posthog-js";
+import { useTranslations } from "next-intl";
 import type { Role } from "@/lib/types";
 import { Check, Copy } from "lucide-react";
 
@@ -21,6 +22,7 @@ export function InviteMemberModal({
   onClose: () => void;
   restaurantId: string;
 }) {
+  const t = useTranslations("InviteMemberModal");
   const [role, setRole] = useState<Role>("staff");
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -32,7 +34,7 @@ export function InviteMemberModal({
     startTransition(async () => {
       const invite = await createInviteLinkAction(restaurantId, role);
       if (!invite) {
-        setError("Impossible de générer le lien. Réessayez.");
+        setError(t("genericError"));
         return;
       }
       posthog.capture("member_invited", { invited_role: role });
@@ -58,11 +60,11 @@ export function InviteMemberModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title="Inviter un collaborateur"
-      description="Générez un lien à partager — valide 7 jours, le rôle est déjà attribué."
+      title={t("title")}
+      description={t("description")}
     >
       <div className="space-y-4">
-        <Field label="Rôle">
+        <Field label={t("roleLabel")}>
           <Select value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={Boolean(link)}>
             {invitableRoles.map((r) => (
               <option key={r} value={r}>
@@ -81,24 +83,22 @@ export function InviteMemberModal({
               <button
                 onClick={handleCopy}
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
-                aria-label="Copier le lien"
+                aria-label={t("copy")}
               >
                 {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
               </button>
             </div>
-            <p className="text-[11.5px] text-mv-ink-faint">
-              Valide 7 jours. Partagez-le par le canal de votre choix (SMS, WhatsApp, etc.).
-            </p>
+            <p className="text-[11.5px] text-mv-ink-faint">{t("hint")}</p>
           </div>
         )}
 
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={handleClose}>
-            Fermer
+            {t("close")}
           </Button>
           {!link && (
             <Button onClick={handleGenerate} disabled={isPending}>
-              {isPending ? "Génération…" : "Générer le lien"}
+              {isPending ? t("generating") : t("generate")}
             </Button>
           )}
         </div>

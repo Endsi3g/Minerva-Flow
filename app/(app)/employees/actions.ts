@@ -14,8 +14,13 @@ import {
   type EmployeeShiftInput,
   type EmployeeReviewInput,
 } from "@/lib/data/employees";
+import {
+  createEmployeeTask,
+  setEmployeeTaskStatus,
+  type EmployeeTaskInput,
+} from "@/lib/data/employee-tasks";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
-import type { Employee, EmployeeReview, EmployeeShift } from "@/lib/types";
+import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask, EmployeeTaskStatus } from "@/lib/types";
 
 async function requireManager(restaurantId: string): Promise<boolean> {
   const membership = await getCurrentMembership();
@@ -94,4 +99,36 @@ export async function createEmployeeReviewAction(
 export async function getEmployeeReviewsAction(employeeId: string): Promise<EmployeeReview[]> {
   if (!employeeId) return [];
   return getEmployeeReviews(employeeId);
+}
+
+export async function createEmployeeTaskAction(
+  input: EmployeeTaskInput,
+  employeeName: string
+): Promise<EmployeeTask | null> {
+  if (!input.employeeId || !input.title.trim()) return null;
+  if (!(await requireManager(input.restaurantId))) return null;
+
+  const task = await createEmployeeTask(input, employeeName);
+  if (task) revalidatePath("/employees");
+  return task;
+}
+
+/**
+ * No manager check here: RLS on employee_tasks already allows both
+ * owner/manager (any task) and the assigned employee via
+ * employees.linked_user_id (their own task only) — this action serves
+ * both the employer checklist and /mon-espace.
+ */
+export async function setEmployeeTaskStatusAction(
+  restaurantId: string,
+  taskId: string,
+  status: EmployeeTaskStatus
+): Promise<boolean> {
+  if (!restaurantId || !taskId) return false;
+  const ok = await setEmployeeTaskStatus(restaurantId, taskId, status);
+  if (ok) {
+    revalidatePath("/employees");
+    revalidatePath("/mon-espace");
+  }
+  return ok;
 }

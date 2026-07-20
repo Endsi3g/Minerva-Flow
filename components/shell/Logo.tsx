@@ -16,7 +16,7 @@ export function Logo({ size = 30 }: { size?: number }) {
     <div className="flex items-center gap-2.5">
       <LogoMark size={size} />
       <span className="font-display text-[17px] font-medium tracking-tight text-mv-ink">
-        Minerva <span className="text-mv-green-dark">Flow</span>
+        Flow <span className="text-mv-green-dark">par Minerva</span>
       </span>
     </div>
   );

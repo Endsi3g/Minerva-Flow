@@ -8,7 +8,7 @@ export default function PrivacyPage() {
         <Link href="/" className="mb-8 flex items-center gap-2.5">
           <LogoMark size={26} />
           <span className="font-sans text-[15px] font-medium text-mv-ink">
-            Minerva <span className="text-mv-green-dark">Flow</span>
+            Flow <span className="text-mv-green-dark">par Minerva</span>
           </span>
         </Link>
 
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
             </h2>
             <p>
               Conformément à la Loi 25, un responsable de la protection des renseignements personnels est désigné
-              pour Minerva Flow. Pour exercer vos droits ou signaler une préoccupation, utilisez la page{" "}
+              pour Flow par Minerva. Pour exercer vos droits ou signaler une préoccupation, utilisez la page{" "}
               <Link href="/support" className="text-mv-green-dark underline underline-offset-2">
                 Aide &amp; Support
               </Link>

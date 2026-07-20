@@ -1,4 +1,4 @@
-# Minerva-Flow
+# Flow par Minerva
 
 Application SaaS pour la gestion opérationnelle des restaurants et cafés au Québec : revenus, dépenses, équipe, fournisseurs, inventaire, fidélisation et rapports — avec un portail dédié pour les clients.
 
@@ -6,7 +6,7 @@ Application SaaS pour la gestion opérationnelle des restaurants et cafés au Qu
 
 ## 1. Description
 
-Minerva-Flow centralise le pilotage quotidien d'un restaurant ou café dans une interface simple, en français, pensée pour être utilisée même pendant les heures de pointe. Au-delà du suivi financier, l'app couvre l'ensemble du cycle d'exploitation : de la commande fournisseur jusqu'à la fidélisation du client final, avec des rapports générés par IA pour interpréter les chiffres.
+Flow par Minerva centralise le pilotage quotidien d'un restaurant ou café dans une interface simple, en français, pensée pour être utilisée même pendant les heures de pointe. Au-delà du suivi financier, l'app couvre l'ensemble du cycle d'exploitation : de la commande fournisseur jusqu'à la fidélisation du client final, avec des rapports générés par IA pour interpréter les chiffres.
 
 ---
 
@@ -119,7 +119,7 @@ Ces ressources peuvent être utilisées pour documenter, prototyper ou automatis
 
 ## 8. État du projet et roadmap
 
-Minerva-Flow est en développement actif et déjà utilisé en production. Les modules listés en section 2 (finance, fidélisation, menu, inventaire, portail client, rapports IA) sont fonctionnels.
+Flow par Minerva est en développement actif et déjà utilisé en production. Les modules listés en section 2 (finance, fidélisation, menu, inventaire, portail client, rapports IA) sont fonctionnels.
 
 Prochaines étapes envisagées :
 
@@ -137,4 +137,4 @@ Les retours et contributions sont les bienvenus.
 - Pull requests pour des contributions sur l’UX, le code ou la documentation.  
 - Prise de contact pour tests en conditions réelles dans des établissements de restauration.
 
-Minerva-Flow vise à devenir une solution simple, fiable et adaptée aux réalités du terrain pour les professionnels de la restauration.
+Flow par Minerva vise à devenir une solution simple, fiable et adaptée aux réalités du terrain pour les professionnels de la restauration.

@@ -8,7 +8,7 @@ commit `3cb8046` si on veut repartir de cette base plutôt que de zéro.
 
 ## 1. Ce qu'est le produit
 
-Minerva Flow est un cockpit de gestion pour restaurants et cafés indépendants
+Flow par Minerva est un cockpit de gestion pour restaurants et cafés indépendants
 ou petites chaînes (2 à 5 établissements) : suivi du revenu quotidien,
 campagnes marketing, gestion d'équipe, assistant IA, rapports partageables.
 
@@ -29,7 +29,7 @@ campagnes marketing, gestion d'équipe, assistant IA, rapports partageables.
 
 ## 3. Proposition de valeur — le seul message qui compte
 
-**Minerva Flow leur dit ce qui se passe dans leur restaurant avant qu'ils
+**Flow par Minerva leur dit ce qui se passe dans leur restaurant avant qu'ils
 aient à le deviner** — pas juste un tableau de chiffres, une lecture de ce
 qui compte, formulée simplement.
 
@@ -55,13 +55,20 @@ scaffolds techniques, pas des fonctionnalités activées :
 - ✅ **Réel et fonctionnel** : suivi de revenu quotidien, import CSV
   d'historique, assistant IA conversationnel, rapports partageables par
   lien, invitations d'équipe par lien, suivi des employés et revues de
-  performance, revue de performance automatique par IA.
+  performance, revue de performance automatique par IA, espace employé
+  libre-service (quarts et revues), tâches assignées par l'employeur.
 - ⚠️ **Construit mais pas branché** (nécessite un compte externe côté
   Minerva avant d'être réellement actif) : facturation Stripe, connexion
   Square, banque ouverte. **Ne pas promettre ces intégrations comme
   disponibles tant qu'elles n'ont pas été activées et testées.**
-- ❌ **N'existe pas** : application mobile native (c'est une PWA), support
-  multi-langue, intégration Lightspeed/Clover.
+- ⚠️ **Partiellement livré** : support multi-langue (FR/EN) — infrastructure
+  next-intl en place avec sélecteur de langue dans le profil, mais seuls les
+  écrans les plus récents (espace employé, tâches, invitation d'équipe) sont
+  traduits pour l'instant. Le reste de l'app reste en français codé en dur.
+  **Ne pas promettre un produit entièrement bilingue tant que la migration
+  n'est pas terminée.**
+- ❌ **N'existe pas** : application mobile native (c'est une PWA),
+  intégration Lightspeed/Clover.
 
 ## 6. Structure de page recommandée
 

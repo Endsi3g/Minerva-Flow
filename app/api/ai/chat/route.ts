@@ -121,7 +121,7 @@ export async function POST(req: Request) {
 
   const system = restaurantId
     ? await buildRestaurantDataSnapshot(restaurantId)
-    : "Tu es l'assistant de Minerva Flow. Aucun établissement n'est encore associé à ce compte — invite l'utilisateur à en créer un avant de pouvoir répondre sur ses données.";
+    : "Tu es l'assistant de Flow par Minerva. Aucun établissement n'est encore associé à ce compte — invite l'utilisateur à en créer un avant de pouvoir répondre sur ses données.";
 
   const result = streamText({
     model: AI_MODEL,

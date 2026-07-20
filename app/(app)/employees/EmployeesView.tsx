@@ -17,9 +17,11 @@ import {
   getEmployeeShiftsAction,
   createEmployeeReviewAction,
   getEmployeeReviewsAction,
+  createEmployeeTaskAction,
 } from "./actions";
 import posthog from "posthog-js";
-import type { Employee, EmployeeReview, EmployeeShift } from "@/lib/types";
+import { useTranslations } from "next-intl";
+import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask } from "@/lib/types";
 import { useApp } from "@/lib/app-context";
 import { UserPlus, Star, Printer, Users2, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -171,6 +173,60 @@ export function LogShiftForm({
       </Field>
       <Button size="sm" type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Enregistrement…" : "Enregistrer le quart"}
+      </Button>
+    </form>
+  );
+}
+
+export function NewTaskForm({
+  employeeId,
+  restaurantId,
+  employeeName,
+  onCreated,
+}: {
+  employeeId: string;
+  restaurantId: string;
+  employeeName: string;
+  onCreated: (t: EmployeeTask) => void;
+}) {
+  const t = useTranslations("EmployeeTasks");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setIsSubmitting(true);
+    try {
+      const task = await createEmployeeTaskAction(
+        {
+          employeeId,
+          restaurantId,
+          title: String(form.get("title") ?? "").trim(),
+          description: String(form.get("description") ?? "") || null,
+        },
+        employeeName
+      );
+      if (task) {
+        onCreated(task);
+        (e.target as HTMLFormElement).reset();
+      } else {
+        toast.error(t("failed"));
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <Field label={t("titleLabel")}>
+        <Input name="title" placeholder={t("titlePlaceholder")} required />
+      </Field>
+      <Field label={t("descriptionLabel")} hint={t("optional")}>
+        <Textarea name="description" rows={2} />
+      </Field>
+      <Button size="sm" type="submit" disabled={isSubmitting}>
+        {isSubmitting ? t("submitting") : t("submit")}
       </Button>
     </form>
   );

@@ -11,6 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { RolePermissionsCard, roleTone } from "@/components/minerva/RolePermissionsCard";
 import { DeleteAccountCard } from "@/components/minerva/DeleteAccountCard";
 import { GoogleCalendarCard } from "@/components/minerva/GoogleCalendarCard";
+import { LanguageSwitcherCard } from "@/components/shell/LanguageSwitcher";
 import { roleLabels, useApp } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
 import { updateProfileNameAction } from "./actions";
@@ -222,11 +223,13 @@ export function ProfileView({
 
         <GoogleCalendarCard />
 
+        <LanguageSwitcherCard />
+
         <Card>
           <CardHeader
             eyebrow="Historique"
             title="Activité"
-            description="Vos dernières actions dans Minerva Flow."
+            description="Vos dernières actions dans Flow par Minerva."
           />
           {activity.length === 0 ? (
             <p className="text-[12.5px] text-mv-ink-faint">

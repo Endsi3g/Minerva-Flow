@@ -88,12 +88,16 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
         if (password !== repeatPassword) {
           throw new Error("Les mots de passe ne correspondent pas.");
         }
+        const signUpMetadata: Record<string, string> = {};
+        if (referralCode) signUpMetadata.referral_code = referralCode;
+        if (inviteToken) signUpMetadata.invite_token = inviteToken;
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/confirm?next=${postAuthPath}`,
-            data: referralCode ? { referral_code: referralCode } : undefined,
+            data: Object.keys(signUpMetadata).length > 0 ? signUpMetadata : undefined,
           },
         });
         if (error) throw error;
@@ -150,7 +154,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
       <div className="mb-6 flex items-center gap-2.5">
         <LogoMark size={30} />
         <span className="font-sans text-[17px] font-medium text-mv-ink">
-          Minerva <span className="text-mv-green-dark">Flow</span>
+          Flow <span className="text-mv-green-dark">par Minerva</span>
         </span>
       </div>
 
@@ -167,7 +171,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
               </h1>
               <p className="mt-1 text-[13px] text-mv-ink-soft">
                 {mode === "login"
-                  ? "Connectez-vous à votre cockpit Minerva Flow."
+                  ? "Connectez-vous à votre cockpit Flow par Minerva."
                   : "Commencez à piloter votre établissement dès aujourd'hui."}
               </p>
             </motion.div>

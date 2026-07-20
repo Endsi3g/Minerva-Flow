@@ -32,7 +32,7 @@ export async function exportReportAction(slug: string): Promise<string | null> {
   const rows = trend.map((t) => [formatDate(t.date), formatCurrency(t.revenue)]);
 
   return exportReportToSheet(restaurantId, {
-    title: `Minerva Flow — ${report.label} — ${formatDate(new Date().toISOString().slice(0, 10))}`,
+    title: `Flow par Minerva — ${report.label} — ${formatDate(new Date().toISOString().slice(0, 10))}`,
     columns,
     rows,
   });

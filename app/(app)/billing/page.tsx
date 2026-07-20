@@ -63,18 +63,18 @@ export default function BillingPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Facturation"
-        description="Votre abonnement Minerva Flow — un tarif mensuel fixe par établissement."
+        description="Votre abonnement Flow par Minerva — un tarif mensuel fixe par établissement."
       />
 
       <div className="mx-auto max-w-xl w-full">
         <Card>
-          <CardHeader eyebrow="Abonnement" title="Plan Minerva Flow" />
+          <CardHeader eyebrow="Abonnement" title="Plan Flow par Minerva" />
 
           {!status ? (
             <p className="text-[13px] text-mv-ink-faint">Chargement…</p>
           ) : !status.configured ? (
             <p className="text-[13px] text-mv-ink-soft">
-              La facturation n&apos;est pas encore activée pour votre établissement — vous utilisez Minerva Flow
+              La facturation n&apos;est pas encore activée pour votre établissement — vous utilisez Flow par Minerva
               gratuitement pour l&apos;instant.
             </p>
           ) : status.subscription ? (
@@ -100,7 +100,7 @@ export default function BillingPage() {
           ) : (
             <div className="space-y-4">
               <p className="text-[13px] text-mv-ink-soft">
-                Vous n&apos;avez pas encore d&apos;abonnement actif. Souscrivez pour continuer à utiliser Minerva Flow
+                Vous n&apos;avez pas encore d&apos;abonnement actif. Souscrivez pour continuer à utiliser Flow par Minerva
                 après votre période pilote.
               </p>
               <Button className="w-full" onClick={handleSubscribe} disabled={loading}>

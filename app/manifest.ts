@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "flow by Minerva",
-    short_name: "Minerva Flow",
-    description: "L'application pour la gestions des revenus des restaurants et cafés au Quebec.",
+    name: "Flow par Minerva",
+    short_name: "Flow par Minerva",
+    description: "L'application pour la gestion des revenus des restaurants et cafés au Québec.",
     start_url: "/overview",
     display: "standalone",
     background_color: "#F5F1E6",

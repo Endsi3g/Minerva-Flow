@@ -1,0 +1,53 @@
+{
+  "MonEspace": {
+    "eyebrow": "My space",
+    "title": "My space",
+    "description": "Your work shifts and performance reviews.",
+    "noEmployeeRecord": "No employee record is linked to your account yet. Ask your manager to link you from the matching employee record.",
+    "greeting": "Hello, {name}",
+    "greetingFallback": "Hello",
+    "subtitle": "{roleTitle} · Your work shifts and performance reviews",
+    "totalHours": "Hours (total)",
+    "punctuality": "Punctuality",
+    "myTasks": "My tasks",
+    "myShifts": "My shifts",
+    "myReviews": "My performance reviews",
+    "noTasks": "No task assigned yet.",
+    "noShifts": "No shift logged yet.",
+    "noReviews": "No performance review published yet.",
+    "late": "Late",
+    "hours": "{count} hours",
+    "raiseRecommended": "Raise recommended",
+    "strengths": "Strengths:",
+    "improvements": "Areas for improvement:",
+    "attributedRevenue": "Revenue generated: {amount}",
+    "reviewedBy": "By {name}",
+    "viewPrint": "View / print",
+    "periodRange": "Period from {start} to {end}",
+    "taskUpdateFailed": "Couldn't update the task."
+  },
+  "EmployeeTasks": {
+    "eyebrow": "Tracking",
+    "title": "Assigned tasks",
+    "empty": "No task assigned yet.",
+    "assignNew": "Assign a new task",
+    "titleLabel": "Title",
+    "titlePlaceholder": "E.g. Clean the espresso machine",
+    "descriptionLabel": "Description",
+    "optional": "Optional",
+    "submit": "Assign task",
+    "submitting": "Assigning…",
+    "failed": "Couldn't assign the task."
+  },
+  "InviteMemberModal": {
+    "title": "Invite a team member",
+    "description": "Generate a link to share — valid for 7 days, the role is already set. If the person already has an account (for another establishment, for example), they'll simply be added to this one.",
+    "roleLabel": "Role",
+    "generate": "Generate link",
+    "generating": "Generating…",
+    "copy": "Copy link",
+    "hint": "Valid for 7 days. Share it through the channel of your choice (SMS, WhatsApp, etc.).",
+    "close": "Close",
+    "genericError": "Couldn't generate the link. Try again."
+  }
+}

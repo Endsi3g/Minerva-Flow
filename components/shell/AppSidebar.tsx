@@ -41,6 +41,7 @@ import {
   UtensilsCrossed,
   PackageSearch,
   ClipboardList,
+  UserCircle,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -89,6 +90,7 @@ const favorites = [
 const operationsItems: NavItem[] = [
   { href: "/reservations", label: "Réservations", icon: CalendarClock, roles: allRoles },
   { href: "/horaire", label: "Horaire", icon: CalendarDays, roles: allRoles },
+  { href: "/mon-espace", label: "Mon espace", icon: UserCircle, roles: allRoles },
   { href: "/fournisseurs", label: "Fournisseurs", icon: Truck, roles: ["owner", "manager"] },
   { href: "/inventaire", label: "Inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
   { href: "/commandes", label: "Commandes", icon: ClipboardList, roles: allRoles },
