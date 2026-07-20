@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { publishChangelogEntryAction } from "./actions";
 import type { ChangelogCategory, ChangelogEntry } from "@/lib/data/changelog";
-import { formatDateFull } from "@/lib/utils";
+import { formatDateFull, formatTime } from "@/lib/utils";
 import { Bell } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -77,7 +77,7 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
             <div className="mb-1 flex items-center justify-between gap-2">
               <Badge tone={categoryTone[entry.category]}>{t(`category.${entry.category}`)}</Badge>
               <span className="text-[11px] text-mv-ink-faint">
-                {formatDateFull(entry.publishedAt.slice(0, 10))}
+                {formatDateFull(entry.publishedAt.slice(0, 10))} · {formatTime(entry.publishedAt)}
               </span>
             </div>
             <p className="text-[13.5px] font-semibold text-mv-ink">{entry.title}</p>

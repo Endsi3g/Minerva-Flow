@@ -3,7 +3,7 @@ import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getChangelogEntries } from "@/lib/data/changelog";
-import { formatDateFull } from "@/lib/utils";
+import { formatDateFull, formatTime } from "@/lib/utils";
 import type { ChangelogCategory } from "@/lib/data/changelog";
 import { History } from "lucide-react";
 
@@ -39,7 +39,7 @@ export default async function ChangelogPage() {
               <div className="mb-1.5 flex items-center justify-between gap-2">
                 <Badge tone={categoryTone[entry.category]}>{categoryLabel[entry.category]}</Badge>
                 <span className="text-[11.5px] text-mv-ink-faint">
-                  {formatDateFull(entry.publishedAt.slice(0, 10))}
+                  {formatDateFull(entry.publishedAt.slice(0, 10))} · {formatTime(entry.publishedAt)}
                 </span>
               </div>
               <p className="font-display text-[16px] font-medium text-mv-ink">{entry.title}</p>
