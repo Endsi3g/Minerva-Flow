@@ -47,7 +47,7 @@ export function GoogleConnectModal({
       open={open}
       onClose={onClose}
       title="Connecter Google"
-      description="Choisissez les fonctionnalités à activer — Minerva Flow ne demande accès qu'à ce que vous cochez."
+      description="Choisissez les fonctionnalités à activer — Flow par Minerva ne demande accès qu'à ce que vous cochez."
       width={480}
     >
       <div className="space-y-4">

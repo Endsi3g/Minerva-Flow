@@ -28,7 +28,7 @@ export default async function SharedExpensePage({ params }: { params: Promise<{ 
         <div className="mb-8 flex items-center gap-2.5">
           <LogoMark size={28} />
           <span className="font-sans text-[16px] font-medium text-mv-ink">
-            Minerva <span className="text-mv-green-dark">Flow</span>
+            Flow <span className="text-mv-green-dark">par Minerva</span>
           </span>
         </div>
 
@@ -55,7 +55,7 @@ export default async function SharedExpensePage({ params }: { params: Promise<{ 
         </div>
 
         <p className="mt-8 text-[11.5px] text-mv-ink-faint">
-          Lien généré via Minerva Flow — mis à jour au moment de sa création, pas en temps réel.
+          Lien généré via Flow par Minerva — mis à jour au moment de sa création, pas en temps réel.
         </p>
       </div>
     </div>

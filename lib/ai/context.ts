@@ -69,7 +69,7 @@ export async function buildRestaurantDataSnapshot(restaurantId: string): Promise
     .map((p) => `- ${formatDate(p.date)} : ${formatCurrency(p.value)} (estimation)`)
     .join("\n");
 
-  return `Tu es l'assistant de Minerva Flow, le cockpit de revenus d'un restaurant. Voici l'état actuel des données du restaurant "${restaurant?.name ?? "—"}"${restaurant?.city ? ` (${restaurant.city})` : ""} :
+  return `Tu es l'assistant de Flow par Minerva, le cockpit de revenus d'un restaurant. Voici l'état actuel des données du restaurant "${restaurant?.name ?? "—"}"${restaurant?.city ? ` (${restaurant.city})` : ""} :
 
 KPIs (13 derniers mois) :
 - Revenu sur la période : ${formatCurrency(totalRevenue)}

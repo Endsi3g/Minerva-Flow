@@ -4,11 +4,12 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
-import { LogShiftForm, NewReviewForm, StarRating } from "../EmployeesView";
-import { setEmployeeActiveAction } from "../actions";
-import type { Employee, EmployeeReview, EmployeeShift } from "@/lib/types";
+import { LogShiftForm, NewReviewForm, NewTaskForm, StarRating } from "../EmployeesView";
+import { setEmployeeActiveAction, setEmployeeTaskStatusAction } from "../actions";
+import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask } from "@/lib/types";
 import { ArrowLeft, Phone, Mail, DollarSign, Calendar, Award, Printer, Clock } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -18,17 +19,20 @@ export function EmployeeDetailView({
   employee: initialEmployee,
   initialShifts,
   initialReviews,
+  initialTasks,
   restaurantId,
 }: {
   employee: Employee;
   initialShifts: EmployeeShift[];
   initialReviews: EmployeeReview[];
+  initialTasks: EmployeeTask[];
   restaurantId: string;
 }) {
   const { role } = useApp();
   const [employee, setEmployee] = useState(initialEmployee);
   const [shifts, setShifts] = useState(initialShifts);
   const [reviews, setReviews] = useState(initialReviews);
+  const [tasks, setTasks] = useState(initialTasks);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canManage = role === "owner" || role === "manager";
@@ -49,6 +53,16 @@ export function EmployeeDetailView({
       }
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleToggleTask(task: EmployeeTask, done: boolean) {
+    const nextStatus = done ? "fait" : "a_faire";
+    setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
+    const ok = await setEmployeeTaskStatusAction(restaurantId, task.id, nextStatus);
+    if (!ok) {
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: task.status } : t)));
+      toast.error("Impossible de mettre à jour la tâche.");
     }
   }
 
@@ -191,6 +205,49 @@ export function EmployeeDetailView({
                     employeeId={employee.id}
                     restaurantId={restaurantId}
                     onLogged={(s) => setShifts((prev) => [s, ...prev])}
+                  />
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Tasks Section */}
+          <Card>
+            <CardHeader eyebrow="Suivi" title="Tâches assignées" />
+            <div className="space-y-4">
+              <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                {tasks.length === 0 ? (
+                  <p className="text-[13px] text-mv-ink-faint py-2">Aucune tâche assignée pour l'instant.</p>
+                ) : (
+                  tasks.map((tk) => (
+                    <label
+                      key={tk.id}
+                      className="flex items-start gap-2.5 rounded-lg border border-mv-border-soft px-3 py-2 text-[13px]"
+                    >
+                      <Checkbox
+                        checked={tk.status === "fait"}
+                        onCheckedChange={(checked) => handleToggleTask(tk, Boolean(checked))}
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1">
+                        <p className={tk.status === "fait" ? "font-medium text-mv-ink-faint line-through" : "font-medium text-mv-ink"}>
+                          {tk.title}
+                        </p>
+                        {tk.description && <p className="text-[12px] text-mv-ink-soft">{tk.description}</p>}
+                      </div>
+                    </label>
+                  ))
+                )}
+              </div>
+
+              {canManage && (
+                <div className="border-t border-mv-border-soft pt-4">
+                  <h3 className="mb-3 text-[13px] font-bold text-mv-ink">Assigner une nouvelle tâche</h3>
+                  <NewTaskForm
+                    employeeId={employee.id}
+                    restaurantId={restaurantId}
+                    employeeName={employee.fullName}
+                    onCreated={(newTask) => setTasks((prev) => [newTask, ...prev])}
                   />
                 </div>
               )}

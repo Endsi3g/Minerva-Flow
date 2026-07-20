@@ -283,7 +283,7 @@ export function MenuOrderFlow({
         <div className="mb-6 flex items-center gap-2.5">
           <LogoMark size={26} />
           <span className="font-sans text-[15px] font-medium text-mv-ink">
-            Minerva <span className="text-mv-green-dark">Flow</span>
+            Flow <span className="text-mv-green-dark">par Minerva</span>
           </span>
         </div>
         <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">

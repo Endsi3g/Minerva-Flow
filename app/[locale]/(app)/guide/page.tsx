@@ -254,7 +254,7 @@ export default function GuidePage() {
       <PageHeader
         eyebrow="Paramètres"
         title="Guide de configuration"
-        description="Tout ce qu'il faut savoir pour configurer et utiliser Minerva Flow, du premier login aux situations du quotidien."
+        description="Tout ce qu'il faut savoir pour configurer et utiliser Flow par Minerva, du premier login aux situations du quotidien."
         action={
           <Button size="sm" variant="secondary" onClick={() => window.print()}>
             <Download size={14} /> Télécharger en PDF

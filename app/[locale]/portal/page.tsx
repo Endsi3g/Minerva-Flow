@@ -53,7 +53,7 @@ export default async function PortalPage({
           <div className="mb-8 flex items-center justify-center gap-2.5">
             <LogoMark size={28} />
             <span className="font-sans text-[16px] font-medium text-mv-ink">
-              Minerva <span className="text-mv-green-dark">Flow</span>
+              Flow <span className="text-mv-green-dark">par Minerva</span>
             </span>
           </div>
           <p className="mb-3 text-center text-[13px] text-mv-ink-soft">Choisissez un établissement</p>

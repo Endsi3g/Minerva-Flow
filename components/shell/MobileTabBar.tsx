@@ -23,6 +23,7 @@ import {
   History,
   Wallet,
   TrendingDown,
+  UserCircle,
 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useApp } from "@/lib/app-context";
@@ -57,6 +58,7 @@ const MORE_ITEMS: MoreItem[] = [
   { href: "/depenses", translationKey: "favDepenses", icon: TrendingDown, roles: ["owner", "manager"] },
   { href: "/reservations", translationKey: "reservations", icon: CalendarClock, roles: allRoles },
   { href: "/horaire", translationKey: "horaire", icon: CalendarDays, roles: allRoles },
+  { href: "/mon-espace", translationKey: "monEspace", icon: UserCircle, roles: allRoles },
   { href: "/fournisseurs", translationKey: "fournisseurs", icon: Truck, roles: ["owner", "manager"] },
   { href: "/collaborateurs", translationKey: "collaborateurs", icon: Users, roles: ["owner", "manager"] },
   { href: "/profil", translationKey: "profil", icon: User, roles: allRoles },

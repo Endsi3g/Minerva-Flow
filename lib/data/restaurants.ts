@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import { geocodeAddress } from "@/lib/geocode";
 import type { Restaurant } from "@/lib/types";
@@ -81,6 +82,58 @@ export async function getRestaurant(id: string): Promise<Restaurant | null> {
 
   if (error || !data) return null;
   return mapRestaurant(data as RestaurantRow);
+}
+
+/**
+ * Signup (email/password or OAuth) always provisions a default "Mon
+ * restaurant" via handle_new_user(), unless raw_user_meta_data carries an
+ * invite_token/workspace_invite_token flag — which only the email/password
+ * path can set (OAuth carries no custom metadata). So an employee invited
+ * via Google/Apple/Azure still ends up owning an empty default restaurant
+ * alongside the one(s) they just joined. Called from both redemption flows
+ * (lib/data/invites.ts and lib/data/workspace-invites.ts) as a safety net:
+ * only ever deletes a restaurant named exactly "Mon restaurant" where this
+ * user is the sole member and no business data exists on it yet.
+ */
+export async function deletePhantomDefaultRestaurant(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  excludeRestaurantIds: string[]
+): Promise<void> {
+  const { data: ownedMemberships } = await admin
+    .from("restaurant_members")
+    .select("restaurant_id")
+    .eq("user_id", userId)
+    .eq("role", "owner")
+    .not("restaurant_id", "in", `(${excludeRestaurantIds.join(",") || "00000000-0000-0000-0000-000000000000"})`);
+
+  for (const membership of ownedMemberships ?? []) {
+    const restaurantId = membership.restaurant_id as string;
+
+    const [{ data: restaurant }, { count: memberCount }] = await Promise.all([
+      admin.from("restaurants").select("id, name").eq("id", restaurantId).maybeSingle(),
+      admin
+        .from("restaurant_members")
+        .select("id", { count: "exact", head: true })
+        .eq("restaurant_id", restaurantId),
+    ]);
+    if (!restaurant || restaurant.name !== "Mon restaurant" || memberCount !== 1) continue;
+
+    const [menuItems, employees, customers, serviceDays] = await Promise.all([
+      admin.from("menu_items").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId),
+      admin.from("employees").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId),
+      admin.from("customers").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId),
+      admin.from("service_days").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId),
+    ]);
+    const isEmpty =
+      (menuItems.count ?? 0) === 0 &&
+      (employees.count ?? 0) === 0 &&
+      (customers.count ?? 0) === 0 &&
+      (serviceDays.count ?? 0) === 0;
+    if (!isEmpty) continue;
+
+    await admin.from("restaurants").delete().eq("id", restaurantId);
+  }
 }
 
 export type RestaurantInput = {

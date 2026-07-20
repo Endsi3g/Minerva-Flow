@@ -1,4 +1,5 @@
 import { getEmployeeById, getEmployeeShifts, getEmployeeReviews } from "@/lib/data/employees";
+import { getEmployeeTasks } from "@/lib/data/employee-tasks";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { EmployeeDetailView } from "./EmployeeDetailView";
 import { notFound } from "next/navigation";
@@ -15,10 +16,11 @@ export default async function EmployeeDetailPage({
     return <div className="p-6 text-mv-ink-soft">Aucun restaurant sélectionné.</div>;
   }
 
-  const [employee, shifts, reviews] = await Promise.all([
+  const [employee, shifts, reviews, tasks] = await Promise.all([
     getEmployeeById(employeeId),
     getEmployeeShifts(employeeId),
     getEmployeeReviews(employeeId),
+    getEmployeeTasks(employeeId),
   ]);
 
   if (!employee || employee.restaurantId !== restaurantId) {
@@ -30,6 +32,7 @@ export default async function EmployeeDetailPage({
       employee={employee}
       initialShifts={shifts}
       initialReviews={reviews}
+      initialTasks={tasks}
       restaurantId={restaurantId}
     />
   );

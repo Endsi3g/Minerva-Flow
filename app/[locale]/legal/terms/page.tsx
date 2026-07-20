@@ -8,7 +8,7 @@ export default function TermsPage() {
         <Link href="/" className="mb-8 flex items-center gap-2.5">
           <LogoMark size={26} />
           <span className="font-sans text-[15px] font-medium text-mv-ink">
-            Minerva <span className="text-mv-green-dark">Flow</span>
+            Flow <span className="text-mv-green-dark">par Minerva</span>
           </span>
         </Link>
 
@@ -27,7 +27,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 font-display text-[16px] font-medium text-mv-ink">1. Acceptation des conditions</h2>
             <p>
-              En créant un compte ou en utilisant Minerva Flow (« le Service »), vous acceptez d&apos;être lié par
+              En créant un compte ou en utilisant Flow par Minerva (« le Service »), vous acceptez d&apos;être lié par
               les présentes conditions d&apos;utilisation. Si vous n&apos;acceptez pas ces conditions, veuillez ne pas
               utiliser le Service.
             </p>
@@ -36,7 +36,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 font-display text-[16px] font-medium text-mv-ink">2. Description du service</h2>
             <p>
-              Minerva Flow est un outil de gestion destiné aux exploitants de restaurants et cafés, permettant de
+              Flow par Minerva est un outil de gestion destiné aux exploitants de restaurants et cafés, permettant de
               suivre les revenus, les journées de service, les campagnes marketing, l&apos;équipe et de générer des
               rapports et recommandations, y compris assistés par intelligence artificielle.
             </p>

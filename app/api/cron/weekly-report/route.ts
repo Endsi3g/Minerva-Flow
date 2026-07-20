@@ -174,10 +174,10 @@ export async function GET(req: Request) {
                 }${m.wowDelta.toFixed(1)}%</td></tr>`
             )
             .join("");
-          const html = `<div style="font-family:sans-serif;max-width:480px"><h2>Rapport hebdomadaire — semaine du ${formatDate(weekStart)}</h2><table style="border-collapse:collapse;width:100%">${rows}</table><p><a href="${origin}/reports">Voir le détail dans Minerva Flow</a></p></div>`;
+          const html = `<div style="font-family:sans-serif;max-width:480px"><h2>Rapport hebdomadaire — semaine du ${formatDate(weekStart)}</h2><table style="border-collapse:collapse;width:100%">${rows}</table><p><a href="${origin}/reports">Voir le détail dans Flow par Minerva</a></p></div>`;
           emailSent = await sendReportEmail(restaurantId, {
             to: connection.connectedEmail,
-            subject: `Minerva Flow — rapport de la semaine du ${formatDate(weekStart)}`,
+            subject: `Flow par Minerva — rapport de la semaine du ${formatDate(weekStart)}`,
             html,
           });
         }
