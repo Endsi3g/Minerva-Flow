@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import { geocodeAddress } from "@/lib/geocode";
+import { fetchWebsiteDescription } from "@/lib/website-description";
 import type { Restaurant } from "@/lib/types";
 
 type RestaurantRow = {
@@ -19,6 +20,8 @@ type RestaurantRow = {
   color: string | null;
   lng: number | null;
   lat: number | null;
+  website: string | null;
+  description: string | null;
   workspace_id: string | null;
   loyalty_points_per_dollar: number;
   tax_rate: number;
@@ -40,6 +43,8 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     color: row.color ?? "var(--mv-green)",
     lng: row.lng,
     lat: row.lat,
+    website: row.website,
+    description: row.description,
     workspaceId: row.workspace_id,
     loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
     taxRate: row.tax_rate ?? 0.14975,
@@ -143,6 +148,8 @@ export type RestaurantInput = {
   province?: string;
   timezone?: string;
   color?: string;
+  website?: string;
+  description?: string;
   loyaltyPointsPerDollar?: number;
   taxRate?: number;
   acceptsTips?: boolean;
@@ -163,6 +170,12 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
   if (!user || !input.name.trim()) return null;
 
   const coords = input.address && input.city ? await geocodeAddress(input.address, input.city, input.province) : null;
+
+  // Pre-fill the description from the establishment's own website when one
+  // is given and the caller didn't already type one — never overwrites an
+  // explicit value.
+  const description =
+    input.description || (input.website ? await fetchWebsiteDescription(input.website) : null);
 
   // A new establishment joins the creator's CURRENT workspace context
   // automatically (the restaurant they had selected when clicking "add
@@ -197,6 +210,8 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
       color: input.color || undefined,
       lng: coords?.lng ?? null,
       lat: coords?.lat ?? null,
+      website: input.website || null,
+      description: description || null,
       workspace_id: workspaceId,
     })
     .select("*")
@@ -237,6 +252,8 @@ export async function updateRestaurant(
   if (patch.province !== undefined) dbPatch.province = patch.province;
   if (patch.timezone !== undefined) dbPatch.timezone = patch.timezone;
   if (patch.color !== undefined) dbPatch.color = patch.color;
+  if (patch.website !== undefined) dbPatch.website = patch.website || null;
+  if (patch.description !== undefined) dbPatch.description = patch.description || null;
   if (patch.loyaltyPointsPerDollar !== undefined) dbPatch.loyalty_points_per_dollar = patch.loyaltyPointsPerDollar;
   if (patch.taxRate !== undefined) dbPatch.tax_rate = patch.taxRate;
   if (patch.acceptsTips !== undefined) dbPatch.accepts_tips = patch.acceptsTips;
@@ -249,6 +266,16 @@ export async function updateRestaurant(
       dbPatch.lng = coords.lng;
       dbPatch.lat = coords.lat;
     }
+  }
+
+  // Auto-fill the description from the website whenever a website is
+  // present and the description field is empty — callers always resubmit
+  // the whole form (not a partial diff), so gating on "empty" rather than
+  // "was this key present" is what actually distinguishes "user hasn't
+  // written one yet" from "user explicitly cleared/edited it".
+  if (patch.website && !patch.description) {
+    const fetched = await fetchWebsiteDescription(patch.website);
+    if (fetched) dbPatch.description = fetched;
   }
 
   const { data, error } = await supabase

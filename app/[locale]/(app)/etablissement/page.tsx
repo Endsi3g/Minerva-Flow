@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Field, Input } from "@/components/minerva/FormField";
+import { Field, Input, Textarea } from "@/components/minerva/FormField";
 import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import {
   createRestaurantAction,
@@ -15,7 +15,15 @@ import { Plus, MapPin, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-type RestaurantFormValues = { name: string; address: string; city: string; timezone: string; color: string };
+type RestaurantFormValues = {
+  name: string;
+  address: string;
+  city: string;
+  timezone: string;
+  color: string;
+  website: string;
+  description: string;
+};
 
 const emptyForm: RestaurantFormValues = {
   name: "",
@@ -23,6 +31,8 @@ const emptyForm: RestaurantFormValues = {
   city: "",
   timezone: "America/Montreal",
   color: "#167f5b",
+  website: "",
+  description: "",
 };
 
 function RestaurantFormFields({
@@ -68,6 +78,21 @@ function RestaurantFormFields({
           placeholder="Ex : America/Montreal"
         />
       </Field>
+      <Field label="Site web" hint="La description ci-dessous se pré-remplit automatiquement depuis ce site quand vous enregistrez.">
+        <Input
+          value={values.website}
+          onChange={(e) => onChange({ website: e.target.value })}
+          placeholder="Ex : minerva-restaurant.com"
+        />
+      </Field>
+      <Field label="Description" hint="Optionnel — modifiable même après la pré-remplissage automatique">
+        <Textarea
+          value={values.description}
+          onChange={(e) => onChange({ description: e.target.value })}
+          rows={3}
+          placeholder="Ex : Cuisine bistro de quartier, produits locaux, terrasse l'été."
+        />
+      </Field>
     </div>
   );
 }
@@ -85,6 +110,8 @@ function EstablishmentIdentityCard() {
       city: restaurant.city ?? "",
       timezone: restaurant.timezone,
       color: restaurant.color,
+      website: restaurant.website ?? "",
+      description: restaurant.description ?? "",
     });
   }, [restaurant?.id]);
 
@@ -94,6 +121,10 @@ function EstablishmentIdentityCard() {
     const updated = await updateRestaurantAction(restaurant.id, form);
     setSaving(false);
     if (updated) {
+      // Reflects server-computed fields immediately — the description may
+      // have just been auto-filled from the website, which the submitted
+      // form itself wouldn't know about.
+      setForm((f) => ({ ...f, description: updated.description ?? "" }));
       toast.success("Établissement mis à jour.");
     } else {
       toast.error("La mise à jour a échoué.");
@@ -133,7 +164,15 @@ function OtherEstablishments() {
 
   function openEdit(r: Restaurant) {
     setEditing(r);
-    setForm({ name: r.name, address: r.address ?? "", city: r.city ?? "", timezone: r.timezone, color: r.color });
+    setForm({
+      name: r.name,
+      address: r.address ?? "",
+      city: r.city ?? "",
+      timezone: r.timezone,
+      color: r.color,
+      website: r.website ?? "",
+      description: r.description ?? "",
+    });
   }
 
   async function handleCreate() {

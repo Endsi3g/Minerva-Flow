@@ -166,16 +166,16 @@ function GlobalStatsCard({
   );
 }
 
-/** Flies to the current restaurant's pin once, the first time it becomes available (backfilled or not). */
-function FlyToRestaurant({ lng, lat }: { lng: number; lat: number }) {
+/** Flies to a restaurant's pin whenever the selection changes (list click, marker click, or a coordinate backfill resolving for the first time). */
+function FlyToRestaurant({ id, lng, lat }: { id: string; lng: number; lat: number }) {
   const { map } = useMap();
-  const flown = useRef(false);
+  const lastFlownId = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!map || flown.current) return;
-    flown.current = true;
-    map.flyTo({ center: [lng, lat], zoom: 14 });
-  }, [map, lng, lat]);
+    if (!map || lastFlownId.current === id) return;
+    lastFlownId.current = id;
+    map.flyTo({ center: [lng, lat], zoom: 14, duration: 1500 });
+  }, [map, id, lng, lat]);
 
   return null;
 }
@@ -227,7 +227,7 @@ function EstablishmentsMode() {
         theme="light"
       >
         <MapControls position="bottom-right" showZoom showFullscreen />
-        {current && <FlyToRestaurant lng={current.lng} lat={current.lat} />}
+        {current && <FlyToRestaurant id={current.id} lng={current.lng} lat={current.lat} />}
         {geoRestaurants.map((r) => {
           const stats = revenueByRestaurant[r.id] ?? { revenue: 0, delta: 0 };
           const active = r.id === restaurantId;

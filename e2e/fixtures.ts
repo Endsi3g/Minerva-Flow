@@ -61,11 +61,23 @@ export async function cleanupTestUser(userId: string, attempts = 3): Promise<voi
   console.warn(`cleanupTestUser: could not delete ${userId} after ${attempts} attempts.`);
 }
 
-/** Logs in through the real form and waits for the post-login redirect. */
+/**
+ * Logs in through the real form and waits for the post-login redirect.
+ * AuthCard's inputs are React-controlled — a fill() that lands before the
+ * client bundle hydrates gets silently reset back to "" once React attaches
+ * (see onboarding.spec.ts for the full explanation). Re-checking and
+ * re-filling right before submit is a race-proof guard regardless of
+ * exactly when hydration finishes.
+ */
 export async function loginAs(page: Page, user: Pick<TestUser, "email" | "password">): Promise<void> {
   await page.goto("/login");
-  await page.fill('input[type="email"]', user.email);
-  await page.fill('input[type="password"]', user.password);
+  const emailInput = page.locator('input[type="email"]');
+  const passwordInput = page.locator('input[type="password"]');
+  await emailInput.fill(user.email);
+  await passwordInput.fill(user.password);
+  await page.waitForTimeout(300);
+  if ((await emailInput.inputValue()) !== user.email) await emailInput.fill(user.email);
+  if ((await passwordInput.inputValue()) !== user.password) await passwordInput.fill(user.password);
   await page.click('button[type="submit"]');
   await page.waitForURL(/overview/, { timeout: 15000 });
 }
