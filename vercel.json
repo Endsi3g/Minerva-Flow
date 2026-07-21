@@ -11,10 +11,6 @@
     {
       "path": "/api/cron/sync-pos",
       "schedule": "15 6 * * *"
-    },
-    {
-      "path": "/api/cron/check-late-shifts",
-      "schedule": "*/15 * * * *"
     }
   ]
 }
