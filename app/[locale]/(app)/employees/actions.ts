@@ -19,8 +19,9 @@ import {
   setEmployeeTaskStatus,
   type EmployeeTaskInput,
 } from "@/lib/data/employee-tasks";
-import { createEmployeeInviteLink, type RestaurantInvite } from "@/lib/data/invites";
+import { createEmployeeInviteLink, type WorkspaceInvite } from "@/lib/data/workspace-invites";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
+import { getCurrentWorkspaceMembership } from "@/lib/data/current-workspace";
 import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask, EmployeeTaskStatus, Role } from "@/lib/types";
 
 async function requireManager(restaurantId: string): Promise<boolean> {
@@ -138,9 +139,12 @@ export async function createEmployeeInviteLinkAction(
   restaurantId: string,
   employeeId: string,
   role: Role
-): Promise<RestaurantInvite | null> {
+): Promise<WorkspaceInvite | null> {
   if (!restaurantId || !employeeId) return null;
   if (!(await requireManager(restaurantId))) return null;
 
-  return createEmployeeInviteLink(restaurantId, employeeId, role);
+  const membership = await getCurrentWorkspaceMembership();
+  if (!membership) return null;
+
+  return createEmployeeInviteLink(membership.workspaceId, restaurantId, employeeId, role);
 }

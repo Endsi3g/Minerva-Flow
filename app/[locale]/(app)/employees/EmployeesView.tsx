@@ -262,7 +262,7 @@ export function InviteEmployeeModal({
         setError("Impossible de générer le lien. Réessayez.");
         return;
       }
-      setLink(`${window.location.origin}/invite/${invite.token}`);
+      setLink(`${window.location.origin}/invite/w/${invite.token}`);
     });
   }
 

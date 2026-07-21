@@ -9,15 +9,16 @@ import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { Select } from "@/components/minerva/FormField";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { InviteMemberModal } from "@/components/forms/InviteMemberModal";
+import { InviteWorkspaceMemberModal } from "@/components/forms/InviteWorkspaceMemberModal";
 import { MemberDetailModal } from "./MemberDetailModal";
-import { updateMemberRoleAction, removeMemberAction, listInvitesAction } from "./actions";
+import { updateMemberRoleAction, removeMemberAction } from "./actions";
+import { listWorkspaceInvitesAction } from "../workspace/actions";
 import { useApp, roleLabels } from "@/lib/app-context";
 import { useTeamPresence } from "@/hooks/use-team-presence";
 import { formatRelativeTime } from "@/lib/utils";
 import posthog from "posthog-js";
-import type { InviteListEntry } from "@/lib/data/invites";
-import type { Role, TeamMember } from "@/lib/types";
+import type { WorkspaceInviteListEntry } from "@/lib/data/workspace-invites";
+import type { Restaurant, Role, TeamMember } from "@/lib/types";
 import { Plus, Users, Trash2, ChevronRight, Mail } from "lucide-react";
 import Link from "next/link";
 
@@ -31,9 +32,13 @@ const roleTone: Record<Role, "green" | "lime" | "amber"> = {
 export function CollaborateursView({
   restaurantId,
   members,
+  workspaceId,
+  restaurants,
 }: {
   restaurantId: string | null;
   members: TeamMember[];
+  workspaceId: string | null;
+  restaurants: Restaurant[];
 }) {
   const { role, authUser } = useApp();
   const router = useRouter();
@@ -43,16 +48,18 @@ export function CollaborateursView({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [selected, setSelected] = useState<TeamMember | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
-  const [invites, setInvites] = useState<InviteListEntry[]>([]);
+  const [invites, setInvites] = useState<WorkspaceInviteListEntry[]>([]);
 
-  const canManage = Boolean(restaurantId) && (role === "owner" || role === "manager");
+  const canManage = Boolean(restaurantId) && Boolean(workspaceId) && (role === "owner" || role === "manager");
 
   function refreshInvites() {
-    if (!restaurantId || !canManage) return;
-    listInvitesAction(restaurantId).then(setInvites);
+    if (!restaurantId || !workspaceId || !canManage) return;
+    listWorkspaceInvitesAction(workspaceId).then((all) =>
+      setInvites(all.filter((invite) => invite.restaurantIds.includes(restaurantId)))
+    );
   }
 
-  useEffect(refreshInvites, [restaurantId, canManage]);
+  useEffect(refreshInvites, [restaurantId, workspaceId, canManage]);
 
   function handleRoleChange(member: TeamMember, next: Role) {
     if (!restaurantId || !member.membershipId) return;
@@ -222,9 +229,10 @@ export function CollaborateursView({
         </div>
       )}
 
-      {restaurantId && (
-        <InviteMemberModal
-          restaurantId={restaurantId}
+      {workspaceId && (
+        <InviteWorkspaceMemberModal
+          workspaceId={workspaceId}
+          restaurants={restaurants}
           open={inviteOpen}
           onClose={() => {
             setInviteOpen(false);
