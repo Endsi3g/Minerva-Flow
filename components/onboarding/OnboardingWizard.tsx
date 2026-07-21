@@ -85,8 +85,12 @@ export function OnboardingWizard({
       }
       await setMyRoleAction(restaurantId, role);
       await finishOnboardingAction();
+      // router.refresh() right after push() races the push's own RSC fetch
+      // for the destination route and can leave the transition hanging
+      // indefinitely (observed in dev mode after several sequential awaited
+      // Server Actions) — push() already fetches fresh data for /overview,
+      // which hasn't been visited yet this session, so refresh() is redundant.
       router.push("/overview");
-      router.refresh();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Une erreur est survenue.");
       setSubmitting(false);
