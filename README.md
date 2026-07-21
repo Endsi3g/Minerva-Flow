@@ -18,12 +18,13 @@ Flow par Minerva centralise le pilotage quotidien d'un restaurant ou café dans 
 - **Portail client** (`/portal`) — vos clients se connectent sans mot de passe (lien magique) pour voir leurs points et partager leur lien de parrainage, sans accès au reste de l'application.
 - **Ingénierie de menu** — classification automatique des plats (étoiles, chevaux de bataille, énigmes, poids morts) selon marge et popularité.
 - **Inventaire et gaspillage** — quantités en main, seuils de réapprovisionnement, coût du gaspillage répercuté automatiquement dans les dépenses.
-- **Fournisseurs** — répertoire, commandes, suivi de livraison (trajet et ETA), réception liée à l'inventaire.
+- **Fournisseurs** — répertoire, commandes (brouillon → envoyée → reçue), suivi de livraison (trajet et ETA), réception liée à l'inventaire.
 - **Réservations** — gestion des tables en interne, et demandes de réservation publiques via un lien de parrainage.
-- **Équipe** — horaire, employés, quarts, évaluations de performance, rôles et permissions (propriétaire/gérant/employé/consultant).
+- **Équipe** — invitations unifiées (collaborateurs et employés) avec envoi automatique par courriel, horaire, quarts, évaluations de performance, rôles et permissions (propriétaire/gérant/employé/consultant), espace personnel employé (`/mon-espace`).
+- **Établissements** — recherche Google Places pour importer automatiquement adresse/coordonnées/téléphone/horaires, ou extraction automatique depuis le site web de l'établissement (description, coordonnées, horaires).
 - **Rapports et revue IA** — métriques hebdomadaires automatiques et à la demande, générées par IA à partir des chiffres réels (revenu, marge, menu, gaspillage).
-- **Cartes** — établissements, attribution publicitaire, trajets de livraison.
-- **Intégrations** — Google (Ads, Workspace, Calendar), Meta Ads, Square, avec un guide de connexion intégré.
+- **Cartes** — établissements (avec effet de survol animé à la sélection), attribution publicitaire, trajets de livraison.
+- **Intégrations** — Google (Places, Ads, Workspace, Calendar), Meta Ads, Square, Resend (courriels transactionnels), avec un guide de connexion intégré.
 - Interface web progressive (PWA), accessible depuis n'importe quel navigateur ou installable comme application.
 
 ---
@@ -119,13 +120,18 @@ Ces ressources peuvent être utilisées pour documenter, prototyper ou automatis
 
 ## 8. État du projet et roadmap
 
-Flow par Minerva est en développement actif et déjà utilisé en production. Les modules listés en section 2 (finance, fidélisation, menu, inventaire, portail client, rapports IA) sont fonctionnels.
+Flow par Minerva est en développement actif et déjà utilisé en production. Les modules listés en section 2 (finance, fidélisation, menu, inventaire, portail client, rapports IA) sont fonctionnels, couverts par une suite de tests automatisés (Vitest pour la logique métier, Playwright pour les parcours critiques) qui tourne en continu.
 
 Prochaines étapes envisagées :
 
 - Commande en ligne complète depuis le menu partagé : image sur les plats, lien public, prix avec taxes, pourboire, et routage direct de la commande vers l'application (sans paiement par carte réel dans un premier temps).
 - Paiement par carte intégré (Stripe), une fois la commande en ligne en place.
 - Intégrations de réservation tierces (OpenTable, Resy) et suivi Uber Direct/Eats, sous réserve d'un partenariat d'affaires actif avec ces plateformes.
+- Partage par lien/QR pour les programmes de fidélisation (comme le partage de menu existant).
+- Suivi de commande fournisseur étendu (statuts intermédiaires, détection des retards de livraison).
+- Espace employé enrichi : pointage, regroupement des heures par période de paie, notifications de retard.
+- Import automatique de menu existant (PDF ou site web de l'établissement).
+- Flow de démonstration à l'onboarding avec offre d'essai gratuit.
 
 ---
 
