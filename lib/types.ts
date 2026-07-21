@@ -51,6 +51,8 @@ export type EmployeeShift = {
   hoursWorked: number;
   wasLate: boolean;
   notes: string | null;
+  clockIn: string | null;
+  clockOut: string | null;
   createdAt: string;
 };
 
