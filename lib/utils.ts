@@ -62,16 +62,27 @@ export function isoDaysAgo(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Parsed at UTC noon rather than local midnight: these formatters always
+// render in the fixed DEFAULT_TIMEZONE regardless of where the process
+// itself runs (Vercel functions, CI, a dev machine — any timezone), so
+// parsing must be equally timezone-independent. Local-midnight parsing
+// would shift the displayed day whenever the process's timezone differs
+// from DEFAULT_TIMEZONE (e.g. a UTC server showing the previous evening
+// in Montreal time for a date meant to mean "this calendar day").
+function parseCalendarDate(iso: string) {
+  return new Date(iso + "T12:00:00Z");
+}
+
 export function formatDate(iso: string) {
-  return dateFormatter.format(new Date(iso + "T00:00:00"));
+  return dateFormatter.format(parseCalendarDate(iso));
 }
 
 export function formatDateFull(iso: string) {
-  return dateFullFormatter.format(new Date(iso + "T00:00:00"));
+  return dateFullFormatter.format(parseCalendarDate(iso));
 }
 
 export function formatDateWeekday(iso: string) {
-  const s = dateWeekdayFormatter.format(new Date(iso + "T00:00:00"));
+  const s = dateWeekdayFormatter.format(parseCalendarDate(iso));
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
