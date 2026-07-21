@@ -20,7 +20,7 @@ Flow par Minerva centralise le pilotage quotidien d'un restaurant ou café dans 
 - **Inventaire et gaspillage** — quantités en main, seuils de réapprovisionnement, coût du gaspillage répercuté automatiquement dans les dépenses.
 - **Fournisseurs** — répertoire, commandes (brouillon → envoyée → reçue), suivi de livraison (trajet et ETA), réception liée à l'inventaire.
 - **Réservations** — gestion des tables en interne, et demandes de réservation publiques via un lien de parrainage.
-- **Équipe** — invitations unifiées (collaborateurs et employés) avec envoi automatique par courriel, horaire, quarts, évaluations de performance, rôles et permissions (propriétaire/gérant/employé/consultant), espace personnel employé (`/mon-espace`).
+- **Équipe** — invitations unifiées (collaborateurs et employés) avec envoi automatique par courriel, horaire, quarts, évaluations de performance, rôles et permissions (propriétaire/gérant/employé/consultant), espace personnel employé (`/mon-espace`) avec pointage (arrivée/départ, en libre-service ou par un gérant), suivi des heures et de la paie par période (semaine, aux deux semaines, mois), et notifications de retard ou d'absence à un quart prévu.
 - **Établissements** — recherche Google Places pour importer automatiquement adresse/coordonnées/téléphone/horaires, ou extraction automatique depuis le site web de l'établissement (description, coordonnées, horaires).
 - **Rapports et revue IA** — métriques hebdomadaires automatiques et à la demande, générées par IA à partir des chiffres réels (revenu, marge, menu, gaspillage).
 - **Cartes** — établissements (avec effet de survol animé à la sélection), attribution publicitaire, trajets de livraison.
@@ -129,7 +129,6 @@ Prochaines étapes envisagées :
 - Intégrations de réservation tierces (OpenTable, Resy) et suivi Uber Direct/Eats, sous réserve d'un partenariat d'affaires actif avec ces plateformes.
 - Partage par lien/QR pour les programmes de fidélisation (comme le partage de menu existant).
 - Suivi de commande fournisseur étendu (statuts intermédiaires, détection des retards de livraison).
-- Espace employé enrichi : pointage, regroupement des heures par période de paie, notifications de retard.
 - Import automatique de menu existant (PDF ou site web de l'établissement).
 - Flow de démonstration à l'onboarding avec offre d'essai gratuit.
 

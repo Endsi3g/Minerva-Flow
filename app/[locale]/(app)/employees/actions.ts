@@ -9,10 +9,16 @@ import {
   getEmployeeShifts,
   createEmployeeReview,
   getEmployeeReviews,
+  clockIn,
+  clockOut,
+  getPayPeriodRange,
+  getEmployeePaySummary,
   type EmployeeInput,
   type EmployeeUpdateInput,
   type EmployeeShiftInput,
   type EmployeeReviewInput,
+  type PayPeriod,
+  type EmployeePaySummary,
 } from "@/lib/data/employees";
 import {
   createEmployeeTask,
@@ -133,6 +139,47 @@ export async function setEmployeeTaskStatusAction(
     revalidatePath("/mon-espace");
   }
   return ok;
+}
+
+/**
+ * Manager-on-behalf-of clock-in/out — for employees with no linked_user_id
+ * (no login account), who can't use the self-service path on /mon-espace.
+ * Reuses the exact same data-layer functions as self-service; RLS allows
+ * this because the manager gate below passes an owner/manager-authenticated
+ * client through to a table where owner/manager already has full insert/
+ * update rights (employee_shifts_manage_insert/employee_shifts_manage_update).
+ */
+export async function clockInEmployeeAction(restaurantId: string, employeeId: string): Promise<EmployeeShift | null> {
+  if (!restaurantId || !employeeId) return null;
+  if (!(await requireManager(restaurantId))) return null;
+
+  const shift = await clockIn(employeeId, restaurantId);
+  if (shift) revalidatePath("/employees");
+  return shift;
+}
+
+export async function clockOutEmployeeAction(restaurantId: string, shiftId: string): Promise<EmployeeShift | null> {
+  if (!restaurantId || !shiftId) return null;
+  if (!(await requireManager(restaurantId))) return null;
+
+  const shift = await clockOut(shiftId, restaurantId);
+  if (shift) {
+    revalidatePath("/employees");
+    revalidatePath("/finance");
+  }
+  return shift;
+}
+
+export async function getEmployeePaySummaryAction(
+  restaurantId: string,
+  employeeId: string,
+  period: PayPeriod
+): Promise<EmployeePaySummary | null> {
+  if (!restaurantId || !employeeId) return null;
+  if (!(await requireManager(restaurantId))) return null;
+
+  const { start, end } = getPayPeriodRange(period);
+  return getEmployeePaySummary(employeeId, start, end);
 }
 
 export async function createEmployeeInviteLinkAction(

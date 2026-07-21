@@ -3,30 +3,142 @@
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select } from "@/components/minerva/FormField";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StarRating } from "../employees/EmployeesView";
 import { setEmployeeTaskStatusAction } from "../employees/actions";
-import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask } from "@/lib/types";
-import { Clock, Award, Printer } from "lucide-react";
+import { clockInAction, clockOutAction, getMyPaySummaryAction } from "./actions";
+import type {
+  Employee,
+  EmployeeReview,
+  EmployeeShift,
+  EmployeeTask,
+  ShiftSchedule,
+} from "@/lib/types";
+import type { EmployeePaySummary, PayPeriod } from "@/lib/data/employees";
+import { Clock, Award, Printer, LogIn, LogOut, CalendarClock } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
+const PERIOD_LABELS: Record<PayPeriod, string> = {
+  week: "Cette semaine",
+  biweekly: "2 dernières semaines",
+  month: "Ce mois-ci",
+};
+
+function ClockInOutCard({ shifts, onShiftsChange }: { shifts: EmployeeShift[]; onShiftsChange: (s: EmployeeShift[]) => void }) {
+  const openShift = shifts.find((s) => s.clockIn && !s.clockOut) ?? null;
+  const [pending, setPending] = useState(false);
+
+  async function handleClockIn() {
+    setPending(true);
+    const shift = await clockInAction();
+    setPending(false);
+    if (shift) {
+      onShiftsChange([shift, ...shifts]);
+      toast.success("Quart commencé.");
+    } else {
+      toast.error("Impossible de pointer. Vous avez peut-être déjà un quart en cours.");
+    }
+  }
+
+  async function handleClockOut() {
+    if (!openShift) return;
+    setPending(true);
+    const updated = await clockOutAction(openShift.id);
+    setPending(false);
+    if (updated) {
+      onShiftsChange(shifts.map((s) => (s.id === updated.id ? updated : s)));
+      toast.success(`Quart terminé — ${updated.hoursWorked.toFixed(2)} heures.`);
+    } else {
+      toast.error("Impossible de terminer le quart.");
+    }
+  }
+
+  return (
+    <Card className="mb-6 flex items-center justify-between gap-3">
+      <div>
+        <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Pointage</p>
+        <p className="mt-0.5 font-display text-[16px] font-medium text-mv-ink">
+          {openShift
+            ? `En quart depuis ${new Date(openShift.clockIn!).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}`
+            : "Aucun quart en cours"}
+        </p>
+      </div>
+      {openShift ? (
+        <Button onClick={handleClockOut} disabled={pending} variant="secondary">
+          <LogOut data-icon="inline-start" /> Terminer mon quart
+        </Button>
+      ) : (
+        <Button onClick={handleClockIn} disabled={pending}>
+          <LogIn data-icon="inline-start" /> Pointer
+        </Button>
+      )}
+    </Card>
+  );
+}
+
+function PaySummaryCard({ initialSummary }: { initialSummary: EmployeePaySummary | null }) {
+  const [period, setPeriod] = useState<PayPeriod>("week");
+  const [summary, setSummary] = useState<EmployeePaySummary | null>(initialSummary);
+  const [loading, setLoading] = useState(false);
+
+  async function handlePeriodChange(next: PayPeriod) {
+    setPeriod(next);
+    setLoading(true);
+    const result = await getMyPaySummaryAction(next);
+    setSummary(result);
+    setLoading(false);
+  }
+
+  return (
+    <Card className="text-center">
+      <div className="mb-2 flex items-center justify-center gap-2">
+        <Clock size={16} className="text-mv-ink-soft" />
+        <Select
+          value={period}
+          onChange={(e) => handlePeriodChange(e.target.value as PayPeriod)}
+          className="h-7 w-auto border-0 bg-transparent px-1 text-[11px] font-semibold uppercase text-mv-ink-faint"
+        >
+          {(Object.keys(PERIOD_LABELS) as PayPeriod[]).map((p) => (
+            <option key={p} value={p}>
+              {PERIOD_LABELS[p]}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <p className="font-display text-[20px] font-medium text-mv-ink">
+        {loading ? "…" : summary ? `${summary.hours.toFixed(1)}h` : "—"}
+      </p>
+      {summary?.grossPay != null && (
+        <p className="mt-0.5 text-[12.5px] font-medium text-mv-green-dark">{formatCurrency(summary.grossPay)}</p>
+      )}
+    </Card>
+  );
+}
+
 export function MonEspaceView({
   employee,
-  shifts,
+  shifts: initialShifts,
   reviews,
   tasks: initialTasks,
+  upcomingShifts,
+  paySummary: initialPaySummary,
   restaurantId,
 }: {
   employee: Employee | null;
   shifts: EmployeeShift[];
   reviews: EmployeeReview[];
   tasks: EmployeeTask[];
+  upcomingShifts: ShiftSchedule[];
+  paySummary: EmployeePaySummary | null;
   restaurantId: string;
 }) {
   const [tasks, setTasks] = useState(initialTasks);
+  const [shifts, setShifts] = useState(initialShifts);
 
   async function handleToggleTask(task: EmployeeTask, done: boolean) {
     const nextStatus = done ? "fait" : "a_faire";
@@ -56,7 +168,6 @@ export function MonEspaceView({
     );
   }
 
-  const totalHours = shifts.reduce((sum, s) => sum + s.hoursWorked, 0);
   const lateCount = shifts.filter((s) => s.wasLate).length;
   const punctuality = shifts.length > 0 ? Math.round(((shifts.length - lateCount) / shifts.length) * 100) : null;
 
@@ -68,12 +179,10 @@ export function MonEspaceView({
         description={`${employee.roleTitle} · Vos quarts de travail et vos revues de performance`}
       />
 
+      <ClockInOutCard shifts={shifts} onShiftsChange={setShifts} />
+
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <Card className="text-center">
-          <Clock size={20} className="mx-auto mb-1 text-mv-ink-soft" />
-          <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Heures (total)</p>
-          <p className="mt-0.5 font-display text-[20px] font-medium text-mv-ink">{totalHours.toFixed(1)}h</p>
-        </Card>
+        <PaySummaryCard initialSummary={initialPaySummary} />
         <Card className="text-center">
           <Award size={20} className="mx-auto mb-1 text-mv-green-dark" />
           <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Ponctualité</p>
@@ -84,6 +193,29 @@ export function MonEspaceView({
       </div>
 
       <div className="space-y-6">
+        {upcomingShifts.length > 0 && (
+          <Card>
+            <CardHeader eyebrow="Horaire" title="Mes prochains quarts" />
+            <div className="space-y-2">
+              {upcomingShifts.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2 text-[13px]"
+                >
+                  <span className="flex items-center gap-2 font-medium text-mv-ink">
+                    <CalendarClock size={14} className="text-mv-ink-faint" />
+                    {formatDate(s.shiftDate)}
+                  </span>
+                  <span className="text-mv-ink-soft">
+                    {s.startTime.slice(0, 5)} – {s.endTime.slice(0, 5)}
+                    {s.positionLabel ? ` · ${s.positionLabel}` : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         <Card>
           <CardHeader eyebrow="Suivi" title="Mes tâches" />
           <div className="space-y-2">

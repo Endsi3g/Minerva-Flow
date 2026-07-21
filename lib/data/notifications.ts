@@ -237,6 +237,31 @@ export async function notifyRestaurantOwners(input: {
 }
 
 /**
+ * Notifies a single specific user — e.g. an employee clocking in late, or
+ * the owner being told a specific employee clocked in. A thin wrapper
+ * around broadcastNotification, same shape as every other notifyX helper
+ * here, for the (surprisingly rare so far) case where the target is one
+ * exact userId rather than a role-derived list.
+ */
+export async function notifyUser(input: {
+  restaurantId: string;
+  userId: string;
+  type: string;
+  title: string;
+  body?: string;
+  link?: string;
+}): Promise<void> {
+  await broadcastNotification({
+    restaurantId: input.restaurantId,
+    userIds: [input.userId],
+    type: input.type,
+    title: input.title,
+    body: input.body,
+    link: input.link,
+  });
+}
+
+/**
  * Notifies owners and managers only — used for app-error surfacing
  * (lib/notify-error.ts) so the people who'd act on a recurring failure see
  * it without paging every staff member for every failed click.

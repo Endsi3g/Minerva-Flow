@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
-import { InviteEmployeeModal, LogShiftForm, NewReviewForm, NewTaskForm, StarRating } from "../EmployeesView";
-import { setEmployeeActiveAction, setEmployeeTaskStatusAction } from "../actions";
+import { InviteEmployeeModal, LogShiftForm, NewReviewForm, NewTaskForm, StarRating, PaySummaryInline } from "../EmployeesView";
+import { setEmployeeActiveAction, setEmployeeTaskStatusAction, clockInEmployeeAction, clockOutEmployeeAction } from "../actions";
 import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask } from "@/lib/types";
-import { ArrowLeft, Phone, Mail, DollarSign, Calendar, Award, Printer, Clock, KeyRound, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Phone, Mail, DollarSign, Calendar, Award, Printer, Clock, KeyRound, CheckCircle2, LogIn, LogOut } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -40,11 +40,38 @@ export function EmployeeDetailView({
   const [tasks, setTasks] = useState(initialTasks);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [clockPending, setClockPending] = useState(false);
 
   const canManage = role === "owner" || role === "manager";
   const totalHours = shifts.reduce((sum, s) => sum + s.hoursWorked, 0);
   const lateCount = shifts.filter((s) => s.wasLate).length;
   const punctuality = shifts.length > 0 ? Math.round(((shifts.length - lateCount) / shifts.length) * 100) : null;
+  const openShift = shifts.find((s) => s.clockIn && !s.clockOut) ?? null;
+
+  async function handleManagerClockIn() {
+    setClockPending(true);
+    const shift = await clockInEmployeeAction(restaurantId, employee.id);
+    setClockPending(false);
+    if (shift) {
+      setShifts((prev) => [shift, ...prev]);
+      toast.success(`${employee.fullName} a été pointé·e.`);
+    } else {
+      toast.error("Impossible de pointer.");
+    }
+  }
+
+  async function handleManagerClockOut() {
+    if (!openShift) return;
+    setClockPending(true);
+    const updated = await clockOutEmployeeAction(restaurantId, openShift.id);
+    setClockPending(false);
+    if (updated) {
+      setShifts((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+      toast.success(`Quart de ${employee.fullName} terminé — ${updated.hoursWorked.toFixed(2)} heures.`);
+    } else {
+      toast.error("Impossible de dépointer.");
+    }
+  }
 
   async function handleToggleActive() {
     setIsSubmitting(true);
@@ -103,6 +130,7 @@ export function EmployeeDetailView({
                   <div>
                     <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("hourlyRate")}</p>
                     <p className="font-medium text-mv-ink">{formatCurrency(employee.hourlyWage)}/h</p>
+                    <PaySummaryInline restaurantId={restaurantId} employeeId={employee.id} />
                   </div>
                 </div>
               )}
@@ -159,14 +187,40 @@ export function EmployeeDetailView({
                   <div className="flex items-center justify-center gap-1.5 rounded-lg bg-mv-green/10 py-2 text-[12.5px] font-medium text-mv-green-dark">
                     <CheckCircle2 size={14} /> Compte connecté
                   </div>
-                ) : employee.contactEmail ? (
-                  <Button size="sm" variant="secondary" className="w-full gap-1.5" onClick={() => setInviteOpen(true)}>
-                    <KeyRound size={14} /> Inviter à se connecter
-                  </Button>
                 ) : (
-                  <p className="text-center text-[11.5px] text-mv-ink-faint">
-                    Ajoutez un courriel à cette fiche pour permettre la connexion.
-                  </p>
+                  <>
+                    {employee.contactEmail ? (
+                      <Button size="sm" variant="secondary" className="w-full gap-1.5" onClick={() => setInviteOpen(true)}>
+                        <KeyRound size={14} /> Inviter à se connecter
+                      </Button>
+                    ) : (
+                      <p className="text-center text-[11.5px] text-mv-ink-faint">
+                        Ajoutez un courriel à cette fiche pour permettre la connexion.
+                      </p>
+                    )}
+                    {/* Pas de compte de connexion — le gérant pointe pour l'employé. */}
+                    {openShift ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full gap-1.5"
+                        onClick={handleManagerClockOut}
+                        disabled={clockPending}
+                      >
+                        <LogOut size={14} /> Dépointer
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full gap-1.5"
+                        onClick={handleManagerClockIn}
+                        disabled={clockPending}
+                      >
+                        <LogIn size={14} /> Pointer
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             )}

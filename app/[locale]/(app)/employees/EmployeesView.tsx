@@ -19,11 +19,15 @@ import {
   getEmployeeReviewsAction,
   createEmployeeTaskAction,
   createEmployeeInviteLinkAction,
+  clockInEmployeeAction,
+  clockOutEmployeeAction,
+  getEmployeePaySummaryAction,
 } from "./actions";
 import posthog from "posthog-js";
 import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask, Role } from "@/lib/types";
+import type { PayPeriod } from "@/lib/data/employees";
 import { useApp, roleLabels } from "@/lib/app-context";
-import { UserPlus, Star, Printer, Users2, ChevronRight, Check, Copy, KeyRound } from "lucide-react";
+import { UserPlus, Star, Printer, Users2, ChevronRight, Check, Copy, KeyRound, LogIn, LogOut } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition, type FormEvent } from "react";
@@ -430,6 +434,47 @@ export function NewReviewForm({
   );
 }
 
+export const PAY_PERIOD_LABELS: Record<PayPeriod, string> = {
+  week: "Cette semaine",
+  biweekly: "2 dernières semaines",
+  month: "Ce mois-ci",
+};
+
+export function PaySummaryInline({ restaurantId, employeeId }: { restaurantId: string; employeeId: string }) {
+  const [period, setPeriod] = useState<PayPeriod>("week");
+  const [hours, setHours] = useState<number | null>(null);
+  const [grossPay, setGrossPay] = useState<number | null>(null);
+
+  useEffect(() => {
+    getEmployeePaySummaryAction(restaurantId, employeeId, period).then((summary) => {
+      setHours(summary?.hours ?? null);
+      setGrossPay(summary?.grossPay ?? null);
+    });
+  }, [restaurantId, employeeId, period]);
+
+  return (
+    <div className="mt-2 flex items-center gap-2 text-[12.5px] text-mv-ink-soft">
+      <Select
+        value={period}
+        onChange={(e) => setPeriod(e.target.value as PayPeriod)}
+        className="h-7 w-auto border-0 bg-transparent px-1 text-[12px]"
+      >
+        {(Object.keys(PAY_PERIOD_LABELS) as PayPeriod[]).map((p) => (
+          <option key={p} value={p}>
+            {PAY_PERIOD_LABELS[p]}
+          </option>
+        ))}
+      </Select>
+      <span>
+        {hours !== null ? `${hours.toFixed(1)}h` : "—"}
+        {grossPay !== null && (
+          <span className="ml-1.5 font-semibold text-mv-green-dark">{formatCurrency(grossPay)}</span>
+        )}
+      </span>
+    </div>
+  );
+}
+
 export function EmployeeDetail({
   employee,
   restaurantId,
@@ -446,6 +491,7 @@ export function EmployeeDetail({
   const [reviews, setReviews] = useState<EmployeeReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [clockPending, setClockPending] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -461,6 +507,32 @@ export function EmployeeDetail({
   const totalHours = shifts.reduce((sum, s) => sum + s.hoursWorked, 0);
   const lateCount = shifts.filter((s) => s.wasLate).length;
   const punctuality = shifts.length > 0 ? Math.round(((shifts.length - lateCount) / shifts.length) * 100) : null;
+  const openShift = shifts.find((s) => s.clockIn && !s.clockOut) ?? null;
+
+  async function handleManagerClockIn() {
+    setClockPending(true);
+    const shift = await clockInEmployeeAction(restaurantId, employee.id);
+    setClockPending(false);
+    if (shift) {
+      setShifts((prev) => [shift, ...prev]);
+      toast.success(`${employee.fullName} a été pointé·e.`);
+    } else {
+      toast.error("Impossible de pointer.");
+    }
+  }
+
+  async function handleManagerClockOut() {
+    if (!openShift) return;
+    setClockPending(true);
+    const updated = await clockOutEmployeeAction(restaurantId, openShift.id);
+    setClockPending(false);
+    if (updated) {
+      setShifts((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+      toast.success(`Quart de ${employee.fullName} terminé — ${updated.hoursWorked.toFixed(2)} heures.`);
+    } else {
+      toast.error("Impossible de dépointer.");
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -473,7 +545,10 @@ export function EmployeeDetail({
           <Badge tone={employee.active ? "green" : "neutral"}>{employee.active ? t("active") : t("inactive")}</Badge>
         </div>
         {employee.hourlyWage !== null && (
-          <p className="mt-2 text-[13px] text-mv-ink-soft">{formatCurrency(employee.hourlyWage)}/h</p>
+          <>
+            <p className="mt-2 text-[13px] text-mv-ink-soft">{formatCurrency(employee.hourlyWage)}/h</p>
+            <PaySummaryInline restaurantId={restaurantId} employeeId={employee.id} />
+          </>
         )}
         {employee.description && (
           <p className="mt-2 text-[12.5px] leading-relaxed text-mv-ink-soft">{employee.description}</p>
@@ -505,11 +580,25 @@ export function EmployeeDetail({
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-mv-green/10 px-3 py-1.5 text-[12.5px] font-medium text-mv-green-dark">
               <Check size={13} /> Compte connecté
             </span>
-          ) : employee.contactEmail ? (
-            <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => setInviteOpen(true)}>
-              <KeyRound size={13} /> Inviter à se connecter
-            </Button>
-          ) : null}
+          ) : (
+            <>
+              {employee.contactEmail && (
+                <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => setInviteOpen(true)}>
+                  <KeyRound size={13} /> Inviter à se connecter
+                </Button>
+              )}
+              {/* Pas de compte de connexion — le gérant pointe pour l'employé. */}
+              {openShift ? (
+                <Button size="sm" variant="secondary" className="gap-1.5" onClick={handleManagerClockOut} disabled={clockPending}>
+                  <LogOut size={13} /> Dépointer
+                </Button>
+              ) : (
+                <Button size="sm" variant="secondary" className="gap-1.5" onClick={handleManagerClockIn} disabled={clockPending}>
+                  <LogIn size={13} /> Pointer
+                </Button>
+              )}
+            </>
+          )}
         </div>
       </Card>
 

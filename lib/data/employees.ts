@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
-import { notifyRestaurant } from "@/lib/data/notifications";
+import { notifyRestaurant, notifyRestaurantManagement } from "@/lib/data/notifications";
 import { createFinancialTransaction } from "@/lib/data/finance";
 import type { Employee, EmployeeReview, EmployeeShift } from "@/lib/types";
 
@@ -158,6 +158,8 @@ type ShiftRow = {
   hours_worked: number;
   was_late: boolean;
   notes: string | null;
+  clock_in: string | null;
+  clock_out: string | null;
   created_at: string;
 };
 
@@ -169,6 +171,8 @@ function mapShift(row: ShiftRow): EmployeeShift {
     hoursWorked: row.hours_worked,
     wasLate: row.was_late,
     notes: row.notes,
+    clockIn: row.clock_in,
+    clockOut: row.clock_out,
     createdAt: row.created_at,
   };
 }
@@ -252,6 +256,165 @@ export async function createEmployeeShift(input: EmployeeShiftInput): Promise<Em
 
   if (error || !data) return null;
   return mapShift(data as ShiftRow);
+}
+
+const LATE_GRACE_MINUTES = 10;
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Self-service clock-in (also used by the manager-on-behalf-of-an-employee
+ * path — the caller/RLS distinction is enforced by which Supabase client
+ * gets used, not by this function). Refuses if the employee already has an
+ * open shift (clock_out is null) — one active shift at a time. Lateness is
+ * derived from today's shift_schedules row for this employee, if any;
+ * employees with no scheduled shift today are never marked late.
+ */
+export async function clockIn(employeeId: string, restaurantId: string): Promise<EmployeeShift | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: openShift } = await supabase
+    .from("employee_shifts")
+    .select("id")
+    .eq("employee_id", employeeId)
+    .is("clock_out", null)
+    .not("clock_in", "is", null)
+    .maybeSingle();
+  if (openShift) return null;
+
+  const shiftDate = todayIso();
+  const now = new Date();
+
+  const { data: schedule } = await supabase
+    .from("shift_schedules")
+    .select("start_time")
+    .eq("employee_id", employeeId)
+    .eq("shift_date", shiftDate)
+    .neq("status", "annule")
+    .order("start_time")
+    .limit(1)
+    .maybeSingle();
+
+  let wasLate = false;
+  if (schedule?.start_time) {
+    const [h, m] = (schedule.start_time as string).split(":").map(Number);
+    const scheduledStart = new Date(now);
+    scheduledStart.setHours(h, m, 0, 0);
+    wasLate = now.getTime() - scheduledStart.getTime() > LATE_GRACE_MINUTES * 60 * 1000;
+  }
+
+  const { data, error } = await supabase
+    .from("employee_shifts")
+    .insert({
+      employee_id: employeeId,
+      restaurant_id: restaurantId,
+      shift_date: shiftDate,
+      hours_worked: 0,
+      was_late: wasLate,
+      clock_in: now.toISOString(),
+      created_by: user?.id,
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) return null;
+
+  const employee = await getEmployeeById(employeeId);
+  if (employee) {
+    await notifyRestaurantManagement({
+      restaurantId,
+      type: wasLate ? "employee.clocked_in_late" : "employee.clocked_in",
+      title: wasLate ? "Employé en retard" : "Quart commencé",
+      body: wasLate
+        ? `${employee.fullName} vient de pointer, en retard.`
+        : `${employee.fullName} vient de pointer pour son quart.`,
+      link: "/employees",
+    });
+  }
+
+  return mapShift(data as ShiftRow);
+}
+
+/**
+ * Clock-out: computes hours_worked from clock_in→now and books the same
+ * labor-expense Finance transaction createEmployeeShift already does for
+ * manually-logged shifts, so a self-clocked shift shows up in expense
+ * totals identically.
+ */
+export async function clockOut(shiftId: string, restaurantId: string): Promise<EmployeeShift | null> {
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("employee_shifts")
+    .select("employee_id, shift_date, clock_in, clock_out")
+    .eq("id", shiftId)
+    .maybeSingle();
+  if (!existing || !existing.clock_in || existing.clock_out) return null;
+
+  const now = new Date();
+  const clockInTime = new Date(existing.clock_in as string);
+  const hoursWorked = Math.round(((now.getTime() - clockInTime.getTime()) / (1000 * 60 * 60)) * 100) / 100;
+
+  const financialTransactionId = await bookLaborExpense(
+    restaurantId,
+    existing.employee_id as string,
+    existing.shift_date as string,
+    hoursWorked
+  );
+
+  const { data, error } = await supabase
+    .from("employee_shifts")
+    .update({
+      clock_out: now.toISOString(),
+      hours_worked: hoursWorked,
+      financial_transaction_id: financialTransactionId,
+    })
+    .eq("id", shiftId)
+    .select("*")
+    .single();
+
+  if (error || !data) return null;
+  return mapShift(data as ShiftRow);
+}
+
+export type { PayPeriod } from "@/lib/pay-period";
+export { getPayPeriodRange } from "@/lib/pay-period";
+
+export type EmployeePaySummary = {
+  hours: number;
+  grossPay: number | null;
+  periodStart: string;
+  periodEnd: string;
+};
+
+export async function getEmployeePaySummary(
+  employeeId: string,
+  periodStart: string,
+  periodEnd: string
+): Promise<EmployeePaySummary> {
+  const supabase = await createClient();
+  const [{ data: shiftRows }, employee] = await Promise.all([
+    supabase
+      .from("employee_shifts")
+      .select("hours_worked")
+      .eq("employee_id", employeeId)
+      .gte("shift_date", periodStart)
+      .lte("shift_date", periodEnd),
+    getEmployeeById(employeeId),
+  ]);
+
+  const hours = ((shiftRows as { hours_worked: number }[] | null) ?? []).reduce(
+    (sum, r) => sum + r.hours_worked,
+    0
+  );
+  const grossPay = employee?.hourlyWage != null ? Math.round(hours * employee.hourlyWage * 100) / 100 : null;
+
+  return { hours: Math.round(hours * 100) / 100, grossPay, periodStart, periodEnd };
 }
 
 type ReviewRow = {
