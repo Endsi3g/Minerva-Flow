@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import { geocodeAddress } from "@/lib/geocode";
-import { fetchWebsiteDescription } from "@/lib/website-description";
-import type { Restaurant } from "@/lib/types";
+import { fetchWebsiteDescription, fetchWebsiteBusinessInfo } from "@/lib/website-description";
+import type { Restaurant, OpeningHours } from "@/lib/types";
 
 type RestaurantRow = {
   id: string;
@@ -22,6 +22,9 @@ type RestaurantRow = {
   lat: number | null;
   website: string | null;
   description: string | null;
+  phone: string | null;
+  opening_hours: OpeningHours | null;
+  google_place_id: string | null;
   workspace_id: string | null;
   loyalty_points_per_dollar: number;
   tax_rate: number;
@@ -45,6 +48,9 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     lat: row.lat,
     website: row.website,
     description: row.description,
+    phone: row.phone,
+    openingHours: row.opening_hours,
+    googlePlaceId: row.google_place_id,
     workspaceId: row.workspace_id,
     loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
     taxRate: row.tax_rate ?? 0.14975,
@@ -146,10 +152,16 @@ export type RestaurantInput = {
   address?: string;
   city?: string;
   province?: string;
+  postalCode?: string;
   timezone?: string;
   color?: string;
   website?: string;
   description?: string;
+  phone?: string;
+  lat?: number;
+  lng?: number;
+  openingHours?: OpeningHours;
+  googlePlaceId?: string;
   loyaltyPointsPerDollar?: number;
   taxRate?: number;
   acceptsTips?: boolean;
@@ -169,13 +181,26 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
   } = await supabase.auth.getUser();
   if (!user || !input.name.trim()) return null;
 
-  const coords = input.address && input.city ? await geocodeAddress(input.address, input.city, input.province) : null;
-
-  // Pre-fill the description from the establishment's own website when one
-  // is given and the caller didn't already type one — never overwrites an
-  // explicit value.
+  // Pre-fill the description and any still-empty business-info fields from
+  // the establishment's own website when one is given — never overwrites a
+  // value the caller already provided.
   const description =
     input.description || (input.website ? await fetchWebsiteDescription(input.website) : null);
+  const websiteInfo =
+    input.website && (!input.phone || !input.address || !input.openingHours)
+      ? await fetchWebsiteBusinessInfo(input.website)
+      : null;
+
+  const resolvedAddress = input.address || websiteInfo?.address;
+  const resolvedCity = input.city || websiteInfo?.city;
+
+  // Skip geocoding when the caller already supplied coordinates (e.g. a
+  // Google Places import, which is authoritative) — Nominatim would only
+  // risk overwriting a more precise position with a worse one.
+  const hasExplicitCoords = input.lat !== undefined && input.lng !== undefined;
+  const coords = !hasExplicitCoords && resolvedAddress && resolvedCity
+    ? await geocodeAddress(resolvedAddress, resolvedCity, input.province || websiteInfo?.province || undefined)
+    : null;
 
   // A new establishment joins the creator's CURRENT workspace context
   // automatically (the restaurant they had selected when clicking "add
@@ -203,15 +228,19 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
     .from("restaurants")
     .insert({
       name: input.name.trim(),
-      address: input.address || null,
-      city: input.city || null,
-      province: input.province || undefined,
+      address: resolvedAddress || null,
+      city: resolvedCity || null,
+      province: input.province || websiteInfo?.province || undefined,
+      postal_code: input.postalCode || websiteInfo?.postalCode || null,
       timezone: input.timezone || undefined,
       color: input.color || undefined,
-      lng: coords?.lng ?? null,
-      lat: coords?.lat ?? null,
+      lng: input.lng ?? coords?.lng ?? null,
+      lat: input.lat ?? coords?.lat ?? null,
       website: input.website || null,
       description: description || null,
+      phone: input.phone || websiteInfo?.phone || null,
+      opening_hours: input.openingHours || websiteInfo?.openingHours || null,
+      google_place_id: input.googlePlaceId || null,
       workspace_id: workspaceId,
     })
     .select("*")
@@ -250,17 +279,26 @@ export async function updateRestaurant(
   if (patch.address !== undefined) dbPatch.address = patch.address;
   if (patch.city !== undefined) dbPatch.city = patch.city;
   if (patch.province !== undefined) dbPatch.province = patch.province;
+  if (patch.postalCode !== undefined) dbPatch.postal_code = patch.postalCode || null;
   if (patch.timezone !== undefined) dbPatch.timezone = patch.timezone;
   if (patch.color !== undefined) dbPatch.color = patch.color;
   if (patch.website !== undefined) dbPatch.website = patch.website || null;
   if (patch.description !== undefined) dbPatch.description = patch.description || null;
+  if (patch.phone !== undefined) dbPatch.phone = patch.phone || null;
+  if (patch.openingHours !== undefined) dbPatch.opening_hours = patch.openingHours;
+  if (patch.googlePlaceId !== undefined) dbPatch.google_place_id = patch.googlePlaceId || null;
   if (patch.loyaltyPointsPerDollar !== undefined) dbPatch.loyalty_points_per_dollar = patch.loyaltyPointsPerDollar;
   if (patch.taxRate !== undefined) dbPatch.tax_rate = patch.taxRate;
   if (patch.acceptsTips !== undefined) dbPatch.accepts_tips = patch.acceptsTips;
 
-  // Re-geocode whenever the address changed — this is the only place a
-  // restaurant's map pin (lng/lat) gets populated.
-  if ((patch.address !== undefined || patch.city !== undefined) && patch.address && patch.city) {
+  // Explicit coordinates (e.g. a Google Places import, authoritative) take
+  // priority and skip re-geocoding entirely.
+  if (patch.lat !== undefined && patch.lng !== undefined) {
+    dbPatch.lat = patch.lat;
+    dbPatch.lng = patch.lng;
+  } else if ((patch.address !== undefined || patch.city !== undefined) && patch.address && patch.city) {
+    // Re-geocode whenever the address changed — this is the only other
+    // place a restaurant's map pin (lng/lat) gets populated.
     const coords = await geocodeAddress(patch.address, patch.city, patch.province);
     if (coords) {
       dbPatch.lng = coords.lng;
@@ -268,14 +306,25 @@ export async function updateRestaurant(
     }
   }
 
-  // Auto-fill the description from the website whenever a website is
-  // present and the description field is empty — callers always resubmit
+  // Auto-fill the description and any still-empty business-info fields
+  // from the website whenever one is present — callers always resubmit
   // the whole form (not a partial diff), so gating on "empty" rather than
   // "was this key present" is what actually distinguishes "user hasn't
   // written one yet" from "user explicitly cleared/edited it".
   if (patch.website && !patch.description) {
     const fetched = await fetchWebsiteDescription(patch.website);
     if (fetched) dbPatch.description = fetched;
+  }
+  if (patch.website && (!patch.phone || !patch.address || !patch.openingHours)) {
+    const info = await fetchWebsiteBusinessInfo(patch.website);
+    if (info) {
+      if (!patch.phone && info.phone) dbPatch.phone = info.phone;
+      if (!patch.address && info.address) dbPatch.address = info.address;
+      if (!patch.address && info.city) dbPatch.city = info.city;
+      if (!patch.address && info.province) dbPatch.province = info.province;
+      if (!patch.address && info.postalCode) dbPatch.postal_code = info.postalCode;
+      if (!patch.openingHours && info.openingHours) dbPatch.opening_hours = info.openingHours;
+    }
   }
 
   const { data, error } = await supabase

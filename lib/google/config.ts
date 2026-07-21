@@ -44,6 +44,16 @@ export function isGoogleConfigured() {
   return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 
+/**
+ * Places API uses a plain API key (billed per-request against the Google
+ * Cloud project), not an OAuth client — distinct credential from
+ * GOOGLE_CLIENT_ID/SECRET above even though it can live in the same
+ * project. Same "gracefully absent until configured" contract.
+ */
+export function isGooglePlacesConfigured() {
+  return Boolean(process.env.GOOGLE_PLACES_API_KEY);
+}
+
 export function googleWorkspaceRedirectUri(origin: string) {
   return `${canonicalOrigin(origin)}/api/oauth/google-workspace/callback`;
 }

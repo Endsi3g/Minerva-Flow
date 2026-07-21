@@ -5,12 +5,14 @@ import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Textarea } from "@/components/minerva/FormField";
+import { GooglePlacesSearch } from "@/components/places/GooglePlacesSearch";
 import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import {
   createRestaurantAction,
   updateRestaurantAction,
 } from "@/app/[locale]/(app)/settings/actions";
-import type { Restaurant } from "@/lib/types";
+import type { RestaurantInput } from "@/lib/data/restaurants";
+import type { Restaurant, OpeningHours, DayHours } from "@/lib/types";
 import { Plus, MapPin, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -19,21 +21,114 @@ type RestaurantFormValues = {
   name: string;
   address: string;
   city: string;
+  province: string;
+  postalCode: string;
   timezone: string;
   color: string;
   website: string;
   description: string;
+  phone: string;
+  openingHours: OpeningHours;
+  lat?: number;
+  lng?: number;
+  googlePlaceId?: string;
 };
 
 const emptyForm: RestaurantFormValues = {
   name: "",
   address: "",
   city: "",
+  province: "",
+  postalCode: "",
   timezone: "America/Montreal",
   color: "#167f5b",
   website: "",
   description: "",
+  phone: "",
+  openingHours: {},
 };
+
+function restaurantToForm(r: Restaurant): RestaurantFormValues {
+  return {
+    name: r.name,
+    address: r.address ?? "",
+    city: r.city ?? "",
+    province: r.province ?? "",
+    postalCode: r.postalCode ?? "",
+    timezone: r.timezone,
+    color: r.color,
+    website: r.website ?? "",
+    description: r.description ?? "",
+    phone: r.phone ?? "",
+    openingHours: r.openingHours ?? {},
+  };
+}
+
+const DAY_LABELS: Record<number, string> = {
+  1: "Lundi",
+  2: "Mardi",
+  3: "Mercredi",
+  4: "Jeudi",
+  5: "Vendredi",
+  6: "Samedi",
+  0: "Dimanche",
+};
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+function OpeningHoursFields({ value, onChange }: { value: OpeningHours; onChange: (hours: OpeningHours) => void }) {
+  function setDay(day: number, hours: DayHours | null) {
+    const next = { ...value };
+    if (hours) {
+      next[day as keyof OpeningHours] = hours;
+    } else {
+      delete next[day as keyof OpeningHours];
+    }
+    onChange(next);
+  }
+
+  return (
+    <Field label="Horaires d'ouverture" hint="Se pré-remplissent automatiquement via la recherche Google ou le site web">
+      <div className="space-y-1.5 rounded-lg border border-mv-border p-3">
+        {DAY_ORDER.map((day) => {
+          const hours = value[day as keyof OpeningHours];
+          const closed = !hours;
+          return (
+            <div key={day} className="flex items-center gap-2">
+              <label className="flex w-[92px] shrink-0 items-center gap-1.5 text-[12.5px] text-mv-ink-soft">
+                <input
+                  type="checkbox"
+                  checked={!closed}
+                  onChange={(e) => setDay(day, e.target.checked ? { open: "11:00", close: "22:00" } : null)}
+                  className="h-3.5 w-3.5 rounded border-mv-border"
+                />
+                {DAY_LABELS[day]}
+              </label>
+              {hours ? (
+                <>
+                  <input
+                    type="time"
+                    value={hours.open}
+                    onChange={(e) => setDay(day, { ...hours, open: e.target.value })}
+                    className="h-8 rounded-md border border-mv-border bg-mv-surface px-2 text-[12px] text-mv-ink"
+                  />
+                  <span className="text-mv-ink-faint">–</span>
+                  <input
+                    type="time"
+                    value={hours.close}
+                    onChange={(e) => setDay(day, { ...hours, close: e.target.value })}
+                    className="h-8 rounded-md border border-mv-border bg-mv-surface px-2 text-[12px] text-mv-ink"
+                  />
+                </>
+              ) : (
+                <span className="text-[12px] text-mv-ink-faint">Fermé</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Field>
+  );
+}
 
 function RestaurantFormFields({
   values,
@@ -42,8 +137,24 @@ function RestaurantFormFields({
   values: RestaurantFormValues;
   onChange: (patch: Partial<RestaurantFormValues>) => void;
 }) {
+  function handlePlacesSelect(patch: Partial<RestaurantInput>) {
+    onChange({
+      address: patch.address ?? values.address,
+      city: patch.city ?? values.city,
+      province: patch.province ?? values.province,
+      postalCode: patch.postalCode ?? values.postalCode,
+      phone: patch.phone ?? values.phone,
+      openingHours: patch.openingHours ?? values.openingHours,
+      lat: patch.lat,
+      lng: patch.lng,
+      googlePlaceId: patch.googlePlaceId,
+    });
+  }
+
   return (
     <div className="space-y-4">
+      <GooglePlacesSearch onSelect={handlePlacesSelect} />
+
       <div className="flex items-end gap-3">
         <div className="flex-1">
           <Field label="Nom de l'établissement">
@@ -65,20 +176,33 @@ function RestaurantFormFields({
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Adresse">
-          <Input value={values.address} onChange={(e) => onChange({ address: e.target.value })} />
+          <Input name="address" value={values.address} onChange={(e) => onChange({ address: e.target.value })} />
         </Field>
         <Field label="Ville">
-          <Input value={values.city} onChange={(e) => onChange({ city: e.target.value })} />
+          <Input name="city" value={values.city} onChange={(e) => onChange({ city: e.target.value })} />
         </Field>
       </div>
-      <Field label="Fuseau horaire">
-        <Input
-          value={values.timezone}
-          onChange={(e) => onChange({ timezone: e.target.value })}
-          placeholder="Ex : America/Montreal"
-        />
-      </Field>
-      <Field label="Site web" hint="La description ci-dessous se pré-remplit automatiquement depuis ce site quand vous enregistrez.">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Province">
+          <Input name="province" value={values.province} onChange={(e) => onChange({ province: e.target.value })} placeholder="Ex : QC" />
+        </Field>
+        <Field label="Code postal">
+          <Input name="postalCode" value={values.postalCode} onChange={(e) => onChange({ postalCode: e.target.value })} placeholder="Ex : H2X 1Y5" />
+        </Field>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Téléphone">
+          <Input name="phone" value={values.phone} onChange={(e) => onChange({ phone: e.target.value })} placeholder="Ex : 514-555-1234" />
+        </Field>
+        <Field label="Fuseau horaire">
+          <Input
+            value={values.timezone}
+            onChange={(e) => onChange({ timezone: e.target.value })}
+            placeholder="Ex : America/Montreal"
+          />
+        </Field>
+      </div>
+      <Field label="Site web" hint="La description et les coordonnées ci-dessous se pré-remplissent automatiquement depuis ce site quand vous enregistrez.">
         <Input
           value={values.website}
           onChange={(e) => onChange({ website: e.target.value })}
@@ -93,6 +217,7 @@ function RestaurantFormFields({
           placeholder="Ex : Cuisine bistro de quartier, produits locaux, terrasse l'été."
         />
       </Field>
+      <OpeningHoursFields value={values.openingHours} onChange={(openingHours) => onChange({ openingHours })} />
     </div>
   );
 }
@@ -104,15 +229,7 @@ function EstablishmentIdentityCard() {
 
   useEffect(() => {
     if (!restaurant) return;
-    setForm({
-      name: restaurant.name,
-      address: restaurant.address ?? "",
-      city: restaurant.city ?? "",
-      timezone: restaurant.timezone,
-      color: restaurant.color,
-      website: restaurant.website ?? "",
-      description: restaurant.description ?? "",
-    });
+    setForm(restaurantToForm(restaurant));
   }, [restaurant?.id]);
 
   async function handleSave() {
@@ -121,10 +238,10 @@ function EstablishmentIdentityCard() {
     const updated = await updateRestaurantAction(restaurant.id, form);
     setSaving(false);
     if (updated) {
-      // Reflects server-computed fields immediately — the description may
-      // have just been auto-filled from the website, which the submitted
-      // form itself wouldn't know about.
-      setForm((f) => ({ ...f, description: updated.description ?? "" }));
+      // Reflects server-computed fields immediately — the description/
+      // phone/address may have just been auto-filled from the website,
+      // which the submitted form itself wouldn't know about.
+      setForm(restaurantToForm(updated));
       toast.success("Établissement mis à jour.");
     } else {
       toast.error("La mise à jour a échoué.");
@@ -164,15 +281,7 @@ function OtherEstablishments() {
 
   function openEdit(r: Restaurant) {
     setEditing(r);
-    setForm({
-      name: r.name,
-      address: r.address ?? "",
-      city: r.city ?? "",
-      timezone: r.timezone,
-      color: r.color,
-      website: r.website ?? "",
-      description: r.description ?? "",
-    });
+    setForm(restaurantToForm(r));
   }
 
   async function handleCreate() {

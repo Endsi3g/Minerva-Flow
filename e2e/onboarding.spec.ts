@@ -12,7 +12,7 @@ test.describe("Onboarding", () => {
     userId = undefined;
   });
 
-  test("signup completes the 3-step wizard and lands on Overview", async ({ page }) => {
+  test("signup completes the 4-step wizard and lands on Overview", async ({ page }) => {
     const email = `e2e-onboarding-${Date.now()}@example.com`;
 
     // AuthCard's inputs are React-controlled — a fill() that lands before the
@@ -57,6 +57,11 @@ test.describe("Onboarding", () => {
     await expect(nameInput).toBeVisible();
 
     await nameInput.fill("E2E Test User");
+    await page.getByRole("button", { name: /suivant/i }).click();
+    await page.waitForTimeout(300);
+
+    // Step 3 (Google Places / website import) is entirely optional — skip
+    // it without filling anything.
     await page.getByRole("button", { name: /suivant/i }).click();
     await page.waitForTimeout(300);
 

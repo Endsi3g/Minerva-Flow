@@ -12,10 +12,13 @@ import {
 } from "@/components/ui/onboarding";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Field, Input } from "@/components/minerva/FormField";
+import { GooglePlacesSearch } from "@/components/places/GooglePlacesSearch";
 import { roleLabels } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
 import { updateProfileNameAction } from "@/app/[locale]/(app)/profil/actions";
+import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
 import { setMyRoleAction, finishOnboardingAction } from "@/app/[locale]/onboarding/actions";
+import type { RestaurantInput } from "@/lib/data/restaurants";
 import type { Role } from "@/lib/types";
 
 const FEATURES = [
@@ -65,6 +68,7 @@ export function OnboardingWizard({
   const [fullName, setFullName] = useState(initialFullName);
   const [role, setRole] = useState<Role>(initialRole);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
+  const [locationForm, setLocationForm] = useState<Partial<RestaurantInput>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -84,6 +88,12 @@ export function OnboardingWizard({
         if (!result.ok) throw new Error(result.error);
       }
       await setMyRoleAction(restaurantId, role);
+      // Best-effort, deliberately outside the throw-on-error flow above —
+      // nothing entered on this step is required, so a failure here should
+      // never block finishing onboarding.
+      if (restaurantId && Object.keys(locationForm).length > 0) {
+        await updateRestaurantAction(restaurantId, locationForm).catch(() => null);
+      }
       await finishOnboardingAction();
       // router.refresh() right after push() races the push's own RSC fetch
       // for the destination route and can leave the transition hanging
@@ -99,7 +109,7 @@ export function OnboardingWizard({
 
   return (
     <Onboarding
-      totalSteps={3}
+      totalSteps={4}
       maxStepValue={FEATURES.length - 1}
       onComplete={handleComplete}
       canGoNext={(step) => step !== 2 || fullName.trim().length > 0}
@@ -169,6 +179,31 @@ export function OnboardingWizard({
       </Onboarding.Step>
 
       <Onboarding.Step step={3}>
+        <Onboarding.Header
+          title="Trouvez votre établissement"
+          description="Importez automatiquement l'adresse et les horaires — ou passez cette étape."
+        />
+        <div className="mt-5 space-y-4">
+          {restaurantId ? (
+            <>
+              <GooglePlacesSearch onSelect={(patch) => setLocationForm((f) => ({ ...f, ...patch }))} />
+              <Field label="Site web" hint="Pré-remplit aussi la description à l'enregistrement">
+                <Input
+                  value={locationForm.website ?? ""}
+                  onChange={(e) => setLocationForm((f) => ({ ...f, website: e.target.value }))}
+                  placeholder="Ex : monrestaurant.com"
+                />
+              </Field>
+            </>
+          ) : (
+            <p className="text-[13px] text-mv-ink-soft">
+              Vous pourrez importer ces informations plus tard depuis Réglages → Établissement.
+            </p>
+          )}
+        </div>
+      </Onboarding.Step>
+
+      <Onboarding.Step step={4}>
         <Onboarding.Header title="Vous êtes prêt !" description="Quelques conseils pour bien démarrer." />
         <div className="mt-5">
           <TipsList title="Conseils">
