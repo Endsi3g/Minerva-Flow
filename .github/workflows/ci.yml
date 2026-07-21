@@ -20,12 +20,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      # --legacy-peer-deps: @vitejs/plugin-react's optional Rolldown/Babel-8
-      # peer conflicts with shadcn's pinned Babel 7. That peer is never
-      # actually invoked for plain Vitest/jsdom usage, but npm ci enforces
-      # strict peer resolution unless told otherwise — must match how the
-      # lockfile itself was generated locally.
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci
 
       - name: Typecheck
         run: npx tsc --noEmit -p .
