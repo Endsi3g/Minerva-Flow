@@ -14,6 +14,8 @@ export type Restaurant = {
   color: string;
   lng: number | null;
   lat: number | null;
+  website: string | null;
+  description: string | null;
   workspaceId?: string | null;
   loyaltyPointsPerDollar: number;
   taxRate: number;

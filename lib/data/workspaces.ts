@@ -147,6 +147,8 @@ export async function getWorkspaceRestaurants(workspaceId: string): Promise<Rest
     color: row.color ?? "var(--mv-green)",
     lng: row.lng,
     lat: row.lat,
+    website: row.website,
+    description: row.description,
     workspaceId: row.workspace_id,
     loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
     taxRate: row.tax_rate ?? 0.14975,
