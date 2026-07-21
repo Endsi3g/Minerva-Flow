@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Field, Select } from "@/components/minerva/FormField";
+import { Field, Input, Select } from "@/components/minerva/FormField";
 import { roleLabels } from "@/lib/app-context";
 import { createWorkspaceInviteLinkAction } from "@/app/[locale]/(app)/workspace/actions";
 import posthog from "posthog-js";
@@ -25,7 +25,9 @@ export function InviteWorkspaceMemberModal({
 }) {
   const [role, setRole] = useState<Role>("staff");
   const [selectedRestaurantIds, setSelectedRestaurantIds] = useState<string[]>(restaurants.map((r) => r.id));
+  const [email, setEmail] = useState("");
   const [link, setLink] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,13 @@ export function InviteWorkspaceMemberModal({
   function handleGenerate() {
     setError(null);
     startTransition(async () => {
-      const invite = await createWorkspaceInviteLinkAction(workspaceId, role, selectedRestaurantIds);
+      const trimmedEmail = email.trim();
+      const invite = await createWorkspaceInviteLinkAction(
+        workspaceId,
+        role,
+        selectedRestaurantIds,
+        trimmedEmail || undefined
+      );
       if (!invite) {
         setError("Impossible de générer le lien. Réessayez.");
         return;
@@ -45,7 +53,9 @@ export function InviteWorkspaceMemberModal({
       posthog.capture("workspace_member_invited", {
         invited_role: role,
         restaurant_count: invite.restaurantIds.length,
+        via_email: Boolean(trimmedEmail),
       });
+      setEmailSent(Boolean(trimmedEmail));
       setLink(`${window.location.origin}/invite/w/${invite.token}`);
     });
   }
@@ -59,8 +69,10 @@ export function InviteWorkspaceMemberModal({
 
   function handleClose() {
     setLink(null);
+    setEmailSent(false);
     setError(null);
     setRole("staff");
+    setEmail("");
     setSelectedRestaurantIds(restaurants.map((r) => r.id));
     onClose();
   }
@@ -81,6 +93,16 @@ export function InviteWorkspaceMemberModal({
               </option>
             ))}
           </Select>
+        </Field>
+
+        <Field label="Courriel" hint="Optionnel — envoie l'invitation automatiquement">
+          <Input
+            type="email"
+            placeholder="collegue@exemple.com"
+            value={email}
+            disabled={Boolean(link)}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </Field>
 
         <Field label="Établissements accessibles">
@@ -119,7 +141,9 @@ export function InviteWorkspaceMemberModal({
               </button>
             </div>
             <p className="text-[11.5px] text-mv-ink-faint">
-              Valide 7 jours. Partagez-le par le canal de votre choix (SMS, WhatsApp, etc.).
+              {emailSent
+                ? "Courriel envoyé. Vous pouvez aussi partager le lien directement (SMS, WhatsApp, etc.)."
+                : "Valide 7 jours. Partagez-le par le canal de votre choix (SMS, WhatsApp, etc.)."}
             </p>
           </div>
         )}

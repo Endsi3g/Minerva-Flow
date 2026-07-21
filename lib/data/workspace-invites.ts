@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import { notifyRestaurant } from "@/lib/data/notifications";
 import { deletePhantomDefaultRestaurant } from "@/lib/data/restaurants";
+import { sendInviteEmail, sendEmployeeInviteEmail } from "@/lib/email/resend";
 import type { Role } from "@/lib/types";
 
 const INVITE_TTL_DAYS = 7;
@@ -50,11 +51,17 @@ function mapInvite(row: InviteRow): WorkspaceInvite {
  * because the eventual redeemer may not have an account yet. The caller (a
  * server action) is responsible for checking that the actor is
  * owner/manager before calling this.
+ *
+ * `email`, when provided, sends the invite via Resend on top of returning
+ * the link — best-effort, never blocks invite creation on delivery success
+ * (see lib/email/resend.ts). The caller keeps showing the copyable link
+ * either way; email is a nicety, not a replacement.
  */
 export async function createInviteLink(
   workspaceId: string,
   role: Role,
-  restaurantIds: string[]
+  restaurantIds: string[],
+  email?: string
 ): Promise<WorkspaceInvite | null> {
   const supabase = await createClient();
   const {
@@ -93,6 +100,16 @@ export async function createInviteLink(
       restaurantId: filteredRestaurantIds[0],
       actionType: "workspace_invite.create_link",
       description: `A généré un lien d'invitation workspace (${role}).`,
+    });
+  }
+
+  if (email) {
+    const { data: workspace } = await admin.from("workspaces").select("name").eq("id", workspaceId).maybeSingle();
+    await sendInviteEmail({
+      to: email,
+      token,
+      workspaceName: (workspace as { name: string } | null)?.name ?? "votre établissement",
+      role,
     });
   }
 
@@ -146,6 +163,23 @@ export async function createEmployeeInviteLink(
     entityId: employeeId,
     description: `A généré un lien de connexion pour un employé (${role}).`,
   });
+
+  // contact_email is mandatory on employees (enforced in the create-employee
+  // form), so this always sends — best-effort, see lib/email/resend.ts.
+  const { data: employee } = await admin
+    .from("employees")
+    .select("full_name, contact_email, restaurant:restaurants(name)")
+    .eq("id", employeeId)
+    .maybeSingle();
+  const employeeRow = employee as { full_name: string; contact_email: string | null; restaurant: { name: string } | null } | null;
+  if (employeeRow?.contact_email) {
+    await sendEmployeeInviteEmail({
+      to: employeeRow.contact_email,
+      token,
+      employeeName: employeeRow.full_name,
+      restaurantName: employeeRow.restaurant?.name ?? "votre établissement",
+    });
+  }
 
   return mapInvite(data as InviteRow);
 }
