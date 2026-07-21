@@ -70,6 +70,21 @@ export async function loginAs(page: Page, user: Pick<TestUser, "email" | "passwo
   await page.waitForURL(/overview/, { timeout: 15000 });
 }
 
+/**
+ * A persistent, real (non-throwaway) test account, for smoke-testing login
+ * against an account that went through actual signup rather than the
+ * admin-API shortcut createTestUser() uses. Read from env, never hardcoded
+ * here — see .env.local.
+ */
+export function getFixedTestUser(): Pick<TestUser, "email" | "password"> {
+  const email = process.env.E2E_FIXED_TEST_EMAIL;
+  const password = process.env.E2E_FIXED_TEST_PASSWORD;
+  if (!email || !password) {
+    throw new Error("E2E_FIXED_TEST_EMAIL et E2E_FIXED_TEST_PASSWORD sont requis (voir .env.local).");
+  }
+  return { email, password };
+}
+
 /** Deletes any restaurant left with zero members — the "phantom restaurant" shape. */
 export async function cleanupOrphanRestaurants(): Promise<void> {
   const { data: restaurants } = await supabaseAdmin.from("restaurants").select("id, name").eq("name", "Mon restaurant");
