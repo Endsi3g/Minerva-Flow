@@ -313,7 +313,8 @@ export function InviteEmployeeModal({
               </button>
             </div>
             <p className="text-[11.5px] text-mv-ink-faint">
-              Partagez-le avec {employee.fullName} (courriel : {employee.contactEmail}) par le canal de votre choix.
+              Un courriel a été envoyé à {employee.contactEmail}. Vous pouvez aussi partager le lien directement avec{" "}
+              {employee.fullName} (SMS, WhatsApp, etc.).
             </p>
           </div>
         )}

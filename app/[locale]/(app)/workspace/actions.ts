@@ -104,12 +104,13 @@ const INVITABLE_ROLES: Role[] = ["manager", "staff", "consultant"];
 export async function createWorkspaceInviteLinkAction(
   workspaceId: string,
   role: Role,
-  restaurantIds: string[]
+  restaurantIds: string[],
+  email?: string
 ): Promise<WorkspaceInvite | null> {
   const membership = await requireWorkspaceManager(workspaceId);
   if (!membership || !INVITABLE_ROLES.includes(role)) return null;
 
-  return createInviteLink(workspaceId, role, restaurantIds);
+  return createInviteLink(workspaceId, role, restaurantIds, email);
 }
 
 export async function listWorkspaceInvitesAction(workspaceId: string): Promise<WorkspaceInviteListEntry[]> {
