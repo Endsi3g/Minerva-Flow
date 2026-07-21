@@ -17,12 +17,21 @@ export function GooglePlacesSearch({ onSelect }: { onSelect: (patch: Partial<Res
   const [searching, setSearching] = useState(false);
   const [importing, setImporting] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Setting query to the selected suggestion's label after a selection
+  // would otherwise re-trigger the search effect below (it depends on
+  // query) and immediately reopen a fresh dropdown — this flag skips that
+  // one round-trip.
+  const skipNextSearchRef = useRef(false);
 
   useEffect(() => {
     isGooglePlacesEnabledAction().then(setEnabled);
   }, []);
 
   useEffect(() => {
+    if (skipNextSearchRef.current) {
+      skipNextSearchRef.current = false;
+      return;
+    }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (query.trim().length < MIN_QUERY_LENGTH) {
       setSuggestions([]);
@@ -47,6 +56,8 @@ export function GooglePlacesSearch({ onSelect }: { onSelect: (patch: Partial<Res
     const patch = await getPlaceDetailsAction(placeId);
     setImporting(null);
     setOpen(false);
+    setSuggestions([]);
+    skipNextSearchRef.current = true;
     setQuery(label);
     if (patch) onSelect(patch);
   }

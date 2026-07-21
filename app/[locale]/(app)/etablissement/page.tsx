@@ -176,23 +176,23 @@ function RestaurantFormFields({
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Adresse">
-          <Input value={values.address} onChange={(e) => onChange({ address: e.target.value })} />
+          <Input name="address" value={values.address} onChange={(e) => onChange({ address: e.target.value })} />
         </Field>
         <Field label="Ville">
-          <Input value={values.city} onChange={(e) => onChange({ city: e.target.value })} />
+          <Input name="city" value={values.city} onChange={(e) => onChange({ city: e.target.value })} />
         </Field>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Province">
-          <Input value={values.province} onChange={(e) => onChange({ province: e.target.value })} placeholder="Ex : QC" />
+          <Input name="province" value={values.province} onChange={(e) => onChange({ province: e.target.value })} placeholder="Ex : QC" />
         </Field>
         <Field label="Code postal">
-          <Input value={values.postalCode} onChange={(e) => onChange({ postalCode: e.target.value })} placeholder="Ex : H2X 1Y5" />
+          <Input name="postalCode" value={values.postalCode} onChange={(e) => onChange({ postalCode: e.target.value })} placeholder="Ex : H2X 1Y5" />
         </Field>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Téléphone">
-          <Input value={values.phone} onChange={(e) => onChange({ phone: e.target.value })} placeholder="Ex : 514-555-1234" />
+          <Input name="phone" value={values.phone} onChange={(e) => onChange({ phone: e.target.value })} placeholder="Ex : 514-555-1234" />
         </Field>
         <Field label="Fuseau horaire">
           <Input
