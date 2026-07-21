@@ -14,6 +14,7 @@ export type WorkspaceInvite = {
   workspaceId: string;
   role: Role;
   restaurantIds: string[];
+  employeeId: string | null;
   token: string;
   expiresAt: string;
 };
@@ -23,6 +24,7 @@ type InviteRow = {
   workspace_id: string;
   role: Role;
   restaurant_ids: string[];
+  employee_id: string | null;
   token: string;
   expires_at: string;
   used_at: string | null;
@@ -35,6 +37,7 @@ function mapInvite(row: InviteRow): WorkspaceInvite {
     workspaceId: row.workspace_id,
     role: row.role,
     restaurantIds: row.restaurant_ids,
+    employeeId: row.employee_id,
     token: row.token,
     expiresAt: row.expires_at,
   };
@@ -92,6 +95,57 @@ export async function createInviteLink(
       description: `A généré un lien d'invitation workspace (${role}).`,
     });
   }
+
+  return mapInvite(data as InviteRow);
+}
+
+/**
+ * Same as createInviteLink, but scoped to a specific `employees` row: on
+ * redemption, that employee's linked_user_id is set to the redeeming
+ * account (see redeemInvite below) so they can log in and see /mon-espace.
+ * Ports the restaurant_invites-level equivalent (lib/data/invites.ts) to
+ * the workspace system — always scoped to the single restaurant the
+ * employee belongs to, unlike the general workspace invite's multi-
+ * restaurant selection.
+ */
+export async function createEmployeeInviteLink(
+  workspaceId: string,
+  restaurantId: string,
+  employeeId: string,
+  role: Role
+): Promise<WorkspaceInvite | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const token = randomUUID().replace(/-/g, "");
+  const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("workspace_invites")
+    .insert({
+      workspace_id: workspaceId,
+      role,
+      restaurant_ids: [restaurantId],
+      employee_id: employeeId,
+      token,
+      created_by: user.id,
+      expires_at: expiresAt,
+    })
+    .select()
+    .single();
+  if (error || !data) return null;
+
+  await logActivity({
+    restaurantId,
+    actionType: "workspace_invite.create_employee_link",
+    entityType: "employee",
+    entityId: employeeId,
+    description: `A généré un lien de connexion pour un employé (${role}).`,
+  });
 
   return mapInvite(data as InviteRow);
 }
@@ -282,6 +336,17 @@ export async function redeemInvite(token: string): Promise<{ ok: boolean; worksp
   }
 
   await deletePhantomDefaultRestaurant(admin, user.id, restaurantIds);
+
+  if (invite.employee_id) {
+    // Only link if the employee record isn't already linked to someone —
+    // never steal/overwrite an existing link via a stale or misdirected
+    // invite token.
+    await admin
+      .from("employees")
+      .update({ linked_user_id: user.id })
+      .eq("id", invite.employee_id)
+      .is("linked_user_id", null);
+  }
 
   return { ok: true, workspaceId: invite.workspace_id };
 }

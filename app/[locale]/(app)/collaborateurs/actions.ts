@@ -3,38 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { updateTeamMemberRole, removeTeamMember, updateMemberSidebarPermissions } from "@/lib/data/team";
 import { getActivityLog } from "@/lib/data/activity";
-import { createInviteLink, listInvites, type RestaurantInvite, type InviteListEntry } from "@/lib/data/invites";
-import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import type { ActivityLogEntry, Role } from "@/lib/types";
-
-/**
- * Generates a redeemable invite link (7-day expiry, role pre-assigned).
- * Replaces the email-invite flow, which depends on outbound email that
- * isn't wired up yet — the owner/manager copies this link and shares it
- * themselves (SMS, WhatsApp, etc.).
- */
-export async function createInviteLinkAction(
-  restaurantId: string,
-  role: Role
-): Promise<RestaurantInvite | null> {
-  if (!restaurantId || !role) return null;
-
-  const membership = await getCurrentMembership();
-  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
-    return null;
-  }
-
-  return createInviteLink(restaurantId, role);
-}
-
-export async function listInvitesAction(restaurantId: string): Promise<InviteListEntry[]> {
-  if (!restaurantId) return [];
-  const membership = await getCurrentMembership();
-  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
-    return [];
-  }
-  return listInvites(restaurantId);
-}
 
 /**
  * Updates a member's role. Authorization is enforced by the
