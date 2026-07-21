@@ -52,7 +52,8 @@ export type EmployeeInput = {
   hourlyWage?: number | null;
   description?: string | null;
   contactPhone?: string | null;
-  contactEmail?: string | null;
+  /** Required — this is the address invited to log in and access /mon-espace. */
+  contactEmail: string;
 };
 
 export async function getEmployeeById(id: string): Promise<Employee | null> {

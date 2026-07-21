@@ -59,7 +59,10 @@ export async function createMenuShare(
     .select("*")
     .single();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    if (error) console.error("createMenuShare failed:", error.message);
+    return null;
+  }
   return mapMenuShare(data as MenuShareRow);
 }
 

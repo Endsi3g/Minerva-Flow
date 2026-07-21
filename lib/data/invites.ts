@@ -65,6 +65,44 @@ export async function createInviteLink(restaurantId: string, role: Role): Promis
   return mapInvite(data as InviteRow);
 }
 
+/**
+ * Same as createInviteLink, but scoped to a specific `employees` row: on
+ * redemption, that employee's linked_user_id is set to the redeeming
+ * account (see redeemInvite below) so they can log in and see /mon-espace.
+ */
+export async function createEmployeeInviteLink(
+  restaurantId: string,
+  employeeId: string,
+  role: Role
+): Promise<RestaurantInvite | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const token = randomUUID().replace(/-/g, "");
+  const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("restaurant_invites")
+    .insert({ restaurant_id: restaurantId, employee_id: employeeId, role, token, created_by: user.id, expires_at: expiresAt })
+    .select()
+    .single();
+  if (error || !data) return null;
+
+  await logActivity({
+    restaurantId,
+    actionType: "invite.create_employee_link",
+    entityType: "employee",
+    entityId: employeeId,
+    description: `A généré un lien de connexion pour un employé (${role}).`,
+  });
+
+  return mapInvite(data as InviteRow);
+}
+
 export type InviteListEntry = {
   id: string;
   role: Role;
@@ -187,6 +225,17 @@ export async function redeemInvite(token: string): Promise<{ ok: boolean; restau
   });
 
   await deletePhantomDefaultRestaurant(admin, user.id, [invite.restaurant_id]);
+
+  if (invite.employee_id) {
+    // Only link if the employee record isn't already linked to someone —
+    // never steal/overwrite an existing link via a stale or misdirected
+    // invite token.
+    await admin
+      .from("employees")
+      .update({ linked_user_id: user.id })
+      .eq("id", invite.employee_id)
+      .is("linked_user_id", null);
+  }
 
   return { ok: true, restaurantId: invite.restaurant_id };
 }

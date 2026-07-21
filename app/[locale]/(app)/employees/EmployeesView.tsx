@@ -5,7 +5,7 @@ import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Field, Input, Textarea } from "@/components/minerva/FormField";
+import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { Switch } from "@/components/ui/Switch";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -18,14 +18,15 @@ import {
   createEmployeeReviewAction,
   getEmployeeReviewsAction,
   createEmployeeTaskAction,
+  createEmployeeInviteLinkAction,
 } from "./actions";
 import posthog from "posthog-js";
-import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask } from "@/lib/types";
-import { useApp } from "@/lib/app-context";
-import { UserPlus, Star, Printer, Users2, ChevronRight } from "lucide-react";
+import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask, Role } from "@/lib/types";
+import { useApp, roleLabels } from "@/lib/app-context";
+import { UserPlus, Star, Printer, Users2, ChevronRight, Check, Copy, KeyRound } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { toast } from "sonner";
 
 export function StarRating({ value }: { value: number }) {
@@ -68,7 +69,7 @@ function NewEmployeeModal({
         hourlyWage: wage ? Number(wage) : null,
         description: String(form.get("description") ?? "") || null,
         contactPhone: String(form.get("contactPhone") ?? "") || null,
-        contactEmail: String(form.get("contactEmail") ?? "") || null,
+        contactEmail: String(form.get("contactEmail") ?? "").trim(),
       });
       if (employee) {
         posthog.capture("employee_created", { role_title: employee.roleTitle, has_wage: employee.hourlyWage !== null });
@@ -98,8 +99,8 @@ function NewEmployeeModal({
           <Field label={t("phoneLabel")} hint={t("optional")}>
             <Input name="contactPhone" type="tel" placeholder={t("phonePlaceholder")} />
           </Field>
-          <Field label={t("emailLabel")} hint={t("optional")}>
-            <Input name="contactEmail" type="email" placeholder={t("emailPlaceholder")} />
+          <Field label={t("emailLabel")} hint={t("emailHint")}>
+            <Input name="contactEmail" type="email" placeholder={t("emailPlaceholder")} required />
           </Field>
         </div>
         <Field label={t("descriptionLabel")} hint={t("optional")}>
@@ -234,6 +235,104 @@ export function NewTaskForm({
   );
 }
 
+const INVITABLE_EMPLOYEE_ROLES: Role[] = ["manager", "staff", "consultant"];
+
+export function InviteEmployeeModal({
+  employee,
+  restaurantId,
+  open,
+  onClose,
+}: {
+  employee: Employee;
+  restaurantId: string;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [role, setRole] = useState<Role>("staff");
+  const [link, setLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function handleGenerate() {
+    setError(null);
+    startTransition(async () => {
+      const invite = await createEmployeeInviteLinkAction(restaurantId, employee.id, role);
+      if (!invite) {
+        setError("Impossible de générer le lien. Réessayez.");
+        return;
+      }
+      setLink(`${window.location.origin}/invite/${invite.token}`);
+    });
+  }
+
+  async function handleCopy() {
+    if (!link) return;
+    await navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleClose() {
+    setLink(null);
+    setError(null);
+    setRole("staff");
+    onClose();
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Inviter à se connecter"
+      description={`Générez un lien pour que ${employee.fullName} crée son compte et accède à son espace personnel — valide 7 jours.`}
+    >
+      <div className="space-y-4">
+        <Field label="Rôle">
+          <Select value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={Boolean(link)}>
+            {INVITABLE_EMPLOYEE_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {roleLabels[r]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        {error && <p className="text-[12.5px] text-mv-red">{error}</p>}
+
+        {link && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-3 py-2">
+              <p className="flex-1 truncate text-[12.5px] text-mv-ink-soft">{link}</p>
+              <button
+                onClick={handleCopy}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                aria-label="Copier le lien"
+              >
+                {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
+              </button>
+            </div>
+            <p className="text-[11.5px] text-mv-ink-faint">
+              Partagez-le avec {employee.fullName} (courriel : {employee.contactEmail}) par le canal de votre choix.
+            </p>
+          </div>
+        )}
+
+        <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
+          <Button type="button" variant="ghost" onClick={handleClose}>
+            Fermer
+          </Button>
+          {!link && (
+            <Button onClick={handleGenerate} disabled={isPending}>
+              {isPending ? "Génération…" : "Générer le lien"}
+            </Button>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function NewReviewForm({
   employee,
   restaurantId,
@@ -345,6 +444,7 @@ export function EmployeeDetail({
   const [shifts, setShifts] = useState<EmployeeShift[]>([]);
   const [reviews, setReviews] = useState<EmployeeReview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -395,15 +495,29 @@ export function EmployeeDetail({
             </p>
           </div>
         </div>
-        <Button
-          size="sm"
-          variant="secondary"
-          className="mt-4"
-          onClick={() => onToggleActive(employee.id, !employee.active)}
-        >
-          {employee.active ? td("markInactive") : td("markActive")}
-        </Button>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="secondary" onClick={() => onToggleActive(employee.id, !employee.active)}>
+            {employee.active ? td("markInactive") : td("markActive")}
+          </Button>
+
+          {employee.linkedUserId ? (
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-mv-green/10 px-3 py-1.5 text-[12.5px] font-medium text-mv-green-dark">
+              <Check size={13} /> Compte connecté
+            </span>
+          ) : employee.contactEmail ? (
+            <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => setInviteOpen(true)}>
+              <KeyRound size={13} /> Inviter à se connecter
+            </Button>
+          ) : null}
+        </div>
       </Card>
+
+      <InviteEmployeeModal
+        employee={employee}
+        restaurantId={restaurantId}
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+      />
 
       <Card>
         <CardHeader eyebrow={td("shiftsEyebrow")} title={td("shiftsTitle")} />

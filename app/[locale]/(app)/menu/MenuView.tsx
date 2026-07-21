@@ -882,7 +882,7 @@ export function MenuView({
                 className={cn(
                   "rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-all duration-200",
                   categoryFilter === "all"
-                    ? "bg-mv-green text-mv-green-dark shadow-sm"
+                    ? "bg-mv-green text-white shadow-sm"
                     : "bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-ink/5"
                 )}
               >
@@ -895,7 +895,7 @@ export function MenuView({
                   className={cn(
                     "rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-all duration-200",
                     categoryFilter === c
-                      ? "bg-mv-green text-mv-green-dark shadow-sm"
+                      ? "bg-mv-green text-white shadow-sm"
                       : "bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-ink/5"
                   )}
                 >

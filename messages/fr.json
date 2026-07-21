@@ -289,7 +289,7 @@
     "inactive": "Inactif",
     "newEmployee": {
       "modalTitle": "Ajouter un employé",
-      "modalDescription": "Nom, poste et taux horaire (optionnel).",
+      "modalDescription": "Nom, poste, taux horaire (optionnel) et courriel — requis pour permettre à l'employé de se connecter.",
       "fullNameLabel": "Nom complet",
       "fullNamePlaceholder": "Ex : Sam Tremblay",
       "roleLabel": "Poste",
@@ -300,6 +300,7 @@
       "phoneLabel": "Téléphone",
       "phonePlaceholder": "Ex : 514-555-1234",
       "emailLabel": "Courriel",
+      "emailHint": "Requis — permet à l'employé de se connecter",
       "emailPlaceholder": "Ex : sam@courriel.com",
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Ex : disponible les fins de semaine, formation en pâtisserie…",
