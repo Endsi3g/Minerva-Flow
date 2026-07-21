@@ -40,7 +40,10 @@ test.describe("Employee login access", () => {
     await page.getByRole("button", { name: /inviter à se connecter/i }).click();
     await page.getByRole("button", { name: /générer le lien/i }).click();
 
-    const linkText = await page.locator("p.truncate").first().innerText();
+    // Text-content match on the URL itself rather than a CSS class — the
+    // "truncate" class is a common Tailwind utility used elsewhere on the
+    // page too (e.g. the account email in the header).
+    const linkText = await page.getByText(/\/invite\//).innerText();
     const token = linkText.split("/invite/")[1];
     expect(token).toBeTruthy();
 
