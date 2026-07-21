@@ -10,6 +10,8 @@ import { getConnections, createConnection } from "@/lib/data/finance";
 import { getAlertRules, upsertAlertRule } from "@/lib/data/alerts";
 import { createClient } from "@/lib/supabase/server";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { isGooglePlacesConfigured } from "@/lib/google/config";
+import { searchPlaces, getPlaceDetails, mapPlaceDetailsToRestaurantInput, type PlaceSuggestion } from "@/lib/google-places";
 import type {
   AlertRule,
   AlertRuleType,
@@ -40,6 +42,24 @@ export async function updateRestaurantAction(
   const restaurant = await updateRestaurant(id, patch);
   if (restaurant) revalidatePath("/etablissement");
   return restaurant;
+}
+
+/**
+ * Read-only, no restaurant-mutation semantics — the caller merges the
+ * result into its own local form state before calling
+ * createRestaurantAction/updateRestaurantAction to actually persist it.
+ */
+export async function isGooglePlacesEnabledAction(): Promise<boolean> {
+  return isGooglePlacesConfigured();
+}
+
+export async function searchPlacesAction(query: string): Promise<PlaceSuggestion[]> {
+  return searchPlaces(query);
+}
+
+export async function getPlaceDetailsAction(placeId: string): Promise<Partial<RestaurantInput> | null> {
+  const details = await getPlaceDetails(placeId);
+  return details ? mapPlaceDetailsToRestaurantInput(details) : null;
 }
 
 export async function getConnectionsAction(restaurantId: string): Promise<Connection[]> {

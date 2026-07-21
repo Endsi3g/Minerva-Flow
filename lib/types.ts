@@ -1,5 +1,10 @@
 export type Role = "owner" | "manager" | "staff" | "consultant";
 
+/** "HH:MM", 24h, local to the restaurant's own timezone. */
+export type DayHours = { open: string; close: string };
+/** Keyed 0 (Sunday) – 6 (Saturday), matching operating_days' convention. Missing key = closed that day. */
+export type OpeningHours = Partial<Record<0 | 1 | 2 | 3 | 4 | 5 | 6, DayHours>>;
+
 export type Restaurant = {
   id: string;
   name: string;
@@ -16,6 +21,9 @@ export type Restaurant = {
   lat: number | null;
   website: string | null;
   description: string | null;
+  phone: string | null;
+  openingHours: OpeningHours | null;
+  googlePlaceId: string | null;
   workspaceId?: string | null;
   loyaltyPointsPerDollar: number;
   taxRate: number;
