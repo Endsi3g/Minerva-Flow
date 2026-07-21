@@ -24,7 +24,9 @@ test.describe("Collaborateurs", () => {
     await page.getByRole("button", { name: /inviter un collaborateur/i }).first().click();
     await page.getByRole("button", { name: /générer le lien/i }).click();
 
-    const linkText = await page.locator("p.truncate").first().innerText();
-    expect(linkText).toContain("/invite/w/");
+    // Text-content match on the URL itself rather than a CSS class — the
+    // "truncate" class is a common Tailwind utility used elsewhere on the
+    // page too (e.g. the account email in the header).
+    await expect(page.getByText(/\/invite\/w\//)).toBeVisible({ timeout: 10000 });
   });
 });
