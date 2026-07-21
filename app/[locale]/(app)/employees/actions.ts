@@ -19,8 +19,9 @@ import {
   setEmployeeTaskStatus,
   type EmployeeTaskInput,
 } from "@/lib/data/employee-tasks";
+import { createEmployeeInviteLink, type RestaurantInvite } from "@/lib/data/invites";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
-import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask, EmployeeTaskStatus } from "@/lib/types";
+import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask, EmployeeTaskStatus, Role } from "@/lib/types";
 
 async function requireManager(restaurantId: string): Promise<boolean> {
   const membership = await getCurrentMembership();
@@ -33,7 +34,7 @@ export async function createEmployeeAction(
   restaurantId: string,
   input: EmployeeInput
 ): Promise<Employee | null> {
-  if (!restaurantId || !input.fullName.trim()) return null;
+  if (!restaurantId || !input.fullName.trim() || !input.contactEmail.trim()) return null;
   if (!(await requireManager(restaurantId))) return null;
 
   const employee = await createEmployee(restaurantId, input);
@@ -131,4 +132,15 @@ export async function setEmployeeTaskStatusAction(
     revalidatePath("/mon-espace");
   }
   return ok;
+}
+
+export async function createEmployeeInviteLinkAction(
+  restaurantId: string,
+  employeeId: string,
+  role: Role
+): Promise<RestaurantInvite | null> {
+  if (!restaurantId || !employeeId) return null;
+  if (!(await requireManager(restaurantId))) return null;
+
+  return createEmployeeInviteLink(restaurantId, employeeId, role);
 }

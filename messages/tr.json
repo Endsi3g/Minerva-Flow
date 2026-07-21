@@ -289,7 +289,7 @@
     "inactive": "Pasif",
     "newEmployee": {
       "modalTitle": "Çalışan ekle",
-      "modalDescription": "Ad, görev ve saatlik ücret (isteğe bağlı).",
+      "modalDescription": "Ad, görev, saatlik ücret (isteğe bağlı) ve e-posta — çalışanın giriş yapabilmesi için gereklidir.",
       "fullNameLabel": "Ad soyad",
       "fullNamePlaceholder": "Örn: Sam Tremblay",
       "roleLabel": "Görev",
@@ -300,6 +300,7 @@
       "phoneLabel": "Telefon",
       "phonePlaceholder": "Örn: 514-555-1234",
       "emailLabel": "E-posta",
+      "emailHint": "Gerekli — çalışanın giriş yapmasını sağlar",
       "emailPlaceholder": "Örn: sam@eposta.com",
       "descriptionLabel": "Açıklama",
       "descriptionPlaceholder": "Örn: hafta sonları müsait, pastacılık eğitimi…",

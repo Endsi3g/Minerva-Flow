@@ -25,6 +25,11 @@ import { CalendarCheck2, Megaphone, ArrowUpRight, ArrowRight, Store } from "luci
 import type { ProgramStatus, ServiceDay } from "@/lib/types";
 import Link from "next/link";
 
+// Picked at random on each load so the greeting doesn't feel static —
+// vouvoiement throughout to match the app's tone, avoid time-of-day words
+// (e.g. "Bonsoir") since there's no local-time signal to base it on.
+const GREETINGS = ["Salutations", "Bonjour", "Allô", "Bon retour", "Bienvenue"];
+
 const statusTone: Record<ProgramStatus, "green" | "amber" | "neutral"> = {
   actif: "green",
   planifie: "amber",
@@ -103,6 +108,7 @@ export default async function OverviewPage() {
   const firstName = profile?.fullName?.split(" ")[0] ?? null;
   const monthMarge = margTrend.reduce((sum, d) => sum + d.revenue, 0);
   const todayLabel = formatDateFull(new Date().toISOString().slice(0, 10));
+  const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
 
   const alerts = computeAlerts({ serviceDays, connections, alertRules, financialTransactions });
   const recommendations = computeRecommendations({ campaigns, programs, serviceDays, alerts });
@@ -133,7 +139,7 @@ export default async function OverviewPage() {
       <LiveKpiSync restaurantId={restaurantId} />
       <PageHeader
         eyebrow="Vue globale"
-        title={firstName ? `Salutations, ${firstName}` : "Salutations"}
+        title={firstName ? `${greeting}, ${firstName}` : greeting}
         description={`Voici votre marge cumulée du mois — ${formatCurrency(monthMarge)} au ${todayLabel}.`}
         action={
           <Button href="/days" variant="secondary" size="sm">

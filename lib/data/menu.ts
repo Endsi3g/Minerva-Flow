@@ -72,7 +72,10 @@ export async function createMenuItem(restaurantId: string, input: MenuItemInput)
     .select("*")
     .single();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    if (error) console.error("createMenuItem failed:", error.message);
+    return null;
+  }
 
   await logActivity({
     restaurantId,

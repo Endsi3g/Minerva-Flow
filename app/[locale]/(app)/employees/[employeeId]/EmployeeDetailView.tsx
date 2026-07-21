@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
-import { LogShiftForm, NewReviewForm, NewTaskForm, StarRating } from "../EmployeesView";
+import { InviteEmployeeModal, LogShiftForm, NewReviewForm, NewTaskForm, StarRating } from "../EmployeesView";
 import { setEmployeeActiveAction, setEmployeeTaskStatusAction } from "../actions";
 import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask } from "@/lib/types";
-import { ArrowLeft, Phone, Mail, DollarSign, Calendar, Award, Printer, Clock } from "lucide-react";
+import { ArrowLeft, Phone, Mail, DollarSign, Calendar, Award, Printer, Clock, KeyRound, CheckCircle2 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -39,6 +39,7 @@ export function EmployeeDetailView({
   const [reviews, setReviews] = useState(initialReviews);
   const [tasks, setTasks] = useState(initialTasks);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const canManage = role === "owner" || role === "manager";
   const totalHours = shifts.reduce((sum, s) => sum + s.hoursWorked, 0);
@@ -143,7 +144,7 @@ export function EmployeeDetailView({
             </div>
 
             {canManage && (
-              <div className="mt-6 border-t border-mv-border-soft pt-4">
+              <div className="mt-6 space-y-2 border-t border-mv-border-soft pt-4">
                 <Button
                   size="sm"
                   variant="secondary"
@@ -153,9 +154,32 @@ export function EmployeeDetailView({
                 >
                   {employee.active ? t("deactivate") : t("activate")}
                 </Button>
+
+                {employee.linkedUserId ? (
+                  <div className="flex items-center justify-center gap-1.5 rounded-lg bg-mv-green/10 py-2 text-[12.5px] font-medium text-mv-green-dark">
+                    <CheckCircle2 size={14} /> Compte connecté
+                  </div>
+                ) : employee.contactEmail ? (
+                  <Button size="sm" variant="secondary" className="w-full gap-1.5" onClick={() => setInviteOpen(true)}>
+                    <KeyRound size={14} /> Inviter à se connecter
+                  </Button>
+                ) : (
+                  <p className="text-center text-[11.5px] text-mv-ink-faint">
+                    Ajoutez un courriel à cette fiche pour permettre la connexion.
+                  </p>
+                )}
               </div>
             )}
           </Card>
+
+          {canManage && (
+            <InviteEmployeeModal
+              employee={employee}
+              restaurantId={restaurantId}
+              open={inviteOpen}
+              onClose={() => setInviteOpen(false)}
+            />
+          )}
 
           <Card>
             <CardHeader eyebrow={t("statsEyebrow")} title={t("statsTitle")} />
