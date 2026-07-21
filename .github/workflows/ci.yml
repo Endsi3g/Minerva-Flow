@@ -32,6 +32,9 @@ jobs:
         # Flip this to blocking once that debt is cleaned up separately.
         continue-on-error: true
 
+      - name: Unit tests
+        run: npm run test
+
       - name: Build
         run: npm run build
         env:
