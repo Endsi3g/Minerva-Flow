@@ -14,6 +14,7 @@ import { AdPlatformsCard } from "@/components/minerva/AdPlatformsCard";
 import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
 import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
 import { ReservationDeliveryConnectionsCard } from "@/components/minerva/ReservationDeliveryConnectionsCard";
+import { StripeConnectCard } from "@/components/minerva/StripeConnectCard";
 import {
   getConnectionsAction,
   createConnectionAction,
@@ -205,6 +206,7 @@ function IntegrationsTab() {
         <GoogleWorkspaceCard />
         <PosConnectionsCard />
         <ReservationDeliveryConnectionsCard />
+        <StripeConnectCard />
       </div>
 
       {loading ? (

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getStripeClient, stripePriceId } from "@/lib/stripe/config";
 import { upsertSubscription, getSubscriptionByStripeCustomerId } from "@/lib/data/subscriptions";
-import { notifyWorkspaceOwners } from "@/lib/data/notifications";
+import { notifyWorkspaceOwners, notifyRestaurant } from "@/lib/data/notifications";
+import { getRestaurantIdByStripeConnectAccountId, syncConnectAccountStatus } from "@/lib/data/restaurant-payments";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatCurrency } from "@/lib/utils";
 import type Stripe from "stripe";
 
 /**
@@ -178,6 +180,86 @@ export async function POST(req: Request) {
             title: "Paiement reçu",
             body: `Votre paiement de ${amount} a été traité avec succès.`,
             link: "/billing",
+          });
+        }
+      }
+      break;
+    }
+
+    // Destination charges (transfer_data.destination) keep the
+    // PaymentIntent on the platform account — these arrive as ordinary
+    // events here, no "listen to connected account events" dashboard
+    // change needed, unlike account.updated below.
+    case "payment_intent.succeeded": {
+      const intent = event.data.object as Stripe.PaymentIntent;
+      const orderId = intent.metadata?.orderId;
+      if (orderId) {
+        const admin = createAdminClient();
+        const { data: order } = await admin
+          .from("orders")
+          .update({ payment_status: "paye", paid_at: new Date().toISOString() })
+          .eq("id", orderId)
+          .eq("stripe_payment_intent_id", intent.id)
+          .select("restaurant_id, guest_name, total")
+          .maybeSingle();
+        if (order) {
+          await notifyRestaurant({
+            restaurantId: order.restaurant_id,
+            type: "order.paid",
+            title: "Commande payée en ligne",
+            body: `${order.guest_name} — ${formatCurrency(order.total)}`,
+            link: "/commandes",
+          });
+        }
+      }
+      break;
+    }
+
+    case "payment_intent.payment_failed": {
+      const intent = event.data.object as Stripe.PaymentIntent;
+      const orderId = intent.metadata?.orderId;
+      if (orderId) {
+        const admin = createAdminClient();
+        const { data: order } = await admin
+          .from("orders")
+          .update({ payment_status: "echoue" })
+          .eq("id", orderId)
+          .eq("stripe_payment_intent_id", intent.id)
+          .select("restaurant_id, guest_name, guest_phone")
+          .maybeSingle();
+        if (order) {
+          await notifyRestaurant({
+            restaurantId: order.restaurant_id,
+            type: "order.payment_failed",
+            title: "Échec de paiement en ligne",
+            body: `${order.guest_name}${order.guest_phone ? ` (${order.guest_phone})` : ""} — le paiement a échoué, à suivre.`,
+            link: "/commandes",
+          });
+        }
+      }
+      break;
+    }
+
+    // Connected-account event — requires "Listen to events on connected
+    // accounts" enabled on this webhook endpoint in the Stripe dashboard
+    // (see docs/integrations.md). payment_intent.* above need no such
+    // change since destination charges stay on the platform account.
+    case "account.updated": {
+      const account = event.data.object as Stripe.Account;
+      const restaurantId = await getRestaurantIdByStripeConnectAccountId(account.id);
+      if (restaurantId) {
+        const { justActivated } = await syncConnectAccountStatus(restaurantId, {
+          chargesEnabled: Boolean(account.charges_enabled),
+          payoutsEnabled: Boolean(account.payouts_enabled),
+          detailsSubmitted: Boolean(account.details_submitted),
+        });
+        if (justActivated) {
+          await notifyRestaurant({
+            restaurantId,
+            type: "stripe_connect.activated",
+            title: "Paiements en ligne activés",
+            body: "Vous pouvez maintenant encaisser vos clients directement en ligne.",
+            link: "/settings",
           });
         }
       }

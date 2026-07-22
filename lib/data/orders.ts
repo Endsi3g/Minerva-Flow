@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
-import type { Order, OrderItem, OrderStatus } from "@/lib/types";
+import type { Order, OrderItem, OrderStatus, OrderPaymentStatus } from "@/lib/types";
 
 type OrderRow = {
   id: string;
@@ -13,6 +13,9 @@ type OrderRow = {
   tip_amount: number;
   total: number;
   payment_method: string | null;
+  payment_status: OrderPaymentStatus;
+  stripe_payment_intent_id: string | null;
+  paid_at: string | null;
   notes: string | null;
   customer_id: string | null;
   referral_link_id: string | null;
@@ -54,6 +57,9 @@ function mapOrder(row: OrderRow, items: OrderItemRow[]): Order {
     tipAmount: row.tip_amount,
     total: row.total,
     paymentMethod: row.payment_method,
+    paymentStatus: row.payment_status,
+    stripePaymentIntentId: row.stripe_payment_intent_id,
+    paidAt: row.paid_at,
     notes: row.notes,
     customerId: row.customer_id,
     referralLinkId: row.referral_link_id,

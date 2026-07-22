@@ -564,6 +564,9 @@ export type MenuItem = {
 
 export type OrderStatus = "soumise" | "confirmee" | "en_preparation" | "prete" | "servie" | "annulee";
 
+/** 'non_requis' = pay-on-site (today's default). The other three only apply when the guest chose "Payer en ligne" at checkout — see app/api/stripe/webhook/route.ts for the en_attente -> paye/echoue transition. */
+export type OrderPaymentStatus = "non_requis" | "en_attente" | "paye" | "echoue";
+
 export type OrderItem = {
   id: string;
   orderId: string;
@@ -585,6 +588,9 @@ export type Order = {
   tipAmount: number;
   total: number;
   paymentMethod: string | null;
+  paymentStatus: OrderPaymentStatus;
+  stripePaymentIntentId: string | null;
+  paidAt: string | null;
   notes: string | null;
   customerId: string | null;
   referralLinkId: string | null;

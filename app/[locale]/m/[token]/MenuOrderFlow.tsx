@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { requestCustomerMagicLink } from "@/lib/auth/customer-magic-link";
 import { submitPublicOrderAction } from "./actions";
+import { OnlinePaymentForm } from "./OnlinePaymentForm";
 import { formatCurrency, roundToCents, cn } from "@/lib/utils";
 import { InstallAppPrompt } from "@/components/pwa/InstallAppPrompt";
 import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
@@ -32,6 +33,7 @@ function CheckoutModal({
   authenticated,
   token,
   referralCode,
+  onlinePaymentEnabled,
   onOrdered,
 }: {
   open: boolean;
@@ -44,13 +46,18 @@ function CheckoutModal({
   authenticated: boolean;
   token: string;
   referralCode: string | null;
+  onlinePaymentEnabled: boolean;
   onOrdered: () => void;
 }) {
   const { subtotal, taxAmount, tipAmount, total } = totals;
   const [email, setEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "submitting" | "done" | "paying" | "paid" | "error">(
+    "idle"
+  );
+  const [payOnline, setPayOnline] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   async function handleEmailSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -71,24 +78,58 @@ function CheckoutModal({
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     setSubmitStatus("submitting");
-    const ok = await submitPublicOrderAction(
+    const result = await submitPublicOrderAction(
       token,
       referralCode,
       cartLines.map((l) => ({ menuItemId: l.item.id, quantity: l.quantity })),
       {
         guestName: String(form.get("guestName") ?? ""),
         guestPhone: String(form.get("guestPhone") ?? "") || null,
-        paymentMethod: String(form.get("paymentMethod") ?? "") || null,
+        paymentMethod: payOnline ? null : String(form.get("paymentMethod") ?? "") || null,
         tipAmount,
+        payOnline,
       }
     );
-    if (ok) onOrdered();
-    setSubmitStatus(ok ? "done" : "error");
+    if (!result.ok) {
+      setSubmitStatus("error");
+      return;
+    }
+    if (result.clientSecret) {
+      setClientSecret(result.clientSecret);
+      setSubmitStatus("paying");
+    } else {
+      onOrdered();
+      setSubmitStatus("done");
+    }
   }
 
   return (
     <Modal open={open} onClose={onClose} title="Votre commande" width={480}>
-      {submitStatus === "done" ? (
+      {submitStatus === "paying" && clientSecret ? (
+        <div className="py-2">
+          <p className="mb-3 text-[13px] text-mv-ink-soft">
+            Votre commande a été transmise au restaurant. Complétez le paiement pour confirmer.
+          </p>
+          <OnlinePaymentForm
+            clientSecret={clientSecret}
+            total={total}
+            onPaid={() => {
+              onOrdered();
+              setSubmitStatus("paid");
+            }}
+          />
+        </div>
+      ) : submitStatus === "paid" ? (
+        <div className="py-4 text-center">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+            <CheckCircle2 size={18} />
+          </div>
+          <p className="font-display text-[17px] font-medium text-mv-ink">Paiement envoyé</p>
+          <p className="mt-1.5 text-[13px] text-mv-ink-soft">
+            Nous confirmons avec votre banque. Votre commande est déjà transmise au restaurant.
+          </p>
+        </div>
+      ) : submitStatus === "done" ? (
         <div className="py-4 text-center">
           <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
             <CheckCircle2 size={18} />
@@ -163,9 +204,42 @@ function CheckoutModal({
               <Field label="Téléphone" hint="Optionnel">
                 <Input name="guestPhone" type="tel" />
               </Field>
-              <Field label="Mode de paiement sur place" hint="Optionnel">
-                <Input name="paymentMethod" placeholder="Ex : Carte, comptant" />
-              </Field>
+              {onlinePaymentEnabled && (
+                <div>
+                  <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Paiement</p>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPayOnline(false)}
+                      className={cn(
+                        "flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium",
+                        !payOnline
+                          ? "border-mv-green bg-mv-green-tint text-mv-green-dark"
+                          : "border-mv-border text-mv-ink-soft"
+                      )}
+                    >
+                      Sur place
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPayOnline(true)}
+                      className={cn(
+                        "flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium",
+                        payOnline
+                          ? "border-mv-green bg-mv-green-tint text-mv-green-dark"
+                          : "border-mv-border text-mv-ink-soft"
+                      )}
+                    >
+                      En ligne maintenant
+                    </button>
+                  </div>
+                </div>
+              )}
+              {!payOnline && (
+                <Field label="Mode de paiement sur place" hint="Optionnel">
+                  <Input name="paymentMethod" placeholder="Ex : Carte, comptant" />
+                </Field>
+              )}
               {submitStatus === "error" && (
                 <p className="text-[12.5px] text-mv-red">La commande a échoué. Réessayez.</p>
               )}
@@ -210,7 +284,7 @@ export function MenuOrderFlow({
   offers: Offer[];
   authenticated: boolean;
 }) {
-  const { restaurantName, items, taxRate, acceptsTips } = landing;
+  const { restaurantName, items, taxRate, acceptsTips, onlinePaymentEnabled } = landing;
   const [cart, setCart] = useState<Record<string, number>>({});
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [tipPct, setTipPct] = useState<number | null>(acceptsTips ? 0.15 : null);
@@ -399,6 +473,7 @@ export function MenuOrderFlow({
         authenticated={authenticated}
         token={token}
         referralCode={referralCode}
+        onlinePaymentEnabled={onlinePaymentEnabled}
         onOrdered={handleOrdered}
       />
     </div>

@@ -78,22 +78,61 @@ export type PublicMenuLanding = {
   restaurantName: string;
   taxRate: number;
   acceptsTips: boolean;
+  onlinePaymentEnabled: boolean;
   items: MenuItem[];
 };
 
-/** Shared by getMenuShareByToken and submitPublicOrder (lib/data/customer-referrals.ts) — both need only these two fields via the admin client for a public-facing request. */
+type ConnectAvailability = { onlinePaymentEnabled: boolean; stripeConnectAccountId: string | null };
+
+/**
+ * Deliberately a separate query from the core tax_rate/accepts_tips
+ * lookup below, and deliberately swallows its own error instead of
+ * failing the caller: the stripe_connect_* columns are new (migration
+ * 0026) and this function is on the same request path as the
+ * already-live public ordering flow — if the migration hasn't been
+ * applied yet in some environment, online payment should just look
+ * unavailable, not take down menu browsing/ordering entirely.
+ */
+async function getConnectPaymentAvailability(
+  admin: ReturnType<typeof createAdminClient>,
+  restaurantId: string
+): Promise<ConnectAvailability> {
+  const fallback: ConnectAvailability = { onlinePaymentEnabled: false, stripeConnectAccountId: null };
+  const { data, error } = await admin
+    .from("restaurants")
+    .select("stripe_connect_account_id, stripe_connect_charges_enabled")
+    .eq("id", restaurantId)
+    .maybeSingle();
+  if (error || !data) return fallback;
+  const row = data as { stripe_connect_account_id: string | null; stripe_connect_charges_enabled: boolean };
+  return {
+    onlinePaymentEnabled: Boolean(row.stripe_connect_account_id) && row.stripe_connect_charges_enabled,
+    stripeConnectAccountId: row.stripe_connect_account_id,
+  };
+}
+
+/**
+ * Shared by getMenuShareByToken and submitPublicOrder
+ * (lib/data/customer-referrals.ts) — the same function feeds both the
+ * public page's display AND the authoritative payment-creation check, so
+ * the two can never disagree about whether online payment is available.
+ */
 export async function getRestaurantOrderSettings(
   admin: ReturnType<typeof createAdminClient>,
   restaurantId: string
-): Promise<{ taxRate: number; acceptsTips: boolean } | null> {
-  const { data } = await admin
-    .from("restaurants")
-    .select("tax_rate, accepts_tips")
-    .eq("id", restaurantId)
-    .maybeSingle();
+): Promise<{
+  taxRate: number;
+  acceptsTips: boolean;
+  onlinePaymentEnabled: boolean;
+  stripeConnectAccountId: string | null;
+} | null> {
+  const [{ data }, connect] = await Promise.all([
+    admin.from("restaurants").select("tax_rate, accepts_tips").eq("id", restaurantId).maybeSingle(),
+    getConnectPaymentAvailability(admin, restaurantId),
+  ]);
   if (!data) return null;
   const row = data as { tax_rate: number; accepts_tips: boolean };
-  return { taxRate: row.tax_rate, acceptsTips: row.accepts_tips };
+  return { taxRate: row.tax_rate, acceptsTips: row.accepts_tips, ...connect };
 }
 
 /**
@@ -117,9 +156,10 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     itemsQuery = itemsQuery.in("id", share.itemIds);
   }
 
-  const [restaurantResult, itemsResult] = await Promise.all([
+  const [restaurantResult, itemsResult, connect] = await Promise.all([
     admin.from("restaurants").select("name, tax_rate, accepts_tips").eq("id", share.restaurantId).maybeSingle(),
     itemsQuery.order("category").order("name"),
+    getConnectPaymentAvailability(admin, share.restaurantId),
   ]);
 
   if (!restaurantResult.data) return null;
@@ -132,6 +172,7 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     restaurantName: restaurant.name,
     taxRate: restaurant.tax_rate,
     acceptsTips: restaurant.accepts_tips,
+    onlinePaymentEnabled: connect.onlinePaymentEnabled,
     items,
   };
 }
