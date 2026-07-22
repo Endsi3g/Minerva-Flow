@@ -13,6 +13,7 @@ import { AppearanceTab } from "@/components/settings/AppearanceTab";
 import { AdPlatformsCard } from "@/components/minerva/AdPlatformsCard";
 import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
 import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
+import { ReservationDeliveryConnectionsCard } from "@/components/minerva/ReservationDeliveryConnectionsCard";
 import {
   getConnectionsAction,
   createConnectionAction,
@@ -203,6 +204,7 @@ function IntegrationsTab() {
         <AdPlatformsCard />
         <GoogleWorkspaceCard />
         <PosConnectionsCard />
+        <ReservationDeliveryConnectionsCard />
       </div>
 
       {loading ? (
