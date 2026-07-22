@@ -116,7 +116,7 @@ export async function createPurchaseOrder(
     .insert({
       restaurant_id: restaurantId,
       supplier_id: input.supplierId,
-      expected_date: input.expectedDate,
+      expected_date: input.expectedDate || null,
       notes: input.notes,
       created_by: user?.id,
     })

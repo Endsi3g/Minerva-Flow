@@ -178,7 +178,7 @@ export async function createCampaign(
       channel: input.channel,
       type: input.type,
       start_date: input.startDate,
-      end_date: input.endDate,
+      end_date: input.endDate || null,
       cost: input.cost ?? 0,
       status: input.status ?? "planifiee",
       estimated_revenue: input.estimatedRevenue ?? 0,
@@ -222,7 +222,7 @@ export async function updateCampaign(
   if (patch.channel !== undefined) dbPatch.channel = patch.channel;
   if (patch.type !== undefined) dbPatch.type = patch.type;
   if (patch.startDate !== undefined) dbPatch.start_date = patch.startDate;
-  if (patch.endDate !== undefined) dbPatch.end_date = patch.endDate;
+  if (patch.endDate !== undefined) dbPatch.end_date = patch.endDate || null;
   if (patch.cost !== undefined) dbPatch.cost = patch.cost;
   if (patch.status !== undefined) dbPatch.status = patch.status;
   if (patch.estimatedRevenue !== undefined) dbPatch.estimated_revenue = patch.estimatedRevenue;
