@@ -17,6 +17,7 @@ Flow par Minerva centralise le pilotage quotidien d'un restaurant ou café dans 
 - **Fidélisation client** — fiches clients, points de fidélité, catalogue de récompenses, programmes de parrainage avec suivi des conversions, et un lien/QR public pour qu'un nouveau client rejoigne le programme lui-même.
 - **Portail client** (`/portal`) — vos clients se connectent sans mot de passe (lien magique) pour voir leurs points et partager leur lien de parrainage, sans accès au reste de l'application.
 - **Ingénierie de menu** — classification automatique des plats (étoiles, chevaux de bataille, énigmes, poids morts) selon marge et popularité.
+- **Commande en ligne** — menu partagé par lien public (`/m/[token]`), panier, taxes et pourboire calculés automatiquement, routage direct vers le tableau de bord `/commandes`. Paiement par carte optionnel via Stripe Connect — l'argent va directement dans le compte du restaurant, jamais dans celui de Flow par Minerva (voir `docs/integrations.md` pour l'activer).
 - **Inventaire et gaspillage** — quantités en main, seuils de réapprovisionnement, coût du gaspillage répercuté automatiquement dans les dépenses.
 - **Fournisseurs** — répertoire, commandes (brouillon → envoyée → reçue), suivi de livraison (trajet et ETA), réception liée à l'inventaire.
 - **Réservations** — gestion des tables en interne, et demandes de réservation publiques via un lien de parrainage.
@@ -125,8 +126,6 @@ Flow par Minerva est en développement actif et déjà utilisé en production. L
 
 Prochaines étapes envisagées :
 
-- Commande en ligne complète depuis le menu partagé : image sur les plats, lien public, prix avec taxes, pourboire, et routage direct de la commande vers l'application (sans paiement par carte réel dans un premier temps).
-- Paiement par carte intégré (Stripe), une fois la commande en ligne en place.
 - Synchronisation réelle avec OpenTable, Resy et Uber Direct/Eats — la surface de connexion existe déjà (Paramètres → Intégrations), en attente d'un partenariat d'affaires actif avec ces plateformes. Voir [`docs/integrations.md`](docs/integrations.md) pour la démarche.
 - Suivi de commande fournisseur étendu (statuts intermédiaires, détection des retards de livraison).
 - Import automatique de menu existant (PDF ou site web de l'établissement).

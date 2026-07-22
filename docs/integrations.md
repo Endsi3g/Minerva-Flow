@@ -31,7 +31,8 @@ Après tout ajout de variable, la variable doit aussi être ajoutée à `.env.lo
 | Google Ads / Google Workspace / Google Calendar | ❌ Pas configuré | Créer une app OAuth Google Cloud |
 | Meta Ads | ❌ Pas configuré | Créer une app Meta for Developers |
 | Vercel AI Gateway (Chat IA, Revue IA) | ⏸️ Clé créée, bloquée | Ajouter une carte de crédit au compte Vercel |
-| Stripe (facturation) | ⏸️ Différé volontairement | À activer quand vous le demandez |
+| Stripe (facturation — abonnement Flow par Minerva) | ⏸️ Différé volontairement | À activer quand vous le demandez |
+| Stripe Connect (paiements clients en ligne) | ⏸️ Construit, en attente | Activer Connect + clé publique + webhook connecté |
 | OpenTable | ❌ Pas configuré | Candidature de partenariat OpenTable Connect |
 | Resy | ❌ Pas configuré | Candidature de partenariat Resy API |
 | Uber Direct / Uber Eats | ❌ Pas configuré | Compte marchand Uber Direct |
@@ -124,6 +125,26 @@ Différé volontairement — pas encore de demande de votre part pour l'activer.
    ```
 
 Dites-moi simplement quand vous voulez l'activer et je m'occupe du reste une fois ces trois valeurs en main.
+
+---
+
+## 5b. Stripe Connect (paiements clients en ligne)
+
+Distinct de la section précédente : ceci fait que **vos clients** paient directement dans **le compte Stripe de chaque restaurant** (pas le vôtre) quand ils commandent depuis un menu partagé (`/m/[token]`) — le code est entièrement construit (compte Express, carte "Connecter Stripe" dans Paramètres → Intégrations, `PaymentElement` au checkout, webhook de confirmation), et utilise la **même clé secrète** que la facturation ci-dessus (un seul compte Stripe, un seul `STRIPE_SECRET_KEY`). Il reste seulement des étapes de configuration côté dashboard :
+
+1. [Dashboard Stripe](https://dashboard.stripe.com/) → **Connect** → activer le produit Connect sur votre compte plateforme (choix "Plateforme ou marketplace" à l'inscription si ce n'est pas déjà fait).
+2. **Developers → API keys** → récupérer la clé publique (`pk_...`) :
+   ```bash
+   vercel env add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY production
+   ```
+3. **Developers → Webhooks** → ouvrir le endpoint existant (`https://minerva-flow.vercel.app/api/stripe/webhook`, déjà configuré pour la facturation) → activer **"Listen to events on connected accounts"** et ajouter l'événement `account.updated` à sa liste. Les événements `payment_intent.succeeded`/`payment_intent.payment_failed` n'ont besoin d'aucun changement — ils arrivent déjà comme des événements normaux de la plateforme.
+4. Optionnel — commission plateforme (0 % par défaut tant que vous n'avez pas tranché un modèle d'affaires) :
+   ```bash
+   vercel env add STRIPE_CONNECT_FEE_PERCENT production
+   # valeur : un nombre entre 0 et 100, ex. "2" pour 2 %
+   ```
+
+Une fois ces étapes faites, chaque restaurant peut cliquer "Connecter Stripe" dans ses propres Paramètres et compléter son inscription Express (numéro d'entreprise, compte bancaire) directement chez Stripe — aucune autre action de votre part par restaurant.
 
 ---
 

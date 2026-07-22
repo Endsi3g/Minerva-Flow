@@ -7,7 +7,7 @@ import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatTime } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
-import type { Order, OrderStatus } from "@/lib/types";
+import type { Order, OrderStatus, OrderPaymentStatus } from "@/lib/types";
 import { ClipboardList, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { getOrdersForDayAction, updateOrderStatusAction, deleteOrderAction } from "./actions";
@@ -29,6 +29,20 @@ const statusTone: Record<OrderStatus, "green" | "amber" | "red" | "neutral"> = {
   prete: "green",
   servie: "green",
   annulee: "neutral",
+};
+
+// Only "non_requis" (pay-on-site, today's default) never renders a badge —
+// the other three only apply once a guest chooses "Payer en ligne".
+const paymentStatusLabel: Partial<Record<OrderPaymentStatus, string>> = {
+  en_attente: "Paiement en attente",
+  paye: "Payé en ligne",
+  echoue: "Paiement échoué",
+};
+
+const paymentStatusTone: Partial<Record<OrderPaymentStatus, "green" | "amber" | "red" | "neutral">> = {
+  en_attente: "amber",
+  paye: "green",
+  echoue: "red",
 };
 
 const nextStatus: Partial<Record<OrderStatus, { status: OrderStatus; label: string }>> = {
@@ -126,7 +140,14 @@ export function CommandesView({
                   </Td>
                   <Td className="text-right font-semibold text-mv-ink">{formatCurrency(o.total)}</Td>
                   <Td>
-                    <Badge tone={statusTone[o.status]}>{statusLabel[o.status]}</Badge>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge tone={statusTone[o.status]}>{statusLabel[o.status]}</Badge>
+                      {o.paymentStatus !== "non_requis" && (
+                        <Badge tone={paymentStatusTone[o.paymentStatus]}>
+                          {paymentStatusLabel[o.paymentStatus]}
+                        </Badge>
+                      )}
+                    </div>
                   </Td>
                   <Td className="text-right">
                     {canManage && (

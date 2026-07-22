@@ -5,7 +5,9 @@ import { generateToken } from "@/lib/tokens";
 import { mapReferralProgram, type ReferralProgramRow } from "@/lib/data/referral-programs";
 import { getRestaurantOrderSettings } from "@/lib/data/menu-shares";
 import { notifyRestaurant } from "@/lib/data/notifications";
-import { formatCurrency, roundToCents } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
+import { computeOrderPricing } from "@/lib/data/order-pricing";
+import { createOrderPaymentIntent } from "@/lib/stripe/connect";
 import type { CustomerReferralLink, ReferralProgram } from "@/lib/types";
 
 export type ReferralLinkTracking = {
@@ -294,7 +296,14 @@ export type PublicOrderGuestInfo = {
   paymentMethod: string | null;
   /** Customer-chosen tip in dollars — everything else is recomputed server-side from real menu prices. */
   tipAmount: number;
+  /** True if the guest picked "Payer en ligne" — only honored if the restaurant's Connect account is actually active (getRestaurantOrderSettings.onlinePaymentEnabled), otherwise silently falls back to pay-on-site. */
+  payOnline: boolean;
 };
+
+export type SubmitPublicOrderResult =
+  | { ok: false }
+  | { ok: true; orderId: string; clientSecret: null }
+  | { ok: true; orderId: string; clientSecret: string };
 
 /**
  * Same shape as submitPublicReservationRequest: identify the visitor via
@@ -302,23 +311,31 @@ export type PublicOrderGuestInfo = {
  * customers row, insert the order as 'soumise' (never auto-confirmed —
  * staff advances it in /commandes), and log an uncredited 'achat'
  * conversion if a referral code rode along. Prices are always recomputed
- * from the live menu_items table — a client-submitted cart only supplies
- * item ids and quantities, never amounts, so a tampered request can't
- * change what's actually charged.
+ * from the live menu_items table via computeOrderPricing — a
+ * client-submitted cart only supplies item ids and quantities, never
+ * amounts, so a tampered request can't change what's actually charged.
+ *
+ * The order row is always committed first, before any Stripe call, so
+ * staff sees it in /commandes immediately even if the guest never
+ * completes payment (payment_status stays 'en_attente' until the webhook
+ * confirms it — see app/api/stripe/webhook/route.ts). If PaymentIntent
+ * creation itself fails (e.g. the Connect account got disabled between
+ * page load and submit), degrade gracefully to a normal pay-on-site order
+ * rather than losing the order entirely.
  */
 export async function submitPublicOrder(
   menuToken: string,
   referralCode: string | null,
   cart: PublicOrderCartLine[],
   guestInfo: PublicOrderGuestInfo
-): Promise<boolean> {
-  if (cart.length === 0) return false;
+): Promise<SubmitPublicOrderResult> {
+  if (cart.length === 0) return { ok: false };
 
   const session = await createClient();
   const {
     data: { user },
   } = await session.auth.getUser();
-  if (!user?.email) return false;
+  if (!user?.email) return { ok: false };
 
   const admin = createAdminClient();
 
@@ -328,7 +345,7 @@ export async function submitPublicOrder(
     .eq("token", menuToken)
     .maybeSingle();
   const restaurantId = (shareRow as { restaurant_id: string } | null)?.restaurant_id;
-  if (!restaurantId) return false;
+  if (!restaurantId) return { ok: false };
 
   // These four all depend only on restaurantId (or nothing) — never on each
   // other's result — so they run concurrently instead of as four sequential
@@ -355,50 +372,62 @@ export async function submitPublicOrder(
     ),
   ]);
 
-  if (!orderSettings || !customerId) return false;
+  if (!orderSettings || !customerId) return { ok: false };
 
   const menuItemById = new Map(
     ((menuItemsResult.data as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
   );
 
-  const lineItems = cart
-    .map((line) => {
-      const item = menuItemById.get(line.menuItemId);
-      if (!item || !Number.isFinite(line.quantity) || line.quantity <= 0) return null;
-      return { menuItemId: item.id, itemName: item.name, unitPrice: item.price, quantity: line.quantity };
-    })
-    .filter((l): l is NonNullable<typeof l> => l !== null);
-
-  if (lineItems.length === 0) return false;
-
-  const subtotal = lineItems.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
-  const taxAmount = roundToCents(subtotal * orderSettings.taxRate);
-  const tipAmount =
-    orderSettings.acceptsTips && Number.isFinite(guestInfo.tipAmount) ? Math.max(0, guestInfo.tipAmount) : 0;
-  const total = subtotal + taxAmount + tipAmount;
+  const pricing = computeOrderPricing({
+    cart,
+    menuItemById,
+    taxRate: orderSettings.taxRate,
+    acceptsTips: orderSettings.acceptsTips,
+    requestedTipAmount: guestInfo.tipAmount,
+  });
+  if (!pricing) return { ok: false };
+  const { lineItems, subtotal, taxAmount, tipAmount, total } = pricing;
 
   const referralLinkId = (referralLinkResult.data as { id: string } | null)?.id ?? null;
+  let wantsOnlinePayment = guestInfo.payOnline && orderSettings.onlinePaymentEnabled;
 
-  const { data: order, error: orderError } = await admin
+  const baseOrderFields = {
+    restaurant_id: restaurantId,
+    status: "soumise",
+    guest_name: guestInfo.guestName,
+    guest_phone: guestInfo.guestPhone,
+    subtotal,
+    tax_amount: taxAmount,
+    tip_amount: tipAmount,
+    total,
+    is_public_request: true,
+    customer_id: customerId,
+    referral_link_id: referralLinkId,
+  };
+
+  let { data: order, error: orderError } = await admin
     .from("orders")
     .insert({
-      restaurant_id: restaurantId,
-      status: "soumise",
-      guest_name: guestInfo.guestName,
-      guest_phone: guestInfo.guestPhone,
-      subtotal,
-      tax_amount: taxAmount,
-      tip_amount: tipAmount,
-      total,
-      payment_method: guestInfo.paymentMethod,
-      is_public_request: true,
-      customer_id: customerId,
-      referral_link_id: referralLinkId,
+      ...baseOrderFields,
+      payment_method: wantsOnlinePayment ? "Carte (en ligne)" : guestInfo.paymentMethod,
+      payment_status: wantsOnlinePayment ? "en_attente" : "non_requis",
     })
     .select("id")
     .single();
 
-  if (orderError || !order) return false;
+  // payment_status/stripe_payment_intent_id (migration 0026) may not exist
+  // yet in every environment — retry without them rather than breaking
+  // order submission entirely for a column PostgREST can't find.
+  if (orderError?.code === "PGRST204") {
+    wantsOnlinePayment = false;
+    ({ data: order, error: orderError } = await admin
+      .from("orders")
+      .insert({ ...baseOrderFields, payment_method: guestInfo.paymentMethod })
+      .select("id")
+      .single());
+  }
+
+  if (orderError || !order) return { ok: false };
   const orderId = (order as { id: string }).id;
 
   const { error: itemsError } = await admin.from("order_items").insert(
@@ -410,7 +439,7 @@ export async function submitPublicOrder(
       quantity: l.quantity,
     }))
   );
-  if (itemsError) return false;
+  if (itemsError) return { ok: false };
 
   if (referralLinkId) {
     await admin.from("customer_referral_conversions").insert({
@@ -428,5 +457,24 @@ export async function submitPublicOrder(
     link: "/commandes",
   });
 
-  return true;
+  if (!wantsOnlinePayment || !orderSettings.stripeConnectAccountId) {
+    return { ok: true, orderId, clientSecret: null };
+  }
+
+  try {
+    const intent = await createOrderPaymentIntent({
+      orderId,
+      restaurantId,
+      connectedAccountId: orderSettings.stripeConnectAccountId,
+      amountCents: Math.round(total * 100),
+    });
+    await admin.from("orders").update({ stripe_payment_intent_id: intent.id }).eq("id", orderId);
+    return { ok: true, orderId, clientSecret: intent.clientSecret };
+  } catch {
+    // Stripe call failed (e.g. account got disabled mid-flow) — the order
+    // itself is already safely committed as a normal order; just fall back
+    // to pay-on-site rather than losing it.
+    await admin.from("orders").update({ payment_status: "non_requis" }).eq("id", orderId);
+    return { ok: true, orderId, clientSecret: null };
+  }
 }
