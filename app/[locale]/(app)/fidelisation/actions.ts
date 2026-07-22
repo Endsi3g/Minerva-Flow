@@ -19,7 +19,12 @@ import {
 } from "@/lib/data/referral-programs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Customer, LoyaltyReward, ReferralProgram } from "@/lib/types";
+import {
+  getLoyaltySharesForRestaurant,
+  createLoyaltyShare,
+  deleteLoyaltyShare,
+} from "@/lib/data/loyalty-shares";
+import type { Customer, LoyaltyReward, LoyaltyShare, ReferralProgram } from "@/lib/types";
 
 export async function createCustomerAction(
   restaurantId: string,
@@ -144,4 +149,21 @@ export async function sendPortalLinkAction(
 
   if (error) return { ok: false, error: error.message };
   return { ok: true };
+}
+
+export async function getLoyaltySharesAction(restaurantId: string): Promise<LoyaltyShare[]> {
+  return getLoyaltySharesForRestaurant(restaurantId);
+}
+
+export async function createLoyaltyShareAction(restaurantId: string, title: string): Promise<LoyaltyShare | null> {
+  if (!title.trim()) return null;
+  const share = await createLoyaltyShare(restaurantId, title.trim());
+  if (share) revalidatePath("/fidelisation");
+  return share;
+}
+
+export async function deleteLoyaltyShareAction(restaurantId: string, id: string): Promise<boolean> {
+  const ok = await deleteLoyaltyShare(restaurantId, id);
+  if (ok) revalidatePath("/fidelisation");
+  return ok;
 }

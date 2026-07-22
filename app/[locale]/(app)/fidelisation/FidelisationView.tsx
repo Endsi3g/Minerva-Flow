@@ -10,11 +10,12 @@ import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
-import type { Customer, LoyaltyReward, LoyaltyTransactionType, ReferralProgram } from "@/lib/types";
+import type { Customer, LoyaltyReward, LoyaltyShare, LoyaltyTransactionType, ReferralProgram } from "@/lib/types";
 import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
-import { Heart, Plus, Trash2, Gift, Search, Link2, MousePointerClick, Send, Copy, Check } from "lucide-react";
+import { Heart, Plus, Trash2, Gift, Search, Link2, MousePointerClick, Send, Copy, Check, Share2, Download, QrCode } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useMemo, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
+import QRCode from "qrcode";
 import {
   createCustomerAction,
   deleteCustomerAction,
@@ -27,6 +28,8 @@ import {
   updateReferralProgramActiveAction,
   deleteReferralProgramAction,
   sendPortalLinkAction,
+  createLoyaltyShareAction,
+  deleteLoyaltyShareAction,
 } from "./actions";
 import { toast } from "sonner";
 import { notifyError } from "@/lib/notify-error";
@@ -410,6 +413,170 @@ function ReferralProgramsCard({
   );
 }
 
+function LoyaltyShareRow({ share, onDeleted }: { share: LoyaltyShare; onDeleted: (id: string) => void }) {
+  const [copied, setCopied] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/f/${share.token}`;
+
+  useEffect(() => {
+    QRCode.toDataURL(url, { width: 512, margin: 1 }).then(setQrDataUrl).catch(() => setQrDataUrl(null));
+  }, [url]);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleDownload() {
+    if (!qrDataUrl) return;
+    const a = document.createElement("a");
+    a.href = qrDataUrl;
+    a.download = `qr-${share.title.toLowerCase().replace(/\s+/g, "-")}.png`;
+    a.click();
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
+      <div className="flex min-w-0 items-center gap-2.5">
+        {qrDataUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={qrDataUrl} alt="" className="h-9 w-9 shrink-0 rounded border border-mv-border-soft" />
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-[12.5px] font-medium text-mv-ink">{share.title}</p>
+          <p className="truncate text-[11.5px] text-mv-ink-faint">/f/{share.token}</p>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button
+          onClick={handleDownload}
+          disabled={!qrDataUrl}
+          className="text-mv-ink-faint hover:text-mv-ink disabled:opacity-40"
+          aria-label="Télécharger le code QR"
+        >
+          <Download size={14} />
+        </button>
+        <button onClick={handleCopy} className="text-mv-ink-faint hover:text-mv-ink" aria-label="Copier le lien">
+          {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
+        </button>
+        <button
+          onClick={() => onDeleted(share.id)}
+          className="text-mv-ink-faint hover:text-mv-red"
+          aria-label="Supprimer le lien"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ShareLoyaltyModal({
+  restaurantId,
+  open,
+  onClose,
+  onCreated,
+}: {
+  restaurantId: string;
+  open: boolean;
+  onClose: () => void;
+  onCreated: (share: LoyaltyShare) => void;
+}) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setIsSubmitting(true);
+    try {
+      const share = await createLoyaltyShareAction(restaurantId, String(form.get("title") ?? "") || "Fidélité");
+      if (share) {
+        onCreated(share);
+        onClose();
+      } else {
+        notifyError("La création du lien a échoué.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Partager la fidélité"
+      description="Génère un lien public — un nouveau client peut rejoindre le programme sans avoir de fiche existante."
+    >
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <Field label="Titre" hint="Affiché sur la page publique">
+          <Input name="title" placeholder="Fidélité" defaultValue="Fidélité" required autoFocus />
+        </Field>
+        <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Création…" : "Générer le lien"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function LoyaltyShareCard({
+  restaurantId,
+  shares,
+  onChange,
+}: {
+  restaurantId: string;
+  shares: LoyaltyShare[];
+  onChange: (shares: LoyaltyShare[]) => void;
+}) {
+  const [shareOpen, setShareOpen] = useState(false);
+
+  function handleDeleted(id: string) {
+    deleteLoyaltyShareAction(restaurantId, id).then((ok) => {
+      if (ok) onChange(shares.filter((s) => s.id !== id));
+      else notifyError("La suppression a échoué.");
+    });
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Croissance"
+        title="Partager la fidélité"
+        description="Un lien ou un code QR pour qu'un nouveau client rejoigne le programme lui-même."
+        action={
+          <Button size="sm" variant="secondary" onClick={() => setShareOpen(true)}>
+            <Share2 size={14} /> Nouveau lien
+          </Button>
+        }
+      />
+      {shares.length === 0 ? (
+        <p className="flex items-center gap-2 text-[12.5px] text-mv-ink-faint">
+          <QrCode size={14} /> Aucun lien généré pour l&apos;instant.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {shares.map((s) => (
+            <LoyaltyShareRow key={s.id} share={s} onDeleted={handleDeleted} />
+          ))}
+        </div>
+      )}
+      <ShareLoyaltyModal
+        restaurantId={restaurantId}
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        onCreated={(s) => onChange([s, ...shares])}
+      />
+    </Card>
+  );
+}
+
 export function FidelisationView({
   restaurantId,
   initialCustomers,
@@ -417,6 +584,7 @@ export function FidelisationView({
   loyaltyPointsPerDollar,
   initialReferralPrograms,
   referralLinks,
+  initialLoyaltyShares,
 }: {
   restaurantId: string | null;
   initialCustomers: Customer[];
@@ -424,6 +592,7 @@ export function FidelisationView({
   loyaltyPointsPerDollar: number;
   initialReferralPrograms: ReferralProgram[];
   referralLinks: ReferralLinkTracking[];
+  initialLoyaltyShares: LoyaltyShare[];
 }) {
   const { role } = useApp();
   const router = useRouter();
@@ -433,6 +602,7 @@ export function FidelisationView({
   const [customers, setCustomers] = useState(initialCustomers);
   const [rewards, setRewards] = useState(initialRewards);
   const [referralPrograms, setReferralPrograms] = useState(initialReferralPrograms);
+  const [loyaltyShares, setLoyaltyShares] = useState(initialLoyaltyShares);
   const [rate, setRate] = useState(loyaltyPointsPerDollar);
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(initialId);
@@ -741,6 +911,7 @@ export function FidelisationView({
       {canManage && (
         <div className="mt-6 space-y-6">
           <RewardsCard restaurantId={restaurantId!} rewards={rewards} onChange={setRewards} />
+          <LoyaltyShareCard restaurantId={restaurantId!} shares={loyaltyShares} onChange={setLoyaltyShares} />
           <ReferralProgramsCard
             restaurantId={restaurantId!}
             programs={referralPrograms}
