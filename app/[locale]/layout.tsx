@@ -4,6 +4,7 @@ import "../globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ServiceWorkerManager } from "@/components/pwa/ServiceWorkerManager";
 import { Analytics } from "@vercel/analytics/react";
 import { hasLocale } from "next-intl";
@@ -77,8 +78,11 @@ export async function generateMetadata({
 }
 
 export const viewport: Viewport = {
-  colorScheme: "light",
-  themeColor: "#F5F1E6",
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F5F1E6" },
+    { media: "(prefers-color-scheme: dark)", color: "#14170F" },
+  ],
   viewportFit: "cover",
 };
 
@@ -98,14 +102,20 @@ export default async function RootLayout({
   setRequestLocale(locale);
 
   return (
-    <html lang={locale} className={cn("h-full", jakarta.variable, fraunces.variable, "font-sans", inter.variable, playfairDisplayHeading.variable)}>
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      className={cn("h-full", jakarta.variable, fraunces.variable, "font-sans", inter.variable, playfairDisplayHeading.variable)}
+    >
       <body className="min-h-full bg-mv-cream text-mv-ink antialiased">
-        <NextIntlClientProvider>
-          <TooltipProvider delay={150}>{children}</TooltipProvider>
-          <Toaster />
-          <ServiceWorkerManager />
-          <Analytics />
-        </NextIntlClientProvider>
+        <ThemeProvider>
+          <NextIntlClientProvider>
+            <TooltipProvider delay={150}>{children}</TooltipProvider>
+            <Toaster />
+            <ServiceWorkerManager />
+            <Analytics />
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

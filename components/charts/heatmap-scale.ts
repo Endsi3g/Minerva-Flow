@@ -1,4 +1,10 @@
-export const heatmapBuckets = ["#EDE7D6", "#C7E1D0", "#8FC7A9", "#4DA37E", "#167F5B"];
+export const heatmapBuckets = [
+  "var(--mv-heat-1)",
+  "var(--mv-heat-2)",
+  "var(--mv-heat-3)",
+  "var(--mv-heat-4)",
+  "var(--mv-heat-5)",
+];
 
 export function bucketFor(revenue: number, min: number, max: number) {
   if (max === min) return heatmapBuckets[2];
