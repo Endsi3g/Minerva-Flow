@@ -3,13 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { isPlatformAdmin } from "@/lib/data/admin";
 import { createChangelogEntry, type CreateChangelogEntryInput } from "@/lib/data/changelog";
-import { notifyAllUsers } from "@/lib/data/notifications";
+import { announceChangelogEntry } from "@/lib/data/updates";
 
 /**
- * Publishes a changelog entry and, in the same action, notifies every
- * active user on the platform to reload the app and check /changelog —
- * this is the "notification pour toutes les mises à jour" mechanism: it
- * fires once per publish, not automatically on deploy.
+ * Publishes a changelog entry and, in the same action, announces it to
+ * every active user on the platform (in-app/push notification + email
+ * campaign, see announceChangelogEntry) — the manual counterpart to the
+ * automatic GitHub release webhook (app/api/system/publish-release), for
+ * announcements not tied to a release (e.g. a heads-up post).
  */
 export async function publishChangelogEntryAction(input: CreateChangelogEntryInput): Promise<boolean> {
   if (!(await isPlatformAdmin())) return false;
@@ -18,12 +19,7 @@ export async function publishChangelogEntryAction(input: CreateChangelogEntryInp
   const entry = await createChangelogEntry(input);
   if (!entry) return false;
 
-  await notifyAllUsers({
-    type: "changelog.published",
-    title: "Mise à jour disponible",
-    body: `${entry.title} — rechargez l'application et consultez le journal des mises à jour.`,
-    link: "/changelog",
-  });
+  await announceChangelogEntry(entry);
 
   revalidatePath("/changelog");
   revalidatePath("/admin/changelog");
