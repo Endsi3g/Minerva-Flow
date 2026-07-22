@@ -127,10 +127,12 @@ Prochaines étapes envisagées :
 
 - Commande en ligne complète depuis le menu partagé : image sur les plats, lien public, prix avec taxes, pourboire, et routage direct de la commande vers l'application (sans paiement par carte réel dans un premier temps).
 - Paiement par carte intégré (Stripe), une fois la commande en ligne en place.
-- Intégrations de réservation tierces (OpenTable, Resy) et suivi Uber Direct/Eats, sous réserve d'un partenariat d'affaires actif avec ces plateformes.
+- Synchronisation réelle avec OpenTable, Resy et Uber Direct/Eats — la surface de connexion existe déjà (Paramètres → Intégrations), en attente d'un partenariat d'affaires actif avec ces plateformes. Voir [`docs/integrations.md`](docs/integrations.md) pour la démarche.
 - Suivi de commande fournisseur étendu (statuts intermédiaires, détection des retards de livraison).
 - Import automatique de menu existant (PDF ou site web de l'établissement).
 - Flow de démonstration à l'onboarding avec offre d'essai gratuit.
+
+Le détail de chaque intégration (statut actuel, ce qui bloque, marche à suivre exacte) est dans [`docs/integrations.md`](docs/integrations.md).
 
 ---
 
