@@ -55,7 +55,8 @@ test.describe("Loyalty self-enrollment", () => {
     // same token_hash Supabase would have emailed and hit /auth/confirm directly.
     const { data: linkData, error } = await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email });
     expect(error).toBeNull();
-    const tokenHash = linkData!.properties.hashed_token;
+    expect(linkData?.properties).toBeTruthy();
+    const tokenHash = linkData!.properties!.hashed_token;
 
     await page.goto(`/auth/confirm?token_hash=${tokenHash}&type=magiclink&next=%2Fportal`);
     await expect(page).toHaveURL(/\/portal$/, { timeout: 10000 });
