@@ -14,7 +14,7 @@ Flow par Minerva centralise le pilotage quotidien d'un restaurant ou café dans 
 
 - **Journées et finance** — saisie (ou import CSV) des revenus/dépenses quotidiens, catégorisation, connexions bancaires/POS (Square).
 - **Programmes et campagnes** — sources de revenu récurrentes (brunchs, soirées, événements) et campagnes marketing (Instagram, Facebook, courriel).
-- **Fidélisation client** — fiches clients, points de fidélité, catalogue de récompenses, programmes de parrainage avec suivi des conversions.
+- **Fidélisation client** — fiches clients, points de fidélité, catalogue de récompenses, programmes de parrainage avec suivi des conversions, et un lien/QR public pour qu'un nouveau client rejoigne le programme lui-même.
 - **Portail client** (`/portal`) — vos clients se connectent sans mot de passe (lien magique) pour voir leurs points et partager leur lien de parrainage, sans accès au reste de l'application.
 - **Ingénierie de menu** — classification automatique des plats (étoiles, chevaux de bataille, énigmes, poids morts) selon marge et popularité.
 - **Inventaire et gaspillage** — quantités en main, seuils de réapprovisionnement, coût du gaspillage répercuté automatiquement dans les dépenses.
@@ -128,7 +128,6 @@ Prochaines étapes envisagées :
 - Commande en ligne complète depuis le menu partagé : image sur les plats, lien public, prix avec taxes, pourboire, et routage direct de la commande vers l'application (sans paiement par carte réel dans un premier temps).
 - Paiement par carte intégré (Stripe), une fois la commande en ligne en place.
 - Intégrations de réservation tierces (OpenTable, Resy) et suivi Uber Direct/Eats, sous réserve d'un partenariat d'affaires actif avec ces plateformes.
-- Partage par lien/QR pour les programmes de fidélisation (comme le partage de menu existant).
 - Suivi de commande fournisseur étendu (statuts intermédiaires, détection des retards de livraison).
 - Import automatique de menu existant (PDF ou site web de l'établissement).
 - Flow de démonstration à l'onboarding avec offre d'essai gratuit.
