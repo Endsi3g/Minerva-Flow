@@ -23,6 +23,7 @@ export async function announceChangelogEntry(entry: ChangelogEntry): Promise<voi
   await sendChangelogCampaignEmail({
     title: entry.title,
     description: entry.description,
+    category: entry.category,
     link: "/changelog",
   });
 }
