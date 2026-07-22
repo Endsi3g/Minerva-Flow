@@ -1,0 +1,29 @@
+name: Publish release to changelog
+
+# Fires whenever a GitHub release is published (see the standing release
+# workflow: gh release create after a green-CI merge) and turns it into a
+# changelog entry + notification/email campaign automatically — see
+# app/api/system/publish-release/route.ts. Replaces the manual "publish
+# from admin" step that used to have to follow every release by hand.
+on:
+  release:
+    types: [published]
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify app of new release
+        env:
+          RELEASE_TITLE: ${{ github.event.release.name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_WEBHOOK_SECRET: ${{ secrets.RELEASE_WEBHOOK_SECRET }}
+        run: |
+          TITLE="${RELEASE_TITLE:-$RELEASE_TAG}"
+          jq -n --arg title "$TITLE" --arg body "$RELEASE_BODY" \
+            '{title: $title, body: $body}' > payload.json
+          curl -sf -X POST "https://minerva-flow.vercel.app/api/system/publish-release" \
+            -H "Authorization: Bearer $RELEASE_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            --data @payload.json

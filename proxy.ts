@@ -89,6 +89,7 @@ export async function proxy(request: NextRequest) {
   const isServerCallbackRoute =
     pathWithoutLocale.startsWith("/api/cron/") ||
     pathWithoutLocale.startsWith("/api/webhooks/") ||
+    pathWithoutLocale.startsWith("/api/system/") ||
     pathWithoutLocale === "/api/stripe/webhook";
 
   if (!user && !isAuthRoute && !isServerCallbackRoute && pathWithoutLocale !== "/") {
