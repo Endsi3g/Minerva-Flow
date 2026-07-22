@@ -602,6 +602,14 @@ export type MenuShare = {
   createdAt: string;
 };
 
+export type LoyaltyShare = {
+  id: string;
+  restaurantId: string;
+  token: string;
+  title: string;
+  createdAt: string;
+};
+
 export type Offer = {
   id: string;
   restaurantId: string;

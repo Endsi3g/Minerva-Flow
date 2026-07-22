@@ -3,20 +3,22 @@ import { getCustomers, getLoyaltyRewards } from "@/lib/data/customers";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { getReferralPrograms } from "@/lib/data/referral-programs";
 import { getReferralLinksForRestaurant } from "@/lib/data/customer-referrals";
+import { getLoyaltySharesForRestaurant } from "@/lib/data/loyalty-shares";
 import { FidelisationView } from "./FidelisationView";
 
 export default async function FidelisationPage() {
   const restaurantId = await getCurrentRestaurantId();
 
-  const [customers, rewards, restaurant, referralPrograms, referralLinks] = restaurantId
+  const [customers, rewards, restaurant, referralPrograms, referralLinks, loyaltyShares] = restaurantId
     ? await Promise.all([
         getCustomers(restaurantId),
         getLoyaltyRewards(restaurantId),
         getRestaurant(restaurantId),
         getReferralPrograms(restaurantId),
         getReferralLinksForRestaurant(restaurantId),
+        getLoyaltySharesForRestaurant(restaurantId),
       ])
-    : [[], [], null, [], []];
+    : [[], [], null, [], [], []];
 
   return (
     <FidelisationView
@@ -26,6 +28,7 @@ export default async function FidelisationPage() {
       loyaltyPointsPerDollar={restaurant?.loyaltyPointsPerDollar ?? 1}
       initialReferralPrograms={referralPrograms}
       referralLinks={referralLinks}
+      initialLoyaltyShares={loyaltyShares}
     />
   );
 }

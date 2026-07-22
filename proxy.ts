@@ -8,10 +8,18 @@ const handleI18nRouting = createIntlProxy(routing);
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname.replace(/\/$/, "") || "/";
   const isApiRoute = pathname === "/api" || pathname.startsWith("/api/");
+  // app/auth/* (magic-link/OTP confirmation, OAuth callback) deliberately
+  // lives outside app/[locale]/ — a login link shouldn't need locale
+  // resolution before it can redirect the user onward. Running next-intl's
+  // middleware on it 404s: it treats the path as the default-locale page
+  // and expects a matching route under app/[locale]/auth/..., which doesn't
+  // exist. Confirmed live: /auth/confirm 404'd for every magic-link login
+  // (customer portal, referral, loyalty self-enrollment) before this fix.
+  const isAuthCallbackRoute = pathname === "/auth" || pathname.startsWith("/auth/");
 
-  // Locale detection/redirect/rewrite only applies to page routes — API
-  // routes are never locale-prefixed.
-  const response = isApiRoute ? NextResponse.next({ request }) : handleI18nRouting(request);
+  // Locale detection/redirect/rewrite only applies to localized page routes.
+  const response =
+    isApiRoute || isAuthCallbackRoute ? NextResponse.next({ request }) : handleI18nRouting(request);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -70,7 +78,8 @@ export async function proxy(request: NextRequest) {
     // exists; the pages themselves gate on their own auth state.
     pathWithoutLocale.startsWith("/portal") ||
     pathWithoutLocale.startsWith("/p/") ||
-    pathWithoutLocale.startsWith("/m/");
+    pathWithoutLocale.startsWith("/m/") ||
+    pathWithoutLocale.startsWith("/f/");
 
   // Server-to-server callers (Vercel Cron, Stripe, Square) never carry a
   // Supabase session cookie — redirecting them to /login silently turns
