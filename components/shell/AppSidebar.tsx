@@ -225,6 +225,7 @@ function TeamSwitcher() {
   const { restaurantId, setRestaurantId, restaurants } = useApp();
   const router = useRouter();
   const current = restaurants.find((r) => r.id === restaurantId) ?? restaurants[0];
+  if (!current) return null;
 
   return (
     <DropdownMenu>

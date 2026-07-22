@@ -26,6 +26,7 @@ Flow par Minerva centralise le pilotage quotidien d'un restaurant ou café dans 
 - **Cartes** — établissements (avec effet de survol animé à la sélection), attribution publicitaire, trajets de livraison.
 - **Intégrations** — Google (Places, Ads, Workspace, Calendar), Meta Ads, Square, Resend (courriels transactionnels), avec un guide de connexion intégré.
 - Interface web progressive (PWA), accessible depuis n'importe quel navigateur ou installable comme application.
+- Thème clair et sombre, avec suivi automatique des préférences système ou choix manuel dans Paramètres → Apparence.
 
 ---
 

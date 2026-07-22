@@ -45,35 +45,35 @@ export function RevenueChart({
       <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="mvRevenueFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#167F5B" stopOpacity={0.28} />
-            <stop offset="100%" stopColor="#167F5B" stopOpacity={0} />
+            <stop offset="0%" stopColor="var(--mv-green)" stopOpacity={0.28} />
+            <stop offset="100%" stopColor="var(--mv-green)" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid vertical={false} stroke="#E6E0D0" strokeDasharray="3 4" />
+        <CartesianGrid vertical={false} stroke="var(--mv-border)" strokeDasharray="3 4" />
         <XAxis
           dataKey="date"
           tickFormatter={(v) => formatDate(v)}
-          tick={{ fill: "#8D9488", fontSize: 11 }}
-          axisLine={{ stroke: "#E6E0D0" }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+          axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
           minTickGap={28}
         />
         <YAxis
           tickFormatter={(v) => `${v / 1000}k`}
-          tick={{ fill: "#8D9488", fontSize: 11 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
           axisLine={false}
           tickLine={false}
           width={36}
         />
-        <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#167F5B", strokeWidth: 1 }} />
+        <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--mv-green)", strokeWidth: 1 }} />
         <Area
           type="monotone"
           dataKey="revenue"
-          stroke="#167F5B"
+          stroke="var(--mv-green)"
           strokeWidth={2.25}
           fill="url(#mvRevenueFill)"
           dot={false}
-          activeDot={{ r: 4, fill: "#167F5B", stroke: "#FBF9F3", strokeWidth: 2 }}
+          activeDot={{ r: 4, fill: "var(--mv-green)", stroke: "var(--mv-surface)", strokeWidth: 2 }}
         />
       </AreaChart>
     </ResponsiveContainer>

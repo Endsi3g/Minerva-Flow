@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  color-scheme: light only;
+  color-scheme: light;
   /* Brand */
   --mv-green: #167f5b;
   --mv-green-dark: #0e5a40;
@@ -33,6 +33,13 @@
   --mv-red-bg: #f8ece8;
   --mv-amber: #ab7d1f;
   --mv-amber-bg: #f6efd9;
+
+  /* Revenue-intensity heatmap scale (components/charts/heatmap-scale.ts) */
+  --mv-heat-1: #ede7d6;
+  --mv-heat-2: #c7e1d0;
+  --mv-heat-3: #8fc7a9;
+  --mv-heat-4: #4da37e;
+  --mv-heat-5: #167f5b;
 
   --shadow-mv-sm: 0 1px 2px rgba(26, 30, 22, 0.05);
   --shadow-mv-md: 0 2px 4px rgba(26, 30, 22, 0.04), 0 8px 20px rgba(26, 30, 22, 0.06);
@@ -261,7 +268,80 @@ body {
   animation: mv-scale-in 0.18s ease-out both;
 }
 
-/* Minerva Flow is light-mode only — no .dark overrides on purpose. */
+.dark {
+  color-scheme: dark;
+  /* Brand — the green accent stays the same hue everywhere; mv-green-dark
+     flips role from "deeper green for text on cream" to "brighter green for
+     text on a near-black background", same as every ink/cream pair below. */
+  --mv-green: #1c9a6f;
+  --mv-green-dark: #4ade9b;
+  --mv-green-darker: #0a4531;
+  --mv-green-light: #16362a;
+  --mv-green-tint: #12241c;
+
+  --mv-lime: #dfff5f;
+  --mv-lime-dark: #eaff8f;
+  --mv-lime-tint: #2b3410;
+
+  --mv-cream: #14170f;
+  --mv-cream-soft: #1a1e14;
+  --mv-surface: #1f2418;
+
+  --mv-ink: #f3f2ea;
+  --mv-ink-soft: #b9c0b0;
+  --mv-ink-faint: #838a7a;
+  --mv-ink-mute: #5b6252;
+
+  --mv-border: #33392a;
+  --mv-border-soft: #262b1d;
+
+  --mv-red: #e07a6a;
+  --mv-red-bg: #3a1f1c;
+  --mv-amber: #d9ab52;
+  --mv-amber-bg: #3a3018;
+
+  --mv-heat-1: #262b1d;
+  --mv-heat-2: #1e3a2b;
+  --mv-heat-3: #1c5c40;
+  --mv-heat-4: #1c8a5f;
+  --mv-heat-5: #1c9a6f;
+
+  --shadow-mv-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-mv-md: 0 2px 4px rgba(0, 0, 0, 0.24), 0 8px 20px rgba(0, 0, 0, 0.3);
+  --shadow-mv-lg: 0 8px 16px rgba(0, 0, 0, 0.3), 0 24px 48px rgba(0, 0, 0, 0.4);
+
+  --card: oklch(0.19 0.007 107.1);
+  --card-foreground: oklch(0.95 0.004 106.5);
+  --popover: oklch(0.19 0.007 107.1);
+  --popover-foreground: oklch(0.95 0.004 106.5);
+  --primary: oklch(0.95 0.004 106.5);
+  --primary-foreground: oklch(0.19 0.007 107.1);
+  --secondary: oklch(0.26 0.01 107.1);
+  --secondary-foreground: oklch(0.95 0.004 106.5);
+  --muted: oklch(0.26 0.01 107.1);
+  --muted-foreground: oklch(0.68 0.02 107.3);
+  --accent: oklch(0.26 0.01 107.1);
+  --accent-foreground: oklch(0.95 0.004 106.5);
+  --destructive: oklch(0.65 0.2 27.325);
+  --border: oklch(0.3 0.01 107.1);
+  --input: oklch(0.3 0.01 107.1);
+  --ring: oklch(0.55 0.02 107.1);
+  --chart-1: oklch(0.286 0.016 107.4);
+  --chart-2: oklch(0.394 0.023 107.4);
+  --chart-3: oklch(0.466 0.025 107.3);
+  --chart-4: oklch(0.58 0.031 107.3);
+  --chart-5: oklch(0.88 0.011 106.6);
+  --sidebar: oklch(0.14 0.006 107.1);
+  --sidebar-foreground: oklch(0.95 0.004 106.5);
+  --sidebar-primary: oklch(0.95 0.004 106.5);
+  --sidebar-primary-foreground: oklch(0.19 0.007 107.1);
+  --sidebar-accent: oklch(0.22 0.01 107.1);
+  --sidebar-accent-foreground: oklch(0.95 0.004 106.5);
+  --sidebar-border: oklch(0.28 0.01 107.1);
+  --sidebar-ring: oklch(0.55 0.02 107.1);
+  --background: oklch(0.16 0.006 107.1);
+  --foreground: oklch(0.95 0.004 106.5);
+}
 
 /* Used by pages with a "Télécharger en PDF" button (e.g. /guide) that
    triggers window.print() — hides the app chrome (sidebar, topbar, mobile
