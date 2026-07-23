@@ -44,10 +44,12 @@ import {
   UserCircle,
   FolderOpen,
   Zap,
+  Star,
+  StarOff,
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import type { Role } from "@/lib/types";
 import { SearchDialog } from "./SearchDialog";
@@ -65,44 +67,38 @@ type NavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
-// Main navigation items flat list (Overview, Flow AI, Programmes, Journées, Employés, Rapports, Cartes)
-const mainNavItems: NavItem[] = [
+// 1. Core General Items (Always visible at top)
+const coreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
   { key: "library", href: "/library", icon: FolderOpen, roles: allRoles },
   { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
-  { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
+];
+
+// 2. Opérations & Équipe
+const operationsItems: NavItem[] = [
+  { key: "horaire", href: "/horaire", icon: CalendarDays, roles: allRoles },
+  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
+  { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
+  { key: "fournisseurs", href: "/fournisseurs", icon: Truck, roles: ["owner", "manager"] },
+  { key: "reservations", href: "/reservations", icon: CalendarClock, roles: allRoles },
+  { key: "monEspace", href: "/mon-espace", icon: UserCircle, roles: allRoles },
+  { key: "employees", href: "/employees", icon: Boxes, roles: ["owner", "manager"] },
+];
+
+// 3. Performance & Analytics
+const analyticsItems: NavItem[] = [
   { key: "days", href: "/days", icon: BarChart3, roles: allRoles },
   { key: "reports", href: "/reports", icon: FileText, roles: allRoles },
+  { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
   { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
-  { key: "employees", href: "/employees", icon: Boxes, roles: ["owner", "manager"] },
   { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
   { key: "maps", href: "/maps", icon: MapIcon, roles: allRoles },
   { key: "programs", href: "/programs", icon: GitCommit, roles: allRoles },
 ];
 
-// Favorites section
-const favorites: (NavItem & { color: string; translationKey: string })[] = [
-  { key: "fav_maps", translationKey: "favMaps", href: "/maps", icon: MapIcon, color: "#9F7AEA", roles: allRoles },
-  { key: "fav_campaigns_email", translationKey: "favCampaignsEmail", href: "/campaigns?channel=Email", icon: SendIcon, color: "#48BB78", roles: ["owner", "consultant"] },
-  { key: "fav_depenses", translationKey: "favDepenses", href: "/depenses", icon: TrendingDown, color: "#B5473A", roles: ["owner", "manager"] },
-  { key: "fav_data", translationKey: "favData", href: "/data", icon: Database, color: "#DD6B20", roles: ["owner", "manager", "consultant"] },
-  { key: "fav_collaborateurs", translationKey: "favCollaborateurs", href: "/collaborateurs", icon: Users, color: "#718096", roles: ["owner", "manager"] },
-];
-
-// Opérations — expansion "OS pour restaurants" (réservations, puis horaire,
-// puis fournisseurs au fur et à mesure qu'ils sont construits).
-const operationsItems: NavItem[] = [
-  { key: "reservations", href: "/reservations", icon: CalendarClock, roles: allRoles },
-  { key: "horaire", href: "/horaire", icon: CalendarDays, roles: allRoles },
-  { key: "monEspace", href: "/mon-espace", icon: UserCircle, roles: allRoles },
-  { key: "fournisseurs", href: "/fournisseurs", icon: Truck, roles: ["owner", "manager"] },
-  { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
-  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
-];
-
-// Sub settings items (without Paramètres/Settings which is standalone)
-const subSettingsGroupItems: NavItem[] = [
+// 4. Sub settings & help items
+const settingsGroupItems: NavItem[] = [
   { key: "billing", href: "/billing", icon: CreditCard, roles: ["owner"] },
   { key: "guide", href: "/guide", icon: BookOpen, roles: allRoles },
   { key: "support", href: "/support", icon: LifeBuoy, roles: allRoles },
@@ -132,17 +128,12 @@ const navTranslationKeys: Record<string, string> = {
   guide: "guide",
   support: "support",
   changelog: "changelog",
-  fav_maps: "favMaps",
-  fav_campaigns_email: "favCampaignsEmail",
-  fav_depenses: "favDepenses",
-  fav_data: "favData",
-  fav_collaborateurs: "favCollaborateurs",
 };
 
-/** All customizable nav item keys, for the per-member sidebar permission editor. */
-export const sidebarNavCatalog: { key: string; translationKey: string }[] = Object.entries(
-  navTranslationKeys
-).map(([key, translationKey]) => ({ key, translationKey }));
+export const sidebarNavCatalog = Object.entries(navTranslationKeys).map(([key, translationKey]) => ({
+  key,
+  translationKey,
+}));
 
 function NavLink({
   href,
@@ -150,34 +141,50 @@ function NavLink({
   icon: Icon,
   active,
   onNavigate,
-  iconColor,
+  isFavorite,
+  onToggleFavorite,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
   active: boolean;
   onNavigate?: () => void;
-  iconColor?: string;
+  isFavorite?: boolean;
+  onToggleFavorite?: (e: React.MouseEvent) => void;
 }) {
   return (
-    <Link
-      href={href}
-      onClick={onNavigate}
-      className={cn(
-        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all duration-150",
-        active
-          ? "bg-mv-green text-mv-cream-soft font-semibold"
-          : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
+    <div className="group relative flex items-center">
+      <Link
+        href={href}
+        onClick={onNavigate}
+        className={cn(
+          "flex flex-1 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all duration-150",
+          active
+            ? "bg-mv-green text-mv-cream-soft font-semibold shadow-sm"
+            : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
+        )}
+      >
+        <Icon
+          size={16}
+          strokeWidth={active ? 2.2 : 1.5}
+          className={cn("shrink-0 transition-all duration-150", active ? "text-mv-cream-soft" : "opacity-60")}
+        />
+        <span className="truncate flex-1">{label}</span>
+      </Link>
+      {onToggleFavorite && (
+        <button
+          type="button"
+          onClick={onToggleFavorite}
+          title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+          className={cn(
+            "p-1 text-mv-ink-faint transition-opacity hover:text-mv-amber focus:outline-none",
+            isFavorite ? "opacity-100 text-mv-amber" : "opacity-0 group-hover:opacity-100"
+          )}
+        >
+          <Star size={13} fill={isFavorite ? "currentColor" : "none"} />
+        </button>
       )}
-    >
-      <Icon
-        size={16}
-        strokeWidth={active ? 2.2 : 1.5}
-        style={{ color: active ? "currentColor" : iconColor }}
-        className={cn("shrink-0 transition-all duration-150", active ? "text-mv-cream-soft" : !iconColor && "opacity-60")}
-      />
-      <span className="truncate">{label}</span>
-    </Link>
+    </div>
   );
 }
 
@@ -280,13 +287,46 @@ export function AppSidebar() {
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Dynamic Favorites state persisted in localStorage
+  const [favoriteKeys, setFavoriteKeys] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("mv_user_favorites");
+      if (stored) {
+        setFavoriteKeys(JSON.parse(stored));
+      } else {
+        setFavoriteKeys(["horaire", "commandes", "reports"]);
+      }
+    } catch {
+      setFavoriteKeys(["horaire", "commandes", "reports"]);
+    }
+  }, []);
+
+  const toggleFavorite = (key: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const updated = favoriteKeys.includes(key)
+      ? favoriteKeys.filter((k) => k !== key)
+      : [...favoriteKeys, key];
+    setFavoriteKeys(updated);
+    try {
+      localStorage.setItem("mv_user_favorites", JSON.stringify(updated));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const allowedByRole = (n: NavItem) =>
     n.roles.includes(role) && (!sidebarPermissions || sidebarPermissions.includes(n.key));
 
-  const visibleMainItems = mainNavItems.filter(allowedByRole);
-  const visibleFavorites = favorites.filter(allowedByRole);
+  const allNavItemsList = [...coreNavItems, ...operationsItems, ...analyticsItems, ...settingsGroupItems];
+  const favoriteItems = allNavItemsList.filter((item) => favoriteKeys.includes(item.key) && allowedByRole(item));
+
+  const visibleCoreItems = coreNavItems.filter(allowedByRole);
   const visibleOperationsItems = operationsItems.filter(allowedByRole);
-  const visibleSettingsItems = subSettingsGroupItems.filter(allowedByRole);
+  const visibleAnalyticsItems = analyticsItems.filter(allowedByRole);
+  const visibleSettingsItems = settingsGroupItems.filter(allowedByRole);
   const hasSettingsAccess = ["owner", "manager"].includes(role);
 
   function closeMobile() {
@@ -340,20 +380,43 @@ export function AppSidebar() {
             </button>
           </div>
 
-          <div className="flex-1 space-y-5 overflow-y-auto px-2.5 py-3">
-            {/* Main Navigation List */}
+          <div className="flex-1 space-y-4 overflow-y-auto px-2.5 py-3">
+            {/* Core General List */}
             <div className="space-y-0.5">
-              {visibleMainItems.map((item) => (
+              {visibleCoreItems.map((item) => (
                 <NavLink
                   key={item.href}
                   href={item.href}
-                  label={t(navTranslationKeys[item.key])}
+                  label={t(navTranslationKeys[item.key] || item.key)}
                   icon={item.icon}
                   active={pathname.startsWith(item.href)}
                   onNavigate={closeMobile}
+                  isFavorite={favoriteKeys.includes(item.key)}
+                  onToggleFavorite={(e) => toggleFavorite(item.key, e)}
                 />
               ))}
             </div>
+
+            {/* Dynamic Favorites Section */}
+            {favoriteItems.length > 0 && (
+              <CollapsibleSection
+                label={t("sectionFavorites")}
+                defaultOpen={true}
+              >
+                {favoriteItems.map((item) => (
+                  <NavLink
+                    key={`fav-${item.key}`}
+                    href={item.href}
+                    label={t(navTranslationKeys[item.key] || item.key)}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                    isFavorite={true}
+                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
+                  />
+                ))}
+              </CollapsibleSection>
+            )}
 
             {/* Opérations Section */}
             {visibleOperationsItems.length > 0 && (
@@ -365,17 +428,40 @@ export function AppSidebar() {
                   <NavLink
                     key={item.href}
                     href={item.href}
-                    label={t(navTranslationKeys[item.key])}
+                    label={t(navTranslationKeys[item.key] || item.key)}
                     icon={item.icon}
                     active={pathname.startsWith(item.href)}
                     onNavigate={closeMobile}
+                    isFavorite={favoriteKeys.includes(item.key)}
+                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
+                  />
+                ))}
+              </CollapsibleSection>
+            )}
+
+            {/* Performance & Analytics Section */}
+            {visibleAnalyticsItems.length > 0 && (
+              <CollapsibleSection
+                label="Performance & Analyse"
+                defaultOpen={visibleAnalyticsItems.some((item) => pathname.startsWith(item.href))}
+              >
+                {visibleAnalyticsItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={t(navTranslationKeys[item.key] || item.key)}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                    isFavorite={favoriteKeys.includes(item.key)}
+                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
                   />
                 ))}
               </CollapsibleSection>
             )}
 
             {/* Teams / Restaurants Section */}
-            <div className="space-y-1">
+            <div className="space-y-1 pt-1">
               <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
                 {t("sectionTeams")}
               </p>
@@ -416,31 +502,10 @@ export function AppSidebar() {
                 />
               </div>
             </div>
-
-            {/* Favorites Section */}
-            {visibleFavorites.length > 0 && (
-              <CollapsibleSection
-                label={t("sectionFavorites")}
-                defaultOpen={visibleFavorites.some((item) => pathname.startsWith(item.href))}
-              >
-                {visibleFavorites.map((item) => (
-                  <NavLink
-                    key={item.key}
-                    href={item.href}
-                    label={t(navTranslationKeys[item.key])}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                    iconColor={item.color}
-                  />
-                ))}
-              </CollapsibleSection>
-            )}
           </div>
 
-          {/* Settings Section Flat/Collapsible List at the bottom */}
+          {/* Settings Section at the bottom */}
           <div className="border-t border-mv-border p-2.5 space-y-1.5">
-            {/* Collapsible Paramètres et plus */}
             {visibleSettingsItems.length > 0 && (
               <CollapsibleSection
                 label={t("sectionSettingsMore")}
@@ -450,7 +515,7 @@ export function AppSidebar() {
                   <NavLink
                     key={item.href}
                     href={item.href}
-                    label={t(navTranslationKeys[item.key])}
+                    label={t(navTranslationKeys[item.key] || item.key)}
                     icon={item.icon}
                     active={pathname.startsWith(item.href)}
                     onNavigate={closeMobile}
@@ -459,7 +524,6 @@ export function AppSidebar() {
               </CollapsibleSection>
             )}
 
-            {/* Standalone settings item */}
             {hasSettingsAccess && (
               <NavLink
                 href="/settings"

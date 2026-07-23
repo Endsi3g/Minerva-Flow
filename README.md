@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="public/icon-512.png" width="96" alt="Flow par Minerva Logo" style="border-radius: 20px; margin-bottom: 12px;" />
+
 # 🌿 Flow par Minerva
 
 ### *La plateforme SaaS de gestion opérationnelle unifiée pour restaurants et cafés*
@@ -13,6 +15,10 @@
 <br />
 
 [✨ Découvrir l'Application Live](https://minerva-flow.vercel.app) • [📖 Guide des Intégrations](docs/integrations.md) • [🔒 Confidentialité](app/[locale]/legal/privacy/page.tsx) • [📄 Conditions](app/[locale]/legal/terms/page.tsx)
+
+<br /><br />
+
+<img src="public/demo.png" alt="Flow par Minerva Interface Demo" width="100%" style="border-radius: 12px; border: 1px solid #E2E8F0;" />
 
 </div>
 

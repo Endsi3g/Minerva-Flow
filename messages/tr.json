@@ -11,6 +11,8 @@
   "nav": {
     "overview": "Genel Bakış",
     "assistant": "Flow AI",
+    "library": "Kütüphane",
+    "integrations": "Entegrasyonlar",
     "finance": "Finans",
     "days": "Günler",
     "reports": "Raporlar",
