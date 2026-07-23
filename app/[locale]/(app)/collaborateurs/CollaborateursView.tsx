@@ -166,7 +166,7 @@ export function CollaborateursView({
                     <Tr key={m.id}>
                       <Td>
                         <div className="flex items-center gap-3">
-                          <Avatar name={m.name} size="md" isOnline={isOnline} />
+                          <Avatar name={m.name} size={36} />
                           <div>
                             <button
                               onClick={() => setSelected(m)}
