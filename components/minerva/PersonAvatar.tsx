@@ -29,20 +29,25 @@ export function Avatar({
   className?: string;
   src?: string | null;
 }) {
-  const initials = name
-    .split(" ")
-    .map((p) => p[0])
+  const cleanName = (name && name !== "—" ? name : "Collaborateur").trim();
+  const parts = cleanName.split(/\s+/).filter(Boolean);
+  let initials = parts
+    .map((p) => p.replace(/[^a-zA-Z0-9]/g, "")[0])
+    .filter(Boolean)
     .slice(0, 2)
     .join("")
     .toUpperCase();
-  const color = palette[hash(name) % palette.length];
+
+  if (!initials) initials = "CO";
+
+  const color = palette[hash(cleanName) % palette.length];
 
   return (
     <ShadcnAvatar
       className={cn("shrink-0 after:border-transparent", className)}
       style={{ width: size, height: size }}
     >
-      {src && <AvatarImage src={src} alt={name} />}
+      {src && <AvatarImage src={src} alt={cleanName} className="object-cover" />}
       <AvatarFallback
         className="font-semibold text-mv-cream-soft"
         style={{ background: color, fontSize: size * 0.38 }}

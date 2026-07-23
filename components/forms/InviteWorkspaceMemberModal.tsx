@@ -17,11 +17,15 @@ export function InviteWorkspaceMemberModal({
   onClose,
   workspaceId,
   restaurants,
+  currentRestaurantId,
+  onSuccess,
 }: {
   open: boolean;
   onClose: () => void;
   workspaceId: string;
   restaurants: Restaurant[];
+  currentRestaurantId?: string;
+  onSuccess?: () => void;
 }) {
   const [role, setRole] = useState<Role>("staff");
   const [selectedRestaurantIds, setSelectedRestaurantIds] = useState<string[]>(restaurants.map((r) => r.id));

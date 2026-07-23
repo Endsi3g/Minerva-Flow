@@ -677,3 +677,26 @@ export type TeamChatMessage = {
   isAiResponse?: boolean;
   createdAt: string;
 };
+
+export type IncidentPriority = "basse" | "moyenne" | "haute" | "urgente";
+export type IncidentStatus = "nouveau" | "assigne" | "en_cours" | "resolu" | "rejete";
+export type IncidentSource = "client" | "employe";
+
+export type IncidentReport = {
+  id: string;
+  restaurantId: string;
+  source: IncidentSource;
+  reporterName: string;
+  reporterEmail?: string;
+  title: string;
+  description: string;
+  priority: IncidentPriority;
+  status: IncidentStatus;
+  mediaUrls: string[];
+  audioUrl?: string;
+  assignedToId?: string | null;
+  assignedToName?: string | null;
+  justification?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+};
