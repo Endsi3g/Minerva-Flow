@@ -127,7 +127,7 @@ export function MessageBubble({
         {role === "assistant" && text && <CopyButton text={text} />}
         {attachments && attachments.length > 0 && (
           <AttachmentGroup className={cn(role === "user" && "justify-end", "mt-2")}>
-            {attachments.map((a) => (
+            {attachments.map((a: ChatAttachment) => (
               <AttachmentChip key={a.id} attachment={a} />
             ))}
           </AttachmentGroup>
