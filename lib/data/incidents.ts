@@ -5,7 +5,7 @@ export type IncidentSeverity = "faible" | "moyenne" | "critique";
 export type Incident = IncidentReport & {
   severity: IncidentSeverity;
   occurredAt: string;
-  affectedUserCount?: number;
+  affectedUserCount: number;
   resolution?: string | null;
 };
 
@@ -44,6 +44,7 @@ export function getIncidents(restaurantId: string): Incident[] {
         mediaUrls: [],
         createdAt: new Date(Date.now() - 7200000).toISOString(),
         occurredAt: new Date(Date.now() - 7200000).toISOString(),
+        affectedUserCount: 1,
       },
       {
         id: "inc-102",
@@ -60,6 +61,7 @@ export function getIncidents(restaurantId: string): Incident[] {
         assignedToName: "Alexandre Tremblay",
         createdAt: new Date(Date.now() - 14400000).toISOString(),
         occurredAt: new Date(Date.now() - 14400000).toISOString(),
+        affectedUserCount: 3,
       },
     ];
     incidentsStore.set(restaurantId, defaultIncidents);
@@ -103,6 +105,7 @@ export function createIncidentReport(input: {
     audioUrl: input.audioUrl,
     createdAt: now,
     occurredAt: now,
+    affectedUserCount: 0,
   };
 
   const list = getIncidents(input.restaurantId);
