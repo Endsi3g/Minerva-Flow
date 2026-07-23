@@ -17,17 +17,20 @@ const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
   style: ["normal", "italic"],
   variable: "--font-heading-fallback",
+  display: "swap",
 });
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  display: "swap",
 });
 
 const ogLocales: Record<string, string> = {

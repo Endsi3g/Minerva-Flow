@@ -24,6 +24,7 @@ import {
 import type { Notification } from "@/lib/data/notifications";
 import type { Alert, AlertSeverity } from "@/lib/types";
 import { PushNotificationToggle } from "@/components/pwa/PushNotificationToggle";
+import { GlobalSearchModal } from "@/components/shell/GlobalSearchModal";
 
 const alertSeverityTone: Record<AlertSeverity, "red" | "amber" | "neutral"> = {
   critique: "red",
@@ -407,6 +408,7 @@ function NotificationBell() {
 export function TopbarActions() {
   return (
     <div className="flex items-center gap-3">
+      <GlobalSearchModal />
       <NotificationBell />
       <div className="h-6 w-px bg-mv-border" />
       <UserMenu />
