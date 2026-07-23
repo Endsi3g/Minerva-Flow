@@ -182,12 +182,18 @@ export async function getEmployeePaySummaryAction(
   return getEmployeePaySummary(employeeId, start, end);
 }
 
+// Deliberately excludes "owner" — same reasoning as workspace/actions.ts's
+// INVITABLE_ROLES: without this, a manager could call this action directly
+// (bypassing the invite modal's own role dropdown) and mint themselves or
+// anyone else a co-owner.
+const INVITABLE_ROLES: Role[] = ["manager", "staff", "consultant"];
+
 export async function createEmployeeInviteLinkAction(
   restaurantId: string,
   employeeId: string,
   role: Role
 ): Promise<WorkspaceInvite | null> {
-  if (!restaurantId || !employeeId) return null;
+  if (!restaurantId || !employeeId || !INVITABLE_ROLES.includes(role)) return null;
   if (!(await requireManager(restaurantId))) return null;
 
   const membership = await getCurrentWorkspaceMembership();
