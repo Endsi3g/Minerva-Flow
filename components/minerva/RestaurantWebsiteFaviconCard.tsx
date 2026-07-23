@@ -47,7 +47,7 @@ export function RestaurantWebsiteFaviconCard({
               <h3 className="font-display text-[16px] font-bold text-mv-ink">
                 Site Web Officiel &amp; Logo Favicon
               </h3>
-              <Badge variant="outline" className="border-mv-green/40 bg-mv-green-tint text-mv-green-dark">
+              <Badge tone="green">
                 <CheckCircle2 size={12} className="mr-1 inline" /> Détecté
               </Badge>
             </div>

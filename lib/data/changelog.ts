@@ -32,22 +32,22 @@ function mapEntry(row: ChangelogEntryRow): ChangelogEntry {
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
     id: "ch-2026-07-23-2",
-    title: "Version 2.4 — Simulateur de Rentabilité, Cloudflare AI Gateway & Refonte Gemini",
-    description: "Ajout du Simulateur de Seuil de Rentabilité & Point Mort en direct avec curseurs interactifs. Intégration officielle de Cloudflare AI Gateway (llama-3.3-70b-instruct-fp8-fast via ai-gateway-provider). Refonte du Chat IA sur le modèle Gemini Advanced, publication en direct Site Web ↔ Dashboard et extraction automatique de Favicon de marque d'URL.",
+    title: "Simulateur de Seuil de Rentabilité, Cloudflare AI Gateway & Refonte Minerva Flow",
+    description: "Ajout du Simulateur de Seuil de Rentabilité & Point Mort en direct avec calculateur interactif de coûts fixes, panier moyen et marge nette. Intégration de Cloudflare AI Gateway (modèle Llama 3.3 70B), refonte visuelle du Chat IA sur le modèle Gemini Advanced, publication en direct Site Web ↔ Dashboard et extraction automatique de Favicon de marque d'URL.",
     category: "fonctionnalite",
     publishedAt: "2026-07-23T11:30:00.000Z",
   },
   {
     id: "ch-2026-07-23-1",
     title: "Correctif Auto-Refresh Jetons Google & Synchro 2 Sens Calendar",
-    description: "Correction du bug critique d'expiration des jetons Google OAuth via un rafraîchissement automatique par refresh_token. Activation de la synchronisation bidirectionnelle Google Calendar (lecture des congés et conflits d'horaires d'équipe) et intégration des avis Google Business Profile.",
+    description: "Correction du bug d'expiration des jetons Google OAuth via rafraîchissement automatique par refresh_token. Activation de la synchronisation bidirectionnelle Google Calendar et intégration des avis Google Business Profile.",
     category: "correctif",
     publishedAt: "2026-07-23T09:30:00.000Z",
   },
   {
     id: "ch-2026-07-23-0",
-    title: "Nouvelle Interface Sana AI, Bibliothèque d'Assets & Intégrations",
-    description: "Refonte complète de l'expérience d'authentification 2 colonnes avec OTP à 6 chiffres, restructuration du Chat IA avec pilules de création/sources, ajout de la page Bibliothèque d'Assets (/library) et de la page des Intégrations (/integrations).",
+    title: "Nouvelle Interface Authentification, Bibliothèque d'Assets & Hub Intégrations",
+    description: "Refonte de l'authentification 2 colonnes avec OTP à 6 chiffres, ajout de la page Bibliothèque d'Assets (/library) et du hub d'Intégrations (/integrations).",
     category: "fonctionnalite",
     publishedAt: "2026-07-23T08:15:00.000Z",
   },
@@ -71,7 +71,6 @@ export async function getChangelogEntries(): Promise<ChangelogEntry[]> {
     if (error || !data || data.length === 0) return DEFAULT_CHANGELOG_ENTRIES;
     const dbEntries = (data as ChangelogEntryRow[]).map(mapEntry);
 
-    // Merge default latest entries if not present
     const existingIds = new Set(dbEntries.map((e) => e.id));
     const missingDefaults = DEFAULT_CHANGELOG_ENTRIES.filter((e) => !existingIds.has(e.id));
     return [...missingDefaults, ...dbEntries].sort(

@@ -18,10 +18,11 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type FileUIPart } from "ai";
 import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
-import { Bot, PanelLeft, Sparkles, FileText, Plus, BarChart2, TrendingUp, Code2 } from "lucide-react";
+import { Bot, PanelLeft, Sparkles, FileText, Plus, TrendingUp, Utensils, Users, PackageCheck, PlusCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/lib/app-context";
-import { updateConversationTitleAction } from "@/app/[locale]/(chat)/assistant/actions";
+import { updateConversationTitleAction, createConversationAction } from "@/app/[locale]/(chat)/assistant/actions";
+import { useRouter } from "next/navigation";
 
 async function notifyAssistantDone() {
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
@@ -75,6 +76,7 @@ export function AssistantChatView({
   defaultContext: CanvasContextData;
 }) {
   const { authUser } = useApp();
+  const router = useRouter();
   const firstName = authUser?.fullName ? authUser.fullName.split(" ")[0] : "Collaborateur";
 
   const [shareOpen, setShareOpen] = useState(false);
@@ -141,6 +143,11 @@ export function AssistantChatView({
     }
   }, [messages, conversationId]);
 
+  async function handleNewChat() {
+    const conv = await createConversationAction(restaurantId);
+    if (conv) router.push(`/assistant/${conv.id}`);
+  }
+
   function handleSubmit(text: string, attachments: { path: string; fileName: string; mimeType: string; sizeBytes: number; signedUrl: string }[]) {
     const files: FileUIPart[] = attachments.map((a) => ({
       type: "file",
@@ -167,7 +174,7 @@ export function AssistantChatView({
   }
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-mv-surface">
+    <div className="flex h-full w-full overflow-hidden bg-mv-cream border-t border-mv-border">
       <ChatSidebar
         conversations={conversations}
         activeConversationId={conversationId}
@@ -176,16 +183,33 @@ export function AssistantChatView({
         onCollapse={setSidebarCollapsed}
       />
 
-      <div className="flex flex-1 min-w-0 overflow-hidden relative">
-        {sidebarCollapsed && (
+      <div className="flex flex-1 min-w-0 overflow-hidden relative flex-col">
+        {/* Gemini Top Header Bar */}
+        <div className="flex h-14 items-center justify-between border-b border-mv-border bg-mv-cream-soft/90 px-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              aria-label="Toggle Sidebar"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
+            >
+              <PanelLeft size={18} />
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="font-display text-[15px] font-bold text-mv-ink">Minerva Flow AI</span>
+              <span className="rounded-full bg-mv-green-tint px-2.5 py-0.5 text-[11px] font-bold text-mv-green-dark border border-mv-green/20">
+                Gemini 2.5
+              </span>
+            </div>
+          </div>
+
           <button
-            onClick={() => setSidebarCollapsed(false)}
-            aria-label="Afficher la barre latérale"
-            className="absolute left-2 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+            onClick={handleNewChat}
+            className="flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] font-bold text-mv-ink shadow-mv-sm hover:bg-mv-cream-soft transition-all"
           >
-            <PanelLeft size={16} />
+            <PlusCircle size={15} className="text-mv-green-dark" />
+            <span>Nouveau chat</span>
           </button>
-        )}
+        </div>
 
         <div
           className={cn(
@@ -225,7 +249,7 @@ export function AssistantChatView({
                     Bonjour, {firstName}
                   </span>
                 </h1>
-                <h2 className="text-3xl md:text-4xl font-medium text-mv-ink-faint/70 mt-2">
+                <h2 className="text-3xl md:text-4xl font-medium text-mv-ink-faint/80 mt-2">
                   Comment puis-je vous aider aujourd&apos;hui ?
                 </h2>
               </div>
@@ -236,7 +260,7 @@ export function AssistantChatView({
                   <button
                     key={item.title}
                     onClick={() => handleSubmit(item.prompt, [])}
-                    className="group relative flex flex-col justify-between rounded-2xl border border-mv-border-soft bg-mv-cream-soft/60 p-4.5 text-left transition-all duration-200 hover:border-mv-green/40 hover:bg-mv-surface hover:shadow-mv-md h-52"
+                    className="group relative flex flex-col justify-between rounded-2xl border border-mv-border bg-mv-surface p-4.5 text-left transition-all duration-200 hover:border-mv-green/50 hover:shadow-mv-md h-52"
                   >
                     <div>
                       <h3 className="text-[13.5px] font-bold leading-snug text-mv-ink group-hover:text-mv-green-dark transition-colors">
@@ -245,14 +269,14 @@ export function AssistantChatView({
                     </div>
 
                     {/* Rich Visual Illustration per Card Type (Gemini Style) */}
-                    <div className="mt-4 flex flex-1 items-center justify-center rounded-xl bg-mv-surface border border-mv-border-soft p-3 overflow-hidden group-hover:border-mv-green/20 transition-colors">
+                    <div className="mt-4 flex flex-1 items-center justify-center rounded-xl bg-mv-cream-soft border border-mv-border-soft p-3 overflow-hidden group-hover:border-mv-green/30 transition-colors">
                       {item.type === "code" && (
-                        <div className="w-full text-[10px] font-mono text-mv-ink-faint space-y-1">
-                          <div className="flex justify-between text-mv-green-dark font-semibold">
+                        <div className="w-full text-[10px] font-mono text-mv-ink space-y-1">
+                          <div className="flex justify-between text-mv-green-dark font-bold">
                             <span>revenus_semaine = &#123;</span>
                           </div>
                           <div className="pl-2">ventes: 14850.00,</div>
-                          <div className="pl-2 text-mv-amber">marge_brute: 68.4%</div>
+                          <div className="pl-2 text-mv-amber font-semibold">marge_brute: 68.4%</div>
                           <div>&#125;</div>
                         </div>
                       )}
@@ -270,11 +294,11 @@ export function AssistantChatView({
                       )}
 
                       {item.type === "plan" && (
-                        <div className="w-full text-[10.5px] text-mv-ink-soft space-y-1">
-                          <div className="font-semibold text-mv-ink">Plan de menu :</div>
-                          <div className="text-[9.5px] text-mv-ink-faint line-clamp-2">
-                            1. Plats Étoiles (Tartare, Burger Gourmet)<br />
-                            2. Optimisation des coûts
+                        <div className="w-full text-[10.5px] text-mv-ink space-y-1">
+                          <div className="font-bold text-mv-ink">Plan de menu :</div>
+                          <div className="text-[9.5px] text-mv-ink-soft line-clamp-2">
+                            1. Plats Étoiles (Tartare, Burger)<br />
+                            2. Optimisation coûts
                           </div>
                         </div>
                       )}
@@ -295,7 +319,7 @@ export function AssistantChatView({
             </div>
           ) : (
             <MessageScrollerProvider>
-              <MessageScroller className="flex-1">
+              <MessageScroller className="flex-1 w-full max-w-4xl mx-auto">
                 <MessageScrollerViewport>
                   <MessageScrollerContent>
                     {initialMessages.map((m) => (
@@ -318,7 +342,7 @@ export function AssistantChatView({
                     {/* Sleek Shimmer Loading Indicator */}
                     {isLoading && (
                       <MessageScrollerItem scrollAnchor>
-                        <div className="flex items-center gap-3 rounded-2xl border border-mv-border-soft bg-mv-surface p-3.5 shadow-mv-sm max-w-md">
+                        <div className="flex items-center gap-3 rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-sm max-w-md">
                           <Bot size={16} className="animate-spin text-mv-green-dark shrink-0" />
                           <div className="flex-1 space-y-2">
                             <div className="h-3.5 w-3/4 rounded bg-gradient-to-r from-mv-border-soft via-mv-cream-soft to-mv-border-soft animate-pulse" />
@@ -348,7 +372,7 @@ export function AssistantChatView({
           </div>
 
           {error && (
-            <p className="mt-2 text-center text-[12px] text-mv-red">
+            <p className="mt-2 text-center text-[12px] text-mv-red font-semibold">
               Une erreur est survenue — réessayez dans un instant.
             </p>
           )}

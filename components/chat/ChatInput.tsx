@@ -3,7 +3,7 @@
 import { ChatAttachments, type PreparedAttachment } from "@/components/chat/ChatAttachments";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { cn } from "@/lib/utils";
-import { ArrowUp, Mic, MicOff, Paperclip, Loader2, Zap, FolderOpen, Plus } from "lucide-react";
+import { ArrowUp, Mic, MicOff, Loader2, FolderOpen, Plus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
@@ -61,7 +61,7 @@ export function ChatInput({
 
   return (
     <form onSubmit={handleSubmit} className="mt-2">
-      <div className="relative rounded-3xl border border-mv-border/80 bg-mv-cream-soft/80 p-3 md:p-4 shadow-mv-md transition-all focus-within:border-mv-green/50 focus-within:bg-mv-surface focus-within:shadow-mv-lg">
+      <div className="relative rounded-3xl border border-mv-border bg-mv-surface p-3.5 md:p-4 shadow-mv-lg transition-all focus-within:border-mv-green-dark">
         <textarea
           ref={textareaRef}
           value={input}
@@ -69,7 +69,7 @@ export function ChatInput({
           onKeyDown={handleKeyDown}
           placeholder="Entrer une invite ici..."
           rows={1}
-          className="w-full resize-none bg-transparent px-2 py-1 text-[14.5px] leading-relaxed text-mv-ink placeholder-mv-ink-faint focus:outline-none min-h-[36px] max-h-[180px]"
+          className="w-full resize-none bg-transparent px-2 py-1 text-[14.5px] leading-relaxed text-mv-ink placeholder-mv-ink-faint focus:outline-none min-h-[38px] max-h-[180px]"
         />
 
         {speech.isListening && speech.interimTranscript && (
@@ -87,14 +87,14 @@ export function ChatInput({
             onChange={setAttachments}
           >
             {(openUpload, uploadLoading) => (
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-mv-border-soft/60 pt-2.5">
-                <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-mv-border-soft/80 pt-2.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={openUpload}
                     disabled={uploadLoading}
                     title="Ajouter des fichiers"
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-mv-border bg-mv-surface text-mv-ink-soft transition-colors hover:bg-mv-border/30 disabled:opacity-50"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-mv-border bg-mv-cream-soft text-mv-ink transition-colors hover:bg-mv-border/40 disabled:opacity-50"
                   >
                     {uploadLoading ? (
                       <Loader2 size={15} className="animate-spin text-mv-green-dark" />
@@ -103,20 +103,9 @@ export function ChatInput({
                     )}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setInput((prev) => (prev ? `${prev} [Générer une analyse]` : "Générer une analyse financière détaillée"));
-                    }}
-                    className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/30"
-                  >
-                    <Zap size={13} className="text-mv-amber" />
-                    <span>Créer</span>
-                  </button>
-
                   <Link
                     href="/library"
-                    className="hidden sm:flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/30"
+                    className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-cream-soft px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/40"
                   >
                     <FolderOpen size={13} className="text-mv-green-dark" />
                     <span>Bibliothèque</span>
