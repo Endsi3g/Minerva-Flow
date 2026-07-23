@@ -220,7 +220,7 @@ export function AssistantChatView({
         <div className="flex h-14 items-center justify-between border-b border-mv-border bg-mv-cream-soft/90 px-4">
           <div className="flex items-center gap-3">
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <button
                   onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                   aria-label="Masquer ou afficher le panneau latéral"
@@ -242,7 +242,7 @@ export function AssistantChatView({
 
           <div className="flex items-center gap-2">
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <button
                   onClick={() => setShareOpen(true)}
                   aria-label="Partager cette conversation"
@@ -255,7 +255,7 @@ export function AssistantChatView({
             </Tooltip>
 
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <button
                   onClick={handleNewChat}
                   aria-label="Démarrer une nouvelle discussion"

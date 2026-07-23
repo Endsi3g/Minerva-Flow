@@ -93,7 +93,7 @@ export function BreakEvenSimulator() {
               <CardTitle className="font-display text-[20px] font-bold text-mv-ink flex items-center gap-2">
                 <span>Simulateur de Seuil de Rentabilité &amp; Point Mort</span>
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                  <TooltipTrigger>
                     <button type="button" aria-label="Informations sur le simulateur" className="text-mv-ink-faint hover:text-mv-ink transition-colors">
                       <Info size={16} />
                     </button>
@@ -128,7 +128,7 @@ export function BreakEvenSimulator() {
         <CardContent className="pt-5 p-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <div>
                   <StatCard
                     label="Point Mort Mensuel"
@@ -143,7 +143,7 @@ export function BreakEvenSimulator() {
             </Tooltip>
 
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <div>
                   <StatCard
                     label="Seuil Quotidien"
@@ -158,7 +158,7 @@ export function BreakEvenSimulator() {
             </Tooltip>
 
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <div>
                   <StatCard
                     label="Clients / Jour Requis"
@@ -173,7 +173,7 @@ export function BreakEvenSimulator() {
             </Tooltip>
 
             <Tooltip>
-              <TooltipTrigger asChild>
+              <TooltipTrigger>
                 <div>
                   <StatCard
                     label="Jour de Rentabilité"
@@ -205,7 +205,7 @@ export function BreakEvenSimulator() {
             <div className="space-y-2.5">
               <div className="flex justify-between text-[13.5px] font-semibold">
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                  <TooltipTrigger>
                     <span className="text-mv-ink cursor-help border-b border-dashed border-mv-border-soft">
                       Coûts Fixes Mensuels (Loyer, Salaires, Assurance)
                     </span>
@@ -233,7 +233,7 @@ export function BreakEvenSimulator() {
             <div className="space-y-2.5">
               <div className="flex justify-between text-[13.5px] font-semibold">
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                  <TooltipTrigger>
                     <span className="text-mv-ink cursor-help border-b border-dashed border-mv-border-soft">
                       Taux de Marge Brute (100% - Food Cost %)
                     </span>
@@ -261,7 +261,7 @@ export function BreakEvenSimulator() {
             <div className="space-y-2.5">
               <div className="flex justify-between text-[13.5px] font-semibold">
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                  <TooltipTrigger>
                     <span className="text-mv-ink cursor-help border-b border-dashed border-mv-border-soft">
                       Panier Moyen par Client / Transaction
                     </span>
@@ -289,7 +289,7 @@ export function BreakEvenSimulator() {
             <div className="space-y-2.5">
               <div className="flex justify-between text-[13.5px] font-semibold">
                 <Tooltip>
-                  <TooltipTrigger asChild>
+                  <TooltipTrigger>
                     <span className="text-mv-ink cursor-help border-b border-dashed border-mv-border-soft">
                       Chiffre d&apos;Affaires Mensuel Estimé
                     </span>
