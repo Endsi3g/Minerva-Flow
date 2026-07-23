@@ -1,5 +1,7 @@
 import type { IncidentReport, IncidentPriority, IncidentStatus, IncidentSource } from "@/lib/types";
 
+export type Incident = IncidentReport;
+
 // In-memory store for Incident Reports per restaurant
 const incidentsStore = new Map<string, IncidentReport[]>();
 
