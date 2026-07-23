@@ -1,6 +1,10 @@
 import type { IncidentReport, IncidentPriority, IncidentStatus, IncidentSource } from "@/lib/types";
 
-export type Incident = IncidentReport;
+export type IncidentSeverity = "faible" | "moyenne" | "critique";
+
+export type Incident = IncidentReport & {
+  severity: IncidentSeverity;
+};
 
 // In-memory store for Incident Reports per restaurant
 const incidentsStore = new Map<string, IncidentReport[]>();
@@ -20,9 +24,9 @@ export function recordRateLimit(restaurantId: string, reporterId: string): void 
   rateLimitTracker.set(key, true);
 }
 
-export function getIncidents(restaurantId: string): IncidentReport[] {
+export function getIncidents(restaurantId: string): Incident[] {
   if (!incidentsStore.has(restaurantId)) {
-    const defaultIncidents: IncidentReport[] = [
+    const defaultIncidents: Incident[] = [
       {
         id: "inc-101",
         restaurantId,
@@ -32,6 +36,7 @@ export function getIncidents(restaurantId: string): IncidentReport[] {
         title: "Attente prolongée au comptoir & température plat",
         description: "Commande #402 servie avec 25 minutes de retard. La soupe au pistou était tiède.",
         priority: "haute",
+        severity: "critique",
         status: "nouveau",
         mediaUrls: [],
         createdAt: new Date(Date.now() - 7200000).toISOString(),
@@ -44,6 +49,7 @@ export function getIncidents(restaurantId: string): IncidentReport[] {
         title: "Rupture de stock sauce tomate bio & emballages",
         description: "Le stock tampon en réserve est épuisé avant le coup de feu du soir.",
         priority: "moyenne",
+        severity: "moyenne",
         status: "assigne",
         mediaUrls: [],
         assignedToId: "usr-alex",
@@ -65,9 +71,10 @@ export function createIncidentReport(input: {
   title: string;
   description: string;
   priority: IncidentPriority;
+  severity?: IncidentSeverity;
   mediaUrls?: string[];
   audioUrl?: string;
-}): { incident?: IncidentReport; error?: string } {
+}): { incident?: Incident; error?: string } {
   // Rate-limiting check: max 1 report per day
   if (isRateLimited(input.restaurantId, input.reporterId)) {
     return {
@@ -75,7 +82,7 @@ export function createIncidentReport(input: {
     };
   }
 
-  const incident: IncidentReport = {
+  const incident: Incident = {
     id: `inc-${Date.now()}`,
     restaurantId: input.restaurantId,
     source: input.source,
@@ -84,6 +91,7 @@ export function createIncidentReport(input: {
     title: input.title,
     description: input.description,
     priority: input.priority,
+    severity: input.severity || "faible",
     status: "nouveau",
     mediaUrls: input.mediaUrls || [],
     audioUrl: input.audioUrl,
