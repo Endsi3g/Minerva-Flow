@@ -1,17 +1,17 @@
 import React from "react";
 import SquareSvg from "@thesvg/react/square";
 import GoogleSvg from "@thesvg/react/google";
-import GoogleCalendarSvg from "@thesvg/react/googlecalendar";
-import GoogleSheetsSvg from "@thesvg/react/googlesheets";
-import GoogleDriveSvg from "@thesvg/react/googledrive";
+import GoogleCalendarSvg from "@thesvg/react/google-calendar";
+import GoogleSheetsSvg from "@thesvg/react/google-sheets";
+import GoogleDriveSvg from "@thesvg/react/google-drive";
 import GmailSvg from "@thesvg/react/gmail";
-import GoogleAnalyticsSvg from "@thesvg/react/googleanalytics";
-import GoogleAdsSvg from "@thesvg/react/googleads";
+import GoogleAnalyticsSvg from "@thesvg/react/google-analytics";
+import GoogleAdsSvg from "@thesvg/react/google-ads";
 import MetaSvg from "@thesvg/react/meta";
 import StripeSvg from "@thesvg/react/stripe";
 import AppleSvg from "@thesvg/react/apple";
 import MicrosoftSvg from "@thesvg/react/microsoft";
-import UberEatsSvg from "@thesvg/react/ubereats";
+import UberEatsSvg from "@thesvg/react/uber-eats";
 
 interface BrandIconProps extends React.SVGProps<SVGSVGElement> {
   size?: number;

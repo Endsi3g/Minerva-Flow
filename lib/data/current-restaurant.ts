@@ -25,6 +25,13 @@ export async function getCurrentRestaurantId(): Promise<string | null> {
   return restaurants[0].id;
 }
 
+export async function getCurrentRestaurant() {
+  const restaurantId = await getCurrentRestaurantId();
+  if (!restaurantId) return null;
+  const restaurants = await getUserRestaurants();
+  return restaurants.find((r) => r.id === restaurantId) || null;
+}
+
 export type CurrentMembership = {
   restaurantId: string;
   role: Role;
