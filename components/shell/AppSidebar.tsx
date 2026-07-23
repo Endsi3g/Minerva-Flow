@@ -67,18 +67,19 @@ type NavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
-// 1. Core General Items (Overview, Flow AI, then Bibliothèque at the bottom)
+// 1. Core General Items (Overview, Flow AI, Finances, Commandes, Collaborateurs, Inventaire)
 const coreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
-  { key: "library", href: "/library", icon: FolderOpen, roles: allRoles },
+  { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
+  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
+  { key: "collaborateurs", href: "/collaborateurs", icon: Users, roles: allRoles },
+  { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
 ];
 
 // 2. Opérations & Équipe
 const operationsItems: NavItem[] = [
   { key: "horaire", href: "/horaire", icon: CalendarDays, roles: allRoles },
-  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
-  { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
   { key: "fournisseurs", href: "/fournisseurs", icon: Truck, roles: ["owner", "manager"] },
   { key: "reservations", href: "/reservations", icon: CalendarClock, roles: allRoles },
   { key: "monEspace", href: "/mon-espace", icon: UserCircle, roles: allRoles },
@@ -89,14 +90,14 @@ const operationsItems: NavItem[] = [
 const analyticsItems: NavItem[] = [
   { key: "days", href: "/days", icon: BarChart3, roles: allRoles },
   { key: "reports", href: "/reports", icon: FileText, roles: allRoles },
-  { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
   { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
   { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
   { key: "maps", href: "/maps", icon: MapIcon, roles: allRoles },
   { key: "programs", href: "/programs", icon: GitCommit, roles: allRoles },
+  { key: "library", href: "/library", icon: FolderOpen, roles: allRoles },
 ];
 
-// 4. Sub settings & help items (with Intégrations included under Paramètres et plus)
+// 4. Sub settings & help items (with Intégrations inclus)
 const settingsGroupItems: NavItem[] = [
   { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
   { key: "billing", href: "/billing", icon: CreditCard, roles: ["owner"] },
@@ -108,9 +109,12 @@ const settingsGroupItems: NavItem[] = [
 const navTranslationKeys: Record<string, string> = {
   overview: "overview",
   assistant: "assistant",
+  finance: "finance",
+  commandes: "commandes",
+  collaborateurs: "collaborateurs",
+  inventaire: "inventaire",
   library: "library",
   integrations: "integrations",
-  finance: "finance",
   days: "days",
   reports: "reports",
   menu: "menu",
@@ -122,8 +126,6 @@ const navTranslationKeys: Record<string, string> = {
   horaire: "horaire",
   monEspace: "monEspace",
   fournisseurs: "fournisseurs",
-  inventaire: "inventaire",
-  commandes: "commandes",
   billing: "billing",
   guide: "guide",
   support: "support",
