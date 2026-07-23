@@ -22,6 +22,7 @@ import { createCategoryAction, categorizeTransactionsAction, createTransactionAc
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
+import { BreakEvenSimulator } from "@/components/finance/BreakEvenSimulator";
 import type {
   Connection,
   ConnectionStatus,
@@ -166,6 +167,11 @@ function OverviewTab({ transactions }: { transactions: FinancialTransaction[] })
             <p className="text-[12.5px] text-mv-ink-faint">{t("overview.noOutflowsThisMonth")}</p>
           )}
         </Card>
+      </div>
+
+      {/* Break-Even Simulator Section (Valeur ++) */}
+      <div className="mt-8">
+        <BreakEvenSimulator />
       </div>
     </div>
   );
