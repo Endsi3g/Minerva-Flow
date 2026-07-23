@@ -47,7 +47,7 @@ export function SiteSyncCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="border-mv-green/40 bg-mv-green-tint text-mv-green-dark">
+          <Badge tone="green">
             <CheckCircle2 size={12} className="mr-1 inline" /> Connecté en direct
           </Badge>
           <Link
