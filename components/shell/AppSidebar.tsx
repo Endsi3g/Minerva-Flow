@@ -67,12 +67,11 @@ type NavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
-// 1. Core General Items (Always visible at top)
+// 1. Core General Items (Overview, Flow AI, then Bibliothèque at the bottom)
 const coreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
   { key: "library", href: "/library", icon: FolderOpen, roles: allRoles },
-  { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
 ];
 
 // 2. Opérations & Équipe
@@ -97,8 +96,9 @@ const analyticsItems: NavItem[] = [
   { key: "programs", href: "/programs", icon: GitCommit, roles: allRoles },
 ];
 
-// 4. Sub settings & help items
+// 4. Sub settings & help items (with Intégrations included under Paramètres et plus)
 const settingsGroupItems: NavItem[] = [
+  { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
   { key: "billing", href: "/billing", icon: CreditCard, roles: ["owner"] },
   { key: "guide", href: "/guide", icon: BookOpen, roles: allRoles },
   { key: "support", href: "/support", icon: LifeBuoy, roles: allRoles },

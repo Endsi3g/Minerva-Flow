@@ -15,7 +15,7 @@ import { routing } from "@/i18n/routing";
 
 const playfairDisplayHeading = Playfair_Display({ subsets: ['latin'], variable: '--font-heading' });
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const sora = Sora({ subsets: ['latin'], variable: '--font-sans' });
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -105,7 +105,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={cn("h-full", jakarta.variable, fraunces.variable, "font-sans", inter.variable, playfairDisplayHeading.variable)}
+      className={cn("h-full", jakarta.variable, sora.variable, "font-sans")}
     >
       <body className="min-h-full bg-mv-cream text-mv-ink antialiased">
         <ThemeProvider>

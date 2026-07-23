@@ -119,7 +119,7 @@ export function ChatSidebar({
             className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[12.5px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
           >
             <Zap size={15} className="text-mv-amber" />
-            <span>Intégrations & Workflows</span>
+            <span>Intégrations</span>
           </Link>
         </div>
 

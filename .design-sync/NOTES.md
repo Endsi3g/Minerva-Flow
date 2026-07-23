@@ -64,6 +64,11 @@ Everything else (~180 components — chat/message/attachment/map/marker primitiv
 
 Hand-written prop bodies (`cfg.dtsPropsFor`) exist for **Button** and the **Card**/**Table** families only (written by the orchestrator during the solo calibration pass). The other ~48 authored core components still carry the auto-extracted stub (`[key: string]: unknown`) as their shipped `.d.ts`, even though their previews were authored correctly from real source (not the stub). This doesn't affect preview fidelity, but it does mean the design agent's actual *prop-name contract* for those components is weak. Worth backfilling `dtsPropsFor` for the highest-traffic ones (Input, Select, Checkbox, Dialog, DropdownMenu at minimum) on a future sync.
 
+## Known render warns
+
+- **`[RENDER_THIN]` (rendered height 0-1px) on AlertDialog, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, Dialog, DialogFooter, Drawer, DrawerFooter, DrawerHeader, Sheet, SheetFooter, SheetHeader.** All are authored, `cardMode: "single"` overlay compounds — the check's height measurement collapses on Base UI's portaled/fixed-position overlay content even though the overlay itself renders correctly. Confirmed benign by reading the actual `_screenshots/review/general__<Name>.png` contact sheets during authoring (all graded "good" — real content, real brand styling, nothing missing). Non-blocking; re-syncs should expect this warn to keep appearing on these 12 names unless the components' underlying positioning strategy changes.
+- **`[RENDER_BLANK]` on Apple, Attachment, AttachmentGroup, AttachmentMedia, Marker, Microsoft, Square.** All outside this sync's declared authoring scope (brand icons not selected as core; chat-attachment and map-marker primitives are feature-specific, not core design-system surface). Honest floor cards, authorable on a future re-sync if that scope expands.
+
 ## Re-sync risks
 
 - **`.design-sync/.cache/compiled-tailwind.css` and `.design-sync/fonts/` are gitignored** (generated/fetched, not committed) — a fresh clone must re-run `node .design-sync/compile-css.mjs` and `node .design-sync/fetch-fonts.mjs` before the first build, or the CSS/font wiring silently reverts to broken (unresolved `@import`s, invalid `--font-*` vars).

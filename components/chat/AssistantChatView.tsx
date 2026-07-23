@@ -18,9 +18,10 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type FileUIPart } from "ai";
 import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
-import { Bot, PanelLeft, Sparkles, TrendingUp, Utensils, Users, PackageCheck, Zap } from "lucide-react";
+import { Bot, PanelLeft, Sparkles, TrendingUp, Utensils, Users, PackageCheck } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/lib/app-context";
+import { updateConversationTitleAction } from "@/app/[locale]/(chat)/assistant/actions";
 
 async function notifyAssistantDone() {
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
@@ -126,6 +127,19 @@ export function AssistantChatView({
     }
   }, [messages, conversationId, restaurantId]);
 
+  // Auto-generate title on first prompt
+  useEffect(() => {
+    if (messages.length === 1 && messages[0].role === "user") {
+      const firstText = messages[0].parts
+        ?.filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
+        .map((p) => p.text)
+        .join("") || "Nouvelle conversation";
+      
+      const generatedTitle = firstText.length > 30 ? `${firstText.slice(0, 30)}...` : firstText;
+      updateConversationTitleAction(conversationId, generatedTitle);
+    }
+  }, [messages, conversationId]);
+
   function handleSubmit(text: string, attachments: { path: string; fileName: string; mimeType: string; sizeBytes: number; signedUrl: string }[]) {
     const files: FileUIPart[] = attachments.map((a) => ({
       type: "file",
@@ -203,7 +217,7 @@ export function AssistantChatView({
 
           {!hasAnyMessages ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center max-w-3xl mx-auto w-full">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-mv-green-tint text-mv-green-dark shadow-mv-sm border border-mv-green/20">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-mv-surface text-mv-green-dark shadow-mv-sm border border-mv-border">
                 <Sparkles size={24} />
               </div>
 
@@ -216,7 +230,7 @@ export function AssistantChatView({
                 </p>
               </div>
 
-              {/* Sana AI Featured Prompt Cards Grid */}
+              {/* Sana AI Featured Prompt Cards Grid (No Emojis) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full text-left pt-2">
                 {FEATURED_SUGGESTIONS.map((item) => {
                   const IconComponent = item.icon;
@@ -227,7 +241,7 @@ export function AssistantChatView({
                       className="group flex flex-col justify-between rounded-2xl border border-mv-border bg-mv-surface p-4 transition-all hover:border-mv-green-dark hover:shadow-mv-sm"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-mv-cream-soft text-mv-green-dark group-hover:bg-mv-green-tint transition-colors">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-mv-cream-soft text-mv-green-dark border border-mv-border-soft group-hover:border-mv-green/30 transition-colors">
                           <IconComponent size={16} />
                         </div>
                         <span className="text-[13px] font-bold text-mv-ink group-hover:text-mv-green-dark transition-colors">
@@ -263,10 +277,16 @@ export function AssistantChatView({
                         </MessageScrollerItem>
                       );
                     })}
+
+                    {/* Sleek Shimmer Loading Indicator */}
                     {isLoading && (
                       <MessageScrollerItem scrollAnchor>
-                        <div className="flex items-center gap-2 text-[12.5px] text-mv-ink-faint">
-                          <Bot size={14} className="animate-pulse" /> L&apos;assistant analyse vos données…
+                        <div className="flex items-center gap-3 rounded-2xl border border-mv-border-soft bg-mv-surface p-3.5 shadow-mv-sm max-w-md">
+                          <Bot size={16} className="animate-spin text-mv-green-dark shrink-0" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3.5 w-3/4 rounded bg-gradient-to-r from-mv-border-soft via-mv-cream-soft to-mv-border-soft animate-pulse" />
+                            <div className="h-3 w-1/2 rounded bg-gradient-to-r from-mv-border-soft via-mv-cream-soft to-mv-border-soft animate-pulse" />
+                          </div>
                         </div>
                       </MessageScrollerItem>
                     )}

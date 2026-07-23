@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Bot, FileText } from "lucide-react";
+import { Bot, FileText, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
@@ -14,6 +14,8 @@ import {
   AttachmentTitle,
   AttachmentDescription,
 } from "@/components/ui/attachment";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const markdownComponents: Components = {
   p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -55,6 +57,29 @@ function AttachmentChip({ attachment }: { attachment: ChatAttachment }) {
   );
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success("Réponse copiée dans le presse-papier");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      title="Copier la réponse"
+      className="mt-1 flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+    >
+      {copied ? <Check size={12} className="text-mv-green-dark" /> : <Copy size={12} />}
+      <span>{copied ? "Copié !" : "Copier"}</span>
+    </button>
+  );
+}
+
 export function MessageBubble({
   role,
   text,
@@ -70,7 +95,7 @@ export function MessageBubble({
     <Message align={align}>
       {role === "assistant" && (
         <MessageAvatar>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-cream-soft border border-mv-border text-mv-green-dark shadow-mv-sm">
             <Bot size={14} />
           </div>
         </MessageAvatar>
@@ -79,8 +104,8 @@ export function MessageBubble({
         <Bubble align={align} variant="ghost">
           <BubbleContent
             className={cn(
-              "mv-scale-in rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed",
-              role === "user" ? "bg-mv-green text-mv-cream-soft" : "bg-mv-cream-soft text-mv-ink"
+              "mv-scale-in rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed border border-mv-border-soft",
+              role === "user" ? "bg-mv-green text-mv-cream-soft border-mv-green-dark" : "bg-mv-surface text-mv-ink shadow-mv-sm"
             )}
           >
             {role === "assistant" ? (
@@ -92,6 +117,7 @@ export function MessageBubble({
             )}
           </BubbleContent>
         </Bubble>
+        {role === "assistant" && text && <CopyButton text={text} />}
         {attachments && attachments.length > 0 && (
           <AttachmentGroup className={cn(role === "user" && "justify-end")}>
             {attachments.map((a) => (
