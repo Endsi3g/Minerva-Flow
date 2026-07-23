@@ -65,16 +65,36 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
       }
 
       const registration = await navigator.serviceWorker.ready;
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!vapidKey) {
-        setState("not_configured");
-        return;
-      }
 
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
-      });
+      // iOS Safari's PushManager.getSubscription() is known to intermittently
+      // return null for an installed PWA even when a subscription already
+      // exists browser-side (a WebKit reliability gap, not something we
+      // control) — re-checking right here, not just at mount, means a stale
+      // "available" state self-heals into "subscribed" instead of creating
+      // a redundant subscription every time the user taps the button.
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        if (!vapidKey) {
+          setState("not_configured");
+          return;
+        }
+        const subscribeOptions = {
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
+        };
+        try {
+          subscription = await registration.pushManager.subscribe(subscribeOptions);
+        } catch {
+          // A zombie subscription (browser holds internal state
+          // getSubscription() didn't surface) can make a fresh subscribe()
+          // throw — clear it and retry once before giving up.
+          const zombie = await registration.pushManager.getSubscription();
+          if (zombie) await zombie.unsubscribe();
+          subscription = await registration.pushManager.subscribe(subscribeOptions);
+        }
+      }
 
       const saved = await subscribeToPushAction(
         restaurantId,
