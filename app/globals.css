@@ -112,9 +112,9 @@
   --color-mv-amber-bg: var(--mv-amber-bg);
 
   --font-sans: var(--font-sans);
-  --font-display: var(--font-heading);
-  --font-heading: var(--font-heading);
-  --font-serif: var(--font-serif);
+  --font-display: "New York", -apple-system-serif, ui-serif, Georgia, var(--font-heading-fallback), serif;
+  --font-heading: "New York", -apple-system-serif, ui-serif, Georgia, var(--font-heading-fallback), serif;
+  --font-serif: "New York", -apple-system-serif, ui-serif, Georgia, var(--font-heading-fallback), serif;
   --font-mono: var(--font-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);

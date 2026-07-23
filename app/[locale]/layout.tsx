@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Newsreader, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Playfair_Display, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "../globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,17 +13,10 @@ import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 
-const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-heading",
-});
-
-const newsreader = Newsreader({
+const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
   style: ["normal", "italic"],
-  variable: "--font-serif",
+  variable: "--font-heading-fallback",
 });
 
 const jakarta = Plus_Jakarta_Sans({
@@ -38,7 +31,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const ogLocales: Record<string, string> = {
-  fr: "fr_FR",
+  fr: "fr_CA",
   tr: "tr_TR",
 };
 
@@ -52,19 +45,42 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const ogLocale = ogLocales[locale] ?? "fr_FR";
+  const ogLocale = ogLocales[locale] ?? "fr_CA";
 
-  const defaultTitle = "Minerva Flow — Système de Gestion & d'Analyse pour Restaurants";
-  const description = "Plateforme unifiée d'exploitation, de prévision financière, de gestion d'équipe et d'analyse IA pour restaurants.";
+  const title = "Minerva Flow — Système d'Analyse & Gestion Intelligente pour Restaurants (Québec & France)";
+  const description = "Plateforme unifiée de prévision financière, seuil de rentabilité, gestion d'équipe et analyse IA pour restaurants et bistros au Québec, Montréal et France.";
 
   return {
     title: {
-      default: defaultTitle,
+      default: title,
       template: "%s | Minerva Flow",
     },
     description,
     applicationName: "Minerva Flow",
+    keywords: [
+      "Minerva Flow",
+      "Gestion Restaurant Québec",
+      "Logiciel Restaurant Montréal",
+      "Seuil de rentabilité restaurant",
+      "Analyse financière bistro",
+      "POS Square integration",
+      "Food Cost calcul",
+      "IA Restauration",
+      "Gestion d'équipe restaurant",
+    ],
+    authors: [{ name: "Minerva Flow Team", url: "https://minerva-flow.vercel.app" }],
+    creator: "Minerva Flow",
+    publisher: "Minerva Flow Inc.",
     manifest: "/manifest.webmanifest",
+    metadataBase: new URL("https://minerva-flow.vercel.app"),
+    alternates: {
+      canonical: `https://minerva-flow.vercel.app/${locale}`,
+      languages: {
+        "fr-CA": "https://minerva-flow.vercel.app/fr",
+        "fr-FR": "https://minerva-flow.vercel.app/fr",
+        "tr-TR": "https://minerva-flow.vercel.app/tr",
+      },
+    },
     icons: {
       icon: [
         { url: "/favicon.ico", sizes: "any" },
@@ -76,14 +92,31 @@ export async function generateMetadata({
     openGraph: {
       type: "website",
       siteName: "Minerva Flow",
-      title: defaultTitle,
+      title,
       description,
+      url: `https://minerva-flow.vercel.app/${locale}`,
       locale: ogLocale,
+      images: [
+        {
+          url: "https://minerva-flow.vercel.app/icon-512.png",
+          width: 512,
+          height: 512,
+          alt: "Minerva Flow — Système de Gestion de Restaurant Intelligente",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
-      title: defaultTitle,
+      title,
       description,
+      images: ["https://minerva-flow.vercel.app/icon-512.png"],
+      creator: "@MinervaFlow",
+    },
+    other: {
+      "geo.region": "CA-QC",
+      "geo.placename": "Montréal",
+      "geo.position": "45.5017;-73.5673",
+      ICBM: "45.5017, -73.5673",
     },
   };
 }
@@ -107,8 +140,27 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  // Enables static rendering for this locale's pages.
   setRequestLocale(locale);
+
+  // Schema.org JSON-LD Structured Data for Software Application & Organization
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Minerva Flow",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "CAD",
+    },
+    description: "Système unifié d'exploitation, de prévision financière et d'analyse IA pour restaurants au Québec et en France.",
+    author: {
+      "@type": "Organization",
+      name: "Minerva Flow",
+      url: "https://minerva-flow.vercel.app",
+    },
+  };
 
   return (
     <html
@@ -117,12 +169,17 @@ export default async function LocaleLayout({
       className={cn(
         "h-full",
         jakarta.variable,
-        instrumentSerif.variable,
-        newsreader.variable,
+        playfairDisplay.variable,
         jetbrainsMono.variable,
         "font-sans"
       )}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="min-h-full bg-mv-cream text-mv-ink antialiased">
         <ThemeProvider>
           <NextIntlClientProvider>
