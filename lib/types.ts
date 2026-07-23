@@ -663,3 +663,17 @@ export type ReferralReward = {
   appliedAt: string | null;
   createdAt: string;
 };
+
+export type TeamChannel = "general" | "cuisine" | "service" | "urgences";
+
+export type TeamChatMessage = {
+  id: string;
+  restaurantId: string;
+  channel: TeamChannel;
+  authorId: string;
+  authorName: string;
+  authorRole: string;
+  content: string;
+  isAiResponse?: boolean;
+  createdAt: string;
+};

@@ -11,15 +11,17 @@ import { Select } from "@/components/minerva/FormField";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InviteWorkspaceMemberModal } from "@/components/forms/InviteWorkspaceMemberModal";
 import { MemberDetailModal } from "./MemberDetailModal";
+import { TeamChatView } from "@/components/collaborateurs/TeamChatView";
+import { getInitialTeamMessages } from "@/lib/data/team-chat";
 import { updateMemberRoleAction, removeMemberAction } from "./actions";
 import { listWorkspaceInvitesAction } from "../workspace/actions";
 import { useApp, roleLabels } from "@/lib/app-context";
 import { useTeamPresence } from "@/hooks/use-team-presence";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, cn } from "@/lib/utils";
 import posthog from "posthog-js";
 import type { WorkspaceInviteListEntry } from "@/lib/data/workspace-invites";
 import type { Restaurant, Role, TeamMember } from "@/lib/types";
-import { Plus, Users, Trash2, ChevronRight, Mail } from "lucide-react";
+import { Plus, Users, Trash2, ChevronRight, Mail, MessageSquare, Bot } from "lucide-react";
 import Link from "next/link";
 
 const roleTone: Record<Role, "green" | "lime" | "amber"> = {
@@ -45,12 +47,15 @@ export function CollaborateursView({
   const [, startTransition] = useTransition();
   const onlineIds = useTeamPresence(restaurantId, authUser);
 
+  const [activeTab, setActiveTab] = useState<"members" | "chat">("members");
   const [inviteOpen, setInviteOpen] = useState(false);
   const [selected, setSelected] = useState<TeamMember | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [invites, setInvites] = useState<WorkspaceInviteListEntry[]>([]);
 
   const canManage = Boolean(restaurantId) && Boolean(workspaceId) && (role === "owner" || role === "manager");
+
+  const initialChatMessages = restaurantId ? getInitialTeamMessages(restaurantId, "general") : [];
 
   function refreshInvites() {
     if (!restaurantId || !workspaceId || !canManage) return;
@@ -85,11 +90,11 @@ export function CollaborateursView({
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
-        eyebrow="Collaborateurs"
-        title="Collaborateurs"
-        description="Les personnes qui ont accès à cet établissement, leur rôle et leur statut."
+        eyebrow="Collaborateurs &amp; Équipe"
+        title="Collaborateurs &amp; Communication"
+        description="Gérez les membres de l'équipe, leurs rôles et communiquez en direct avec l'assistant @FlowAI."
         action={
           canManage && (
             <Button size="sm" onClick={() => setInviteOpen(true)}>
@@ -99,152 +104,139 @@ export function CollaborateursView({
         }
       />
 
-      {!restaurantId || members.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="Aucun collaborateur pour le moment"
-          description="Invitez des collègues pour qu'ils accèdent à cet établissement."
-          action={
-            canManage && (
-              <Button size="sm" onClick={() => setInviteOpen(true)}>
-                <Plus size={15} /> Inviter un collaborateur
-              </Button>
-            )
-          }
+      {/* Navigation Tabs */}
+      <div className="flex border-b border-mv-border bg-mv-surface rounded-xl p-1 w-fit shadow-mv-sm gap-1">
+        <button
+          onClick={() => setActiveTab("members")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg font-display text-[13.5px] font-bold transition-all",
+            activeTab === "members"
+              ? "bg-mv-green text-mv-surface shadow-mv-sm"
+              : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+          )}
+        >
+          <Users size={16} />
+          <span>Membres &amp; Rôles ({members.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("chat")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg font-display text-[13.5px] font-bold transition-all",
+            activeTab === "chat"
+              ? "bg-mv-green text-mv-surface shadow-mv-sm"
+              : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+          )}
+        >
+          <MessageSquare size={16} />
+          <span>Chat d&apos;Équipe &amp; @FlowAI</span>
+          <span className="flex h-2 w-2 rounded-full bg-mv-green-tint animate-pulse" />
+        </button>
+      </div>
+
+      {/* Tab 1: Team Members List */}
+      {activeTab === "members" && (
+        <>
+          {!restaurantId || members.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="Aucun collaborateur pour le moment"
+              description="Invitez des collègues pour qu'ils accèdent à cet établissement."
+              action={
+                canManage && (
+                  <Button size="sm" onClick={() => setInviteOpen(true)}>
+                    <Plus size={15} /> Inviter un collaborateur
+                  </Button>
+                )
+              }
+            />
+          ) : (
+            <Table>
+              <THead>
+                <Th>Collaborateur</Th>
+                <Th>Rôle</Th>
+                <Th>Statut</Th>
+                <Th className="text-right">Actions</Th>
+              </THead>
+              <tbody>
+                {members.map((m) => {
+                  const isOnline = onlineIds.includes(m.id);
+                  const isSelf = authUser?.id === m.id;
+                  return (
+                    <Tr key={m.id}>
+                      <Td>
+                        <div className="flex items-center gap-3">
+                          <Avatar name={m.name} size="md" isOnline={isOnline} />
+                          <div>
+                            <button
+                              onClick={() => setSelected(m)}
+                              className="font-bold text-mv-ink hover:text-mv-green-dark transition-colors flex items-center gap-1.5"
+                            >
+                              <span>{m.name}</span>
+                              {isSelf && (
+                                <span className="text-[11px] font-semibold text-mv-ink-faint bg-mv-cream px-1.5 py-0.5 rounded border border-mv-border-soft">
+                                  Vous
+                                </span>
+                              )}
+                            </button>
+                            <p className="text-[12px] text-mv-ink-soft">{m.email}</p>
+                          </div>
+                        </div>
+                      </Td>
+                      <Td>
+                        <Badge tone={roleTone[m.role]}>{roleLabels[m.role] ?? m.role}</Badge>
+                      </Td>
+                      <Td>
+                        <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold ${isOnline ? "text-mv-green-dark" : "text-mv-ink-faint"}`}>
+                          <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-mv-green animate-pulse" : "bg-mv-border"}`} />
+                          {isOnline ? "En ligne" : "Hors ligne"}
+                        </span>
+                      </Td>
+                      <Td className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button size="xs" variant="secondary" onClick={() => setSelected(m)}>
+                            Détails <ChevronRight size={13} />
+                          </Button>
+                          {canManage && !isSelf && (
+                            <Button size="xs" variant="secondary" onClick={() => handleRemove(m)} disabled={pendingId === m.id}>
+                              <Trash2 size={13} className="text-mv-red" />
+                            </Button>
+                          )}
+                        </div>
+                      </Td>
+                    </Tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          )}
+        </>
+      )}
+
+      {/* Tab 2: Team Chat & @FlowAI */}
+      {activeTab === "chat" && restaurantId && (
+        <TeamChatView
+          restaurantId={restaurantId}
+          initialMessages={initialChatMessages}
+          teamMembers={members}
         />
-      ) : (
-        <Table>
-          <THead>
-            <Th>Collaborateur</Th>
-            <Th>Rôle</Th>
-            <Th>Statut</Th>
-            {canManage && <Th className="text-right">Actions</Th>}
-            <Th className="text-right"></Th>
-          </THead>
-          <tbody>
-            {members.map((m) => (
-              <Tr key={m.id} onClick={() => setSelected(m)}>
-                <Td>
-                  <div className="flex items-center gap-2.5">
-                    <div className="relative shrink-0">
-                      <Avatar name={m.name} src={m.avatarUrl} size={30} />
-                      {onlineIds.has(m.id) && (
-                        <span
-                          className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-mv-green ring-2 ring-mv-surface"
-                          aria-label="En ligne"
-                          title="En ligne"
-                        />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-mv-ink">{m.name}</p>
-                      <p className="truncate text-[11.5px] text-mv-ink-faint">{m.email}</p>
-                    </div>
-                  </div>
-                </Td>
-                <Td>
-                  {canManage ? (
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <Select
-                        value={m.role}
-                        disabled={pendingId === m.id}
-                        onChange={(e) => handleRoleChange(m, e.target.value as Role)}
-                        className="h-8 w-40 text-[12.5px]"
-                      >
-                        {(Object.keys(roleLabels) as Role[]).map((r) => (
-                          <option key={r} value={r}>
-                            {roleLabels[r]}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                  ) : (
-                    <Badge tone={roleTone[m.role]}>{roleLabels[m.role]}</Badge>
-                  )}
-                </Td>
-                <Td>
-                  <Badge tone={m.status === "actif" ? "green" : "amber"} dot>
-                    {m.status === "actif" ? "Actif" : "Invitation envoyée"}
-                  </Badge>
-                </Td>
-                {canManage && (
-                  <Td className="text-right">
-                    {m.id !== authUser?.id && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemove(m);
-                        }}
-                        disabled={pendingId === m.id}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-mv-ink-faint transition-colors hover:bg-mv-red-bg hover:text-mv-red disabled:opacity-50"
-                        aria-label={`Retirer ${m.name} des collaborateurs`}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </Td>
-                )}
-                <Td className="text-right">
-                  <Link
-                    href={`/collaborateurs/${m.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label="Voir la fiche complète"
-                    className="inline-flex rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
-                  >
-                    <ChevronRight size={15} />
-                  </Link>
-                </Td>
-              </Tr>
-            ))}
-          </tbody>
-        </Table>
       )}
 
-      {canManage && invites.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-mv-border bg-mv-surface p-5">
-          <p className="mb-3 text-[13px] font-semibold text-mv-ink">Invitations envoyées</p>
-          <div className="space-y-2">
-            {invites.map((invite) => (
-              <div
-                key={invite.id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2.5"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Mail size={14} className="text-mv-ink-faint" />
-                  <div>
-                    <p className="text-[12.5px] font-medium text-mv-ink">
-                      {roleLabels[invite.role]} · {formatRelativeTime(invite.createdAt)}
-                    </p>
-                    {invite.redeemedByEmail && (
-                      <p className="text-[11.5px] text-mv-ink-faint">Rejoint par {invite.redeemedByEmail}</p>
-                    )}
-                  </div>
-                </div>
-                <Badge tone={invite.status === "utilisee" ? "green" : invite.status === "expiree" ? "neutral" : "amber"} dot>
-                  {invite.status === "utilisee" ? "A rejoint" : invite.status === "expiree" ? "Expirée" : "En attente"}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {workspaceId && (
+      {inviteOpen && workspaceId && restaurantId && (
         <InviteWorkspaceMemberModal
           workspaceId={workspaceId}
+          currentRestaurantId={restaurantId}
           restaurants={restaurants}
           open={inviteOpen}
-          onClose={() => {
-            setInviteOpen(false);
-            refreshInvites();
-          }}
+          onClose={() => setInviteOpen(false)}
+          onSuccess={refreshInvites}
         />
       )}
 
-      {restaurantId && (
+      {selected && (
         <MemberDetailModal
-          restaurantId={restaurantId}
           member={selected}
+          open={Boolean(selected)}
           onClose={() => setSelected(null)}
         />
       )}
