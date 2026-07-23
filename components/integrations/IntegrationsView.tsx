@@ -24,6 +24,8 @@ import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { Square, Stripe, Google, UberEats, Gmail } from "@/components/ui/BrandIcons";
 
+import { SiteSyncCard } from "@/components/minerva/SiteSyncCard";
+
 export function IntegrationsView({
   initialIntegrations,
   restaurantName,
@@ -85,8 +87,26 @@ export function IntegrationsView({
         </Link>
       </div>
 
+      {/* Live Site ↔ Dashboard Publishing Card */}
+      <div className="mb-6 mt-6">
+        <SiteSyncCard
+          restaurantId="demo-rest-id"
+          initialShowcase={{
+            restaurantId: "demo-rest-id",
+            restaurantName: restaurantName || "Café & Bistro Minerva",
+            isOpenNow: true,
+            hoursNotice: "Ouvert aujourd'hui de 08:00 à 22:00",
+            activePromoTitle: "Spécial Brunch du Dimanche",
+            activePromoText: "Profitez de 15% de réduction sur la formule brunch ce week-end !",
+            activePromoBadge: "Promotion Vedette",
+            featuredMenuItems: [],
+            updatedAt: new Date().toISOString(),
+          }}
+        />
+      </div>
+
       {/* Category Pills Bar (Sana AI style) */}
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={() => setSelectedCategory("all")}
           className={`rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all ${

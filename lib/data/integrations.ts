@@ -105,6 +105,19 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
       },
     },
     {
+      id: "site-sync",
+      name: "Site Web Vitrine ↔ Dashboard",
+      category: "marketing",
+      description: "Publication en direct du menu du jour, des horaires d'ouverture et des bannières d'annonces promos sur le site web public.",
+      status: "connected",
+      connectedAt: "Synchro Active",
+      iconName: "google",
+      details: {
+        channel: "Direct Webhook & Stream Sync",
+        mode: "Automatique",
+      },
+    },
+    {
       id: "resend-email",
       name: "Resend Services Courriel",
       category: "communication",

@@ -101,7 +101,7 @@ export default async function RootPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-mv-border-soft pb-4 gap-2">
             <div className="flex items-center gap-3">
               <div className="h-3 w-3 rounded-full bg-mv-green animate-pulse" />
-              <span className="font-display text-[16px] font-bold text-mv-ink">Tableau de bord opérationnel — Flow</span>
+              <span className="font-display text-[16px] font-bold text-mv-ink">Tableau de bord opérationnel — Minerva Flow</span>
             </div>
             <span className="rounded-full bg-mv-green-tint px-3 py-1 text-[11px] font-bold text-mv-green-dark">
               Données synchronisées en direct
@@ -135,6 +135,52 @@ export default async function RootPage() {
               <p className="mt-2 text-[24px] font-bold text-mv-ink">Square &amp; Stripe</p>
               <span className="text-[11px] font-semibold text-mv-green-dark">Connecté &amp; Sécurisé</span>
             </div>
+          </div>
+        </div>
+
+        {/* Live Published Showcase Banner (Site ↔ Dashboard Integration) */}
+        <div className="mt-10 mx-auto max-w-5xl rounded-2xl border border-mv-green/30 bg-mv-green-tint/40 p-6 sm:p-8 text-left shadow-mv-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-mv-green/20 pb-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-3 w-3 rounded-full bg-mv-green animate-ping" />
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-mv-green-dark">
+                  En Direct du Dashboard Minerva Flow
+                </span>
+                <h2 className="font-display text-[18px] font-bold text-mv-ink">
+                  Café &amp; Bistro Minerva — Information &amp; Menu du Jour
+                </h2>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-mv-surface px-3 py-1 text-[12px] font-bold text-mv-green-dark border border-mv-green/30">
+                <CheckCircle2 size={13} /> Ouvert aujourd&apos;hui de 08:00 à 22:00
+              </span>
+            </div>
+          </div>
+
+          {/* Active Promo Notice Banner */}
+          <div className="mt-5 rounded-xl border border-mv-amber/30 bg-mv-amber-bg/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-mv-amber/20 text-mv-amber">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <span className="rounded-md bg-mv-amber/20 px-2 py-0.5 text-[10.5px] font-bold uppercase text-mv-amber">
+                  Promotion Vedette Publiée
+                </span>
+                <p className="mt-0.5 text-[13.5px] font-bold text-mv-ink">
+                  Spécial Brunch du Dimanche — 15% de réduction sur la formule brunch !
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/sign-up"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-mv-green px-3.5 py-1.5 text-[12.5px] font-bold text-mv-cream-soft hover:bg-mv-green-dark transition-colors shrink-0"
+            >
+              Commander en ligne <ArrowRight size={13} />
+            </Link>
           </div>
         </div>
       </section>
