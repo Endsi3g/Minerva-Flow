@@ -31,6 +31,13 @@ function mapEntry(row: ChangelogEntryRow): ChangelogEntry {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-07-23-3",
+    title: "Version v2.5.0 : Recherche Cmd+K, Recharts Finance, Chat d'Équipe & Optimisations UX",
+    description: "Publication officielle de la version v2.5.0. Intégration de la recherche globale Cmd+K avec historique et suggestions, refonte du Simulateur Financier avec graphiques Recharts dynamiques et typographie épurée, Chat d'équipe en direct avec bot @FlowAI, module d'incidents avec dictaphone, élimination totale du Cumulative Layout Shift (CLS) et transitions de pages fluides.",
+    category: "fonctionnalite",
+    publishedAt: new Date().toISOString(),
+  },
+  {
     id: "ch-2026-07-23-2",
     title: "Simulateur de Seuil de Rentabilité, Cloudflare AI Gateway & Refonte Minerva Flow",
     description: "Ajout du Simulateur de Seuil de Rentabilité & Point Mort en direct avec calculateur interactif de coûts fixes, panier moyen et marge nette. Intégration de Cloudflare AI Gateway (modèle Llama 3.3 70B), refonte visuelle du Chat IA sur le modèle Gemini Advanced, publication en direct Site Web ↔ Dashboard et extraction automatique de Favicon de marque d'URL.",
