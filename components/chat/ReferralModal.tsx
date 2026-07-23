@@ -50,7 +50,7 @@ export function ReferralModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title="Parrainez d'autres restaurants"
       description="Partagez Flow par Minerva et obtenez un mois gratuit sur votre abonnement pour chaque restaurant référé qui devient actif."
     >
