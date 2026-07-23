@@ -15,12 +15,18 @@ type ReferralModalData = {
 export function ReferralModal({
   open,
   onClose,
-  restaurantId,
+  onOpenChange,
+  restaurantId = "",
 }: {
   open: boolean;
-  onClose: () => void;
-  restaurantId: string;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
+  restaurantId?: string;
 }) {
+  const handleClose = () => {
+    onClose?.();
+    onOpenChange?.(false);
+  };
   const [data, setData] = useState<ReferralModalData | null>(null);
   const [copied, setCopied] = useState(false);
 
