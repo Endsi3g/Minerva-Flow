@@ -52,15 +52,17 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "meta" });
   const ogLocale = ogLocales[locale] ?? "fr_FR";
+
+  const defaultTitle = "Minerva Flow — Système de Gestion & d'Analyse pour Restaurants";
+  const description = "Plateforme unifiée d'exploitation, de prévision financière, de gestion d'équipe et d'analyse IA pour restaurants.";
 
   return {
     title: {
-      default: t("title.default"),
-      template: t("title.template"),
+      default: defaultTitle,
+      template: "%s | Minerva Flow",
     },
-    description: t("description"),
+    description,
     applicationName: "Minerva Flow",
     manifest: "/manifest.webmanifest",
     icons: {
@@ -74,14 +76,14 @@ export async function generateMetadata({
     openGraph: {
       type: "website",
       siteName: "Minerva Flow",
-      title: t("title.default"),
-      description: t("description"),
+      title: defaultTitle,
+      description,
       locale: ogLocale,
     },
     twitter: {
       card: "summary_large_image",
-      title: t("title.default"),
-      description: t("description"),
+      title: defaultTitle,
+      description,
     },
   };
 }
