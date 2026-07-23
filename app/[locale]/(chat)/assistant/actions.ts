@@ -29,3 +29,7 @@ export async function renameConversationAction(id: string, title: string): Promi
   await renameConversation(id, title.trim());
   revalidatePath("/assistant");
 }
+
+export async function updateConversationTitleAction(id: string, title: string): Promise<void> {
+  return renameConversationAction(id, title);
+}

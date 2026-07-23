@@ -60,12 +60,8 @@ export function BreakEvenSimulator() {
             </div>
           </div>
           <Badge
-            variant="outline"
-            className={
-              isProfitable
-                ? "border-mv-green/40 bg-mv-green-tint text-mv-green-dark font-bold py-1 px-3"
-                : "border-mv-red/40 bg-mv-red-bg text-mv-red font-bold py-1 px-3"
-            }
+            tone={isProfitable ? "green" : "red"}
+            className="font-bold py-1 px-3"
           >
             {isProfitable ? (
               <>
