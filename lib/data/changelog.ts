@@ -31,6 +31,13 @@ function mapEntry(row: ChangelogEntryRow): ChangelogEntry {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-07-23-2",
+    title: "Version 2.4 — Simulateur de Rentabilité, Cloudflare AI Gateway & Refonte Gemini",
+    description: "Ajout du Simulateur de Seuil de Rentabilité & Point Mort en direct avec curseurs interactifs. Intégration officielle de Cloudflare AI Gateway (llama-3.3-70b-instruct-fp8-fast via ai-gateway-provider). Refonte du Chat IA sur le modèle Gemini Advanced, publication en direct Site Web ↔ Dashboard et extraction automatique de Favicon de marque d'URL.",
+    category: "fonctionnalite",
+    publishedAt: "2026-07-23T11:30:00.000Z",
+  },
+  {
     id: "ch-2026-07-23-1",
     title: "Correctif Auto-Refresh Jetons Google & Synchro 2 Sens Calendar",
     description: "Correction du bug critique d'expiration des jetons Google OAuth via un rafraîchissement automatique par refresh_token. Activation de la synchronisation bidirectionnelle Google Calendar (lecture des congés et conflits d'horaires d'équipe) et intégration des avis Google Business Profile.",
