@@ -378,6 +378,7 @@ export function AssistantChatView({
                               id: m.id,
                               conversationId,
                               restaurantId,
+                              authorId: authUser?.id ?? null,
                               role: m.role as "user" | "assistant",
                               content: text || "",
                               createdAt: new Date().toISOString(),
