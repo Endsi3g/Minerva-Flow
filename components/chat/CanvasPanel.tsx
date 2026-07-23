@@ -34,10 +34,14 @@ export function CanvasPanel({
   artifact,
   defaultContext,
   onClose,
+  restaurantId,
+  conversationId,
 }: {
   artifact: ChatArtifact | null;
   defaultContext: CanvasContextData;
   onClose?: () => void;
+  restaurantId?: string;
+  conversationId?: string;
 }) {
   const [tab, setTab] = useState<"visual" | "data">("visual");
   const [isPending, startTransition] = useTransition();

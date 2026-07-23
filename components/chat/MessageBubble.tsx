@@ -81,14 +81,19 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export function MessageBubble({
-  role,
-  text,
-  attachments,
+  role: propRole,
+  text: propText,
+  attachments: propAttachments,
+  message,
 }: {
-  role: "user" | "assistant";
-  text: string;
+  role?: "user" | "assistant";
+  text?: string;
   attachments?: ChatAttachment[];
+  message?: ChatMessage;
 }) {
+  const role = message?.role ?? propRole ?? "user";
+  const text = message?.content ?? propText ?? "";
+  const attachments = message?.attachments ?? propAttachments;
   const align = role === "user" ? "end" : "start";
 
   return (
