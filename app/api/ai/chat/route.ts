@@ -2,6 +2,7 @@ import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AI_MODEL, isAiConfigured } from "@/lib/ai/config";
+import { isCloudflareAiConfigured, runCloudflareAiModel } from "@/lib/ai/cloudflare";
 import { buildRestaurantDataSnapshot } from "@/lib/ai/context";
 import { saveArtifact, saveAttachment, saveMessage } from "@/lib/data/chat";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
@@ -40,9 +41,7 @@ const comparisonDataSchema = z.object({
       method: z.literal("trend"),
     })
     .optional()
-    .describe(
-      "Projection de tendance simple (régression linéaire, pas un vrai modèle ML) — utilise les valeurs de prévision déjà fournies dans le contexte quand disponibles, ne jamais inventer de chiffres."
-    ),
+    .describe("Projection de tendance simple (régression linéaire)."),
 });
 
 const artifactSchema = z.object({
@@ -68,7 +67,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error:
-          "L'assistant IA n'est pas encore configuré — ajoutez AI_GATEWAY_API_KEY dans .env.local pour l'activer.",
+          "L'assistant IA n'est pas configuré — ajoutez AI_GATEWAY_API_KEY ou CLOUDFLARE_API_TOKEN dans .env.local.",
       },
       { status: 503 }
     );
@@ -121,7 +120,31 @@ export async function POST(req: Request) {
 
   const system = restaurantId
     ? await buildRestaurantDataSnapshot(restaurantId)
-    : "Tu es l'assistant de Flow par Minerva. Aucun établissement n'est encore associé à ce compte — invite l'utilisateur à en créer un avant de pouvoir répondre sur ses données.";
+    : "Tu es l'assistant de Flow par Minerva. Aucun établissement n'est encore associé à ce compte.";
+
+  // If Cloudflare AI is configured and AI Gateway key is absent, use Cloudflare AI directly
+  if (isCloudflareAiConfigured() && !process.env.AI_GATEWAY_API_KEY) {
+    const userPrompt = lastMessage?.parts
+      .filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
+      .map((p) => p.text)
+      .join("\n") || "Bonjour";
+
+    const responseText = await runCloudflareAiModel(userPrompt, system);
+    const contentText = responseText || "Désolé, impossible d'obtenir une réponse de Cloudflare AI.";
+
+    if (canPersist) {
+      await saveMessage({
+        conversationId: conversationId!,
+        restaurantId: restaurantId!,
+        role: "assistant",
+        content: contentText,
+      });
+    }
+
+    return new Response(contentText, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
 
   const result = streamText({
     model: AI_MODEL,
@@ -130,9 +153,8 @@ export async function POST(req: Request) {
     tools: {
       createArtifact: {
         description:
-          "Génère un rapport visuel affiché dans le panneau Canvas, à partir des données du restaurant déjà fournies dans le contexte. " +
-          "Utilise ce tool proactivement dès que tu annonces un rapport à l'utilisateur (ex: « Voici le rapport... », « Je vais analyser... », « Regardons l'évolution de... ») — ne réponds pas seulement en texte quand un visuel serait plus clair. " +
-          "Types disponibles : 'table' (données tabulaires simples), 'chart' (une seule série), 'summary' (texte formaté), et 'comparison' (le type le plus riche : graphiques à deux courbes + table de métriques clés avec delta + résumé en puces + prévision de tendance optionnelle) — préfère 'comparison' pour toute demande d'analyse ou de comparaison de métriques.",
+          "Génère un rapport visuel affiché dans le panneau Canvas, à partir des données du restaurant. " +
+          "Types disponibles : 'table', 'chart', 'summary', 'comparison'.",
         inputSchema: artifactSchema,
         execute: async (artifact) => {
           if (canPersist) {
