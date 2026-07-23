@@ -145,8 +145,9 @@ export type CreateIncidentInput = {
   restaurantId?: string;
   title: string;
   description: string;
-  severity?: "low" | "medium" | "high" | "critical";
+  severity?: "low" | "medium" | "high" | "critical" | "faible" | "moyenne" | "critique";
   status?: "open" | "investigating" | "resolved" | "closed";
+  affectedUserCount?: number;
 };
 
 export async function createIncident(input: CreateIncidentInput): Promise<boolean> {
