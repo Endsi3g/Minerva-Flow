@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Fraunces, Inter, Playfair_Display } from "next/font/google";
+import { Plus_Jakarta_Sans, Fraunces, Inter, Playfair_Display, Sora } from "next/font/google";
 import "../globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
