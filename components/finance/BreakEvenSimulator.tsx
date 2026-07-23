@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/Badge";
 import { StatCard } from "@/components/ui/StatCard";
 import { Slider } from "@/components/ui/slider";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useOptimistic, useTransition } from "react";
 import {
   Calculator,
   Target,
@@ -16,7 +17,7 @@ import {
   DollarSign,
   AlertTriangle,
   CheckCircle2,
-  TrendingUp,
+  Info,
 } from "lucide-react";
 
 export function BreakEvenSimulator() {
@@ -25,20 +26,58 @@ export function BreakEvenSimulator() {
   const [avgBasket, setAvgBasket] = useState<number>(38.5);
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(34500);
 
-  // Calculations
-  const grossMarginRatio = grossMarginPct / 100;
-  const breakEvenMonthly = grossMarginRatio > 0 ? fixedCosts / grossMarginRatio : 0;
-  const breakEvenDaily = breakEvenMonthly / 30;
-  const dailyCoversNeeded = avgBasket > 0 ? Math.ceil(breakEvenDaily / avgBasket) : 0;
+  const [, startTransition] = useTransition();
 
-  const estimatedGrossProfit = monthlyRevenue * grossMarginRatio;
-  const netProfit = estimatedGrossProfit - fixedCosts;
+  // Optimistic State for Sliders
+  const [optimisticValues, setOptimisticValue] = useOptimistic(
+    { fixedCosts, grossMarginPct, avgBasket, monthlyRevenue },
+    (state, update: Partial<{ fixedCosts: number; grossMarginPct: number; avgBasket: number; monthlyRevenue: number }>) => ({
+      ...state,
+      ...update,
+    })
+  );
+
+  function handleFixedCostsChange(val: number) {
+    startTransition(() => {
+      setOptimisticValue({ fixedCosts: val });
+    });
+    setFixedCosts(val);
+  }
+
+  function handleGrossMarginChange(val: number) {
+    startTransition(() => {
+      setOptimisticValue({ grossMarginPct: val });
+    });
+    setGrossMarginPct(val);
+  }
+
+  function handleAvgBasketChange(val: number) {
+    startTransition(() => {
+      setOptimisticValue({ avgBasket: val });
+    });
+    setAvgBasket(val);
+  }
+
+  function handleMonthlyRevenueChange(val: number) {
+    startTransition(() => {
+      setOptimisticValue({ monthlyRevenue: val });
+    });
+    setMonthlyRevenue(val);
+  }
+
+  // Calculations based on optimistic values for 0ms lag UI feedback
+  const grossMarginRatio = optimisticValues.grossMarginPct / 100;
+  const breakEvenMonthly = grossMarginRatio > 0 ? optimisticValues.fixedCosts / grossMarginRatio : 0;
+  const breakEvenDaily = breakEvenMonthly / 30;
+  const dailyCoversNeeded = optimisticValues.avgBasket > 0 ? Math.ceil(breakEvenDaily / optimisticValues.avgBasket) : 0;
+
+  const estimatedGrossProfit = optimisticValues.monthlyRevenue * grossMarginRatio;
+  const netProfit = estimatedGrossProfit - optimisticValues.fixedCosts;
   const isProfitable = netProfit >= 0;
 
-  // Day of month break-even is reached
   const dayBreakEvenReached =
-    monthlyRevenue > 0
-      ? Math.min(30, Math.ceil((breakEvenMonthly / monthlyRevenue) * 30))
+    optimisticValues.monthlyRevenue > 0
+      ? Math.min(30, Math.ceil((breakEvenMonthly / optimisticValues.monthlyRevenue) * 30))
       : 30;
 
   return (
@@ -51,8 +90,18 @@ export function BreakEvenSimulator() {
               <Calculator size={22} />
             </div>
             <div>
-              <CardTitle className="font-display text-[20px] font-bold text-mv-ink">
-                Simulateur de Seuil de Rentabilité &amp; Point Mort
+              <CardTitle className="font-display text-[20px] font-bold text-mv-ink flex items-center gap-2">
+                <span>Simulateur de Seuil de Rentabilité &amp; Point Mort</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" aria-label="Informations sur le simulateur" className="text-mv-ink-faint hover:text-mv-ink transition-colors">
+                      <Info size={16} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    Module de calcul interactif du point mort mensuel et du nombre de couverts nécessaires.
+                  </TooltipContent>
+                </Tooltip>
               </CardTitle>
               <CardDescription className="text-[13px] text-mv-ink-soft">
                 Ajustez vos variables d&apos;exploitation pour calculer en direct votre seuil minimal et la date d&apos;équilibre.
@@ -78,34 +127,65 @@ export function BreakEvenSimulator() {
         {/* Top Summary Metrics via Shadcn StatCard */}
         <CardContent className="pt-5 p-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              label="Point Mort Mensuel"
-              value={formatCurrency(breakEvenMonthly)}
-              icon={Target}
-              sublabel="Seuil minimal de revenus"
-              accent="green"
-            />
-            <StatCard
-              label="Seuil Quotidien"
-              value={`${formatCurrency(breakEvenDaily)} / jour`}
-              icon={DollarSign}
-              sublabel="Obj. quotidien pour équilibre"
-              accent="green"
-            />
-            <StatCard
-              label="Clients / Jour Requis"
-              value={`${dailyCoversNeeded} clients`}
-              icon={Users}
-              sublabel={`à ${formatCurrency(avgBasket)} / client`}
-              accent="lime"
-            />
-            <StatCard
-              label="Jour de Rentabilité"
-              value={`Jour ${dayBreakEvenReached} du mois`}
-              icon={Calendar}
-              sublabel={dayBreakEvenReached <= 30 ? "Profit après cette date" : "Hors objectif"}
-              accent="ink"
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <StatCard
+                    label="Point Mort Mensuel"
+                    value={formatCurrency(breakEvenMonthly)}
+                    icon={Target}
+                    sublabel="Seuil minimal de revenus"
+                    accent="green"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Chiffre d&apos;affaires minimal pour couvrir 100% des coûts fixes</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <StatCard
+                    label="Seuil Quotidien"
+                    value={`${formatCurrency(breakEvenDaily)} / jour`}
+                    icon={DollarSign}
+                    sublabel="Obj. quotidien pour équilibre"
+                    accent="green"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Ventes moyennes nécessaires chaque jour d&apos;ouverture</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <StatCard
+                    label="Clients / Jour Requis"
+                    value={`${dailyCoversNeeded} clients`}
+                    icon={Users}
+                    sublabel={`à ${formatCurrency(optimisticValues.avgBasket)} / client`}
+                    accent="lime"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Nombre de transactions nécessaires basées sur le panier moyen</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <StatCard
+                    label="Jour de Rentabilité"
+                    value={`Jour ${dayBreakEvenReached} du mois`}
+                    icon={Calendar}
+                    sublabel={dayBreakEvenReached <= 30 ? "Profit après cette date" : "Hors objectif"}
+                    accent="ink"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Jour du mois où tous les coûts fixes sont intégralement remboursés</TooltipContent>
+            </Tooltip>
           </div>
         </CardContent>
       </Card>
@@ -124,15 +204,23 @@ export function BreakEvenSimulator() {
             {/* Slider 1: Fixed Costs */}
             <div className="space-y-2.5">
               <div className="flex justify-between text-[13.5px] font-semibold">
-                <span className="text-mv-ink">Coûts Fixes Mensuels (Loyer, Salaires, Assurance)</span>
-                <span className="font-bold text-mv-green-dark">{formatCurrency(fixedCosts)}</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-mv-ink cursor-help border-b border-dashed border-mv-border-soft">
+                      Coûts Fixes Mensuels (Loyer, Salaires, Assurance)
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Frais récurrents indépendants du volume de ventes</TooltipContent>
+                </Tooltip>
+                <span className="font-bold text-mv-green-dark">{formatCurrency(optimisticValues.fixedCosts)}</span>
               </div>
               <Slider
                 min={5000}
                 max={50000}
                 step={500}
-                value={fixedCosts}
-                onValueChange={setFixedCosts}
+                value={optimisticValues.fixedCosts}
+                onValueChange={handleFixedCostsChange}
+                aria-label="Coûts Fixes Mensuels"
               />
               <div className="flex justify-between text-[11px] text-mv-ink-faint">
                 <span>5 000 $</span>
@@ -144,15 +232,23 @@ export function BreakEvenSimulator() {
             {/* Slider 2: Gross Margin % */}
             <div className="space-y-2.5">
               <div className="flex justify-between text-[13.5px] font-semibold">
-                <span className="text-mv-ink">Taux de Marge Brute (100% - Food Cost %)</span>
-                <span className="font-bold text-mv-green-dark">{grossMarginPct}%</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-mv-ink cursor-help border-b border-dashed border-mv-border-soft">
+                      Taux de Marge Brute (100% - Food Cost %)
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Pourcentage restant après paiement des matières premières</TooltipContent>
+                </Tooltip>
+                <span className="font-bold text-mv-green-dark">{optimisticValues.grossMarginPct}%</span>
               </div>
               <Slider
                 min={40}
                 max={85}
                 step={1}
-                value={grossMarginPct}
-                onValueChange={setGrossMarginPct}
+                value={optimisticValues.grossMarginPct}
+                onValueChange={handleGrossMarginChange}
+                aria-label="Taux de Marge Brute"
               />
               <div className="flex justify-between text-[11px] text-mv-ink-faint">
                 <span>40% (Coût élevé)</span>
@@ -164,15 +260,23 @@ export function BreakEvenSimulator() {
             {/* Slider 3: Average Basket */}
             <div className="space-y-2.5">
               <div className="flex justify-between text-[13.5px] font-semibold">
-                <span className="text-mv-ink">Panier Moyen par Client / Transaction</span>
-                <span className="font-bold text-mv-green-dark">{formatCurrency(avgBasket)}</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-mv-ink cursor-help border-b border-dashed border-mv-border-soft">
+                      Panier Moyen par Client / Transaction
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Dépense moyenne par client par repas ou transaction</TooltipContent>
+                </Tooltip>
+                <span className="font-bold text-mv-green-dark">{formatCurrency(optimisticValues.avgBasket)}</span>
               </div>
               <Slider
                 min={10}
                 max={120}
                 step={0.5}
-                value={avgBasket}
-                onValueChange={setAvgBasket}
+                value={optimisticValues.avgBasket}
+                onValueChange={handleAvgBasketChange}
+                aria-label="Panier Moyen par Client"
               />
               <div className="flex justify-between text-[11px] text-mv-ink-faint">
                 <span>10,00 $ (Café)</span>
@@ -184,15 +288,23 @@ export function BreakEvenSimulator() {
             {/* Slider 4: Monthly Revenue */}
             <div className="space-y-2.5">
               <div className="flex justify-between text-[13.5px] font-semibold">
-                <span className="text-mv-ink">Chiffre d&apos;Affaires Mensuel Estimé</span>
-                <span className="font-bold text-mv-green-dark">{formatCurrency(monthlyRevenue)}</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-mv-ink cursor-help border-b border-dashed border-mv-border-soft">
+                      Chiffre d&apos;Affaires Mensuel Estimé
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Ventes totales brutes prévues sur le mois</TooltipContent>
+                </Tooltip>
+                <span className="font-bold text-mv-green-dark">{formatCurrency(optimisticValues.monthlyRevenue)}</span>
               </div>
               <Slider
                 min={10000}
                 max={100000}
                 step={1000}
-                value={monthlyRevenue}
-                onValueChange={setMonthlyRevenue}
+                value={optimisticValues.monthlyRevenue}
+                onValueChange={handleMonthlyRevenueChange}
+                aria-label="Chiffre d'Affaires Mensuel Estimé"
               />
               <div className="flex justify-between text-[11px] text-mv-ink-faint">
                 <span>10 000 $</span>
@@ -216,19 +328,15 @@ export function BreakEvenSimulator() {
               <div className="h-48 w-full relative flex items-center justify-center bg-mv-cream-soft/60 rounded-xl border border-mv-border-soft p-4">
                 {/* SVG Break-Even Curve Illustration */}
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 300 120">
-                  {/* Fixed Costs Horizontal Line */}
                   <line x1="0" y1="90" x2="300" y2="90" stroke="#ab7d1f" strokeWidth="1.5" strokeDasharray="4" />
-                  <text x="5" y="85" fill="#ab7d1f" fontSize="9" fontWeight="bold">Coûts Fixes ({formatCurrency(fixedCosts)})</text>
+                  <text x="5" y="85" fill="#ab7d1f" fontSize="9" fontWeight="bold">Coûts Fixes ({formatCurrency(optimisticValues.fixedCosts)})</text>
 
-                  {/* Total Costs Line (Fixed + Variable) */}
                   <line x1="0" y1="90" x2="300" y2="30" stroke="#b5473a" strokeWidth="2" />
                   <text x="205" y="32" fill="#b5473a" fontSize="9" fontWeight="bold">Coûts Totaux</text>
 
-                  {/* Revenue Line */}
                   <line x1="0" y1="110" x2="300" y2="10" stroke="#167f5b" strokeWidth="2.5" />
-                  <text x="205" y="15" fill="#167f5b" fontSize="9" fontWeight="bold">Ventes ({formatCurrency(monthlyRevenue)})</text>
+                  <text x="205" y="15" fill="#167f5b" fontSize="9" fontWeight="bold">Ventes ({formatCurrency(optimisticValues.monthlyRevenue)})</text>
 
-                  {/* Break-Even Intersection Point Circle */}
                   <circle cx="160" cy="53" r="5" fill="#167f5b" stroke="#ffffff" strokeWidth="2" />
                   <text x="135" y="42" fill="#167f5b" fontSize="10" fontWeight="bold">Point Mort</text>
                 </svg>
@@ -254,7 +362,7 @@ export function BreakEvenSimulator() {
                 </>
               ) : (
                 <>
-                  Votre niveau de ventes actuel ({formatCurrency(monthlyRevenue)}) est inférieur au seuil de rentabilité de <strong className="text-mv-ink font-bold">{formatCurrency(breakEvenMonthly)}</strong>. Nous recommandons de viser {dailyCoversNeeded} clients/jour ou de revoir la marge brute des plats vedettes.
+                  Votre niveau de ventes actuel ({formatCurrency(optimisticValues.monthlyRevenue)}) est inférieur au seuil de rentabilité de <strong className="text-mv-ink font-bold">{formatCurrency(breakEvenMonthly)}</strong>. Nous recommandons de viser {dailyCoversNeeded} clients/jour ou de revoir la marge brute des plats vedettes.
                 </>
               )}
             </AlertDescription>

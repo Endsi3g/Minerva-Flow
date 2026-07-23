@@ -5,6 +5,7 @@ import { CanvasPanel } from "@/components/chat/CanvasPanel";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ReferralModal } from "@/components/chat/ReferralModal";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   MessageScrollerProvider,
@@ -18,8 +19,8 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type FileUIPart } from "ai";
 import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
-import { Bot, PanelLeft, Sparkles, FileText, Plus, TrendingUp, Utensils, Users, PackageCheck, PlusCircle } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { Bot, PanelLeft, Sparkles, FileText, Plus, TrendingUp, Utensils, Users, PackageCheck, PlusCircle, Share2 } from "lucide-react";
+import { useState, useEffect, useRef, useOptimistic } from "react";
 import { useApp } from "@/lib/app-context";
 import { updateConversationTitleAction, createConversationAction } from "@/app/[locale]/(chat)/assistant/actions";
 import { useRouter } from "next/navigation";
@@ -99,7 +100,24 @@ export function AssistantChatView({
       .join("");
     return Boolean(text && text.trim().length > 0);
   });
-  const hasAnyMessages = validInitialMessages.length > 0 || validLiveMessages.length > 0;
+  
+  // React 19 Optimistic Rendering hook for immediate message feedback
+  const [optimisticMessages, addOptimisticMessage] = useOptimistic(
+    validInitialMessages,
+    (currentMessages: ChatMessage[], newPromptText: string) => [
+      ...currentMessages,
+      {
+        id: `optimistic-${Date.now()}`,
+        conversationId,
+        restaurantId,
+        role: "user",
+        content: newPromptText,
+        createdAt: new Date().toISOString(),
+      },
+    ]
+  );
+
+  const hasAnyMessages = optimisticMessages.length > 0 || validLiveMessages.length > 0;
 
   const prevStatusRef = useRef(status);
   useEffect(() => {
@@ -158,6 +176,10 @@ export function AssistantChatView({
   }
 
   function handleSubmit(text: string, attachments: { path: string; fileName: string; mimeType: string; sizeBytes: number; signedUrl: string }[]) {
+    // 1. Instant Optimistic Rendering update
+    addOptimisticMessage(text);
+
+    // 2. Real AI SDK dispatch
     const files: FileUIPart[] = attachments.map((a) => ({
       type: "file",
       mediaType: a.mimeType,
@@ -196,13 +218,19 @@ export function AssistantChatView({
         {/* Gemini Top Header Bar */}
         <div className="flex h-14 items-center justify-between border-b border-mv-border bg-mv-cream-soft/90 px-4">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              aria-label="Toggle Sidebar"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
-            >
-              <PanelLeft size={18} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  aria-label="Masquer ou afficher le panneau latéral"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
+                >
+                  <PanelLeft size={18} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Masquer / Afficher le panneau</TooltipContent>
+            </Tooltip>
+
             <div className="flex items-center gap-2">
               <span className="font-display text-[15px] font-bold text-mv-ink">Minerva Flow AI</span>
               <span className="rounded-full bg-mv-green-tint px-2.5 py-0.5 text-[11px] font-bold text-mv-green-dark border border-mv-green/20">
@@ -211,152 +239,168 @@ export function AssistantChatView({
             </div>
           </div>
 
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setShareOpen(true)}
+                  aria-label="Partager cette conversation"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
+                >
+                  <Share2 size={17} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Partager la conversation</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleNewChat}
+                  aria-label="Démarrer une nouvelle discussion"
+                  className="flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] font-bold text-mv-ink shadow-mv-sm hover:bg-mv-cream-soft transition-all"
+                >
+                  <PlusCircle size={15} className="text-mv-green-dark" />
+                  <span>Nouveau chat</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Nouvelle discussion IA</TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+
+        {/* Mobile View Switcher */}
+        <div className="flex sm:hidden border-b border-mv-border bg-mv-cream-soft">
           <button
-            onClick={handleNewChat}
-            className="flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] font-bold text-mv-ink shadow-mv-sm hover:bg-mv-cream-soft transition-all"
+            onClick={() => setActiveMobileView("chat")}
+            className={cn(
+              "flex-1 py-2 text-center font-display text-xs font-bold transition-colors",
+              activeMobileView === "chat"
+                ? "border-b-2 border-mv-green text-mv-green-dark bg-mv-surface"
+                : "text-mv-ink-soft hover:text-mv-ink"
+            )}
           >
-            <PlusCircle size={15} className="text-mv-green-dark" />
-            <span>Nouveau chat</span>
+            Discussion IA
+          </button>
+          <button
+            onClick={() => setActiveMobileView("canvas")}
+            className={cn(
+              "flex-1 py-2 text-center font-display text-xs font-bold transition-colors flex items-center justify-center gap-1.5",
+              activeMobileView === "canvas"
+                ? "border-b-2 border-mv-green text-mv-green-dark bg-mv-surface"
+                : "text-mv-ink-soft hover:text-mv-ink"
+            )}
+          >
+            <span>Rapports &amp; Canvas</span>
+            {currentArtifact && (
+              <span className="h-2 w-2 rounded-full bg-mv-green animate-pulse" />
+            )}
           </button>
         </div>
 
-        <div
-          className={cn(
-            "flex flex-1 flex-col px-4 md:px-12 py-6 min-w-0 h-full overflow-hidden transition-all duration-300",
-            currentArtifact && activeMobileView === "canvas" ? "hidden md:flex" : "flex"
-          )}
-        >
-          {currentArtifact && (
-            <div className="flex border border-mv-border/80 md:hidden bg-mv-cream-soft rounded-full mb-4 p-0.5 shadow-mv-sm">
-              <button
-                onClick={() => setActiveMobileView("chat")}
-                className={cn(
-                  "flex-1 py-1.5 text-center text-[12px] font-semibold rounded-full transition-all",
-                  activeMobileView === "chat" ? "bg-mv-green text-mv-cream-soft shadow-mv-sm" : "text-mv-ink-faint"
-                )}
-              >
-                Discussion
-              </button>
-              <button
-                onClick={() => setActiveMobileView("canvas")}
-                className={cn(
-                  "flex-1 py-1.5 text-center text-[12px] font-semibold rounded-full transition-all truncate px-2",
-                  activeMobileView === "canvas" ? "bg-mv-green text-mv-cream-soft shadow-mv-sm" : "text-mv-ink-faint"
-                )}
-              >
-                Rapport : {currentArtifact.title}
-              </button>
-            </div>
-          )}
-
-          {!hasAnyMessages ? (
-            <div className="flex flex-1 flex-col items-start justify-center max-w-4xl mx-auto w-full py-8">
-              {/* Gemini Advanced Gradient Welcome Typography */}
-              <div className="mb-10 text-left">
-                <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
-                  <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-rose-500 bg-clip-text text-transparent">
-                    Bonjour, {firstName}
-                  </span>
-                </h1>
-                <h2 className="text-3xl md:text-4xl font-medium text-mv-ink-faint/80 mt-2">
-                  Comment puis-je vous aider aujourd&apos;hui ?
-                </h2>
-              </div>
-
-              {/* Gemini Advanced 4 Rich Visual Suggestion Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full">
-                {GEMINI_SUGGESTIONS.map((item) => (
-                  <button
-                    key={item.title}
-                    onClick={() => handleSubmit(item.prompt, [])}
-                    className="group relative flex flex-col justify-between rounded-2xl border border-mv-border bg-mv-surface p-4.5 text-left transition-all duration-200 hover:border-mv-green/50 hover:shadow-mv-md h-52"
-                  >
-                    <div>
-                      <h3 className="text-[13.5px] font-bold leading-snug text-mv-ink group-hover:text-mv-green-dark transition-colors">
-                        {item.title}
-                      </h3>
-                    </div>
-
-                    {/* Rich Visual Illustration per Card Type (Gemini Style) */}
-                    <div className="mt-4 flex flex-1 items-center justify-center rounded-xl bg-mv-cream-soft border border-mv-border-soft p-3 overflow-hidden group-hover:border-mv-green/30 transition-colors">
-                      {item.type === "code" && (
-                        <div className="w-full text-[10px] font-mono text-mv-ink space-y-1">
-                          <div className="flex justify-between text-mv-green-dark font-bold">
-                            <span>revenus_semaine = &#123;</span>
-                          </div>
-                          <div className="pl-2">ventes: 14850.00,</div>
-                          <div className="pl-2 text-mv-amber font-semibold">marge_brute: 68.4%</div>
-                          <div>&#125;</div>
-                        </div>
-                      )}
-
-                      {item.type === "pdf" && (
-                        <div className="relative flex flex-col items-center justify-center text-center">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-mv-red/10 text-mv-red">
-                            <FileText size={20} />
-                          </div>
-                          <span className="mt-1 text-[9.5px] font-bold uppercase text-mv-red">PDF</span>
-                          <span className="absolute -right-2 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft shadow-mv-sm">
-                            <Plus size={12} />
-                          </span>
-                        </div>
-                      )}
-
-                      {item.type === "plan" && (
-                        <div className="w-full text-[10.5px] text-mv-ink space-y-1">
-                          <div className="font-bold text-mv-ink">Plan de menu :</div>
-                          <div className="text-[9.5px] text-mv-ink-soft line-clamp-2">
-                            1. Plats Étoiles (Tartare, Burger)<br />
-                            2. Optimisation coûts
-                          </div>
-                        </div>
-                      )}
-
-                      {item.type === "chart" && (
-                        <div className="flex items-end justify-center gap-1.5 h-12 w-full px-2">
-                          <div className="w-2.5 h-[40%] bg-mv-green/40 rounded-t-sm" />
-                          <div className="w-2.5 h-[65%] bg-mv-green/60 rounded-t-sm" />
-                          <div className="w-2.5 h-[90%] bg-mv-green rounded-t-sm" />
-                          <div className="w-2.5 h-[55%] bg-mv-green/50 rounded-t-sm" />
-                          <div className="w-2.5 h-[75%] bg-mv-green-dark rounded-t-sm" />
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
+        {/* Main Conversation Container */}
+        <div className="flex flex-1 min-h-0 min-w-0">
+          <div
+            className={cn(
+              "flex-1 flex flex-col min-w-0 bg-mv-cream h-full relative",
+              activeMobileView === "canvas" && "hidden sm:flex"
+            )}
+          >
             <MessageScrollerProvider>
-              <MessageScroller className="flex-1 w-full max-w-4xl mx-auto">
-                <MessageScrollerViewport>
-                  <MessageScrollerContent>
-                    {initialMessages.map((m) => (
+              <MessageScroller className="flex-1">
+                <MessageScrollerViewport className="p-4 sm:p-6">
+                  <MessageScrollerContent className="max-w-3xl mx-auto space-y-6">
+                    {/* Gemini Advanced Welcome Title & 4 Visual Suggestion Cards */}
+                    {!hasAnyMessages && (
+                      <div className="pt-8 pb-4 space-y-8 max-w-2xl mx-auto">
+                        <div className="space-y-2 text-left">
+                          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-mv-ink">
+                            Bonjour, <span className="text-mv-green-dark font-serif italic">{firstName}</span>
+                          </h1>
+                          <p className="font-display text-xl sm:text-2xl font-semibold text-mv-ink-soft">
+                            Comment puis-je vous aider aujourd&apos;hui ?
+                          </p>
+                        </div>
+
+                        {/* 4 Rich Visual Illustration Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+                          {GEMINI_SUGGESTIONS.map((card, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleSubmit(card.prompt, [])}
+                              aria-label={`Prompt suggéré: ${card.title}`}
+                              className="group flex flex-col justify-between p-4 rounded-2xl border border-mv-border bg-mv-surface text-left transition-all duration-200 hover:border-mv-green/40 hover:shadow-mv-md hover:-translate-y-0.5"
+                            >
+                              <div className="space-y-2">
+                                <span className="font-display text-[14.5px] font-bold text-mv-ink group-hover:text-mv-green-dark transition-colors">
+                                  {card.title}
+                                </span>
+                                <p className="text-[12.5px] text-mv-ink-soft leading-relaxed line-clamp-2">
+                                  {card.prompt}
+                                </p>
+                              </div>
+
+                              <div className="mt-4 flex items-center justify-between text-mv-ink-faint group-hover:text-mv-green-dark">
+                                <span className="text-[11px] font-medium">Cliquer pour exécuter</span>
+                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-cream-soft text-mv-ink-soft group-hover:bg-mv-green-tint group-hover:text-mv-green-dark transition-colors">
+                                  {card.type === "code" && <TrendingUp size={15} />}
+                                  {card.type === "pdf" && <PackageCheck size={15} />}
+                                  {card.type === "plan" && <Utensils size={15} />}
+                                  {card.type === "chart" && <FileText size={15} />}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Optimistic User Messages & Saved Initial Messages */}
+                    {optimisticMessages.map((m) => (
                       <MessageScrollerItem key={m.id}>
-                        <MessageBubble role={m.role} text={m.content} attachments={m.attachments} />
+                        <MessageBubble message={m} />
                       </MessageScrollerItem>
                     ))}
+
+                    {/* AI SDK Live Messages */}
                     {messages.map((m) => {
                       const text = m.parts
-                        .filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
+                        ?.filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
                         .map((p) => p.text)
                         .join("");
+                      if (!text && (!m.parts || m.parts.length === 0)) return null;
+
                       return (
                         <MessageScrollerItem key={m.id}>
-                          <MessageBubble role={m.role === "user" ? "user" : "assistant"} text={text} />
+                          <MessageBubble
+                            message={{
+                              id: m.id,
+                              conversationId,
+                              restaurantId,
+                              role: m.role as "user" | "assistant",
+                              content: text || "",
+                              createdAt: new Date().toISOString(),
+                            }}
+                          />
                         </MessageScrollerItem>
                       );
                     })}
 
-                    {/* Sleek Shimmer Loading Indicator */}
                     {isLoading && (
-                      <MessageScrollerItem scrollAnchor>
-                        <div className="flex items-center gap-3 rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-sm max-w-md">
-                          <Bot size={16} className="animate-spin text-mv-green-dark shrink-0" />
-                          <div className="flex-1 space-y-2">
-                            <div className="h-3.5 w-3/4 rounded bg-gradient-to-r from-mv-border-soft via-mv-cream-soft to-mv-border-soft animate-pulse" />
-                            <div className="h-3 w-1/2 rounded bg-gradient-to-r from-mv-border-soft via-mv-cream-soft to-mv-border-soft animate-pulse" />
-                          </div>
+                      <MessageScrollerItem>
+                        <div className="flex items-center gap-3 text-mv-ink-soft py-2 px-4 bg-mv-surface border border-mv-border rounded-xl w-fit shadow-mv-sm">
+                          <Bot size={18} className="text-mv-green-dark animate-spin" />
+                          <span className="text-[13px] font-medium animate-pulse">
+                            Minerva Flow AI analyse les données d&apos;exploitation...
+                          </span>
+                        </div>
+                      </MessageScrollerItem>
+                    )}
+
+                    {error && (
+                      <MessageScrollerItem>
+                        <div className="p-3.5 rounded-xl border border-mv-red/30 bg-mv-red-bg text-mv-red text-xs font-medium">
+                          Une erreur est survenue lors de la réponse IA. Veuillez réessayer.
                         </div>
                       </MessageScrollerItem>
                     )}
@@ -365,47 +409,38 @@ export function AssistantChatView({
                 <MessageScrollerButton />
               </MessageScroller>
             </MessageScrollerProvider>
-          )}
 
-          {/* Gemini Floating Input Bar Container */}
-          <div className="w-full max-w-4xl mx-auto mt-auto pt-2">
-            <ChatInput
-              restaurantId={restaurantId}
-              conversationId={conversationId}
-              isLoading={isLoading}
-              onSubmit={handleSubmit}
-            />
-            <p className="mt-2 text-center text-[11px] text-mv-ink-faint">
-              Minerva Flow peut afficher des prévisions et analyses d&apos;exploitation — vérifiez toujours les chiffres importants.
-            </p>
+            {/* Chat Floating Pill Input Bar */}
+            <div className="p-3 sm:p-4 bg-mv-cream border-t border-mv-border-soft">
+              <div className="max-w-3xl mx-auto">
+                <ChatInput
+                  restaurantId={restaurantId}
+                  conversationId={conversationId}
+                  isLoading={isLoading}
+                  onSubmit={handleSubmit}
+                />
+              </div>
+            </div>
           </div>
 
-          {error && (
-            <p className="mt-2 text-center text-[12px] text-mv-red font-semibold">
-              Une erreur est survenue — réessayez dans un instant.
-            </p>
-          )}
-        </div>
-
-        <div
-          className={cn(
-            "h-full border-l border-mv-border-soft overflow-y-auto bg-mv-cream-soft transition-all duration-300",
-            currentArtifact
-              ? (activeMobileView === "canvas" ? "flex flex-1 md:w-[28rem] md:flex-initial" : "hidden md:flex md:w-[28rem]")
-              : "hidden"
-          )}
-        >
-          <CanvasPanel
-            artifact={currentArtifact}
-            defaultContext={defaultContext}
-            onClose={() => {
-              setActiveMobileView("chat");
-            }}
-          />
+          {/* Canvas Right Panel */}
+          <div
+            className={cn(
+              "w-full sm:w-[480px] lg:w-[540px] border-l border-mv-border bg-mv-surface flex-col h-full",
+              activeMobileView === "canvas" ? "flex" : "hidden sm:flex"
+            )}
+          >
+            <CanvasPanel
+              artifact={currentArtifact}
+              defaultContext={defaultContext}
+              restaurantId={restaurantId}
+              conversationId={conversationId}
+            />
+          </div>
         </div>
       </div>
 
-      <ReferralModal open={shareOpen} onClose={() => setShareOpen(false)} restaurantId={restaurantId} />
+      <ReferralModal open={shareOpen} onOpenChange={setShareOpen} />
     </div>
   );
 }
