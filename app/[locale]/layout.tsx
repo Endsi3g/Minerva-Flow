@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Fraunces, Inter, Playfair_Display, Sora } from "next/font/google";
+import { Plus_Jakarta_Sans, Open_Sans, Cormorant_Infant, Varela_Round } from "next/font/google";
 import "../globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,22 +13,28 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 
-const playfairDisplayHeading = Playfair_Display({ subsets: ['latin'], variable: '--font-heading' });
+const openSansCondensed = Open_Sans({
+  subsets: ["latin"],
+  variable: "--font-heading",
+});
 
-const sora = Sora({ subsets: ['latin'], variable: '--font-sans' });
+const cormorantInfant = Cormorant_Infant({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+});
+
+const varelaRound = Varela_Round({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-sans",
+});
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  weight: "variable",
-  style: ["normal", "italic"],
-  axes: ["opsz", "SOFT"],
 });
 
 const ogLocales: Record<string, string> = {
@@ -46,47 +52,48 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "metadata" });
+  const t = await getTranslations({ locale, namespace: "meta" });
+  const ogLocale = ogLocales[locale] ?? "fr_FR";
 
   return {
-    title: t("title"),
+    title: {
+      default: t("title.default"),
+      template: t("title.template"),
+    },
     description: t("description"),
+    applicationName: "Minerva Flow",
+    manifest: "/manifest.webmanifest",
     icons: {
-      icon: "/icon-512.png",
-      shortcut: "/icon-512.png",
-      apple: "/icon-512.png",
+      icon: [
+        { url: "/favicon.ico", sizes: "any" },
+        { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      ],
+      apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
     },
     openGraph: {
-      title: t("title"),
-      description: t("description"),
       type: "website",
-      locale: ogLocales[locale] ?? "fr_FR",
-      images: [{ url: "/og.png", width: 1200, height: 630, alt: t("title") }],
+      siteName: "Minerva Flow",
+      title: t("title.default"),
+      description: t("description"),
+      locale: ogLocale,
     },
     twitter: {
       card: "summary_large_image",
-      title: t("title"),
+      title: t("title.default"),
       description: t("description"),
-      images: ["/og.png"],
-    },
-    appleWebApp: {
-      capable: true,
-      statusBarStyle: "default",
-      title: "Flow par Minerva",
     },
   };
 }
 
 export const viewport: Viewport = {
-  colorScheme: "light dark",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F5F1E6" },
-    { media: "(prefers-color-scheme: dark)", color: "#14170F" },
-  ],
-  viewportFit: "cover",
+  themeColor: "#f5f1e6",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
-export default async function RootLayout({
+export default async function LocaleLayout({
   children,
   params,
 }: Readonly<{
@@ -105,7 +112,14 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={cn("h-full", jakarta.variable, sora.variable, "font-sans")}
+      className={cn(
+        "h-full",
+        jakarta.variable,
+        varelaRound.variable,
+        openSansCondensed.variable,
+        cormorantInfant.variable,
+        "font-sans"
+      )}
     >
       <body className="min-h-full bg-mv-cream text-mv-ink antialiased">
         <ThemeProvider>
