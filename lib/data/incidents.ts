@@ -5,10 +5,12 @@ export type IncidentSeverity = "faible" | "moyenne" | "critique";
 export type Incident = IncidentReport & {
   severity: IncidentSeverity;
   occurredAt: string;
+  affectedUserCount?: number;
+  resolution?: string | null;
 };
 
 // In-memory store for Incident Reports per restaurant
-const incidentsStore = new Map<string, IncidentReport[]>();
+const incidentsStore = new Map<string, Incident[]>();
 
 // Rate-limiting tracker: map of `${restaurantId}:${reporterIdOrIp}:${YYYY-MM-DD}` -> boolean
 const rateLimitTracker = new Map<string, boolean>();
