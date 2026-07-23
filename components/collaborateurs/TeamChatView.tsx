@@ -39,7 +39,7 @@ export function TeamChatView({
   initialMessages: TeamChatMessage[];
   teamMembers: TeamMember[];
 }) {
-  const { authUser } = useApp();
+  const { authUser, role } = useApp();
   const [activeChannel, setActiveChannel] = useState<TeamChannel>("general");
   const [inputContent, setInputContent] = useState("");
   const [showMentionPopover, setShowMentionPopover] = useState(false);
