@@ -3,7 +3,7 @@ import { Bot, FileText, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
-import type { ChatAttachment } from "@/lib/types";
+import type { ChatAttachment, ChatMessage } from "@/lib/types";
 import { Message, MessageAvatar, MessageContent } from "@/components/ui/message";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import {
