@@ -233,6 +233,8 @@ function CollapsibleSection({
   );
 }
 
+import { getRestaurantFaviconUrl } from "@/lib/utils/favicon";
+
 function TeamSwitcher() {
   const t = useTranslations("nav");
   const { restaurantId, setRestaurantId, restaurants } = useApp();
@@ -240,10 +242,23 @@ function TeamSwitcher() {
   const current = restaurants.find((r) => r.id === restaurantId) ?? restaurants[0];
   if (!current) return null;
 
+  const currentFavicon = getRestaurantFaviconUrl((current as any).websiteUrl || `${current.name.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-mv-ink/5">
-        <LogoMark size={24} />
+        {currentFavicon ? (
+          <img
+            src={currentFavicon}
+            alt={current.name}
+            className="h-6 w-6 rounded-md object-contain bg-mv-cream-soft p-0.5 border border-mv-border-soft shrink-0"
+            onError={(e) => {
+              (e.target as HTMLElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <LogoMark size={24} />
+        )}
         <span className="min-w-0 flex-1">
           <span className="block truncate font-display text-[14.5px] font-medium text-mv-ink">
             {current.name.replace("Minerva — ", "")}
@@ -252,20 +267,27 @@ function TeamSwitcher() {
         <ChevronDown size={14} className="shrink-0 text-mv-ink-faint" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64 max-h-80 overflow-y-auto">
-        {restaurants.map((r) => (
-          <DropdownMenuItem
-            key={r.id}
-            onClick={() => setRestaurantId(r.id)}
-            className="flex items-center gap-2.5"
-          >
-            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: r.color }} />
-            <span className="flex-1">
-              <span className="block text-[13px] font-semibold text-mv-ink">{r.name}</span>
-              <span className="block text-[11.5px] text-mv-ink-faint">{r.city}</span>
-            </span>
-            {r.id === restaurantId && <Check size={15} className="text-mv-green-dark" />}
-          </DropdownMenuItem>
-        ))}
+        {restaurants.map((r) => {
+          const favicon = getRestaurantFaviconUrl((r as any).websiteUrl || `${r.name.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`);
+          return (
+            <DropdownMenuItem
+              key={r.id}
+              onClick={() => setRestaurantId(r.id)}
+              className="flex items-center gap-2.5"
+            >
+              {favicon ? (
+                <img src={favicon} alt={r.name} className="h-4 w-4 rounded object-contain shrink-0" />
+              ) : (
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: r.color }} />
+              )}
+              <span className="flex-1">
+                <span className="block text-[13px] font-semibold text-mv-ink">{r.name}</span>
+                <span className="block text-[11.5px] text-mv-ink-faint">{r.city}</span>
+              </span>
+              {r.id === restaurantId && <Check size={15} className="text-mv-green-dark" />}
+            </DropdownMenuItem>
+          );
+        })}
         <div className="my-1 border-t border-mv-border-soft" />
         <DropdownMenuItem
           onClick={() => router.push("/workspace")}

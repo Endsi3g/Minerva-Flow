@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/utils";
 import type { Restaurant, ServiceDay } from "@/lib/types";
 import { ArrowLeft, MapPin, TrendingUp, Users, GitCommit } from "lucide-react";
 import Link from "next/link";
+import { RestaurantWebsiteFaviconCard } from "@/components/minerva/RestaurantWebsiteFaviconCard";
 
 export function EtablissementDetailView({
   restaurant,
@@ -80,6 +81,13 @@ export function EtablissementDetailView({
           </p>
         )}
       </Card>
+
+      <div className="mt-6">
+        <RestaurantWebsiteFaviconCard
+          initialWebsiteUrl={`https://${restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, "")}.ca`}
+          restaurantName={restaurant.name}
+        />
+      </div>
     </div>
   );
 }
