@@ -27,7 +27,7 @@ export function recordRateLimit(restaurantId: string, reporterId: string): void 
   rateLimitTracker.set(key, true);
 }
 
-export function getIncidents(restaurantId: string): Incident[] {
+export function getIncidents(restaurantId: string = "default"): Incident[] {
   if (!incidentsStore.has(restaurantId)) {
     const defaultIncidents: Incident[] = [
       {
