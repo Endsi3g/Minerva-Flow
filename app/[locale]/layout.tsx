@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Open_Sans, Cormorant_Infant, Varela_Round } from "next/font/google";
+import { Instrument_Serif, Newsreader, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "../globals.css";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,32 +9,32 @@ import { ServiceWorkerManager } from "@/components/pwa/ServiceWorkerManager";
 import { Analytics } from "@vercel/analytics/react";
 import { hasLocale } from "next-intl";
 import { NextIntlClientProvider } from "next-intl";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 
-const openSansCondensed = Open_Sans({
+const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
   variable: "--font-heading",
 });
 
-const cormorantInfant = Cormorant_Infant({
+const newsreader = Newsreader({
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
   style: ["normal", "italic"],
-  variable: "--font-cormorant",
-});
-
-const varelaRound = Varela_Round({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-sans",
+  variable: "--font-serif",
 });
 
 const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-sans",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
 });
 
 const ogLocales: Record<string, string> = {
@@ -117,9 +117,9 @@ export default async function LocaleLayout({
       className={cn(
         "h-full",
         jakarta.variable,
-        varelaRound.variable,
-        openSansCondensed.variable,
-        cormorantInfant.variable,
+        instrumentSerif.variable,
+        newsreader.variable,
+        jetbrainsMono.variable,
         "font-sans"
       )}
     >
