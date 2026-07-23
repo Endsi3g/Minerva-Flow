@@ -26,13 +26,15 @@ function toActivityLogEntry(row: ActivityLogRow, actorName: string): ActivityLog
 }
 
 export function MemberDetailModal({
-  restaurantId,
+  restaurantId = "",
   member,
   onClose,
+  open,
 }: {
-  restaurantId: string;
+  restaurantId?: string;
   member: TeamMember | null;
   onClose: () => void;
+  open?: boolean;
 }) {
   const [activity, setActivity] = useState<ActivityLogEntry[]>([]);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
