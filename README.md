@@ -1,183 +1,94 @@
 <div align="center">
 
-<img src="public/icon-512.png" width="96" alt="Flow par Minerva Logo" style="border-radius: 20px; margin-bottom: 12px;" />
+<img src="public/icon-512.png" width="88" alt="Logo Flow par Minerva" style="border-radius: 18px; margin-bottom: 14px;" />
 
-# 🌿 Flow par Minerva
+# Flow par Minerva
 
-### *La plateforme SaaS de gestion opérationnelle unifiée pour restaurants et cafés*
+### Plateforme de gestion opérationnelle unifiée pour restaurants et cafés
 
-[![Vercel Deployment](https://img.shields.io/badge/Vercel-Production%20Live-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://minerva-flow.vercel.app)
-[![Next.js 16](https://img.shields.io/badge/Next.js-16%20App%20Router-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Statut Vercel](https://img.shields.io/badge/Vercel-Production-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://minerva-flow.vercel.app)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/License-Proprietary-mv--green?style=for-the-badge)](#-licence)
+[![Licence](https://img.shields.io/badge/Licence-Propriétaire-2D3748?style=for-the-badge)](#-licence)
 
 <br />
 
-[✨ Découvrir l'Application Live](https://minerva-flow.vercel.app) • [📖 Guide des Intégrations](docs/integrations.md) • [🔒 Confidentialité](app/[locale]/legal/privacy/page.tsx) • [📄 Conditions](app/[locale]/legal/terms/page.tsx)
+[Accéder à l'application](https://minerva-flow.vercel.app) • [Guide des intégrations](docs/integrations.md) • [Politique de confidentialité](app/[locale]/legal/privacy/page.tsx) • [Conditions d'utilisation](app/[locale]/legal/terms/page.tsx)
 
 <br /><br />
 
-<img src="public/demo.png" alt="Flow par Minerva Interface Demo" width="100%" style="border-radius: 12px; border: 1px solid #E2E8F0;" />
+<img src="public/demo.png" alt="Aperçu de l'interface Flow par Minerva" width="100%" style="border-radius: 12px; border: 1px solid #E2E8F0;" />
 
 </div>
 
 ---
 
-## ⚡ En Bref
+## Aperçu Général
 
-**Flow par Minerva** est une application web SaaS de nouvelle génération conçue spécifiquement pour piloter l'exploitation quotidienne des restaurants, cafés, bistros et bars. 
+ Flow par Minerva est la solution logicielle conçue pour simplifier et unifier le pilotage quotidien des établissements de restauration indépendants, cafés, bistros et brasseries.
 
-Elle centralise en une seule interface fluide, moderne et en français tout le cycle opérationnel d'un établissement : **revenus, dépenses, ingénierie de menu, planification des horaires, gestion des fournisseurs, inventaire, fidélisation client et intelligence artificielle décisionnelle.**
-
----
-
-## 🛠️ Stack Technique & Écosystème
-
-| Catégorie | Technologie |
-|---|---|
-| **Framework & SSR** | **Next.js 16** (App Router, Turbopack, React 19) |
-| **Langage** | **TypeScript** typé à 100% |
-| **Base de Données & Sécurité** | **Supabase** (PostgreSQL, Row Level Security, Vault) |
-| **Authentification** | **Supabase Auth** (Mots de passe, OTP 6 chiffres, OAuth Google/Apple/Microsoft) |
-| **Design System & UI** | **Vanilla CSS & Design System Minerva** (`--mv-*`), `@thesvg/react` icons, Framer Motion |
-| **Intelligence Artificielle** | **Vercel AI SDK & Claude / Gemini** (Analyses financières, suggestions IA, revues de menu) |
-| **Point de Vente (POS)** | **Square POS API** |
-| **Paiements & Webhooks** | **Stripe Connect & Stripe Checkout** |
-| **Courriels Transactionnels** | **Resend API** |
-| **Déploiement Cloud** | **Vercel Infrastructure** |
+Dans un secteur où les marges sont souvent serrées et les opérations fragmentées entre de multiples outils incomplets, Flow par Minerva offre une interface centralisée, intuitive et entièrement en français. Elle permet aux propriétaires et gérants d'éliminer la gestion manuelle sur papier ou tableur, d'optimiser leurs coûts de revient et d'assurer une expérience client irréprochable.
 
 ---
 
-## 🔥 Fonctionnalités Principales
+## Ce qu'apporte l'application aux établissements
 
-### 🤖 1. Assistant IA & Interface Sana Style (`/chat`)
-- Chat IA avec pilules d'action rapide (`+ Sources`, `⚡ Créer`, `Bibliothèque`).
-- Cartes de suggestions contextuelles (*Revenus*, *Marges*, *Équipe*, *Inventaire*).
-- Widget de quota de requêtes IA en direct avec raccourcis vers les workflows opérationnels.
+### 1. Pilotage Financier & Rentabilité Quotidienne
+La plateforme permet de suivre en temps réel le chiffre d'affaires, les coûts des marchandises vendues et les dépenses d'exploitation. Grâce à la synchronisation automatique avec le point de vente Square et l'import bancaire, les gestionnaires disposent d'un tableau de bord financier précis sans perte de temps à la fermeture des caisses.
 
-### 📚 2. Bibliothèque d'Assets Unifiée (`/library`)
-- Espace centralisé réunissant tous les documents de l'établissement : bons de commande fournisseurs, fiches recettes de menu, plannings de service, factures.
-- Filtres par catégorie et tiroir de prévisualisation rapide en écran scindé.
+### 2. Assistant d'Intelligence Artificielle & Analyses Décisionnelles
+Un assistant virtuel spécialisé analyse en permanence les données d'exploitation de l'établissement. Il identifie les dérives de coûts, suggère des ajustements sur les prix du menu, détecte les anomalies de stock et génère des synthèses hebdomadaires claires pour aider le gestionnaire à prendre les bonnes décisions stratégiques.
 
-### 🔌 3. Hub des Intégrations Directes (`/integrations`)
-- Statuts de connexion en temps réel pour **Square POS**, **Stripe Connect**, **Google Workspace / Analytics**, **Services de Livraison (Uber Eats)** et **Resend**.
-- Tiroir latéral de configuration et gestion des jetons sécurisés.
+### 3. Journal des Nouveautés In-App
+Un espace dédié au suivi des mises à jour permet à l'équipe de consulter l'historique des nouvelles fonctionnalités, des améliorations apportées et des correctifs déployés sur la plateforme. Cela garantit une adoption fluide et une transparence totale sur les évolutions du produit.
 
-### 🔑 4. Authentification 2 Colonnes & Code OTP 6 Chiffres (`/login`)
-- Layout moderne avec carte de connexion sur la gauche et aperçu dynamique interactif Minerva sur la droite.
-- Envoi et vérification instantanés de codes OTP à 6 chiffres via SMS / Courriel et réinitialisation de mot de passe fonctionnelle.
+### 4. Planification d'Équipe & Synchronisation Bidirectionnelle Google Calendar
+La gestion des horaires s'adapte à la réalité du personnel de restauration. La synchronisation à deux sens avec Google Calendar permet de lire automatiquement les indisponibilités, congés et engagements personnels des employés avant la publication des plannings, évitant ainsi les conflits d'horaires et les absences imprévues.
 
-### 📅 5. Horaire & Synchro Google Calendar Bidirectionnelle 2 Sens (`/horaire`)
-- Planification intelligente des quarts de travail des employés.
-- **Synchronisation 2 Sens** : Lecture automatique des congés et indisponibilités déjà présents dans le calendrier Google des employés pour éviter les conflits d'horaires.
-- Auto-refresh transparent des jetons OAuth Google expirés.
+### 5. Gestion des Fournisseurs, Commandes & Contrôle du Gaspillage
+Flow par Minerva numérise la relation fournisseur. Les bons de commande sont générés et transmis directement depuis l'application. Dès la réception des marchandises, les stocks sont mis à jour et les pertes ou produits avariés sont comptabilisés dans les charges pour ajuster précisément le coût réel de chaque portion.
 
-### 🏢 6. Google Business Profile & Avis Clients
-- Synchronisation des heures d'ouverture et consultation/réponse directe aux avis clients Google dans l'interface.
-- Intégration préparée pour *Reserve with Google* (réservation directe depuis Google Maps/Recherche).
+### 6. Ingénierie de Menu & Optimisation des Marges Brutes
+Chaque plat de la carte est automatiquement classé selon sa popularité et sa rentabilité (Étoiles, Poids morts, Énigmes, Chevaux de bataille). Cette analyse permet au chef et au restaurateur de retravailler les recettes peu rentables, de réorganiser l'affichage du menu et d'augmenter la marge brute globale.
 
-### 🛒 7. Commandes en Ligne & Ingrédients
-- Menu en ligne accessible par lien public (`/m/[token]`) avec calcul automatique des taxes et pourboires.
-- Gestion des fournisseurs, génération de bons de commande et répercussion directe dans l'inventaire.
+### 7. Fidélisation Client, Parrainage & Portail en Libre-Service
+L'application intègre un programme de fidélité complet. Les clients peuvent rejoindre le programme via un QR code, accumuler des points et accéder à un portail dédié sécurisé sans mot de passe (Lien Magique) pour consulter leur solde de points et partager leur lien de parrainage.
 
-### 🎁 8. Portail Client & Programme de Fidélité (`/portal`)
-- Accès client sans mot de passe (Lien Magique) pour consulter les points de fidélité, le catalogue de récompenses et le lien de parrainage.
+### 8. Présence Numérique, Avis Google Business & Commandes Directes
+Les avis laissés par les clients sur Google Business Profile sont centralisés dans l'application pour permettre une réponse rapide. L'établissement bénéficie également d'un module de commande en ligne directe sans commission, avec paiement sécurisé Stripe Connect crédité directement sur le compte du restaurant.
+
+### 9. Bibliothèque d'Assets & Documents Utiles
+Tous les documents essentiels de l'établissement (factures d'achats, fiches techniques de recettes, permis, manuels d'exploitation) sont archivés et classés dans une bibliothèque d'assets dotée d'un tiroir de prévisualisation rapide.
+
+### 10. Hub d'Intégrations API
+Une vue consolidée affiche le statut des connexions en temps réel avec les services tiers tiers (Square POS, Stripe, Google Analytics, Google Workspace, Uber Eats, Resend), facilitant la maintenance technique par le gestionnaire.
 
 ---
 
-## 📂 Architecture de la Codebase
+## Conformité et Protection des Données
 
-```
-Minerva-Flow/
-├── app/                        # Next.js 16 App Router avec i18n
-│   ├── [locale]/
-│   │   ├── (app)/              # Application protégée par authentification
-│   │   │   ├── chat/           # Assistant IA (Style Sana)
-│   │   │   ├── horaire/        # Planning d'équipe & Synchro Calendar
-│   │   │   ├── integrations/   # Hub d'intégrations API
-│   │   │   ├── library/        # Bibliothèque d'assets & documents
-│   │   │   ├── reports/        # Rapports financiers & analytiques
-│   │   │   └── changelog/      # Journal des mises à jour in-app
-│   │   ├── legal/              # Pages légales (Privacy & Terms)
-│   │   ├── portal/             # Portail client sans mot de passe
-│   │   ├── login/              # Écran d'authentification 2 colonnes
-│   │   └── page.tsx            # Landing Page publique
-├── components/                 # Composants React typés
-│   ├── auth/                   # AuthCard, OtpInput
-│   ├── chat/                   # Sana AI Assistant components
-│   ├── integrations/           # IntegrationsView & cartes API
-│   ├── library/                # LibraryView & Asset drawers
-│   ├── minerva/                # Composants du Design System Minerva
-│   └── ui/                     # BrandIcons (@thesvg/react), Buttons, Badges
-├── lib/                        # Logique métier & services backend
-│   ├── data/                   # requêtes Supabase (Library, Integrations, Changelog)
-│   ├── google/                 # API Google (Config, Calendar 2-way, Business, Tokens)
-│   ├── square/                 # Intégration POS Square
-│   ├── stripe/                 # Connect & Checkout Stripe
-│   └── supabase/               # Clients Supabase (Server, Admin, Browser)
-├── supabase/                   # Migrations SQL & Schéma de base de données
-└── docs/                       # Guides des intégrations et protocoles
-```
+- **Conformité à la Loi 25 du Québec** : Respect rigoureux des normes de protection des renseignements personnels et des droits d'accès.
+- **Politique d'utilisation limitée des API Google** : Respect des exigences de sécurité et de confidentialité de Google Cloud Console pour le traitement des données utilisateur.
 
 ---
 
-## 🚀 Installation & Lancement Local
+## Spécifications Techniques
 
-### Prérequis
-- **Node.js** v18 ou v20+
-- **npm** ou **pnpm**
-- Un projet **Supabase** configuré
+Cette section résume l'infrastructure sur laquelle repose la plateforme :
 
-### 1. Cloner le projet & installer les dépendances
-```bash
-git clone https://github.com/Endsi3g/Minerva-Flow.git
-cd Minerva-Flow
-npm install
-```
-
-### 2. Configurer les variables d'environnement
-Créez un fichier `.env.local` à la racine :
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://votre-projet.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=votre-cle-anon
-SUPABASE_SERVICE_ROLE_KEY=votre-cle-service-role
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-GOOGLE_CLIENT_ID=votre-google-client-id
-GOOGLE_CLIENT_SECRET=votre-google-client-secret
-```
-
-### 3. Démarrer le serveur de développement
-```bash
-npm run dev
-```
-Accédez à l'application sur [http://localhost:3000](http://localhost:3000).
-
----
-
-## 🌍 Déploiement en Production
-
-Le projet est configuré pour un déploiement continu instantané sur **Vercel** :
-
-```bash
-git add .
-git commit -m "feat: SaaS README redesign and feature update"
-git push origin main
-```
-
-L'application est déployée en direct sur : **[https://minerva-flow.vercel.app](https://minerva-flow.vercel.app)**
-
----
-
-## ⚖️ Conformité & Sécurité
-
-- **Loi 25 du Québec** : Gestion stricte de la confidentialité des données personnelles et droit à l'oubli.
-- **Google OAuth Limited Use Disclosure** : Conformité avec les exigences de vérification Google Cloud Console pour les accès non sensibles (`openid`, `email`, `profile`).
+- **Framework Web** : Next.js 16 (App Router, Turbopack, React 19)
+- **Langage** : TypeScript
+- **Base de données & Authentification** : Supabase (PostgreSQL avec Row Level Security, Supabase Auth, Vault)
+- **Design System** : Vanilla CSS sur-mesure avec variables de marque, icônes vectorielles officielles `@thesvg/react`
+- **Intégrations Monétiques & POS** : Square POS API, Stripe Connect, Stripe Checkout
+- **Services Transactionnels** : Resend API (courriels), Google Workspace API, Google Places API
+- **Hébergement & Infrastructure** : Vercel Cloud Platform
 
 ---
 
 <div align="center">
 
-*Propulsé par l'équipe Minerva — Fait avec passion au Québec 🇨🇦*
+*Flow par Minerva — Développé pour la restauration au Québec*
 
 </div>
