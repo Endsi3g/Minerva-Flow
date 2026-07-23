@@ -105,7 +105,7 @@ export function TeamChatView({
     setShowMentionPopover(false);
 
     const authorName = authUser?.fullName || "Collaborateur";
-    const authorRole = authUser?.role || "Membre";
+    const authorRole = role || "Membre";
 
     // 1. Instant Optimistic User Message
     const tempUserMsg: TeamChatMessage = {
