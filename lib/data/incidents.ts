@@ -4,6 +4,7 @@ export type IncidentSeverity = "faible" | "moyenne" | "critique";
 
 export type Incident = IncidentReport & {
   severity: IncidentSeverity;
+  occurredAt: string;
 };
 
 // In-memory store for Incident Reports per restaurant
@@ -40,6 +41,7 @@ export function getIncidents(restaurantId: string): Incident[] {
         status: "nouveau",
         mediaUrls: [],
         createdAt: new Date(Date.now() - 7200000).toISOString(),
+        occurredAt: new Date(Date.now() - 7200000).toISOString(),
       },
       {
         id: "inc-102",
@@ -55,6 +57,7 @@ export function getIncidents(restaurantId: string): Incident[] {
         assignedToId: "usr-alex",
         assignedToName: "Alexandre Tremblay",
         createdAt: new Date(Date.now() - 14400000).toISOString(),
+        occurredAt: new Date(Date.now() - 14400000).toISOString(),
       },
     ];
     incidentsStore.set(restaurantId, defaultIncidents);
@@ -82,6 +85,7 @@ export function createIncidentReport(input: {
     };
   }
 
+  const now = new Date().toISOString();
   const incident: Incident = {
     id: `inc-${Date.now()}`,
     restaurantId: input.restaurantId,
@@ -95,7 +99,8 @@ export function createIncidentReport(input: {
     status: "nouveau",
     mediaUrls: input.mediaUrls || [],
     audioUrl: input.audioUrl,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    occurredAt: now,
   };
 
   const list = getIncidents(input.restaurantId);
