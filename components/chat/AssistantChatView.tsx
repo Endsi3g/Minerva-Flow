@@ -18,7 +18,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type FileUIPart } from "ai";
 import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
-import { Bot, PanelLeft, Sparkles, TrendingUp, Utensils, Users, PackageCheck } from "lucide-react";
+import { Bot, PanelLeft, Sparkles, FileText, Plus, BarChart2, TrendingUp, Code2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/lib/app-context";
 import { updateConversationTitleAction } from "@/app/[locale]/(chat)/assistant/actions";
@@ -35,26 +35,27 @@ async function notifyAssistantDone() {
   });
 }
 
-const FEATURED_SUGGESTIONS = [
+// 4 Rich Gemini Advanced Visual Suggestion Cards
+const GEMINI_SUGGESTIONS = [
   {
-    icon: TrendingUp,
-    label: "Analyse des revenus",
+    title: "Analyse des revenus & marges",
     prompt: "Génère un rapport d'analyse des revenus et des tendances de cette semaine avec les moments forts.",
+    type: "code",
   },
   {
-    icon: Utensils,
-    label: "Ingénierie de menu & marges",
-    prompt: "Quels sont mes plats étoiles et mes poids morts ce mois-ci d'après l'ingénierie de menu ?",
+    title: "Générer un plan opérationnel",
+    prompt: "Crée un plan d'action opérationnel pour optimiser les achats et la gestion des stocks de l'établissement.",
+    type: "pdf",
   },
   {
-    icon: Users,
-    label: "Optimisation de l'équipe",
-    prompt: "Résume les heures travaillées et les coûts de paie prévus pour l'équipe cette semaine.",
+    title: "Développer le plan stratégique",
+    prompt: "Analyse mes plats étoiles et mes poids morts ce mois-ci d'après l'ingénierie de menu.",
+    type: "plan",
   },
   {
-    icon: PackageCheck,
-    label: "Seuils d'inventaire & stocks",
-    prompt: "Quels sont les ingrédients en sous-stock ou proche de la rupture d'inventaire ?",
+    title: "Créer un graphique & métriques",
+    prompt: "Compare les ventes quotidiennes et montre l'évolution du panier moyen sous forme de graphique.",
+    type: "chart",
   },
 ];
 
@@ -166,7 +167,7 @@ export function AssistantChatView({
   }
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-mv-cream">
+    <div className="flex h-full w-full overflow-hidden bg-mv-surface">
       <ChatSidebar
         conversations={conversations}
         activeConversationId={conversationId}
@@ -188,7 +189,7 @@ export function AssistantChatView({
 
         <div
           className={cn(
-            "flex flex-1 flex-col p-6 min-w-0 h-full overflow-hidden transition-all duration-300",
+            "flex flex-1 flex-col px-4 md:px-12 py-6 min-w-0 h-full overflow-hidden transition-all duration-300",
             currentArtifact && activeMobileView === "canvas" ? "hidden md:flex" : "flex"
           )}
         >
@@ -216,44 +217,80 @@ export function AssistantChatView({
           )}
 
           {!hasAnyMessages ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center max-w-3xl mx-auto w-full">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-mv-surface text-mv-green-dark shadow-mv-sm border border-mv-border">
-                <Sparkles size={24} />
-              </div>
-
-              <div>
-                <h1 className="font-display text-[22px] font-bold text-mv-ink">
-                  Bonjour {firstName}, prêt·e à analyser votre journée ?
+            <div className="flex flex-1 flex-col items-start justify-center max-w-4xl mx-auto w-full py-8">
+              {/* Gemini Advanced Gradient Welcome Typography */}
+              <div className="mb-10 text-left">
+                <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
+                  <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-rose-500 bg-clip-text text-transparent">
+                    Bonjour, {firstName}
+                  </span>
                 </h1>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft max-w-lg mx-auto">
-                  Posez n'importe quelle question sur vos performances, votre inventaire, votre menu ou vos collaborateurs. L'IA accède en direct à vos données enregistrées sur Flow.
-                </p>
+                <h2 className="text-3xl md:text-4xl font-medium text-mv-ink-faint/70 mt-2">
+                  Comment puis-je vous aider aujourd&apos;hui ?
+                </h2>
               </div>
 
-              {/* Sana AI Featured Prompt Cards Grid (No Emojis) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full text-left pt-2">
-                {FEATURED_SUGGESTIONS.map((item) => {
-                  const IconComponent = item.icon;
-                  return (
-                    <button
-                      key={item.label}
-                      onClick={() => handleSubmit(item.prompt, [])}
-                      className="group flex flex-col justify-between rounded-2xl border border-mv-border bg-mv-surface p-4 transition-all hover:border-mv-green-dark hover:shadow-mv-sm"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-mv-cream-soft text-mv-green-dark border border-mv-border-soft group-hover:border-mv-green/30 transition-colors">
-                          <IconComponent size={16} />
+              {/* Gemini Advanced 4 Rich Visual Suggestion Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                {GEMINI_SUGGESTIONS.map((item) => (
+                  <button
+                    key={item.title}
+                    onClick={() => handleSubmit(item.prompt, [])}
+                    className="group relative flex flex-col justify-between rounded-2xl border border-mv-border-soft bg-mv-cream-soft/60 p-4.5 text-left transition-all duration-200 hover:border-mv-green/40 hover:bg-mv-surface hover:shadow-mv-md h-52"
+                  >
+                    <div>
+                      <h3 className="text-[13.5px] font-bold leading-snug text-mv-ink group-hover:text-mv-green-dark transition-colors">
+                        {item.title}
+                      </h3>
+                    </div>
+
+                    {/* Rich Visual Illustration per Card Type (Gemini Style) */}
+                    <div className="mt-4 flex flex-1 items-center justify-center rounded-xl bg-mv-surface border border-mv-border-soft p-3 overflow-hidden group-hover:border-mv-green/20 transition-colors">
+                      {item.type === "code" && (
+                        <div className="w-full text-[10px] font-mono text-mv-ink-faint space-y-1">
+                          <div className="flex justify-between text-mv-green-dark font-semibold">
+                            <span>revenus_semaine = &#123;</span>
+                          </div>
+                          <div className="pl-2">ventes: 14850.00,</div>
+                          <div className="pl-2 text-mv-amber">marge_brute: 68.4%</div>
+                          <div>&#125;</div>
                         </div>
-                        <span className="text-[13px] font-bold text-mv-ink group-hover:text-mv-green-dark transition-colors">
-                          {item.label}
-                        </span>
-                      </div>
-                      <p className="mt-3 text-[12px] leading-relaxed text-mv-ink-soft group-hover:text-mv-ink transition-colors">
-                        "{item.prompt}"
-                      </p>
-                    </button>
-                  );
-                })}
+                      )}
+
+                      {item.type === "pdf" && (
+                        <div className="relative flex flex-col items-center justify-center text-center">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-mv-red/10 text-mv-red">
+                            <FileText size={20} />
+                          </div>
+                          <span className="mt-1 text-[9.5px] font-bold uppercase text-mv-red">PDF</span>
+                          <span className="absolute -right-2 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft shadow-mv-sm">
+                            <Plus size={12} />
+                          </span>
+                        </div>
+                      )}
+
+                      {item.type === "plan" && (
+                        <div className="w-full text-[10.5px] text-mv-ink-soft space-y-1">
+                          <div className="font-semibold text-mv-ink">Plan de menu :</div>
+                          <div className="text-[9.5px] text-mv-ink-faint line-clamp-2">
+                            1. Plats Étoiles (Tartare, Burger Gourmet)<br />
+                            2. Optimisation des coûts
+                          </div>
+                        </div>
+                      )}
+
+                      {item.type === "chart" && (
+                        <div className="flex items-end justify-center gap-1.5 h-12 w-full px-2">
+                          <div className="w-2.5 h-[40%] bg-mv-green/40 rounded-t-sm" />
+                          <div className="w-2.5 h-[65%] bg-mv-green/60 rounded-t-sm" />
+                          <div className="w-2.5 h-[90%] bg-mv-green rounded-t-sm" />
+                          <div className="w-2.5 h-[55%] bg-mv-green/50 rounded-t-sm" />
+                          <div className="w-2.5 h-[75%] bg-mv-green-dark rounded-t-sm" />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
           ) : (
@@ -297,14 +334,21 @@ export function AssistantChatView({
             </MessageScrollerProvider>
           )}
 
-          <ChatInput
-            restaurantId={restaurantId}
-            conversationId={conversationId}
-            isLoading={isLoading}
-            onSubmit={handleSubmit}
-          />
+          {/* Gemini Floating Input Bar Container */}
+          <div className="w-full max-w-4xl mx-auto mt-auto pt-2">
+            <ChatInput
+              restaurantId={restaurantId}
+              conversationId={conversationId}
+              isLoading={isLoading}
+              onSubmit={handleSubmit}
+            />
+            <p className="mt-2 text-center text-[11px] text-mv-ink-faint">
+              Minerva Flow peut afficher des prévisions et analyses d&apos;exploitation — vérifiez toujours les chiffres importants.
+            </p>
+          </div>
+
           {error && (
-            <p className="mt-2 text-[12px] text-mv-red">
+            <p className="mt-2 text-center text-[12px] text-mv-red">
               Une erreur est survenue — réessayez dans un instant.
             </p>
           )}

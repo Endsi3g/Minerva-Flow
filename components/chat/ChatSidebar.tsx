@@ -83,7 +83,7 @@ export function ChatSidebar({
         <div className="flex h-14 items-center justify-between border-b border-mv-border px-3">
           <Link href="/overview" className="flex items-center gap-2 rounded-lg p-1 hover:bg-mv-ink/5">
             <LogoMark size={24} />
-            <span className="font-sans text-[15px] font-bold text-mv-ink">Flow par Minerva</span>
+            <span className="font-sans text-[15px] font-bold text-mv-ink">Minerva Flow</span>
           </Link>
           <button
             onClick={() => onCollapse(true)}

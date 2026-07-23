@@ -418,13 +418,13 @@ export function AppSidebar() {
               </CollapsibleSection>
             )}
 
-            {/* Opérations Section */}
-            {visibleOperationsItems.length > 0 && (
+            {/* Performance & Analytics Section (Prioritaire & Ouvert par défaut) */}
+            {visibleAnalyticsItems.length > 0 && (
               <CollapsibleSection
-                label={t("sectionOperations")}
-                defaultOpen={visibleOperationsItems.some((item) => pathname.startsWith(item.href))}
+                label="Performance & Analyse"
+                defaultOpen={true}
               >
-                {visibleOperationsItems.map((item) => (
+                {visibleAnalyticsItems.map((item) => (
                   <NavLink
                     key={item.href}
                     href={item.href}
@@ -439,13 +439,13 @@ export function AppSidebar() {
               </CollapsibleSection>
             )}
 
-            {/* Performance & Analytics Section */}
-            {visibleAnalyticsItems.length > 0 && (
+            {/* Opérations Section */}
+            {visibleOperationsItems.length > 0 && (
               <CollapsibleSection
-                label="Performance & Analyse"
-                defaultOpen={visibleAnalyticsItems.some((item) => pathname.startsWith(item.href))}
+                label={t("sectionOperations")}
+                defaultOpen={visibleOperationsItems.some((item) => pathname.startsWith(item.href))}
               >
-                {visibleAnalyticsItems.map((item) => (
+                {visibleOperationsItems.map((item) => (
                   <NavLink
                     key={item.href}
                     href={item.href}

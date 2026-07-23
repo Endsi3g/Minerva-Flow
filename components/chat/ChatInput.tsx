@@ -3,7 +3,7 @@
 import { ChatAttachments, type PreparedAttachment } from "@/components/chat/ChatAttachments";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { cn } from "@/lib/utils";
-import { ArrowUp, Mic, MicOff, Paperclip, Loader2, Sparkles, FolderOpen, Zap } from "lucide-react";
+import { ArrowUp, Mic, MicOff, Paperclip, Loader2, Zap, FolderOpen, Plus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
@@ -60,28 +60,26 @@ export function ChatInput({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-3">
-      <div className="relative rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-md transition-all focus-within:border-mv-green-dark">
-        {/* Multiline textarea style Sana AI / Claude */}
+    <form onSubmit={handleSubmit} className="mt-2">
+      <div className="relative rounded-3xl border border-mv-border/80 bg-mv-cream-soft/80 p-3 md:p-4 shadow-mv-md transition-all focus-within:border-mv-green/50 focus-within:bg-mv-surface focus-within:shadow-mv-lg">
         <textarea
           ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Posez n'importe quelle question sur vos revenus, votre menu, vos équipes..."
+          placeholder="Entrer une invite ici..."
           rows={1}
-          className="w-full resize-none bg-transparent px-1 py-1 text-[14px] leading-relaxed text-mv-ink placeholder-mv-ink-faint focus:outline-none min-h-[32px] max-h-[200px]"
+          className="w-full resize-none bg-transparent px-2 py-1 text-[14.5px] leading-relaxed text-mv-ink placeholder-mv-ink-faint focus:outline-none min-h-[36px] max-h-[180px]"
         />
 
         {speech.isListening && speech.interimTranscript && (
-          <span className="pointer-events-none absolute left-4.5 top-4.5 flex items-center truncate text-[13px] text-mv-ink-faint">
+          <span className="pointer-events-none absolute left-5 top-4 flex items-center truncate text-[13.5px] text-mv-ink-faint">
             {input ? `${input} ` : ""}
             {speech.interimTranscript}
           </span>
         )}
 
-        {/* Attachments Section & Button Row inside the box */}
-        <div className="mt-3">
+        <div className="mt-2">
           <ChatAttachments
             restaurantId={restaurantId}
             conversationId={conversationId}
@@ -89,29 +87,28 @@ export function ChatInput({
             onChange={setAttachments}
           >
             {(openUpload, uploadLoading) => (
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-mv-border-soft pt-3">
-                {/* Sana AI Action Pills Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-mv-border-soft/60 pt-2.5">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={openUpload}
                     disabled={uploadLoading}
-                    className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-cream-soft px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/40 disabled:opacity-50"
+                    title="Ajouter des fichiers"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-mv-border bg-mv-surface text-mv-ink-soft transition-colors hover:bg-mv-border/30 disabled:opacity-50"
                   >
                     {uploadLoading ? (
-                      <Loader2 size={13} className="animate-spin text-mv-green-dark" />
+                      <Loader2 size={15} className="animate-spin text-mv-green-dark" />
                     ) : (
-                      <Paperclip size={13} className="text-mv-green-dark" />
+                      <Plus size={16} />
                     )}
-                    <span>+ Sources</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => {
-                      setInput((prev) => (prev ? `${prev} [Générer une analyse financière]` : "Générer une analyse financière détaillée"));
+                      setInput((prev) => (prev ? `${prev} [Générer une analyse]` : "Générer une analyse financière détaillée"));
                     }}
-                    className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-cream-soft px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/40"
+                    className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/30"
                   >
                     <Zap size={13} className="text-mv-amber" />
                     <span>Créer</span>
@@ -119,14 +116,13 @@ export function ChatInput({
 
                   <Link
                     href="/library"
-                    className="hidden sm:flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-cream-soft px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/40"
+                    className="hidden sm:flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/30"
                   >
                     <FolderOpen size={13} className="text-mv-green-dark" />
                     <span>Bibliothèque</span>
                   </Link>
                 </div>
 
-                {/* Right Input Actions (Mic & Submit) */}
                 <div className="flex items-center gap-2">
                   {speech.isSupported && (
                     <button
@@ -140,7 +136,7 @@ export function ChatInput({
                           : "text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink"
                       )}
                     >
-                      {speech.isListening ? <MicOff size={15} /> : <Mic size={15} />}
+                      {speech.isListening ? <MicOff size={16} /> : <Mic size={16} />}
                     </button>
                   )}
 
