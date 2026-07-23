@@ -102,14 +102,15 @@ export function AssistantChatView({
   });
   
   // React 19 Optimistic Rendering hook for immediate message feedback
-  const [optimisticMessages, addOptimisticMessage] = useOptimistic(
+  const [optimisticMessages, addOptimisticMessage] = useOptimistic<ChatMessage[], string>(
     validInitialMessages,
-    (currentMessages: ChatMessage[], newPromptText: string) => [
+    (currentMessages, newPromptText) => [
       ...currentMessages,
       {
         id: `optimistic-${Date.now()}`,
         conversationId,
         restaurantId,
+        authorId: authUser?.id ?? null,
         role: "user",
         content: newPromptText,
         createdAt: new Date().toISOString(),
