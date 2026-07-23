@@ -8,7 +8,11 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const nextParam = searchParams.get("next");
-  const next = nextParam?.startsWith("/") ? nextParam : "/overview";
+  // A leading "//" is still accepted by startsWith("/") but browsers resolve
+  // it as a protocol-relative URL to an external host — reject it so a
+  // crafted magic-link "next" param can't bounce a freshly-authenticated
+  // victim off to an attacker-controlled site.
+  const next = nextParam?.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/overview";
 
   if (token_hash && type) {
     const supabase = await createClient();

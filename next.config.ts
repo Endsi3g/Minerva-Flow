@@ -6,6 +6,21 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  async headers() {
+    return [
+      {
+        // Nothing in this app is meant to be iframed by another site —
+        // without this, a sensitive page (e.g. /settings, /billing,
+        // /collaborateurs) could be loaded invisibly in an attacker's page
+        // for a clickjacking/UI-redress attack against a logged-in owner.
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

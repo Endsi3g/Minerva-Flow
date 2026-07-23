@@ -8,6 +8,7 @@ import { notifyRestaurant } from "@/lib/data/notifications";
 import { formatCurrency } from "@/lib/utils";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
 import { createOrderPaymentIntent } from "@/lib/stripe/connect";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import type { CustomerReferralLink, ReferralProgram } from "@/lib/types";
 
 export type ReferralLinkTracking = {
@@ -209,6 +210,13 @@ export async function submitPublicReservationRequest(
   code: string,
   input: PublicReservationRequestInput
 ): Promise<boolean> {
+  // The page load itself is rate-limited, but that only throttles GETs — a
+  // scripted client can call this server action repeatedly without ever
+  // reloading the page, flooding a restaurant's reservation queue.
+  const ip = await getClientIp();
+  const { allowed } = await checkRateLimit(`reservation-submit:${ip}`, { max: 10, windowSeconds: 300 });
+  if (!allowed) return false;
+
   const session = await createClient();
   const {
     data: { user },
@@ -330,6 +338,14 @@ export async function submitPublicOrder(
   guestInfo: PublicOrderGuestInfo
 ): Promise<SubmitPublicOrderResult> {
   if (cart.length === 0) return { ok: false };
+
+  // Same reasoning as submitPublicReservationRequest — the page load is
+  // rate-limited, but a scripted client calling this action directly isn't,
+  // and each call can create a real order (and, once online payment is on,
+  // a real PaymentIntent) without ever hitting that page-level limit.
+  const ip = await getClientIp();
+  const { allowed } = await checkRateLimit(`order-submit:${ip}`, { max: 10, windowSeconds: 300 });
+  if (!allowed) return { ok: false };
 
   const session = await createClient();
   const {
