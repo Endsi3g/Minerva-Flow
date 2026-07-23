@@ -160,7 +160,7 @@ export function CollaborateursView({
               </THead>
               <tbody>
                 {members.map((m) => {
-                  const isOnline = onlineIds.includes(m.id);
+                  const isOnline = Array.isArray(onlineIds) ? onlineIds.includes(m.id) : (onlineIds as any)?.has?.(m.id) ?? false;
                   const isSelf = authUser?.id === m.id;
                   return (
                     <Tr key={m.id}>
