@@ -1,146 +1,177 @@
-# Flow par Minerva
+<div align="center">
 
-Application SaaS pour la gestion opérationnelle des restaurants et cafés au Québec : revenus, dépenses, équipe, fournisseurs, inventaire, fidélisation et rapports — avec un portail dédié pour les clients.
+# 🌿 Flow par Minerva
 
----
+### *La plateforme SaaS de gestion opérationnelle unifiée pour restaurants et cafés*
 
-## 1. Description
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Production%20Live-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://minerva-flow.vercel.app)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16%20App%20Router-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-Proprietary-mv--green?style=for-the-badge)](#-licence)
 
-Flow par Minerva centralise le pilotage quotidien d'un restaurant ou café dans une interface simple, en français, pensée pour être utilisée même pendant les heures de pointe. Au-delà du suivi financier, l'app couvre l'ensemble du cycle d'exploitation : de la commande fournisseur jusqu'à la fidélisation du client final, avec des rapports générés par IA pour interpréter les chiffres.
+<br />
 
----
+[✨ Découvrir l'Application Live](https://minerva-flow.vercel.app) • [📖 Guide des Intégrations](docs/integrations.md) • [🔒 Confidentialité](app/[locale]/legal/privacy/page.tsx) • [📄 Conditions](app/[locale]/legal/terms/page.tsx)
 
-## 2. Fonctionnalités
-
-- **Journées et finance** — saisie (ou import CSV) des revenus/dépenses quotidiens, catégorisation, connexions bancaires/POS (Square).
-- **Programmes et campagnes** — sources de revenu récurrentes (brunchs, soirées, événements) et campagnes marketing (Instagram, Facebook, courriel).
-- **Fidélisation client** — fiches clients, points de fidélité, catalogue de récompenses, programmes de parrainage avec suivi des conversions, et un lien/QR public pour qu'un nouveau client rejoigne le programme lui-même.
-- **Portail client** (`/portal`) — vos clients se connectent sans mot de passe (lien magique) pour voir leurs points et partager leur lien de parrainage, sans accès au reste de l'application.
-- **Ingénierie de menu** — classification automatique des plats (étoiles, chevaux de bataille, énigmes, poids morts) selon marge et popularité.
-- **Commande en ligne** — menu partagé par lien public (`/m/[token]`), panier, taxes et pourboire calculés automatiquement, routage direct vers le tableau de bord `/commandes`. Paiement par carte optionnel via Stripe Connect — l'argent va directement dans le compte du restaurant, jamais dans celui de Flow par Minerva (voir `docs/integrations.md` pour l'activer).
-- **Inventaire et gaspillage** — quantités en main, seuils de réapprovisionnement, coût du gaspillage répercuté automatiquement dans les dépenses.
-- **Fournisseurs** — répertoire, commandes (brouillon → envoyée → reçue), suivi de livraison (trajet et ETA), réception liée à l'inventaire.
-- **Réservations** — gestion des tables en interne, et demandes de réservation publiques via un lien de parrainage.
-- **Équipe** — invitations unifiées (collaborateurs et employés) avec envoi automatique par courriel, horaire, quarts, évaluations de performance, rôles et permissions (propriétaire/gérant/employé/consultant), espace personnel employé (`/mon-espace`) avec pointage (arrivée/départ, en libre-service ou par un gérant), suivi des heures et de la paie par période (semaine, aux deux semaines, mois), et notifications de retard ou d'absence à un quart prévu.
-- **Établissements** — recherche Google Places pour importer automatiquement adresse/coordonnées/téléphone/horaires, ou extraction automatique depuis le site web de l'établissement (description, coordonnées, horaires).
-- **Rapports et revue IA** — métriques hebdomadaires automatiques et à la demande, générées par IA à partir des chiffres réels (revenu, marge, menu, gaspillage).
-- **Cartes** — établissements (avec effet de survol animé à la sélection), attribution publicitaire, trajets de livraison.
-- **Intégrations** — Google (Places, Ads, Workspace, Calendar), Meta Ads, Square, Resend (courriels transactionnels), avec un guide de connexion intégré.
-- Interface web progressive (PWA), accessible depuis n'importe quel navigateur ou installable comme application.
-- Thème clair et sombre, avec suivi automatique des préférences système ou choix manuel dans Paramètres → Apparence.
+</div>
 
 ---
 
-## 3. Public cible
+## ⚡ En Bref
 
-- Restaurants indépendants.  
-- Cafés, bistros et brasseries.  
-- Bars et établissements de nuit.  
-- Groupes de restaurants souhaitant une vue consolidée.
+**Flow par Minerva** est une application web SaaS de nouvelle génération conçue spécifiquement pour piloter l'exploitation quotidienne des restaurants, cafés, bistros et bars. 
 
----
-
-## 4. Stack technique
-
-- Framework : Next.js 16 (App Router), Turbopack.
-- Langage : TypeScript.
-- UI : Tailwind CSS, shadcn/ui, Framer Motion.
-- Backend et base de données : Supabase (PostgreSQL, Auth, Storage, Row Level Security).
-- Authentification : Supabase Auth (mot de passe, OAuth Google/Apple/Microsoft, lien magique pour le portail client) et middleware Next.js.
-- IA : Vercel AI SDK, pour les revues de performance et l'assistant conversationnel.
-- Déploiement : Vercel.
-
-Cette stack permet une évolution rapide tout en restant fiable et maintenable.
+Elle centralise en une seule interface fluide, moderne et en français tout le cycle opérationnel d'un établissement : **revenus, dépenses, ingénierie de menu, planification des horaires, gestion des fournisseurs, inventaire, fidélisation client et intelligence artificielle décisionnelle.**
 
 ---
 
-## 5. Installation
+## 🛠️ Stack Technique & Écosystème
 
-Prérequis : Node.js, gestionnaire de paquets (npm, yarn, pnpm ou bun), accès à un projet Supabase configuré.
-
-1. Cloner le dépôt :
-
-   ```bash
-   git clone https://github.com/Endsi3g/Minerva-Flow.git
-   cd Minerva-Flow
-   ```
-
-2. Installer les dépendances :
-
-   ```bash
-   npm install
-   # ou
-   yarn install
-   # ou
-   pnpm install
-   # ou
-   bun install
-   ```
-
-3. Configurer les variables d’environnement (`.env.local` — clés Supabase, `NEXT_PUBLIC_APP_URL`, clés d'intégration selon les besoins), puis exécuter les migrations dans `supabase/migrations/` (éditeur SQL Supabase ou `supabase db push`).
-
-4. Lancer le serveur de développement :
-
-   ```bash
-   npm run dev
-   # ou
-   yarn dev
-   # ou
-   pnpm dev
-   # ou
-   bun dev
-   ```
-
-5. Ouvrir l’application à l’adresse suivante :
-
-   - http://localhost:3000
+| Catégorie | Technologie |
+|---|---|
+| **Framework & SSR** | **Next.js 16** (App Router, Turbopack, React 19) |
+| **Langage** | **TypeScript** typé à 100% |
+| **Base de Données & Sécurité** | **Supabase** (PostgreSQL, Row Level Security, Vault) |
+| **Authentification** | **Supabase Auth** (Mots de passe, OTP 6 chiffres, OAuth Google/Apple/Microsoft) |
+| **Design System & UI** | **Vanilla CSS & Design System Minerva** (`--mv-*`), `@thesvg/react` icons, Framer Motion |
+| **Intelligence Artificielle** | **Vercel AI SDK & Claude / Gemini** (Analyses financières, suggestions IA, revues de menu) |
+| **Point de Vente (POS)** | **Square POS API** |
+| **Paiements & Webhooks** | **Stripe Connect & Stripe Checkout** |
+| **Courriels Transactionnels** | **Resend API** |
+| **Déploiement Cloud** | **Vercel Infrastructure** |
 
 ---
 
-## 6. Architecture générale
+## 🔥 Fonctionnalités Principales
 
-- Dossier `app` : routes et pages de l’interface Next.js.  
-- Dossier `components` : composants UI réutilisables.  
-- Dossier `lib` : utilitaires, intégrations et services.  
-- Dossier `supabase` : schémas, scripts et configuration de la base de données.  
-- Dossier `scripts` : scripts CLI et automatisations.  
+### 🤖 1. Assistant IA & Interface Sana Style (`/chat`)
+- Chat IA avec pilules d'action rapide (`+ Sources`, `⚡ Créer`, `Bibliothèque`).
+- Cartes de suggestions contextuelles (*Revenus*, *Marges*, *Équipe*, *Inventaire*).
+- Widget de quota de requêtes IA en direct avec raccourcis vers les workflows opérationnels.
 
-Cette organisation vise à séparer clairement UI, logique métier et infrastructure.
+### 📚 2. Bibliothèque d'Assets Unifiée (`/library`)
+- Espace centralisé réunissant tous les documents de l'établissement : bons de commande fournisseurs, fiches recettes de menu, plannings de service, factures.
+- Filtres par catégorie et tiroir de prévisualisation rapide en écran scindé.
+
+### 🔌 3. Hub des Intégrations Directes (`/integrations`)
+- Statuts de connexion en temps réel pour **Square POS**, **Stripe Connect**, **Google Workspace / Analytics**, **Services de Livraison (Uber Eats)** et **Resend**.
+- Tiroir latéral de configuration et gestion des jetons sécurisés.
+
+### 🔑 4. Authentification 2 Colonnes & Code OTP 6 Chiffres (`/login`)
+- Layout moderne avec carte de connexion sur la gauche et aperçu dynamique interactif Minerva sur la droite.
+- Envoi et vérification instantanés de codes OTP à 6 chiffres via SMS / Courriel et réinitialisation de mot de passe fonctionnelle.
+
+### 📅 5. Horaire & Synchro Google Calendar Bidirectionnelle 2 Sens (`/horaire`)
+- Planification intelligente des quarts de travail des employés.
+- **Synchronisation 2 Sens** : Lecture automatique des congés et indisponibilités déjà présents dans le calendrier Google des employés pour éviter les conflits d'horaires.
+- Auto-refresh transparent des jetons OAuth Google expirés.
+
+### 🏢 6. Google Business Profile & Avis Clients
+- Synchronisation des heures d'ouverture et consultation/réponse directe aux avis clients Google dans l'interface.
+- Intégration préparée pour *Reserve with Google* (réservation directe depuis Google Maps/Recherche).
+
+### 🛒 7. Commandes en Ligne & Ingrédients
+- Menu en ligne accessible par lien public (`/m/[token]`) avec calcul automatique des taxes et pourboires.
+- Gestion des fournisseurs, génération de bons de commande et répercussion directe dans l'inventaire.
+
+### 🎁 8. Portail Client & Programme de Fidélité (`/portal`)
+- Accès client sans mot de passe (Lien Magique) pour consulter les points de fidélité, le catalogue de récompenses et le lien de parrainage.
 
 ---
 
-## 7. Automatisation et agents
+## 📂 Architecture de la Codebase
 
-Le projet utilise des fichiers de configuration d’agents pour faciliter le développement et la génération de contenu :
-
-- `AGENTS.md` : description des agents et de leurs rôles.  
-- `CLAUDE.md` et dossier `.claude` : workflows assistés par IA pour le projet.
-
-Ces ressources peuvent être utilisées pour documenter, prototyper ou automatiser certaines tâches.
+```
+Minerva-Flow/
+├── app/                        # Next.js 16 App Router avec i18n
+│   ├── [locale]/
+│   │   ├── (app)/              # Application protégée par authentification
+│   │   │   ├── chat/           # Assistant IA (Style Sana)
+│   │   │   ├── horaire/        # Planning d'équipe & Synchro Calendar
+│   │   │   ├── integrations/   # Hub d'intégrations API
+│   │   │   ├── library/        # Bibliothèque d'assets & documents
+│   │   │   ├── reports/        # Rapports financiers & analytiques
+│   │   │   └── changelog/      # Journal des mises à jour in-app
+│   │   ├── legal/              # Pages légales (Privacy & Terms)
+│   │   ├── portal/             # Portail client sans mot de passe
+│   │   ├── login/              # Écran d'authentification 2 colonnes
+│   │   └── page.tsx            # Landing Page publique
+├── components/                 # Composants React typés
+│   ├── auth/                   # AuthCard, OtpInput
+│   ├── chat/                   # Sana AI Assistant components
+│   ├── integrations/           # IntegrationsView & cartes API
+│   ├── library/                # LibraryView & Asset drawers
+│   ├── minerva/                # Composants du Design System Minerva
+│   └── ui/                     # BrandIcons (@thesvg/react), Buttons, Badges
+├── lib/                        # Logique métier & services backend
+│   ├── data/                   # requêtes Supabase (Library, Integrations, Changelog)
+│   ├── google/                 # API Google (Config, Calendar 2-way, Business, Tokens)
+│   ├── square/                 # Intégration POS Square
+│   ├── stripe/                 # Connect & Checkout Stripe
+│   └── supabase/               # Clients Supabase (Server, Admin, Browser)
+├── supabase/                   # Migrations SQL & Schéma de base de données
+└── docs/                       # Guides des intégrations et protocoles
+```
 
 ---
 
-## 8. État du projet et roadmap
+## 🚀 Installation & Lancement Local
 
-Flow par Minerva est en développement actif et déjà utilisé en production. Les modules listés en section 2 (finance, fidélisation, menu, inventaire, portail client, rapports IA) sont fonctionnels, couverts par une suite de tests automatisés (Vitest pour la logique métier, Playwright pour les parcours critiques) qui tourne en continu.
+### Prérequis
+- **Node.js** v18 ou v20+
+- **npm** ou **pnpm**
+- Un projet **Supabase** configuré
 
-Prochaines étapes envisagées :
+### 1. Cloner le projet & installer les dépendances
+```bash
+git clone https://github.com/Endsi3g/Minerva-Flow.git
+cd Minerva-Flow
+npm install
+```
 
-- Synchronisation réelle avec OpenTable, Resy et Uber Direct/Eats — la surface de connexion existe déjà (Paramètres → Intégrations), en attente d'un partenariat d'affaires actif avec ces plateformes. Voir [`docs/integrations.md`](docs/integrations.md) pour la démarche.
-- Suivi de commande fournisseur étendu (statuts intermédiaires, détection des retards de livraison).
-- Import automatique de menu existant (PDF ou site web de l'établissement).
-- Flow de démonstration à l'onboarding avec offre d'essai gratuit.
+### 2. Configurer les variables d'environnement
+Créez un fichier `.env.local` à la racine :
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://votre-projet.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=votre-cle-anon
+SUPABASE_SERVICE_ROLE_KEY=votre-cle-service-role
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=votre-google-client-id
+GOOGLE_CLIENT_SECRET=votre-google-client-secret
+```
 
-Le détail de chaque intégration (statut actuel, ce qui bloque, marche à suivre exacte) est dans [`docs/integrations.md`](docs/integrations.md).
+### 3. Démarrer le serveur de développement
+```bash
+npm run dev
+```
+Accédez à l'application sur [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 9. Contribution et contact
+## 🌍 Déploiement en Production
 
-Les retours et contributions sont les bienvenus.
+Le projet est configuré pour un déploiement continu instantané sur **Vercel** :
 
-- Ouverture d’issues pour signaler un problème ou proposer une amélioration.  
-- Pull requests pour des contributions sur l’UX, le code ou la documentation.  
-- Prise de contact pour tests en conditions réelles dans des établissements de restauration.
+```bash
+git add .
+git commit -m "feat: SaaS README redesign and feature update"
+git push origin main
+```
 
-Flow par Minerva vise à devenir une solution simple, fiable et adaptée aux réalités du terrain pour les professionnels de la restauration.
+L'application est déployée en direct sur : **[https://minerva-flow.vercel.app](https://minerva-flow.vercel.app)**
+
+---
+
+## ⚖️ Conformité & Sécurité
+
+- **Loi 25 du Québec** : Gestion stricte de la confidentialité des données personnelles et droit à l'oubli.
+- **Google OAuth Limited Use Disclosure** : Conformité avec les exigences de vérification Google Cloud Console pour les accès non sensibles (`openid`, `email`, `profile`).
+
+---
+
+<div align="center">
+
+*Propulsé par l'équipe Minerva — Fait avec passion au Québec 🇨🇦*
+
+</div>
