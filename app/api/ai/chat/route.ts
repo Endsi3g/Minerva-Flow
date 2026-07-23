@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AI_MODEL, isAiConfigured } from "@/lib/ai/config";
 import { isCloudflareAiConfigured, runCloudflareAiModel } from "@/lib/ai/cloudflare";
+import { isNvidiaAiConfigured, runNvidiaAiModel } from "@/lib/ai/nvidia";
 import { buildRestaurantDataSnapshot } from "@/lib/ai/context";
 import { saveArtifact, saveAttachment, saveMessage } from "@/lib/data/chat";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
@@ -122,7 +123,32 @@ export async function POST(req: Request) {
     ? await buildRestaurantDataSnapshot(restaurantId)
     : "Tu es l'assistant de Flow par Minerva. Aucun établissement n'est encore associé à ce compte.";
 
-  // If Cloudflare AI is configured and AI Gateway key is absent, use Cloudflare AI directly
+  // 1. If NVIDIA API is configured (z-ai/glm-5.2)
+  if (isNvidiaAiConfigured() && !process.env.AI_GATEWAY_API_KEY) {
+    const userPrompt =
+      lastMessage?.parts
+        .filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
+        .map((p) => p.text)
+        .join("\n") || "Bonjour";
+
+    const responseText = await runNvidiaAiModel(userPrompt, system);
+    const contentText = responseText || "Désolé, impossible d'obtenir une réponse du modèle NVIDIA GLM-5.2.";
+
+    if (canPersist) {
+      await saveMessage({
+        conversationId: conversationId!,
+        restaurantId: restaurantId!,
+        role: "assistant",
+        content: contentText,
+      });
+    }
+
+    return new Response(contentText, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+
+  // 2. If Cloudflare AI is configured and AI Gateway key is absent, use Cloudflare AI directly
   if (isCloudflareAiConfigured() && !process.env.AI_GATEWAY_API_KEY) {
     const userPrompt = lastMessage?.parts
       .filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
