@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../*"],
+      "next/link": ["./shims/next-link.tsx"],
+      "@thesvg/react/googlecalendar": ["../node_modules/@thesvg/react/dist/google-calendar.js"],
+      "@thesvg/react/googlesheets": ["../node_modules/@thesvg/react/dist/google-sheets.js"],
+      "@thesvg/react/googledrive": ["../node_modules/@thesvg/react/dist/google-drive.js"],
+      "@thesvg/react/googleanalytics": ["../node_modules/@thesvg/react/dist/google-analytics.js"],
+      "@thesvg/react/googleads": ["../node_modules/@thesvg/react/dist/google-ads.js"],
+      "@thesvg/react/ubereats": ["../node_modules/@thesvg/react/dist/uber-eats.js"]
+    }
+  }
+}

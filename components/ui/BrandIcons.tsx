@@ -1,4 +1,17 @@
 import React from "react";
+import SquareSvg from "@thesvg/react/square";
+import GoogleSvg from "@thesvg/react/google";
+import GoogleCalendarSvg from "@thesvg/react/googlecalendar";
+import GoogleSheetsSvg from "@thesvg/react/googlesheets";
+import GoogleDriveSvg from "@thesvg/react/googledrive";
+import GmailSvg from "@thesvg/react/gmail";
+import GoogleAnalyticsSvg from "@thesvg/react/googleanalytics";
+import GoogleAdsSvg from "@thesvg/react/googleads";
+import MetaSvg from "@thesvg/react/meta";
+import StripeSvg from "@thesvg/react/stripe";
+import AppleSvg from "@thesvg/react/apple";
+import MicrosoftSvg from "@thesvg/react/microsoft";
+import UberEatsSvg from "@thesvg/react/ubereats";
 
 interface BrandIconProps extends React.SVGProps<SVGSVGElement> {
   size?: number;
@@ -6,199 +19,80 @@ interface BrandIconProps extends React.SVGProps<SVGSVGElement> {
   height?: number;
 }
 
-export function Square({ size = 20, width, height, ...props }: BrandIconProps) {
+export function Square({ size = 20, width, height, className, ...props }: BrandIconProps) {
   const w = width || size;
   const h = height || size;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <rect x="3" y="3" width="18" height="18" rx="5" />
-      <rect x="9" y="9" width="6" height="6" rx="1.5" />
-    </svg>
-  );
+  return <SquareSvg width={w} height={h} className={className} {...props} />;
 }
 
-export function GoogleCalendar({ size = 20, width, height, ...props }: BrandIconProps) {
+export function Google({ size = 20, width, height, className, ...props }: BrandIconProps) {
   const w = width || size;
   const h = height || size;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-      <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" strokeWidth="2.5" />
-    </svg>
-  );
+  return <GoogleSvg width={w} height={h} className={className} {...props} />;
 }
 
-export function GoogleSheets({ size = 20, width, height, ...props }: BrandIconProps) {
+export function GoogleCalendar({ size = 20, width, height, className, ...props }: BrandIconProps) {
   const w = width || size;
   const h = height || size;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="8" y1="13" x2="16" y2="13" />
-      <line x1="8" y1="17" x2="16" y2="17" />
-      <line x1="10" y1="9" x2="8" y2="9" />
-    </svg>
-  );
+  return <GoogleCalendarSvg width={w} height={h} className={className} {...props} />;
 }
 
-export function GoogleDrive({ size = 20, width, height, ...props }: BrandIconProps) {
+export function GoogleSheets({ size = 20, width, height, className, ...props }: BrandIconProps) {
   const w = width || size;
   const h = height || size;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <polygon points="12 2 2 22 22 22" />
-      <line x1="12" y1="2" x2="12" y2="22" />
-      <line x1="7" y1="12" x2="17" y2="12" />
-    </svg>
-  );
+  return <GoogleSheetsSvg width={w} height={h} className={className} {...props} />;
 }
 
-export function Gmail({ size = 20, width, height, ...props }: BrandIconProps) {
+export function GoogleDrive({ size = 20, width, height, className, ...props }: BrandIconProps) {
   const w = width || size;
   const h = height || size;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-      <polyline points="22,6 12,13 2,6" />
-    </svg>
-  );
+  return <GoogleDriveSvg width={w} height={h} className={className} {...props} />;
 }
 
-export function GoogleAnalytics({ size = 20, width, height, ...props }: BrandIconProps) {
+export function Gmail({ size = 20, width, height, className, ...props }: BrandIconProps) {
   const w = width || size;
   const h = height || size;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <line x1="18" y1="20" x2="18" y2="10" />
-      <line x1="12" y1="20" x2="12" y2="4" />
-      <line x1="6" y1="20" x2="6" y2="14" />
-    </svg>
-  );
+  return <GmailSvg width={w} height={h} className={className} {...props} />;
 }
 
-export function GoogleAds({ size = 20, width, height, ...props }: BrandIconProps) {
+export function GoogleAnalytics({ size = 20, width, height, className, ...props }: BrandIconProps) {
   const w = width || size;
   const h = height || size;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      <line x1="11" y1="8" x2="11" y2="14" strokeWidth="2.5" />
-      <line x1="8" y1="11" x2="14" y2="11" strokeWidth="2.5" />
-    </svg>
-  );
+  return <GoogleAnalyticsSvg width={w} height={h} className={className} {...props} />;
 }
 
-export function Meta({ size = 20, width, height, ...props }: BrandIconProps) {
+export function GoogleAds({ size = 20, width, height, className, ...props }: BrandIconProps) {
   const w = width || size;
   const h = height || size;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4zm0 0c2 2.67 4 4 6 4a4 4 0 1 0 0-8c-2 0-4 1.33-6 4z" />
-    </svg>
-  );
+  return <GoogleAdsSvg width={w} height={h} className={className} {...props} />;
 }
 
-export function Stripe({ size = 20, width, height, ...props }: BrandIconProps) {
+export function Meta({ size = 20, width, height, className, ...props }: BrandIconProps) {
   const w = width || size;
   const h = height || size;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-    </svg>
-  );
+  return <MetaSvg width={w} height={h} className={className} {...props} />;
+}
+
+export function Stripe({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return <StripeSvg width={w} height={h} className={className} {...props} />;
+}
+
+export function Apple({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return <AppleSvg width={w} height={h} className={className} {...props} />;
+}
+
+export function Microsoft({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return <MicrosoftSvg width={w} height={h} className={className} {...props} />;
+}
+
+export function UberEats({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return <UberEatsSvg width={w} height={h} className={className} {...props} />;
 }

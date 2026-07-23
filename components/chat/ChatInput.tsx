@@ -3,8 +3,9 @@
 import { ChatAttachments, type PreparedAttachment } from "@/components/chat/ChatAttachments";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { cn } from "@/lib/utils";
-import { ArrowUp, Mic, MicOff, Paperclip, Loader2 } from "lucide-react";
+import { ArrowUp, Mic, MicOff, Paperclip, Loader2, Sparkles, FolderOpen, Zap } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 
 export function ChatInput({
   restaurantId,
@@ -60,16 +61,16 @@ export function ChatInput({
 
   return (
     <form onSubmit={handleSubmit} className="mt-3">
-      <div className="relative rounded-2xl border border-mv-border bg-mv-cream-soft p-3.5 shadow-mv-sm focus-within:border-mv-green-dark transition-all">
-        {/* Multiline textarea style Claude */}
+      <div className="relative rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-md transition-all focus-within:border-mv-green-dark">
+        {/* Multiline textarea style Sana AI / Claude */}
         <textarea
           ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Posez votre question à l'assistant..."
+          placeholder="Posez n'importe quelle question sur vos revenus, votre menu, vos équipes..."
           rows={1}
-          className="w-full resize-none bg-transparent py-1 px-1 text-[13.5px] leading-relaxed text-mv-ink placeholder-mv-ink-faint focus:outline-none min-h-[24px] max-h-[200px]"
+          className="w-full resize-none bg-transparent px-1 py-1 text-[14px] leading-relaxed text-mv-ink placeholder-mv-ink-faint focus:outline-none min-h-[32px] max-h-[200px]"
         />
 
         {speech.isListening && speech.interimTranscript && (
@@ -80,7 +81,7 @@ export function ChatInput({
         )}
 
         {/* Attachments Section & Button Row inside the box */}
-        <div className="mt-2">
+        <div className="mt-3">
           <ChatAttachments
             restaurantId={restaurantId}
             conversationId={conversationId}
@@ -88,22 +89,45 @@ export function ChatInput({
             onChange={setAttachments}
           >
             {(openUpload, uploadLoading) => (
-              <div className="flex items-center justify-between border-t border-mv-border/40 mt-3 pt-2">
-                <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-mv-border-soft pt-3">
+                {/* Sana AI Action Pills Bar */}
+                <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={openUpload}
                     disabled={uploadLoading}
-                    aria-label="Joindre un fichier"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-cream-soft px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/40 disabled:opacity-50"
                   >
                     {uploadLoading ? (
-                      <Loader2 size={15} className="animate-spin" />
+                      <Loader2 size={13} className="animate-spin text-mv-green-dark" />
                     ) : (
-                      <Paperclip size={15} />
+                      <Paperclip size={13} className="text-mv-green-dark" />
                     )}
+                    <span>+ Sources</span>
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInput((prev) => (prev ? `${prev} [Générer une analyse financière]` : "Générer une analyse financière détaillée"));
+                    }}
+                    className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-cream-soft px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/40"
+                  >
+                    <Zap size={13} className="text-mv-amber" />
+                    <span>⚡ Créer</span>
+                  </button>
+
+                  <Link
+                    href="/library"
+                    className="hidden sm:flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-cream-soft px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/40"
+                  >
+                    <FolderOpen size={13} className="text-mv-green-dark" />
+                    <span>Bibliothèque</span>
+                  </Link>
+                </div>
+
+                {/* Right Input Actions (Mic & Submit) */}
+                <div className="flex items-center gap-2">
                   {speech.isSupported && (
                     <button
                       type="button"
@@ -119,16 +143,16 @@ export function ChatInput({
                       {speech.isListening ? <MicOff size={15} /> : <Mic size={15} />}
                     </button>
                   )}
-                </div>
 
-                <button
-                  type="submit"
-                  disabled={(!input.trim() && attachments.length === 0) || isLoading}
-                  aria-label="Envoyer"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark transition-colors disabled:pointer-events-none disabled:bg-mv-ink/[0.06] disabled:text-mv-ink-faint"
-                >
-                  <ArrowUp size={15} strokeWidth={2.5} />
-                </button>
+                  <button
+                    type="submit"
+                    disabled={(!input.trim() && attachments.length === 0) || isLoading}
+                    aria-label="Envoyer"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark transition-all shadow-mv-sm disabled:pointer-events-none disabled:bg-mv-ink/[0.06] disabled:text-mv-ink-faint"
+                  >
+                    <ArrowUp size={16} strokeWidth={2.5} />
+                  </button>
+                </div>
               </div>
             )}
           </ChatAttachments>

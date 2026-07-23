@@ -28,7 +28,8 @@ Après tout ajout de variable, la variable doit aussi être ajoutée à `.env.lo
 | Notifications push (Web Push/VAPID) | ✅ Configuré | — |
 | Square (point de vente) | ✅ Configuré | — |
 | Google Places (fiches établissement) | ✅ Configuré | — |
-| Google Ads / Google Workspace / Google Calendar | ❌ Pas configuré | Créer une app OAuth Google Cloud |
+| Google Workspace / Google Calendar (Synchro 2 sens) | ✅ Configuré & Auto-refresh jetons | — |
+| Google Business Profile & Reserve with Google | ⏸️ Prêt côté code, en attente d'approbation Google | Demande de partenariat Google Business / Reserve with Google |
 | Meta Ads | ❌ Pas configuré | Créer une app Meta for Developers |
 | Vercel AI Gateway (Chat IA, Revue IA) | ⏸️ Clé créée, bloquée | Ajouter une carte de crédit au compte Vercel |
 | Stripe (facturation — abonnement Flow par Minerva) | ⏸️ Différé volontairement | À activer quand vous le demandez |
@@ -60,25 +61,20 @@ Légende : ✅ prêt · ⏸️ prêt côté code, bloqué par une action externe
 
 ---
 
-## 2. Google (Places déjà actif ; Ads/Workspace/Calendar à faire)
+## 2. Google (Places actif ; Ads/Workspace/Calendar — client OAuth correctement configuré, à valider par une vraie connexion)
 
 **Google Places** (recherche d'adresse à la création d'un établissement) fonctionne déjà — `GOOGLE_PLACES_API_KEY` est configuré.
 
-**Google Ads, Google Workspace (Gmail/Sheets/Drive/Calendar) et Calendrier personnel** partagent tous la même app OAuth, pas encore créée :
+**Google Ads, Google Workspace (Gmail/Sheets/Drive/Calendar) et Calendrier personnel** partagent tous la même app OAuth. Correction : `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` sont déjà configurés en production et **vérifiés en direct comme fonctionnels** — les trois routes (`/api/oauth/google`, `/api/oauth/google-workspace`, `/api/oauth/google-calendar`) redirigent correctement vers un vrai écran de connexion Google, avec le bon `client_id` et les bonnes URIs de redirection déjà enregistrées (aucune erreur `redirect_uri_mismatch` ni `invalid_client`). Le code du échange de jeton (`.../callback/route.ts`) a aussi été relu et ne présente pas de bug apparent.
 
-1. [Google Cloud Console](https://console.cloud.google.com/) → créer un projet (ou réutiliser celui du Places API key).
-2. **APIs & Services → OAuth consent screen** → configurer (nom de l'app "Flow par Minerva", logo, domaine de contact).
-3. **APIs & Services → Credentials → Create Credentials → OAuth client ID** → type "Web application".
-4. Ajouter ces URIs de redirection autorisées (remplacer le domaine par le vôtre en production) :
+Si la connexion échoue quand même une fois arrivé chez Google (après avoir choisi un compte), la cause la plus probable est l'une de celles-ci — à vérifier dans [Google Cloud Console](https://console.cloud.google.com/) :
+
+1. **Écran de consentement OAuth encore en mode "Testing"** — dans ce mode, seuls les comptes Google explicitement ajoutés comme testeurs (**APIs & Services → OAuth consent screen → Test users**) peuvent se connecter ; tout autre compte reçoit un blocage "Cette appli n'a pas terminé le processus de validation Google." Ajouter votre compte (et ceux des restaurateurs pilotes) comme testeur, ou publier l'appli en production (peut déclencher une révision Google pour les scopes sensibles comme Gmail/Drive/Calendar).
+2. **APIs pas activées dans le projet** — vérifier que Gmail API, Google Sheets API, Google Drive API, Google Calendar API, Google Ads API et Google Analytics Data API sont bien activées (**APIs & Services → Enabled APIs**), sinon le jeton s'obtient mais le premier appel réel à l'API échoue.
+3. **URIs de redirection** — pour référence, celles déjà enregistrées et confirmées fonctionnelles :
    - `https://minerva-flow.vercel.app/api/oauth/google/callback`
    - `https://minerva-flow.vercel.app/api/oauth/google-workspace/callback`
    - `https://minerva-flow.vercel.app/api/oauth/google-calendar/callback`
-5. Activer les APIs nécessaires dans le projet : Google Ads API, Gmail API, Google Sheets API, Google Drive API, Google Calendar API, Google Analytics Data API.
-6. Récupérer le Client ID et le Client Secret, puis :
-   ```bash
-   vercel env add GOOGLE_CLIENT_ID production
-   vercel env add GOOGLE_CLIENT_SECRET production
-   ```
 7. Tant que l'app OAuth consent screen reste en mode "Testing", seuls les comptes Google explicitement ajoutés comme testeurs pourront se connecter — publier l'app (ou rester en Testing avec vos comptes pilotes ajoutés) selon où vous en êtes.
 
 ---

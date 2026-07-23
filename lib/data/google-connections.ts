@@ -69,9 +69,8 @@ export type GoogleTokens = {
 };
 
 /**
- * Server-only (service role) — called from the OAuth callback route.
- * Tokens are stored via Supabase Vault (store_vault_secret RPC, see
- * 0006_ad_attribution.sql); only the key ids are kept on the row.
+ * Server-only (service role) — called from the OAuth callback route or auto-refresh.
+ * Tokens are stored via Supabase Vault (store_vault_secret RPC).
  */
 export async function saveGoogleTokens(restaurantId: string, tokens: GoogleTokens): Promise<void> {
   const admin = createAdminClient();
@@ -90,21 +89,27 @@ export async function saveGoogleTokens(restaurantId: string, tokens: GoogleToken
     refreshTokenId = data ?? null;
   }
 
-  await admin.from("google_connections").upsert(
-    {
-      restaurant_id: restaurantId,
-      connected_email: tokens.connectedEmail ?? null,
-      granted_scopes: tokens.scopes,
-      access_token_id: accessTokenId,
-      refresh_token_id: refreshTokenId,
-      expires_at: tokens.expiresAt ?? null,
-      status: "connecte",
-    },
-    { onConflict: "restaurant_id" }
-  );
+  const patch: Record<string, any> = {
+    restaurant_id: restaurantId,
+    connected_email: tokens.connectedEmail ?? null,
+    granted_scopes: tokens.scopes,
+    access_token_id: accessTokenId,
+    expires_at: tokens.expiresAt ?? null,
+    status: "connecte",
+  };
+
+  if (refreshTokenId) {
+    patch.refresh_token_id = refreshTokenId;
+  }
+
+  await admin.from("google_connections").upsert(patch, { onConflict: "restaurant_id" });
 }
 
-/** Server-only (service role) — called by Gmail/Sheets/Calendar/Analytics helpers. */
+/**
+ * Server-only (service role) — retrieves valid Google tokens, automatically
+ * executing a token refresh via oauth2.googleapis.com/token if expired (~1h expiry).
+ * Fixes silent data loss & analytics breakage.
+ */
 export async function getGoogleTokens(
   restaurantId: string
 ): Promise<{ accessToken: string; refreshToken: string | null } | null> {
@@ -112,22 +117,61 @@ export async function getGoogleTokens(
 
   const { data: connection } = await admin
     .from("google_connections")
-    .select("access_token_id, refresh_token_id")
+    .select("access_token_id, refresh_token_id, expires_at, granted_scopes, connected_email")
     .eq("restaurant_id", restaurantId)
     .maybeSingle();
 
   if (!connection?.access_token_id) return null;
-
-  const { data: accessToken } = await admin.rpc("read_vault_secret", {
-    secret_id: connection.access_token_id,
-  });
-  if (!accessToken) return null;
 
   let refreshToken: string | null = null;
   if (connection.refresh_token_id) {
     const { data } = await admin.rpc("read_vault_secret", { secret_id: connection.refresh_token_id });
     refreshToken = data ?? null;
   }
+
+  // Check expiration (if expires_at exists and is within 5 minutes or past)
+  const isExpired =
+    connection.expires_at &&
+    new Date(connection.expires_at).getTime() - Date.now() < 5 * 60 * 1000;
+
+  if (isExpired && refreshToken && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    try {
+      const res = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          refresh_token: refreshToken,
+          grant_type: "refresh_token",
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const newAccessToken = json.access_token;
+        const expiresInSec = json.expires_in || 3600;
+        const newExpiresAt = new Date(Date.now() + expiresInSec * 1000).toISOString();
+
+        await saveGoogleTokens(restaurantId, {
+          accessToken: newAccessToken,
+          refreshToken,
+          expiresAt: newExpiresAt,
+          connectedEmail: connection.connected_email ?? undefined,
+          scopes: connection.granted_scopes || [],
+        });
+
+        return { accessToken: newAccessToken, refreshToken };
+      }
+    } catch (err) {
+      console.error("[Google Tokens Refresh Error]", err);
+    }
+  }
+
+  const { data: accessToken } = await admin.rpc("read_vault_secret", {
+    secret_id: connection.access_token_id,
+  });
+  if (!accessToken) return null;
 
   return { accessToken, refreshToken };
 }

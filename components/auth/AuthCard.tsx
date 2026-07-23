@@ -4,12 +4,15 @@ import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/minerva/FormField";
+import { OtpInput } from "@/components/auth/OtpInput";
 import { createClient } from "@/lib/supabase/client";
 import posthog from "posthog-js";
 import { Link, getPathname, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState, type FormEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Sparkles, ArrowRight, ShieldCheck, CheckCircle2, TrendingUp, Users, PackageCheck } from "lucide-react";
+import { Google, Apple, Microsoft } from "@/components/ui/BrandIcons";
 
 function OAuthButton({
   label,
@@ -24,7 +27,7 @@ function OAuthButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-mv-border bg-mv-surface text-[13px] font-semibold text-mv-ink transition-colors hover:bg-mv-cream-soft"
+      className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-mv-border bg-mv-surface text-[13px] font-semibold text-mv-ink transition-all hover:bg-mv-cream-soft focus:outline-none focus:ring-2 focus:ring-mv-green/20"
     >
       {icon}
       {label}
@@ -36,12 +39,22 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   const t = useTranslations("auth");
   const locale = useLocale();
   const router = useRouter();
+
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
+  const [authMethod, setAuthMethod] = useState<"password" | "otp">("password");
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
+  
+  // OTP state
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [workspaceInviteToken, setWorkspaceInviteToken] = useState<string | null>(null);
@@ -61,8 +74,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     : inviteToken
       ? `/invite/${inviteToken}`
       : "/overview";
-  // Supabase's emailRedirectTo/redirectTo hit /auth/confirm outside of React,
-  // so they need the locale prefix baked into the `next` param by hand.
+  
   const localizedPostAuthPath = getPathname({ href: postAuthPath, locale });
 
   const mapErrorMessage = (msg: string): string => {
@@ -77,11 +89,80 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     ) {
       return t("errorAlreadyRegistered");
     }
+    if (normalized.includes("token has expired") || normalized.includes("invalid token")) {
+      return "Le code OTP renseigné est invalide ou expiré.";
+    }
     return msg;
   };
 
+  async function handleSendOtp() {
+    if (!email) {
+      setError("Veuillez saisir votre adresse email.");
+      return;
+    }
+    setError(null);
+    setSuccessMsg(null);
+    setIsLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=${localizedPostAuthPath}`,
+        },
+      });
+      if (error) throw error;
+      setOtpSent(true);
+      setSuccessMsg("Un code de vérification à 6 chiffres vous a été envoyé par courriel.");
+    } catch (err) {
+      setError(err instanceof Error ? mapErrorMessage(err.message) : t("errorGeneric"));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp(codeToVerify?: string) {
+    const token = codeToVerify || otpCode;
+    if (!token || token.length !== 6) {
+      setError("Veuillez saisir le code à 6 chiffres.");
+      return;
+    }
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: "email",
+      });
+      if (error) throw error;
+      if (data.user) {
+        posthog.identify(data.user.id, { email: data.user.email });
+        posthog.capture("user_logged_in", { method: "otp" });
+      }
+      router.push(postAuthPath);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? mapErrorMessage(err.message) : t("errorGeneric"));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function handleAuth(e: FormEvent) {
     e.preventDefault();
+    if (authMethod === "otp") {
+      if (otpSent) {
+        await handleVerifyOtp();
+      } else {
+        await handleSendOtp();
+      }
+      return;
+    }
+
     setError(null);
     setIsLoading(true);
 
@@ -157,6 +238,8 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
 
   function toggleMode() {
     setError(null);
+    setSuccessMsg(null);
+    setOtpSent(false);
     const newMode = mode === "login" ? "signup" : "login";
     setMode(newMode);
     const href = getPathname({ href: newMode === "login" ? "/login" : "/sign-up", locale });
@@ -164,152 +247,212 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-mv-cream px-6 py-10">
-      <div className="mb-6 flex items-center gap-2.5">
-        <LogoMark size={30} />
-        <span className="font-sans text-[17px] font-medium text-mv-ink">
-          Flow <span className="text-mv-green-dark">par Minerva</span>
-        </span>
-      </div>
+    <div className="min-h-screen w-full bg-mv-cream text-mv-ink">
+      {/* Top Bar Header */}
+      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+        <div className="flex items-center gap-3">
+          <LogoMark size={32} />
+          <span className="font-sans text-[18px] font-bold text-mv-ink">
+            Flow <span className="text-mv-green-dark">par Minerva</span>
+          </span>
+        </div>
+        <div className="hidden items-center gap-6 text-[13px] font-semibold text-mv-ink-soft md:flex">
+          <Link href="/legal/terms" className="hover:text-mv-ink">Conditions</Link>
+          <Link href="/legal/privacy" className="hover:text-mv-ink">Confidentialité</Link>
+          <Link href="/support" className="hover:text-mv-ink">Assistance</Link>
+        </div>
+      </header>
 
-      <motion.div
-        layout
-        transition={{ type: "spring", stiffness: 350, damping: 40 }}
-        className="w-full max-w-md"
-      >
-        <Card padded={false} className="w-full overflow-hidden">
-          <form onSubmit={handleAuth} className="flex flex-col gap-4 p-8">
-            <motion.div layout="position">
-              <h1 className="font-display text-[22px] font-medium text-mv-ink">
-                {mode === "login" ? t("login.title") : t("signup.title")}
-              </h1>
-              <p className="mt-1 text-[13px] text-mv-ink-soft">
-                {mode === "login" ? t("login.subtitle") : t("signup.subtitle")}
-              </p>
-            </motion.div>
-
-            <motion.div layout="position" className="space-y-4">
-              <Field label={t("emailLabel")}>
-                <Input
-                  type="email"
-                  placeholder={t("emailPlaceholder")}
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </Field>
-
-              <Field label={t("passwordLabel")}>
-                <div className="flex items-center justify-between">
-                  <span />
-                  {mode === "login" && (
-                    <Link
-                      href="/forgot-password"
-                      className="text-[11.5px] font-semibold text-mv-green-dark hover:underline"
-                    >
-                      {t("forgotPasswordLink")}
-                    </Link>
-                  )}
-                </div>
-                <Input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </Field>
-
-              <AnimatePresence initial={false} mode="popLayout">
-                {mode === "signup" && (
-                  <motion.div
-                    key="repeatPassword"
-                    initial={{ opacity: 0, height: 0, y: -10 }}
-                    animate={{ opacity: 1, height: "auto", y: 0 }}
-                    exit={{ opacity: 0, height: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Field label={t("confirmPasswordLabel")}>
-                      <Input
-                        type="password"
-                        required
-                        value={repeatPassword}
-                        onChange={(e) => setRepeatPassword(e.target.value)}
-                      />
-                    </Field>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            <motion.div layout="position" className="space-y-4">
-              {error && <p className="text-[12.5px] text-mv-red">{error}</p>}
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading
-                  ? mode === "login"
-                    ? t("submitLoginLoading")
-                    : t("submitSignupLoading")
-                  : mode === "login"
-                    ? t("submitLogin")
-                    : t("submitSignup")}
-              </Button>
-
-              <div className="flex items-center gap-3 py-1">
-                <div className="h-px flex-1 bg-mv-border-soft" />
-                <span className="text-[11.5px] text-mv-ink-faint">{t("orContinueWith")}</span>
-                <div className="h-px flex-1 bg-mv-border-soft" />
+      {/* Main 2-Column Section */}
+      <main className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-12 px-6 py-6 lg:flex-row lg:items-stretch lg:py-12">
+        {/* Left Column: Form Card */}
+        <div className="flex w-full flex-col justify-center lg:w-[480px]">
+          <Card padded={false} className="w-full border-mv-border bg-mv-surface shadow-mv-md">
+            <form onSubmit={handleAuth} className="flex flex-col gap-5 p-8">
+              <div>
+                <h1 className="font-display text-[24px] font-bold tracking-tight text-mv-ink">
+                  {mode === "login" ? "Connexion à votre espace" : "Créer un compte Minerva"}
+                </h1>
+                <p className="mt-1 text-[13.5px] text-mv-ink-soft">
+                  {mode === "login"
+                    ? "Pilotez l'exploitation de vos établissements en toute simplicité."
+                    : "Rejoignez la plateforme de gestion unifiée pour restaurants et cafés."}
+                </p>
               </div>
 
+              {/* OAuth Buttons */}
               <div className="flex gap-2">
                 <OAuthButton
                   label="Google"
                   onClick={() => handleOAuth("google")}
-                  icon={
-                    <svg width="15" height="15" viewBox="0 0 24 24">
-                      <path
-                        fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.85A11 11 0 0 0 12 23z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.84 14.09A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.43.34-2.09V7.06H2.18A11 11 0 0 0 1 12c0 1.77.43 3.45 1.18 4.94l3.66-2.85z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 0 0-9.82 6.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z"
-                      />
-                    </svg>
-                  }
+                  icon={<Google size={16} />}
                 />
                 <OAuthButton
                   label="Apple"
                   onClick={() => handleOAuth("apple")}
-                  icon={
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M16.365 1.43c0 1.14-.462 2.15-1.213 2.9-.83.85-2.18 1.51-3.37 1.42-.15-1.09.44-2.24 1.16-2.98.82-.86 2.23-1.5 3.42-1.34zM20.6 17.36c-.51 1.18-.76 1.7-1.42 2.75-.92 1.46-2.22 3.28-3.83 3.29-1.43.02-1.8-.93-3.73-.92-1.94.01-2.34.94-3.77.92-1.61-.02-2.84-1.66-3.76-3.12C1.62 16.9.94 12.85 2.4 10.09c.99-1.9 2.79-3.1 4.73-3.13 1.5-.02 2.9.99 3.82.99.92 0 2.61-1.22 4.41-1.04.75.03 2.85.3 4.2 2.26-.11.07-2.5 1.44-2.47 4.31.03 3.43 3.03 4.57 3.06 4.58-.02.07-.48 1.6-1.55 3.3z" />
-                    </svg>
-                  }
+                  icon={<Apple size={16} />}
                 />
                 <OAuthButton
                   label="Microsoft"
                   onClick={() => handleOAuth("azure")}
-                  icon={
-                    <svg width="15" height="15" viewBox="0 0 24 24">
-                      <rect x="2" y="2" width="9.2" height="9.2" fill="#F25022" />
-                      <rect x="12.8" y="2" width="9.2" height="9.2" fill="#7FBA00" />
-                      <rect x="2" y="12.8" width="9.2" height="9.2" fill="#00A4EF" />
-                      <rect x="12.8" y="12.8" width="9.2" height="9.2" fill="#FFB900" />
-                    </svg>
-                  }
+                  icon={<Microsoft size={16} />}
                 />
               </div>
 
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-mv-border-soft" />
+                <span className="text-[11.5px] font-medium text-mv-ink-faint">ou avec votre courriel</span>
+                <div className="h-px flex-1 bg-mv-border-soft" />
+              </div>
+
+              {/* Mode Switcher: Password vs OTP */}
+              {mode === "login" && (
+                <div className="flex rounded-lg border border-mv-border bg-mv-cream-soft p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMethod("password");
+                      setError(null);
+                      setSuccessMsg(null);
+                    }}
+                    className={`flex-1 rounded-md py-1.5 text-[12px] font-semibold transition-all ${
+                      authMethod === "password"
+                        ? "bg-mv-surface text-mv-ink shadow-mv-sm"
+                        : "text-mv-ink-soft hover:text-mv-ink"
+                    }`}
+                  >
+                    Mot de passe
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMethod("otp");
+                      setError(null);
+                      setSuccessMsg(null);
+                    }}
+                    className={`flex-1 rounded-md py-1.5 text-[12px] font-semibold transition-all ${
+                      authMethod === "otp"
+                        ? "bg-mv-surface text-mv-ink shadow-mv-sm"
+                        : "text-mv-ink-soft hover:text-mv-ink"
+                    }`}
+                  >
+                    Code OTP / Magique
+                  </button>
+                </div>
+              )}
+
+              {/* Fields */}
+              <div className="space-y-4">
+                <Field label={t("emailLabel")}>
+                  <Input
+                    type="email"
+                    placeholder={t("emailPlaceholder")}
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </Field>
+
+                {authMethod === "password" ? (
+                  <>
+                    <Field label={t("passwordLabel")}>
+                      <div className="flex items-center justify-between">
+                        <span />
+                        {mode === "login" && (
+                          <Link
+                            href="/forgot-password"
+                            className="text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                          >
+                            {t("forgotPasswordLink")}
+                          </Link>
+                        )}
+                      </div>
+                      <Input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                    </Field>
+
+                    <AnimatePresence initial={false} mode="popLayout">
+                      {mode === "signup" && (
+                        <motion.div
+                          key="repeatPassword"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                        >
+                          <Field label={t("confirmPasswordLabel")}>
+                            <Input
+                              type="password"
+                              required
+                              value={repeatPassword}
+                              onChange={(e) => setRepeatPassword(e.target.value)}
+                            />
+                          </Field>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                ) : (
+                  /* OTP Mode Field */
+                  <div className="space-y-3 pt-1">
+                    {otpSent ? (
+                      <div className="space-y-3">
+                        <p className="text-[12.5px] font-medium text-mv-ink-soft">
+                          Saisissez le code à 6 chiffres reçu sur <strong className="text-mv-ink">{email}</strong> :
+                        </p>
+                        <OtpInput
+                          length={6}
+                          onComplete={(code) => {
+                            setOtpCode(code);
+                            handleVerifyOtp(code);
+                          }}
+                          disabled={isLoading}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSendOtp}
+                          disabled={isLoading}
+                          className="text-[11.5px] font-semibold text-mv-green-dark hover:underline focus:outline-none"
+                        >
+                          Renvoyer un nouveau code
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-[12px] text-mv-ink-soft">
+                        Nous vous enverrons un code de connexion sécurisé à 6 chiffres par courriel (aucun mot de passe requis).
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Status Messages */}
+              {error && <p className="text-[12.5px] font-medium text-mv-red">{error}</p>}
+              {successMsg && <p className="text-[12.5px] font-medium text-mv-green-dark">{successMsg}</p>}
+
+              {/* Submit Button */}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  "Traitement en cours..."
+                ) : authMethod === "otp" ? (
+                  otpSent ? (
+                    "Vérifier le code →"
+                  ) : (
+                    "Envoyer le code OTP →"
+                  )
+                ) : mode === "login" ? (
+                  t("submitLogin")
+                ) : (
+                  t("submitSignup")
+                )}
+              </Button>
+
+              {/* Toggle Mode Link */}
               <p className="text-center text-[12.5px] text-mv-ink-faint">
-                {mode === "login" ? t("noAccount") : t("hasAccount")}
+                {mode === "login" ? t("noAccount") : t("hasAccount")}{" "}
                 <button
                   type="button"
                   onClick={toggleMode}
@@ -318,25 +461,95 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
                   {mode === "login" ? t("createAccount") : t("submitLogin")}
                 </button>
               </p>
-            </motion.div>
-          </form>
-        </Card>
-      </motion.div>
+            </form>
+          </Card>
+        </div>
 
-      <p className="mt-6 max-w-md text-center text-[12px] leading-relaxed text-mv-ink-faint">
-        {t.rich("termsAgreement", {
-          terms: (chunks) => (
-            <Link href="/legal/terms" className="underline underline-offset-2 hover:text-mv-ink">
-              {chunks}
-            </Link>
-          ),
-          privacy: (chunks) => (
-            <Link href="/legal/privacy" className="underline underline-offset-2 hover:text-mv-ink">
-              {chunks}
-            </Link>
-          ),
-        })}
-      </p>
+        {/* Right Column: App Interactive Live Preview (Minerva Theme) */}
+        <div className="hidden flex-1 lg:flex flex-col justify-center">
+          <div className="relative overflow-hidden rounded-2xl border border-mv-border bg-mv-surface p-8 shadow-mv-md">
+            {/* Background Decorative Blur Tints */}
+            <div className="pointer-events-none absolute -right-12 -top-12 h-64 w-64 rounded-full bg-mv-green-tint/60 blur-3xl" />
+            <div className="pointer-events-none absolute -left-12 -bottom-12 h-64 w-64 rounded-full bg-mv-lime-tint/60 blur-3xl" />
+
+            <div className="relative space-y-6">
+              {/* Header Badge & Title */}
+              <div className="flex items-center justify-between border-b border-mv-border-soft pb-4">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2.5 w-2.5 rounded-full bg-mv-green animate-pulse" />
+                  <span className="text-[12px] font-bold uppercase tracking-wider text-mv-green-dark">
+                    Plateforme Minerva Live
+                  </span>
+                </div>
+                <span className="rounded-full bg-mv-green-tint px-3 py-1 text-[11px] font-semibold text-mv-green-dark">
+                  Établissement connecté
+                </span>
+              </div>
+
+              {/* Grid Widgets Preview */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-4">
+                  <div className="flex items-center justify-between text-mv-ink-soft">
+                    <span className="text-[12px] font-semibold">Revenu du jour</span>
+                    <TrendingUp size={16} className="text-mv-green-dark" />
+                  </div>
+                  <p className="mt-2 text-[22px] font-bold text-mv-ink">3 840,50 $</p>
+                  <span className="mt-1 inline-block text-[11px] font-semibold text-mv-green-dark">
+                    +14.2% vs semaine passée
+                  </span>
+                </div>
+
+                <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-4">
+                  <div className="flex items-center justify-between text-mv-ink-soft">
+                    <span className="text-[12px] font-semibold">Équipe en quart</span>
+                    <Users size={16} className="text-mv-green-dark" />
+                  </div>
+                  <p className="mt-2 text-[22px] font-bold text-mv-ink">6 présents</p>
+                  <span className="mt-1 inline-block text-[11px] font-semibold text-mv-ink-soft">
+                    Service du soir (17h - 23h)
+                  </span>
+                </div>
+              </div>
+
+              {/* AI Assistant Live Prompt Card */}
+              <div className="rounded-xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
+                <div className="flex items-center gap-2 text-[12.5px] font-semibold text-mv-green-dark">
+                  <Sparkles size={16} />
+                  <span>Assistant IA Minerva</span>
+                </div>
+                <div className="mt-3 rounded-lg bg-mv-green-tint/50 p-3 text-[13px] leading-relaxed text-mv-ink">
+                  "L'ingénierie de menu indique que le <strong>Tartare de Saumon</strong> est votre plat avec la plus forte marge (+68%)."
+                </div>
+              </div>
+
+              {/* Feature Points */}
+              <div className="grid grid-cols-2 gap-3 pt-2 text-[12px] text-mv-ink-soft">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-mv-green-dark" />
+                  <span>Point de vente & Square</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-mv-green-dark" />
+                  <span>Paiements Stripe Connect</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-mv-green-dark" />
+                  <span>Horaires & Paie d'équipe</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-mv-green-dark" />
+                  <span>Fidélisation & QR Codes</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="py-6 text-center text-[12px] text-mv-ink-faint">
+        © 2026 Flow par Minerva. Gestion opérationnelle pour restaurants et cafés au Québec.
+      </footer>
     </div>
   );
 }

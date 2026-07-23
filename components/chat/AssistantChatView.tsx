@@ -18,7 +18,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type FileUIPart } from "ai";
 import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
-import { Bot, PanelLeft, Sparkles } from "lucide-react";
+import { Bot, PanelLeft, Sparkles, TrendingUp, Utensils, Users, PackageCheck, Zap } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/lib/app-context";
 
@@ -34,11 +34,27 @@ async function notifyAssistantDone() {
   });
 }
 
-const SUGGESTIONS = [
-  "Pourquoi le revenu a baissé mercredi ?",
-  "Quel programme a la meilleure marge ?",
-  "Quelles alertes traiter en priorité ?",
-  "Résume ma semaine en 3 points.",
+const FEATURED_SUGGESTIONS = [
+  {
+    icon: TrendingUp,
+    label: "Analyse des revenus",
+    prompt: "Génère un rapport d'analyse des revenus et des tendances de cette semaine avec les moments forts.",
+  },
+  {
+    icon: Utensils,
+    label: "Ingénierie de menu & marges",
+    prompt: "Quels sont mes plats étoiles et mes poids morts ce mois-ci d'après l'ingénierie de menu ?",
+  },
+  {
+    icon: Users,
+    label: "Optimisation de l'équipe",
+    prompt: "Résume les heures travaillées et les coûts de paie prévus pour l'équipe cette semaine.",
+  },
+  {
+    icon: PackageCheck,
+    label: "Seuils d'inventaire & stocks",
+    prompt: "Quels sont les ingrédients en sous-stock ou proche de la rupture d'inventaire ?",
+  },
 ];
 
 export function AssistantChatView({
@@ -72,9 +88,6 @@ export function AssistantChatView({
   const isLoading = status === "submitted" || status === "streaming";
   const hasAnyMessages = initialMessages.length > 0 || messages.length > 0;
 
-  // Sound + native notification when a response finishes while the tab/app
-  // isn't in view — mirrors what any chat app does instead of dinging while
-  // you're already watching it stream.
   const prevStatusRef = useRef(status);
   useEffect(() => {
     const wasLoading = prevStatusRef.current === "submitted" || prevStatusRef.current === "streaming";
@@ -84,13 +97,11 @@ export function AssistantChatView({
     prevStatusRef.current = status;
   }, [status]);
 
-  // Sync initialArtifact when conversation changes
   useEffect(() => {
     setCurrentArtifact(initialArtifact);
     setActiveMobileView("chat");
   }, [initialArtifact, conversationId]);
 
-  // Monitor messages to detect any real-time "createArtifact" tool calls
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage?.role === "assistant" && lastMessage.parts) {
@@ -108,7 +119,6 @@ export function AssistantChatView({
               data: input.data,
               createdAt: new Date().toISOString(),
             });
-            // Auto-focus the new canvas view on mobile
             setActiveMobileView("canvas");
           }
         }
@@ -161,14 +171,13 @@ export function AssistantChatView({
             <PanelLeft size={16} />
           </button>
         )}
-        {/* Left Column: Chat Area */}
+
         <div
           className={cn(
             "flex flex-1 flex-col p-6 min-w-0 h-full overflow-hidden transition-all duration-300",
             currentArtifact && activeMobileView === "canvas" ? "hidden md:flex" : "flex"
           )}
         >
-          {/* Mobile view selector */}
           {currentArtifact && (
             <div className="flex border border-mv-border/80 md:hidden bg-mv-cream-soft rounded-full mb-4 p-0.5 shadow-mv-sm">
               <button
@@ -193,28 +202,44 @@ export function AssistantChatView({
           )}
 
           {!hasAnyMessages ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-4 py-10 text-center">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark shadow-mv-sm">
-                <Sparkles size={20} />
+            <div className="flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center max-w-3xl mx-auto w-full">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-mv-green-tint text-mv-green-dark shadow-mv-sm border border-mv-green/20">
+                <Sparkles size={24} />
               </div>
+
               <div>
-                <p className="font-display text-[18px] font-medium text-mv-ink">
-                  Bonjour {firstName}, voici vos statistiques pour aujourd&apos;hui :
-                </p>
-                <p className="mt-1.5 text-[13px] text-mv-ink-soft">
-                  Que voulez-vous savoir ? Les réponses s&apos;appuient sur vos données réelles.
+                <h1 className="font-display text-[22px] font-bold text-mv-ink">
+                  Bonjour {firstName}, prêt·e à analyser votre journée ?
+                </h1>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft max-w-lg mx-auto">
+                  Posez n'importe quelle question sur vos performances, votre inventaire, votre menu ou vos collaborateurs. L'IA accède en direct à vos données enregistrées sur Flow.
                 </p>
               </div>
-              <div className="flex max-w-md flex-wrap justify-center gap-2">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => handleSubmit(s, [])}
-                    className="rounded-full border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-cream-soft"
-                  >
-                    {s}
-                  </button>
-                ))}
+
+              {/* Sana AI Featured Prompt Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full text-left pt-2">
+                {FEATURED_SUGGESTIONS.map((item) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <button
+                      key={item.label}
+                      onClick={() => handleSubmit(item.prompt, [])}
+                      className="group flex flex-col justify-between rounded-2xl border border-mv-border bg-mv-surface p-4 transition-all hover:border-mv-green-dark hover:shadow-mv-sm"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-mv-cream-soft text-mv-green-dark group-hover:bg-mv-green-tint transition-colors">
+                          <IconComponent size={16} />
+                        </div>
+                        <span className="text-[13px] font-bold text-mv-ink group-hover:text-mv-green-dark transition-colors">
+                          {item.label}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-[12px] leading-relaxed text-mv-ink-soft group-hover:text-mv-ink transition-colors">
+                        "{item.prompt}"
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -241,7 +266,7 @@ export function AssistantChatView({
                     {isLoading && (
                       <MessageScrollerItem scrollAnchor>
                         <div className="flex items-center gap-2 text-[12.5px] text-mv-ink-faint">
-                          <Bot size={14} className="animate-pulse" /> L&apos;assistant réfléchit…
+                          <Bot size={14} className="animate-pulse" /> L&apos;assistant analyse vos données…
                         </div>
                       </MessageScrollerItem>
                     )}
@@ -265,7 +290,6 @@ export function AssistantChatView({
           )}
         </div>
 
-        {/* Right Column: Canvas Area (collapsible on mobile, takes full height) */}
         <div
           className={cn(
             "h-full border-l border-mv-border-soft overflow-y-auto bg-mv-cream-soft transition-all duration-300",

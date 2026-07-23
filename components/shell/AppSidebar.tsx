@@ -42,6 +42,8 @@ import {
   PackageSearch,
   ClipboardList,
   UserCircle,
+  FolderOpen,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -67,6 +69,8 @@ const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 const mainNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
+  { key: "library", href: "/library", icon: FolderOpen, roles: allRoles },
+  { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
   { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
   { key: "days", href: "/days", icon: BarChart3, roles: allRoles },
   { key: "reports", href: "/reports", icon: FileText, roles: allRoles },
@@ -108,6 +112,8 @@ const subSettingsGroupItems: NavItem[] = [
 const navTranslationKeys: Record<string, string> = {
   overview: "overview",
   assistant: "assistant",
+  library: "library",
+  integrations: "integrations",
   finance: "finance",
   days: "days",
   reports: "reports",

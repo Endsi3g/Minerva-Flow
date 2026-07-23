@@ -1,0 +1,46 @@
+{
+  "projectId": "75ea46ab-cd20-4ad8-89a5-884f6d62170b",
+  "shape": "package",
+  "pkg": "minerva-flow",
+  "globalName": "MinervaUI",
+  "srcDir": "components/ui",
+  "tsconfig": ".design-sync/tsconfig.dssync.json",
+  "cssEntry": ".design-sync/.cache/compiled-tailwind.css",
+  "tokensGlob": "app/globals.css",
+  "provider": {
+    "component": "ThemeProvider"
+  },
+  "extraEntries": [
+    "./components/theme/ThemeProvider.tsx"
+  ],
+  "componentSrcMap": {
+    "MarkerContent": null
+  },
+  "extraFonts": [".design-sync/fonts/fonts.css"],
+  "dtsPropsFor": {
+    "Button": "variant?: \"default\" | \"primary\" | \"outline\" | \"secondary\" | \"ghost\" | \"destructive\" | \"danger\" | \"lime\" | \"link\"; size?: \"default\" | \"md\" | \"xs\" | \"sm\" | \"lg\" | \"icon\" | \"icon-xs\" | \"icon-sm\" | \"icon-lg\"; href?: string; disabled?: boolean; className?: string; children?: React.ReactNode; onClick?: () => void;",
+    "Card": "size?: \"default\" | \"sm\"; className?: string; children?: React.ReactNode;",
+    "CardHeader": "className?: string; children?: React.ReactNode;",
+    "CardTitle": "className?: string; children?: React.ReactNode;",
+    "CardDescription": "className?: string; children?: React.ReactNode;",
+    "CardAction": "className?: string; children?: React.ReactNode;",
+    "CardContent": "className?: string; children?: React.ReactNode;",
+    "CardFooter": "className?: string; children?: React.ReactNode;",
+    "Table": "className?: string; children?: React.ReactNode;",
+    "TableHeader": "className?: string; children?: React.ReactNode;",
+    "TableBody": "className?: string; children?: React.ReactNode;",
+    "TableFooter": "className?: string; children?: React.ReactNode;",
+    "TableRow": "className?: string; children?: React.ReactNode;",
+    "TableHead": "className?: string; children?: React.ReactNode;",
+    "TableCell": "className?: string; children?: React.ReactNode;",
+    "TableCaption": "className?: string; children?: React.ReactNode;",
+    "Input": "type?: string; disabled?: boolean; placeholder?: string; className?: string; value?: string; defaultValue?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;",
+    "Textarea": "disabled?: boolean; placeholder?: string; className?: string; value?: string; defaultValue?: string; rows?: number; onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;",
+    "Checkbox": "checked?: boolean; defaultChecked?: boolean; indeterminate?: boolean; disabled?: boolean; className?: string; onCheckedChange?: (checked: boolean) => void;",
+    "Switch": "checked?: boolean; defaultChecked?: boolean; disabled?: boolean; size?: \"sm\" | \"default\"; className?: string; onCheckedChange?: (checked: boolean) => void;",
+    "Toggle": "pressed?: boolean; defaultPressed?: boolean; disabled?: boolean; variant?: \"default\" | \"outline\"; size?: \"default\" | \"sm\" | \"lg\"; className?: string; children?: React.ReactNode; onPressedChange?: (pressed: boolean) => void;",
+    "Badge": "tone?: \"green\" | \"lime\" | \"red\" | \"amber\" | \"neutral\" | \"ink\"; dot?: boolean; className?: string; children?: React.ReactNode;",
+    "Label": "className?: string; children?: React.ReactNode; htmlFor?: string;",
+    "Separator": "orientation?: \"horizontal\" | \"vertical\"; className?: string;"
+  }
+}

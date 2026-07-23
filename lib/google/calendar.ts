@@ -4,6 +4,15 @@ import type { ServiceDay } from "@/lib/types";
 const CALENDAR_BASE_URL = "https://www.googleapis.com/calendar/v3";
 const CALENDAR_NAME = "Flow par Minerva";
 
+export type GoogleCalendarItem = {
+  id: string;
+  summary: string;
+  description?: string;
+  start: string;
+  end: string;
+  isAllDay: boolean;
+};
+
 /**
  * Returns the restaurant's dedicated Google Calendar id, creating it on
  * first use and persisting the id on google_connections.
@@ -32,21 +41,13 @@ export async function getOrCreateMinervaCalendar(restaurantId: string): Promise<
   return data.id;
 }
 
-/**
- * Google Calendar event ids must match [a-v0-9]{5,1024} — a service day's
- * UUID (hex + dashes) already satisfies that once dashes are stripped, so
- * reusing it as the event id makes create-or-update naturally idempotent
- * without a separate mapping table.
- */
 function eventIdFor(serviceDayId: string): string {
   return serviceDayId.replace(/-/g, "").toLowerCase();
 }
 
 /**
  * Creates or updates the Google Calendar event for a service day that has
- * events populated (soirées, promos). No-op (returns false) if Calendar
- * isn't connected — callers must treat this as best-effort, never blocking
- * the underlying service_days write.
+ * events populated (soirées, promos).
  */
 export async function syncServiceDayEvent(restaurantId: string, serviceDay: ServiceDay): Promise<boolean> {
   if (serviceDay.events.length === 0) return false;
@@ -91,4 +92,51 @@ export async function syncServiceDayEvent(restaurantId: string, serviceDay: Serv
     }
   );
   return createRes.ok;
+}
+
+/**
+ * Bi-directional sync helper: reads events & unavailabilities from the Google Calendar
+ * to detect scheduling conflicts for shifts, holidays & team availability.
+ */
+export async function fetchGoogleCalendarEvents(
+  restaurantId: string,
+  timeMin?: string,
+  timeMax?: string
+): Promise<GoogleCalendarItem[]> {
+  const [tokens, calendarId] = await Promise.all([
+    getGoogleTokens(restaurantId),
+    getOrCreateMinervaCalendar(restaurantId),
+  ]);
+  if (!tokens || !calendarId) return [];
+
+  const params = new URLSearchParams({
+    singleEvents: "true",
+    orderBy: "startTime",
+    maxResults: "100",
+  });
+  if (timeMin) params.set("timeMin", timeMin);
+  if (timeMax) params.set("timeMax", timeMax);
+
+  const res = await fetch(
+    `${CALENDAR_BASE_URL}/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+      },
+    }
+  );
+
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  const items = data.items || [];
+
+  return items.map((item: any) => ({
+    id: item.id,
+    summary: item.summary || "Événement Google Calendar",
+    description: item.description,
+    start: item.start?.dateTime || item.start?.date || "",
+    end: item.end?.dateTime || item.end?.date || "",
+    isAllDay: Boolean(item.start?.date),
+  }));
 }
