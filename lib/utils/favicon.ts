@@ -1,6 +1,6 @@
 /**
  * Utility functions for cleaning restaurant website URLs
- * and fetching high-res brand favicons.
+ * and fetching high-res brand favicons with Minerva Flow logo fallback.
  */
 
 export function cleanWebsiteUrl(rawUrl: string): string {
@@ -23,12 +23,14 @@ export function extractDomain(rawUrl: string): string {
 }
 
 /**
- * Returns a high-res Google Favicon API URL for any restaurant domain,
- * with DuckDuckGo fallback format.
+ * Returns a high-res Google Favicon API URL for a valid restaurant domain,
+ * or defaults to the official Minerva Flow brand logo (/icon-512.png).
  */
-export function getRestaurantFaviconUrl(websiteUrl?: string | null, size: number = 128): string | null {
-  if (!websiteUrl) return null;
+export function getRestaurantFaviconUrl(websiteUrl?: string | null, size: number = 128): string {
+  if (!websiteUrl || !websiteUrl.trim()) return "/icon-512.png";
   const domain = extractDomain(websiteUrl);
-  if (!domain || domain.length < 3) return null;
+  if (!domain || domain.length < 3 || domain.includes("localhost") || domain.includes("127.0.0.1")) {
+    return "/icon-512.png";
+  }
   return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=${size}`;
 }

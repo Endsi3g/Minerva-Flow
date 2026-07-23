@@ -90,7 +90,16 @@ export function AssistantChatView({
   });
 
   const isLoading = status === "submitted" || status === "streaming";
-  const hasAnyMessages = initialMessages.length > 0 || messages.length > 0;
+
+  const validInitialMessages = initialMessages.filter((m) => m.content && m.content.trim().length > 0);
+  const validLiveMessages = messages.filter((m) => {
+    const text = m.parts
+      ?.filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
+      .map((p) => p.text)
+      .join("");
+    return Boolean(text && text.trim().length > 0);
+  });
+  const hasAnyMessages = validInitialMessages.length > 0 || validLiveMessages.length > 0;
 
   const prevStatusRef = useRef(status);
   useEffect(() => {

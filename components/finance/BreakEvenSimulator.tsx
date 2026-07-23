@@ -2,11 +2,12 @@
 
 import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
+import { StatCard } from "@/components/ui/StatCard";
+import { Slider } from "@/components/ui/slider";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import {
   Calculator,
-  TrendingUp,
   Target,
   Users,
   Calendar,
@@ -27,9 +28,6 @@ export function BreakEvenSimulator() {
   const breakEvenMonthly = grossMarginRatio > 0 ? fixedCosts / grossMarginRatio : 0;
   const breakEvenDaily = breakEvenMonthly / 30;
   const dailyCoversNeeded = avgBasket > 0 ? Math.ceil(breakEvenDaily / avgBasket) : 0;
-
-  const actualDailyRevenue = monthlyRevenue / 30;
-  const actualDailyCovers = avgBasket > 0 ? Math.round(actualDailyRevenue / avgBasket) : 0;
 
   const estimatedGrossProfit = monthlyRevenue * grossMarginRatio;
   const netProfit = estimatedGrossProfit - fixedCosts;
@@ -61,7 +59,7 @@ export function BreakEvenSimulator() {
           </div>
           <Badge
             tone={isProfitable ? "green" : "red"}
-            className="font-bold py-1 px-3"
+            className="font-bold py-1 px-3 shrink-0"
           >
             {isProfitable ? (
               <>
@@ -69,65 +67,42 @@ export function BreakEvenSimulator() {
               </>
             ) : (
               <>
-                <AlertTriangle size={13} className="mr-1 inline" /> Déficit Estimer ({formatCurrency(netProfit)})
+                <AlertTriangle size={13} className="mr-1 inline" /> Déficit Estimé ({formatCurrency(netProfit)})
               </>
             )}
           </Badge>
         </div>
 
-        {/* Top Key Metrics Cards */}
+        {/* Top Key Metrics Cards via Shadcn StatCard */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
-          <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-4">
-            <div className="flex items-center justify-between text-mv-ink-faint">
-              <span className="text-[11.5px] font-bold uppercase">Point Mort Mensuel</span>
-              <Target size={16} className="text-mv-green-dark" />
-            </div>
-            <p className="mt-2 font-display text-[22px] font-bold text-mv-ink">
-              {formatCurrency(breakEvenMonthly)}
-            </p>
-            <span className="text-[11.5px] text-mv-ink-soft">
-              Seuil minimal de revenus
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-4">
-            <div className="flex items-center justify-between text-mv-ink-faint">
-              <span className="text-[11.5px] font-bold uppercase">Seuil Quotidien</span>
-              <DollarSign size={16} className="text-mv-green-dark" />
-            </div>
-            <p className="mt-2 font-display text-[22px] font-bold text-mv-ink">
-              {formatCurrency(breakEvenDaily)} / jour
-            </p>
-            <span className="text-[11.5px] text-mv-ink-soft">
-              Obj. quotidien pour équilibre
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-4">
-            <div className="flex items-center justify-between text-mv-ink-faint">
-              <span className="text-[11.5px] font-bold uppercase">Clients / Jour Requis</span>
-              <Users size={16} className="text-mv-green-dark" />
-            </div>
-            <p className="mt-2 font-display text-[22px] font-bold text-mv-ink">
-              {dailyCoversNeeded} clients
-            </p>
-            <span className="text-[11.5px] text-mv-ink-soft">
-              à {formatCurrency(avgBasket)} / client
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-4">
-            <div className="flex items-center justify-between text-mv-ink-faint">
-              <span className="text-[11.5px] font-bold uppercase">Jour de Rentabilité</span>
-              <Calendar size={16} className="text-mv-amber" />
-            </div>
-            <p className="mt-2 font-display text-[22px] font-bold text-mv-ink">
-              Jour {dayBreakEvenReached} du mois
-            </p>
-            <span className="text-[11.5px] text-mv-ink-soft">
-              {dayBreakEvenReached <= 30 ? "Profit après cette date" : "Hors objectif"}
-            </span>
-          </div>
+          <StatCard
+            label="Point Mort Mensuel"
+            value={formatCurrency(breakEvenMonthly)}
+            icon={Target}
+            sublabel="Seuil minimal de revenus"
+            accent="green"
+          />
+          <StatCard
+            label="Seuil Quotidien"
+            value={`${formatCurrency(breakEvenDaily)} / jour`}
+            icon={DollarSign}
+            sublabel="Obj. quotidien pour équilibre"
+            accent="green"
+          />
+          <StatCard
+            label="Clients / Jour Requis"
+            value={`${dailyCoversNeeded} clients`}
+            icon={Users}
+            sublabel={`à ${formatCurrency(avgBasket)} / client`}
+            accent="lime"
+          />
+          <StatCard
+            label="Jour de Rentabilité"
+            value={`Jour ${dayBreakEvenReached} du mois`}
+            icon={Calendar}
+            sublabel={dayBreakEvenReached <= 30 ? "Profit après cette date" : "Hors objectif"}
+            accent="ink"
+          />
         </div>
       </Card>
 
@@ -145,14 +120,12 @@ export function BreakEvenSimulator() {
               <span className="text-mv-ink">Coûts Fixes Mensuels (Loyer, Salaires, Assurance)</span>
               <span className="font-bold text-mv-green-dark">{formatCurrency(fixedCosts)}</span>
             </div>
-            <input
-              type="range"
-              min="5000"
-              max="50000"
-              step="500"
+            <Slider
+              min={5000}
+              max={50000}
+              step={500}
               value={fixedCosts}
-              onChange={(e) => setFixedCosts(Number(e.target.value))}
-              className="w-full h-2 rounded-lg bg-mv-cream-soft appearance-none cursor-pointer accent-mv-green"
+              onValueChange={setFixedCosts}
             />
             <div className="flex justify-between text-[10.5px] text-mv-ink-faint">
               <span>5 000 $</span>
@@ -167,14 +140,12 @@ export function BreakEvenSimulator() {
               <span className="text-mv-ink">Taux de Marge Brute (100% - Food Cost %)</span>
               <span className="font-bold text-mv-green-dark">{grossMarginPct}%</span>
             </div>
-            <input
-              type="range"
-              min="40"
-              max="85"
-              step="1"
+            <Slider
+              min={40}
+              max={85}
+              step={1}
               value={grossMarginPct}
-              onChange={(e) => setGrossMarginPct(Number(e.target.value))}
-              className="w-full h-2 rounded-lg bg-mv-cream-soft appearance-none cursor-pointer accent-mv-green"
+              onValueChange={setGrossMarginPct}
             />
             <div className="flex justify-between text-[10.5px] text-mv-ink-faint">
               <span>40% (Coût élevé)</span>
@@ -189,14 +160,12 @@ export function BreakEvenSimulator() {
               <span className="text-mv-ink">Panier Moyen par Client / Transaction</span>
               <span className="font-bold text-mv-green-dark">{formatCurrency(avgBasket)}</span>
             </div>
-            <input
-              type="range"
-              min="10"
-              max="120"
-              step="0.5"
+            <Slider
+              min={10}
+              max={120}
+              step={0.5}
               value={avgBasket}
-              onChange={(e) => setAvgBasket(Number(e.target.value))}
-              className="w-full h-2 rounded-lg bg-mv-cream-soft appearance-none cursor-pointer accent-mv-green"
+              onValueChange={setAvgBasket}
             />
             <div className="flex justify-between text-[10.5px] text-mv-ink-faint">
               <span>10,00 $ (Café)</span>
@@ -211,14 +180,12 @@ export function BreakEvenSimulator() {
               <span className="text-mv-ink">Chiffre d&apos;Affaires Mensuel Estimé</span>
               <span className="font-bold text-mv-green-dark">{formatCurrency(monthlyRevenue)}</span>
             </div>
-            <input
-              type="range"
-              min="10000"
-              max="100000"
-              step="1000"
+            <Slider
+              min={10000}
+              max={100000}
+              step={1000}
               value={monthlyRevenue}
-              onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
-              className="w-full h-2 rounded-lg bg-mv-cream-soft appearance-none cursor-pointer accent-mv-green"
+              onValueChange={setMonthlyRevenue}
             />
             <div className="flex justify-between text-[10.5px] text-mv-ink-faint">
               <span>10 000 $</span>
@@ -264,10 +231,10 @@ export function BreakEvenSimulator() {
             </div>
           </Card>
 
-          {/* AI Strategic Insights */}
-          <div className="rounded-2xl border border-mv-green/30 bg-mv-green-tint/50 p-5 space-y-2 shadow-mv-sm">
-            <div className="flex items-center gap-2 text-[13px] font-bold text-mv-green-dark">
-              <Sparkles size={16} />
+          {/* AI Strategic Insights in Clean Minimalist Surface Card */}
+          <Card className="p-5 border border-mv-border bg-mv-surface shadow-mv-sm space-y-2">
+            <div className="flex items-center gap-2 text-[13px] font-bold text-mv-ink">
+              <Sparkles size={16} className="text-mv-green-dark" />
               Recommandation Stratégique Minerva Flow
             </div>
             <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
@@ -281,7 +248,7 @@ export function BreakEvenSimulator() {
                 </>
               )}
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     </div>
