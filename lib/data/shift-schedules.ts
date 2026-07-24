@@ -33,13 +33,21 @@ export async function getShiftSchedulesForWeek(
   weekStart: string,
   weekEnd: string
 ): Promise<ShiftSchedule[]> {
+  return getShiftSchedulesForRange(restaurantId, weekStart, weekEnd);
+}
+
+export async function getShiftSchedulesForRange(
+  restaurantId: string,
+  startDate: string,
+  endDate: string
+): Promise<ShiftSchedule[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("shift_schedules")
     .select("*")
     .eq("restaurant_id", restaurantId)
-    .gte("shift_date", weekStart)
-    .lte("shift_date", weekEnd)
+    .gte("shift_date", startDate)
+    .lte("shift_date", endDate)
     .order("shift_date")
     .order("start_time");
 

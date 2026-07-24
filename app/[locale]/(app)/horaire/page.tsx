@@ -1,6 +1,6 @@
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getEmployees } from "@/lib/data/employees";
-import { getShiftSchedulesForWeek } from "@/lib/data/shift-schedules";
+import { getShiftSchedulesForRange } from "@/lib/data/shift-schedules";
 import { HoraireView } from "./HoraireView";
 
 function mondayOf(date: Date): Date {
@@ -18,14 +18,21 @@ function toIsoDate(d: Date): string {
 
 export default async function HorairePage() {
   const restaurantId = await getCurrentRestaurantId();
-  const weekStart = mondayOf(new Date());
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6);
+  const now = new Date();
+  
+  // Calculate month boundaries for full calendar grid
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const gridStart = mondayOf(monthStart);
+  const gridEnd = new Date(monthEnd);
+  gridEnd.setDate(gridEnd.getDate() + (7 - (gridEnd.getDay() || 7)));
+
+  const weekStart = mondayOf(now);
 
   const [employees, shifts] = restaurantId
     ? await Promise.all([
         getEmployees(restaurantId),
-        getShiftSchedulesForWeek(restaurantId, toIsoDate(weekStart), toIsoDate(weekEnd)),
+        getShiftSchedulesForRange(restaurantId, toIsoDate(gridStart), toIsoDate(gridEnd)),
       ])
     : [[], []];
 

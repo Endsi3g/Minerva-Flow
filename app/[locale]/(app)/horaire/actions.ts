@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   getShiftSchedulesForWeek,
+  getShiftSchedulesForRange,
   getUpcomingShiftsForEmployee,
   createShiftSchedule,
   updateShiftScheduleStatus,
@@ -27,10 +28,18 @@ export async function getWeekScheduleAction(
   weekStart: string,
   weekEnd: string
 ): Promise<{ employees: Employee[]; shifts: ShiftSchedule[] }> {
+  return getRangeScheduleAction(restaurantId, weekStart, weekEnd);
+}
+
+export async function getRangeScheduleAction(
+  restaurantId: string,
+  startDate: string,
+  endDate: string
+): Promise<{ employees: Employee[]; shifts: ShiftSchedule[] }> {
   if (!restaurantId) return { employees: [], shifts: [] };
   const [employees, shifts] = await Promise.all([
     getEmployees(restaurantId),
-    getShiftSchedulesForWeek(restaurantId, weekStart, weekEnd),
+    getShiftSchedulesForRange(restaurantId, startDate, endDate),
   ]);
   return { employees: employees.filter((e) => e.active), shifts };
 }
