@@ -73,19 +73,19 @@ function mapServiceDay(row: ServiceDayRow, authorName: string): ServiceDay {
 
 /**
  * Looks up display names for a set of auth.users ids via `profiles`.
- * There's no FK from service_days.created_by straight to `profiles` (both
- * reference auth.users independently), so PostgREST can't embed the join —
- * fetch and merge instead.
+ * Uses the service-role admin client to bypass the `profiles_self_read`
+ * RLS policy — this is a safe read-only lookup of display names only;
+ * the caller already verified the user is a member of the restaurant.
  */
 async function namesByUserId(
-  supabase: Awaited<ReturnType<typeof createClient>>,
   userIds: (string | null)[]
 ): Promise<Map<string, string>> {
   const uniqueIds = Array.from(new Set(userIds.filter((id): id is string => Boolean(id))));
   const map = new Map<string, string>();
   if (uniqueIds.length === 0) return map;
 
-  const { data } = await supabase.from("profiles").select("id, full_name").in("id", uniqueIds);
+  const admin = createAdminClient();
+  const { data } = await admin.from("profiles").select("id, full_name").in("id", uniqueIds);
   for (const p of (data as { id: string; full_name: string | null }[]) ?? []) {
     map.set(p.id, p.full_name ?? "—");
   }
@@ -213,7 +213,7 @@ export async function getServiceDays(
   if (error || !data) return [];
 
   const rows = data as ServiceDayRow[];
-  const names = await namesByUserId(supabase, rows.map((r) => r.created_by));
+  const names = await namesByUserId(rows.map((r) => r.created_by));
   return rows.map((row) => mapServiceDay(row, names.get(row.created_by ?? "") ?? "—"));
 }
 
@@ -232,7 +232,7 @@ export async function getServiceDay(
   if (error || !data) return null;
 
   const row = data as ServiceDayRow;
-  const names = await namesByUserId(supabase, [row.created_by]);
+  const names = await namesByUserId([row.created_by]);
   return mapServiceDay(row, names.get(row.created_by ?? "") ?? "—");
 }
 
@@ -293,7 +293,7 @@ export async function createServiceDay(
   });
 
   const row = data as ServiceDayRow;
-  const names = await namesByUserId(supabase, [row.created_by]);
+  const names = await namesByUserId([row.created_by]);
   const serviceDay = mapServiceDay(row, names.get(row.created_by ?? "") ?? "—");
   syncCalendarInBackground(restaurantId, serviceDay);
   return serviceDay;
@@ -338,7 +338,7 @@ export async function updateServiceDay(
   });
 
   const row = data as ServiceDayRow;
-  const names = await namesByUserId(supabase, [row.created_by]);
+  const names = await namesByUserId([row.created_by]);
   const serviceDay = mapServiceDay(row, names.get(row.created_by ?? "") ?? "—");
   syncCalendarInBackground(restaurantId, serviceDay);
   return serviceDay;
