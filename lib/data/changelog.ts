@@ -31,60 +31,86 @@ function mapEntry(row: ChangelogEntryRow): ChangelogEntry {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-07-24-v2-9-3",
+    title: "Version v2.9.3 : Correctifs Dark Mode Calendrier, Support Mobile 375px & Personnalisation des Widgets",
+    description: `- **Calendrier & Dark Mode** : Correction du contraste de texte en mode sombre (\`/horaire\` & \`MonthCalendar.tsx\`) et bascule vers une vue à puces d'indicateur sur mobile (< 640px).
+- **Carte Interactive (\`/maps\`)** : Hauteur explicite de 420px sur mobile empêchant l'effondrement de la carte et repositionnement des contrôles.
+- **Personnalisation des Widgets (\`/overview\`)** : Panneau **« Personnaliser mes widgets »** (\`WidgetManagerModal.tsx\`) avec toggles On/Off sauvegardés.`,
+    category: "correctif",
+    publishedAt: "2026-07-24T13:53:00.000Z",
+  },
+  {
+    id: "ch-2026-07-24-v2-9-2",
+    title: "Version v2.9.2 : Sélecteur de Profils de Trafic (Calme, Normal, Rush, Événementiel) pour simulate-analytics.ts",
+    description: `- **Sélection Interactive** : Choix du profil de trafic au lancement en terminal (Options 1 à 5).
+- **Arguments CLI** : Support direct des flags \`npx tsx scripts/simulate-analytics.ts --profile=calme|normal|rush|evenement|history-only\`.
+- **Profils configurés** :
+  - 🟢 **Calme** : 8 vis./jour, pause 90-180s.
+  - 🟡 **Normal** : 25 vis./jour, pause 40-80s.
+  - 🔴 **Rush** : 80 vis./jour, pause 15-35s.
+  - ⚡ **Événementiel** : 200 vis./jour, pause 5-15s.`,
+    category: "amelioration",
+    publishedAt: "2026-07-24T13:31:00.000Z",
+  },
+  {
     id: "ch-2026-07-24-v2-9-0",
     title: "Version v2.9.0 : Commande Directe 0%, Hub POS Unifié & Studio Marketing Visuel",
-    description: "Publication majeure v2.9.0 résolvant les 3 plaies du restaurateur indépendant : 1) Module Commande Directe 0% commission avec calculateur d'économies vs Uber Eats & générateur de widget web / QR Code table (/commandes et /etablissement). 2) Hub POS Unifié avec déduction des stocks en temps réel et synchro masse salariale (/integrations). 3) Studio Marketing avec éditeur visuel Instagram (Story 9:16, Post 1:1, Carrousel 4:5) ultra-personnalisable et relances automatiques SMS/Email des clients inactifs (/campaigns).",
+    description: `- **Commande Directe 0%** : Calculateur d'économies vs commissions Uber Eats (20-30%) et générateur de widget \`<iframe>\` web & badges QR code table (\`/commandes\` & \`/etablissement\`).
+- **Hub POS & Stocks** : Synchronisation POS automatique (Square, Clover, Lightspeed) avec déduction des stocks en temps réel et alignement masse salariale/chiffre d'affaires (\`/integrations\`).
+- **Studio Marketing Visuel** : Éditeur 1-Click de visuels Instagram (Story 9:16, Post 1:1, Carrousel 4:5) ultra-personnalisable et règles de relance automatique SMS/Email des clients inactifs (\`/campaigns\`).`,
     category: "fonctionnalite",
     publishedAt: "2026-07-24T13:00:00.000Z",
   },
   {
     id: "ch-2026-07-24-v2-8-0",
     title: "Version v2.8.0 : Calendrier Mensuel d'Équipe Interactif pour les Horaires",
-    description: "Refonte de la section /horaire avec une nouvelle vue Calendrier (Mois) par défaut : grille 7 jours avec mise en avant d'aujourd'hui, aperçu direct des cartes de quarts, bouton d'ajout rapide au survol, modale de détail par journée et bascule vers le planning par semaine.",
+    description: `- **Vue Calendrier Mensuel** : Grille 7 jours avec mise en avant du jour actuel, indicateurs de quarts et modale de détail par jour (\`/horaire\`).
+- **Planification Rapide** : Bouton d'ajout rapide au survol des cellules et bascule fluide vers le planning hebdomadaire.`,
     category: "amelioration",
     publishedAt: "2026-07-24T01:45:00.000Z",
   },
   {
     id: "ch-2026-07-24-v2-7-0",
     title: "Version v2.7.0 : Chat d'Équipe Realtime, Soft-Delete & Droits d'Accès aux Canaux",
-    description: "Migration du chat d'équipe vers Supabase Realtime avec mise à jour en direct des messages, logo Flow AI officiel (/icon-512.png), avatars d'utilisateurs connectés, suppression propre (soft delete) et tiroir (drawer) de gestion restreinte des accès aux canaux.",
+    description: `- **Supabase Realtime Chat** : Mise à jour en direct des messages sans rechargement (\`/collaborateurs\`).
+- **Identité & Modération** : Logo Flow AI officiel, avatars d'utilisateurs connectés, suppression propre (soft-delete) et tiroir d'accès aux canaux.`,
     category: "fonctionnalite",
     publishedAt: "2026-07-24T01:15:00.000Z",
   },
   {
     id: "ch-2026-07-23-3",
-    title: "Version v2.5.0 : Recherche Cmd+K, Recharts Finance, Chat d'Équipe & Optimisations UX",
-    description: "Publication officielle de la version v2.5.0. Intégration de la recherche globale Cmd+K avec historique et suggestions, refonte du Simulateur Financier avec graphiques Recharts dynamiques et typographie épurée, Chat d'équipe en direct avec bot @FlowAI, module d'incidents avec dictaphone, élimination totale du Cumulative Layout Shift (CLS) et transitions de pages fluides.",
+    title: "Version v2.5.0 : Recherche Cmd+K, Recharts Finance & Assistant @FlowAI",
+    description: `- **Recherche Globale Cmd+K** : Recherche instantanée dans l'application avec historique et suggestions.
+- **Simulateur Financier Recharts** : Graphiques interactifs de marge et de seuil de rentabilité.
+- **Optimisations CLS & UX** : Suppression des sauts de mise en page et transitions fluides.`,
     category: "fonctionnalite",
-    publishedAt: new Date().toISOString(),
+    publishedAt: "2026-07-23T18:00:00.000Z",
   },
   {
     id: "ch-2026-07-23-2",
-    title: "Simulateur de Seuil de Rentabilité, Cloudflare AI Gateway & Refonte Minerva Flow",
-    description: "Ajout du Simulateur de Seuil de Rentabilité & Point Mort en direct avec calculateur interactif de coûts fixes, panier moyen et marge nette. Intégration de Cloudflare AI Gateway (modèle Llama 3.3 70B), refonte visuelle du Chat IA sur le modèle Gemini Advanced, publication en direct Site Web ↔ Dashboard et extraction automatique de Favicon de marque d'URL.",
+    title: "Simulateur de Seuil de Rentabilité & Cloudflare AI Gateway",
+    description: `- **Point Mort & Rentabilité** : Calculateur interactif de coûts fixes, panier moyen et marge nette.
+- **Cloudflare AI Gateway** : Optimisation et mise en cache des prompts LLM Llama 3.3 70B.
+- **Refonte Chat IA** : Interface inspirée de Gemini Advanced avec gestion des pièces jointes.`,
     category: "fonctionnalite",
     publishedAt: "2026-07-23T11:30:00.000Z",
   },
   {
     id: "ch-2026-07-23-1",
     title: "Correctif Auto-Refresh Jetons Google & Synchro 2 Sens Calendar",
-    description: "Correction du bug d'expiration des jetons Google OAuth via rafraîchissement automatique par refresh_token. Activation de la synchronisation bidirectionnelle Google Calendar et intégration des avis Google Business Profile.",
+    description: `- **Google OAuth Auto-Refresh** : Rafraîchissement automatique des jetons d'accès via \`refresh_token\`.
+- **Google Calendar Sync** : Synchronisation bidirectionnelle des événements et avis Google Business Profile.`,
     category: "correctif",
     publishedAt: "2026-07-23T09:30:00.000Z",
   },
   {
     id: "ch-2026-07-23-0",
     title: "Nouvelle Interface Authentification, Bibliothèque d'Assets & Hub Intégrations",
-    description: "Refonte de l'authentification 2 colonnes avec OTP à 6 chiffres, ajout de la page Bibliothèque d'Assets (/library) et du hub d'Intégrations (/integrations).",
+    description: `- **Authentification 2 Colonnes** : Connexion moderne avec OTP 6 chiffres.
+- **Bibliothèque d'Assets (\`/library\`)** : Gestionnaire de fichiers et ressources médias.
+- **Hub Intégrations (\`/integrations\`)** : Connexions Square, Stripe, Meta Ads & Google Workspace.`,
     category: "fonctionnalite",
     publishedAt: "2026-07-23T08:15:00.000Z",
-  },
-  {
-    id: "ch-2026-07-16-1",
-    title: "Gestion des Fournisseurs, Commandes & Ingrédients",
-    description: "Ajout du module Fournisseurs avec génération de bons de commande, suivi du statut d'expédition et répercussion automatique dans l'inventaire et les dépenses.",
-    category: "fonctionnalite",
-    publishedAt: "2026-07-16T14:00:00.000Z",
   },
 ];
 
