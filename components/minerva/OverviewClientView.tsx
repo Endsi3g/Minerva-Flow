@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
 import { MiniSparkline } from "@/components/charts/MiniSparkline";
-import { ContributionHeatmap } from "@/components/charts/ContributionHeatmap";
+import { MonthCalendar } from "@/components/charts/MonthCalendar";
 import { LiveAlertsPanel } from "@/components/minerva/LiveAlertsPanel";
 import { RecommendationsPanel } from "@/components/minerva/RecommendationsPanel";
 import { StartupChecklist } from "@/components/minerva/StartupChecklist";
 import { WidgetManagerModal, useWidgetVisibility } from "@/components/minerva/WidgetManagerModal";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
-import { formatCurrency } from "@/lib/utils";
-import { CalendarCheck2, Megaphone, ArrowRight, SlidersHorizontal, Eye } from "lucide-react";
+import { formatCurrency, formatDateFull } from "@/lib/utils";
+import { CalendarCheck2, Megaphone, ArrowRight, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import type { Alert, Recommendation, ServiceDay } from "@/lib/types";
 
@@ -49,7 +50,30 @@ export function OverviewClientView({
   recommendations: Recommendation[];
 }) {
   const [managerOpen, setManagerOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const { visibleWidgets, toggleWidget, resetWidgets, isVisible } = useWidgetVisibility();
+  const router = useRouter();
+
+  const now = useMemo(() => new Date(), []);
+  const monthLabel = useMemo(() => {
+    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    const full = formatDateFull(iso);
+    return full.charAt(0).toUpperCase() + full.slice(full.indexOf(" ") + 1);
+  }, [now]);
+
+  const eventsByDate = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    for (const d of serviceDays) if (d.events.length) map[d.date] = true;
+    return map;
+  }, [serviceDays]);
+
+  function handleSelectDate(date: string) {
+    if (date === selectedDate) {
+      setSelectedDate(undefined);
+    } else {
+      router.push(`/days?date=${date}`);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -149,16 +173,21 @@ export function OverviewClientView({
         </div>
       )}
 
-      {/* Heatmap Widget */}
+      {/* Month Calendar Widget */}
       {isVisible("widget-heatmap") && (
         <div className="mb-6 mv-animate-in">
           <Card className="p-4 sm:p-5">
             <CardHeader
-              eyebrow="Calendrier"
-              title="Distribution quotidienne des revenus"
-              description="Couleur plus soutenue = journée plus rentable"
+              eyebrow={monthLabel}
+              title="Calendrier des revenus"
+              description="Cliquez sur un jour pour accéder au détail de cette journée."
             />
-            <ContributionHeatmap data={heat} />
+            <MonthCalendar
+              data={heat}
+              selectedDate={selectedDate}
+              onSelectDate={handleSelectDate}
+              eventsByDate={eventsByDate}
+            />
           </Card>
         </div>
       )}
