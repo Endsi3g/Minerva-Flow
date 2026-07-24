@@ -59,7 +59,7 @@ export function ChangelogView({ initialEntries }: { initialEntries: ChangelogEnt
   }, [initialEntries]);
 
   return (
-    <div className="mx-auto max-w-4xl w-full space-y-6">
+    <div className="mx-auto max-w-2xl w-full space-y-6">
       <PageHeader
         eyebrow="Système & Mises à Jour"
         title="Journal des évolutions"
