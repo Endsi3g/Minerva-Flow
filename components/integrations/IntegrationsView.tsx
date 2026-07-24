@@ -105,6 +105,61 @@ export function IntegrationsView({
         />
       </div>
 
+      {/* POS Auto-Sync & Realtime Inventory Deduction Card (Flow 2) */}
+      <Card className="mb-6 p-5 border-mv-green/30 bg-gradient-to-br from-mv-surface via-mv-cream/20 to-white shadow-mv-sm">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-mv-border-soft">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="bg-mv-green text-white text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                Hub POS & Ops Unifié
+              </span>
+              <h2 className="font-display text-[18px] font-bold text-mv-ink">
+                Auto-Synchro Caisse POS (Square / Clover / Lightspeed) & Déduction d'Inventaire
+              </h2>
+            </div>
+            <p className="text-[13px] text-mv-ink-soft">
+              Zéro double saisie : chaque vente POS déduit instantanément vos matières premières et met à jour le chiffre d'affaires et le planning horaire.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="flex items-center gap-1.5 text-[12px] font-bold text-mv-green-dark bg-mv-green/10 border border-mv-green/20 px-3 py-1.5 rounded-xl">
+              <span className="h-2 w-2 rounded-full bg-mv-green animate-pulse" />
+              Synchro POS Active (0.4s de latence)
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+          <div className="rounded-xl border border-mv-border-soft bg-white p-3.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-semibold text-mv-ink-soft">Ventes POS du jour</span>
+              <span className="text-[11px] font-bold text-mv-green-dark bg-mv-green/10 px-1.5 py-0.5 rounded">Auto-synchro</span>
+            </div>
+            <p className="font-display text-[20px] font-bold text-mv-ink">142 tickets</p>
+            <p className="text-[11.5px] text-mv-ink-faint">Square POS · 3,420 $ bruts</p>
+          </div>
+
+          <div className="rounded-xl border border-mv-border-soft bg-white p-3.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-semibold text-mv-ink-soft">Déduction Stocks en direct</span>
+              <span className="text-[11px] font-bold text-mv-green-dark bg-mv-green/10 px-1.5 py-0.5 rounded">En direct</span>
+            </div>
+            <p className="font-display text-[20px] font-bold text-mv-ink">384 articles déduits</p>
+            <p className="text-[11.5px] text-mv-ink-faint">Dernier ticket : #1048 (-2 Burgers, -1 Frites)</p>
+          </div>
+
+          <div className="rounded-xl border border-mv-border-soft bg-white p-3.5 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-semibold text-mv-ink-soft">Horaire & Masse Salariale</span>
+              <span className="text-[11px] font-bold text-mv-green-dark bg-mv-green/10 px-1.5 py-0.5 rounded">Optimal</span>
+            </div>
+            <p className="font-display text-[20px] font-bold text-mv-ink">22.4 % de Ratio Paie</p>
+            <p className="text-[11.5px] text-mv-ink-faint">Aligné sur le budget cible</p>
+          </div>
+        </div>
+      </Card>
+
       {/* Category Pills Bar (Sana AI style) */}
       <div className="flex flex-wrap items-center gap-2">
         <button

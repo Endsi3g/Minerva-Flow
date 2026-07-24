@@ -11,7 +11,8 @@ import { updateCampaignStatusAction, getCampaignAssetsAction } from "@/app/[loca
 import { useApp } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Campaign, CampaignAsset, CampaignChannel, CampaignStatus, CampaignType } from "@/lib/types";
-import { Megaphone, Plus, Camera, Mail, Store, Users, FileText } from "lucide-react";
+import { MarketingStudioView } from "./MarketingStudioView";
+import { Sparkles, Megaphone, Plus, Camera, Mail, Store, Users, FileText } from "lucide-react";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -56,6 +57,7 @@ export function CampaignsView({
 }) {
   const { role } = useApp();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"studio" | "campaigns">("studio");
   const [statusFilter, setStatusFilter] = useState<"all" | CampaignStatus>("all");
   const [channelFilter, setChannelFilter] = useState<"all" | CampaignChannel>(
     initialChannel && ["Instagram", "Email", "En salle", "Facebook"].includes(initialChannel)
@@ -65,9 +67,6 @@ export function CampaignsView({
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId || null);
   const [isPending, startTransition] = useTransition();
 
-  // Keep the URL in sync with the open campaign so the detail panel is
-  // shareable/bookmarkable (/campaigns?id=...) instead of only reachable
-  // by clicking a row — the server page already reads this param.
   function handleSelect(id: string) {
     setSelectedId(id);
     router.push(`/campaigns?id=${id}`, { scroll: false });
@@ -113,239 +112,254 @@ export function CampaignsView({
   const selected: Campaign | undefined = campaigns.find((c) => c.id === selectedId);
 
   return (
-    <div>
+    <div className="space-y-5">
       <PageHeader
-        eyebrow="Campagnes & contenu"
-        title="Campagnes"
-        description="Posts, emails et promotions — et leur corrélation avec les revenus qui suivent."
+        eyebrow="Marketing & Fidélisation"
+        title="Studio Marketing & Campagnes"
+        description="Créez des visuels ultra-personnalisés pour vos réseaux sociaux et gérez vos campagnes de relance."
         action={
-          canCreate && (
-            <Button size="sm" href="/campaigns/new">
-              <Plus size={15} /> Nouvelle campagne
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-xl border border-mv-border bg-mv-surface p-1 shadow-mv-xs">
+              <button
+                onClick={() => setActiveTab("studio")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-semibold rounded-lg transition-all ${
+                  activeTab === "studio"
+                    ? "bg-mv-green text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                }`}
+              >
+                <Sparkles size={14} /> Studio Visual Kits & Relances
+              </button>
+              <button
+                onClick={() => setActiveTab("campaigns")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-semibold rounded-lg transition-all ${
+                  activeTab === "campaigns"
+                    ? "bg-mv-green text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                }`}
+              >
+                <Megaphone size={14} /> Toutes les Campagnes ({campaigns.length})
+              </button>
+            </div>
+
+            {canCreate && (
+              <Button size="sm" href="/campaigns/new">
+                <Plus size={15} /> Nouvelle campagne
+              </Button>
+            )}
+          </div>
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2.5">
-        <Select
-          className="w-auto"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as "all" | CampaignStatus)}
-        >
-          <option value="all">Tous les statuts</option>
-          {(Object.keys(statusLabel) as CampaignStatus[]).map((s) => (
-            <option key={s} value={s}>
-              {statusLabel[s]}
-            </option>
-          ))}
-        </Select>
-        <Select
-          className="w-auto"
-          value={channelFilter}
-          onChange={(e) => setChannelFilter(e.target.value as "all" | CampaignChannel)}
-        >
-          <option value="all">Tous les canaux</option>
-          {(Object.keys(channelIcon) as CampaignChannel[]).map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </Select>
-        <span className="text-[12.5px] text-mv-ink-faint">
-          {filtered.length} campagne{filtered.length > 1 ? "s" : ""}
-        </span>
-      </div>
+      {activeTab === "studio" && <MarketingStudioView />}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-        <div className={selected ? "xl:col-span-7" : "xl:col-span-12"}>
-          {filtered.length === 0 ? (
-            <EmptyState
-              icon={Megaphone}
-              title="Aucune campagne ne correspond"
-              description="Ajustez les filtres ou créez une nouvelle campagne."
-              action={
-                canCreate && (
-                  <Button size="sm" href="/campaigns/new">
-                    <Plus size={15} /> Nouvelle campagne
-                  </Button>
-                )
-              }
-            />
-          ) : (
-            <Table>
-              <THead>
-                <Th>Campagne</Th>
-                <Th>Canal</Th>
-                <Th>Dates</Th>
-                <Th>Statut</Th>
-                <Th className="text-right">Résultat</Th>
-              </THead>
-              <tbody>
-                {filtered.map((c) => {
-                  const Icon = channelIcon[c.channel];
-                  return (
-                    <Tr key={c.id} onClick={() => handleSelect(c.id)} active={c.id === selectedId}>
-                      <Td>
-                        <p className="font-semibold text-mv-ink">{c.name}</p>
-                        <p className="text-[11.5px] text-mv-ink-faint">{typeLabel[c.type]}</p>
-                      </Td>
-                      <Td>
-                        <span className="inline-flex items-center gap-1.5 text-mv-ink-soft">
-                          <Icon size={14} /> {c.channel}
-                        </span>
-                      </Td>
-                      <Td className="text-mv-ink-soft">
-                        {formatDate(c.startDate)} — {formatDate(c.endDate)}
-                      </Td>
-                      <Td>
-                        <Badge tone={statusTone[c.status]}>{statusLabel[c.status]}</Badge>
-                      </Td>
-                      <Td className="text-right">
-                        <p className="font-semibold text-mv-ink">
-                          {c.estimatedRevenue > 0 ? formatCurrency(c.estimatedRevenue) : "—"}
-                        </p>
-                        <Badge tone={impactTone[c.impact]} className="mt-1">
-                          Impact {c.impact}
-                        </Badge>
-                      </Td>
-                    </Tr>
-                  );
-                })}
-              </tbody>
-            </Table>
-          )}
-        </div>
+      {activeTab === "campaigns" && (
+        <div className="space-y-4">
+          <div className="mb-4 flex flex-wrap items-center gap-2.5">
+            <Select
+              className="w-auto"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "all" | CampaignStatus)}
+            >
+              <option value="all">Tous les statuts</option>
+              {(Object.keys(statusLabel) as CampaignStatus[]).map((s) => (
+                <option key={s} value={s}>
+                  {statusLabel[s]}
+                </option>
+              ))}
+            </Select>
+            <Select
+              className="w-auto"
+              value={channelFilter}
+              onChange={(e) => setChannelFilter(e.target.value as "all" | CampaignChannel)}
+            >
+              <option value="all">Tous les canaux</option>
+              {(Object.keys(channelIcon) as CampaignChannel[]).map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
+            <span className="text-[12.5px] text-mv-ink-faint">
+              {filtered.length} campagne{filtered.length > 1 ? "s" : ""}
+            </span>
+          </div>
 
-        {selected && (
-          <div className="xl:col-span-5">
-            <div className="space-y-4 xl:sticky xl:top-6">
-              <Card>
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <Badge tone="neutral">{typeLabel[selected.type]}</Badge>
-                  <Badge tone={statusTone[selected.status]}>{statusLabel[selected.status]}</Badge>
-                </div>
-                <h2 className="font-display text-[19px] font-medium text-mv-ink">{selected.name}</h2>
-                <p className="mt-1 text-[13px] leading-relaxed text-mv-ink-soft">
-                  {selected.description}
-                </p>
-
-                {canCreate && selected.status !== "terminee" && (
-                  <div className="mt-3">
-                    {selected.status === "planifiee" ? (
-                      <Button size="sm" variant="secondary" disabled={isPending} onClick={() => handleStatusChange("active")}>
-                        Démarrer la campagne
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+            <div className={selected ? "xl:col-span-7" : "xl:col-span-12"}>
+              {filtered.length === 0 ? (
+                <EmptyState
+                  icon={Megaphone}
+                  title="Aucune campagne ne correspond"
+                  description="Ajustez les filtres ou créez une nouvelle campagne."
+                  action={
+                    canCreate && (
+                      <Button size="sm" href="/campaigns/new">
+                        <Plus size={15} /> Nouvelle campagne
                       </Button>
-                    ) : (
-                      <Button size="sm" variant="secondary" disabled={isPending} onClick={() => handleStatusChange("terminee")}>
-                        Terminer la campagne
-                      </Button>
-                    )}
-                  </div>
-                )}
+                    )
+                  }
+                />
+              ) : (
+                <Table>
+                  <THead>
+                    <Th>Campagne</Th>
+                    <Th>Canal</Th>
+                    <Th>Dates</Th>
+                    <Th>Statut</Th>
+                    <Th className="text-right">Résultat</Th>
+                  </THead>
+                  <tbody>
+                    {filtered.map((c) => {
+                      const Icon = channelIcon[c.channel];
+                      return (
+                        <Tr key={c.id} onClick={() => handleSelect(c.id)} active={c.id === selectedId}>
+                          <Td>
+                            <p className="font-semibold text-mv-ink">{c.name}</p>
+                            <p className="text-[11.5px] text-mv-ink-faint">{typeLabel[c.type]}</p>
+                          </Td>
+                          <Td>
+                            <span className="inline-flex items-center gap-1.5 text-mv-ink-soft">
+                              <Icon size={14} /> {c.channel}
+                            </span>
+                          </Td>
+                          <Td className="text-mv-ink-soft">
+                            {formatDate(c.startDate)} — {formatDate(c.endDate)}
+                          </Td>
+                          <Td>
+                            <Badge tone={statusTone[c.status]}>{statusLabel[c.status]}</Badge>
+                          </Td>
+                          <Td className="text-right font-medium text-mv-ink">
+                            {c.estimatedRevenue ? (
+                              <span className="text-mv-green-dark">+{formatCurrency(c.estimatedRevenue)}</span>
+                            ) : (
+                              "—"
+                            )}
+                          </Td>
+                        </Tr>
+                      );
+                    })}
+                  </tbody>
+                </Table>
+              )}
+            </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-mv-cream-soft p-3">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Visites</p>
-                    <p className="font-display text-[16px] font-medium text-mv-ink">
-                      {selected.visites.toLocaleString("fr-FR")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">
-                      Revenu corrélé
-                    </p>
-                    <p className="font-display text-[16px] font-medium text-mv-green-dark">
-                      {formatCurrency(selected.estimatedRevenue)}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card>
-                <CardHeader title="Timeline" description="Étapes clés de la campagne" />
-                {selected.timeline.length === 0 ? (
-                  <p className="text-[12.5px] text-mv-ink-faint">
-                    Cette campagne n&apos;a pas encore démarré.
-                  </p>
-                ) : (
-                  <div className="space-y-0">
-                    {selected.timeline.map((t, i) => (
-                      <div key={i} className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-mv-green" />
-                          {i < selected.timeline.length - 1 && (
-                            <span className="w-px flex-1 bg-mv-border" />
-                          )}
-                        </div>
-                        <div className="pb-4">
-                          <p className="text-[11.5px] font-semibold text-mv-ink-faint">
-                            {formatDate(t.date)}
-                          </p>
-                          <p className="text-[13px] text-mv-ink">{t.label}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
-
-              {assets.length > 0 && (
+            {selected && (
+              <div className="space-y-4 xl:col-span-5">
                 <Card>
-                  <CardHeader title="Pièces jointes" description={`${assets.length} fichier(s)`} />
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                    {assets.map((a) =>
-                      a.kind === "image" && a.url ? (
-                        <a
-                          key={a.id}
-                          href={a.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="aspect-square overflow-hidden rounded-lg border border-mv-border bg-mv-cream-soft"
+                  <CardHeader
+                    eyebrow={selected.channel}
+                    title={selected.name}
+                    description={`${formatDate(selected.startDate)} — ${formatDate(selected.endDate)}`}
+                    action={<Badge tone={statusTone[selected.status]}>{statusLabel[selected.status]}</Badge>}
+                  />
+
+                  {canCreate && (
+                    <div className="mb-4 flex flex-wrap gap-2 border-b border-mv-border-soft pb-4">
+                      {selected.status !== "active" && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleStatusChange("active")}
+                          disabled={isPending}
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={a.url} alt={a.fileName} className="h-full w-full object-cover" />
-                        </a>
-                      ) : (
-                        <a
-                          key={a.id}
-                          href={a.url ?? undefined}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="col-span-2 flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-2.5 py-2 text-[12px] text-mv-ink-soft hover:bg-mv-surface sm:col-span-4"
+                          Marquer comme active
+                        </Button>
+                      )}
+                      {selected.status !== "terminee" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleStatusChange("terminee")}
+                          disabled={isPending}
                         >
-                          <FileText size={14} className="shrink-0 text-mv-ink-faint" />
-                          <span className="truncate">{a.fileName}</span>
-                        </a>
-                      )
+                          Terminer la campagne
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-3 text-[13px]">
+                    <p className="text-mv-ink-soft">{selected.description}</p>
+
+
+
+                    {selected.estimatedRevenue != null && (
+                      <div className="flex justify-between border-t border-mv-border-soft pt-2.5">
+                        <span className="text-mv-ink-faint">Revenu corrélé</span>
+                        <span className="font-semibold text-mv-green-dark">
+                          +{formatCurrency(selected.estimatedRevenue)}
+                        </span>
+                      </div>
+                    )}
+
+                    {selected.impact && (
+                      <div className="flex justify-between border-t border-mv-border-soft pt-2.5">
+                        <span className="text-mv-ink-faint">Impact global</span>
+                        <Badge tone={impactTone[selected.impact]}>
+                          {selected.impact.toUpperCase()}
+                        </Badge>
+                      </div>
                     )}
                   </div>
                 </Card>
-              )}
 
-              <Card>
-                <CardHeader title="Notes du consultant" description={`${selected.notes.length} note(s)`} />
-                {selected.notes.length === 0 ? (
-                  <p className="text-[12.5px] text-mv-ink-faint">Aucune note pour l&apos;instant.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {selected.notes.map((n, i) => (
-                      <div key={i} className="rounded-lg bg-mv-cream-soft p-3">
-                        <div className="mb-1 flex items-center justify-between">
-                          <span className="text-[12px] font-semibold text-mv-ink">{n.author}</span>
-                          <span className="text-[11px] text-mv-ink-faint">{formatDate(n.date)}</span>
-                        </div>
-                        <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">{n.text}</p>
-                      </div>
-                    ))}
-                  </div>
+                {assets.length > 0 && (
+                  <Card>
+                    <CardHeader title="Fichiers rattachés" description={`${assets.length} fichier(s)`} />
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {assets.map((a) =>
+                        a.url && (a.mimeType.startsWith("image/") || a.kind === "image") ? (
+                          <a
+                            key={a.id}
+                            href={a.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="aspect-square overflow-hidden rounded-lg border border-mv-border bg-mv-cream-soft"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={a.url} alt={a.fileName} className="h-full w-full object-cover" />
+                          </a>
+                        ) : (
+                          <a
+                            key={a.id}
+                            href={a.url ?? undefined}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="col-span-2 flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-2.5 py-2 text-[12px] text-mv-ink-soft hover:bg-mv-surface sm:col-span-4"
+                          >
+                            <FileText size={14} className="shrink-0 text-mv-ink-faint" />
+                            <span className="truncate">{a.fileName}</span>
+                          </a>
+                        )
+                      )}
+                    </div>
+                  </Card>
                 )}
-              </Card>
-            </div>
-          </div>
-        )}
-      </div>
 
+                <Card>
+                  <CardHeader title="Notes du consultant" description={`${selected.notes.length} note(s)`} />
+                  {selected.notes.length === 0 ? (
+                    <p className="text-[12.5px] text-mv-ink-faint">Aucune note pour l&apos;instant.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {selected.notes.map((n, i) => (
+                        <div key={i} className="rounded-lg bg-mv-cream-soft p-3">
+                          <div className="mb-1 flex items-center justify-between">
+                            <span className="text-[12px] font-semibold text-mv-ink">{n.author}</span>
+                            <span className="text-[11px] text-mv-ink-faint">{formatDate(n.date)}</span>
+                          </div>
+                          <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">{n.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

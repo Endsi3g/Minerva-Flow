@@ -11,6 +11,7 @@ import Image from "next/image";
 import {
   sendTeamMessageAction,
   deleteTeamMessageAction,
+  editTeamMessageAction,
   pinTeamMessageAction,
   reactToTeamMessageAction,
   getChannelMembersAction,
@@ -43,6 +44,8 @@ import {
   Hash,
   Trash2,
   Settings2,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -110,23 +113,38 @@ function MessageRow({
   msg,
   isSelf,
   canDelete,
+  canEdit,
   onReact,
   onReply,
   onPin,
   onDelete,
+  onEdit,
   currentUserId,
 }: {
   msg: TeamChatMessage;
   isSelf: boolean;
   canDelete: boolean;
+  canEdit: boolean;
   onReact: (msgId: string, emoji: string) => void;
   onReply: (msg: TeamChatMessage) => void;
   onPin: (msgId: string, pinned: boolean) => void;
   onDelete: (msgId: string) => void;
+  onEdit: (msgId: string, newContent: string) => Promise<void>;
   currentUserId: string;
 }) {
   const [hovered, setHovered] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState(msg.content);
+  const [editSaving, setEditSaving] = useState(false);
+  const editRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (editing && editRef.current) {
+      editRef.current.focus();
+      editRef.current.setSelectionRange(editContent.length, editContent.length);
+    }
+  }, [editing]);
 
   const time = new Date(msg.createdAt).toLocaleTimeString("fr-CA", {
     hour: "2-digit",
@@ -196,7 +214,7 @@ function MessageRow({
         {/* Bubble */}
         <div
           className={cn(
-            "relative rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap break-words",
+            "relative rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed break-words",
             isSelf
               ? "bg-mv-green text-white rounded-tr-sm"
               : isAI
@@ -204,13 +222,80 @@ function MessageRow({
               : "bg-white border border-mv-border-soft text-mv-ink rounded-tl-sm shadow-sm"
           )}
         >
-          <span dangerouslySetInnerHTML={{
-            __html: msg.content
-              .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")
-              .replace(/@(\w+)/g, '<span class="font-semibold text-mv-green-dark">@$1</span>')
-          }} />
+          {editing ? (
+            <div className="space-y-2">
+              <textarea
+                ref={editRef}
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (!editContent.trim()) return;
+                    setEditSaving(true);
+                    try {
+                      await onEdit(msg.id, editContent);
+                      setEditing(false);
+                    } finally {
+                      setEditSaving(false);
+                    }
+                  } else if (e.key === "Escape") {
+                    setEditContent(msg.content);
+                    setEditing(false);
+                  }
+                }}
+                rows={Math.max(2, editContent.split("\n").length)}
+                className={cn(
+                  "w-full resize-none rounded-lg border px-3 py-2 text-[13px] outline-none focus:ring-1 bg-transparent",
+                  isSelf
+                    ? "border-white/30 text-white placeholder-white/50 focus:ring-white/40"
+                    : "border-mv-border text-mv-ink focus:ring-mv-green"
+                )}
+                disabled={editSaving}
+              />
+              <div className="flex items-center gap-2 text-[11px]">
+                <button
+                  onClick={async () => {
+                    if (!editContent.trim()) return;
+                    setEditSaving(true);
+                    try {
+                      await onEdit(msg.id, editContent);
+                      setEditing(false);
+                    } finally {
+                      setEditSaving(false);
+                    }
+                  }}
+                  disabled={editSaving || !editContent.trim()}
+                  className={cn(
+                    "flex items-center gap-1 font-medium rounded px-2 py-0.5 transition-colors",
+                    isSelf ? "bg-white/20 text-white hover:bg-white/30" : "bg-mv-green text-white hover:bg-mv-green-dark"
+                  )}
+                >
+                  <Check size={11} />{editSaving ? "Enregistrement…" : "Enregistrer"}
+                </button>
+                <button
+                  onClick={() => { setEditContent(msg.content); setEditing(false); }}
+                  className={cn(
+                    "font-medium rounded px-2 py-0.5 transition-colors",
+                    isSelf ? "text-white/70 hover:text-white" : "text-mv-ink-faint hover:text-mv-ink"
+                  )}
+                >
+                  Annuler
+                </button>
+                <span className={cn("ml-auto", isSelf ? "text-white/50" : "text-mv-ink-faint")}>
+                  Entrée pour sauvegarder · Échap pour annuler
+                </span>
+              </div>
+            </div>
+          ) : (
+            <span dangerouslySetInnerHTML={{
+              __html: msg.content
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/@(\w+)/g, '<span class="font-semibold text-mv-green-dark">@$1</span>')
+            }} />
+          )}
         </div>
 
         {/* Reactions */}
@@ -293,6 +378,18 @@ function MessageRow({
             </TooltipTrigger>
             <TooltipContent side="top">{msg.isPinned ? "Désépingler" : "Épingler le message"}</TooltipContent>
           </Tooltip>
+
+          {canEdit && !editing && (
+            <Tooltip>
+              <TooltipTrigger
+                onClick={() => setEditing(true)}
+                className="flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-green-dark transition-colors"
+              >
+                <Pencil size={13} />
+              </TooltipTrigger>
+              <TooltipContent side="top">Modifier ce message</TooltipContent>
+            </Tooltip>
+          )}
 
           {canDelete && (
             <Tooltip>
@@ -676,6 +773,21 @@ export function TeamChatView({
     }
   }
 
+  async function handleEdit(msgId: string, newContent: string): Promise<void> {
+    const trimmed = newContent.trim();
+    if (!trimmed) return;
+    // Optimistic update
+    const prev = messages.find((m) => m.id === msgId);
+    setMessages((msgs) => msgs.map((m) => m.id === msgId ? { ...m, content: trimmed } : m));
+    try {
+      await editTeamMessageAction(msgId, currentUserId, trimmed);
+      toast.success("Message modifié.");
+    } catch {
+      toast.error("Erreur lors de la modification.");
+      if (prev) setMessages((msgs) => msgs.map((m) => m.id === msgId ? prev : m));
+    }
+  }
+
   async function handleSend(e?: React.FormEvent) {
     e?.preventDefault();
     const content = inputContent.trim();
@@ -877,14 +989,18 @@ export function TeamChatView({
                       msg={msg}
                       isSelf={msg.authorId === currentUserId}
                       canDelete={
-                        msg.authorId === currentUserId ||
-                        role === "owner" ||
-                        role === "manager"
+                        !msg.isAiResponse && (
+                          msg.authorId === currentUserId ||
+                          role === "owner" ||
+                          role === "manager"
+                        )
                       }
+                      canEdit={!msg.isAiResponse && msg.authorId === currentUserId}
                       onReact={handleReact}
                       onReply={setReplyingTo}
                       onPin={handlePin}
                       onDelete={handleDelete}
+                      onEdit={handleEdit}
                       currentUserId={currentUserId}
                     />
                   ))}

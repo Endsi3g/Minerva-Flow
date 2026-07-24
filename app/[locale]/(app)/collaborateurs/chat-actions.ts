@@ -3,6 +3,7 @@
 import {
   sendTeamMessage,
   deleteTeamMessage,
+  editTeamMessage,
   pinTeamMessage,
   reactToTeamMessage,
   setChannelMembers,
@@ -29,6 +30,14 @@ export async function deleteTeamMessageAction(
   requesterRole: string
 ): Promise<void> {
   return await deleteTeamMessage(messageId, requesterId, requesterRole);
+}
+
+export async function editTeamMessageAction(
+  messageId: string,
+  requesterId: string,
+  newContent: string
+): Promise<void> {
+  return await editTeamMessage(messageId, requesterId, newContent);
 }
 
 export async function pinTeamMessageAction(

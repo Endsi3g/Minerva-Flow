@@ -3,15 +3,30 @@
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/minerva/PageCard";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatCurrency, formatTime } from "@/lib/utils";
+import { formatCurrency, formatTime, cn } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import type { Order, OrderStatus, OrderPaymentStatus } from "@/lib/types";
-import { ClipboardList, RefreshCw, Trash2 } from "lucide-react";
+import {
+  ClipboardList,
+  RefreshCw,
+  Trash2,
+  Zap,
+  TrendingUp,
+  DollarSign,
+  QrCode,
+  Globe,
+  Share2,
+  CheckCircle2,
+  Percent,
+} from "lucide-react";
 import { useState } from "react";
 import { getOrdersForDayAction, updateOrderStatusAction, deleteOrderAction } from "./actions";
 import { notifyError } from "@/lib/notify-error";
+import { toast } from "sonner";
+import Link from "next/link";
 
 const statusLabel: Record<OrderStatus, string> = {
   soumise: "Soumise",
@@ -31,8 +46,6 @@ const statusTone: Record<OrderStatus, "green" | "amber" | "red" | "neutral"> = {
   annulee: "neutral",
 };
 
-// Only "non_requis" (pay-on-site, today's default) never renders a badge —
-// the other three only apply once a guest chooses "Payer en ligne".
 const paymentStatusLabel: Partial<Record<OrderPaymentStatus, string>> = {
   en_attente: "Paiement en attente",
   paye: "Payé en ligne",
@@ -66,8 +79,14 @@ export function CommandesView({
   const { role } = useApp();
   const [orders, setOrders] = useState(initialOrders);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"all" | "direct">("all");
 
   const canManage = role === "owner" || role === "manager" || role === "staff";
+
+  // Calculate 0% commission metrics
+  const totalVolume = orders.reduce((acc, o) => (o.status !== "annulee" ? acc + o.total : acc), 0);
+  const estimatedPlatformCommission = totalVolume * 0.25; // 25% average saved vs UberEats/DoorDash
+  const orderCount = orders.filter((o) => o.status !== "annulee").length;
 
   async function handleRefresh() {
     if (!restaurantId) return;
@@ -97,23 +116,110 @@ export function CommandesView({
   }
 
   return (
-    <div>
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Opérations"
-        title="Commandes"
-        description="Les commandes envoyées depuis votre menu en ligne — jamais confirmées automatiquement."
+        title="Commandes & Ventes Directes"
+        description="Gérez les commandes en direct sans commission tiers (0% frais Flow)."
         action={
-          <Button size="sm" variant="secondary" onClick={handleRefresh} disabled={loading}>
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Rafraîchir
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-xl border border-mv-border bg-mv-surface p-1 shadow-mv-xs">
+              <button
+                onClick={() => setActiveTab("all")}
+                className={cn(
+                  "px-3 py-1.5 text-[12.5px] font-medium rounded-lg transition-all",
+                  activeTab === "all"
+                    ? "bg-mv-green text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                )}
+              >
+                Toutes les commandes ({orders.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("direct")}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium rounded-lg transition-all",
+                  activeTab === "direct"
+                    ? "bg-mv-green text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                )}
+              >
+                <Zap size={14} className="text-mv-amber fill-mv-amber" />
+                Commande Directe 0%
+              </button>
+            </div>
+
+            <Button size="sm" variant="secondary" onClick={handleRefresh} disabled={loading}>
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Rafraîchir
+            </Button>
+          </div>
         }
       />
 
+      {/* Direct Ordering 0% Commission Impact Header Card */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-4 bg-gradient-to-br from-mv-green/10 via-mv-cream/40 to-white border-mv-green/20 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-green-dark">
+              Économies de Commission 0%
+            </span>
+            <div className="h-8 w-8 rounded-full bg-mv-green/20 flex items-center justify-center text-mv-green-dark">
+              <DollarSign size={16} />
+            </div>
+          </div>
+          <p className="font-display text-[26px] font-bold text-mv-ink">
+            {formatCurrency(estimatedPlatformCommission)}
+          </p>
+          <p className="text-[12px] text-mv-ink-soft mt-1">
+            Préservés par rapport au tarif 25% Uber Eats / DoorDash
+          </p>
+        </Card>
+
+        <Card className="p-4 bg-mv-surface border-mv-border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+              Volume Direct (Aujourd'hui)
+            </span>
+            <div className="h-8 w-8 rounded-full bg-mv-cream flex items-center justify-center text-mv-ink-soft">
+              <TrendingUp size={16} />
+            </div>
+          </div>
+          <p className="font-display text-[26px] font-bold text-mv-ink">{formatCurrency(totalVolume)}</p>
+          <p className="text-[12px] text-mv-ink-soft mt-1">
+            {orderCount} commande{orderCount > 1 ? "s" : ""} validée{orderCount > 1 ? "s" : ""}
+          </p>
+        </Card>
+
+        <Card className="p-4 bg-mv-surface border-mv-border flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+              Canaux de Commande Directe
+            </span>
+            <div className="h-8 w-8 rounded-full bg-mv-cream flex items-center justify-center text-mv-ink-soft">
+              <Globe size={16} />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <Link href="/etablissement">
+              <Button size="sm" variant="secondary" className="text-[12px]">
+                <QrCode size={13} /> Générer QR Code / Widget
+              </Button>
+            </Link>
+            <Link href="/menu">
+              <Button size="sm" variant="ghost" className="text-[12px]">
+                Lien de la carte →
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+
+      {/* Orders Table */}
       {orders.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
           title="Aucune commande aujourd'hui"
-          description="Partagez votre lien de menu depuis la page Menu pour commencer à recevoir des commandes."
+          description="Partagez votre lien de menu ou votre widget web depuis les paramètres pour recevoir des commandes directes."
         />
       ) : (
         <Table>

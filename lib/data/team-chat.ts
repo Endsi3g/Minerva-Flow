@@ -128,9 +128,12 @@ export async function deleteTeamMessage(
   // fetch the message to verify ownership
   const { data: msg } = await admin
     .from("team_chat_messages")
-    .select("author_id")
+    .select("author_id, is_ai_response")
     .eq("id", messageId)
     .single();
+
+  // AI messages cannot be deleted
+  if (msg?.is_ai_response) throw new Error("Cannot delete AI messages");
 
   const canDelete =
     msg?.author_id === requesterId ||
@@ -142,6 +145,32 @@ export async function deleteTeamMessage(
   await admin
     .from("team_chat_messages")
     .update({ deleted: true })
+    .eq("id", messageId);
+}
+
+/* ── edit a user message ── */
+export async function editTeamMessage(
+  messageId: string,
+  requesterId: string,
+  newContent: string
+): Promise<void> {
+  const admin = createAdminClient();
+
+  const { data: msg } = await admin
+    .from("team_chat_messages")
+    .select("author_id, is_ai_response")
+    .eq("id", messageId)
+    .single();
+
+  if (msg?.is_ai_response) throw new Error("Cannot edit AI messages");
+  if (msg?.author_id !== requesterId) throw new Error("Unauthorized");
+
+  const trimmed = newContent.trim();
+  if (!trimmed) throw new Error("Message cannot be empty");
+
+  await admin
+    .from("team_chat_messages")
+    .update({ content: trimmed, edited_at: new Date().toISOString() })
     .eq("id", messageId);
 }
 

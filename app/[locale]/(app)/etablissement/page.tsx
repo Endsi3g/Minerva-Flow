@@ -11,6 +11,7 @@ import {
   createRestaurantAction,
   updateRestaurantAction,
 } from "@/app/[locale]/(app)/settings/actions";
+import { DirectOrderingWidgetGenerator } from "@/components/etablissement/DirectOrderingWidgetGenerator";
 import type { RestaurantInput } from "@/lib/data/restaurants";
 import type { Restaurant, OpeningHours, DayHours } from "@/lib/types";
 import { Plus, MapPin, Clock } from "lucide-react";
@@ -388,6 +389,8 @@ function OtherEstablishments() {
 }
 
 export default function EtablissementPage() {
+  const restaurant = useCurrentRestaurant();
+
   return (
     <div>
       <PageHeader
@@ -397,6 +400,12 @@ export default function EtablissementPage() {
       />
       <div className="space-y-8">
         <EstablishmentIdentityCard />
+        {restaurant && (
+          <DirectOrderingWidgetGenerator
+            restaurantName={restaurant.name}
+            menuToken={restaurant.id}
+          />
+        )}
         <OtherEstablishments />
       </div>
     </div>
