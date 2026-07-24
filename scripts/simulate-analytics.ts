@@ -1,9 +1,13 @@
 import { randomUUID } from "crypto";
+import readline from "readline";
 
 /**
  * Script d'automatisation continue & historique Vercel Analytics multi-jours
- * (Distribution sur 14 jours passés + boucle automatique continue temps réel).
- * Exécution : npx tsx scripts/simulate-analytics.ts
+ * Sélection interactive de profils de trafic (Calme, Normal, Rush, Événementiel).
+ *
+ * Exécution interactive : npx tsx scripts/simulate-analytics.ts
+ * Exécution directe CLI : npx tsx scripts/simulate-analytics.ts rush
+ * ou : npx tsx scripts/simulate-analytics.ts --profile=evenement
  */
 
 const BASE_URL = "https://minerva-flow.vercel.app";
@@ -66,6 +70,60 @@ const DEVICE_PROFILES = [
   },
 ];
 
+export type TrafficProfileKey = "calme" | "normal" | "rush" | "evenement" | "history-only";
+
+export type TrafficProfileConfig = {
+  key: TrafficProfileKey;
+  label: string;
+  baseVisitorsPerDay: number;
+  minLoopDelayMs: number;
+  maxLoopDelayMs: number;
+  description: string;
+};
+
+const TRAFFIC_PROFILES: Record<TrafficProfileKey, TrafficProfileConfig> = {
+  calme: {
+    key: "calme",
+    label: "🟢 Calme (Activité Modérée)",
+    baseVisitorsPerDay: 8,
+    minLoopDelayMs: 90000, // 90s
+    maxLoopDelayMs: 180000, // 3 min
+    description: "Ideal pour simuler un début de semaine ou un établissement intimiste.",
+  },
+  normal: {
+    key: "normal",
+    label: "🟡 Normal / Standard (Activité Récurrente)",
+    baseVisitorsPerDay: 25,
+    minLoopDelayMs: 40000, // 40s
+    maxLoopDelayMs: 80000, // 80s
+    description: "Profil équilibré simulant une journée type de restaurant dynamique.",
+  },
+  rush: {
+    key: "rush",
+    label: "🔴 Rush / Coup de feu (Fort Trafic)",
+    baseVisitorsPerDay: 80,
+    minLoopDelayMs: 15000, // 15s
+    maxLoopDelayMs: 35000, // 35s
+    description: "Simule les périodes de pointe du midi et du soir.",
+  },
+  evenement: {
+    key: "evenement",
+    label: "⚡ Événementiel / Virals (Pic Massif)",
+    baseVisitorsPerDay: 200,
+    minLoopDelayMs: 5000, // 5s
+    maxLoopDelayMs: 15000, // 15s
+    description: "Simule une campagne marketing virale ou un festival.",
+  },
+  "history-only": {
+    key: "history-only",
+    label: "📅 Historique 14 Jours Uniquement (Sans boucle continue)",
+    baseVisitorsPerDay: 30,
+    minLoopDelayMs: 0,
+    maxLoopDelayMs: 0,
+    description: "Rempli les données des 14 derniers jours puis s'arrête.",
+  },
+};
+
 function getRandomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
 }
@@ -78,30 +136,35 @@ function generateRandomIP(): string {
   return `${octet1}.${octet2}.${octet3}.${octet4}`;
 }
 
-// Coefficient d'affluence selon le jour de la semaine
 function getDayOfWeekMultiplier(dayIndex: number): number {
-  // 0 = Dimanche, 5 = Vendredi, 6 = Samedi (PICS DE TRAFIC)
   switch (dayIndex) {
-    case 5: // Vendredi (Très fort)
+    case 5: // Vendredi
       return 2.2;
-    case 6: // Samedi (Pic maximum)
+    case 6: // Samedi
       return 2.5;
-    case 0: // Dimanche (Fort)
+    case 0: // Dimanche
       return 1.8;
-    case 4: // Jeudi (Moyen-fort)
+    case 4: // Jeudi
       return 1.3;
-    case 1: // Lundi (Calme)
+    case 1: // Lundi
       return 0.6;
-    case 2: // Mardi (Calme)
+    case 2: // Mardi
       return 0.7;
-    case 3: // Mercredi (Moyen)
+    case 3: // Mercredi
       return 1.0;
     default:
       return 1.0;
   }
 }
 
-async function sendVercelAnalyticsBeacon(url: string, referrer: string, visitorId: string, timestamp: number, profile: typeof DEVICE_PROFILES[0], clientIp: string) {
+async function sendVercelAnalyticsBeacon(
+  url: string,
+  referrer: string,
+  visitorId: string,
+  timestamp: number,
+  profile: typeof DEVICE_PROFILES[0],
+  clientIp: string
+) {
   try {
     await fetch(`${BASE_URL}/_vercel/insights/view`, {
       method: "POST",
@@ -156,41 +219,40 @@ async function simulateSessionForDate(targetTimestamp: number, visitorIndex: num
     if (profile.mobile) headers["Sec-Ch-Ua-Mobile"] = profile.mobile;
 
     try {
-      const res = await fetch(pageUrl, { headers });
+      await fetch(pageUrl, { headers });
       await sendVercelAnalyticsBeacon(pageUrl, referrer, uniqueVisitorId, currentTimestamp, profile, clientIp);
     } catch {
       // Ignore network hiccup
     }
 
-    // Incrémentation du timestamp de session (2s à 8s par page)
     const dwellMs = 2000 + Math.floor(Math.random() * 6000);
     currentTimestamp += dwellMs;
   }
 }
 
-async function generateHistorical14DaysTraffic() {
-  console.log("📅 [Historique 14 Jours] Génération des variations d'affluence par jour (Pics W-E vs Lundi/Mardi calme)...");
+async function generateHistorical14DaysTraffic(profile: TrafficProfileConfig) {
+  console.log(
+    `\n📅 [Historique 14 Jours] Génération des variations d'affluence (Base : ${profile.baseVisitorsPerDay} vis./jour)...`
+  );
   const now = Date.now();
   const DAY_MS = 24 * 60 * 60 * 1000;
 
   for (let dayOffset = 14; dayOffset >= 0; dayOffset--) {
     const dayDate = new Date(now - dayOffset * DAY_MS);
-    const dayOfWeek = dayDate.getDay(); // 0 = Dimanche, 6 = Samedi
+    const dayOfWeek = dayDate.getDay();
     const multiplier = getDayOfWeekMultiplier(dayOfWeek);
 
-    const baseVisitorsPerDay = 20;
-    const visitorCount = Math.round(baseVisitorsPerDay * multiplier);
+    const visitorCount = Math.round(profile.baseVisitorsPerDay * multiplier);
 
     const dayName = dayDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "short" });
     console.log(`  └─ [${dayName}] Multiplicateur: ${multiplier}x -> ${visitorCount} visiteurs uniques`);
 
     for (let v = 0; v < visitorCount; v++) {
-      // Heures de visite naturelles (pics entre 11h-14h et 18h-22h)
       const isDinnerPeak = Math.random() > 0.4;
       const hourOffset = isDinnerPeak
-        ? 18 + Math.floor(Math.random() * 4) // 18h - 22h
-        : 11 + Math.floor(Math.random() * 3); // 11h - 14h
-      
+        ? 18 + Math.floor(Math.random() * 4)
+        : 11 + Math.floor(Math.random() * 3);
+
       const minuteOffset = Math.floor(Math.random() * 60);
       const visitorTimestamp = dayDate.getTime() + (hourOffset * 3600 + minuteOffset * 60) * 1000;
 
@@ -201,11 +263,17 @@ async function generateHistorical14DaysTraffic() {
   console.log("✅ Historique des 14 jours généré avec succès.");
 }
 
-async function startContinuousDaemon() {
-  console.log("🚀 Lancement du Générateur de Trafic Automatique Continu (Mode Multi-Jours & Boucle Permanente)...");
-  
-  // 1. Remplir l'historique des 14 derniers jours avec variations
-  await generateHistorical14DaysTraffic();
+async function startContinuousDaemon(profile: TrafficProfileConfig) {
+  console.log(`\n🚀 Lancement du Simulateur de Trafic — Profil [ ${profile.label} ]`);
+  console.log(`📌 Description : ${profile.description}`);
+
+  // 1. Remplir l'historique des 14 derniers jours
+  await generateHistorical14DaysTraffic(profile);
+
+  if (profile.key === "history-only") {
+    console.log("\n🏁 Fin du traitement (Mode Historique Uniquement).");
+    process.exit(0);
+  }
 
   // 2. Boucle continue automatique en temps réel
   console.log("\n🔄 [Mode En Direct] Activation de la boucle continue temps réel...");
@@ -217,14 +285,89 @@ async function startContinuousDaemon() {
     const dayOfWeek = new Date().getDay();
     const multiplier = getDayOfWeekMultiplier(dayOfWeek);
 
-    console.log(`\n🟢 [Visite En Direct #${liveSessionCount}] Jour actuel (${multiplier}x affluence) - Simulation en cours...`);
+    console.log(
+      `\n🟢 [Visite En Direct #${liveSessionCount}] Profil: ${profile.key} (${multiplier}x affluence jour) - Simulation en cours...`
+    );
     await simulateSessionForDate(now, liveSessionCount);
 
-    // Pause organique entre 45s et 90s avant le visiteur suivant
-    const delayMs = 45000 + Math.floor(Math.random() * 45000);
+    const delayRange = profile.maxLoopDelayMs - profile.minLoopDelayMs;
+    const delayMs = profile.minLoopDelayMs + Math.floor(Math.random() * Math.max(1, delayRange));
     console.log(`   ⏳ Prochain visiteur en direct dans ${Math.round(delayMs / 1000)}s...`);
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
 }
 
-startContinuousDaemon();
+function parseCliProfile(): TrafficProfileConfig | null {
+  const args = process.argv.slice(2);
+  for (const arg of args) {
+    const cleanArg = arg.replace(/^--profile=|^--p=|^--/, "").toLowerCase();
+    if (cleanArg in TRAFFIC_PROFILES) {
+      return TRAFFIC_PROFILES[cleanArg as TrafficProfileKey];
+    }
+  }
+  return null;
+}
+
+async function promptUserForProfile(): Promise<TrafficProfileConfig> {
+  const cliProfile = parseCliProfile();
+  if (cliProfile) {
+    console.log(`\n⚡ Profil détecté via CLI : [ ${cliProfile.label} ]`);
+    return cliProfile;
+  }
+
+  // If non-interactive environment (CI, background daemon), default to normal
+  if (!process.stdin.isTTY) {
+    console.log("ℹ️ Environnement non-interactif détecté, profil par défaut [ Normal ] sélectionné.");
+    return TRAFFIC_PROFILES.normal;
+  }
+
+  console.log("\n============================================================");
+  console.log(" 📊 MINERVA FLOW — SIMULATEUR DE TRAFIC VERCEL ANALYTICS");
+  console.log("============================================================");
+  console.log("Choisissez le profil de trafic à simuler :\n");
+  console.log("  1. 🟢 Calme (8 vis./jour, pause 90-180s)");
+  console.log("  2. 🟡 Normal / Standard (25 vis./jour, pause 40-80s) [Par défaut]");
+  console.log("  3. 🔴 Rush / Coup de feu (80 vis./jour, pause 15-35s)");
+  console.log("  4. ⚡ Événementiel / Viral (200 vis./jour, pause 5-15s)");
+  console.log("  5. 📅 Historique 14 Jours Uniquement (Sans boucle continue)\n");
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question("Entrez votre choix (1-5, Défaut=2) : ", (answer) => {
+      rl.close();
+      const choice = answer.trim();
+      switch (choice) {
+        case "1":
+          resolve(TRAFFIC_PROFILES.calme);
+          break;
+        case "3":
+          resolve(TRAFFIC_PROFILES.rush);
+          break;
+        case "4":
+          resolve(TRAFFIC_PROFILES.evenement);
+          break;
+        case "5":
+          resolve(TRAFFIC_PROFILES["history-only"]);
+          break;
+        case "2":
+        default:
+          resolve(TRAFFIC_PROFILES.normal);
+          break;
+      }
+    });
+  });
+}
+
+async function main() {
+  const profile = await promptUserForProfile();
+  await startContinuousDaemon(profile);
+}
+
+main().catch((err) => {
+  console.error("❌ Erreur dans le simulateur de trafic :", err);
+  process.exit(1);
+});
