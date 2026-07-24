@@ -4,7 +4,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/Badge";
 import { StatCard } from "@/components/ui/StatCard";
 import { Slider } from "@/components/ui/slider";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/lib/utils";
 import { useState, useOptimistic, useTransition, useMemo } from "react";
@@ -13,7 +12,6 @@ import {
   Target,
   Users,
   Calendar,
-  Sparkles,
   DollarSign,
   AlertTriangle,
   CheckCircle2,
@@ -397,22 +395,6 @@ export function BreakEvenSimulator() {
             </CardContent>
           </Card>
 
-          {/* AI Strategic Insights via Shadcn Alert */}
-          <Alert variant="default" className="border border-mv-border bg-mv-surface shadow-mv-sm">
-            <Sparkles size={18} className="text-mv-green-dark" />
-            <AlertTitle className="font-heading font-normal">Recommandation Stratégique Minerva Flow</AlertTitle>
-            <AlertDescription className="font-normal text-[13px]">
-              {isProfitable ? (
-                <>
-                  Votre modèle génère un bénéfice net estimé de <strong className="text-mv-ink font-normal">{formatCurrency(netProfit)}</strong>. Pour atteindre le point mort plus tôt (actuellement jour {dayBreakEvenReached}), augmentez votre panier moyen de 2,00 $ ou réduisez les pertes d&apos;ingrédients de 3%.
-                </>
-              ) : (
-                <>
-                  Votre niveau de ventes actuel ({formatCurrency(optimisticValues.monthlyRevenue)}) est inférieur au seuil de rentabilité de <strong className="text-mv-ink font-normal">{formatCurrency(breakEvenMonthly)}</strong>. Nous recommandons de viser {dailyCoversNeeded} clients/jour ou de revoir la marge brute des plats vedettes.
-                </>
-              )}
-            </AlertDescription>
-          </Alert>
         </div>
       </div>
     </div>
