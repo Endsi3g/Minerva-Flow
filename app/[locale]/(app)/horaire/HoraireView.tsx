@@ -571,14 +571,14 @@ export function HoraireView({
 
       {/* ── View 1: Month Calendar View ── */}
       {viewMode === "month" && (
-        <div className="rounded-2xl border border-mv-border bg-white shadow-mv-sm overflow-hidden">
+        <div className="rounded-2xl border border-mv-border bg-mv-surface shadow-mv-sm overflow-hidden">
           {/* Controls Bar */}
-          <div className="flex items-center justify-between border-b border-mv-border bg-mv-surface px-5 py-3.5">
-            <div className="flex items-center gap-3">
-              <span className="text-[16px] font-semibold text-mv-ink">{capitalizedMonth}</span>
+          <div className="flex items-center justify-between border-b border-mv-border bg-mv-surface px-4 sm:px-5 py-3.5">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-[14.5px] sm:text-[16px] font-semibold text-mv-ink">{capitalizedMonth}</span>
               <button
                 onClick={todayMonth}
-                className="rounded-lg border border-mv-border px-2.5 py-1 text-[11.5px] font-medium text-mv-ink-soft hover:bg-mv-cream hover:text-mv-ink transition-colors"
+                className="rounded-lg border border-mv-border px-2 py-0.5 sm:px-2.5 sm:py-1 text-[11px] sm:text-[11.5px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft hover:text-mv-ink transition-colors"
               >
                 Aujourd'hui
               </button>
@@ -588,7 +588,7 @@ export function HoraireView({
               <Tooltip>
                 <TooltipTrigger
                   onClick={prevMonth}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-mv-border text-mv-ink-soft hover:bg-mv-cream transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-mv-border text-mv-ink-soft hover:bg-mv-cream-soft transition-colors"
                 >
                   <ChevronLeft size={16} />
                 </TooltipTrigger>
@@ -598,7 +598,7 @@ export function HoraireView({
               <Tooltip>
                 <TooltipTrigger
                   onClick={nextMonth}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-mv-border text-mv-ink-soft hover:bg-mv-cream transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-mv-border text-mv-ink-soft hover:bg-mv-cream-soft transition-colors"
                 >
                   <ChevronRight size={16} />
                 </TooltipTrigger>
@@ -608,9 +608,9 @@ export function HoraireView({
           </div>
 
           {/* Grid Header (Days of week) */}
-          <div className="grid grid-cols-7 border-b border-mv-border bg-mv-cream-soft text-center text-[12px] font-semibold text-mv-ink-soft">
+          <div className="grid grid-cols-7 border-b border-mv-border bg-mv-cream-soft text-center text-[11px] sm:text-[12px] font-semibold text-mv-ink-soft">
             {DAY_LABELS.map((d) => (
-              <div key={d} className="py-2.5">
+              <div key={d} className="py-2 sm:py-2.5">
                 {d}
               </div>
             ))}
@@ -627,16 +627,16 @@ export function HoraireView({
                   key={cell.iso}
                   onClick={() => setSelectedDayIso(cell.iso)}
                   className={cn(
-                    "min-h-[115px] p-2 bg-white flex flex-col justify-between transition-colors relative group cursor-pointer",
-                    !cell.isCurrentMonth && "bg-[#fafaf9]/60 opacity-60",
-                    isToday && "bg-mv-green/5 border-2 border-mv-green/40"
+                    "min-h-[75px] sm:min-h-[115px] p-1 sm:p-2 bg-mv-surface flex flex-col justify-between transition-colors relative group cursor-pointer",
+                    !cell.isCurrentMonth && "bg-mv-cream/20 opacity-50",
+                    isToday && "bg-mv-green/10 border-2 border-mv-green"
                   )}
                 >
                   {/* Top day header */}
                   <div className="flex items-center justify-between mb-1">
                     <span
                       className={cn(
-                        "text-[12px] font-bold h-6 w-6 rounded-full flex items-center justify-center transition-colors",
+                        "text-[11px] sm:text-[12px] font-bold h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center transition-colors",
                         isToday
                           ? "bg-mv-green text-white shadow-sm"
                           : cell.isCurrentMonth
@@ -648,47 +648,63 @@ export function HoraireView({
                     </span>
 
                     {dayShifts.length > 0 && (
-                      <span className="text-[10px] font-semibold text-mv-green-dark bg-mv-green/10 px-1.5 py-0.5 rounded-full">
-                        {dayShifts.length} quart{dayShifts.length > 1 ? "s" : ""}
+                      <span className="text-[9.5px] sm:text-[10px] font-semibold text-mv-green-dark bg-mv-green/10 px-1 sm:px-1.5 py-0.5 rounded-full">
+                        {dayShifts.length} <span className="hidden sm:inline">quart{dayShifts.length > 1 ? "s" : ""}</span>
                       </span>
                     )}
                   </div>
 
                   {/* Shifts list inside cell */}
                   <div className="flex-1 space-y-1 overflow-hidden">
-                    {dayShifts.slice(0, 3).map((s) => {
-                      const emp = employeesMap.get(s.employeeId);
-                      return (
-                        <div
-                          key={s.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (canManage) handleToggleStatus(s);
-                          }}
-                          className={cn(
-                            "flex items-center justify-between gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium border transition-all truncate",
-                            s.status === "confirme"
-                              ? "bg-mv-green/10 border-mv-green/30 text-mv-green-dark"
-                              : "bg-amber-50 border-amber-200 text-amber-800"
-                          )}
-                        >
-                          <div className="flex items-center gap-1 min-w-0 truncate">
-                            <span className="font-semibold truncate">{emp?.fullName.split(" ")[0] ?? "Employé"}</span>
-                            <span className="text-[10px] opacity-75 shrink-0">{formatTime(s.startTime)}</span>
+                    {/* Desktop view shift badges */}
+                    <div className="hidden sm:block space-y-1">
+                      {dayShifts.slice(0, 3).map((s) => {
+                        const emp = employeesMap.get(s.employeeId);
+                        return (
+                          <div
+                            key={s.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (canManage) handleToggleStatus(s);
+                            }}
+                            className={cn(
+                              "flex items-center justify-between gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium border transition-all truncate",
+                              s.status === "confirme"
+                                ? "bg-mv-green/10 border-mv-green/30 text-mv-green-dark"
+                                : "bg-amber-500/10 border-amber-500/30 text-amber-600"
+                            )}
+                          >
+                            <div className="flex items-center gap-1 min-w-0 truncate">
+                              <span className="font-semibold truncate">{emp?.fullName.split(" ")[0] ?? "Employé"}</span>
+                              <span className="text-[10px] opacity-75 shrink-0">{formatTime(s.startTime)}</span>
+                            </div>
+                            {s.positionLabel && (
+                              <span className="text-[9.5px] font-normal opacity-70 truncate hidden xl:inline">
+                                {s.positionLabel}
+                              </span>
+                            )}
                           </div>
-                          {s.positionLabel && (
-                            <span className="text-[9.5px] font-normal opacity-70 truncate hidden xl:inline">
-                              {s.positionLabel}
-                            </span>
+                        );
+                      })}
+                      {dayShifts.length > 3 && (
+                        <p className="text-[10px] font-semibold text-mv-ink-faint text-center pt-0.5">
+                          +{dayShifts.length - 3} autre{dayShifts.length - 3 > 1 ? "s" : ""}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Mobile compact shift indicators */}
+                    <div className="sm:hidden flex flex-wrap gap-0.5 pt-0.5">
+                      {dayShifts.slice(0, 4).map((s) => (
+                        <span
+                          key={s.id}
+                          className={cn(
+                            "h-2 w-2 rounded-full",
+                            s.status === "confirme" ? "bg-mv-green" : "bg-amber-500"
                           )}
-                        </div>
-                      );
-                    })}
-                    {dayShifts.length > 3 && (
-                      <p className="text-[10px] font-semibold text-mv-ink-faint text-center pt-0.5">
-                        +{dayShifts.length - 3} autre{dayShifts.length - 3 > 1 ? "s" : ""}
-                      </p>
-                    )}
+                        />
+                      ))}
+                    </div>
                   </div>
 
                   {/* Add Shift Plus Button on Hover */}
@@ -701,7 +717,7 @@ export function HoraireView({
                           date: cell.iso,
                         });
                       }}
-                      className="opacity-0 group-hover:opacity-100 flex items-center justify-center h-6 w-6 rounded-md bg-mv-cream border border-mv-border text-mv-ink-faint hover:text-mv-green-dark hover:border-mv-green transition-all absolute bottom-1.5 right-1.5"
+                      className="opacity-0 group-hover:opacity-100 flex items-center justify-center h-6 w-6 rounded-md bg-mv-surface border border-mv-border text-mv-ink-faint hover:text-mv-green-dark hover:border-mv-green transition-all absolute bottom-1.5 right-1.5"
                       title="Ajouter un quart"
                     >
                       <Plus size={13} />

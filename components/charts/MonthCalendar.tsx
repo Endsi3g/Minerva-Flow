@@ -29,11 +29,11 @@ export function MonthCalendar({
 
   return (
     <div>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {weekdays.map((w, i) => (
           <div
             key={i}
-            className="pb-1 text-center text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint"
+            className="pb-1 text-center text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint"
           >
             {w}
           </div>
@@ -51,14 +51,14 @@ export function MonthCalendar({
               onClick={() => onSelectDate?.(d.date)}
               style={{ background: bg }}
               className={cn(
-                "group relative flex aspect-square flex-col items-start justify-between rounded-lg p-2 text-left transition-transform hover:z-10 hover:scale-[1.06] hover:shadow-mv-md",
+                "group relative flex aspect-square flex-col items-start justify-between rounded-lg p-1 sm:p-2 text-left transition-transform hover:z-10 hover:scale-[1.06] hover:shadow-mv-md",
                 isSelected && "ring-2 ring-mv-green ring-offset-2 ring-offset-mv-surface"
               )}
             >
               <span
                 className={cn(
-                  "text-[11.5px] font-semibold",
-                  isLight ? "text-mv-ink-soft" : "text-mv-cream-soft"
+                  "text-[10.5px] sm:text-[11.5px] font-bold leading-none",
+                  isLight ? "text-mv-ink" : "text-white drop-shadow-sm"
                 )}
               >
                 {dayNum}

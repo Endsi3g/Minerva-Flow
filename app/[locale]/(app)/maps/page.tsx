@@ -243,7 +243,7 @@ function EstablishmentsMode() {
         })}
       </Map>
 
-      <div className="absolute left-4 top-4 z-10 w-64 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
+      <div className="md:absolute static mb-4 md:mb-0 md:left-4 md:top-4 z-10 w-full md:w-64 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
           Établissements
         </p>
@@ -369,7 +369,7 @@ function AttributionMode() {
         )}
       </Map>
 
-      <div className="absolute left-4 top-4 z-10 w-64 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
+      <div className="md:absolute static mb-4 md:mb-0 md:left-4 md:top-4 z-10 w-full md:w-64 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
           Attribution publicitaire
         </p>
@@ -448,8 +448,8 @@ export default function MapsPage() {
   }, [setSidebarCollapsed]);
 
   return (
-    <div className="relative flex-1">
-      <div className="absolute right-4 top-4 z-10 flex items-center rounded-lg border border-mv-border bg-mv-surface/95 p-0.5 shadow-mv-lg backdrop-blur-sm">
+    <div className="relative flex-1 min-h-[420px] md:min-h-[calc(100vh-140px)] flex flex-col space-y-4 md:space-y-0">
+      <div className="md:absolute static self-end md:right-4 md:top-4 z-10 flex items-center rounded-lg border border-mv-border bg-mv-surface/95 p-0.5 shadow-mv-lg backdrop-blur-sm">
         <button
           onClick={() => setMode("establishments")}
           className={
