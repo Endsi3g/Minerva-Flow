@@ -79,20 +79,10 @@ export function GlobalSearchModal() {
     }
   }, [open]);
 
-  // Load recent searches from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("minerva_recent_searches");
-      if (saved) setRecentSearches(JSON.parse(saved));
-    } catch {}
-  }, []);
 
   function handleSelect(href: string, title: string) {
     const updated = [title, ...recentSearches.filter((s) => s !== title)].slice(0, 5);
     setRecentSearches(updated);
-    try {
-      localStorage.setItem("minerva_recent_searches", JSON.stringify(updated));
-    } catch {}
 
     setOpen(false);
     startTransition(() => {

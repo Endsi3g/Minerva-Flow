@@ -310,21 +310,8 @@ export function AppSidebar() {
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Dynamic Favorites state persisted in localStorage
-  const [favoriteKeys, setFavoriteKeys] = useState<string[]>([]);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("mv_user_favorites");
-      if (stored) {
-        setFavoriteKeys(JSON.parse(stored));
-      } else {
-        setFavoriteKeys(["horaire", "commandes", "reports"]);
-      }
-    } catch {
-      setFavoriteKeys(["horaire", "commandes", "reports"]);
-    }
-  }, []);
+  // Dynamic Favorites state (in-memory, session only — no localStorage)
+  const [favoriteKeys, setFavoriteKeys] = useState<string[]>(["horaire", "commandes", "reports"]);
 
   const toggleFavorite = (key: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -333,11 +320,6 @@ export function AppSidebar() {
       ? favoriteKeys.filter((k) => k !== key)
       : [...favoriteKeys, key];
     setFavoriteKeys(updated);
-    try {
-      localStorage.setItem("mv_user_favorites", JSON.stringify(updated));
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const allowedByRole = (n: NavItem) =>

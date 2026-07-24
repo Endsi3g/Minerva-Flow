@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useOptimistic, useTransition, useRef, useEffect, useCallback } from "react";
+import { useState, useOptimistic, useTransition, useRef, useEffect } from "react";
 import { sendTeamMessageAction } from "@/app/[locale]/(app)/collaborateurs/chat-actions";
 import { useApp } from "@/lib/app-context";
 import { useTeamPresence } from "@/hooks/use-team-presence";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/minerva/PersonAvatar";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import type { TeamChannel, TeamChatMessage, TeamMember } from "@/lib/types";
 import {
   MessageSquare,
@@ -24,7 +25,6 @@ import {
   Paperclip,
   Smile,
   Plus,
-  ChevronRight,
   X,
   Hash,
 } from "lucide-react";
@@ -145,7 +145,6 @@ function MessageRow({
               : "bg-white border border-mv-border-soft text-mv-ink rounded-tl-sm shadow-sm"
           )}
         >
-          {/* Render content with @mention highlights */}
           <span dangerouslySetInnerHTML={{
             __html: msg.content
               .replace(/&/g, "&amp;")
@@ -177,7 +176,7 @@ function MessageRow({
         )}
       </div>
 
-      {/* Action toolbar (hover) */}
+      {/* Action toolbar (hover) — Base UI TooltipTrigger renders a <button> itself */}
       {hovered && (
         <div
           className={cn(
@@ -187,13 +186,15 @@ function MessageRow({
         >
           {/* Quick emoji reactions */}
           <div className="relative">
-            <button
-              onClick={() => setEmojiOpen((p) => !p)}
-              className="flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink transition-colors"
-              title="Réagir"
-            >
-              <Smile size={14} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger
+                onClick={() => setEmojiOpen((p) => !p)}
+                className="flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink transition-colors"
+              >
+                <Smile size={14} />
+              </TooltipTrigger>
+              <TooltipContent side="top">Réagir avec un emoji</TooltipContent>
+            </Tooltip>
             {emojiOpen && (
               <div className={cn(
                 "absolute top-8 flex gap-1 bg-white border border-mv-border rounded-xl shadow-lg p-1.5 z-30",
@@ -212,20 +213,25 @@ function MessageRow({
             )}
           </div>
 
-          <button
-            onClick={() => onReply(msg)}
-            className="flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink transition-colors"
-            title="Répondre"
-          >
-            <Reply size={13} />
-          </button>
-          <button
-            onClick={() => onPin(msg.id)}
-            className="flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink transition-colors"
-            title={msg.isPinned ? "Désépingler" : "Épingler"}
-          >
-            <Pin size={13} className={msg.isPinned ? "text-mv-amber" : ""} />
-          </button>
+          <Tooltip>
+            <TooltipTrigger
+              onClick={() => onReply(msg)}
+              className="flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink transition-colors"
+            >
+              <Reply size={13} />
+            </TooltipTrigger>
+            <TooltipContent side="top">Répondre à ce message</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger
+              onClick={() => onPin(msg.id)}
+              className="flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink transition-colors"
+            >
+              <Pin size={13} className={msg.isPinned ? "text-mv-amber" : ""} />
+            </TooltipTrigger>
+            <TooltipContent side="top">{msg.isPinned ? "Épinglé — cliquer pour désépingler" : "Épingler le message"}</TooltipContent>
+          </Tooltip>
         </div>
       )}
     </div>
@@ -267,7 +273,6 @@ export function TeamChatView({
 
   const currentUserId = authUser?.id || "user-current";
 
-  // Filter messages by channel
   const filteredInitial = initialMessages.filter((m) => m.channel === activeChannel);
 
   const [optimisticMessages, addOptimisticMessage] = useOptimistic<TeamChatMessage[], TeamChatMessage>(
@@ -275,7 +280,6 @@ export function TeamChatView({
     (state, msg) => [...state, msg]
   );
 
-  // Merge local reactions into displayed messages
   const messagesWithReactions = optimisticMessages.map((msg) => {
     const merged = { ...msg };
     if (localReactions[msg.id]) {
@@ -289,7 +293,6 @@ export function TeamChatView({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messagesWithReactions, activeChannel]);
 
-  // Pinned messages for this channel
   const channelPinned = messagesWithReactions.filter((m) => m.isPinned);
 
   async function enableNotifications() {
@@ -308,8 +311,6 @@ export function TeamChatView({
 
   function handleInputChange(val: string) {
     setInputContent(val);
-
-    // Detect @mention trigger
     const lastAt = val.lastIndexOf("@");
     if (lastAt !== -1 && lastAt === val.length - 1) {
       setShowMentionPopover(true);
@@ -325,8 +326,6 @@ export function TeamChatView({
     } else {
       setShowMentionPopover(false);
     }
-
-    // Fake typing indicator
     if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     typingTimerRef.current = setTimeout(() => setTypingUsers([]), 2000);
   }
@@ -407,7 +406,6 @@ export function TeamChatView({
       startTransition(() => {
         addOptimisticMessage(res.aiResponse!);
       });
-
       if (notificationsEnabled && typeof window !== "undefined" && "Notification" in window) {
         new Notification("Réponse de Flow AI 🤖", {
           body: res.aiResponse.content.slice(0, 100),
@@ -428,7 +426,6 @@ export function TeamChatView({
     }
   }
 
-  // Mention suggestions
   const mentionSuggestions = [
     { id: "ai-flow", name: "FlowAI", role: "Assistant IA", isAI: true },
     ...teamMembers.map((m) => ({ id: m.id, name: m.name.split(" ")[0], role: m.role, isAI: false })),
@@ -448,58 +445,64 @@ export function TeamChatView({
         {/* Top bar */}
         <div className="flex items-center justify-between border-b border-mv-border bg-white px-5 py-3 shrink-0">
           <div className="flex items-center gap-3">
-            {/* Channel pills */}
             <div className="flex items-center gap-1">
               {CHANNELS.map((ch) => {
                 const Icon = ch.icon;
                 const isActive = activeChannel === ch.id;
                 return (
-                  <button
-                    key={ch.id}
-                    onClick={() => setActiveChannel(ch.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-all",
-                      isActive
-                        ? "bg-mv-green text-white shadow-sm"
-                        : "text-mv-ink-soft hover:bg-mv-cream hover:text-mv-ink"
-                    )}
-                  >
-                    <Hash size={12} />
-                    {ch.label}
-                  </button>
+                  <Tooltip key={ch.id}>
+                    <TooltipTrigger
+                      onClick={() => setActiveChannel(ch.id)}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-all",
+                        isActive
+                          ? "bg-mv-green text-white shadow-sm"
+                          : "text-mv-ink-soft hover:bg-mv-cream hover:text-mv-ink"
+                      )}
+                    >
+                      <Hash size={12} />
+                      {ch.label}
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">{ch.description}</TooltipContent>
+                  </Tooltip>
                 );
               })}
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Notifications */}
-            <button
-              onClick={enableNotifications}
-              title={notificationsEnabled ? "Désactiver les alertes" : "Activer les alertes"}
-              className={cn(
-                "flex items-center justify-center h-8 w-8 rounded-lg border transition-all",
-                notificationsEnabled
-                  ? "border-mv-green/30 bg-mv-green/10 text-mv-green-dark"
-                  : "border-mv-border bg-white text-mv-ink-faint hover:bg-mv-cream"
-              )}
-            >
-              {notificationsEnabled ? <Bell size={15} /> : <BellOff size={15} />}
-            </button>
+            <Tooltip>
+              <TooltipTrigger
+                onClick={enableNotifications}
+                className={cn(
+                  "flex items-center justify-center h-8 w-8 rounded-lg border transition-all",
+                  notificationsEnabled
+                    ? "border-mv-green/30 bg-mv-green/10 text-mv-green-dark"
+                    : "border-mv-border bg-white text-mv-ink-faint hover:bg-mv-cream"
+                )}
+              >
+                {notificationsEnabled ? <Bell size={15} /> : <BellOff size={15} />}
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {notificationsEnabled ? "Notifications activées — cliquer pour désactiver" : "Activer les notifications Web Push"}
+              </TooltipContent>
+            </Tooltip>
 
-            {/* Toggle members sidebar */}
-            <button
-              onClick={() => setShowMembers((p) => !p)}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-all",
-                showMembers
-                  ? "border-mv-green/30 bg-mv-green/10 text-mv-green-dark"
-                  : "border-mv-border bg-white text-mv-ink-soft hover:bg-mv-cream"
-              )}
-            >
-              <Users size={14} />
-              <span className="hidden sm:inline">Équipe</span>
-            </button>
+            <Tooltip>
+              <TooltipTrigger
+                onClick={() => setShowMembers((p) => !p)}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-all",
+                  showMembers
+                    ? "border-mv-green/30 bg-mv-green/10 text-mv-green-dark"
+                    : "border-mv-border bg-white text-mv-ink-soft hover:bg-mv-cream"
+                )}
+              >
+                <Users size={14} />
+                <span className="hidden sm:inline">Équipe</span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{showMembers ? "Masquer la liste des membres" : "Afficher la liste des membres"}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -527,7 +530,6 @@ export function TeamChatView({
           ) : (
             groups.map((group) => (
               <div key={group.label}>
-                {/* Date separator */}
                 <div className="flex items-center gap-3 px-4 py-3">
                   <div className="flex-1 h-px bg-mv-border-soft" />
                   <span className="text-[11px] font-medium text-mv-ink-faint px-2">{group.label}</span>
@@ -548,7 +550,6 @@ export function TeamChatView({
             ))
           )}
 
-          {/* Typing indicator */}
           {typingUsers.length > 0 && (
             <div className="px-4 py-1 flex items-center gap-2 text-[12px] text-mv-ink-faint">
               <div className="flex gap-0.5">
@@ -637,47 +638,60 @@ export function TeamChatView({
               />
               {/* Toolbar row */}
               <div className="flex items-center gap-1 px-3 pb-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => insertMention("FlowAI")}
-                  className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-green-dark transition-colors"
-                  title="Mentionner @FlowAI"
-                >
-                  <AtSign size={15} />
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink transition-colors"
-                  title="Pièce jointe (simulée)"
-                  onClick={() => toast.info("Upload de fichiers bientôt disponible.")}
-                >
-                  <Paperclip size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsRecording((p) => !p);
-                    toast.info(isRecording ? "Enregistrement arrêté." : "Enregistrement en cours…");
-                  }}
-                  className={cn(
-                    "flex items-center justify-center h-7 w-7 rounded-lg transition-colors",
-                    isRecording
-                      ? "bg-red-100 text-red-500 hover:bg-red-200"
-                      : "hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink"
-                  )}
-                  title={isRecording ? "Arrêter l'enregistrement" : "Enregistrement audio"}
-                >
-                  {isRecording ? <MicOff size={15} /> : <Mic size={15} />}
-                </button>
+                <Tooltip>
+                  <TooltipTrigger
+                    type="button"
+                    onClick={() => insertMention("FlowAI")}
+                    className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-green-dark transition-colors"
+                  >
+                    <AtSign size={15} />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Mentionner @FlowAI dans le message</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger
+                    type="button"
+                    onClick={() => toast.info("Upload de fichiers bientôt disponible.")}
+                    className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink transition-colors"
+                  >
+                    <Paperclip size={15} />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Joindre un fichier ou une image</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger
+                    type="button"
+                    onClick={() => {
+                      setIsRecording((p) => !p);
+                      toast.info(isRecording ? "Enregistrement arrêté." : "Enregistrement en cours…");
+                    }}
+                    className={cn(
+                      "flex items-center justify-center h-7 w-7 rounded-lg transition-colors",
+                      isRecording
+                        ? "bg-red-100 text-red-500 hover:bg-red-200"
+                        : "hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink"
+                    )}
+                  >
+                    {isRecording ? <MicOff size={15} /> : <Mic size={15} />}
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{isRecording ? "Arrêter l'enregistrement audio" : "Enregistrer un message vocal"}</TooltipContent>
+                </Tooltip>
+
                 <div className="flex-1" />
-                <button
-                  type="submit"
-                  disabled={!inputContent.trim()}
-                  className="flex h-8 items-center gap-1.5 rounded-lg bg-mv-green px-3.5 text-[12.5px] font-semibold text-white disabled:opacity-40 hover:bg-mv-green-dark transition-all"
-                >
-                  <Send size={13} />
-                  <span>Envoyer</span>
-                </button>
+
+                <Tooltip>
+                  <TooltipTrigger
+                    type="submit"
+                    disabled={!inputContent.trim()}
+                    className="flex h-8 items-center gap-1.5 rounded-lg bg-mv-green px-3.5 text-[12.5px] font-semibold text-white disabled:opacity-40 hover:bg-mv-green-dark transition-all"
+                  >
+                    <Send size={13} />
+                    <span>Envoyer</span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Envoyer le message (Entrée)</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           </form>
@@ -693,39 +707,43 @@ export function TeamChatView({
               Équipe ({teamMembers.length})
             </span>
             {onInvite && (
-              <button
-                onClick={onInvite}
-                className="flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-green-dark transition-colors"
-                title="Inviter un collaborateur"
-              >
-                <Plus size={14} />
-              </button>
+              <Tooltip>
+                <TooltipTrigger
+                  onClick={onInvite}
+                  className="flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-green-dark transition-colors"
+                >
+                  <Plus size={14} />
+                </TooltipTrigger>
+                <TooltipContent side="left">Inviter un collaborateur</TooltipContent>
+              </Tooltip>
             )}
           </div>
 
           {/* FlowAI bot always online */}
           <div className="px-3 py-2">
             <p className="text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1.5 px-1">Bots</p>
-            <button
-              onClick={() => insertMention("FlowAI")}
-              className="w-full flex items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-mv-cream transition-colors text-left"
-            >
-              <div className="relative shrink-0">
-                <div className="h-8 w-8 rounded-full flex items-center justify-center bg-mv-green/10 border border-mv-green/30 text-mv-green-dark">
-                  <Bot size={15} />
+            <Tooltip>
+              <TooltipTrigger
+                onClick={() => insertMention("FlowAI")}
+                className="w-full flex items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-mv-cream transition-colors text-left"
+              >
+                <div className="relative shrink-0">
+                  <div className="h-8 w-8 rounded-full flex items-center justify-center bg-mv-green/10 border border-mv-green/30 text-mv-green-dark">
+                    <Bot size={15} />
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-mv-green border-2 border-white" />
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-mv-green border-2 border-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[12.5px] font-semibold text-mv-ink truncate">Flow AI</p>
-                <p className="text-[10.5px] text-mv-green-dark font-medium">En ligne</p>
-              </div>
-            </button>
+                <div className="min-w-0">
+                  <p className="text-[12.5px] font-semibold text-mv-ink truncate">Flow AI</p>
+                  <p className="text-[10.5px] text-mv-green-dark font-medium">En ligne</p>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left">Cliquer pour insérer @FlowAI dans votre message</TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Members list */}
           <div className="flex-1 overflow-y-auto px-3 pb-3">
-            {/* Online */}
             {teamMembers.some((m) => isOnline(m.id)) && (
               <>
                 <p className="text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1.5 px-1 pt-2">
@@ -736,7 +754,6 @@ export function TeamChatView({
                 ))}
               </>
             )}
-            {/* Offline */}
             {teamMembers.some((m) => !isOnline(m.id)) && (
               <>
                 <p className="text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1.5 px-1 pt-3">
@@ -778,25 +795,28 @@ function MemberRow({
   onMention: (name: string) => void;
 }) {
   return (
-    <button
-      onClick={() => onMention(member.name.split(" ")[0])}
-      className="w-full flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-mv-cream transition-colors text-left"
-    >
-      <div className="relative shrink-0">
-        <Avatar name={member.name} src={member.avatarUrl} size={30} />
-        <span
-          className={cn(
-            "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white",
-            online ? "bg-mv-green" : "bg-mv-border"
-          )}
-        />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[12px] font-medium text-mv-ink truncate">{member.name}</p>
-        <p className={cn("text-[10px] font-medium truncate", online ? "text-mv-green-dark" : "text-mv-ink-faint")}>
-          {online ? "En ligne" : "Hors ligne"}
-        </p>
-      </div>
-    </button>
+    <Tooltip>
+      <TooltipTrigger
+        onClick={() => onMention(member.name.split(" ")[0])}
+        className="w-full flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-mv-cream transition-colors text-left"
+      >
+        <div className="relative shrink-0">
+          <Avatar name={member.name} src={member.avatarUrl} size={30} />
+          <span
+            className={cn(
+              "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white",
+              online ? "bg-mv-green" : "bg-mv-border"
+            )}
+          />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[12px] font-medium text-mv-ink truncate">{member.name}</p>
+          <p className={cn("text-[10px] font-medium truncate", online ? "text-mv-green-dark" : "text-mv-ink-faint")}>
+            {online ? "En ligne" : "Hors ligne"}
+          </p>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="left">Cliquer pour mentionner @{member.name.split(" ")[0]}</TooltipContent>
+    </Tooltip>
   );
 }
