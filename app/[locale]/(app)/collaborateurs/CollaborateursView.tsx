@@ -6,8 +6,6 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/minerva/PersonAvatar";
-import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
-import { Select } from "@/components/minerva/FormField";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InviteWorkspaceMemberModal } from "@/components/forms/InviteWorkspaceMemberModal";
 import { MemberDetailModal } from "./MemberDetailModal";
@@ -16,13 +14,18 @@ import { getInitialTeamMessages } from "@/lib/data/team-chat";
 import { updateMemberRoleAction, removeMemberAction } from "./actions";
 import { listWorkspaceInvitesAction } from "../workspace/actions";
 import { useApp, roleLabels } from "@/lib/app-context";
-import { useTeamPresence } from "@/hooks/use-team-presence";
 import { formatRelativeTime, cn } from "@/lib/utils";
 import posthog from "posthog-js";
 import type { WorkspaceInviteListEntry } from "@/lib/data/workspace-invites";
 import type { Restaurant, Role, TeamMember } from "@/lib/types";
-import { Plus, Users, Trash2, ChevronRight, Mail, MessageSquare, Bot } from "lucide-react";
-import Link from "next/link";
+import {
+  Plus,
+  Users,
+  MessageSquare,
+  ChevronRight,
+  Trash2,
+  X,
+} from "lucide-react";
 
 const roleTone: Record<Role, "green" | "lime" | "amber"> = {
   owner: "green",
@@ -45,22 +48,26 @@ export function CollaborateursView({
   const { role, authUser } = useApp();
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const onlineIds = useTeamPresence(restaurantId, authUser);
 
-  const [activeTab, setActiveTab] = useState<"members" | "chat">("members");
+  const [view, setView] = useState<"chat" | "members">("chat");
   const [inviteOpen, setInviteOpen] = useState(false);
   const [selected, setSelected] = useState<TeamMember | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [invites, setInvites] = useState<WorkspaceInviteListEntry[]>([]);
 
-  const canManage = Boolean(restaurantId) && Boolean(workspaceId) && (role === "owner" || role === "manager");
+  const canManage =
+    Boolean(restaurantId) &&
+    Boolean(workspaceId) &&
+    (role === "owner" || role === "manager");
 
-  const initialChatMessages = restaurantId ? getInitialTeamMessages(restaurantId, "general") : [];
+  const initialChatMessages = restaurantId
+    ? getInitialTeamMessages(restaurantId, "general")
+    : [];
 
   function refreshInvites() {
     if (!restaurantId || !workspaceId || !canManage) return;
     listWorkspaceInvitesAction(workspaceId).then((all) =>
-      setInvites(all.filter((invite) => invite.restaurantIds.includes(restaurantId)))
+      setInvites(all.filter((inv) => inv.restaurantIds.includes(restaurantId)))
     );
   }
 
@@ -90,53 +97,72 @@ export function CollaborateursView({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Collaborateurs &amp; Équipe"
-        title="Collaborateurs &amp; Communication"
-        description="Gérez les membres de l'équipe, leurs rôles et communiquez en direct avec l'assistant @FlowAI."
+        title="Chat d'Équipe"
+        description="Discutez en direct avec vos collaborateurs et mentionnez @FlowAI pour obtenir de l'aide métier instantanée."
         action={
-          canManage && (
-            <Button size="sm" onClick={() => setInviteOpen(true)}>
-              <Plus size={15} /> Inviter un collaborateur
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            {/* View toggle */}
+            <div className="flex items-center gap-1 rounded-xl border border-mv-border bg-mv-surface p-1 shadow-mv-xs">
+              <button
+                onClick={() => setView("chat")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-all",
+                  view === "chat"
+                    ? "bg-mv-green text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                )}
+              >
+                <MessageSquare size={14} />
+                Chat
+                <span className="ml-0.5 flex h-1.5 w-1.5 rounded-full bg-green-300 animate-pulse" />
+              </button>
+              <button
+                onClick={() => setView("members")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-all",
+                  view === "members"
+                    ? "bg-mv-green text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                )}
+              >
+                <Users size={14} />
+                Membres ({members.length})
+              </button>
+            </div>
+
+            {canManage && (
+              <Button size="sm" onClick={() => setInviteOpen(true)}>
+                <Plus size={15} /> Inviter
+              </Button>
+            )}
+          </div>
         }
       />
 
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-mv-border bg-mv-surface rounded-xl p-1 w-fit shadow-mv-sm gap-1">
-        <button
-          onClick={() => setActiveTab("members")}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-lg font-display text-[13.5px] font-bold transition-all",
-            activeTab === "members"
-              ? "bg-mv-green text-mv-surface shadow-mv-sm"
-              : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
-          )}
-        >
-          <Users size={16} />
-          <span>Membres &amp; Rôles ({members.length})</span>
-        </button>
+      {/* ── Chat View (full-screen) ── */}
+      {view === "chat" && restaurantId && (
+        <TeamChatView
+          restaurantId={restaurantId}
+          initialMessages={initialChatMessages}
+          teamMembers={members}
+          onInvite={canManage ? () => setInviteOpen(true) : undefined}
+        />
+      )}
 
-        <button
-          onClick={() => setActiveTab("chat")}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-lg font-display text-[13.5px] font-bold transition-all",
-            activeTab === "chat"
-              ? "bg-mv-green text-mv-surface shadow-mv-sm"
-              : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
-          )}
-        >
-          <MessageSquare size={16} />
-          <span>Chat d&apos;Équipe &amp; @FlowAI</span>
-          <span className="flex h-2 w-2 rounded-full bg-mv-green-tint animate-pulse" />
-        </button>
-      </div>
+      {view === "chat" && !restaurantId && (
+        <EmptyState
+          icon={MessageSquare}
+          title="Aucun établissement sélectionné"
+          description="Veuillez sélectionner un établissement pour accéder au chat d'équipe."
+        />
+      )}
 
-      {/* Tab 1: Team Members List */}
-      {activeTab === "members" && (
-        <>
+      {/* ── Members View ── */}
+      {view === "members" && (
+        <div className="rounded-2xl border border-mv-border bg-mv-surface shadow-mv-sm overflow-hidden">
           {!restaurantId || members.length === 0 ? (
             <EmptyState
               icon={Users}
@@ -151,77 +177,60 @@ export function CollaborateursView({
               }
             />
           ) : (
-            <Table>
-              <THead>
-                <Th>Collaborateur</Th>
-                <Th>Rôle</Th>
-                <Th>Statut</Th>
-                <Th className="text-right">Actions</Th>
-              </THead>
-              <tbody>
-                {members.map((m) => {
-                  const isOnline = Array.isArray(onlineIds) ? onlineIds.includes(m.id) : (onlineIds as any)?.has?.(m.id) ?? false;
-                  const isSelf = authUser?.id === m.id;
-                  return (
-                    <Tr key={m.id}>
-                      <Td>
-                        <div className="flex items-center gap-3">
-                          <Avatar name={m.name} size={36} />
-                          <div>
-                            <button
-                              onClick={() => setSelected(m)}
-                              className="font-bold text-mv-ink hover:text-mv-green-dark transition-colors flex items-center gap-1.5"
-                            >
-                              <span>{m.name}</span>
-                              {isSelf && (
-                                <span className="text-[11px] font-semibold text-mv-ink-faint bg-mv-cream px-1.5 py-0.5 rounded border border-mv-border-soft">
-                                  Vous
-                                </span>
-                              )}
-                            </button>
-                            <p className="text-[12px] text-mv-ink-soft">{m.email}</p>
-                          </div>
-                        </div>
-                      </Td>
-                      <Td>
+            <div className="divide-y divide-mv-border-soft">
+              {members.map((m) => {
+                const isSelf = authUser?.id === m.id;
+                return (
+                  <div
+                    key={m.id}
+                    className="flex items-center gap-4 px-5 py-4 hover:bg-mv-cream-soft/50 transition-colors"
+                  >
+                    <Avatar name={m.name} src={m.avatarUrl} size={40} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSelected(m)}
+                          className="font-semibold text-mv-ink hover:text-mv-green-dark transition-colors text-[14px]"
+                        >
+                          {m.name}
+                        </button>
+                        {isSelf && (
+                          <span className="text-[10.5px] font-medium text-mv-ink-faint bg-mv-cream px-1.5 py-0.5 rounded border border-mv-border-soft">
+                            Vous
+                          </span>
+                        )}
                         <Badge tone={roleTone[m.role]}>{roleLabels[m.role] ?? m.role}</Badge>
-                      </Td>
-                      <Td>
-                        <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold ${isOnline ? "text-mv-green-dark" : "text-mv-ink-faint"}`}>
-                          <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-mv-green animate-pulse" : "bg-mv-border"}`} />
-                          {isOnline ? "En ligne" : "Hors ligne"}
-                        </span>
-                      </Td>
-                      <Td className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button size="xs" variant="secondary" onClick={() => setSelected(m)}>
-                            Détails <ChevronRight size={13} />
-                          </Button>
-                          {canManage && !isSelf && (
-                            <Button size="xs" variant="secondary" onClick={() => handleRemove(m)} disabled={pendingId === m.id}>
-                              <Trash2 size={13} className="text-mv-red" />
-                            </Button>
-                          )}
-                        </div>
-                      </Td>
-                    </Tr>
-                  );
-                })}
-              </tbody>
-            </Table>
+                      </div>
+                      <p className="text-[12px] text-mv-ink-soft mt-0.5">{m.email}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        onClick={() => setSelected(m)}
+                      >
+                        Activité <ChevronRight size={13} />
+                      </Button>
+                      {canManage && !isSelf && (
+                        <Button
+                          size="xs"
+                          variant="secondary"
+                          onClick={() => handleRemove(m)}
+                          disabled={pendingId === m.id}
+                        >
+                          <Trash2 size={13} className="text-mv-red" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </>
+        </div>
       )}
 
-      {/* Tab 2: Team Chat & @FlowAI */}
-      {activeTab === "chat" && restaurantId && (
-        <TeamChatView
-          restaurantId={restaurantId}
-          initialMessages={initialChatMessages}
-          teamMembers={members}
-        />
-      )}
-
+      {/* Modals */}
       {inviteOpen && workspaceId && restaurantId && (
         <InviteWorkspaceMemberModal
           workspaceId={workspaceId}
