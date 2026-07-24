@@ -31,6 +31,27 @@ function mapEntry(row: ChangelogEntryRow): ChangelogEntry {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-07-24-v2-9-0",
+    title: "Version v2.9.0 : Commande Directe 0%, Hub POS Unifié & Studio Marketing Visuel",
+    description: "Publication majeure v2.9.0 résolvant les 3 plaies du restaurateur indépendant : 1) Module Commande Directe 0% commission avec calculateur d'économies vs Uber Eats & générateur de widget web / QR Code table (/commandes et /etablissement). 2) Hub POS Unifié avec déduction des stocks en temps réel et synchro masse salariale (/integrations). 3) Studio Marketing avec éditeur visuel Instagram (Story 9:16, Post 1:1, Carrousel 4:5) ultra-personnalisable et relances automatiques SMS/Email des clients inactifs (/campaigns).",
+    category: "fonctionnalite",
+    publishedAt: "2026-07-24T13:00:00.000Z",
+  },
+  {
+    id: "ch-2026-07-24-v2-8-0",
+    title: "Version v2.8.0 : Calendrier Mensuel d'Équipe Interactif pour les Horaires",
+    description: "Refonte de la section /horaire avec une nouvelle vue Calendrier (Mois) par défaut : grille 7 jours avec mise en avant d'aujourd'hui, aperçu direct des cartes de quarts, bouton d'ajout rapide au survol, modale de détail par journée et bascule vers le planning par semaine.",
+    category: "amelioration",
+    publishedAt: "2026-07-24T01:45:00.000Z",
+  },
+  {
+    id: "ch-2026-07-24-v2-7-0",
+    title: "Version v2.7.0 : Chat d'Équipe Realtime, Soft-Delete & Droits d'Accès aux Canaux",
+    description: "Migration du chat d'équipe vers Supabase Realtime avec mise à jour en direct des messages, logo Flow AI officiel (/icon-512.png), avatars d'utilisateurs connectés, suppression propre (soft delete) et tiroir (drawer) de gestion restreinte des accès aux canaux.",
+    category: "fonctionnalite",
+    publishedAt: "2026-07-24T01:15:00.000Z",
+  },
+  {
     id: "ch-2026-07-23-3",
     title: "Version v2.5.0 : Recherche Cmd+K, Recharts Finance, Chat d'Équipe & Optimisations UX",
     description: "Publication officielle de la version v2.5.0. Intégration de la recherche globale Cmd+K avec historique et suggestions, refonte du Simulateur Financier avec graphiques Recharts dynamiques et typographie épurée, Chat d'équipe en direct avec bot @FlowAI, module d'incidents avec dictaphone, élimination totale du Cumulative Layout Shift (CLS) et transitions de pages fluides.",
