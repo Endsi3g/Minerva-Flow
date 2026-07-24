@@ -673,9 +673,11 @@ export type TeamChatMessage = {
   authorId: string;
   authorName: string;
   authorRole: string;
+  authorAvatarUrl?: string | null;
   content: string;
   isAiResponse?: boolean;
   isPinned?: boolean;
+  deleted?: boolean;
   replyTo?: { id: string; authorName: string; content: string };
   reactions?: Record<string, string[]>; // emoji -> authorIds[]
   attachments?: { name: string; url: string; type: "image" | "file" | "audio" }[];

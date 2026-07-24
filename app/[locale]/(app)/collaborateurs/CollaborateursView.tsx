@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { InviteWorkspaceMemberModal } from "@/components/forms/InviteWorkspaceMemberModal";
 import { MemberDetailModal } from "./MemberDetailModal";
 import { TeamChatView } from "@/components/collaborateurs/TeamChatView";
-import { getInitialTeamMessages } from "@/lib/data/team-chat";
+import { getTeamMessages } from "@/lib/data/team-chat";
 import { updateMemberRoleAction, removeMemberAction } from "./actions";
 import { listWorkspaceInvitesAction } from "../workspace/actions";
 import { useApp, roleLabels } from "@/lib/app-context";
@@ -60,9 +60,13 @@ export function CollaborateursView({
     Boolean(workspaceId) &&
     (role === "owner" || role === "manager");
 
-  const initialChatMessages = restaurantId
-    ? getInitialTeamMessages(restaurantId, "general")
-    : [];
+  const [initialChatMessages, setInitialChatMessages] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (restaurantId) {
+      getTeamMessages(restaurantId, "general").then(setInitialChatMessages);
+    }
+  }, [restaurantId]);
 
   function refreshInvites() {
     if (!restaurantId || !workspaceId || !canManage) return;
