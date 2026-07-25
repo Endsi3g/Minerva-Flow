@@ -271,7 +271,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
             </motion.div>
           </AnimatePresence>
 
-          <form onSubmit={handleAuth} className="mt-8 flex flex-col gap-4">
+          <motion.form layout onSubmit={handleAuth} className="mt-8 flex flex-col gap-4">
             {/* Google OAuth */}
             <button
               type="button"
@@ -324,14 +324,15 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
             </Field>
 
             {/* Repeat Password (Signup) */}
-            <AnimatePresence initial={false}>
+            <AnimatePresence initial={false} mode="popLayout">
               {mode === "signup" && (
                 <motion.div
                   key="confirmPwd"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.18 }}
+                  initial={{ opacity: 0, height: 0, y: -4 }}
+                  animate={{ opacity: 1, height: "auto", y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -4 }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  className="overflow-hidden"
                 >
                   <Field label="Confirmer le mot de passe">
                     <Input
@@ -375,7 +376,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
                 {mode === "login" ? "Créer un compte" : "Se connecter"}
               </button>
             </p>
-          </form>
+          </motion.form>
         </div>
 
         {/* Footer Terms */}

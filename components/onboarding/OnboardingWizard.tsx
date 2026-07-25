@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BarChart3, Camera, MessagesSquare, FileText, Loader2, Check, Zap, ExternalLink } from "lucide-react";
 import {
@@ -16,7 +16,7 @@ import { GooglePlacesSearch } from "@/components/places/GooglePlacesSearch";
 import { roleLabels } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
 import { updateProfileNameAction } from "@/app/[locale]/(app)/profil/actions";
-import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
+import { updateRestaurantAction, createRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
 import { setMyRoleAction, finishOnboardingAction } from "@/app/[locale]/onboarding/actions";
 import type { RestaurantInput } from "@/lib/data/restaurants";
 import type { Role } from "@/lib/types";
@@ -55,6 +55,7 @@ export function OnboardingWizard({
   initialFullName,
   initialAvatarUrl,
   initialRole,
+  initialStep = 1,
 }: {
   userId: string;
   restaurantId: string;
@@ -62,6 +63,7 @@ export function OnboardingWizard({
   initialFullName: string;
   initialAvatarUrl: string | null;
   initialRole: Role;
+  initialStep?: number;
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -89,19 +91,21 @@ export function OnboardingWizard({
         if (!result.ok) throw new Error(result.error);
       }
       await setMyRoleAction(restaurantId, role);
-      // Best-effort, deliberately outside the throw-on-error flow above —
-      // nothing entered on this step is required, so a failure here should
-      // never block finishing onboarding.
-      if (restaurantId && Object.keys(locationForm).length > 0) {
-        await updateRestaurantAction(restaurantId, locationForm).catch(() => null);
+
+      // Create or Update Restaurant details entered during onboarding step 3
+      if (Object.keys(locationForm).length > 0) {
+        if (restaurantId) {
+          await updateRestaurantAction(restaurantId, locationForm).catch(() => null);
+        } else {
+          await createRestaurantAction({
+            name: locationForm.name || "Mon restaurant",
+            ...locationForm,
+          }).catch(() => null);
+        }
       }
+
       const finished = await finishOnboardingAction();
       if (!finished) throw new Error("Impossible de terminer la configuration. Réessayez.");
-      // router.refresh() right after push() races the push's own RSC fetch
-      // for the destination route and can leave the transition hanging
-      // indefinitely (observed in dev mode after several sequential awaited
-      // Server Actions) — push() already fetches fresh data for /overview,
-      // which hasn't been visited yet this session, so refresh() is redundant.
       router.push("/overview");
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Une erreur est survenue.");
@@ -111,9 +115,15 @@ export function OnboardingWizard({
 
   return (
     <Onboarding
+      defaultValue={initialStep}
       totalSteps={5}
       maxStepValue={FEATURES.length - 1}
       onComplete={handleComplete}
+      onValueChange={(step) => {
+        if (typeof window !== "undefined") {
+          window.history.replaceState(null, "", `?step=${step}`);
+        }
+      }}
       canGoNext={(step) => step !== 2 || fullName.trim().length > 0}
       className="w-full max-w-lg mx-auto"
     >
@@ -186,22 +196,14 @@ export function OnboardingWizard({
           description="Importez automatiquement l'adresse et les horaires — ou passez cette étape."
         />
         <div className="mt-5 space-y-4">
-          {restaurantId ? (
-            <>
-              <GooglePlacesSearch onSelect={(patch) => setLocationForm((f) => ({ ...f, ...patch }))} />
-              <Field label="Site web" hint="Pré-remplit aussi la description à l'enregistrement">
-                <Input
-                  value={locationForm.website ?? ""}
-                  onChange={(e) => setLocationForm((f) => ({ ...f, website: e.target.value }))}
-                  placeholder="Ex : monrestaurant.com"
-                />
-              </Field>
-            </>
-          ) : (
-            <p className="text-[13px] text-mv-ink-soft">
-              Vous pourrez importer ces informations plus tard depuis Réglages → Établissement.
-            </p>
-          )}
+          <GooglePlacesSearch onSelect={(patch) => setLocationForm((f) => ({ ...f, ...patch }))} />
+          <Field label="Site web" hint="Pré-remplit aussi la description à l'enregistrement">
+            <Input
+              value={locationForm.website ?? ""}
+              onChange={(e) => setLocationForm((f) => ({ ...f, website: e.target.value }))}
+              placeholder="Ex : monrestaurant.com"
+            />
+          </Field>
         </div>
       </Onboarding.Step>
 
@@ -240,10 +242,6 @@ export function OnboardingWizard({
   );
 }
 
-// Controlled by the Onboarding root's stepValue/setStepValue so the tab
-// row, the panel below, the step dots, and the Back/Next buttons all agree
-// on which feature is showing (an uncontrolled FeatureCarousel would keep
-// its own index and drift out of sync with Navigation's Next button).
 function FeatureStep() {
   const { stepValue, setStepValue } = useOnboarding();
   const feature = FEATURES[stepValue];
@@ -280,6 +278,17 @@ function FeatureStep() {
 function ConnectToolsStep() {
   const [connected, setConnected] = useState<Record<string, boolean>>({});
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("minerva_connected_tools");
+      if (saved) {
+        setConnected(JSON.parse(saved));
+      }
+    } catch {
+      // Ignore storage read errors
+    }
+  }, []);
+
   const tools = [
     {
       id: "square",
@@ -287,15 +296,13 @@ function ConnectToolsStep() {
       desc: "Synchronisation des ventes & caisse",
       icon: Square,
       href: "/api/oauth/square",
-      color: "bg-black text-white",
     },
     {
       id: "stripe",
       name: "Stripe",
       desc: "Gestion des paiements & factures",
       icon: Stripe,
-      href: "/api/stripe/webhook",
-      color: "bg-[#635BFF] text-white",
+      href: "/billing",
     },
     {
       id: "google-calendar",
@@ -303,7 +310,6 @@ function ConnectToolsStep() {
       desc: "Réservations & plannings d'équipe",
       icon: GoogleCalendar,
       href: "/api/oauth/google-calendar",
-      color: "bg-[#4285F4] text-white",
     },
     {
       id: "meta",
@@ -311,7 +317,6 @@ function ConnectToolsStep() {
       desc: "Avis clients & réseaux sociaux",
       icon: Meta,
       href: "/api/oauth/meta",
-      color: "bg-[#0668E1] text-white",
     },
     {
       id: "workspace",
@@ -319,60 +324,75 @@ function ConnectToolsStep() {
       desc: "Documents & fichiers d'exploitation",
       icon: GoogleDrive,
       href: "/api/oauth/google-workspace",
-      color: "bg-[#0F9D58] text-white",
     },
   ];
 
   function toggleConnect(id: string, href: string) {
-    setConnected((prev) => ({ ...prev, [id]: !prev[id] }));
-    if (href.startsWith("/api/oauth")) {
-      window.open(href, "_blank", "width=600,height=700");
+    const nextState = !connected[id];
+    const newConnected = { ...connected, [id]: nextState };
+    setConnected(newConnected);
+
+    try {
+      localStorage.setItem("minerva_connected_tools", JSON.stringify(newConnected));
+    } catch {
+      // Ignore storage write errors
+    }
+
+    if (nextState && href.startsWith("/api/oauth")) {
+      const popup = window.open(href, `oauth_${id}`, "width=600,height=720");
+      if (popup) {
+        const timer = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(timer);
+          }
+        }, 800);
+      }
     }
   }
 
   return (
     <div className="mt-4 space-y-4">
-      {/* Visual Orbit Container */}
-      <div className="relative mx-auto flex h-36 w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl border border-mv-border bg-mv-ink/95 p-4 shadow-mv-sm">
-        {/* Glow behind orbit */}
-        <div className="absolute h-24 w-24 rounded-full bg-mv-green/20 blur-xl" />
+      {/* High-Contrast Visual Orbit Container */}
+      <div className="relative mx-auto flex h-36 w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl border border-mv-border bg-[#0a1e14] p-4 shadow-mv-sm">
+        {/* Ambient Glow */}
+        <div className="absolute h-24 w-24 rounded-full bg-emerald-500/20 blur-xl" />
 
-        {/* Outer Orbit Circle */}
-        <div className="absolute h-28 w-28 rounded-full border border-dashed border-white/20" />
+        {/* Orbit Circle Ring */}
+        <div className="absolute h-28 w-28 rounded-full border border-dashed border-white/25" />
 
-        {/* Center Badge */}
-        <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-mv-green p-3 shadow-lg shadow-mv-green/30 ring-4 ring-white/10">
-          <Zap size={22} className="text-mv-cream-soft" />
+        {/* Center Minerva Pulse Badge */}
+        <div className="relative z-10 flex h-13 w-13 items-center justify-center rounded-full bg-mv-green p-3 shadow-lg shadow-mv-green/40 ring-4 ring-white/20">
+          <Zap size={22} className="text-white" />
         </div>
 
-        {/* Orbiting Icons */}
-        <div className="absolute left-6 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white shadow">
-          <Square size={14} />
+        {/* Orbiting White High-Contrast Badges with Official Tool Icons */}
+        <div className="absolute left-5 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white border border-gray-200 shadow-md text-mv-ink">
+          <Square size={18} />
         </div>
-        <div className="absolute right-6 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white shadow">
-          <Stripe size={14} />
+        <div className="absolute right-5 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white border border-gray-200 shadow-md text-mv-ink">
+          <Stripe size={18} />
         </div>
-        <div className="absolute left-10 bottom-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white shadow">
-          <GoogleCalendar size={14} />
+        <div className="absolute left-9 bottom-3 flex h-9 w-9 items-center justify-center rounded-full bg-white border border-gray-200 shadow-md text-mv-ink">
+          <GoogleCalendar size={18} />
         </div>
-        <div className="absolute right-10 bottom-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white shadow">
-          <Meta size={14} />
+        <div className="absolute right-9 bottom-3 flex h-9 w-9 items-center justify-center rounded-full bg-white border border-gray-200 shadow-md text-mv-ink">
+          <Meta size={18} />
         </div>
       </div>
 
-      {/* Mini Cards Grid */}
-      <div className="space-y-2">
+      {/* High-Contrast Crisp Mini Cards List */}
+      <div className="space-y-2.5">
         {tools.map((t) => {
           const Icon = t.icon;
           const isConnected = Boolean(connected[t.id]);
           return (
             <div
               key={t.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-mv-border bg-mv-surface p-3 shadow-mv-sm transition-all hover:bg-mv-cream-soft"
+              className="flex items-center justify-between gap-3 rounded-xl border border-mv-border bg-white p-3 shadow-mv-sm transition-all hover:border-mv-green/40"
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${t.color}`}>
-                  <Icon size={18} />
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f8f9fa] border border-mv-border shadow-mv-sm text-mv-ink">
+                  <Icon size={20} />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[13px] font-bold text-mv-ink truncate">{t.name}</p>
@@ -383,16 +403,16 @@ function ConnectToolsStep() {
               <button
                 type="button"
                 onClick={() => toggleConnect(t.id, t.href)}
-                className={`flex shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[12px] font-semibold transition-all ${
                   isConnected
                     ? "bg-mv-green-tint text-mv-green-dark border border-mv-green/30"
-                    : "bg-mv-ink text-white hover:bg-mv-ink/80"
+                    : "bg-mv-ink text-white hover:bg-mv-ink/90 shadow-mv-sm"
                 }`}
               >
                 {isConnected ? (
                   <>
                     <Check size={13} />
-                    Connected
+                    Connecté
                   </>
                 ) : (
                   <>
@@ -408,4 +428,3 @@ function ConnectToolsStep() {
     </div>
   );
 }
-

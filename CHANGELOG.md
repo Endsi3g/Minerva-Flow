@@ -2,6 +2,19 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.13.0] - 2026-07-25
+
+### 🛠️ Correctifs & Améliorations Onboarding & OAuth
+- **Persistance de l'Onboarding & des Intégrations** :
+  - Sauvegarde automatique du restaurant et de son adresse Google Places à la fin du wizard (création automatique si aucun établissement préalable ne régit le compte).
+  - Maintien de l'étape 4 dans l'URL (`?step=4`) pour éviter la réinitialisation de l'onboarding au début lors d'une connexion d'intégration.
+  - Fenêtres popup sécurisées pour les flux OAuth avec statut "Connecté" conservé en stockage local.
+- **Rendu Visuel des SVG Outils (Orbit & Cartes)** :
+  - Badges ronds blancs haute définition avec ombrage et bordure subtile pour les icônes Orbit.
+  - Cartes d'outils à fort contraste avec logos officiels (Square POS, Stripe, Google Calendar, Meta, Google Workspace) d'une netteté parfaite.
+- **Animation de Morphing Fluide (Auth Layout)** :
+  - Animation de transition morphing `motion.form layout` sans saut de hauteur ni glitch lors du basculement entre Connexion et Inscription.
+
 ## [v2.12.0] - 2026-07-25
 
 ### 🖥️ Full Screen Edge-to-Edge & Suppression des Animations Distrayantes

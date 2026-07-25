@@ -7,7 +7,14 @@ import { LogoMark } from "@/components/shell/Logo";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { OriginRightPanel } from "@/components/auth/AuthCard";
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ step?: string }>;
+}) {
+  const { step } = await searchParams;
+  const initialStep = step ? parseInt(step, 10) : 1;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -52,6 +59,7 @@ export default async function OnboardingPage() {
             initialFullName={profile?.fullName ?? ""}
             initialAvatarUrl={profile?.avatarUrl ?? null}
             initialRole={membership?.role ?? "owner"}
+            initialStep={isNaN(initialStep) ? 1 : initialStep}
           />
         </div>
 
