@@ -78,7 +78,9 @@
     "fidelisation": "Sadakat",
     "menu": "Menü",
     "inventaire": "Envanter",
-    "commandes": "Siparişler"
+    "commandes": "Siparişler",
+    "collaborateurs": "Çalışanlar",
+    "incidents": "Olaylar"
   },
   "shell": {
     "toggleNav": "Gezinmeyi değiştir",

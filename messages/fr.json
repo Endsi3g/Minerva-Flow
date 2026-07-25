@@ -78,7 +78,9 @@
     "fidelisation": "Fidélisation",
     "menu": "Menu",
     "inventaire": "Inventaire",
-    "commandes": "Commandes"
+    "commandes": "Commandes",
+    "collaborateurs": "Collaborateurs",
+    "incidents": "Incidents"
   },
   "shell": {
     "toggleNav": "Basculer la navigation",

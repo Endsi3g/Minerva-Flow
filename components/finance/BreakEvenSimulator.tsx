@@ -124,10 +124,8 @@ export function BreakEvenSimulator() {
               <CardTitle className="font-heading text-[21px] font-normal text-mv-ink flex items-center gap-2">
                 <span>Simulateur de Seuil de Rentabilité &amp; Point Mort</span>
                 <Tooltip>
-                  <TooltipTrigger>
-                    <button type="button" aria-label="Informations sur le simulateur" className="text-mv-ink-faint hover:text-mv-ink transition-colors">
-                      <Info size={16} />
-                    </button>
+                  <TooltipTrigger aria-label="Informations sur le simulateur" className="text-mv-ink-faint hover:text-mv-ink transition-colors">
+                    <Info size={16} />
                   </TooltipTrigger>
                   <TooltipContent side="top">
                     Module de calcul interactif du point mort mensuel et du nombre de couverts nécessaires.
