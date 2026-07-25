@@ -2,7 +2,7 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
-## [v1.4.0] - 2026-07-25
+## [v2.10.0] - 2026-07-25
 
 ### 🚀 Nouveautés & Fonctionnalités (Features)
 - **Nouvelle Étape d'Onboarding "Connectez vos outils"** :
