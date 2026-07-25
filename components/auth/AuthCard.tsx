@@ -252,26 +252,18 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
 
         {/* Form Content */}
         <div className="my-auto mx-auto w-full max-w-[360px] py-8">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mode}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18 }}
-            >
-              <h1 className="font-display text-[30px] sm:text-[34px] font-bold tracking-tight text-mv-ink leading-tight text-center">
-                {mode === "login" ? "Connexion" : "Créer un compte"}
-              </h1>
-              <p className="mt-2 text-center text-[13.5px] text-mv-ink-soft">
-                {mode === "login"
-                  ? "Pilotez l'exploitation de votre établissement."
-                  : "Rejoignez la plateforme unifiée pour restaurants & cafés."}
-              </p>
-            </motion.div>
-          </AnimatePresence>
+          <div>
+            <h1 className="font-display text-[30px] sm:text-[34px] font-bold tracking-tight text-mv-ink leading-tight text-center">
+              {mode === "login" ? "Connexion" : "Créer un compte"}
+            </h1>
+            <p className="mt-2 text-center text-[13.5px] text-mv-ink-soft">
+              {mode === "login"
+                ? "Pilotez l'exploitation de votre établissement."
+                : "Rejoignez la plateforme unifiée pour restaurants & cafés."}
+            </p>
+          </div>
 
-          <motion.form layout onSubmit={handleAuth} className="mt-8 flex flex-col gap-4">
+          <form onSubmit={handleAuth} className="mt-8 flex flex-col gap-4">
             {/* Google OAuth */}
             <button
               type="button"
@@ -324,28 +316,17 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
             </Field>
 
             {/* Repeat Password (Signup) */}
-            <AnimatePresence initial={false} mode="popLayout">
-              {mode === "signup" && (
-                <motion.div
-                  key="confirmPwd"
-                  initial={{ opacity: 0, height: 0, y: -4 }}
-                  animate={{ opacity: 1, height: "auto", y: 0 }}
-                  exit={{ opacity: 0, height: 0, y: -4 }}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                  className="overflow-hidden"
-                >
-                  <Field label="Confirmer le mot de passe">
-                    <Input
-                      type="password"
-                      required
-                      value={repeatPassword}
-                      onChange={(e) => setRepeatPassword(e.target.value)}
-                      className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] focus:border-mv-green/60 focus:ring-mv-green/20"
-                    />
-                  </Field>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {mode === "signup" && (
+              <Field label="Confirmer le mot de passe">
+                <Input
+                  type="password"
+                  required
+                  value={repeatPassword}
+                  onChange={(e) => setRepeatPassword(e.target.value)}
+                  className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] focus:border-mv-green/60 focus:ring-mv-green/20"
+                />
+              </Field>
+            )}
 
             {/* Error Message */}
             {error && (
@@ -376,7 +357,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
                 {mode === "login" ? "Créer un compte" : "Se connecter"}
               </button>
             </p>
-          </motion.form>
+          </form>
         </div>
 
         {/* Footer Terms */}

@@ -238,22 +238,18 @@ function OnboardingRoot({
       onComplete,
     ]
   );
-
   return (
     <OnboardingContext.Provider value={contextValue}>
-      <motion.div
-        layout
-        transition={{ type: "spring", stiffness: 350, damping: 40 }}
+      <div
         className={cn(
           "flex flex-col rounded-2xl border border-mv-border bg-mv-surface p-6 shadow-mv-sm overflow-hidden",
           className
         )}
-        data-slot="onboarding"
-        data-state={`step-${currentStep}`}
+        data-slot="onboarding-root"
         {...(props as any)}
       >
         {children}
-      </motion.div>
+      </div>
     </OnboardingContext.Provider>
   );
 }
@@ -271,24 +267,17 @@ function OnboardingStep({ step, children, className, ...props }: OnboardingStepP
   const { currentStep } = useOnboarding();
   const isActive = currentStep === step;
 
+  if (!isActive) return null;
+
   return (
-    <AnimatePresence mode="wait">
-      {isActive && (
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: 15 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -15 }}
-          transition={{ duration: 0.2 }}
-          className={cn(className)}
-          data-slot="onboarding-step"
-          data-state="active"
-          {...(props as any)}
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div
+      className={cn(className)}
+      data-slot="onboarding-step"
+      data-state="active"
+      {...(props as any)}
+    >
+      {children}
+    </div>
   );
 }
 

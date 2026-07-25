@@ -2,6 +2,16 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.14.0] - 2026-07-25
+
+### ⚡ Suppression Totale des Animations de Transition Perturbantes
+- **Élimination des Animations Spring & Slide dans l'Onboarding** :
+  - Suppression des transitions Framer Motion avec ressorts (`spring layout`) et glissements latéraux (`x: 15 / x: -15`) sur l'Onboarding qui causaient des secousses et décalages d'interface.
+  - Affichage instantané, solide et stable des étapes du parcours d'onboarding.
+- **Formulaire d'Authentification Purifié** :
+  - Retrait des animations de hauteur de formulaire et `mode="popLayout"` sur `AuthCard`.
+  - Basculement direct et réactif entre Connexion et Inscription sans aucun décalage visuel.
+
 ## [v2.13.0] - 2026-07-25
 
 ### 🛠️ Correctifs & Améliorations Onboarding & OAuth
