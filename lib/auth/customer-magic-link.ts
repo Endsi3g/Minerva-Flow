@@ -1,5 +1,19 @@
 import { createClient } from "@/lib/supabase/client";
 
+/** Mirrors AuthCard.tsx's mapErrorMessage — Supabase's raw auth error strings
+ * (English, developer-facing) must never reach an end customer placing an
+ * order. */
+function friendlyAuthError(message: string): string {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("rate limit")) {
+    return "Trop de tentatives. Réessayez dans quelques minutes.";
+  }
+  if (normalized.includes("invalid email") || normalized.includes("unable to validate email")) {
+    return "Cette adresse courriel semble invalide.";
+  }
+  return "Impossible d'envoyer le lien pour l'instant. Réessayez dans un instant.";
+}
+
 /**
  * Passwordless sign-in for the customer portal / public referral flow.
  * `data: { is_customer: true }` is read by handle_new_user() (Postgres
@@ -23,6 +37,6 @@ export async function requestCustomerMagicLink(
     },
   });
 
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: friendlyAuthError(error.message) };
   return { ok: true };
 }

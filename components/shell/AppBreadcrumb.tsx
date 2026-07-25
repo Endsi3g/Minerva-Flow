@@ -29,6 +29,22 @@ const crumbTranslationKeys: Record<string, string> = {
   commandes: "commandes",
   collaborateurs: "collaborateurs",
   incidents: "incidents",
+  billing: "billing",
+  changelog: "changelog",
+  data: "data",
+  depenses: "depenses",
+  employees: "employees",
+  etablissement: "etablissement",
+  etablissements: "etablissement",
+  fournisseurs: "fournisseurs",
+  guide: "guide",
+  horaire: "horaire",
+  library: "library",
+  "mon-espace": "monEspace",
+  profil: "profil",
+  reservations: "reservations",
+  support: "support",
+  workspace: "workspace",
 };
 
 export function AppBreadcrumb() {

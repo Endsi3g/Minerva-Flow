@@ -37,7 +37,7 @@ export function ReferralModal({
   }, [open, restaurantId]);
 
   const link = data?.code
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/sign-up?ref=${data.code}`
+    ? `${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/sign-up?ref=${data.code}`
     : null;
 
   function copyLink() {

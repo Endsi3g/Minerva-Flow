@@ -1,39 +1,17 @@
 "use client";
 
 import { LogoMark } from "@/components/shell/Logo";
-import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/minerva/FormField";
-import { OtpInput } from "@/components/auth/OtpInput";
 import { createClient } from "@/lib/supabase/client";
 import posthog from "posthog-js";
 import { Link, getPathname, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState, type FormEvent } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, ArrowRight, ShieldCheck, CheckCircle2, TrendingUp, Users, PackageCheck } from "lucide-react";
-import { Google, Apple, Microsoft } from "@/components/ui/BrandIcons";
-
-function OAuthButton({
-  label,
-  icon,
-  onClick,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-mv-border bg-mv-surface text-[13px] font-semibold text-mv-ink transition-all hover:bg-mv-cream-soft focus:outline-none focus:ring-2 focus:ring-mv-green/20"
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
+import { AnimatePresence, motion } from "motion/react";
+import { TrendingUp, Star } from "lucide-react";
+import { Google } from "@/components/ui/BrandIcons";
+import Image from "next/image";
 
 export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   const t = useTranslations("auth");
@@ -41,18 +19,10 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   const router = useRouter();
 
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
-  const [authMethod, setAuthMethod] = useState<"password" | "otp">("password");
-  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-  
-  // OTP state
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const [referralCode, setReferralCode] = useState<string | null>(null);
@@ -74,95 +44,18 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     : inviteToken
       ? `/invite/${inviteToken}`
       : "/overview";
-  
+
   const localizedPostAuthPath = getPathname({ href: postAuthPath, locale });
 
   const mapErrorMessage = (msg: string): string => {
     const normalized = msg.toLowerCase();
-    if (normalized.includes("invalid login credentials")) {
-      return t("errorInvalidCredentials");
-    }
-    if (
-      normalized.includes("already registered") ||
-      normalized.includes("user already registered") ||
-      normalized.includes("already exists")
-    ) {
-      return t("errorAlreadyRegistered");
-    }
-    if (normalized.includes("token has expired") || normalized.includes("invalid token")) {
-      return "Le code OTP renseigné est invalide ou expiré.";
-    }
+    if (normalized.includes("invalid login credentials")) return t("errorInvalidCredentials");
+    if (normalized.includes("already registered") || normalized.includes("user already registered") || normalized.includes("already exists")) return t("errorAlreadyRegistered");
     return msg;
   };
 
-  async function handleSendOtp() {
-    if (!email) {
-      setError("Veuillez saisir votre adresse email.");
-      return;
-    }
-    setError(null);
-    setSuccessMsg(null);
-    setIsLoading(true);
-
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm?next=${localizedPostAuthPath}`,
-        },
-      });
-      if (error) throw error;
-      setOtpSent(true);
-      setSuccessMsg("Un code de vérification à 6 chiffres vous a été envoyé par courriel.");
-    } catch (err) {
-      setError(err instanceof Error ? mapErrorMessage(err.message) : t("errorGeneric"));
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleVerifyOtp(codeToVerify?: string) {
-    const token = codeToVerify || otpCode;
-    if (!token || token.length !== 6) {
-      setError("Veuillez saisir le code à 6 chiffres.");
-      return;
-    }
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: "email",
-      });
-      if (error) throw error;
-      if (data.user) {
-        posthog.identify(data.user.id, { email: data.user.email });
-        posthog.capture("user_logged_in", { method: "otp" });
-      }
-      router.push(postAuthPath);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? mapErrorMessage(err.message) : t("errorGeneric"));
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   async function handleAuth(e: FormEvent) {
     e.preventDefault();
-    if (authMethod === "otp") {
-      if (otpSent) {
-        await handleVerifyOtp();
-      } else {
-        await handleSendOtp();
-      }
-      return;
-    }
-
     setError(null);
     setIsLoading(true);
 
@@ -178,9 +71,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
         router.push(postAuthPath);
         router.refresh();
       } else {
-        if (password !== repeatPassword) {
-          throw new Error(t("errorPasswordMismatch"));
-        }
+        if (password !== repeatPassword) throw new Error(t("errorPasswordMismatch"));
         const signUpMetadata: Record<string, string> = {};
         if (referralCode) signUpMetadata.referral_code = referralCode;
         if (inviteToken) signUpMetadata.invite_token = inviteToken;
@@ -218,7 +109,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     }
   }
 
-  async function handleOAuth(provider: "google" | "apple" | "azure") {
+  async function handleOAuth(provider: "google") {
     setError(null);
     posthog.capture(mode === "login" ? "user_logged_in" : "user_signed_up", {
       method: provider,
@@ -238,8 +129,6 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
 
   function toggleMode() {
     setError(null);
-    setSuccessMsg(null);
-    setOtpSent(false);
     const newMode = mode === "login" ? "signup" : "login";
     setMode(newMode);
     const href = getPathname({ href: newMode === "login" ? "/login" : "/sign-up", locale });
@@ -247,309 +136,229 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   }
 
   return (
-    <div className="min-h-screen w-full bg-mv-cream text-mv-ink">
-      {/* Top Bar Header */}
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-3">
-          <LogoMark size={32} />
-          <span className="font-sans text-[18px] font-bold text-mv-ink">
-            Flow <span className="text-mv-green-dark">par Minerva</span>
-          </span>
+    <div className="flex min-h-screen w-full bg-white">
+      {/* ── LEFT PANEL: Form ─────────────────────────── */}
+      <div className="flex w-full flex-col lg:w-[46%] xl:w-[42%]">
+        {/* Logo header */}
+        <div className="flex items-center gap-3 px-8 pt-8">
+          <LogoMark size={28} />
+          <div className="flex flex-col leading-tight">
+            <span className="font-sans text-[15px] font-bold text-mv-ink leading-none">Minerva Flow</span>
+            <span className="text-[10px] font-semibold text-mv-ink-soft leading-none mt-0.5">par Minerva</span>
+          </div>
         </div>
-        <div className="hidden items-center gap-6 text-[13px] font-semibold text-mv-ink-soft md:flex">
-          <Link href="/legal/terms" className="hover:text-mv-ink">Conditions</Link>
-          <Link href="/legal/privacy" className="hover:text-mv-ink">Confidentialité</Link>
-          <Link href="/support" className="hover:text-mv-ink">Assistance</Link>
-        </div>
-      </header>
 
-      {/* Main 2-Column Section */}
-      <main className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-12 px-6 py-6 lg:flex-row lg:items-stretch lg:py-12">
-        {/* Left Column: Form Card */}
-        <div className="flex w-full flex-col justify-center lg:w-[480px]">
-          <Card padded={false} className="w-full border-mv-border bg-mv-surface shadow-mv-md">
-            <form onSubmit={handleAuth} className="flex flex-col gap-5 p-8">
-              <div>
-                <h1 className="font-display text-[24px] font-bold tracking-tight text-mv-ink">
-                  {mode === "login" ? "Connexion à votre espace" : "Créer un compte Minerva"}
+        {/* Form area */}
+        <div className="flex flex-1 flex-col justify-center px-8 py-10 sm:px-12 lg:px-14 xl:px-16">
+          <div className="mx-auto w-full max-w-[360px]">
+
+            {/* Heading */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={mode}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+              >
+                <h1 className="font-display text-[28px] font-bold tracking-tight text-mv-ink leading-tight">
+                  {mode === "login" ? "Content de vous revoir." : "Créer un compte."}
                 </h1>
-                <p className="mt-1 text-[13.5px] text-mv-ink-soft">
+                <p className="mt-1.5 text-[13.5px] text-mv-ink-soft">
                   {mode === "login"
-                    ? "Pilotez l'exploitation de vos établissements en toute simplicité."
-                    : "Rejoignez la plateforme de gestion unifiée pour restaurants et cafés."}
+                    ? "Pilotez votre établissement en toute simplicité."
+                    : "Rejoignez la plateforme de gestion pour restaurants et cafés."}
                 </p>
-              </div>
+              </motion.div>
+            </AnimatePresence>
 
-              {/* OAuth Buttons */}
-              <div className="flex gap-2">
-                <OAuthButton
-                  label="Google"
-                  onClick={() => handleOAuth("google")}
-                  icon={<Google size={16} />}
-                />
-                <OAuthButton
-                  label="Apple"
-                  onClick={() => handleOAuth("apple")}
-                  icon={<Apple size={16} />}
-                />
-                <OAuthButton
-                  label="Microsoft"
-                  onClick={() => handleOAuth("azure")}
-                  icon={<Microsoft size={16} />}
-                />
-              </div>
+            <form onSubmit={handleAuth} className="mt-7 flex flex-col gap-4">
+              {/* Google OAuth */}
+              <button
+                type="button"
+                onClick={() => handleOAuth("google")}
+                className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-[#e2e8f0] bg-white text-[13.5px] font-semibold text-mv-ink shadow-sm transition-all hover:bg-gray-50 hover:shadow focus:outline-none focus:ring-2 focus:ring-mv-green/20"
+              >
+                <Google size={17} />
+                Continuer avec Google
+              </button>
 
+              {/* Divider */}
               <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-mv-border-soft" />
-                <span className="text-[11.5px] font-medium text-mv-ink-faint">ou avec votre courriel</span>
-                <div className="h-px flex-1 bg-mv-border-soft" />
+                <div className="h-px flex-1 bg-[#e8e8e6]" />
+                <span className="text-[11.5px] font-medium text-mv-ink-faint">ou continuer avec votre courriel</span>
+                <div className="h-px flex-1 bg-[#e8e8e6]" />
               </div>
 
-              {/* Mode Switcher: Password vs OTP */}
-              {mode === "login" && (
-                <div className="flex rounded-lg border border-mv-border bg-mv-cream-soft p-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAuthMethod("password");
-                      setError(null);
-                      setSuccessMsg(null);
-                    }}
-                    className={`flex-1 rounded-md py-1.5 text-[12px] font-semibold transition-all ${
-                      authMethod === "password"
-                        ? "bg-mv-surface text-mv-ink shadow-mv-sm"
-                        : "text-mv-ink-soft hover:text-mv-ink"
-                    }`}
-                  >
-                    Mot de passe
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAuthMethod("otp");
-                      setError(null);
-                      setSuccessMsg(null);
-                    }}
-                    className={`flex-1 rounded-md py-1.5 text-[12px] font-semibold transition-all ${
-                      authMethod === "otp"
-                        ? "bg-mv-surface text-mv-ink shadow-mv-sm"
-                        : "text-mv-ink-soft hover:text-mv-ink"
-                    }`}
-                  >
-                    Code OTP / Magique
-                  </button>
+              {/* Email */}
+              <div>
+                <Input
+                  type="email"
+                  placeholder="Adresse courriel"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] placeholder:text-mv-ink-faint focus:border-mv-green/60 focus:ring-mv-green/20"
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[12px] font-semibold text-mv-ink-soft">Mot de passe</span>
+                  {mode === "login" && (
+                    <Link
+                      href="/forgot-password"
+                      className="text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                    >
+                      Mot de passe oublié ?
+                    </Link>
+                  )}
                 </div>
+                <Input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] focus:border-mv-green/60 focus:ring-mv-green/20"
+                />
+              </div>
+
+              {/* Confirm password (signup only) */}
+              <AnimatePresence initial={false}>
+                {mode === "signup" && (
+                  <motion.div
+                    key="confirmPwd"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    <div className="mb-1.5">
+                      <span className="text-[12px] font-semibold text-mv-ink-soft">Confirmer le mot de passe</span>
+                    </div>
+                    <Input
+                      type="password"
+                      required
+                      value={repeatPassword}
+                      onChange={(e) => setRepeatPassword(e.target.value)}
+                      className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] focus:border-mv-green/60 focus:ring-mv-green/20"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Error */}
+              {error && (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-[12.5px] font-medium text-red-600">{error}</p>
               )}
 
-              {/* Fields */}
-              <div className="space-y-4">
-                <Field label={t("emailLabel")}>
-                  <Input
-                    type="email"
-                    placeholder={t("emailPlaceholder")}
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </Field>
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex h-11 w-full items-center justify-center rounded-xl bg-mv-ink text-[13.5px] font-bold text-white transition-all hover:bg-mv-ink/90 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-mv-ink/30"
+              >
+                {isLoading
+                  ? "Traitement..."
+                  : mode === "login"
+                    ? "Se connecter"
+                    : "Créer mon compte"}
+              </button>
 
-                {authMethod === "password" ? (
-                  <>
-                    <Field label={t("passwordLabel")}>
-                      <div className="flex items-center justify-between">
-                        <span />
-                        {mode === "login" && (
-                          <Link
-                            href="/forgot-password"
-                            className="text-[11.5px] font-semibold text-mv-green-dark hover:underline"
-                          >
-                            {t("forgotPasswordLink")}
-                          </Link>
-                        )}
-                      </div>
-                      <Input
-                        type="password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                    </Field>
-
-                    <AnimatePresence initial={false} mode="popLayout">
-                      {mode === "signup" && (
-                        <motion.div
-                          key="repeatPassword"
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                        >
-                          <Field label={t("confirmPasswordLabel")}>
-                            <Input
-                              type="password"
-                              required
-                              value={repeatPassword}
-                              onChange={(e) => setRepeatPassword(e.target.value)}
-                            />
-                          </Field>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </>
-                ) : (
-                  /* OTP Mode Field */
-                  <div className="space-y-3 pt-1">
-                    {otpSent ? (
-                      <div className="space-y-3">
-                        <p className="text-[12.5px] font-medium text-mv-ink-soft">
-                          Saisissez le code à 6 chiffres reçu sur <strong className="text-mv-ink">{email}</strong> :
-                        </p>
-                        <OtpInput
-                          length={6}
-                          onComplete={(code) => {
-                            setOtpCode(code);
-                            handleVerifyOtp(code);
-                          }}
-                          disabled={isLoading}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleSendOtp}
-                          disabled={isLoading}
-                          className="text-[11.5px] font-semibold text-mv-green-dark hover:underline focus:outline-none"
-                        >
-                          Renvoyer un nouveau code
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="text-[12px] text-mv-ink-soft">
-                        Nous vous enverrons un code de connexion sécurisé à 6 chiffres par courriel (aucun mot de passe requis).
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Status Messages */}
-              {error && <p className="text-[12.5px] font-medium text-mv-red">{error}</p>}
-              {successMsg && <p className="text-[12.5px] font-medium text-mv-green-dark">{successMsg}</p>}
-
-              {/* Submit Button */}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  "Traitement en cours..."
-                ) : authMethod === "otp" ? (
-                  otpSent ? (
-                    "Vérifier le code →"
-                  ) : (
-                    "Envoyer le code OTP →"
-                  )
-                ) : mode === "login" ? (
-                  t("submitLogin")
-                ) : (
-                  t("submitSignup")
-                )}
-              </Button>
-
-              {/* Toggle Mode Link */}
+              {/* Toggle */}
               <p className="text-center text-[12.5px] text-mv-ink-faint">
-                {mode === "login" ? t("noAccount") : t("hasAccount")}{" "}
+                {mode === "login" ? "Pas encore de compte ?" : "Vous avez déjà un compte ?"}{" "}
                 <button
                   type="button"
                   onClick={toggleMode}
                   className="font-semibold text-mv-green-dark hover:underline focus:outline-none"
                 >
-                  {mode === "login" ? t("createAccount") : t("submitLogin")}
+                  {mode === "login" ? "S'inscrire" : "Se connecter"}
                 </button>
               </p>
             </form>
-          </Card>
+
+            {/* Legal */}
+            <p className="mt-6 text-center text-[11px] leading-relaxed text-mv-ink-faint">
+              En créant un compte, vous acceptez nos{" "}
+              <Link href="/legal/terms" className="underline hover:text-mv-ink-soft">
+                Conditions d&apos;utilisation
+              </Link>{" "}
+              et notre{" "}
+              <Link href="/legal/privacy" className="underline hover:text-mv-ink-soft">
+                Politique de confidentialité
+              </Link>
+              .
+            </p>
+          </div>
         </div>
+      </div>
 
-        {/* Right Column: App Interactive Live Preview (Minerva Theme) */}
-        <div className="hidden flex-1 lg:flex flex-col justify-center">
-          <div className="relative overflow-hidden rounded-2xl border border-mv-border bg-mv-surface p-8 shadow-mv-md">
-            {/* Background Decorative Blur Tints */}
-            <div className="pointer-events-none absolute -right-12 -top-12 h-64 w-64 rounded-full bg-mv-green-tint/60 blur-3xl" />
-            <div className="pointer-events-none absolute -left-12 -bottom-12 h-64 w-64 rounded-full bg-mv-lime-tint/60 blur-3xl" />
+      {/* ── RIGHT PANEL: Restaurant Visual ───────────── */}
+      <div className="relative hidden flex-1 overflow-hidden lg:flex lg:flex-col lg:justify-end">
+        {/* Background image */}
+        <Image
+          src="/auth-restaurant-bg.jpg"
+          alt="Restaurant ambiance Minerva"
+          fill
+          className="object-cover object-center"
+          priority
+          quality={90}
+        />
 
-            <div className="relative space-y-6">
-              {/* Header Badge & Title */}
-              <div className="flex items-center justify-between border-b border-mv-border-soft pb-4">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-2.5 w-2.5 rounded-full bg-mv-green animate-pulse" />
-                  <span className="text-[12px] font-bold uppercase tracking-wider text-mv-green-dark">
-                    Plateforme Minerva Live
-                  </span>
-                </div>
-                <span className="rounded-full bg-mv-green-tint px-3 py-1 text-[11px] font-semibold text-mv-green-dark">
-                  Établissement connecté
-                </span>
+        {/* Deep green gradient overlay — harmonizes with Melk-style mint green palette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d2b1a]/92 via-[#1a4a2e]/60 to-[#0d2b1a]/30" />
+
+        {/* Content overlay */}
+        <div className="relative z-10 p-10 xl:p-14">
+          {/* Star badge */}
+          <div className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-sm">
+            <div className="flex items-center gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={11} className="fill-amber-400 text-amber-400" />
+              ))}
+            </div>
+            <span className="text-[12px] font-bold uppercase tracking-wider text-emerald-200">
+              100+ établissements
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h2 className="font-display text-[36px] font-bold leading-tight text-white xl:text-[42px]">
+            Pilotez votre restaurant,<br />posez n&apos;importe quelle question.
+          </h2>
+
+          {/* KPI floating card */}
+          <div className="mt-8 w-[280px] rounded-2xl border border-emerald-400/20 bg-[#0d2b1a]/60 p-5 backdrop-blur-md xl:w-[300px]">
+            <div className="flex items-center justify-between text-white/60">
+              <span className="text-[11px] font-bold uppercase tracking-wider">Revenu ce mois</span>
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10">
+                <TrendingUp size={12} className="text-white" />
               </div>
-
-              {/* Grid Widgets Preview */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-4">
-                  <div className="flex items-center justify-between text-mv-ink-soft">
-                    <span className="text-[12px] font-semibold">Revenu du jour</span>
-                    <TrendingUp size={16} className="text-mv-green-dark" />
-                  </div>
-                  <p className="mt-2 text-[22px] font-bold text-mv-ink">3 840,50 $</p>
-                  <span className="mt-1 inline-block text-[11px] font-semibold text-mv-green-dark">
-                    +14.2% vs semaine passée
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-4">
-                  <div className="flex items-center justify-between text-mv-ink-soft">
-                    <span className="text-[12px] font-semibold">Équipe en quart</span>
-                    <Users size={16} className="text-mv-green-dark" />
-                  </div>
-                  <p className="mt-2 text-[22px] font-bold text-mv-ink">6 présents</p>
-                  <span className="mt-1 inline-block text-[11px] font-semibold text-mv-ink-soft">
-                    Service du soir (17h - 23h)
-                  </span>
-                </div>
-              </div>
-
-              {/* AI Assistant Live Prompt Card */}
-              <div className="rounded-xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
-                <div className="flex items-center gap-2 text-[12.5px] font-semibold text-mv-green-dark">
-                  <Sparkles size={16} />
-                  <span>Assistant IA Minerva</span>
-                </div>
-                <div className="mt-3 rounded-lg bg-mv-green-tint/50 p-3 text-[13px] leading-relaxed text-mv-ink">
-                  "L'ingénierie de menu indique que le <strong>Tartare de Saumon</strong> est votre plat avec la plus forte marge (+68%)."
-                </div>
-              </div>
-
-              {/* Feature Points */}
-              <div className="grid grid-cols-2 gap-3 pt-2 text-[12px] text-mv-ink-soft">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={15} className="text-mv-green-dark" />
-                  <span>Point de vente & Square</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={15} className="text-mv-green-dark" />
-                  <span>Paiements Stripe Connect</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={15} className="text-mv-green-dark" />
-                  <span>Horaires & Paie d'équipe</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={15} className="text-mv-green-dark" />
-                  <span>Fidélisation & QR Codes</span>
-                </div>
-              </div>
+            </div>
+            <p className="mt-2 font-display text-[30px] font-bold text-white">
+              48 290 $
+            </p>
+            <span className="text-[11.5px] font-semibold text-emerald-400">↑ +18.4% vs mois dernier</span>
+            {/* Mini sparkline bars */}
+            <div className="mt-4 flex items-end gap-1">
+              {[28, 42, 35, 55, 48, 62, 58, 70, 65, 80, 72, 88].map((h, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-sm bg-white/20"
+                  style={{ height: `${(h / 88) * 36}px` }}
+                />
+              ))}
+            </div>
+            <div className="mt-1.5 flex justify-between text-[9.5px] text-white/40">
+              <span>Jan</span>
+              <span>Juin</span>
+              <span>Juil</span>
             </div>
           </div>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="py-6 text-center text-[12px] text-mv-ink-faint">
-        © 2026 Flow par Minerva. Gestion opérationnelle pour restaurants et cafés au Québec.
-      </footer>
+      </div>
     </div>
   );
 }

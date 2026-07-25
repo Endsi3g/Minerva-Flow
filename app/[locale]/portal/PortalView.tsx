@@ -39,7 +39,7 @@ function ReferralProgramCard({
 
   function handleCopy() {
     if (!link) return;
-    navigator.clipboard.writeText(`${window.location.origin}/p/${link.code}`);
+    navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/p/${link.code}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -53,7 +53,7 @@ function ReferralProgramCard({
         <div className="space-y-3">
           <div className="flex items-center gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
             <span className="flex-1 truncate text-[12.5px] text-mv-ink-soft">
-              {`${typeof window !== "undefined" ? window.location.origin : ""}/p/${link.code}`}
+              {`${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/p/${link.code}`}
             </span>
             <button
               onClick={handleCopy}

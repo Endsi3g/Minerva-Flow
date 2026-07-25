@@ -44,7 +44,7 @@ export default async function OverviewPage() {
   if (!restaurantId) {
     return (
       <div>
-        <PageHeader eyebrow="Vue globale" title="Overview" />
+        <PageHeader eyebrow="Vue globale" title="Aperçu" />
         <EmptyState
           icon={Store}
           title="Aucun restaurant configuré"

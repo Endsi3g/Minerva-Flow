@@ -416,7 +416,7 @@ function ReferralProgramsCard({
 function LoyaltyShareRow({ share, onDeleted }: { share: LoyaltyShare; onDeleted: (id: string) => void }) {
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/f/${share.token}`;
+  const url = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/f/${share.token}`;
 
   useEffect(() => {
     QRCode.toDataURL(url, { width: 512, margin: 1 }).then(setQrDataUrl).catch(() => setQrDataUrl(null));

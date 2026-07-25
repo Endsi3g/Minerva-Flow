@@ -66,6 +66,19 @@ export async function createMenuShare(
   return mapMenuShare(data as MenuShareRow);
 }
 
+/**
+ * The QR code / iframe / button widget generator on /etablissement needs a
+ * real menu_shares token pointing at the full active menu (item_ids null) —
+ * it must never fall back to the restaurant's own id, which getMenuShareByToken
+ * would never match and every generated link/QR code would 404.
+ */
+export async function getOrCreateDefaultMenuShare(restaurantId: string): Promise<MenuShare | null> {
+  const existing = await getMenuSharesForRestaurant(restaurantId);
+  const full = existing.find((s) => !s.itemIds || s.itemIds.length === 0);
+  if (full) return full;
+  return createMenuShare(restaurantId, { title: "Commande directe" });
+}
+
 export async function deleteMenuShare(restaurantId: string, id: string): Promise<boolean> {
   const supabase = await createClient();
   const { error } = await supabase.from("menu_shares").delete().eq("restaurant_id", restaurantId).eq("id", id);

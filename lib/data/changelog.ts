@@ -29,6 +29,21 @@ function mapEntry(row: ChangelogEntryRow): ChangelogEntry {
   };
 }
 
+/**
+ * Strips the "Version vX.Y.Z : " / "vX.Y.Z — " prefix so a hardcoded
+ * DEFAULT_CHANGELOG_ENTRIES row and its later real DB counterpart (published
+ * by the release-changelog-automation with a fresh uuid and a slightly
+ * different prefix style) normalize to the same key — otherwise the id-only
+ * comparison below misses the match and the entry renders twice.
+ */
+function normalizeTitle(title: string): string {
+  return title
+    .replace(/^version\s+v\d+\.\d+\.\d+\s*[:\-—]\s*/i, "")
+    .replace(/^v\d+\.\d+\.\d+\s*[:\-—]\s*/i, "")
+    .trim()
+    .toLowerCase();
+}
+
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
     id: "ch-2026-07-24-v2-9-3",
@@ -126,7 +141,10 @@ export async function getChangelogEntries(): Promise<ChangelogEntry[]> {
     const dbEntries = (data as ChangelogEntryRow[]).map(mapEntry);
 
     const existingIds = new Set(dbEntries.map((e) => e.id));
-    const missingDefaults = DEFAULT_CHANGELOG_ENTRIES.filter((e) => !existingIds.has(e.id));
+    const existingTitles = new Set(dbEntries.map((e) => normalizeTitle(e.title)));
+    const missingDefaults = DEFAULT_CHANGELOG_ENTRIES.filter(
+      (e) => !existingIds.has(e.id) && !existingTitles.has(normalizeTitle(e.title))
+    );
     return [...missingDefaults, ...dbEntries].sort(
       (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
     );

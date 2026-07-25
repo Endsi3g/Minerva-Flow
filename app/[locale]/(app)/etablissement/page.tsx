@@ -11,6 +11,7 @@ import {
   createRestaurantAction,
   updateRestaurantAction,
 } from "@/app/[locale]/(app)/settings/actions";
+import { getOrCreateDefaultMenuShareTokenAction } from "./actions";
 import { DirectOrderingWidgetGenerator } from "@/components/etablissement/DirectOrderingWidgetGenerator";
 import type { RestaurantInput } from "@/lib/data/restaurants";
 import type { Restaurant, OpeningHours, DayHours } from "@/lib/types";
@@ -388,6 +389,31 @@ function OtherEstablishments() {
   );
 }
 
+function DirectOrderingWidgetSection({ restaurant }: { restaurant: Restaurant }) {
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setToken(null);
+    getOrCreateDefaultMenuShareTokenAction(restaurant.id).then((t) => {
+      if (!cancelled) setToken(t);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurant.id]);
+
+  if (!token) {
+    return (
+      <Card className="p-8 text-center text-[13px] text-mv-ink-faint">
+        Préparation du lien de commande directe…
+      </Card>
+    );
+  }
+
+  return <DirectOrderingWidgetGenerator restaurantName={restaurant.name} menuToken={token} />;
+}
+
 export default function EtablissementPage() {
   const restaurant = useCurrentRestaurant();
 
@@ -400,12 +426,7 @@ export default function EtablissementPage() {
       />
       <div className="space-y-8">
         <EstablishmentIdentityCard />
-        {restaurant && (
-          <DirectOrderingWidgetGenerator
-            restaurantName={restaurant.name}
-            menuToken={restaurant.id}
-          />
-        )}
+        {restaurant && <DirectOrderingWidgetSection restaurant={restaurant} />}
         <OtherEstablishments />
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, Camera, MessagesSquare, FileText, Loader2 } from "lucide-react";
+import { BarChart3, Camera, MessagesSquare, FileText, Loader2, Check, Zap, ExternalLink } from "lucide-react";
 import {
   Onboarding,
   ChoiceGroup,
@@ -20,6 +20,7 @@ import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
 import { setMyRoleAction, finishOnboardingAction } from "@/app/[locale]/onboarding/actions";
 import type { RestaurantInput } from "@/lib/data/restaurants";
 import type { Role } from "@/lib/types";
+import { Square, Stripe, GoogleCalendar, Meta, GoogleDrive } from "@/components/ui/BrandIcons";
 
 const FEATURES = [
   {
@@ -94,7 +95,8 @@ export function OnboardingWizard({
       if (restaurantId && Object.keys(locationForm).length > 0) {
         await updateRestaurantAction(restaurantId, locationForm).catch(() => null);
       }
-      await finishOnboardingAction();
+      const finished = await finishOnboardingAction();
+      if (!finished) throw new Error("Impossible de terminer la configuration. Réessayez.");
       // router.refresh() right after push() races the push's own RSC fetch
       // for the destination route and can leave the transition hanging
       // indefinitely (observed in dev mode after several sequential awaited
@@ -109,7 +111,7 @@ export function OnboardingWizard({
 
   return (
     <Onboarding
-      totalSteps={4}
+      totalSteps={5}
       maxStepValue={FEATURES.length - 1}
       onComplete={handleComplete}
       canGoNext={(step) => step !== 2 || fullName.trim().length > 0}
@@ -204,6 +206,14 @@ export function OnboardingWizard({
       </Onboarding.Step>
 
       <Onboarding.Step step={4}>
+        <Onboarding.Header
+          title="Connectez vos outils"
+          description="Synchronisez vos comptes clés pour centraliser toutes vos données d'exploitation."
+        />
+        <ConnectToolsStep />
+      </Onboarding.Step>
+
+      <Onboarding.Step step={5}>
         <Onboarding.Header title="Vous êtes prêt !" description="Quelques conseils pour bien démarrer." />
         <div className="mt-5">
           <TipsList title="Conseils">
@@ -266,3 +276,136 @@ function FeatureStep() {
     </div>
   );
 }
+
+function ConnectToolsStep() {
+  const [connected, setConnected] = useState<Record<string, boolean>>({});
+
+  const tools = [
+    {
+      id: "square",
+      name: "Square POS",
+      desc: "Synchronisation des ventes & caisse",
+      icon: Square,
+      href: "/api/oauth/square",
+      color: "bg-black text-white",
+    },
+    {
+      id: "stripe",
+      name: "Stripe",
+      desc: "Gestion des paiements & factures",
+      icon: Stripe,
+      href: "/api/stripe/webhook",
+      color: "bg-[#635BFF] text-white",
+    },
+    {
+      id: "google-calendar",
+      name: "Google Calendar",
+      desc: "Réservations & plannings d'équipe",
+      icon: GoogleCalendar,
+      href: "/api/oauth/google-calendar",
+      color: "bg-[#4285F4] text-white",
+    },
+    {
+      id: "meta",
+      name: "Meta (FB & IG)",
+      desc: "Avis clients & réseaux sociaux",
+      icon: Meta,
+      href: "/api/oauth/meta",
+      color: "bg-[#0668E1] text-white",
+    },
+    {
+      id: "workspace",
+      name: "Google Workspace",
+      desc: "Documents & fichiers d'exploitation",
+      icon: GoogleDrive,
+      href: "/api/oauth/google-workspace",
+      color: "bg-[#0F9D58] text-white",
+    },
+  ];
+
+  function toggleConnect(id: string, href: string) {
+    setConnected((prev) => ({ ...prev, [id]: !prev[id] }));
+    if (href.startsWith("/api/oauth")) {
+      window.open(href, "_blank", "width=600,height=700");
+    }
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      {/* Visual Orbit Container */}
+      <div className="relative mx-auto flex h-36 w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl border border-mv-border bg-mv-ink/95 p-4 shadow-mv-sm">
+        {/* Glow behind orbit */}
+        <div className="absolute h-24 w-24 rounded-full bg-mv-green/20 blur-xl animate-pulse" />
+
+        {/* Outer Orbit Circle */}
+        <div className="absolute h-28 w-28 rounded-full border border-dashed border-white/20 animate-[spin_20s_linear_infinite]" />
+
+        {/* Center Badge */}
+        <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-mv-green p-3 shadow-lg shadow-mv-green/30 ring-4 ring-white/10">
+          <Zap size={22} className="text-mv-cream-soft" />
+        </div>
+
+        {/* Orbiting Icons */}
+        <div className="absolute left-6 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white shadow">
+          <Square size={14} />
+        </div>
+        <div className="absolute right-6 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white shadow">
+          <Stripe size={14} />
+        </div>
+        <div className="absolute left-10 bottom-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white shadow">
+          <GoogleCalendar size={14} />
+        </div>
+        <div className="absolute right-10 bottom-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white shadow">
+          <Meta size={14} />
+        </div>
+      </div>
+
+      {/* Mini Cards Grid */}
+      <div className="space-y-2">
+        {tools.map((t) => {
+          const Icon = t.icon;
+          const isConnected = Boolean(connected[t.id]);
+          return (
+            <div
+              key={t.id}
+              className="flex items-center justify-between gap-3 rounded-xl border border-mv-border bg-mv-surface p-3 shadow-mv-sm transition-all hover:bg-mv-cream-soft"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${t.color}`}>
+                  <Icon size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-bold text-mv-ink truncate">{t.name}</p>
+                  <p className="text-[11px] text-mv-ink-soft truncate">{t.desc}</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => toggleConnect(t.id, t.href)}
+                className={`flex shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all ${
+                  isConnected
+                    ? "bg-mv-green-tint text-mv-green-dark border border-mv-green/30"
+                    : "bg-mv-ink text-white hover:bg-mv-ink/80"
+                }`}
+              >
+                {isConnected ? (
+                  <>
+                    <Check size={13} />
+                    Connected
+                  </>
+                ) : (
+                  <>
+                    Connecter
+                    <ExternalLink size={11} />
+                  </>
+                )}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+

@@ -80,7 +80,22 @@
     "inventaire": "Inventaire",
     "commandes": "Commandes",
     "collaborateurs": "Collaborateurs",
-    "incidents": "Incidents"
+    "incidents": "Incidents",
+    "billing": "Facturation",
+    "changelog": "Nouveautés",
+    "data": "Données",
+    "depenses": "Dépenses",
+    "employees": "Employés",
+    "etablissement": "Établissements",
+    "fournisseurs": "Fournisseurs",
+    "guide": "Guide",
+    "horaire": "Horaire",
+    "library": "Bibliothèque",
+    "monEspace": "Mon espace",
+    "profil": "Profil",
+    "reservations": "Réservations",
+    "support": "Aide & Support",
+    "workspace": "Workspace"
   },
   "shell": {
     "toggleNav": "Basculer la navigation",

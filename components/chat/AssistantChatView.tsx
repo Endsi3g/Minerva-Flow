@@ -220,14 +220,12 @@ export function AssistantChatView({
         <div className="flex h-14 items-center justify-between border-b border-mv-border bg-mv-cream-soft/90 px-4">
           <div className="flex items-center gap-3">
             <Tooltip>
-              <TooltipTrigger>
-                <button
-                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                  aria-label="Masquer ou afficher le panneau latéral"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
-                >
-                  <PanelLeft size={18} />
-                </button>
+              <TooltipTrigger
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                aria-label="Masquer ou afficher le panneau latéral"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
+              >
+                <PanelLeft size={18} />
               </TooltipTrigger>
               <TooltipContent side="bottom">Masquer / Afficher le panneau</TooltipContent>
             </Tooltip>
@@ -242,28 +240,24 @@ export function AssistantChatView({
 
           <div className="flex items-center gap-2">
             <Tooltip>
-              <TooltipTrigger>
-                <button
-                  onClick={() => setShareOpen(true)}
-                  aria-label="Partager cette conversation"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
-                >
-                  <Share2 size={17} />
-                </button>
+              <TooltipTrigger
+                onClick={() => setShareOpen(true)}
+                aria-label="Partager cette conversation"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
+              >
+                <Share2 size={17} />
               </TooltipTrigger>
               <TooltipContent side="bottom">Partager la conversation</TooltipContent>
             </Tooltip>
 
             <Tooltip>
-              <TooltipTrigger>
-                <button
-                  onClick={handleNewChat}
-                  aria-label="Démarrer une nouvelle discussion"
-                  className="flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] font-bold text-mv-ink shadow-mv-sm hover:bg-mv-cream-soft transition-all"
-                >
-                  <PlusCircle size={15} className="text-mv-green-dark" />
-                  <span>Nouveau chat</span>
-                </button>
+              <TooltipTrigger
+                onClick={handleNewChat}
+                aria-label="Démarrer une nouvelle discussion"
+                className="flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] font-bold text-mv-ink shadow-mv-sm hover:bg-mv-cream-soft transition-all"
+              >
+                <PlusCircle size={15} className="text-mv-green-dark" />
+                <span>Nouveau chat</span>
               </TooltipTrigger>
               <TooltipContent side="bottom">Nouvelle discussion IA</TooltipContent>
             </Tooltip>

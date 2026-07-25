@@ -33,9 +33,12 @@ export default async function RootPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-3">
             <LogoMark size={32} />
-            <span className="font-sans text-[19px] font-bold text-mv-ink">
-              Flow <span className="text-mv-green-dark">par Minerva</span>
-            </span>
+            <div className="flex flex-col leading-tight">
+              <span className="font-sans text-[17px] font-bold text-mv-ink leading-none">
+                Minerva Flow
+              </span>
+              <span className="text-[10.5px] font-semibold text-mv-ink-soft leading-none mt-0.5">par Minerva</span>
+            </div>
           </Link>
 
           <nav className="hidden items-center gap-8 text-[13.5px] font-semibold text-mv-ink-soft md:flex">
@@ -75,7 +78,11 @@ export default async function RootPage() {
             Pilotage quotidien et intelligent de votre établissement.
           </h1>
 
-          <p className="text-[16px] sm:text-[18px] leading-relaxed text-mv-ink-soft max-w-2xl mx-auto">
+          <p className="text-[15px] sm:text-[16px] leading-relaxed text-mv-green-dark font-bold max-w-xl mx-auto">
+            Minerva Flow est la plateforme SaaS de gestion opérationnelle conçue pour les restaurants et cafés au Québec.
+          </p>
+
+          <p className="text-[15px] sm:text-[17px] leading-relaxed text-mv-ink-soft max-w-2xl mx-auto">
             Centralisez vos revenus, vos dépenses, votre inventaire, vos horaires d&apos;équipe et vos analyses de marge dans une interface moderne et sécurisée.
           </p>
 
@@ -282,7 +289,10 @@ export default async function RootPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2.5">
               <LogoMark size={24} />
-              <span className="font-bold text-[16px] text-mv-ink">Flow par Minerva</span>
+              <div className="flex flex-col leading-tight">
+                <span className="font-bold text-[15px] text-mv-ink leading-none">Minerva Flow</span>
+                <span className="text-[10px] text-mv-ink-faint leading-none mt-0.5">par Minerva</span>
+              </div>
             </div>
             <p className="text-[12.5px] text-mv-ink-faint max-w-md">
               Plateforme SaaS de pilotage opérationnel pour restaurants et cafés. Québec, Canada.

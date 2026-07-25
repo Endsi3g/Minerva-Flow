@@ -51,7 +51,7 @@ export async function generateMetadata({
   const ogLocale = ogLocales[locale] ?? "fr_CA";
 
   const title = "Minerva Flow — Système d'Analyse & Gestion Intelligente pour Restaurants (Québec & France)";
-  const description = "Plateforme unifiée de prévision financière, seuil de rentabilité, gestion d'équipe et analyse IA pour restaurants et bistros au Québec, Montréal et France.";
+  const description = "Minerva Flow est la plateforme SaaS de gestion opérationnelle pour restaurants et cafés au Québec. Centralisez finances, inventaire, équipe et analyse IA dans une interface unifiée.";
 
   return {
     title: {
@@ -60,6 +60,9 @@ export async function generateMetadata({
     },
     description,
     applicationName: "Minerva Flow",
+    verification: {
+      google: "2k08zY7Mxenx_aiBOJ-Tlto9kEVG6nYdbitk6K5OQ-8",
+    },
     keywords: [
       "Minerva Flow",
       "Gestion Restaurant Québec",

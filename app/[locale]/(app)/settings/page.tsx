@@ -293,7 +293,7 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Configuration" title="Settings" />
+      <PageHeader eyebrow="Configuration" title="Paramètres" />
 
       <Tabs key={defaultTab} defaultValue={defaultTab}>
         <TabsList className="mb-6 h-auto rounded-full border border-mv-border bg-mv-cream-soft p-1">

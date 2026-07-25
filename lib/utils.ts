@@ -69,8 +69,13 @@ export function isoDaysAgo(days: number): string {
 // would shift the displayed day whenever the process's timezone differs
 // from DEFAULT_TIMEZONE (e.g. a UTC server showing the previous evening
 // in Montreal time for a date meant to mean "this calendar day").
+// Some callers pass a full timestamptz value (e.g. customers.last_visit_at)
+// instead of the plain "YYYY-MM-DD" this was designed for — appending
+// "T12:00:00Z" to an already-complete ISO string produces an unparseable
+// value ("...T19:00:00.000ZT12:00:00Z") and formatDate/formatDateFull throw
+// RangeError: Invalid time value. Detect that case and parse as-is instead.
 function parseCalendarDate(iso: string) {
-  return new Date(iso + "T12:00:00Z");
+  return iso.includes("T") ? new Date(iso) : new Date(iso + "T12:00:00Z");
 }
 
 export function formatDate(iso: string) {

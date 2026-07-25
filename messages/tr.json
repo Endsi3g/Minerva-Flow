@@ -80,7 +80,22 @@
     "inventaire": "Envanter",
     "commandes": "Siparişler",
     "collaborateurs": "Çalışanlar",
-    "incidents": "Olaylar"
+    "incidents": "Olaylar",
+    "billing": "Faturalandırma",
+    "changelog": "Yenilikler",
+    "data": "Veriler",
+    "depenses": "Giderler",
+    "employees": "Çalışanlar",
+    "etablissement": "İşletmeler",
+    "fournisseurs": "Tedarikçiler",
+    "guide": "Rehber",
+    "horaire": "Vardiya Planı",
+    "library": "Kütüphane",
+    "monEspace": "Alanım",
+    "profil": "Profil",
+    "reservations": "Rezervasyonlar",
+    "support": "Yardım ve Destek",
+    "workspace": "Çalışma Alanı"
   },
   "shell": {
     "toggleNav": "Gezinmeyi değiştir",

@@ -419,7 +419,7 @@ function ShareLinkRow({ share, onDeleted }: { share: MenuShare; onDeleted: (id: 
   const t = useTranslations("menu.shareLink");
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/m/${share.token}`;
+  const url = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/m/${share.token}`;
 
   useEffect(() => {
     QRCode.toDataURL(url, { width: 512, margin: 1 }).then(setQrDataUrl).catch(() => setQrDataUrl(null));
