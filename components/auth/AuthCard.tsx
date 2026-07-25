@@ -13,11 +13,11 @@ import { Google } from "@/components/ui/BrandIcons";
 
 export function OriginRightPanel() {
   return (
-    <div className="relative flex h-full w-full flex-col justify-between overflow-hidden rounded-[24px] bg-[#06140d] p-8 xl:p-12 text-white">
+    <div className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-[#06140d] p-8 xl:p-14 text-white">
       {/* Background starry night gradient & ambient radial glows */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#113824] via-[#081e13] to-[#040d08]" />
-      <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-emerald-500/15 blur-3xl" />
-      <div className="pointer-events-none absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-teal-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl" />
+      <div className="pointer-events-none absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-teal-500/10 blur-3xl" />
 
       {/* Subtle Star Particles Grid */}
       <div
@@ -28,32 +28,32 @@ export function OriginRightPanel() {
         }}
       />
 
-      {/* Content Top Spacer */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center items-center text-center">
+      {/* Content Center */}
+      <div className="relative z-10 flex-1 flex flex-col justify-center items-center text-center max-w-lg mx-auto">
         {/* Decorative thin accent line */}
         <div className="mb-6 h-px w-16 bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
 
         {/* Headline in Serif (New York / Playfair Display) */}
-        <h2 className="font-display text-[30px] sm:text-[34px] xl:text-[38px] font-normal leading-[1.2] text-white/95 tracking-tight max-w-md">
+        <h2 className="font-display text-[32px] sm:text-[36px] xl:text-[42px] font-normal leading-[1.18] text-white/95 tracking-tight">
           Pilotez vos revenus,<br />
           posez n&apos;importe quelle question.<br />
           <span className="italic font-light text-emerald-200">Maîtrisez votre restaurant.</span>
         </h2>
 
         {/* Laurel Star Rating Badge */}
-        <div className="mt-7 flex items-center justify-center gap-2">
+        <div className="mt-8 flex items-center justify-center gap-2">
           <div className="flex items-center gap-1">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} size={13} className="fill-amber-400 text-amber-400" />
+              <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
             ))}
           </div>
-          <span className="text-[11px] font-bold tracking-widest text-emerald-300 uppercase">
+          <span className="text-[11.5px] font-bold tracking-widest text-emerald-300 uppercase">
             100+ Établissements
           </span>
         </div>
 
-        {/* Glassmorphism Floating KPI Card (Origin style chart) */}
-        <div className="mt-9 w-full max-w-[320px] rounded-2xl border border-white/15 bg-white/[0.07] p-5 shadow-2xl backdrop-blur-xl transition-transform hover:scale-[1.02]">
+        {/* Glassmorphism KPI Card (Origin style chart) */}
+        <div className="mt-10 w-full max-w-[340px] rounded-2xl border border-white/15 bg-white/[0.07] p-6 shadow-2xl backdrop-blur-xl">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono tracking-wider text-white/60 uppercase">
               REVENU CE MOIS
@@ -63,18 +63,18 @@ export function OriginRightPanel() {
             </div>
           </div>
 
-          <div className="mt-2 text-left">
-            <p className="font-display text-[32px] font-semibold text-white tracking-tight">
+          <div className="mt-3 text-left">
+            <p className="font-display text-[34px] font-semibold text-white tracking-tight">
               24 850 $
             </p>
-            <p className="text-[11px] font-medium text-emerald-400 flex items-center gap-1 mt-0.5">
+            <p className="text-[11.5px] font-medium text-emerald-400 flex items-center gap-1 mt-0.5">
               <span>● Juillet 2026</span>
               <span className="ml-auto text-emerald-300 font-semibold">+18.4%</span>
             </p>
           </div>
 
-          {/* Smooth Curved SVG Line Chart */}
-          <div className="mt-4 h-16 w-full">
+          {/* Smooth Curved SVG Line Chart (Static, no pulse animation) */}
+          <div className="mt-5 h-20 w-full">
             <svg className="h-full w-full overflow-visible" viewBox="0 0 300 60" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="originChartGrad" x1="0" y1="0" x2="0" y2="1">
@@ -95,14 +95,14 @@ export function OriginRightPanel() {
                 strokeWidth="2.5"
                 strokeLinecap="round"
               />
-              {/* Glowing dot on last point */}
-              <circle cx="300" cy="8" r="4" fill="#34d399" className="animate-ping" />
-              <circle cx="300" cy="8" r="3.5" fill="#ffffff" />
+              {/* Dot on last point */}
+              <circle cx="300" cy="8" r="4" fill="#34d399" />
+              <circle cx="300" cy="8" r="2.5" fill="#ffffff" />
             </svg>
           </div>
 
           {/* X-Axis dates */}
-          <div className="mt-2 flex justify-between font-mono text-[9px] text-white/40">
+          <div className="mt-2 flex justify-between font-mono text-[10px] text-white/40">
             <span>01</span>
             <span>07</span>
             <span>14</span>
@@ -238,166 +238,163 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-[#f7f6f2] p-4 sm:p-6 lg:p-8">
-      {/* Outer Floating Card Container (Origin Style) */}
-      <div className="flex w-full max-w-6xl min-h-[640px] overflow-hidden rounded-[32px] border border-[#e5e3dc] bg-white p-3 shadow-2xl">
-        {/* ── LEFT PANEL: Form (55% width on large screens) ── */}
-        <div className="flex w-full flex-col justify-between p-6 sm:p-10 lg:w-[55%] xl:w-[54%]">
-          {/* Top Logo */}
-          <div className="flex items-center gap-3">
-            <LogoMark size={28} />
-            <div className="flex flex-col leading-tight">
-              <span className="font-sans text-[15px] font-bold text-mv-ink leading-none">Minerva Flow</span>
-              <span className="text-[10px] font-semibold text-mv-ink-soft leading-none mt-0.5">par Minerva</span>
-            </div>
+    <div className="flex min-h-screen w-full bg-white">
+      {/* ── LEFT PANEL: Full Screen Edge-to-Edge Form (55% width) ── */}
+      <div className="flex w-full flex-col justify-between p-8 sm:p-12 lg:w-[55%] xl:w-[50%] lg:p-16">
+        {/* Top Logo */}
+        <div className="flex items-center gap-3">
+          <LogoMark size={28} />
+          <div className="flex flex-col leading-tight">
+            <span className="font-sans text-[15px] font-bold text-mv-ink leading-none">Minerva Flow</span>
+            <span className="text-[10px] font-semibold text-mv-ink-soft leading-none mt-0.5">par Minerva</span>
           </div>
+        </div>
 
-          {/* Form Content */}
-          <div className="my-auto mx-auto w-full max-w-[350px] py-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={mode}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18 }}
-              >
-                <h1 className="font-display text-[28px] sm:text-[32px] font-bold tracking-tight text-mv-ink leading-tight text-center">
-                  {mode === "login" ? "Connexion" : "Créer un compte"}
-                </h1>
-                <p className="mt-2 text-center text-[13.5px] text-mv-ink-soft">
-                  {mode === "login"
-                    ? "Pilotez l'exploitation de votre établissement."
-                    : "Rejoignez la plateforme unifiée pour restaurants & cafés."}
-                </p>
-              </motion.div>
+        {/* Form Content */}
+        <div className="my-auto mx-auto w-full max-w-[360px] py-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={mode}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18 }}
+            >
+              <h1 className="font-display text-[30px] sm:text-[34px] font-bold tracking-tight text-mv-ink leading-tight text-center">
+                {mode === "login" ? "Connexion" : "Créer un compte"}
+              </h1>
+              <p className="mt-2 text-center text-[13.5px] text-mv-ink-soft">
+                {mode === "login"
+                  ? "Pilotez l'exploitation de votre établissement."
+                  : "Rejoignez la plateforme unifiée pour restaurants & cafés."}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+
+          <form onSubmit={handleAuth} className="mt-8 flex flex-col gap-4">
+            {/* Google OAuth */}
+            <button
+              type="button"
+              onClick={() => handleOAuth("google")}
+              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-[#e2e8f0] bg-white text-[13.5px] font-semibold text-mv-ink shadow-sm transition-all hover:bg-gray-50 hover:shadow focus:outline-none focus:ring-2 focus:ring-mv-green/20"
+            >
+              <Google size={17} />
+              Continuer avec Google
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-1">
+              <div className="h-px flex-1 bg-[#e8e8e6]" />
+              <span className="text-[11.5px] font-medium text-mv-ink-faint">ou avec votre courriel</span>
+              <div className="h-px flex-1 bg-[#e8e8e6]" />
+            </div>
+
+            {/* Email Input */}
+            <Field label="Adresse courriel">
+              <Input
+                type="email"
+                placeholder="nom@restaurant.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] placeholder:text-mv-ink-faint focus:border-mv-green/60 focus:ring-mv-green/20"
+              />
+            </Field>
+
+            {/* Password Input */}
+            <Field label="Mot de passe">
+              <div className="flex items-center justify-between mb-1">
+                <span />
+                {mode === "login" && (
+                  <Link
+                    href="/forgot-password"
+                    className="text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                  >
+                    Mot de passe oublié ?
+                  </Link>
+                )}
+              </div>
+              <Input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] focus:border-mv-green/60 focus:ring-mv-green/20"
+              />
+            </Field>
+
+            {/* Repeat Password (Signup) */}
+            <AnimatePresence initial={false}>
+              {mode === "signup" && (
+                <motion.div
+                  key="confirmPwd"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  <Field label="Confirmer le mot de passe">
+                    <Input
+                      type="password"
+                      required
+                      value={repeatPassword}
+                      onChange={(e) => setRepeatPassword(e.target.value)}
+                      className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] focus:border-mv-green/60 focus:ring-mv-green/20"
+                    />
+                  </Field>
+                </motion.div>
+              )}
             </AnimatePresence>
 
-            <form onSubmit={handleAuth} className="mt-8 flex flex-col gap-4">
-              {/* Google OAuth */}
+            {/* Error Message */}
+            {error && (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-[12.5px] font-medium text-red-600">{error}</p>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="mt-2 flex h-11 w-full items-center justify-center rounded-xl bg-mv-ink text-[13.5px] font-bold text-white transition-all hover:bg-mv-ink/90 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-mv-ink/30 shadow-mv-sm"
+            >
+              {isLoading
+                ? "Traitement..."
+                : mode === "login"
+                  ? "Se connecter"
+                  : "S'inscrire"}
+            </button>
+
+            {/* Mode Toggle Link */}
+            <p className="mt-3 text-center text-[12.5px] text-mv-ink-faint">
+              {mode === "login" ? "Déjà membre ?" : "Vous avez un compte ?"}{" "}
               <button
                 type="button"
-                onClick={() => handleOAuth("google")}
-                className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-[#e2e8f0] bg-white text-[13.5px] font-semibold text-mv-ink shadow-sm transition-all hover:bg-gray-50 hover:shadow focus:outline-none focus:ring-2 focus:ring-mv-green/20"
+                onClick={toggleMode}
+                className="font-semibold text-mv-green-dark hover:underline focus:outline-none"
               >
-                <Google size={17} />
-                Continuer avec Google
+                {mode === "login" ? "Créer un compte" : "Se connecter"}
               </button>
-
-              {/* Divider */}
-              <div className="flex items-center gap-3 my-1">
-                <div className="h-px flex-1 bg-[#e8e8e6]" />
-                <span className="text-[11.5px] font-medium text-mv-ink-faint">ou avec votre courriel</span>
-                <div className="h-px flex-1 bg-[#e8e8e6]" />
-              </div>
-
-              {/* Email Input */}
-              <Field label="Adresse courriel">
-                <Input
-                  type="email"
-                  placeholder="nom@restaurant.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] placeholder:text-mv-ink-faint focus:border-mv-green/60 focus:ring-mv-green/20"
-                />
-              </Field>
-
-              {/* Password Input */}
-              <Field label="Mot de passe">
-                <div className="flex items-center justify-between mb-1">
-                  <span />
-                  {mode === "login" && (
-                    <Link
-                      href="/forgot-password"
-                      className="text-[11.5px] font-semibold text-mv-green-dark hover:underline"
-                    >
-                      Mot de passe oublié ?
-                    </Link>
-                  )}
-                </div>
-                <Input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] focus:border-mv-green/60 focus:ring-mv-green/20"
-                />
-              </Field>
-
-              {/* Repeat Password (Signup) */}
-              <AnimatePresence initial={false}>
-                {mode === "signup" && (
-                  <motion.div
-                    key="confirmPwd"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.18 }}
-                  >
-                    <Field label="Confirmer le mot de passe">
-                      <Input
-                        type="password"
-                        required
-                        value={repeatPassword}
-                        onChange={(e) => setRepeatPassword(e.target.value)}
-                        className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] focus:border-mv-green/60 focus:ring-mv-green/20"
-                      />
-                    </Field>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Error Message */}
-              {error && (
-                <p className="rounded-lg bg-red-50 px-3 py-2 text-[12.5px] font-medium text-red-600">{error}</p>
-              )}
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="mt-2 flex h-11 w-full items-center justify-center rounded-xl bg-mv-ink text-[13.5px] font-bold text-white transition-all hover:bg-mv-ink/90 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-mv-ink/30 shadow-mv-sm"
-              >
-                {isLoading
-                  ? "Traitement..."
-                  : mode === "login"
-                    ? "Se connecter"
-                    : "S'inscrire"}
-              </button>
-
-              {/* Mode Toggle Link */}
-              <p className="mt-3 text-center text-[12.5px] text-mv-ink-faint">
-                {mode === "login" ? "Déjà membre ?" : "Vous avez un compte ?"}{" "}
-                <button
-                  type="button"
-                  onClick={toggleMode}
-                  className="font-semibold text-mv-green-dark hover:underline focus:outline-none"
-                >
-                  {mode === "login" ? "Créer un compte" : "Se connecter"}
-                </button>
-              </p>
-            </form>
-          </div>
-
-          {/* Footer Terms */}
-          <p className="text-center text-[11px] text-mv-ink-faint">
-            En continuant, vous acceptez nos{" "}
-            <Link href="/legal/terms" className="underline hover:text-mv-ink">
-              Conditions
-            </Link>{" "}
-            et{" "}
-            <Link href="/legal/privacy" className="underline hover:text-mv-ink">
-              Confidentialité
-            </Link>
-            .
-          </p>
+            </p>
+          </form>
         </div>
 
-        {/* ── RIGHT PANEL: Origin Style Space/Night Graphic (45% width) ── */}
-        <div className="hidden lg:block lg:w-[45%] xl:w-[46%] p-1">
-          <OriginRightPanel />
-        </div>
+        {/* Footer Terms */}
+        <p className="text-center text-[11px] text-mv-ink-faint">
+          En continuant, vous acceptez nos{" "}
+          <Link href="/legal/terms" className="underline hover:text-mv-ink">
+            Conditions
+          </Link>{" "}
+          et{" "}
+          <Link href="/legal/privacy" className="underline hover:text-mv-ink">
+            Confidentialité
+          </Link>
+          .
+        </p>
+      </div>
+
+      {/* ── RIGHT PANEL: Edge-to-Edge Full Screen (45-50% width) ── */}
+      <div className="hidden lg:block lg:w-[45%] xl:w-[50%]">
+        <OriginRightPanel />
       </div>
     </div>
   );

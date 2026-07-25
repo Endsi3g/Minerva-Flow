@@ -2,6 +2,17 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.12.0] - 2026-07-25
+
+### 🖥️ Full Screen Edge-to-Edge & Suppression des Animations Distrayantes
+- **Passage en Plein Écran (Full Screen Edge-to-Edge)** :
+  - Suppression de la carte/conteneur flottant avec marges extérieures (`max-w-6xl rounded-[32px] border shadow-2xl`).
+  - Alignement direct des deux colonnes sur toute la largeur et hauteur de l'écran (`min-h-screen w-full`).
+  - Application directe sur l'Onboarding (`OnboardingPage`) et les pages d'Authentification (`AuthCard`).
+- **Élimination des Animations Intrusives** :
+  - Retrait des animations pulsantes (`animate-ping`, `animate-pulse`, `animate-spin`) sur les graphiques, cercles et orbites.
+  - Visuel SVG statique propre, élégant et fluide.
+
 ## [v2.11.0] - 2026-07-25
 
 ### 🎨 Perfectionnement Design Origin (Onboarding & Auth Container)

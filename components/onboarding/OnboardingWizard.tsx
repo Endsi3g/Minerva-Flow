@@ -335,10 +335,10 @@ function ConnectToolsStep() {
       {/* Visual Orbit Container */}
       <div className="relative mx-auto flex h-36 w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl border border-mv-border bg-mv-ink/95 p-4 shadow-mv-sm">
         {/* Glow behind orbit */}
-        <div className="absolute h-24 w-24 rounded-full bg-mv-green/20 blur-xl animate-pulse" />
+        <div className="absolute h-24 w-24 rounded-full bg-mv-green/20 blur-xl" />
 
         {/* Outer Orbit Circle */}
-        <div className="absolute h-28 w-28 rounded-full border border-dashed border-white/20 animate-[spin_20s_linear_infinite]" />
+        <div className="absolute h-28 w-28 rounded-full border border-dashed border-white/20" />
 
         {/* Center Badge */}
         <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-mv-green p-3 shadow-lg shadow-mv-green/30 ring-4 ring-white/10">
