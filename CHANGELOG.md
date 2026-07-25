@@ -2,6 +2,19 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.11.0] - 2026-07-25
+
+### 🎨 Perfectionnement Design Origin (Onboarding & Auth Container)
+- **Conteneur Floating Origin-Style** :
+  - Encadrement à coins très doux (`rounded-[32px]`, fond crème `#f7f6f2`, bordure subtile et ombre portée 2XL).
+  - Proportion équilibrée 55% gauche / 45% droite pour une meilleure aération du contenu.
+  - Harmonie visuelle unifiée entre la page d'authentification (`AuthCard`) et le parcours d'onboarding (`OnboardingPage`).
+- **Panneau Visuel Nuit / Cosmétique Vert-Minerva (`OriginRightPanel`)** :
+  - Fond sombre nuit/espace avec dégradé vert-nuit Minerva et poussière d'étoiles.
+  - Slogan en police Serif New York / Playfair Display (*"Pilotez vos revenus, posez n'importe quelle question. Maîtrisez votre restaurant."*).
+  - Badge étoiles `100+ ÉTABLISSEMENTS ★★★★★`.
+  - Carte KPI glassmorphic translucide avec courbe de revenus SVG lisse et dates de suivi.
+
 ## [v2.10.0] - 2026-07-25
 
 ### 🚀 Nouveautés & Fonctionnalités (Features)

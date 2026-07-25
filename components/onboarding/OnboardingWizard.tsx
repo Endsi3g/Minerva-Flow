@@ -115,7 +115,7 @@ export function OnboardingWizard({
       maxStepValue={FEATURES.length - 1}
       onComplete={handleComplete}
       canGoNext={(step) => step !== 2 || fullName.trim().length > 0}
-      className="w-full max-w-md"
+      className="w-full max-w-lg mx-auto"
     >
       <Onboarding.StepIndicator className="mb-5" />
 
