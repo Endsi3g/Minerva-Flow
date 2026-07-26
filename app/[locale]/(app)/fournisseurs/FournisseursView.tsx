@@ -23,6 +23,7 @@ import type { PurchaseOrder, PurchaseOrderStatus, Supplier } from "@/lib/types";
 import type { PurchaseOrderItemInput } from "@/lib/data/purchase-orders";
 import { Package, Plus, Trash2, Truck } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { notifyError } from "@/lib/notify-error";
 
 const statusLabel: Record<PurchaseOrderStatus, string> = {
@@ -304,8 +305,17 @@ export function FournisseursView({
 
   async function handleStatusChange(id: string, status: PurchaseOrderStatus) {
     if (!restaurantId) return;
-    const ok = await updatePurchaseOrderStatusAction(restaurantId, id, status);
-    if (ok) setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    const result = await updatePurchaseOrderStatusAction(restaurantId, id, status);
+    if (!result.ok) {
+      notifyError("La mise à jour du statut a échoué.");
+      return;
+    }
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    if (result.unmatchedItemNames && result.unmatchedItemNames.length > 0) {
+      toast.warning(
+        `Commande reçue, mais le stock n'a pas été mis à jour pour : ${result.unmatchedItemNames.join(", ")} — ces noms d'article ne correspondent à aucun article d'inventaire existant.`
+      );
+    }
   }
 
   async function handleDelete(id: string) {

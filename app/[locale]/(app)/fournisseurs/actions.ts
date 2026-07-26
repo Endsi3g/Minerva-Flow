@@ -49,34 +49,40 @@ export async function createPurchaseOrderAction(
   return order;
 }
 
+export type UpdatePurchaseOrderStatusResult = {
+  ok: boolean;
+  unmatchedItemNames?: string[];
+};
+
 export async function updatePurchaseOrderStatusAction(
   restaurantId: string,
   id: string,
   status: PurchaseOrderStatus
-): Promise<boolean> {
+): Promise<UpdatePurchaseOrderStatusResult> {
   const ok = await updatePurchaseOrderStatus(restaurantId, id, status);
-  if (ok) {
-    revalidatePath("/fournisseurs");
-    if (status === "envoyee") {
-      await notifyRestaurant({
+  if (!ok) return { ok: false };
+
+  revalidatePath("/fournisseurs");
+  if (status === "envoyee") {
+    await notifyRestaurant({
+      restaurantId,
+      type: "purchase_order.sent",
+      title: "Commande fournisseur envoyée",
+      link: "/fournisseurs",
+    });
+  }
+  if (status === "recue") {
+    const order = await getPurchaseOrder(restaurantId, id);
+    if (order && order.items.length > 0) {
+      const { matchedCount, unmatchedNames } = await receivePurchaseOrderItems(
         restaurantId,
-        type: "purchase_order.sent",
-        title: "Commande fournisseur envoyée",
-        link: "/fournisseurs",
-      });
-    }
-    if (status === "recue") {
-      const order = await getPurchaseOrder(restaurantId, id);
-      if (order && order.items.length > 0) {
-        const matched = await receivePurchaseOrderItems(
-          restaurantId,
-          order.items.map((i) => ({ itemName: i.itemName, quantity: i.quantity }))
-        );
-        if (matched > 0) revalidatePath("/inventaire");
-      }
+        order.items.map((i) => ({ itemName: i.itemName, quantity: i.quantity }))
+      );
+      if (matchedCount > 0) revalidatePath("/inventaire");
+      if (unmatchedNames.length > 0) return { ok: true, unmatchedItemNames: unmatchedNames };
     }
   }
-  return ok;
+  return { ok: true };
 }
 
 export async function deletePurchaseOrderAction(restaurantId: string, id: string): Promise<boolean> {
