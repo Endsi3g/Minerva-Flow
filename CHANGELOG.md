@@ -2,6 +2,20 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.15.0] - 2026-07-25
+
+### 🛠️ Correctifs de Fiabilité — Réservations & Fournisseurs
+- **Réservations : Prévention des Doubles Réservations** :
+  - Une table ne peut plus être assignée à deux réservations actives au même moment — vérification de conflit à la création et lors de la réattribution de table.
+  - Message d'erreur clair affiché en cas de conflit (« Cette table est déjà réservée à cette heure »).
+- **Fournisseurs : Fin des Échecs Silencieux à la Réception** :
+  - Avertissement explicite désormais affiché si un article d'un bon de commande ne correspond à aucun article d'inventaire existant — auparavant, le stock n'était pas mis à jour sans aucune notification à l'utilisateur.
+
+### 💬 Chat d'Équipe : Groupes, Messages Privés & Notes Vocales
+- **Déploiement des Canaux Dynamiques** : Activation des groupes personnalisés et des conversations privées (DM) entre collaborateurs, en plus des 4 canaux fixes existants (`général`, `cuisine`, `service`, `urgences`).
+- **Notes Vocales** : Enregistrement et envoi de messages vocaux dans n'importe quel canal.
+- **Correctif de Sécurité Critique (RLS)** : Un membre exclu d'un canal privé ou d'un groupe pouvait auparavant lire et écrire dans ce canal via un accès direct à l'API, malgré les restrictions affichées dans l'interface. L'accès aux canaux privés est désormais réellement restreint au niveau de la base de données (lecture ET écriture) — vérifié en conditions réelles avec plusieurs comptes membres.
+
 ## [v2.14.0] - 2026-07-25
 
 ### ⚡ Suppression Totale des Animations de Transition Perturbantes

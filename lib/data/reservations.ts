@@ -132,14 +132,42 @@ export type ReservationInput = {
   notes: string | null;
 };
 
+/** Sentinel returned instead of a reservation/boolean when a table is already booked at that exact time. */
+export const RESERVATION_CONFLICT = "conflict" as const;
+
+/** A table is double-booked if another non-cancelled reservation already holds it at that exact time. */
+async function hasTableConflict(
+  restaurantId: string,
+  tableId: string,
+  reservationTime: string,
+  excludeReservationId?: string
+): Promise<boolean> {
+  const supabase = await createClient();
+  let query = supabase
+    .from("reservations")
+    .select("id")
+    .eq("restaurant_id", restaurantId)
+    .eq("table_id", tableId)
+    .eq("reservation_time", reservationTime)
+    .neq("status", "annulee");
+  if (excludeReservationId) query = query.neq("id", excludeReservationId);
+
+  const { data } = await query.limit(1);
+  return !!data && data.length > 0;
+}
+
 export async function createReservation(
   restaurantId: string,
   input: ReservationInput
-): Promise<Reservation | null> {
+): Promise<Reservation | null | typeof RESERVATION_CONFLICT> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (input.tableId && (await hasTableConflict(restaurantId, input.tableId, input.reservationTime))) {
+    return RESERVATION_CONFLICT;
+  }
 
   const { data, error } = await supabase
     .from("reservations")
@@ -185,8 +213,22 @@ export async function updateReservationTable(
   restaurantId: string,
   id: string,
   tableId: string | null
-): Promise<boolean> {
+): Promise<boolean | typeof RESERVATION_CONFLICT> {
   const supabase = await createClient();
+
+  if (tableId) {
+    const { data: current } = await supabase
+      .from("reservations")
+      .select("reservation_time")
+      .eq("restaurant_id", restaurantId)
+      .eq("id", id)
+      .maybeSingle();
+    const reservationTime = (current as { reservation_time: string } | null)?.reservation_time;
+    if (reservationTime && (await hasTableConflict(restaurantId, tableId, reservationTime, id))) {
+      return RESERVATION_CONFLICT;
+    }
+  }
+
   const { error } = await supabase
     .from("reservations")
     .update({ table_id: tableId })

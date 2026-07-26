@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { StatCard } from "@/components/ui/StatCard";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
@@ -17,9 +18,12 @@ import {
   createTableAction,
   deleteTableAction,
 } from "./actions";
+
+/** Mirrors RESERVATION_CONFLICT in lib/data/reservations.ts — kept as a literal since "use server" files may only export functions. */
+const RESERVATION_CONFLICT = "conflict";
 import { useApp } from "@/lib/app-context";
 import type { Reservation, ReservationStatus, RestaurantTable } from "@/lib/types";
-import { CalendarClock, ChevronLeft, ChevronRight, Plus, Trash2, Users, Link2 } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Plus, Trash2, Users, Link2, CheckCircle2, UsersRound } from "lucide-react";
 import type { ReservationPlatformConnection } from "@/lib/data/reservation-platforms";
 import { useState, type FormEvent } from "react";
 import { notifyError } from "@/lib/notify-error";
@@ -90,9 +94,11 @@ function NewReservationModal({
         tableId: tableId || null,
         notes: String(form.get("notes") ?? "") || null,
       });
-      if (reservation) {
+      if (reservation && reservation !== RESERVATION_CONFLICT) {
         onCreated(reservation);
         onClose();
+      } else if (reservation === RESERVATION_CONFLICT) {
+        notifyError("Cette table est déjà réservée à cette heure — choisissez une autre table ou un autre horaire.");
       } else {
         notifyError("La création de la réservation a échoué.");
       }
@@ -318,6 +324,11 @@ export function ReservationsView({
 
   const canManage = role === "owner" || role === "manager";
 
+  const confirmedCount = reservations.filter(
+    (r) => r.status === "confirmee" || r.status === "honoree"
+  ).length;
+  const totalCovers = reservations.reduce((sum, r) => sum + r.partySize, 0);
+
   async function loadDay(newDayStart: string) {
     if (!restaurantId) return;
     setLoading(true);
@@ -339,8 +350,14 @@ export function ReservationsView({
 
   async function handleTableChange(id: string, tableId: string) {
     if (!restaurantId) return;
-    const ok = await updateReservationTableAction(restaurantId, id, tableId || null);
-    if (ok) setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, tableId: tableId || null } : r)));
+    const result = await updateReservationTableAction(restaurantId, id, tableId || null);
+    if (result === true) {
+      setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, tableId: tableId || null } : r)));
+    } else if (result === RESERVATION_CONFLICT) {
+      notifyError("Cette table est déjà réservée à cette heure — choisissez une autre table.");
+    } else {
+      notifyError("La mise à jour de la table a échoué.");
+    }
   }
 
   async function handleDelete(id: string) {
@@ -363,6 +380,12 @@ export function ReservationsView({
           )
         }
       />
+
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row">
+        <StatCard label="Réservations du jour" value={reservations.length} icon={CalendarClock} sublabel={formatDayLabel(dayStart)} accent="green" />
+        <StatCard label="Confirmées" value={confirmedCount} icon={CheckCircle2} sublabel={`Sur ${reservations.length} réservation${reservations.length > 1 ? "s" : ""}`} accent="lime" />
+        <StatCard label="Couverts attendus" value={totalCovers} icon={UsersRound} sublabel="Total des tailles de groupe" accent="ink" />
+      </div>
 
       <div className="mb-4 flex items-center gap-2">
         <button

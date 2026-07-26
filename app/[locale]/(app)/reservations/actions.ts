@@ -10,6 +10,7 @@ import {
   updateReservationStatus,
   updateReservationTable,
   deleteReservation,
+  RESERVATION_CONFLICT,
   type ReservationInput,
 } from "@/lib/data/reservations";
 import { notifyRestaurant } from "@/lib/data/notifications";
@@ -49,10 +50,10 @@ export async function getReservationsForDayAction(
 export async function createReservationAction(
   restaurantId: string,
   input: ReservationInput
-): Promise<Reservation | null> {
+): Promise<Reservation | null | typeof RESERVATION_CONFLICT> {
   if (!input.guestName.trim()) return null;
   const reservation = await createReservation(restaurantId, input);
-  if (reservation) {
+  if (reservation && reservation !== RESERVATION_CONFLICT) {
     revalidatePath("/reservations");
     await notifyRestaurant({
       restaurantId,
@@ -85,10 +86,10 @@ export async function updateReservationTableAction(
   restaurantId: string,
   id: string,
   tableId: string | null
-): Promise<boolean> {
-  const ok = await updateReservationTable(restaurantId, id, tableId);
-  if (ok) revalidatePath("/reservations");
-  return ok;
+): Promise<boolean | typeof RESERVATION_CONFLICT> {
+  const result = await updateReservationTable(restaurantId, id, tableId);
+  if (result === true) revalidatePath("/reservations");
+  return result;
 }
 
 export async function deleteReservationAction(restaurantId: string, id: string): Promise<boolean> {
