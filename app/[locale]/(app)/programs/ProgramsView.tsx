@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { StatCard } from "@/components/ui/StatCard";
 import { Select, Textarea } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -12,7 +13,7 @@ import { CreateProgramModal } from "@/components/forms/CreateProgramModal";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Campaign, Program, ProgramStatus, ProgramType } from "@/lib/types";
-import { LineChart, Plus, MessageSquare, Trash2 } from "lucide-react";
+import { LineChart, Plus, MessageSquare, Trash2, Sparkles, TrendingUp, Percent } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { updateProgramStatusAction, deleteProgramAction, createProgramNoteAction } from "./actions";
@@ -131,6 +132,18 @@ export function ProgramsView({
     ? campaigns.filter((c) => selected.campaignIds.includes(c.id))
     : [];
 
+  const activeCount = programs.filter((p) => p.status === "actif").length;
+  const totalRevenue = programs.reduce((sum, p) => sum + p.revenue, 0);
+  const profitablePrograms = programs.filter((p) => p.revenue > 0);
+  const avgMargin =
+    profitablePrograms.length > 0
+      ? Math.round(
+          profitablePrograms.reduce((sum, p) => sum + (p.revenue - p.cost) / p.revenue, 0) /
+            profitablePrograms.length *
+            100
+        )
+      : null;
+
   return (
     <div>
       <PageHeader
@@ -145,6 +158,12 @@ export function ProgramsView({
           )
         }
       />
+
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row">
+        <StatCard label="Programmes actifs" value={activeCount} icon={Sparkles} sublabel={`${programs.length} au total`} accent="green" />
+        <StatCard label="Revenu total" value={formatCurrency(totalRevenue)} icon={TrendingUp} sublabel="Tous programmes confondus" accent="lime" />
+        <StatCard label="Marge moyenne" value={avgMargin !== null ? `${avgMargin}%` : "—"} icon={Percent} sublabel="Sur les programmes rentables" accent="ink" />
+      </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <Select

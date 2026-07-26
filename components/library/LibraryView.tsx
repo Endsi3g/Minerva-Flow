@@ -2,7 +2,9 @@
 
 import type { LibraryAsset } from "@/lib/data/library";
 import { Card } from "@/components/minerva/PageCard";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { toast } from "sonner";
 import {
   Search,
   FileText,
@@ -87,39 +89,28 @@ export function LibraryView({
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-mv-green-tint px-2.5 py-0.5 text-[11px] font-bold text-mv-green-dark uppercase tracking-wider">
-              {restaurantName}
-            </span>
-          </div>
-          <h1 className="font-display text-[26px] font-bold tracking-tight text-mv-ink mt-1">
-            Bibliothèque d&apos;assets & Documents
-          </h1>
-          <p className="text-[13.5px] text-mv-ink-soft">
-            Recherchez et utilisez les documents, factures et rapports de votre établissement à travers Flow.
-          </p>
-        </div>
+    <div>
+      <PageHeader
+        eyebrow={restaurantName}
+        title="Bibliothèque d'assets & Documents"
+        description="Recherchez et utilisez les documents, factures et rapports de votre établissement à travers Flow."
+        action={
+          <label className="flex items-center gap-2 rounded-xl bg-mv-green px-4 py-2.5 text-[13px] font-bold text-mv-cream-soft shadow-mv-sm transition-all hover:bg-mv-green-dark cursor-pointer shrink-0">
+            <Upload size={16} />
+            <span>{isUploading ? "Téléversement..." : "Ajouter un asset"}</span>
+            <input
+              type="file"
+              className="hidden"
+              accept=".pdf,.doc,.docx,.png,.jpg,.csv,.xlsx"
+              onChange={handleSimulatedUpload}
+              disabled={isUploading}
+            />
+          </label>
+        }
+      />
 
-        {/* Upload Button */}
-        <label className="flex items-center gap-2 rounded-xl bg-mv-green px-4 py-2.5 text-[13px] font-bold text-mv-cream-soft shadow-mv-sm transition-all hover:bg-mv-green-dark cursor-pointer shrink-0">
-          <Upload size={16} />
-          <span>{isUploading ? "Téléversement..." : "Ajouter un asset"}</span>
-          <input
-            type="file"
-            className="hidden"
-            accept=".pdf,.doc,.docx,.png,.jpg,.csv,.xlsx"
-            onChange={handleSimulatedUpload}
-            disabled={isUploading}
-          />
-        </label>
-      </div>
-
-      {/* Main Search Bar & Filter Pills (Sana AI style - Image 5) */}
-      <div className="mt-6 space-y-4">
+      {/* Main Search Bar & Filter Pills */}
+      <div className="space-y-4">
         {/* Search Bar */}
         <div className="relative flex items-center">
           <Search size={18} className="absolute left-4 text-mv-ink-faint" />
@@ -251,7 +242,7 @@ export function LibraryView({
           )}
         </div>
 
-        {/* Right Split-Pane Preview Drawer (Sana AI style - Image 4) */}
+        {/* Right Split-Pane Preview Drawer */}
         {selectedAsset && (
           <div className="w-full lg:w-[400px] shrink-0">
             <Card padded={false} className="sticky top-6 border-mv-border bg-mv-surface shadow-mv-md overflow-hidden">
@@ -308,7 +299,7 @@ export function LibraryView({
                   </Link>
 
                   <button
-                    onClick={() => alert(`Téléchargement de ${selectedAsset.title} en cours...`)}
+                    onClick={() => toast.info(`Téléchargement de ${selectedAsset.title} en cours...`)}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-mv-border bg-mv-surface px-4 py-2.5 text-[13px] font-semibold text-mv-ink transition-all hover:bg-mv-cream-soft"
                   >
                     <Download size={15} />
