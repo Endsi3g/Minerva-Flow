@@ -8,8 +8,12 @@ import {
   reactToTeamMessage,
   setChannelMembers,
   getChannelMembers,
+  listTeamChannelsForUser,
+  createGroupChannel,
+  getOrCreateDmChannel,
+  getTeamMessages,
 } from "@/lib/data/team-chat";
-import type { TeamChannel, TeamChatMessage } from "@/lib/types";
+import type { TeamChannel, TeamChannelSummary, TeamChatMessage } from "@/lib/types";
 
 export async function sendTeamMessageAction(input: {
   restaurantId: string;
@@ -19,9 +23,43 @@ export async function sendTeamMessageAction(input: {
   authorRole: string;
   authorAvatarUrl?: string | null;
   content: string;
+  audioPath?: string | null;
   replyTo?: { id: string; authorName: string; content: string };
 }): Promise<{ userMessage: TeamChatMessage; aiResponse?: TeamChatMessage }> {
   return await sendTeamMessage(input);
+}
+
+export async function listTeamChannelsAction(
+  restaurantId: string,
+  userId: string
+): Promise<TeamChannelSummary[]> {
+  return await listTeamChannelsForUser(restaurantId, userId);
+}
+
+export async function createGroupChannelAction(
+  restaurantId: string,
+  name: string,
+  memberIds: string[],
+  createdBy: string
+): Promise<TeamChannelSummary | null> {
+  if (!name.trim() || memberIds.length === 0) return null;
+  return await createGroupChannel(restaurantId, name, memberIds, createdBy);
+}
+
+export async function getOrCreateDmChannelAction(
+  restaurantId: string,
+  userId: string,
+  otherUserId: string
+): Promise<string | null> {
+  if (userId === otherUserId) return null;
+  return await getOrCreateDmChannel(restaurantId, userId, otherUserId);
+}
+
+export async function getTeamMessagesAction(
+  restaurantId: string,
+  channel: TeamChannel
+): Promise<TeamChatMessage[]> {
+  return await getTeamMessages(restaurantId, channel);
 }
 
 export async function deleteTeamMessageAction(

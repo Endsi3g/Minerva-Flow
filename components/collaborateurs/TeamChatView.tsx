@@ -16,6 +16,10 @@ import {
   reactToTeamMessageAction,
   getChannelMembersAction,
   setChannelMembersAction,
+  listTeamChannelsAction,
+  createGroupChannelAction,
+  getOrCreateDmChannelAction,
+  getTeamMessagesAction,
 } from "@/app/[locale]/(app)/collaborateurs/chat-actions";
 import { useApp } from "@/lib/app-context";
 import { useTeamPresence } from "@/hooks/use-team-presence";
@@ -23,7 +27,10 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import type { TeamChannel, TeamChatMessage, TeamMember } from "@/lib/types";
+import { Modal } from "@/components/ui/Modal";
+import { Field, Input } from "@/components/minerva/FormField";
+import { Button } from "@/components/ui/Button";
+import type { TeamChannel, TeamChannelSummary, TeamChatMessage, TeamMember } from "@/lib/types";
 import {
   MessageSquare,
   Send,
@@ -46,6 +53,8 @@ import {
   Settings2,
   Pencil,
   Check,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,6 +66,12 @@ const CHANNELS: { id: TeamChannel; label: string; icon: any; description: string
   { id: "service",  label: "service",   icon: Users,         description: "Salle, réservations & VIP" },
   { id: "urgences", label: "urgences",  icon: AlertTriangle, description: "Absences & alertes immédiates" },
 ];
+
+const LEGACY_CHANNEL_SUMMARIES: TeamChannelSummary[] = CHANNELS.map((c) => ({
+  id: c.id,
+  name: c.label,
+  kind: "legacy",
+}));
 
 const EMOJI_QUICK = ["❤️", "👍", "😄", "🙌", "🔥", "👀"];
 
@@ -104,6 +119,39 @@ function FlowAIAvatar({ size = 32 }: { size?: number }) {
         priority
       />
     </div>
+  );
+}
+
+/* ────────────────────────── voice note player ──────────────────────── */
+
+function AudioMessagePlayer({ path, isSelf }: { path: string; isSelf: boolean }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+    supabase.storage
+      .from("team-voice-notes")
+      .createSignedUrl(path, 3600)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data) setFailed(true);
+        else setUrl(data.signedUrl);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [path]);
+
+  if (failed) {
+    return <span className="text-[12.5px] italic opacity-75">Message vocal indisponible.</span>;
+  }
+  if (!url) {
+    return <span className="text-[12.5px] italic opacity-75">Chargement du message vocal…</span>;
+  }
+  return (
+    <audio controls src={url} className={cn("h-9 max-w-[220px]", isSelf && "invert")} />
   );
 }
 
@@ -287,6 +335,8 @@ function MessageRow({
                 </span>
               </div>
             </div>
+          ) : msg.audioPath ? (
+            <AudioMessagePlayer path={msg.audioPath} isSelf={isSelf} />
           ) : (
             <span dangerouslySetInnerHTML={{
               __html: msg.content
@@ -598,9 +648,36 @@ export function TeamChatView({
   const [managingChannel, setManagingChannel] = useState<TeamChannel | null>(null);
   const [, startTransition] = useTransition();
 
+  const [channels, setChannels] = useState<TeamChannelSummary[]>(LEGACY_CHANNEL_SUMMARIES);
+  const loadedChannelIdsRef = useRef<Set<string>>(new Set(["general"]));
+  const [newChannelOpen, setNewChannelOpen] = useState(false);
+  const [newChannelMode, setNewChannelMode] = useState<"group" | "dm">("group");
+  const [newChannelName, setNewChannelName] = useState("");
+  const [newChannelMemberIds, setNewChannelMemberIds] = useState<string[]>([]);
+  const [creatingChannel, setCreatingChannel] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+
+  function handleMessagesScroll() {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    setCanScrollUp(el.scrollTop > 80);
+    setCanScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 80);
+  }
+
+  function scrollMessagesTo(position: "top" | "bottom") {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: position === "top" ? 0 : el.scrollHeight, behavior: "smooth" });
+  }
 
   const currentUserId = authUser?.id || "user-current";
   const canManageChannels = role === "owner" || role === "manager";
@@ -615,6 +692,28 @@ export function TeamChatView({
     channelMessages,
     (state, msg) => [...state, msg]
   );
+
+  // ── Fetch this restaurant's dynamic groups/DMs (RLS-filtered to what the
+  // current user can actually see) once on mount ──
+  useEffect(() => {
+    if (!authUser?.id) return;
+    listTeamChannelsAction(restaurantId, authUser.id).then(setChannels).catch(() => null);
+  }, [restaurantId, authUser?.id]);
+
+  // ── Lazily load history the first time a channel is opened — only
+  // "general" comes preloaded via initialMessages (see CollaborateursView),
+  // every other channel (including brand-new groups/DMs) would otherwise
+  // show empty until a fresh realtime message arrives. ──
+  useEffect(() => {
+    if (loadedChannelIdsRef.current.has(activeChannel)) return;
+    loadedChannelIdsRef.current.add(activeChannel);
+    getTeamMessagesAction(restaurantId, activeChannel).then((rows) => {
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        return [...prev, ...rows.filter((r) => !existingIds.has(r.id))];
+      });
+    });
+  }, [activeChannel, restaurantId]);
 
   // ── Supabase Realtime subscription ──
   useEffect(() => {
@@ -680,6 +779,9 @@ export function TeamChatView({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Let the smooth scroll settle before recomputing button visibility.
+    const t = setTimeout(handleMessagesScroll, 350);
+    return () => clearTimeout(t);
   }, [optimisticMessages, activeChannel]);
 
   const channelPinned = optimisticMessages.filter((m) => m.isPinned && !m.deleted);
@@ -834,9 +936,13 @@ export function TeamChatView({
         replyTo: tempMsg.replyTo,
       });
 
-      // Replace temp message with real one
+      // Replace temp message with the real one — the realtime subscription's
+      // own-echo INSERT can beat this await and add res.userMessage/aiResponse
+      // first, so drop any id already present before appending or the two
+      // paths race and render the same message twice.
       setMessages((prev) => {
-        const without = prev.filter((m) => m.id !== tempId);
+        const keepIds = new Set([res.userMessage.id, res.aiResponse?.id].filter(Boolean));
+        const without = prev.filter((m) => m.id !== tempId && !keepIds.has(m.id));
         return [...without, res.userMessage, ...(res.aiResponse ? [res.aiResponse] : [])];
       });
 
@@ -848,6 +954,96 @@ export function TeamChatView({
       }
     } catch {
       toast.error("Erreur lors de l'envoi du message.");
+    }
+  }
+
+  async function sendVoiceNote(audioPath: string) {
+    const authorName = authUser?.fullName || "Collaborateur";
+    const authorRole = role || "Membre";
+    const authorAvatarUrl = authUser?.avatarUrl ?? null;
+    const tempId = `temp-${Date.now()}`;
+
+    startTransition(() => {
+      addOptimisticMessage({
+        id: tempId,
+        restaurantId,
+        channel: activeChannel,
+        authorId: currentUserId,
+        authorName,
+        authorRole,
+        authorAvatarUrl,
+        content: "",
+        audioPath,
+        createdAt: new Date().toISOString(),
+      });
+    });
+
+    try {
+      const res = await sendTeamMessageAction({
+        restaurantId,
+        channel: activeChannel,
+        authorId: currentUserId,
+        authorName,
+        authorRole,
+        authorAvatarUrl,
+        content: "",
+        audioPath,
+      });
+      setMessages((prev) => {
+        const keepIds = new Set([res.userMessage.id, res.aiResponse?.id].filter(Boolean));
+        const without = prev.filter((m) => m.id !== tempId && !keepIds.has(m.id));
+        return [...without, res.userMessage, ...(res.aiResponse ? [res.aiResponse] : [])];
+      });
+    } catch {
+      toast.error("Erreur lors de l'envoi du message vocal.");
+    }
+  }
+
+  async function handleToggleRecording() {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      toast.error("L'enregistrement audio n'est pas supporté par ce navigateur.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setIsRecording(false);
+
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        if (blob.size === 0) return;
+
+        const path = `${restaurantId}/${activeChannel}/${crypto.randomUUID()}.webm`;
+        const supabase = createClient();
+        const { error } = await supabase.storage.from("team-voice-notes").upload(path, blob, {
+          contentType: "audio/webm",
+        });
+        if (error) {
+          toast.error("L'envoi du message vocal a échoué.");
+          return;
+        }
+        await sendVoiceNote(path);
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+      toast.info("Enregistrement en cours…");
+    } catch {
+      toast.error("Impossible d'accéder au microphone.");
     }
   }
 
@@ -869,56 +1065,186 @@ export function TeamChatView({
 
   const groups = groupMessagesByDate(optimisticMessages);
 
+  function channelDisplayName(c: TeamChannelSummary): string {
+    if (c.kind !== "dm") return c.name;
+    const other = teamMembers.find((m) => m.id === c.otherMemberId);
+    return other?.name ?? c.name;
+  }
+
+  const activeChannelSummary = channels.find((c) => c.id === activeChannel);
+  const activeChannelLabel = activeChannelSummary ? channelDisplayName(activeChannelSummary) : activeChannel;
+
+  const dynamicGroups = channels.filter((c) => c.kind === "group");
+  const dmChannels = channels.filter((c) => c.kind === "dm");
+  const dmCandidates = teamMembers.filter(
+    (m) => m.id !== currentUserId && !dmChannels.some((c) => c.otherMemberId === m.id)
+  );
+
   const isOnline = (id: string) =>
     Array.isArray(onlineIds) ? onlineIds.includes(id) : (onlineIds as any)?.has?.(id) ?? false;
 
+  async function handleCreateChannel() {
+    if (creatingChannel) return;
+    setCreatingChannel(true);
+    try {
+      if (newChannelMode === "group") {
+        if (!newChannelName.trim() || newChannelMemberIds.length === 0) {
+          toast.error("Nom du groupe et au moins un membre requis.");
+          return;
+        }
+        const created = await createGroupChannelAction(restaurantId, newChannelName, newChannelMemberIds, currentUserId);
+        if (!created) {
+          toast.error("La création du groupe a échoué.");
+          return;
+        }
+        setChannels((prev) => [...prev, created]);
+        setActiveChannel(created.id);
+      } else {
+        if (newChannelMemberIds.length !== 1) {
+          toast.error("Choisissez une personne pour démarrer une conversation privée.");
+          return;
+        }
+        const otherId = newChannelMemberIds[0];
+        const dmId = await getOrCreateDmChannelAction(restaurantId, currentUserId, otherId);
+        if (!dmId) {
+          toast.error("La création de la conversation a échoué.");
+          return;
+        }
+        if (!channels.some((c) => c.id === dmId)) {
+          const other = teamMembers.find((m) => m.id === otherId);
+          setChannels((prev) => [...prev, { id: dmId, name: other?.name ?? "Message privé", kind: "dm", otherMemberId: otherId }]);
+        }
+        setActiveChannel(dmId);
+      }
+      setNewChannelOpen(false);
+      setNewChannelName("");
+      setNewChannelMemberIds([]);
+    } finally {
+      setCreatingChannel(false);
+    }
+  }
+
   return (
     <>
-      <div className="flex h-[calc(100vh-130px)] min-h-[600px] bg-[#fafaf9] rounded-2xl border border-mv-border overflow-hidden shadow-mv-md">
+      <div className="flex h-[calc(100vh-210px)] min-h-[440px] bg-[#fafaf9] rounded-2xl border border-mv-border overflow-hidden shadow-mv-md">
+
+        {/* ── Channels Sidebar ── */}
+        <div className="w-52 border-r border-mv-border bg-white flex flex-col shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-mv-border">
+            <span className="text-[12px] font-semibold text-mv-ink-soft uppercase tracking-wider">Canaux</span>
+            <Tooltip>
+              <TooltipTrigger
+                onClick={() => { setNewChannelMode("group"); setNewChannelOpen(true); }}
+                className="flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-green-dark transition-colors"
+              >
+                <Plus size={14} />
+              </TooltipTrigger>
+              <TooltipContent side="right">Nouveau groupe ou message privé</TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+            {CHANNELS.map((ch) => {
+              const isActive = activeChannel === ch.id;
+              return (
+                <div key={ch.id} className="group/channel flex items-center">
+                  <Tooltip>
+                    <TooltipTrigger
+                      onClick={() => setActiveChannel(ch.id)}
+                      className={cn(
+                        "flex flex-1 items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-all text-left min-w-0",
+                        isActive
+                          ? "bg-mv-green/10 text-mv-green-dark font-semibold"
+                          : "text-mv-ink-soft hover:bg-mv-cream hover:text-mv-ink"
+                      )}
+                    >
+                      <Hash size={13} className="shrink-0" />
+                      <span className="truncate">{ch.label}</span>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">{ch.description}</TooltipContent>
+                  </Tooltip>
+                  {/* Channel settings (owner/manager only) */}
+                  {canManageChannels && isActive && (
+                    <Tooltip>
+                      <TooltipTrigger
+                        onClick={() => setManagingChannel(ch.id)}
+                        className="shrink-0 flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink transition-colors opacity-0 group-hover/channel:opacity-100"
+                      >
+                        <Settings2 size={12} />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">Gérer les accès au canal #{ch.id}</TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              );
+            })}
+
+            {dynamicGroups.length > 0 && (
+              <p className="mt-3 mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">Groupes</p>
+            )}
+            {dynamicGroups.map((c) => (
+              <Tooltip key={c.id}>
+                <TooltipTrigger
+                  onClick={() => setActiveChannel(c.id)}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-all text-left min-w-0",
+                    activeChannel === c.id
+                      ? "bg-mv-green/10 text-mv-green-dark font-semibold"
+                      : "text-mv-ink-soft hover:bg-mv-cream hover:text-mv-ink"
+                  )}
+                >
+                  <Users size={13} className="shrink-0" />
+                  <span className="truncate">{c.name}</span>
+                </TooltipTrigger>
+                <TooltipContent side="right">Groupe : {c.name}</TooltipContent>
+              </Tooltip>
+            ))}
+
+            {dmChannels.length > 0 && (
+              <p className="mt-3 mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">Messages privés</p>
+            )}
+            {dmChannels.map((c) => {
+              const other = teamMembers.find((m) => m.id === c.otherMemberId);
+              const displayName = other?.name ?? c.name;
+              return (
+                <Tooltip key={c.id}>
+                  <TooltipTrigger
+                    onClick={() => setActiveChannel(c.id)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-all text-left min-w-0",
+                      activeChannel === c.id
+                        ? "bg-mv-green/10 text-mv-green-dark font-semibold"
+                        : "text-mv-ink-soft hover:bg-mv-cream hover:text-mv-ink"
+                    )}
+                  >
+                    <span className="relative shrink-0">
+                      <Avatar name={displayName} src={other?.avatarUrl ?? undefined} size={18} />
+                      {other && (
+                        <span className={cn("absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-white", isOnline(other.id) ? "bg-mv-green" : "bg-mv-border")} />
+                      )}
+                    </span>
+                    <span className="truncate">{displayName}</span>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Message privé avec {displayName}</TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        </div>
 
         {/* ── Main Chat Area ── */}
         <div className="flex flex-1 flex-col min-w-0">
 
           {/* Top bar */}
           <div className="flex items-center justify-between border-b border-mv-border bg-white px-5 py-3 shrink-0">
-            <div className="flex items-center gap-1">
-              {CHANNELS.map((ch) => {
-                const isActive = activeChannel === ch.id;
-                return (
-                  <div key={ch.id} className="flex items-center">
-                    <Tooltip>
-                      <TooltipTrigger
-                        onClick={() => setActiveChannel(ch.id)}
-                        className={cn(
-                          "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-all",
-                          isActive
-                            ? "bg-mv-green text-white shadow-sm"
-                            : "text-mv-ink-soft hover:bg-mv-cream hover:text-mv-ink"
-                        )}
-                      >
-                        <Hash size={12} />
-                        {ch.label}
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">{ch.description}</TooltipContent>
-                    </Tooltip>
-                    {/* Channel settings (owner/manager only) */}
-                    {canManageChannels && isActive && (
-                      <Tooltip>
-                        <TooltipTrigger
-                          onClick={() => setManagingChannel(ch.id)}
-                          className="ml-0.5 flex items-center justify-center h-6 w-6 rounded-lg hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink transition-colors"
-                        >
-                          <Settings2 size={12} />
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">Gérer les accès au canal #{ch.id}</TooltipContent>
-                      </Tooltip>
-                    )}
-                  </div>
-                );
-              })}
+            <div className="flex items-center gap-2 min-w-0">
+              <Hash size={16} className="text-mv-ink-faint shrink-0" />
+              <span className="text-[14.5px] font-semibold text-mv-ink truncate">{activeChannelLabel}</span>
+              <span className="hidden sm:inline text-[12px] text-mv-ink-faint truncate">
+                — {CHANNELS.find((c) => c.id === activeChannel)?.description}
+              </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Tooltip>
                 <TooltipTrigger
                   onClick={enableNotifications}
@@ -966,13 +1292,14 @@ export function TeamChatView({
           )}
 
           {/* Message stream */}
-          <div className="flex-1 overflow-y-auto py-4">
+          <div className="relative flex-1 min-h-0">
+          <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="h-full overflow-y-auto py-4">
             {groups.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
                 <div className="h-14 w-14 rounded-2xl bg-mv-cream flex items-center justify-center border border-mv-border">
                   <MessageSquare size={24} className="text-mv-ink-faint" />
                 </div>
-                <p className="text-[14px] font-medium text-mv-ink">Aucun message dans #{activeChannel}</p>
+                <p className="text-[14px] font-medium text-mv-ink">Aucun message dans #{activeChannelLabel}</p>
                 <p className="text-[12.5px] text-mv-ink-faint">Soyez le premier à écrire !</p>
               </div>
             ) : (
@@ -1024,6 +1351,31 @@ export function TeamChatView({
             )}
 
             <div ref={messagesEndRef} />
+          </div>
+
+          {canScrollUp && (
+            <Tooltip>
+              <TooltipTrigger
+                onClick={() => scrollMessagesTo("top")}
+                className="absolute left-1/2 top-3 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-mv-border bg-white text-mv-ink-soft shadow-mv-sm hover:text-mv-ink hover:shadow-mv-md transition-all"
+              >
+                <ChevronUp size={16} />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Aller en haut</TooltipContent>
+            </Tooltip>
+          )}
+
+          {canScrollDown && (
+            <Tooltip>
+              <TooltipTrigger
+                onClick={() => scrollMessagesTo("bottom")}
+                className="absolute left-1/2 bottom-3 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-mv-border bg-white text-mv-ink-soft shadow-mv-sm hover:text-mv-ink hover:shadow-mv-md transition-all"
+              >
+                <ChevronDown size={16} />
+              </TooltipTrigger>
+              <TooltipContent side="top">Aller en bas</TooltipContent>
+            </Tooltip>
+          )}
           </div>
 
           {/* Input area */}
@@ -1078,7 +1430,7 @@ export function TeamChatView({
                     e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
                   }}
                   onKeyDown={handleKeyDown}
-                  placeholder={`Message #${activeChannel}… (Shift+Enter pour sauter une ligne, @ pour mentionner)`}
+                  placeholder={`Message #${activeChannelLabel}… (Shift+Enter pour sauter une ligne, @ pour mentionner)`}
                   className="flex-1 resize-none bg-transparent px-4 pt-3 pb-1 text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint focus:outline-none min-h-[42px] max-h-[120px]"
                   style={{ height: "42px" }}
                 />
@@ -1096,7 +1448,7 @@ export function TeamChatView({
                     <TooltipContent side="top">Joindre un fichier</TooltipContent>
                   </Tooltip>
                   <Tooltip>
-                    <TooltipTrigger type="button" onClick={() => { setIsRecording((p) => !p); toast.info(isRecording ? "Enregistrement arrêté." : "Enregistrement en cours…"); }} className={cn("flex items-center justify-center h-7 w-7 rounded-lg transition-colors", isRecording ? "bg-red-100 text-red-500 hover:bg-red-200" : "hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink")}>
+                    <TooltipTrigger type="button" onClick={handleToggleRecording} className={cn("flex items-center justify-center h-7 w-7 rounded-lg transition-colors", isRecording ? "bg-red-100 text-red-500 hover:bg-red-200" : "hover:bg-mv-cream text-mv-ink-faint hover:text-mv-ink")}>
                       {isRecording ? <MicOff size={15} /> : <Mic size={15} />}
                     </TooltipTrigger>
                     <TooltipContent side="top">{isRecording ? "Arrêter l'enregistrement" : "Enregistrement audio"}</TooltipContent>
@@ -1132,41 +1484,30 @@ export function TeamChatView({
               )}
             </div>
 
-            {/* FlowAI */}
-            <div className="px-3 py-2">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1.5 px-1">Bots</p>
+            <div className="flex-1 overflow-y-auto px-3 py-2">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1.5 px-1">
+                Membres — {teamMembers.length + 1}
+              </p>
+
               <Tooltip>
-                <TooltipTrigger onClick={() => insertMention("FlowAI")} className="w-full flex items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-mv-cream transition-colors text-left">
+                <TooltipTrigger onClick={() => insertMention("FlowAI")} className="w-full flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-mv-cream transition-colors text-left">
                   <div className="relative shrink-0">
-                    <FlowAIAvatar size={32} />
-                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-mv-green border-2 border-white" />
+                    <FlowAIAvatar size={30} />
+                    <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-mv-green border-2 border-white" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[12.5px] font-semibold text-mv-ink truncate">Flow AI</p>
-                    <p className="text-[10.5px] text-mv-green-dark font-medium">En ligne</p>
+                    <p className="text-[12px] font-medium text-mv-ink truncate">Flow AI</p>
+                    <p className="text-[10px] text-mv-green-dark font-medium truncate">En ligne</p>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="left">Insérer @FlowAI dans le message</TooltipContent>
               </Tooltip>
-            </div>
 
-            <div className="flex-1 overflow-y-auto px-3 pb-3">
-              {teamMembers.some((m) => isOnline(m.id)) && (
-                <>
-                  <p className="text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1.5 px-1 pt-2">En ligne</p>
-                  {teamMembers.filter((m) => isOnline(m.id)).map((m) => (
-                    <MemberRow key={m.id} member={m} online={true} onMention={insertMention} />
-                  ))}
-                </>
-              )}
-              {teamMembers.some((m) => !isOnline(m.id)) && (
-                <>
-                  <p className="text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1.5 px-1 pt-3">Hors ligne</p>
-                  {teamMembers.filter((m) => !isOnline(m.id)).map((m) => (
-                    <MemberRow key={m.id} member={m} online={false} onMention={insertMention} />
-                  ))}
-                </>
-              )}
+              {[...teamMembers]
+                .sort((a, b) => Number(isOnline(b.id)) - Number(isOnline(a.id)))
+                .map((m) => (
+                  <MemberRow key={m.id} member={m} online={isOnline(m.id)} onMention={insertMention} />
+                ))}
             </div>
 
             {onInvite && (
@@ -1191,6 +1532,93 @@ export function TeamChatView({
           onClose={() => setManagingChannel(null)}
         />
       )}
+
+      {/* New Group / New DM */}
+      <Modal
+        open={newChannelOpen}
+        onClose={() => { setNewChannelOpen(false); setNewChannelName(""); setNewChannelMemberIds([]); }}
+        title="Nouveau groupe ou message privé"
+        description="Créez un groupe personnalisé avec les membres de votre choix, ou démarrez une conversation privée."
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-1 rounded-xl border border-mv-border bg-mv-cream-soft p-1">
+            <button
+              type="button"
+              onClick={() => { setNewChannelMode("group"); setNewChannelMemberIds([]); }}
+              className={cn(
+                "flex-1 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-all",
+                newChannelMode === "group" ? "bg-white shadow-mv-xs text-mv-ink" : "text-mv-ink-soft"
+              )}
+            >
+              Groupe
+            </button>
+            <button
+              type="button"
+              onClick={() => { setNewChannelMode("dm"); setNewChannelMemberIds([]); }}
+              className={cn(
+                "flex-1 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-all",
+                newChannelMode === "dm" ? "bg-white shadow-mv-xs text-mv-ink" : "text-mv-ink-soft"
+              )}
+            >
+              Message privé
+            </button>
+          </div>
+
+          {newChannelMode === "group" && (
+            <Field label="Nom du groupe">
+              <Input
+                value={newChannelName}
+                onChange={(e) => setNewChannelName(e.target.value)}
+                placeholder="Ex : Ouverture de weekend"
+                autoFocus
+              />
+            </Field>
+          )}
+
+          <div>
+            <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">
+              {newChannelMode === "group" ? "Membres" : "Avec qui ?"}
+            </p>
+            <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-mv-border p-1.5">
+              {(newChannelMode === "group" ? teamMembers.filter((m) => m.id !== currentUserId) : dmCandidates).map((m) => {
+                const selected = newChannelMemberIds.includes(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      if (newChannelMode === "dm") {
+                        setNewChannelMemberIds([m.id]);
+                      } else {
+                        setNewChannelMemberIds((prev) =>
+                          prev.includes(m.id) ? prev.filter((id) => id !== m.id) : [...prev, m.id]
+                        );
+                      }
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
+                      selected ? "bg-mv-green/10" : "hover:bg-mv-cream-soft"
+                    )}
+                  >
+                    <Avatar name={m.name} src={m.avatarUrl ?? undefined} size={26} />
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-mv-ink">{m.name}</span>
+                    {selected && <Check size={14} className="shrink-0 text-mv-green-dark" />}
+                  </button>
+                );
+              })}
+              {newChannelMode === "dm" && dmCandidates.length === 0 && (
+                <p className="px-2 py-3 text-center text-[12.5px] text-mv-ink-faint">
+                  Vous avez déjà une conversation privée avec tout le monde.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <Button className="w-full" onClick={handleCreateChannel} disabled={creatingChannel}>
+            {creatingChannel ? "Création…" : newChannelMode === "group" ? "Créer le groupe" : "Démarrer la conversation"}
+          </Button>
+        </div>
+      </Modal>
     </>
   );
 }

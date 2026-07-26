@@ -327,7 +327,9 @@ export function ReservationsView({
   const confirmedCount = reservations.filter(
     (r) => r.status === "confirmee" || r.status === "honoree"
   ).length;
-  const totalCovers = reservations.reduce((sum, r) => sum + r.partySize, 0);
+  const totalCovers = reservations
+    .filter((r) => r.status !== "annulee" && r.status !== "no_show")
+    .reduce((sum, r) => sum + r.partySize, 0);
 
   async function loadDay(newDayStart: string) {
     if (!restaurantId) return;

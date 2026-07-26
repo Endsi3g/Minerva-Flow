@@ -184,7 +184,14 @@ export async function createReservation(
     .select("*")
     .single();
 
-  if (error || !data) return null;
+  if (error) {
+    // Belt-and-suspenders: the hasTableConflict check above is a pre-check,
+    // not a guarantee — idx_reservations_no_double_booking (unique index)
+    // is what actually closes the race between two concurrent requests.
+    if (error.code === "23505") return RESERVATION_CONFLICT;
+    return null;
+  }
+  if (!data) return null;
 
   await logActivity({
     restaurantId,
@@ -234,7 +241,8 @@ export async function updateReservationTable(
     .update({ table_id: tableId })
     .eq("restaurant_id", restaurantId)
     .eq("id", id);
-  return !error;
+  if (error) return error.code === "23505" ? RESERVATION_CONFLICT : false;
+  return true;
 }
 
 export async function deleteReservation(restaurantId: string, id: string): Promise<boolean> {

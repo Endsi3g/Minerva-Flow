@@ -59,8 +59,8 @@ export async function updatePurchaseOrderStatusAction(
   id: string,
   status: PurchaseOrderStatus
 ): Promise<UpdatePurchaseOrderStatusResult> {
-  const ok = await updatePurchaseOrderStatus(restaurantId, id, status);
-  if (!ok) return { ok: false };
+  const result = await updatePurchaseOrderStatus(restaurantId, id, status);
+  if (!result.ok) return { ok: false };
 
   revalidatePath("/fournisseurs");
   if (status === "envoyee") {
@@ -71,7 +71,10 @@ export async function updatePurchaseOrderStatusAction(
       link: "/fournisseurs",
     });
   }
-  if (status === "recue") {
+  // Only the request that actually flipped envoyee -> recue processes
+  // receipt — a duplicate/concurrent request racing on the same PO returns
+  // ok:true without re-incrementing stock a second time.
+  if (status === "recue" && result.transitioned) {
     const order = await getPurchaseOrder(restaurantId, id);
     if (order && order.items.length > 0) {
       const { matchedCount, unmatchedNames } = await receivePurchaseOrderItems(

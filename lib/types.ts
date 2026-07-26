@@ -664,7 +664,19 @@ export type ReferralReward = {
   createdAt: string;
 };
 
-export type TeamChannel = "general" | "cuisine" | "service" | "urgences";
+// Legacy 4 fixed values, or a dynamic id for a custom group ("grp-...")
+// or a 1-to-1 DM ("dm-<userIdA>-<userIdB>", sorted).
+export type TeamChannel = string;
+
+export type TeamChannelKind = "legacy" | "group" | "dm";
+
+export type TeamChannelSummary = {
+  id: string;
+  name: string;
+  kind: TeamChannelKind;
+  /** For kind "dm" only — the other participant, so the UI can show their avatar/status. */
+  otherMemberId?: string;
+};
 
 export type TeamChatMessage = {
   id: string;
@@ -681,6 +693,9 @@ export type TeamChatMessage = {
   replyTo?: { id: string; authorName: string; content: string };
   reactions?: Record<string, string[]>; // emoji -> authorIds[]
   attachments?: { name: string; url: string; type: "image" | "file" | "audio" }[];
+  /** Storage path (not a URL) in the private "team-voice-notes" bucket — each
+   * viewer resolves their own signed URL from it at render time. */
+  audioPath?: string | null;
   createdAt: string;
 };
 

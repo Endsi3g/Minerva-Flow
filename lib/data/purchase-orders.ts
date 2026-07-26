@@ -153,18 +153,39 @@ export async function createPurchaseOrder(
   return mapOrder(orderRow, itemRows);
 }
 
+export type UpdatePurchaseOrderStatusOutcome = {
+  ok: boolean;
+  /** True only for the request that actually flipped the status — a duplicate/concurrent
+   * request racing to also set "recue" gets ok:true but transitioned:false, so the caller
+   * knows not to re-run stock receipt and double-count the delivery. */
+  transitioned: boolean;
+};
+
 export async function updatePurchaseOrderStatus(
   restaurantId: string,
   id: string,
   status: PurchaseOrderStatus
-): Promise<boolean> {
+): Promise<UpdatePurchaseOrderStatusOutcome> {
   const supabase = await createClient();
+
+  if (status === "recue") {
+    const { data, error } = await supabase
+      .from("purchase_orders")
+      .update({ status })
+      .eq("restaurant_id", restaurantId)
+      .eq("id", id)
+      .eq("status", "envoyee")
+      .select("id");
+    if (error) return { ok: false, transitioned: false };
+    return { ok: true, transitioned: (data?.length ?? 0) > 0 };
+  }
+
   const { error } = await supabase
     .from("purchase_orders")
     .update({ status })
     .eq("restaurant_id", restaurantId)
     .eq("id", id);
-  return !error;
+  return { ok: !error, transitioned: !error };
 }
 
 export async function deletePurchaseOrder(restaurantId: string, id: string): Promise<boolean> {
