@@ -4,7 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { runNvidiaAiModel } from "@/lib/ai/nvidia";
 import { runCloudflareAiModel } from "@/lib/ai/cloudflare";
-import type { TeamChannel, TeamChatMessage } from "@/lib/types";
+import { generateToken } from "@/lib/tokens";
+import { notifyUser } from "@/lib/data/notifications";
+import type { TeamChannel, TeamChannelSummary, TeamChatMessage } from "@/lib/types";
+
+const LEGACY_CHANNELS: { id: TeamChannel; name: string }[] = [
+  { id: "general", name: "général" },
+  { id: "cuisine", name: "cuisine" },
+  { id: "service", name: "service" },
+  { id: "urgences", name: "urgences" },
+];
 
 /* ── helpers ── */
 function dbRowToMessage(row: any): TeamChatMessage {
@@ -23,8 +32,121 @@ function dbRowToMessage(row: any): TeamChatMessage {
     replyTo: row.reply_to ?? undefined,
     reactions: row.reactions ?? undefined,
     attachments: row.attachments ?? undefined,
+    audioPath: row.audio_url ?? undefined,
     createdAt: row.created_at,
   };
+}
+
+/** Deterministic id for a 1-to-1 DM — same value regardless of who starts it.
+ * Uses a separator ("__") that never appears in a UUID, unlike "-". */
+function dmChannelId(userIdA: string, userIdB: string): string {
+  return `dm-${[userIdA, userIdB].sort().join("__")}`;
+}
+
+/**
+ * Channels visible to this user: the 4 legacy ones (always open) plus any
+ * dynamic group/DM the RLS policy (can_access_team_channel) actually lets
+ * them see — this query runs on the session-scoped client on purpose so
+ * privacy is enforced by the database, not by this function's logic.
+ */
+export async function listTeamChannelsForUser(
+  restaurantId: string,
+  userId: string
+): Promise<TeamChannelSummary[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("team_channels")
+    .select("id, name, type")
+    .eq("restaurant_id", restaurantId)
+    .order("created_at", { ascending: true });
+
+  const dynamicRows = (data as { id: string; name: string; type: string }[] | null) ?? [];
+  const dmRows = dynamicRows.filter((r) => r.type === "dm");
+
+  // Resolve "the other participant" per DM via team_channel_members rather
+  // than parsing the id — robust regardless of id format.
+  const admin = createAdminClient();
+  const otherMemberByChannel = new Map<string, string>();
+  if (dmRows.length > 0) {
+    const { data: memberRows } = await admin
+      .from("team_channel_members")
+      .select("channel, member_id")
+      .eq("restaurant_id", restaurantId)
+      .in("channel", dmRows.map((r) => r.id))
+      .neq("member_id", userId);
+    for (const row of (memberRows as { channel: string; member_id: string }[] | null) ?? []) {
+      otherMemberByChannel.set(row.channel, row.member_id);
+    }
+  }
+
+  const dynamic = dynamicRows.map((row): TeamChannelSummary => {
+    if (row.type === "dm") {
+      return { id: row.id, name: row.name, kind: "dm", otherMemberId: otherMemberByChannel.get(row.id) };
+    }
+    return { id: row.id, name: row.name, kind: "group" };
+  });
+
+  return [
+    ...LEGACY_CHANNELS.map((c): TeamChannelSummary => ({ ...c, kind: "legacy" })),
+    ...dynamic,
+  ];
+}
+
+/**
+ * Both channel creators below call one atomic RPC (create_team_channel_atomic)
+ * instead of two separate inserts — a channel row followed by its membership
+ * rows. Two separate inserts left a window where a failure between them
+ * created a channel with zero membership rows, which the RLS function used to
+ * treat as "unrestricted" (open to the whole restaurant). The RPC creates
+ * both in one function call, so a failure rolls back the channel too instead
+ * of leaving an orphaned, briefly-public one.
+ */
+export async function createGroupChannel(
+  restaurantId: string,
+  name: string,
+  memberIds: string[],
+  createdBy: string
+): Promise<TeamChannelSummary | null> {
+  const admin = createAdminClient();
+  const id = `grp-${generateToken(12)}`;
+  const allMemberIds = Array.from(new Set([createdBy, ...memberIds]));
+  const trimmedName = name.trim();
+
+  const { error } = await admin.rpc("create_team_channel_atomic", {
+    p_restaurant_id: restaurantId,
+    p_id: id,
+    p_name: trimmedName,
+    p_type: "group",
+    p_member_ids: allMemberIds,
+    p_created_by: createdBy,
+  });
+  if (error) return null;
+
+  return { id, name: trimmedName, kind: "group" };
+}
+
+export async function getOrCreateDmChannel(
+  restaurantId: string,
+  userId: string,
+  otherUserId: string
+): Promise<string | null> {
+  const admin = createAdminClient();
+  const id = dmChannelId(userId, otherUserId);
+
+  const { data: existing } = await admin.from("team_channels").select("id").eq("id", id).maybeSingle();
+  if (existing) return id;
+
+  const { error } = await admin.rpc("create_team_channel_atomic", {
+    p_restaurant_id: restaurantId,
+    p_id: id,
+    p_name: "Message privé",
+    p_type: "dm",
+    p_member_ids: [userId, otherUserId],
+    p_created_by: userId,
+  });
+  if (error) return null;
+
+  return id;
 }
 
 /* ── fetch initial messages (server-side) ── */
@@ -55,6 +177,7 @@ export async function sendTeamMessage(input: {
   authorRole: string;
   authorAvatarUrl?: string | null;
   content: string;
+  audioPath?: string | null;
   replyTo?: { id: string; authorName: string; content: string };
 }): Promise<{ userMessage: TeamChatMessage; aiResponse?: TeamChatMessage }> {
   const admin = createAdminClient();
@@ -69,6 +192,7 @@ export async function sendTeamMessage(input: {
       author_role: input.authorRole,
       author_avatar_url: input.authorAvatarUrl ?? null,
       content: input.content,
+      audio_url: input.audioPath ?? null,
       reply_to: input.replyTo ?? null,
       is_ai_response: false,
     })
@@ -80,6 +204,28 @@ export async function sendTeamMessage(input: {
   }
 
   const userMessage = dbRowToMessage(userRow);
+
+  // DM: notify the other participant — the whole point of a private message
+  // is that it doesn't get missed the way a channel post might.
+  if (input.channel.startsWith("dm-")) {
+    const { data: memberRows } = await admin
+      .from("team_channel_members")
+      .select("member_id")
+      .eq("restaurant_id", input.restaurantId)
+      .eq("channel", input.channel)
+      .neq("member_id", input.authorId);
+    const recipientId = (memberRows as { member_id: string }[] | null)?.[0]?.member_id;
+    if (recipientId) {
+      await notifyUser({
+        restaurantId: input.restaurantId,
+        userId: recipientId,
+        type: "team_chat.dm_received",
+        title: `Message de ${input.authorName}`,
+        body: input.audioPath ? "🎤 Message vocal" : input.content.slice(0, 100),
+        link: "/collaborateurs",
+      });
+    }
+  }
 
   // Check for @FlowAI mention
   const isTagged = /@(FlowAI|Flow|flow|minerva)/i.test(input.content);
