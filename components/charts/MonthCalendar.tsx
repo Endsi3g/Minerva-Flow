@@ -51,7 +51,7 @@ export function MonthCalendar({
               onClick={() => onSelectDate?.(d.date)}
               style={{ background: bg }}
               className={cn(
-                "group relative flex aspect-square flex-col items-start justify-between rounded-lg p-1 sm:p-2 text-left transition-transform hover:z-10 hover:scale-[1.06] hover:shadow-mv-md",
+                "group relative flex h-10 sm:h-12 flex-col items-start justify-between rounded-lg p-1 sm:p-2 text-left transition-transform hover:z-10 hover:scale-[1.06] hover:shadow-mv-md",
                 isSelected && "ring-2 ring-mv-green ring-offset-2 ring-offset-mv-surface"
               )}
             >
