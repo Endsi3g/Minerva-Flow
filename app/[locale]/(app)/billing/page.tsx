@@ -9,6 +9,14 @@ import { formatDate } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Stripe } from "@/components/ui/BrandIcons";
 import { toast } from "sonner";
+import { CheckCircle2, Sparkles } from "lucide-react";
+
+const INCLUDED_FEATURES = [
+  "Finance, inventaire et ingénierie de menu illimités",
+  "Commande directe 0% commission",
+  "Flow AI et rapports automatisés",
+  "Établissements et collaborateurs illimités",
+];
 
 const statusLabel: Record<string, string> = {
   incomplete: "Incomplet",
@@ -73,10 +81,29 @@ export default function BillingPage() {
           {!status ? (
             <p className="text-[13px] text-mv-ink-faint">Chargement…</p>
           ) : !status.configured ? (
-            <p className="text-[13px] text-mv-ink-soft">
-              La facturation n&apos;est pas encore activée pour votre workspace — vous utilisez Flow par Minerva
-              gratuitement pour l&apos;instant.
-            </p>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 rounded-xl bg-mv-green-tint/40 border border-mv-green/20 p-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+                  <Sparkles size={16} />
+                </div>
+                <div>
+                  <p className="text-[13.5px] font-semibold text-mv-ink">Période pilote gratuite</p>
+                  <p className="mt-0.5 text-[12.5px] text-mv-ink-soft">
+                    La facturation n&apos;est pas encore activée pour votre workspace — profitez de Flow par Minerva
+                    gratuitement pendant votre période pilote.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">Inclus dans votre accès</p>
+                {INCLUDED_FEATURES.map((feature) => (
+                  <div key={feature} className="flex items-center gap-2">
+                    <CheckCircle2 size={15} className="shrink-0 text-mv-green-dark" />
+                    <span className="text-[12.5px] text-mv-ink-soft">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : status.subscription ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
