@@ -2,7 +2,24 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
-## [v2.15.0] - 2026-07-25
+## [v2.15.0] - 2026-08-02
+
+### 🍽️ Le Lien Manquant : Commande → Inventaire
+- **Recettes de Menu** : chaque plat peut maintenant déclarer les articles d'inventaire qu'il consomme (fiche du plat → section « Recette »). Servir une commande décrémente désormais automatiquement le stock correspondant — la promesse « commande = inventaire -1, revenus +X, automatiquement » est enfin tenue de bout en bout, vérifiée en conditions réelles (QR code client → cuisine → stock).
+- **Fiabilité** : le revenu du jour et la quantité en stock sont maintenant incrémentés de façon atomique (même mécanisme que les autres compteurs de l'app) — deux commandes servies en même temps ne peuvent plus s'écraser l'une l'autre.
+
+### 🎯 Objectif du Jour sur l'Aperçu
+- Le simulateur de seuil de rentabilité (Finance) sauvegarde maintenant ses hypothèses (coûts fixes, marge, panier moyen) — elles survivent au rechargement.
+- L'Aperçu affiche « Il te faut N clients aujourd'hui pour être payé », calculé en direct à partir de ces hypothèses, avec la progression du jour.
+- Une alerte de stock bas se transforme maintenant en recommandation concrète (« Passer une commande fournisseur ») au lieu d'un simple avertissement.
+
+### 📊 Programmes & Bibliothèque
+- **Programmes** : cartes stats (Programmes actifs / Revenu total / Marge moyenne) au-dessus du tableau.
+- **Bibliothèque** : en-tête uniformisé avec le reste de l'app ; notification discrète (au lieu d'une boîte de dialogue bloquante) au téléchargement d'un fichier.
+- **Calendrier** : hauteur de cellule stabilisée dans la vue mensuelle.
+
+### 💳 Facturation
+- L'état « Stripe non configuré » sur `/billing` affiche maintenant une carte « Période pilote gratuite » avec la liste des fonctionnalités incluses, plutôt qu'un simple paragraphe brut.
 
 ### 🛠️ Correctifs de Fiabilité — Réservations & Fournisseurs
 - **Réservations : Prévention des Doubles Réservations** :
