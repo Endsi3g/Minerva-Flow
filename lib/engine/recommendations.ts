@@ -118,5 +118,21 @@ export function computeRecommendations({
     });
   }
 
+  // From low-stock alerts: the concrete "what to order from the supplier"
+  // suggestion the product spec calls for at clôture — one entry per item
+  // under threshold, turning the alert into an actionable next step instead
+  // of just a warning.
+  for (const alert of alerts.filter((a) => a.id.startsWith("low-stock-"))) {
+    const itemName = alert.title.replace("Stock bas — ", "");
+    recs.push({
+      id: `rec-${alert.id}`,
+      diagnosis: `${itemName} est sous son seuil de réapprovisionnement.`,
+      suggestedAction: `Passer une commande fournisseur pour ${itemName} depuis Fournisseurs avant la prochaine rupture.`,
+      relatedMetric: "inventaire",
+      status: "nouvelle",
+      source: "regles",
+    });
+  }
+
   return recs;
 }

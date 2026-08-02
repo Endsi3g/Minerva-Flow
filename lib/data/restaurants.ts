@@ -29,6 +29,9 @@ type RestaurantRow = {
   loyalty_points_per_dollar: number;
   tax_rate: number;
   accepts_tips: boolean;
+  break_even_fixed_costs: number | null;
+  break_even_gross_margin_pct: number | null;
+  break_even_avg_basket: number | null;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -55,7 +58,31 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
     taxRate: row.tax_rate ?? 0.14975,
     acceptsTips: row.accepts_tips ?? true,
+    breakEvenFixedCosts: row.break_even_fixed_costs,
+    breakEvenGrossMarginPct: row.break_even_gross_margin_pct,
+    breakEvenAvgBasket: row.break_even_avg_basket,
   };
+}
+
+/**
+ * Persists the Finance break-even simulator's assumptions (the "Ajustez vos
+ * variables d'exploitation" sliders) so they survive a reload and Overview
+ * can compute the same daily client target from them — see
+ * BreakEvenSimulator.tsx and the Overview page's "Objectif du jour" stat.
+ */
+export async function updateBreakEvenSettings(
+  restaurantId: string,
+  patch: { fixedCosts?: number; grossMarginPct?: number; avgBasket?: number }
+): Promise<boolean> {
+  const supabase = await createClient();
+  const dbPatch: Record<string, number> = {};
+  if (patch.fixedCosts !== undefined) dbPatch.break_even_fixed_costs = patch.fixedCosts;
+  if (patch.grossMarginPct !== undefined) dbPatch.break_even_gross_margin_pct = patch.grossMarginPct;
+  if (patch.avgBasket !== undefined) dbPatch.break_even_avg_basket = patch.avgBasket;
+  if (Object.keys(dbPatch).length === 0) return true;
+
+  const { error } = await supabase.from("restaurants").update(dbPatch).eq("id", restaurantId);
+  return !error;
 }
 
 /**

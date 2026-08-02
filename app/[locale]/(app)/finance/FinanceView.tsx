@@ -94,7 +94,13 @@ function isCurrentMonth(dateIso: string): boolean {
   return dateIso.startsWith(ym);
 }
 
-function OverviewTab({ transactions }: { transactions: FinancialTransaction[] }) {
+function OverviewTab({
+  transactions,
+  breakEvenSettings,
+}: {
+  transactions: FinancialTransaction[];
+  breakEvenSettings?: { fixedCosts: number | null; grossMarginPct: number | null; avgBasket: number | null };
+}) {
   const t = useTranslations("finance");
   const monthTransactions = useMemo(
     () => transactions.filter((t) => isCurrentMonth(t.date)),
@@ -171,7 +177,11 @@ function OverviewTab({ transactions }: { transactions: FinancialTransaction[] })
 
       {/* Break-Even Simulator Section (Valeur ++) */}
       <div className="mt-8">
-        <BreakEvenSimulator />
+        <BreakEvenSimulator
+          initialFixedCosts={breakEvenSettings?.fixedCosts ?? undefined}
+          initialGrossMarginPct={breakEvenSettings?.grossMarginPct ?? undefined}
+          initialAvgBasket={breakEvenSettings?.avgBasket ?? undefined}
+        />
       </div>
     </div>
   );
@@ -667,10 +677,12 @@ export function FinanceView({
   transactions,
   expenseCategories,
   connections,
+  breakEvenSettings,
 }: {
   transactions: FinancialTransaction[];
   expenseCategories: ExpenseCategory[];
   connections: Connection[];
+  breakEvenSettings?: { fixedCosts: number | null; grossMarginPct: number | null; avgBasket: number | null };
 }) {
   const t = useTranslations("finance");
   return (
@@ -710,7 +722,7 @@ export function FinanceView({
         </TabsList>
 
         <TabsContent value="apercu">
-          <OverviewTab transactions={transactions} />
+          <OverviewTab transactions={transactions} breakEvenSettings={breakEvenSettings} />
         </TabsContent>
         <TabsContent value="transactions">
           <TransactionsTab transactions={transactions} expenseCategories={expenseCategories} />

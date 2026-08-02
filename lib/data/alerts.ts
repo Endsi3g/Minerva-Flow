@@ -136,6 +136,27 @@ const RULE_META: Record<
     defaultThreshold: 40,
     unit: "%",
   },
+  low_stock: {
+    label: "Stock bas",
+    description:
+      "Alerter quand un article d'inventaire tombe à ce pourcentage (ou moins) de son seuil minimal.",
+    defaultThreshold: 100,
+    unit: "%",
+  },
+  unfilled_shift: {
+    label: "Quart non confirmé",
+    description:
+      "Alerter quand un quart de travail approche sans avoir été confirmé par l'employé, sous ce délai (en jours).",
+    defaultThreshold: 2,
+    unit: "jours",
+  },
+  late_supplier_order: {
+    label: "Commande fournisseur en retard",
+    description:
+      "Alerter quand une commande envoyée à un fournisseur dépasse sa date de livraison prévue.",
+    defaultThreshold: 0,
+    unit: "jours",
+  },
 };
 
 type AlertRuleRow = {

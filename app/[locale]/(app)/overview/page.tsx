@@ -3,15 +3,22 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
+import { getRestaurant } from "@/lib/data/restaurants";
 import { getMyProfile } from "@/lib/data/profile";
 import { getPrograms } from "@/lib/data/programs";
 import { getServiceDays } from "@/lib/data/service-days";
 import { getCampaigns } from "@/lib/data/campaigns";
 import { getFinancialTransactions, getConnections } from "@/lib/data/finance";
 import { getAlertRules, getAlerts } from "@/lib/data/alerts";
+import { getInventoryItems } from "@/lib/data/inventory";
+import { getShiftSchedulesForRange } from "@/lib/data/shift-schedules";
+import { getEmployees } from "@/lib/data/employees";
+import { getPurchaseOrders } from "@/lib/data/purchase-orders";
+import { getSuppliers } from "@/lib/data/suppliers";
 import { revenueTrend, margeTrend, joursTrend, type ReportData } from "@/lib/reports";
 import { computeAlerts } from "@/lib/engine/alerts";
 import { computeRecommendations } from "@/lib/engine/recommendations";
+import { computeBreakEven, BREAK_EVEN_DEFAULTS } from "@/lib/engine/break-even";
 import { formatDateFull } from "@/lib/utils";
 import { Store } from "lucide-react";
 import type { ServiceDay } from "@/lib/types";
@@ -60,18 +67,40 @@ export default async function OverviewPage() {
   }
 
   const { from, to, year, month } = currentMonthRange();
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const weekAheadIso = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
 
-  const [profile, serviceDays, programs, campaigns, financialTransactions, connections, alertRules, tableAlerts] =
-    await Promise.all([
-      getMyProfile(),
-      getServiceDays(restaurantId, { from, to }),
-      getPrograms(restaurantId),
-      getCampaigns(restaurantId),
-      getFinancialTransactions(restaurantId, { from, to }),
-      getConnections(restaurantId),
-      getAlertRules(restaurantId),
-      getAlerts(restaurantId),
-    ]);
+  const [
+    profile,
+    restaurant,
+    serviceDays,
+    programs,
+    campaigns,
+    financialTransactions,
+    connections,
+    alertRules,
+    tableAlerts,
+    inventoryItems,
+    shiftSchedules,
+    employees,
+    purchaseOrders,
+    suppliers,
+  ] = await Promise.all([
+    getMyProfile(),
+    getRestaurant(restaurantId),
+    getServiceDays(restaurantId, { from, to }),
+    getPrograms(restaurantId),
+    getCampaigns(restaurantId),
+    getFinancialTransactions(restaurantId, { from, to }),
+    getConnections(restaurantId),
+    getAlertRules(restaurantId),
+    getAlerts(restaurantId),
+    getInventoryItems(restaurantId),
+    getShiftSchedulesForRange(restaurantId, todayIso, weekAheadIso),
+    getEmployees(restaurantId),
+    getPurchaseOrders(restaurantId),
+    getSuppliers(restaurantId),
+  ]);
 
   const reportData: ReportData = { serviceDays, programs, campaigns, financialTransactions };
 
@@ -81,11 +110,40 @@ export default async function OverviewPage() {
 
   const firstName = profile?.fullName?.split(" ")[0] ?? null;
   const monthMarge = margTrend.reduce((sum, d) => sum + d.revenue, 0);
-  const todayLabel = formatDateFull(new Date().toISOString().slice(0, 10));
+  const todayLabel = formatDateFull(todayIso);
   const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
 
-  const alerts = computeAlerts({ serviceDays, connections, alertRules, financialTransactions });
+  const alerts = computeAlerts({
+    serviceDays,
+    connections,
+    alertRules,
+    financialTransactions,
+    inventoryItems,
+    shiftSchedules,
+    employees,
+    purchaseOrders,
+    suppliers,
+  });
   const recommendations = computeRecommendations({ campaigns, programs, serviceDays, alerts });
+
+  // "Objectif du jour" — the daily client target from the Finance seuil de
+  // rentabilité simulator (lib/engine/break-even.ts is the single source of
+  // truth shared with BreakEvenSimulator), plus today's progress toward it
+  // so Overview answers "how many customers do I need today" at a glance
+  // per the product spec's principle #1.
+  const breakEvenAssumptions = {
+    fixedCosts: restaurant?.breakEvenFixedCosts ?? BREAK_EVEN_DEFAULTS.fixedCosts,
+    grossMarginPct: restaurant?.breakEvenGrossMarginPct ?? BREAK_EVEN_DEFAULTS.grossMarginPct,
+    avgBasket: restaurant?.breakEvenAvgBasket ?? BREAK_EVEN_DEFAULTS.avgBasket,
+  };
+  const { dailyCoversNeeded } = computeBreakEven(breakEvenAssumptions);
+  const todayRevenue = serviceDays.find((d) => d.date === todayIso)?.revenue ?? 0;
+  const clientsSoFar = Math.round(todayRevenue / breakEvenAssumptions.avgBasket);
+  const dailyTarget = {
+    clientsNeeded: dailyCoversNeeded,
+    clientsSoFar,
+    reached: clientsSoFar >= dailyCoversNeeded,
+  };
 
   const unreadTableAlerts = tableAlerts.filter((a) => a.status === "nouvelle");
   const combinedAlerts = [...alerts, ...unreadTableAlerts].sort((a, b) =>
@@ -121,6 +179,7 @@ export default async function OverviewPage() {
       heat={heat}
       alerts={combinedAlerts}
       recommendations={recommendations}
+      dailyTarget={dailyTarget}
     />
   );
 }

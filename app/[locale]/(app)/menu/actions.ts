@@ -11,7 +11,8 @@ import {
 import { createMenuShare, deleteMenuShare } from "@/lib/data/menu-shares";
 import { createOffer, updateOffer, deleteOffer, type OfferInput } from "@/lib/data/offers";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
-import type { MenuItem, MenuShare, Offer } from "@/lib/types";
+import { getRecipeItems, setRecipeItems } from "@/lib/data/recipes";
+import type { MenuItem, MenuShare, Offer, RecipeItem } from "@/lib/types";
 
 export async function createMenuItemAction(
   restaurantId: string,
@@ -95,6 +96,26 @@ export async function updateOfferAction(
 
 export async function deleteOfferAction(restaurantId: string, offerId: string): Promise<boolean> {
   const ok = await deleteOffer(restaurantId, offerId);
+  if (ok) revalidatePath("/menu");
+  return ok;
+}
+
+export async function getRecipeItemsAction(restaurantId: string, menuItemId: string): Promise<RecipeItem[]> {
+  return getRecipeItems(restaurantId, menuItemId);
+}
+
+/**
+ * Saves the "recette" (which inventory items this dish consumes, and how
+ * much of each per unit sold) from the menu item editor's Recette section.
+ * This is what lets applyServedOrderEffects (lib/data/orders.ts) decrement
+ * inventory automatically when an order for this dish is served.
+ */
+export async function updateMenuItemRecipeAction(
+  restaurantId: string,
+  menuItemId: string,
+  items: { inventoryItemId: string; quantityPerUnit: number }[]
+): Promise<boolean> {
+  const ok = await setRecipeItems(restaurantId, menuItemId, items);
   if (ok) revalidatePath("/menu");
   return ok;
 }

@@ -28,6 +28,11 @@ export type Restaurant = {
   loyaltyPointsPerDollar: number;
   taxRate: number;
   acceptsTips: boolean;
+  // Finance "seuil de rentabilité" simulator assumptions — null until the
+  // owner has adjusted the simulator at least once (see BreakEvenSimulator).
+  breakEvenFixedCosts: number | null;
+  breakEvenGrossMarginPct: number | null;
+  breakEvenAvgBasket: number | null;
 };
 
 export type Employee = {
@@ -340,6 +345,10 @@ export type Alert = {
   assignedTo?: string | null;
   relatedEntityType?: string | null;
   relatedEntityId?: string | null;
+  // Where clicking this alert should take the owner to act on it (spec:
+  // "every stat should be actionable"). Always set on rule-engine alerts;
+  // derived from relatedEntityType for persisted `alerts` table rows.
+  href?: string;
 };
 
 export type TeamMember = {
@@ -383,7 +392,10 @@ export type AlertRuleType =
   | "expense_spike"
   | "missing_day_input"
   | "broken_sync"
-  | "reservation_anomaly";
+  | "reservation_anomaly"
+  | "low_stock"
+  | "unfilled_shift"
+  | "late_supplier_order";
 
 export type RecommendationStatus =
   | "nouvelle"
@@ -559,6 +571,22 @@ export type MenuItem = {
   active: boolean;
   description: string | null;
   imageUrl: string | null;
+  createdAt: string;
+};
+
+/**
+ * One ingredient a menu item consumes per unit sold — the "recette" that
+ * links a dish to inventory so serving an order can decrement stock
+ * automatically (see applyServedOrderEffects in lib/data/orders.ts).
+ * Optional per menu item: a dish with no RecipeItem rows simply doesn't
+ * move inventory when sold, same as before this existed.
+ */
+export type RecipeItem = {
+  id: string;
+  restaurantId: string;
+  menuItemId: string;
+  inventoryItemId: string;
+  quantityPerUnit: number;
   createdAt: string;
 };
 

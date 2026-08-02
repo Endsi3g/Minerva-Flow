@@ -35,6 +35,9 @@ import {
   CalendarX,
   PlugZap,
   Users,
+  PackageX,
+  UserX,
+  Truck,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -74,6 +77,9 @@ const ruleIcon: Record<AlertRule["type"], typeof TrendingDown> = {
   missing_day_input: CalendarX,
   broken_sync: PlugZap,
   reservation_anomaly: Users,
+  low_stock: PackageX,
+  unfilled_shift: UserX,
+  late_supplier_order: Truck,
 };
 
 function AlertRulesTab() {
