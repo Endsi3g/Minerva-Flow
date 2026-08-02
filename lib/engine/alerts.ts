@@ -4,8 +4,13 @@ import type {
   AlertRule,
   AlertSeverity,
   Connection,
+  Employee,
   FinancialTransaction,
+  InventoryItem,
+  PurchaseOrder,
   ServiceDay,
+  ShiftSchedule,
+  Supplier,
 } from "@/lib/types";
 
 function dayOfWeek(iso: string) {
@@ -23,6 +28,11 @@ export type ComputeAlertsInput = {
   connections: Connection[];
   alertRules: AlertRule[];
   financialTransactions: FinancialTransaction[];
+  inventoryItems?: InventoryItem[];
+  shiftSchedules?: ShiftSchedule[];
+  employees?: Employee[];
+  purchaseOrders?: PurchaseOrder[];
+  suppliers?: Supplier[];
 };
 
 /**
@@ -35,6 +45,11 @@ export function computeAlerts({
   connections,
   alertRules,
   financialTransactions,
+  inventoryItems = [],
+  shiftSchedules = [],
+  employees = [],
+  purchaseOrders = [],
+  suppliers = [],
 }: ComputeAlertsInput): Alert[] {
   const rules = Object.fromEntries(alertRules.map((r) => [r.type, r]));
   const alerts: Alert[] = [];
@@ -57,6 +72,7 @@ export function computeAlerts({
           detail: `${formatDate(day.date)} : revenu ${Math.round(dropPct)}% sous la moyenne du même jour de semaine.`,
           severity: severityFor(dropPct),
           date: day.date,
+          href: "/days",
         });
       }
     }
@@ -87,6 +103,7 @@ export function computeAlerts({
           detail: `${formatDate(t.date)} : "${t.description}" (${Math.abs(t.amount)} $) dépasse de ${Math.round(overPct)}% la moyenne de cette catégorie.`,
           severity: severityFor(overPct),
           date: t.date,
+          href: "/finance",
         });
       }
     }
@@ -107,6 +124,7 @@ export function computeAlerts({
         detail: `Aucune journée renseignée depuis ${daysSince} jour${daysSince > 1 ? "s" : ""} (dernière saisie : ${formatDate(latest.date)}).`,
         severity: daysSince >= missingRule.threshold * 2 ? "critique" : "important",
         date: latest.date,
+        href: "/days",
       });
     }
   }
@@ -122,6 +140,7 @@ export function computeAlerts({
           detail: c.detail ?? "La synchronisation a échoué — reconnectez ce compte.",
           severity: "critique",
           date: new Date().toISOString().slice(0, 10),
+          href: "/settings?tab=integrations",
         });
       }
     }
@@ -132,6 +151,75 @@ export function computeAlerts({
   // rule stays configurable in Settings but the engine can't safely compute
   // it without weak/false claims. It will activate once reservation data
   // is connected.
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  // 6. Low stock — an inventory item at or below its par level (threshold
+  // is a % of par level, so 100 = "at or under par", 50 = "at or under
+  // half of par" for restaurants that only want to be warned when it's
+  // more urgent).
+  const lowStockRule = rules["low_stock"];
+  if (lowStockRule?.enabled) {
+    for (const item of inventoryItems) {
+      if (item.parLevel === null || item.parLevel <= 0) continue;
+      const pctOfPar = (item.quantityOnHand / item.parLevel) * 100;
+      if (pctOfPar <= lowStockRule.threshold) {
+        alerts.push({
+          id: `low-stock-${item.id}`,
+          title: `Stock bas — ${item.name}`,
+          detail: `${item.quantityOnHand} ${item.unit} en stock, sous le seuil de ${item.parLevel} ${item.unit}. Commande fournisseur recommandée.`,
+          severity: pctOfPar <= 0 ? "critique" : severityFor(100 - pctOfPar),
+          date: today,
+          href: "/inventaire",
+        });
+      }
+    }
+  }
+
+  // 7. Unfilled shift — a scheduled shift that's still "planifié" (not yet
+  // confirmed by the employee) within `threshold` days of starting.
+  const unfilledShiftRule = rules["unfilled_shift"];
+  if (unfilledShiftRule?.enabled) {
+    const employeeName = new Map(employees.map((e) => [e.id, e.fullName]));
+    for (const shift of shiftSchedules) {
+      if (shift.status !== "planifie") continue;
+      const daysUntil = Math.floor(
+        (new Date(shift.shiftDate + "T00:00:00").getTime() - Date.now()) / 86_400_000
+      );
+      if (daysUntil < 0 || daysUntil > unfilledShiftRule.threshold) continue;
+      const name = employeeName.get(shift.employeeId) ?? "Un employé";
+      alerts.push({
+        id: `unfilled-shift-${shift.id}`,
+        title: "Quart non confirmé",
+        detail: `${name} — ${formatDate(shift.shiftDate)}${shift.positionLabel ? ` (${shift.positionLabel})` : ""}, ${shift.startTime}–${shift.endTime}, pas encore confirmé.`,
+        severity: daysUntil === 0 ? "critique" : "important",
+        date: shift.shiftDate,
+        href: "/collaborateurs",
+      });
+    }
+  }
+
+  // 8. Late supplier order — a purchase order sent to a supplier whose
+  // expected delivery date has passed without being marked "reçue".
+  const lateSupplierRule = rules["late_supplier_order"];
+  if (lateSupplierRule?.enabled) {
+    const supplierName = new Map(suppliers.map((s) => [s.id, s.name]));
+    for (const po of purchaseOrders) {
+      if (po.status !== "envoyee" || !po.expectedDate) continue;
+      const daysLate = Math.floor(
+        (Date.now() - new Date(po.expectedDate + "T00:00:00").getTime()) / 86_400_000
+      );
+      if (daysLate <= lateSupplierRule.threshold) continue;
+      alerts.push({
+        id: `late-supplier-order-${po.id}`,
+        title: `Commande fournisseur en retard — ${supplierName.get(po.supplierId) ?? "Fournisseur"}`,
+        detail: `Livraison attendue le ${formatDate(po.expectedDate)}, ${daysLate} jour${daysLate > 1 ? "s" : ""} de retard.`,
+        severity: daysLate >= 3 ? "critique" : "important",
+        date: po.expectedDate,
+        href: "/fournisseurs",
+      });
+    }
+  }
 
   return alerts.sort((a, b) => b.date.localeCompare(a.date));
 }

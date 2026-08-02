@@ -156,6 +156,9 @@ export async function getWorkspaceRestaurants(workspaceId: string): Promise<Rest
     loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
     taxRate: row.tax_rate ?? 0.14975,
     acceptsTips: row.accepts_tips ?? true,
+    breakEvenFixedCosts: row.break_even_fixed_costs ?? null,
+    breakEvenGrossMarginPct: row.break_even_gross_margin_pct ?? null,
+    breakEvenAvgBasket: row.break_even_avg_basket ?? null,
   }));
 }
 

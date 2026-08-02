@@ -6,7 +6,9 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/lib/utils";
-import { useState, useOptimistic, useTransition, useMemo } from "react";
+import { useState, useOptimistic, useTransition, useMemo, useEffect, useRef } from "react";
+import { updateBreakEvenSettingsAction } from "@/app/[locale]/(app)/finance/actions";
+import { BREAK_EVEN_DEFAULTS, computeBreakEven } from "@/lib/engine/break-even";
 import {
   Calculator,
   Target,
@@ -29,13 +31,42 @@ import {
   ReferenceDot,
 } from "recharts";
 
-export function BreakEvenSimulator() {
-  const [fixedCosts, setFixedCosts] = useState<number>(18500);
-  const [grossMarginPct, setGrossMarginPct] = useState<number>(68);
-  const [avgBasket, setAvgBasket] = useState<number>(38.5);
+export function BreakEvenSimulator({
+  initialFixedCosts,
+  initialGrossMarginPct,
+  initialAvgBasket,
+}: {
+  initialFixedCosts?: number;
+  initialGrossMarginPct?: number;
+  initialAvgBasket?: number;
+} = {}) {
+  const [fixedCosts, setFixedCosts] = useState<number>(initialFixedCosts ?? BREAK_EVEN_DEFAULTS.fixedCosts);
+  const [grossMarginPct, setGrossMarginPct] = useState<number>(initialGrossMarginPct ?? BREAK_EVEN_DEFAULTS.grossMarginPct);
+  const [avgBasket, setAvgBasket] = useState<number>(initialAvgBasket ?? BREAK_EVEN_DEFAULTS.avgBasket);
   const [monthlyRevenue, setMonthlyRevenue] = useState<number>(34500);
 
   const [, startTransition] = useTransition();
+
+  // Persists the three assumptions (not monthlyRevenue — that one's a
+  // what-if projection, not a durable setting) to the restaurant so the
+  // daily client target survives a reload and Overview can compute the
+  // same "il te faut N clients" number from it. Debounced so dragging a
+  // slider doesn't fire a write per pixel.
+  const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (persistTimer.current) clearTimeout(persistTimer.current);
+    persistTimer.current = setTimeout(() => {
+      updateBreakEvenSettingsAction({ fixedCosts, grossMarginPct, avgBasket });
+    }, 600);
+    return () => {
+      if (persistTimer.current) clearTimeout(persistTimer.current);
+    };
+  }, [fixedCosts, grossMarginPct, avgBasket]);
 
   // Optimistic State for Sliders
   const [optimisticValues, setOptimisticValue] = useOptimistic(
@@ -74,11 +105,10 @@ export function BreakEvenSimulator() {
     setMonthlyRevenue(val);
   }
 
-  // Calculations based on optimistic values for 0ms lag UI feedback
+  // Calculations based on optimistic values for 0ms lag UI feedback — same
+  // formula Overview uses (lib/engine/break-even.ts) so the two never drift.
   const grossMarginRatio = optimisticValues.grossMarginPct / 100;
-  const breakEvenMonthly = grossMarginRatio > 0 ? optimisticValues.fixedCosts / grossMarginRatio : 0;
-  const breakEvenDaily = breakEvenMonthly / 30;
-  const dailyCoversNeeded = optimisticValues.avgBasket > 0 ? Math.ceil(breakEvenDaily / optimisticValues.avgBasket) : 0;
+  const { breakEvenMonthly, breakEvenDaily, dailyCoversNeeded } = computeBreakEven(optimisticValues);
 
   const estimatedGrossProfit = optimisticValues.monthlyRevenue * grossMarginRatio;
   const netProfit = estimatedGrossProfit - optimisticValues.fixedCosts;

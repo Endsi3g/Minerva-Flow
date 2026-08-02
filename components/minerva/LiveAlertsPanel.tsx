@@ -37,6 +37,20 @@ type AlertRow = {
   created_at: string;
 };
 
+// Best-effort route for alerts persisted in the `alerts` table (which don't
+// carry an `href` the way rule-engine alerts do) — keyed by their `type`
+// column so a click always lands somewhere useful instead of nowhere.
+const ROUTE_BY_ALERT_TYPE: Record<string, string> = {
+  low_stock: "/inventaire",
+  unfilled_shift: "/collaborateurs",
+  late_supplier_order: "/fournisseurs",
+  revenue_drop: "/days",
+  missing_day_input: "/days",
+  expense_spike: "/finance",
+  broken_sync: "/settings?tab=integrations",
+  reservation_anomaly: "/reservations",
+};
+
 function mapAlertRow(row: AlertRow): Alert {
   return {
     id: row.id,
@@ -50,6 +64,7 @@ function mapAlertRow(row: AlertRow): Alert {
     assignedTo: row.assigned_to,
     relatedEntityType: row.related_entity_type,
     relatedEntityId: row.related_entity_id,
+    href: ROUTE_BY_ALERT_TYPE[row.type],
   };
 }
 
@@ -112,22 +127,37 @@ export function LiveAlertsPanel({
           <p className="text-[12.5px] text-mv-ink-faint">Rien à signaler pour l&apos;instant.</p>
         ) : (
         <div className="space-y-3">
-          {alerts.map((a, i) => (
-            <div
-              key={a.id}
-              style={{ animationDelay: `${220 + i * 50}ms` }}
-              className="mv-animate-in rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5"
-            >
-              <div className="mb-1.5 flex items-center justify-between gap-2">
-                <Badge tone={severityTone[a.severity]} dot>
-                  {severityLabel[a.severity]}
-                </Badge>
-                <span className="text-[11px] text-mv-ink-faint">{formatDate(a.date)}</span>
+          {alerts.map((a, i) => {
+            const content = (
+              <>
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <Badge tone={severityTone[a.severity]} dot>
+                    {severityLabel[a.severity]}
+                  </Badge>
+                  <span className="text-[11px] text-mv-ink-faint">{formatDate(a.date)}</span>
+                </div>
+                <p className="text-[13px] font-semibold leading-snug text-mv-ink">{a.title}</p>
+                <div className="mt-0.5 flex items-end justify-between gap-2">
+                  <p className="text-[12.5px] leading-snug text-mv-ink-soft">{a.detail}</p>
+                  {a.href && (
+                    <ArrowRight size={14} className="mb-0.5 shrink-0 text-mv-green-dark" />
+                  )}
+                </div>
+              </>
+            );
+            const cardClassName =
+              "mv-animate-in block rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5 transition-colors" +
+              (a.href ? " hover:bg-mv-cream-soft/70 hover:border-mv-border" : "");
+            return a.href ? (
+              <Link key={a.id} href={a.href} style={{ animationDelay: `${220 + i * 50}ms` }} className={cardClassName}>
+                {content}
+              </Link>
+            ) : (
+              <div key={a.id} style={{ animationDelay: `${220 + i * 50}ms` }} className={cardClassName}>
+                {content}
               </div>
-              <p className="text-[13px] font-semibold leading-snug text-mv-ink">{a.title}</p>
-              <p className="mt-0.5 text-[12.5px] leading-snug text-mv-ink-soft">{a.detail}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       </div>

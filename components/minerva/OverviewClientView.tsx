@@ -14,7 +14,7 @@ import { StartupChecklist } from "@/components/minerva/StartupChecklist";
 import { WidgetManagerModal, useWidgetVisibility } from "@/components/minerva/WidgetManagerModal";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
 import { formatCurrency, formatDateFull } from "@/lib/utils";
-import { CalendarCheck2, Megaphone, ArrowRight, SlidersHorizontal } from "lucide-react";
+import { CalendarCheck2, Megaphone, ArrowRight, SlidersHorizontal, Target, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import type { Alert, Recommendation, ServiceDay } from "@/lib/types";
 
@@ -33,6 +33,7 @@ export function OverviewClientView({
   heat,
   alerts,
   recommendations,
+  dailyTarget,
 }: {
   restaurantId: string;
   greeting: string;
@@ -48,6 +49,7 @@ export function OverviewClientView({
   heat: { date: string; revenue: number; dow: number }[];
   alerts: Alert[];
   recommendations: Recommendation[];
+  dailyTarget?: { clientsNeeded: number; clientsSoFar: number; reached: boolean };
 }) {
   const [managerOpen, setManagerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -101,6 +103,50 @@ export function OverviewClientView({
       />
 
       <StartupChecklist />
+
+      {/* "Objectif du jour" — the daily break-even client target computed from
+          the Finance seuil de rentabilité simulator (lib/engine/break-even.ts),
+          with today's progress toward it. The single most important number on
+          this page per the product spec: "il te faut N clients pour être
+          payé". Links to /commandes (take action) and /finance (adjust the
+          assumptions behind the number). */}
+      {dailyTarget && (
+        <div className="mv-animate-in mb-6 rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3.5">
+              <div
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${
+                  dailyTarget.reached
+                    ? "border-mv-green/20 bg-mv-green-tint text-mv-green-dark"
+                    : "border-mv-amber/20 bg-mv-amber-bg text-mv-amber"
+                }`}
+              >
+                {dailyTarget.reached ? <CheckCircle2 size={22} /> : <Target size={22} />}
+              </div>
+              <div>
+                <p className="text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                  Objectif du jour
+                </p>
+                <p className="mt-0.5 font-display text-[19px] font-medium leading-snug text-mv-ink">
+                  {`Il te faut ${dailyTarget.clientsNeeded} client${dailyTarget.clientsNeeded > 1 ? "s" : ""} aujourd'hui pour être payé`}
+                </p>
+                <p className="mt-0.5 text-[12.5px] text-mv-ink-soft">
+                  {`${dailyTarget.clientsSoFar} / ${dailyTarget.clientsNeeded} atteints jusqu'à maintenant`}
+                  {dailyTarget.reached ? " — objectif atteint !" : ""}
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 sm:pl-2">
+              <Button href="/commandes" size="sm" className="text-[12.5px] whitespace-nowrap">
+                Prendre une commande
+              </Button>
+              <Button href="/finance" variant="secondary" size="sm" className="text-[12.5px] whitespace-nowrap">
+                Ajuster mes hypothèses
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* KPI Trend Chart & Summary Cards Widget */}
       {isVisible("widget-kpi-summary") && (

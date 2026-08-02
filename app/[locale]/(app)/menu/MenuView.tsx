@@ -15,8 +15,8 @@ import {
   classifyMenuItems,
   type MenuItemWithQuadrant,
 } from "@/lib/menu-engineering";
-import type { MenuItem, MenuQuadrant, MenuShare, Offer } from "@/lib/types";
-import { UtensilsCrossed, Plus, Trash2, TrendingUp, Pencil, Share2, Copy, Check, Download, Megaphone, EyeOff } from "lucide-react";
+import type { InventoryItem, MenuItem, MenuQuadrant, MenuShare, Offer, RecipeItem } from "@/lib/types";
+import { UtensilsCrossed, Plus, Trash2, TrendingUp, Pencil, Share2, Copy, Check, Download, Megaphone, EyeOff, ChefHat } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import QRCode from "qrcode";
@@ -25,6 +25,7 @@ import {
   deleteMenuItemAction,
   recordSaleAction,
   updateMenuItemAction,
+  updateMenuItemRecipeAction,
   createMenuShareAction,
   deleteMenuShareAction,
   createOfferAction,
@@ -174,15 +175,109 @@ function SaleQuickAdd({
   );
 }
 
+type RecipeRow = { inventoryItemId: string; quantityPerUnit: string };
+
+/**
+ * "Recette" editor — lets the owner declare which inventory items a dish
+ * consumes per unit sold, so serving an order for it decrements those
+ * items automatically (see applyServedOrderEffects in lib/data/orders.ts).
+ * Optional: leaving it empty means this dish doesn't track inventory, same
+ * as before this existed.
+ */
+function RecipeEditor({
+  inventoryItems,
+  rows,
+  onChange,
+}: {
+  inventoryItems: InventoryItem[];
+  rows: RecipeRow[];
+  onChange: (rows: RecipeRow[]) => void;
+}) {
+  function updateRow(index: number, patch: Partial<RecipeRow>) {
+    onChange(rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  }
+  function removeRow(index: number) {
+    onChange(rows.filter((_, i) => i !== index));
+  }
+  function addRow() {
+    const used = new Set(rows.map((r) => r.inventoryItemId));
+    const next = inventoryItems.find((i) => !used.has(i.id));
+    onChange([...rows, { inventoryItemId: next?.id ?? "", quantityPerUnit: "" }]);
+  }
+
+  return (
+    <div className="space-y-2 rounded-lg border border-mv-border-soft bg-mv-cream-soft/50 p-3">
+      <div className="flex items-center gap-1.5 text-[12.5px] font-medium text-mv-ink">
+        <ChefHat size={14} className="text-mv-green-dark" />
+        Recette (optionnel)
+      </div>
+      <p className="text-[11.5px] leading-snug text-mv-ink-faint">
+        Ingrédients d&apos;inventaire consommés par unité vendue — une fois définis, servir une commande de ce
+        plat retire automatiquement le stock correspondant.
+      </p>
+      {rows.map((row, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <select
+            value={row.inventoryItemId}
+            onChange={(e) => updateRow(i, { inventoryItemId: e.target.value })}
+            className="h-8 flex-1 rounded-md border border-mv-border bg-mv-surface px-2 text-[12.5px]"
+          >
+            <option value="" disabled>
+              Choisir un article
+            </option>
+            {inventoryItems.map((inv) => (
+              <option key={inv.id} value={inv.id}>
+                {inv.name} ({inv.unit})
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="Qté"
+            value={row.quantityPerUnit}
+            onChange={(e) => updateRow(i, { quantityPerUnit: e.target.value })}
+            className="h-8 w-20 rounded-md border border-mv-border bg-mv-surface px-2 text-[12.5px]"
+          />
+          <button
+            type="button"
+            onClick={() => removeRow(i)}
+            className="text-mv-ink-faint hover:text-mv-red"
+            aria-label="Retirer cet ingrédient"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addRow}
+        disabled={inventoryItems.length === 0 || rows.length >= inventoryItems.length}
+        className="flex items-center gap-1 text-[12px] font-medium text-mv-green-dark hover:underline disabled:opacity-40"
+      >
+        <Plus size={12} /> Ajouter un ingrédient
+      </button>
+      {inventoryItems.length === 0 && (
+        <p className="text-[11.5px] text-mv-ink-faint">Ajoutez d&apos;abord des articles dans Inventaire.</p>
+      )}
+    </div>
+  );
+}
+
 function EditMenuItemModal({
   restaurantId,
   item,
+  inventoryItems,
+  initialRecipe,
   open,
   onClose,
   onUpdated,
 }: {
   restaurantId: string;
   item: MenuItem;
+  inventoryItems: InventoryItem[];
+  initialRecipe: RecipeItem[];
   open: boolean;
   onClose: () => void;
   onUpdated: (item: MenuItem) => void;
@@ -191,6 +286,9 @@ function EditMenuItemModal({
   const tn = useTranslations("menu.newItem");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null | undefined>(undefined);
+  const [recipeRows, setRecipeRows] = useState<RecipeRow[]>(() =>
+    initialRecipe.map((r) => ({ inventoryItemId: r.inventoryItemId, quantityPerUnit: String(r.quantityPerUnit) }))
+  );
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -206,6 +304,13 @@ function EditMenuItemModal({
         imageUrl,
       });
       if (updated) {
+        await updateMenuItemRecipeAction(
+          restaurantId,
+          item.id,
+          recipeRows
+            .filter((r) => r.inventoryItemId && Number(r.quantityPerUnit) > 0)
+            .map((r) => ({ inventoryItemId: r.inventoryItemId, quantityPerUnit: Number(r.quantityPerUnit) }))
+        );
         onUpdated(updated);
         onClose();
       } else {
@@ -239,6 +344,7 @@ function EditMenuItemModal({
         <Field label={tn("imageLabel")} hint={tn("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={item.id} currentUrl={item.imageUrl} onUploaded={setImageUrl} />
         </Field>
+        <RecipeEditor inventoryItems={inventoryItems} rows={recipeRows} onChange={setRecipeRows} />
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             {tn("cancel")}
@@ -695,6 +801,8 @@ export function MenuView({
   acceptsTips,
   initialShares,
   initialOffers,
+  inventoryItems = [],
+  initialRecipes = {},
 }: {
   restaurantId: string | null;
   initialItems: MenuItem[];
@@ -702,11 +810,14 @@ export function MenuView({
   acceptsTips: boolean;
   initialShares: MenuShare[];
   initialOffers: Offer[];
+  inventoryItems?: InventoryItem[];
+  initialRecipes?: Record<string, RecipeItem[]>;
 }) {
   const t = useTranslations("menu.page");
   const tq = useTranslations("menu.quadrant");
   const { role } = useApp();
   const [items, setItems] = useState(initialItems);
+  const [recipesByMenuItem] = useState(initialRecipes);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -948,6 +1059,8 @@ export function MenuView({
         <EditMenuItemModal
           restaurantId={restaurantId}
           item={editingItem}
+          inventoryItems={inventoryItems}
+          initialRecipe={recipesByMenuItem[editingItem.id] ?? []}
           open={Boolean(editingItem)}
           onClose={() => setEditingItem(null)}
           onUpdated={handleUpdated}

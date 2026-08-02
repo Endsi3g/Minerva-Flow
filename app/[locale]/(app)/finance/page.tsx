@@ -1,6 +1,7 @@
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getFinancialTransactions, getExpenseCategories, getConnections } from "@/lib/data/finance";
+import { getRestaurant } from "@/lib/data/restaurants";
 import { FinanceView } from "./FinanceView";
 
 export default async function FinancePage() {
@@ -10,10 +11,11 @@ export default async function FinancePage() {
     return <FinanceView transactions={[]} expenseCategories={[]} connections={[]} />;
   }
 
-  const [transactions, expenseCategories, connections] = await Promise.all([
+  const [transactions, expenseCategories, connections, restaurant] = await Promise.all([
     getFinancialTransactions(restaurantId),
     getExpenseCategories(restaurantId),
     getConnections(restaurantId),
+    getRestaurant(restaurantId),
   ]);
 
   return (
@@ -23,6 +25,11 @@ export default async function FinancePage() {
         transactions={transactions}
         expenseCategories={expenseCategories}
         connections={connections}
+        breakEvenSettings={{
+          fixedCosts: restaurant?.breakEvenFixedCosts ?? null,
+          grossMarginPct: restaurant?.breakEvenGrossMarginPct ?? null,
+          avgBasket: restaurant?.breakEvenAvgBasket ?? null,
+        }}
       />
     </>
   );

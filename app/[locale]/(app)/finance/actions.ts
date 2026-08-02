@@ -10,6 +10,7 @@ import {
   bulkCategorizeTransactions,
   type TransactionInput,
 } from "@/lib/data/finance";
+import { updateBreakEvenSettings } from "@/lib/data/restaurants";
 import type { ExpenseCategory, FinancialTransaction } from "@/lib/types";
 
 /**
@@ -73,4 +74,20 @@ export async function categorizeTransactionsAction(
   const updated = await bulkCategorizeTransactions(restaurantId, ids, trimmed);
   if (updated > 0) revalidatePath("/finance");
   return updated;
+}
+
+/**
+ * Persists the break-even simulator's sliders so the daily client target
+ * survives a reload and Overview's "Objectif du jour" stat (computed from
+ * the same numbers) reflects whatever the owner last set here.
+ */
+export async function updateBreakEvenSettingsAction(patch: {
+  fixedCosts?: number;
+  grossMarginPct?: number;
+  avgBasket?: number;
+}): Promise<boolean> {
+  const restaurantId = await requireRestaurantId();
+  const ok = await updateBreakEvenSettings(restaurantId, patch);
+  if (ok) revalidatePath("/overview");
+  return ok;
 }
