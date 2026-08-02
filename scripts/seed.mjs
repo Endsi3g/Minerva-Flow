@@ -578,7 +578,7 @@ function transactionTemplates(dense, categories, programIds, accounts) {
       amount: -randInt(6500, 11000),
       direction: "out",
       category: "Personnel",
-      source_account: accounts.banque,
+      source_account: "Paie",
       program_id: null,
     },
     {

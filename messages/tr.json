@@ -207,7 +207,9 @@
       "whereMoneyGoes": "Paranın nereye gittiği",
       "expenseOutflows": "Gider Çıkışları",
       "outflowsBreakdown": "Cari giderlerin dağılımı",
-      "noOutflowsThisMonth": "Bu ay çıkış yok."
+      "noOutflowsThisMonth": "Bu ay çıkış yok.",
+      "laborCostLabel": "İşçilik Maliyeti",
+      "laborCostTarget": "Hedef: Cironun %{target}'inden az"
     },
     "csv": {
       "date": "Tarih",

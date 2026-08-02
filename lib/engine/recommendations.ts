@@ -1,4 +1,5 @@
 import type { Alert, Campaign, Program, Recommendation, ServiceDay } from "@/lib/types";
+import { LABOR_COST_TARGET_PCT } from "@/lib/engine/labor-cost";
 
 const weekdayNames = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
@@ -7,6 +8,7 @@ export type ComputeRecommendationsInput = {
   programs: Program[];
   serviceDays: ServiceDay[];
   alerts: Alert[];
+  laborCostPct?: number | null;
 };
 
 /**
@@ -24,6 +26,7 @@ export function computeRecommendations({
   programs,
   serviceDays,
   alerts,
+  laborCostPct,
 }: ComputeRecommendationsInput): Recommendation[] {
   const recs: Recommendation[] = [];
 
@@ -129,6 +132,20 @@ export function computeRecommendations({
       diagnosis: `${itemName} est sous son seuil de réapprovisionnement.`,
       suggestedAction: `Passer une commande fournisseur pour ${itemName} depuis Fournisseurs avant la prochaine rupture.`,
       relatedMetric: "inventaire",
+      status: "nouvelle",
+      source: "regles",
+    });
+  }
+
+  // Labor cost over the target — the concrete "adjust the schedule" signal
+  // behind the Overview "Masse salariale" banner, same shape as the low-stock
+  // → supplier-order rule above.
+  if (laborCostPct != null && laborCostPct > LABOR_COST_TARGET_PCT) {
+    recs.push({
+      id: "rec-labor-cost-high",
+      diagnosis: `La masse salariale représente ${laborCostPct}% du chiffre d'affaires ce mois-ci, au-dessus de la cible de ${LABOR_COST_TARGET_PCT}%.`,
+      suggestedAction: "Revoir les horaires de la semaine prochaine dans Horaire pour réduire la sur-couverture aux heures creuses.",
+      relatedMetric: "masse salariale",
       status: "nouvelle",
       source: "regles",
     });

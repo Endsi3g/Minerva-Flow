@@ -207,7 +207,9 @@
       "whereMoneyGoes": "Où l'argent part",
       "expenseOutflows": "Sorties de charges",
       "outflowsBreakdown": "Répartition des dépenses courantes",
-      "noOutflowsThisMonth": "Aucune sortie ce mois-ci."
+      "noOutflowsThisMonth": "Aucune sortie ce mois-ci.",
+      "laborCostLabel": "Masse salariale",
+      "laborCostTarget": "Cible ≤ {target}% du CA"
     },
     "csv": {
       "date": "Date",

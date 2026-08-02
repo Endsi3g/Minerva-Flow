@@ -19,6 +19,7 @@ import { revenueTrend, margeTrend, joursTrend, type ReportData } from "@/lib/rep
 import { computeAlerts } from "@/lib/engine/alerts";
 import { computeRecommendations } from "@/lib/engine/recommendations";
 import { computeBreakEven, BREAK_EVEN_DEFAULTS } from "@/lib/engine/break-even";
+import { computeLaborCostPct, sumLaborCost } from "@/lib/engine/labor-cost";
 import { formatDateFull } from "@/lib/utils";
 import { Store } from "lucide-react";
 import type { ServiceDay } from "@/lib/types";
@@ -124,7 +125,15 @@ export default async function OverviewPage() {
     purchaseOrders,
     suppliers,
   });
-  const recommendations = computeRecommendations({ campaigns, programs, serviceDays, alerts });
+  const monthRevenue = serviceDays.reduce((sum, d) => sum + d.revenue, 0);
+  const laborCost = computeLaborCostPct({ amount: sumLaborCost(financialTransactions), revenue: monthRevenue });
+  const recommendations = computeRecommendations({
+    campaigns,
+    programs,
+    serviceDays,
+    alerts,
+    laborCostPct: laborCost.pct,
+  });
 
   // "Objectif du jour" — the daily client target from the Finance seuil de
   // rentabilité simulator (lib/engine/break-even.ts is the single source of
@@ -180,6 +189,7 @@ export default async function OverviewPage() {
       alerts={combinedAlerts}
       recommendations={recommendations}
       dailyTarget={dailyTarget}
+      laborCost={laborCost}
     />
   );
 }
