@@ -23,6 +23,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
 import { BreakEvenSimulator } from "@/components/finance/BreakEvenSimulator";
+import { computeLaborCostPct, sumLaborCost, LABOR_COST_TARGET_PCT } from "@/lib/engine/labor-cost";
 import type {
   Connection,
   ConnectionStatus,
@@ -30,6 +31,7 @@ import type {
   ExpenseCategory,
   FinancialTransaction,
   FlowLine,
+  ServiceDay,
   TransactionDirection,
 } from "@/lib/types";
 import {
@@ -47,6 +49,7 @@ import {
   ReceiptText,
   Tag,
   Pencil,
+  Users,
 } from "lucide-react";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "@/i18n/navigation";
@@ -96,9 +99,11 @@ function isCurrentMonth(dateIso: string): boolean {
 
 function OverviewTab({
   transactions,
+  serviceDays,
   breakEvenSettings,
 }: {
   transactions: FinancialTransaction[];
+  serviceDays: ServiceDay[];
   breakEvenSettings?: { fixedCosts: number | null; grossMarginPct: number | null; avgBasket: number | null };
 }) {
   const t = useTranslations("finance");
@@ -115,12 +120,21 @@ function OverviewTab({
     .reduce((s, t) => s + t.amount, 0);
   const net = totalIn - totalOut;
 
+  const monthRevenue = useMemo(
+    () => serviceDays.filter((d) => isCurrentMonth(d.date)).reduce((s, d) => s + d.revenue, 0),
+    [serviceDays]
+  );
+  const laborCost = useMemo(
+    () => computeLaborCostPct({ amount: sumLaborCost(monthTransactions), revenue: monthRevenue }),
+    [monthTransactions, monthRevenue]
+  );
+
   const inflows = useMemo(() => computeFlowLines(monthTransactions, "in"), [monthTransactions]);
   const outflows = useMemo(() => computeFlowLines(monthTransactions, "out"), [monthTransactions]);
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row">
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           label={t("overview.inflows")}
           value={formatCurrency(totalIn)}
@@ -145,6 +159,13 @@ function OverviewTab({
               : t("overview.thisMonth")
           }
           accent="lime"
+        />
+        <StatCard
+          label={t("overview.laborCostLabel")}
+          value={laborCost.pct !== null ? `${laborCost.pct}%` : "—"}
+          icon={Users}
+          sublabel={t("overview.laborCostTarget", { target: LABOR_COST_TARGET_PCT })}
+          accent="ink"
         />
       </div>
 
@@ -677,11 +698,13 @@ export function FinanceView({
   transactions,
   expenseCategories,
   connections,
+  serviceDays,
   breakEvenSettings,
 }: {
   transactions: FinancialTransaction[];
   expenseCategories: ExpenseCategory[];
   connections: Connection[];
+  serviceDays: ServiceDay[];
   breakEvenSettings?: { fixedCosts: number | null; grossMarginPct: number | null; avgBasket: number | null };
 }) {
   const t = useTranslations("finance");
@@ -722,7 +745,7 @@ export function FinanceView({
         </TabsList>
 
         <TabsContent value="apercu">
-          <OverviewTab transactions={transactions} breakEvenSettings={breakEvenSettings} />
+          <OverviewTab transactions={transactions} serviceDays={serviceDays} breakEvenSettings={breakEvenSettings} />
         </TabsContent>
         <TabsContent value="transactions">
           <TransactionsTab transactions={transactions} expenseCategories={expenseCategories} />

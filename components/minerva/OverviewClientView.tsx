@@ -14,9 +14,10 @@ import { StartupChecklist } from "@/components/minerva/StartupChecklist";
 import { WidgetManagerModal, useWidgetVisibility } from "@/components/minerva/WidgetManagerModal";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
 import { formatCurrency, formatDateFull } from "@/lib/utils";
-import { CalendarCheck2, Megaphone, ArrowRight, SlidersHorizontal, Target, CheckCircle2 } from "lucide-react";
+import { CalendarCheck2, Megaphone, ArrowRight, SlidersHorizontal, Target, CheckCircle2, Users } from "lucide-react";
 import Link from "next/link";
 import type { Alert, Recommendation, ServiceDay } from "@/lib/types";
+import type { LaborCostResult } from "@/lib/engine/labor-cost";
 
 export function OverviewClientView({
   restaurantId,
@@ -34,6 +35,7 @@ export function OverviewClientView({
   alerts,
   recommendations,
   dailyTarget,
+  laborCost,
 }: {
   restaurantId: string;
   greeting: string;
@@ -50,6 +52,7 @@ export function OverviewClientView({
   alerts: Alert[];
   recommendations: Recommendation[];
   dailyTarget?: { clientsNeeded: number; clientsSoFar: number; reached: boolean };
+  laborCost?: LaborCostResult;
 }) {
   const [managerOpen, setManagerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -142,6 +145,47 @@ export function OverviewClientView({
               </Button>
               <Button href="/finance" variant="secondary" size="sm" className="text-[12.5px] whitespace-nowrap">
                 Ajuster mes hypothèses
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* "Masse salariale" — labor cost as % of this month's CA, from
+          lib/engine/labor-cost.ts (single source of truth shared with
+          Finance's Aperçu tab). Amber when over the industry-benchmark
+          target so a real overage reads as a warning, not just a number;
+          the concrete fix action lives in Horaire. */}
+      {laborCost && (
+        <div className="mv-animate-in mb-6 rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3.5">
+              <div
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${
+                  laborCost.withinTarget === false
+                    ? "border-mv-amber/20 bg-mv-amber-bg text-mv-amber"
+                    : "border-mv-ink/10 bg-mv-ink/[0.06] text-mv-ink-soft"
+                }`}
+              >
+                <Users size={22} />
+              </div>
+              <div>
+                <p className="text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                  Masse salariale du mois
+                </p>
+                <p className="mt-0.5 font-display text-[19px] font-medium leading-snug text-mv-ink">
+                  {laborCost.pct !== null ? `${laborCost.pct}% du chiffre d'affaires` : "—"}
+                </p>
+                <p className="mt-0.5 text-[12.5px] text-mv-ink-soft">
+                  {laborCost.pct !== null
+                    ? `Cible ≤ 30% du CA${laborCost.withinTarget === false ? " — au-dessus de la cible" : ""}`
+                    : "Aucune donnée de main-d'œuvre ce mois-ci"}
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 sm:pl-2">
+              <Button href="/horaire" variant="secondary" size="sm" className="text-[12.5px] whitespace-nowrap">
+                Voir les horaires
               </Button>
             </div>
           </div>

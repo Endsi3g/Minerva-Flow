@@ -104,4 +104,20 @@ describe("computeRecommendations", () => {
   it("returns an empty list when there's nothing to flag", () => {
     expect(computeRecommendations(baseInput())).toEqual([]);
   });
+
+  it("flags labor cost above the target", () => {
+    const recs = computeRecommendations(baseInput({ laborCostPct: 34.5 }));
+    const rec = recs.find((r) => r.id === "rec-labor-cost-high");
+    expect(rec).toBeDefined();
+    expect(rec?.diagnosis).toContain("34.5%");
+  });
+
+  it("does not flag labor cost at or under the target, or when unknown", () => {
+    expect(computeRecommendations(baseInput({ laborCostPct: 30 })).some((r) => r.id === "rec-labor-cost-high")).toBe(
+      false
+    );
+    expect(computeRecommendations(baseInput({ laborCostPct: null })).some((r) => r.id === "rec-labor-cost-high")).toBe(
+      false
+    );
+  });
 });

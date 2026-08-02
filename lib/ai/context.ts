@@ -1,5 +1,6 @@
 import { computeAlerts } from "@/lib/engine/alerts";
 import { computeRecommendations } from "@/lib/engine/recommendations";
+import { computeLaborCostPct, sumLaborCost } from "@/lib/engine/labor-cost";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { getServiceDays } from "@/lib/data/service-days";
@@ -114,10 +115,13 @@ export async function ruleBasedFallback(restaurantId: string): Promise<Recommend
     alertRules: rules,
     financialTransactions: transactions,
   });
+  const windowRevenue = days.reduce((sum, d) => sum + d.revenue, 0);
+  const laborCost = computeLaborCostPct({ amount: sumLaborCost(transactions), revenue: windowRevenue });
   return computeRecommendations({
     campaigns: restaurantCampaigns,
     programs: restaurantPrograms,
     serviceDays: days,
     alerts,
+    laborCostPct: laborCost.pct,
   });
 }
