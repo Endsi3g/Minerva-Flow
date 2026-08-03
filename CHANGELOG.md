@@ -2,6 +2,13 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.16.0] - 2026-08-02
+
+### 👥 Masse Salariale en % du Chiffre d'Affaires
+- **Overview** : nouvelle carte "Masse salariale du mois", juste sous l'objectif du jour — pourcentage calculé automatiquement à partir des quarts déjà loggés, sans aucune saisie supplémentaire. Passe en alerte (ambre) au-dessus de la cible de 30 % du CA, avec un lien direct vers Horaire pour ajuster.
+- **Finance** : la même donnée apparaît dans l'onglet Aperçu, à côté des Entrées / Sorties / Flux net.
+- **Recommandations** : une masse salariale trop élevée génère désormais une suggestion concrète ("revoir les horaires de la semaine prochaine"), comme le fait déjà une alerte de stock bas pour les commandes fournisseur.
+
 ## [v2.15.0] - 2026-08-02
 
 ### 🍽️ Le Lien Manquant : Commande → Inventaire
