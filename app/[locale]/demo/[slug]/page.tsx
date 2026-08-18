@@ -74,7 +74,7 @@ export default async function ProspectDemoPage({ params }: { params: Promise<{ s
   const { allowed } = await checkRateLimit(`demo:${ip}`, { max: 60, windowSeconds: 300 });
   if (!allowed) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-mv-cream px-6 text-center">
+      <div className="mv-force-light flex min-h-screen items-center justify-center bg-mv-cream px-6 text-center">
         <p className="text-[14px] text-mv-ink-soft">Trop de tentatives. Réessayez dans quelques minutes.</p>
       </div>
     );
@@ -95,7 +95,7 @@ export default async function ProspectDemoPage({ params }: { params: Promise<{ s
   const contactHref = contactSocialUrl || (contactEmail ? `mailto:${contactEmail}` : undefined);
 
   return (
-    <div className="min-h-screen bg-mv-cream">
+    <div className="mv-force-light min-h-screen bg-mv-cream">
       <header className="border-b border-mv-border bg-mv-cream-soft">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
