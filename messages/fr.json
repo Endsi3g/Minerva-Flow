@@ -888,7 +888,47 @@
     "savingsBannerSuffix": "par mois en commissions de livraison — colmatez la fuite ici.",
     "placeholderNotice": "Menu d'exemple — le vrai menu du restaurant sera ajouté avant l'envoi.",
     "outOfStock": "Épuisé",
-    "footerNote": "Cette page est une démonstration privée générée pour la prospection. Aucune commande n'y est traitée."
+    "footerNote": "Cette page est une démonstration privée générée pour la prospection. Aucune commande n'y est traitée.",
+    "solution": {
+      "title": "Comment colmater cette fuite",
+      "body": "Chaque commande passée sur une appli de livraison verse une commission de 20 à 30 % à la plateforme. Un portail de commande directe récupère cet argent — sans changer votre menu, vos prix ni votre façon de cuisiner.",
+      "steps": [
+        "On active votre portail de commande directe Minerva-Flow — à vos couleurs, prêt en un jour.",
+        "On relie votre fiche Google et vos réseaux sociaux à ce lien plutôt qu'à Uber Eats ou DoorDash.",
+        "0 % de commission sur chaque commande directe — et le reste de l'écosystème (finances, équipe, inventaire) suit automatiquement."
+      ],
+      "cta": "Prendre rendez-vous"
+    },
+    "ecosystem": {
+      "title": "Ce que Minerva-Flow fait pour vous",
+      "intro": "Ce portail de commande n'est qu'un point de départ. Voici, en bref, ce qu'on recommande pour un restaurant comme le vôtre :",
+      "items": {
+        "overview": {
+          "title": "Aperçu",
+          "body": "Un tableau de bord unique pour piloter votre restaurant en un coup d'œil."
+        },
+        "assistant": {
+          "title": "Flow AI",
+          "body": "Un assistant IA qui répond à vos questions sur vos chiffres, en langage simple."
+        },
+        "finance": {
+          "title": "Finance & Seuil",
+          "body": "Votre seuil de rentabilité calculé automatiquement, jour après jour."
+        },
+        "commandes": {
+          "title": "Commandes & Ventes",
+          "body": "Toutes vos commandes — livraison directe incluse — au même endroit."
+        },
+        "collaborateurs": {
+          "title": "Collaborateurs & Équipe",
+          "body": "Horaires, pointage et paie, sans feuilles Excel."
+        },
+        "inventaire": {
+          "title": "Inventaire & Stocks",
+          "body": "Des alertes automatiques avant la rupture de stock."
+        }
+      }
+    }
   },
   "portal": {
     "page": {

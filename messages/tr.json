@@ -888,7 +888,47 @@
     "savingsBannerSuffix": "kaybediyorsunuz — bu kaybı burada durdurun.",
     "placeholderNotice": "Örnek menü — restoranın gerçek menüsü gönderimden önce eklenecek.",
     "outOfStock": "Tükendi",
-    "footerNote": "Bu sayfa, satış amaçlı oluşturulmuş özel bir demodur. Burada hiçbir sipariş işlenmez."
+    "footerNote": "Bu sayfa, satış amaçlı oluşturulmuş özel bir demodur. Burada hiçbir sipariş işlenmez.",
+    "solution": {
+      "title": "Bu kaybı nasıl durdurursunuz",
+      "body": "Teslimat uygulamaları üzerinden verilen her sipariş, platforma %20-30 komisyon öder. Doğrudan sipariş portalı bu parayı geri kazandırır — menünüzü, fiyatlarınızı veya mutfağınızı değiştirmeden.",
+      "steps": [
+        "Minerva-Flow doğrudan sipariş portalınızı etkinleştiriyoruz — kendi renklerinizle, bir gün içinde hazır.",
+        "Google işletme sayfanızı ve sosyal medyanızı Uber Eats veya DoorDash yerine bu bağlantıya yönlendiriyoruz.",
+        "Her doğrudan siparişte %0 komisyon — ve ekosistemin geri kalanı (finans, ekip, envanter) otomatik olarak devreye giriyor."
+      ],
+      "cta": "Randevu alın"
+    },
+    "ecosystem": {
+      "title": "Minerva-Flow sizin için ne yapar",
+      "intro": "Bu sipariş portalı sadece bir başlangıç. Sizin gibi bir restoran için kısaca önerdiklerimiz:",
+      "items": {
+        "overview": {
+          "title": "Genel Bakış",
+          "body": "Restoranınızı tek bakışta yönetmek için tek bir gösterge paneli."
+        },
+        "assistant": {
+          "title": "Flow AI",
+          "body": "Rakamlarınız hakkındaki sorularınızı basit bir dille yanıtlayan bir yapay zeka asistanı."
+        },
+        "finance": {
+          "title": "Finans & Eşik",
+          "body": "Başabaş noktanız her gün otomatik olarak hesaplanır."
+        },
+        "commandes": {
+          "title": "Siparişler & Satışlar",
+          "body": "Doğrudan teslimat dahil tüm siparişleriniz tek bir yerde."
+        },
+        "collaborateurs": {
+          "title": "Ekip & Çalışanlar",
+          "body": "Excel tablosu olmadan vardiyalar, giriş-çıkış takibi ve bordro."
+        },
+        "inventaire": {
+          "title": "Envanter & Stoklar",
+          "body": "Stok tükenmeden önce otomatik uyarılar."
+        }
+      }
+    }
   },
   "portal": {
     "page": {
