@@ -10,7 +10,8 @@ import {
   type CreateProspectInput,
   type UpdateProspectMetaInput,
 } from "@/lib/data/prospects";
-import { parseMenuText, buildPlaceholderMenu } from "@/lib/prospects/parse-menu";
+import { parseMenuText, emptyMenu } from "@/lib/prospects/parse-menu";
+import { submitScrapeJob, getScrapeJobStatus, type ScrapeSubmitResult, type ScrapeStatusResult } from "@/lib/prospects/scrape-menu";
 import type { ProspectMenu, ProspectSourcePlatform, ProspectStatus } from "@/lib/prospects/types";
 
 export type CreateProspectFormInput = {
@@ -22,7 +23,29 @@ export type CreateProspectFormInput = {
   commissionRatePct: number;
   assumedMonthlyOrders: number;
   pastedText?: string;
+  /** Pre-fetched by scrapeMenuAction — takes priority over pastedText when present. */
+  scrapedMenu?: ProspectMenu;
 };
+
+/**
+ * Best-effort auto-scrape, called explicitly by the admin before generating —
+ * never blocks prospect creation itself. Submits a job and returns immediately;
+ * the client polls pollScrapeMenuAction so a slow/stuck scrape can never hang a
+ * server action past a platform's function timeout. Falls back to manual paste
+ * on any failure (unreachable scraper service, unsupported site, no menu found).
+ */
+export async function scrapeMenuAction(
+  url: string,
+  platform: ProspectSourcePlatform
+): Promise<ScrapeSubmitResult> {
+  if (!(await isPlatformAdmin())) return { error: "unauthorized" };
+  return submitScrapeJob(url, platform);
+}
+
+export async function pollScrapeMenuAction(jobId: string): Promise<ScrapeStatusResult> {
+  if (!(await isPlatformAdmin())) return { status: "failed", error: "unauthorized" };
+  return getScrapeJobStatus(jobId);
+}
 
 export async function createProspectAction(
   input: CreateProspectFormInput
@@ -30,9 +53,8 @@ export async function createProspectAction(
   if (!(await isPlatformAdmin())) return null;
   if (!input.sourceUrl.trim() || !input.restaurantName.trim()) return null;
 
-  const menu: ProspectMenu = input.pastedText?.trim()
-    ? parseMenuText(input.pastedText)
-    : buildPlaceholderMenu();
+  const menu: ProspectMenu =
+    input.scrapedMenu ?? (input.pastedText?.trim() ? parseMenuText(input.pastedText) : emptyMenu());
 
   const payload: CreateProspectInput = {
     sourceUrl: input.sourceUrl.trim(),
@@ -54,7 +76,7 @@ export async function createProspectAction(
 
 export async function reparseProspectMenuAction(id: string, pastedText: string): Promise<boolean> {
   if (!(await isPlatformAdmin())) return false;
-  const menu = pastedText.trim() ? parseMenuText(pastedText) : buildPlaceholderMenu();
+  const menu = pastedText.trim() ? parseMenuText(pastedText) : emptyMenu();
   const ok = await updateProspectMenu(id, menu);
   if (ok) {
     revalidatePath(`/admin/prospects/${id}`);

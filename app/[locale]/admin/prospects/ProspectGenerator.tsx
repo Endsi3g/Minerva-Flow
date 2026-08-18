@@ -8,16 +8,67 @@ import { OutboundHub } from "./OutboundHub";
 import {
   createProspectAction,
   reparseProspectMenuAction,
+  scrapeMenuAction,
+  pollScrapeMenuAction,
   updateProspectMenuAction,
   updateProspectMetaAction,
   updateProspectStatusAction,
 } from "./actions";
 import type { Prospect, ProspectMenu, ProspectSourcePlatform, ProspectStatus } from "@/lib/prospects/types";
 import { useRouter } from "@/i18n/navigation";
-import { Zap, RefreshCw } from "lucide-react";
+import { Zap, RefreshCw, Bot, X, CircleCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+
+const SCRAPE_POLL_INTERVAL_MS = 2000;
+const SCRAPE_POLL_MAX_ATTEMPTS = 20; // ~40s ceiling before giving up client-side
+
+function useMenuScraper() {
+  const t = useTranslations("admin.prospects.ingestion");
+  const [status, setStatus] = useState<"idle" | "scraping" | "done" | "error">("idle");
+  const [menu, setMenu] = useState<ProspectMenu | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function scrape(url: string, platform: ProspectSourcePlatform) {
+    setStatus("scraping");
+    setError(null);
+    setMenu(null);
+
+    const submitted = await scrapeMenuAction(url, platform);
+    if ("error" in submitted) {
+      setStatus("error");
+      setError(submitted.error);
+      return;
+    }
+
+    for (let attempt = 0; attempt < SCRAPE_POLL_MAX_ATTEMPTS; attempt++) {
+      await new Promise((r) => setTimeout(r, SCRAPE_POLL_INTERVAL_MS));
+      const result = await pollScrapeMenuAction(submitted.jobId);
+      if (result.status === "processing") continue;
+      if (result.status === "done") {
+        setStatus("done");
+        setMenu(result.menu);
+        toast.success(t("scrapeSuccess", { count: result.menu.categories.flatMap((c) => c.items).length }));
+        return;
+      }
+      setStatus("error");
+      setError(result.error);
+      return;
+    }
+
+    setStatus("error");
+    setError(t("scrapeTimeout"));
+  }
+
+  function reset() {
+    setStatus("idle");
+    setMenu(null);
+    setError(null);
+  }
+
+  return { status, menu, error, scrape, reset };
+}
 
 const PLATFORM_VALUES: ProspectSourcePlatform[] = [
   "uber_eats",
@@ -55,26 +106,29 @@ function IngestionFlow() {
   const router = useRouter();
   const { steps, run, isRunning } = usePipelineSteps();
   const [started, setStarted] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [sourcePlatform, setSourcePlatform] = useState<ProspectSourcePlatform>("other");
+  const scraper = useMenuScraper();
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const sourceUrl = String(form.get("sourceUrl") ?? "").trim();
     const restaurantName = String(form.get("restaurantName") ?? "").trim();
-    if (!sourceUrl || !restaurantName) return;
+    if (!sourceUrl.trim() || !restaurantName) return;
 
     setStarted(true);
     const pipeline = run();
 
     const result = await createProspectAction({
-      sourceUrl,
+      sourceUrl: sourceUrl.trim(),
       restaurantName,
-      sourcePlatform: form.get("sourcePlatform") as ProspectSourcePlatform,
+      sourcePlatform,
       currency: String(form.get("currency") ?? "CAD"),
       detectedAddress: String(form.get("detectedAddress") ?? ""),
       commissionRatePct: Number(form.get("commissionRatePct") ?? 28),
       assumedMonthlyOrders: Number(form.get("assumedMonthlyOrders") ?? 300),
       pastedText: String(form.get("pastedText") ?? ""),
+      scrapedMenu: scraper.menu ?? undefined,
     });
 
     await pipeline;
@@ -95,7 +149,15 @@ function IngestionFlow() {
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
           <Field label={t("urlLabel")}>
-            <Input name="sourceUrl" type="url" placeholder={t("urlPlaceholder")} required disabled={started} />
+            <Input
+              name="sourceUrl"
+              type="url"
+              placeholder={t("urlPlaceholder")}
+              required
+              disabled={started}
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+            />
           </Field>
           <div className="flex items-end">
             <Button type="submit" disabled={started} className="w-full sm:w-auto">
@@ -110,7 +172,12 @@ function IngestionFlow() {
             <Input name="restaurantName" placeholder={t("restaurantNamePlaceholder")} required disabled={started} />
           </Field>
           <Field label={t("platformLabel")}>
-            <Select name="sourcePlatform" defaultValue="other" disabled={started}>
+            <Select
+              name="sourcePlatform"
+              value={sourcePlatform}
+              onChange={(e) => setSourcePlatform(e.target.value as ProspectSourcePlatform)}
+              disabled={started}
+            >
               {PLATFORM_VALUES.map((p) => (
                 <option key={p} value={p}>
                   {t(`platform.${p}`)}
@@ -142,9 +209,46 @@ function IngestionFlow() {
           <Input name="detectedAddress" placeholder={t("addressPlaceholder")} disabled={started} />
         </Field>
 
-        <Field label={t("pastedTextLabel")} hint={t("pastedTextHint")}>
-          <Textarea name="pastedText" rows={6} placeholder={t("pastedTextPlaceholder")} disabled={started} />
-        </Field>
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-mv-ink-soft">{t("pastedTextLabel")}</span>
+            <Button
+              type="button"
+              size="xs"
+              variant="secondary"
+              disabled={started || !sourceUrl.trim() || scraper.status === "scraping"}
+              onClick={() => scraper.scrape(sourceUrl.trim(), sourcePlatform)}
+            >
+              <Bot data-icon="inline-start" size={12} />
+              {scraper.status === "scraping" ? t("scraping") : t("scrapeAuto")}
+            </Button>
+          </div>
+
+          {scraper.status === "done" && scraper.menu && (
+            <div className="mb-2 flex items-center justify-between rounded-lg border border-mv-green/30 bg-mv-green-tint px-3 py-2 text-[12px] text-mv-green-dark">
+              <span className="flex items-center gap-1.5">
+                <CircleCheck size={13} />
+                {t("scrapeFoundItems", {
+                  count: scraper.menu.categories.flatMap((c) => c.items).length,
+                })}
+              </span>
+              <button type="button" onClick={scraper.reset} title={t("scrapeClear")}>
+                <X size={13} />
+              </button>
+            </div>
+          )}
+          {scraper.status === "error" && (
+            <p className="mb-2 text-[12px] text-mv-red">{scraper.error}</p>
+          )}
+
+          <Textarea
+            name="pastedText"
+            rows={6}
+            placeholder={t("pastedTextPlaceholder")}
+            disabled={started || scraper.status === "done"}
+          />
+          <p className="mt-1 text-[12px] text-mv-ink-faint">{t("pastedTextHint")}</p>
+        </div>
       </form>
 
       {started && <PipelineTracker steps={steps} />}

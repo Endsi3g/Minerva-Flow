@@ -803,7 +803,13 @@
         "reparseFailed": "Değiştirme başarısız.",
         "reparsing": "Değiştiriliyor…",
         "reparseConfirm": "Menüyü değiştir",
-        "cancel": "İptal"
+        "cancel": "İptal",
+        "scrapeAuto": "Otomatik tara",
+        "scraping": "Taranıyor…",
+        "scrapeSuccess": "{count, plural, one {# ürün bulundu.} other {# ürün bulundu.}}",
+        "scrapeFoundItems": "{count, plural, one {# ürün tespit edildi — yapıştırılan metin yerine kullanılacak.} other {# ürün tespit edildi — yapıştırılan metin yerine kullanılacak.}}",
+        "scrapeClear": "Taranan menüyü kaldır",
+        "scrapeTimeout": "Tarama çok uzun sürüyor — tekrar deneyin veya menüyü elle yapıştırın."
       },
       "editor": {
         "title": "Önizleme ve hızlı düzenleme",
@@ -886,9 +892,21 @@
     "previewBadge": "Demo önizlemesi",
     "savingsBannerPrefix": "Bu sizin menünüz, bizim altyapımızda. Teslimat komisyonlarında ayda yaklaşık",
     "savingsBannerSuffix": "kaybediyorsunuz — bu kaybı burada durdurun.",
-    "placeholderNotice": "Örnek menü — restoranın gerçek menüsü gönderimden önce eklenecek.",
     "outOfStock": "Tükendi",
+    "contactCta": "Bize ulaşın",
     "footerNote": "Bu sayfa, satış amaçlı oluşturulmuş özel bir demodur. Burada hiçbir sipariş işlenmez.",
+    "noMenu": {
+      "bannerText": "{restaurantName} henüz bir doğrudan sipariş portalına sahip değil — sizin için ne yapabileceğimiz burada.",
+      "title": "Sizin için ne yapabiliriz",
+      "body": "{restaurantName} için çevrimiçi bir menü bulamadık — ancak sipariş alıyorsanız (telefon, sosyal medya, teslimat uygulaması), büyük olasılıkla çoğu bağımsız restoran gibi aynı kaybı yaşıyorsunuz: her siparişte %20-30 komisyon ve doğrudan satış yapabileceğiniz kendi bir portalınızın olmaması.",
+      "steps": [
+        "Minerva-Flow doğrudan sipariş portalınızı kendi renklerinizle yapılandırıyoruz.",
+        "Menü, fotoğraflar, fiyatlar — sizinle birlikte kuruyoruz, yeni bir aracı tek başınıza öğrenmenize gerek kalmadan.",
+        "Her doğrudan siparişin %100'ünü elinizde tutarsınız ve Minerva ekosisteminin geri kalanı otomatik olarak devreye girer."
+      ],
+      "ctaIntro": "Burada karar vermeniz gereken bir fiyat yok — başlamanın sadece iki basit yolu var:",
+      "bookingCta": "Çevrimiçi randevu alın"
+    },
     "solution": {
       "title": "Bu kaybı nasıl durdurursunuz",
       "body": "Teslimat uygulamaları üzerinden verilen her sipariş, platforma %20-30 komisyon öder. Doğrudan sipariş portalı bu parayı geri kazandırır — menünüzü, fiyatlarınızı veya mutfağınızı değiştirmeden.",

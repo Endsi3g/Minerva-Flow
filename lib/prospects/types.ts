@@ -39,8 +39,6 @@ export type ProspectMenuCategory = {
 
 export type ProspectMenu = {
   categories: ProspectMenuCategory[];
-  /** True when no real menu content was pasted — the categories below are placeholder examples. */
-  isPlaceholder?: boolean;
 };
 
 export type ProspectSourcePlatform =

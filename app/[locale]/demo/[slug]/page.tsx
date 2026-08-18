@@ -11,6 +11,8 @@ import {
   UtensilsCrossed,
   CalendarCheck,
   Mail,
+  MessageCircle,
+  Lightbulb,
   Home,
   MessageSquare,
   Wallet,
@@ -29,6 +31,41 @@ const ECOSYSTEM_ITEMS: { key: string; icon: LucideIcon }[] = [
   { key: "collaborateurs", icon: Users },
   { key: "inventaire", icon: PackageSearch },
 ];
+
+/** Both CTAs are shown side by side whenever configured — self-service booking, or a human to message directly. */
+function CtaButtons({
+  bookingUrl,
+  contactHref,
+  bookingLabel,
+  contactLabel,
+}: {
+  bookingUrl?: string;
+  contactHref?: string;
+  bookingLabel: string;
+  contactLabel: string;
+}) {
+  if (!bookingUrl && !contactHref) return null;
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row">
+      {bookingUrl && (
+        <Button href={bookingUrl} className="w-full sm:w-auto">
+          <CalendarCheck data-icon="inline-start" size={15} />
+          {bookingLabel}
+        </Button>
+      )}
+      {contactHref && (
+        <Button href={contactHref} variant="secondary" className="w-full sm:w-auto">
+          {contactHref.startsWith("mailto:") ? (
+            <Mail data-icon="inline-start" size={15} />
+          ) : (
+            <MessageCircle data-icon="inline-start" size={15} />
+          )}
+          {contactLabel}
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default async function ProspectDemoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -49,11 +86,13 @@ export default async function ProspectDemoPage({ params }: { params: Promise<{ s
   await incrementProspectDemoView(slug);
 
   const t = await getTranslations("demo");
+  const hasMenu = prospect.menu.categories.length > 0;
   const margin = estimateMargin(prospect.menu, prospect.commissionRatePct, prospect.assumedMonthlyOrders);
 
   const bookingUrl = process.env.NEXT_PUBLIC_BOOKING_URL;
   const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
-  const ctaHref = bookingUrl || (contactEmail ? `mailto:${contactEmail}` : undefined);
+  const contactSocialUrl = process.env.NEXT_PUBLIC_CONTACT_SOCIAL_URL;
+  const contactHref = contactSocialUrl || (contactEmail ? `mailto:${contactEmail}` : undefined);
 
   return (
     <div className="min-h-screen bg-mv-cream">
@@ -74,7 +113,7 @@ export default async function ProspectDemoPage({ params }: { params: Promise<{ s
         </div>
       </header>
 
-      {margin.monthlyLossCents > 0 && (
+      {hasMenu && margin.monthlyLossCents > 0 && (
         <div className="border-b border-mv-border bg-mv-ink px-4 py-3 text-center sm:px-5 sm:py-3.5">
           <p className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-1.5 text-[12.5px] font-medium text-mv-cream-soft sm:text-[13px]">
             <TrendingDown size={15} className="shrink-0 text-mv-lime" />
@@ -86,58 +125,89 @@ export default async function ProspectDemoPage({ params }: { params: Promise<{ s
           </p>
         </div>
       )}
+      {!hasMenu && (
+        <div className="border-b border-mv-border bg-mv-ink px-4 py-3 text-center sm:px-5 sm:py-3.5">
+          <p className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-1.5 text-[12.5px] font-medium text-mv-cream-soft sm:text-[13px]">
+            <Lightbulb size={15} className="shrink-0 text-mv-lime" />
+            {t("noMenu.bannerText", { restaurantName: prospect.restaurantName })}
+          </p>
+        </div>
+      )}
 
       <main className="mx-auto max-w-3xl space-y-7 px-4 py-6 sm:space-y-8 sm:px-5 sm:py-8">
-        {prospect.menu.isPlaceholder && (
-          <p className="rounded-xl border border-dashed border-mv-border bg-mv-cream-soft px-4 py-2.5 text-center text-[12.5px] text-mv-ink-faint">
-            {t("placeholderNotice")}
-          </p>
-        )}
-
-        {prospect.menu.categories.map((category) => (
-          <section key={category.id}>
-            <h2 className="mb-3 font-display text-[17px] font-medium text-mv-ink sm:text-[19px]">
-              {category.name}
-            </h2>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {category.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-start gap-3 rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-sm"
-                >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-mv-green-tint text-mv-green-dark">
-                    <UtensilsCrossed size={16} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-[13.5px] font-semibold text-mv-ink">{item.name}</p>
-                      <p className="shrink-0 font-display text-[13.5px] font-medium text-mv-green-dark">
-                        {formatCurrency(item.priceCents / 100)}
-                      </p>
+        {hasMenu ? (
+          <>
+            {prospect.menu.categories.map((category) => (
+              <section key={category.id}>
+                <h2 className="mb-3 font-display text-[17px] font-medium text-mv-ink sm:text-[19px]">
+                  {category.name}
+                </h2>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  {category.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-start gap-3 rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-sm"
+                    >
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-mv-green-tint text-mv-green-dark">
+                        <UtensilsCrossed size={16} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[13.5px] font-semibold text-mv-ink">{item.name}</p>
+                          <p className="shrink-0 font-display text-[13.5px] font-medium text-mv-green-dark">
+                            {formatCurrency(item.priceCents / 100)}
+                          </p>
+                        </div>
+                        {item.description && (
+                          <p className="mt-0.5 text-[12px] leading-relaxed text-mv-ink-soft">{item.description}</p>
+                        )}
+                        {!item.inStock && (
+                          <Badge tone="neutral" className="mt-1.5">
+                            {t("outOfStock")}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    {item.description && (
-                      <p className="mt-0.5 text-[12px] leading-relaxed text-mv-ink-soft">{item.description}</p>
-                    )}
-                    {!item.inStock && (
-                      <Badge tone="neutral" className="mt-1.5">
-                        {t("outOfStock")}
-                      </Badge>
-                    )}
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
-        ))}
+              </section>
+            ))}
 
-        {margin.monthlyLossCents > 0 && (
+            {margin.monthlyLossCents > 0 && (
+              <section className="rounded-2xl border border-mv-border bg-mv-surface p-5 shadow-mv-md sm:p-6">
+                <h2 className="mb-2 font-display text-[17px] font-medium text-mv-ink sm:text-[19px]">
+                  {t("solution.title")}
+                </h2>
+                <p className="mb-4 text-[13px] leading-relaxed text-mv-ink-soft">{t("solution.body")}</p>
+                <ol className="mb-5 space-y-2.5">
+                  {(t.raw("solution.steps") as string[]).map((step, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-[13px] leading-relaxed text-mv-ink-soft">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-[11px] font-semibold text-mv-green-dark">
+                        {i + 1}
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+                <CtaButtons
+                  bookingUrl={bookingUrl}
+                  contactHref={contactHref}
+                  bookingLabel={t("solution.cta")}
+                  contactLabel={t("contactCta")}
+                />
+              </section>
+            )}
+          </>
+        ) : (
           <section className="rounded-2xl border border-mv-border bg-mv-surface p-5 shadow-mv-md sm:p-6">
             <h2 className="mb-2 font-display text-[17px] font-medium text-mv-ink sm:text-[19px]">
-              {t("solution.title")}
+              {t("noMenu.title")}
             </h2>
-            <p className="mb-4 text-[13px] leading-relaxed text-mv-ink-soft">{t("solution.body")}</p>
+            <p className="mb-4 text-[13px] leading-relaxed text-mv-ink-soft">
+              {t("noMenu.body", { restaurantName: prospect.restaurantName })}
+            </p>
             <ol className="mb-5 space-y-2.5">
-              {(t.raw("solution.steps") as string[]).map((step, i) => (
+              {(t.raw("noMenu.steps") as string[]).map((step, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-[13px] leading-relaxed text-mv-ink-soft">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-[11px] font-semibold text-mv-green-dark">
                     {i + 1}
@@ -146,18 +216,13 @@ export default async function ProspectDemoPage({ params }: { params: Promise<{ s
                 </li>
               ))}
             </ol>
-            {ctaHref && (
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button href={ctaHref} className="w-full sm:w-auto">
-                  {bookingUrl ? (
-                    <CalendarCheck data-icon="inline-start" size={15} />
-                  ) : (
-                    <Mail data-icon="inline-start" size={15} />
-                  )}
-                  {t("solution.cta")}
-                </Button>
-              </div>
-            )}
+            <p className="mb-4 text-[12.5px] font-medium text-mv-ink-soft">{t("noMenu.ctaIntro")}</p>
+            <CtaButtons
+              bookingUrl={bookingUrl}
+              contactHref={contactHref}
+              bookingLabel={t("noMenu.bookingCta")}
+              contactLabel={t("contactCta")}
+            />
           </section>
         )}
 

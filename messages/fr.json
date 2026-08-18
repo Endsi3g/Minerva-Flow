@@ -803,7 +803,13 @@
         "reparseFailed": "Échec du remplacement.",
         "reparsing": "Remplacement…",
         "reparseConfirm": "Remplacer le menu",
-        "cancel": "Annuler"
+        "cancel": "Annuler",
+        "scrapeAuto": "Scraper automatiquement",
+        "scraping": "Scraping en cours…",
+        "scrapeSuccess": "{count, plural, one {# plat trouvé.} other {# plats trouvés.}}",
+        "scrapeFoundItems": "{count, plural, one {# plat détecté — sera utilisé au lieu du texte collé.} other {# plats détectés — seront utilisés au lieu du texte collé.}}",
+        "scrapeClear": "Retirer le menu scrapé",
+        "scrapeTimeout": "Le scraping prend trop de temps — réessayez ou collez le menu manuellement."
       },
       "editor": {
         "title": "Prévisualisation & édition rapide",
@@ -886,9 +892,21 @@
     "previewBadge": "Aperçu de démonstration",
     "savingsBannerPrefix": "C'est votre menu, dans notre infrastructure. Vous perdez environ",
     "savingsBannerSuffix": "par mois en commissions de livraison — colmatez la fuite ici.",
-    "placeholderNotice": "Menu d'exemple — le vrai menu du restaurant sera ajouté avant l'envoi.",
     "outOfStock": "Épuisé",
+    "contactCta": "Nous contacter",
     "footerNote": "Cette page est une démonstration privée générée pour la prospection. Aucune commande n'y est traitée.",
+    "noMenu": {
+      "bannerText": "{restaurantName} n'a pas encore de portail de commande directe — voici ce qu'on peut faire pour vous.",
+      "title": "Ce qu'on peut faire pour vous",
+      "body": "On n'a pas trouvé de menu en ligne pour {restaurantName} — mais si vous prenez des commandes (téléphone, réseaux sociaux, appli de livraison), vous avez probablement la même fuite que la plupart des restaurants indépendants : des commissions de 20 à 30 % versées à chaque commande, et aucun portail à vous pour vendre en direct.",
+      "steps": [
+        "On configure votre portail de commande directe Minerva-Flow, à vos couleurs.",
+        "On l'installe avec vous — menu, photos, prix — sans que vous ayez à apprendre un nouvel outil seul.",
+        "Vous gardez 100 % de chaque commande directe, et tout le reste de l'écosystème Minerva suit automatiquement."
+      ],
+      "ctaIntro": "Aucun prix à décider ici — juste deux façons simples de commencer :",
+      "bookingCta": "Prendre rendez-vous en ligne"
+    },
     "solution": {
       "title": "Comment colmater cette fuite",
       "body": "Chaque commande passée sur une appli de livraison verse une commission de 20 à 30 % à la plateforme. Un portail de commande directe récupère cet argent — sans changer votre menu, vos prix ni votre façon de cuisiner.",

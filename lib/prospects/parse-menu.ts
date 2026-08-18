@@ -124,76 +124,14 @@ export function parseMenuText(rawText: string): ProspectMenu {
   }
 
   const nonEmptyCategories = categories.filter((c) => c.items.length > 0);
-  if (nonEmptyCategories.length === 0) {
-    return buildPlaceholderMenu();
-  }
-
   return { categories: nonEmptyCategories };
 }
 
-/** Used when the admin generates a prospect from a URL alone, with no pasted text yet. */
-export function buildPlaceholderMenu(): ProspectMenu {
-  const placeholder: ProspectMenuCategory[] = [
-    {
-      id: nextId("cat"),
-      name: "Entrées",
-      items: [
-        {
-          id: nextId("item"),
-          name: "Soupe du jour",
-          description: "À remplacer par les vrais plats du restaurant.",
-          priceCents: 895,
-          inStock: true,
-          dietaryTags: [],
-          modifierGroups: [],
-        },
-        {
-          id: nextId("item"),
-          name: "Salade maison",
-          priceCents: 1250,
-          inStock: true,
-          dietaryTags: ["vegetarian"],
-          modifierGroups: [],
-        },
-      ],
-    },
-    {
-      id: nextId("cat"),
-      name: "Plats principaux",
-      items: [
-        {
-          id: nextId("item"),
-          name: "Plat signature",
-          priceCents: 2200,
-          inStock: true,
-          dietaryTags: [],
-          modifierGroups: [],
-        },
-        {
-          id: nextId("item"),
-          name: "Option végétarienne",
-          priceCents: 1900,
-          inStock: true,
-          dietaryTags: ["vegetarian"],
-          modifierGroups: [],
-        },
-      ],
-    },
-    {
-      id: nextId("cat"),
-      name: "Desserts",
-      items: [
-        {
-          id: nextId("item"),
-          name: "Dessert du jour",
-          priceCents: 850,
-          inStock: true,
-          dietaryTags: [],
-          modifierGroups: [],
-        },
-      ],
-    },
-  ];
-
-  return { categories: placeholder, isPlaceholder: true };
+/**
+ * Used whenever there's no menu to work with — no text pasted, and (once wired up)
+ * no menu found by the scraper either. The demo page renders a "no menu" explainer
+ * variant for these instead of a fake example menu.
+ */
+export function emptyMenu(): ProspectMenu {
+  return { categories: [] };
 }
