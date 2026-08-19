@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getMenuItems } from "@/lib/data/menu";
 import { getRestaurant } from "@/lib/data/restaurants";
@@ -6,6 +8,11 @@ import { getOffersForRestaurant } from "@/lib/data/offers";
 import { getInventoryItems } from "@/lib/data/inventory";
 import { getRecipeItemsForMenuItems } from "@/lib/data/recipes";
 import { MenuView } from "./MenuView";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("menu") };
+}
 
 export default async function MenuPage() {
   const restaurantId = await getCurrentRestaurantId();

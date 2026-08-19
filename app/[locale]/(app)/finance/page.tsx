@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getFinancialTransactions, getExpenseCategories, getConnections } from "@/lib/data/finance";
@@ -11,6 +13,11 @@ function currentMonthRange(now = new Date()) {
   const from = new Date(year, month, 1).toISOString().slice(0, 10);
   const to = new Date(year, month + 1, 0).toISOString().slice(0, 10);
   return { from, to };
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("finance") };
 }
 
 export default async function FinancePage() {

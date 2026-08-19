@@ -91,6 +91,7 @@
     "fournisseurs": "Tedarikçiler",
     "guide": "Rehber",
     "horaire": "Vardiya Planı",
+    "integrations": "Entegrasyonlar",
     "library": "Kütüphane",
     "monEspace": "Alanım",
     "profil": "Profil",
@@ -172,6 +173,11 @@
   },
   "common": {
     "noRestaurantSelected": "Seçili restoran yok."
+  },
+  "notFound": {
+    "title": "Sayfa bulunamadı",
+    "description": "Aradığınız sayfa mevcut değil veya taşınmış olabilir.",
+    "cta": "Genel bakışa dön"
   },
   "finance": {
     "pageEyebrow": "Finansal Akışlar",

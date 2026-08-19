@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import {
   getEmployeeByLinkedUser,
   getEmployeeShifts,
@@ -10,6 +12,11 @@ import { getUpcomingShiftsForEmployee } from "@/lib/data/shift-schedules";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { createClient } from "@/lib/supabase/server";
 import { MonEspaceView } from "./MonEspaceView";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("monEspace") };
+}
 
 export default async function MonEspacePage() {
   const membership = await getCurrentMembership();

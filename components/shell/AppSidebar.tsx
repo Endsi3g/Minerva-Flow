@@ -1,6 +1,5 @@
 "use client";
 
-import { LogoMark } from "./Logo";
 import { useApp } from "@/lib/app-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
