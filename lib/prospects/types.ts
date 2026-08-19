@@ -1,3 +1,6 @@
+import type { WebsiteAuditReport } from "./audit/types";
+export type { AuditCheckId, AuditCheck, WebsiteAuditReport } from "./audit/types";
+
 export type DietaryTag =
   | "vegan"
   | "vegetarian"
@@ -67,6 +70,8 @@ export type Prospect = {
   demoViewCount: number;
   lastViewedAt: string | null;
   contactedAt: string | null;
+  auditReport: WebsiteAuditReport | null;
+  auditGeneratedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

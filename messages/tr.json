@@ -91,6 +91,7 @@
     "fournisseurs": "Tedarikçiler",
     "guide": "Rehber",
     "horaire": "Vardiya Planı",
+    "integrations": "Entegrasyonlar",
     "library": "Kütüphane",
     "monEspace": "Alanım",
     "profil": "Profil",
@@ -172,6 +173,11 @@
   },
   "common": {
     "noRestaurantSelected": "Seçili restoran yok."
+  },
+  "notFound": {
+    "title": "Sayfa bulunamadı",
+    "description": "Aradığınız sayfa mevcut değil veya taşınmış olabilir.",
+    "cta": "Genel bakışa dön"
   },
   "finance": {
     "pageEyebrow": "Finansal Akışlar",
@@ -837,6 +843,30 @@
         "saveMeta": "Kaydet",
         "metaSaveSuccess": "Bilgiler güncellendi.",
         "metaSaveFailed": "Kaydetme başarısız."
+      },
+      "audit": {
+        "eyebrow": "Satış argümanı",
+        "title": "Web sitesi denetimi",
+        "description": "Adayın mevcut çevrimiçi varlığının hızlı analizi — pitch'te yeniden kullanılabilir.",
+        "urlLabel": "Denetlenecek URL",
+        "urlPlaceholder": "https://www.lerestaurant.com",
+        "run": "Denetimi başlat",
+        "rerun": "Denetimi yeniden başlat",
+        "running": "Analiz ediliyor…",
+        "scoreBadge": "{score}/100 — {grade}",
+        "lastGenerated": "Son denetim: {date}",
+        "unreachable": "Bu siteye ulaşılamıyor, kazımaya kapalı ya da bir hatayla yanıt verdi — bu da başlı başına bir satış argümanı.",
+        "checks": {
+          "https": "Güvenli bağlantı (HTTPS)",
+          "speed": "Hızlı yükleme süresi",
+          "mobileViewport": "Mobil için optimize edilmiş",
+          "seoBasics": "Sayfa başlığı ve açıklaması mevcut",
+          "onlineMenu": "Çevrimiçi görüntülenebilir menü",
+          "onlineOrdering": "Çevrimiçi sipariş mevcut",
+          "onlineReservation": "Çevrimiçi rezervasyon mevcut",
+          "clickablePhone": "Tıklanabilir telefon numarası",
+          "socialLinks": "Sosyal medya bağlantıları"
+        }
       },
       "outbound": {
         "linksTitle": "Oluşturulan bağlantılar",

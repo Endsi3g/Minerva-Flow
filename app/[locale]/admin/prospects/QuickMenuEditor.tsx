@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
 import { Badge } from "@/components/ui/Badge";
 import type { ProspectMenu, ProspectMenuCategory } from "@/lib/prospects/types";
-import { Trash2, ImageOff, Save } from "lucide-react";
+import { Trash2, Save } from "lucide-react";
 import { useState } from "react";
+import { MenuItemThumbnail } from "@/components/prospects/MenuItemThumbnail";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -94,9 +95,7 @@ export function QuickMenuEditor({
                       key={item.id}
                       className="flex items-center gap-3 rounded-xl border border-mv-border-soft bg-mv-cream-soft px-3 py-2"
                     >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-mv-ink/[0.05] text-mv-ink-faint">
-                        <ImageOff size={14} />
-                      </div>
+                      <MenuItemThumbnail imageUrl={item.imageUrl} alt={item.name} size={36} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13px] font-medium text-mv-ink">{item.name}</p>
                         {item.description && (

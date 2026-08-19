@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -14,6 +15,11 @@ import { createClient } from "@/lib/supabase/server";
 import { Sparkles, Store } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("reports") };
+}
 
 export default async function ReportsIndexPage() {
   const restaurantId = await getCurrentRestaurantId();

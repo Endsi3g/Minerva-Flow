@@ -24,8 +24,19 @@ import type { ProspectMenu, ProspectMenuCategory, ProspectMenuItem } from "../ty
 const NAME_KEYS = ["name", "title", "itemName", "displayName"];
 const PRICE_KEYS = ["price", "priceCents", "displayPrice", "formattedPrice", "priceValue"];
 const DESCRIPTION_KEYS = ["description", "itemDescription", "subtitle"];
+const IMAGE_KEYS = ["imageUrl", "image", "photoUrl", "photo", "thumbnailUrl", "thumbnail", "imageURL"];
 const CATEGORY_NAME_KEYS = ["title", "name", "sectionName", "categoryName"];
 const CATEGORY_ITEMS_KEYS = ["items", "menuItems", "products", "dishes"];
+
+/** Delivery-platform state embeds an image as a plain URL string or a `{ url }`-shaped object. */
+function imageUrlFrom(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (value && typeof value === "object") {
+    const url = (value as Record<string, unknown>).url;
+    if (typeof url === "string" && url.trim()) return url.trim();
+  }
+  return undefined;
+}
 
 function firstPresent(obj: Record<string, unknown>, keys: string[]): unknown {
   for (const key of keys) {
@@ -60,6 +71,7 @@ function toItem(node: Record<string, unknown>): ProspectMenuItem {
       return typeof d === "string" ? d : undefined;
     })(),
     priceCents: priceToCents(typeof price === "string" || typeof price === "number" ? price : null) ?? 0,
+    imageUrl: imageUrlFrom(firstPresent(node, IMAGE_KEYS)),
     inStock: true,
     dietaryTags: [],
     modifierGroups: [],

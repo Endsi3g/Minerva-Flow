@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { generateDemoSlug } from "@/lib/prospects/slug";
-import type { Prospect, ProspectMenu, ProspectSourcePlatform, ProspectStatus } from "@/lib/prospects/types";
+import type {
+  Prospect,
+  ProspectMenu,
+  ProspectSourcePlatform,
+  ProspectStatus,
+  WebsiteAuditReport,
+} from "@/lib/prospects/types";
 
 type ProspectRow = {
   id: string;
@@ -18,12 +24,14 @@ type ProspectRow = {
   demo_view_count: number;
   last_viewed_at: string | null;
   contacted_at: string | null;
+  audit_report: WebsiteAuditReport | null;
+  audit_generated_at: string | null;
   created_at: string;
   updated_at: string;
 };
 
 const PROSPECT_COLUMNS =
-  "id, source_url, source_platform, restaurant_name, currency, detected_address, commission_rate_pct, assumed_monthly_orders, status, demo_slug, menu_json, notes, demo_view_count, last_viewed_at, contacted_at, created_at, updated_at";
+  "id, source_url, source_platform, restaurant_name, currency, detected_address, commission_rate_pct, assumed_monthly_orders, status, demo_slug, menu_json, notes, demo_view_count, last_viewed_at, contacted_at, audit_report, audit_generated_at, created_at, updated_at";
 
 function mapProspect(row: ProspectRow): Prospect {
   return {
@@ -42,6 +50,8 @@ function mapProspect(row: ProspectRow): Prospect {
     demoViewCount: row.demo_view_count,
     lastViewedAt: row.last_viewed_at,
     contactedAt: row.contacted_at,
+    auditReport: row.audit_report,
+    auditGeneratedAt: row.audit_generated_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -167,5 +177,14 @@ export async function updateProspectStatus(id: string, status: ProspectStatus): 
   const patch: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
   if (status === "contacte") patch.contacted_at = new Date().toISOString();
   const { error } = await supabase.from("prospects").update(patch).eq("id", id);
+  return !error;
+}
+
+export async function saveProspectAudit(id: string, report: WebsiteAuditReport): Promise<boolean> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("prospects")
+    .update({ audit_report: report, audit_generated_at: report.fetchedAt })
+    .eq("id", id);
   return !error;
 }

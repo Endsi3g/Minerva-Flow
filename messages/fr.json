@@ -91,6 +91,7 @@
     "fournisseurs": "Fournisseurs",
     "guide": "Guide",
     "horaire": "Horaire",
+    "integrations": "Intégrations",
     "library": "Bibliothèque",
     "monEspace": "Mon espace",
     "profil": "Profil",
@@ -172,6 +173,11 @@
   },
   "common": {
     "noRestaurantSelected": "Aucun restaurant sélectionné."
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "description": "La page que vous cherchez n'existe pas ou a été déplacée.",
+    "cta": "Retour à l'aperçu"
   },
   "finance": {
     "pageEyebrow": "Flux financiers",
@@ -837,6 +843,30 @@
         "saveMeta": "Enregistrer",
         "metaSaveSuccess": "Informations mises à jour.",
         "metaSaveFailed": "Échec de l'enregistrement."
+      },
+      "audit": {
+        "eyebrow": "Argument de vente",
+        "title": "Audit du site web",
+        "description": "Analyse rapide de la présence en ligne actuelle du prospect — à réutiliser dans le pitch.",
+        "urlLabel": "URL à auditer",
+        "urlPlaceholder": "https://www.lerestaurant.com",
+        "run": "Lancer l'audit",
+        "rerun": "Relancer l'audit",
+        "running": "Analyse en cours…",
+        "scoreBadge": "{score}/100 — {grade}",
+        "lastGenerated": "Dernier audit : {date}",
+        "unreachable": "Ce site est injoignable, interdit au scraping, ou a répondu avec une erreur — c'est en soi un argument de vente.",
+        "checks": {
+          "https": "Connexion sécurisée (HTTPS)",
+          "speed": "Temps de chargement rapide",
+          "mobileViewport": "Optimisé mobile",
+          "seoBasics": "Titre et description de page présents",
+          "onlineMenu": "Menu consultable en ligne",
+          "onlineOrdering": "Commande en ligne disponible",
+          "onlineReservation": "Réservation en ligne disponible",
+          "clickablePhone": "Numéro de téléphone cliquable",
+          "socialLinks": "Liens vers les réseaux sociaux"
+        }
       },
       "outbound": {
         "linksTitle": "Liens générés",

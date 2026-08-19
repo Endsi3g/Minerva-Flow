@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getFinancialTransactions, getExpenseCategories } from "@/lib/data/finance";
 import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { DepensesView } from "./DepensesView";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("depenses") };
+}
 
 export default async function DepensesPage() {
   const restaurantId = await getCurrentRestaurantId();

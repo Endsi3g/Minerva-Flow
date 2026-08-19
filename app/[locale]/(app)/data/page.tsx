@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -12,6 +14,11 @@ import { getReservationsForDay } from "@/lib/data/reservations";
 import { isoDaysAgo } from "@/lib/utils";
 import { DataOverviewView } from "./DataOverviewView";
 import { Store } from "lucide-react";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("data") };
+}
 
 export default async function DataPage() {
   const restaurantId = await getCurrentRestaurantId();

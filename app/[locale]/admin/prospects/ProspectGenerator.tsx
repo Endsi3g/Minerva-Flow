@@ -5,6 +5,7 @@ import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { PipelineTracker, type PipelineStepState } from "./PipelineTracker";
 import { QuickMenuEditor } from "./QuickMenuEditor";
 import { OutboundHub } from "./OutboundHub";
+import { WebsiteAudit } from "./WebsiteAudit";
 import {
   createProspectAction,
   reparseProspectMenuAction,
@@ -312,6 +313,13 @@ function ProspectEditor({ prospect }: { prospect: Prospect }) {
       </div>
 
       <ProspectMetaCard prospect={prospect} />
+
+      <WebsiteAudit
+        prospectId={prospect.id}
+        sourceUrl={prospect.sourceUrl}
+        initialReport={prospect.auditReport}
+        initialGeneratedAt={prospect.auditGeneratedAt}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
         <QuickMenuEditor menu={prospect.menu} onSave={handleMenuSave} />

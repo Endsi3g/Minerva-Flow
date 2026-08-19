@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getEmployees } from "@/lib/data/employees";
 import { getShiftSchedulesForRange } from "@/lib/data/shift-schedules";
@@ -14,6 +16,11 @@ function mondayOf(date: Date): Date {
 
 function toIsoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("horaire") };
 }
 
 export default async function HorairePage() {

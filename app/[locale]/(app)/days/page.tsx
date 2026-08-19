@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -6,6 +8,11 @@ import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getServiceDays } from "@/lib/data/service-days";
 import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { Store } from "lucide-react";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("days") };
+}
 
 export default async function DaysPage() {
   const restaurantId = await getCurrentRestaurantId();

@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { getMyProfile } from "@/lib/data/profile";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { getActivityLog } from "@/lib/data/activity";
 import { ProfileView } from "./ProfileView";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("profil") };
+}
 
 export default async function ProfilPage() {
   const [profile, membership] = await Promise.all([getMyProfile(), getCurrentMembership()]);
