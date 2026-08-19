@@ -57,6 +57,17 @@ function findMenuNode(node: unknown): Record<string, unknown> | null {
   return null;
 }
 
+/** schema.org `image` is either a URL string, an ImageObject ({ url }), or an array of either. */
+function imageUrlFromNode(value: unknown): string | undefined {
+  const first = asArray(value)[0];
+  if (typeof first === "string" && first.trim()) return first.trim();
+  if (first && typeof first === "object") {
+    const url = (first as Record<string, unknown>).url;
+    if (typeof url === "string" && url.trim()) return url.trim();
+  }
+  return undefined;
+}
+
 function itemFromNode(node: unknown): ProspectMenuItem | null {
   if (!node || typeof node !== "object") return null;
   const obj = node as Record<string, unknown>;
@@ -71,6 +82,7 @@ function itemFromNode(node: unknown): ProspectMenuItem | null {
     name: name.trim(),
     description: typeof obj.description === "string" ? obj.description.trim() : undefined,
     priceCents: priceToCents(typeof price === "string" || typeof price === "number" ? price : null) ?? 0,
+    imageUrl: imageUrlFromNode(obj.image),
     inStock: true,
     dietaryTags: [],
     modifierGroups: [],
