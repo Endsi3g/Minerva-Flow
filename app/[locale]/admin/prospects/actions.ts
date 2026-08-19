@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { isPlatformAdmin } from "@/lib/data/admin";
 import {
   createProspect,
+  saveProspectAudit,
   updateProspectMenu,
   updateProspectMeta,
   updateProspectStatus,
@@ -12,7 +13,13 @@ import {
 } from "@/lib/data/prospects";
 import { parseMenuText, emptyMenu } from "@/lib/prospects/parse-menu";
 import { scrapeMenuFromUrl, type ScrapeResult } from "@/lib/prospects/scrape/fetch-menu";
-import type { ProspectMenu, ProspectSourcePlatform, ProspectStatus } from "@/lib/prospects/types";
+import { runWebsiteAudit } from "@/lib/prospects/audit/run-audit";
+import type {
+  ProspectMenu,
+  ProspectSourcePlatform,
+  ProspectStatus,
+  WebsiteAuditReport,
+} from "@/lib/prospects/types";
 
 export type CreateProspectFormInput = {
   sourceUrl: string;
@@ -111,4 +118,22 @@ export async function updateProspectStatusAction(id: string, status: ProspectSta
     revalidatePath("/admin/prospects");
   }
   return ok;
+}
+
+/**
+ * Runs the website audit and persists it in the same call — the report is
+ * only ever useful stored against the prospect (it's what the pitch reuses
+ * next visit), so there's no separate "preview without saving" step.
+ */
+export async function runProspectAuditAction(
+  id: string,
+  url: string
+): Promise<WebsiteAuditReport | { error: string }> {
+  if (!(await isPlatformAdmin())) return { error: "unauthorized" };
+  if (!url.trim()) return { error: "URL invalide." };
+
+  const report = await runWebsiteAudit(url.trim());
+  await saveProspectAudit(id, report);
+  revalidatePath(`/admin/prospects/${id}`);
+  return report;
 }
