@@ -79,7 +79,10 @@ export async function proxy(request: NextRequest) {
     pathWithoutLocale.startsWith("/portal") ||
     pathWithoutLocale.startsWith("/p/") ||
     pathWithoutLocale.startsWith("/m/") ||
-    pathWithoutLocale.startsWith("/f/");
+    pathWithoutLocale.startsWith("/f/") ||
+    // Prospect demo storefronts (admin "1-Click Ingestor") — viewed by the
+    // prospect being pitched, who never has a Minerva session.
+    pathWithoutLocale.startsWith("/demo/");
 
   // Server-to-server callers (Vercel Cron, Stripe, Square) never carry a
   // Supabase session cookie — redirecting them to /login silently turns

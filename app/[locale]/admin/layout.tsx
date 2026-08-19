@@ -28,6 +28,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin/pilots" className="hover:text-mv-ink">
               {t("navPilots")}
             </Link>
+            <Link href="/admin/prospects" className="hover:text-mv-ink">
+              {t("navProspects")}
+            </Link>
             <Link href="/admin/support" className="hover:text-mv-ink">
               {t("navSupport")}
             </Link>

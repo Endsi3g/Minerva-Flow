@@ -156,7 +156,44 @@ Une fois que vous avez un identifiant de compte + une clé API pour l'un des tro
 
 ---
 
-## 7. Supabase Preview Branching
+## 7. Minerva Menu Scraper (service Scrapy séparé, pour le générateur de prospects)
+
+Le bouton "Scraper automatiquement" dans **Admin → Prospects → Nouveau prospect** appelle un
+service Python séparé (`scraper-service/` à la racine du repo — Scrapy + Playwright, jamais
+déployé sur Vercel puisque ça a besoin d'un process persistant). Voir
+`scraper-service/README.md` pour le détail complet ; résumé ici :
+
+1. Déployer `scraper-service/` comme son propre service Docker (Railway, Render, Fly.io — tout
+   host qui build un Dockerfile).
+2. Générer une clé secrète et la mettre en `SCRAPER_API_KEY` sur ce service.
+3. Sur le déploiement de l'app principale (Vercel), ajouter :
+   - `SCRAPER_SERVICE_URL` — l'URL publique du service scraper
+   - `SCRAPER_SERVICE_API_KEY` — exactement la même valeur que `SCRAPER_API_KEY` ci-dessus
+
+Tant que ces deux variables ne sont pas configurées, le bouton "Scraper automatiquement" échoue
+proprement avec un message d'erreur — le collage manuel du menu reste toujours disponible, rien
+ne casse.
+
+⚠️ Les spiders Uber Eats / DoorDash ignorent volontairement `robots.txt` et sont probablement en
+violation de leurs conditions d'utilisation — un choix explicite fait après avoir prévenu que
+c'est un risque business/légal assumé, pas un oubli technique. Voir l'avertissement complet dans
+`scraper-service/README.md`.
+
+**Bonus — CTA de la page démo publique (`/demo/[slug]`)**, y compris la variante "pas de menu
+trouvé" : ces trois variables sont optionnelles mais recommandées, sur le déploiement de l'app
+principale :
+
+| Variable | Rôle |
+|---|---|
+| `NEXT_PUBLIC_BOOKING_URL` | Lien de prise de rendez-vous en ligne (Calendly ou équivalent) — bouton "Prendre rendez-vous" |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | Contact par courriel (`mailto:`) — utilisé si `NEXT_PUBLIC_CONTACT_SOCIAL_URL` n'est pas défini |
+| `NEXT_PUBLIC_CONTACT_SOCIAL_URL` | Lien direct vers un DM/réseau social — prioritaire sur le courriel pour le bouton "Nous contacter" |
+
+Sans ces variables, les boutons correspondants sont simplement absents de la page — rien ne casse.
+
+---
+
+## 8. Supabase Preview Branching
 
 Bloqué par le palier de forfait Supabase actuel, pas par une mauvaise configuration — passer à un forfait supérieur (Pro ou plus, selon l'offre au moment où vous lisez ceci) débloque cette fonctionnalité directement dans le dashboard Supabase, aucun changement de code requis de notre côté.
 
