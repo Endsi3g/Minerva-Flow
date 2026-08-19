@@ -156,28 +156,34 @@ Une fois que vous avez un identifiant de compte + une clé API pour l'un des tro
 
 ---
 
-## 7. Minerva Menu Scraper (service Scrapy séparé, pour le générateur de prospects)
+## 7. Minerva Menu Scraper (intégré à l'app, pour le générateur de prospects)
 
-Le bouton "Scraper automatiquement" dans **Admin → Prospects → Nouveau prospect** appelle un
-service Python séparé (`scraper-service/` à la racine du repo — Scrapy + Playwright, jamais
-déployé sur Vercel puisque ça a besoin d'un process persistant). Voir
-`scraper-service/README.md` pour le détail complet ; résumé ici :
+Le bouton "Scraper automatiquement" dans **Admin → Prospects → Nouveau prospect** tourne
+entièrement dans cette app Next.js — `lib/prospects/scrape/` — sans service séparé ni infra
+à déployer. Un `fetch()` simple (pas de navigateur headless) sur trois stratégies d'extraction
+essayées dans l'ordre :
 
-1. Déployer `scraper-service/` comme son propre service Docker (Railway, Render, Fly.io — tout
-   host qui build un Dockerfile).
-2. Générer une clé secrète et la mettre en `SCRAPER_API_KEY` sur ce service.
-3. Sur le déploiement de l'app principale (Vercel), ajouter :
-   - `SCRAPER_SERVICE_URL` — l'URL publique du service scraper
-   - `SCRAPER_SERVICE_API_KEY` — exactement la même valeur que `SCRAPER_API_KEY` ci-dessus
+1. **JSON-LD schema.org** (`hasMenu`/`MenuSection`/`MenuItem`) — la source la plus fiable quand
+   un site l'expose pour Google, et toujours rendue côté serveur donc pas besoin de JS.
+2. **État embarqué d'une app JS** (`__NEXT_DATA__` de Next.js, ou tout `<script
+   type="application/json">`/`window.__X_STATE__` inline) — scanne l'arbre pour des objets qui
+   ressemblent à un plat de menu (nom + prix), sans dépendre d'un schéma JSON précis par
+   plateforme.
+3. **Scan heuristique du texte visible** — cherche des lignes `"Nom du plat .... 12.50$"`, en
+   dernier recours, uniquement pour les sites vitrines (pas les plateformes de livraison).
 
-Tant que ces deux variables ne sont pas configurées, le bouton "Scraper automatiquement" échoue
-proprement avec un message d'erreur — le collage manuel du menu reste toujours disponible, rien
-ne casse.
+Aucune variable d'environnement à configurer, aucun déploiement séparé — le bouton fonctionne
+dès que le code est en production. Sur tout échec (site injoignable, robots.txt qui l'interdit,
+aucun menu détecté, ou une plateforme qui ne rend son menu qu'après exécution de JS côté client),
+le bouton échoue proprement avec un message clair et le collage manuel reste toujours disponible.
 
-⚠️ Les spiders Uber Eats / DoorDash ignorent volontairement `robots.txt` et sont probablement en
-violation de leurs conditions d'utilisation — un choix explicite fait après avoir prévenu que
-c'est un risque business/légal assumé, pas un oubli technique. Voir l'avertissement complet dans
-`scraper-service/README.md`.
+⚠️ Uber Eats / DoorDash / SkipTheDishes ignorent volontairement `robots.txt` (contrairement aux
+sites vitrines de restaurants, qui le respectent) — un choix explicite assumé comme risque
+business/légal, pas un oubli. En pratique, ces plateformes rendent souvent leur menu uniquement
+via JS côté client une fois la page chargée dans un vrai navigateur ; sans navigateur headless
+(volontairement absent de cette implémentation pour rester déployable sans infra supplémentaire),
+le scraping y échoue plus souvent qu'il ne réussit — le collage manuel reste la méthode fiable
+pour ces trois plateformes.
 
 **Bonus — CTA de la page démo publique (`/demo/[slug]`)**, y compris la variante "pas de menu
 trouvé" : ces trois variables sont optionnelles mais recommandées, sur le déploiement de l'app

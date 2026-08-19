@@ -808,8 +808,7 @@
         "scraping": "Scraping en cours…",
         "scrapeSuccess": "{count, plural, one {# plat trouvé.} other {# plats trouvés.}}",
         "scrapeFoundItems": "{count, plural, one {# plat détecté — sera utilisé au lieu du texte collé.} other {# plats détectés — seront utilisés au lieu du texte collé.}}",
-        "scrapeClear": "Retirer le menu scrapé",
-        "scrapeTimeout": "Le scraping prend trop de temps — réessayez ou collez le menu manuellement."
+        "scrapeClear": "Retirer le menu scrapé"
       },
       "editor": {
         "title": "Prévisualisation & édition rapide",

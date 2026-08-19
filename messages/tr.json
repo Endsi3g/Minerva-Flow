@@ -808,8 +808,7 @@
         "scraping": "Taranıyor…",
         "scrapeSuccess": "{count, plural, one {# ürün bulundu.} other {# ürün bulundu.}}",
         "scrapeFoundItems": "{count, plural, one {# ürün tespit edildi — yapıştırılan metin yerine kullanılacak.} other {# ürün tespit edildi — yapıştırılan metin yerine kullanılacak.}}",
-        "scrapeClear": "Taranan menüyü kaldır",
-        "scrapeTimeout": "Tarama çok uzun sürüyor — tekrar deneyin veya menüyü elle yapıştırın."
+        "scrapeClear": "Taranan menüyü kaldır"
       },
       "editor": {
         "title": "Önizleme ve hızlı düzenleme",
