@@ -1,14 +1,22 @@
 import type { ProspectMenu, ProspectMenuCategory, ProspectMenuItem } from "./types";
-import { PRICE_RE, nextId, detectDietaryTags, priceToCents } from "./menu-text-helpers";
+import { nextId, detectDietaryTags, priceToCents } from "./menu-text-helpers";
 
 const HEADER_RE = /^[A-Za-zÀ-ÿ0-9 '&/-]{2,40}:?$/;
 
+// Anchored to the end of the line — a menu line's price is its trailing
+// token ("Nom du plat .... 12.50$"). Unlike PRICE_RE (used to parse an
+// already-isolated price string), this must not match the first digit
+// anywhere in the line, or a name like "Rouleaux impériaux (4pcs) - 6.50$"
+// misreads "4" as the price and leaves "6.50$" stuck in the name.
+const LINE_PRICE_RE = /\$?\s*(\d+(?:[.,]\d{1,2})?)\s*\$?\s*$/;
+
 function extractPriceCents(line: string): number | null {
-  return priceToCents(line);
+  const match = line.match(LINE_PRICE_RE);
+  return match ? priceToCents(match[1]) : null;
 }
 
 function stripPrice(line: string): string {
-  return line.replace(PRICE_RE, "").replace(/[-–:.\s]+$/, "").trim();
+  return line.replace(LINE_PRICE_RE, "").replace(/[-–:.\s]+$/, "").trim();
 }
 
 function looksLikeHeader(line: string): boolean {
