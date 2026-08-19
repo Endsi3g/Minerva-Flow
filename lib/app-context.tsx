@@ -16,6 +16,7 @@ export type AuthUser = {
 type AppState = {
   role: Role;
   sidebarPermissions: string[] | null;
+  isPlatformAdmin: boolean;
   restaurantId: string;
   setRestaurantId: (id: string) => void;
   restaurants: Restaurant[];
@@ -34,6 +35,7 @@ export function AppProvider({
   authUser = null,
   role,
   sidebarPermissions = null,
+  isPlatformAdmin = false,
   restaurants,
   initialRestaurantId,
 }: {
@@ -41,6 +43,7 @@ export function AppProvider({
   authUser?: AuthUser | null;
   role: Role;
   sidebarPermissions?: string[] | null;
+  isPlatformAdmin?: boolean;
   restaurants: Restaurant[];
   initialRestaurantId: string;
 }) {
@@ -64,6 +67,7 @@ export function AppProvider({
     () => ({
       role,
       sidebarPermissions,
+      isPlatformAdmin,
       restaurantId,
       setRestaurantId,
       restaurants,
@@ -74,7 +78,7 @@ export function AppProvider({
       authUser: localAuthUser,
       updateAuthUser,
     }),
-    [role, sidebarPermissions, restaurantId, restaurants, period, sidebarCollapsed, localAuthUser]
+    [role, sidebarPermissions, isPlatformAdmin, restaurantId, restaurants, period, sidebarCollapsed, localAuthUser]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
