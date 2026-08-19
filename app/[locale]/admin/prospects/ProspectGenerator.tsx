@@ -9,7 +9,6 @@ import {
   createProspectAction,
   reparseProspectMenuAction,
   scrapeMenuAction,
-  pollScrapeMenuAction,
   updateProspectMenuAction,
   updateProspectMetaAction,
   updateProspectStatusAction,
@@ -20,9 +19,6 @@ import { Zap, RefreshCw, Bot, X, CircleCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-
-const SCRAPE_POLL_INTERVAL_MS = 2000;
-const SCRAPE_POLL_MAX_ATTEMPTS = 20; // ~40s ceiling before giving up client-side
 
 function useMenuScraper() {
   const t = useTranslations("admin.prospects.ingestion");
@@ -35,30 +31,16 @@ function useMenuScraper() {
     setError(null);
     setMenu(null);
 
-    const submitted = await scrapeMenuAction(url, platform);
-    if ("error" in submitted) {
-      setStatus("error");
-      setError(submitted.error);
-      return;
-    }
-
-    for (let attempt = 0; attempt < SCRAPE_POLL_MAX_ATTEMPTS; attempt++) {
-      await new Promise((r) => setTimeout(r, SCRAPE_POLL_INTERVAL_MS));
-      const result = await pollScrapeMenuAction(submitted.jobId);
-      if (result.status === "processing") continue;
-      if (result.status === "done") {
-        setStatus("done");
-        setMenu(result.menu);
-        toast.success(t("scrapeSuccess", { count: result.menu.categories.flatMap((c) => c.items).length }));
-        return;
-      }
+    const result = await scrapeMenuAction(url, platform);
+    if ("error" in result) {
       setStatus("error");
       setError(result.error);
       return;
     }
 
-    setStatus("error");
-    setError(t("scrapeTimeout"));
+    setStatus("done");
+    setMenu(result.menu);
+    toast.success(t("scrapeSuccess", { count: result.menu.categories.flatMap((c) => c.items).length }));
   }
 
   function reset() {

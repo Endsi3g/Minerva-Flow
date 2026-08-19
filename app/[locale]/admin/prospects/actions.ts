@@ -11,7 +11,7 @@ import {
   type UpdateProspectMetaInput,
 } from "@/lib/data/prospects";
 import { parseMenuText, emptyMenu } from "@/lib/prospects/parse-menu";
-import { submitScrapeJob, getScrapeJobStatus, type ScrapeSubmitResult, type ScrapeStatusResult } from "@/lib/prospects/scrape-menu";
+import { scrapeMenuFromUrl, type ScrapeResult } from "@/lib/prospects/scrape/fetch-menu";
 import type { ProspectMenu, ProspectSourcePlatform, ProspectStatus } from "@/lib/prospects/types";
 
 export type CreateProspectFormInput = {
@@ -29,22 +29,15 @@ export type CreateProspectFormInput = {
 
 /**
  * Best-effort auto-scrape, called explicitly by the admin before generating —
- * never blocks prospect creation itself. Submits a job and returns immediately;
- * the client polls pollScrapeMenuAction so a slow/stuck scrape can never hang a
- * server action past a platform's function timeout. Falls back to manual paste
- * on any failure (unreachable scraper service, unsupported site, no menu found).
+ * never blocks prospect creation itself. Runs entirely in this one request
+ * (no separate service, no job queue) — see lib/prospects/scrape/fetch-menu.ts
+ * for the actual fetch+extract logic and its documented limits. Falls back to
+ * manual paste on any failure (unreachable site, robots.txt disallow, no menu
+ * found, or a platform that only renders its menu via client-side JS).
  */
-export async function scrapeMenuAction(
-  url: string,
-  platform: ProspectSourcePlatform
-): Promise<ScrapeSubmitResult> {
+export async function scrapeMenuAction(url: string, platform: ProspectSourcePlatform): Promise<ScrapeResult> {
   if (!(await isPlatformAdmin())) return { error: "unauthorized" };
-  return submitScrapeJob(url, platform);
-}
-
-export async function pollScrapeMenuAction(jobId: string): Promise<ScrapeStatusResult> {
-  if (!(await isPlatformAdmin())) return { status: "failed", error: "unauthorized" };
-  return getScrapeJobStatus(jobId);
+  return scrapeMenuFromUrl(url, platform);
 }
 
 export async function createProspectAction(

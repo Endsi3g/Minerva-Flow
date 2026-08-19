@@ -204,10 +204,14 @@
       "revenueInflows": "Entrées de revenu",
       "inflowsBreakdown": "Répartition des sources d'encaissement",
       "noInflowsThisMonth": "Aucune entrée ce mois-ci.",
+      "noInflowsHint": "Ajoutez une transaction manuellement ou importez un relevé pour voir vos revenus se répartir ici.",
+      "addTransactionCta": "Ajouter une transaction",
       "whereMoneyGoes": "Où l'argent part",
       "expenseOutflows": "Sorties de charges",
       "outflowsBreakdown": "Répartition des dépenses courantes",
       "noOutflowsThisMonth": "Aucune sortie ce mois-ci.",
+      "noOutflowsHint": "Connectez un compte bancaire ou une plateforme pour suivre vos dépenses automatiquement.",
+      "connectAccountCta": "Connecter un compte",
       "laborCostLabel": "Masse salariale",
       "laborCostTarget": "Cible ≤ {target}% du CA"
     },
@@ -808,8 +812,7 @@
         "scraping": "Scraping en cours…",
         "scrapeSuccess": "{count, plural, one {# plat trouvé.} other {# plats trouvés.}}",
         "scrapeFoundItems": "{count, plural, one {# plat détecté — sera utilisé au lieu du texte collé.} other {# plats détectés — seront utilisés au lieu du texte collé.}}",
-        "scrapeClear": "Retirer le menu scrapé",
-        "scrapeTimeout": "Le scraping prend trop de temps — réessayez ou collez le menu manuellement."
+        "scrapeClear": "Retirer le menu scrapé"
       },
       "editor": {
         "title": "Prévisualisation & édition rapide",

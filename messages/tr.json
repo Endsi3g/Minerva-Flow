@@ -204,10 +204,14 @@
       "revenueInflows": "Gelir Girişleri",
       "inflowsBreakdown": "Tahsilat kaynaklarının dağılımı",
       "noInflowsThisMonth": "Bu ay giriş yok.",
+      "noInflowsHint": "Gelirlerinizin burada görünmesi için manuel bir işlem ekleyin veya bir ekstre içe aktarın.",
+      "addTransactionCta": "İşlem ekle",
       "whereMoneyGoes": "Paranın nereye gittiği",
       "expenseOutflows": "Gider Çıkışları",
       "outflowsBreakdown": "Cari giderlerin dağılımı",
       "noOutflowsThisMonth": "Bu ay çıkış yok.",
+      "noOutflowsHint": "Giderlerinizi otomatik olarak izlemek için bir banka hesabı veya platform bağlayın.",
+      "connectAccountCta": "Hesap bağla",
       "laborCostLabel": "İşçilik Maliyeti",
       "laborCostTarget": "Hedef: Cironun %{target}'inden az"
     },
@@ -808,8 +812,7 @@
         "scraping": "Taranıyor…",
         "scrapeSuccess": "{count, plural, one {# ürün bulundu.} other {# ürün bulundu.}}",
         "scrapeFoundItems": "{count, plural, one {# ürün tespit edildi — yapıştırılan metin yerine kullanılacak.} other {# ürün tespit edildi — yapıştırılan metin yerine kullanılacak.}}",
-        "scrapeClear": "Taranan menüyü kaldır",
-        "scrapeTimeout": "Tarama çok uzun sürüyor — tekrar deneyin veya menüyü elle yapıştırın."
+        "scrapeClear": "Taranan menüyü kaldır"
       },
       "editor": {
         "title": "Önizleme ve hızlı düzenleme",

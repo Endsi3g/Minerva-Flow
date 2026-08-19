@@ -1,45 +1,22 @@
-import type { ProspectMenu, ProspectMenuCategory, ProspectMenuItem, DietaryTag } from "./types";
+import type { ProspectMenu, ProspectMenuCategory, ProspectMenuItem } from "./types";
+import { nextId, detectDietaryTags, priceToCents } from "./menu-text-helpers";
 
-// Matches "12.50$", "$12.50", "12,50 $", "12 $" — the currency symbol is
-// optional on either side so plain numbers next to a "$" anywhere qualify.
-const PRICE_RE = /\$?\s*(\d+(?:[.,]\d{1,2})?)\s*\$?/;
 const HEADER_RE = /^[A-Za-zÀ-ÿ0-9 '&/-]{2,40}:?$/;
 
-const DIETARY_KEYWORDS: Array<[RegExp, DietaryTag]> = [
-  [/\bv[ée]gan/i, "vegan"],
-  [/v[ée]g[ée]tarien|vegetarian/i, "vegetarian"],
-  [/sans gluten|gluten.?free/i, "gluten_free"],
-  [/\bhalal\b/i, "halal"],
-  [/\bkasher\b|\bkosher\b/i, "kosher"],
-  [/\b[ée]pic[ée]|\bspicy\b|🌶/i, "spicy"],
-  [/\bnoix\b|\bnuts?\b|arachides/i, "contains_nuts"],
-];
-
-let idCounter = 0;
-function nextId(prefix: string): string {
-  idCounter += 1;
-  return `${prefix}-${Date.now().toString(36)}-${idCounter}`;
-}
-
-function detectDietaryTags(text: string): DietaryTag[] {
-  const tags: DietaryTag[] = [];
-  for (const [re, tag] of DIETARY_KEYWORDS) {
-    if (re.test(text)) tags.push(tag);
-  }
-  return tags;
-}
+// Anchored to the end of the line — a menu line's price is its trailing
+// token ("Nom du plat .... 12.50$"). Unlike PRICE_RE (used to parse an
+// already-isolated price string), this must not match the first digit
+// anywhere in the line, or a name like "Rouleaux impériaux (4pcs) - 6.50$"
+// misreads "4" as the price and leaves "6.50$" stuck in the name.
+const LINE_PRICE_RE = /\$?\s*(\d+(?:[.,]\d{1,2})?)\s*\$?\s*$/;
 
 function extractPriceCents(line: string): number | null {
-  const match = line.match(PRICE_RE);
-  if (!match) return null;
-  const numeric = match[1].replace(",", ".");
-  const value = Number.parseFloat(numeric);
-  if (Number.isNaN(value)) return null;
-  return Math.round(value * 100);
+  const match = line.match(LINE_PRICE_RE);
+  return match ? priceToCents(match[1]) : null;
 }
 
 function stripPrice(line: string): string {
-  return line.replace(PRICE_RE, "").replace(/[-–:.\s]+$/, "").trim();
+  return line.replace(LINE_PRICE_RE, "").replace(/[-–:.\s]+$/, "").trim();
 }
 
 function looksLikeHeader(line: string): boolean {
