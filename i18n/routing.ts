@@ -1,11 +1,11 @@
 import { defineRouting } from "next-intl/routing";
 
 export const routing = defineRouting({
-  locales: ["fr", "tr"],
+  locales: ["fr", "en", "tr"],
   defaultLocale: "fr",
   // "fr" (default) keeps today's unprefixed URLs (/overview, /login, ...) so
-  // existing bookmarks, magic links and QR codes never break. "tr" URLs get
-  // an explicit /tr prefix.
+  // existing bookmarks, magic links and QR codes never break. "en" and "tr"
+  // URLs get an explicit /en or /tr prefix.
   localePrefix: "as-needed",
 });
 

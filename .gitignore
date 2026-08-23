@@ -62,3 +62,6 @@ next-env.d.ts
 /.design-sync/learnings/
 /.design-sync/node_modules
 /.design-sync/fonts/
+
+# scratch git worktrees created for isolated background subagents
+/.claude/worktrees/
