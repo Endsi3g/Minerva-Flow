@@ -6,8 +6,9 @@ import { Globe } from "lucide-react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
-const localeLabelKeys: Record<string, "french" | "turkish"> = {
+const localeLabelKeys: Record<string, "french" | "english" | "turkish"> = {
   fr: "french",
+  en: "english",
   tr: "turkish",
 };
 

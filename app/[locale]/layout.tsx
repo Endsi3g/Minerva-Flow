@@ -35,7 +35,59 @@ const jetbrainsMono = JetBrains_Mono({
 
 const ogLocales: Record<string, string> = {
   fr: "fr_CA",
+  en: "en_US",
   tr: "tr_TR",
+};
+
+const metadataByLocale: Record<string, { title: string; description: string; keywords: string[] }> = {
+  fr: {
+    title: "Minerva Flow — Système d'Analyse & Gestion Intelligente pour Restaurants (Québec & France)",
+    description:
+      "Minerva Flow est la plateforme SaaS de gestion opérationnelle pour restaurants et cafés au Québec. Centralisez finances, inventaire, équipe et analyse IA dans une interface unifiée.",
+    keywords: [
+      "Minerva Flow",
+      "Gestion Restaurant Québec",
+      "Logiciel Restaurant Montréal",
+      "Seuil de rentabilité restaurant",
+      "Analyse financière bistro",
+      "POS Square integration",
+      "Food Cost calcul",
+      "IA Restauration",
+      "Gestion d'équipe restaurant",
+    ],
+  },
+  en: {
+    title: "Minerva Flow — Smart Analytics & Management System for Restaurants",
+    description:
+      "Minerva Flow is the operational management SaaS platform for restaurants and cafés. Centralize finance, inventory, team and AI analysis in one unified interface.",
+    keywords: [
+      "Minerva Flow",
+      "Restaurant Management Software",
+      "Restaurant POS Integration",
+      "Break-even calculator restaurant",
+      "Financial analysis bistro",
+      "POS Square integration",
+      "Food cost calculation",
+      "AI for restaurants",
+      "Restaurant team management",
+    ],
+  },
+  tr: {
+    title: "Minerva Flow — Restoranlar için Akıllı Analiz ve Yönetim Sistemi",
+    description:
+      "Minerva Flow, restoran ve kafeler için operasyonel yönetim SaaS platformudur. Finans, envanter, ekip ve yapay zeka analizini tek bir arayüzde birleştirin.",
+    keywords: [
+      "Minerva Flow",
+      "Restoran Yönetim Yazılımı",
+      "Restoran POS Entegrasyonu",
+      "Restoran başabaş noktası",
+      "Bistro finansal analiz",
+      "POS Square entegrasyonu",
+      "Yemek maliyeti hesaplama",
+      "Restoranlar için yapay zeka",
+      "Restoran ekip yönetimi",
+    ],
+  },
 };
 
 export function generateStaticParams() {
@@ -49,9 +101,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const ogLocale = ogLocales[locale] ?? "fr_CA";
-
-  const title = "Minerva Flow — Système d'Analyse & Gestion Intelligente pour Restaurants (Québec & France)";
-  const description = "Minerva Flow est la plateforme SaaS de gestion opérationnelle pour restaurants et cafés au Québec. Centralisez finances, inventaire, équipe et analyse IA dans une interface unifiée.";
+  const { title, description, keywords } = metadataByLocale[locale] ?? metadataByLocale.fr;
 
   return {
     title: {
@@ -63,17 +113,7 @@ export async function generateMetadata({
     verification: {
       google: "2k08zY7Mxenx_aiBOJ-Tlto9kEVG6nYdbitk6K5OQ-8",
     },
-    keywords: [
-      "Minerva Flow",
-      "Gestion Restaurant Québec",
-      "Logiciel Restaurant Montréal",
-      "Seuil de rentabilité restaurant",
-      "Analyse financière bistro",
-      "POS Square integration",
-      "Food Cost calcul",
-      "IA Restauration",
-      "Gestion d'équipe restaurant",
-    ],
+    keywords,
     authors: [{ name: "Minerva Flow Team", url: "https://minerva-flow.vercel.app" }],
     creator: "Minerva Flow",
     publisher: "Minerva Flow Inc.",
@@ -84,6 +124,8 @@ export async function generateMetadata({
       languages: {
         "fr-CA": "https://minerva-flow.vercel.app/fr",
         "fr-FR": "https://minerva-flow.vercel.app/fr",
+        "en-US": "https://minerva-flow.vercel.app/en",
+        "en-GB": "https://minerva-flow.vercel.app/en",
         "tr-TR": "https://minerva-flow.vercel.app/tr",
       },
     },
@@ -160,7 +202,7 @@ export default async function LocaleLayout({
       price: "0",
       priceCurrency: "CAD",
     },
-    description: "Système unifié d'exploitation, de prévision financière et d'analyse IA pour restaurants au Québec et en France.",
+    description: metadataByLocale[locale]?.description ?? metadataByLocale.fr.description,
     author: {
       "@type": "Organization",
       name: "Minerva Flow",
