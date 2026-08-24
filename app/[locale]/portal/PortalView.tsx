@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Modal } from "@/components/ui/Modal";
 import {
   getLoyaltyTier,
   loyaltyTierLabel,
@@ -13,11 +14,16 @@ import {
   type LoyaltyTierThresholds,
 } from "@/lib/loyalty-tiers";
 import { LogoMark } from "@/components/shell/Logo";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, roundToCents, cn } from "@/lib/utils";
 import type { Customer, CustomerReferralLink, LoyaltyReward, MenuItem, Offer, ReferralProgram, RewardRedemption } from "@/lib/types";
 import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-portal";
-import { getOrCreateReferralLinkAction, updateMyProfileAction, selfRedeemRewardAction } from "./actions";
-import { Copy, Check, Gift, Share2, Sparkles, ChefHat, Tag } from "lucide-react";
+import {
+  getOrCreateReferralLinkAction,
+  updateMyProfileAction,
+  selfRedeemRewardAction,
+  submitPortalOrderAction,
+} from "./actions";
+import { Copy, Check, Gift, Share2, Sparkles, ChefHat, Tag, Plus, Minus, ShoppingCart, CheckCircle2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -315,13 +321,24 @@ function isOfferLive(offer: Offer, now = Date.now()) {
 }
 
 /**
- * Read-only browsing — no "commander" button yet. Paying through the
- * portal needs to land straight in the restaurant's own order/POS system,
- * which is a separate, bigger integration (see the POS plan); showing a
- * button that doesn't actually place an order would be worse than not
- * showing one.
+ * Browsing + ordering. Orders submit pay-on-site straight into the
+ * restaurant's own /commandes queue (see submitPortalOrderAction) — same
+ * entry point staff already use for a QR-code table order. Online payment
+ * isn't wired here yet; that's a separate, bigger piece (see HANDOFF.md).
  */
-function MenuBrowserCard({ menuItems, offers }: { menuItems: MenuItem[]; offers: Offer[] }) {
+function MenuBrowserCard({
+  menuItems,
+  offers,
+  cart,
+  onQtyChange,
+  onOpenCart,
+}: {
+  menuItems: MenuItem[];
+  offers: Offer[];
+  cart: Record<string, number>;
+  onQtyChange: (itemId: string, delta: number) => void;
+  onOpenCart: () => void;
+}) {
   const t = useTranslations("portal.view");
   const liveOffers = useMemo(() => offers.filter((o) => isOfferLive(o)), [offers]);
 
@@ -362,31 +379,203 @@ function MenuBrowserCard({ menuItems, offers }: { menuItems: MenuItem[]; offers:
             <div key={category}>
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">{category}</p>
               <div className="space-y-2">
-                {items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 rounded-lg bg-mv-cream-soft p-2.5">
-                    {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
-                    ) : (
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-mv-ink/5 text-mv-ink-faint">
-                        <ChefHat size={16} />
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-medium text-mv-ink">{item.name}</p>
-                      {item.description && (
-                        <p className="truncate text-[11.5px] text-mv-ink-faint">{item.description}</p>
+                {items.map((item) => {
+                  const qty = cart[item.id] ?? 0;
+                  return (
+                    <div key={item.id} className="flex items-center gap-3 rounded-lg bg-mv-cream-soft p-2.5">
+                      {item.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={item.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+                      ) : (
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-mv-ink/5 text-mv-ink-faint">
+                          <ChefHat size={16} />
+                        </div>
                       )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-medium text-mv-ink">{item.name}</p>
+                        {item.description && (
+                          <p className="truncate text-[11.5px] text-mv-ink-faint">{item.description}</p>
+                        )}
+                        <span className="text-[12.5px] font-semibold text-mv-ink">{formatCurrency(item.price)}</span>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {qty > 0 && (
+                          <>
+                            <button
+                              onClick={() => onQtyChange(item.id, -1)}
+                              aria-label="Retirer un"
+                              className="flex h-7 w-7 items-center justify-center rounded-full border border-mv-border text-mv-ink-soft"
+                            >
+                              <Minus size={13} />
+                            </button>
+                            <span className="w-4 text-center text-[13px] font-medium">{qty}</span>
+                          </>
+                        )}
+                        <button
+                          onClick={() => onQtyChange(item.id, 1)}
+                          aria-label="Ajouter un"
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft"
+                        >
+                          <Plus size={13} />
+                        </button>
+                      </div>
                     </div>
-                    <span className="shrink-0 text-[13px] font-semibold text-mv-ink">{formatCurrency(item.price)}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
         </div>
       </Card>
+
+      {Object.values(cart).some((q) => q > 0) && (
+        <button
+          onClick={onOpenCart}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-mv-green px-4 py-3 text-[13px] font-semibold text-mv-cream-soft shadow-mv-md transition-colors hover:bg-mv-green-dark"
+        >
+          <ShoppingCart size={15} /> {t("cartViewOrder")}
+        </button>
+      )}
     </div>
+  );
+}
+
+const TIP_PRESETS = [0, 0.1, 0.15, 0.2];
+
+function CheckoutModal({
+  open,
+  onClose,
+  customerId,
+  cartLines,
+  taxRate,
+  acceptsTips,
+  onOrdered,
+}: {
+  open: boolean;
+  onClose: () => void;
+  customerId: string;
+  cartLines: { item: MenuItem; quantity: number }[];
+  taxRate: number;
+  acceptsTips: boolean;
+  onOrdered: () => void;
+}) {
+  const t = useTranslations("portal.view");
+  const [tipPct, setTipPct] = useState<number | null>(acceptsTips ? 0.15 : null);
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
+
+  const subtotal = cartLines.reduce((sum, l) => sum + l.item.price * l.quantity, 0);
+  const taxAmount = roundToCents(subtotal * taxRate);
+  const tipAmount = tipPct != null ? roundToCents(subtotal * tipPct) : 0;
+  const total = subtotal + taxAmount + tipAmount;
+
+  async function handleSubmit() {
+    setStatus("submitting");
+    const result = await submitPortalOrderAction(
+      customerId,
+      cartLines.map((l) => ({ menuItemId: l.item.id, quantity: l.quantity })),
+      tipAmount,
+      paymentMethod.trim() || null
+    );
+    if (!result.ok) {
+      setStatus("error");
+      return;
+    }
+    onOrdered();
+    setStatus("done");
+  }
+
+  function handleClose() {
+    onClose();
+    if (status === "done") setStatus("idle");
+  }
+
+  return (
+    <Modal open={open} onClose={handleClose} title={t("checkoutTitle")} width={480}>
+      {status === "done" ? (
+        <div className="py-4 text-center">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+            <CheckCircle2 size={18} />
+          </div>
+          <p className="font-display text-[17px] font-medium text-mv-ink">{t("orderSuccessTitle")}</p>
+          <p className="mt-1.5 text-[13px] text-mv-ink-soft">{t("orderSuccessDescription")}</p>
+          <Button size="sm" variant="secondary" className="mt-4" onClick={handleClose}>
+            {t("orderClose")}
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            {cartLines.map((l) => (
+              <div key={l.item.id} className="flex items-center justify-between text-[12.5px]">
+                <span className="text-mv-ink-soft">
+                  {l.quantity}× {l.item.name}
+                </span>
+                <span className="font-medium text-mv-ink">{formatCurrency(l.item.price * l.quantity)}</span>
+              </div>
+            ))}
+          </div>
+
+          {acceptsTips && (
+            <div>
+              <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("checkoutTip")}</p>
+              <div className="flex gap-1.5">
+                {TIP_PRESETS.map((pct) => (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => setTipPct(pct)}
+                    className={cn(
+                      "flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium",
+                      tipPct === pct
+                        ? "border-mv-green bg-mv-green-tint text-mv-green-dark"
+                        : "border-mv-border text-mv-ink-soft"
+                    )}
+                  >
+                    {pct === 0 ? t("checkoutTipNone") : `${Math.round(pct * 100)}%`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1 border-t border-mv-border-soft pt-3 text-[12.5px]">
+            <div className="flex justify-between text-mv-ink-soft">
+              <span>{t("checkoutSubtotal")}</span>
+              <span>{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-mv-ink-soft">
+              <span>{t("checkoutTaxes")}</span>
+              <span>{formatCurrency(taxAmount)}</span>
+            </div>
+            {acceptsTips && (
+              <div className="flex justify-between text-mv-ink-soft">
+                <span>{t("checkoutTip")}</span>
+                <span>{formatCurrency(tipAmount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-[14px] font-semibold text-mv-ink">
+              <span>{t("checkoutTotal")}</span>
+              <span>{formatCurrency(total)}</span>
+            </div>
+          </div>
+
+          <Field label={t("paymentMethodLabel")} hint={t("paymentMethodHint")}>
+            <Input
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              placeholder={t("paymentMethodPlaceholder")}
+            />
+          </Field>
+
+          {status === "error" && <p className="text-[12.5px] text-mv-red">{t("orderError")}</p>}
+
+          <Button onClick={handleSubmit} disabled={status === "submitting"} className="w-full">
+            {status === "submitting" ? t("orderSubmitting") : t("orderSubmit", { total: formatCurrency(total) })}
+          </Button>
+        </div>
+      )}
+    </Modal>
   );
 }
 
@@ -396,17 +585,23 @@ export function PortalView({
   loyaltyTierThresholds,
   menuItems,
   offers,
+  taxRate,
+  acceptsTips,
 }: {
   customer: Customer;
   data: PortalData;
   loyaltyTierThresholds: LoyaltyTierThresholds;
   menuItems: MenuItem[];
   offers: Offer[];
+  taxRate: number;
+  acceptsTips: boolean;
 }) {
   const t = useTranslations("portal.view");
   const [programs, setPrograms] = useState<PortalReferralProgress[]>(data.programs);
   const [points, setPoints] = useState(customer.loyaltyPoints);
   const [redemptions, setRedemptions] = useState<RewardRedemption[]>(data.redemptions);
+  const [cart, setCart] = useState<Record<string, number>>({});
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   function handleLinkCreated(programId: string, link: CustomerReferralLink) {
     setPrograms((prev) => prev.map((p) => (p.program.id === programId ? { ...p, link } : p)));
@@ -416,6 +611,18 @@ export function PortalView({
     setPoints((prev) => prev - redemption.pointsSpent);
     setRedemptions((prev) => [redemption, ...prev]);
   }
+
+  function handleQtyChange(itemId: string, delta: number) {
+    setCart((prev) => ({ ...prev, [itemId]: Math.max(0, (prev[itemId] ?? 0) + delta) }));
+  }
+
+  function handleOrdered() {
+    setCart({});
+  }
+
+  const cartLines = menuItems
+    .filter((i) => (cart[i.id] ?? 0) > 0)
+    .map((i) => ({ item: i, quantity: cart[i.id] }));
 
   return (
     <div className="min-h-screen bg-mv-cream px-6 py-10">
@@ -439,7 +646,22 @@ export function PortalView({
           thresholds={loyaltyTierThresholds}
         />
 
-        <MenuBrowserCard menuItems={menuItems} offers={offers} />
+        <MenuBrowserCard
+          menuItems={menuItems}
+          offers={offers}
+          cart={cart}
+          onQtyChange={handleQtyChange}
+          onOpenCart={() => setCheckoutOpen(true)}
+        />
+        <CheckoutModal
+          open={checkoutOpen}
+          onClose={() => setCheckoutOpen(false)}
+          customerId={customer.id}
+          cartLines={cartLines}
+          taxRate={taxRate}
+          acceptsTips={acceptsTips}
+          onOrdered={handleOrdered}
+        />
 
         <div className="mb-6">
           <RewardsRedeemCard

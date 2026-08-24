@@ -1040,8 +1040,25 @@
       "claimedLabel": "Kullanıldı",
       "pendingLabel": "Beklemede",
       "menuTitle": "Menümüz",
-      "menuDescription": "Şu anda sunduklarımız.",
-      "menuUncategorized": "Diğer"
+      "menuDescription": "Şu anda sunduklarımız — siparişinize ekleyin.",
+      "menuUncategorized": "Diğer",
+      "cartViewOrder": "Siparişi görüntüle",
+      "cartItemCount": "{count, plural, other {# ürün}}",
+      "checkoutTitle": "Siparişiniz",
+      "checkoutSubtotal": "Ara toplam",
+      "checkoutTaxes": "Vergiler",
+      "checkoutTip": "Bahşiş",
+      "checkoutTipNone": "Yok",
+      "checkoutTotal": "Toplam",
+      "paymentMethodLabel": "Yerinde ödeme yöntemi",
+      "paymentMethodHint": "İsteğe bağlı",
+      "paymentMethodPlaceholder": "Örn: Kart, nakit",
+      "orderSubmitting": "Gönderiliyor…",
+      "orderSubmit": "Siparişi gönder — {total}",
+      "orderError": "Sipariş başarısız oldu. Tekrar deneyin.",
+      "orderSuccessTitle": "Sipariş gönderildi",
+      "orderSuccessDescription": "Yerinde ödeyeceksiniz. Restoran kısa süre içinde onaylayacak.",
+      "orderClose": "Kapat"
     }
   }
 }

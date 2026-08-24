@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import type { MenuItem } from "@/lib/types";
 
@@ -38,6 +39,28 @@ export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {
     .from("menu_items")
     .select("*")
     .eq("restaurant_id", restaurantId)
+    .order("category")
+    .order("name");
+
+  if (error || !data) return [];
+  return (data as MenuItemRow[]).map(mapMenuItem);
+}
+
+/**
+ * Active menu items for customer-facing surfaces (portal, public menu
+ * links) — uses the admin client because menu_items_select RLS requires
+ * is_restaurant_member, which a loyalty customer never is. Same
+ * active-only, admin-client shape as getMenuShareByToken in
+ * lib/data/menu-shares.ts, so this and the public menu-share page can
+ * never drift into showing different items for the same restaurant.
+ */
+export async function getActiveMenuItemsForCustomers(restaurantId: string): Promise<MenuItem[]> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("menu_items")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .eq("active", true)
     .order("category")
     .order("name");
 

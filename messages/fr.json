@@ -1040,8 +1040,25 @@
       "claimedLabel": "Utilisée",
       "pendingLabel": "En attente",
       "menuTitle": "Notre menu",
-      "menuDescription": "Ce qu'on sert en ce moment.",
-      "menuUncategorized": "Autres"
+      "menuDescription": "Ce qu'on sert en ce moment — ajoutez à votre commande.",
+      "menuUncategorized": "Autres",
+      "cartViewOrder": "Voir la commande",
+      "cartItemCount": "{count, plural, one {# article} other {# articles}}",
+      "checkoutTitle": "Votre commande",
+      "checkoutSubtotal": "Sous-total",
+      "checkoutTaxes": "Taxes",
+      "checkoutTip": "Pourboire",
+      "checkoutTipNone": "Aucun",
+      "checkoutTotal": "Total",
+      "paymentMethodLabel": "Mode de paiement sur place",
+      "paymentMethodHint": "Optionnel",
+      "paymentMethodPlaceholder": "Ex : Carte, comptant",
+      "orderSubmitting": "Envoi…",
+      "orderSubmit": "Envoyer la commande — {total}",
+      "orderError": "La commande a échoué. Réessayez.",
+      "orderSuccessTitle": "Commande envoyée",
+      "orderSuccessDescription": "Vous paierez sur place. Le restaurant confirmera sous peu.",
+      "orderClose": "Fermer"
     }
   }
 }

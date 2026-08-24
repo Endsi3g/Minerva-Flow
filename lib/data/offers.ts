@@ -81,6 +81,23 @@ export async function getOffersForRestaurant(restaurantId: string): Promise<Offe
 }
 
 /**
+ * Same reasoning as getActiveMenuItemsForCustomers in lib/data/menu.ts —
+ * offers_select RLS requires is_restaurant_member, which a loyalty
+ * customer never is, so the portal needs the admin client here.
+ */
+export async function getActiveOffersForCustomers(restaurantId: string): Promise<Offer[]> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("offers")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return (data as OfferRow[]).map(mapOffer);
+}
+
+/**
  * Public-facing, unauthenticated read — used by the /m/[token] client-mode
  * page, exactly like getMenuShareByToken reads menu_items via the admin
  * client rather than relying on a visitor's (nonexistent) RLS session.

@@ -1,9 +1,16 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrCreateReferralLink } from "@/lib/data/customer-referrals";
-import { getCustomersForUser, selfRedeemReward } from "@/lib/data/customer-portal";
+import {
+  getCustomersForUser,
+  selfRedeemReward,
+  submitPortalOrder,
+  type PortalOrderCartLine,
+  type SubmitPortalOrderResult,
+} from "@/lib/data/customer-portal";
 import { updateCustomer } from "@/lib/data/customers";
 import type { CustomerReferralLink, RewardRedemption } from "@/lib/types";
 
@@ -75,4 +82,32 @@ export async function updateMyProfileAction(
  */
 export async function selfRedeemRewardAction(rewardId: string): Promise<RewardRedemption | null> {
   return selfRedeemReward(rewardId);
+}
+
+/**
+ * customerId is never trusted from the client — same ownership check as
+ * updateMyProfileAction, so a portal order always lands under the correct
+ * customer/restaurant even if the browser tab was left open on a stale id.
+ */
+export async function submitPortalOrderAction(
+  customerId: string,
+  cart: PortalOrderCartLine[],
+  tipAmount: number,
+  paymentMethod: string | null
+): Promise<SubmitPortalOrderResult> {
+  if (cart.length === 0) return { ok: false };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+
+  const customers = await getCustomersForUser(user.id);
+  const customer = customers.find((c) => c.id === customerId);
+  if (!customer) return { ok: false };
+
+  const result = await submitPortalOrder(customer, cart, tipAmount, paymentMethod);
+  if (result.ok) revalidatePath("/portal");
+  return result;
 }

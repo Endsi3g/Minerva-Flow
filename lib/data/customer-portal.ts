@@ -4,6 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { mapCustomer, mapReward, type CustomerRow, mapTransaction, type LoyaltyTransactionRow } from "@/lib/data/customers";
 import { mapReferralProgram, type ReferralProgramRow } from "@/lib/data/referral-programs";
 import { mapLink, type CustomerReferralLinkRow } from "@/lib/data/customer-referrals";
+import { getRestaurantOrderSettings } from "@/lib/data/menu-shares";
+import { computeOrderPricing } from "@/lib/data/order-pricing";
+import { notifyRestaurant } from "@/lib/data/notifications";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { formatCurrency } from "@/lib/utils";
 import type {
   Customer,
   CustomerReferralLink,
@@ -146,4 +151,107 @@ export async function selfRedeemReward(rewardId: string): Promise<RewardRedempti
   const { data, error } = await supabase.rpc("self_redeem_reward", { p_reward_id: rewardId });
   if (error || !data) return null;
   return mapRedemption(data as RewardRedemptionRow);
+}
+
+export type PortalOrderCartLine = {
+  menuItemId: string;
+  quantity: number;
+};
+
+export type SubmitPortalOrderResult = { ok: false } | { ok: true; orderId: string };
+
+/**
+ * Pay-on-site ordering from an already-authenticated portal customer — the
+ * order lands directly in the restaurant's own /commandes queue as
+ * 'soumise', same entry point staff already use for a QR-code table order
+ * (see submitPublicOrder in customer-referrals.ts). Online payment isn't
+ * wired here: payment_status is always 'non_requis', staff collects
+ * payment in person. `customer` is trusted here — the caller
+ * (submitPortalOrderAction) has already confirmed the id belongs to the
+ * authenticated session, same pattern as updateMyProfileAction.
+ */
+export async function submitPortalOrder(
+  customer: Customer,
+  cart: PortalOrderCartLine[],
+  tipAmount: number,
+  paymentMethod: string | null
+): Promise<SubmitPortalOrderResult> {
+  if (cart.length === 0) return { ok: false };
+
+  // Same reasoning as submitPublicOrder — a scripted client calling this
+  // action directly could otherwise create unlimited real orders.
+  const ip = await getClientIp();
+  const { allowed } = await checkRateLimit(`order-submit:${ip}`, { max: 10, windowSeconds: 300 });
+  if (!allowed) return { ok: false };
+
+  const admin = createAdminClient();
+  const [orderSettings, menuItemsResult] = await Promise.all([
+    getRestaurantOrderSettings(admin, customer.restaurantId),
+    admin
+      .from("menu_items")
+      .select("id, name, price")
+      .eq("restaurant_id", customer.restaurantId)
+      .eq("active", true)
+      .in(
+        "id",
+        cart.map((l) => l.menuItemId)
+      ),
+  ]);
+  if (!orderSettings) return { ok: false };
+
+  const menuItemById = new Map(
+    ((menuItemsResult.data as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
+  );
+
+  const pricing = computeOrderPricing({
+    cart,
+    menuItemById,
+    taxRate: orderSettings.taxRate,
+    acceptsTips: orderSettings.acceptsTips,
+    requestedTipAmount: tipAmount,
+  });
+  if (!pricing) return { ok: false };
+  const { lineItems, subtotal, taxAmount, tipAmount: appliedTip, total } = pricing;
+
+  const { data: order, error: orderError } = await admin
+    .from("orders")
+    .insert({
+      restaurant_id: customer.restaurantId,
+      status: "soumise",
+      guest_name: customer.name,
+      guest_phone: customer.phone,
+      subtotal,
+      tax_amount: taxAmount,
+      tip_amount: appliedTip,
+      total,
+      payment_method: paymentMethod,
+      payment_status: "non_requis",
+      is_public_request: true,
+      customer_id: customer.id,
+    })
+    .select("id")
+    .single();
+  if (orderError || !order) return { ok: false };
+  const orderId = (order as { id: string }).id;
+
+  const { error: itemsError } = await admin.from("order_items").insert(
+    lineItems.map((l) => ({
+      order_id: orderId,
+      menu_item_id: l.menuItemId,
+      item_name: l.itemName,
+      unit_price: l.unitPrice,
+      quantity: l.quantity,
+    }))
+  );
+  if (itemsError) return { ok: false };
+
+  await notifyRestaurant({
+    restaurantId: customer.restaurantId,
+    type: "order.created",
+    title: "Nouvelle commande — portail client",
+    body: `${customer.name} — ${formatCurrency(total)}`,
+    link: "/commandes",
+  });
+
+  return { ok: true, orderId };
 }
