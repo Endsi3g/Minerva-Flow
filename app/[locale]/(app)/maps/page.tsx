@@ -450,7 +450,7 @@ export default function MapsPage() {
   }, [setSidebarCollapsed]);
 
   return (
-    <div className="relative flex-1 min-h-[420px] md:min-h-[calc(100vh-140px)] flex flex-col space-y-4 md:space-y-0">
+    <div className="relative flex-1 min-h-[420px] md:h-full flex flex-col space-y-4 md:space-y-0">
       <div className="md:absolute static self-end md:right-4 md:top-4 z-10 flex items-center rounded-lg border border-mv-border bg-mv-surface/95 p-0.5 shadow-mv-lg backdrop-blur-sm">
         <button
           onClick={() => setMode("establishments")}

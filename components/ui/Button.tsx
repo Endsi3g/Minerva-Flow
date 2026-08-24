@@ -18,7 +18,7 @@ const buttonVariants = cva(
         ghost: "text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink",
         destructive: "bg-mv-red text-white hover:bg-[#963a2f] shadow-mv-sm",
         danger: "bg-mv-red text-white hover:bg-[#963a2f] shadow-mv-sm",
-        lime: "bg-mv-lime text-white hover:brightness-95 shadow-mv-sm",
+        lime: "bg-mv-lime text-mv-green-darker hover:brightness-95 shadow-mv-sm",
         link: "text-mv-green-dark underline-offset-4 hover:underline",
       },
       size: {

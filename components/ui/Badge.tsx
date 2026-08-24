@@ -38,7 +38,7 @@ const outlineTones: Record<BadgeTone, string> = {
 
 const solidTones: Record<BadgeTone, string> = {
   green: "bg-mv-green text-mv-cream-soft border-transparent",
-  lime: "bg-mv-lime text-white border-transparent",
+  lime: "bg-mv-lime text-mv-green-darker border-transparent",
   red: "bg-mv-red text-white border-transparent",
   amber: "bg-mv-amber text-white border-transparent",
   neutral: "bg-mv-ink-soft text-mv-cream-soft border-transparent",

@@ -58,7 +58,11 @@ import { SearchDialog } from "./SearchDialog";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 
 const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const;
-const SIDEBAR_WIDTH = 256;
+// 288px (was 256) — the longer page renames this session ("Performance
+// quotidienne", "Résultats fidélisation") were clipping the favorite-star
+// button at the old width since the label's own truncation ellipsis kicked
+// in right up against it, leaving no room for the star to show on hover.
+const SIDEBAR_WIDTH = 288;
 
 export type NavItem = {
   key: string;
@@ -428,7 +432,7 @@ export function AppSidebar() {
         style={{ minWidth: 0 }}
       >
         <motion.div
-          className="flex h-full w-64 min-w-64 flex-col"
+          className="flex h-full w-72 min-w-72 flex-col"
           animate={
             isMobile
               ? { x: 0, opacity: 1 }

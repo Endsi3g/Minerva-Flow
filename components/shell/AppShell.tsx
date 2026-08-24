@@ -52,7 +52,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className={cn(
               "flex-1 overflow-y-auto",
               isFullBleed
-                ? "flex flex-col pb-[calc(4rem+24px+env(safe-area-inset-bottom))] md:pb-0"
+                ? // Matches MobileTabBar's actual height (h-16 + safe area) exactly —
+                  // the +24px extra breathing room below is deliberate for scrollable
+                  // card content (the non-full-bleed branch) but left a visible blank
+                  // strip below edge-to-edge content like the map.
+                  "flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0"
                 : "px-6 pt-6 pb-[calc(4rem+24px+env(safe-area-inset-bottom))] md:pb-6 lg:px-8 lg:pt-7 lg:pb-7"
             )}
           >

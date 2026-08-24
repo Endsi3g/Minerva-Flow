@@ -31,7 +31,7 @@ import { useTranslations } from "next-intl";
 const walletTierBg: Record<LoyaltyTier, string> = {
   habitue: "bg-mv-ink text-mv-cream",
   privilegie: "bg-mv-green-dark text-mv-cream",
-  ambassadeur: "bg-mv-lime text-white",
+  ambassadeur: "bg-mv-lime text-mv-green-darker",
 };
 
 function LoyaltyWalletCard({
