@@ -222,6 +222,7 @@ function EstablishmentsMode() {
   return (
     <>
       <Map
+        className="flex-1 min-h-0"
         center={current ? [current.lng, current.lat] : [-73.5673, 45.5017]}
         zoom={current ? 14 : 11}
         theme="light"
@@ -359,6 +360,7 @@ function AttributionMode() {
     <>
       <Map
         blank
+        className="flex-1 min-h-0"
         center={current?.lng != null && current?.lat != null ? [current.lng, current.lat] : [-73.5673, 45.5017]}
         zoom={current?.lng != null ? 9 : 11}
         theme="light"
