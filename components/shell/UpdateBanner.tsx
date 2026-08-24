@@ -41,23 +41,27 @@ export function UpdateBanner() {
   }
 
   return (
-    <div className="mb-5 flex items-center gap-3 rounded-xl border border-mv-green/25 bg-mv-green/[0.06] px-4 py-3">
-      <Sparkles size={18} className="shrink-0 text-mv-green-dark" />
-      <p className="flex-1 text-[13px] font-medium text-mv-ink">{entry.body ?? entry.title}</p>
-      <Link
-        href={entry.link ?? "/changelog"}
-        onClick={handleDismiss}
-        className="shrink-0 rounded-lg bg-mv-green px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-green-dark"
-      >
-        {t("viewChangelog")}
-      </Link>
-      <button
-        onClick={handleDismiss}
-        aria-label={t("close")}
-        className="shrink-0 rounded-lg p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
-      >
-        <X size={15} />
-      </button>
+    <div className="mb-5 flex flex-col gap-3 rounded-xl border border-mv-green/25 bg-mv-green/[0.06] px-4 py-3 sm:flex-row sm:items-center">
+      <div className="flex items-start gap-3 sm:flex-1 sm:items-center">
+        <Sparkles size={18} className="mt-0.5 shrink-0 text-mv-green-dark sm:mt-0" />
+        <p className="text-[13px] font-medium text-mv-ink">{entry.body ?? entry.title}</p>
+      </div>
+      <div className="flex shrink-0 items-center justify-end gap-2 self-end sm:self-auto">
+        <Link
+          href={entry.link ?? "/changelog"}
+          onClick={handleDismiss}
+          className="shrink-0 rounded-lg bg-mv-green px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-green-dark"
+        >
+          {t("viewChangelog")}
+        </Link>
+        <button
+          onClick={handleDismiss}
+          aria-label={t("close")}
+          className="shrink-0 rounded-lg p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+        >
+          <X size={15} />
+        </button>
+      </div>
     </div>
   );
 }

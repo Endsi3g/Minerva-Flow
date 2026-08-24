@@ -81,9 +81,28 @@ export async function GET(req: Request) {
 
       const eligible = (list: Customer[]) => list.filter((c) => !recentlyContacted.has(c.id));
 
+      const { data: cheapestReward } = await admin
+        .from("loyalty_rewards")
+        .select("name, points_cost")
+        .eq("restaurant_id", restaurantId)
+        .eq("active", true)
+        .order("points_cost", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
       // Priority: birthday (warmest occasion) overrides value_drift, which
-      // overrides plain inactivity — one message per customer per run.
-      const targets = new Map<string, { customer: Customer; trigger: Trigger }>();
+      // overrides plain inactivity, which overrides a reward-available nudge
+      // (the mildest reason to reach out) — one message per customer per run.
+      const targets = new Map<string, { customer: Customer; trigger: Trigger; extra?: { points: number; rewardName: string } }>();
+      if (cheapestReward) {
+        for (const c of eligible(mapped.filter((c) => c.loyaltyPoints >= cheapestReward.points_cost))) {
+          targets.set(c.id, {
+            customer: c,
+            trigger: "reward_available",
+            extra: { points: c.loyaltyPoints, rewardName: cheapestReward.name },
+          });
+        }
+      }
       for (const c of eligible(getInactiveCustomers(mapped, restaurantRow.retention_inactivity_days))) {
         targets.set(c.id, { customer: c, trigger: "inactivity" });
       }
@@ -95,8 +114,8 @@ export async function GET(req: Request) {
       }
 
       let sentCount = 0;
-      for (const { customer, trigger } of targets.values()) {
-        const channel = await sendRetentionNudge(admin, restaurantId, restaurantRow.name, customer, trigger);
+      for (const { customer, trigger, extra } of targets.values()) {
+        const channel = await sendRetentionNudge(admin, restaurantId, restaurantRow.name, customer, trigger, extra);
         if (channel) sentCount++;
       }
 

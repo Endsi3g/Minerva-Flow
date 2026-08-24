@@ -15,18 +15,20 @@ import { notifyError } from "@/lib/notify-error";
 import { sendManualRetentionNudgeAction } from "./actions";
 import type { LtvImpact } from "@/lib/engine/impact";
 import type { AtRiskCustomer } from "@/lib/data/impact";
-import { DollarSign, TrendingUp, Repeat, Users, Send, Clock, TrendingDown } from "lucide-react";
+import { DollarSign, TrendingUp, Repeat, Users, Send, Clock, TrendingDown, Gift } from "lucide-react";
 
 const triggerLabel: Record<AtRiskCustomer["trigger"], string> = {
   inactivity: "N'est pas revenu depuis un moment",
   value_drift: "Vient moins souvent qu'avant",
   birthday: "Anniversaire",
+  reward_available: "A assez de points pour une récompense",
 };
 
 const triggerIcon: Record<AtRiskCustomer["trigger"], typeof Clock> = {
   inactivity: Clock,
   value_drift: TrendingDown,
   birthday: Clock,
+  reward_available: Gift,
 };
 
 export function ImpactView({

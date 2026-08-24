@@ -4,15 +4,21 @@ import { sendPushToUsers } from "@/lib/push/send";
 import { sendSms, isSmsConfigured } from "@/lib/sms/send";
 import type { Customer } from "@/lib/types";
 
-export type RetentionTrigger = "inactivity" | "birthday" | "value_drift";
+export type RetentionTrigger = "inactivity" | "birthday" | "value_drift" | "reward_available";
 export type RetentionChannel = "email" | "push" | "sms";
 
 /**
  * Shared between the daily cron (app/api/cron/retention-engine) and the
  * manual "Relancer maintenant" action on /impact — same message, whether
- * the automated engine picked the customer or the owner did.
+ * the automated engine picked the customer or the owner did. `extra` only
+ * applies to "reward_available" — the other triggers ignore it.
  */
-export function buildRetentionMessage(trigger: RetentionTrigger, restaurantName: string, customerName: string) {
+export function buildRetentionMessage(
+  trigger: RetentionTrigger,
+  restaurantName: string,
+  customerName: string,
+  extra?: { points: number; rewardName: string }
+) {
   const firstName = customerName.trim().split(/\s+/)[0] || customerName;
   const p = (text: string) => `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">${text}</p>`;
 
@@ -47,6 +53,19 @@ export function buildRetentionMessage(trigger: RetentionTrigger, restaurantName:
         pushTitle: `On s'ennuie de vous, ${firstName}`,
         pushBody: `${restaurantName} aimerait vous revoir bientôt.`,
       };
+    case "reward_available": {
+      const points = extra?.points ?? 0;
+      const rewardName = extra?.rewardName ?? "une récompense";
+      return {
+        subject: `${firstName}, vous avez ${points} points à échanger chez ${restaurantName}`,
+        bodyHtml:
+          p(`Bonjour ${firstName},`) +
+          p(`Vous avez ${points} points de fidélité chez ${restaurantName} — assez pour échanger « ${rewardName} ». Passez les réclamer !`),
+        smsBody: `${restaurantName} : ${firstName}, vous avez ${points} pts — assez pour « ${rewardName} ». Venez les échanger !`,
+        pushTitle: `${points} points à échanger !`,
+        pushBody: `Vous avez assez pour « ${rewardName} » chez ${restaurantName}.`,
+      };
+    }
   }
 }
 
@@ -61,9 +80,10 @@ export async function sendRetentionNudge(
   restaurantId: string,
   restaurantName: string,
   customer: Pick<Customer, "id" | "name" | "email" | "userId" | "phone">,
-  trigger: RetentionTrigger
+  trigger: RetentionTrigger,
+  extra?: { points: number; rewardName: string }
 ): Promise<RetentionChannel | null> {
-  const msg = buildRetentionMessage(trigger, restaurantName, customer.name);
+  const msg = buildRetentionMessage(trigger, restaurantName, customer.name, extra);
   let channel: RetentionChannel | null = null;
 
   if (customer.email) {
