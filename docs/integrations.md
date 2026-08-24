@@ -156,7 +156,50 @@ Une fois que vous avez un identifiant de compte + une clé API pour l'un des tro
 
 ---
 
-## 7. Supabase Preview Branching
+## 7. Minerva Menu Scraper (intégré à l'app, pour le générateur de prospects)
+
+Le bouton "Scraper automatiquement" dans **Admin → Prospects → Nouveau prospect** tourne
+entièrement dans cette app Next.js — `lib/prospects/scrape/` — sans service séparé ni infra
+à déployer. Un `fetch()` simple (pas de navigateur headless) sur trois stratégies d'extraction
+essayées dans l'ordre :
+
+1. **JSON-LD schema.org** (`hasMenu`/`MenuSection`/`MenuItem`) — la source la plus fiable quand
+   un site l'expose pour Google, et toujours rendue côté serveur donc pas besoin de JS.
+2. **État embarqué d'une app JS** (`__NEXT_DATA__` de Next.js, ou tout `<script
+   type="application/json">`/`window.__X_STATE__` inline) — scanne l'arbre pour des objets qui
+   ressemblent à un plat de menu (nom + prix), sans dépendre d'un schéma JSON précis par
+   plateforme.
+3. **Scan heuristique du texte visible** — cherche des lignes `"Nom du plat .... 12.50$"`, en
+   dernier recours, uniquement pour les sites vitrines (pas les plateformes de livraison).
+
+Aucune variable d'environnement à configurer, aucun déploiement séparé — le bouton fonctionne
+dès que le code est en production. Sur tout échec (site injoignable, robots.txt qui l'interdit,
+aucun menu détecté, ou une plateforme qui ne rend son menu qu'après exécution de JS côté client),
+le bouton échoue proprement avec un message clair et le collage manuel reste toujours disponible.
+
+⚠️ Uber Eats / DoorDash / SkipTheDishes ignorent volontairement `robots.txt` (contrairement aux
+sites vitrines de restaurants, qui le respectent) — un choix explicite assumé comme risque
+business/légal, pas un oubli. En pratique, ces plateformes rendent souvent leur menu uniquement
+via JS côté client une fois la page chargée dans un vrai navigateur ; sans navigateur headless
+(volontairement absent de cette implémentation pour rester déployable sans infra supplémentaire),
+le scraping y échoue plus souvent qu'il ne réussit — le collage manuel reste la méthode fiable
+pour ces trois plateformes.
+
+**Bonus — CTA de la page démo publique (`/demo/[slug]`)**, y compris la variante "pas de menu
+trouvé" : ces trois variables sont optionnelles mais recommandées, sur le déploiement de l'app
+principale :
+
+| Variable | Rôle |
+|---|---|
+| `NEXT_PUBLIC_BOOKING_URL` | Lien de prise de rendez-vous en ligne (Calendly ou équivalent) — bouton "Prendre rendez-vous" |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | Contact par courriel (`mailto:`) — utilisé si `NEXT_PUBLIC_CONTACT_SOCIAL_URL` n'est pas défini |
+| `NEXT_PUBLIC_CONTACT_SOCIAL_URL` | Lien direct vers un DM/réseau social — prioritaire sur le courriel pour le bouton "Nous contacter" |
+
+Sans ces variables, les boutons correspondants sont simplement absents de la page — rien ne casse.
+
+---
+
+## 8. Supabase Preview Branching
 
 Bloqué par le palier de forfait Supabase actuel, pas par une mauvaise configuration — passer à un forfait supérieur (Pro ou plus, selon l'offre au moment où vous lisez ceci) débloque cette fonctionnalité directement dans le dashboard Supabase, aucun changement de code requis de notre côté.
 

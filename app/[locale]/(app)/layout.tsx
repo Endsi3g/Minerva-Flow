@@ -7,7 +7,7 @@ import { DemoGuideTour } from "@/components/demo/DemoGuideTour";
 import { getAppSessionData } from "@/lib/data/session";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { authUser, restaurants, role, sidebarPermissions, initialRestaurantId, onboardingCompleted } =
+  const { authUser, restaurants, role, sidebarPermissions, isPlatformAdmin, initialRestaurantId, onboardingCompleted } =
     await getAppSessionData();
 
   if (authUser && !onboardingCompleted) {
@@ -19,6 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       authUser={authUser}
       role={role}
       sidebarPermissions={sidebarPermissions}
+      isPlatformAdmin={isPlatformAdmin}
       restaurants={restaurants}
       initialRestaurantId={initialRestaurantId}
     >

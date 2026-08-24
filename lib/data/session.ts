@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getUserRestaurants } from "@/lib/data/restaurants";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
+import { isPlatformAdmin } from "@/lib/data/admin";
 import type { AuthUser } from "@/lib/app-context";
 import type { Restaurant, Role } from "@/lib/types";
 
@@ -11,6 +12,7 @@ export type AppSessionData = {
   sidebarPermissions: string[] | null;
   initialRestaurantId: string;
   onboardingCompleted: boolean;
+  isPlatformAdmin: boolean;
 };
 
 /**
@@ -33,7 +35,7 @@ export async function getAppSessionData(): Promise<AppSessionData> {
       }
     : null;
 
-  const [restaurants, membership, onboardingCompleted] = await Promise.all([
+  const [restaurants, membership, onboardingCompleted, platformAdmin] = await Promise.all([
     getUserRestaurants(),
     getCurrentMembership(),
     user
@@ -44,6 +46,7 @@ export async function getAppSessionData(): Promise<AppSessionData> {
           .maybeSingle()
           .then(({ data }) => (data as { onboarding_completed: boolean } | null)?.onboarding_completed ?? true)
       : Promise.resolve(true),
+    user ? isPlatformAdmin() : Promise.resolve(false),
   ]);
 
   return {
@@ -53,5 +56,6 @@ export async function getAppSessionData(): Promise<AppSessionData> {
     sidebarPermissions: membership?.sidebarPermissions ?? null,
     initialRestaurantId: membership?.restaurantId ?? restaurants[0]?.id ?? "",
     onboardingCompleted,
+    isPlatformAdmin: platformAdmin,
   };
 }

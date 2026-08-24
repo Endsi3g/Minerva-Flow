@@ -1,6 +1,5 @@
 "use client";
 
-import { LogoMark } from "./Logo";
 import { useApp } from "@/lib/app-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -47,6 +46,7 @@ import {
   Star,
   StarOff,
   Palette,
+  Shield,
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -308,8 +308,16 @@ function TeamSwitcher() {
 export function AppSidebar() {
   const t = useTranslations("nav");
   const pathname = usePathname();
-  const { role, sidebarPermissions, sidebarCollapsed, setSidebarCollapsed, restaurantId, setRestaurantId, restaurants } =
-    useApp();
+  const {
+    role,
+    sidebarPermissions,
+    isPlatformAdmin,
+    sidebarCollapsed,
+    setSidebarCollapsed,
+    restaurantId,
+    setRestaurantId,
+    restaurants,
+  } = useApp();
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -530,6 +538,16 @@ export function AppSidebar() {
                   />
                 ))}
               </CollapsibleSection>
+            )}
+
+            {isPlatformAdmin && (
+              <NavLink
+                href="/admin/restaurants"
+                label={t("admin")}
+                icon={Shield}
+                active={pathname.startsWith("/admin")}
+                onNavigate={closeMobile}
+              />
             )}
 
             {hasSettingsAccess && (

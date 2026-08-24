@@ -220,6 +220,13 @@ export function CommandesView({
           icon={ClipboardList}
           title="Aucune commande aujourd'hui"
           description="Partagez votre lien de menu ou votre widget web depuis les paramètres pour recevoir des commandes directes."
+          action={
+            <Link href="/etablissement">
+              <Button size="sm" variant="secondary" className="text-[12px]">
+                <QrCode size={13} /> Générer QR Code / Widget
+              </Button>
+            </Link>
+          }
         />
       ) : (
         <Table>

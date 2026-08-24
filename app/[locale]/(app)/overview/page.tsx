@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { OverviewClientView } from "@/components/minerva/OverviewClientView";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -47,6 +49,11 @@ function monthHeat(serviceDays: ServiceDay[], year: number, month: number) {
     out.push({ date: iso, revenue: byDate.get(iso) ?? 0, dow: date.getDay() });
   }
   return out;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("overview") };
 }
 
 export default async function OverviewPage() {

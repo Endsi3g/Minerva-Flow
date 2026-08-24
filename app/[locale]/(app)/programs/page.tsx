@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getPrograms } from "@/lib/data/programs";
 import { getCampaigns } from "@/lib/data/campaigns";
 import { ProgramsView } from "./ProgramsView";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("programs") };
+}
 
 export default async function ProgramsPage() {
   const restaurantId = await getCurrentRestaurantId();

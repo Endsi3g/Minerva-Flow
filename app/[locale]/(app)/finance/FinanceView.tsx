@@ -101,10 +101,14 @@ function OverviewTab({
   transactions,
   serviceDays,
   breakEvenSettings,
+  onGoToAccounts,
+  onGoToTransactions,
 }: {
   transactions: FinancialTransaction[];
   serviceDays: ServiceDay[];
   breakEvenSettings?: { fixedCosts: number | null; grossMarginPct: number | null; avgBasket: number | null };
+  onGoToAccounts: () => void;
+  onGoToTransactions: () => void;
 }) {
   const t = useTranslations("finance");
   const monthTransactions = useMemo(
@@ -179,7 +183,16 @@ function OverviewTab({
           {inflows.length > 0 ? (
             <FlowBars lines={inflows} tone="green" />
           ) : (
-            <p className="text-[12.5px] text-mv-ink-faint">{t("overview.noInflowsThisMonth")}</p>
+            <EmptyState
+              icon={ArrowDownLeft}
+              title={t("overview.noInflowsThisMonth")}
+              description={t("overview.noInflowsHint")}
+              action={
+                <Button size="sm" variant="secondary" onClick={onGoToTransactions}>
+                  {t("overview.addTransactionCta")}
+                </Button>
+              }
+            />
           )}
         </Card>
         <Card>
@@ -191,7 +204,16 @@ function OverviewTab({
           {outflows.length > 0 ? (
             <FlowBars lines={outflows} tone="ink" />
           ) : (
-            <p className="text-[12.5px] text-mv-ink-faint">{t("overview.noOutflowsThisMonth")}</p>
+            <EmptyState
+              icon={ArrowUpRight}
+              title={t("overview.noOutflowsThisMonth")}
+              description={t("overview.noOutflowsHint")}
+              action={
+                <Button size="sm" variant="secondary" onClick={onGoToAccounts}>
+                  {t("overview.connectAccountCta")}
+                </Button>
+              }
+            />
           )}
         </Card>
       </div>
@@ -708,6 +730,7 @@ export function FinanceView({
   breakEvenSettings?: { fixedCosts: number | null; grossMarginPct: number | null; avgBasket: number | null };
 }) {
   const t = useTranslations("finance");
+  const [tab, setTab] = useState("apercu");
   return (
     <div>
       <PageHeader
@@ -716,7 +739,7 @@ export function FinanceView({
         description={t("pageDescription")}
       />
 
-      <Tabs defaultValue="apercu">
+      <Tabs value={tab} onValueChange={(v) => setTab(String(v))}>
         <TabsList className="mb-6 h-auto rounded-full border border-mv-border bg-mv-cream-soft p-1">
           <TabsTrigger
             value="apercu"
@@ -745,7 +768,13 @@ export function FinanceView({
         </TabsList>
 
         <TabsContent value="apercu">
-          <OverviewTab transactions={transactions} serviceDays={serviceDays} breakEvenSettings={breakEvenSettings} />
+          <OverviewTab
+            transactions={transactions}
+            serviceDays={serviceDays}
+            breakEvenSettings={breakEvenSettings}
+            onGoToAccounts={() => setTab("comptes")}
+            onGoToTransactions={() => setTab("transactions")}
+          />
         </TabsContent>
         <TabsContent value="transactions">
           <TransactionsTab transactions={transactions} expenseCategories={expenseCategories} />

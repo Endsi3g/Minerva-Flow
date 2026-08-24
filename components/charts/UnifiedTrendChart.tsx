@@ -73,6 +73,23 @@ export function UnifiedTrendChart({ series }: { series: TrendSeries[] }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const data = mergeSeries(series);
 
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[280px] flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-mv-border bg-mv-cream-soft text-center">
+        <p className="text-[13.5px] font-medium text-mv-ink-soft">Aucune donnée de revenu pour l&apos;instant</p>
+        <p className="max-w-xs text-[12.5px] text-mv-ink-faint">
+          Cette courbe se remplit dès votre première journée de service enregistrée.
+        </p>
+        <Link
+          href="/days"
+          className="mt-1.5 text-[12.5px] font-semibold text-mv-green-dark hover:underline"
+        >
+          Ajouter une journée →
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div>
       <ResponsiveContainer width="100%" height={280}>

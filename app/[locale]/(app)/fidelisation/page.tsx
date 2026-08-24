@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getCustomers, getLoyaltyRewards } from "@/lib/data/customers";
 import { getRestaurant } from "@/lib/data/restaurants";
@@ -5,6 +7,11 @@ import { getReferralPrograms } from "@/lib/data/referral-programs";
 import { getReferralLinksForRestaurant } from "@/lib/data/customer-referrals";
 import { getLoyaltySharesForRestaurant } from "@/lib/data/loyalty-shares";
 import { FidelisationView } from "./FidelisationView";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("fidelisation") };
+}
 
 export default async function FidelisationPage() {
   const restaurantId = await getCurrentRestaurantId();

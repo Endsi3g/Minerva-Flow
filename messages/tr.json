@@ -44,6 +44,7 @@
     "manageWorkspace": "Çalışma Alanını Yönet",
     "allTeams": "Tüm Ekipler",
     "settings": "Ayarlar",
+    "admin": "Operatör Paneli",
     "searchAria": "Ara",
     "searchTitle": "Uygulamada ara (⌘K)",
     "mobileHome": "Ana Sayfa",
@@ -91,6 +92,7 @@
     "fournisseurs": "Tedarikçiler",
     "guide": "Rehber",
     "horaire": "Vardiya Planı",
+    "integrations": "Entegrasyonlar",
     "library": "Kütüphane",
     "monEspace": "Alanım",
     "profil": "Profil",
@@ -173,6 +175,11 @@
   "common": {
     "noRestaurantSelected": "Seçili restoran yok."
   },
+  "notFound": {
+    "title": "Sayfa bulunamadı",
+    "description": "Aradığınız sayfa mevcut değil veya taşınmış olabilir.",
+    "cta": "Genel bakışa dön"
+  },
   "finance": {
     "pageEyebrow": "Finansal Akışlar",
     "pageTitle": "Finans",
@@ -205,10 +212,14 @@
       "revenueInflows": "Gelir Girişleri",
       "inflowsBreakdown": "Tahsilat kaynaklarının dağılımı",
       "noInflowsThisMonth": "Bu ay giriş yok.",
+      "noInflowsHint": "Gelirlerinizin burada görünmesi için manuel bir işlem ekleyin veya bir ekstre içe aktarın.",
+      "addTransactionCta": "İşlem ekle",
       "whereMoneyGoes": "Paranın nereye gittiği",
       "expenseOutflows": "Gider Çıkışları",
       "outflowsBreakdown": "Cari giderlerin dağılımı",
       "noOutflowsThisMonth": "Bu ay çıkış yok.",
+      "noOutflowsHint": "Giderlerinizi otomatik olarak izlemek için bir banka hesabı veya platform bağlayın.",
+      "connectAccountCta": "Hesap bağla",
       "laborCostLabel": "İşçilik Maliyeti",
       "laborCostTarget": "Hedef: Cironun %{target}'inden az"
     },
@@ -679,6 +690,7 @@
       "title": "Operatör Paneli",
       "navRestaurants": "Restoranlar",
       "navPilots": "Pilotlar",
+      "navProspects": "Adaylar",
       "navSupport": "Destek",
       "navIncidents": "Olaylar",
       "navAnalytics": "Analitik",
@@ -744,6 +756,142 @@
       },
       "emptyState": "Henüz pilot erişim talebi yok."
     },
+    "prospects": {
+      "pageTitle": "Adaylar — Demo Oluşturucu",
+      "countDescription": "{count, plural, one {# aday oluşturuldu.} other {# aday oluşturuldu.}}",
+      "newProspect": "Yeni aday",
+      "emptyTitle": "Henüz aday yok",
+      "emptyDescription": "Bir restoranın menüsünden 60 saniyede ilk demonuzu oluşturun.",
+      "colRestaurant": "Restoran",
+      "colStatus": "Durum",
+      "colEstimatedLoss": "Tahmini kayıp",
+      "colViews": "Demo görüntülemeleri",
+      "colCreatedAt": "Oluşturulma",
+      "untitled": "İsimsiz",
+      "newPageTitle": "Yeni aday",
+      "newPageDescription": "Teslimat platformunun (veya restoran sitesinin) bağlantısını ve menüyü yapıştırın; Minerva-Flow anında kendi renkleriyle bir demo ve kâr marjı analizi oluşturur.",
+      "status": {
+        "draft": "Taslak",
+        "ready": "Hazır",
+        "contacte": "İletişime geçildi",
+        "converti": "Dönüştürüldü",
+        "decline": "Reddedildi"
+      },
+      "pipeline": {
+        "stepRead": "İçerik okunuyor",
+        "stepStructure": "Menü yapılandırılıyor",
+        "stepMargin": "Kâr marjı hesaplanıyor",
+        "stepInstance": "Örnek oluşturuldu"
+      },
+      "ingestion": {
+        "urlLabel": "Hedef URL",
+        "urlPlaceholder": "https://www.ubereats.com/store/restoran/...",
+        "generate": "Örneği oluştur ⚡",
+        "generating": "Oluşturuluyor…",
+        "restaurantNameLabel": "Restoran adı",
+        "restaurantNamePlaceholder": "Örn. Brasserie Le Saint-Laurent",
+        "platformLabel": "Kaynak platform",
+        "platform": {
+          "uber_eats": "Uber Eats",
+          "doordash": "DoorDash",
+          "skipthedishes": "SkipTheDishes",
+          "direct_website": "Restoran sitesi",
+          "raw_text": "Yapıştırılan metin",
+          "other": "Diğer"
+        },
+        "currencyLabel": "Para birimi",
+        "commissionLabel": "Tahmini komisyon (%)",
+        "assumedOrdersLabel": "Aylık sipariş (tahmini)",
+        "addressLabel": "Adres / şehir",
+        "addressHint": "İsteğe bağlı — teklif metninde kullanılır.",
+        "addressPlaceholder": "Örn. Montréal, QC",
+        "pastedTextLabel": "Menü (metni buraya yapıştırın)",
+        "pastedTextHint": "Yemekleri ve fiyatlarını her satıra bir tane olacak şekilde yapıştırın. Boş bırakırsanız düzenlenebilir bir örnek menü oluşturulur.",
+        "pastedTextPlaceholder": "Başlangıçlar\nGünün çorbası — 8.95$\nEv salatası — 12.50$\n\nAna yemekler\nİmza burger — 21.50$",
+        "createFailed": "Oluşturma başarısız — zorunlu alanları kontrol edin.",
+        "reingest": "Yeni menü yapıştır",
+        "reingestHint": "Yeniden ayrıştırıldıktan sonra mevcut menünün tamamen yerine geçer.",
+        "reparseSuccess": "Menü değiştirildi.",
+        "reparseFailed": "Değiştirme başarısız.",
+        "reparsing": "Değiştiriliyor…",
+        "reparseConfirm": "Menüyü değiştir",
+        "cancel": "İptal",
+        "scrapeAuto": "Otomatik tara",
+        "scraping": "Taranıyor…",
+        "scrapeSuccess": "{count, plural, one {# ürün bulundu.} other {# ürün bulundu.}}",
+        "scrapeFoundItems": "{count, plural, one {# ürün tespit edildi — yapıştırılan metin yerine kullanılacak.} other {# ürün tespit edildi — yapıştırılan metin yerine kullanılacak.}}",
+        "scrapeClear": "Taranan menüyü kaldır"
+      },
+      "editor": {
+        "title": "Önizleme ve hızlı düzenleme",
+        "itemCount": "{count, plural, one {# ürün} other {# ürün}}",
+        "emptyMenu": "Ürün bulunamadı.",
+        "emptyCategory": "Bu kategoride ürün yok.",
+        "saveChanges": "Değişiklikleri kaydet",
+        "saving": "Kaydediliyor…",
+        "saveSuccess": "Menü güncellendi.",
+        "saveFailed": "Kaydetme başarısız.",
+        "inStockToggle": "Stokta",
+        "removeItem": "Bu ürünü kaldır",
+        "nameLabel": "Ad",
+        "currencyLabel": "Para birimi",
+        "commissionLabel": "Tahmini komisyon (%)",
+        "assumedOrdersLabel": "Aylık sipariş",
+        "addressLabel": "Adres / şehir",
+        "addressHint": "İsteğe bağlı",
+        "notesLabel": "Dahili notlar",
+        "notesPlaceholder": "Ekip için notlar (adaya görünmez)",
+        "saveMeta": "Kaydet",
+        "metaSaveSuccess": "Bilgiler güncellendi.",
+        "metaSaveFailed": "Kaydetme başarısız."
+      },
+      "audit": {
+        "eyebrow": "Satış argümanı",
+        "title": "Web sitesi denetimi",
+        "description": "Adayın mevcut çevrimiçi varlığının hızlı analizi — pitch'te yeniden kullanılabilir.",
+        "urlLabel": "Denetlenecek URL",
+        "urlPlaceholder": "https://www.lerestaurant.com",
+        "run": "Denetimi başlat",
+        "rerun": "Denetimi yeniden başlat",
+        "running": "Analiz ediliyor…",
+        "scoreBadge": "{score}/100 — {grade}",
+        "lastGenerated": "Son denetim: {date}",
+        "unreachable": "Bu siteye ulaşılamıyor, kazımaya kapalı ya da bir hatayla yanıt verdi — bu da başlı başına bir satış argümanı.",
+        "checks": {
+          "https": "Güvenli bağlantı (HTTPS)",
+          "speed": "Hızlı yükleme süresi",
+          "mobileViewport": "Mobil için optimize edilmiş",
+          "seoBasics": "Sayfa başlığı ve açıklaması mevcut",
+          "onlineMenu": "Çevrimiçi görüntülenebilir menü",
+          "onlineOrdering": "Çevrimiçi sipariş mevcut",
+          "onlineReservation": "Çevrimiçi rezervasyon mevcut",
+          "clickablePhone": "Tıklanabilir telefon numarası",
+          "socialLinks": "Sosyal medya bağlantıları"
+        }
+      },
+      "outbound": {
+        "linksTitle": "Oluşturulan bağlantılar",
+        "linkCopied": "Bağlantı kopyalandı.",
+        "copyFailed": "Kopyalanamadı — manuel olarak kopyalayın.",
+        "copyLink": "Bağlantıyı kopyala",
+        "openDemo": "Demoyu aç",
+        "noLinkYet": "Aday oluşturulduktan sonra demo bağlantısı burada görünecek.",
+        "pitchTitle": "Yaklaşım metni",
+        "pitchHint": "Restoranın gerçek verileriyle önceden doldurulmuştur — göndermeden önce düzenlenebilir.",
+        "pitchCopied": "Mesaj kopyalandı.",
+        "copyPitch": "Metni kopyala",
+        "sendEmail": "E-posta ile gönder",
+        "emailSubject": "{restaurantName} için doğrudan sipariş portalınız",
+        "marginTitle": "Hızlı simülasyon",
+        "avgOrderValue": "Tahmini ortalama sepet",
+        "assumedOrders": "Aylık sipariş (tahmini)",
+        "monthlyLoss": "Tahmini aylık tasarruf",
+        "statusTitle": "Aday durumu",
+        "viewCount": "Demo {count, plural, one {# görüntülemesi} other {# görüntülemesi}} var.",
+        "genericItem": "yemeklerinizden biri",
+        "pitchTemplate": "Merhaba {restaurantName}, {itemPrice} fiyatındaki {itemName} için her teslimat siparişinde yaklaşık {commission} komisyon ödüyorsunuz. %0 komisyonlu doğrudan sipariş portalınızı hazırladım: {demoUrl}"
+      }
+    },
     "restaurants": {
       "pageTitle": "Restoranlar",
       "countDescription": "{count, plural, other {Platformda # işletme.}}",
@@ -772,6 +920,67 @@
       "replySuccess": "Yanıt gönderildi.",
       "replyFailed": "Gönderim başarısız oldu.",
       "emptyState": "Henüz destek talebi yok."
+    }
+  },
+  "demo": {
+    "poweredBy": "Minerva-Flow tarafından desteklenmektedir",
+    "previewBadge": "Demo önizlemesi",
+    "savingsBannerPrefix": "Bu sizin menünüz, bizim altyapımızda. Teslimat komisyonlarında ayda yaklaşık",
+    "savingsBannerSuffix": "kaybediyorsunuz — bu kaybı burada durdurun.",
+    "outOfStock": "Tükendi",
+    "contactCta": "Bize ulaşın",
+    "footerNote": "Bu sayfa, satış amaçlı oluşturulmuş özel bir demodur. Burada hiçbir sipariş işlenmez.",
+    "noMenu": {
+      "bannerText": "{restaurantName} henüz bir doğrudan sipariş portalına sahip değil — sizin için ne yapabileceğimiz burada.",
+      "title": "Sizin için ne yapabiliriz",
+      "body": "{restaurantName} için çevrimiçi bir menü bulamadık — ancak sipariş alıyorsanız (telefon, sosyal medya, teslimat uygulaması), büyük olasılıkla çoğu bağımsız restoran gibi aynı kaybı yaşıyorsunuz: her siparişte %20-30 komisyon ve doğrudan satış yapabileceğiniz kendi bir portalınızın olmaması.",
+      "steps": [
+        "Minerva-Flow doğrudan sipariş portalınızı kendi renklerinizle yapılandırıyoruz.",
+        "Menü, fotoğraflar, fiyatlar — sizinle birlikte kuruyoruz, yeni bir aracı tek başınıza öğrenmenize gerek kalmadan.",
+        "Her doğrudan siparişin %100'ünü elinizde tutarsınız ve Minerva ekosisteminin geri kalanı otomatik olarak devreye girer."
+      ],
+      "ctaIntro": "Burada karar vermeniz gereken bir fiyat yok — başlamanın sadece iki basit yolu var:",
+      "bookingCta": "Çevrimiçi randevu alın"
+    },
+    "solution": {
+      "title": "Bu kaybı nasıl durdurursunuz",
+      "body": "Teslimat uygulamaları üzerinden verilen her sipariş, platforma %20-30 komisyon öder. Doğrudan sipariş portalı bu parayı geri kazandırır — menünüzü, fiyatlarınızı veya mutfağınızı değiştirmeden.",
+      "steps": [
+        "Minerva-Flow doğrudan sipariş portalınızı etkinleştiriyoruz — kendi renklerinizle, bir gün içinde hazır.",
+        "Google işletme sayfanızı ve sosyal medyanızı Uber Eats veya DoorDash yerine bu bağlantıya yönlendiriyoruz.",
+        "Her doğrudan siparişte %0 komisyon — ve ekosistemin geri kalanı (finans, ekip, envanter) otomatik olarak devreye giriyor."
+      ],
+      "cta": "Randevu alın"
+    },
+    "ecosystem": {
+      "title": "Minerva-Flow sizin için ne yapar",
+      "intro": "Bu sipariş portalı sadece bir başlangıç. Sizin gibi bir restoran için kısaca önerdiklerimiz:",
+      "items": {
+        "overview": {
+          "title": "Genel Bakış",
+          "body": "Restoranınızı tek bakışta yönetmek için tek bir gösterge paneli."
+        },
+        "assistant": {
+          "title": "Flow AI",
+          "body": "Rakamlarınız hakkındaki sorularınızı basit bir dille yanıtlayan bir yapay zeka asistanı."
+        },
+        "finance": {
+          "title": "Finans & Eşik",
+          "body": "Başabaş noktanız her gün otomatik olarak hesaplanır."
+        },
+        "commandes": {
+          "title": "Siparişler & Satışlar",
+          "body": "Doğrudan teslimat dahil tüm siparişleriniz tek bir yerde."
+        },
+        "collaborateurs": {
+          "title": "Ekip & Çalışanlar",
+          "body": "Excel tablosu olmadan vardiyalar, giriş-çıkış takibi ve bordro."
+        },
+        "inventaire": {
+          "title": "Envanter & Stoklar",
+          "body": "Stok tükenmeden önce otomatik uyarılar."
+        }
+      }
     }
   },
   "portal": {
