@@ -10,6 +10,7 @@ import { MenuImageUpload } from "@/components/menu/MenuImageUpload";
 import { formatCurrency } from "@/lib/utils";
 import { notifyError } from "@/lib/notify-error";
 import { useApp } from "@/lib/app-context";
+import { usePresenceDetail } from "@/lib/presence/context";
 import { updateMenuItemAction, deleteMenuItemAction } from "@/app/[locale]/(app)/menu/actions";
 import type { MenuItem, InventoryItem, RecipeItem } from "@/lib/types";
 import { ArrowLeft, ArrowRight, ChefHat, EyeOff, Eye, Trash2, DollarSign, TrendingUp, ShoppingBag } from "lucide-react";
@@ -36,6 +37,8 @@ export function MenuItemDetailView({
   const [item, setItem] = useState(initialItem);
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  usePresenceDetail(`Plat : ${item.name}`);
 
   const marginPct = item.price > 0 ? (item.price - item.foodCost) / item.price : 0;
   const inventoryById = new Map(inventoryItems.map((i) => [i.id, i]));

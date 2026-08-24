@@ -25,6 +25,7 @@ import type { Notification } from "@/lib/data/notifications";
 import type { Alert, AlertSeverity } from "@/lib/types";
 import { PushNotificationToggle } from "@/components/pwa/PushNotificationToggle";
 import { SearchDialog } from "@/components/shell/SearchDialog";
+import { TeamPresenceStack } from "@/components/shell/TeamPresenceStack";
 import { DemoRoleSwitcher } from "@/components/demo/DemoRoleSwitcher";
 import { isDemoAccount } from "@/lib/demo";
 
@@ -434,6 +435,7 @@ function TopbarSearchTrigger() {
 export function TopbarActions() {
   return (
     <div className="flex items-center gap-3">
+      <TeamPresenceStack />
       <TopbarSearchTrigger />
       <NotificationBell />
       <div className="h-6 w-px bg-mv-border" />

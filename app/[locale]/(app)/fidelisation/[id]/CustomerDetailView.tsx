@@ -22,6 +22,7 @@ import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
 import { getLoyaltyTier, getVisitBonusMultiplier, loyaltyTierLabel, loyaltyTierOrder, type LoyaltyTierThresholds } from "@/lib/loyalty-tiers";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
+import { usePresenceDetail } from "@/lib/presence/context";
 import { notifyError } from "@/lib/notify-error";
 import { logVisitAction, redeemRewardAction, sendPortalLinkAction, deleteCustomerAction } from "@/app/[locale]/(app)/fidelisation/actions";
 import type { Customer, LoyaltyReward, LoyaltyTransactionType } from "@/lib/types";
@@ -52,6 +53,9 @@ export function CustomerDetailView({
   const canCreate = role === "owner" || role === "manager" || role === "staff";
 
   const [customer, setCustomer] = useState(initialCustomer);
+
+  usePresenceDetail(`Client : ${customer.name}`);
+
   const [visitOpen, setVisitOpen] = useState(false);
   const [visitAmount, setVisitAmount] = useState("");
   const [sendingPortalLink, setSendingPortalLink] = useState(false);
