@@ -127,7 +127,8 @@
     "searchTypeCustomer": "Clients",
     "searchTypeMenuItem": "Menu",
     "searchTypeInventoryItem": "Inventaire",
-    "searchTypeOrder": "Commandes"
+    "searchTypeOrder": "Commandes",
+    "searchSuggestedHeading": "Pages suggérées"
   },
   "auth": {
     "login": {

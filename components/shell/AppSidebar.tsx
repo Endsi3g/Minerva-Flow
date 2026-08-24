@@ -60,21 +60,21 @@ import { LocaleSwitcher } from "./LocaleSwitcher";
 const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const;
 const SIDEBAR_WIDTH = 256;
 
-type NavItem = {
+export type NavItem = {
   key: string;
   href: string;
   icon: LucideIcon;
   roles: Role[];
 };
 
-const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
+export const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
 // 1a. LTV core — the ecosystem that gets a customer back in the door
 // (menu profitability, retention/loyalty/referral). Owner/manager land here
 // first; staff/consultant see it merged flat with the operational tools
 // below, since they need day-to-day access to Commandes/Collaborateurs etc.
 // without an extra click.
-const ltvCoreNavItems: NavItem[] = [
+export const ltvCoreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
   { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
@@ -83,7 +83,7 @@ const ltvCoreNavItems: NavItem[] = [
 
 // 1b. Day-to-day operational tools — still top-level for staff/consultant,
 // collapsed under "Gestion quotidienne" for owner/manager (see AppSidebar()).
-const operationalToolsItems: NavItem[] = [
+export const operationalToolsItems: NavItem[] = [
   { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
   { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
   { key: "collaborateurs", href: "/collaborateurs", icon: Users, roles: allRoles },
@@ -93,7 +93,7 @@ const operationalToolsItems: NavItem[] = [
 const coreNavItems: NavItem[] = [...ltvCoreNavItems, ...operationalToolsItems];
 
 // 2. Opérations & Équipe
-const operationsItems: NavItem[] = [
+export const operationsItems: NavItem[] = [
   { key: "horaire", href: "/horaire", icon: CalendarDays, roles: allRoles },
   { key: "fournisseurs", href: "/fournisseurs", icon: Truck, roles: ["owner", "manager"] },
   { key: "reservations", href: "/reservations", icon: CalendarClock, roles: allRoles },
@@ -103,13 +103,13 @@ const operationsItems: NavItem[] = [
 
 // 3a. LTV-side analytics — surfaced prominently for owner/manager (see
 // AppSidebar()), not buried inside the generic analytics dropdown below.
-const ltvAnalyticsItems: NavItem[] = [
+export const ltvAnalyticsItems: NavItem[] = [
   { key: "franchise", href: "/franchise", icon: Building2, roles: ["owner", "manager"] },
   { key: "impact", href: "/impact", icon: TrendingUp, roles: ["owner", "manager"] },
 ];
 
 // 3b. Performance & Analytics — operational reporting, not LTV-specific.
-const operationalAnalyticsItems: NavItem[] = [
+export const operationalAnalyticsItems: NavItem[] = [
   { key: "days", href: "/days", icon: BarChart3, roles: allRoles },
   { key: "reports", href: "/reports", icon: FileText, roles: allRoles },
   { key: "maps", href: "/maps", icon: MapIcon, roles: allRoles },
@@ -122,7 +122,7 @@ const analyticsItems: NavItem[] = [...ltvAnalyticsItems, ...operationalAnalytics
 const FAVORITES_STORAGE_KEY = "mv-sidebar-favorites";
 
 // 4. Sub settings & help items (with Intégrations inclus)
-const settingsGroupItems: NavItem[] = [
+export const settingsGroupItems: NavItem[] = [
   { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
   { key: "billing", href: "/billing", icon: CreditCard, roles: ["owner"] },
   { key: "guide", href: "/guide", icon: BookOpen, roles: allRoles },

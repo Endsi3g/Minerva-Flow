@@ -127,7 +127,8 @@
     "searchTypeCustomer": "Müşteriler",
     "searchTypeMenuItem": "Menü",
     "searchTypeInventoryItem": "Envanter",
-    "searchTypeOrder": "Siparişler"
+    "searchTypeOrder": "Siparişler",
+    "searchSuggestedHeading": "Önerilen sayfalar"
   },
   "auth": {
     "login": {

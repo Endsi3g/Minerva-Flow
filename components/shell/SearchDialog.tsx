@@ -12,20 +12,39 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { searchEverythingAction, type SearchResult } from "@/app/[locale]/(app)/search-actions";
+import { navItemsForRole } from "@/lib/nav-items";
+import { useApp } from "@/lib/app-context";
 import { Search, Navigation, Megaphone, Users, FolderKanban, LifeBuoy, Heart, UtensilsCrossed, PackageSearch, ClipboardList } from "lucide-react";
 
 interface SearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   restaurantId: string | null;
+  /** Only one instance should listen globally — set true on the topbar's instance, leave false on the sidebar's. */
+  enableGlobalShortcut?: boolean;
 }
 
-export function SearchDialog({ open, onOpenChange, restaurantId }: SearchDialogProps) {
+export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalShortcut }: SearchDialogProps) {
   const t = useTranslations("shell");
   const router = useRouter();
+  const { role, sidebarPermissions } = useApp();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isPending, startTransition] = useTransition();
+
+  const suggestedItems = navItemsForRole(role, sidebarPermissions);
+
+  useEffect(() => {
+    if (!enableGlobalShortcut) return;
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        onOpenChange(!open);
+      }
+    };
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, [enableGlobalShortcut, open, onOpenChange]);
 
   useEffect(() => {
     if (!open) {
@@ -118,9 +137,22 @@ export function SearchDialog({ open, onOpenChange, restaurantId }: SearchDialogP
             </div>
           )}
           {!query && (
-            <div className="py-8 text-center text-[13px] text-mv-ink-faint">
-              {t("searchPrompt")}
-            </div>
+            <CommandGroup heading={t("searchSuggestedHeading")} className="text-mv-ink-faint">
+              {suggestedItems.map((item) => (
+                <CommandItem
+                  key={item.href}
+                  value={item.title + " " + item.subtitle}
+                  onSelect={() => handleSelect(item.href)}
+                  className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium text-mv-ink-soft hover:bg-mv-ink/[0.05] hover:text-mv-ink cursor-pointer transition-colors"
+                >
+                  <Navigation className="h-4 w-4 text-mv-ink-faint shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="truncate text-mv-ink font-semibold">{item.title}</span>
+                    <span className="truncate text-[11px] text-mv-ink-faint">{item.subtitle}</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
           )}
 
           {Object.entries(grouped).map(([type, items]) => {

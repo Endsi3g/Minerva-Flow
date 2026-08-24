@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/Badge";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { ChevronDown, LogOut, User, Bell, Gift, Settings } from "lucide-react";
+import { ChevronDown, LogOut, User, Bell, Gift, Settings, Search } from "lucide-react";
 import { ReferralModal } from "@/components/chat/ReferralModal";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -24,7 +24,7 @@ import {
 import type { Notification } from "@/lib/data/notifications";
 import type { Alert, AlertSeverity } from "@/lib/types";
 import { PushNotificationToggle } from "@/components/pwa/PushNotificationToggle";
-import { GlobalSearchModal } from "@/components/shell/GlobalSearchModal";
+import { SearchDialog } from "@/components/shell/SearchDialog";
 import { DemoRoleSwitcher } from "@/components/demo/DemoRoleSwitcher";
 import { isDemoAccount } from "@/lib/demo";
 
@@ -408,10 +408,33 @@ function NotificationBell() {
   );
 }
 
+function TopbarSearchTrigger() {
+  const { restaurantId } = useApp();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Rechercher dans l'application (⌘K)"
+        className="flex items-center gap-2.5 rounded-xl border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] text-mv-ink-soft hover:border-mv-green/40 hover:bg-mv-cream-soft transition-all shadow-mv-xs"
+      >
+        <Search size={14} className="text-mv-ink-faint" />
+        <span className="hidden sm:inline font-normal">Rechercher un outil, rapport...</span>
+        <span className="sm:hidden font-normal">Rechercher</span>
+        <kbd className="hidden sm:inline-flex h-5 items-center gap-0.5 rounded border border-mv-border-soft bg-mv-cream px-1.5 text-[10px] font-medium text-mv-ink-faint">
+          <span className="text-[11px]">⌘</span>K
+        </kbd>
+      </button>
+      <SearchDialog open={open} onOpenChange={setOpen} restaurantId={restaurantId} enableGlobalShortcut />
+    </>
+  );
+}
+
 export function TopbarActions() {
   return (
     <div className="flex items-center gap-3">
-      <GlobalSearchModal />
+      <TopbarSearchTrigger />
       <NotificationBell />
       <div className="h-6 w-px bg-mv-border" />
       <UserMenu />

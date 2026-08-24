@@ -8,6 +8,7 @@ import { getCustomers } from "@/lib/data/customers";
 import { getMenuItems } from "@/lib/data/menu";
 import { getInventoryItems } from "@/lib/data/inventory";
 import { getOrdersForDay } from "@/lib/data/orders";
+import { NAV_ITEMS } from "@/lib/nav-items";
 
 export type SearchResult = {
   id: string;
@@ -34,34 +35,10 @@ export async function searchEverythingAction(
   const normalizedQuery = query.toLowerCase().trim();
   const results: SearchResult[] = [];
 
-  // 1. Search Navigation
-  const navigationItems = [
-    { title: "Overview", subtitle: "Tableau de bord principal", href: "/overview" },
-    { title: "Flow AI", subtitle: "Assistant IA conversationnel", href: "/assistant" },
-    { title: "Programmes", subtitle: "Gestion des programmes de fidélité et d'opérations", href: "/programs" },
-    { title: "Journées", subtitle: "Suivi des performances journalières", href: "/days" },
-    { title: "Collaborateurs", subtitle: "Gestion de l'équipe et des permissions", href: "/collaborateurs" },
-    { title: "Employés", subtitle: "Liste des employés et revues de performance", href: "/employees" },
-    { title: "Campagnes", subtitle: "Suivi des campagnes marketing", href: "/campaigns" },
-    { title: "Cartes", subtitle: "Visualisation des cartes et zones de livraison", href: "/maps" },
-    { title: "Réservations", subtitle: "Réservations et assignation des tables", href: "/reservations" },
-    { title: "Horaire", subtitle: "Planification des quarts de l'équipe", href: "/horaire" },
-    { title: "Fournisseurs", subtitle: "Commandes et répertoire de fournisseurs", href: "/fournisseurs" },
-    { title: "Fidélisation", subtitle: "Fiches clients, visites et points de fidélité", href: "/fidelisation" },
-    { title: "Menu", subtitle: "Ingénierie de menu et rentabilité par plat", href: "/menu" },
-    { title: "Inventaire", subtitle: "Quantités en main et suivi du gaspillage", href: "/inventaire" },
-    { title: "Commandes", subtitle: "File de commandes en ligne et cuisine", href: "/commandes" },
-    { title: "Finance", subtitle: "Analyse des transactions et revenus", href: "/finance" },
-    { title: "Dépenses", subtitle: "Toutes vos sorties d'argent, en détail", href: "/depenses" },
-    { title: "Données", subtitle: "Statistiques clés de l'application", href: "/data" },
-    { title: "Paramètres", subtitle: "Configuration de la succursale", href: "/settings" },
-    { title: "Facturation", subtitle: "Gestion de l'abonnement et de la facturation", href: "/billing" },
-    { title: "Guide", subtitle: "Centre d'aide et documentation", href: "/guide" },
-    { title: "Support", subtitle: "Tickets de support client", href: "/support" },
-    { title: "Nouveautés", subtitle: "Changelog et nouveautés", href: "/changelog" },
-  ];
-
-  for (const item of navigationItems) {
+  // 1. Search Navigation — NAV_ITEMS is the same canonical list SearchDialog
+  // shows as suggestions, so results here never drift from what the app
+  // actually has (this used to be its own separately-hardcoded, stale copy).
+  for (const item of NAV_ITEMS) {
     if (
       item.title.toLowerCase().includes(normalizedQuery) ||
       item.subtitle.toLowerCase().includes(normalizedQuery)
