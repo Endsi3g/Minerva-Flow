@@ -8,6 +8,7 @@ import {
 } from "@/lib/data/restaurants";
 import { getConnections, createConnection } from "@/lib/data/finance";
 import { getAlertRules, upsertAlertRule } from "@/lib/data/alerts";
+import { getMySessions, revokeSession, type DeviceSession } from "@/lib/data/sessions";
 import { createClient } from "@/lib/supabase/server";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { isGooglePlacesConfigured } from "@/lib/google/config";
@@ -87,4 +88,14 @@ export async function upsertAlertRuleAction(
   const rule = await upsertAlertRule(restaurantId, type, patch);
   if (rule) revalidatePath("/settings");
   return rule;
+}
+
+export async function getMySessionsAction(): Promise<DeviceSession[]> {
+  return getMySessions();
+}
+
+export async function revokeSessionAction(sessionId: string): Promise<boolean> {
+  const ok = await revokeSession(sessionId);
+  if (ok) revalidatePath("/settings");
+  return ok;
 }

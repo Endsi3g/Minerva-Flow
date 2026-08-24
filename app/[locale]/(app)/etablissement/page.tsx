@@ -5,6 +5,7 @@ import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Textarea } from "@/components/minerva/FormField";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { GooglePlacesSearch } from "@/components/places/GooglePlacesSearch";
 import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import {
@@ -34,6 +35,7 @@ type RestaurantFormValues = {
   lat?: number;
   lng?: number;
   googlePlaceId?: string;
+  serviceModel: "restaurant" | "cafe" | "hybrid";
 };
 
 const emptyForm: RestaurantFormValues = {
@@ -48,6 +50,7 @@ const emptyForm: RestaurantFormValues = {
   description: "",
   phone: "",
   openingHours: {},
+  serviceModel: "restaurant",
 };
 
 function restaurantToForm(r: Restaurant): RestaurantFormValues {
@@ -63,8 +66,15 @@ function restaurantToForm(r: Restaurant): RestaurantFormValues {
     description: r.description ?? "",
     phone: r.phone ?? "",
     openingHours: r.openingHours ?? {},
+    serviceModel: (r.serviceModel as "restaurant" | "cafe" | "hybrid" | undefined) ?? "restaurant",
   };
 }
+
+const SERVICE_MODEL_LABEL: Record<"restaurant" | "cafe" | "hybrid", string> = {
+  restaurant: "Restaurant",
+  cafe: "Café",
+  hybrid: "Hybride (café-resto)",
+};
 
 const DAY_LABELS: Record<number, string> = {
   1: "Lundi",
@@ -176,6 +186,26 @@ function RestaurantFormFields({
           />
         </Field>
       </div>
+      <Field
+        label="Type d'établissement"
+        hint="Ajuste automatiquement les seuils par défaut (panier moyen, rentabilité, fenêtre d'inactivité fidélité) à votre modèle d'affaires."
+      >
+        <Select
+          value={values.serviceModel}
+          onValueChange={(v) => onChange({ serviceModel: v as "restaurant" | "cafe" | "hybrid" })}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Sélectionner un type">
+              {(v: string | null) => (v ? SERVICE_MODEL_LABEL[v as "restaurant" | "cafe" | "hybrid"] : null)}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="restaurant">{SERVICE_MODEL_LABEL.restaurant}</SelectItem>
+            <SelectItem value="cafe">{SERVICE_MODEL_LABEL.cafe}</SelectItem>
+            <SelectItem value="hybrid">{SERVICE_MODEL_LABEL.hybrid}</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Adresse">
           <Input name="address" value={values.address} onChange={(e) => onChange({ address: e.target.value })} />

@@ -567,7 +567,7 @@ function transactionTemplates(dense, categories, programIds, accounts) {
     },
     {
       description: `Virement fournisseur — ${pick(QC_SUPPLIERS)}`,
-      amount: -randInt(400, 900),
+      amount: randInt(400, 900),
       direction: "out",
       category: "Fournisseurs",
       source_account: accounts.banque,
@@ -575,7 +575,7 @@ function transactionTemplates(dense, categories, programIds, accounts) {
     },
     {
       description: "Salaires équipe — acompte quinzaine",
-      amount: -randInt(6500, 11000),
+      amount: randInt(6500, 11000),
       direction: "out",
       category: "Personnel",
       source_account: "Paie",
@@ -583,7 +583,7 @@ function transactionTemplates(dense, categories, programIds, accounts) {
     },
     {
       description: "Loyer commercial — mensuel",
-      amount: -randInt(2800, 4200),
+      amount: randInt(2800, 4200),
       direction: "out",
       category: "Loyer & charges",
       source_account: accounts.banque,
@@ -591,7 +591,7 @@ function transactionTemplates(dense, categories, programIds, accounts) {
     },
     {
       description: "Campagne Instagram — terrasse d'été",
-      amount: -randInt(150, 400),
+      amount: randInt(150, 400),
       direction: "out",
       category: "Marketing",
       source_account: "Carte pro Visa",
@@ -607,7 +607,7 @@ function transactionTemplates(dense, categories, programIds, accounts) {
     },
     {
       description: "Abonnement logiciel de caisse",
-      amount: -randInt(45, 120),
+      amount: randInt(45, 120),
       direction: "out",
       category: "Logiciels",
       source_account: "Carte pro Visa",
@@ -615,7 +615,7 @@ function transactionTemplates(dense, categories, programIds, accounts) {
     },
     {
       description: "Facture Hydro-Québec",
-      amount: -randInt(280, 520),
+      amount: randInt(280, 520),
       direction: "out",
       category: "Utilities",
       source_account: accounts.banque,
@@ -623,7 +623,7 @@ function transactionTemplates(dense, categories, programIds, accounts) {
     },
     {
       description: `Virement fournisseur — ${pick(QC_SUPPLIERS)}`,
-      amount: -randInt(300, 650),
+      amount: randInt(300, 650),
       direction: "out",
       category: "Fournisseurs",
       source_account: accounts.banque,
@@ -647,7 +647,7 @@ function transactionTemplates(dense, categories, programIds, accounts) {
     },
     {
       description: "Frais bancaires mensuels",
-      amount: -randInt(25, 60),
+      amount: randInt(25, 60),
       direction: "out",
       category: "Divers",
       source_account: accounts.banque,

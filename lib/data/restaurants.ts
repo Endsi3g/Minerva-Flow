@@ -247,7 +247,20 @@ export type RestaurantInput = {
   loyaltyPointsPerDollar?: number;
   taxRate?: number;
   acceptsTips?: boolean;
+  serviceModel?: "restaurant" | "cafe" | "hybrid";
 };
+
+// A café's average ticket and visit cadence are structurally different from
+// a full-service restaurant's — the generic BREAK_EVEN_DEFAULTS (38.50$/
+// client) and the 21-day retention inactivity threshold are calibrated for
+// a sit-down restaurant and would misrepresent a café's break-even point and
+// flag regulars as "inactive" while they're still visiting normally.
+const CAFE_BREAK_EVEN_DEFAULTS = {
+  fixedCosts: 9500,
+  grossMarginPct: 74,
+  avgBasket: 8.5,
+};
+const CAFE_RETENTION_INACTIVITY_DAYS = 10;
 
 /**
  * Creates a restaurant and immediately makes the current user its owner.
@@ -306,6 +319,8 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
         ?.workspace_id ?? null;
   }
 
+  const isCafe = input.serviceModel === "cafe";
+
   const { data, error } = await supabase
     .from("restaurants")
     .insert({
@@ -324,6 +339,15 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
       opening_hours: input.openingHours || websiteInfo?.openingHours || null,
       google_place_id: input.googlePlaceId || null,
       workspace_id: workspaceId,
+      ...(input.serviceModel ? { service_model: input.serviceModel } : {}),
+      ...(isCafe
+        ? {
+            break_even_fixed_costs: CAFE_BREAK_EVEN_DEFAULTS.fixedCosts,
+            break_even_gross_margin_pct: CAFE_BREAK_EVEN_DEFAULTS.grossMarginPct,
+            break_even_avg_basket: CAFE_BREAK_EVEN_DEFAULTS.avgBasket,
+            retention_inactivity_days: CAFE_RETENTION_INACTIVITY_DAYS,
+          }
+        : {}),
     })
     .select("*")
     .single();
@@ -372,6 +396,7 @@ export async function updateRestaurant(
   if (patch.loyaltyPointsPerDollar !== undefined) dbPatch.loyalty_points_per_dollar = patch.loyaltyPointsPerDollar;
   if (patch.taxRate !== undefined) dbPatch.tax_rate = patch.taxRate;
   if (patch.acceptsTips !== undefined) dbPatch.accepts_tips = patch.acceptsTips;
+  if (patch.serviceModel !== undefined) dbPatch.service_model = patch.serviceModel;
 
   // Explicit coordinates (e.g. a Google Places import, authoritative) take
   // priority and skip re-geocoding entirely.

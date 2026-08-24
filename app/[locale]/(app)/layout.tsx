@@ -3,6 +3,7 @@ import { getLocale } from "next-intl/server";
 import { AppProvider } from "@/lib/app-context";
 import { AppShell } from "@/components/shell/AppShell";
 import { PostHogIdentifier } from "@/components/PostHogIdentifier";
+import { DemoGuideTour } from "@/components/demo/DemoGuideTour";
 import { getAppSessionData } from "@/lib/data/session";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -22,6 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       initialRestaurantId={initialRestaurantId}
     >
       <PostHogIdentifier authUser={authUser} />
+      <DemoGuideTour authUser={authUser} />
       <AppShell>{children}</AppShell>
     </AppProvider>
   );

@@ -1,11 +1,9 @@
 "use client";
 
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, CardHeader } from "@/components/minerva/PageCard";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/minerva/PageCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
-import { Field, Input, Select } from "@/components/minerva/FormField";
+import { Input } from "@/components/minerva/FormField";
 import { Switch } from "@/components/ui/Switch";
 import { useApp } from "@/lib/app-context";
 import { ReferralSettingsTab } from "@/components/chat/ReferralSettingsTab";
@@ -16,19 +14,17 @@ import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
 import { ReservationDeliveryConnectionsCard } from "@/components/minerva/ReservationDeliveryConnectionsCard";
 import { StripeConnectCard } from "@/components/minerva/StripeConnectCard";
 import {
-  getConnectionsAction,
-  createConnectionAction,
   getAlertRulesAction,
   upsertAlertRuleAction,
+  getMySessionsAction,
+  revokeSessionAction,
 } from "@/app/[locale]/(app)/settings/actions";
-import type { AlertRule, Connection, ConnectionStatus, ConnectionType } from "@/lib/types";
+import type { AlertRule } from "@/lib/types";
+import type { DeviceSession } from "@/lib/data/sessions";
+import { ConfirmDestructiveModal } from "@/components/ui/ConfirmDestructiveModal";
+import { Badge } from "@/components/ui/Badge";
+import { AlertBanner } from "@/components/ui/AlertBanner";
 import {
-  Landmark,
-  CreditCard,
-  Bike,
-  Mail,
-  CalendarCheck2,
-  RefreshCw,
   Bell,
   TrendingDown,
   TrendingUp,
@@ -38,38 +34,14 @@ import {
   PackageX,
   UserX,
   Truck,
+  Monitor,
+  Smartphone,
+  Tablet,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
-
-const typeIcon: Record<ConnectionType, typeof Landmark> = {
-  banque: Landmark,
-  pos: CreditCard,
-  livraison: Bike,
-  email: Mail,
-  reservation: CalendarCheck2,
-};
-
-const typeLabel: Record<ConnectionType, string> = {
-  banque: "Banque",
-  pos: "Point de vente",
-  livraison: "Livraison",
-  email: "Email",
-  reservation: "Réservations",
-};
-
-const statusTone: Record<ConnectionStatus, "green" | "red" | "amber"> = {
-  connecte: "green",
-  erreur: "red",
-  attente: "amber",
-};
-
-const statusLabel: Record<ConnectionStatus, string> = {
-  connecte: "Connecté",
-  erreur: "Erreur",
-  attente: "En attente",
-};
+import { formatRelativeTime } from "@/lib/utils";
 
 const ruleIcon: Record<AlertRule["type"], typeof TrendingDown> = {
   revenue_drop: TrendingDown,
@@ -174,121 +146,116 @@ function AlertRulesTab() {
   );
 }
 
-function IntegrationsTab() {
-  const { restaurantId } = useApp();
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newType, setNewType] = useState<ConnectionType>("banque");
-  const [newName, setNewName] = useState("");
-  const [saving, setSaving] = useState(false);
+const deviceIcon: Record<string, typeof Monitor> = {
+  iPhone: Smartphone,
+  "Téléphone Android": Smartphone,
+  iPad: Tablet,
+  "Tablette Android": Tablet,
+};
 
-  useEffect(() => {
-    if (!restaurantId) return;
+function SecurityTab() {
+  const [sessions, setSessions] = useState<DeviceSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [toRevoke, setToRevoke] = useState<DeviceSession | null>(null);
+
+  function load() {
     setLoading(true);
-    getConnectionsAction(restaurantId).then((data) => {
-      setConnections(data);
+    getMySessionsAction().then((data) => {
+      setSessions(data);
       setLoading(false);
     });
-  }, [restaurantId]);
+  }
 
-  async function handleConnect() {
-    if (!newName.trim()) return;
-    setSaving(true);
-    const created = await createConnectionAction(restaurantId, { name: newName.trim(), type: newType });
-    setSaving(false);
-    if (created) {
-      setConnections((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
-      setNewName("");
-      toast.success("Intégration ajoutée.");
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function handleRevoke() {
+    if (!toRevoke) return;
+    const ok = await revokeSessionAction(toRevoke.id);
+    if (ok) {
+      toast.success("Appareil déconnecté.");
+      setSessions((prev) => prev.filter((s) => s.id !== toRevoke.id));
     } else {
-      toast.error("L'ajout de l'intégration a échoué.");
+      toast.error("La déconnexion de cet appareil a échoué.");
     }
+  }
+
+  if (loading) {
+    return <p className="text-[13px] text-mv-ink-faint">Chargement…</p>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <AdPlatformsCard />
-        <GoogleWorkspaceCard />
-        <PosConnectionsCard />
-        <ReservationDeliveryConnectionsCard />
-        <StripeConnectCard />
+      <AlertBanner tone="info" title="Vos appareils connectés">
+        Plusieurs appareils connectés en même temps, c&apos;est normal (téléphone, ordinateur du resto, etc.) — ceci
+        sert surtout à repérer une connexion qui ne vous appartient pas et à la déconnecter. La déconnexion prend
+        effet dans les minutes qui suivent, pas instantanément.
+      </AlertBanner>
+      <div className="space-y-3">
+        {sessions.map((s) => {
+          const Icon = deviceIcon[s.device] ?? Monitor;
+          return (
+            <Card key={s.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-cream-soft text-mv-ink-soft">
+                    <Icon size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-display text-[15px] font-medium text-mv-ink">
+                        {s.device}
+                        {s.browser ? ` — ${s.browser}` : ""}
+                      </p>
+                      {s.isCurrent && (
+                        <Badge tone="green" variant="subtle" size="sm">
+                          Cet appareil
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 text-[12.5px] text-mv-ink-soft">
+                      Dernière activité {formatRelativeTime(s.updatedAt)} · Connecté depuis{" "}
+                      {formatRelativeTime(s.createdAt)}
+                      {s.ip ? ` · ${s.ip}` : ""}
+                    </p>
+                  </div>
+                </div>
+                {!s.isCurrent && (
+                  <button
+                    type="button"
+                    onClick={() => setToRevoke(s)}
+                    className="shrink-0 rounded-lg border border-mv-border px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink-soft transition-colors hover:border-mv-red/30 hover:text-mv-red"
+                  >
+                    Déconnecter
+                  </button>
+                )}
+              </div>
+            </Card>
+          );
+        })}
       </div>
 
-      {loading ? (
-        <p className="text-[13px] text-mv-ink-faint">Chargement…</p>
-      ) : connections.length === 0 ? (
-        <Card>
-          <p className="text-[13px] text-mv-ink-soft">
-            Aucune intégration connectée pour cet établissement.
-          </p>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {connections.map((c) => {
-            const Icon = typeIcon[c.type];
-            return (
-              <Card key={c.id}>
-                <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-mv-cream-soft text-mv-ink-soft">
-                    <Icon size={17} />
-                  </div>
-                  <Badge tone={statusTone[c.status]} dot>
-                    {statusLabel[c.status]}
-                  </Badge>
-                </div>
-                <h3 className="mt-3 font-display text-[15px] font-medium text-mv-ink">{c.name}</h3>
-                <p className="text-[12px] text-mv-ink-faint">
-                  {typeLabel[c.type]} · {c.lastSync}
-                </p>
-                {c.detail && <p className="mt-1.5 text-[12px] text-mv-red">{c.detail}</p>}
-                <div className="mt-4">
-                  {c.status === "erreur" ? (
-                    <Button size="sm" variant="secondary" className="w-full">
-                      <RefreshCw size={13} /> Reconnecter
-                    </Button>
-                  ) : c.status === "attente" ? (
-                    <Button size="sm" className="w-full">
-                      Configurer
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="ghost" className="w-full">
-                      Gérer
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+      <ConfirmDestructiveModal
+        open={Boolean(toRevoke)}
+        onOpenChange={(open) => !open && setToRevoke(null)}
+        title="Déconnecter cet appareil ?"
+        description={`${toRevoke?.device ?? "Cet appareil"}${toRevoke?.browser ? ` — ${toRevoke.browser}` : ""} sera déconnecté de votre compte. Si c'est bien vous, il vous suffira de vous reconnecter.`}
+        actionLabel="Déconnecter"
+        onConfirm={handleRevoke}
+      />
+    </div>
+  );
+}
 
-      <Card>
-        <CardHeader eyebrow="Nouvelle connexion" title="Connecter un service" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Field label="Type de service">
-            <Select value={newType} onChange={(e) => setNewType(e.target.value as ConnectionType)}>
-              <option value="banque">Banque</option>
-              <option value="pos">Point de vente</option>
-              <option value="livraison">Livraison</option>
-              <option value="email">Email</option>
-              <option value="reservation">Réservations</option>
-            </Select>
-          </Field>
-          <Field label="Nom du fournisseur">
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="Ex : Stripe, Square…"
-            />
-          </Field>
-          <div className="flex items-end">
-            <Button className="w-full" onClick={handleConnect} disabled={!newName.trim() || saving}>
-              {saving ? "Ajout…" : "Continuer"}
-            </Button>
-          </div>
-        </div>
-      </Card>
+function IntegrationsTab() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <AdPlatformsCard />
+      <GoogleWorkspaceCard />
+      <PosConnectionsCard />
+      <ReservationDeliveryConnectionsCard />
+      <StripeConnectCard />
     </div>
   );
 }
@@ -327,6 +294,12 @@ export default function SettingsPage() {
           >
             Apparence
           </TabsTrigger>
+          <TabsTrigger
+            value="securite"
+            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
+          >
+            Sécurité
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="integrations">
@@ -343,6 +316,10 @@ export default function SettingsPage() {
 
         <TabsContent value="apparence">
           <AppearanceTab />
+        </TabsContent>
+
+        <TabsContent value="securite">
+          <SecurityTab />
         </TabsContent>
       </Tabs>
     </div>

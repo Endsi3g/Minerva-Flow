@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { HelperTooltip } from "@/components/ui/HelperTooltip";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import type { Customer, LoyaltyReward, LoyaltyShare, LoyaltyTransactionType, ReferralProgram } from "@/lib/types";
@@ -194,6 +195,7 @@ function RetentionSettingsCard({
           className="h-7 w-16 rounded-md border border-mv-border bg-mv-surface px-2 text-center text-[12.5px]"
         />
         jours sans visite. Seuls les clients ayant consenti à recevoir des offres sont ciblés.
+        <HelperTooltip content="Un même client n'est jamais relancé deux fois pour la même chose : anniversaire, décrochage et inactivité sont priorisés dans cet ordre, et un délai minimal (30 jours par défaut) s'applique toujours entre deux relances." />
       </div>
     </Card>
   );
@@ -217,7 +219,12 @@ function LoyaltyTierSettingsCard({
     <Card>
       <CardHeader
         eyebrow="Statut client"
-        title="Paliers de fidélité"
+        title={
+          <span className="flex items-center gap-1.5">
+            Paliers de fidélité
+            <HelperTooltip content="Le seuil correspond à la dépense cumulée à vie du client (total_spent), recalculée automatiquement à chaque visite — aucune attribution manuelle n'est nécessaire." />
+          </span>
+        }
         description="Une progression premium plutôt que des paliers génériques — le palier le plus élevé est le meilleur candidat pour parrainer."
       />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

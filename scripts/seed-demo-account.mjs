@@ -571,15 +571,28 @@ async function seedFinancialTransactions(restaurantId, programs) {
   if (countError) throw countError;
   if (count && count > 0) return;
 
+  // amount est TOUJOURS une magnitude positive — direction porte le signe.
+  // lib/engine/labor-cost.ts (sumLaborCost) et FinanceView (net = totalIn -
+  // totalOut) additionnent amount directement pour direction='out' en
+  // s'attendant à une magnitude positive ; des montants déjà négatifs ici
+  // faisaient gonfler le flux net au lieu de le réduire (bug trouvé en audit
+  // démo — ex: "flux net à 446% des entrées").
+  // Un mélange équilibré entrées/sorties — un compte démo qui perd de
+  // l'argent ce mois-ci est mathématiquement correct mais désastreux pour
+  // un démarchage ; le nombre de lignes "in" doit dépasser les "out" en
+  // volume total, pas juste être présent.
   const findProgram = (name) => programs.find((p) => p.name === name)?.id ?? null;
   const templates = [
     { description: "Encaissement TPE — service soir", amount: randInt(1800, 3600), direction: "in", category: "Ventes en salle", source_account: "Lightspeed POS", program_id: findProgram("Terrasse d'été") },
+    { description: "Encaissement TPE — service midi", amount: randInt(1200, 2400), direction: "in", category: "Ventes en salle", source_account: "Lightspeed POS", program_id: null },
+    { description: "Encaissement TPE — brunch dimanche", amount: randInt(1600, 3000), direction: "in", category: "Ventes en salle", source_account: "Lightspeed POS", program_id: findProgram("Brunch du dimanche") },
     { description: "Uber Eats — règlement hebdomadaire", amount: randInt(400, 900), direction: "in", category: "Livraison (commissions)", source_account: "Uber Eats", program_id: null },
-    { description: "Virement fournisseur — Fromagerie du Terroir", amount: -randInt(400, 900), direction: "out", category: "Fournisseurs", source_account: "Desjardins — Compte pro", program_id: null },
-    { description: "Salaires équipe — acompte quinzaine", amount: -randInt(6500, 11000), direction: "out", category: "Personnel", source_account: "Paie", program_id: null },
-    { description: "Loyer commercial — mensuel", amount: -randInt(2800, 4200), direction: "out", category: "Loyer & charges", source_account: "Desjardins — Compte pro", program_id: null },
-    { description: "Campagne Instagram — terrasse d'été", amount: -randInt(150, 400), direction: "out", category: "Marketing", source_account: "Carte pro Visa", program_id: findProgram("Terrasse d'été") },
-    { description: "Facture Hydro-Québec", amount: -randInt(280, 520), direction: "out", category: "Utilities", source_account: "Desjardins — Compte pro", program_id: null },
+    { description: "DoorDash — règlement hebdomadaire", amount: randInt(300, 700), direction: "in", category: "Livraison (commissions)", source_account: "DoorDash", program_id: null },
+    { description: "Virement fournisseur — Fromagerie du Terroir", amount: randInt(400, 900), direction: "out", category: "Fournisseurs", source_account: "Desjardins — Compte pro", program_id: null },
+    { description: "Salaires équipe — acompte quinzaine", amount: randInt(6500, 11000), direction: "out", category: "Personnel", source_account: "Paie", program_id: null },
+    { description: "Loyer commercial — mensuel", amount: randInt(2800, 4200), direction: "out", category: "Loyer & charges", source_account: "Desjardins — Compte pro", program_id: null },
+    { description: "Campagne Instagram — terrasse d'été", amount: randInt(150, 400), direction: "out", category: "Marketing", source_account: "Carte pro Visa", program_id: findProgram("Terrasse d'été") },
+    { description: "Facture Hydro-Québec", amount: randInt(280, 520), direction: "out", category: "Utilities", source_account: "Desjardins — Compte pro", program_id: null },
   ];
 
   const rows = templates.map((t, i) => ({
@@ -607,9 +620,13 @@ async function seedConnections(restaurantId) {
   if (countError) throw countError;
   if (count && count > 0) return;
 
+  // Pas de ligne "pos" ici — depuis que /settings a une vraie carte POS
+  // (pos_connections, Square/Lightspeed réels), une ligne "pos" fantôme
+  // dans cette table générique contredisait directement le vrai statut
+  // ("Pas encore disponible") avec un faux "Connecté". Banque/livraison
+  // restent, sans équivalent réel contradictoire ailleurs sur /settings.
   const rows = [
     { name: "Desjardins — Compte pro", type: "banque", status: "connecte", last_sync: new Date(Date.now() - 12 * 60 * 1000).toISOString(), detail: null },
-    { name: "Lightspeed POS", type: "pos", status: "connecte", last_sync: new Date(Date.now() - 3 * 60 * 1000).toISOString(), detail: null },
     { name: "Uber Eats", type: "livraison", status: "connecte", last_sync: new Date(Date.now() - 27 * 60 * 1000).toISOString(), detail: null },
   ].map((c) => ({ restaurant_id: restaurantId, ...c }));
 
