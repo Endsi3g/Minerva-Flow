@@ -2,6 +2,38 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.22.0] - 2026-08-24
+
+### 🎯 Impact devient actionnable
+- Relancer un client à risque directement depuis la page Impact, sans attendre la relance automatique du lendemain.
+
+### 🍽️ Pages dédiées par plat + menu dans le portail client
+- Chaque plat a maintenant sa propre page (au lieu d'un panneau) avec navigation carrousel entre les plats.
+- La dérive de marge se limite aux 3 plats les plus urgents.
+- Les clients peuvent parcourir le menu directement depuis leur portail.
+
+### 🖼️ Changelog : captures d'écran et liens cliquables
+- Les entrées du changelog peuvent maintenant inclure une image et des liens `[texte](/page)` cliquables vers une page de l'app.
+
+### 🔔 Relance automatique par paliers de points + bannière mobile corrigée
+- Un client est relancé automatiquement dès qu'il a assez de points pour une récompense, sans attendre son prochain palier de fidélité.
+- La bannière de mise à jour ne s'écrase plus sur mobile.
+
+### 🔎 Recherche unifiée
+- La recherche de la sidebar et celle de la topbar utilisent maintenant le même système et la même liste de pages — fini les résultats différents selon l'endroit où on cherche.
+
+### 👥 Présence d'équipe en temps réel
+- La topbar affiche qui d'autre est connecté en ce moment, avec la page précise que chaque personne consulte.
+
+### 💬 Sondage de fonctionnalités
+- Une carte sur /support permet de voter pour les prochaines fonctionnalités ou de suggérer une idée, envoyée directement à l'équipe.
+
+### 🧭 Pages renommées pour être plus claires
+- 5 pages ont un nom qui décrit mieux ce qu'elles font : Journées → Performance quotidienne, Programmes → Revenus récurrents, Cartes → Carte des établissements, Bibliothèque → Documents, LTV → Résultats fidélisation.
+
+### 🗺️ Correctif : la carte des établissements ne s'affichait plus
+- La carte était invisible (hauteur 0) à cause d'un problème de mise en page — elle s'affiche de nouveau correctement.
+
 ## [v2.21.0] - 2026-08-24
 
 ### 👤 Page client dédiée pour Fidélisation
