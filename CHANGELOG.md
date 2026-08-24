@@ -2,6 +2,25 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.18.0] - 2026-08-24
+
+### 🧭 Sidebar & Aperçu centrés sur le LTV (owner/manager)
+- Pour les propriétaires et gérants, la sidebar affiche désormais une liste condensée (Aperçu, Flow AI, Menu, Fidélisation, Impact LTV, Vue franchise) — les outils opérationnels (Finance, Commandes, Collaborateurs, Inventaire) et les rapports génériques restent accessibles en un clic, mais repliés par défaut au lieu de mélanger contenu LTV et non-LTV dans les mêmes menus. Le staff garde l'accès complet inchangé.
+- **Aperçu** se réoriente autour de l'écosystème LTV pour owner/manager : impact chiffré (revenu incrémental, gain de marge du menu, fréquence de visite), santé du menu (répartition BCG + dérive de marge) et aperçu fidélisation (paliers, clients inactifs, anniversaires à venir) — chacun cliquable vers le détail. Les widgets financiers/opérationnels génériques restent une clic plus loin.
+
+### 💳 Récompenses en libre-service
+- Le client échange ses points depuis son espace client et reçoit un code à montrer en caisse ; le personnel le valide directement depuis Fidélisation. Catalogue de récompenses démo peuplé.
+
+### 📈 Impact LTV & vue franchise
+- Nouvelle page **Impact LTV** chiffrant le gain de marge du menu actif et la fréquence de visite des clients touchés par la rétention vs non touchés, par segmentation plutôt que comparaison arbitraire avant/après.
+- Nouvelle page **Vue franchise** agrégeant cet impact sur plusieurs établissements d'un même workspace.
+
+### 🔗 Menu partageable
+- Partage du menu (générique, sur le menu public) et partage récompensé après une commande confirmée, réutilisant l'infrastructure de parrainage déjà éprouvée.
+
+### ✨ Détails soignés
+- Carte de fidélité visuelle par palier avec barre de progression dans l'espace client, chronologie visuelle des transactions dans la fiche client, micro-interactions de confirmation sur les moments de succès.
+
 ## [v2.17.0] - 2026-08-23
 
 ### 🎯 Repositionnement produit : Menu Engineering & Fidélisation
