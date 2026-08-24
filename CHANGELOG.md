@@ -2,6 +2,24 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.19.0] - 2026-08-24
+
+### 🔄 Bascule de rôle pour le compte démo
+- Nouveau sélecteur dans le menu du compte (démo seulement) pour prévisualiser l'application en propriétaire ou en staff, sans reconnexion — un vrai changement de rôle sur l'établissement démo.
+
+### 🎯 Objectif du jour basé sur les vrais chiffres du client
+- Nouvelle étape d'onboarding « Vos chiffres clés » (type d'établissement, panier moyen, marge brute, coûts fixes) — l'Objectif du jour n'est plus calculé à partir de valeurs génériques, mais des chiffres saisis à l'inscription.
+
+### 🎛️ Gestionnaire de widgets complet
+- Les 10 blocs d'Aperçu (Objectif du jour, Impact LTV, Santé du menu, Fidélisation, etc.) sont maintenant tous individuellement affichables ou masquables.
+
+### 📊 Aperçu en graphiques
+- Les cartes d'impact LTV et de santé du menu/fidélisation affichent maintenant de vrais graphiques (comparaisons à barres, répartitions en donut) plutôt que des chiffres bruts.
+
+### 🛠️ Correctifs
+- Un bug de calcul pouvait faire exploser le ratio de fréquence de visite pour un client tout juste créé (ex. ×360) — corrigé.
+- L'enregistrement des hypothèses de rentabilité pendant l'onboarding pouvait échouer silencieusement pour un tout nouvel utilisateur — corrigé.
+
 ## [v2.18.0] - 2026-08-24
 
 ### 🧭 Sidebar & Aperçu centrés sur le LTV (owner/manager)
