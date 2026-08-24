@@ -14,11 +14,11 @@ import {
 } from "@/lib/loyalty-tiers";
 import { LogoMark } from "@/components/shell/Logo";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import type { Customer, CustomerReferralLink, LoyaltyReward, ReferralProgram, RewardRedemption } from "@/lib/types";
+import type { Customer, CustomerReferralLink, LoyaltyReward, MenuItem, Offer, ReferralProgram, RewardRedemption } from "@/lib/types";
 import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-portal";
 import { getOrCreateReferralLinkAction, updateMyProfileAction, selfRedeemRewardAction } from "./actions";
-import { Copy, Check, Gift, Share2, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Copy, Check, Gift, Share2, Sparkles, ChefHat, Tag } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -307,14 +307,101 @@ function RewardsRedeemCard({
   );
 }
 
+function isOfferLive(offer: Offer, now = Date.now()) {
+  if (!offer.active) return false;
+  if (offer.startsAt && new Date(offer.startsAt).getTime() > now) return false;
+  if (offer.endsAt && new Date(offer.endsAt).getTime() < now) return false;
+  return true;
+}
+
+/**
+ * Read-only browsing — no "commander" button yet. Paying through the
+ * portal needs to land straight in the restaurant's own order/POS system,
+ * which is a separate, bigger integration (see the POS plan); showing a
+ * button that doesn't actually place an order would be worse than not
+ * showing one.
+ */
+function MenuBrowserCard({ menuItems, offers }: { menuItems: MenuItem[]; offers: Offer[] }) {
+  const t = useTranslations("portal.view");
+  const liveOffers = useMemo(() => offers.filter((o) => isOfferLive(o)), [offers]);
+
+  const byCategory = useMemo(() => {
+    const map = new Map<string, MenuItem[]>();
+    for (const item of menuItems.filter((i) => i.active)) {
+      const key = item.category ?? t("menuUncategorized");
+      const list = map.get(key) ?? [];
+      list.push(item);
+      map.set(key, list);
+    }
+    return map;
+  }, [menuItems, t]);
+
+  if (menuItems.filter((i) => i.active).length === 0) return null;
+
+  return (
+    <div className="mb-6">
+      <Card>
+        <CardHeader title={t("menuTitle")} description={t("menuDescription")} />
+
+        {liveOffers.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {liveOffers.map((offer) => (
+              <div key={offer.id} className="flex items-start gap-2.5 rounded-lg border border-mv-green/25 bg-mv-green-tint px-3 py-2.5">
+                <Tag size={14} className="mt-0.5 shrink-0 text-mv-green-dark" />
+                <div className="min-w-0">
+                  <p className="text-[12.5px] font-semibold text-mv-green-darker">{offer.title}</p>
+                  {offer.description && <p className="text-[11.5px] text-mv-green-dark">{offer.description}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="space-y-5">
+          {Array.from(byCategory.entries()).map(([category, items]) => (
+            <div key={category}>
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">{category}</p>
+              <div className="space-y-2">
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-center gap-3 rounded-lg bg-mv-cream-soft p-2.5">
+                    {item.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+                    ) : (
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-mv-ink/5 text-mv-ink-faint">
+                        <ChefHat size={16} />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-medium text-mv-ink">{item.name}</p>
+                      {item.description && (
+                        <p className="truncate text-[11.5px] text-mv-ink-faint">{item.description}</p>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-[13px] font-semibold text-mv-ink">{formatCurrency(item.price)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export function PortalView({
   customer,
   data,
   loyaltyTierThresholds,
+  menuItems,
+  offers,
 }: {
   customer: Customer;
   data: PortalData;
   loyaltyTierThresholds: LoyaltyTierThresholds;
+  menuItems: MenuItem[];
+  offers: Offer[];
 }) {
   const t = useTranslations("portal.view");
   const [programs, setPrograms] = useState<PortalReferralProgress[]>(data.programs);
@@ -351,6 +438,8 @@ export function PortalView({
           totalSpent={customer.totalSpent}
           thresholds={loyaltyTierThresholds}
         />
+
+        <MenuBrowserCard menuItems={menuItems} offers={offers} />
 
         <div className="mb-6">
           <RewardsRedeemCard

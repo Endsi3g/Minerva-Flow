@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -412,9 +413,11 @@ function MenuItemRow({
   return (
     <div className="rounded-lg border border-mv-border-soft p-3">
       <div className="flex items-start justify-between gap-2">
-        <div>
+        <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-[13.5px] font-semibold text-mv-ink">
-            {item.name}
+            <Link href={`/menu/${item.id}`} className="truncate hover:underline">
+              {item.name}
+            </Link>
             {!item.active && <Badge tone="neutral">Retiré du menu</Badge>}
           </p>
           {item.category && <p className="text-[11.5px] text-mv-ink-faint">{item.category}</p>}
@@ -851,7 +854,10 @@ function MarginDriftPanel({
   onUpdated: (item: MenuItem) => void;
 }) {
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   if (items.length === 0) return null;
+
+  const visibleItems = showAll ? items : items.slice(0, 3);
 
   async function handleDisable(itemId: string) {
     if (!restaurantId) return;
@@ -879,7 +885,7 @@ function MarginDriftPanel({
       className="mb-6"
     >
       <div className="space-y-1.5">
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <div key={item.id} className="flex items-center justify-between gap-2">
             <span className="font-medium text-mv-ink">{item.name}</span>
             <div className="flex items-center gap-2.5">
@@ -900,6 +906,14 @@ function MarginDriftPanel({
           </div>
         ))}
       </div>
+      {items.length > 3 && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          className="mt-2.5 text-[12px] font-semibold text-mv-amber hover:underline"
+        >
+          {showAll ? "Afficher moins" : `Voir les ${items.length - 3} autre(s)`}
+        </button>
+      )}
     </AlertBanner>
   );
 }

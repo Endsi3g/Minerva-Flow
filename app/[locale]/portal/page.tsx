@@ -2,6 +2,8 @@ import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCustomersForUser, getPortalData } from "@/lib/data/customer-portal";
 import { getRestaurant } from "@/lib/data/restaurants";
+import { getMenuItems } from "@/lib/data/menu";
+import { getOffersForRestaurant } from "@/lib/data/offers";
 import { LogoMark } from "@/components/shell/Logo";
 import { PortalView } from "./PortalView";
 import { Link } from "@/i18n/navigation";
@@ -77,10 +79,23 @@ export default async function PortalPage({
     );
   }
 
-  const [data, restaurant] = await Promise.all([getPortalData(selected), getRestaurant(selected.restaurantId)]);
+  const [data, restaurant, menuItems, offers] = await Promise.all([
+    getPortalData(selected),
+    getRestaurant(selected.restaurantId),
+    getMenuItems(selected.restaurantId),
+    getOffersForRestaurant(selected.restaurantId),
+  ]);
   const loyaltyTierThresholds = {
     tier2: restaurant?.loyaltyTier2Threshold ?? 150,
     tier3: restaurant?.loyaltyTier3Threshold ?? 400,
   };
-  return <PortalView customer={selected} data={data} loyaltyTierThresholds={loyaltyTierThresholds} />;
+  return (
+    <PortalView
+      customer={selected}
+      data={data}
+      loyaltyTierThresholds={loyaltyTierThresholds}
+      menuItems={menuItems}
+      offers={offers}
+    />
+  );
 }

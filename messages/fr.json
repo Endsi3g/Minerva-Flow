@@ -1035,7 +1035,10 @@
       "redeemSuccessTitle": "Montrez ce code à la caisse",
       "pendingRedemptionsTitle": "Mes échanges en attente",
       "claimedLabel": "Utilisée",
-      "pendingLabel": "En attente"
+      "pendingLabel": "En attente",
+      "menuTitle": "Notre menu",
+      "menuDescription": "Ce qu'on sert en ce moment.",
+      "menuUncategorized": "Autres"
     }
   }
 }
