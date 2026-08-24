@@ -35,12 +35,17 @@ export function Modal({
         onClick={onClose}
       />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mv-modal-title"
         style={{ maxWidth: width }}
-        className="mv-animate-in relative w-full rounded-2xl border border-mv-border bg-mv-surface p-6 shadow-mv-lg"
+        className="mv-animate-in relative flex max-h-[90vh] w-full flex-col overflow-y-auto rounded-2xl border border-mv-border bg-mv-surface p-6 shadow-mv-lg"
       >
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-display text-[19px] font-medium text-mv-ink">{title}</h2>
+            <h2 id="mv-modal-title" className="font-display text-[19px] font-medium text-mv-ink">
+              {title}
+            </h2>
             {description && (
               <p className="mt-1 text-[13px] text-mv-ink-soft">{description}</p>
             )}

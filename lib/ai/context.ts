@@ -8,6 +8,10 @@ import { getPrograms } from "@/lib/data/programs";
 import { getCampaigns } from "@/lib/data/campaigns";
 import { getAlerts, getAlertRules } from "@/lib/data/alerts";
 import { getConnections, getFinancialTransactions } from "@/lib/data/finance";
+import { getMenuItems } from "@/lib/data/menu";
+import { getCustomers } from "@/lib/data/customers";
+import { classifyMenuItems, getMarginDriftItems, quadrantLabel, MARGIN_DRIFT_FOOD_COST_PCT } from "@/lib/menu-engineering";
+import { getInactiveCustomers } from "@/lib/engine/retention";
 import { simpleTrendForecast } from "@/lib/engine/forecast";
 import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS as CONTEXT_WINDOW_DAYS } from "@/lib/utils";
 import type { Recommendation } from "@/lib/types";
@@ -18,7 +22,7 @@ import type { Recommendation } from "@/lib/types";
  * Supabase-backed lib/data/*.ts modules — no mock data.
  */
 export async function buildRestaurantDataSnapshot(restaurantId: string): Promise<string> {
-  const [restaurant, days, restaurantPrograms, restaurantCampaigns, alerts, restaurantConnections] =
+  const [restaurant, days, restaurantPrograms, restaurantCampaigns, alerts, restaurantConnections, menuItems, customers] =
     await Promise.all([
       getRestaurant(restaurantId),
       getServiceDays(restaurantId, { from: isoDaysAgo(CONTEXT_WINDOW_DAYS) }),
@@ -26,6 +30,8 @@ export async function buildRestaurantDataSnapshot(restaurantId: string): Promise
       getCampaigns(restaurantId),
       getAlerts(restaurantId),
       getConnections(restaurantId),
+      getMenuItems(restaurantId),
+      getCustomers(restaurantId),
     ]);
 
   const recentDays = days
@@ -53,6 +59,33 @@ export async function buildRestaurantDataSnapshot(restaurantId: string): Promise
         `- ${c.name} (${c.channel}, ${c.status}) : ${c.visites} visites, revenu estimé ${formatCurrency(c.estimatedRevenue)}, impact ${c.impact}`
     )
     .join("\n");
+
+  const classifiedMenu = classifyMenuItems(menuItems);
+  const marginDriftItems = getMarginDriftItems(classifiedMenu);
+  const menuLines = classifiedMenu
+    .filter((i) => i.active)
+    .map(
+      (i) =>
+        `- ${i.name} (${quadrantLabel[i.quadrant]}) : prix ${formatCurrency(i.price)}, coût matière ${formatCurrency(i.foodCost)}${
+          i.foodCostPct !== null ? ` (${Math.round(i.foodCostPct * 100)}% du prix)` : ""
+        }, ${i.unitsSold} vendus`
+    )
+    .join("\n");
+  const marginDriftLines = marginDriftItems
+    .map((i) => `- ${i.name} : coût matière à ${Math.round((i.foodCostPct ?? 0) * 100)}% du prix, au-dessus du seuil de ${Math.round(MARGIN_DRIFT_FOOD_COST_PCT * 100)}%`)
+    .join("\n");
+
+  const inactivityThresholdDays = restaurant?.retentionInactivityDays ?? 21;
+  const inactiveCustomersAll = getInactiveCustomers(customers, inactivityThresholdDays);
+  const inactiveCustomers = [...inactiveCustomersAll].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 5);
+  const customerLines = customers.length
+    ? `- Clients fidélité enregistrés : ${customers.length}\n- Clients inactifs depuis ${inactivityThresholdDays}+ jours : ${inactiveCustomersAll.length}` +
+      (inactiveCustomers.length
+        ? `\nClients réguliers à relancer en priorité (forte dépense cumulée, inactifs) :\n${inactiveCustomers
+            .map((c) => `  - ${c.name} : ${formatCurrency(c.totalSpent)} dépensés, dernière visite ${c.lastVisitAt ? formatDate(c.lastVisitAt) : "inconnue"}`)
+            .join("\n")}`
+        : "")
+    : "Aucun client enregistré dans le programme de fidélité.";
 
   const alertLines = alerts
     .map((a) => `- [${a.severity}] ${a.title} (${formatDate(a.date)}) — ${a.detail}`)
@@ -83,6 +116,13 @@ ${recentDays || "Aucune journée enregistrée."}
 Programmes de revenus :
 ${programLines || "Aucun programme."}
 
+Rentabilité du menu (food cost & marge par plat, classification étoile/cheval de bataille/énigme/poids mort) :
+${menuLines || "Aucun plat actif au menu."}
+${marginDriftLines ? `\nDérive de marge détectée (coût matière anormalement élevé) :\n${marginDriftLines}` : ""}
+
+Clients & fidélité :
+${customerLines}
+
 Campagnes :
 ${campaignLines || "Aucune campagne."}
 
@@ -95,7 +135,9 @@ ${connectionLines || "Aucune connexion configurée."}
 Prévision de revenu (régression linéaire simple sur les journées enregistrées, 14 prochains jours — une estimation grossière, pas un vrai modèle prédictif) :
 ${forecastLines || "Pas assez de journées enregistrées pour une prévision."}
 
-Réponds toujours en français, de façon concise et opérationnelle. Base-toi uniquement sur les données fournies ci-dessus — si une information n'y figure pas, dis clairement que tu ne l'as pas plutôt que de l'inventer. Ne fais jamais d'affirmation causale forte (« la campagne X a causé Y ») quand seule une corrélation est visible dans les données ; utilise un langage prudent (« semble corrélé à », « pourrait expliquer »). Si tu inclus une prédiction dans un artefact, utilise exactement les valeurs de la section "Prévision de revenu" ci-dessus plutôt que d'en inventer de nouvelles.`;
+Réponds toujours en français, de façon concise et opérationnelle. Base-toi uniquement sur les données fournies ci-dessus — si une information n'y figure pas, dis clairement que tu ne l'as pas plutôt que de l'inventer. Ne fais jamais d'affirmation causale forte (« la campagne X a causé Y ») quand seule une corrélation est visible dans les données ; utilise un langage prudent (« semble corrélé à », « pourrait expliquer »). Si tu inclus une prédiction dans un artefact, utilise exactement les valeurs de la section "Prévision de revenu" ci-dessus plutôt que d'en inventer de nouvelles.
+
+Ton rôle sur la rentabilité et la fidélisation : tu n'ajustes jamais les prix et ne proposes jamais de tarification dynamique ou automatisée — ce n'est pas un service que Flow par Minerva offre. À la place, tu analyses la rentabilité des plats (section "Rentabilité du menu" ci-dessus), tu signales les dérives de marge (coût matière qui dérape) en expliquant la cause probable plutôt qu'en suggérant un nouveau prix, et tu génères des idées concrètes de campagnes marketing pour faire revenir les clients réguliers inactifs listés dans "Clients & fidélité" (ex : offre ciblée, message de relance, rappel du programme de parrainage).`;
 }
 
 export async function ruleBasedFallback(restaurantId: string): Promise<Recommendation[]> {

@@ -11,5 +11,5 @@ export default async function IntegrationsPage() {
 
   const integrations = await getRestaurantIntegrations(restaurant.id);
 
-  return <IntegrationsView initialIntegrations={integrations} restaurantName={restaurant.name} />;
+  return <IntegrationsView initialIntegrations={integrations} restaurantName={restaurant.name} restaurantId={restaurant.id} />;
 }

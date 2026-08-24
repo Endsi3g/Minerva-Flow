@@ -22,7 +22,7 @@
 
 ---
 
-## 🍽️ Aperçu Général
+## Aperçu Général
 
 **Minerva Flow** est la plateforme logicielle complète conçue pour simplifier et unifier le pilotage quotidien des établissements de restauration indépendants, cafés, bistros et brasseries au Québec et en France.
 
@@ -30,7 +30,7 @@ Dans un secteur où les marges sont souvent serrées et les opérations fragment
 
 ---
 
-## 🚀 Ce qu'apporte l'application aux restaurateurs
+## Ce qu'apporte l'application aux restaurateurs
 
 ### 1. Pilotage Financier & Rentabilité Quotidienne
 Suivi en temps réel du chiffre d'affaires, des coûts fixes, du taux de marge brute (Food Cost %) et du panier moyen. Le **Simulateur de Seuil de Rentabilité** permet de calculer instantanément le point mort mensuel, l'objectif quotidien de revenus et le nombre de clients requis par jour pour atteindre l'équilibre financier.

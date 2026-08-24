@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { squareBaseUrl, posOauthRedirectUri } from "@/lib/pos/config";
 import { verifyOAuthState } from "@/lib/ad-platforms/state";
 import { savePosConnectionTokens } from "@/lib/data/pos-connections";
-import { backfillSquareHistory } from "@/lib/pos/sync";
+import { backfillPosHistory } from "@/lib/pos/sync";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -63,7 +63,7 @@ export async function GET(req: Request) {
   // up this redirect for ~90 sequential Square API calls.
   after(async () => {
     try {
-      await backfillSquareHistory(verified.restaurantId);
+      await backfillPosHistory("square", verified.restaurantId);
     } catch (err) {
       console.error("Square history backfill failed:", err);
     }

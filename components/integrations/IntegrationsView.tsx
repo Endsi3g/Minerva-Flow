@@ -25,19 +25,34 @@ import { Link } from "@/i18n/navigation";
 import { Square, Stripe, Google, UberEats, Gmail } from "@/components/ui/BrandIcons";
 
 import { SiteSyncCard } from "@/components/minerva/SiteSyncCard";
+import { syncPosNowAction } from "@/app/[locale]/(app)/settings/pos-actions";
+import type { PosProvider } from "@/lib/data/pos-connections";
 
 export function IntegrationsView({
   initialIntegrations,
   restaurantName,
+  restaurantId,
 }: {
   initialIntegrations: IntegrationItem[];
   restaurantName: string;
+  restaurantId: string;
 }) {
   const [integrations, setIntegrations] = useState<IntegrationItem[]>(initialIntegrations);
   const [selectedIntegration, setSelectedIntegration] = useState<IntegrationItem | null>(
     initialIntegrations[0] || null
   );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  async function handleForceSync(item: IntegrationItem) {
+    const provider = item.id.replace(/-pos$/, "") as PosProvider;
+    setIsSyncing(true);
+    try {
+      await syncPosNowAction(provider);
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   const filteredIntegrations = integrations.filter(
     (item) => selectedCategory === "all" || item.category === selectedCategory
@@ -90,9 +105,9 @@ export function IntegrationsView({
       {/* Live Site ↔ Dashboard Publishing Card */}
       <div className="mb-6 mt-6">
         <SiteSyncCard
-          restaurantId="demo-rest-id"
+          restaurantId={restaurantId}
           initialShowcase={{
-            restaurantId: "demo-rest-id",
+            restaurantId,
             restaurantName: restaurantName || "Café & Bistro Minerva",
             isOpenNow: true,
             hoursNotice: "Ouvert aujourd'hui de 08:00 à 22:00",
@@ -104,61 +119,6 @@ export function IntegrationsView({
           }}
         />
       </div>
-
-      {/* POS Auto-Sync & Realtime Inventory Deduction Card (Flow 2) */}
-      <Card className="mb-6 p-5 border-mv-green/30 bg-gradient-to-br from-mv-surface via-mv-cream/20 to-white shadow-mv-sm">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-mv-border-soft">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="bg-mv-green text-white text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
-                Hub POS & Ops Unifié
-              </span>
-              <h2 className="font-display text-[18px] font-bold text-mv-ink">
-                Auto-Synchro Caisse POS (Square / Clover / Lightspeed) & Déduction d'Inventaire
-              </h2>
-            </div>
-            <p className="text-[13px] text-mv-ink-soft">
-              Zéro double saisie : chaque vente POS déduit instantanément vos matières premières et met à jour le chiffre d'affaires et le planning horaire.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="flex items-center gap-1.5 text-[12px] font-bold text-mv-green-dark bg-mv-green/10 border border-mv-green/20 px-3 py-1.5 rounded-xl">
-              <span className="h-2 w-2 rounded-full bg-mv-green animate-pulse" />
-              Synchro POS Active (0.4s de latence)
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-          <div className="rounded-xl border border-mv-border-soft bg-white p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[12px] font-semibold text-mv-ink-soft">Ventes POS du jour</span>
-              <span className="text-[11px] font-bold text-mv-green-dark bg-mv-green/10 px-1.5 py-0.5 rounded">Auto-synchro</span>
-            </div>
-            <p className="font-display text-[20px] font-bold text-mv-ink">142 tickets</p>
-            <p className="text-[11.5px] text-mv-ink-faint">Square POS · 3,420 $ bruts</p>
-          </div>
-
-          <div className="rounded-xl border border-mv-border-soft bg-white p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[12px] font-semibold text-mv-ink-soft">Déduction Stocks en direct</span>
-              <span className="text-[11px] font-bold text-mv-green-dark bg-mv-green/10 px-1.5 py-0.5 rounded">En direct</span>
-            </div>
-            <p className="font-display text-[20px] font-bold text-mv-ink">384 articles déduits</p>
-            <p className="text-[11.5px] text-mv-ink-faint">Dernier ticket : #1048 (-2 Burgers, -1 Frites)</p>
-          </div>
-
-          <div className="rounded-xl border border-mv-border-soft bg-white p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[12px] font-semibold text-mv-ink-soft">Horaire & Masse Salariale</span>
-              <span className="text-[11px] font-bold text-mv-green-dark bg-mv-green/10 px-1.5 py-0.5 rounded">Optimal</span>
-            </div>
-            <p className="font-display text-[20px] font-bold text-mv-ink">22.4 % de Ratio Paie</p>
-            <p className="text-[11.5px] text-mv-ink-faint">Aligné sur le budget cible</p>
-          </div>
-        </div>
-      </Card>
 
       {/* Category Pills Bar (Sana AI style) */}
       <div className="flex flex-wrap items-center gap-2">
@@ -243,6 +203,10 @@ export function IntegrationsView({
                     ) : item.status === "pending" ? (
                       <span className="flex items-center gap-1.5 rounded-full bg-mv-amber-bg px-2.5 py-1 text-[11px] font-bold text-mv-amber">
                         <AlertCircle size={13} /> En cours
+                      </span>
+                    ) : item.status === "error" ? (
+                      <span className="flex items-center gap-1.5 rounded-full bg-mv-red-bg px-2.5 py-1 text-[11px] font-bold text-mv-red">
+                        <XCircle size={13} /> Erreur — à reconnecter
                       </span>
                     ) : (
                       <span className="flex items-center gap-1.5 rounded-full bg-mv-cream-soft px-2.5 py-1 text-[11px] font-bold text-mv-ink-soft">
@@ -330,33 +294,43 @@ export function IntegrationsView({
 
                 {/* Actions */}
                 <div className="space-y-2.5 pt-2">
-                  {selectedIntegration.status === "connected" ? (
-                    <>
-                      <button
-                        onClick={() => alert(`Synchronisation forcé pour ${selectedIntegration.name}`)}
+                  {(() => {
+                    const manageHref = selectedIntegration.category === "caisse" ? "/settings" : "/etablissement";
+                    if (selectedIntegration.status === "connected") {
+                      return (
+                        <>
+                          {selectedIntegration.category === "caisse" && (
+                            <button
+                              onClick={() => handleForceSync(selectedIntegration)}
+                              disabled={isSyncing}
+                              className="flex w-full items-center justify-center gap-2 rounded-xl bg-mv-green px-4 py-2.5 text-[13px] font-bold text-mv-cream-soft shadow-mv-sm transition-all hover:bg-mv-green-dark disabled:opacity-50"
+                            >
+                              <RefreshCw size={15} className={isSyncing ? "animate-spin" : ""} />
+                              <span>{isSyncing ? "Synchronisation…" : "Forcer la synchronisation"}</span>
+                            </button>
+                          )}
+                          <Link
+                            href={manageHref}
+                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-mv-border bg-mv-surface px-4 py-2.5 text-[13px] font-semibold text-mv-ink transition-all hover:bg-mv-cream-soft"
+                          >
+                            <Settings size={15} />
+                            <span>Configurer dans les paramètres</span>
+                          </Link>
+                        </>
+                      );
+                    }
+                    return (
+                      <Link
+                        href={manageHref}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-mv-green px-4 py-2.5 text-[13px] font-bold text-mv-cream-soft shadow-mv-sm transition-all hover:bg-mv-green-dark"
                       >
-                        <RefreshCw size={15} />
-                        <span>Forcer la synchronisation en direct</span>
-                      </button>
-
-                      <Link
-                        href="/etablissement"
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-mv-border bg-mv-surface px-4 py-2.5 text-[13px] font-semibold text-mv-ink transition-all hover:bg-mv-cream-soft"
-                      >
-                        <Settings size={15} />
-                        <span>Configurer dans les paramètres</span>
+                        <ExternalLink size={15} />
+                        <span>
+                          {selectedIntegration.status === "error" ? "Reconnecter" : "Connecter"} {selectedIntegration.name}
+                        </span>
                       </Link>
-                    </>
-                  ) : (
-                    <Link
-                      href="/etablissement"
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-mv-green px-4 py-2.5 text-[13px] font-bold text-mv-cream-soft shadow-mv-sm transition-all hover:bg-mv-green-dark"
-                    >
-                      <ExternalLink size={15} />
-                      <span>Connecter {selectedIntegration.name}</span>
-                    </Link>
-                  )}
+                    );
+                  })()}
                 </div>
               </div>
             </Card>

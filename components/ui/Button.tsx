@@ -43,6 +43,7 @@ const buttonVariants = cva(
 type ButtonBaseProps = VariantProps<typeof buttonVariants> & {
   className?: string
   children?: React.ReactNode
+  loading?: boolean
   // Only meaningful in button mode (Base UI's polymorphic composition,
   // e.g. <Button render={<ComboboxTrigger />} />) — declared on the shared
   // base so the ButtonAsLink | ButtonAsButton union stays uniform for
@@ -62,26 +63,73 @@ type ButtonAsButton = ButtonBaseProps &
   }
 
 function Button(props: ButtonAsLink | ButtonAsButton) {
-  const { className, variant, size, children } = props
+  const { className, variant, size, children, loading, disabled } = props
   const classes = cn(buttonVariants({ variant, size, className }))
+
+  const content = (
+    <>
+      {loading && (
+        <svg
+          className="size-4 animate-spin text-current opacity-80"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="3"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
+        </svg>
+      )}
+      {children}
+    </>
+  )
 
   if ("href" in props && props.href) {
     return (
-      <Link href={props.href} className={classes} onClick={props.onClick}>
-        {children}
+      <Link
+        href={props.href}
+        className={classes}
+        onClick={props.onClick}
+        aria-disabled={disabled || loading}
+      >
+        {content}
       </Link>
     )
   }
 
-  const { href: _href, variant: _v, size: _s, className: _c, ...rest } =
-    props as ButtonAsButton
+  const {
+    href: _href,
+    variant: _v,
+    size: _s,
+    className: _c,
+    loading: _l,
+    disabled: _d,
+    ...rest
+  } = props as ButtonAsButton
   void _href
   void _v
   void _s
   void _c
+  void _l
+  void _d
   return (
-    <ButtonPrimitive data-slot="button" className={classes} {...rest}>
-      {children}
+    <ButtonPrimitive
+      data-slot="button"
+      className={classes}
+      disabled={disabled || loading}
+      {...rest}
+    >
+      {content}
     </ButtonPrimitive>
   )
 }

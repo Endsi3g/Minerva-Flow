@@ -22,6 +22,14 @@ export type MenuItemWithQuadrant = MenuItem & {
   quadrant: MenuQuadrant;
 };
 
+/** Food-cost ratio above which a dish is flagged as margin drift (coût matière qui dérape). */
+export const MARGIN_DRIFT_FOOD_COST_PCT = 0.35;
+
+/** Active dishes whose food cost has drifted above MARGIN_DRIFT_FOOD_COST_PCT of their price. */
+export function getMarginDriftItems(items: MenuItemWithQuadrant[]): MenuItemWithQuadrant[] {
+  return items.filter((i) => i.active && i.foodCostPct !== null && i.foodCostPct > MARGIN_DRIFT_FOOD_COST_PCT);
+}
+
 /**
  * Classifies active menu items into the 4 classic menu-engineering
  * quadrants, using the average margin and average units_sold across the

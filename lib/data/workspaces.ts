@@ -159,6 +159,12 @@ export async function getWorkspaceRestaurants(workspaceId: string): Promise<Rest
     breakEvenFixedCosts: row.break_even_fixed_costs ?? null,
     breakEvenGrossMarginPct: row.break_even_gross_margin_pct ?? null,
     breakEvenAvgBasket: row.break_even_avg_basket ?? null,
+    retentionEngineEnabled: row.retention_engine_enabled ?? false,
+    retentionInactivityDays: row.retention_inactivity_days ?? 21,
+    retentionFrequencyCapDays: row.retention_frequency_cap_days ?? 30,
+    retentionBirthdayLeadDays: row.retention_birthday_lead_days ?? 3,
+    loyaltyTier2Threshold: row.loyalty_tier_2_threshold ?? 150,
+    loyaltyTier3Threshold: row.loyalty_tier_3_threshold ?? 400,
   }));
 }
 

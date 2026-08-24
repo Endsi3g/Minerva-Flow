@@ -13,10 +13,28 @@ import { formatCurrency } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import {
   classifyMenuItems,
+  getMarginDriftItems,
+  MARGIN_DRIFT_FOOD_COST_PCT,
   type MenuItemWithQuadrant,
 } from "@/lib/menu-engineering";
 import type { InventoryItem, MenuItem, MenuQuadrant, MenuShare, Offer, RecipeItem } from "@/lib/types";
-import { UtensilsCrossed, Plus, Trash2, TrendingUp, Pencil, Share2, Copy, Check, Download, Megaphone, EyeOff, ChefHat } from "lucide-react";
+import {
+  UtensilsCrossed,
+  Plus,
+  Trash2,
+  TrendingUp,
+  Pencil,
+  Share2,
+  Copy,
+  Check,
+  Download,
+  Megaphone,
+  EyeOff,
+  ChefHat,
+  Sparkles,
+  Lightbulb,
+} from "lucide-react";
+import { AlertBanner } from "@/components/ui/AlertBanner";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import QRCode from "qrcode";
@@ -35,6 +53,8 @@ import {
 } from "./actions";
 import { notifyError } from "@/lib/notify-error";
 import { MenuImageUpload } from "@/components/menu/MenuImageUpload";
+import { toast } from "sonner";
+import { createCampaignAction } from "@/app/[locale]/(app)/campaigns/actions";
 
 const quadrantTone: Record<MenuQuadrant, "green" | "amber" | "lime" | "neutral"> = {
   etoile: "green",
@@ -376,15 +396,40 @@ function MenuItemRow({
   onEdit: (item: MenuItem) => void;
 }) {
   const t = useTranslations("menu.itemRow");
+  const [isToggling, setIsToggling] = useState(false);
+
+  async function handleToggleActive() {
+    setIsToggling(true);
+    try {
+      const updated = await updateMenuItemAction(restaurantId, item.id, { active: !item.active });
+      if (updated) onUpdated(updated);
+      else notifyError("La mise à jour a échoué.");
+    } finally {
+      setIsToggling(false);
+    }
+  }
+
   return (
     <div className="rounded-lg border border-mv-border-soft p-3">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[13.5px] font-semibold text-mv-ink">{item.name}</p>
+          <p className="flex items-center gap-1.5 text-[13.5px] font-semibold text-mv-ink">
+            {item.name}
+            {!item.active && <Badge tone="neutral">Retiré du menu</Badge>}
+          </p>
           {item.category && <p className="text-[11.5px] text-mv-ink-faint">{item.category}</p>}
         </div>
         {canManage && (
           <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={handleToggleActive}
+              disabled={isToggling}
+              aria-label={item.active ? "Retirer du menu" : "Remettre au menu"}
+              title={item.active ? "Retirer du menu" : "Remettre au menu"}
+              className="text-mv-ink-faint transition-colors hover:text-mv-amber disabled:opacity-50"
+            >
+              <EyeOff size={13} />
+            </button>
             <button
               onClick={() => onEdit(item)}
               aria-label={t("editAria")}
@@ -794,6 +839,169 @@ function OfferRow({
   );
 }
 
+function MarginDriftPanel({
+  items,
+  restaurantId,
+  canManage,
+  onUpdated,
+}: {
+  items: MenuItemWithQuadrant[];
+  restaurantId: string | null;
+  canManage: boolean;
+  onUpdated: (item: MenuItem) => void;
+}) {
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  if (items.length === 0) return null;
+
+  async function handleDisable(itemId: string) {
+    if (!restaurantId) return;
+    setTogglingId(itemId);
+    try {
+      const updated = await updateMenuItemAction(restaurantId, itemId, { active: false });
+      if (updated) onUpdated(updated);
+      else notifyError("La mise à jour a échoué.");
+    } finally {
+      setTogglingId(null);
+    }
+  }
+
+  return (
+    <AlertBanner
+      tone="warning"
+      title={
+        <span className="flex items-center gap-1.5">
+          Dérive de marge
+          <HelperTooltip
+            content={`Plats dont le coût matière dépasse ${Math.round(MARGIN_DRIFT_FOOD_COST_PCT * 100)}% du prix de vente — la marge de ces plats s'est dégradée, sans qu'il soit question d'en changer le prix.`}
+          />
+        </span>
+      }
+      className="mb-6"
+    >
+      <div className="space-y-1.5">
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center justify-between gap-2">
+            <span className="font-medium text-mv-ink">{item.name}</span>
+            <div className="flex items-center gap-2.5">
+              <span className="text-mv-ink-faint">
+                coût matière {formatCurrency(item.foodCost)} ({Math.round((item.foodCostPct ?? 0) * 100)}% du prix{" "}
+                {formatCurrency(item.price)})
+              </span>
+              {canManage && (
+                <button
+                  onClick={() => handleDisable(item.id)}
+                  disabled={togglingId === item.id}
+                  className="shrink-0 whitespace-nowrap rounded-md border border-mv-amber/30 px-2 py-1 text-[11.5px] font-semibold text-mv-amber transition-colors hover:bg-mv-amber-bg disabled:opacity-50"
+                >
+                  {togglingId === item.id ? "…" : "Retirer du menu"}
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </AlertBanner>
+  );
+}
+
+type MenuInsightIdea = { title: string; action: string };
+
+function MenuAiInsightsPanel({ restaurantId }: { restaurantId: string | null }) {
+  const [ideas, setIdeas] = useState<MenuInsightIdea[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [launchedIndexes, setLaunchedIndexes] = useState<Set<number>>(new Set());
+  const [launchingIndex, setLaunchingIndex] = useState<number | null>(null);
+
+  async function generate() {
+    setLoading(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/ai/menu-insights", { method: "POST" });
+      const data = await res.json();
+      setIdeas(data.ideas ?? []);
+      setLaunchedIndexes(new Set());
+      if (data.message) setMessage(data.message);
+    } catch {
+      setMessage("La génération IA a échoué — réessayez plus tard.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleLaunch(idea: MenuInsightIdea, index: number) {
+    if (!restaurantId) return;
+    setLaunchingIndex(index);
+    try {
+      const today = new Date();
+      const inThirtyDays = new Date(Date.now() + 30 * 86_400_000);
+      const campaign = await createCampaignAction(restaurantId, {
+        name: idea.title,
+        description: idea.action,
+        channel: "Email",
+        type: "email",
+        status: "planifiee",
+        startDate: today.toISOString().slice(0, 10),
+        endDate: inThirtyDays.toISOString().slice(0, 10),
+      });
+      if (campaign) {
+        setLaunchedIndexes((prev) => new Set(prev).add(index));
+        toast.success("Campagne créée — à retrouver et ajuster dans Campagnes.");
+      } else {
+        notifyError("La création de la campagne a échoué.");
+      }
+    } finally {
+      setLaunchingIndex(null);
+    }
+  }
+
+  return (
+    <div className="mb-6 rounded-xl bg-mv-cream-soft px-4 py-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-mv-ink">
+          <Sparkles size={14} className="text-mv-green-dark" /> Idées de campagnes Flow AI
+        </p>
+        <Button size="sm" variant="secondary" onClick={generate} disabled={loading}>
+          <Sparkles size={14} /> {loading ? "Analyse…" : "Générer des idées"}
+        </Button>
+      </div>
+      {ideas === null ? (
+        <p className="text-[12px] text-mv-ink-faint">
+          Analyse la rentabilité de vos plats et vos clients inactifs pour suggérer des campagnes de fidélisation —
+          jamais un changement de prix.
+        </p>
+      ) : ideas.length === 0 ? (
+        <p className="text-[12px] text-mv-ink-faint">{message ?? "Rien à suggérer pour l'instant."}</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {ideas.map((idea, i) => (
+            <div key={i} className="rounded-xl border border-mv-border-soft bg-mv-surface p-3.5">
+              <div className="mb-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-mv-lime-tint text-mv-lime-dark">
+                <Lightbulb size={12} />
+              </div>
+              <p className="text-[13px] font-semibold leading-snug text-mv-ink">{idea.title}</p>
+              <p className="mt-1 text-[12.5px] leading-snug text-mv-ink-soft">{idea.action}</p>
+              {launchedIndexes.has(i) ? (
+                <p className="mt-2.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark">
+                  <Check size={13} /> Campagne créée
+                </p>
+              ) : (
+                <button
+                  onClick={() => handleLaunch(idea, i)}
+                  disabled={launchingIndex === i}
+                  className="mt-2.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark hover:underline disabled:opacity-50"
+                >
+                  <Megaphone size={13} /> {launchingIndex === i ? "Création…" : "Lancer cette campagne"}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MenuView({
   restaurantId,
   initialItems,
@@ -841,6 +1049,7 @@ export function MenuView({
     [items, categoryFilter]
   );
   const classified = useMemo(() => classifyMenuItems(filtered), [filtered]);
+  const marginDriftItems = useMemo(() => getMarginDriftItems(classified), [classified]);
   const byQuadrant = useMemo(() => {
     const map = new Map<MenuQuadrant, MenuItemWithQuadrant[]>();
     for (const q of quadrantOrder) map.set(q, []);
@@ -970,6 +1179,17 @@ export function MenuView({
           )}
         </div>
       )}
+
+      {canManage && restaurantId && (
+        <MarginDriftPanel
+          items={marginDriftItems}
+          restaurantId={restaurantId}
+          canManage={canManage}
+          onUpdated={handleUpdated}
+        />
+      )}
+
+      {canManage && restaurantId && <MenuAiInsightsPanel restaurantId={restaurantId} />}
 
       {items.length === 0 ? (
         <EmptyState

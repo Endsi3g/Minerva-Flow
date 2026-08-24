@@ -3,6 +3,7 @@ import { logActivity } from "@/lib/data/activity";
 import { recordSale } from "@/lib/data/menu";
 import { getRecipeItemsForMenuItems } from "@/lib/data/recipes";
 import { logMovement } from "@/lib/data/inventory";
+import { logVisit } from "@/lib/data/customers";
 import type { Order, OrderItem, OrderStatus, OrderPaymentStatus } from "@/lib/types";
 
 type OrderRow = {
@@ -138,23 +139,34 @@ export async function updateOrderStatus(restaurantId: string, id: string, status
  * item's popularity counter is bumped (so menu engineering's cheval de
  * bataille/poids mort classification stays live), and — for any menu item
  * that has a "recette" defined (recipe_items, set from the menu item editor)
- * — the inventory items it consumes are decremented too. A dish with no
- * recipe defined simply doesn't move inventory, so this is additive and
- * never blocks serving an order. Best-effort — a failure here shouldn't
+ * — the inventory items it consumes are decremented too. Also credits the
+ * order's customer_id (if any — public online orders are attached to a
+ * customer via findOrCreateCustomerForUser) with a loyalty visit, so
+ * self-service orders count toward total_spent/points/tier just like a
+ * staff-logged visit — previously only staff-recorded visits did. A dish
+ * with no recipe defined simply doesn't move inventory, so this is additive
+ * and never blocks serving an order. Best-effort — a failure here shouldn't
  * roll back the status change staff just made.
  */
 async function applyServedOrderEffects(restaurantId: string, orderId: string): Promise<void> {
   const supabase = await createClient();
 
   const [{ data: order }, { data: items }] = await Promise.all([
-    supabase.from("orders").select("subtotal, created_at").eq("id", orderId).maybeSingle(),
+    supabase.from("orders").select("subtotal, created_at, customer_id").eq("id", orderId).maybeSingle(),
     supabase.from("order_items").select("menu_item_id, item_name, quantity").eq("order_id", orderId),
   ]);
 
   if (order) {
-    const { subtotal, created_at } = order as { subtotal: number; created_at: string };
+    const { subtotal, created_at, customer_id } = order as {
+      subtotal: number;
+      created_at: string;
+      customer_id: string | null;
+    };
     const date = created_at.slice(0, 10);
     await incrementServiceDayRevenue(restaurantId, date, subtotal);
+    if (customer_id) {
+      await logVisit(restaurantId, customer_id, subtotal, "Commande en ligne");
+    }
   }
 
   const orderItems =

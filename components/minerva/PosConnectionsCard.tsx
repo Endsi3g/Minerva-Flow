@@ -3,7 +3,7 @@
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { useApp } from "@/lib/app-context";
-import { getPosStatusAction, syncPosNowAction } from "@/app/[locale]/(app)/settings/pos-actions";
+import { getPosStatusAction, syncPosNowAction, type PosProviderConfigured } from "@/app/[locale]/(app)/settings/pos-actions";
 import type { PosConnection, PosProvider } from "@/lib/data/pos-connections";
 import { formatDate } from "@/lib/utils";
 import { RefreshCw, Store } from "lucide-react";
@@ -64,7 +64,7 @@ function ConnectRow({
               type="button"
               disabled={isPending}
               onClick={() => startTransition(async () => {
-                await syncPosNowAction();
+                await syncPosNowAction(provider);
                 onSynced();
               })}
               className="flex items-center gap-1.5 rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink disabled:opacity-50"
@@ -102,7 +102,7 @@ function ConnectRow({
 
 export function PosConnectionsCard() {
   const { restaurantId } = useApp();
-  const [status, setStatus] = useState<{ squareConfigured: boolean; connections: PosConnection[] } | null>(
+  const [status, setStatus] = useState<{ configured: PosProviderConfigured; connections: PosConnection[] } | null>(
     null
   );
 
@@ -115,7 +115,7 @@ export function PosConnectionsCard() {
 
   if (!status) return null;
 
-  const squareConnection = status.connections.find((c) => c.provider === "square");
+  const connectionFor = (provider: PosProvider) => status.connections.find((c) => c.provider === provider);
 
   return (
     <Card>
@@ -127,11 +127,16 @@ export function PosConnectionsCard() {
       <div className="space-y-2">
         <ConnectRow
           provider="square"
-          configured={status.squareConfigured}
-          connection={squareConnection}
+          configured={status.configured.square}
+          connection={connectionFor("square")}
           onSynced={refresh}
         />
-        <ConnectRow provider="lightspeed" configured={false} onSynced={refresh} />
+        <ConnectRow
+          provider="lightspeed"
+          configured={status.configured.lightspeed}
+          connection={connectionFor("lightspeed")}
+          onSynced={refresh}
+        />
         <ConnectRow provider="clover" configured={false} onSynced={refresh} />
       </div>
     </Card>

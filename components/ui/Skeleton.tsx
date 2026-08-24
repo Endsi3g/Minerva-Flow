@@ -38,3 +38,43 @@ export function SkeletonRow() {
     </div>
   );
 }
+
+export function SkeletonTable({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-mv-border bg-mv-surface shadow-mv-sm">
+      <div className="flex items-center gap-4 border-b border-mv-border bg-mv-cream-soft px-4 py-3">
+        <Skeleton className="h-3 w-1/4" />
+        <Skeleton className="h-3 w-1/6" />
+        <Skeleton className="h-3 w-1/6" />
+        <Skeleton className="h-3 w-1/6" />
+        <Skeleton className="ml-auto h-3 w-12" />
+      </div>
+      {Array.from({ length: rows }).map((_, i) => (
+        <SkeletonRow key={i} />
+      ))}
+    </div>
+  );
+}
+
+export function SkeletonText({
+  lines = 3,
+  className,
+}: {
+  lines?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-2", className)}>
+      {Array.from({ length: lines }).map((_, i) => (
+        <Skeleton
+          key={i}
+          className={cn(
+            "h-3",
+            i === lines - 1 ? "w-3/4" : "w-full"
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+

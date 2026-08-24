@@ -6,7 +6,7 @@ import {
   getRestaurantTimezoneAdmin,
 } from "@/lib/data/pos-connections";
 import { syncSquareSalesForDate } from "@/lib/pos/sync";
-import { todayInTimezone } from "@/lib/pos/square";
+import { todayInTimezone } from "@/lib/pos/shared";
 
 // Basic Square event set — payments, orders and refunds all trigger a
 // same-day resync; a revoked authorization marks the connection as broken

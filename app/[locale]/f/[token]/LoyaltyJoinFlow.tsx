@@ -5,6 +5,7 @@ import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Gift, Mail, Heart } from "lucide-react";
 import { joinLoyaltyProgramAction } from "./actions";
 import type { PublicLoyaltyLanding } from "@/lib/data/loyalty-shares";
@@ -12,13 +13,20 @@ import type { PublicLoyaltyLanding } from "@/lib/data/loyalty-shares";
 export function LoyaltyJoinFlow({ token, landing }: { token: string; landing: PublicLoyaltyLanding }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("sending");
-    const result = await joinLoyaltyProgramAction(token, { name, email });
+    const result = await joinLoyaltyProgramAction(token, {
+      name,
+      email,
+      marketingConsent,
+      birthday: birthday || null,
+    });
     if (result.ok) {
       setStatus("sent");
     } else {
@@ -80,6 +88,19 @@ export function LoyaltyJoinFlow({ token, landing }: { token: string; landing: Pu
                 <Field label="Courriel">
                   <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.com" required />
                 </Field>
+                <Field label="Date de naissance" hint="Optionnel">
+                  <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
+                </Field>
+                <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
+                  <Checkbox
+                    checked={marketingConsent}
+                    onCheckedChange={(checked) => setMarketingConsent(Boolean(checked))}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    J&apos;accepte de recevoir des offres et rappels par courriel ou SMS de {landing.restaurantName}.
+                  </span>
+                </label>
                 {status === "error" && <p className="text-[12.5px] text-mv-red">{error}</p>}
                 <Button type="submit" disabled={status === "sending"} className="w-full">
                   {status === "sending" ? "Envoi…" : "Rejoindre le programme"}

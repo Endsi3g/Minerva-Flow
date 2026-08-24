@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrCreateReferralLink } from "@/lib/data/customer-referrals";
 import { getCustomersForUser } from "@/lib/data/customer-portal";
+import { updateCustomer } from "@/lib/data/customers";
 import type { CustomerReferralLink } from "@/lib/types";
 
 /**
@@ -36,4 +37,32 @@ export async function getOrCreateReferralLinkAction(programId: string): Promise<
   if (!customer) return null;
 
   return getOrCreateReferralLink(customer.id, programId);
+}
+
+/**
+ * Lets a customer set their own marketing consent/birthday from the
+ * portal — covers people who joined before these fields existed, or via
+ * the staff-facing form which may not have asked. customerId is trusted
+ * only after confirming it belongs to the authenticated session, same
+ * pattern as getOrCreateReferralLinkAction.
+ */
+export async function updateMyProfileAction(
+  customerId: string,
+  input: { marketingConsent: boolean; birthday: string | null }
+): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const customers = await getCustomersForUser(user.id);
+  const customer = customers.find((c) => c.id === customerId);
+  if (!customer) return false;
+
+  return updateCustomer(customer.restaurantId, customer.id, {
+    marketingConsent: input.marketingConsent,
+    consentSource: "portal",
+    birthday: input.birthday,
+  });
 }

@@ -5,6 +5,7 @@ import { hasGoogleScope } from "@/lib/data/google-connections";
 import { formatDateFull } from "@/lib/utils";
 import { after } from "next/server";
 import type { Anomaly, RushLevel, ServiceDay, ServiceSource } from "@/lib/types";
+import type { PosProvider } from "@/lib/data/pos-connections";
 
 /**
  * Background Calendar sync, scheduled via next/server's after() so it keeps
@@ -376,7 +377,7 @@ export async function upsertSyncedServiceDayRevenue(
   restaurantId: string,
   date: string,
   revenue: number,
-  source: "square"
+  source: PosProvider
 ): Promise<"synced" | "skipped_manual"> {
   const admin = createAdminClient();
 

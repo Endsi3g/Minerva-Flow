@@ -11,6 +11,8 @@ export type ReferralProgramRow = {
   reward_description: string | null;
   active: boolean;
   created_at: string;
+  new_customer_bonus_points: number;
+  referrer_bonus_points: number;
 };
 
 export function mapReferralProgram(row: ReferralProgramRow): ReferralProgram {
@@ -24,6 +26,8 @@ export function mapReferralProgram(row: ReferralProgramRow): ReferralProgram {
     rewardDescription: row.reward_description,
     active: row.active,
     createdAt: row.created_at,
+    newCustomerBonusPoints: row.new_customer_bonus_points ?? 0,
+    referrerBonusPoints: row.referrer_bonus_points ?? 0,
   };
 }
 
@@ -45,6 +49,8 @@ export type ReferralProgramInput = {
   goalCount: number;
   rewardId?: string | null;
   rewardDescription?: string | null;
+  newCustomerBonusPoints?: number;
+  referrerBonusPoints?: number;
 };
 
 export async function createReferralProgram(
@@ -61,6 +67,8 @@ export async function createReferralProgram(
       goal_count: input.goalCount,
       reward_id: input.rewardId ?? null,
       reward_description: input.rewardDescription ?? null,
+      new_customer_bonus_points: input.newCustomerBonusPoints ?? 0,
+      referrer_bonus_points: input.referrerBonusPoints ?? 0,
     })
     .select("*")
     .single();

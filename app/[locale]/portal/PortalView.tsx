@@ -3,15 +3,61 @@
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Field, Input } from "@/components/minerva/FormField";
+import { Checkbox } from "@/components/ui/checkbox";
+import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
+import type { LoyaltyTierThresholds } from "@/lib/loyalty-tiers";
 import { LogoMark } from "@/components/shell/Logo";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Customer, CustomerReferralLink, ReferralProgram } from "@/lib/types";
 import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-portal";
-import { getOrCreateReferralLinkAction } from "./actions";
-import { Copy, Check, Gift } from "lucide-react";
+import { getOrCreateReferralLinkAction, updateMyProfileAction } from "./actions";
+import { Copy, Check, Gift, Share2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+
+function ProfileSettingsCard({ customer }: { customer: Customer }) {
+  const [birthday, setBirthday] = useState(customer.birthday ?? "");
+  const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function handleSave() {
+    setIsSaving(true);
+    try {
+      const ok = await updateMyProfileAction(customer.id, {
+        marketingConsent,
+        birthday: birthday || null,
+      });
+      if (ok) toast.success("Profil mis à jour.");
+      else toast.error("La mise à jour a échoué.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader title="Mon profil" description="Reçois des offres personnalisées et un cadeau le jour de ton anniversaire." />
+      <div className="space-y-3">
+        <Field label="Date de naissance" hint="Optionnel">
+          <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
+        </Field>
+        <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
+          <Checkbox
+            checked={marketingConsent}
+            onCheckedChange={(checked) => setMarketingConsent(Boolean(checked))}
+            className="mt-0.5"
+          />
+          <span>J&apos;accepte de recevoir des offres et rappels par courriel ou SMS.</span>
+        </label>
+        <Button size="sm" onClick={handleSave} disabled={isSaving}>
+          {isSaving ? "Enregistrement…" : "Enregistrer"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
 
 function ReferralProgramCard({
   program,
@@ -37,11 +83,26 @@ function ReferralProgramCard({
     }
   }
 
+  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/p/${link?.code}`;
+
   function handleCopy() {
     if (!link) return;
-    navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/p/${link.code}`);
+    navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleShare() {
+    if (!link) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: program.name, text: program.description ?? undefined, url: shareUrl });
+      } catch {
+        // l'utilisateur a annulé le partage — rien à faire
+      }
+    } else {
+      handleCopy();
+    }
   }
 
   const progress = link ? Math.min(1, link.convertedCount / program.goalCount) : 0;
@@ -52,9 +113,14 @@ function ReferralProgramCard({
       {link ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
-            <span className="flex-1 truncate text-[12.5px] text-mv-ink-soft">
-              {`${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/p/${link.code}`}
-            </span>
+            <span className="flex-1 truncate text-[12.5px] text-mv-ink-soft">{shareUrl}</span>
+            <button
+              onClick={handleShare}
+              className="shrink-0 text-mv-ink-faint hover:text-mv-ink"
+              aria-label="Partager le lien"
+            >
+              <Share2 size={14} />
+            </button>
             <button
               onClick={handleCopy}
               className="shrink-0 text-mv-ink-faint hover:text-mv-ink"
@@ -89,7 +155,15 @@ function ReferralProgramCard({
   );
 }
 
-export function PortalView({ customer, data }: { customer: Customer; data: PortalData }) {
+export function PortalView({
+  customer,
+  data,
+  loyaltyTierThresholds,
+}: {
+  customer: Customer;
+  data: PortalData;
+  loyaltyTierThresholds: LoyaltyTierThresholds;
+}) {
   const t = useTranslations("portal.view");
   const [programs, setPrograms] = useState<PortalReferralProgress[]>(data.programs);
 
@@ -108,7 +182,10 @@ export function PortalView({ customer, data }: { customer: Customer; data: Porta
         </div>
 
         <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">{t("spaceLabel")}</p>
-        <h1 className="mb-6 font-display text-[26px] font-medium text-mv-ink">{t("greeting", { name: customer.name })}</h1>
+        <div className="mb-6 flex flex-wrap items-center gap-2.5">
+          <h1 className="font-display text-[26px] font-medium text-mv-ink">{t("greeting", { name: customer.name })}</h1>
+          <LoyaltyTierBadge totalSpent={customer.totalSpent} thresholds={loyaltyTierThresholds} />
+        </div>
 
         <div className="mb-6 grid grid-cols-2 gap-3 rounded-xl bg-mv-surface p-4 shadow-mv-sm sm:grid-cols-3">
           <div>
@@ -123,6 +200,10 @@ export function PortalView({ customer, data }: { customer: Customer; data: Porta
             <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("totalSpent")}</p>
             <p className="font-display text-[19px] font-medium text-mv-ink">{formatCurrency(customer.totalSpent)}</p>
           </div>
+        </div>
+
+        <div className="mb-6">
+          <ProfileSettingsCard customer={customer} />
         </div>
 
         {programs.length > 0 && (

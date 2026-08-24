@@ -1,4 +1,5 @@
 import { canonicalOrigin } from "@/lib/canonical-url";
+import type { PosProvider } from "@/lib/data/pos-connections";
 
 /**
  * Square OAuth config — same "gracefully absent until configured" pattern
@@ -26,6 +27,36 @@ export function squareBaseUrl(): string {
     : "https://connect.squareupsandbox.com";
 }
 
-export function posOauthRedirectUri(provider: "square", origin: string) {
+export function posOauthRedirectUri(provider: PosProvider, origin: string) {
   return `${canonicalOrigin(origin)}/api/oauth/${provider}/callback`;
+}
+
+/**
+ * Lightspeed Restaurant (K-Series) config — same "gracefully absent until
+ * configured" pattern as Square above. UNVERIFIED against a live account:
+ * access to the K-Series API is itself gated behind Lightspeed's
+ * partner/approved-merchant program (api-portal.lsk.lightspeed.app), so
+ * this was built from public API docs (api-docs.lsk.lightspeed.app) only —
+ * confirm the base URLs below still match once real credentials exist.
+ */
+export function isLightspeedConfigured() {
+  return Boolean(process.env.LIGHTSPEED_APPLICATION_ID && process.env.LIGHTSPEED_APPLICATION_SECRET);
+}
+
+export function lightspeedEnvironment(): "trial" | "production" {
+  return process.env.LIGHTSPEED_ENVIRONMENT === "production" ? "production" : "trial";
+}
+
+/** Keycloak-based OIDC realm — authorize/token endpoints live under this base + /auth or /token. */
+export function lightspeedAuthBaseUrl(): string {
+  return lightspeedEnvironment() === "production"
+    ? "https://auth.lsk-prod.app/realms/k-series/protocol/openid-connect"
+    : "https://auth.lsk-demo.app/realms/k-series/protocol/openid-connect";
+}
+
+/** Data API base — REST, distinct host from the auth realm above. */
+export function lightspeedApiBaseUrl(): string {
+  return lightspeedEnvironment() === "production"
+    ? "https://api.lsk.lightspeed.app"
+    : "https://api.trial.lsk.lightspeed.app";
 }

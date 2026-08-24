@@ -199,7 +199,7 @@ export function CommandesView({
               <Globe size={16} />
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex flex-wrap items-center gap-2 mt-1">
             <Link href="/etablissement">
               <Button size="sm" variant="secondary" className="text-[12px]">
                 <QrCode size={13} /> Générer QR Code / Widget

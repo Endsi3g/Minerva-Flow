@@ -33,6 +33,12 @@ export type Restaurant = {
   breakEvenFixedCosts: number | null;
   breakEvenGrossMarginPct: number | null;
   breakEvenAvgBasket: number | null;
+  retentionEngineEnabled: boolean;
+  retentionInactivityDays: number;
+  retentionFrequencyCapDays: number;
+  retentionBirthdayLeadDays: number;
+  loyaltyTier2Threshold: number;
+  loyaltyTier3Threshold: number;
 };
 
 export type Employee = {
@@ -125,6 +131,10 @@ export type ReferralProgram = {
   rewardDescription: string | null;
   active: boolean;
   createdAt: string;
+  /** Points crédités immédiatement au filleul à la conversion — distinct de la grosse récompense au goalCount (remise manuelle). */
+  newCustomerBonusPoints: number;
+  /** Points crédités immédiatement au parrain à chaque conversion — distinct de la grosse récompense au goalCount. */
+  referrerBonusPoints: number;
 };
 
 export type CustomerReferralLink = {
@@ -547,6 +557,10 @@ export type Customer = {
   createdAt: string;
   transactions: LoyaltyTransaction[];
   userId: string | null;
+  marketingConsent: boolean;
+  consentSource: string | null;
+  consentAt: string | null;
+  birthday: string | null;
 };
 
 export type LoyaltyReward = {

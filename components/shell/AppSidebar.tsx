@@ -46,6 +46,7 @@ import {
   Zap,
   Star,
   StarOff,
+  Palette,
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -67,10 +68,12 @@ type NavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
-// 1. Core General Items (Overview, Flow AI, Finances, Commandes, Collaborateurs, Inventaire)
+// 1. Core General Items (Overview, Flow AI, Menu & Food Cost, Fidélité, Finances, Commandes, Collaborateurs, Inventaire)
 const coreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
+  { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
+  { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
   { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
   { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
   { key: "collaborateurs", href: "/collaborateurs", icon: Users, roles: allRoles },
@@ -90,8 +93,6 @@ const operationsItems: NavItem[] = [
 const analyticsItems: NavItem[] = [
   { key: "days", href: "/days", icon: BarChart3, roles: allRoles },
   { key: "reports", href: "/reports", icon: FileText, roles: allRoles },
-  { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
-  { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
   { key: "maps", href: "/maps", icon: MapIcon, roles: allRoles },
   { key: "programs", href: "/programs", icon: GitCommit, roles: allRoles },
   { key: "library", href: "/library", icon: FolderOpen, roles: allRoles },
@@ -102,6 +103,7 @@ const settingsGroupItems: NavItem[] = [
   { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
   { key: "billing", href: "/billing", icon: CreditCard, roles: ["owner"] },
   { key: "guide", href: "/guide", icon: BookOpen, roles: allRoles },
+  { key: "designSystem", href: "/design-system", icon: Palette, roles: allRoles },
   { key: "support", href: "/support", icon: LifeBuoy, roles: allRoles },
   { key: "changelog", href: "/changelog", icon: History, roles: allRoles },
 ];
@@ -128,6 +130,7 @@ const navTranslationKeys: Record<string, string> = {
   fournisseurs: "fournisseurs",
   billing: "billing",
   guide: "guide",
+  designSystem: "designSystem",
   support: "support",
   changelog: "changelog",
 };

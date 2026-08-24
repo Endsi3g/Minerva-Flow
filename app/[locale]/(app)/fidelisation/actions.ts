@@ -11,6 +11,7 @@ import {
   type CustomerInput,
 } from "@/lib/data/customers";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
+import { updateRetentionSettings, updateLoyaltyTierThresholds } from "@/lib/data/restaurants";
 import {
   createReferralProgram,
   updateReferralProgramActive,
@@ -164,6 +165,24 @@ export async function createLoyaltyShareAction(restaurantId: string, title: stri
 
 export async function deleteLoyaltyShareAction(restaurantId: string, id: string): Promise<boolean> {
   const ok = await deleteLoyaltyShare(restaurantId, id);
+  if (ok) revalidatePath("/fidelisation");
+  return ok;
+}
+
+export async function updateRetentionSettingsAction(
+  restaurantId: string,
+  patch: { enabled?: boolean; inactivityDays?: number }
+): Promise<boolean> {
+  const ok = await updateRetentionSettings(restaurantId, patch);
+  if (ok) revalidatePath("/fidelisation");
+  return ok;
+}
+
+export async function updateLoyaltyTierThresholdsAction(
+  restaurantId: string,
+  patch: { tier2?: number; tier3?: number }
+): Promise<boolean> {
+  const ok = await updateLoyaltyTierThresholds(restaurantId, patch);
   if (ok) revalidatePath("/fidelisation");
   return ok;
 }

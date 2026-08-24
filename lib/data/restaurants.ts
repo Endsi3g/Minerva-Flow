@@ -32,6 +32,12 @@ type RestaurantRow = {
   break_even_fixed_costs: number | null;
   break_even_gross_margin_pct: number | null;
   break_even_avg_basket: number | null;
+  retention_engine_enabled: boolean;
+  retention_inactivity_days: number;
+  retention_frequency_cap_days: number;
+  retention_birthday_lead_days: number;
+  loyalty_tier_2_threshold: number;
+  loyalty_tier_3_threshold: number;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -61,7 +67,56 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     breakEvenFixedCosts: row.break_even_fixed_costs,
     breakEvenGrossMarginPct: row.break_even_gross_margin_pct,
     breakEvenAvgBasket: row.break_even_avg_basket,
+    retentionEngineEnabled: row.retention_engine_enabled ?? false,
+    retentionInactivityDays: row.retention_inactivity_days ?? 21,
+    retentionFrequencyCapDays: row.retention_frequency_cap_days ?? 30,
+    retentionBirthdayLeadDays: row.retention_birthday_lead_days ?? 3,
+    loyaltyTier2Threshold: row.loyalty_tier_2_threshold ?? 150,
+    loyaltyTier3Threshold: row.loyalty_tier_3_threshold ?? 400,
   };
+}
+
+/** Persists the premium loyalty tier thresholds (lib/loyalty-tiers.ts) — same dedicated-function pattern as updateRetentionSettings. */
+export async function updateLoyaltyTierThresholds(
+  restaurantId: string,
+  patch: { tier2?: number; tier3?: number }
+): Promise<boolean> {
+  const supabase = await createClient();
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.tier2 !== undefined) dbPatch.loyalty_tier_2_threshold = patch.tier2;
+  if (patch.tier3 !== undefined) dbPatch.loyalty_tier_3_threshold = patch.tier3;
+  if (Object.keys(dbPatch).length === 0) return true;
+
+  const { error } = await supabase.from("restaurants").update(dbPatch).eq("id", restaurantId);
+  return !error;
+}
+
+/**
+ * Persists the automated retention engine's on/off toggle and thresholds
+ * (see lib/engine/retention.ts + /api/cron/retention-engine) — same
+ * dedicated-function pattern as updateBreakEvenSettings, kept separate from
+ * the general updateRestaurant/RestaurantInput path since it's a small,
+ * self-contained settings group.
+ */
+export async function updateRetentionSettings(
+  restaurantId: string,
+  patch: {
+    enabled?: boolean;
+    inactivityDays?: number;
+    frequencyCapDays?: number;
+    birthdayLeadDays?: number;
+  }
+): Promise<boolean> {
+  const supabase = await createClient();
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.enabled !== undefined) dbPatch.retention_engine_enabled = patch.enabled;
+  if (patch.inactivityDays !== undefined) dbPatch.retention_inactivity_days = patch.inactivityDays;
+  if (patch.frequencyCapDays !== undefined) dbPatch.retention_frequency_cap_days = patch.frequencyCapDays;
+  if (patch.birthdayLeadDays !== undefined) dbPatch.retention_birthday_lead_days = patch.birthdayLeadDays;
+  if (Object.keys(dbPatch).length === 0) return true;
+
+  const { error } = await supabase.from("restaurants").update(dbPatch).eq("id", restaurantId);
+  return !error;
 }
 
 /**

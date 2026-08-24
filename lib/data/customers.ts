@@ -15,6 +15,10 @@ export type CustomerRow = {
   last_visit_at: string | null;
   created_at: string;
   user_id: string | null;
+  marketing_consent: boolean;
+  consent_source: string | null;
+  consent_at: string | null;
+  birthday: string | null;
 };
 
 export type LoyaltyTransactionRow = {
@@ -58,6 +62,10 @@ export function mapCustomer(row: CustomerRow, transactions: LoyaltyTransaction[]
     createdAt: row.created_at,
     transactions,
     userId: row.user_id,
+    marketingConsent: row.marketing_consent,
+    consentSource: row.consent_source,
+    consentAt: row.consent_at,
+    birthday: row.birthday,
   };
 }
 
@@ -94,6 +102,9 @@ export type CustomerInput = {
   email?: string | null;
   phone?: string | null;
   notes?: string | null;
+  marketingConsent?: boolean;
+  consentSource?: string | null;
+  birthday?: string | null;
 };
 
 export async function createCustomer(restaurantId: string, input: CustomerInput): Promise<Customer | null> {
@@ -106,6 +117,10 @@ export async function createCustomer(restaurantId: string, input: CustomerInput)
       email: input.email ?? null,
       phone: input.phone ?? null,
       notes: input.notes ?? null,
+      marketing_consent: input.marketingConsent ?? false,
+      consent_source: input.marketingConsent ? (input.consentSource ?? "staff") : null,
+      consent_at: input.marketingConsent ? new Date().toISOString() : null,
+      birthday: input.birthday ?? null,
     })
     .select("*")
     .single();
@@ -134,6 +149,14 @@ export async function updateCustomer(
   if (patch.email !== undefined) dbPatch.email = patch.email;
   if (patch.phone !== undefined) dbPatch.phone = patch.phone;
   if (patch.notes !== undefined) dbPatch.notes = patch.notes;
+  if (patch.birthday !== undefined) dbPatch.birthday = patch.birthday;
+  if (patch.marketingConsent !== undefined) {
+    dbPatch.marketing_consent = patch.marketingConsent;
+    if (patch.marketingConsent) {
+      dbPatch.consent_source = patch.consentSource ?? "staff";
+      dbPatch.consent_at = new Date().toISOString();
+    }
+  }
 
   const { error } = await supabase
     .from("customers")

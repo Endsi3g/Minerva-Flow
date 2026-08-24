@@ -15,11 +15,14 @@ import { getShiftSchedulesForRange } from "@/lib/data/shift-schedules";
 import { getEmployees } from "@/lib/data/employees";
 import { getPurchaseOrders } from "@/lib/data/purchase-orders";
 import { getSuppliers } from "@/lib/data/suppliers";
+import { getCustomers } from "@/lib/data/customers";
+import { getRetentionSends } from "@/lib/data/retention-sends";
 import { revenueTrend, margeTrend, joursTrend, type ReportData } from "@/lib/reports";
 import { computeAlerts } from "@/lib/engine/alerts";
 import { computeRecommendations } from "@/lib/engine/recommendations";
 import { computeBreakEven, BREAK_EVEN_DEFAULTS } from "@/lib/engine/break-even";
 import { computeLaborCostPct, sumLaborCost } from "@/lib/engine/labor-cost";
+import { getIncrementalRetentionRevenue } from "@/lib/engine/retention";
 import { formatDateFull } from "@/lib/utils";
 import { Store } from "lucide-react";
 import type { ServiceDay } from "@/lib/types";
@@ -86,6 +89,8 @@ export default async function OverviewPage() {
     employees,
     purchaseOrders,
     suppliers,
+    customers,
+    retentionSends,
   ] = await Promise.all([
     getMyProfile(),
     getRestaurant(restaurantId),
@@ -101,6 +106,8 @@ export default async function OverviewPage() {
     getEmployees(restaurantId),
     getPurchaseOrders(restaurantId),
     getSuppliers(restaurantId),
+    getCustomers(restaurantId),
+    getRetentionSends(restaurantId, { from, to }),
   ]);
 
   const reportData: ReportData = { serviceDays, programs, campaigns, financialTransactions };
@@ -172,6 +179,12 @@ export default async function OverviewPage() {
 
   const heat = monthHeat(serviceDays, year, month);
 
+  // "Revenu incrémental — fidélisation" — revenue from visits that landed
+  // within 14 days of an automated retention nudge (see
+  // app/api/cron/retention-engine + lib/engine/retention.ts), the concrete
+  // "this system makes you money" number behind the LTV pitch.
+  const incrementalRetentionRevenue = getIncrementalRetentionRevenue(retentionSends, customers, 14);
+
   return (
     <OverviewClientView
       restaurantId={restaurantId}
@@ -190,6 +203,7 @@ export default async function OverviewPage() {
       recommendations={recommendations}
       dailyTarget={dailyTarget}
       laborCost={laborCost}
+      incrementalRetentionRevenue={incrementalRetentionRevenue}
     />
   );
 }

@@ -14,7 +14,7 @@ import { StartupChecklist } from "@/components/minerva/StartupChecklist";
 import { WidgetManagerModal, useWidgetVisibility } from "@/components/minerva/WidgetManagerModal";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
 import { formatCurrency, formatDateFull } from "@/lib/utils";
-import { CalendarCheck2, Megaphone, ArrowRight, SlidersHorizontal, Target, CheckCircle2, Users } from "lucide-react";
+import { CalendarCheck2, Megaphone, ArrowRight, SlidersHorizontal, Target, CheckCircle2, Users, Heart } from "lucide-react";
 import Link from "next/link";
 import type { Alert, Recommendation, ServiceDay } from "@/lib/types";
 import type { LaborCostResult } from "@/lib/engine/labor-cost";
@@ -36,6 +36,7 @@ export function OverviewClientView({
   recommendations,
   dailyTarget,
   laborCost,
+  incrementalRetentionRevenue,
 }: {
   restaurantId: string;
   greeting: string;
@@ -53,6 +54,7 @@ export function OverviewClientView({
   recommendations: Recommendation[];
   dailyTarget?: { clientsNeeded: number; clientsSoFar: number; reached: boolean };
   laborCost?: LaborCostResult;
+  incrementalRetentionRevenue?: number;
 }) {
   const [managerOpen, setManagerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -186,6 +188,39 @@ export function OverviewClientView({
             <div className="flex shrink-0 items-center gap-2 sm:pl-2">
               <Button href="/horaire" variant="secondary" size="sm" className="text-[12.5px] whitespace-nowrap">
                 Voir les horaires
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* "Revenu incrémental — fidélisation" — the concrete $ number behind
+          the LTV pitch: revenue from visits that landed within 14 days of an
+          automated retention nudge (lib/engine/retention.ts). Always shown
+          (even at 0$) so activating the toggle in /fidelisation has a
+          visible payoff to watch grow. */}
+      {incrementalRetentionRevenue !== undefined && (
+        <div className="mv-animate-in mb-6 rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-mv-green/20 bg-mv-green-tint text-mv-green-dark">
+                <Heart size={22} />
+              </div>
+              <div>
+                <p className="text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                  Revenu incrémental — fidélisation
+                </p>
+                <p className="mt-0.5 font-display text-[19px] font-medium leading-snug text-mv-ink">
+                  {formatCurrency(incrementalRetentionRevenue)} ce mois-ci
+                </p>
+                <p className="mt-0.5 text-[12.5px] text-mv-ink-soft">
+                  Visites survenues dans les 14 jours suivant une relance automatique (inactivité, anniversaire, décrochage)
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 sm:pl-2">
+              <Button href="/fidelisation" variant="secondary" size="sm" className="text-[12.5px] whitespace-nowrap">
+                Voir la fidélisation
               </Button>
             </div>
           </div>

@@ -11,8 +11,18 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import type { Customer, LoyaltyReward, LoyaltyShare, LoyaltyTransactionType, ReferralProgram } from "@/lib/types";
+import {
+  loyaltyTierOrder,
+  loyaltyTierLabel,
+  loyaltyTierDescription,
+  loyaltyTierBadge,
+  type LoyaltyTierThresholds,
+} from "@/lib/loyalty-tiers";
+import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
 import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
-import { Heart, Plus, Trash2, Gift, Search, Link2, MousePointerClick, Send, Copy, Check, Share2, Download, QrCode } from "lucide-react";
+import { Heart, Plus, Trash2, Gift, Search, Link2, MousePointerClick, Send, Copy, Check, Share2, Download, QrCode, Zap } from "lucide-react";
+import { Switch } from "@/components/ui/Switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import QRCode from "qrcode";
@@ -30,6 +40,8 @@ import {
   sendPortalLinkAction,
   createLoyaltyShareAction,
   deleteLoyaltyShareAction,
+  updateRetentionSettingsAction,
+  updateLoyaltyTierThresholdsAction,
 } from "./actions";
 import { toast } from "sonner";
 import { notifyError } from "@/lib/notify-error";
@@ -52,6 +64,7 @@ function NewCustomerModal({
   onCreated: (c: Customer) => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -63,11 +76,15 @@ function NewCustomerModal({
         email: String(form.get("email") ?? "") || null,
         phone: String(form.get("phone") ?? "") || null,
         notes: String(form.get("notes") ?? "") || null,
+        birthday: String(form.get("birthday") ?? "") || null,
+        marketingConsent,
+        consentSource: "staff",
       });
       if (customer) {
         onCreated(customer);
         onClose();
         (e.target as HTMLFormElement).reset();
+        setMarketingConsent(false);
       } else {
         notifyError("L'ajout du client a échoué.");
       }
@@ -93,6 +110,17 @@ function NewCustomerModal({
         <Field label="Notes" hint="Optionnel — allergies, préférences…">
           <Input name="notes" />
         </Field>
+        <Field label="Date de naissance" hint="Optionnel — pour les campagnes anniversaire">
+          <Input name="birthday" type="date" />
+        </Field>
+        <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
+          <Checkbox
+            checked={marketingConsent}
+            onCheckedChange={(checked) => setMarketingConsent(Boolean(checked))}
+            className="mt-0.5"
+          />
+          <span>Le client accepte de recevoir des offres et rappels par courriel ou SMS.</span>
+        </label>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Annuler
@@ -103,6 +131,128 @@ function NewCustomerModal({
         </div>
       </form>
     </Modal>
+  );
+}
+
+function RetentionSettingsCard({
+  restaurantId,
+  initialEnabled,
+  initialInactivityDays,
+}: {
+  restaurantId: string;
+  initialEnabled: boolean;
+  initialInactivityDays: number;
+}) {
+  const [enabled, setEnabled] = useState(initialEnabled);
+  const [inactivityDays, setInactivityDays] = useState(initialInactivityDays);
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function handleToggle(next: boolean) {
+    setEnabled(next);
+    setIsSaving(true);
+    try {
+      const ok = await updateRetentionSettingsAction(restaurantId, { enabled: next });
+      if (!ok) {
+        setEnabled(!next);
+        notifyError("La mise à jour a échoué.");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleInactivityBlur() {
+    if (inactivityDays === initialInactivityDays) return;
+    await updateRetentionSettingsAction(restaurantId, { inactivityDays });
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="LTV"
+        title="Rétention automatique"
+        description="Relance par courriel/SMS/notification les clients inactifs, ceux qui décrochent, et pour leur anniversaire — sans intervention."
+        action={
+          <Switch
+            checked={enabled}
+            onCheckedChange={handleToggle}
+            disabled={isSaving}
+            className="data-checked:bg-mv-green"
+            aria-label={enabled ? "Désactiver la rétention automatique" : "Activer la rétention automatique"}
+          />
+        }
+      />
+      <div className="flex items-center gap-2 text-[12.5px] text-mv-ink-soft">
+        <Zap size={13} className="text-mv-green-dark" />
+        Considérer un client inactif après
+        <input
+          type="number"
+          min="1"
+          value={inactivityDays}
+          onChange={(e) => setInactivityDays(Number(e.target.value))}
+          onBlur={handleInactivityBlur}
+          className="h-7 w-16 rounded-md border border-mv-border bg-mv-surface px-2 text-center text-[12.5px]"
+        />
+        jours sans visite. Seuls les clients ayant consenti à recevoir des offres sont ciblés.
+      </div>
+    </Card>
+  );
+}
+
+function LoyaltyTierSettingsCard({
+  restaurantId,
+  initialThresholds,
+}: {
+  restaurantId: string;
+  initialThresholds: LoyaltyTierThresholds;
+}) {
+  const [tier2, setTier2] = useState(initialThresholds.tier2);
+  const [tier3, setTier3] = useState(initialThresholds.tier3);
+
+  async function handleBlur(patch: { tier2?: number; tier3?: number }) {
+    await updateLoyaltyTierThresholdsAction(restaurantId, patch);
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Statut client"
+        title="Paliers de fidélité"
+        description="Une progression premium plutôt que des paliers génériques — le palier le plus élevé est le meilleur candidat pour parrainer."
+      />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {loyaltyTierOrder.map((tier, i) => {
+          const { tone, variant, icon: Icon } = loyaltyTierBadge[tier];
+          return (
+            <div key={tier} className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 p-3">
+              <Badge tone={tone} variant={variant}>
+                <Icon size={12} strokeWidth={2.4} />
+                {loyaltyTierLabel[tier]}
+              </Badge>
+              <p className="mt-2 text-[11.5px] leading-snug text-mv-ink-faint">{loyaltyTierDescription[tier]}</p>
+              <p className="mt-2 text-[12px] text-mv-ink-soft">
+                {i === 0 ? (
+                  "Dès l'inscription"
+                ) : (
+                  <>
+                    Dès{" "}
+                    <input
+                      type="number"
+                      min="0"
+                      value={i === 1 ? tier2 : tier3}
+                      onChange={(e) => (i === 1 ? setTier2(Number(e.target.value)) : setTier3(Number(e.target.value)))}
+                      onBlur={() => handleBlur(i === 1 ? { tier2 } : { tier3 })}
+                      className="h-7 w-20 rounded-md border border-mv-border bg-mv-surface px-2 text-center text-[12px]"
+                    />{" "}
+                    $ dépensés
+                  </>
+                )}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 
@@ -209,6 +359,8 @@ function NewReferralProgramModal({
         goalCount: Number(form.get("goalCount") ?? 1),
         rewardId: String(form.get("rewardId") ?? "") || null,
         rewardDescription: String(form.get("rewardDescription") ?? "") || null,
+        referrerBonusPoints: Number(form.get("referrerBonusPoints") ?? 0),
+        newCustomerBonusPoints: Number(form.get("newCustomerBonusPoints") ?? 0),
       });
       if (program) {
         onCreated(program);
@@ -254,6 +406,20 @@ function NewReferralProgramModal({
         <Field label="Ou décrivez la récompense librement" hint="Optionnel — affiché au client">
           <Input name="rewardDescription" placeholder="Ex : dessert offert" />
         </Field>
+        <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 p-3">
+          <p className="mb-2 text-[12px] font-semibold text-mv-ink">Bonus immédiat à la conversion</p>
+          <p className="mb-3 text-[11.5px] leading-snug text-mv-ink-faint">
+            Crédité en points dès qu&apos;un ami parrainé devient client — en plus de la récompense d&apos;objectif ci-dessus, qui reste remise à la main.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Pour le parrain" hint="Points">
+              <Input name="referrerBonusPoints" type="number" min="0" step="1" defaultValue="0" />
+            </Field>
+            <Field label="Pour le nouveau client" hint="Points">
+              <Input name="newCustomerBonusPoints" type="number" min="0" step="1" defaultValue="0" />
+            </Field>
+          </div>
+        </div>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Annuler
@@ -366,6 +532,11 @@ function ReferralProgramsCard({
                     Objectif : {p.goalCount} parrainage{p.goalCount > 1 ? "s" : ""}
                     {p.rewardDescription ? ` — ${p.rewardDescription}` : ""}
                   </p>
+                  {(p.referrerBonusPoints > 0 || p.newCustomerBonusPoints > 0) && (
+                    <p className="mt-0.5 text-[11.5px] text-mv-green-dark">
+                      Bonus immédiat : +{p.referrerBonusPoints} pts parrain / +{p.newCustomerBonusPoints} pts filleul
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge tone={p.active ? "green" : "neutral"}>{p.active ? "Actif" : "Inactif"}</Badge>
@@ -585,6 +756,9 @@ export function FidelisationView({
   initialReferralPrograms,
   referralLinks,
   initialLoyaltyShares,
+  retentionEngineEnabled,
+  retentionInactivityDays,
+  loyaltyTierThresholds,
 }: {
   restaurantId: string | null;
   initialCustomers: Customer[];
@@ -593,6 +767,9 @@ export function FidelisationView({
   initialReferralPrograms: ReferralProgram[];
   referralLinks: ReferralLinkTracking[];
   initialLoyaltyShares: LoyaltyShare[];
+  retentionEngineEnabled: boolean;
+  retentionInactivityDays: number;
+  loyaltyTierThresholds: LoyaltyTierThresholds;
 }) {
   const { role } = useApp();
   const router = useRouter();
@@ -766,7 +943,12 @@ export function FidelisationView({
               <tbody>
                 {filtered.map((c) => (
                   <Tr key={c.id} onClick={() => handleSelect(c.id)} active={c.id === selectedId}>
-                    <Td className="font-semibold">{c.name}</Td>
+                    <Td className="font-semibold">
+                      <div className="flex items-center gap-2">
+                        {c.name}
+                        <LoyaltyTierBadge totalSpent={c.totalSpent} thresholds={loyaltyTierThresholds} size="xs" />
+                      </div>
+                    </Td>
                     <Td className="text-mv-ink-soft">{c.lastVisitAt ? formatDate(c.lastVisitAt) : "—"}</Td>
                     <Td className="text-right">{c.visitCount}</Td>
                     <Td className="text-right font-medium">{formatCurrency(c.totalSpent)}</Td>
@@ -785,7 +967,10 @@ export function FidelisationView({
             <div className="space-y-4 xl:sticky xl:top-6">
               <Card>
                 <div className="mb-1 flex items-center justify-between gap-2">
-                  <Badge tone="green">{selected.loyaltyPoints} points</Badge>
+                  <div className="flex items-center gap-1.5">
+                    <Badge tone="green">{selected.loyaltyPoints} points</Badge>
+                    <LoyaltyTierBadge totalSpent={selected.totalSpent} thresholds={loyaltyTierThresholds} />
+                  </div>
                   {canManage && (
                     <button
                       onClick={() => handleDelete(selected.id, selected.name)}
@@ -910,6 +1095,12 @@ export function FidelisationView({
 
       {canManage && (
         <div className="mt-6 space-y-6">
+          <LoyaltyTierSettingsCard restaurantId={restaurantId!} initialThresholds={loyaltyTierThresholds} />
+          <RetentionSettingsCard
+            restaurantId={restaurantId!}
+            initialEnabled={retentionEngineEnabled}
+            initialInactivityDays={retentionInactivityDays}
+          />
           <RewardsCard restaurantId={restaurantId!} rewards={rewards} onChange={setRewards} />
           <LoyaltyShareCard restaurantId={restaurantId!} shares={loyaltyShares} onChange={setLoyaltyShares} />
           <ReferralProgramsCard

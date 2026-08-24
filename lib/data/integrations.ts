@@ -1,16 +1,37 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { getPosConnections, type PosProvider } from "@/lib/data/pos-connections";
+import { isSquareConfigured, isLightspeedConfigured } from "@/lib/pos/config";
+import { formatDate } from "@/lib/utils";
 
 export type IntegrationItem = {
   id: string;
   name: string;
   category: "caisse" | "paiement" | "marketing" | "livraison" | "communication";
   description: string;
-  status: "connected" | "disconnected" | "pending";
+  status: "connected" | "disconnected" | "pending" | "error";
   connectedAt?: string;
-  iconName: "square" | "stripe" | "google" | "delivery" | "resend";
+  iconName: "square" | "lightspeed" | "stripe" | "google" | "delivery" | "resend";
   details?: Record<string, any>;
+};
+
+const posProviderMeta: Record<PosProvider, { name: string; description: string; iconName: IntegrationItem["iconName"] }> = {
+  square: {
+    name: "Square Point de Vente",
+    description: "Synchronisation automatique des ventes quotidiennes.",
+    iconName: "square",
+  },
+  lightspeed: {
+    name: "Lightspeed Restaurant",
+    description: "Synchronisation automatique des ventes quotidiennes (K-Series).",
+    iconName: "lightspeed",
+  },
+  clover: {
+    name: "Clover",
+    description: "Pas encore disponible.",
+    iconName: "square",
+  },
 };
 
 export async function getRestaurantIntegrations(restaurantId: string): Promise<IntegrationItem[]> {
@@ -23,12 +44,16 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
     .eq("id", restaurantId)
     .maybeSingle();
 
-  // 2. Fetch POS Connections (Square)
-  const { data: posConn } = await supabase
-    .from("pos_connections")
-    .select("id, provider, location_id, updated_at")
-    .eq("restaurant_id", restaurantId)
-    .maybeSingle();
+  // 2. Fetch POS Connections — multi-row aware (a restaurant can have both
+  // Square and Lightspeed connected at once), reusing the same real
+  // connection model as the Settings page instead of a stale, single-row
+  // query that assumed exactly one POS.
+  const posConnections = await getPosConnections(restaurantId);
+  const posConfigured: Record<PosProvider, boolean> = {
+    square: isSquareConfigured(),
+    lightspeed: isLightspeedConfigured(),
+    clover: false,
+  };
 
   // 3. Fetch Google Connections
   const { data: googleConn } = await supabase
@@ -45,26 +70,44 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
     .maybeSingle();
 
   const stripeConnected = Boolean(restaurant?.stripe_connect_account_id && restaurant?.stripe_connect_charges_enabled);
-  const posConnected = Boolean(posConn?.id);
   const googleConnected = Boolean(googleConn?.id);
   const deliveryConnected = Boolean(deliveryConn?.id);
   const resendConnected = Boolean(process.env.RESEND_API_KEY);
 
+  // One card per POS provider that's either configured (env vars present)
+  // or already has a connection row — so a provider nobody's set up yet
+  // simply doesn't clutter the list, but an existing connection always
+  // shows even if the env got unconfigured later.
+  const posItems: IntegrationItem[] = (["square", "lightspeed"] as PosProvider[])
+    .filter((provider) => posConfigured[provider] || posConnections.some((c) => c.provider === provider))
+    .map((provider) => {
+      const connection = posConnections.find((c) => c.provider === provider);
+      const meta = posProviderMeta[provider];
+      const status: IntegrationItem["status"] = !connection
+        ? "disconnected"
+        : connection.status === "erreur"
+          ? "error"
+          : connection.status === "attente"
+            ? "pending"
+            : "connected";
+
+      return {
+        id: `${provider}-pos`,
+        name: meta.name,
+        category: "caisse",
+        description: meta.description,
+        status,
+        connectedAt: connection?.lastSyncedAt ? formatDate(connection.lastSyncedAt) : undefined,
+        iconName: meta.iconName,
+        details: {
+          externalAccountId: connection?.externalAccountId || "Non configuré",
+          autoSync: status === "connected",
+        },
+      };
+    });
+
   return [
-    {
-      id: "square-pos",
-      name: "Square Point de Vente",
-      category: "caisse",
-      description: "Synchronisation automatique des ventes quotidiennes, inventaire et clôture de caisse.",
-      status: posConnected ? "connected" : "disconnected",
-      connectedAt: posConn?.updated_at ? new Date(posConn.updated_at).toLocaleDateString("fr-CA") : undefined,
-      iconName: "square",
-      details: {
-        locationId: posConn?.location_id || "Non configuré",
-        provider: "Square POS API v2",
-        autoSync: true,
-      },
-    },
+    ...posItems,
     {
       id: "stripe-connect",
       name: "Stripe Connect Paiements",

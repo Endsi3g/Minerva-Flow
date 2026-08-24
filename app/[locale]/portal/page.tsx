@@ -77,6 +77,10 @@ export default async function PortalPage({
     );
   }
 
-  const data = await getPortalData(selected);
-  return <PortalView customer={selected} data={data} />;
+  const [data, restaurant] = await Promise.all([getPortalData(selected), getRestaurant(selected.restaurantId)]);
+  const loyaltyTierThresholds = {
+    tier2: restaurant?.loyaltyTier2Threshold ?? 150,
+    tier3: restaurant?.loyaltyTier3Threshold ?? 400,
+  };
+  return <PortalView customer={selected} data={data} loyaltyTierThresholds={loyaltyTierThresholds} />;
 }

@@ -88,6 +88,32 @@ export async function sendEmployeeInviteEmail({
   return { ok: !error };
 }
 
+/**
+ * Automated retention win-back/birthday email (app/api/cron/retention-engine)
+ * — same best-effort contract as sendInviteEmail. bodyHtml is caller-composed
+ * (rule-based templates, not AI-generated per send — see the cron route),
+ * escaped by the caller before interpolating any customer-provided text.
+ */
+export async function sendRetentionEmail({
+  to,
+  subject,
+  bodyHtml,
+}: {
+  to: string;
+  subject: string;
+  bodyHtml: string;
+}): Promise<{ ok: boolean }> {
+  if (!resend) return { ok: false };
+
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject,
+    html: emailShell(bodyHtml, "Voir mes points", `${APP_ORIGIN}/portal`),
+  });
+  return { ok: !error };
+}
+
 type CampaignCategory = "fonctionnalite" | "amelioration" | "correctif";
 
 const CAMPAIGN_CATEGORY_LABEL: Record<CampaignCategory, string> = {

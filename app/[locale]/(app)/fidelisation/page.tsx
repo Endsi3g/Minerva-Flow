@@ -26,6 +26,12 @@ export default async function FidelisationPage() {
       initialCustomers={customers}
       initialRewards={rewards}
       loyaltyPointsPerDollar={restaurant?.loyaltyPointsPerDollar ?? 1}
+      retentionEngineEnabled={restaurant?.retentionEngineEnabled ?? false}
+      retentionInactivityDays={restaurant?.retentionInactivityDays ?? 21}
+      loyaltyTierThresholds={{
+        tier2: restaurant?.loyaltyTier2Threshold ?? 150,
+        tier3: restaurant?.loyaltyTier3Threshold ?? 400,
+      }}
       initialReferralPrograms={referralPrograms}
       referralLinks={referralLinks}
       initialLoyaltyShares={loyaltyShares}
