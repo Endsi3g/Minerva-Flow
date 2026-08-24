@@ -172,7 +172,7 @@ function RetentionSettingsCard({
   return (
     <Card>
       <CardHeader
-        eyebrow="LTV"
+        eyebrow="Automatisation"
         title="Rétention automatique"
         description="Relance par courriel/SMS/notification les clients inactifs, ceux qui décrochent, et pour leur anniversaire — sans intervention."
         action={
@@ -577,7 +577,7 @@ function ReferralProgramsCard({
   async function handleDelete(id: string, name: string) {
     if (
       !window.confirm(
-        `Supprimer le programme "${name}" ? Tous les liens de parrainage et l'historique des conversions de ce programme seront définitivement supprimés.`
+        `Supprimer le programme "${name}" ? Tous les liens de parrainage et l'historique des filleuls de ce programme seront définitivement supprimés.`
       )
     ) {
       return;

@@ -21,7 +21,7 @@
     "fidelisation": "Sadakat",
     "maps": "Haritalar",
     "programs": "Programlar",
-    "impact": "LTV Etkisi",
+    "impact": "Etki",
     "franchise": "Franchise Görünümü",
     "favMaps": "Şehir Raporu",
     "favCampaignsEmail": "Haftalık Gönderim",
@@ -102,7 +102,7 @@
     "reservations": "Rezervasyonlar",
     "support": "Yardım ve Destek",
     "workspace": "Çalışma Alanı",
-    "impact": "LTV Etkisi",
+    "impact": "Etki",
     "franchise": "Franchise Görünümü"
   },
   "shell": {

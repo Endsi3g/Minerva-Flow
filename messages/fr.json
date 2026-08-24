@@ -21,7 +21,7 @@
     "fidelisation": "Fidélisation",
     "maps": "Cartes",
     "programs": "Programmes",
-    "impact": "Impact LTV",
+    "impact": "Impact",
     "franchise": "Vue franchise",
     "favMaps": "Rapport des villes",
     "favCampaignsEmail": "Envoi hebdomadaire",
@@ -102,7 +102,7 @@
     "reservations": "Réservations",
     "support": "Aide & Support",
     "workspace": "Workspace",
-    "impact": "Impact LTV",
+    "impact": "Impact",
     "franchise": "Vue franchise"
   },
   "shell": {

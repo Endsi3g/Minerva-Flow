@@ -38,15 +38,15 @@ export const OVERVIEW_WIDGETS: WidgetItem[] = [
   },
   {
     id: "widget-ltv-impact",
-    title: "Impact LTV",
-    description: "Revenu incrémental, gain de marge du menu et fréquence de visite — vue propriétaire/gérant.",
+    title: "Impact",
+    description: "Ce que la fidélisation rapporte : ventes générées, marge gagnée sur le menu, clients qui reviennent plus souvent.",
     category: "kpi",
     defaultVisible: true,
   },
   {
     id: "widget-menu-health",
     title: "Santé du menu",
-    description: "Répartition BCG du menu actif et nombre de plats en dérive de marge.",
+    description: "Répartition de vos plats par popularité et rentabilité, et nombre de plats qui coûtent trop cher.",
     category: "analytics",
     defaultVisible: true,
   },

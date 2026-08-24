@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
+import { getLoyaltyTier, loyaltyTierLabel, DEFAULT_LOYALTY_TIER_THRESHOLDS } from "@/lib/loyalty-tiers";
+import { sendRetentionEmail } from "@/lib/email/resend";
+import { sendPushToUsers } from "@/lib/push/send";
 import type { Customer, LoyaltyReward, LoyaltyTransaction, LoyaltyTransactionType } from "@/lib/types";
 
 export type CustomerRow = {
@@ -189,11 +192,17 @@ export async function logVisit(
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("loyalty_points_per_dollar")
+    .select("name, loyalty_points_per_dollar, loyalty_tier_2_threshold, loyalty_tier_3_threshold")
     .eq("id", restaurantId)
     .maybeSingle();
 
-  const rate = (restaurant as { loyalty_points_per_dollar: number } | null)?.loyalty_points_per_dollar ?? 1;
+  const restaurantRow = restaurant as {
+    name: string;
+    loyalty_points_per_dollar: number;
+    loyalty_tier_2_threshold: number | null;
+    loyalty_tier_3_threshold: number | null;
+  } | null;
+  const rate = restaurantRow?.loyalty_points_per_dollar ?? 1;
   const pointsEarned = Math.round(amountSpent * rate);
 
   // Atomic: the RPC inserts the ledger row and updates the customer's
@@ -218,6 +227,35 @@ export async function logVisit(
     entityId: customerId,
     description: `A enregistré une visite pour "${customer.name}" (${amountSpent}$, +${pointsEarned} pts)`,
   });
+
+  // Told to the customer, not the staff — the staff-side toast for this
+  // same crossing lives in FidelisationView (their own screen, right after
+  // this call resolves). Total spent before this visit is derived rather
+  // than re-queried, since the RPC already added amountSpent atomically.
+  const tierThresholds = {
+    tier2: restaurantRow?.loyalty_tier_2_threshold ?? DEFAULT_LOYALTY_TIER_THRESHOLDS.tier2,
+    tier3: restaurantRow?.loyalty_tier_3_threshold ?? DEFAULT_LOYALTY_TIER_THRESHOLDS.tier3,
+  };
+  const tierBefore = getLoyaltyTier(customer.total_spent - amountSpent, tierThresholds);
+  const tierAfter = getLoyaltyTier(customer.total_spent, tierThresholds);
+  if (tierAfter !== tierBefore && restaurantRow) {
+    const tierName = loyaltyTierLabel[tierAfter];
+    const firstName = customer.name.trim().split(/\s+/)[0] || customer.name;
+    if (customer.email) {
+      await sendRetentionEmail({
+        to: customer.email,
+        subject: `${firstName}, vous passez au palier ${tierName} chez ${restaurantRow.name} !`,
+        bodyHtml: `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">Félicitations ${firstName} ! Vous venez de passer au palier <strong>${tierName}</strong> chez ${restaurantRow.name}. Consultez vos points et vos récompenses disponibles.</p>`,
+      });
+    }
+    if (customer.user_id) {
+      await sendPushToUsers(
+        [customer.user_id],
+        { title: `Vous passez au palier ${tierName} !`, body: `${restaurantRow.name} vous récompense pour votre fidélité.`, link: "/portal" },
+        restaurantId
+      );
+    }
+  }
 
   const { data: txData } = await supabase
     .from("loyalty_transactions")

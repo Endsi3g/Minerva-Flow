@@ -45,14 +45,13 @@ import {
   Zap,
   Star,
   StarOff,
-  Palette,
   Shield,
   TrendingUp,
   Building2,
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Role } from "@/lib/types";
 import { SearchDialog } from "./SearchDialog";
@@ -120,12 +119,13 @@ const operationalAnalyticsItems: NavItem[] = [
 
 const analyticsItems: NavItem[] = [...ltvAnalyticsItems, ...operationalAnalyticsItems];
 
+const FAVORITES_STORAGE_KEY = "mv-sidebar-favorites";
+
 // 4. Sub settings & help items (with Intégrations inclus)
 const settingsGroupItems: NavItem[] = [
   { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
   { key: "billing", href: "/billing", icon: CreditCard, roles: ["owner"] },
   { key: "guide", href: "/guide", icon: BookOpen, roles: allRoles },
-  { key: "designSystem", href: "/design-system", icon: Palette, roles: allRoles },
   { key: "support", href: "/support", icon: LifeBuoy, roles: allRoles },
   { key: "changelog", href: "/changelog", icon: History, roles: allRoles },
 ];
@@ -345,8 +345,20 @@ export function AppSidebar() {
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Dynamic Favorites state (in-memory, session only — no localStorage)
-  const [favoriteKeys, setFavoriteKeys] = useState<string[]>(["horaire", "commandes", "reports"]);
+  // Favorites, persisted per-browser — previously in-memory only, so a
+  // removed favorite silently came back on every refresh. Starts empty:
+  // the app's own focus is the LTV core list, not the operational tools
+  // this section used to pre-favorite by default. Read lazily (not in an
+  // effect) so there's no extra render pass just to pick up saved state.
+  const [favoriteKeys, setFavoriteKeys] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem(FAVORITES_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const toggleFavorite = (key: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -355,6 +367,11 @@ export function AppSidebar() {
       ? favoriteKeys.filter((k) => k !== key)
       : [...favoriteKeys, key];
     setFavoriteKeys(updated);
+    try {
+      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(updated));
+    } catch {
+      // Ignore — the in-memory state still updates for this session.
+    }
   };
 
   const allowedByRole = (n: NavItem) =>
@@ -420,7 +437,7 @@ export function AppSidebar() {
           transition={SPRING}
         >
           {/* Header block with Logo switcher and search icon */}
-          <div className="flex h-12 items-center justify-between border-b border-mv-border px-3">
+          <div className="flex h-16 items-center justify-between border-b border-mv-border px-3">
             <div className="flex-1 min-w-0">
               <TeamSwitcher />
             </div>

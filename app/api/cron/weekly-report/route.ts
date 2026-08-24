@@ -21,7 +21,7 @@ import { saveAiReview } from "@/lib/data/ai-reviews";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getMenuItems } from "@/lib/data/menu";
 import { getWasteSummary } from "@/lib/data/inventory";
-import { buildMenuWasteContext } from "@/lib/menu-engineering";
+import { buildMenuWasteContext, classifyMenuItems, getMarginDriftItems } from "@/lib/menu-engineering";
 
 /** Monday-Sunday range of the week immediately before the current one. */
 function previousWeekRange(now = new Date()) {
@@ -133,6 +133,24 @@ export async function GET(req: Request) {
         getWasteSummary(restaurantId, { from, to }),
       ]);
       const menuWasteContext = buildMenuWasteContext(menuItems, wasteSummary);
+
+      // Weekly digest of plats en dérive de marge — MarginDriftPanel only
+      // surfaces this live on /menu when someone happens to look, same gap
+      // computeAlerts() had before the digest above; same fix here.
+      const driftItems = getMarginDriftItems(classifyMenuItems(menuItems));
+      if (driftItems.length > 0) {
+        await broadcastNotification({
+          restaurantId,
+          userIds,
+          type: "menu.margin_drift_digest",
+          title:
+            driftItems.length === 1
+              ? `"${driftItems[0].name}" coûte trop cher en ce moment`
+              : `${driftItems.length} plats coûtent trop cher en ce moment`,
+          body: "Le coût de ces plats a grimpé plus vite que leur prix de vente — vérifiez s'il faut ajuster.",
+          link: "/menu",
+        });
+      }
 
       const aiReview = await generateAiReview(
         "ce restaurant",

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import type { AuthUser } from "@/lib/app-context";
+import { useApp, type AuthUser } from "@/lib/app-context";
 import { isDemoAccount } from "@/lib/demo";
+import { cn } from "@/lib/utils";
 import {
   Compass,
   Hammer,
@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  X,
 } from "lucide-react";
 
 const STORAGE_KEY = "mv_demo_guide_seen_v1";
@@ -73,18 +74,17 @@ const STEPS: Step[] = [
     body: (
       <div className="space-y-2.5 text-[13.5px] leading-relaxed text-mv-ink-soft">
         <p>
-          Minerva Flow tourne sur une pile moderne (Next.js, Supabase, Vercel) — chaque chiffre que vous voyez ici
-          vient d&apos;une vraie base de données, pas d&apos;un fichier de démo statique.
+          Minerva Flow est une vraie application, pas une maquette — chaque chiffre que vous voyez ici vient d&apos;une
+          vraie base de données, pas d&apos;un fichier de démonstration figé.
         </p>
         <p>
-          Les intégrations affichées (caisse Square, Google, plateformes publicitaires, Stripe) sont de vraies
-          connexions OAuth fonctionnelles — pas des boutons décoratifs. Quand une intégration n&apos;est pas encore
-          branchée pour ce compte, l&apos;application le dit clairement (« Pas encore disponible ») plutôt que de
-          simuler un faux statut.
+          Les connexions affichées (caisse Square, Google, publicités, paiements) fonctionnent réellement — ce ne
+          sont pas des boutons décoratifs. Quand une connexion n&apos;est pas encore branchée pour ce compte,
+          l&apos;application le dit clairement (« Pas encore disponible ») plutôt que d&apos;afficher un faux statut.
         </p>
         <p>
-          Ce compte démo, lui, est peuplé de données réalistes générées automatiquement — mêmes tables, mêmes
-          règles, mêmes calculs qu&apos;un vrai restaurant.
+          Ce compte de démonstration, lui, est rempli de données réalistes générées automatiquement — les mêmes
+          règles et les mêmes calculs que ceux qu&apos;utiliserait un vrai restaurant.
         </p>
       </div>
     ),
@@ -101,14 +101,15 @@ const STEPS: Step[] = [
           restaurant indépendant :
         </p>
         <p>
-          <strong className="font-semibold text-mv-ink">Menu Engineering</strong> — savoir quels plats sont
-          rentables (matrice BCG) et repérer une dérive de marge avant qu&apos;elle ne coûte cher, sans jamais
-          toucher aux prix à votre place.
+          <strong className="font-semibold text-mv-ink">Rentabilité du menu</strong> — savoir quels plats vous
+          rapportent vraiment et repérer un plat qui coûte trop cher avant que ça ne vous coûte de l&apos;argent, sans
+          jamais toucher aux prix à votre place.
         </p>
         <p>
-          <strong className="font-semibold text-mv-ink">Fidélisation & rétention</strong> — un moteur qui détecte
-          l&apos;inactivité, les anniversaires et le décrochage de valeur, puis agit automatiquement — plutôt qu&apos;un
-          simple programme de points qu&apos;il faut animer soi-même.
+          <strong className="font-semibold text-mv-ink">Faire revenir vos clients</strong> — l&apos;application repère
+          toute seule les clients inactifs, les anniversaires qui approchent, et ceux qui dépensent de moins en
+          moins, puis leur envoie une relance automatiquement — plutôt qu&apos;un simple programme de points qu&apos;il faut
+          animer soi-même.
         </p>
         <p>Chaque insight affiché débouche sur une action en un clic — jamais un chiffre sans suite.</p>
       </div>
@@ -121,8 +122,11 @@ const STEPS: Step[] = [
     body: (
       <div className="space-y-1.5 text-[13.5px] leading-relaxed text-mv-ink-soft">
         <ul className="list-disc space-y-1.5 pl-4">
-          <li>Matrice BCG du menu + alerte automatique de dérive de marge</li>
-          <li>Moteur de rétention automatisé (inactivité, anniversaire, décrochage comportemental) multi-canal</li>
+          <li>Classement automatique des plats les plus et les moins rentables, avec alerte quand un plat coûte trop cher</li>
+          <li>
+            Relances automatiques par courriel, texto ou notification — clients inactifs, anniversaires, clients
+            qui dépensent de moins en moins
+          </li>
           <li>Paliers de fidélité premium — Habitué, Privilégié, Ambassadeur</li>
           <li>Parrainage à double sens (récompense le parrain et le filleul)</li>
           <li>Intégration caisse (Square) avec synchronisation automatique des ventes</li>
@@ -163,6 +167,7 @@ export function DemoGuideTour({ authUser }: { authUser: AuthUser | null }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const isDemo = isDemoAccount(authUser?.email);
+  const { sidebarCollapsed } = useApp();
 
   useEffect(() => {
     if (!isDemo) return;
@@ -217,57 +222,114 @@ export function DemoGuideTour({ authUser }: { authUser: AuthUser | null }) {
         </button>
       )}
 
-      <Modal open={open} onClose={close} title={current.title} width={620}>
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-mv-green-tint text-mv-green-dark">
-              <Icon size={17} />
+      {open && (
+        <GuideOverlay onClose={close} sidebarCollapsed={sidebarCollapsed}>
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-display text-[19px] font-medium text-mv-ink">{current.title}</h2>
             </div>
-            <Badge tone="green" variant="subtle" size="sm">
-              {current.eyebrow}
-            </Badge>
+            <button
+              onClick={close}
+              aria-label="Fermer le guide"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-mv-ink-soft transition-colors hover:bg-mv-ink/5"
+            >
+              <X size={17} />
+            </button>
           </div>
-          <div className="flex items-center gap-1.5">
-            {STEPS.map((_, i) => (
-              <span
-                key={i}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === step ? "w-5 bg-mv-green" : "w-1.5 bg-mv-border"
-                }`}
-              />
-            ))}
+
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-mv-green-tint text-mv-green-dark">
+                <Icon size={17} />
+              </div>
+              <Badge tone="green" variant="subtle" size="sm">
+                {current.eyebrow}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {STEPS.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === step ? "w-5 bg-mv-green" : "w-1.5 bg-mv-border"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
-        </div>
 
-        {current.body}
+          {current.body}
 
-        <div className="mt-6 flex items-center justify-between border-t border-mv-border pt-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
-            disabled={step === 0}
-          >
-            <ArrowLeft size={14} /> Précédent
-          </Button>
-          <button
-            type="button"
-            onClick={close}
-            className="text-[12px] font-semibold text-mv-ink-faint hover:text-mv-ink-soft"
-          >
-            Passer le guide
-          </button>
-          {isLast ? (
-            <Button size="sm" onClick={close}>
-              <Check size={14} /> Terminer
+          <div className="mt-6 flex items-center justify-between border-t border-mv-border pt-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setStep((s) => Math.max(0, s - 1))}
+              disabled={step === 0}
+            >
+              <ArrowLeft size={14} /> Précédent
             </Button>
-          ) : (
-            <Button size="sm" onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}>
-              Suivant <ArrowRight size={14} />
-            </Button>
-          )}
-        </div>
-      </Modal>
+            <button
+              type="button"
+              onClick={close}
+              className="text-[12px] font-semibold text-mv-ink-faint hover:text-mv-ink-soft"
+            >
+              Passer le guide
+            </button>
+            {isLast ? (
+              <Button size="sm" onClick={close}>
+                <Check size={14} /> Terminer
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}>
+                Suivant <ArrowRight size={14} />
+              </Button>
+            )}
+          </div>
+        </GuideOverlay>
+      )}
     </>
+  );
+}
+
+/**
+ * Custom overlay (not the shared Modal) so the backdrop starts after the
+ * sidebar instead of covering it — step 1 of the guide walks through the
+ * sidebar items, so leaving it visible and unblurred while reading helps
+ * rather than a generic full-screen dim. Desktop only offset; on mobile the
+ * sidebar isn't persistent anyway (own slide-in overlay), so it dims fully.
+ */
+function GuideOverlay({
+  onClose,
+  sidebarCollapsed,
+  children,
+}: {
+  onClose: () => void;
+  sidebarCollapsed: boolean;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className={cn(
+        "fixed inset-y-0 right-0 left-0 z-50 flex items-center justify-center p-4",
+        !sidebarCollapsed && "md:left-64"
+      )}
+    >
+      <div className="absolute inset-0 bg-mv-ink/40 backdrop-blur-[2px] mv-animate-in" onClick={onClose} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        style={{ maxWidth: 620 }}
+        className="mv-animate-in relative flex max-h-[90vh] w-full flex-col overflow-y-auto rounded-2xl border border-mv-border bg-mv-surface p-6 shadow-mv-lg"
+      >
+        {children}
+      </div>
+    </div>
   );
 }

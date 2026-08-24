@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
 import { MiniSparkline } from "@/components/charts/MiniSparkline";
 import { MonthCalendar } from "@/components/charts/MonthCalendar";
-import { ComparisonBars } from "@/components/charts/ComparisonBars";
+import { RadialGauge } from "@/components/charts/RadialGauge";
 import { DistributionDonut } from "@/components/charts/DistributionDonut";
 import { LiveAlertsPanel } from "@/components/minerva/LiveAlertsPanel";
 import { RecommendationsPanel } from "@/components/minerva/RecommendationsPanel";
@@ -161,84 +161,95 @@ export function OverviewClientView({
         <div className="mv-animate-in mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           <button
             onClick={() => router.push("/impact")}
-            className="group rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
+            className="group flex items-center gap-4 rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
           >
-            <div className="mb-2 flex items-center justify-between">
-              <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                <DollarSign size={13} /> Revenu incrémental
-              </p>
-              <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
-            </div>
-            <p className="mb-2 font-display text-[19px] font-medium text-mv-ink">
-              {formatCurrency(ltvImpact.incrementalRevenue)}
-            </p>
-            <ComparisonBars
-              height={72}
-              formatValue={(v) => formatCurrency(Math.round(v))}
-              data={[
-                { label: "Relances", value: ltvImpact.incrementalRevenue, color: "var(--mv-green)" },
-                {
-                  label: "Reste du mois",
-                  value: Math.max(0, (monthRevenue ?? 0) - ltvImpact.incrementalRevenue),
-                  color: "var(--mv-border)",
-                },
-              ]}
+            <RadialGauge
+              value={monthRevenue ? (ltvImpact.incrementalRevenue / monthRevenue) * 100 : 0}
+              color="var(--mv-green)"
+              centerValue={`${monthRevenue ? Math.round((ltvImpact.incrementalRevenue / monthRevenue) * 100) : 0}%`}
+              centerLabel="du mois"
             />
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <DollarSign size={13} /> Ventes grâce à la fidélisation
+              </p>
+              <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+                Achats en plus générés par vos relances automatiques, ce mois-ci.
+              </p>
+              <p className="mt-1 font-display text-[19px] font-medium text-mv-ink">
+                {formatCurrency(ltvImpact.incrementalRevenue)}
+              </p>
+              <p className="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark">
+                Voir le détail
+                <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+              </p>
+            </div>
           </button>
 
           <button
             onClick={() => router.push("/impact")}
-            className="group rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
+            className="group flex items-center gap-4 rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
           >
-            <div className="mb-2 flex items-center justify-between">
-              <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                <TrendingUp size={13} /> Gain de marge — menu
-              </p>
-              <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
-            </div>
-            <p className="mb-2 font-display text-[19px] font-medium text-mv-ink">
-              {ltvImpact.marginGainPct >= 0 ? "+" : ""}
-              {ltvImpact.marginGainPct.toFixed(1)} pts
-            </p>
-            <ComparisonBars
-              height={72}
-              formatValue={(v) => `${v.toFixed(1)}%`}
-              data={[
-                { label: "Menu actif", value: ltvImpact.activeMarginPct, color: "var(--mv-green)" },
-                {
-                  label: "Menu complet",
-                  value: ltvImpact.activeMarginPct - ltvImpact.marginGainPct,
-                  color: "var(--mv-border)",
-                },
-              ]}
+            <RadialGauge
+              value={ltvImpact.activeMarginPct}
+              color="var(--mv-green)"
+              centerValue={`${ltvImpact.activeMarginPct.toFixed(0)}%`}
+              centerLabel="de marge"
             />
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <TrendingUp size={13} /> Marge gagnée sur le menu
+              </p>
+              <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+                Marge des plats que vous mettez de l&apos;avant, comparée à l&apos;ensemble du menu.
+              </p>
+              <p className="mt-1 font-display text-[19px] font-medium text-mv-ink">
+                {ltvImpact.marginGainPct >= 0 ? "+" : ""}
+                {ltvImpact.marginGainPct.toFixed(1)} pt
+              </p>
+              <p className="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark">
+                Voir le détail
+                <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+              </p>
+            </div>
           </button>
 
           <button
             onClick={() => router.push("/impact")}
-            className="group rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
+            className="group flex items-center gap-4 rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
           >
-            <div className="mb-2 flex items-center justify-between">
+            <RadialGauge
+              value={
+                ltvImpact.visitFrequency.hasEnoughSignal
+                  ? (ltvImpact.visitFrequency.touchedPerMonth /
+                      (ltvImpact.visitFrequency.touchedPerMonth + ltvImpact.visitFrequency.untouchedPerMonth || 1)) *
+                    100
+                  : 0
+              }
+              color="var(--mv-lime-dark)"
+              centerValue={ltvImpact.visitFrequency.hasEnoughSignal ? `×${ltvImpact.visitFrequency.multiplier.toFixed(1)}` : "—"}
+              centerLabel="plus souvent"
+            />
+            <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                <Repeat size={13} /> Fréquence de visite
+                <Repeat size={13} /> Clients qui reviennent plus souvent
               </p>
-              <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
+              <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+                Clients touchés par une relance, comparés à ceux qui n&apos;en ont pas reçu.
+              </p>
+              {ltvImpact.visitFrequency.hasEnoughSignal ? (
+                <p className="mt-1 text-[13px] text-mv-ink-soft">
+                  {ltvImpact.visitFrequency.touchedPerMonth.toFixed(1)} visites/mois vs{" "}
+                  {ltvImpact.visitFrequency.untouchedPerMonth.toFixed(1)}
+                </p>
+              ) : (
+                <p className="mt-1 text-[13px] text-mv-ink-faint">Pas encore assez de données</p>
+              )}
+              <p className="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark">
+                Voir le détail
+                <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+              </p>
             </div>
-            <p className="mb-2 font-display text-[19px] font-medium text-mv-ink">
-              {ltvImpact.visitFrequency.hasEnoughSignal ? `×${ltvImpact.visitFrequency.multiplier.toFixed(1)}` : "—"}
-            </p>
-            {ltvImpact.visitFrequency.hasEnoughSignal ? (
-              <ComparisonBars
-                height={72}
-                formatValue={(v) => `${v.toFixed(1)}/mois`}
-                data={[
-                  { label: "Touchés", value: ltvImpact.visitFrequency.touchedPerMonth, color: "var(--mv-lime-dark)" },
-                  { label: "Non touchés", value: ltvImpact.visitFrequency.untouchedPerMonth, color: "var(--mv-border)" },
-                ]}
-              />
-            ) : (
-              <p className="text-[12px] text-mv-ink-faint">Pas encore assez de données.</p>
-            )}
           </button>
         </div>
       )}
@@ -256,6 +267,9 @@ export function OverviewClientView({
                 </p>
                 <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
               </div>
+              <p className="mb-3 text-[11.5px] leading-snug text-mv-ink-faint">
+                Répartition de vos plats par popularité et par rentabilité.
+              </p>
               <DistributionDonut
                 data={[
                   { label: "Étoiles", value: menuHealth.etoile, color: "var(--mv-green)" },
@@ -283,6 +297,9 @@ export function OverviewClientView({
                 </p>
                 <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
               </div>
+              <p className="mb-3 text-[11.5px] leading-snug text-mv-ink-faint">
+                Vos clients, classés par palier de fidélité selon leurs dépenses cumulées.
+              </p>
               <DistributionDonut
                 data={[
                   { label: "Habitués", value: loyaltyHealth.habitue, color: "var(--mv-ink-faint)" },

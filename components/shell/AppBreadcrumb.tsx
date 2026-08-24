@@ -16,6 +16,8 @@ import { ChevronRight } from "lucide-react";
 const crumbTranslationKeys: Record<string, string> = {
   overview: "overview",
   programs: "programs",
+  impact: "impact",
+  franchise: "franchise",
   days: "days",
   finance: "finance",
   campaigns: "campaigns",
