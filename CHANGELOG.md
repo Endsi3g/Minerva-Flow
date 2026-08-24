@@ -2,6 +2,25 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.21.0] - 2026-08-24
+
+### 👤 Page client dédiée pour Fidélisation
+- Cliquer sur un client ouvre maintenant une page dédiée (au lieu d'un panneau latéral) avec un graphique de l'évolution du solde de points dans le temps, en plus de l'historique et des récompenses.
+- La liste des clients se limite à 10 à la fois avec un bouton « Voir plus ».
+
+### 💰 Points de fidélité proportionnels au montant, avec bonus
+- Une visite de 20$ et plus donne un bonus de taux (×1.25 dès 20$, ×1.5 dès 50$) — un aperçu du nombre de points s'affiche en direct pendant la saisie.
+
+### 🧭 Réorganisation de la sidebar
+- Vue franchise et Impact remontent juste après Flow AI, avant Fidélisation et Menu.
+- Les favoris de la sidebar ne pré-remplissent plus les outils opérationnels par défaut.
+
+### ✨ Petites améliorations
+- Bouton « Ouvrir le lien » sur le partage de fidélité et le suivi des liens de parrainage ; suivi des liens limité à 5 + « Afficher plus » ; tooltips sur les icônes de clics/conversions.
+- Bannière « en construction » sur Flow AI expliquant l'objectif final.
+- Texte blanc (plutôt que vert) sur tout fond lime plein — meilleure lisibilité.
+- Design System retiré du menu Paramètres (page interne).
+
 ## [v2.20.0] - 2026-08-24
 
 ### 🔵 Jauges circulaires plutôt que des barres
