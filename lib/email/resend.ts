@@ -315,3 +315,42 @@ export async function sendChangelogCampaignEmail({
   if (error) return { ok: false, reason: error.message };
   return { ok: true };
 }
+
+const FEEDBACK_RECIPIENT = "kbelceus776@gmail.com";
+
+/**
+ * A one-to-one transactional send, not a Broadcast — unlike
+ * sendChangelogCampaignEmail, this works fine from the shared sandbox
+ * domain (Resend only blocks Broadcasts from resend.dev, not regular
+ * emails.send calls), so it's not affected by the unverified-domain issue.
+ */
+export async function sendFeatureFeedbackEmail({
+  submitterName,
+  submitterEmail,
+  restaurantName,
+  pollOption,
+  suggestion,
+}: {
+  submitterName: string;
+  submitterEmail: string;
+  restaurantName: string | null;
+  pollOption: string | null;
+  suggestion: string | null;
+}): Promise<{ ok: boolean }> {
+  if (!resend) return { ok: false };
+
+  const p = (text: string) => `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6; margin: 0 0 10px;">${text}</p>`;
+  const bodyHtml =
+    p(`<strong>${escapeHtml(submitterName)}</strong> (${escapeHtml(submitterEmail)})${restaurantName ? ` — ${escapeHtml(restaurantName)}` : ""}`) +
+    (pollOption ? p(`<strong>Vote :</strong> ${escapeHtml(pollOption)}`) : "") +
+    (suggestion ? p(`<strong>Suggestion :</strong> ${escapeHtml(suggestion)}`) : "");
+
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: FEEDBACK_RECIPIENT,
+    replyTo: submitterEmail,
+    subject: `Feedback Flow par Minerva — ${submitterName}`,
+    html: `<div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">${bodyHtml}</div>`,
+  });
+  return { ok: !error };
+}

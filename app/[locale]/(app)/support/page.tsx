@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Textarea } from "@/components/minerva/FormField";
 import { useApp } from "@/lib/app-context";
-import { createSupportRequestAction, getMySupportRequestsAction } from "./actions";
+import { createSupportRequestAction, getMySupportRequestsAction, submitFeatureFeedbackAction } from "./actions";
 import type { SupportCategory, SupportRequest } from "@/lib/data/support";
 import { formatDate } from "@/lib/utils";
-import { CheckCircle2, HelpCircle, Bug, Lightbulb, MessageCircleQuestion } from "lucide-react";
+import { CheckCircle2, HelpCircle, Bug, Lightbulb, MessageCircleQuestion, Vote } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 
 const categoryLabel: Record<SupportCategory, string> = {
   bug: "Problème",
@@ -133,6 +134,8 @@ export default function SupportPage() {
           )}
         </Card>
 
+        <FeatureFeedbackCard restaurantId={restaurantId} />
+
         <Card>
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-cream-soft text-mv-ink-soft">
@@ -195,5 +198,111 @@ export default function SupportPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+const FEATURE_POLL_OPTIONS = [
+  "Paiement et commande depuis le portail client (lié à mon terminal de paiement)",
+  "Carte de fidélité numérique (Apple Wallet)",
+];
+
+/**
+ * A quick priority vote + an open-ended suggestion box, sent straight to
+ * the team's inbox — separate from the ticket form above (which is for
+ * bugs/questions someone follows up on), this is a one-way signal about
+ * what to build next.
+ */
+function FeatureFeedbackCard({ restaurantId }: { restaurantId: string | null }) {
+  const [pollOption, setPollOption] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!pollOption && !suggestion.trim()) return;
+    setIsSubmitting(true);
+    try {
+      const ok = await submitFeatureFeedbackAction({
+        restaurantId,
+        pollOption,
+        suggestion: suggestion.trim() || null,
+      });
+      if (ok) {
+        setSent(true);
+        setPollOption(null);
+        setSuggestion("");
+        toast.success("Merci pour votre retour !");
+      } else {
+        toast.error("L'envoi a échoué — réessayez.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Card>
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+          <Vote size={17} />
+        </div>
+        <div>
+          <p className="font-display text-[15px] font-medium text-mv-ink">Aidez-nous à prioriser</p>
+          <p className="text-[12.5px] text-mv-ink-soft">Quelle prochaine fonctionnalité vous aiderait le plus ?</p>
+        </div>
+      </div>
+
+      {sent ? (
+        <div className="flex flex-col items-center py-4 text-center">
+          <CheckCircle2 size={26} className="mb-2 text-mv-green-dark" />
+          <p className="text-[13px] text-mv-ink-soft">Votre retour a été envoyé.</p>
+          <Button size="sm" variant="secondary" className="mt-3" onClick={() => setSent(false)}>
+            Envoyer un autre retour
+          </Button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            {FEATURE_POLL_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setPollOption(pollOption === option ? null : option)}
+                className={`flex w-full items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-[12.5px] font-medium transition-colors ${
+                  pollOption === option
+                    ? "border-mv-green bg-mv-green-tint text-mv-green-dark"
+                    : "border-mv-border text-mv-ink-soft hover:bg-mv-cream-soft"
+                }`}
+              >
+                <span
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                    pollOption === option ? "border-mv-green bg-mv-green" : "border-mv-border-soft"
+                  }`}
+                >
+                  {pollOption === option && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                </span>
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <Field label="Une suggestion en particulier ?" hint="Optionnel">
+            <Textarea
+              value={suggestion}
+              onChange={(e) => setSuggestion(e.target.value)}
+              placeholder="Décrivez ce qui vous aiderait — même si ce n'est pas dans la liste ci-dessus."
+              rows={3}
+            />
+          </Field>
+
+          <div className="flex justify-end">
+            <Button type="submit" size="sm" disabled={isSubmitting || (!pollOption && !suggestion.trim())}>
+              {isSubmitting ? "Envoi…" : "Envoyer"}
+            </Button>
+          </div>
+        </form>
+      )}
+    </Card>
   );
 }

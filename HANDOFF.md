@@ -20,15 +20,9 @@ Carte numérique avec code QR que le client ajoute à son Apple Wallet ; scanné
 
 **Pourquoi ce n'est pas fait** : demande une intégration Apple PassKit (génération de `.pkpass`, certificat Apple Developer) + un lien avec le système de paiement du POS (même dépendance que le point 1 ci-dessus — sans lien POS, scanner le code ne peut pas déclencher l'attribution de points au moment du paiement). Décision de l'utilisateur (2026-08-24) : scoper séparément plus tard.
 
-## En cours
-
-### 3. Présence d'équipe dans la topbar
-Vue en temps réel (Supabase Realtime) montrant quels membres de l'équipe sont connectés, sur quelle page, avec quel niveau de détail — pile d'avatars à gauche de la barre de recherche, tooltip au survol. **Démarré le 2026-08-24, voir le commit correspondant pour l'état exact.**
-
-### 4. Boîte à suggestions / sondage fonctionnalités
-Sondage à choix + champ libre "suggestion spéciale", accessible à tous les utilisateurs connectés depuis Paramètres/Support, envoyé par courriel à kbelceus776@gmail.com à chaque soumission. **Démarré le 2026-08-24.**
-
 ## Bugs connus, non corrigés
+
+- **Avertissement React "same key" observé sur /support** : deux entrées avec le même id apparaissent dans une liste (notifications ou alertes de la topbar) lors d'un refetch — vu deux fois dans les logs du serveur de dev (2026-08-24), jamais reproduit de façon fiable, cause probable : une course entre le fetch initial et un refetch déclenché par Realtime. N'affecte pas la fonctionnalité (juste un avertissement dev), mais à investiguer si ça revient.
 
 - **`handle_new_user()` (trigger Postgres) ne crée pas de restaurant par défaut** pour un utilisateur créé via `admin.auth.admin.createUser()` — crée seulement `profiles` + `notification_preferences`. Trouvé en testant l'onboarding (2026-08-24), jamais corrigé — cause racine distincte du travail en cours à ce moment-là, hors scope à l'époque.
 - **Courriels en broadcast (annonces de changelog) bloqués** : Resend refuse tout Broadcast envoyé depuis le domaine sandbox partagé (`onboarding@resend.dev`) — confirmé en testant un envoi réel (2026-08-24). Aucun courriel d'annonce de mise à jour ne peut partir tant qu'un domaine vérifié n'est pas configuré (`RESEND_FROM_EMAIL`). Les courriels transactionnels un-à-un (invitations, relances clients) fonctionnent déjà normalement — seuls les Broadcasts à toute la plateforme sont bloqués.
@@ -40,4 +34,6 @@ Sondage à choix + champ libre "suggestion spéciale", accessible à tous les ut
 
 ## Fait récemment (pour contexte, pas une liste exhaustive)
 
+- 2026-08-24 — **Boîte à suggestions / sondage fonctionnalités** (`/support`) : sondage à choix (priorité entre les 2 grands chantiers en attente) + champ libre, chaque soumission enregistrée dans `feature_feedback` et envoyée par courriel à kbelceus776@gmail.com (courriel transactionnel, pas un Broadcast — fonctionne malgré le domaine Resend non vérifié). Vérifié en live : ligne enregistrée en base + courriel confirmé "delivered" via l'API Resend.
+- 2026-08-24 — **Présence d'équipe dans la topbar** : pile d'avatars (Supabase Realtime Presence, un canal par restaurant) à gauche de la barre de recherche, tooltip montrant nom + page consultée ; les fiches plat/client publient un libellé précis ("Plat : Poutine") au lieu du nom générique de la page. Vérifié en live avec deux sessions simultanées.
 - 2026-08-24 — Écosystème LTV : jauges circulaires, langage simplifié partout, guide démo qui ne floute plus la sidebar, page client dédiée + graphique de points, page plat dédiée + navigation précédent/suivant, menu dans le portail client, Impact devient actionnable (relancer un client en un clic), notifications palier de fidélité + dérive de marge + récompense disponible, recherche sidebar/topbar unifiée, bannière mobile corrigée. Voir l'historique de commits pour le détail complet.
