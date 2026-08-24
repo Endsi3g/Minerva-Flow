@@ -77,8 +77,8 @@ const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 const ltvCoreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
-  { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
   { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
+  { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
 ];
 
 // 1b. Day-to-day operational tools — still top-level for staff/consultant,
@@ -104,8 +104,8 @@ const operationsItems: NavItem[] = [
 // 3a. LTV-side analytics — surfaced prominently for owner/manager (see
 // AppSidebar()), not buried inside the generic analytics dropdown below.
 const ltvAnalyticsItems: NavItem[] = [
-  { key: "impact", href: "/impact", icon: TrendingUp, roles: ["owner", "manager"] },
   { key: "franchise", href: "/franchise", icon: Building2, roles: ["owner", "manager"] },
+  { key: "impact", href: "/impact", icon: TrendingUp, roles: ["owner", "manager"] },
 ];
 
 // 3b. Performance & Analytics — operational reporting, not LTV-specific.
@@ -452,26 +452,26 @@ export function AppSidebar() {
           </div>
 
           <div className="flex-1 space-y-4 overflow-y-auto px-2.5 py-3">
-            {/* Core General List */}
+            {/* Core General List — for owner/manager, Vue franchise / Impact
+                are interleaved right after Flow AI (before Fidélisation /
+                Menu), not tacked on as a separate block. Staff/consultant
+                render visibleCoreItems flat and unchanged (their list never
+                contains franchise/impact — role-gated to owner/manager). */}
             <div className="space-y-0.5">
-              {visibleCoreItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  href={item.href}
-                  label={t(navTranslationKeys[item.key] || item.key)}
-                  icon={item.icon}
-                  active={pathname.startsWith(item.href)}
-                  onNavigate={closeMobile}
-                  isFavorite={favoriteKeys.includes(item.key)}
-                  onToggleFavorite={(e) => toggleFavorite(item.key, e)}
-                />
-              ))}
-            </div>
-
-            {/* Impact LTV / Vue franchise — kept flat and visible for owner/manager,
-                distinct from the generic analytics dropdown below. */}
-            {visibleLtvAnalyticsItems.length > 0 && (
-              <div className="space-y-0.5">
+            {isLtvFocusedRole ? (
+              <>
+                {visibleCoreItems.slice(0, 2).map((item) => (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={t(navTranslationKeys[item.key] || item.key)}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                    isFavorite={favoriteKeys.includes(item.key)}
+                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
+                  />
+                ))}
                 {visibleLtvAnalyticsItems.map((item) => (
                   <NavLink
                     key={item.href}
@@ -484,8 +484,34 @@ export function AppSidebar() {
                     onToggleFavorite={(e) => toggleFavorite(item.key, e)}
                   />
                 ))}
-              </div>
+                {visibleCoreItems.slice(2).map((item) => (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={t(navTranslationKeys[item.key] || item.key)}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                    isFavorite={favoriteKeys.includes(item.key)}
+                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
+                  />
+                ))}
+              </>
+            ) : (
+              visibleCoreItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  label={t(navTranslationKeys[item.key] || item.key)}
+                  icon={item.icon}
+                  active={pathname.startsWith(item.href)}
+                  onNavigate={closeMobile}
+                  isFavorite={favoriteKeys.includes(item.key)}
+                  onToggleFavorite={(e) => toggleFavorite(item.key, e)}
+                />
+              ))
             )}
+            </div>
 
             {/* Gestion quotidienne — collapsed operational tools for owner/manager */}
             {visibleOperationalToolsItems.length > 0 && (

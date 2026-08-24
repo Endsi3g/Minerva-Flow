@@ -264,6 +264,20 @@ export function AssistantChatView({
           </div>
         </div>
 
+        {/* Flow AI is a real, working chat — but the deep restaurant-data
+            access (menu, clients, finances, commandes in one conversation)
+            that makes it a genuine game-changer is still being built.
+            Setting that expectation up front beats a silent gap in what it
+            can currently answer. */}
+        <div className="flex items-center gap-2 border-b border-mv-amber/25 bg-mv-amber-bg px-4 py-2 text-[12px] text-[#5c420e]">
+          <Sparkles size={14} className="shrink-0 text-mv-amber" />
+          <span>
+            <strong className="font-semibold">Flow AI est encore en construction.</strong> On travaille à lui donner un
+            accès complet à toutes vos données — menu, clients, finances, commandes — pour qu&apos;il devienne un vrai
+            changement de jeu pour votre resto ou café.
+          </span>
+        </div>
+
         {/* Mobile View Switcher */}
         <div className="flex sm:hidden border-b border-mv-border bg-mv-cream-soft">
           <button

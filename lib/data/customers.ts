@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
-import { getLoyaltyTier, loyaltyTierLabel, DEFAULT_LOYALTY_TIER_THRESHOLDS } from "@/lib/loyalty-tiers";
+import {
+  getLoyaltyTier,
+  loyaltyTierLabel,
+  getVisitBonusMultiplier,
+  DEFAULT_LOYALTY_TIER_THRESHOLDS,
+} from "@/lib/loyalty-tiers";
 import { sendRetentionEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
 import type { Customer, LoyaltyReward, LoyaltyTransaction, LoyaltyTransactionType } from "@/lib/types";
@@ -98,6 +103,27 @@ export async function getCustomers(restaurantId: string): Promise<Customer[]> {
   }
 
   return rows.map((row) => mapCustomer(row, txByCustomer.get(row.id) ?? []));
+}
+
+/** Single customer with full transaction history — for the dedicated /fidelisation/[id] page. */
+export async function getCustomer(restaurantId: string, customerId: string): Promise<Customer | null> {
+  const supabase = await createClient();
+  const { data: row } = await supabase
+    .from("customers")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .eq("id", customerId)
+    .maybeSingle();
+
+  if (!row) return null;
+
+  const { data: txData } = await supabase
+    .from("loyalty_transactions")
+    .select("*")
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false });
+
+  return mapCustomer(row as CustomerRow, ((txData as LoyaltyTransactionRow[]) ?? []).map(mapTransaction));
 }
 
 export type CustomerInput = {
@@ -203,7 +229,7 @@ export async function logVisit(
     loyalty_tier_3_threshold: number | null;
   } | null;
   const rate = restaurantRow?.loyalty_points_per_dollar ?? 1;
-  const pointsEarned = Math.round(amountSpent * rate);
+  const pointsEarned = Math.round(amountSpent * rate * getVisitBonusMultiplier(amountSpent));
 
   // Atomic: the RPC inserts the ledger row and updates the customer's
   // running totals in one transaction — see migration comment for why a

@@ -43,3 +43,20 @@ export function getLoyaltyTier(
   if (totalSpent >= thresholds.tier2) return "privilegie";
   return "habitue";
 }
+
+/**
+ * A flat points-per-dollar rate already rewards a $40 visit twice as much
+ * as a $20 one — but it doesn't nudge someone who's already at the counter
+ * toward spending more on THIS visit. This bonus multiplier does: bigger
+ * single-visit tickets earn a better rate, on top of the base rate.
+ */
+const VISIT_BONUS_TIERS: { minAmount: number; multiplier: number }[] = [
+  { minAmount: 50, multiplier: 1.5 },
+  { minAmount: 20, multiplier: 1.25 },
+  { minAmount: 0, multiplier: 1 },
+];
+
+export function getVisitBonusMultiplier(amountSpent: number): number {
+  return (VISIT_BONUS_TIERS.find((tier) => amountSpent >= tier.minAmount) ?? VISIT_BONUS_TIERS[VISIT_BONUS_TIERS.length - 1])
+    .multiplier;
+}
