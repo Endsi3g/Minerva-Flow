@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MonthCalendar } from "@/components/charts/MonthCalendar";
+import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
 import { AddServiceDayModal, type AddServiceDayInput } from "@/components/forms/AddServiceDayModal";
 import { ImportServiceDaysModal } from "@/components/forms/ImportServiceDaysModal";
 import {
@@ -15,6 +16,7 @@ import {
   deleteServiceDayAction,
   type CreateServiceDayResult,
 } from "./actions";
+import { revenueTrend, margeTrend } from "@/lib/reports";
 import { useApp } from "@/lib/app-context";
 import { useRouter } from "next/navigation";
 import { formatCurrency, formatDateFull, formatDateWeekday } from "@/lib/utils";
@@ -85,6 +87,16 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
 
   const canEdit = role === "owner" || role === "manager" || role === "staff";
 
+  // Same revenueTrend/margeTrend used on Overview's "Revenu vs marge" widget
+  // (lib/reports.ts) — reused here so the two pages never show diverging
+  // numbers for the same underlying service days.
+  const reportData = useMemo(
+    () => ({ serviceDays: days, programs: [], campaigns: [], financialTransactions: [] }),
+    [days]
+  );
+  const revTrend = useMemo(() => revenueTrend(reportData), [reportData]);
+  const margTrend = useMemo(() => margeTrend(reportData), [reportData]);
+
   async function handleSubmit(input: AddServiceDayInput): Promise<CreateServiceDayResult> {
     const result = editingDay ? await updateServiceDayAction(editingDay.id, input) : await createServiceDayAction(input);
     if (result.ok) {
@@ -138,6 +150,22 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
           eventsByDate={eventsByDate}
         />
       </Card>
+
+      {days.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader
+            eyebrow="Revenus"
+            title="Revenu vs marge"
+            description="Toutes journées de la période — survolez une légende pour l'isoler"
+          />
+          <UnifiedTrendChart
+            series={[
+              { key: "revenu", slug: "revenu", label: "Revenu total", color: "var(--mv-green)", data: revTrend },
+              { key: "marge", slug: "marge", label: "Marge estimée", color: "var(--mv-lime-dark)", data: margTrend },
+            ]}
+          />
+        </Card>
+      )}
 
       {days.length === 0 ? (
         <EmptyState

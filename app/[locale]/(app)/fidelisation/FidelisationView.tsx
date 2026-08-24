@@ -21,7 +21,7 @@ import {
 } from "@/lib/loyalty-tiers";
 import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
 import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
-import { Heart, Plus, Trash2, Search, Link2, MousePointerClick, Copy, Check, Share2, Download, QrCode, Zap, ExternalLink } from "lucide-react";
+import { Heart, Plus, Trash2, Search, Link2, MousePointerClick, Copy, Check, Share2, Download, QrCode, Zap, ExternalLink, MapPin } from "lucide-react";
 import { Switch } from "@/components/ui/Switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
@@ -68,6 +68,7 @@ function NewCustomerModal({
         phone: String(form.get("phone") ?? "") || null,
         notes: String(form.get("notes") ?? "") || null,
         birthday: String(form.get("birthday") ?? "") || null,
+        city: String(form.get("city") ?? "") || null,
         marketingConsent,
         consentSource: "staff",
       });
@@ -101,9 +102,14 @@ function NewCustomerModal({
         <Field label="Notes" hint="Optionnel — allergies, préférences…">
           <Input name="notes" />
         </Field>
-        <Field label="Date de naissance" hint="Optionnel — pour les campagnes anniversaire">
-          <Input name="birthday" type="date" />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Date de naissance" hint="Optionnel">
+            <Input name="birthday" type="date" />
+          </Field>
+          <Field label="Ville" hint="Optionnel — d'où vient le client">
+            <Input name="city" placeholder="Ex : Montréal" />
+          </Field>
+        </div>
         <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
           <Checkbox
             checked={marketingConsent}
@@ -335,6 +341,84 @@ function RewardsCard({
           <Input name="description" placeholder="Ex : Tout format, toute la journée" className="w-full" />
         </Field>
       </form>
+    </Card>
+  );
+}
+
+/**
+ * Ranked "where do my customers come from" list, grouped by the city each
+ * customer entered (portal self-serve, or staff at creation — see
+ * ProfileSettingsCard / NewCustomerModal). Sorted by total visits rather
+ * than customer count so a smaller but highly repeat-visiting city can
+ * outrank a bigger one-and-done crowd — the actual ask was to spot where
+ * the people who "come back often" live, not just where headcount is
+ * highest. Replaces the map's old ad-attribution tab, which tracked ad
+ * channels, not geography.
+ */
+function CustomerOriginCard({ customers }: { customers: Customer[] }) {
+  const byCity = useMemo(() => {
+    const map = new Map<string, { city: string; customerCount: number; visits: number; spent: number }>();
+    for (const c of customers) {
+      const raw = c.city?.trim();
+      if (!raw) continue;
+      const key = raw.toLowerCase();
+      const entry = map.get(key) ?? { city: raw, customerCount: 0, visits: 0, spent: 0 };
+      entry.customerCount += 1;
+      entry.visits += c.visitCount;
+      entry.spent += c.totalSpent;
+      map.set(key, entry);
+    }
+    return Array.from(map.values()).sort((a, b) => b.visits - a.visits);
+  }, [customers]);
+
+  const withCity = customers.filter((c) => c.city?.trim()).length;
+  const maxVisits = Math.max(1, ...byCity.map((c) => c.visits));
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Géographie"
+        title="Provenance des clients"
+        description={
+          withCity > 0
+            ? `${withCity} client${withCity > 1 ? "s ont" : " a"} indiqué sa ville — classé par visites cumulées.`
+            : "Aucun client n'a encore indiqué sa ville — ça se remplit dès qu'un client le fait depuis son portail."
+        }
+      />
+      {byCity.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-6 text-center">
+          <MapPin size={20} className="text-mv-ink-faint" />
+          <p className="max-w-sm text-[12.5px] text-mv-ink-soft">
+            Demandez à vos clients d&apos;ajouter leur ville dans &laquo; Mon profil &raquo; sur leur portail, ou
+            ajoutez-la vous-même en créant une fiche client.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {byCity.slice(0, 8).map((c) => (
+            <div key={c.city} className="relative overflow-hidden rounded-lg bg-mv-cream-soft p-2.5">
+              <div
+                className="absolute inset-y-0 left-0 bg-mv-green/10"
+                style={{ width: `${Math.max(6, (c.visits / maxVisits) * 100)}%` }}
+              />
+              <div className="relative flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5 text-[13px] font-medium text-mv-ink">
+                  <MapPin size={13} className="text-mv-green-dark" /> {c.city}
+                </span>
+                <span className="flex shrink-0 items-center gap-3 text-[12px] text-mv-ink-soft">
+                  <span>
+                    {c.customerCount} client{c.customerCount > 1 ? "s" : ""}
+                  </span>
+                  <span className="font-semibold text-mv-ink">
+                    {c.visits} visite{c.visits > 1 ? "s" : ""}
+                  </span>
+                  <span>{formatCurrency(c.spent)}</span>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
@@ -914,8 +998,9 @@ export function FidelisationView({
         }
       />
 
-      <div className="mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RewardValidationCard restaurantId={restaurantId!} />
+        <CustomerOriginCard customers={customers} />
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2.5">

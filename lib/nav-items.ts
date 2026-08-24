@@ -42,7 +42,7 @@ export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "employees", href: "/employees", title: "Employés", subtitle: "Liste des employés et revues de performance", roles: managerRoles },
   { key: "days", href: "/days", title: "Performance quotidienne", subtitle: "Suivi des performances journalières", roles: allRoles },
   { key: "reports", href: "/reports", title: "Rapports", subtitle: "Seuil de rentabilité, food cost, journées", roles: allRoles },
-  { key: "maps", href: "/maps", title: "Carte des établissements", subtitle: "Vos établissements et l'origine de vos clients sur une carte", roles: allRoles },
+  { key: "maps", href: "/maps", title: "Carte des établissements", subtitle: "Vos établissements sur une carte, revenu et classement par ville", roles: allRoles },
   { key: "programs", href: "/programs", title: "Revenus récurrents", subtitle: "Brunchs, soirées et périodes spéciales, avec leur performance", roles: allRoles },
   { key: "library", href: "/library", title: "Documents", subtitle: "Documents et ressources partagées", roles: allRoles },
   { key: "integrations", href: "/integrations", title: "Intégrations", subtitle: "POS et outils connectés", roles: allRoles },

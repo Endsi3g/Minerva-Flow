@@ -109,6 +109,24 @@ export function LibraryView({
         }
       />
 
+      {assets.length > 0 && (
+        <div className="mb-6 flex flex-wrap gap-3">
+          <div className="flex items-center gap-2.5 rounded-xl border border-mv-border bg-mv-surface px-4 py-2.5 shadow-mv-sm">
+            <Layers size={15} className="text-mv-green-dark" />
+            <span className="text-[13px] text-mv-ink-soft">
+              <strong className="font-semibold text-mv-ink">{assets.length}</strong>{" "}
+              document{assets.length > 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="flex items-center gap-2.5 rounded-xl border border-mv-border bg-mv-surface px-4 py-2.5 shadow-mv-sm">
+            <Calendar size={15} className="text-mv-green-dark" />
+            <span className="text-[13px] text-mv-ink-soft">
+              Mis à jour <strong className="font-semibold text-mv-ink">{assets[0]?.updatedAt}</strong>
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Main Search Bar & Filter Pills */}
       <div className="space-y-4">
         {/* Search Bar */}

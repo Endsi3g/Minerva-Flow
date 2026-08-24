@@ -22,7 +22,7 @@ export async function getRestaurantLibraryAssets(restaurantId: string): Promise<
   // 1. Fetch Purchase Orders (Fournisseurs / Factures)
   const { data: purchaseOrders } = await supabase
     .from("purchase_orders")
-    .select("id, created_at, total_amount, status, suppliers ( name )")
+    .select("id, created_at, status, suppliers ( name )")
     .eq("restaurant_id", restaurantId)
     .order("created_at", { ascending: false })
     .limit(10);
@@ -42,7 +42,7 @@ export async function getRestaurantLibraryAssets(restaurantId: string): Promise<
           day: "numeric",
         }),
         sourceName: supplierName,
-        description: `Commande ${po.status} d'un montant de ${Number(po.total_amount || 0).toFixed(2)} $`,
+        description: `Commande ${po.status} auprès de ${supplierName}.`,
       });
     });
   }
@@ -50,8 +50,9 @@ export async function getRestaurantLibraryAssets(restaurantId: string): Promise<
   // 2. Fetch Menu Items (Carte & Ingénierie)
   const { data: menuItems } = await supabase
     .from("menu_items")
-    .select("id, name, category, updated_at, selling_price")
+    .select("id, name, category, price")
     .eq("restaurant_id", restaurantId)
+    .eq("active", true)
     .limit(5);
 
   if (menuItems && menuItems.length > 0) {
@@ -70,7 +71,7 @@ export async function getRestaurantLibraryAssets(restaurantId: string): Promise<
   // 3. Fetch Service Days / Reports (Rapports de revenus)
   const { data: serviceDays } = await supabase
     .from("service_days")
-    .select("id, date, total_revenue")
+    .select("id, date, revenue")
     .eq("restaurant_id", restaurantId)
     .order("date", { ascending: false })
     .limit(5);

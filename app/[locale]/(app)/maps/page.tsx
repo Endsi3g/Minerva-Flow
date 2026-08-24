@@ -9,25 +9,16 @@ import {
   MarkerContent,
   MarkerLabel,
   MarkerPopup,
-  MapClusterLayer,
   useMap,
 } from "@/components/ui/map";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency } from "@/lib/utils";
 import { BarListCard } from "@/components/minerva/BarListCard";
-import { getAdConversionsAction, getRevenueByRestaurantAction, geocodeRestaurantIfMissingAction } from "./actions";
-import type { AdConversion, Restaurant } from "@/lib/types";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { MapPinned, Megaphone, LocateFixed, Navigation, ChevronRight, X, TrendingUp } from "lucide-react";
+import { getRevenueByRestaurantAction, geocodeRestaurantIfMissingAction } from "./actions";
+import type { Restaurant } from "@/lib/types";
+import { useEffect, useRef, useState } from "react";
+import { LocateFixed, Navigation, ChevronRight, X, TrendingUp } from "lucide-react";
 import Link from "next/link";
-
-type FilterMode = "tous" | "organique" | "payant";
-
-const filters: { id: FilterMode; label: string }[] = [
-  { id: "tous", label: "Tout" },
-  { id: "organique", label: "Organique" },
-  { id: "payant", label: "Payant" },
-];
 
 function RestaurantMarker({
   restaurant,
@@ -307,142 +298,7 @@ function EstablishmentsMode() {
   );
 }
 
-const clusterColorsByFilter: Record<FilterMode, [string, string, string]> = {
-  tous: ["#94a3b8", "#3b82f6", "#1d4ed8"],
-  organique: ["#a7f3d0", "#34d399", "#059669"],
-  payant: ["#fecaca", "#f87171", "#dc2626"],
-};
-
-function AttributionMode() {
-  const { restaurantId, restaurants } = useApp();
-  const current = restaurants.find((r) => r.id === restaurantId);
-  const [filter, setFilter] = useState<FilterMode>("tous");
-  const [conversions, setConversions] = useState<AdConversion[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!restaurantId) return;
-    setLoading(true);
-    getAdConversionsAction(restaurantId).then((data) => {
-      setConversions(data);
-      setLoading(false);
-    });
-  }, [restaurantId]);
-
-  const filtered = useMemo(() => {
-    if (filter === "tous") return conversions;
-    if (filter === "organique") return conversions.filter((c) => c.channel === "organic");
-    return conversions.filter((c) => c.channel === "meta" || c.channel === "google");
-  }, [conversions, filter]);
-
-  const geoConversions = filtered.filter(
-    (c): c is AdConversion & { lng: number; lat: number } => c.lng !== null && c.lat !== null
-  );
-
-  const geoJson = useMemo(
-    () => ({
-      type: "FeatureCollection" as const,
-      features: geoConversions.map((c) => ({
-        type: "Feature" as const,
-        geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },
-        properties: { id: c.id, channel: c.channel, city: c.city, revenue: c.revenue },
-      })),
-    }),
-    [geoConversions]
-  );
-
-  const onlineShare =
-    filtered.length > 0
-      ? Math.round((filtered.filter((c) => c.convertedOnline).length / filtered.length) * 100)
-      : 0;
-
-  return (
-    <>
-      <Map
-        blank
-        className="flex-1 min-h-0"
-        center={current?.lng != null && current?.lat != null ? [current.lng, current.lat] : [-73.5673, 45.5017]}
-        zoom={current?.lng != null ? 9 : 11}
-        theme="light"
-      >
-        <MapControls position="bottom-right" showZoom showFullscreen />
-        {geoConversions.length > 0 && (
-          <MapClusterLayer data={geoJson} clusterColors={clusterColorsByFilter[filter]} />
-        )}
-      </Map>
-
-      <div className="md:absolute static mb-4 md:mb-0 md:left-4 md:top-4 z-10 w-full md:w-64 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-          Attribution publicitaire
-        </p>
-        <div className="mb-3 flex items-center rounded-lg border border-mv-border bg-mv-cream-soft p-0.5">
-          {filters.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={
-                filter === f.id
-                  ? "flex-1 rounded-md bg-mv-surface px-2 py-1.5 text-[12px] font-semibold text-mv-ink shadow-mv-sm"
-                  : "flex-1 rounded-md px-2 py-1.5 text-[12px] font-semibold text-mv-ink-soft"
-              }
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {loading ? (
-          <p className="text-[12.5px] text-mv-ink-faint">Chargement…</p>
-        ) : conversions.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-6 text-center">
-            <Megaphone size={20} className="text-mv-ink-faint" />
-            <p className="text-[12.5px] text-mv-ink-soft">
-              Connectez Meta Ads ou Google Ads dans Paramètres → Intégrations pour voir d&apos;où
-              viennent vos clients.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="rounded-lg bg-mv-cream-soft p-2.5">
-              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">Conversions</p>
-              <p className="font-display text-[16px] font-medium text-mv-ink">{filtered.length}</p>
-            </div>
-            <div className="rounded-lg bg-mv-cream-soft p-2.5">
-              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">
-                Achats en ligne
-              </p>
-              <p className="font-display text-[16px] font-medium text-mv-ink">{onlineShare}%</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <BarListCard
-        eyebrow="Classement"
-        title="Sources d'attribution"
-        dismissKey="mv-maps-attribution-bars-dismissed"
-        position="right-4 top-20"
-        rows={(() => {
-          const channelLabel: Record<string, string> = { organic: "Organique", meta: "Meta Ads", google: "Google Ads" };
-          const counts: Record<string, number> = {};
-          for (const c of conversions) counts[c.channel] = (counts[c.channel] ?? 0) + 1;
-          const entries = Object.entries(counts);
-          const max = Math.max(1, ...entries.map(([, n]) => n));
-          return entries
-            .sort((a, b) => b[1] - a[1])
-            .map(([channel, count]) => ({
-              label: channelLabel[channel] ?? channel,
-              value: String(count),
-              fraction: count / max,
-            }));
-        })()}
-      />
-    </>
-  );
-}
-
 export default function MapsPage() {
-  const [mode, setMode] = useState<"establishments" | "attribution">("establishments");
   const { setSidebarCollapsed } = useApp();
 
   useEffect(() => {
@@ -451,30 +307,7 @@ export default function MapsPage() {
 
   return (
     <div className="relative flex-1 min-h-[420px] md:h-full flex flex-col space-y-4 md:space-y-0">
-      <div className="md:absolute static self-end md:right-4 md:top-4 z-10 flex items-center rounded-lg border border-mv-border bg-mv-surface/95 p-0.5 shadow-mv-lg backdrop-blur-sm">
-        <button
-          onClick={() => setMode("establishments")}
-          className={
-            mode === "establishments"
-              ? "flex items-center gap-1.5 rounded-md bg-mv-green px-2.5 py-1.5 text-[12px] font-semibold text-mv-cream-soft"
-              : "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft"
-          }
-        >
-          <MapPinned size={13} /> Établissements
-        </button>
-        <button
-          onClick={() => setMode("attribution")}
-          className={
-            mode === "attribution"
-              ? "flex items-center gap-1.5 rounded-md bg-mv-green px-2.5 py-1.5 text-[12px] font-semibold text-mv-cream-soft"
-              : "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft"
-          }
-        >
-          <Megaphone size={13} /> Attribution
-        </button>
-      </div>
-
-      {mode === "establishments" ? <EstablishmentsMode /> : <AttributionMode />}
+      <EstablishmentsMode />
     </div>
   );
 }

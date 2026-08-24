@@ -561,6 +561,7 @@ export type Customer = {
   consentSource: string | null;
   consentAt: string | null;
   birthday: string | null;
+  city: string | null;
 };
 
 export type LoyaltyReward = {

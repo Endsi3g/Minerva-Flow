@@ -88,6 +88,7 @@ function LoyaltyWalletCard({
 
 function ProfileSettingsCard({ customer }: { customer: Customer }) {
   const [birthday, setBirthday] = useState(customer.birthday ?? "");
+  const [city, setCity] = useState(customer.city ?? "");
   const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -97,6 +98,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
       const ok = await updateMyProfileAction(customer.id, {
         marketingConsent,
         birthday: birthday || null,
+        city: city.trim() || null,
       });
       if (ok) toast.success("Profil mis à jour.");
       else toast.error("La mise à jour a échoué.");
@@ -111,6 +113,9 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
       <div className="space-y-3">
         <Field label="Date de naissance" hint="Optionnel">
           <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
+        </Field>
+        <Field label="Ville" hint="Optionnel — aide le restaurant à savoir d'où viennent ses clients">
+          <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ex : Montréal" />
         </Field>
         <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
           <Checkbox

@@ -55,7 +55,7 @@ export async function getOrCreateReferralLinkAction(programId: string): Promise<
  */
 export async function updateMyProfileAction(
   customerId: string,
-  input: { marketingConsent: boolean; birthday: string | null }
+  input: { marketingConsent: boolean; birthday: string | null; city?: string | null }
 ): Promise<boolean> {
   const supabase = await createClient();
   const {
@@ -71,6 +71,7 @@ export async function updateMyProfileAction(
     marketingConsent: input.marketingConsent,
     consentSource: "portal",
     birthday: input.birthday,
+    city: input.city,
   });
 }
 
