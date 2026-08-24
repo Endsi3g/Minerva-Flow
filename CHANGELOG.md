@@ -2,6 +2,34 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.17.0] - 2026-08-23
+
+### 🎯 Repositionnement produit : Menu Engineering & Fidélisation
+- Le produit se recentre sur deux piliers : rentabilité du menu (matrice BCG, alerte de dérive de marge) et fidélisation/rétention (moteur LTV) — plus de simulateur de tarification dynamique.
+- **Menu** : matrice BCG (Étoiles / Chevaux de bataille / Énigmes / Poids morts), panneau de dérive de marge avec action « Retirer du menu » en un clic, et idées de campagnes générées par IA avec bouton « Lancer cette campagne ».
+
+### 💌 Moteur de rétention automatisé & paliers premium
+- Relance automatique et multi-canal (courriel → notification push → SMS) des clients inactifs, en décrochage de valeur, ou dont l'anniversaire approche — respecte le consentement marketing et un plafond de fréquence anti-spam.
+- Paliers de fidélité premium — Habitué, Privilégié, Ambassadeur — configurables par établissement.
+- Parrainage à double sens : le parrain et le nouveau client reçoivent chacun une récompense immédiate à la conversion.
+- **Aperçu** : nouvelle carte « Revenu incrémental — fidélisation », chiffrant le revenu généré par les relances automatiques.
+
+### 🔌 Intégration caisse (POS) multi-fournisseur
+- L'architecture POS est généralisée à plusieurs fournisseurs (Square, en production ; Lightspeed Restaurant, prêt à activer dès qu'un compte développeur est fourni) au lieu d'être câblée uniquement pour Square.
+- `/settings` affiche un statut honnête par fournisseur (connecté / en erreur / pas encore disponible) plutôt qu'un état générique.
+
+### 🔐 Appareils connectés
+- **Paramètres → Sécurité** : chaque utilisateur peut voir les appareils connectés à son compte (appareil, navigateur, dernière activité) et déconnecter ceux qui ne lui appartiennent pas — sans jamais restreindre les connexions multiples légitimes.
+
+### 📖 Guide de démarrage du compte démo
+- Le compte de démonstration affiche, à la première utilisation, un guide en 5 étapes (comment utiliser l'application, comment elle a été construite, la mentalité produit, ce qui est déjà implémenté, comment percevoir la valeur) — réouvrable à tout moment.
+- Nouvelles infobulles contextuelles sur les réglages de rétention et les paliers de fidélité.
+
+### 🛠️ Correctifs de fiabilité
+- **Finance** : corrige un flux net incohérent (les sorties étaient parfois comptées deux fois) — les entrées, sorties et le flux net affichent maintenant des montants toujours cohérents entre eux.
+- **Paramètres** : retire un panneau d'intégrations obsolète qui pouvait afficher un statut de caisse contradictoire avec la vraie carte de connexion POS.
+- **Établissement** : le type d'établissement (Restaurant / Café / Hybride) est maintenant configurable et ajuste automatiquement les seuils de rentabilité et de rétention par défaut à votre modèle d'affaires.
+
 ## [v2.16.0] - 2026-08-02
 
 ### 👥 Masse Salariale en % du Chiffre d'Affaires
