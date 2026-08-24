@@ -14,10 +14,46 @@ import { StartupChecklist } from "@/components/minerva/StartupChecklist";
 import { WidgetManagerModal, useWidgetVisibility } from "@/components/minerva/WidgetManagerModal";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
 import { formatCurrency, formatDateFull } from "@/lib/utils";
-import { CalendarCheck2, Megaphone, ArrowRight, SlidersHorizontal, Target, CheckCircle2, Users, Heart } from "lucide-react";
+import { StatCard } from "@/components/ui/StatCard";
+import { StatGrid } from "@/components/ui/StatGrid";
+import {
+  CalendarCheck2,
+  Megaphone,
+  ArrowRight,
+  SlidersHorizontal,
+  Target,
+  CheckCircle2,
+  Users,
+  Heart,
+  DollarSign,
+  TrendingUp,
+  Repeat,
+  UtensilsCrossed,
+  Sprout,
+  Star,
+  Crown,
+  Cake,
+} from "lucide-react";
 import Link from "next/link";
 import type { Alert, Recommendation, ServiceDay } from "@/lib/types";
 import type { LaborCostResult } from "@/lib/engine/labor-cost";
+import type { LtvImpact } from "@/lib/engine/impact";
+
+type MenuHealth = {
+  etoile: number;
+  chevalBataille: number;
+  enigme: number;
+  poidsMort: number;
+  marginDriftCount: number;
+};
+
+type LoyaltyHealth = {
+  habitue: number;
+  privilegie: number;
+  ambassadeur: number;
+  inactiveCount: number;
+  upcomingBirthdaysCount: number;
+};
 
 export function OverviewClientView({
   restaurantId,
@@ -37,6 +73,10 @@ export function OverviewClientView({
   dailyTarget,
   laborCost,
   incrementalRetentionRevenue,
+  isLtvFocusedRole,
+  ltvImpact,
+  menuHealth,
+  loyaltyHealth,
 }: {
   restaurantId: string;
   greeting: string;
@@ -55,6 +95,10 @@ export function OverviewClientView({
   dailyTarget?: { clientsNeeded: number; clientsSoFar: number; reached: boolean };
   laborCost?: LaborCostResult;
   incrementalRetentionRevenue?: number;
+  isLtvFocusedRole?: boolean;
+  ltvImpact?: LtvImpact | null;
+  menuHealth?: MenuHealth | null;
+  loyaltyHealth?: LoyaltyHealth | null;
 }) {
   const [managerOpen, setManagerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -109,6 +153,129 @@ export function OverviewClientView({
 
       <StartupChecklist />
 
+      {/* Owner/manager Overview is LTV-first (mirrors AppSidebar's role
+          split): impact of menu engineering + rétention, then menu/loyalty
+          health at a glance — replacing the generic finance/ops widgets
+          below, which stay one click away in Gestion quotidienne /
+          Performance & Analyse. Staff/consultant keep everything unchanged. */}
+      {isLtvFocusedRole && ltvImpact && (
+        <div className="mv-animate-in mb-6">
+          <StatGrid cols={3}>
+            <StatCard
+              label="Revenu incrémental"
+              value={formatCurrency(ltvImpact.incrementalRevenue)}
+              icon={DollarSign}
+              sublabel="Visites suivant une relance"
+              accent="green"
+              onClick={() => router.push("/impact")}
+            />
+            <StatCard
+              label="Gain de marge — menu"
+              value={`${ltvImpact.marginGainPct >= 0 ? "+" : ""}${ltvImpact.marginGainPct.toFixed(1)} pts`}
+              icon={TrendingUp}
+              sublabel={`Menu actif : ${ltvImpact.activeMarginPct.toFixed(1)}%`}
+              accent={ltvImpact.marginGainPct >= 0 ? "green" : "amber"}
+              onClick={() => router.push("/impact")}
+            />
+            <StatCard
+              label="Fréquence de visite"
+              value={ltvImpact.visitFrequency.hasEnoughSignal ? `×${ltvImpact.visitFrequency.multiplier.toFixed(1)}` : "—"}
+              icon={Repeat}
+              sublabel="Touchés vs non touchés"
+              accent="lime"
+              onClick={() => router.push("/impact")}
+            />
+          </StatGrid>
+        </div>
+      )}
+
+      {isLtvFocusedRole && (menuHealth || loyaltyHealth) && (
+        <div className="mv-animate-in mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {menuHealth && (
+            <Link
+              href="/menu"
+              className="group rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                  <UtensilsCrossed size={13} /> Santé du menu
+                </p>
+                <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div>
+                  <p className="font-display text-[22px] font-medium text-mv-green-dark">{menuHealth.etoile}</p>
+                  <p className="text-[11px] text-mv-ink-faint">Étoiles</p>
+                </div>
+                <div>
+                  <p className="font-display text-[22px] font-medium text-mv-ink">{menuHealth.chevalBataille}</p>
+                  <p className="text-[11px] text-mv-ink-faint">Chevaux de bataille</p>
+                </div>
+                <div>
+                  <p className="font-display text-[22px] font-medium text-mv-ink">{menuHealth.enigme}</p>
+                  <p className="text-[11px] text-mv-ink-faint">Énigmes</p>
+                </div>
+                <div>
+                  <p className={`font-display text-[22px] font-medium ${menuHealth.poidsMort > 0 ? "text-mv-red" : "text-mv-ink"}`}>
+                    {menuHealth.poidsMort}
+                  </p>
+                  <p className="text-[11px] text-mv-ink-faint">Poids morts</p>
+                </div>
+              </div>
+              {menuHealth.marginDriftCount > 0 && (
+                <p className="mt-3 border-t border-mv-border-soft pt-3 text-[12px] font-medium text-mv-amber">
+                  {menuHealth.marginDriftCount} plat{menuHealth.marginDriftCount > 1 ? "s" : ""} en dérive de marge
+                </p>
+              )}
+            </Link>
+          )}
+
+          {loyaltyHealth && (
+            <Link
+              href="/fidelisation"
+              className="group rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                  <Heart size={13} /> Fidélisation en un coup d&apos;œil
+                </p>
+                <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <p className="flex items-center gap-1 font-display text-[20px] font-medium text-mv-ink">
+                    <Sprout size={14} className="text-mv-ink-faint" /> {loyaltyHealth.habitue}
+                  </p>
+                  <p className="text-[11px] text-mv-ink-faint">Habitués</p>
+                </div>
+                <div>
+                  <p className="flex items-center gap-1 font-display text-[20px] font-medium text-mv-green-dark">
+                    <Star size={14} /> {loyaltyHealth.privilegie}
+                  </p>
+                  <p className="text-[11px] text-mv-ink-faint">Privilégiés</p>
+                </div>
+                <div>
+                  <p className="flex items-center gap-1 font-display text-[20px] font-medium text-mv-lime-dark">
+                    <Crown size={14} /> {loyaltyHealth.ambassadeur}
+                  </p>
+                  <p className="text-[11px] text-mv-ink-faint">Ambassadeurs</p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-mv-border-soft pt-3 text-[12px] text-mv-ink-soft">
+                <span>{loyaltyHealth.inactiveCount} client(s) inactif(s)</span>
+                {loyaltyHealth.upcomingBirthdaysCount > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Cake size={12} /> {loyaltyHealth.upcomingBirthdaysCount} anniversaire(s) à venir
+                  </span>
+                )}
+              </div>
+            </Link>
+          )}
+        </div>
+      )}
+
+      {!isLtvFocusedRole && (
+      <>
       {/* "Objectif du jour" — the daily break-even client target computed from
           the Finance seuil de rentabilité simulator (lib/engine/break-even.ts),
           with today's progress toward it. The single most important number on
@@ -315,6 +482,8 @@ export function OverviewClientView({
             />
           </Card>
         </div>
+      )}
+      </>
       )}
 
       {/* Alerts & Recommendations Widgets */}

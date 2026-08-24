@@ -102,16 +102,23 @@ const operationsItems: NavItem[] = [
   { key: "employees", href: "/employees", icon: Boxes, roles: ["owner", "manager"] },
 ];
 
-// 3. Performance & Analytics
-const analyticsItems: NavItem[] = [
-  { key: "days", href: "/days", icon: BarChart3, roles: allRoles },
-  { key: "reports", href: "/reports", icon: FileText, roles: allRoles },
+// 3a. LTV-side analytics — surfaced prominently for owner/manager (see
+// AppSidebar()), not buried inside the generic analytics dropdown below.
+const ltvAnalyticsItems: NavItem[] = [
   { key: "impact", href: "/impact", icon: TrendingUp, roles: ["owner", "manager"] },
   { key: "franchise", href: "/franchise", icon: Building2, roles: ["owner", "manager"] },
+];
+
+// 3b. Performance & Analytics — operational reporting, not LTV-specific.
+const operationalAnalyticsItems: NavItem[] = [
+  { key: "days", href: "/days", icon: BarChart3, roles: allRoles },
+  { key: "reports", href: "/reports", icon: FileText, roles: allRoles },
   { key: "maps", href: "/maps", icon: MapIcon, roles: allRoles },
   { key: "programs", href: "/programs", icon: GitCommit, roles: allRoles },
   { key: "library", href: "/library", icon: FolderOpen, roles: allRoles },
 ];
+
+const analyticsItems: NavItem[] = [...ltvAnalyticsItems, ...operationalAnalyticsItems];
 
 // 4. Sub settings & help items (with Intégrations inclus)
 const settingsGroupItems: NavItem[] = [
@@ -364,7 +371,15 @@ export function AppSidebar() {
   const visibleCoreItems = (isLtvFocusedRole ? ltvCoreNavItems : coreNavItems).filter(allowedByRole);
   const visibleOperationalToolsItems = isLtvFocusedRole ? operationalToolsItems.filter(allowedByRole) : [];
   const visibleOperationsItems = operationsItems.filter(allowedByRole);
-  const visibleAnalyticsItems = analyticsItems.filter(allowedByRole);
+  // Owner/manager see Impact LTV / Vue franchise as their own small block
+  // (not buried inside the generic analytics dropdown alongside non-LTV
+  // reporting) — the rest of "Performance & Analyse" stays collapsed by
+  // default instead of forced open, same "hidden, not removed" treatment
+  // as every other non-LTV group. Staff/consultant never see impact/
+  // franchise (role-gated to owner/manager already) so their flat
+  // analytics list is unaffected either way.
+  const visibleLtvAnalyticsItems = isLtvFocusedRole ? ltvAnalyticsItems.filter(allowedByRole) : [];
+  const visibleAnalyticsItems = (isLtvFocusedRole ? operationalAnalyticsItems : analyticsItems).filter(allowedByRole);
   const visibleSettingsItems = settingsGroupItems.filter(allowedByRole);
   const hasSettingsAccess = ["owner", "manager"].includes(role);
 
@@ -436,6 +451,25 @@ export function AppSidebar() {
               ))}
             </div>
 
+            {/* Impact LTV / Vue franchise — kept flat and visible for owner/manager,
+                distinct from the generic analytics dropdown below. */}
+            {visibleLtvAnalyticsItems.length > 0 && (
+              <div className="space-y-0.5">
+                {visibleLtvAnalyticsItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={t(navTranslationKeys[item.key] || item.key)}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                    isFavorite={favoriteKeys.includes(item.key)}
+                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
+                  />
+                ))}
+              </div>
+            )}
+
             {/* Gestion quotidienne — collapsed operational tools for owner/manager */}
             {visibleOperationalToolsItems.length > 0 && (
               <CollapsibleSection
@@ -478,11 +512,14 @@ export function AppSidebar() {
               </CollapsibleSection>
             )}
 
-            {/* Performance & Analytics Section (Prioritaire & Ouvert par défaut) */}
+            {/* Performance & Analytics Section — forced open for staff/consultant
+                (unchanged prior behavior); collapsed by default for owner/manager
+                now that it's non-LTV-only content, same treatment as every other
+                secondary group. */}
             {visibleAnalyticsItems.length > 0 && (
               <CollapsibleSection
                 label="Performance & Analyse"
-                defaultOpen={true}
+                defaultOpen={!isLtvFocusedRole || visibleAnalyticsItems.some((item) => pathname.startsWith(item.href))}
               >
                 {visibleAnalyticsItems.map((item) => (
                   <NavLink

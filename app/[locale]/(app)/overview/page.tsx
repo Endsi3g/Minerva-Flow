@@ -4,9 +4,14 @@ import { OverviewClientView } from "@/components/minerva/OverviewClientView";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
+import { getCurrentRestaurantId, getCurrentMembership } from "@/lib/data/current-restaurant";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { getMyProfile } from "@/lib/data/profile";
+import { getMenuItems } from "@/lib/data/menu";
+import { classifyMenuItems, getMarginDriftItems } from "@/lib/menu-engineering";
+import { getLoyaltyTier, DEFAULT_LOYALTY_TIER_THRESHOLDS } from "@/lib/loyalty-tiers";
+import { getInactiveCustomers, getUpcomingBirthdays } from "@/lib/engine/retention";
+import { computeLtvImpact } from "@/lib/engine/impact";
 import { getPrograms } from "@/lib/data/programs";
 import { getServiceDays } from "@/lib/data/service-days";
 import { getCampaigns } from "@/lib/data/campaigns";
@@ -83,6 +88,7 @@ export default async function OverviewPage() {
 
   const [
     profile,
+    membership,
     restaurant,
     serviceDays,
     programs,
@@ -98,8 +104,11 @@ export default async function OverviewPage() {
     suppliers,
     customers,
     retentionSends,
+    retentionSendsAllTime,
+    menuItems,
   ] = await Promise.all([
     getMyProfile(),
+    getCurrentMembership(),
     getRestaurant(restaurantId),
     getServiceDays(restaurantId, { from, to }),
     getPrograms(restaurantId),
@@ -115,7 +124,11 @@ export default async function OverviewPage() {
     getSuppliers(restaurantId),
     getCustomers(restaurantId),
     getRetentionSends(restaurantId, { from, to }),
+    getRetentionSends(restaurantId),
+    getMenuItems(restaurantId),
   ]);
+
+  const isLtvFocusedRole = membership?.role === "owner" || membership?.role === "manager";
 
   const reportData: ReportData = { serviceDays, programs, campaigns, financialTransactions };
 
@@ -192,6 +205,39 @@ export default async function OverviewPage() {
   // "this system makes you money" number behind the LTV pitch.
   const incrementalRetentionRevenue = getIncrementalRetentionRevenue(retentionSends, customers, 14);
 
+  // Owner/manager Overview is LTV-first (see AppSidebar's role split) —
+  // these three summaries replace the generic finance/ops widgets with the
+  // menu-engineering + fidélisation pulse. All-time sends (not the
+  // month-scoped `retentionSends` above) for the frequency segmentation,
+  // matching /impact's own methodology exactly.
+  let ltvImpact = null;
+  let menuHealth = null;
+  let loyaltyHealth = null;
+  if (isLtvFocusedRole) {
+    ltvImpact = computeLtvImpact(restaurantId, customers, menuItems, retentionSendsAllTime);
+
+    const classified = classifyMenuItems(menuItems);
+    menuHealth = {
+      etoile: classified.filter((i) => i.quadrant === "etoile" && i.active).length,
+      chevalBataille: classified.filter((i) => i.quadrant === "cheval_bataille" && i.active).length,
+      enigme: classified.filter((i) => i.quadrant === "enigme" && i.active).length,
+      poidsMort: classified.filter((i) => i.quadrant === "poids_mort" && i.active).length,
+      marginDriftCount: getMarginDriftItems(classified).length,
+    };
+
+    const tierThresholds = {
+      tier2: restaurant?.loyaltyTier2Threshold ?? DEFAULT_LOYALTY_TIER_THRESHOLDS.tier2,
+      tier3: restaurant?.loyaltyTier3Threshold ?? DEFAULT_LOYALTY_TIER_THRESHOLDS.tier3,
+    };
+    loyaltyHealth = {
+      habitue: customers.filter((c) => getLoyaltyTier(c.totalSpent, tierThresholds) === "habitue").length,
+      privilegie: customers.filter((c) => getLoyaltyTier(c.totalSpent, tierThresholds) === "privilegie").length,
+      ambassadeur: customers.filter((c) => getLoyaltyTier(c.totalSpent, tierThresholds) === "ambassadeur").length,
+      inactiveCount: getInactiveCustomers(customers, restaurant?.retentionInactivityDays ?? 21).length,
+      upcomingBirthdaysCount: getUpcomingBirthdays(customers, restaurant?.retentionBirthdayLeadDays ?? 3).length,
+    };
+  }
+
   return (
     <OverviewClientView
       restaurantId={restaurantId}
@@ -211,6 +257,10 @@ export default async function OverviewPage() {
       dailyTarget={dailyTarget}
       laborCost={laborCost}
       incrementalRetentionRevenue={incrementalRetentionRevenue}
+      isLtvFocusedRole={isLtvFocusedRole}
+      ltvImpact={ltvImpact}
+      menuHealth={menuHealth}
+      loyaltyHealth={loyaltyHealth}
     />
   );
 }
