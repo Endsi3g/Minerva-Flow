@@ -12,12 +12,15 @@ import {
 } from "@/components/ui/onboarding";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Field, Input } from "@/components/minerva/FormField";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { GooglePlacesSearch } from "@/components/places/GooglePlacesSearch";
 import { roleLabels } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
 import { updateProfileNameAction } from "@/app/[locale]/(app)/profil/actions";
 import { updateRestaurantAction, createRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
+import { updateBreakEvenSettingsAction } from "@/app/[locale]/(app)/finance/actions";
 import { setMyRoleAction, finishOnboardingAction } from "@/app/[locale]/onboarding/actions";
+import { BREAK_EVEN_DEFAULTS, CAFE_BREAK_EVEN_DEFAULTS } from "@/lib/engine/break-even";
 import type { RestaurantInput } from "@/lib/data/restaurants";
 import type { Role } from "@/lib/types";
 import { Square, Stripe, GoogleCalendar, Meta, GoogleDrive } from "@/components/ui/BrandIcons";
@@ -72,8 +75,23 @@ export function OnboardingWizard({
   const [role, setRole] = useState<Role>(initialRole);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const [locationForm, setLocationForm] = useState<Partial<RestaurantInput>>({});
+  const [serviceModel, setServiceModel] = useState<"restaurant" | "cafe" | "hybrid">("restaurant");
+  const [avgBasket, setAvgBasket] = useState(BREAK_EVEN_DEFAULTS.avgBasket);
+  const [fixedCosts, setFixedCosts] = useState(BREAK_EVEN_DEFAULTS.fixedCosts);
+  const [grossMarginPct, setGrossMarginPct] = useState(BREAK_EVEN_DEFAULTS.grossMarginPct);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Switching the establishment type suggests café-calibrated numbers
+  // instead of the generic restaurant defaults — still freely editable,
+  // just a better starting point than a one-size-fits-all guess.
+  function handleServiceModelChange(next: "restaurant" | "cafe" | "hybrid") {
+    setServiceModel(next);
+    const defaults = next === "cafe" ? CAFE_BREAK_EVEN_DEFAULTS : BREAK_EVEN_DEFAULTS;
+    setAvgBasket(defaults.avgBasket);
+    setFixedCosts(defaults.fixedCosts);
+    setGrossMarginPct(defaults.grossMarginPct);
+  }
 
   const { preview, loading: uploadLoading, error: uploadError, pickAndUpload } = useAvatarUpload({
     userId,
@@ -92,16 +110,29 @@ export function OnboardingWizard({
       }
       await setMyRoleAction(restaurantId, role);
 
-      // Create or Update Restaurant details entered during onboarding step 3
-      if (Object.keys(locationForm).length > 0) {
-        if (restaurantId) {
-          await updateRestaurantAction(restaurantId, locationForm).catch(() => null);
-        } else {
-          await createRestaurantAction({
-            name: locationForm.name || "Mon restaurant",
-            ...locationForm,
-          }).catch(() => null);
-        }
+      // Create or Update Restaurant details entered during onboarding steps 3-4
+      const restaurantPatch = { ...locationForm, serviceModel };
+      let resolvedRestaurantId = restaurantId || null;
+      if (restaurantId) {
+        await updateRestaurantAction(restaurantId, restaurantPatch).catch(() => null);
+      } else {
+        const created = await createRestaurantAction({
+          name: restaurantPatch.name || "Mon restaurant",
+          ...restaurantPatch,
+        }).catch(() => null);
+        resolvedRestaurantId = created?.id ?? null;
+      }
+
+      // Break-even assumptions live outside RestaurantInput (see
+      // updateBreakEvenSettings) — this is what makes Overview's "Objectif
+      // du jour" reflect this client's real numbers from day one instead
+      // of the generic BREAK_EVEN_DEFAULTS fallback. Passed explicitly
+      // (not via the "current restaurant" cookie) since a restaurant just
+      // created above isn't guaranteed to be reflected in that cookie yet.
+      if (resolvedRestaurantId) {
+        await updateBreakEvenSettingsAction({ fixedCosts, grossMarginPct, avgBasket }, resolvedRestaurantId).catch(
+          () => null
+        );
       }
 
       const finished = await finishOnboardingAction();
@@ -116,7 +147,7 @@ export function OnboardingWizard({
   return (
     <Onboarding
       defaultValue={initialStep}
-      totalSteps={5}
+      totalSteps={6}
       maxStepValue={FEATURES.length - 1}
       onComplete={handleComplete}
       onValueChange={(step) => {
@@ -209,13 +240,67 @@ export function OnboardingWizard({
 
       <Onboarding.Step step={4}>
         <Onboarding.Header
+          title="Vos chiffres clés"
+          description="Ces trois nombres calculent votre objectif de clients chaque jour dans Aperçu — modifiables en tout temps depuis Finance."
+        />
+        <div className="mt-5 space-y-4">
+          <Field label="Type d'établissement">
+            <Select value={serviceModel} onValueChange={(v) => handleServiceModelChange(v as "restaurant" | "cafe" | "hybrid")}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionner un type">
+                  {(v: string | null) =>
+                    v === "cafe" ? "Café" : v === "hybrid" ? "Hybride (café-resto)" : "Restaurant"
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="restaurant">Restaurant</SelectItem>
+                <SelectItem value="cafe">Café</SelectItem>
+                <SelectItem value="hybrid">Hybride (café-resto)</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Panier moyen par client ($)">
+              <Input
+                type="number"
+                min="0"
+                step="0.5"
+                value={avgBasket}
+                onChange={(e) => setAvgBasket(Number(e.target.value))}
+              />
+            </Field>
+            <Field label="Marge brute (%)" hint="100% moins votre food cost">
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                value={grossMarginPct}
+                onChange={(e) => setGrossMarginPct(Number(e.target.value))}
+              />
+            </Field>
+          </div>
+          <Field label="Coûts fixes mensuels ($)" hint="Loyer, salaires de base, assurances — avant les ventes">
+            <Input
+              type="number"
+              min="0"
+              step="100"
+              value={fixedCosts}
+              onChange={(e) => setFixedCosts(Number(e.target.value))}
+            />
+          </Field>
+        </div>
+      </Onboarding.Step>
+
+      <Onboarding.Step step={5}>
+        <Onboarding.Header
           title="Connectez vos outils"
           description="Synchronisez vos comptes clés pour centraliser toutes vos données d'exploitation."
         />
         <ConnectToolsStep />
       </Onboarding.Step>
 
-      <Onboarding.Step step={5}>
+      <Onboarding.Step step={6}>
         <Onboarding.Header title="Vous êtes prêt !" description="Quelques conseils pour bien démarrer." />
         <div className="mt-5">
           <TipsList title="Conseils">

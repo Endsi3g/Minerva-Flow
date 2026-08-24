@@ -25,6 +25,8 @@ import type { Notification } from "@/lib/data/notifications";
 import type { Alert, AlertSeverity } from "@/lib/types";
 import { PushNotificationToggle } from "@/components/pwa/PushNotificationToggle";
 import { GlobalSearchModal } from "@/components/shell/GlobalSearchModal";
+import { DemoRoleSwitcher } from "@/components/demo/DemoRoleSwitcher";
+import { isDemoAccount } from "@/lib/demo";
 
 const alertSeverityTone: Record<AlertSeverity, "red" | "amber" | "neutral"> = {
   critique: "red",
@@ -118,6 +120,7 @@ function UserMenu() {
             </p>
             <p className="mt-1 text-[12.5px] font-medium text-mv-ink-soft">{roleLabels[role]}</p>
           </div>
+          {isDemoAccount(authUser?.email) && <DemoRoleSwitcher currentRole={role} />}
           <div className="mt-1 border-t border-mv-border-soft pt-1.5">
             <button
               onClick={() => {

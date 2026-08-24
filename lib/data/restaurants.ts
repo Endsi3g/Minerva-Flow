@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import { geocodeAddress } from "@/lib/geocode";
 import { fetchWebsiteDescription, fetchWebsiteBusinessInfo } from "@/lib/website-description";
+import { CAFE_BREAK_EVEN_DEFAULTS } from "@/lib/engine/break-even";
 import type { Restaurant, OpeningHours } from "@/lib/types";
 
 type RestaurantRow = {
@@ -250,16 +251,11 @@ export type RestaurantInput = {
   serviceModel?: "restaurant" | "cafe" | "hybrid";
 };
 
-// A café's average ticket and visit cadence are structurally different from
-// a full-service restaurant's — the generic BREAK_EVEN_DEFAULTS (38.50$/
-// client) and the 21-day retention inactivity threshold are calibrated for
-// a sit-down restaurant and would misrepresent a café's break-even point and
-// flag regulars as "inactive" while they're still visiting normally.
-const CAFE_BREAK_EVEN_DEFAULTS = {
-  fixedCosts: 9500,
-  grossMarginPct: 74,
-  avgBasket: 8.5,
-};
+// The 21-day retention inactivity threshold is calibrated for a sit-down
+// restaurant and would flag café regulars as "inactive" while they're still
+// visiting normally (café visit cadence is much tighter). CAFE_BREAK_EVEN_DEFAULTS
+// itself now lives in lib/engine/break-even.ts (client-reachable, needed by
+// the onboarding wizard's live prefill too).
 const CAFE_RETENTION_INACTIVITY_DAYS = 10;
 
 /**

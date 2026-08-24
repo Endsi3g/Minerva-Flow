@@ -81,13 +81,19 @@ export async function categorizeTransactionsAction(
  * survives a reload and Overview's "Objectif du jour" stat (computed from
  * the same numbers) reflects whatever the owner last set here.
  */
-export async function updateBreakEvenSettingsAction(patch: {
-  fixedCosts?: number;
-  grossMarginPct?: number;
-  avgBasket?: number;
-}): Promise<boolean> {
-  const restaurantId = await requireRestaurantId();
-  const ok = await updateBreakEvenSettings(restaurantId, patch);
+export async function updateBreakEvenSettingsAction(
+  patch: {
+    fixedCosts?: number;
+    grossMarginPct?: number;
+    avgBasket?: number;
+  },
+  restaurantId?: string
+): Promise<boolean> {
+  // Onboarding passes its explicit restaurantId — the "current restaurant"
+  // cookie a brand-new signup relies on isn't guaranteed to point at a
+  // restaurant just created earlier in that same onboarding submit.
+  const id = restaurantId ?? (await requireRestaurantId());
+  const ok = await updateBreakEvenSettings(id, patch);
   if (ok) revalidatePath("/overview");
   return ok;
 }

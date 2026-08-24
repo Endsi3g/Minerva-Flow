@@ -8,14 +8,14 @@ import { Button } from "@/components/ui/Button";
 import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
 import { MiniSparkline } from "@/components/charts/MiniSparkline";
 import { MonthCalendar } from "@/components/charts/MonthCalendar";
+import { ComparisonBars } from "@/components/charts/ComparisonBars";
+import { DistributionDonut } from "@/components/charts/DistributionDonut";
 import { LiveAlertsPanel } from "@/components/minerva/LiveAlertsPanel";
 import { RecommendationsPanel } from "@/components/minerva/RecommendationsPanel";
 import { StartupChecklist } from "@/components/minerva/StartupChecklist";
 import { WidgetManagerModal, useWidgetVisibility } from "@/components/minerva/WidgetManagerModal";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
 import { formatCurrency, formatDateFull } from "@/lib/utils";
-import { StatCard } from "@/components/ui/StatCard";
-import { StatGrid } from "@/components/ui/StatGrid";
 import {
   CalendarCheck2,
   Megaphone,
@@ -29,9 +29,6 @@ import {
   TrendingUp,
   Repeat,
   UtensilsCrossed,
-  Sprout,
-  Star,
-  Crown,
   Cake,
 } from "lucide-react";
 import Link from "next/link";
@@ -73,6 +70,7 @@ export function OverviewClientView({
   dailyTarget,
   laborCost,
   incrementalRetentionRevenue,
+  monthRevenue,
   isLtvFocusedRole,
   ltvImpact,
   menuHealth,
@@ -95,6 +93,7 @@ export function OverviewClientView({
   dailyTarget?: { clientsNeeded: number; clientsSoFar: number; reached: boolean };
   laborCost?: LaborCostResult;
   incrementalRetentionRevenue?: number;
+  monthRevenue?: number;
   isLtvFocusedRole?: boolean;
   ltvImpact?: LtvImpact | null;
   menuHealth?: MenuHealth | null;
@@ -158,40 +157,95 @@ export function OverviewClientView({
           health at a glance — replacing the generic finance/ops widgets
           below, which stay one click away in Gestion quotidienne /
           Performance & Analyse. Staff/consultant keep everything unchanged. */}
-      {isLtvFocusedRole && ltvImpact && (
-        <div className="mv-animate-in mb-6">
-          <StatGrid cols={3}>
-            <StatCard
-              label="Revenu incrémental"
-              value={formatCurrency(ltvImpact.incrementalRevenue)}
-              icon={DollarSign}
-              sublabel="Visites suivant une relance"
-              accent="green"
-              onClick={() => router.push("/impact")}
+      {isLtvFocusedRole && ltvImpact && isVisible("widget-ltv-impact") && (
+        <div className="mv-animate-in mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <button
+            onClick={() => router.push("/impact")}
+            className="group rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <DollarSign size={13} /> Revenu incrémental
+              </p>
+              <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
+            </div>
+            <p className="mb-2 font-display text-[19px] font-medium text-mv-ink">
+              {formatCurrency(ltvImpact.incrementalRevenue)}
+            </p>
+            <ComparisonBars
+              height={72}
+              formatValue={(v) => formatCurrency(Math.round(v))}
+              data={[
+                { label: "Relances", value: ltvImpact.incrementalRevenue, color: "var(--mv-green)" },
+                {
+                  label: "Reste du mois",
+                  value: Math.max(0, (monthRevenue ?? 0) - ltvImpact.incrementalRevenue),
+                  color: "var(--mv-border)",
+                },
+              ]}
             />
-            <StatCard
-              label="Gain de marge — menu"
-              value={`${ltvImpact.marginGainPct >= 0 ? "+" : ""}${ltvImpact.marginGainPct.toFixed(1)} pts`}
-              icon={TrendingUp}
-              sublabel={`Menu actif : ${ltvImpact.activeMarginPct.toFixed(1)}%`}
-              accent={ltvImpact.marginGainPct >= 0 ? "green" : "amber"}
-              onClick={() => router.push("/impact")}
+          </button>
+
+          <button
+            onClick={() => router.push("/impact")}
+            className="group rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <TrendingUp size={13} /> Gain de marge — menu
+              </p>
+              <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
+            </div>
+            <p className="mb-2 font-display text-[19px] font-medium text-mv-ink">
+              {ltvImpact.marginGainPct >= 0 ? "+" : ""}
+              {ltvImpact.marginGainPct.toFixed(1)} pts
+            </p>
+            <ComparisonBars
+              height={72}
+              formatValue={(v) => `${v.toFixed(1)}%`}
+              data={[
+                { label: "Menu actif", value: ltvImpact.activeMarginPct, color: "var(--mv-green)" },
+                {
+                  label: "Menu complet",
+                  value: ltvImpact.activeMarginPct - ltvImpact.marginGainPct,
+                  color: "var(--mv-border)",
+                },
+              ]}
             />
-            <StatCard
-              label="Fréquence de visite"
-              value={ltvImpact.visitFrequency.hasEnoughSignal ? `×${ltvImpact.visitFrequency.multiplier.toFixed(1)}` : "—"}
-              icon={Repeat}
-              sublabel="Touchés vs non touchés"
-              accent="lime"
-              onClick={() => router.push("/impact")}
-            />
-          </StatGrid>
+          </button>
+
+          <button
+            onClick={() => router.push("/impact")}
+            className="group rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <Repeat size={13} /> Fréquence de visite
+              </p>
+              <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
+            </div>
+            <p className="mb-2 font-display text-[19px] font-medium text-mv-ink">
+              {ltvImpact.visitFrequency.hasEnoughSignal ? `×${ltvImpact.visitFrequency.multiplier.toFixed(1)}` : "—"}
+            </p>
+            {ltvImpact.visitFrequency.hasEnoughSignal ? (
+              <ComparisonBars
+                height={72}
+                formatValue={(v) => `${v.toFixed(1)}/mois`}
+                data={[
+                  { label: "Touchés", value: ltvImpact.visitFrequency.touchedPerMonth, color: "var(--mv-lime-dark)" },
+                  { label: "Non touchés", value: ltvImpact.visitFrequency.untouchedPerMonth, color: "var(--mv-border)" },
+                ]}
+              />
+            ) : (
+              <p className="text-[12px] text-mv-ink-faint">Pas encore assez de données.</p>
+            )}
+          </button>
         </div>
       )}
 
       {isLtvFocusedRole && (menuHealth || loyaltyHealth) && (
         <div className="mv-animate-in mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {menuHealth && (
+          {menuHealth && isVisible("widget-menu-health") && (
             <Link
               href="/menu"
               className="group rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
@@ -202,26 +256,14 @@ export function OverviewClientView({
                 </p>
                 <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div>
-                  <p className="font-display text-[22px] font-medium text-mv-green-dark">{menuHealth.etoile}</p>
-                  <p className="text-[11px] text-mv-ink-faint">Étoiles</p>
-                </div>
-                <div>
-                  <p className="font-display text-[22px] font-medium text-mv-ink">{menuHealth.chevalBataille}</p>
-                  <p className="text-[11px] text-mv-ink-faint">Chevaux de bataille</p>
-                </div>
-                <div>
-                  <p className="font-display text-[22px] font-medium text-mv-ink">{menuHealth.enigme}</p>
-                  <p className="text-[11px] text-mv-ink-faint">Énigmes</p>
-                </div>
-                <div>
-                  <p className={`font-display text-[22px] font-medium ${menuHealth.poidsMort > 0 ? "text-mv-red" : "text-mv-ink"}`}>
-                    {menuHealth.poidsMort}
-                  </p>
-                  <p className="text-[11px] text-mv-ink-faint">Poids morts</p>
-                </div>
-              </div>
+              <DistributionDonut
+                data={[
+                  { label: "Étoiles", value: menuHealth.etoile, color: "var(--mv-green)" },
+                  { label: "Chevaux de bataille", value: menuHealth.chevalBataille, color: "var(--mv-lime-dark)" },
+                  { label: "Énigmes", value: menuHealth.enigme, color: "var(--mv-amber)" },
+                  { label: "Poids morts", value: menuHealth.poidsMort, color: "var(--mv-red)" },
+                ]}
+              />
               {menuHealth.marginDriftCount > 0 && (
                 <p className="mt-3 border-t border-mv-border-soft pt-3 text-[12px] font-medium text-mv-amber">
                   {menuHealth.marginDriftCount} plat{menuHealth.marginDriftCount > 1 ? "s" : ""} en dérive de marge
@@ -230,7 +272,7 @@ export function OverviewClientView({
             </Link>
           )}
 
-          {loyaltyHealth && (
+          {loyaltyHealth && isVisible("widget-loyalty-health") && (
             <Link
               href="/fidelisation"
               className="group rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
@@ -241,26 +283,13 @@ export function OverviewClientView({
                 </p>
                 <ArrowRight size={14} className="text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <p className="flex items-center gap-1 font-display text-[20px] font-medium text-mv-ink">
-                    <Sprout size={14} className="text-mv-ink-faint" /> {loyaltyHealth.habitue}
-                  </p>
-                  <p className="text-[11px] text-mv-ink-faint">Habitués</p>
-                </div>
-                <div>
-                  <p className="flex items-center gap-1 font-display text-[20px] font-medium text-mv-green-dark">
-                    <Star size={14} /> {loyaltyHealth.privilegie}
-                  </p>
-                  <p className="text-[11px] text-mv-ink-faint">Privilégiés</p>
-                </div>
-                <div>
-                  <p className="flex items-center gap-1 font-display text-[20px] font-medium text-mv-lime-dark">
-                    <Crown size={14} /> {loyaltyHealth.ambassadeur}
-                  </p>
-                  <p className="text-[11px] text-mv-ink-faint">Ambassadeurs</p>
-                </div>
-              </div>
+              <DistributionDonut
+                data={[
+                  { label: "Habitués", value: loyaltyHealth.habitue, color: "var(--mv-ink-faint)" },
+                  { label: "Privilégiés", value: loyaltyHealth.privilegie, color: "var(--mv-green)" },
+                  { label: "Ambassadeurs", value: loyaltyHealth.ambassadeur, color: "var(--mv-lime-dark)" },
+                ]}
+              />
               <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-mv-border-soft pt-3 text-[12px] text-mv-ink-soft">
                 <span>{loyaltyHealth.inactiveCount} client(s) inactif(s)</span>
                 {loyaltyHealth.upcomingBirthdaysCount > 0 && (
@@ -282,7 +311,7 @@ export function OverviewClientView({
           this page per the product spec: "il te faut N clients pour être
           payé". Links to /commandes (take action) and /finance (adjust the
           assumptions behind the number). */}
-      {dailyTarget && (
+      {dailyTarget && isVisible("widget-daily-target") && (
         <div className="mv-animate-in mb-6 rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3.5">
@@ -325,7 +354,7 @@ export function OverviewClientView({
           Finance's Aperçu tab). Amber when over the industry-benchmark
           target so a real overage reads as a warning, not just a number;
           the concrete fix action lives in Horaire. */}
-      {laborCost && (
+      {laborCost && isVisible("widget-labor-cost") && (
         <div className="mv-animate-in mb-6 rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3.5">
@@ -366,7 +395,7 @@ export function OverviewClientView({
           automated retention nudge (lib/engine/retention.ts). Always shown
           (even at 0$) so activating the toggle in /fidelisation has a
           visible payoff to watch grow. */}
-      {incrementalRetentionRevenue !== undefined && (
+      {incrementalRetentionRevenue !== undefined && isVisible("widget-incremental-revenue") && (
         <div className="mv-animate-in mb-6 rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3.5">

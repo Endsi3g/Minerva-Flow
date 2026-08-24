@@ -16,6 +16,48 @@ export type WidgetItem = {
 
 export const OVERVIEW_WIDGETS: WidgetItem[] = [
   {
+    id: "widget-daily-target",
+    title: "Objectif du jour",
+    description: "Nombre de clients requis aujourd'hui pour couvrir vos coûts, selon vos hypothèses de rentabilité.",
+    category: "kpi",
+    defaultVisible: true,
+  },
+  {
+    id: "widget-labor-cost",
+    title: "Masse salariale du mois",
+    description: "Coût de la main-d'œuvre en % du chiffre d'affaires du mois.",
+    category: "kpi",
+    defaultVisible: true,
+  },
+  {
+    id: "widget-incremental-revenue",
+    title: "Revenu incrémental — fidélisation",
+    description: "Revenu des visites survenues peu après une relance automatique.",
+    category: "kpi",
+    defaultVisible: true,
+  },
+  {
+    id: "widget-ltv-impact",
+    title: "Impact LTV",
+    description: "Revenu incrémental, gain de marge du menu et fréquence de visite — vue propriétaire/gérant.",
+    category: "kpi",
+    defaultVisible: true,
+  },
+  {
+    id: "widget-menu-health",
+    title: "Santé du menu",
+    description: "Répartition BCG du menu actif et nombre de plats en dérive de marge.",
+    category: "analytics",
+    defaultVisible: true,
+  },
+  {
+    id: "widget-loyalty-health",
+    title: "Fidélisation en un coup d'œil",
+    description: "Répartition des paliers de fidélité, clients inactifs et anniversaires à venir.",
+    category: "analytics",
+    defaultVisible: true,
+  },
+  {
     id: "widget-kpi-summary",
     title: "Chiffre d'Affaires & KPIs du Mois",
     description: "Métriques de revenus, marge brute et nombre de couverts du mois en cours.",
@@ -33,13 +75,6 @@ export const OVERVIEW_WIDGETS: WidgetItem[] = [
     id: "widget-heatmap",
     title: "Calendrier d'Affluence & Heatmap",
     description: "Heatmap des jours calmes vs jours de pointe du mois.",
-    category: "analytics",
-    defaultVisible: true,
-  },
-  {
-    id: "widget-trends",
-    title: "Tendances Unifiées Recharts",
-    description: "Graphiques d'évolution du chiffre d'affaires et de la masse salariale.",
     category: "analytics",
     defaultVisible: true,
   },

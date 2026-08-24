@@ -257,6 +257,7 @@ export default async function OverviewPage() {
       dailyTarget={dailyTarget}
       laborCost={laborCost}
       incrementalRetentionRevenue={incrementalRetentionRevenue}
+      monthRevenue={monthRevenue}
       isLtvFocusedRole={isLtvFocusedRole}
       ltvImpact={ltvImpact}
       menuHealth={menuHealth}

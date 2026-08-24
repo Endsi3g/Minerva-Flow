@@ -130,7 +130,10 @@ export function getVisitFrequencyImpact(
   function avgVisitsPerMonth(list: Customer[]): number {
     if (list.length === 0) return 0;
     const rates = list.map((c) => {
-      const tenureDays = Math.max(1, (now - new Date(c.createdAt).getTime()) / 86_400_000);
+      // Floored at 30 days (not 1) — a customer created hours ago with a
+      // handful of backfilled visits would otherwise extrapolate to an
+      // absurd rate (e.g. 12 visits / 1 day -> 360/month).
+      const tenureDays = Math.max(30, (now - new Date(c.createdAt).getTime()) / 86_400_000);
       return c.visitCount / (tenureDays / 30);
     });
     return rates.reduce((sum, r) => sum + r, 0) / rates.length;
