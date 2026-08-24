@@ -92,7 +92,7 @@ export function LibraryView({
     <div>
       <PageHeader
         eyebrow={restaurantName}
-        title="Bibliothèque d'assets & Documents"
+        title="Documents"
         description="Recherchez et utilisez les documents, factures et rapports de votre établissement à travers Flow."
         action={
           <label className="flex items-center gap-2 rounded-xl bg-mv-green px-4 py-2.5 text-[13px] font-bold text-mv-cream-soft shadow-mv-sm transition-all hover:bg-mv-green-dark cursor-pointer shrink-0">

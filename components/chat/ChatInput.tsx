@@ -108,7 +108,7 @@ export function ChatInput({
                     className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-cream-soft px-3 py-1 text-[11.5px] font-semibold text-mv-ink transition-colors hover:bg-mv-border/40"
                   >
                     <FolderOpen size={13} className="text-mv-green-dark" />
-                    <span>Bibliothèque</span>
+                    <span>Documents</span>
                   </Link>
                 </div>
 

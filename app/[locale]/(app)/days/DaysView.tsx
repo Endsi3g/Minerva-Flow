@@ -109,7 +109,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
     <div>
       <PageHeader
         eyebrow="Journées de service"
-        title="Journées"
+        title="Performance quotidienne"
         description="Le calendrier de vos services : niveau de revenu, source principale et notes remontées par l'équipe."
         action={
           canEdit && (

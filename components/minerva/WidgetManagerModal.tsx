@@ -38,7 +38,7 @@ export const OVERVIEW_WIDGETS: WidgetItem[] = [
   },
   {
     id: "widget-ltv-impact",
-    title: "Impact",
+    title: "Résultats fidélisation",
     description: "Ce que la fidélisation rapporte : ventes générées, marge gagnée sur le menu, clients qui reviennent plus souvent.",
     category: "kpi",
     defaultVisible: true,

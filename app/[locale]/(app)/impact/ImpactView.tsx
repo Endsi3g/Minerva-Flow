@@ -47,7 +47,7 @@ export function ImpactView({
   if (!impact) {
     return (
       <div>
-        <PageHeader eyebrow="Impact" title="Ce que la fidélisation vous rapporte" />
+        <PageHeader eyebrow="Résultats fidélisation" title="Ce que la fidélisation vous rapporte" />
         <EmptyState
           icon={TrendingUp}
           title="Aucun établissement sélectionné"
@@ -66,7 +66,7 @@ export function ImpactView({
   return (
     <div>
       <PageHeader
-        eyebrow="Impact"
+        eyebrow="Résultats fidélisation"
         title="Ce que la fidélisation vous rapporte"
         description={
           restaurantName

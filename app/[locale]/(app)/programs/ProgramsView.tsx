@@ -147,8 +147,8 @@ export function ProgramsView({
   return (
     <div>
       <PageHeader
-        eyebrow="Programmes"
-        title="Programmes"
+        eyebrow="Revenus récurrents"
+        title="Revenus récurrents"
         description="Chaque source de revenu récurrente ou saisonnière — brunchs, soirées, périodes spéciales — avec sa performance."
         action={
           canCreate && (
