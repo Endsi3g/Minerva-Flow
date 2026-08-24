@@ -1,22 +1,46 @@
 "use client";
 
+import { useState } from "react";
+import { toast } from "sonner";
+import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AlertBanner } from "@/components/ui/AlertBanner";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { RadialGauge } from "@/components/charts/RadialGauge";
 import { formatCurrency } from "@/lib/utils";
+import { notifyError } from "@/lib/notify-error";
+import { sendManualRetentionNudgeAction } from "./actions";
 import type { LtvImpact } from "@/lib/engine/impact";
-import { DollarSign, TrendingUp, Repeat, Users } from "lucide-react";
+import type { AtRiskCustomer } from "@/lib/data/impact";
+import { DollarSign, TrendingUp, Repeat, Users, Send, Clock, TrendingDown } from "lucide-react";
+
+const triggerLabel: Record<AtRiskCustomer["trigger"], string> = {
+  inactivity: "N'est pas revenu depuis un moment",
+  value_drift: "Vient moins souvent qu'avant",
+  birthday: "Anniversaire",
+};
+
+const triggerIcon: Record<AtRiskCustomer["trigger"], typeof Clock> = {
+  inactivity: Clock,
+  value_drift: TrendingDown,
+  birthday: Clock,
+};
 
 export function ImpactView({
   restaurantName,
   impact,
   monthRevenue,
+  atRiskCustomers,
+  retentionEngineEnabled,
 }: {
   restaurantName: string | null;
   impact: LtvImpact | null;
   monthRevenue: number;
+  atRiskCustomers: AtRiskCustomer[];
+  retentionEngineEnabled: boolean;
 }) {
   if (!impact) {
     return (
@@ -44,12 +68,14 @@ export function ImpactView({
         title="Ce que la fidélisation vous rapporte"
         description={
           restaurantName
-            ? `L'effet concret d'un menu optimisé et de relances automatiques chez ${restaurantName}.`
-            : "L'effet concret d'un menu optimisé et de relances automatiques."
+            ? `Ce que vos relances automatiques rapportent chez ${restaurantName} — et les clients à relancer dès maintenant.`
+            : "Ce que vos relances automatiques rapportent — et les clients à relancer dès maintenant."
         }
       />
 
-      <AlertBanner tone="info" title="Comment lire ces chiffres" className="mb-6">
+      <ActionableCustomersCard retentionEngineEnabled={retentionEngineEnabled} initialCustomers={atRiskCustomers} />
+
+      <AlertBanner tone="info" title="Comment lire les chiffres ci-dessous" className="mb-6 mt-6">
         On ne compare pas un « avant / après » — un établissement qui vient tout juste d&apos;activer la fidélisation
         n&apos;a pas d&apos;historique à comparer. On compare plutôt, sur la même période, les clients qui ont reçu une
         relance à ceux qui n&apos;en ont pas reçu.
@@ -153,5 +179,90 @@ export function ImpactView({
         </Card>
       </div>
     </div>
+  );
+}
+
+function ActionableCustomersCard({
+  retentionEngineEnabled,
+  initialCustomers,
+}: {
+  retentionEngineEnabled: boolean;
+  initialCustomers: AtRiskCustomer[];
+}) {
+  const [customers, setCustomers] = useState(initialCustomers);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+
+  async function handleSend(customerId: string, trigger: AtRiskCustomer["trigger"]) {
+    setSendingId(customerId);
+    try {
+      const result = await sendManualRetentionNudgeAction(customerId, trigger);
+      if (result.ok) {
+        toast.success("Relance envoyée.");
+        setCustomers((prev) => prev.filter((c) => c.customer.id !== customerId));
+      } else {
+        notifyError("L'envoi a échoué — vérifiez que ce client a un courriel, un téléphone ou un compte portail.");
+      }
+    } finally {
+      setSendingId(null);
+    }
+  }
+
+  return (
+    <Card className="mb-6">
+      <CardHeader
+        eyebrow="À faire aujourd'hui"
+        title="Clients à relancer maintenant"
+        description="Ces clients contribuent directement à « Ventes grâce à la fidélisation » ci-dessous — relancez-les au lieu d'attendre l'envoi automatique de demain."
+      />
+      {!retentionEngineEnabled ? (
+        <p className="text-[12.5px] text-mv-ink-faint">
+          La rétention automatique n&apos;est pas encore activée — activez-la depuis{" "}
+          <Link href="/fidelisation" className="font-semibold text-mv-green-dark hover:underline">
+            Fidélisation
+          </Link>{" "}
+          pour voir ici les clients à relancer.
+        </p>
+      ) : customers.length === 0 ? (
+        <p className="text-[12.5px] text-mv-ink-faint">
+          Aucun client à relancer pour l&apos;instant. Revenez plus tard, ou{" "}
+          <Link href="/fidelisation" className="font-semibold text-mv-green-dark hover:underline">
+            ajustez vos automatisations
+          </Link>
+          .
+        </p>
+      ) : (
+        <div className="space-y-1.5">
+          {customers.map(({ customer, trigger }) => {
+            const Icon = triggerIcon[trigger];
+            return (
+              <div
+                key={customer.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-mv-border-soft px-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <Link href={`/fidelisation/${customer.id}`} className="text-[13px] font-semibold text-mv-ink hover:underline">
+                    {customer.name}
+                  </Link>
+                  <p className="flex items-center gap-1.5 text-[11.5px] text-mv-ink-faint">
+                    <Icon size={12} /> {triggerLabel[trigger]}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge tone="neutral">{formatCurrency(customer.totalSpent)} dépensés</Badge>
+                  <Button
+                    size="xs"
+                    onClick={() => handleSend(customer.id, trigger)}
+                    disabled={sendingId === customer.id}
+                  >
+                    <Send size={12} />
+                    {sendingId === customer.id ? "Envoi…" : "Relancer"}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Card>
   );
 }

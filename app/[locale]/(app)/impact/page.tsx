@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getRestaurant } from "@/lib/data/restaurants";
-import { getLtvImpact } from "@/lib/data/impact";
+import { getLtvImpact, getActionableAtRiskCustomers } from "@/lib/data/impact";
 import { getServiceDays } from "@/lib/data/service-days";
 import { ImpactView } from "./ImpactView";
 
@@ -23,22 +23,29 @@ export default async function ImpactPage() {
   if (!restaurantId) {
     return (
       <Suspense>
-        <ImpactView restaurantName={null} impact={null} monthRevenue={0} />
+        <ImpactView restaurantName={null} impact={null} monthRevenue={0} atRiskCustomers={[]} retentionEngineEnabled={false} />
       </Suspense>
     );
   }
 
   const { from, to } = currentMonthRange();
-  const [restaurant, impact, serviceDays] = await Promise.all([
+  const [restaurant, impact, serviceDays, atRiskCustomers] = await Promise.all([
     getRestaurant(restaurantId),
     getLtvImpact(restaurantId),
     getServiceDays(restaurantId, { from, to }),
+    getActionableAtRiskCustomers(restaurantId),
   ]);
   const monthRevenue = serviceDays.reduce((sum, d) => sum + d.revenue, 0);
 
   return (
     <Suspense>
-      <ImpactView restaurantName={restaurant?.name ?? null} impact={impact} monthRevenue={monthRevenue} />
+      <ImpactView
+        restaurantName={restaurant?.name ?? null}
+        impact={impact}
+        monthRevenue={monthRevenue}
+        atRiskCustomers={atRiskCustomers}
+        retentionEngineEnabled={restaurant?.retentionEngineEnabled ?? false}
+      />
     </Suspense>
   );
 }
