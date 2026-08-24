@@ -55,6 +55,8 @@ const counts = {
   referral_programs: 0,
   customer_referral_links: 0,
   offers: 0,
+  loyalty_rewards: 0,
+  retention_sends: 0,
   loyalty_shares: 0,
   consent_backfilled: 0,
   birthday_backfilled: 0,
@@ -370,6 +372,26 @@ async function seedOffers(restaurantId) {
   const { data, error } = await supabase.from("offers").insert(rows).select("id");
   if (error) throw error;
   counts.offers += data.length;
+}
+
+async function seedLoyaltyRewards(restaurantId) {
+  const { count, error: countError } = await supabase
+    .from("loyalty_rewards")
+    .select("id", { count: "exact", head: true })
+    .eq("restaurant_id", restaurantId);
+  if (countError) throw countError;
+  if (count && count > 0) return;
+
+  const rows = [
+    { name: "Café ou thé offert", description: "Tout format, toute la journée.", points_cost: 50, active: true },
+    { name: "Dessert offert", description: "Sur présentation du reçu de votre dernière visite.", points_cost: 120, active: true },
+    { name: "10% de rabais sur l'addition", description: "Valide un passage, non cumulable.", points_cost: 200, active: true },
+    { name: "Menu du jour offert", description: "Un menu du jour au choix, un par visite.", points_cost: 450, active: true },
+  ].map((r) => ({ restaurant_id: restaurantId, ...r }));
+
+  const { data, error } = await supabase.from("loyalty_rewards").insert(rows).select("id");
+  if (error) throw error;
+  counts.loyalty_rewards += data.length;
 }
 
 // ── 6. programmes de revenus, journées de service, campagnes, finance ──
@@ -735,6 +757,50 @@ async function backfillConsentAndBirthday(restaurantId) {
   }
 }
 
+// Peuple quelques envois du moteur de rétention pour que la page /impact
+// (Impact LTV) ait un vrai signal à montrer en démo, plutôt qu'des zéros —
+// envoyé peu avant une visite déjà connue quand c'est possible, pour que le
+// "revenu incrémental" trouve de vrais exemples.
+async function seedRetentionSends(restaurantId) {
+  const { count, error: countError } = await supabase
+    .from("customer_retention_sends")
+    .select("id", { count: "exact", head: true })
+    .eq("restaurant_id", restaurantId);
+  if (countError) throw countError;
+  if (count && count > 0) return;
+
+  const { data: customers, error } = await supabase
+    .from("customers")
+    .select("id, last_visit_at")
+    .eq("restaurant_id", restaurantId)
+    .eq("marketing_consent", true)
+    .order("last_visit_at", { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  if (!customers || customers.length === 0) return;
+
+  const triggers = ["inactivity", "value_drift", "birthday"];
+  const rows = customers.map((c, i) => {
+    const lastVisit = c.last_visit_at ? new Date(c.last_visit_at) : null;
+    const daysBeforeVisit = randInt(2, 6);
+    const sentAt =
+      lastVisit && Date.now() - lastVisit.getTime() < 30 * 86_400_000
+        ? new Date(lastVisit.getTime() - daysBeforeVisit * 86_400_000)
+        : addDays(TODAY, -randInt(3, 21));
+    return {
+      restaurant_id: restaurantId,
+      customer_id: c.id,
+      trigger_type: triggers[i % triggers.length],
+      channel: "email",
+      sent_at: sentAt.toISOString(),
+    };
+  });
+
+  const { data, error: insertError } = await supabase.from("customer_retention_sends").insert(rows).select("id");
+  if (insertError) throw insertError;
+  counts.retention_sends += data.length;
+}
+
 // ── run ──────────────────────────────────────────────────────────────
 async function main() {
   console.log("Seed compte démo permanent — Minerva Flow\n");
@@ -759,10 +825,12 @@ async function main() {
   const customers = await seedCustomersAndTransactions(restaurantId);
   await seedReferralPrograms(restaurantId, customers);
   await seedOffers(restaurantId);
+  await seedLoyaltyRewards(restaurantId);
 
   await seedRetentionAndTierSettings(restaurantId);
   await seedLoyaltyShare(restaurantId);
   await backfillConsentAndBirthday(restaurantId);
+  await seedRetentionSends(restaurantId);
 
   console.log("\n── Résumé ──────────────────────────────────────────────");
   console.log(`Identifiants démo : ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);

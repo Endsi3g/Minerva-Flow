@@ -21,6 +21,8 @@
     "fidelisation": "Sadakat",
     "maps": "Haritalar",
     "programs": "Programlar",
+    "impact": "LTV Etkisi",
+    "franchise": "Franchise Görünümü",
     "favMaps": "Şehir Raporu",
     "favCampaignsEmail": "Haftalık Gönderim",
     "favDepenses": "Giderler",
@@ -38,6 +40,7 @@
     "support": "Yardım ve Destek",
     "changelog": "Yenilikler",
     "sectionOperations": "Operasyonlar",
+    "sectionOperationalTools": "Günlük Yönetim",
     "sectionTeams": "Ekipler",
     "sectionFavorites": "Favoriler",
     "sectionSettingsMore": "Ayarlar ve Daha Fazlası",
@@ -98,7 +101,9 @@
     "profil": "Profil",
     "reservations": "Rezervasyonlar",
     "support": "Yardım ve Destek",
-    "workspace": "Çalışma Alanı"
+    "workspace": "Çalışma Alanı",
+    "impact": "LTV Etkisi",
+    "franchise": "Franchise Görünümü"
   },
   "shell": {
     "toggleNav": "Gezinmeyi değiştir",
@@ -1021,7 +1026,16 @@
       "historyTitle": "Geçmiş",
       "transactionsCount": "{count, plural, other {# işlem}}",
       "noTransactions": "Henüz işlem yok.",
-      "pts": "puan"
+      "pts": "puan",
+      "rewardsTitle": "Ödüller",
+      "rewardsEmpty": "Şu anda kullanılabilir ödül yok.",
+      "redeemButton": "Değiştir",
+      "redeemMissingPoints": "{count} puan eksik",
+      "redeemFailed": "Değişim başarısız oldu — puan bakiyenizi kontrol edin.",
+      "redeemSuccessTitle": "Bu kodu kasada gösterin",
+      "pendingRedemptionsTitle": "Bekleyen değişimlerim",
+      "claimedLabel": "Kullanıldı",
+      "pendingLabel": "Beklemede"
     }
   }
 }

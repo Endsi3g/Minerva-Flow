@@ -982,7 +982,7 @@ function MenuAiInsightsPanel({ restaurantId }: { restaurantId: string | null }) 
               <p className="text-[13px] font-semibold leading-snug text-mv-ink">{idea.title}</p>
               <p className="mt-1 text-[12.5px] leading-snug text-mv-ink-soft">{idea.action}</p>
               {launchedIndexes.has(i) ? (
-                <p className="mt-2.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark">
+                <p className="mv-check-pop mt-2.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark">
                   <Check size={13} /> Campagne créée
                 </p>
               ) : (
@@ -1213,7 +1213,7 @@ export function MenuView({
                 className={cn(
                   "rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-all duration-200",
                   categoryFilter === "all"
-                    ? "bg-mv-green text-white shadow-sm"
+                    ? "bg-mv-green text-mv-cream-soft shadow-sm"
                     : "bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-ink/5"
                 )}
               >
@@ -1226,7 +1226,7 @@ export function MenuView({
                   className={cn(
                     "rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-all duration-200",
                     categoryFilter === c
-                      ? "bg-mv-green text-white shadow-sm"
+                      ? "bg-mv-green text-mv-cream-soft shadow-sm"
                       : "bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-ink/5"
                   )}
                 >

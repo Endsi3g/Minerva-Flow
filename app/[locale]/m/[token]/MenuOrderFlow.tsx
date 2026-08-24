@@ -15,7 +15,9 @@ import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
 import type { MenuItem, Offer } from "@/lib/types";
 import type { PublicMenuLanding } from "@/lib/data/menu-shares";
 import Link from "next/link";
-import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart, Share2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { getOrCreateReferralLinkAction } from "@/app/[locale]/portal/actions";
 
 type CartLine = { item: MenuItem; quantity: number };
 type OrderTotals = { subtotal: number; taxAmount: number; tipAmount: number; total: number };
@@ -35,6 +37,8 @@ function CheckoutModal({
   referralCode,
   onlinePaymentEnabled,
   onOrdered,
+  shareProgramId,
+  restaurantName,
 }: {
   open: boolean;
   onClose: () => void;
@@ -48,6 +52,8 @@ function CheckoutModal({
   referralCode: string | null;
   onlinePaymentEnabled: boolean;
   onOrdered: () => void;
+  shareProgramId: string | null;
+  restaurantName: string;
 }) {
   const { subtotal, taxAmount, tipAmount, total } = totals;
   const [email, setEmail] = useState("");
@@ -58,6 +64,34 @@ function CheckoutModal({
   );
   const [payOnline, setPayOnline] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+
+  async function handleShareOrder() {
+    if (!shareProgramId) return;
+    setShareLoading(true);
+    try {
+      const link = await getOrCreateReferralLinkAction(shareProgramId);
+      if (!link) {
+        toast.error("Impossible de créer votre lien pour l'instant.");
+        return;
+      }
+      const url = `${window.location.origin}/m/${token}?ref=${link.code}`;
+      setShareLink(url);
+      const dishName = cartLines[0]?.item.name;
+      const shareText = dishName
+        ? `Je viens de commander ${dishName} chez ${restaurantName} — passe voir le menu !`
+        : `Je viens de commander chez ${restaurantName} — passe voir le menu !`;
+      if (navigator.share) {
+        await navigator.share({ title: restaurantName, text: shareText, url }).catch(() => {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url);
+        toast.success("Lien copié — partagez-le pour gagner une récompense.");
+      }
+    } finally {
+      setShareLoading(false);
+    }
+  }
 
   async function handleEmailSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -128,6 +162,17 @@ function CheckoutModal({
           <p className="mt-1.5 text-[13px] text-mv-ink-soft">
             Nous confirmons avec votre banque. Votre commande est déjà transmise au restaurant.
           </p>
+          {shareProgramId && (
+            <div className="mt-4 border-t border-mv-border-soft pt-4">
+              {shareLink ? (
+                <p className="mv-check-pop text-[12.5px] text-mv-green-dark">Merci d&apos;avoir partagé !</p>
+              ) : (
+                <Button variant="secondary" size="sm" onClick={handleShareOrder} disabled={shareLoading}>
+                  <Sparkles size={14} /> Partager ce plat et gagner une récompense
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       ) : submitStatus === "done" ? (
         <div className="py-4 text-center">
@@ -138,6 +183,17 @@ function CheckoutModal({
           <p className="mt-1.5 text-[13px] text-mv-ink-soft">
             Vous paierez sur place. Le restaurant confirmera sous peu.
           </p>
+          {shareProgramId && (
+            <div className="mt-4 border-t border-mv-border-soft pt-4">
+              {shareLink ? (
+                <p className="mv-check-pop text-[12.5px] text-mv-green-dark">Merci d&apos;avoir partagé !</p>
+              ) : (
+                <Button variant="secondary" size="sm" onClick={handleShareOrder} disabled={shareLoading}>
+                  <Sparkles size={14} /> Partager ce plat et gagner une récompense
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -277,12 +333,14 @@ export function MenuOrderFlow({
   landing,
   offers,
   authenticated,
+  shareProgramId,
 }: {
   token: string;
   referralCode: string | null;
   landing: PublicMenuLanding;
   offers: Offer[];
   authenticated: boolean;
+  shareProgramId: string | null;
 }) {
   const { restaurantName, items, taxRate, acceptsTips, onlinePaymentEnabled } = landing;
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -365,12 +423,29 @@ export function MenuOrderFlow({
         </p>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
           <h1 className="font-display text-[26px] font-medium text-mv-ink">{restaurantName}</h1>
-          <Link
-            href="/portal"
-            className="flex shrink-0 items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3.5 py-2 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-cream-soft hover:text-mv-ink"
-          >
-            <Heart size={14} className="text-mv-green-dark" /> Mes points
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const url = typeof window !== "undefined" ? window.location.href : "";
+                if (navigator.share) {
+                  navigator.share({ title: `Le menu de ${restaurantName}`, url }).catch(() => {});
+                } else if (navigator.clipboard) {
+                  navigator.clipboard.writeText(url);
+                  toast.success("Lien du menu copié.");
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3.5 py-2 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-cream-soft hover:text-mv-ink"
+            >
+              <Share2 size={14} className="text-mv-green-dark" /> Partager
+            </button>
+            <Link
+              href="/portal"
+              className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3.5 py-2 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-cream-soft hover:text-mv-ink"
+            >
+              <Heart size={14} className="text-mv-green-dark" /> Mes points
+            </Link>
+          </div>
         </div>
 
         <InstallAppPrompt />
@@ -475,6 +550,8 @@ export function MenuOrderFlow({
         referralCode={referralCode}
         onlinePaymentEnabled={onlinePaymentEnabled}
         onOrdered={handleOrdered}
+        shareProgramId={shareProgramId}
+        restaurantName={restaurantName}
       />
     </div>
   );

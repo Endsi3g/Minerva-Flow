@@ -21,6 +21,8 @@
     "fidelisation": "Fidélisation",
     "maps": "Cartes",
     "programs": "Programmes",
+    "impact": "Impact LTV",
+    "franchise": "Vue franchise",
     "favMaps": "Rapport des villes",
     "favCampaignsEmail": "Envoi hebdomadaire",
     "favDepenses": "Dépenses",
@@ -38,6 +40,7 @@
     "support": "Aide & Support",
     "changelog": "Nouveautés",
     "sectionOperations": "Opérations",
+    "sectionOperationalTools": "Gestion quotidienne",
     "sectionTeams": "Équipes",
     "sectionFavorites": "Favoris",
     "sectionSettingsMore": "Paramètres et plus",
@@ -98,7 +101,9 @@
     "profil": "Profil",
     "reservations": "Réservations",
     "support": "Aide & Support",
-    "workspace": "Workspace"
+    "workspace": "Workspace",
+    "impact": "Impact LTV",
+    "franchise": "Vue franchise"
   },
   "shell": {
     "toggleNav": "Basculer la navigation",
@@ -1021,7 +1026,16 @@
       "historyTitle": "Historique",
       "transactionsCount": "{count, plural, one {# transaction} other {# transactions}}",
       "noTransactions": "Aucune transaction pour l'instant.",
-      "pts": "pts"
+      "pts": "pts",
+      "rewardsTitle": "Récompenses",
+      "rewardsEmpty": "Aucune récompense disponible pour l'instant.",
+      "redeemButton": "Échanger",
+      "redeemMissingPoints": "Il vous manque {count} pts",
+      "redeemFailed": "L'échange a échoué — vérifiez votre solde de points.",
+      "redeemSuccessTitle": "Montrez ce code à la caisse",
+      "pendingRedemptionsTitle": "Mes échanges en attente",
+      "claimedLabel": "Utilisée",
+      "pendingLabel": "En attente"
     }
   }
 }

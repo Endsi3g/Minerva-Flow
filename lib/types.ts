@@ -567,9 +567,25 @@ export type LoyaltyReward = {
   id: string;
   restaurantId: string;
   name: string;
+  description: string | null;
   pointsCost: number;
   active: boolean;
   createdAt: string;
+};
+
+export type RewardRedemptionStatus = "pending" | "claimed";
+
+export type RewardRedemption = {
+  id: string;
+  restaurantId: string;
+  customerId: string;
+  rewardId: string;
+  rewardName: string;
+  pointsSpent: number;
+  code: string;
+  status: RewardRedemptionStatus;
+  createdAt: string;
+  claimedAt: string | null;
 };
 
 export type MenuQuadrant = "etoile" | "cheval_bataille" | "enigme" | "poids_mort";

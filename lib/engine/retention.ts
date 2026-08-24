@@ -102,3 +102,53 @@ export function getIncrementalRetentionRevenue(
   }
   return Math.round(total * 100) / 100;
 }
+
+/** Below this many touched customers, a single outlier can swing the ratio wildly — treat as no signal yet. */
+const MIN_TOUCHED_FOR_FREQUENCY_SIGNAL = 5;
+
+/**
+ * Compares visit cadence (visits per 30 days of tenure) between customers
+ * who've received at least one retention nudge, ever, and those who
+ * haven't — segmentation, not a before/after time window, since a brand-new
+ * restaurant that just enabled retention has no "before" period to compare
+ * against. Mirrors getIncrementalRetentionRevenue's touched/untouched split.
+ */
+export function getVisitFrequencyImpact(
+  customers: Customer[],
+  sends: { customerId: string; sentAt: string }[],
+  now = Date.now()
+): {
+  touchedPerMonth: number;
+  untouchedPerMonth: number;
+  multiplier: number;
+  touchedCount: number;
+  untouchedCount: number;
+  hasEnoughSignal: boolean;
+} {
+  const touchedIds = new Set(sends.map((s) => s.customerId));
+
+  function avgVisitsPerMonth(list: Customer[]): number {
+    if (list.length === 0) return 0;
+    const rates = list.map((c) => {
+      const tenureDays = Math.max(1, (now - new Date(c.createdAt).getTime()) / 86_400_000);
+      return c.visitCount / (tenureDays / 30);
+    });
+    return rates.reduce((sum, r) => sum + r, 0) / rates.length;
+  }
+
+  const touched = customers.filter((c) => touchedIds.has(c.id));
+  const untouched = customers.filter((c) => !touchedIds.has(c.id));
+  const hasEnoughSignal = touched.length >= MIN_TOUCHED_FOR_FREQUENCY_SIGNAL && untouched.length > 0;
+
+  const touchedPerMonth = Math.round(avgVisitsPerMonth(touched) * 100) / 100;
+  const untouchedPerMonth = Math.round(avgVisitsPerMonth(untouched) * 100) / 100;
+
+  return {
+    touchedPerMonth,
+    untouchedPerMonth,
+    multiplier: hasEnoughSignal && untouchedPerMonth > 0 ? Math.round((touchedPerMonth / untouchedPerMonth) * 100) / 100 : 0,
+    touchedCount: touched.length,
+    untouchedCount: untouched.length,
+    hasEnoughSignal,
+  };
+}

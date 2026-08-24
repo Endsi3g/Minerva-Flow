@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateToken } from "@/lib/tokens";
+import { mapReward } from "@/lib/data/customers";
 import type { LoyaltyReward, LoyaltyShare } from "@/lib/types";
 
 type LoyaltyShareRow = {
@@ -92,16 +93,17 @@ export async function getLoyaltyShareByToken(token: string): Promise<PublicLoyal
 
   if (!restaurantResult.data) return null;
   const restaurant = restaurantResult.data as { name: string; loyalty_points_per_dollar: number };
-  const topRewards = ((rewardsResult.data as { id: string; restaurant_id: string; name: string; points_cost: number; active: boolean; created_at: string }[]) ?? []).map(
-    (r) => ({
-      id: r.id,
-      restaurantId: r.restaurant_id,
-      name: r.name,
-      pointsCost: r.points_cost,
-      active: r.active,
-      createdAt: r.created_at,
-    })
-  );
+  const topRewards = (
+    (rewardsResult.data as {
+      id: string;
+      restaurant_id: string;
+      name: string;
+      description: string | null;
+      points_cost: number;
+      active: boolean;
+      created_at: string;
+    }[]) ?? []
+  ).map(mapReward);
 
   return {
     share,

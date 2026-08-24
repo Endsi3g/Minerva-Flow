@@ -12,14 +12,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Bundle & Asset Optimization**: Keep client components light, use dynamic imports for heavy modals/charts, and optimize images using Next.js WebP/AVIF output.
 
 ## 2. Navigation & UX Conventions
-- **Top-Level Core Tools**: The sidebar navigation (`AppSidebar.tsx`) maintains 6 primary entrepreneur tools at the top level:
-  1. `Overview` (`/overview`)
-  2. `Flow AI` (`/assistant`)
-  3. `Finance & Seuil` (`/finance`)
-  4. `Commandes & Ventes` (`/commandes`)
-  5. `Collaborateurs & Équipe` (`/collaborateurs`)
-  6. `Inventaire & Stocks` (`/inventaire`)
-- Secondary items are organized into collapsible, non-intrusive groups (`Opérations`, `Performance & Analytics`, `Paramètres et plus`).
+- **Top-Level Core Tools (role-conditional)**: The sidebar navigation (`AppSidebar.tsx`) is LTV-first for `owner`/`manager` and full-operational for `staff`/`consultant`:
+  - **Owner/Manager** — condensed core list, LTV ecosystem only: `Overview`, `Flow AI`, `Menu`, `Fidélisation`. `Finance`, `Commandes`, `Collaborateurs`, `Inventaire` are one click away in the collapsible "Gestion quotidienne" section, not removed.
+  - **Staff/Consultant** — full flat list at the top level (unchanged from before): `Overview`, `Flow AI`, `Menu`, `Fidélisation`, `Finance` (role-gated), `Commandes`, `Collaborateurs`, `Inventaire` (role-gated) — this role needs daily operational access without an extra click.
+- Secondary items are organized into collapsible, non-intrusive groups (`Gestion quotidienne` [owner/manager only], `Opérations`, `Performance & Analytics`, `Paramètres et plus`).
 
 ## 3. Typographic System & Brand Design
 - **Title & Heading Font**: `"New York"`, `-apple-system-serif`, with fallback to `Playfair Display`.

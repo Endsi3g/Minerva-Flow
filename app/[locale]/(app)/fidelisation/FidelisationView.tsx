@@ -17,6 +17,7 @@ import {
   loyaltyTierLabel,
   loyaltyTierDescription,
   loyaltyTierBadge,
+  getLoyaltyTier,
   type LoyaltyTierThresholds,
 } from "@/lib/loyalty-tiers";
 import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
@@ -43,6 +44,7 @@ import {
   deleteLoyaltyShareAction,
   updateRetentionSettingsAction,
   updateLoyaltyTierThresholdsAction,
+  claimRewardRedemptionAction,
 } from "./actions";
 import { toast } from "sonner";
 import { notifyError } from "@/lib/notify-error";
@@ -281,6 +283,7 @@ function RewardsCard({
     try {
       const reward = await createLoyaltyRewardAction(restaurantId, {
         name: String(form.get("name") ?? ""),
+        description: String(form.get("description") ?? "") || undefined,
         pointsCost: Number(form.get("pointsCost") ?? 0),
       });
       if (reward) {
@@ -310,9 +313,12 @@ function RewardsCard({
       <div className="mb-3 space-y-1.5">
         {rewards.length === 0 && <p className="text-[12.5px] text-mv-ink-faint">Aucune récompense configurée.</p>}
         {rewards.map((r) => (
-          <div key={r.id} className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2">
-            <span className="text-[13px] font-medium text-mv-ink">{r.name}</span>
-            <div className="flex items-center gap-2">
+          <div key={r.id} className="flex items-start justify-between gap-3 rounded-lg border border-mv-border-soft px-3 py-2">
+            <div className="min-w-0">
+              <span className="text-[13px] font-medium text-mv-ink">{r.name}</span>
+              {r.description && <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">{r.description}</p>}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
               <Badge tone="neutral">{r.pointsCost} pts</Badge>
               <button
                 onClick={() => handleDelete(r.id, r.name)}
@@ -325,17 +331,84 @@ function RewardsCard({
           </div>
         ))}
       </div>
-      <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-2 border-t border-mv-border-soft pt-3">
-        <Field label="Nom">
-          <Input name="name" placeholder="Ex : Café gratuit" required className="w-56" />
+      <form onSubmit={handleAdd} className="space-y-2 border-t border-mv-border-soft pt-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <Field label="Nom">
+            <Input name="name" placeholder="Ex : Café gratuit" required className="w-56" />
+          </Field>
+          <Field label="Coût en points">
+            <Input name="pointsCost" type="number" min="1" step="1" required className="w-28" />
+          </Field>
+          <Button type="submit" size="sm" disabled={isSubmitting}>
+            <Plus size={14} /> Ajouter
+          </Button>
+        </div>
+        <Field label="Description (optionnel)">
+          <Input name="description" placeholder="Ex : Tout format, toute la journée" className="w-full" />
         </Field>
-        <Field label="Coût en points">
-          <Input name="pointsCost" type="number" min="1" step="1" required className="w-28" />
+      </form>
+    </Card>
+  );
+}
+
+function RewardValidationCard({ restaurantId }: { restaurantId: string }) {
+  const [code, setCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [result, setResult] = useState<{
+    rewardName: string;
+    pointsSpent: number;
+    customerName: string;
+    claimedAt: string;
+  } | null>(null);
+
+  async function handleValidate(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setIsSubmitting(true);
+    setResult(null);
+    try {
+      const claimed = await claimRewardRedemptionAction(restaurantId, code);
+      if (claimed) {
+        setResult(claimed);
+        setCode("");
+      } else {
+        notifyError("Code introuvable ou déjà utilisé.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Au comptoir"
+        title="Valider une récompense"
+        description="Le client échange ses points depuis son espace client et reçoit un code — entrez-le ici pour confirmer."
+      />
+      <form onSubmit={handleValidate} className="flex flex-wrap items-end gap-2">
+        <Field label="Code du client">
+          <Input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="Ex : A1B2C3"
+            className="w-40 font-mono uppercase tracking-wider"
+            maxLength={6}
+          />
         </Field>
-        <Button type="submit" size="sm" disabled={isSubmitting}>
-          <Plus size={14} /> Ajouter
+        <Button type="submit" size="sm" disabled={isSubmitting || !code.trim()}>
+          <Check size={14} /> Valider
         </Button>
       </form>
+      {result && (
+        <div className="mv-check-pop mt-3 flex items-start gap-2.5 rounded-lg border border-mv-green/20 bg-mv-green-tint px-3 py-2.5">
+          <Check size={15} className="mt-0.5 shrink-0 text-mv-green-dark" />
+          <p className="text-[12.5px] leading-relaxed text-mv-green-darker">
+            <strong className="font-semibold">{result.rewardName}</strong> validée pour {result.customerName}
+            {" "}(-{result.pointsSpent} pts).
+          </p>
+        </div>
+      )}
     </Card>
   );
 }
@@ -821,11 +894,20 @@ export function FidelisationView({
     const note = String(form.get("note") ?? "") || null;
     if (!Number.isFinite(amount) || amount <= 0) return;
 
+    const tierBefore = getLoyaltyTier(selected.totalSpent, loyaltyTierThresholds);
     const updated = await logVisitAction(restaurantId, selected.id, amount, note);
     if (updated) {
       setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       setVisitOpen(false);
       (e.target as HTMLFormElement).reset();
+
+      const tierAfter = getLoyaltyTier(updated.totalSpent, loyaltyTierThresholds);
+      if (loyaltyTierOrder.indexOf(tierAfter) > loyaltyTierOrder.indexOf(tierBefore)) {
+        toast.success(`${updated.name} passe au palier ${loyaltyTierLabel[tierAfter]} !`, {
+          icon: "🎉",
+          duration: 5000,
+        });
+      }
     } else {
       notifyError("L'enregistrement de la visite a échoué.");
     }
@@ -889,6 +971,10 @@ export function FidelisationView({
           )
         }
       />
+
+      <div className="mb-6">
+        <RewardValidationCard restaurantId={restaurantId!} />
+      </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <div className="relative w-64">
@@ -1074,24 +1160,35 @@ export function FidelisationView({
                 {selected.transactions.length === 0 ? (
                   <p className="text-[12.5px] text-mv-ink-faint">Aucune transaction pour ce client.</p>
                 ) : (
-                  <div className="space-y-2">
-                    {selected.transactions.map((t) => (
-                      <div key={t.id} className="rounded-lg bg-mv-cream-soft p-3">
-                        <div className="mb-1 flex items-center justify-between">
-                          <span className="text-[12px] font-semibold text-mv-ink">{txLabel[t.type]}</span>
-                          <span className="text-[11px] text-mv-ink-faint">{formatDate(t.createdAt)}</span>
+                  <div className="space-y-0">
+                    {selected.transactions.map((t, i) => {
+                      const dotTone =
+                        t.type === "visite" ? "bg-mv-green" : t.type === "echange" ? "bg-mv-lime-dark" : "bg-mv-ink-faint";
+                      const isLast = i === selected.transactions.length - 1;
+                      return (
+                        <div key={t.id} className="relative flex gap-3 pb-4 last:pb-0">
+                          {!isLast && (
+                            <span className="absolute left-[5px] top-[14px] bottom-0 w-px bg-mv-border-soft" />
+                          )}
+                          <span className={`relative mt-1.5 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-mv-surface shadow-sm ${dotTone}`} />
+                          <div className="min-w-0 flex-1 rounded-lg bg-mv-cream-soft p-3">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-[12px] font-semibold text-mv-ink">{txLabel[t.type]}</span>
+                              <span className="text-[11px] text-mv-ink-faint">{formatDate(t.createdAt)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-[12.5px]">
+                              <span className="text-mv-ink-soft">
+                                {t.note ?? (t.amountSpent != null ? formatCurrency(t.amountSpent) : "—")}
+                              </span>
+                              <span className={t.pointsDelta >= 0 ? "font-semibold text-mv-green-dark" : "font-semibold text-mv-red"}>
+                                {t.pointsDelta >= 0 ? "+" : ""}
+                                {t.pointsDelta} pts
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-[12.5px]">
-                          <span className="text-mv-ink-soft">
-                            {t.note ?? (t.amountSpent != null ? formatCurrency(t.amountSpent) : "—")}
-                          </span>
-                          <span className={t.pointsDelta >= 0 ? "font-semibold text-mv-green-dark" : "font-semibold text-mv-red"}>
-                            {t.pointsDelta >= 0 ? "+" : ""}
-                            {t.pointsDelta} pts
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </Card>

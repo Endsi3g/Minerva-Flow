@@ -5,17 +5,80 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Checkbox } from "@/components/ui/checkbox";
-import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
-import type { LoyaltyTierThresholds } from "@/lib/loyalty-tiers";
+import {
+  getLoyaltyTier,
+  loyaltyTierLabel,
+  loyaltyTierBadge,
+  type LoyaltyTier,
+  type LoyaltyTierThresholds,
+} from "@/lib/loyalty-tiers";
 import { LogoMark } from "@/components/shell/Logo";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import type { Customer, CustomerReferralLink, ReferralProgram } from "@/lib/types";
+import type { Customer, CustomerReferralLink, LoyaltyReward, ReferralProgram, RewardRedemption } from "@/lib/types";
 import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-portal";
-import { getOrCreateReferralLinkAction, updateMyProfileAction } from "./actions";
-import { Copy, Check, Gift, Share2 } from "lucide-react";
+import { getOrCreateReferralLinkAction, updateMyProfileAction, selfRedeemRewardAction } from "./actions";
+import { Copy, Check, Gift, Share2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+
+const walletTierBg: Record<LoyaltyTier, string> = {
+  habitue: "bg-mv-ink text-mv-cream",
+  privilegie: "bg-mv-green-dark text-mv-cream",
+  ambassadeur: "bg-mv-lime text-mv-ink",
+};
+
+function LoyaltyWalletCard({
+  points,
+  visitCount,
+  totalSpent,
+  thresholds,
+}: {
+  points: number;
+  visitCount: number;
+  totalSpent: number;
+  thresholds: LoyaltyTierThresholds;
+}) {
+  const t = useTranslations("portal.view");
+  const tier = getLoyaltyTier(totalSpent, thresholds);
+  const { icon: Icon } = loyaltyTierBadge[tier];
+
+  const prevTarget = tier === "ambassadeur" ? thresholds.tier3 : tier === "privilegie" ? thresholds.tier2 : 0;
+  const nextTarget = tier === "habitue" ? thresholds.tier2 : tier === "privilegie" ? thresholds.tier3 : null;
+  const progress = nextTarget ? Math.min(1, Math.max(0, (totalSpent - prevTarget) / (nextTarget - prevTarget))) : 1;
+
+  return (
+    <div className={`mb-6 overflow-hidden rounded-2xl p-5 shadow-mv-md ${walletTierBg[tier]}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide opacity-70">{t("points")}</p>
+          <p className="mt-0.5 font-display text-[32px] font-medium leading-none">{points}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[12px] font-semibold">
+          <Icon size={14} /> {loyaltyTierLabel[tier]}
+        </div>
+      </div>
+
+      {nextTarget !== null && (
+        <div className="mt-4">
+          <div className="h-1.5 overflow-hidden rounded-full bg-white/20">
+            <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.max(4, progress * 100)}%` }} />
+          </div>
+          <p className="mt-1.5 text-[11.5px] opacity-80">
+            {formatCurrency(Math.max(0, nextTarget - totalSpent))} avant le palier suivant
+          </p>
+        </div>
+      )}
+
+      <div className="mt-4 flex items-center gap-5 border-t border-white/15 pt-3 text-[12px] opacity-90">
+        <span>
+          {visitCount} {t("visits").toLowerCase()}
+        </span>
+        <span>{formatCurrency(totalSpent)}</span>
+      </div>
+    </div>
+  );
+}
 
 function ProfileSettingsCard({ customer }: { customer: Customer }) {
   const [birthday, setBirthday] = useState(customer.birthday ?? "");
@@ -155,6 +218,95 @@ function ReferralProgramCard({
   );
 }
 
+function RewardsRedeemCard({
+  rewards,
+  points,
+  redemptions,
+  onRedeemed,
+}: {
+  rewards: LoyaltyReward[];
+  points: number;
+  redemptions: RewardRedemption[];
+  onRedeemed: (redemption: RewardRedemption) => void;
+}) {
+  const t = useTranslations("portal.view");
+  const [redeemingId, setRedeemingId] = useState<string | null>(null);
+
+  async function handleRedeem(reward: LoyaltyReward) {
+    setRedeemingId(reward.id);
+    try {
+      const redemption = await selfRedeemRewardAction(reward.id);
+      if (redemption) onRedeemed(redemption);
+      else toast.error(t("redeemFailed"));
+    } finally {
+      setRedeemingId(null);
+    }
+  }
+
+  const pending = redemptions.filter((r) => r.status === "pending");
+
+  return (
+    <Card>
+      <CardHeader title={t("rewardsTitle")} description={t("points") + ` : ${points}`} />
+      {rewards.length === 0 ? (
+        <p className="text-[12.5px] text-mv-ink-faint">{t("rewardsEmpty")}</p>
+      ) : (
+        <div className="space-y-2">
+          {rewards.map((reward) => {
+            const affordable = points >= reward.pointsCost;
+            return (
+              <div
+                key={reward.id}
+                className="flex items-center justify-between gap-3 rounded-lg border border-mv-border-soft px-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium text-mv-ink">{reward.name}</p>
+                  {reward.description && (
+                    <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">{reward.description}</p>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Badge tone={affordable ? "green" : "neutral"}>{reward.pointsCost} pts</Badge>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={!affordable || redeemingId === reward.id}
+                    onClick={() => handleRedeem(reward)}
+                  >
+                    {affordable
+                      ? t("redeemButton")
+                      : t("redeemMissingPoints", { count: reward.pointsCost - points })}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {pending.length > 0 && (
+        <div className="mt-4 space-y-2 border-t border-mv-border-soft pt-3">
+          <p className="text-[12px] font-semibold text-mv-ink-soft">{t("pendingRedemptionsTitle")}</p>
+          {pending.map((r) => (
+            <div
+              key={r.id}
+              className="flex items-center justify-between gap-3 rounded-lg bg-mv-green-tint px-3 py-2.5"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles size={14} className="text-mv-green-dark" />
+                <span className="text-[12.5px] font-medium text-mv-green-darker">{r.rewardName}</span>
+              </div>
+              <span className="font-mono text-[15px] font-semibold tracking-wider text-mv-green-darker">
+                {r.code}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export function PortalView({
   customer,
   data,
@@ -166,9 +318,16 @@ export function PortalView({
 }) {
   const t = useTranslations("portal.view");
   const [programs, setPrograms] = useState<PortalReferralProgress[]>(data.programs);
+  const [points, setPoints] = useState(customer.loyaltyPoints);
+  const [redemptions, setRedemptions] = useState<RewardRedemption[]>(data.redemptions);
 
   function handleLinkCreated(programId: string, link: CustomerReferralLink) {
     setPrograms((prev) => prev.map((p) => (p.program.id === programId ? { ...p, link } : p)));
+  }
+
+  function handleRedeemed(redemption: RewardRedemption) {
+    setPoints((prev) => prev - redemption.pointsSpent);
+    setRedemptions((prev) => [redemption, ...prev]);
   }
 
   return (
@@ -182,24 +341,24 @@ export function PortalView({
         </div>
 
         <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">{t("spaceLabel")}</p>
-        <div className="mb-6 flex flex-wrap items-center gap-2.5">
-          <h1 className="font-display text-[26px] font-medium text-mv-ink">{t("greeting", { name: customer.name })}</h1>
-          <LoyaltyTierBadge totalSpent={customer.totalSpent} thresholds={loyaltyTierThresholds} />
-        </div>
+        <h1 className="mb-6 font-display text-[26px] font-medium text-mv-ink">
+          {t("greeting", { name: customer.name })}
+        </h1>
 
-        <div className="mb-6 grid grid-cols-2 gap-3 rounded-xl bg-mv-surface p-4 shadow-mv-sm sm:grid-cols-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("points")}</p>
-            <p className="font-display text-[19px] font-medium text-mv-green-dark">{customer.loyaltyPoints}</p>
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("visits")}</p>
-            <p className="font-display text-[19px] font-medium text-mv-ink">{customer.visitCount}</p>
-          </div>
-          <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("totalSpent")}</p>
-            <p className="font-display text-[19px] font-medium text-mv-ink">{formatCurrency(customer.totalSpent)}</p>
-          </div>
+        <LoyaltyWalletCard
+          points={points}
+          visitCount={customer.visitCount}
+          totalSpent={customer.totalSpent}
+          thresholds={loyaltyTierThresholds}
+        />
+
+        <div className="mb-6">
+          <RewardsRedeemCard
+            rewards={data.rewards}
+            points={points}
+            redemptions={redemptions}
+            onRedeemed={handleRedeemed}
+          />
         </div>
 
         <div className="mb-6">

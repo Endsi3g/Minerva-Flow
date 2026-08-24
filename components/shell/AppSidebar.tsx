@@ -47,6 +47,8 @@ import {
   StarOff,
   Palette,
   Shield,
+  TrendingUp,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -68,17 +70,28 @@ type NavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
-// 1. Core General Items (Overview, Flow AI, Menu & Food Cost, Fidélité, Finances, Commandes, Collaborateurs, Inventaire)
-const coreNavItems: NavItem[] = [
+// 1a. LTV core — the ecosystem that gets a customer back in the door
+// (menu profitability, retention/loyalty/referral). Owner/manager land here
+// first; staff/consultant see it merged flat with the operational tools
+// below, since they need day-to-day access to Commandes/Collaborateurs etc.
+// without an extra click.
+const ltvCoreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
   { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
   { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
+];
+
+// 1b. Day-to-day operational tools — still top-level for staff/consultant,
+// collapsed under "Gestion quotidienne" for owner/manager (see AppSidebar()).
+const operationalToolsItems: NavItem[] = [
   { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
   { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
   { key: "collaborateurs", href: "/collaborateurs", icon: Users, roles: allRoles },
   { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
 ];
+
+const coreNavItems: NavItem[] = [...ltvCoreNavItems, ...operationalToolsItems];
 
 // 2. Opérations & Équipe
 const operationsItems: NavItem[] = [
@@ -93,6 +106,8 @@ const operationsItems: NavItem[] = [
 const analyticsItems: NavItem[] = [
   { key: "days", href: "/days", icon: BarChart3, roles: allRoles },
   { key: "reports", href: "/reports", icon: FileText, roles: allRoles },
+  { key: "impact", href: "/impact", icon: TrendingUp, roles: ["owner", "manager"] },
+  { key: "franchise", href: "/franchise", icon: Building2, roles: ["owner", "manager"] },
   { key: "maps", href: "/maps", icon: MapIcon, roles: allRoles },
   { key: "programs", href: "/programs", icon: GitCommit, roles: allRoles },
   { key: "library", href: "/library", icon: FolderOpen, roles: allRoles },
@@ -124,6 +139,8 @@ const navTranslationKeys: Record<string, string> = {
   fidelisation: "fidelisation",
   maps: "maps",
   programs: "programs",
+  impact: "impact",
+  franchise: "franchise",
   reservations: "reservations",
   horaire: "horaire",
   monEspace: "monEspace",
@@ -339,7 +356,13 @@ export function AppSidebar() {
   const allNavItemsList = [...coreNavItems, ...operationsItems, ...analyticsItems, ...settingsGroupItems];
   const favoriteItems = allNavItemsList.filter((item) => favoriteKeys.includes(item.key) && allowedByRole(item));
 
-  const visibleCoreItems = coreNavItems.filter(allowedByRole);
+  // Owner/manager get a condensed, LTV-first core list (Overview, Flow AI,
+  // Menu, Fidélisation) with the operational tools one click away in
+  // "Gestion quotidienne" — staff/consultant, who need those tools daily,
+  // keep the flat combined list unchanged.
+  const isLtvFocusedRole = role === "owner" || role === "manager";
+  const visibleCoreItems = (isLtvFocusedRole ? ltvCoreNavItems : coreNavItems).filter(allowedByRole);
+  const visibleOperationalToolsItems = isLtvFocusedRole ? operationalToolsItems.filter(allowedByRole) : [];
   const visibleOperationsItems = operationsItems.filter(allowedByRole);
   const visibleAnalyticsItems = analyticsItems.filter(allowedByRole);
   const visibleSettingsItems = settingsGroupItems.filter(allowedByRole);
@@ -412,6 +435,27 @@ export function AppSidebar() {
                 />
               ))}
             </div>
+
+            {/* Gestion quotidienne — collapsed operational tools for owner/manager */}
+            {visibleOperationalToolsItems.length > 0 && (
+              <CollapsibleSection
+                label={t("sectionOperationalTools")}
+                defaultOpen={visibleOperationalToolsItems.some((item) => pathname.startsWith(item.href))}
+              >
+                {visibleOperationalToolsItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={t(navTranslationKeys[item.key] || item.key)}
+                    icon={item.icon}
+                    active={pathname.startsWith(item.href)}
+                    onNavigate={closeMobile}
+                    isFavorite={favoriteKeys.includes(item.key)}
+                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
+                  />
+                ))}
+              </CollapsibleSection>
+            )}
 
             {/* Dynamic Favorites Section */}
             {favoriteItems.length > 0 && (

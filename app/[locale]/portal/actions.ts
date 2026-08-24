@@ -3,9 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrCreateReferralLink } from "@/lib/data/customer-referrals";
-import { getCustomersForUser } from "@/lib/data/customer-portal";
+import { getCustomersForUser, selfRedeemReward } from "@/lib/data/customer-portal";
 import { updateCustomer } from "@/lib/data/customers";
-import type { CustomerReferralLink } from "@/lib/types";
+import type { CustomerReferralLink, RewardRedemption } from "@/lib/types";
 
 /**
  * customerId is never trusted from the client — derived from the session
@@ -65,4 +65,14 @@ export async function updateMyProfileAction(
     consentSource: "portal",
     birthday: input.birthday,
   });
+}
+
+/**
+ * Self-serve reward redemption. rewardId is never trusted blindly — the
+ * self_redeem_reward RPC re-derives the caller's own customer row from
+ * auth.uid() and re-checks the points balance server-side, so this action
+ * is just a thin pass-through, not the trust boundary.
+ */
+export async function selfRedeemRewardAction(rewardId: string): Promise<RewardRedemption | null> {
+  return selfRedeemReward(rewardId);
 }

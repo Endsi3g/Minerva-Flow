@@ -31,6 +31,38 @@ export function getMarginDriftItems(items: MenuItemWithQuadrant[]): MenuItemWith
 }
 
 /**
+ * Gross-margin percentage-point gain from menu curation: the units-sold-
+ * weighted average margin % of the currently active menu vs. what it would
+ * be if every item ever added (including ones removed for margin drift or
+ * poor performance) were still counted. No time-series exists to compare
+ * "before/after" a specific date, so this compares acted-on vs not-acted-on
+ * items instead — same segmentation spirit as getIncrementalRetentionRevenue.
+ */
+export function getMenuMarginImpact(items: MenuItem[]): { activeMarginPct: number; allMarginPct: number; gainPct: number } {
+  function weightedAvgMarginPct(list: MenuItem[]): number {
+    let weightedSum = 0;
+    let totalWeight = 0;
+    for (const item of list) {
+      if (item.price <= 0) continue;
+      const weight = Math.max(1, item.unitsSold);
+      weightedSum += ((item.price - item.foodCost) / item.price) * weight;
+      totalWeight += weight;
+    }
+    return totalWeight > 0 ? weightedSum / totalWeight : 0;
+  }
+
+  const activeItems = items.filter((i) => i.active);
+  const activeMarginPct = weightedAvgMarginPct(activeItems);
+  const allMarginPct = weightedAvgMarginPct(items);
+
+  return {
+    activeMarginPct: Math.round(activeMarginPct * 1000) / 10,
+    allMarginPct: Math.round(allMarginPct * 1000) / 10,
+    gainPct: Math.round((activeMarginPct - allMarginPct) * 1000) / 10,
+  };
+}
+
+/**
  * Classifies active menu items into the 4 classic menu-engineering
  * quadrants, using the average margin and average units_sold across the
  * set as the popularity/profitability thresholds — there's no per-period

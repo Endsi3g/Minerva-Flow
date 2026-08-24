@@ -8,6 +8,7 @@ import {
   redeemReward,
   createLoyaltyReward,
   deleteLoyaltyReward,
+  claimRewardRedemption,
   type CustomerInput,
 } from "@/lib/data/customers";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
@@ -66,7 +67,7 @@ export async function redeemRewardAction(
 
 export async function createLoyaltyRewardAction(
   restaurantId: string,
-  input: { name: string; pointsCost: number }
+  input: { name: string; description?: string; pointsCost: number }
 ): Promise<LoyaltyReward | null> {
   if (!input.name.trim() || !Number.isFinite(input.pointsCost) || input.pointsCost <= 0) return null;
   const reward = await createLoyaltyReward(restaurantId, input);
@@ -78,6 +79,16 @@ export async function deleteLoyaltyRewardAction(restaurantId: string, id: string
   const ok = await deleteLoyaltyReward(restaurantId, id);
   if (ok) revalidatePath("/fidelisation");
   return ok;
+}
+
+export async function claimRewardRedemptionAction(
+  restaurantId: string,
+  code: string
+): Promise<{ rewardName: string; pointsSpent: number; customerName: string; claimedAt: string } | null> {
+  if (!code.trim()) return null;
+  const result = await claimRewardRedemption(restaurantId, code);
+  if (result) revalidatePath("/fidelisation");
+  return result;
 }
 
 export async function updateLoyaltyRateAction(restaurantId: string, rate: number): Promise<boolean> {

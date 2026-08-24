@@ -280,16 +280,18 @@ type LoyaltyRewardRow = {
   id: string;
   restaurant_id: string;
   name: string;
+  description: string | null;
   points_cost: number;
   active: boolean;
   created_at: string;
 };
 
-function mapReward(row: LoyaltyRewardRow): LoyaltyReward {
+export function mapReward(row: LoyaltyRewardRow): LoyaltyReward {
   return {
     id: row.id,
     restaurantId: row.restaurant_id,
     name: row.name,
+    description: row.description,
     pointsCost: row.points_cost,
     active: row.active,
     createdAt: row.created_at,
@@ -310,12 +312,17 @@ export async function getLoyaltyRewards(restaurantId: string): Promise<LoyaltyRe
 
 export async function createLoyaltyReward(
   restaurantId: string,
-  input: { name: string; pointsCost: number }
+  input: { name: string; description?: string; pointsCost: number }
 ): Promise<LoyaltyReward | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("loyalty_rewards")
-    .insert({ restaurant_id: restaurantId, name: input.name, points_cost: input.pointsCost })
+    .insert({
+      restaurant_id: restaurantId,
+      name: input.name,
+      description: input.description || null,
+      points_cost: input.pointsCost,
+    })
     .select("*")
     .single();
 
@@ -331,4 +338,38 @@ export async function deleteLoyaltyReward(restaurantId: string, id: string): Pro
     .eq("restaurant_id", restaurantId)
     .eq("id", id);
   return !error;
+}
+
+type RewardRedemptionRpcRow = {
+  id: string;
+  reward_name: string;
+  points_spent: number;
+  customer_name: string;
+  claimed_at: string;
+};
+
+/**
+ * Staff validates a code the customer is showing in person (from their
+ * self-serve redemption in /portal). The RPC itself enforces staff
+ * membership and atomically flips pending -> claimed, so a double-tap on
+ * an already-claimed code fails cleanly instead of "claiming" it twice.
+ */
+export async function claimRewardRedemption(
+  restaurantId: string,
+  code: string
+): Promise<{ rewardName: string; pointsSpent: number; customerName: string; claimedAt: string } | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("staff_claim_reward_redemption", {
+    p_restaurant_id: restaurantId,
+    p_code: code.trim(),
+  });
+
+  if (error || !data || (data as RewardRedemptionRpcRow[]).length === 0) return null;
+  const row = (data as RewardRedemptionRpcRow[])[0];
+  return {
+    rewardName: row.reward_name,
+    pointsSpent: row.points_spent,
+    customerName: row.customer_name,
+    claimedAt: row.claimed_at,
+  };
 }

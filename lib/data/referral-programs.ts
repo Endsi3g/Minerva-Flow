@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { ReferralProgram } from "@/lib/types";
 
 export type ReferralProgramRow = {
@@ -41,6 +42,28 @@ export async function getReferralPrograms(restaurantId: string): Promise<Referra
 
   if (error || !data) return [];
   return (data as ReferralProgramRow[]).map(mapReferralProgram);
+}
+
+/**
+ * The restaurant's active referral program, readable from public,
+ * unauthenticated pages (the "partager ce plat" CTA on /m/[token]) — admin
+ * client because referral_programs' own RLS policy requires restaurant
+ * membership, and this is read-only public metadata (name/reward
+ * description), not sensitive data.
+ */
+export async function getActiveReferralProgramForRestaurant(restaurantId: string): Promise<ReferralProgram | null> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("referral_programs")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapReferralProgram(data as ReferralProgramRow);
 }
 
 export type ReferralProgramInput = {
