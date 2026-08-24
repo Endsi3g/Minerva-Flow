@@ -2,6 +2,27 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.20.0] - 2026-08-24
+
+### 🔵 Jauges circulaires plutôt que des barres
+- Les cartes d'Impact LTV (Overview, Impact, Vue franchise) affichent maintenant des jauges circulaires animées plutôt que des graphiques à barres — plus lisible d'un coup d'œil.
+- Une courte description a été ajoutée sous chaque carte pour expliquer ce que le chiffre représente concrètement.
+
+### 🗣️ Langage simplifié sur tout l'écosystème LTV
+- « LTV » devient « Impact » dans la navigation et les titres de page. Le jargon technique (BCG, quadrant, dérive de marge, segmentation) a été remplacé par un langage clair, sans vocabulaire technique — Overview, Impact, Vue franchise, Fidélisation, gestionnaire de widgets, guide démo.
+
+### 🪟 Le guide démo ne floute plus la sidebar
+- Pendant la visite guidée, seul le contenu de la page est assombri — la sidebar reste visible et cliquable.
+- Correctif d'alignement sidebar/topbar (les deux barres d'en-tête ont maintenant la même hauteur).
+
+### 🔔 Nouvelles notifications
+- Le client est notifié (courriel + push) lorsqu'il atteint un nouveau palier de fidélité.
+- L'équipe reçoit un digest hebdomadaire des plats en dérive de marge.
+
+### 🛠️ Correctifs
+- Les favoris de la sidebar n'étaient jamais réellement sauvegardés (état en mémoire, réinitialisé à chaque actualisation de la page) — maintenant persistés.
+- La page Design System (interne, pas destinée à l'utilisateur) a été retirée du menu Paramètres.
+
 ## [v2.19.0] - 2026-08-24
 
 ### 🔄 Bascule de rôle pour le compte démo
