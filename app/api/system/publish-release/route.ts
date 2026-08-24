@@ -10,11 +10,16 @@ function categorize(title: string, body: string): ChangelogCategory {
   return "fonctionnalite";
 }
 
-/** GitHub release bodies are markdown; the changelog description is shown as plain text. */
+/**
+ * GitHub release bodies are markdown; the changelog description is shown
+ * through ChangelogMarkdownRenderer, which understands `code`, **bold**,
+ * and [label](/path) links — so links are kept as-is (they render as
+ * clickable, not stripped down to plain text) while heading markers and
+ * list bullets are normalized to what the renderer expects.
+ */
 function cleanDescription(body: string): string {
   return body
     .replace(/^#{1,6}\s*/gm, "")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/^[-*]\s+/gm, "• ")
     .replace(/\r?\n{3,}/g, "\n\n")
     .trim()

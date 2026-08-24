@@ -204,6 +204,15 @@ export function ChangelogView({ initialEntries }: { initialEntries: ChangelogEnt
                     {cleanTitle}
                   </h3>
 
+                  {entry.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={entry.imageUrl}
+                      alt=""
+                      className="mb-3 w-full rounded-xl border border-mv-border-soft object-cover"
+                    />
+                  )}
+
                   <ChangelogMarkdownRenderer
                     content={entry.description}
                     category={entry.category}

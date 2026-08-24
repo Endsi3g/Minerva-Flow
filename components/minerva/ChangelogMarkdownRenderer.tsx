@@ -1,10 +1,17 @@
 "use client";
 
-import { Sparkles, Zap, Bug, CheckCircle2 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { Sparkles, Zap, Bug, CheckCircle2, ArrowRight } from "lucide-react";
+
+// [texte](/chemin) — un lien markdown standard, rendu comme un lien
+// cliquable vers une page de l'appli (ou externe, si l'URL commence par
+// http). C'est ce qui permet à une entrée de changelog de dire "Voir la
+// nouvelle page Impact" et d'y amener directement, plutôt que de laisser
+// l'utilisateur deviner où chercher.
+const INLINE_PATTERN = /(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g;
 
 export function formatInlineText(text: string) {
-  // Regex to match `code` and **bold**
-  const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
+  const parts = text.split(INLINE_PATTERN);
 
   return parts.map((part, idx) => {
     if (part.startsWith("`") && part.endsWith("`")) {
@@ -24,6 +31,23 @@ export function formatInlineText(text: string) {
         <strong key={idx} className="font-semibold text-mv-ink dark:text-mv-cream">
           {boldText}
         </strong>
+      );
+    }
+    const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
+    if (linkMatch) {
+      const [, label, href] = linkMatch;
+      const isExternal = href.startsWith("http");
+      return (
+        <Link
+          key={idx}
+          href={href as any}
+          target={isExternal ? "_blank" : undefined}
+          rel={isExternal ? "noopener noreferrer" : undefined}
+          className="mx-0.5 inline-flex items-center gap-0.5 font-semibold text-mv-green-dark hover:underline"
+        >
+          {label}
+          <ArrowRight size={11} />
+        </Link>
       );
     }
     return part;

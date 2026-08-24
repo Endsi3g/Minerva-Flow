@@ -726,7 +726,9 @@
       "publishing": "Publication…",
       "publishAndNotify": "Publier et notifier",
       "publishSuccess": "Publié — tous les utilisateurs ont été notifiés.",
-      "publishFailed": "Échec de la publication."
+      "publishFailed": "Échec de la publication.",
+      "screenshotLabel": "Capture d'écran",
+      "screenshotHint": "Optionnel — une image de la fonctionnalité, montrée en haut de l'entrée."
     },
     "incidents": {
       "pageTitle": "Registre des incidents",

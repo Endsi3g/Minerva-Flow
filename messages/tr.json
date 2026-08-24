@@ -726,7 +726,9 @@
       "publishing": "Yayınlanıyor…",
       "publishAndNotify": "Yayınla ve bildir",
       "publishSuccess": "Yayınlandı — tüm kullanıcılar bilgilendirildi.",
-      "publishFailed": "Yayınlama başarısız oldu."
+      "publishFailed": "Yayınlama başarısız oldu.",
+      "screenshotLabel": "Ekran görüntüsü",
+      "screenshotHint": "İsteğe bağlı — özelliğin bir görüntüsü, girişin üstünde gösterilir."
     },
     "incidents": {
       "pageTitle": "Olay Kayıtları",

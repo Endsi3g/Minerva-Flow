@@ -4,6 +4,7 @@ import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
+import { MenuImageUpload } from "@/components/menu/MenuImageUpload";
 import { publishChangelogEntryAction } from "./actions";
 import type { ChangelogCategory, ChangelogEntry } from "@/lib/data/changelog";
 import { formatDateFull, formatTime } from "@/lib/utils";
@@ -22,6 +23,8 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
   const t = useTranslations("admin.changelog");
   const [entries, setEntries] = useState(initialEntries);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploadScopeId, setUploadScopeId] = useState(() => crypto.randomUUID());
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,10 +35,13 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
         title: String(form.get("title") ?? ""),
         description: String(form.get("description") ?? ""),
         category: form.get("category") as ChangelogCategory,
+        imageUrl,
       });
       if (ok) {
         toast.success(t("publishSuccess"));
         (e.target as HTMLFormElement).reset();
+        setImageUrl(null);
+        setUploadScopeId(crypto.randomUUID());
         window.location.reload();
       } else {
         toast.error(t("publishFailed"));
@@ -64,6 +70,15 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
               <option value="amelioration">{t("category.amelioration")}</option>
               <option value="correctif">{t("category.correctif")}</option>
             </Select>
+          </Field>
+          <Field label={t("screenshotLabel")} hint={t("screenshotHint")}>
+            <MenuImageUpload
+              restaurantId="changelog"
+              scopeId={uploadScopeId}
+              bucket="changelog-images"
+              currentUrl={imageUrl}
+              onUploaded={setImageUrl}
+            />
           </Field>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? t("publishing") : t("publishAndNotify")}

@@ -9,6 +9,7 @@ export type ChangelogEntry = {
   description: string;
   category: ChangelogCategory;
   publishedAt: string;
+  imageUrl?: string | null;
 };
 
 type ChangelogEntryRow = {
@@ -17,6 +18,7 @@ type ChangelogEntryRow = {
   description: string;
   category: ChangelogCategory;
   published_at: string;
+  image_url: string | null;
 };
 
 function mapEntry(row: ChangelogEntryRow): ChangelogEntry {
@@ -26,6 +28,7 @@ function mapEntry(row: ChangelogEntryRow): ChangelogEntry {
     description: row.description,
     category: row.category,
     publishedAt: row.published_at,
+    imageUrl: row.image_url ?? null,
   };
 }
 
@@ -157,6 +160,7 @@ export type CreateChangelogEntryInput = {
   title: string;
   description: string;
   category: ChangelogCategory;
+  imageUrl?: string | null;
 };
 
 export async function createChangelogEntry(input: CreateChangelogEntryInput): Promise<ChangelogEntry | null> {
@@ -171,6 +175,7 @@ export async function createChangelogEntry(input: CreateChangelogEntryInput): Pr
       title: input.title,
       description: input.description,
       category: input.category,
+      image_url: input.imageUrl ?? null,
       created_by: user?.id,
     })
     .select("*")
@@ -188,6 +193,7 @@ export async function createChangelogEntryAsSystem(input: CreateChangelogEntryIn
       title: input.title,
       description: input.description,
       category: input.category,
+      image_url: input.imageUrl ?? null,
       created_by: null,
     })
     .select("*")
