@@ -112,6 +112,7 @@ function IngestionFlow() {
       assumedMonthlyOrders: Number(form.get("assumedMonthlyOrders") ?? 300),
       pastedText: String(form.get("pastedText") ?? ""),
       scrapedMenu: scraper.menu ?? undefined,
+      contactName: String(form.get("contactName") ?? ""),
     });
 
     await pipeline;
@@ -188,9 +189,14 @@ function IngestionFlow() {
           </Field>
         </div>
 
-        <Field label={t("addressLabel")} hint={t("addressHint")}>
-          <Input name="detectedAddress" placeholder={t("addressPlaceholder")} disabled={started} />
-        </Field>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label={t("addressLabel")} hint={t("addressHint")}>
+            <Input name="detectedAddress" placeholder={t("addressPlaceholder")} disabled={started} />
+          </Field>
+          <Field label={t("contactNameLabel")} hint={t("contactNameHint")}>
+            <Input name="contactName" placeholder={t("contactNamePlaceholder")} disabled={started} />
+          </Field>
+        </div>
 
         <div>
           <div className="mb-1.5 flex items-center justify-between">
@@ -345,6 +351,7 @@ function ProspectMetaCard({ prospect }: { prospect: Prospect }) {
         commissionRatePct: Number(form.get("commissionRatePct") ?? 28),
         assumedMonthlyOrders: Number(form.get("assumedMonthlyOrders") ?? 300),
         notes: String(form.get("notes") ?? "") || null,
+        contactName: String(form.get("contactName") ?? "") || null,
       });
       if (ok) toast.success(t("metaSaveSuccess"));
       else toast.error(t("metaSaveFailed"));
@@ -378,6 +385,9 @@ function ProspectMetaCard({ prospect }: { prospect: Prospect }) {
       </Field>
       <Field label={t("addressLabel")} hint={t("addressHint")}>
         <Input name="detectedAddress" defaultValue={prospect.detectedAddress ?? ""} />
+      </Field>
+      <Field label={t("contactNameLabel")} hint={t("contactNameHint")}>
+        <Input name="contactName" defaultValue={prospect.contactName ?? ""} placeholder={t("contactNamePlaceholder")} />
       </Field>
       <div className="sm:col-span-2 lg:col-span-3">
         <Field label={t("notesLabel")}>

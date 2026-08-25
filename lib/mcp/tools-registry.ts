@@ -680,7 +680,7 @@ export async function executeMcpTool(
       case "minerva_get_prospects": {
         let query = supabase
           .from("prospects")
-          .select("id, restaurant_name, source_url, source_platform, status, demo_slug, commission_rate_pct, assumed_monthly_orders, demo_view_count, contacted_at, notes, created_at")
+          .select("id, restaurant_name, source_url, source_platform, status, demo_slug, commission_rate_pct, assumed_monthly_orders, demo_view_count, contacted_at, notes, contact_name, created_at")
           .order("created_at", { ascending: false })
           .limit(Number(args.limit || 20));
         if (args.status) query = query.eq("status", args.status as string);
@@ -693,7 +693,6 @@ export async function executeMcpTool(
         const slug = generateDemoSlug(String(args.restaurantName));
         const notes = [
           args.notes,
-          args.contactName ? `Contact: ${args.contactName}` : null,
           args.email ? `Email: ${args.email}` : null,
           args.phone ? `Tél: ${args.phone}` : null,
           args.city ? `Ville: ${args.city}` : null,
@@ -708,6 +707,7 @@ export async function executeMcpTool(
           demo_slug: slug,
           status: "ready",
           notes,
+          contact_name: args.contactName ? String(args.contactName) : null,
           menu_json: { categories: [] },
         }).select().single();
 
@@ -724,7 +724,6 @@ export async function executeMcpTool(
           const slug = generateDemoSlug(name);
           const notes = [
             lead.notes,
-            lead.contact_name ? `Contact: ${lead.contact_name}` : null,
             lead.email ? `Email: ${lead.email}` : null,
             lead.phone ? `Tél: ${lead.phone}` : null,
             lead.city ? `Ville: ${lead.city}` : null,
@@ -737,6 +736,7 @@ export async function executeMcpTool(
             demo_slug: slug,
             status: "nouveau",
             notes,
+            contact_name: lead.contact_name ? String(lead.contact_name) : null,
             menu_json: { categories: [] },
           });
           if (!error) imported++;

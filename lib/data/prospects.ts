@@ -21,6 +21,7 @@ type ProspectRow = {
   demo_slug: string | null;
   menu_json: ProspectMenu;
   notes: string | null;
+  contact_name: string | null;
   demo_view_count: number;
   last_viewed_at: string | null;
   contacted_at: string | null;
@@ -31,7 +32,7 @@ type ProspectRow = {
 };
 
 const PROSPECT_COLUMNS =
-  "id, source_url, source_platform, restaurant_name, currency, detected_address, commission_rate_pct, assumed_monthly_orders, status, demo_slug, menu_json, notes, demo_view_count, last_viewed_at, contacted_at, audit_report, audit_generated_at, created_at, updated_at";
+  "id, source_url, source_platform, restaurant_name, currency, detected_address, commission_rate_pct, assumed_monthly_orders, status, demo_slug, menu_json, notes, contact_name, demo_view_count, last_viewed_at, contacted_at, audit_report, audit_generated_at, created_at, updated_at";
 
 function mapProspect(row: ProspectRow): Prospect {
   return {
@@ -47,6 +48,7 @@ function mapProspect(row: ProspectRow): Prospect {
     demoSlug: row.demo_slug,
     menu: row.menu_json ?? { categories: [] },
     notes: row.notes,
+    contactName: row.contact_name,
     demoViewCount: row.demo_view_count,
     lastViewedAt: row.last_viewed_at,
     contactedAt: row.contacted_at,
@@ -107,6 +109,7 @@ export type CreateProspectInput = {
   commissionRatePct: number;
   assumedMonthlyOrders: number;
   menu: ProspectMenu;
+  contactName?: string | null;
 };
 
 export async function createProspect(input: CreateProspectInput): Promise<Prospect | null> {
@@ -129,6 +132,7 @@ export async function createProspect(input: CreateProspectInput): Promise<Prospe
       status: "ready",
       demo_slug: generateDemoSlug(input.restaurantName),
       menu_json: input.menu,
+      contact_name: input.contactName || null,
     })
     .select(PROSPECT_COLUMNS)
     .single();
@@ -153,6 +157,7 @@ export type UpdateProspectMetaInput = {
   commissionRatePct: number;
   assumedMonthlyOrders: number;
   notes: string | null;
+  contactName?: string | null;
 };
 
 export async function updateProspectMeta(id: string, input: UpdateProspectMetaInput): Promise<boolean> {
@@ -166,6 +171,7 @@ export async function updateProspectMeta(id: string, input: UpdateProspectMetaIn
       commission_rate_pct: input.commissionRatePct,
       assumed_monthly_orders: input.assumedMonthlyOrders,
       notes: input.notes || null,
+      contact_name: input.contactName || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

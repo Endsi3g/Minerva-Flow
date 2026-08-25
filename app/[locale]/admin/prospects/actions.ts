@@ -32,6 +32,7 @@ export type CreateProspectFormInput = {
   pastedText?: string;
   /** Pre-fetched by scrapeMenuAction — takes priority over pastedText when present. */
   scrapedMenu?: ProspectMenu;
+  contactName?: string;
 };
 
 /**
@@ -65,6 +66,7 @@ export async function createProspectAction(
     commissionRatePct: input.commissionRatePct,
     assumedMonthlyOrders: input.assumedMonthlyOrders,
     menu,
+    contactName: input.contactName?.trim() || null,
   };
 
   const prospect = await createProspect(payload);

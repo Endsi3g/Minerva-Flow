@@ -48,7 +48,6 @@ export async function POST(req: Request) {
     const contactName = body.contactName || body.contact || null;
     const notes = [
       body.notes,
-      contactName ? `Contact: ${contactName}` : null,
       contactEmail ? `Email: ${contactEmail}` : null,
       contactPhone ? `Tél: ${contactPhone}` : null,
       body.reachLeadId ? `Lead Reach ID: ${body.reachLeadId}` : null,
@@ -69,6 +68,7 @@ export async function POST(req: Request) {
       commissionRatePct,
       assumedMonthlyOrders,
       menu: body.menu || emptyMenu(),
+      contactName,
     });
 
     if (!prospect) {
@@ -83,6 +83,7 @@ export async function POST(req: Request) {
         commissionRatePct: prospect.commissionRatePct,
         assumedMonthlyOrders: prospect.assumedMonthlyOrders,
         notes,
+        contactName: prospect.contactName,
       });
     }
 
