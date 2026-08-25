@@ -20,10 +20,9 @@ import {
   Check,
   Plus,
   Trash2,
-  ShieldCheck,
   Play,
   Clock,
-  Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatRelativeTime } from "@/lib/utils";
@@ -44,7 +43,7 @@ export function ApiKeysMcpTab() {
   const [newKeyName, setNewKeyName] = useState("");
   const [createdRawToken, setCreatedRawToken] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Quick connect tab
   const [connectClient, setConnectClient] = useState<"composio" | "claude" | "cursor" | "antigravity" | "curl">("composio");
@@ -84,11 +83,11 @@ export function ApiKeysMcpTab() {
   const openApiUrl = `${origin}/api/openapi.json`;
   const activeKeyPlaceholder = keys.find((k) => !k.revoked)?.keyPrefix || "votre_cle_mcp_ici";
 
-  function copyToClipboard(text: string, label: string) {
+  function copyText(text: string, identifier: string, feedbackLabel: string) {
     navigator.clipboard.writeText(text);
-    setCopiedText(label);
-    toast.success(`${label} copié dans le presse-papier !`);
-    setTimeout(() => setCopiedText(null), 2000);
+    setCopiedKey(identifier);
+    toast.success(`${feedbackLabel} copié dans le presse-papier !`);
+    setTimeout(() => setCopiedKey(null), 2000);
   }
 
   async function handleCreateKey(e: React.FormEvent) {
@@ -145,12 +144,12 @@ export function ApiKeysMcpTab() {
     switch (connectClient) {
       case "composio":
         return `# 🚀 Intégration 1-Clic dans Composio :
-1. Dans votre Dashboard Composio, allez dans "Tools" > "Add Custom Tool" (ou "Import OpenAPI").
-2. Collez l'URL de Spécification OpenAPI ci-dessous :
+1. Allez dans Composio > "Tools" > "Add Custom Tool" (ou "Import OpenAPI").
+2. Collez l'URL de Spécification OpenAPI :
    ${openApiUrl}
-3. Choisissez l'authentification "API Key" ou "Bearer Token" et collez :
+3. Choisissez l'authentification "API Key" ou "Bearer Token" et collez votre clé :
    ${createdRawToken || activeKeyPlaceholder}
-4. Composio importera automatiquement les 24 outils de gestion, prospection et fidélisation !`;
+4. ✅ Composio active instantanément les 25 outils en direct sur votre base Supabase !`;
       case "claude":
         return JSON.stringify(
           {
@@ -209,112 +208,224 @@ export function ApiKeysMcpTab() {
 
   return (
     <div className="space-y-6">
-      {/* 1. MCP & OpenAPI Endpoints Status */}
+      {/* 1. Ultra Simple 3-Step Hero Connection Card */}
+      <div className="relative overflow-hidden rounded-2xl border border-mv-green/30 bg-gradient-to-br from-mv-green-tint via-mv-surface to-mv-cream-soft p-6 shadow-mv-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-mv-border-soft pb-5">
+          <div>
+            <div className="flex items-center gap-2">
+              <Badge tone="green" size="sm" dot pulse>
+                Serveur MCP & OpenAPI Actifs
+              </Badge>
+              <span className="text-[12px] font-mono text-mv-ink-soft">v1.2.0 · Live Supabase</span>
+            </div>
+            <h3 className="mt-2 font-display text-[22px] font-semibold text-mv-ink leading-tight">
+              Connectez votre IA en 3 étapes simples
+            </h3>
+            <p className="mt-1 text-[13.5px] text-mv-ink-soft">
+              Branchez Claude Desktop, Cursor, Composio ou votre agent autonome en moins de 30 secondes.
+            </p>
+          </div>
+
+          <Button
+            size="md"
+            onClick={() => setCreateModalOpen(true)}
+            className="shrink-0 gap-2 shadow-mv-sm"
+          >
+            <Plus size={16} /> Générer une clé API
+          </Button>
+        </div>
+
+        {/* 3 Simple Visual Steps */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Step 1 */}
+          <div className="rounded-xl border border-mv-border bg-white/80 p-4 shadow-sm space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-mv-green text-white text-[12px] font-bold">
+                1
+              </span>
+              <span className="text-[11.5px] font-semibold text-mv-green-dark">Identifiant & Clé</span>
+            </div>
+            <h4 className="font-semibold text-[14px] text-mv-ink">Copiez votre Clé d&apos;Accès</h4>
+            <p className="text-[12px] text-mv-ink-soft">
+              Utilisez la clé ci-dessous ou générez-en une nouvelle avec le bouton ci-dessus.
+            </p>
+            <button
+              type="button"
+              onClick={() => copyText(createdRawToken || activeKeyPlaceholder, "step1-key", "Clé API")}
+              className="mt-2 flex w-full items-center justify-between rounded-lg border border-mv-border-soft bg-mv-cream-soft px-3 py-2 text-[12px] font-mono text-mv-ink hover:border-mv-green transition-colors"
+            >
+              <span className="truncate">{createdRawToken || activeKeyPlaceholder}</span>
+              {copiedKey === "step1-key" ? <Check size={14} className="text-mv-green shrink-0 ml-2" /> : <Copy size={14} className="text-mv-ink-soft shrink-0 ml-2" />}
+            </button>
+          </div>
+
+          {/* Step 2 */}
+          <div className="rounded-xl border border-mv-border bg-white/80 p-4 shadow-sm space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-mv-green text-white text-[12px] font-bold">
+                2
+              </span>
+              <span className="text-[11.5px] font-semibold text-mv-green-dark">Lien OpenAPI (Composio)</span>
+            </div>
+            <h4 className="font-semibold text-[14px] text-mv-ink">URL OpenAPI Spécification</h4>
+            <p className="text-[12px] text-mv-ink-soft">
+              À coller dans Composio (&ldquo;Import OpenAPI&rdquo;) ou dans un Custom GPT.
+            </p>
+            <button
+              type="button"
+              onClick={() => copyText(openApiUrl, "step2-openapi", "URL OpenAPI")}
+              className="mt-2 flex w-full items-center justify-between rounded-lg border border-mv-border-soft bg-mv-cream-soft px-3 py-2 text-[12px] font-mono text-mv-ink hover:border-mv-green transition-colors"
+            >
+              <span className="truncate">{openApiUrl}</span>
+              {copiedKey === "step2-openapi" ? <Check size={14} className="text-mv-green shrink-0 ml-2" /> : <Copy size={14} className="text-mv-ink-soft shrink-0 ml-2" />}
+            </button>
+          </div>
+
+          {/* Step 3 */}
+          <div className="rounded-xl border border-mv-border bg-white/80 p-4 shadow-sm space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-mv-green text-white text-[12px] font-bold">
+                3
+              </span>
+              <span className="text-[11.5px] font-semibold text-mv-green-dark">Endpoint MCP Remote</span>
+            </div>
+            <h4 className="font-semibold text-[14px] text-mv-ink">URL Serveur MCP (Claude)</h4>
+            <p className="text-[12px] text-mv-ink-soft">
+              Pour Claude Desktop, Cursor, Windsurf ou Antigravity via SSE/JSON-RPC.
+            </p>
+            <button
+              type="button"
+              onClick={() => copyText(mcpUrl, "step3-mcp", "URL Serveur MCP")}
+              className="mt-2 flex w-full items-center justify-between rounded-lg border border-mv-border-soft bg-mv-cream-soft px-3 py-2 text-[12px] font-mono text-mv-ink hover:border-mv-green transition-colors"
+            >
+              <span className="truncate">{mcpUrl}</span>
+              {copiedKey === "step3-mcp" ? <Check size={14} className="text-mv-green shrink-0 ml-2" /> : <Copy size={14} className="text-mv-ink-soft shrink-0 ml-2" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. One-Click Snippet Generator with Tabs */}
       <Card>
         <CardHeader
-          eyebrow="Connectivité & Protocoles"
-          title="Serveur MCP & Spécification OpenAPI"
-          description="Endpoints sécurisés pour connecter Composio, Claude Desktop, Cursor ou tout agent IA à votre restaurant."
-          action={
-            <Badge tone="green" size="sm" dot pulse>
-              Actif · Token-Efficient
-            </Badge>
-          }
+          eyebrow="Configuration Prête à l'Emploi"
+          title="Sélectionnez votre Plateforme IA"
+          description="Cliquez sur votre outil pour copier instantanément la configuration complète."
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/70 p-3.5 space-y-2">
-            <div className="flex items-center justify-between text-[12px]">
-              <span className="font-semibold text-mv-ink flex items-center gap-1.5">
-                <Sparkles size={13} className="text-mv-green-dark" /> Spécification OpenAPI (Composio) :
-              </span>
-              <button
-                onClick={() => copyToClipboard(openApiUrl, "URL OpenAPI")}
-                className="inline-flex items-center gap-1 text-mv-green-dark hover:underline font-medium"
-              >
-                {copiedText === "URL OpenAPI" ? <Check size={12} /> : <Copy size={12} />}
-                {copiedText === "URL OpenAPI" ? "Copié" : "Copier"}
-              </button>
-            </div>
-            <p className="truncate font-mono text-[11px] bg-white p-2 rounded-lg border border-mv-border-soft text-mv-ink">
-              {openApiUrl}
-            </p>
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2 border-b border-mv-border-soft pb-3">
+            <button
+              type="button"
+              onClick={() => setConnectClient("composio")}
+              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all ${
+                connectClient === "composio"
+                  ? "bg-mv-green-dark text-white shadow-sm"
+                  : "bg-mv-cream-soft text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream"
+              }`}
+            >
+              🚀 Composio (OpenAPI)
+            </button>
+            <button
+              type="button"
+              onClick={() => setConnectClient("claude")}
+              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all ${
+                connectClient === "claude"
+                  ? "bg-mv-ink text-mv-cream shadow-sm"
+                  : "bg-mv-cream-soft text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream"
+              }`}
+            >
+              Claude Desktop
+            </button>
+            <button
+              type="button"
+              onClick={() => setConnectClient("cursor")}
+              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all ${
+                connectClient === "cursor"
+                  ? "bg-mv-ink text-mv-cream shadow-sm"
+                  : "bg-mv-cream-soft text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream"
+              }`}
+            >
+              Cursor / Windsurf
+            </button>
+            <button
+              type="button"
+              onClick={() => setConnectClient("antigravity")}
+              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all ${
+                connectClient === "antigravity"
+                  ? "bg-mv-ink text-mv-cream shadow-sm"
+                  : "bg-mv-cream-soft text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream"
+              }`}
+            >
+              Antigravity IDE
+            </button>
+            <button
+              type="button"
+              onClick={() => setConnectClient("curl")}
+              className={`rounded-full px-4 py-1.5 text-[13px] font-semibold transition-all ${
+                connectClient === "curl"
+                  ? "bg-mv-ink text-mv-cream shadow-sm"
+                  : "bg-mv-cream-soft text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream"
+              }`}
+            >
+              cURL / REST
+            </button>
           </div>
 
-          <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/70 p-3.5 space-y-2">
-            <div className="flex items-center justify-between text-[12px]">
-              <span className="font-semibold text-mv-ink">Serveur MCP Remote URL :</span>
+          <div className="relative rounded-2xl bg-[#0E1318] p-5 text-[#E6EDF3] font-mono text-[12.5px] overflow-x-auto shadow-inner border border-gray-800">
+            <div className="absolute top-3.5 right-3.5">
               <button
-                onClick={() => copyToClipboard(mcpUrl, "URL Serveur MCP")}
-                className="inline-flex items-center gap-1 text-mv-green-dark hover:underline font-medium"
+                type="button"
+                onClick={() => copyText(clientConfigSnippet, "main-snippet", "Configuration")}
+                className="flex items-center gap-1.5 rounded-lg bg-mv-green px-3 py-1.5 text-[12px] font-sans font-semibold text-white hover:bg-mv-green-dark transition-colors shadow-sm"
               >
-                {copiedText === "URL Serveur MCP" ? <Check size={12} /> : <Copy size={12} />}
-                {copiedText === "URL Serveur MCP" ? "Copié" : "Copier"}
+                {copiedKey === "main-snippet" ? <Check size={14} /> : <Copy size={14} />}
+                {copiedKey === "main-snippet" ? "Copié !" : "Copier la configuration"}
               </button>
             </div>
-            <p className="truncate font-mono text-[11px] bg-white p-2 rounded-lg border border-mv-border-soft text-mv-ink">
-              {mcpUrl}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/70 p-3.5 space-y-2">
-            <div className="flex items-center justify-between text-[12px]">
-              <span className="font-semibold text-mv-ink">Webhook Minerva Reach :</span>
-              <button
-                onClick={() => copyToClipboard(`${origin}/api/leads/reach-webhook`, "Webhook Reach")}
-                className="inline-flex items-center gap-1 text-mv-green-dark hover:underline font-medium"
-              >
-                {copiedText === "Webhook Reach" ? <Check size={12} /> : <Copy size={12} />}
-                {copiedText === "Webhook Reach" ? "Copié" : "Copier"}
-              </button>
-            </div>
-            <p className="truncate font-mono text-[11px] bg-white p-2 rounded-lg border border-mv-border-soft text-mv-ink">
-              {origin}/api/leads/reach-webhook
-            </p>
+            <pre className="pt-2 whitespace-pre-wrap leading-relaxed">{clientConfigSnippet}</pre>
           </div>
         </div>
       </Card>
 
-      {/* 2. API Keys Management */}
+      {/* 3. API Keys Management Card */}
       <Card>
         <CardHeader
-          eyebrow="Sécurité & Accès"
-          title="Clés API d'Authentification"
-          description="Chaque agent ou intégration externe utilise une clé pour exécuter des actions opérationnelles."
+          eyebrow="Sécurité & Révocation"
+          title="Vos Clés d'Accès Actives"
+          description="Gérez les autorisations accordées à vos différents clients ou bots autonomes."
           action={
             <Button size="sm" onClick={() => setCreateModalOpen(true)}>
-              <Plus size={14} /> Nouvelle clé API
+              <Plus size={14} /> Nouvelle clé
             </Button>
           }
         />
 
         {createdRawToken && (
-          <div className="mb-4 rounded-xl border border-mv-green/30 bg-mv-green-tint p-4 space-y-2">
+          <div className="mb-4 rounded-xl border border-mv-green/40 bg-mv-green-tint p-4 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[12.5px] font-semibold text-mv-green-darker flex items-center gap-1.5">
-                <ShieldCheck size={15} /> Clé API générée — Copiez-la maintenant :
+              <span className="text-[13px] font-semibold text-mv-green-darker flex items-center gap-1.5">
+                <CheckCircle2 size={16} className="text-mv-green" /> Clé API prête — Copiez-la maintenant :
               </span>
               <button
-                onClick={() => copyToClipboard(createdRawToken, "Clé API")}
+                type="button"
+                onClick={() => copyText(createdRawToken, "just-created", "Clé API")}
                 className="inline-flex items-center gap-1 text-[12px] font-bold text-mv-green-dark hover:underline"
               >
-                {copiedText === "Clé API" ? <Check size={13} /> : <Copy size={13} />}
-                {copiedText === "Clé API" ? "Copié" : "Copier la clé"}
+                {copiedKey === "just-created" ? <Check size={13} /> : <Copy size={13} />}
+                {copiedKey === "just-created" ? "Copié" : "Copier la clé"}
               </button>
             </div>
-            <p className="font-mono text-[12px] bg-white/80 p-2.5 rounded-lg text-mv-ink font-semibold break-all">
+            <p className="font-mono text-[12.5px] bg-white/90 p-2.5 rounded-lg text-mv-ink font-semibold break-all border border-mv-green/20">
               {createdRawToken}
-            </p>
-            <p className="text-[11px] text-mv-green-dark">
-              ⚠️ Pour votre sécurité, cette clé secrète ne sera plus jamais réaffichée en clair.
             </p>
           </div>
         )}
 
         {loading ? (
-          <p className="text-[12.5px] text-mv-ink-faint">Chargement des clés…</p>
+          <p className="text-[13px] text-mv-ink-faint">Chargement des clés…</p>
         ) : keys.length === 0 ? (
-          <p className="text-[12.5px] text-mv-ink-faint">Aucune clé API configurée pour l&apos;instant.</p>
+          <p className="text-[13px] text-mv-ink-faint">Aucune clé API configurée pour l&apos;instant.</p>
         ) : (
           <div className="space-y-2.5">
             {keys.map((k) => (
@@ -347,12 +458,14 @@ export function ApiKeysMcpTab() {
                 {!k.isEnvKey && !k.revoked && (
                   <div className="flex items-center gap-1.5">
                     <button
+                      type="button"
                       onClick={() => handleRevokeKey(k.id)}
                       className="rounded-lg border border-mv-border px-2.5 py-1 text-[11.5px] font-semibold text-mv-ink-soft hover:text-mv-amber hover:border-mv-amber/40 transition-colors"
                     >
                       Révoquer
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleDeleteKey(k.id)}
                       className="p-1.5 text-mv-ink-faint hover:text-mv-red transition-colors"
                       title="Supprimer"
@@ -367,85 +480,18 @@ export function ApiKeysMcpTab() {
         )}
       </Card>
 
-      {/* 3. Quick Connect Guides */}
+      {/* 4. Live MCP Diagnostic & Tester Card */}
       <Card>
         <CardHeader
-          eyebrow="Intégrations Clients"
-          title="Guides de Connexion Rapide (1-Clic)"
-          description="Copiez la configuration prête à l'emploi pour Composio, Claude Desktop ou vos agents IA."
-        />
-
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2 border-b border-mv-border-soft pb-3">
-            <button
-              onClick={() => setConnectClient("composio")}
-              className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors ${
-                connectClient === "composio" ? "bg-mv-green-dark text-white" : "bg-mv-cream-soft text-mv-ink hover:bg-mv-cream"
-              }`}
-            >
-              Composio (OpenAPI)
-            </button>
-            <button
-              onClick={() => setConnectClient("claude")}
-              className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors ${
-                connectClient === "claude" ? "bg-mv-ink text-mv-cream" : "bg-mv-cream-soft text-mv-ink hover:bg-mv-cream"
-              }`}
-            >
-              Claude Desktop
-            </button>
-            <button
-              onClick={() => setConnectClient("cursor")}
-              className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors ${
-                connectClient === "cursor" ? "bg-mv-ink text-mv-cream" : "bg-mv-cream-soft text-mv-ink hover:bg-mv-cream"
-              }`}
-            >
-              Cursor / Windsurf
-            </button>
-            <button
-              onClick={() => setConnectClient("antigravity")}
-              className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors ${
-                connectClient === "antigravity" ? "bg-mv-ink text-mv-cream" : "bg-mv-cream-soft text-mv-ink hover:bg-mv-cream"
-              }`}
-            >
-              Antigravity IDE
-            </button>
-            <button
-              onClick={() => setConnectClient("curl")}
-              className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors ${
-                connectClient === "curl" ? "bg-mv-ink text-mv-cream" : "bg-mv-cream-soft text-mv-ink hover:bg-mv-cream"
-              }`}
-            >
-              cURL / REST
-            </button>
-          </div>
-
-          <div className="relative rounded-xl bg-[#0C1117] p-4 text-[#C9D1D9] font-mono text-[12px] overflow-x-auto shadow-inner">
-            <div className="absolute top-3 right-3">
-              <button
-                onClick={() => copyToClipboard(clientConfigSnippet, "Guide / Config")}
-                className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-[11.5px] font-sans font-medium text-white hover:bg-white/20 transition-colors"
-              >
-                {copiedText === "Guide / Config" ? <Check size={12} /> : <Copy size={12} />}
-                {copiedText === "Guide / Config" ? "Copié !" : "Copier"}
-              </button>
-            </div>
-            <pre className="pt-2 whitespace-pre-wrap">{clientConfigSnippet}</pre>
-          </div>
-        </div>
-      </Card>
-
-      {/* 4. Interactive MCP Tool Tester */}
-      <Card>
-        <CardHeader
-          eyebrow="Diagnostic & Test Direct"
-          title="Testeur d'Outils MCP en Direct"
-          description="Exécutez un appel d'outil MCP en direct pour vérifier la connectivité et mesurer l'économie de tokens."
+          eyebrow="Diagnostic & Validation Live"
+          title="Testeur d'Outils en Direct (Zéro Mock)"
+          description="Exécutez une action réelle sur la base Supabase pour valider la connectivité et la latence."
         />
 
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
             <div className="flex-1">
-              <Field label="Choisir un outil MCP à tester">
+              <Field label="Choisir une action à tester">
                 <Select value={selectedTool} onChange={(e) => setSelectedTool(e.target.value)}>
                   {AVAILABLE_TOOLS.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -457,7 +503,7 @@ export function ApiKeysMcpTab() {
             </div>
             <Button onClick={handleRunTest} disabled={testingTool} className="gap-2">
               <Play size={14} />
-              {testingTool ? "Exécution…" : "Tester l'outil"}
+              {testingTool ? "Exécution en cours…" : "Tester en direct"}
             </Button>
           </div>
 
@@ -490,7 +536,7 @@ export function ApiKeysMcpTab() {
       <Modal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        title="Créer une clé API MCP"
+        title="Créer une clé API"
         description="Donnez un nom clair pour identifier l'agent ou le service qui utilisera cette clé."
       >
         <form onSubmit={handleCreateKey} className="space-y-4">
