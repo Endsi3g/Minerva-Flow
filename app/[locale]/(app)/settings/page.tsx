@@ -13,6 +13,7 @@ import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
 import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
 import { ReservationDeliveryConnectionsCard } from "@/components/minerva/ReservationDeliveryConnectionsCard";
 import { StripeConnectCard } from "@/components/minerva/StripeConnectCard";
+import { ApiKeysMcpTab } from "@/components/settings/ApiKeysMcpTab";
 import {
   getAlertRulesAction,
   upsertAlertRuleAction,
@@ -60,12 +61,17 @@ function AlertRulesTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     if (!restaurantId) return;
-    setLoading(true);
     getAlertRulesAction(restaurantId).then((data) => {
-      setRules(data);
-      setLoading(false);
+      if (isMounted) {
+        setRules(data);
+        setLoading(false);
+      }
     });
+    return () => {
+      isMounted = false;
+    };
   }, [restaurantId]);
 
   function updateLocal(id: string, patch: Partial<AlertRule>) {
@@ -158,16 +164,17 @@ function SecurityTab() {
   const [loading, setLoading] = useState(true);
   const [toRevoke, setToRevoke] = useState<DeviceSession | null>(null);
 
-  function load() {
-    setLoading(true);
-    getMySessionsAction().then((data) => {
-      setSessions(data);
-      setLoading(false);
-    });
-  }
-
   useEffect(() => {
-    load();
+    let isMounted = true;
+    getMySessionsAction().then((data) => {
+      if (isMounted) {
+        setSessions(data);
+        setLoading(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   async function handleRevoke() {
@@ -277,6 +284,12 @@ export default function SettingsPage() {
             Intégrations
           </TabsTrigger>
           <TabsTrigger
+            value="api-keys"
+            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
+          >
+            Clés API & MCP
+          </TabsTrigger>
+          <TabsTrigger
             value="alertes"
             className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
           >
@@ -304,6 +317,10 @@ export default function SettingsPage() {
 
         <TabsContent value="integrations">
           <IntegrationsTab />
+        </TabsContent>
+
+        <TabsContent value="api-keys">
+          <ApiKeysMcpTab />
         </TabsContent>
 
         <TabsContent value="alertes">

@@ -52,7 +52,17 @@ export type ProspectSourcePlatform =
   | "raw_text"
   | "other";
 
-export type ProspectStatus = "draft" | "ready" | "contacte" | "converti" | "decline";
+export type ProspectStatus =
+  | "draft"
+  | "nouveau"
+  | "ready"
+  | "contacte"
+  | "audit_envoye"
+  | "relance_1"
+  | "relance_2"
+  | "rdv_fixe"
+  | "converti"
+  | "decline";
 
 export type Prospect = {
   id: string;
@@ -67,9 +77,15 @@ export type Prospect = {
   demoSlug: string | null;
   menu: ProspectMenu;
   notes: string | null;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
   demoViewCount: number;
   lastViewedAt: string | null;
   contactedAt: string | null;
+  lastContactedAt?: string | null;
+  relanceCount?: number;
+  nextFollowupDate?: string | null;
   auditReport: WebsiteAuditReport | null;
   auditGeneratedAt: string | null;
   createdAt: string;

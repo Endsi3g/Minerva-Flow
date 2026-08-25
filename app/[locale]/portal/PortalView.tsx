@@ -23,8 +23,9 @@ import {
   selfRedeemRewardAction,
   submitPortalOrderAction,
 } from "./actions";
-import { Copy, Check, Gift, Share2, Sparkles, ChefHat, Tag, Plus, Minus, ShoppingCart, CheckCircle2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Copy, Check, Gift, Share2, Sparkles, ChefHat, Tag, Plus, Minus, ShoppingCart, CheckCircle2, MessageCircle, QrCode, Smartphone } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import QRCode from "qrcode";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -133,18 +134,74 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
   );
 }
 
+function PeerQrModal({
+  open,
+  onClose,
+  shareUrl,
+  programName,
+}: {
+  open: boolean;
+  onClose: () => void;
+  shareUrl: string;
+  programName: string;
+}) {
+  const [qrUrl, setQrUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (open && shareUrl) {
+      QRCode.toDataURL(shareUrl, {
+        width: 600,
+        margin: 2,
+        color: { dark: "#062419", light: "#FFFFFF" },
+      }).then(setQrUrl);
+    }
+  }, [open, shareUrl]);
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Faire scanner à table"
+      description="Votre ami peut scanner ce QR Code directement depuis l'appareil photo de son smartphone."
+    >
+      <div className="flex flex-col items-center justify-center p-4 text-center space-y-4">
+        <p className="text-[13px] font-semibold text-mv-ink">{programName}</p>
+        <div className="rounded-2xl border-4 border-mv-green/30 bg-white p-4 shadow-xl">
+          {qrUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={qrUrl} alt="QR Code Parrainage" className="h-60 w-60 object-contain" />
+          ) : (
+            <div className="h-60 w-60 flex items-center justify-center">
+              <QrCode size={32} className="animate-spin text-mv-ink-faint" />
+            </div>
+          )}
+        </div>
+        <p className="text-[12px] text-mv-ink-soft max-w-xs">
+          ✦ Les points et récompenses seront automatiquement crédités dès sa première visite ✦
+        </p>
+        <Button variant="secondary" onClick={onClose} className="w-full">
+          Fermer
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 function ReferralProgramCard({
   program,
   link,
+  restaurantName,
   onLinkCreated,
 }: {
   program: ReferralProgram;
   link: CustomerReferralLink | null;
+  restaurantName?: string;
   onLinkCreated: (link: CustomerReferralLink) => void;
 }) {
   const t = useTranslations("portal.view");
   const [isCreating, setIsCreating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   async function handleGetLink() {
     setIsCreating(true);
@@ -157,26 +214,45 @@ function ReferralProgramCard({
     }
   }
 
-  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/p/${link?.code}`;
+  const shareUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/p/${link?.code}`
+    : `https://minerva-flow.vercel.app/p/${link?.code}`;
+
+  const shareText = `Je t'invite chez ${restaurantName || "notre restaurant"} ! Utilise mon lien pour découvrir la carte et recevoir ton cadeau de bienvenue : ${shareUrl}`;
 
   function handleCopy() {
     if (!link) return;
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
+    toast.success("Lien copié dans le presse-papier !");
     setTimeout(() => setCopied(false), 2000);
   }
 
-  async function handleShare() {
+  async function handleNativeShare() {
     if (!link) return;
-    if (navigator.share) {
+    if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: program.name, text: program.description ?? undefined, url: shareUrl });
+        await navigator.share({
+          title: `Invitation de parrainage — ${program.name}`,
+          text: shareText,
+          url: shareUrl,
+        });
       } catch {
-        // l'utilisateur a annulé le partage — rien à faire
+        // Ignored if cancelled
       }
     } else {
       handleCopy();
     }
+  }
+
+  function handleWhatsAppShare() {
+    const encoded = encodeURIComponent(shareText);
+    window.open(`https://api.whatsapp.com/send?text=${encoded}`, "_blank");
+  }
+
+  function handleSmsShare() {
+    const encoded = encodeURIComponent(shareText);
+    window.location.href = `sms:?&body=${encoded}`;
   }
 
   const progress = link ? Math.min(1, link.convertedCount / program.goalCount) : 0;
@@ -185,40 +261,70 @@ function ReferralProgramCard({
     <Card>
       <CardHeader title={program.name} description={program.description ?? undefined} />
       {link ? (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
-            <span className="flex-1 truncate text-[12.5px] text-mv-ink-soft">{shareUrl}</span>
+        <div className="space-y-4">
+          {/* Quick Viral Share Buttons */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
-              onClick={handleShare}
-              className="shrink-0 text-mv-ink-faint hover:text-mv-ink"
-              aria-label="Partager le lien"
+              onClick={handleWhatsAppShare}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366]/10 px-3 py-2 text-[12px] font-semibold text-[#128C7E] hover:bg-[#25D366]/20 transition-colors"
             >
-              <Share2 size={14} />
+              <MessageCircle size={14} /> WhatsApp
             </button>
             <button
+              onClick={handleSmsShare}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 px-3 py-2 text-[12px] font-semibold text-blue-600 hover:bg-blue-500/20 transition-colors"
+            >
+              <Smartphone size={14} /> SMS
+            </button>
+            <button
+              onClick={handleNativeShare}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-mv-ink/[0.06] px-3 py-2 text-[12px] font-semibold text-mv-ink hover:bg-mv-ink/[0.1] transition-colors"
+            >
+              <Share2 size={14} /> Partager
+            </button>
+            <button
+              onClick={() => setQrModalOpen(true)}
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-mv-green-tint px-3 py-2 text-[12px] font-semibold text-mv-green-dark hover:bg-mv-green-tint/80 transition-colors"
+            >
+              <QrCode size={14} /> Scanner
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-xl border border-mv-border-soft bg-mv-cream-soft px-3 py-2">
+            <span className="flex-1 truncate font-mono text-[11.5px] text-mv-ink-soft">{shareUrl}</span>
+            <button
               onClick={handleCopy}
-              className="shrink-0 text-mv-ink-faint hover:text-mv-ink"
+              className="shrink-0 text-mv-ink-faint hover:text-mv-ink transition-colors p-1"
               aria-label={t("copyLinkAria")}
             >
               {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
             </button>
           </div>
+
           <div>
             <div className="mb-1 flex items-center justify-between text-[12px] text-mv-ink-soft">
               <span>
-                {link.convertedCount} / {program.goalCount}
+                {link.convertedCount} / {program.goalCount} amis parrainés
               </span>
               {link.rewardClaimedAt && <Badge tone="green">{t("rewardUnlocked")}</Badge>}
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-mv-ink/[0.08]">
-              <div className="h-full rounded-full bg-mv-green" style={{ width: `${Math.max(4, progress * 100)}%` }} />
+            <div className="h-2 overflow-hidden rounded-full bg-mv-ink/[0.08]">
+              <div className="h-full rounded-full bg-mv-green transition-all" style={{ width: `${Math.max(4, progress * 100)}%` }} />
             </div>
           </div>
+
           {program.rewardDescription && (
             <p className="flex items-center gap-1.5 text-[12px] text-mv-ink-faint">
-              <Gift size={13} /> {program.rewardDescription}
+              <Gift size={13} className="text-mv-green" /> Récompense : {program.rewardDescription}
             </p>
           )}
+
+          <PeerQrModal
+            open={qrModalOpen}
+            onClose={() => setQrModalOpen(false)}
+            shareUrl={shareUrl}
+            programName={program.name}
+          />
         </div>
       ) : (
         <Button size="sm" onClick={handleGetLink} disabled={isCreating}>

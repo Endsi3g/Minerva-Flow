@@ -120,6 +120,10 @@ export async function updateProspectStatusAction(id: string, status: ProspectSta
   return ok;
 }
 
+import { sendProspectAuditEmail, sendProspectRelanceEmail } from "@/lib/email/prospect-mailer";
+import { generateEnrichedProspectAudit, type EnrichedAuditResult } from "@/lib/prospects/audit/ai-audit";
+import { getProspectById, recordProspectFollowup } from "@/lib/data/prospects";
+
 /**
  * Runs the website audit and persists it in the same call — the report is
  * only ever useful stored against the prospect (it's what the pitch reuses
@@ -137,3 +141,86 @@ export async function runProspectAuditAction(
   revalidatePath(`/admin/prospects/${id}`);
   return report;
 }
+
+export async function runEnrichedProspectAuditAction(
+  id: string,
+  url: string
+): Promise<EnrichedAuditResult | { error: string }> {
+  if (!(await isPlatformAdmin())) return { error: "unauthorized" };
+  const prospect = await getProspectById(id);
+  if (!prospect) return { error: "Prospect introuvable" };
+
+  const targetUrl = url.trim() || prospect.sourceUrl;
+  if (!targetUrl) return { error: "URL invalide" };
+
+  const enriched = await generateEnrichedProspectAudit({
+    restaurantName: prospect.restaurantName,
+    websiteUrl: targetUrl,
+    menu: prospect.menu,
+    commissionRatePct: prospect.commissionRatePct,
+    assumedMonthlyOrders: prospect.assumedMonthlyOrders,
+  });
+
+  await saveProspectAudit(id, enriched.technicalAudit);
+  revalidatePath(`/admin/prospects/${id}`);
+  return enriched;
+}
+
+export async function sendProspectAuditEmailAction(
+  id: string,
+  recipientEmail: string,
+  customMessage?: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isPlatformAdmin())) return { ok: false, error: "Non autorisé" };
+  if (!recipientEmail || !recipientEmail.includes("@")) {
+    return { ok: false, error: "Adresse email invalide" };
+  }
+
+  const prospect = await getProspectById(id);
+  if (!prospect) return { ok: false, error: "Prospect introuvable" };
+
+  const result = await sendProspectAuditEmail({
+    to: recipientEmail.trim(),
+    prospect,
+    customMessage,
+  });
+
+  if (result.ok) {
+    await updateProspectStatus(id, "audit_envoye");
+    revalidatePath(`/admin/prospects/${id}`);
+    revalidatePath("/admin/prospects");
+  }
+
+  return result;
+}
+
+export async function sendProspectRelanceAction(
+  id: string,
+  step: 1 | 2,
+  recipientEmail: string,
+  customMessage?: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isPlatformAdmin())) return { ok: false, error: "Non autorisé" };
+  if (!recipientEmail || !recipientEmail.includes("@")) {
+    return { ok: false, error: "Adresse email invalide" };
+  }
+
+  const prospect = await getProspectById(id);
+  if (!prospect) return { ok: false, error: "Prospect introuvable" };
+
+  const result = await sendProspectRelanceEmail({
+    to: recipientEmail.trim(),
+    prospect,
+    step,
+    customMessage,
+  });
+
+  if (result.ok) {
+    await recordProspectFollowup(id, step, `Envoyé à ${recipientEmail.trim()}`);
+    revalidatePath(`/admin/prospects/${id}`);
+    revalidatePath("/admin/prospects");
+  }
+
+  return result;
+}
+

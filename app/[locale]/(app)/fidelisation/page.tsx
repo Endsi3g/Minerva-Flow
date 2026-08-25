@@ -6,6 +6,7 @@ import { getRestaurant } from "@/lib/data/restaurants";
 import { getReferralPrograms } from "@/lib/data/referral-programs";
 import { getReferralLinksForRestaurant } from "@/lib/data/customer-referrals";
 import { getLoyaltySharesForRestaurant } from "@/lib/data/loyalty-shares";
+import { computeReferralRoiMetrics, getTopAmbassadors } from "@/lib/data/referral-roi";
 import { FidelisationView } from "./FidelisationView";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function FidelisationPage() {
   const restaurantId = await getCurrentRestaurantId();
 
-  const [customers, rewards, restaurant, referralPrograms, referralLinks, loyaltyShares] = restaurantId
+  const [customers, rewards, restaurant, referralPrograms, referralLinks, loyaltyShares, referralRoi, topAmbassadors] = restaurantId
     ? await Promise.all([
         getCustomers(restaurantId),
         getLoyaltyRewards(restaurantId),
@@ -24,12 +25,34 @@ export default async function FidelisationPage() {
         getReferralPrograms(restaurantId),
         getReferralLinksForRestaurant(restaurantId),
         getLoyaltySharesForRestaurant(restaurantId),
+        computeReferralRoiMetrics(restaurantId),
+        getTopAmbassadors(restaurantId),
       ])
-    : [[], [], null, [], [], []];
+    : [
+        [],
+        [],
+        null,
+        [],
+        [],
+        [],
+        {
+          totalClicks: 0,
+          totalConversions: 0,
+          conversionRatePct: 0,
+          totalRevenueGenerated: 0,
+          estimatedRewardsCost: 0,
+          netProfitGenerated: 0,
+          roiMultiplier: 0,
+          activeProgramsCount: 0,
+          activeAmbassadorsCount: 0,
+        },
+        [],
+      ];
 
   return (
     <FidelisationView
       restaurantId={restaurantId}
+      restaurantName={restaurant?.name ?? "Restaurant"}
       initialCustomers={customers}
       initialRewards={rewards}
       loyaltyPointsPerDollar={restaurant?.loyaltyPointsPerDollar ?? 1}
@@ -42,6 +65,8 @@ export default async function FidelisationPage() {
       initialReferralPrograms={referralPrograms}
       referralLinks={referralLinks}
       initialLoyaltyShares={loyaltyShares}
+      referralRoi={referralRoi}
+      topAmbassadors={topAmbassadors}
     />
   );
 }

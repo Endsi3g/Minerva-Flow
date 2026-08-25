@@ -9,10 +9,15 @@ import type { Prospect, ProspectStatus } from "@/lib/prospects/types";
 import { Store, Eye, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-const statusTone: Record<ProspectStatus, "amber" | "neutral" | "green" | "red" | "lime"> = {
+const statusTone: Record<ProspectStatus, "amber" | "neutral" | "green" | "red" | "lime" | "blue" | "purple"> = {
   draft: "neutral",
+  nouveau: "purple",
   ready: "lime",
   contacte: "amber",
+  audit_envoye: "blue",
+  relance_1: "amber",
+  relance_2: "purple",
+  rdv_fixe: "lime",
   converti: "green",
   decline: "red",
 };

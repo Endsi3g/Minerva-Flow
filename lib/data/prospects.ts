@@ -175,7 +175,9 @@ export async function updateProspectMeta(id: string, input: UpdateProspectMetaIn
 export async function updateProspectStatus(id: string, status: ProspectStatus): Promise<boolean> {
   const supabase = await createClient();
   const patch: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
-  if (status === "contacte") patch.contacted_at = new Date().toISOString();
+  if (status === "contacte" || status === "audit_envoye" || status === "relance_1" || status === "relance_2") {
+    patch.contacted_at = new Date().toISOString();
+  }
   const { error } = await supabase.from("prospects").update(patch).eq("id", id);
   return !error;
 }
@@ -186,5 +188,58 @@ export async function saveProspectAudit(id: string, report: WebsiteAuditReport):
     .from("prospects")
     .update({ audit_report: report, audit_generated_at: report.fetchedAt })
     .eq("id", id);
+  return !error;
+}
+
+/**
+ * Identifie les prospects nécessitant une relance selon la cadence recommandée :
+ * - J+2 après audit_envoye / contacte -> Prêt pour Relance 1 (Rentabilité/Marges)
+ * - J+3 après Relance 1 -> Prêt pour Relance 2 (Démo interactive/Fermeture)
+ */
+export async function getProspectsDueForFollowup(): Promise<{ prospect: Prospect; suggestedStep: 1 | 2; daysSinceContact: number }[]> {
+  const prospects = await getProspects();
+  const now = Date.now();
+  const results: { prospect: Prospect; suggestedStep: 1 | 2; daysSinceContact: number }[] = [];
+
+  for (const p of prospects) {
+    if (p.status === "converti" || p.status === "decline" || p.status === "rdv_fixe") continue;
+
+    const lastContact = p.contactedAt ? new Date(p.contactedAt).getTime() : p.createdAt ? new Date(p.createdAt).getTime() : null;
+    if (!lastContact) continue;
+
+    const daysSince = Math.floor((now - lastContact) / (1000 * 60 * 60 * 24));
+
+    if ((p.status === "audit_envoye" || p.status === "contacte") && daysSince >= 2) {
+      results.push({ prospect: p, suggestedStep: 1, daysSinceContact: daysSince });
+    } else if (p.status === "relance_1" && daysSince >= 3) {
+      results.push({ prospect: p, suggestedStep: 2, daysSinceContact: daysSince });
+    }
+  }
+
+  return results;
+}
+
+export async function recordProspectFollowup(id: string, step: 1 | 2, noteAppend?: string): Promise<boolean> {
+  const supabase = await createClient();
+  const current = await getProspectById(id);
+  if (!current) return false;
+
+  const nextStatus: ProspectStatus = step === 1 ? "relance_1" : "relance_2";
+  const nowIso = new Date().toISOString();
+  const stepLabel = step === 1 ? "Relance 1 (Rentabilité)" : "Relance 2 (Démo)";
+  const newNotes = [current.notes, `[${nowIso.slice(0, 10)}] ${stepLabel}${noteAppend ? ` : ${noteAppend}` : ""}`]
+    .filter(Boolean)
+    .join("\n");
+
+  const { error } = await supabase
+    .from("prospects")
+    .update({
+      status: nextStatus,
+      contacted_at: nowIso,
+      notes: newNotes,
+      updated_at: nowIso,
+    })
+    .eq("id", id);
+
   return !error;
 }

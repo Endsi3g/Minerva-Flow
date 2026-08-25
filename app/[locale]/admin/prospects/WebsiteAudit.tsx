@@ -7,9 +7,10 @@ import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { ScanSearch, CircleCheck, CircleX } from "lucide-react";
-import { runProspectAuditAction } from "./actions";
+import { ScanSearch, CircleCheck, CircleX, Sparkles, TrendingUp, AlertTriangle } from "lucide-react";
+import { runProspectAuditAction, runEnrichedProspectAuditAction } from "./actions";
 import type { AuditCheckId, WebsiteAuditReport } from "@/lib/prospects/types";
+import type { EnrichedAuditResult } from "@/lib/prospects/audit/ai-audit";
 
 const CHECK_ORDER: AuditCheckId[] = [
   "onlineMenu",
@@ -46,6 +47,8 @@ export function WebsiteAudit({
   const [report, setReport] = useState<WebsiteAuditReport | null>(initialReport);
   const [generatedAt, setGeneratedAt] = useState<string | null>(initialGeneratedAt);
   const [isRunning, setIsRunning] = useState(false);
+  const [enrichedData, setEnrichedData] = useState<EnrichedAuditResult | null>(null);
+  const [isEnriching, setIsEnriching] = useState(false);
 
   async function handleRun() {
     if (!url.trim()) return;
@@ -60,6 +63,24 @@ export function WebsiteAudit({
       setGeneratedAt(result.fetchedAt);
     } finally {
       setIsRunning(false);
+    }
+  }
+
+  async function handleRunAiEnrich() {
+    if (!url.trim()) return;
+    setIsEnriching(true);
+    try {
+      const result = await runEnrichedProspectAuditAction(prospectId, url.trim());
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+      setEnrichedData(result);
+      setReport(result.technicalAudit);
+      setGeneratedAt(result.technicalAudit.fetchedAt);
+      toast.success("Audit IA et analyse financière générés avec succès !");
+    } finally {
+      setIsEnriching(false);
     }
   }
 
@@ -85,20 +106,62 @@ export function WebsiteAudit({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder={t("urlPlaceholder")}
-              disabled={isRunning}
+              disabled={isRunning || isEnriching}
             />
           </Field>
         </div>
-        <Button onClick={handleRun} disabled={isRunning || !url.trim()}>
-          <ScanSearch data-icon="inline-start" size={14} />
-          {isRunning ? t("running") : report ? t("rerun") : t("run")}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleRun} disabled={isRunning || isEnriching || !url.trim()} variant="outline">
+            <ScanSearch data-icon="inline-start" size={14} />
+            {isRunning ? t("running") : report ? t("rerun") : t("run")}
+          </Button>
+          <Button onClick={handleRunAiEnrich} disabled={isRunning || isEnriching || !url.trim()}>
+            <Sparkles data-icon="inline-start" size={14} />
+            {isEnriching ? "Analyse IA…" : "Audit IA + Marges"}
+          </Button>
+        </div>
       </div>
 
       {generatedAt && (
         <p className="mt-2 text-[12px] text-mv-ink-faint">
           {t("lastGenerated", { date: new Date(generatedAt).toLocaleString("fr-CA", { dateStyle: "medium", timeStyle: "short" }) })}
         </p>
+      )}
+
+      {/* Enriched AI Findings */}
+      {enrichedData && (
+        <div className="mt-4 rounded-xl border border-mv-border bg-mv-cream-soft p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="font-display text-[14px] font-semibold text-mv-ink flex items-center gap-1.5">
+              <Sparkles size={15} className="text-mv-green" /> Diagnostic commercial & Pertes estimées
+            </p>
+            <span className="text-[12px] font-bold text-mv-red">~{enrichedData.monthlyCommissionLoss}/mois</span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 text-[12px]">
+            <div className="space-y-1.5 rounded-lg border border-mv-border-soft bg-mv-surface p-3">
+              <p className="font-medium text-mv-amber flex items-center gap-1">
+                <AlertTriangle size={13} /> Goulots / Pertes identifiées
+              </p>
+              <ul className="space-y-1 text-mv-ink-soft">
+                {enrichedData.keyFindings.weaknesses.map((w, idx) => (
+                  <li key={idx} className="list-disc list-inside">{w}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="space-y-1.5 rounded-lg border border-mv-border-soft bg-mv-surface p-3">
+              <p className="font-medium text-mv-green flex items-center gap-1">
+                <TrendingUp size={13} /> Opportunités Minerva Flow
+              </p>
+              <ul className="space-y-1 text-mv-ink-soft">
+                {enrichedData.keyFindings.opportunities.map((o, idx) => (
+                  <li key={idx} className="list-disc list-inside">{o}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
       )}
 
       {report?.siteUnreachable && (

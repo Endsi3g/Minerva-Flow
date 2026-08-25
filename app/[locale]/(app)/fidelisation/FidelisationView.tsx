@@ -41,6 +41,9 @@ import {
   updateLoyaltyTierThresholdsAction,
   claimRewardRedemptionAction,
 } from "./actions";
+import { ReferralRoiDashboard } from "@/components/fidelisation/ReferralRoiDashboard";
+import { QrTableStandStudio } from "@/components/fidelisation/QrTableStandStudio";
+import type { ReferralRoiMetrics, TopAmbassador } from "@/lib/data/referral-roi";
 import { notifyError } from "@/lib/notify-error";
 
 function NewCustomerModal({
@@ -932,6 +935,7 @@ function LoyaltyShareCard({
 
 export function FidelisationView({
   restaurantId,
+  restaurantName = "Restaurant",
   initialCustomers,
   initialRewards,
   loyaltyPointsPerDollar,
@@ -941,8 +945,21 @@ export function FidelisationView({
   retentionEngineEnabled,
   retentionInactivityDays,
   loyaltyTierThresholds,
+  referralRoi = {
+    totalClicks: 0,
+    totalConversions: 0,
+    conversionRatePct: 0,
+    totalRevenueGenerated: 0,
+    estimatedRewardsCost: 0,
+    netProfitGenerated: 0,
+    roiMultiplier: 0,
+    activeProgramsCount: 0,
+    activeAmbassadorsCount: 0,
+  },
+  topAmbassadors = [],
 }: {
   restaurantId: string | null;
+  restaurantName?: string;
   initialCustomers: Customer[];
   initialRewards: LoyaltyReward[];
   loyaltyPointsPerDollar: number;
@@ -952,6 +969,8 @@ export function FidelisationView({
   retentionEngineEnabled: boolean;
   retentionInactivityDays: number;
   loyaltyTierThresholds: LoyaltyTierThresholds;
+  referralRoi?: ReferralRoiMetrics;
+  topAmbassadors?: TopAmbassador[];
 }) {
   const { role } = useApp();
   const router = useRouter();
@@ -963,10 +982,20 @@ export function FidelisationView({
   const [rate, setRate] = useState(loyaltyPointsPerDollar);
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [qrStudioOpen, setQrStudioOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(10);
 
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
   const canManage = role === "owner" || role === "manager";
+
+  const defaultShareUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/portal`
+    : "https://minerva-flow.vercel.app/portal";
+
+  const firstShareToken = loyaltyShares[0]?.token;
+  const activeQrPortalUrl = firstShareToken
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/rejoindre/${firstShareToken}`
+    : defaultShareUrl;
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -988,13 +1017,20 @@ export function FidelisationView({
       <PageHeader
         eyebrow="Clients"
         title="Fidélisation"
-        description="Fiches clients, visites et points de fidélité."
+        description="Fiches clients, visites, parrainage viral et points de fidélité."
         action={
-          canCreate && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus size={15} /> Nouveau client
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            {canManage && (
+              <Button size="sm" variant="secondary" onClick={() => setQrStudioOpen(true)}>
+                <QrCode size={14} /> Studio QR & Affiches
+              </Button>
+            )}
+            {canCreate && (
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus size={15} /> Nouveau client
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -1091,6 +1127,7 @@ export function FidelisationView({
 
       {canManage && (
         <div className="mt-6 space-y-6">
+          <ReferralRoiDashboard metrics={referralRoi} ambassadors={topAmbassadors} />
           <LoyaltyTierSettingsCard restaurantId={restaurantId!} initialThresholds={loyaltyTierThresholds} />
           <RetentionSettingsCard
             restaurantId={restaurantId!}
@@ -1120,6 +1157,13 @@ export function FidelisationView({
           }}
         />
       )}
+
+      <QrTableStandStudio
+        restaurantName={restaurantName}
+        portalUrl={activeQrPortalUrl}
+        open={qrStudioOpen}
+        onClose={() => setQrStudioOpen(false)}
+      />
     </div>
   );
 }
