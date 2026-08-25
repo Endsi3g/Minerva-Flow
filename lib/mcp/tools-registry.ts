@@ -339,8 +339,11 @@ export const MCP_TOOLS_CATALOG: McpToolDefinition[] = [
 
 export async function resolveRestaurantId(
   supabase: ReturnType<typeof createAdminClient>,
-  explicitId?: string
+  explicitId: string | undefined,
+  authRestaurantId: string | null = null
 ): Promise<string | null> {
+  // A tenant-scoped API key can never be redirected to another restaurant by its own request args.
+  if (authRestaurantId) return authRestaurantId;
   if (explicitId) return explicitId;
   const { data } = await supabase.from("restaurants").select("id").limit(1).maybeSingle();
   return (data as { id: string } | null)?.id ?? null;
@@ -348,7 +351,8 @@ export async function resolveRestaurantId(
 
 export async function executeMcpTool(
   toolId: string,
-  args: Record<string, unknown> = {}
+  args: Record<string, unknown> = {},
+  authRestaurantId: string | null = null
 ): Promise<{ success: boolean; data?: unknown; error?: string; tokenSavingsPct?: number }> {
   const supabase = createAdminClient();
   const format = (args.format as string) || "compact";
@@ -357,7 +361,7 @@ export async function executeMcpTool(
   try {
     switch (toolId) {
       case "minerva_get_restaurant_summary": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Aucun restaurant trouvé." };
 
         const todayStart = new Date();
@@ -392,7 +396,7 @@ export async function executeMcpTool(
       }
 
       case "minerva_get_menu_items": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         let query = supabase.from("menu_items").select("*").eq("restaurant_id", restaurantId).order("category").order("name");
@@ -419,7 +423,7 @@ export async function executeMcpTool(
       }
 
       case "minerva_manage_menu_item": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         const action = args.action as string;
@@ -458,7 +462,7 @@ export async function executeMcpTool(
       }
 
       case "minerva_get_orders": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         let query = supabase.from("orders").select("id, order_number, status, total, order_type, created_at").eq("restaurant_id", restaurantId).order("created_at", { ascending: false }).limit(Number(args.limit || 20));
@@ -470,13 +474,22 @@ export async function executeMcpTool(
       }
 
       case "minerva_update_order_status": {
-        const { data, error } = await supabase.from("orders").update({ status: args.status }).eq("id", args.orderId).select("id, status, order_number").single();
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
+        if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
+
+        const { data, error } = await supabase
+          .from("orders")
+          .update({ status: args.status })
+          .eq("id", args.orderId)
+          .eq("restaurant_id", restaurantId)
+          .select("id, status, order_number")
+          .single();
         if (error) return { success: false, error: error.message };
         return { success: true, data: { updated: data } };
       }
 
       case "minerva_get_reservations": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         let query = supabase.from("reservations").select("id, customer_name, party_size, reservation_time, status, table_number, special_requests").eq("restaurant_id", restaurantId).order("reservation_time", { ascending: false }).limit(Number(args.limit || 20));
@@ -488,15 +501,24 @@ export async function executeMcpTool(
       }
 
       case "minerva_update_reservation_status": {
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
+        if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
+
         const patch: Record<string, unknown> = { status: args.status };
         if (args.tableNumber) patch.table_number = args.tableNumber;
-        const { data, error } = await supabase.from("reservations").update(patch).eq("id", args.reservationId).select("id, status, table_number").single();
+        const { data, error } = await supabase
+          .from("reservations")
+          .update(patch)
+          .eq("id", args.reservationId)
+          .eq("restaurant_id", restaurantId)
+          .select("id, status, table_number")
+          .single();
         if (error) return { success: false, error: error.message };
         return { success: true, data: { updated: data } };
       }
 
       case "minerva_get_inventory": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         let query = supabase.from("inventory_items").select("id, name, quantity_on_hand, unit, unit_cost, minimum_stock_alert").eq("restaurant_id", restaurantId);
@@ -508,17 +530,31 @@ export async function executeMcpTool(
       }
 
       case "minerva_update_stock_level": {
-        const { data: item, error: fetchErr } = await supabase.from("inventory_items").select("id, quantity_on_hand").eq("id", args.itemId).single();
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
+        if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
+
+        const { data: item, error: fetchErr } = await supabase
+          .from("inventory_items")
+          .select("id, quantity_on_hand")
+          .eq("id", args.itemId)
+          .eq("restaurant_id", restaurantId)
+          .single();
         if (fetchErr || !item) return { success: false, error: "Ingrédient introuvable" };
 
         const newQty = Math.max(0, (item.quantity_on_hand || 0) + Number(args.quantityChange));
-        const { data, error } = await supabase.from("inventory_items").update({ quantity_on_hand: newQty }).eq("id", args.itemId).select().single();
+        const { data, error } = await supabase
+          .from("inventory_items")
+          .update({ quantity_on_hand: newQty })
+          .eq("id", args.itemId)
+          .eq("restaurant_id", restaurantId)
+          .select()
+          .single();
         if (error) return { success: false, error: error.message };
         return { success: true, data: { updated: data, previousQty: item.quantity_on_hand, newQty } };
       }
 
       case "minerva_get_employees_and_shifts": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         const [{ data: employees }, { data: shifts }] = await Promise.all([
@@ -530,7 +566,7 @@ export async function executeMcpTool(
       }
 
       case "minerva_get_alerts": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         let query = supabase.from("alerts").select("id, type, severity, message, resolved, created_at").eq("restaurant_id", restaurantId).order("created_at", { ascending: false }).limit(20);
@@ -542,13 +578,22 @@ export async function executeMcpTool(
       }
 
       case "minerva_resolve_alert": {
-        const { data, error } = await supabase.from("alerts").update({ resolved: true }).eq("id", args.alertId).select("id, resolved").single();
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
+        if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
+
+        const { data, error } = await supabase
+          .from("alerts")
+          .update({ resolved: true })
+          .eq("id", args.alertId)
+          .eq("restaurant_id", restaurantId)
+          .select("id, resolved")
+          .single();
         if (error) return { success: false, error: error.message };
         return { success: true, data: { resolvedAlert: data } };
       }
 
       case "minerva_get_customers": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         let query = supabase.from("customers").select("id, name, email, visit_count, total_spent, loyalty_points, last_visit_at").eq("restaurant_id", restaurantId).order("visit_count", { ascending: false }).limit(Number(args.limit || 30));
@@ -560,7 +605,7 @@ export async function executeMcpTool(
       }
 
       case "minerva_get_referral_roi_and_ambassadors": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         const [roi, ambassadors] = await Promise.all([
@@ -581,7 +626,7 @@ export async function executeMcpTool(
       }
 
       case "minerva_create_loyalty_campaign": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         const { data, error } = await supabase.from("campaigns").insert({
@@ -603,7 +648,7 @@ export async function executeMcpTool(
       }
 
       case "minerva_get_financial_kpis": {
-        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         const { data: orders } = await supabase.from("orders").select("total, status, created_at").eq("restaurant_id", restaurantId).limit(200);

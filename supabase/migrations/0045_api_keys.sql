@@ -25,14 +25,14 @@ CREATE POLICY "Members can view their restaurant api keys"
 CREATE POLICY "Managers and owners can insert api keys"
   ON public.api_keys
   FOR INSERT
-  WITH CHECK (is_restaurant_manager(restaurant_id));
+  WITH CHECK (is_restaurant_member(restaurant_id, ARRAY['owner'::member_role, 'manager'::member_role]));
 
 CREATE POLICY "Managers and owners can update api keys"
   ON public.api_keys
   FOR UPDATE
-  USING (is_restaurant_manager(restaurant_id));
+  USING (is_restaurant_member(restaurant_id, ARRAY['owner'::member_role, 'manager'::member_role]));
 
 CREATE POLICY "Managers and owners can delete api keys"
   ON public.api_keys
   FOR DELETE
-  USING (is_restaurant_manager(restaurant_id));
+  USING (is_restaurant_member(restaurant_id, ARRAY['owner'::member_role, 'manager'::member_role]));
