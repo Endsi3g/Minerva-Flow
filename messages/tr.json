@@ -725,6 +725,7 @@
       "descriptionLabel": "Açıklama",
       "categoryLabel": "Kategori",
       "publishing": "Yayınlanıyor…",
+      "waitingForImage": "Görsel yükleniyor…",
       "publishAndNotify": "Yayınla ve bildir",
       "publishSuccess": "Yayınlandı — tüm kullanıcılar bilgilendirildi.",
       "publishFailed": "Yayınlama başarısız oldu.",

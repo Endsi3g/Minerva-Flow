@@ -23,12 +23,19 @@ export function MenuImageUpload({
   currentUrl,
   onUploaded,
   bucket = DEFAULT_BUCKET,
+  onUploadingChange,
 }: {
   restaurantId: string;
   scopeId: string;
   currentUrl?: string | null;
   onUploaded: (url: string) => void;
   bucket?: string;
+  /** Fires whenever an upload starts/finishes — callers with a submit button
+   * next to this dropzone should disable it while true, otherwise a quick
+   * submit can go through before onUploaded ever fires and silently drop
+   * the image (the file's local preview appears instantly, well before the
+   * actual Supabase Storage upload — and the callback it depends on — resolve). */
+  onUploadingChange?: (uploading: boolean) => void;
 }) {
   const path = `${restaurantId}/${scopeId}`;
   const upload = useSupabaseUpload({
@@ -45,6 +52,17 @@ export function MenuImageUpload({
     if (pending.length > 0 && !upload.loading) upload.onUpload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [upload.files]);
+
+  useEffect(() => {
+    const pending = upload.files.some(
+      (f) =>
+        f.errors.length === 0 &&
+        !upload.successes.includes(f.name) &&
+        !upload.errors.some((e) => e.name === f.name)
+    );
+    onUploadingChange?.(pending || upload.loading);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [upload.loading, upload.files, upload.successes, upload.errors]);
 
   useEffect(() => {
     const newlyUploaded = upload.files.filter(

@@ -24,6 +24,7 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
   const [entries, setEntries] = useState(initialEntries);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isImageUploading, setIsImageUploading] = useState(false);
   const [uploadScopeId, setUploadScopeId] = useState(() => crypto.randomUUID());
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -78,10 +79,11 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
               bucket="changelog-images"
               currentUrl={imageUrl}
               onUploaded={setImageUrl}
+              onUploadingChange={setIsImageUploading}
             />
           </Field>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? t("publishing") : t("publishAndNotify")}
+          <Button type="submit" disabled={isSubmitting || isImageUploading}>
+            {isImageUploading ? t("waitingForImage") : isSubmitting ? t("publishing") : t("publishAndNotify")}
           </Button>
         </form>
       </Card>
