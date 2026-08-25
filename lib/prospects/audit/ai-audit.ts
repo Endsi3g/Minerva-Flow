@@ -10,6 +10,11 @@ export type EnrichedAuditResult = {
   monthlyCommissionLossCents: number;
   averageOrderValue: string;
   assumedMonthlyOrders: number;
+  /** "captured" when the estimate is derived from the prospect's own menu_json;
+   * "estimated" when no menu was captured yet and a generic placeholder item
+   * price was used instead — callers should soften any wording that implies
+   * the figure came from this restaurant's actual menu. */
+  menuSource: "captured" | "estimated";
   keyFindings: {
     strengths: string[];
     weaknesses: string[];
@@ -37,24 +42,32 @@ export async function generateEnrichedProspectAudit({
 }): Promise<EnrichedAuditResult> {
   const technicalAudit = await runWebsiteAudit(websiteUrl);
 
-  const fallbackMenu: ProspectMenu = menu ?? {
-    categories: [
-      {
-        id: "default",
-        name: "Plats principaux",
-        items: [
+  const hasRealMenu = Boolean(menu?.categories?.some((c) => c.items.length > 0));
+  const menuSource: "captured" | "estimated" = hasRealMenu ? "captured" : "estimated";
+
+  // No menu captured yet for this prospect (the common case for a freshly-synced
+  // Reach lead) — fall back to a generic casual-dining item price rather than
+  // claiming a precise figure derived from a menu we don't actually have.
+  const fallbackMenu: ProspectMenu = hasRealMenu
+    ? menu!
+    : {
+        categories: [
           {
-            id: "default-1",
-            name: "Plat signature",
-            priceCents: 2400,
-            inStock: true,
-            dietaryTags: [],
-            modifierGroups: [],
+            id: "default",
+            name: "Estimation générique",
+            items: [
+              {
+                id: "default-1",
+                name: "Prix moyen d'un plat (estimation générique)",
+                priceCents: 1800,
+                inStock: true,
+                dietaryTags: [],
+                modifierGroups: [],
+              },
+            ],
           },
         ],
-      },
-    ],
-  };
+      };
 
   const margin = estimateMargin(fallbackMenu, commissionRatePct, assumedMonthlyOrders);
   const monthlyLossFormatted = formatCurrency(margin.monthlyLossCents / 100);
@@ -99,7 +112,8 @@ export async function generateEnrichedProspectAudit({
   }
 
   if (margin.monthlyLossCents > 0) {
-    weaknesses.push(`Pertes de marge estimées à ~${monthlyLossFormatted}/mois reversées aux plateformes tierces.`);
+    const basis = menuSource === "captured" ? "" : " (estimation générique, menu non capturé)";
+    weaknesses.push(`Pertes de marge estimées à ~${monthlyLossFormatted}/mois reversées aux plateformes tierces${basis}.`);
     opportunities.push(`Récupérer jusqu'à ${monthlyLossFormatted}/mois en marge brute avec Flow par Minerva.`);
   }
 
@@ -113,7 +127,11 @@ export async function generateEnrichedProspectAudit({
       : "Optimisation de rentabilité et programme de fidélisation propriétaire";
 
   const subject = `Proposition d'optimisation pour ${restaurantName} (Économie estimée : ${monthlyLossFormatted}/mois)`;
-  const body = `Bonjour,\n\nEn analysant la présence numérique de ${restaurantName}, nous avons constaté une opportunité majeure : en conservant vos commandes à emporter et livraisons sur votre propre plateforme directe, vous pourriez récupérer jusqu'à ${monthlyLossFormatted} par mois de commissions cédées aux agrégateurs.\n\nNous avons préparé une démo clé en main avec votre propre menu pour tester l'expérience client.\n\nSeriez-vous ouvert à un rapide échange de 10 minutes cette semaine ?`;
+  const lossClause =
+    menuSource === "captured"
+      ? `vous pourriez récupérer jusqu'à ${monthlyLossFormatted} par mois de commissions cédées aux agrégateurs`
+      : `des restaurants comparables récupèrent souvent jusqu'à ${monthlyLossFormatted} par mois en évitant les commissions des agrégateurs`;
+  const body = `Bonjour,\n\nEn analysant la présence numérique de ${restaurantName}, nous avons constaté une opportunité majeure : en conservant vos commandes à emporter et livraisons sur votre propre plateforme directe, ${lossClause}.\n\nNous avons préparé une démo clé en main avec votre propre menu pour tester l'expérience client.\n\nSeriez-vous ouvert à un rapide échange de 10 minutes cette semaine ?`;
 
   return {
     technicalAudit,
@@ -121,6 +139,7 @@ export async function generateEnrichedProspectAudit({
     monthlyCommissionLossCents: margin.monthlyLossCents,
     averageOrderValue: avgBasketFormatted,
     assumedMonthlyOrders,
+    menuSource,
     keyFindings: {
       strengths,
       weaknesses,

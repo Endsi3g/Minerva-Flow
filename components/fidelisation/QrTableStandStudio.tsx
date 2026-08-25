@@ -12,12 +12,13 @@ export type QrStudioFormat = "chevalet_a6" | "sticker_carre" | "carton_addition"
 
 const themeStyles: Record<
   string,
-  { bg: string; text: string; accent: string; qrDark: string; qrLight: string; border: string }
+  { bg: string; text: string; accent: string; accentHex: string; qrDark: string; qrLight: string; border: string }
 > = {
   emerald: {
     bg: "bg-[#062419]",
     text: "text-[#F8F5EE]",
     accent: "text-[#B4F064]",
+    accentHex: "#B4F064",
     qrDark: "#062419",
     qrLight: "#FFFFFF",
     border: "border-[#1D4A38]",
@@ -26,6 +27,7 @@ const themeStyles: Record<
     bg: "bg-[#111827]",
     text: "text-[#F9FAFB]",
     accent: "text-[#E5E7EB]",
+    accentHex: "#E5E7EB",
     qrDark: "#111827",
     qrLight: "#FFFFFF",
     border: "border-gray-800",
@@ -34,6 +36,7 @@ const themeStyles: Record<
     bg: "bg-[#FDFBF7]",
     text: "text-[#1C2024]",
     accent: "text-[#062419]",
+    accentHex: "#062419",
     qrDark: "#1C2024",
     qrLight: "#FDFBF7",
     border: "border-[#E5DFD5]",
@@ -42,6 +45,7 @@ const themeStyles: Record<
     bg: "bg-[#1E1B18]",
     text: "text-[#F3EED9]",
     accent: "text-[#D4AF37]",
+    accentHex: "#D4AF37",
     qrDark: "#1E1B18",
     qrLight: "#FFFFFF",
     border: "border-[#3D372E]",
@@ -127,7 +131,7 @@ export function QrTableStandStudio({
 
       // Header Restaurant Name
       ctx.textAlign = "center";
-      ctx.fillStyle = theme === "cream" ? "#062419" : theme === "gold" ? "#D4AF37" : "#B4F064";
+      ctx.fillStyle = activeTheme.accentHex;
       ctx.font = "bold 38px 'Plus Jakarta Sans', sans-serif";
       ctx.fillText(restaurantName.toUpperCase(), width / 2, isSticker ? 160 : 180);
 
@@ -164,7 +168,7 @@ export function QrTableStandStudio({
       ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
       // Footer call to action
-      ctx.fillStyle = theme === "cream" ? "#062419" : "#B4F064";
+      ctx.fillStyle = activeTheme.accentHex;
       ctx.font = "bold 32px 'Plus Jakarta Sans', sans-serif";
       ctx.fillText("✦ MINERVA FLOW VIP ✦", width / 2, height - (isSticker ? 90 : 140));
 

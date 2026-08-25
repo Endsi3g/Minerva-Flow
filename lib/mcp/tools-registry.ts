@@ -252,7 +252,7 @@ export const MCP_TOOLS_CATALOG: McpToolDefinition[] = [
     categoryLabel: "Prospection Minerva Reach",
     description: "Liste des restaurants cibles qualifiés, statuts d'outreach et commissions estimées.",
     parameters: {
-      status: { type: "string", enum: ["identifie", "contacte", "audit_envoye", "relance_1", "relance_2", "rdv_fixe", "converti", "decline"] },
+      status: { type: "string", enum: ["draft", "nouveau", "ready", "contacte", "audit_envoye", "relance_1", "relance_2", "rdv_fixe", "converti", "decline"] },
       limit: { type: "number" },
       format: { type: "string", enum: ["compact", "full"] },
     },
@@ -657,7 +657,11 @@ export async function executeMcpTool(
       }
 
       case "minerva_get_prospects": {
-        let query = supabase.from("prospects").select("id, restaurant_name, contact_name, email, phone, city, status, commission_rate_pct, estimated_loss, demo_slug").order("created_at", { ascending: false }).limit(Number(args.limit || 20));
+        let query = supabase
+          .from("prospects")
+          .select("id, restaurant_name, source_url, source_platform, status, demo_slug, commission_rate_pct, assumed_monthly_orders, demo_view_count, contacted_at, notes, created_at")
+          .order("created_at", { ascending: false })
+          .limit(Number(args.limit || 20));
         if (args.status) query = query.eq("status", args.status as string);
         const { data, error } = await query;
         if (error) return { success: false, error: error.message };
@@ -666,16 +670,24 @@ export async function executeMcpTool(
 
       case "minerva_create_prospect": {
         const slug = generateDemoSlug(String(args.restaurantName));
+        const notes = [
+          args.notes,
+          args.contactName ? `Contact: ${args.contactName}` : null,
+          args.email ? `Email: ${args.email}` : null,
+          args.phone ? `Tél: ${args.phone}` : null,
+          args.city ? `Ville: ${args.city}` : null,
+        ].filter(Boolean).join(" | ") || null;
+
         const { data, error } = await supabase.from("prospects").insert({
           restaurant_name: String(args.restaurantName),
-          contact_name: args.contactName ? String(args.contactName) : null,
-          email: args.email ? String(args.email) : null,
-          phone: args.phone ? String(args.phone) : null,
-          city: args.city ? String(args.city) : "Montréal",
-          monthly_delivery_volume: Number(args.monthlyDeliveryVolume || 15000),
-          commission_rate_pct: Number(args.commissionRatePct || 25),
+          source_url: args.sourceUrl ? String(args.sourceUrl) : "https://example.com",
+          source_platform: (args.sourcePlatform as string) || "direct_website",
+          commission_rate_pct: Number(args.commissionRatePct || 28),
+          assumed_monthly_orders: Number(args.assumedMonthlyOrders || 300),
           demo_slug: slug,
-          status: "identifie",
+          status: "ready",
+          notes,
+          menu_json: { categories: [] },
         }).select().single();
 
         if (error) return { success: false, error: error.message };
@@ -689,13 +701,22 @@ export async function executeMcpTool(
           const name = String(lead.name || lead.restaurant_name || "");
           if (!name) continue;
           const slug = generateDemoSlug(name);
+          const notes = [
+            lead.notes,
+            lead.contact_name ? `Contact: ${lead.contact_name}` : null,
+            lead.email ? `Email: ${lead.email}` : null,
+            lead.phone ? `Tél: ${lead.phone}` : null,
+            lead.city ? `Ville: ${lead.city}` : null,
+          ].filter(Boolean).join(" | ") || null;
+
           const { error } = await supabase.from("prospects").insert({
             restaurant_name: name,
-            contact_name: (lead.contact_name as string) || null,
-            email: (lead.email as string) || null,
-            city: (lead.city as string) || "Montréal",
+            source_url: (lead.source_url as string) || (lead.sourceUrl as string) || "https://example.com",
+            source_platform: "other",
             demo_slug: slug,
-            status: "identifie",
+            status: "nouveau",
+            notes,
+            menu_json: { categories: [] },
           });
           if (!error) imported++;
         }

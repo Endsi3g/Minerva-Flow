@@ -98,6 +98,7 @@ export default async function PortalPage({
       offers={offers}
       taxRate={restaurant?.taxRate ?? 0.14975}
       acceptsTips={restaurant?.acceptsTips ?? false}
+      restaurantName={restaurant?.name ?? null}
     />
   );
 }
