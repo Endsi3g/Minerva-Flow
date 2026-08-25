@@ -126,108 +126,45 @@ export async function deleteApiKeyAction(restaurantId: string, id: string) {
   return ok;
 }
 
+export async function getMcpToolsCatalogAction() {
+  const { MCP_TOOLS_CATALOG } = await import("@/lib/mcp/tools-registry");
+  return MCP_TOOLS_CATALOG;
+}
+
 export async function testMcpToolAction(
   restaurantId: string,
   toolName: string
 ): Promise<{ ok: boolean; result: string; durationMs: number; tokenSavingsPct: number }> {
   const start = Date.now();
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const supabase = createAdminClient();
+  const { executeMcpTool } = await import("@/lib/mcp/tools-registry");
 
   try {
-    let output: unknown = {};
+    const res = await executeMcpTool(toolName, { restaurantId, format: "compact" });
+    const durationMs = Date.now() - start;
 
-    switch (toolName) {
-      case "minerva_get_restaurant_summary": {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const [
-          { data: restaurant },
-          { count: todayOrdersCount },
-          { data: todayOrders },
-          { count: todayReservationsCount },
-          { count: lowStockCount },
-        ] = await Promise.all([
-          supabase.from("restaurants").select("name, city, currency").eq("id", restaurantId).maybeSingle(),
-          supabase.from("orders").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).gte("created_at", todayStart.toISOString()),
-          supabase.from("orders").select("total, status").eq("restaurant_id", restaurantId).gte("created_at", todayStart.toISOString()),
-          supabase.from("reservations").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).gte("reservation_time", todayStart.toISOString()),
-          supabase.from("inventory_items").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).lt("quantity_on_hand", 5),
-        ]);
-        const todayRevenue = (todayOrders as { total: number }[] ?? []).reduce((sum, o) => sum + (o.total || 0), 0);
-        output = {
-          restaurant: (restaurant as { name: string; city: string; currency: string } | null)?.name,
-          city: (restaurant as { name: string; city: string; currency: string } | null)?.city,
-          ordersToday: todayOrdersCount ?? 0,
-          revenueToday: Math.round(todayRevenue * 100) / 100,
-          reservationsToday: todayReservationsCount ?? 0,
-          stockAlerts: lowStockCount ?? 0,
-        };
-        break;
-      }
-      case "minerva_get_menu_items": {
-        const { data } = await supabase.from("menu_items").select("id, name, price, category, food_cost, active").eq("restaurant_id", restaurantId).limit(5);
-        output = data ?? [];
-        break;
-      }
-      case "minerva_get_referral_roi_and_ambassadors": {
-        const { computeReferralRoiMetrics, getTopAmbassadors } = await import("@/lib/data/referral-roi");
-        const [roi, ambassadors] = await Promise.all([
-          computeReferralRoiMetrics(restaurantId),
-          getTopAmbassadors(restaurantId, 3),
-        ]);
-        output = {
-          clicks: roi.totalClicks,
-          conversions: roi.totalConversions,
-          revenue: roi.totalRevenueGenerated,
-          multiplier: `${roi.roiMultiplier}x`,
-          topAmbassadors: ambassadors.map((a) => ({ name: a.customerName, conversions: a.referralConversions, revenue: a.revenueGenerated })),
-        };
-        break;
-      }
-      case "minerva_get_prospects": {
-        const { data } = await supabase.from("prospects").select("id, restaurant_name, status, demo_slug, commission_rate_pct").limit(5);
-        output = data ?? [];
-        break;
-      }
-      case "minerva_system_health": {
-        const [
-          { count: restCount },
-          { count: menuCount },
-          { count: orderCount },
-          { count: customerCount },
-          { count: prospectCount },
-        ] = await Promise.all([
-          supabase.from("restaurants").select("id", { count: "exact", head: true }),
-          supabase.from("menu_items").select("id", { count: "exact", head: true }),
-          supabase.from("orders").select("id", { count: "exact", head: true }),
-          supabase.from("customers").select("id", { count: "exact", head: true }),
-          supabase.from("prospects").select("id", { count: "exact", head: true }),
-        ]);
-        output = {
-          dbConnected: true,
-          provider: "Supabase Live Database (Production)",
-          counts: {
-            restaurants: restCount ?? 0,
-            menuItems: menuCount ?? 0,
-            orders: orderCount ?? 0,
-            customers: customerCount ?? 0,
-            prospects: prospectCount ?? 0,
-          },
-          verifiedAt: new Date().toISOString(),
-        };
-        break;
-      }
-      default: {
-        output = { message: `Outil ${toolName} exécuté avec succès en direct sur Supabase.` };
-      }
+    if (!res.success) {
+      return {
+        ok: false,
+        result: `Erreur : ${res.error || "Échec d'exécution"}`,
+        durationMs,
+        tokenSavingsPct: 0,
+      };
     }
 
-    const durationMs = Date.now() - start;
-    const jsonStr = JSON.stringify(output, null, 2);
-    return { ok: true, result: jsonStr, durationMs, tokenSavingsPct: 72 };
+    const jsonStr = JSON.stringify(res.data, null, 2);
+    return {
+      ok: true,
+      result: jsonStr,
+      durationMs,
+      tokenSavingsPct: res.tokenSavingsPct || 70,
+    };
   } catch (err: unknown) {
     const durationMs = Date.now() - start;
-    return { ok: false, result: `Erreur d'exécution : ${err instanceof Error ? err.message : String(err)}`, durationMs, tokenSavingsPct: 0 };
+    return {
+      ok: false,
+      result: `Erreur d'exécution : ${err instanceof Error ? err.message : String(err)}`,
+      durationMs,
+      tokenSavingsPct: 0,
+    };
   }
 }

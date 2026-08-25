@@ -13,8 +13,10 @@ import {
   revokeApiKeyAction,
   deleteApiKeyAction,
   testMcpToolAction,
+  getMcpToolsCatalogAction,
 } from "@/app/[locale]/(app)/settings/actions";
 import type { ApiKey } from "@/lib/data/api-keys";
+import type { McpToolDefinition } from "@/lib/mcp/tools-registry";
 import {
   Copy,
   Check,
@@ -27,17 +29,10 @@ import {
 import { toast } from "sonner";
 import { formatRelativeTime } from "@/lib/utils";
 
-const AVAILABLE_TOOLS = [
-  { id: "minerva_system_health", name: "Diagnostic Supabase Live", desc: "Vérification de connectivité et comptage des tables en direct (zéro mock)" },
-  { id: "minerva_get_restaurant_summary", name: "Synthèse Restaurant Flash", desc: "Ventes du jour, commandes, réservations, stocks bas" },
-  { id: "minerva_get_menu_items", name: "Catalogue du Menu", desc: "Plats, prix, marges et statuts actifs" },
-  { id: "minerva_get_referral_roi_and_ambassadors", name: "ROI Parrainage & Ambassadeurs", desc: "Performance du bouche-à-oreille et top parrains" },
-  { id: "minerva_get_prospects", name: "Pipeline Prospection & Leads", desc: "Restaurants cibles et opportunités Reach" },
-];
-
 export function ApiKeysMcpTab() {
   const { restaurantId } = useApp();
   const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [toolsCatalog, setToolsCatalog] = useState<McpToolDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
@@ -49,7 +44,7 @@ export function ApiKeysMcpTab() {
   const [connectClient, setConnectClient] = useState<"composio" | "claude" | "cursor" | "antigravity" | "curl">("composio");
 
   // Tool tester state
-  const [selectedTool, setSelectedTool] = useState(AVAILABLE_TOOLS[0].id);
+  const [selectedTool, setSelectedTool] = useState("minerva_system_health");
   const [testingTool, setTestingTool] = useState(false);
   const [testResult, setTestResult] = useState<{
     ok: boolean;
@@ -62,10 +57,17 @@ export function ApiKeysMcpTab() {
     let isMounted = true;
     if (!restaurantId) return;
 
-    getApiKeysAction(restaurantId)
-      .then((data) => {
+    Promise.all([
+      getApiKeysAction(restaurantId),
+      getMcpToolsCatalogAction(),
+    ])
+      .then(([keysData, toolsData]) => {
         if (isMounted) {
-          setKeys(data);
+          setKeys(keysData);
+          setToolsCatalog(toolsData);
+          if (toolsData.length > 0 && !selectedTool) {
+            setSelectedTool(toolsData[0].id);
+          }
           setLoading(false);
         }
       })
@@ -76,7 +78,7 @@ export function ApiKeysMcpTab() {
     return () => {
       isMounted = false;
     };
-  }, [restaurantId]);
+  }, [restaurantId, selectedTool]);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "https://minerva-flow.vercel.app";
   const mcpUrl = `${origin}/api/mcp`;
@@ -133,11 +135,22 @@ export function ApiKeysMcpTab() {
     try {
       const res = await testMcpToolAction(restaurantId, selectedTool);
       setTestResult(res);
-      if (res.ok) toast.success("Test MCP exécuté avec succès !");
+      if (res.ok) toast.success("Action exécutée en direct avec succès sur Supabase !");
     } finally {
       setTestingTool(false);
     }
   }
+
+  // Group tools by category for structured dropdown display
+  const groupedTools = useMemo(() => {
+    const map = new Map<string, McpToolDefinition[]>();
+    for (const tool of toolsCatalog) {
+      const list = map.get(tool.categoryLabel) || [];
+      list.push(tool);
+      map.set(tool.categoryLabel, list);
+    }
+    return Array.from(map.entries());
+  }, [toolsCatalog]);
 
   // Generate client snippet
   const clientConfigSnippet = useMemo(() => {
@@ -198,13 +211,13 @@ export function ApiKeysMcpTab() {
           2
         );
       case "curl":
-        return `curl -X POST ${origin}/api/v1/restaurant/summary \\\n  -H "Content-Type: application/json" \\\n  -H "x-api-key: ${
+        return `curl -X POST ${origin}/api/v1/tools/${selectedTool} \\\n  -H "Content-Type: application/json" \\\n  -H "x-api-key: ${
           createdRawToken || activeKeyPlaceholder
         }"`;
       default:
         return "";
     }
-  }, [connectClient, openApiUrl, mcpUrl, origin, createdRawToken, activeKeyPlaceholder]);
+  }, [connectClient, openApiUrl, mcpUrl, origin, selectedTool, createdRawToken, activeKeyPlaceholder]);
 
   return (
     <div className="space-y-6">
@@ -216,7 +229,9 @@ export function ApiKeysMcpTab() {
               <Badge tone="green" size="sm" dot pulse>
                 Serveur MCP & OpenAPI Actifs
               </Badge>
-              <span className="text-[12px] font-mono text-mv-ink-soft">v1.2.0 · Live Supabase</span>
+              <span className="text-[12px] font-mono text-mv-ink-soft">
+                {toolsCatalog.length > 0 ? `${toolsCatalog.length} outils réels connectés` : "25 outils live"} · Supabase Direct
+              </span>
             </div>
             <h3 className="mt-2 font-display text-[22px] font-semibold text-mv-ink leading-tight">
               Connectez votre IA en 3 étapes simples
@@ -480,23 +495,27 @@ export function ApiKeysMcpTab() {
         )}
       </Card>
 
-      {/* 4. Live MCP Diagnostic & Tester Card */}
+      {/* 4. Live MCP Diagnostic & Tester Card (All 25 Tools Loaded Dynamically) */}
       <Card>
         <CardHeader
           eyebrow="Diagnostic & Validation Live"
-          title="Testeur d'Outils en Direct (Zéro Mock)"
-          description="Exécutez une action réelle sur la base Supabase pour valider la connectivité et la latence."
+          title={`Testeur des ${toolsCatalog.length || 25} Outils en Direct (Supabase Production)`}
+          description="Sélectionnez n'importe quel outil pour exécuter une requête réelle en direct sur la base de données."
         />
 
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
             <div className="flex-1">
-              <Field label="Choisir une action à tester">
+              <Field label="Choisir une action opérationnelle à tester">
                 <Select value={selectedTool} onChange={(e) => setSelectedTool(e.target.value)}>
-                  {AVAILABLE_TOOLS.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.id})
-                    </option>
+                  {groupedTools.map(([catLabel, toolList]) => (
+                    <optgroup key={catLabel} label={catLabel}>
+                      {toolList.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} ({t.id})
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </Select>
               </Field>
@@ -512,7 +531,7 @@ export function ApiKeysMcpTab() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge tone={testResult.ok ? "green" : "red"}>
-                    {testResult.ok ? "200 OK" : "Erreur"}
+                    {testResult.ok ? "200 OK (Live Supabase)" : "Erreur"}
                   </Badge>
                   <span className="text-[12px] text-mv-ink-soft flex items-center gap-1">
                     <Clock size={12} /> {testResult.durationMs} ms

@@ -1,17 +1,127 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { MCP_TOOLS_CATALOG } from "@/lib/mcp/tools-registry";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin || "https://minerva-flow.vercel.app";
 
+  const paths: Record<string, unknown> = {};
+
+  // Construct dynamic paths from the 25 live tools in the registry
+  for (const tool of MCP_TOOLS_CATALOG) {
+    const endpointPath = `/api/v1/tools/${tool.id}`;
+
+    const paramProperties: Record<string, unknown> = {};
+    const requiredProps: string[] = [];
+
+    for (const [pName, pDef] of Object.entries(tool.parameters)) {
+      paramProperties[pName] = {
+        type: pDef.type === "number" ? "number" : pDef.type === "boolean" ? "boolean" : pDef.type === "array" ? "array" : "string",
+        description: pDef.description,
+        ...(pDef.enum ? { enum: pDef.enum } : {}),
+      };
+      if (pDef.required) {
+        requiredProps.push(pName);
+      }
+    }
+
+    paths[endpointPath] = {
+      post: {
+        tags: [tool.categoryLabel],
+        summary: tool.name,
+        description: tool.description,
+        operationId: tool.id,
+        requestBody: Object.keys(paramProperties).length > 0 ? {
+          required: requiredProps.length > 0,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: paramProperties,
+                ...(requiredProps.length > 0 ? { required: requiredProps } : {}),
+              },
+            },
+          },
+        } : undefined,
+        responses: {
+          "200": {
+            description: "Résultat d'exécution en direct (Supabase Live)",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    ok: { type: "boolean" },
+                    data: { type: "object" },
+                    error: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          "401": {
+            description: "Clé API manquante ou non autorisée",
+          },
+        },
+      },
+    };
+  }
+
+  // Also include standard convenient aliases (summary, menu, referral-roi, prospects, system/health)
+  paths["/api/v1/restaurant/summary"] = {
+    get: {
+      tags: ["Vue d'ensemble"],
+      summary: "Synthèse flash du restaurant",
+      description: "Retourne les KPIs vitaux du jour (commandes, CA, réservations, alertes stock).",
+      operationId: "getRestaurantSummaryAlias",
+      responses: { "200": { description: "Synthèse opérationnelle" } },
+    },
+  };
+  paths["/api/v1/restaurant/menu"] = {
+    get: {
+      tags: ["Menu & Recettes"],
+      summary: "Catalogue du Menu",
+      description: "Liste des plats, prix, marges et statuts actifs.",
+      operationId: "getMenuItemsAlias",
+      responses: { "200": { description: "Liste des plats" } },
+    },
+  };
+  paths["/api/v1/loyalty/referral-roi"] = {
+    get: {
+      tags: ["Fidélisation & Bouche-à-oreille"],
+      summary: "ROI Parrainage & Meilleurs Ambassadeurs",
+      description: "Analyse financière du bouche-à-oreille & classement des ambassadeurs.",
+      operationId: "getReferralRoiAlias",
+      responses: { "200": { description: "Métriques ROI" } },
+    },
+  };
+  paths["/api/v1/prospects/list"] = {
+    get: {
+      tags: ["Prospection Minerva Reach"],
+      summary: "Pipeline de Prospection",
+      description: "Liste des restaurants cibles et commissions récupérables.",
+      operationId: "getProspectsAlias",
+      responses: { "200": { description: "Liste des prospects" } },
+    },
+  };
+  paths["/api/v1/system/health"] = {
+    get: {
+      tags: ["Diagnostic & Santé Système"],
+      summary: "Santé du Système & Diagnostic Base de Données (Zéro Mock)",
+      description: "Vérifie la connexion active en temps réel à Supabase et compte les enregistrements réels.",
+      operationId: "getSystemHealthAlias",
+      responses: { "200": { description: "Diagnostic Supabase Live" } },
+    },
+  };
+
   const openApiSpec = {
     openapi: "3.1.0",
     info: {
       title: "Minerva Flow REST & MCP API",
-      version: "1.0.0",
+      version: "1.2.0",
       description:
-        "API complète et token-efficient pour la gestion de restaurants, fidélisation, parrainage viral et prospection autonome (compatible Composio, OpenAI GPTs, LangChain et MCP).",
+        "API complète et token-efficient pour la gestion de restaurants, fidélisation, parrainage viral et prospection autonome (25 outils connectés en direct à Supabase).",
       contact: {
         name: "Minerva Flow Support",
         url: "https://minerva-flow.vercel.app",
@@ -45,254 +155,8 @@ export async function GET(req: NextRequest) {
           description: "Header direct API Key (ex: x-api-key: mcp_live_...)",
         },
       },
-      schemas: {
-        CompactResponse: {
-          type: "object",
-          properties: {
-            ok: { type: "boolean" },
-            data: { type: "object" },
-          },
-        },
-      },
     },
-    paths: {
-      "/api/v1/restaurant/summary": {
-        get: {
-          summary: "Synthèse flash du restaurant",
-          description: "Retourne les KPIs vitaux du jour (commandes, CA, réservations, alertes stock).",
-          operationId: "getRestaurantSummary",
-          responses: {
-            "200": {
-              description: "Synthèse opérationnelle condensée",
-              content: { "application/json": { schema: { $ref: "#/components/schemas/CompactResponse" } } },
-            },
-          },
-        },
-        post: {
-          summary: "Synthèse flash du restaurant (POST)",
-          description: "Retourne les KPIs vitaux du jour.",
-          operationId: "postRestaurantSummary",
-          requestBody: {
-            required: false,
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  properties: {
-                    restaurantId: { type: "string", format: "uuid" },
-                    format: { type: "string", enum: ["compact", "full"], default: "compact" },
-                  },
-                },
-              },
-            },
-          },
-          responses: {
-            "200": {
-              description: "Synthèse opérationnelle",
-              content: { "application/json": { schema: { $ref: "#/components/schemas/CompactResponse" } } },
-            },
-          },
-        },
-      },
-      "/api/v1/restaurant/menu": {
-        get: {
-          summary: "Catalogue du Menu",
-          description: "Liste des plats, prix, marges et statuts actifs.",
-          operationId: "getMenuItems",
-          responses: {
-            "200": {
-              description: "Liste des plats du menu",
-              content: { "application/json": { schema: { $ref: "#/components/schemas/CompactResponse" } } },
-            },
-          },
-        },
-        post: {
-          summary: "Catalogue du Menu (Filtré)",
-          description: "Liste des plats avec filtres catégorie et statut actif.",
-          operationId: "queryMenuItems",
-          requestBody: {
-            required: false,
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  properties: {
-                    restaurantId: { type: "string", format: "uuid" },
-                    category: { type: "string" },
-                    activeOnly: { type: "boolean", default: true },
-                    format: { type: "string", enum: ["compact", "full"], default: "compact" },
-                  },
-                },
-              },
-            },
-          },
-          responses: {
-            "200": {
-              description: "Liste filtrée des plats",
-              content: { "application/json": { schema: { $ref: "#/components/schemas/CompactResponse" } } },
-            },
-          },
-        },
-      },
-      "/api/v1/loyalty/referral-roi": {
-        get: {
-          summary: "ROI Parrainage & Meilleurs Ambassadeurs",
-          description: "Analyse financière du bouche-à-oreille (clics, conversions, CA généré, multiplicateur ROI, top ambassadeurs).",
-          operationId: "getReferralRoiAndAmbassadors",
-          responses: {
-            "200": {
-              description: "Métriques ROI et classement des ambassadeurs",
-              content: { "application/json": { schema: { $ref: "#/components/schemas/CompactResponse" } } },
-            },
-          },
-        },
-        post: {
-          summary: "ROI Parrainage (POST)",
-          operationId: "postReferralRoi",
-          requestBody: {
-            required: false,
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  properties: {
-                    restaurantId: { type: "string", format: "uuid" },
-                    format: { type: "string", enum: ["compact", "full"], default: "compact" },
-                  },
-                },
-              },
-            },
-          },
-          responses: {
-            "200": {
-              description: "Métriques ROI",
-              content: { "application/json": { schema: { $ref: "#/components/schemas/CompactResponse" } } },
-            },
-          },
-        },
-      },
-      "/api/v1/prospects/list": {
-        get: {
-          summary: "Pipeline de Prospection",
-          description: "Liste des restaurants cibles et opportunités de commissions récupérables.",
-          operationId: "getProspects",
-          responses: {
-            "200": {
-              description: "Liste des prospects",
-              content: { "application/json": { schema: { $ref: "#/components/schemas/CompactResponse" } } },
-            },
-          },
-        },
-        post: {
-          summary: "Filtrer les prospects",
-          operationId: "filterProspects",
-          requestBody: {
-            required: false,
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  properties: {
-                    status: { type: "string" },
-                    limit: { type: "number", default: 20 },
-                    format: { type: "string", enum: ["compact", "full"], default: "compact" },
-                  },
-                },
-              },
-            },
-          },
-          responses: {
-            "200": {
-              description: "Prospects filtrés",
-              content: { "application/json": { schema: { $ref: "#/components/schemas/CompactResponse" } } },
-            },
-          },
-        },
-      },
-      "/api/v1/prospects/audit": {
-        post: {
-          summary: "Générer un audit IA de commissions",
-          description: "Analyse les pertes de marges sur plateformes de livraison (Uber Eats / DoorDash) et rédige un pitch d'audit.",
-          operationId: "runProspectAudit",
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  required: ["prospectId"],
-                  properties: {
-                    prospectId: { type: "string", format: "uuid" },
-                  },
-                },
-              },
-            },
-          },
-          responses: {
-            "200": {
-              description: "Rapport d'audit IA généré",
-              content: { "application/json": { schema: { $ref: "#/components/schemas/CompactResponse" } } },
-            },
-          },
-        },
-      },
-      "/api/v1/prospects/relance": {
-        post: {
-          summary: "Déclencher une relance de prospect",
-          description: "Envoie un email de relance automatisé J+2 ou J+5.",
-          operationId: "triggerProspectRelance",
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  required: ["prospectId", "step"],
-                  properties: {
-                    prospectId: { type: "string", format: "uuid" },
-                    step: { type: "string", enum: ["relance_1", "relance_2"] },
-                  },
-                },
-              },
-            },
-          },
-          responses: {
-            "200": {
-              description: "Relance exécutée",
-              content: { "application/json": { schema: { $ref: "#/components/schemas/CompactResponse" } } },
-            },
-          },
-        },
-      },
-      "/api/v1/restaurant/orders": {
-        get: {
-          summary: "Commandes récentes",
-          operationId: "getOrders",
-          responses: { "200": { description: "Liste des commandes" } },
-        },
-      },
-      "/api/v1/restaurant/reservations": {
-        get: {
-          summary: "Réservations",
-          operationId: "getReservations",
-          responses: { "200": { description: "Liste des réservations" } },
-        },
-      },
-      "/api/v1/restaurant/inventory": {
-        get: {
-          summary: "Inventaire et stocks",
-          operationId: "getInventory",
-          responses: { "200": { description: "État des stocks" } },
-        },
-      },
-      "/api/v1/restaurant/alerts": {
-        get: {
-          summary: "Alertes et anomalies",
-          operationId: "getAlerts",
-          responses: { "200": { description: "Liste des alertes actives" } },
-        },
-      },
-    },
+    paths,
   };
 
   return NextResponse.json(openApiSpec, {

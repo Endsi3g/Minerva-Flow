@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { timingSafeEqual } from "node:crypto";
-import { computeReferralRoiMetrics, getTopAmbassadors } from "@/lib/data/referral-roi";
+import { executeMcpTool } from "@/lib/mcp/tools-registry";
 
 export const runtime = "nodejs";
 
@@ -47,165 +46,42 @@ async function authenticateRequest(req: NextRequest): Promise<{ authenticated: b
   return { authenticated: false };
 }
 
-async function resolveRestaurantId(supabase: ReturnType<typeof createAdminClient>, explicitId?: string): Promise<string | null> {
-  if (explicitId) return explicitId;
-  const { data } = await supabase.from("restaurants").select("id").limit(1).maybeSingle();
-  return (data as { id: string } | null)?.id ?? null;
-}
+const REST_TO_MCP_MAP: Record<string, string> = {
+  "restaurant/summary": "minerva_get_restaurant_summary",
+  "restaurant/menu": "minerva_get_menu_items",
+  "restaurant/menu/manage": "minerva_manage_menu_item",
+  "restaurant/orders": "minerva_get_orders",
+  "restaurant/orders/status": "minerva_update_order_status",
+  "restaurant/reservations": "minerva_get_reservations",
+  "restaurant/reservations/status": "minerva_update_reservation_status",
+  "restaurant/inventory": "minerva_get_inventory",
+  "restaurant/inventory/update": "minerva_update_stock_level",
+  "restaurant/alerts": "minerva_get_alerts",
+  "restaurant/alerts/resolve": "minerva_resolve_alert",
+  "restaurant/employees": "minerva_get_employees_and_shifts",
+  "restaurant/kpis": "minerva_get_financial_kpis",
+  "loyalty/customers": "minerva_get_customers",
+  "loyalty/referral-roi": "minerva_get_referral_roi_and_ambassadors",
+  "loyalty/campaigns/create": "minerva_create_loyalty_campaign",
+  "loyalty/reviews": "minerva_get_reviews_and_feedback",
+  "prospects/list": "minerva_get_prospects",
+  "prospects/create": "minerva_create_prospect",
+  "prospects/sync-reach": "minerva_sync_reach_leads",
+  "prospects/audit": "minerva_run_prospect_audit",
+  "prospects/send-audit": "minerva_send_prospect_audit",
+  "prospects/relance": "minerva_trigger_prospect_relance",
+  "prospects/due-followups": "minerva_get_prospects_due_for_followup",
+  "system/health": "minerva_system_health",
+};
 
-async function handleAction(endpoint: string, method: string, payload: Record<string, unknown>) {
-  const supabase = createAdminClient();
-  const explicitRestaurantId = typeof payload.restaurantId === "string" ? payload.restaurantId : undefined;
-  const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId);
-
-  switch (endpoint) {
-    case "restaurant/summary": {
-      if (!restaurantId) return { error: "Restaurant introuvable" };
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-
-      const [
-        { data: restaurant },
-        { count: todayOrdersCount },
-        { data: todayOrders },
-        { count: todayReservationsCount },
-        { count: lowStockCount },
-      ] = await Promise.all([
-        supabase.from("restaurants").select("name, city, currency").eq("id", restaurantId).maybeSingle(),
-        supabase.from("orders").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).gte("created_at", todayStart.toISOString()),
-        supabase.from("orders").select("total, status").eq("restaurant_id", restaurantId).gte("created_at", todayStart.toISOString()),
-        supabase.from("reservations").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).gte("reservation_time", todayStart.toISOString()),
-        supabase.from("inventory_items").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).lt("quantity_on_hand", 5),
-      ]);
-
-      const todayRevenue = (todayOrders as { total: number }[] ?? []).reduce((sum, o) => sum + (o.total || 0), 0);
-
-      return {
-        restaurant: (restaurant as { name: string; city: string; currency: string } | null)?.name,
-        city: (restaurant as { name: string; city: string; currency: string } | null)?.city,
-        ordersToday: todayOrdersCount ?? 0,
-        revenueToday: Math.round(todayRevenue * 100) / 100,
-        reservationsToday: todayReservationsCount ?? 0,
-        stockAlerts: lowStockCount ?? 0,
-      };
-    }
-
-    case "restaurant/menu": {
-      if (!restaurantId) return { error: "Restaurant introuvable" };
-      const { data } = await supabase
-        .from("menu_items")
-        .select("id, name, price, category, food_cost, active")
-        .eq("restaurant_id", restaurantId)
-        .limit(50);
-      return data ?? [];
-    }
-
-    case "loyalty/referral-roi": {
-      if (!restaurantId) return { error: "Restaurant introuvable" };
-      const [roi, ambassadors] = await Promise.all([
-        computeReferralRoiMetrics(restaurantId),
-        getTopAmbassadors(restaurantId, 5),
-      ]);
-      return {
-        clicks: roi.totalClicks,
-        conversions: roi.totalConversions,
-        rate: `${roi.conversionRatePct}%`,
-        revenue: roi.totalRevenueGenerated,
-        cost: roi.estimatedRewardsCost,
-        multiplier: `${roi.roiMultiplier}x`,
-        topAmbassadors: ambassadors.map((a) => ({ name: a.customerName, conversions: a.referralConversions, revenue: a.revenueGenerated })),
-      };
-    }
-
-    case "prospects/list": {
-      const { data } = await supabase
-        .from("prospects")
-        .select("id, restaurant_name, contact_name, email, city, commission_rate_pct, status, demo_slug")
-        .order("created_at", { ascending: false })
-        .limit(25);
-      return data ?? [];
-    }
-
-    case "restaurant/orders": {
-      if (!restaurantId) return { error: "Restaurant introuvable" };
-      const { data } = await supabase
-        .from("orders")
-        .select("id, order_number, status, total, order_type, created_at")
-        .eq("restaurant_id", restaurantId)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      return data ?? [];
-    }
-
-    case "restaurant/reservations": {
-      if (!restaurantId) return { error: "Restaurant introuvable" };
-      const { data } = await supabase
-        .from("reservations")
-        .select("id, customer_name, party_size, reservation_time, status, table_number")
-        .eq("restaurant_id", restaurantId)
-        .order("reservation_time", { ascending: false })
-        .limit(20);
-      return data ?? [];
-    }
-
-    case "restaurant/inventory": {
-      if (!restaurantId) return { error: "Restaurant introuvable" };
-      const { data } = await supabase
-        .from("inventory_items")
-        .select("id, name, quantity_on_hand, unit, unit_cost")
-        .eq("restaurant_id", restaurantId)
-        .limit(50);
-      return data ?? [];
-    }
-
-    case "restaurant/alerts": {
-      if (!restaurantId) return { error: "Restaurant introuvable" };
-      const { data } = await supabase
-        .from("alerts")
-        .select("id, type, severity, message, resolved, created_at")
-        .eq("restaurant_id", restaurantId)
-        .eq("resolved", false)
-        .limit(20);
-      return data ?? [];
-    }
-
-    case "system/health": {
-      const start = Date.now();
-      const [
-        { count: restCount, error: errRest },
-        { count: menuCount },
-        { count: orderCount },
-        { count: customerCount },
-        { count: prospectCount },
-      ] = await Promise.all([
-        supabase.from("restaurants").select("id", { count: "exact", head: true }),
-        supabase.from("menu_items").select("id", { count: "exact", head: true }),
-        supabase.from("orders").select("id", { count: "exact", head: true }),
-        supabase.from("customers").select("id", { count: "exact", head: true }),
-        supabase.from("prospects").select("id", { count: "exact", head: true }),
-      ]);
-
-      const latencyMs = Date.now() - start;
-      if (errRest) return { dbConnected: false, error: errRest.message, latencyMs };
-
-      return {
-        dbConnected: true,
-        provider: "Supabase Live Database",
-        latencyMs,
-        counts: {
-          restaurants: restCount ?? 0,
-          menuItems: menuCount ?? 0,
-          orders: orderCount ?? 0,
-          customers: customerCount ?? 0,
-          prospects: prospectCount ?? 0,
-        },
-        verifiedAt: new Date().toISOString(),
-      };
-    }
-
-    default:
-      return { error: `Endpoint non reconnu : /api/v1/${endpoint}` };
+async function dispatchAction(endpoint: string, payload: Record<string, unknown>) {
+  // 1. Direct tool ID or direct REST mapping
+  let toolId = REST_TO_MCP_MAP[endpoint] || endpoint;
+  if (endpoint.startsWith("tools/")) {
+    toolId = endpoint.replace("tools/", "");
   }
+
+  return executeMcpTool(toolId, payload);
 }
 
 export async function GET(req: NextRequest, context: { params: Promise<{ slug: string[] }> }) {
@@ -225,11 +101,11 @@ export async function GET(req: NextRequest, context: { params: Promise<{ slug: s
     searchParamsObj[key] = val;
   });
 
-  const result = await handleAction(endpoint, "GET", searchParamsObj);
-  return NextResponse.json({ ok: !("error" in (result as Record<string, unknown>)), data: result }, {
-    status: 200,
-    headers: { "Access-Control-Allow-Origin": "*" },
-  });
+  const res = await dispatchAction(endpoint, searchParamsObj);
+  return NextResponse.json(
+    { ok: res.success, data: res.data, error: res.error },
+    { status: res.success ? 200 : 400, headers: { "Access-Control-Allow-Origin": "*" } }
+  );
 }
 
 export async function POST(req: NextRequest, context: { params: Promise<{ slug: string[] }> }) {
@@ -251,11 +127,11 @@ export async function POST(req: NextRequest, context: { params: Promise<{ slug: 
     // empty body
   }
 
-  const result = await handleAction(endpoint, "POST", body);
-  return NextResponse.json({ ok: !("error" in (result as Record<string, unknown>)), data: result }, {
-    status: 200,
-    headers: { "Access-Control-Allow-Origin": "*" },
-  });
+  const res = await dispatchAction(endpoint, body);
+  return NextResponse.json(
+    { ok: res.success, data: res.data, error: res.error },
+    { status: res.success ? 200 : 400, headers: { "Access-Control-Allow-Origin": "*" } }
+  );
 }
 
 export async function OPTIONS() {
