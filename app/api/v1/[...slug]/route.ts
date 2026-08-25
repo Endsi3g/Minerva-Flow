@@ -169,6 +169,40 @@ async function handleAction(endpoint: string, method: string, payload: Record<st
       return data ?? [];
     }
 
+    case "system/health": {
+      const start = Date.now();
+      const [
+        { count: restCount, error: errRest },
+        { count: menuCount },
+        { count: orderCount },
+        { count: customerCount },
+        { count: prospectCount },
+      ] = await Promise.all([
+        supabase.from("restaurants").select("id", { count: "exact", head: true }),
+        supabase.from("menu_items").select("id", { count: "exact", head: true }),
+        supabase.from("orders").select("id", { count: "exact", head: true }),
+        supabase.from("customers").select("id", { count: "exact", head: true }),
+        supabase.from("prospects").select("id", { count: "exact", head: true }),
+      ]);
+
+      const latencyMs = Date.now() - start;
+      if (errRest) return { dbConnected: false, error: errRest.message, latencyMs };
+
+      return {
+        dbConnected: true,
+        provider: "Supabase Live Database",
+        latencyMs,
+        counts: {
+          restaurants: restCount ?? 0,
+          menuItems: menuCount ?? 0,
+          orders: orderCount ?? 0,
+          customers: customerCount ?? 0,
+          prospects: prospectCount ?? 0,
+        },
+        verifiedAt: new Date().toISOString(),
+      };
+    }
+
     default:
       return { error: `Endpoint non reconnu : /api/v1/${endpoint}` };
   }

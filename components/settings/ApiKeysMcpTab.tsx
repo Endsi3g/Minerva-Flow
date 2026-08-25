@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { formatRelativeTime } from "@/lib/utils";
 
 const AVAILABLE_TOOLS = [
+  { id: "minerva_system_health", name: "Diagnostic Supabase Live", desc: "Vérification de connectivité et comptage des tables en direct (zéro mock)" },
   { id: "minerva_get_restaurant_summary", name: "Synthèse Restaurant Flash", desc: "Ventes du jour, commandes, réservations, stocks bas" },
   { id: "minerva_get_menu_items", name: "Catalogue du Menu", desc: "Plats, prix, marges et statuts actifs" },
   { id: "minerva_get_referral_roi_and_ambassadors", name: "ROI Parrainage & Ambassadeurs", desc: "Performance du bouche-à-oreille et top parrains" },
