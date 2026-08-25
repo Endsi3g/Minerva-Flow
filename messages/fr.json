@@ -706,10 +706,10 @@
     "analytics": {
       "title": "Analytics produit",
       "description": "Suivi d'usage (PostHog) — adoption des fonctionnalités, entonnoir d'onboarding, rétention.",
-      "dashboardTitle": "Tableau de bord détaillé dans PostHog",
+      "dashboardTitle": "Clé API PostHog manquante",
       "dashboardDescription": "Les événements clés (inscription, onboarding complété, journée ajoutée, campagne créée, revue publiée…) sont déjà envoyés à PostHog. Consultez les entonnoirs, la rétention et l'adoption par fonctionnalité directement dans son tableau de bord.",
       "openPostHog": "Ouvrir PostHog",
-      "configureHostHint": "Configurez NEXT_PUBLIC_POSTHOG_HOST pour afficher un lien direct ici."
+      "configureHostHint": "Ajoutez POSTHOG_PERSONAL_API_KEY (Personal API key, scopes insight:read/query:read/cohort:read) pour afficher les données ici directement."
     },
     "changelog": {
       "pageTitle": "Journal des mises à jour",
