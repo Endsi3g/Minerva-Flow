@@ -78,7 +78,7 @@ export const MCP_TOOLS_CATALOG: McpToolDefinition[] = [
     description: "Historique des commandes, totaux, modes de service (sur place, emporter, livraison).",
     parameters: {
       restaurantId: { type: "string" },
-      status: { type: "string", enum: ["pending", "in_progress", "completed", "cancelled"] },
+      status: { type: "string", enum: ["soumise", "confirmee", "en_preparation", "prete", "servie", "annulee"] },
       limit: { type: "number" },
       format: { type: "string", enum: ["compact", "full"] },
     },
@@ -91,7 +91,7 @@ export const MCP_TOOLS_CATALOG: McpToolDefinition[] = [
     description: "Avancer le statut d'une commande (en préparation, prête, terminée).",
     parameters: {
       orderId: { type: "string", required: true },
-      status: { type: "string", required: true, enum: ["pending", "in_progress", "completed", "cancelled"] },
+      status: { type: "string", required: true, enum: ["soumise", "confirmee", "en_preparation", "prete", "servie", "annulee"] },
     },
   },
   {
@@ -102,7 +102,7 @@ export const MCP_TOOLS_CATALOG: McpToolDefinition[] = [
     description: "Liste des réservations du jour, nombre de couverts, tables assignées et demandes spéciales.",
     parameters: {
       restaurantId: { type: "string" },
-      status: { type: "string", enum: ["confirmed", "pending", "seated", "completed", "cancelled", "no_show"] },
+      status: { type: "string", enum: ["confirmee", "annulee", "honoree", "no_show", "demandee"] },
       limit: { type: "number" },
       format: { type: "string", enum: ["compact", "full"] },
     },
@@ -115,8 +115,8 @@ export const MCP_TOOLS_CATALOG: McpToolDefinition[] = [
     description: "Assigner une table, marquer comme installé (seated) ou terminer.",
     parameters: {
       reservationId: { type: "string", required: true },
-      status: { type: "string", required: true, enum: ["confirmed", "seated", "completed", "cancelled", "no_show"] },
-      tableNumber: { type: "string" },
+      status: { type: "string", required: true, enum: ["confirmee", "annulee", "honoree", "no_show", "demandee"] },
+      tableId: { type: "string", description: "ID de la table à assigner (optionnel)" },
     },
   },
   // 4. Inventaire & Alertes
@@ -222,10 +222,10 @@ export const MCP_TOOLS_CATALOG: McpToolDefinition[] = [
   },
   {
     id: "minerva_get_reviews_and_feedback",
-    name: "Avis Clients & Satisfaction",
+    name: "Revues IA périodiques",
     category: "loyalty_referral",
     categoryLabel: "Fidélisation & Bouche-à-oreille",
-    description: "Notes moyennes, avis récents et points de friction remontés par les clients.",
+    description: "Synthèses IA générées périodiquement : points forts, points faibles et recommandations pour ce restaurant.",
     parameters: {
       restaurantId: { type: "string" },
       limit: { type: "number" },
@@ -465,7 +465,7 @@ export async function executeMcpTool(
         const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
-        let query = supabase.from("orders").select("id, order_number, status, total, order_type, created_at").eq("restaurant_id", restaurantId).order("created_at", { ascending: false }).limit(Number(args.limit || 20));
+        let query = supabase.from("orders").select("id, guest_name, status, total, payment_method, created_at").eq("restaurant_id", restaurantId).order("created_at", { ascending: false }).limit(Number(args.limit || 20));
         if (args.status) query = query.eq("status", args.status as string);
 
         const { data, error } = await query;
@@ -482,7 +482,7 @@ export async function executeMcpTool(
           .update({ status: args.status })
           .eq("id", args.orderId)
           .eq("restaurant_id", restaurantId)
-          .select("id, status, order_number")
+          .select("id, status, guest_name")
           .single();
         if (error) return { success: false, error: error.message };
         return { success: true, data: { updated: data } };
@@ -492,7 +492,7 @@ export async function executeMcpTool(
         const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
-        let query = supabase.from("reservations").select("id, customer_name, party_size, reservation_time, status, table_number, special_requests").eq("restaurant_id", restaurantId).order("reservation_time", { ascending: false }).limit(Number(args.limit || 20));
+        let query = supabase.from("reservations").select("id, guest_name, party_size, reservation_time, status, table_id, notes").eq("restaurant_id", restaurantId).order("reservation_time", { ascending: false }).limit(Number(args.limit || 20));
         if (args.status) query = query.eq("status", args.status as string);
 
         const { data, error } = await query;
@@ -505,13 +505,13 @@ export async function executeMcpTool(
         if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
 
         const patch: Record<string, unknown> = { status: args.status };
-        if (args.tableNumber) patch.table_number = args.tableNumber;
+        if (args.tableId) patch.table_id = args.tableId;
         const { data, error } = await supabase
           .from("reservations")
           .update(patch)
           .eq("id", args.reservationId)
           .eq("restaurant_id", restaurantId)
-          .select("id, status, table_number")
+          .select("id, status, table_id")
           .single();
         if (error) return { success: false, error: error.message };
         return { success: true, data: { updated: data } };
@@ -643,8 +643,29 @@ export async function executeMcpTool(
       }
 
       case "minerva_get_reviews_and_feedback": {
-        const { data } = await supabase.from("feature_feedback").select("id, user_email, type, title, message, rating, created_at").order("created_at", { ascending: false }).limit(20);
-        return { success: true, data: data ?? [], tokenSavingsPct: 60 };
+        const restaurantId = await resolveRestaurantId(supabase, explicitRestaurantId, authRestaurantId);
+        if (!restaurantId) return { success: false, error: "Restaurant introuvable" };
+
+        const { data, error } = await supabase
+          .from("ai_reviews")
+          .select("id, period_start, period_end, strengths, weaknesses, recommendations, created_at")
+          .eq("restaurant_id", restaurantId)
+          .order("created_at", { ascending: false })
+          .limit(Number(args.limit || 3));
+        if (error) return { success: false, error: error.message };
+
+        if (format === "compact") {
+          const compact = (data ?? []).map((r) => ({
+            id: r.id,
+            period: `${r.period_start} -> ${r.period_end}`,
+            strengths: r.strengths?.slice(0, 2),
+            weaknesses: r.weaknesses?.slice(0, 2),
+            recs: r.recommendations?.slice(0, 2),
+          }));
+          return { success: true, data: compact, tokenSavingsPct: 60 };
+        }
+
+        return { success: true, data: data ?? [] };
       }
 
       case "minerva_get_financial_kpis": {
