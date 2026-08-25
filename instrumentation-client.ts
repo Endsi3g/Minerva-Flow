@@ -41,4 +41,11 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
   defaults: "2026-01-30",
   capture_exceptions: true,
   debug: process.env.NODE_ENV === "development",
+  // The dated "defaults" bundle gates initial pageview capture behind a
+  // consent check (isOptedIn) that this app never satisfies — there's no
+  // consent banner anywhere, so every pageview was silently dropped despite
+  // init/config/flags requests succeeding normally. Force capture on so it
+  // doesn't depend on an implicit consent flow this app doesn't implement.
+  capture_pageview: true,
+  opt_out_capturing_by_default: false,
 });
