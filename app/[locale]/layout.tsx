@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ServiceWorkerManager } from "@/components/pwa/ServiceWorkerManager";
 import { Analytics } from "@vercel/analytics/react";
+import Script from "next/script";
 import { hasLocale } from "next-intl";
 import { NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
@@ -187,6 +188,11 @@ export default async function LocaleLayout({
         />
       </head>
       <body className="min-h-full bg-mv-cream text-mv-ink antialiased">
+        <Script
+          src="https://www.vesk.dev/a.js"
+          data-key="7e85d29120374ba48b24f0f7332ad114"
+          strategy="afterInteractive"
+        />
         <ThemeProvider>
           <NextIntlClientProvider>
             <TooltipProvider delay={150}>{children}</TooltipProvider>

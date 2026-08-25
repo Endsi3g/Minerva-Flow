@@ -725,6 +725,7 @@
       "descriptionLabel": "Description",
       "categoryLabel": "Catégorie",
       "publishing": "Publication…",
+      "waitingForImage": "Envoi de l'image en cours…",
       "publishAndNotify": "Publier et notifier",
       "publishSuccess": "Publié — tous les utilisateurs ont été notifiés.",
       "publishFailed": "Échec de la publication.",
