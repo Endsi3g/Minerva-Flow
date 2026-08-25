@@ -136,6 +136,15 @@ export async function testMcpToolAction(
   toolName: string
 ): Promise<{ ok: boolean; result: string; durationMs: number; tokenSavingsPct: number }> {
   const start = Date.now();
+
+  // executeMcpTool runs on the service-role client (bypasses RLS), so this action must verify
+  // restaurant membership itself before letting the caller point it at an arbitrary restaurantId.
+  const supabase = await createClient();
+  const { data: membership } = await supabase.from("restaurants").select("id").eq("id", restaurantId).maybeSingle();
+  if (!membership) {
+    return { ok: false, result: "Erreur : accès refusé à ce restaurant.", durationMs: Date.now() - start, tokenSavingsPct: 0 };
+  }
+
   const { executeMcpTool } = await import("@/lib/mcp/tools-registry");
 
   try {

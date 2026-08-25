@@ -1,5 +1,5 @@
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
-import type { AuthInfo } from "@modelcontextprotocol/server";
+import type { AuthInfo, ServerContext } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -45,19 +45,28 @@ const verifyToken = async (req: Request, bearerToken?: string): Promise<AuthInfo
   const serverToken = process.env.MCP_SERVER_TOKEN;
   const hermesToken = process.env.MCP_HERMES_TOKEN;
 
+  // System-level tokens (.env) are admin credentials, not tied to one tenant: they may
+  // operate on whatever restaurantId the caller supplies (or the single-restaurant fallback).
   if (serverToken && safeEqual(token, serverToken)) {
-    return { token, scopes: ["all:minerva-flow"], clientId: "claude-or-api" };
+    return { token, scopes: ["all:minerva-flow"], clientId: "claude-or-api", extra: { restaurantId: null } };
   }
   if (hermesToken && safeEqual(token, hermesToken)) {
-    return { token, scopes: ["all:minerva-flow"], clientId: "hermes-agent" };
+    return { token, scopes: ["all:minerva-flow"], clientId: "hermes-agent", extra: { restaurantId: null } };
   }
 
-  // Check dynamic user-created API keys
+  // Check dynamic user-created API keys. These are hard-scoped to the restaurant they were
+  // issued for (api_keys.restaurant_id) — that scoping travels in `extra.restaurantId` and
+  // MUST override any restaurantId the caller passes in tool arguments (see resolveRestaurantId).
   try {
     const { verifyDynamicApiKey } = await import("@/lib/data/api-keys");
     const dynamicAuth = await verifyDynamicApiKey(token);
     if (dynamicAuth) {
-      return { token: dynamicAuth.token, scopes: dynamicAuth.scopes, clientId: dynamicAuth.clientId };
+      return {
+        token: dynamicAuth.token,
+        scopes: dynamicAuth.scopes,
+        clientId: dynamicAuth.clientId,
+        extra: { restaurantId: dynamicAuth.restaurantId },
+      };
     }
   } catch {
     // ignore
@@ -66,7 +75,20 @@ const verifyToken = async (req: Request, bearerToken?: string): Promise<AuthInfo
   return undefined;
 };
 
-async function resolveRestaurantId(supabase: ReturnType<typeof createAdminClient>, explicitId?: string): Promise<string | null> {
+/** The restaurantId a tenant-scoped API key is locked to, or null for an unscoped admin token. */
+function authRestaurantIdFrom(ctx: ServerContext): string | null {
+  const extra = ctx.http?.authInfo?.extra;
+  const restaurantId = extra?.restaurantId;
+  return typeof restaurantId === "string" ? restaurantId : null;
+}
+
+async function resolveRestaurantId(
+  supabase: ReturnType<typeof createAdminClient>,
+  explicitId: string | undefined,
+  authRestaurantId: string | null
+): Promise<string | null> {
+  // A tenant-scoped key can never be redirected to another restaurant by its own request args.
+  if (authRestaurantId) return authRestaurantId;
   if (explicitId) return explicitId;
   const { data } = await supabase.from("restaurants").select("id").limit(1).maybeSingle();
   return (data as { id: string } | null)?.id ?? null;
@@ -88,9 +110,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId }) => {
+      async ({ restaurantId: explicitId }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) {
           return { content: [{ type: "text" as const, text: "Aucun restaurant trouvé." }], isError: true };
         }
@@ -144,9 +166,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, category, activeOnly, format }) => {
+      async ({ restaurantId: explicitId, category, activeOnly, format }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         let query = supabase.from("menu_items").select("*").eq("restaurant_id", restaurantId).order("category").order("name");
@@ -192,9 +214,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, action, itemId, name, category, price, foodCost, description, active }) => {
+      async ({ restaurantId: explicitId, action, itemId, name, category, price, foodCost, description, active }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         if (action === "create") {
@@ -282,9 +304,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, status, limit, format }) => {
+      async ({ restaurantId: explicitId, status, limit, format }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         let query = supabase
@@ -327,9 +349,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, orderId, status }) => {
+      async ({ restaurantId: explicitId, orderId, status }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         const { error } = await supabase.from("orders").update({ status }).eq("id", orderId).eq("restaurant_id", restaurantId);
@@ -355,9 +377,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, date, status, format }) => {
+      async ({ restaurantId: explicitId, date, status, format }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         const targetDate = date || new Date().toISOString().slice(0, 10);
@@ -405,9 +427,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, reservationId, status }) => {
+      async ({ restaurantId: explicitId, reservationId, status }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         const { error } = await supabase.from("reservations").update({ status }).eq("id", reservationId).eq("restaurant_id", restaurantId);
@@ -432,9 +454,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, lowStockOnly, format }) => {
+      async ({ restaurantId: explicitId, lowStockOnly, format }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         const { data, error } = await supabase
@@ -481,9 +503,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, itemId, type, quantity, reason }) => {
+      async ({ restaurantId: explicitId, itemId, type, quantity, reason }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         const delta = type === "reception" || type === "ajustement" ? quantity : -quantity;
@@ -521,9 +543,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, search, limit, format }) => {
+      async ({ restaurantId: explicitId, search, limit, format }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         let query = supabase
@@ -573,9 +595,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, name, description, channel, type, startDate, endDate, cost, estimatedRevenue }) => {
+      async ({ restaurantId: explicitId, name, description, channel, type, startDate, endDate, cost, estimatedRevenue }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         const { data, error } = await supabase
@@ -612,9 +634,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, format }) => {
+      async ({ restaurantId: explicitId, format }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         const { computeReferralRoiMetrics, getTopAmbassadors } = await import("@/lib/data/referral-roi");
@@ -656,9 +678,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, limit, format }) => {
+      async ({ restaurantId: explicitId, limit, format }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         const [{ data: transactions, error: txError }, { data: serviceDays, error: daysError }] = await Promise.all([
@@ -696,9 +718,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, activeOnly, format }) => {
+      async ({ restaurantId: explicitId, activeOnly, format }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         let query = supabase.from("employees").select("id, full_name, role_title, hourly_wage, active, contact_email").eq("restaurant_id", restaurantId).order("full_name");
@@ -738,9 +760,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, status, format }) => {
+      async ({ restaurantId: explicitId, status, format }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         let query = supabase.from("alerts").select("id, type, severity, title, detail, status, created_at").eq("restaurant_id", restaurantId).order("created_at", { ascending: false }).limit(20);
@@ -777,9 +799,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, alertId, status }) => {
+      async ({ restaurantId: explicitId, alertId, status }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         const { error } = await supabase.from("alerts").update({ status }).eq("id", alertId).eq("restaurant_id", restaurantId);
@@ -804,9 +826,9 @@ const handler = createMcpHandler(
           })
           .strict(),
       },
-      async ({ restaurantId: explicitId, limit, format }) => {
+      async ({ restaurantId: explicitId, limit, format }, ctx) => {
         const supabase = createAdminClient();
-        const restaurantId = await resolveRestaurantId(supabase, explicitId);
+        const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
         const { data, error } = await supabase.from("ai_reviews").select("id, period_start, period_end, strengths, weaknesses, recommendations, created_at").eq("restaurant_id", restaurantId).order("created_at", { ascending: false }).limit(limit);

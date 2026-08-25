@@ -11,7 +11,9 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(bufA, bufB);
 }
 
-async function authenticateRequest(req: NextRequest): Promise<{ authenticated: boolean; clientId?: string }> {
+async function authenticateRequest(
+  req: NextRequest
+): Promise<{ authenticated: boolean; clientId?: string; restaurantId?: string | null }> {
   const authHeader = req.headers.get("authorization");
   const xApiKey = req.headers.get("x-api-key") || req.headers.get("X-API-Key");
   const queryApiKey = req.nextUrl.searchParams.get("api_key") || req.nextUrl.searchParams.get("token");
@@ -26,18 +28,21 @@ async function authenticateRequest(req: NextRequest): Promise<{ authenticated: b
   const serverToken = process.env.MCP_SERVER_TOKEN;
   const hermesToken = process.env.MCP_HERMES_TOKEN;
 
+  // System-level tokens (.env) are unscoped admin credentials; dynamic per-restaurant keys
+  // are hard-locked to the restaurant they were issued for — that scoping MUST be enforced
+  // downstream by resolveRestaurantId, never left to whatever restaurantId the caller passes.
   if (serverToken && safeEqual(token, serverToken)) {
-    return { authenticated: true, clientId: "server-env" };
+    return { authenticated: true, clientId: "server-env", restaurantId: null };
   }
   if (hermesToken && safeEqual(token, hermesToken)) {
-    return { authenticated: true, clientId: "hermes-env" };
+    return { authenticated: true, clientId: "hermes-env", restaurantId: null };
   }
 
   try {
     const { verifyDynamicApiKey } = await import("@/lib/data/api-keys");
     const dynamicAuth = await verifyDynamicApiKey(token);
     if (dynamicAuth) {
-      return { authenticated: true, clientId: dynamicAuth.clientId };
+      return { authenticated: true, clientId: dynamicAuth.clientId, restaurantId: dynamicAuth.restaurantId };
     }
   } catch {
     // ignore
@@ -74,14 +79,14 @@ const REST_TO_MCP_MAP: Record<string, string> = {
   "system/health": "minerva_system_health",
 };
 
-async function dispatchAction(endpoint: string, payload: Record<string, unknown>) {
+async function dispatchAction(endpoint: string, payload: Record<string, unknown>, authRestaurantId: string | null) {
   // 1. Direct tool ID or direct REST mapping
   let toolId = REST_TO_MCP_MAP[endpoint] || endpoint;
   if (endpoint.startsWith("tools/")) {
     toolId = endpoint.replace("tools/", "");
   }
 
-  return executeMcpTool(toolId, payload);
+  return executeMcpTool(toolId, payload, authRestaurantId);
 }
 
 export async function GET(req: NextRequest, context: { params: Promise<{ slug: string[] }> }) {
@@ -101,7 +106,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ slug: s
     searchParamsObj[key] = val;
   });
 
-  const res = await dispatchAction(endpoint, searchParamsObj);
+  const res = await dispatchAction(endpoint, searchParamsObj, auth.restaurantId ?? null);
   return NextResponse.json(
     { ok: res.success, data: res.data, error: res.error },
     { status: res.success ? 200 : 400, headers: { "Access-Control-Allow-Origin": "*" } }
@@ -127,7 +132,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ slug: 
     // empty body
   }
 
-  const res = await dispatchAction(endpoint, body);
+  const res = await dispatchAction(endpoint, body, auth.restaurantId ?? null);
   return NextResponse.json(
     { ok: res.success, data: res.data, error: res.error },
     { status: res.success ? 200 : 400, headers: { "Access-Control-Allow-Origin": "*" } }
