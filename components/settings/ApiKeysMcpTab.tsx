@@ -25,6 +25,7 @@ import {
   Play,
   Clock,
   CheckCircle2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatRelativeTime } from "@/lib/utils";
@@ -422,14 +423,24 @@ export function ApiKeysMcpTab() {
               <span className="text-[13px] font-semibold text-mv-green-darker flex items-center gap-1.5">
                 <CheckCircle2 size={16} className="text-mv-green" /> Clé API prête — Copiez-la maintenant :
               </span>
-              <button
-                type="button"
-                onClick={() => copyText(createdRawToken, "just-created", "Clé API")}
-                className="inline-flex items-center gap-1 text-[12px] font-bold text-mv-green-dark hover:underline"
-              >
-                {copiedKey === "just-created" ? <Check size={13} /> : <Copy size={13} />}
-                {copiedKey === "just-created" ? "Copié" : "Copier la clé"}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => copyText(createdRawToken, "just-created", "Clé API")}
+                  className="inline-flex items-center gap-1 text-[12px] font-bold text-mv-green-dark hover:underline"
+                >
+                  {copiedKey === "just-created" ? <Check size={13} /> : <Copy size={13} />}
+                  {copiedKey === "just-created" ? "Copié" : "Copier la clé"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreatedRawToken(null)}
+                  title="Masquer — je l'ai copiée"
+                  className="text-mv-green-dark/70 hover:text-mv-green-darker"
+                >
+                  <X size={15} />
+                </button>
+              </div>
             </div>
             <p className="font-mono text-[12.5px] bg-white/90 p-2.5 rounded-lg text-mv-ink font-semibold break-all border border-mv-green/20">
               {createdRawToken}

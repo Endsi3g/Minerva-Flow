@@ -72,10 +72,13 @@ export async function computeReferralRoiMetrics(restaurantId: string): Promise<R
 
   // Revenue generated: total of direct referral orders + estimated base from reservations/conversions
   const orderRevenue = attributedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-  // Default assumed ticket size ($45) for conversions if no direct digital order recorded yet
+  // For conversions with no directly-linked order, fall back to this restaurant's own real
+  // average order value (computed from its actual order history) rather than a flat guess —
+  // only use the $45 generic estimate when the restaurant has no order history at all yet.
+  const allOrders = (ordersData as { id: string; total: number; referral_link_id: string | null }[]) ?? [];
+  const realAverageOrderValue = allOrders.length > 0 ? allOrders.reduce((sum, o) => sum + (o.total || 0), 0) / allOrders.length : 45;
   const unlinkedConversions = Math.max(0, totalConversions - attributedOrders.length);
-  const estimatedTicketPerVisit = 45;
-  const totalRevenueGenerated = Math.round((orderRevenue + unlinkedConversions * estimatedTicketPerVisit) * 100) / 100;
+  const totalRevenueGenerated = Math.round((orderRevenue + unlinkedConversions * realAverageOrderValue) * 100) / 100;
 
   // Estimated reward cost: ~5% value of points / gifts given per conversion ($3.50 est. bonus cost per converted friend)
   const costPerConversion = 3.5;
@@ -84,12 +87,8 @@ export async function computeReferralRoiMetrics(restaurantId: string): Promise<R
   const estimatedRewardsCost = Math.round((totalConversions * costPerConversion + majorRewardCost) * 100) / 100;
 
   const netProfitGenerated = Math.round((totalRevenueGenerated - estimatedRewardsCost) * 100) / 100;
-  const roiMultiplier =
-    estimatedRewardsCost > 0
-      ? Math.round((totalRevenueGenerated / estimatedRewardsCost) * 10) / 10
-      : totalRevenueGenerated > 0
-      ? 10.0
-      : 0;
+  // No cost basis to divide by means no multiplier to report — not a fabricated placeholder.
+  const roiMultiplier = estimatedRewardsCost > 0 ? Math.round((totalRevenueGenerated / estimatedRewardsCost) * 10) / 10 : 0;
 
   const uniqueAmbassadors = new Set(links.filter((l) => (l.clicks || 0) > 0 || (l.converted_count || 0) > 0).map((l) => l.customer_id));
 
@@ -149,8 +148,11 @@ export async function getTopAmbassadors(restaurantId: string, limit: number = 8)
 
   const customerMap = new Map(((customerRows as { id: string; name: string; email: string | null; total_spent: number }[]) ?? []).map((c) => [c.id, c]));
 
+  const allOrders = (ordersData as { total: number; referral_link_id: string | null }[]) ?? [];
+  const realAverageOrderValue = allOrders.length > 0 ? allOrders.reduce((sum, o) => sum + (o.total || 0), 0) / allOrders.length : 45;
+
   const ordersByLinkId = new Map<string, number>();
-  for (const o of (ordersData as { total: number; referral_link_id: string | null }[]) ?? []) {
+  for (const o of allOrders) {
     if (o.referral_link_id) {
       ordersByLinkId.set(o.referral_link_id, (ordersByLinkId.get(o.referral_link_id) || 0) + (o.total || 0));
     }
@@ -167,7 +169,7 @@ export async function getTopAmbassadors(restaurantId: string, limit: number = 8)
       directOrderRevenue += ordersByLinkId.get(linkId) || 0;
     }
 
-    const estimatedBaseRevenue = stats.converted * 45;
+    const estimatedBaseRevenue = stats.converted * realAverageOrderValue;
     const revenueGenerated = Math.max(directOrderRevenue, estimatedBaseRevenue);
 
     ambassadors.push({

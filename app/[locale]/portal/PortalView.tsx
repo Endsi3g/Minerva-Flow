@@ -698,6 +698,7 @@ export function PortalView({
   offers,
   taxRate,
   acceptsTips,
+  restaurantName,
 }: {
   customer: Customer;
   data: PortalData;
@@ -706,6 +707,7 @@ export function PortalView({
   offers: Offer[];
   taxRate: number;
   acceptsTips: boolean;
+  restaurantName?: string | null;
 }) {
   const t = useTranslations("portal.view");
   const [programs, setPrograms] = useState<PortalReferralProgress[]>(data.programs);
@@ -795,6 +797,7 @@ export function PortalView({
                 key={program.id}
                 program={program}
                 link={link}
+                restaurantName={restaurantName ?? undefined}
                 onLinkCreated={(created) => handleLinkCreated(program.id, created)}
               />
             ))}
