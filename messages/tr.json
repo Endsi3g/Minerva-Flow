@@ -706,10 +706,10 @@
     "analytics": {
       "title": "Ürün Analitiği",
       "description": "Kullanım takibi (PostHog) — özellik benimsenmesi, onboarding hunisi, elde tutma.",
-      "dashboardTitle": "PostHog'da ayrıntılı gösterge paneli",
+      "dashboardTitle": "PostHog API anahtarı eksik",
       "dashboardDescription": "Anahtar olaylar (kayıt, onboarding tamamlandı, gün eklendi, kampanya oluşturuldu, değerlendirme yayınlandı…) zaten PostHog'a gönderiliyor. Huniye, elde tutmaya ve özellik benimsenmesine doğrudan gösterge panelinden bakın.",
       "openPostHog": "PostHog'u aç",
-      "configureHostHint": "Burada doğrudan bir bağlantı göstermek için NEXT_PUBLIC_POSTHOG_HOST'u yapılandırın."
+      "configureHostHint": "Verileri doğrudan burada görüntülemek için POSTHOG_PERSONAL_API_KEY ekleyin (Personal API key, insight:read/query:read/cohort:read scope'ları)."
     },
     "changelog": {
       "pageTitle": "Güncelleme Günlüğü",
