@@ -298,7 +298,7 @@ const handler = createMcpHandler(
         inputSchema: z
           .object({
             restaurantId: z.string().uuid().optional(),
-            status: z.enum(["nouvelle", "en_preparation", "prete", "servie", "annulee"]).optional(),
+            status: z.enum(["soumise", "confirmee", "en_preparation", "prete", "servie", "annulee"]).optional(),
             limit: z.number().int().min(1).max(50).default(15),
             format: z.enum(["compact", "full"]).optional().default("compact"),
           })
@@ -345,7 +345,7 @@ const handler = createMcpHandler(
           .object({
             restaurantId: z.string().uuid().optional(),
             orderId: z.string().uuid(),
-            status: z.enum(["nouvelle", "en_preparation", "prete", "servie", "annulee"]),
+            status: z.enum(["soumise", "confirmee", "en_preparation", "prete", "servie", "annulee"]),
           })
           .strict(),
       },
@@ -372,7 +372,7 @@ const handler = createMcpHandler(
           .object({
             restaurantId: z.string().uuid().optional(),
             date: z.string().optional().describe("YYYY-MM-DD (défaut: aujourd'hui)"),
-            status: z.enum(["confirmee", "arrivee", "terminee", "annulee", "no_show"]).optional(),
+            status: z.enum(["confirmee", "annulee", "honoree", "no_show", "demandee"]).optional(),
             format: z.enum(["compact", "full"]).optional().default("compact"),
           })
           .strict(),
@@ -423,7 +423,7 @@ const handler = createMcpHandler(
           .object({
             restaurantId: z.string().uuid().optional(),
             reservationId: z.string().uuid(),
-            status: z.enum(["confirmee", "arrivee", "terminee", "annulee", "no_show"]),
+            status: z.enum(["confirmee", "annulee", "honoree", "no_show", "demandee"]),
           })
           .strict(),
       },
