@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Play,
   Clock,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatRelativeTime } from "@/lib/utils";
@@ -45,7 +46,7 @@ export function ApiKeysMcpTab() {
   const [copiedText, setCopiedText] = useState<string | null>(null);
 
   // Quick connect tab
-  const [connectClient, setConnectClient] = useState<"claude" | "cursor" | "antigravity" | "curl">("claude");
+  const [connectClient, setConnectClient] = useState<"composio" | "claude" | "cursor" | "antigravity" | "curl">("composio");
 
   // Tool tester state
   const [selectedTool, setSelectedTool] = useState(AVAILABLE_TOOLS[0].id);
@@ -79,6 +80,7 @@ export function ApiKeysMcpTab() {
 
   const origin = typeof window !== "undefined" ? window.location.origin : "https://minerva-flow.vercel.app";
   const mcpUrl = `${origin}/api/mcp`;
+  const openApiUrl = `${origin}/api/openapi.json`;
   const activeKeyPlaceholder = keys.find((k) => !k.revoked)?.keyPrefix || "votre_cle_mcp_ici";
 
   function copyToClipboard(text: string, label: string) {
@@ -140,6 +142,14 @@ export function ApiKeysMcpTab() {
   // Generate client snippet
   const clientConfigSnippet = useMemo(() => {
     switch (connectClient) {
+      case "composio":
+        return `# 🚀 Intégration 1-Clic dans Composio :
+1. Dans votre Dashboard Composio, allez dans "Tools" > "Add Custom Tool" (ou "Import OpenAPI").
+2. Collez l'URL de Spécification OpenAPI ci-dessous :
+   ${openApiUrl}
+3. Choisissez l'authentification "API Key" ou "Bearer Token" et collez :
+   ${createdRawToken || activeKeyPlaceholder}
+4. Composio importera automatiquement les 24 outils de gestion, prospection et fidélisation !`;
       case "claude":
         return JSON.stringify(
           {
@@ -188,33 +198,51 @@ export function ApiKeysMcpTab() {
           2
         );
       case "curl":
-        return `curl -X POST ${mcpUrl} \\\n  -H "Content-Type: application/json" \\\n  -H "Authorization: Bearer ${
+        return `curl -X POST ${origin}/api/v1/restaurant/summary \\\n  -H "Content-Type: application/json" \\\n  -H "x-api-key: ${
           createdRawToken || activeKeyPlaceholder
-        }" \\\n  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`;
+        }"`;
       default:
         return "";
     }
-  }, [connectClient, mcpUrl, createdRawToken, activeKeyPlaceholder]);
+  }, [connectClient, openApiUrl, mcpUrl, origin, createdRawToken, activeKeyPlaceholder]);
 
   return (
     <div className="space-y-6">
-      {/* 1. MCP Server Status & Endpoint */}
+      {/* 1. MCP & OpenAPI Endpoints Status */}
       <Card>
         <CardHeader
-          eyebrow="Protocole & Connectivité"
-          title="Serveur MCP (Model Context Protocol)"
-          description="Point d'accès sécurisé permettant aux agents IA (Claude Desktop, Cursor, Hermes) d'interagir avec votre restaurant."
+          eyebrow="Connectivité & Protocoles"
+          title="Serveur MCP & Spécification OpenAPI"
+          description="Endpoints sécurisés pour connecter Composio, Claude Desktop, Cursor ou tout agent IA à votre restaurant."
           action={
             <Badge tone="green" size="sm" dot pulse>
-              Actif · Mode Token-Efficient
+              Actif · Token-Efficient
             </Badge>
           }
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/70 p-3.5 space-y-2">
             <div className="flex items-center justify-between text-[12px]">
-              <span className="font-semibold text-mv-ink">Endpoint URL Serveur MCP :</span>
+              <span className="font-semibold text-mv-ink flex items-center gap-1.5">
+                <Sparkles size={13} className="text-mv-green-dark" /> Spécification OpenAPI (Composio) :
+              </span>
+              <button
+                onClick={() => copyToClipboard(openApiUrl, "URL OpenAPI")}
+                className="inline-flex items-center gap-1 text-mv-green-dark hover:underline font-medium"
+              >
+                {copiedText === "URL OpenAPI" ? <Check size={12} /> : <Copy size={12} />}
+                {copiedText === "URL OpenAPI" ? "Copié" : "Copier"}
+              </button>
+            </div>
+            <p className="truncate font-mono text-[11px] bg-white p-2 rounded-lg border border-mv-border-soft text-mv-ink">
+              {openApiUrl}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/70 p-3.5 space-y-2">
+            <div className="flex items-center justify-between text-[12px]">
+              <span className="font-semibold text-mv-ink">Serveur MCP Remote URL :</span>
               <button
                 onClick={() => copyToClipboard(mcpUrl, "URL Serveur MCP")}
                 className="inline-flex items-center gap-1 text-mv-green-dark hover:underline font-medium"
@@ -223,14 +251,14 @@ export function ApiKeysMcpTab() {
                 {copiedText === "URL Serveur MCP" ? "Copié" : "Copier"}
               </button>
             </div>
-            <p className="truncate font-mono text-[12px] bg-white p-2 rounded-lg border border-mv-border-soft text-mv-ink">
+            <p className="truncate font-mono text-[11px] bg-white p-2 rounded-lg border border-mv-border-soft text-mv-ink">
               {mcpUrl}
             </p>
           </div>
 
           <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/70 p-3.5 space-y-2">
             <div className="flex items-center justify-between text-[12px]">
-              <span className="font-semibold text-mv-ink">Webhook Ingestion Minerva Reach :</span>
+              <span className="font-semibold text-mv-ink">Webhook Minerva Reach :</span>
               <button
                 onClick={() => copyToClipboard(`${origin}/api/leads/reach-webhook`, "Webhook Reach")}
                 className="inline-flex items-center gap-1 text-mv-green-dark hover:underline font-medium"
@@ -239,7 +267,7 @@ export function ApiKeysMcpTab() {
                 {copiedText === "Webhook Reach" ? "Copié" : "Copier"}
               </button>
             </div>
-            <p className="truncate font-mono text-[12px] bg-white p-2 rounded-lg border border-mv-border-soft text-mv-ink">
+            <p className="truncate font-mono text-[11px] bg-white p-2 rounded-lg border border-mv-border-soft text-mv-ink">
               {origin}/api/leads/reach-webhook
             </p>
           </div>
@@ -343,11 +371,19 @@ export function ApiKeysMcpTab() {
         <CardHeader
           eyebrow="Intégrations Clients"
           title="Guides de Connexion Rapide (1-Clic)"
-          description="Copiez la configuration prête à l'emploi pour votre client IA préféré."
+          description="Copiez la configuration prête à l'emploi pour Composio, Claude Desktop ou vos agents IA."
         />
 
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2 border-b border-mv-border-soft pb-3">
+            <button
+              onClick={() => setConnectClient("composio")}
+              className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors ${
+                connectClient === "composio" ? "bg-mv-green-dark text-white" : "bg-mv-cream-soft text-mv-ink hover:bg-mv-cream"
+              }`}
+            >
+              Composio (OpenAPI)
+            </button>
             <button
               onClick={() => setConnectClient("claude")}
               className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors ${
@@ -378,21 +414,21 @@ export function ApiKeysMcpTab() {
                 connectClient === "curl" ? "bg-mv-ink text-mv-cream" : "bg-mv-cream-soft text-mv-ink hover:bg-mv-cream"
               }`}
             >
-              cURL / HTTP
+              cURL / REST
             </button>
           </div>
 
           <div className="relative rounded-xl bg-[#0C1117] p-4 text-[#C9D1D9] font-mono text-[12px] overflow-x-auto shadow-inner">
             <div className="absolute top-3 right-3">
               <button
-                onClick={() => copyToClipboard(clientConfigSnippet, "Configuration MCP")}
+                onClick={() => copyToClipboard(clientConfigSnippet, "Guide / Config")}
                 className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-[11.5px] font-sans font-medium text-white hover:bg-white/20 transition-colors"
               >
-                {copiedText === "Configuration MCP" ? <Check size={12} /> : <Copy size={12} />}
-                {copiedText === "Configuration MCP" ? "Copié !" : "Copier le JSON"}
+                {copiedText === "Guide / Config" ? <Check size={12} /> : <Copy size={12} />}
+                {copiedText === "Guide / Config" ? "Copié !" : "Copier"}
               </button>
             </div>
-            <pre className="pt-2">{clientConfigSnippet}</pre>
+            <pre className="pt-2 whitespace-pre-wrap">{clientConfigSnippet}</pre>
           </div>
         </div>
       </Card>
@@ -461,7 +497,7 @@ export function ApiKeysMcpTab() {
             <Input
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
-              placeholder="Ex : Claude Desktop Maison, Agent Hermes, CRM"
+              placeholder="Ex : Composio Agent, Claude Desktop, Hermes"
               required
               autoFocus
             />

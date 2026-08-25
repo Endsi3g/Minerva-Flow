@@ -90,6 +90,8 @@ export async function proxy(request: NextRequest) {
   // (CRON_SECRET, webhook signature) never even runs. These verify
   // themselves; the rest of /api/* still relies on the session check below.
   const isServerCallbackRoute =
+    pathWithoutLocale.startsWith("/api/openapi") ||
+    pathWithoutLocale.startsWith("/api/v1/") ||
     pathWithoutLocale.startsWith("/api/mcp") ||
     pathWithoutLocale.startsWith("/api/leads/") ||
     pathWithoutLocale.startsWith("/api/cron/") ||
