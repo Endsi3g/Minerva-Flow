@@ -70,6 +70,9 @@ export function ProspectsListView({ prospects }: { prospects: Prospect[] }) {
                   >
                     <Store size={14} className="text-mv-ink-faint" /> {p.restaurantName || t("untitled")}
                   </Link>
+                  {p.contactName && (
+                    <p className="mt-0.5 pl-[22px] text-[11.5px] text-mv-ink-faint">{p.contactName}</p>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <Badge tone={statusTone[p.status]}>{tStatus(p.status)}</Badge>

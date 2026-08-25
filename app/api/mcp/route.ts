@@ -869,7 +869,7 @@ const handler = createMcpHandler(
         const supabase = createAdminClient();
         let query = supabase
           .from("prospects")
-          .select("id, restaurant_name, source_url, source_platform, status, demo_slug, commission_rate_pct, assumed_monthly_orders, demo_view_count, contacted_at, audit_generated_at, notes, created_at")
+          .select("id, restaurant_name, source_url, source_platform, status, demo_slug, commission_rate_pct, assumed_monthly_orders, demo_view_count, contacted_at, audit_generated_at, notes, contact_name, created_at")
           .order("created_at", { ascending: false })
           .limit(limit);
 
@@ -909,10 +909,11 @@ const handler = createMcpHandler(
             assumedMonthlyOrders: z.number().optional().default(400),
             detectedAddress: z.string().optional(),
             notes: z.string().optional(),
+            contactName: z.string().optional(),
           })
           .strict(),
       },
-      async ({ restaurantName, sourceUrl, sourcePlatform, commissionRatePct, assumedMonthlyOrders, detectedAddress, notes }) => {
+      async ({ restaurantName, sourceUrl, sourcePlatform, commissionRatePct, assumedMonthlyOrders, detectedAddress, notes, contactName }) => {
         const supabase = createAdminClient();
         const demoSlug = generateDemoSlug(restaurantName);
 
@@ -929,6 +930,7 @@ const handler = createMcpHandler(
             status: "ready",
             demo_slug: demoSlug,
             notes: notes || null,
+            contact_name: contactName || null,
             menu_json: { categories: [] },
           })
           .select("id, restaurant_name, status, demo_slug")
@@ -953,6 +955,7 @@ const handler = createMcpHandler(
                 commissionRatePct: z.number().optional().default(30),
                 contactEmail: z.string().optional(),
                 contactPhone: z.string().optional(),
+                contactName: z.string().optional(),
                 notes: z.string().optional(),
               })
             ),
@@ -977,6 +980,7 @@ const handler = createMcpHandler(
             status: "nouveau",
             demo_slug: demoSlug,
             notes: fullNotes || null,
+            contact_name: l.contactName || null,
             menu_json: { categories: [] },
           });
 
