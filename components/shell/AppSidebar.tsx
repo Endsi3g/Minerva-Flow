@@ -399,7 +399,14 @@ export function AppSidebar() {
   // as every other non-LTV group. Staff/consultant never see impact/
   // franchise (role-gated to owner/manager already) so their flat
   // analytics list is unaffected either way.
-  const visibleLtvAnalyticsItems = isLtvFocusedRole ? ltvAnalyticsItems.filter(allowedByRole) : [];
+  // "Vue franchise" leads to a permanently empty page for a restaurant with
+  // no workspace (it can never have a second location to roll up against) —
+  // hidden rather than shown-then-disappointing, same "don't show a dead
+  // end" principle as the rest of this role-conditional nav.
+  const currentRestaurantHasWorkspace = Boolean(restaurants.find((r) => r.id === restaurantId)?.workspaceId);
+  const visibleLtvAnalyticsItems = isLtvFocusedRole
+    ? ltvAnalyticsItems.filter(allowedByRole).filter((item) => item.key !== "franchise" || currentRestaurantHasWorkspace)
+    : [];
   const visibleAnalyticsItems = (isLtvFocusedRole ? operationalAnalyticsItems : analyticsItems).filter(allowedByRole);
   const visibleSettingsItems = settingsGroupItems.filter(allowedByRole);
   const hasSettingsAccess = ["owner", "manager"].includes(role);

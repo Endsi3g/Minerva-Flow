@@ -114,14 +114,14 @@ export function ImpactView({
           />
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              <TrendingUp size={13} /> Marge gagnée sur le menu
+              <TrendingUp size={13} /> Marge du menu actif
             </p>
             <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
-              Marge des plats que vous mettez de l&apos;avant, comparée à l&apos;ensemble du menu.
+              Marge de ce qui est au menu aujourd&apos;hui — retirez un plat à faible marge pour voir ce chiffre bouger.
             </p>
             <p className="mt-1 text-[12px] text-mv-ink-soft">
               {impact.marginGainPct >= 0 ? "+" : ""}
-              {impact.marginGainPct.toFixed(1)} pt vs le menu au complet
+              {impact.marginGainPct.toFixed(1)} pt vs le menu complet (plats retirés inclus)
             </p>
           </div>
         </Card>

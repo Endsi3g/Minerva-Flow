@@ -32,12 +32,26 @@ export async function computeReferralRoiMetrics(restaurantId: string): Promise<R
   const [
     { data: programsData },
     { data: ordersData },
+    { data: restaurantData },
   ] = await Promise.all([
     supabase.from("referral_programs").select("*").eq("restaurant_id", restaurantId),
     supabase.from("orders").select("id, total, referral_link_id, status").eq("restaurant_id", restaurantId).neq("status", "annulee"),
+    supabase.from("restaurants").select("loyalty_points_per_dollar").eq("id", restaurantId).maybeSingle(),
   ]);
 
-  const programs = (programsData as { id: string; active: boolean; referrer_bonus_points: number; new_customer_bonus_points: number }[]) ?? [];
+  // Points are worth what the restaurant itself says they're worth — its
+  // own earn rate — rather than a flat guess, so two restaurants with very
+  // different reward generosity get honestly different cost estimates.
+  const pointsPerDollar = (restaurantData as { loyalty_points_per_dollar: number } | null)?.loyalty_points_per_dollar || 1;
+
+  const programs =
+    (programsData as {
+      id: string;
+      active: boolean;
+      referrer_bonus_points: number;
+      new_customer_bonus_points: number;
+      reward_id: string | null;
+    }[]) ?? [];
   if (programs.length === 0) {
     return {
       totalClicks: 0,
@@ -53,12 +67,21 @@ export async function computeReferralRoiMetrics(restaurantId: string): Promise<R
   }
 
   const programIds = programs.map((p) => p.id);
-  const { data: linkRows } = await supabase
-    .from("customer_referral_links")
-    .select("id, referral_program_id, customer_id, clicks, converted_count, reward_claimed_at")
-    .in("referral_program_id", programIds);
+  const rewardIds = Array.from(new Set(programs.map((p) => p.reward_id).filter((id): id is string => Boolean(id))));
+
+  const [{ data: linkRows }, { data: rewardRows }] = await Promise.all([
+    supabase
+      .from("customer_referral_links")
+      .select("id, referral_program_id, customer_id, clicks, converted_count, reward_claimed_at")
+      .in("referral_program_id", programIds),
+    rewardIds.length > 0
+      ? supabase.from("loyalty_rewards").select("id, points_cost").in("id", rewardIds)
+      : Promise.resolve({ data: [] as { id: string; points_cost: number }[] }),
+  ]);
 
   const links = (linkRows as { id: string; referral_program_id: string; customer_id: string; clicks: number; converted_count: number; reward_claimed_at: string | null }[]) ?? [];
+  const rewardPointsById = new Map(((rewardRows as { id: string; points_cost: number }[]) ?? []).map((r) => [r.id, r.points_cost]));
+  const programById = new Map(programs.map((p) => [p.id, p]));
 
   const totalClicks = links.reduce((sum, l) => sum + (l.clicks || 0), 0);
   const totalConversions = links.reduce((sum, l) => sum + (l.converted_count || 0), 0);
@@ -80,11 +103,21 @@ export async function computeReferralRoiMetrics(restaurantId: string): Promise<R
   const unlinkedConversions = Math.max(0, totalConversions - attributedOrders.length);
   const totalRevenueGenerated = Math.round((orderRevenue + unlinkedConversions * realAverageOrderValue) * 100) / 100;
 
-  // Estimated reward cost: ~5% value of points / gifts given per conversion ($3.50 est. bonus cost per converted friend)
-  const costPerConversion = 3.5;
-  const rewardsClaimedCount = links.filter((l) => l.reward_claimed_at !== null).length;
-  const majorRewardCost = rewardsClaimedCount * 12.0; // ~$12 per completed program goal
-  const estimatedRewardsCost = Math.round((totalConversions * costPerConversion + majorRewardCost) * 100) / 100;
+  // Real reward cost: what each program actually pays out — the referrer +
+  // new-customer bonus points per conversion, plus the milestone reward's
+  // points_cost on each claim — converted to dollars at this restaurant's
+  // own points-per-dollar rate, not a flat guess shared by every restaurant.
+  let rawRewardsCost = 0;
+  for (const link of links) {
+    const program = programById.get(link.referral_program_id);
+    if (!program) continue;
+    const perConversionPoints = (program.referrer_bonus_points || 0) + (program.new_customer_bonus_points || 0);
+    rawRewardsCost += (link.converted_count || 0) * perConversionPoints;
+    if (link.reward_claimed_at) {
+      rawRewardsCost += (program.reward_id ? rewardPointsById.get(program.reward_id) : 0) || 0;
+    }
+  }
+  const estimatedRewardsCost = Math.round((rawRewardsCost / pointsPerDollar) * 100) / 100;
 
   const netProfitGenerated = Math.round((totalRevenueGenerated - estimatedRewardsCost) * 100) / 100;
   // No cost basis to divide by means no multiplier to report — not a fabricated placeholder.

@@ -138,6 +138,11 @@ export default async function OverviewPage() {
 
   const firstName = profile?.fullName?.split(" ")[0] ?? null;
   const monthMarge = margTrend.reduce((sum, d) => sum + d.revenue, 0);
+  // margeTrend falls back to a flat 52.4% estimate for any day without a
+  // real expenses figure (lib/reports.ts) — most owners never fill that
+  // field in, so "marge cumulée" would otherwise read as a precise number
+  // when it's actually a guess. Surfaced so Overview can say so.
+  const monthMargeIsEstimated = serviceDays.some((d) => d.expenses === undefined);
   const todayLabel = formatDateFull(todayIso);
   const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
 
@@ -244,6 +249,7 @@ export default async function OverviewPage() {
       greeting={greeting}
       firstName={firstName}
       monthMarge={monthMarge}
+      monthMargeIsEstimated={monthMargeIsEstimated}
       todayLabel={todayLabel}
       revTrend={revTrend}
       margTrend={margTrend}
