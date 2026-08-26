@@ -5,7 +5,7 @@ import { logActivity } from "@/lib/data/activity";
 import { geocodeAddress } from "@/lib/geocode";
 import { fetchWebsiteDescription, fetchWebsiteBusinessInfo } from "@/lib/website-description";
 import { CAFE_BREAK_EVEN_DEFAULTS } from "@/lib/engine/break-even";
-import type { Restaurant, OpeningHours } from "@/lib/types";
+import type { Restaurant, OpeningHours, VisitRewardTier } from "@/lib/types";
 
 type RestaurantRow = {
   id: string;
@@ -39,6 +39,8 @@ type RestaurantRow = {
   retention_birthday_lead_days: number;
   loyalty_tier_2_threshold: number;
   loyalty_tier_3_threshold: number;
+  visit_rewards_enabled: boolean;
+  visit_reward_tiers: VisitRewardTier[] | null;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -74,6 +76,8 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     retentionBirthdayLeadDays: row.retention_birthday_lead_days ?? 3,
     loyaltyTier2Threshold: row.loyalty_tier_2_threshold ?? 150,
     loyaltyTier3Threshold: row.loyalty_tier_3_threshold ?? 400,
+    visitRewardsEnabled: row.visit_rewards_enabled ?? false,
+    visitRewardTiers: row.visit_reward_tiers ?? [],
   };
 }
 
@@ -86,6 +90,21 @@ export async function updateLoyaltyTierThresholds(
   const dbPatch: Record<string, unknown> = {};
   if (patch.tier2 !== undefined) dbPatch.loyalty_tier_2_threshold = patch.tier2;
   if (patch.tier3 !== undefined) dbPatch.loyalty_tier_3_threshold = patch.tier3;
+  if (Object.keys(dbPatch).length === 0) return true;
+
+  const { error } = await supabase.from("restaurants").update(dbPatch).eq("id", restaurantId);
+  return !error;
+}
+
+/** Persists the visit-count reward ladder (lib/types.ts VisitRewardTier) — same dedicated-function pattern as updateLoyaltyTierThresholds. */
+export async function updateVisitRewardTiers(
+  restaurantId: string,
+  patch: { enabled?: boolean; tiers?: VisitRewardTier[] }
+): Promise<boolean> {
+  const supabase = await createClient();
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.enabled !== undefined) dbPatch.visit_rewards_enabled = patch.enabled;
+  if (patch.tiers !== undefined) dbPatch.visit_reward_tiers = patch.tiers;
   if (Object.keys(dbPatch).length === 0) return true;
 
   const { error } = await supabase.from("restaurants").update(dbPatch).eq("id", restaurantId);

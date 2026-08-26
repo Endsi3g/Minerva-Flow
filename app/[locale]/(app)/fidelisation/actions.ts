@@ -12,7 +12,7 @@ import {
   type CustomerInput,
 } from "@/lib/data/customers";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
-import { updateRetentionSettings, updateLoyaltyTierThresholds } from "@/lib/data/restaurants";
+import { updateRetentionSettings, updateLoyaltyTierThresholds, updateVisitRewardTiers } from "@/lib/data/restaurants";
 import {
   createReferralProgram,
   updateReferralProgramActive,
@@ -26,7 +26,7 @@ import {
   createLoyaltyShare,
   deleteLoyaltyShare,
 } from "@/lib/data/loyalty-shares";
-import type { Customer, LoyaltyReward, LoyaltyShare, ReferralProgram } from "@/lib/types";
+import type { Customer, LoyaltyReward, LoyaltyShare, ReferralProgram, VisitRewardTier } from "@/lib/types";
 
 export async function createCustomerAction(
   restaurantId: string,
@@ -195,5 +195,17 @@ export async function updateLoyaltyTierThresholdsAction(
 ): Promise<boolean> {
   const ok = await updateLoyaltyTierThresholds(restaurantId, patch);
   if (ok) revalidatePath("/fidelisation");
+  return ok;
+}
+
+export async function updateVisitRewardTiersAction(
+  restaurantId: string,
+  patch: { enabled?: boolean; tiers?: VisitRewardTier[] }
+): Promise<boolean> {
+  const ok = await updateVisitRewardTiers(restaurantId, patch);
+  if (ok) {
+    revalidatePath("/fidelisation");
+    revalidatePath("/fidelisation/recompenses");
+  }
   return ok;
 }

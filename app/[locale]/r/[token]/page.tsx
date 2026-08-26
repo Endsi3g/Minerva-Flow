@@ -1,12 +1,15 @@
 import { LogoMark } from "@/components/shell/Logo";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
+import { PoweredByBadge } from "@/components/minerva/PoweredByBadge";
+import { ReportWatermark } from "@/components/minerva/ReportWatermark";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 import { FlowBars } from "@/components/charts/FlowBars";
 import { getReportShareByToken } from "@/lib/data/report-shares";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { notFound } from "next/navigation";
+import { Clock } from "lucide-react";
 
 export default async function SharedReportPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -24,6 +27,24 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
   const share = await getReportShareByToken(token);
 
   if (!share) notFound();
+
+  if (share.expired) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-mv-cream px-6 text-center">
+        <div>
+          <div className="mb-6 flex items-center justify-center gap-2.5">
+            <LogoMark size={28} />
+            <span className="font-display text-[16px] font-medium text-mv-ink">
+              Flow <span className="text-mv-green-dark">par Minerva</span>
+            </span>
+          </div>
+          <Clock size={22} className="mx-auto mb-3 text-mv-ink-faint" />
+          <p className="text-[14px] font-medium text-mv-ink">Ce lien a expiré.</p>
+          <p className="mt-1.5 text-[13px] text-mv-ink-soft">Demandez un nouveau lien à la personne qui vous l&apos;a envoyé.</p>
+        </div>
+      </div>
+    );
+  }
 
   const { report, trend, breakdown } = share.snapshot;
 
@@ -47,23 +68,26 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
           Instantané généré le {formatDate(share.createdAt.slice(0, 10))}
         </p>
 
-        <div className="rounded-2xl border-2 border-mv-green bg-mv-surface p-5 shadow-mv-md">
-          <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-            {report.label}
-          </p>
-          <p className="mt-4 font-display text-[42px] font-medium leading-none text-mv-ink">
-            {report.unit === "currency" ? formatCurrency(report.value) : report.value}
-          </p>
-          {report.delta !== undefined && (
-            <Badge tone={report.delta >= 0 ? "green" : "red"} className="mt-3">
-              {report.delta >= 0 ? "↑" : "↓"} {Math.abs(report.delta).toFixed(1)}% vs période précédente
-            </Badge>
-          )}
-          {trend.length > 0 && (
-            <div className="mt-4">
-              <RevenueChart data={trend} height={160} />
-            </div>
-          )}
+        <div className="relative overflow-hidden rounded-2xl border-2 border-mv-green bg-mv-surface p-5 shadow-mv-md">
+          {share.watermark && <ReportWatermark />}
+          <div className="relative">
+            <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+              {report.label}
+            </p>
+            <p className="mt-4 font-display text-[42px] font-medium leading-none text-mv-ink">
+              {report.unit === "currency" ? formatCurrency(report.value) : report.value}
+            </p>
+            {report.delta !== undefined && (
+              <Badge tone={report.delta >= 0 ? "green" : "red"} className="mt-3">
+                {report.delta >= 0 ? "↑" : "↓"} {Math.abs(report.delta).toFixed(1)}% vs période précédente
+              </Badge>
+            )}
+            {trend.length > 0 && (
+              <div className="mt-4">
+                <RevenueChart data={trend} height={160} />
+              </div>
+            )}
+          </div>
         </div>
 
         {breakdown.length > 0 && (
@@ -73,9 +97,12 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
           </Card>
         )}
 
-        <p className="mt-8 text-center text-[12px] text-mv-ink-faint">
-          Généré avec Flow par Minerva — ce lien ne se met pas à jour automatiquement.
-        </p>
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <PoweredByBadge />
+          <p className="text-center text-[12px] text-mv-ink-faint">
+            Ce lien ne se met pas à jour automatiquement{share.expiresAt ? ` · expire le ${formatDate(share.expiresAt.slice(0, 10))}` : ""}.
+          </p>
+        </div>
       </div>
     </div>
   );

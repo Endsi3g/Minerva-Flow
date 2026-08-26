@@ -5,6 +5,9 @@ export type DayHours = { open: string; close: string };
 /** Keyed 0 (Sunday) – 6 (Saturday), matching operating_days' convention. Missing key = closed that day. */
 export type OpeningHours = Partial<Record<0 | 1 | 2 | 3 | 4 | 5 | 6, DayHours>>;
 
+/** One rung of the visit-count reward ladder (V1→V2→V3) — see lib/data/customers.ts's logVisit for the crossing check. */
+export type VisitRewardTier = { id: string; label: string; visits: number; reward: string; active: boolean };
+
 export type Restaurant = {
   id: string;
   name: string;
@@ -39,6 +42,8 @@ export type Restaurant = {
   retentionBirthdayLeadDays: number;
   loyaltyTier2Threshold: number;
   loyaltyTier3Threshold: number;
+  visitRewardsEnabled: boolean;
+  visitRewardTiers: VisitRewardTier[];
 };
 
 export type Employee = {

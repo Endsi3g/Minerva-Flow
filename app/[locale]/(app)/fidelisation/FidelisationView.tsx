@@ -21,7 +21,7 @@ import {
 } from "@/lib/loyalty-tiers";
 import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
 import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
-import { Heart, Plus, Trash2, Search, Link2, MousePointerClick, Copy, Check, Share2, Download, QrCode, Zap, ExternalLink, MapPin } from "lucide-react";
+import { Heart, Plus, Trash2, Search, Link2, MousePointerClick, Copy, Check, Share2, Download, QrCode, Zap, ExternalLink, MapPin, Gift } from "lucide-react";
 import { Switch } from "@/components/ui/Switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
@@ -1020,6 +1020,11 @@ export function FidelisationView({
         description="Fiches clients, visites, parrainage viral et points de fidélité."
         action={
           <div className="flex items-center gap-2">
+            {canManage && (
+              <Button href="/fidelisation/recompenses" size="sm" variant="secondary">
+                <Gift size={14} /> Récompenses par palier
+              </Button>
+            )}
             {canManage && (
               <Button size="sm" variant="secondary" onClick={() => setQrStudioOpen(true)}>
                 <QrCode size={14} /> Studio QR & Affiches

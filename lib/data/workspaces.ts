@@ -165,6 +165,8 @@ export async function getWorkspaceRestaurants(workspaceId: string): Promise<Rest
     retentionBirthdayLeadDays: row.retention_birthday_lead_days ?? 3,
     loyaltyTier2Threshold: row.loyalty_tier_2_threshold ?? 150,
     loyaltyTier3Threshold: row.loyalty_tier_3_threshold ?? 400,
+    visitRewardsEnabled: row.visit_rewards_enabled ?? false,
+    visitRewardTiers: row.visit_reward_tiers ?? [],
   }));
 }
 

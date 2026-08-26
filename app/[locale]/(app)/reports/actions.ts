@@ -9,7 +9,7 @@ import { getReport, trendFor, breakdownFor, type ReportData, type ReportDef } fr
 import { exportReportToSheet } from "@/lib/google/sheets";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createReportShare } from "@/lib/data/report-shares";
+import { createReportShare, type ReportShareOptions } from "@/lib/data/report-shares";
 import type { FlowLine } from "@/lib/types";
 import { getTranslations } from "next-intl/server";
 
@@ -78,14 +78,18 @@ export async function getReportDataAction(slug: string, range: ReportRange) {
  * Snapshots the current (optionally range-filtered) report and stores it
  * for public, read-only viewing at /r/[token] — no auth required to view.
  */
-export async function shareReportAction(slug: string, range?: ReportRange): Promise<string | null> {
+export async function shareReportAction(
+  slug: string,
+  range?: ReportRange,
+  options?: ReportShareOptions
+): Promise<string | null> {
   const restaurantId = await getCurrentRestaurantId();
   if (!restaurantId) return null;
 
   const snapshot = await buildReportSnapshot(slug, restaurantId, range);
   if (!snapshot) return null;
 
-  return createReportShare(restaurantId, slug, snapshot);
+  return createReportShare(restaurantId, slug, snapshot, options);
 }
 
 export async function publishReportAction(
