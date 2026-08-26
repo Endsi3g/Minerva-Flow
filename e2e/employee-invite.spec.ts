@@ -30,10 +30,15 @@ test.describe("Employee login access", () => {
 
     await loginAs(page, owner);
     await page.goto("/employees");
-    await page.getByRole("button", { name: /ajouter|nouvel|add/i }).first().click();
+    // Exact match — a loose /ajouter|.../i also matches the sidebar's
+    // per-nav-item "Ajouter aux favoris" toggle (a title attribute, so it
+    // has no visible text but still counts as its accessible name), which
+    // sits earlier in the DOM than this page's own "Ajouter un employé"
+    // button.
+    await page.getByRole("button", { name: "Ajouter un employé" }).first().click();
     await page.fill('input[name="fullName"]', employeeName);
     await page.fill('input[name="contactEmail"]', employeeEmail);
-    await page.getByRole("button", { name: /ajouter|add/i }).last().click();
+    await page.getByRole("button", { name: "Ajouter", exact: true }).last().click();
     await expect(page.getByText(employeeName).first()).toBeVisible({ timeout: 10000 });
 
     await page.getByText(employeeName).first().click();

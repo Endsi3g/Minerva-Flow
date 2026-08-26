@@ -18,7 +18,11 @@ test.describe("Menu", () => {
     await page.goto("/menu");
 
     const itemName = `Item E2E ${Date.now()}`;
-    await page.getByRole("button", { name: /ajouter|nouveau|add/i }).first().click();
+    // Exact match — a loose /ajouter|nouveau|add/i also matches the sidebar's
+    // per-nav-item "Ajouter aux favoris" toggle (a title attribute, so it has
+    // no visible text but still counts as its accessible name), which sits
+    // earlier in the DOM than this page's own "Nouveau plat" button.
+    await page.getByRole("button", { name: "Nouveau plat" }).first().click();
     await page.fill('input[name="name"]', itemName);
     await page.fill('input[name="price"]', "12.50");
     await page.fill('input[name="foodCost"]', "4.25");
@@ -32,7 +36,11 @@ test.describe("Menu", () => {
     await loginAs(page, user);
     await page.goto("/menu");
 
-    await page.getByRole("button", { name: /ajouter|nouveau|add/i }).first().click();
+    // Exact match — a loose /ajouter|nouveau|add/i also matches the sidebar's
+    // per-nav-item "Ajouter aux favoris" toggle (a title attribute, so it has
+    // no visible text but still counts as its accessible name), which sits
+    // earlier in the DOM than this page's own "Nouveau plat" button.
+    await page.getByRole("button", { name: "Nouveau plat" }).first().click();
     await page.fill('input[name="name"]', `Item Share ${Date.now()}`);
     await page.fill('input[name="price"]', "10");
     await page.fill('input[name="foodCost"]', "3");
