@@ -69,6 +69,7 @@ export type EmployeeShift = {
   notes: string | null;
   clockIn: string | null;
   clockOut: string | null;
+  financialTransactionId: string | null;
   createdAt: string;
 };
 

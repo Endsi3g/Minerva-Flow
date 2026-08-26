@@ -6,9 +6,11 @@ import {
   getShiftSchedulesForRange,
   getUpcomingShiftsForEmployee,
   createShiftSchedule,
+  updateShiftSchedule,
   updateShiftScheduleStatus,
   deleteShiftSchedule,
   type ShiftScheduleInput,
+  type ShiftScheduleUpdateInput,
 } from "@/lib/data/shift-schedules";
 import { notifyRestaurant, broadcastNotification } from "@/lib/data/notifications";
 import { getEmployees, getEmployeeById } from "@/lib/data/employees";
@@ -92,6 +94,16 @@ export async function createShiftScheduleAction(
       link: "/horaire",
     });
   }
+  return shift;
+}
+
+export async function updateShiftScheduleAction(
+  restaurantId: string,
+  id: string,
+  patch: ShiftScheduleUpdateInput
+): Promise<ShiftSchedule | null> {
+  const shift = await updateShiftSchedule(restaurantId, id, patch);
+  if (shift) revalidatePath("/horaire");
   return shift;
 }
 

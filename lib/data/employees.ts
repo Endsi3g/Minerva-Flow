@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import { notifyRestaurant, notifyRestaurantManagement } from "@/lib/data/notifications";
-import { createFinancialTransaction } from "@/lib/data/finance";
+import { createFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction } from "@/lib/data/finance";
 import type { Employee, EmployeeReview, EmployeeShift } from "@/lib/types";
 
 type EmployeeRow = {
@@ -160,6 +160,7 @@ type ShiftRow = {
   notes: string | null;
   clock_in: string | null;
   clock_out: string | null;
+  financial_transaction_id: string | null;
   created_at: string;
 };
 
@@ -173,6 +174,7 @@ function mapShift(row: ShiftRow): EmployeeShift {
     notes: row.notes,
     clockIn: row.clock_in,
     clockOut: row.clock_out,
+    financialTransactionId: row.financial_transaction_id,
     createdAt: row.created_at,
   };
 }
@@ -256,6 +258,107 @@ export async function createEmployeeShift(input: EmployeeShiftInput): Promise<Em
 
   if (error || !data) return null;
   return mapShift(data as ShiftRow);
+}
+
+export type EmployeeShiftPatch = {
+  shiftDate?: string;
+  hoursWorked?: number;
+  wasLate?: boolean;
+  notes?: string | null;
+};
+
+/**
+ * Edits a manually-logged shift. Keeps the auto-booked labor expense (see
+ * bookLaborExpense) in sync: if the shift already has a
+ * financial_transaction_id, its date/amount are updated to match rather
+ * than left stale — the alternative (deleting + recreating the shift) would
+ * silently leave a wrong-amount expense in Finance.
+ */
+export async function updateEmployeeShift(
+  restaurantId: string,
+  shiftId: string,
+  patch: EmployeeShiftPatch
+): Promise<EmployeeShift | null> {
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("employee_shifts")
+    .select("employee_id, financial_transaction_id")
+    .eq("id", shiftId)
+    .eq("restaurant_id", restaurantId)
+    .maybeSingle();
+  if (!existing) return null;
+
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.shiftDate !== undefined) dbPatch.shift_date = patch.shiftDate;
+  if (patch.hoursWorked !== undefined) dbPatch.hours_worked = patch.hoursWorked;
+  if (patch.wasLate !== undefined) dbPatch.was_late = patch.wasLate;
+  if (patch.notes !== undefined) dbPatch.notes = patch.notes;
+
+  const { data, error } = await supabase
+    .from("employee_shifts")
+    .update(dbPatch)
+    .eq("id", shiftId)
+    .eq("restaurant_id", restaurantId)
+    .select("*")
+    .single();
+  if (error || !data) return null;
+
+  const shift = data as ShiftRow;
+  const financialTransactionId = existing.financial_transaction_id as string | null;
+  if (financialTransactionId && (patch.hoursWorked !== undefined || patch.shiftDate !== undefined)) {
+    const employee = await getEmployeeById(existing.employee_id as string);
+    if (employee && employee.hourlyWage !== null) {
+      await updateFinancialTransaction(restaurantId, financialTransactionId, {
+        date: shift.shift_date,
+        amount: Math.round(employee.hourlyWage * shift.hours_worked * 100) / 100,
+      });
+    }
+  }
+
+  await logActivity({
+    restaurantId,
+    actionType: "employee.shift_update",
+    entityType: "employee_shift",
+    entityId: shiftId,
+    description: "A modifié un quart de travail",
+  });
+
+  return mapShift(shift);
+}
+
+export async function deleteEmployeeShift(restaurantId: string, shiftId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("employee_shifts")
+    .select("financial_transaction_id")
+    .eq("id", shiftId)
+    .eq("restaurant_id", restaurantId)
+    .maybeSingle();
+  if (!existing) return false;
+
+  const { error } = await supabase
+    .from("employee_shifts")
+    .delete()
+    .eq("id", shiftId)
+    .eq("restaurant_id", restaurantId);
+  if (error) return false;
+
+  const financialTransactionId = existing.financial_transaction_id as string | null;
+  if (financialTransactionId) {
+    await deleteFinancialTransaction(restaurantId, financialTransactionId);
+  }
+
+  await logActivity({
+    restaurantId,
+    actionType: "employee.shift_delete",
+    entityType: "employee_shift",
+    entityId: shiftId,
+    description: "A supprimé un quart de travail",
+  });
+
+  return true;
 }
 
 const LATE_GRACE_MINUTES = 10;

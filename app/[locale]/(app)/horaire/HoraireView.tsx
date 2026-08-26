@@ -13,6 +13,7 @@ import { GoogleCalendarCard } from "@/components/minerva/GoogleCalendarCard";
 import { cn, formatDate, formatCurrency } from "@/lib/utils";
 import {
   createShiftScheduleAction,
+  updateShiftScheduleAction,
   updateShiftScheduleStatusAction,
   deleteShiftScheduleAction,
   getEmployeeUpcomingShiftsAction,
@@ -40,6 +41,8 @@ import {
   TrendingUp,
   Percent,
   Sparkles,
+  AlertTriangle,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -90,38 +93,55 @@ function NewShiftModal({
   employees,
   defaultEmployeeId,
   defaultDate,
+  editingShift,
   open,
   onClose,
   onCreated,
+  onUpdated,
 }: {
   restaurantId: string;
   employees: Employee[];
   defaultEmployeeId: string;
   defaultDate: string;
+  editingShift?: ShiftSchedule | null;
   open: boolean;
   onClose: () => void;
   onCreated: (s: ShiftSchedule) => void;
+  onUpdated?: (s: ShiftSchedule) => void;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditing = Boolean(editingShift);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const input = {
+      employeeId: String(form.get("employeeId") ?? ""),
+      shiftDate: String(form.get("shiftDate") ?? defaultDate),
+      startTime: String(form.get("startTime") ?? "09:00"),
+      endTime: String(form.get("endTime") ?? "17:00"),
+      positionLabel: String(form.get("positionLabel") ?? "") || null,
+    };
     setIsSubmitting(true);
     try {
-      const shift = await createShiftScheduleAction(restaurantId, {
-        employeeId: String(form.get("employeeId") ?? ""),
-        shiftDate: String(form.get("shiftDate") ?? defaultDate),
-        startTime: String(form.get("startTime") ?? "09:00"),
-        endTime: String(form.get("endTime") ?? "17:00"),
-        positionLabel: String(form.get("positionLabel") ?? "") || null,
-      });
-      if (shift) {
-        onCreated(shift);
-        toast.success("Quart planifié avec succès.");
-        onClose();
+      if (editingShift) {
+        const shift = await updateShiftScheduleAction(restaurantId, editingShift.id, input);
+        if (shift) {
+          onUpdated?.(shift);
+          toast.success("Quart modifié avec succès.");
+          onClose();
+        } else {
+          toast.error("La modification du quart a échoué.");
+        }
       } else {
-        toast.error("La planification du quart a échoué.");
+        const shift = await createShiftScheduleAction(restaurantId, input);
+        if (shift) {
+          onCreated(shift);
+          toast.success("Quart planifié avec succès.");
+          onClose();
+        } else {
+          toast.error("La planification du quart a échoué.");
+        }
       }
     } finally {
       setIsSubmitting(false);
@@ -129,10 +149,15 @@ function NewShiftModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Planifier un quart" description="Employé, date et plage horaire.">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={isEditing ? "Modifier le quart" : "Planifier un quart"}
+      description="Employé, date et plage horaire."
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Employé">
-          <Select name="employeeId" defaultValue={defaultEmployeeId} required>
+          <Select name="employeeId" defaultValue={editingShift?.employeeId ?? defaultEmployeeId} required>
             {employees.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.fullName} — {e.roleTitle}
@@ -141,25 +166,25 @@ function NewShiftModal({
           </Select>
         </Field>
         <Field label="Date">
-          <Input name="shiftDate" type="date" defaultValue={defaultDate} required />
+          <Input name="shiftDate" type="date" defaultValue={editingShift?.shiftDate ?? defaultDate} required />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Début">
-            <Input name="startTime" type="time" defaultValue="09:00" required />
+            <Input name="startTime" type="time" defaultValue={editingShift?.startTime.slice(0, 5) ?? "09:00"} required />
           </Field>
           <Field label="Fin">
-            <Input name="endTime" type="time" defaultValue="17:00" required />
+            <Input name="endTime" type="time" defaultValue={editingShift?.endTime.slice(0, 5) ?? "17:00"} required />
           </Field>
         </div>
         <Field label="Poste" hint="Optionnel — ex : cuisine, service, caisse">
-          <Input name="positionLabel" placeholder="Ex : Service" />
+          <Input name="positionLabel" placeholder="Ex : Service" defaultValue={editingShift?.positionLabel ?? ""} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Planification…" : "Planifier"}
+            {isSubmitting ? "Enregistrement…" : isEditing ? "Enregistrer" : "Planifier"}
           </Button>
         </div>
       </form>
@@ -413,6 +438,7 @@ export function HoraireView({
 
   // Modals
   const [modalTarget, setModalTarget] = useState<{ employeeId: string; date: string } | null>(null);
+  const [editingShift, setEditingShift] = useState<ShiftSchedule | null>(null);
   const [scheduleEmployee, setScheduleEmployee] = useState<Employee | null>(null);
   const [selectedDayIso, setSelectedDayIso] = useState<string | null>(null);
 
@@ -533,16 +559,26 @@ export function HoraireView({
     }, 0);
   }, [shifts]);
 
-  const totalLaborCost = useMemo(() => {
-    return shifts.reduce((acc, s) => {
+  // Shifts for an employee with no hourly wage on file are excluded rather
+  // than priced with a made-up default rate — a silent guess here would show
+  // up as a precise-looking dollar figure the owner has no way to know is
+  // partly fictional. shiftsMissingWage lets the UI disclose the gap instead.
+  const { totalLaborCost, shiftsMissingWage } = useMemo(() => {
+    let cost = 0;
+    let missing = 0;
+    for (const s of shifts) {
       const emp = employeeMap.get(s.employeeId);
-      const wage = emp?.hourlyWage ?? 16.50;
+      if (emp?.hourlyWage == null) {
+        missing += 1;
+        continue;
+      }
       const [sh, sm] = s.startTime.split(":").map(Number);
       const [eh, em] = s.endTime.split(":").map(Number);
       let mins = (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0));
       if (mins < 0) mins += 24 * 60;
-      return acc + Math.max(0, mins / 60) * wage;
-    }, 0);
+      cost += Math.max(0, mins / 60) * emp.hourlyWage;
+    }
+    return { totalLaborCost: cost, shiftsMissingWage: missing };
   }, [shifts, employeeMap]);
 
   return (
@@ -616,8 +652,20 @@ export function HoraireView({
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-xs flex items-center justify-between">
           <div>
-            <span className="text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+            <span className="flex items-center gap-1 text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
               Masse Salariale Estimée
+              {shiftsMissingWage > 0 && (
+                <Tooltip>
+                  <TooltipTrigger className="cursor-help normal-case tracking-normal text-mv-amber">
+                    <AlertTriangle size={12} />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {shiftsMissingWage} quart{shiftsMissingWage > 1 ? "s" : ""} exclu
+                    {shiftsMissingWage > 1 ? "s" : ""} de ce total — salaire horaire non configuré pour l&apos;employé.
+                    Ajoutez son taux horaire dans sa fiche pour un chiffre exact.
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </span>
             <p className="font-display text-[22px] font-bold text-mv-ink mt-0.5">
               {formatCurrency(totalLaborCost)}
@@ -899,16 +947,28 @@ export function HoraireView({
                                     {s.positionLabel ? ` · ${s.positionLabel}` : ""}
                                   </span>
                                   {canManage && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDelete(s.id);
-                                      }}
-                                      aria-label="Retirer le quart"
-                                      className="hidden text-mv-ink-faint hover:text-mv-red group-hover:block"
-                                    >
-                                      <X size={12} />
-                                    </button>
+                                    <div className="hidden items-center gap-1 group-hover:flex">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingShift(s);
+                                        }}
+                                        aria-label="Modifier le quart"
+                                        className="text-mv-ink-faint hover:text-mv-green-dark"
+                                      >
+                                        <Pencil size={12} />
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDelete(s.id);
+                                        }}
+                                        aria-label="Retirer le quart"
+                                        className="text-mv-ink-faint hover:text-mv-red"
+                                      >
+                                        <X size={12} />
+                                      </button>
+                                    </div>
                                   )}
                                 </div>
                               ))}
@@ -936,15 +996,20 @@ export function HoraireView({
       </div>
 
       {/* Modals */}
-      {restaurantId && modalTarget && (
+      {restaurantId && (modalTarget || editingShift) && (
         <NewShiftModal
           restaurantId={restaurantId}
           employees={employees}
-          defaultEmployeeId={modalTarget.employeeId}
-          defaultDate={modalTarget.date}
-          open={Boolean(modalTarget)}
-          onClose={() => setModalTarget(null)}
+          defaultEmployeeId={modalTarget?.employeeId ?? editingShift?.employeeId ?? ""}
+          defaultDate={modalTarget?.date ?? editingShift?.shiftDate ?? ""}
+          editingShift={editingShift}
+          open={Boolean(modalTarget || editingShift)}
+          onClose={() => {
+            setModalTarget(null);
+            setEditingShift(null);
+          }}
           onCreated={(s) => setShifts((prev) => [...prev, s])}
+          onUpdated={(s) => setShifts((prev) => prev.map((existing) => (existing.id === s.id ? s : existing)))}
         />
       )}
 
