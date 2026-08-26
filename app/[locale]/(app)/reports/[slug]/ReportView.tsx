@@ -147,6 +147,10 @@ export function ReportView({
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function handleResetShareLink() {
+    setShareLink(null);
+  }
+
   function handleExportPdf() {
     window.print();
   }
@@ -248,7 +252,12 @@ export function ReportView({
             <PopoverContent align="end" className="w-80">
               <p className="mb-3 text-[12.5px] font-semibold text-mv-ink">{t("publicReadOnlyLink")}</p>
 
-              <div className="mb-3 flex items-start justify-between gap-3 rounded-lg border border-mv-border-soft bg-mv-cream-soft/60 p-2.5">
+              <div
+                className={cn(
+                  "mb-3 flex items-start justify-between gap-3 rounded-lg border border-mv-border-soft bg-mv-cream-soft/60 p-2.5",
+                  shareLink && "opacity-60"
+                )}
+              >
                 <div>
                   <p className="text-[12.5px] font-semibold text-mv-ink">Filigrane Minerva Flow</p>
                   <p className="mt-0.5 text-[11px] leading-snug text-mv-ink-faint">
@@ -258,13 +267,14 @@ export function ReportView({
                 <Switch
                   checked={shareWatermark}
                   onCheckedChange={setShareWatermark}
+                  disabled={Boolean(shareLink)}
                   className="mt-0.5 shrink-0 data-checked:bg-mv-green"
                   aria-label={shareWatermark ? "Désactiver le filigrane" : "Activer le filigrane"}
                 />
               </div>
 
               <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Expiration du lien</p>
-              <div className="mb-3 flex gap-1.5">
+              <div className={cn("mb-3 flex gap-1.5", shareLink && "opacity-60")}>
                 {[
                   { label: "7j", value: 7 },
                   { label: "30j", value: 30 },
@@ -273,8 +283,9 @@ export function ReportView({
                   <button
                     key={opt.label}
                     onClick={() => setShareExpiresInDays(opt.value)}
+                    disabled={Boolean(shareLink)}
                     className={cn(
-                      "h-7 flex-1 rounded-md text-[12px] font-semibold transition-colors",
+                      "h-7 flex-1 rounded-md text-[12px] font-semibold transition-colors disabled:cursor-not-allowed",
                       shareExpiresInDays === opt.value
                         ? "bg-mv-green text-mv-cream-soft"
                         : "border border-mv-border text-mv-ink-soft hover:bg-mv-ink/5"
@@ -298,7 +309,15 @@ export function ReportView({
                         {copied ? <Check size={13} className="text-mv-green-dark" /> : <Copy size={13} />}
                       </button>
                     </div>
-                    <p className="text-[11.5px] text-mv-ink-faint">{t("snapshotNote")}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11.5px] text-mv-ink-faint">{t("snapshotNote")}</p>
+                      <button
+                        onClick={handleResetShareLink}
+                        className="shrink-0 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                      >
+                        Nouveau lien
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <Button size="sm" className="w-full" onClick={handleGenerateShareLink} disabled={sharing}>

@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Switch } from "@/components/ui/Switch";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Link } from "@/i18n/navigation";
-import { ChevronLeft, Bell, Store } from "lucide-react";
+import { ChevronLeft, Bell, Store, AlertTriangle } from "lucide-react";
 import { loyaltyTierOrder, loyaltyTierBadge } from "@/lib/loyalty-tiers";
+import { cn } from "@/lib/utils";
 import type { VisitRewardTier } from "@/lib/types";
 import { updateVisitRewardTiersAction } from "../actions";
 import { notifyError } from "@/lib/notify-error";
@@ -40,6 +41,18 @@ export function RecompensesView({
     return sortedTiers[idx + 1] ?? null;
   }, [sortedTiers, currentTier]);
 
+  // Validation is inline, not blocking: an invalid edit stays visible and
+  // uncommitted (handleTierBlur skips the save) until fixed — never
+  // silently persisted (an empty reward would otherwise ship in the
+  // customer email as "vous avez débloqué «  »").
+  const emptyRewardIds = useMemo(() => new Set(tiers.filter((t) => !t.reward.trim()).map((t) => t.id)), [tiers]);
+  const duplicateVisitIds = useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const t of tiers) counts.set(t.visits, (counts.get(t.visits) ?? 0) + 1);
+    return new Set(tiers.filter((t) => (counts.get(t.visits) ?? 0) > 1).map((t) => t.id));
+  }, [tiers]);
+  const hasErrors = emptyRewardIds.size > 0 || duplicateVisitIds.size > 0;
+
   async function persist(nextTiers: VisitRewardTier[]) {
     setTiers(nextTiers);
     const ok = await updateVisitRewardTiersAction(restaurantId!, { tiers: nextTiers });
@@ -60,7 +73,8 @@ export function RecompensesView({
   }
 
   function updateTierVisits(id: string, value: number) {
-    setTiers((prev) => prev.map((t) => (t.id === id ? { ...t, visits: value } : t)));
+    const clamped = Math.max(1, value || 1);
+    setTiers((prev) => prev.map((t) => (t.id === id ? { ...t, visits: clamped } : t)));
   }
 
   async function handleTierActiveToggle(id: string, active: boolean) {
@@ -68,6 +82,7 @@ export function RecompensesView({
   }
 
   async function handleTierBlur() {
+    if (hasErrors) return;
     await persist(tiers);
   }
 
@@ -102,6 +117,13 @@ export function RecompensesView({
           </div>
         }
       />
+
+      {hasErrors && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-mv-red/30 bg-mv-red-bg px-3 py-2.5 text-[12.5px] font-medium text-mv-red">
+          <AlertTriangle size={14} className="shrink-0" />
+          Corrigez les champs en rouge ci-dessous — vos changements ne sont pas encore enregistrés.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className={enabled ? "space-y-4" : "space-y-4 opacity-50 pointer-events-none"}>
@@ -142,10 +164,16 @@ export function RecompensesView({
                           type="number"
                           min={1}
                           value={tier.visits}
-                          onChange={(e) => updateTierVisits(tier.id, Number(e.target.value) || 0)}
+                          onChange={(e) => updateTierVisits(tier.id, Number(e.target.value))}
                           onBlur={handleTierBlur}
-                          className="h-9 w-full rounded-lg border border-mv-border bg-mv-surface px-3 text-[13.5px] text-mv-ink outline-none focus-visible:border-mv-green"
+                          className={cn(
+                            "h-9 w-full rounded-lg border bg-mv-surface px-3 text-[13.5px] text-mv-ink outline-none focus-visible:border-mv-green",
+                            duplicateVisitIds.has(tier.id) ? "border-mv-red" : "border-mv-border"
+                          )}
                         />
+                        {duplicateVisitIds.has(tier.id) && (
+                          <p className="mt-1 text-[11px] text-mv-red">Ce seuil est déjà utilisé par un autre palier.</p>
+                        )}
                       </div>
                       <div>
                         <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Récompense</label>
@@ -153,8 +181,14 @@ export function RecompensesView({
                           value={tier.reward}
                           onChange={(e) => updateTierField(tier.id, "reward", e.target.value)}
                           onBlur={handleTierBlur}
-                          className="h-9 w-full rounded-lg border border-mv-border bg-mv-surface px-3 text-[13.5px] text-mv-ink outline-none focus-visible:border-mv-green"
+                          className={cn(
+                            "h-9 w-full rounded-lg border bg-mv-surface px-3 text-[13.5px] text-mv-ink outline-none focus-visible:border-mv-green",
+                            emptyRewardIds.has(tier.id) ? "border-mv-red" : "border-mv-border"
+                          )}
                         />
+                        {emptyRewardIds.has(tier.id) && (
+                          <p className="mt-1 text-[11px] text-mv-red">Requis — ce texte est envoyé au client.</p>
+                        )}
                       </div>
                     </div>
                   </div>
