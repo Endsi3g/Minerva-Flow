@@ -609,7 +609,8 @@
     "saleQuickAdd": {
       "quantityAria": "Satılan miktar",
       "sales": "satış",
-      "recordFailed": "Kayıt başarısız oldu."
+      "recordFailed": "Kayıt başarısız oldu.",
+      "scopeNote": "Yalnızca yemeklerinizi sıralamak için kullanılan popülerlik sayacını artırır — gelirinize hiçbir şey eklemez ve stokunuzu etkilemez. Bunun için Siparişler'i kullanın."
     },
     "editItem": {
       "modalTitle": "Ürünü düzenle",

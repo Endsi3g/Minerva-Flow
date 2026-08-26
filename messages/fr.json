@@ -609,7 +609,8 @@
     "saleQuickAdd": {
       "quantityAria": "Quantité vendue",
       "sales": "ventes",
-      "recordFailed": "L'enregistrement a échoué."
+      "recordFailed": "L'enregistrement a échoué.",
+      "scopeNote": "Fait uniquement progresser le compteur de popularité utilisé pour classer vos plats — n'ajoute rien à votre revenu et ne touche pas votre inventaire. Utilisez Commandes pour ça."
     },
     "editItem": {
       "modalTitle": "Modifier le plat",
