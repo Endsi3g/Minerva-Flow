@@ -8,13 +8,14 @@ import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import type { InventoryItem, InventoryMovementType, Supplier } from "@/lib/types";
-import { PackageSearch, Plus, Trash2, TriangleAlert } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { PackageSearch, Plus, Trash2, TriangleAlert, ShoppingCart, ArrowRight, Sparkles } from "lucide-react";
+import { useMemo, useState, type FormEvent } from "react";
 import { createInventoryItemAction, deleteInventoryItemAction, logMovementAction } from "./actions";
 import { notifyError } from "@/lib/notify-error";
+import Link from "next/link";
 
 const movementLabel: Record<InventoryMovementType, string> = {
   reception: "Réception",
@@ -278,14 +279,26 @@ export function InventaireView({
     });
   }
 
-  const lowStockCount = items.filter((i) => stockStatus(i).tone === "amber" || stockStatus(i).tone === "red").length;
+  const lowStockItems = useMemo(
+    () => items.filter((i) => stockStatus(i).tone === "amber" || stockStatus(i).tone === "red"),
+    [items]
+  );
+
+  const estimatedRestockCost = useMemo(
+    () =>
+      lowStockItems.reduce(
+        (acc, i) => acc + Math.max(0, (i.parLevel ?? 0) - i.quantityOnHand) * (i.unitCost || 0),
+        0
+      ),
+    [lowStockItems]
+  );
 
   return (
-    <div>
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Opérations"
-        title="Inventaire"
-        description="Quantités en main, seuils de réapprovisionnement et suivi du gaspillage."
+        title="Inventaire & Gestion des Stocks"
+        description="Quantités en main, seuils de réapprovisionnement et suivi des pertes et du gaspillage."
         action={
           canCreate && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -296,21 +309,68 @@ export function InventaireView({
       />
 
       {items.length > 0 && (
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 items-start">
           <WasteSummaryCard wasteSummary={wasteSummary} />
-          {lowStockCount > 0 && (
-            <Card>
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-amber-bg text-mv-amber">
-                  <TriangleAlert size={16} />
-                </div>
-                <div>
-                  <p className="font-display text-[16px] font-medium text-mv-ink">
-                    {lowStockCount} article{lowStockCount > 1 ? "s" : ""} sous le seuil
-                  </p>
-                  <p className="text-[12.5px] text-mv-ink-faint">À réapprovisionner bientôt.</p>
+
+          {lowStockItems.length > 0 ? (
+            <Card className="border-mv-amber/40 bg-gradient-to-br from-mv-amber-tint/40 to-mv-surface p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mv-amber-tint text-mv-amber-dark border border-mv-amber/30">
+                    <TriangleAlert size={18} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-display text-[16px] font-bold text-mv-ink">
+                        {lowStockItems.length} article{lowStockItems.length > 1 ? "s" : ""} à réapprovisionner
+                      </p>
+                      <Badge tone="amber">Priorité Stock</Badge>
+                    </div>
+                    <p className="text-[12.5px] text-mv-ink-soft mt-0.5">
+                      Coût estimé pour atteindre les seuils par :{" "}
+                      <span className="font-semibold text-mv-ink font-mono">{formatCurrency(estimatedRestockCost)}</span>
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-mv-amber/20 pt-3">
+                {lowStockItems.slice(0, 4).map((i) => (
+                  <span
+                    key={i.id}
+                    className="inline-flex items-center gap-1 rounded-lg bg-mv-cream px-2 py-1 text-[11.5px] font-medium text-mv-ink-soft"
+                  >
+                    <span className="font-semibold text-mv-ink">{i.name}</span>
+                    <span className="text-mv-red">({i.quantityOnHand} / {i.parLevel} {i.unit})</span>
+                  </span>
+                ))}
+                {lowStockItems.length > 4 && (
+                  <span className="inline-flex items-center px-1.5 py-1 text-[11px] text-mv-ink-faint">
+                    +{lowStockItems.length - 4} autres
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-3 flex justify-end">
+                <Link href="/fournisseurs">
+                  <Button size="sm" variant="secondary" className="text-[12px] h-7 px-3 gap-1.5 border-mv-amber/50 text-mv-amber-dark hover:bg-mv-amber hover:text-white">
+                    <ShoppingCart size={13} /> Passer commande fournisseur <ArrowRight size={12} />
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          ) : (
+            <Card className="border-mv-green/30 bg-gradient-to-br from-mv-green-tint/30 to-mv-surface p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mv-green-tint text-mv-green-dark">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <p className="font-display text-[15px] font-bold text-mv-ink">Niveaux de stocks optimaux</p>
+                  <p className="text-[12px] text-mv-ink-soft">Tous les articles avec seuil sont au-dessus de leur par level.</p>
+                </div>
+              </div>
+              <Badge tone="green">Stocks Sains</Badge>
             </Card>
           )}
         </div>

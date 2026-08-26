@@ -10,7 +10,11 @@ import { ChevronDown, LogOut, User, Bell, Gift, Settings, Search } from "lucide-
 import { ReferralModal } from "@/components/chat/ReferralModal";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useRealtimeAlertSubscription,
+  useRealtimeNotificationSubscription,
+} from "@/lib/realtime/RealtimeProvider";
 import {
   getNotificationsAction,
   markNotificationReadAction,
@@ -223,76 +227,38 @@ function NotificationBell() {
   }, [restaurantId]);
 
   // Live badge — new rows inserted into `alerts` for this restaurant show
-  // up on the bell immediately, without waiting for a refetch.
-  useEffect(() => {
-    if (!restaurantId) return;
-
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`topbar-alerts-${restaurantId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "alerts",
-          filter: `restaurant_id=eq.${restaurantId}`,
-        },
-        (payload) => {
-          const row = payload.new as AlertRow;
-          setAlerts((prev) => [mapAlertRow(row), ...prev.filter((a) => a.id !== row.id)]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [restaurantId]);
+  // up on the bell immediately via the unified restaurant realtime bus.
+  useRealtimeAlertSubscription(
+    useCallback((row) => {
+      setAlerts((prev) => [mapAlertRow(row as AlertRow), ...prev.filter((a) => a.id !== row.id)]);
+    }, [])
+  );
 
   // Live notifications — new rows inserted into `notifications` for this restaurant
   // and this user show up in real-time and trigger browser notifications.
-  useEffect(() => {
-    if (!restaurantId || !authUser) return;
+  useRealtimeNotificationSubscription(
+    useCallback(
+      (row) => {
+        if (!authUser || (row.user_id && row.user_id !== authUser.id)) return;
+        const mapped = mapNotificationRow(row as NotificationRow);
+        setNotifications((prev) => [mapped, ...prev]);
 
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`topbar-notifications-${restaurantId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `restaurant_id=eq.${restaurantId}`,
-        },
-        (payload) => {
-          const row = payload.new as NotificationRow;
-          if (row.user_id === authUser.id) {
-            const mapped = mapNotificationRow(row);
-            setNotifications((prev) => [mapped, ...prev]);
-
-            // Request permission / display desktop notification
-            if (Notification.permission === "granted") {
-              const n = new Notification(mapped.title, {
-                body: mapped.body || undefined,
-                icon: "/icon-192.png",
-              });
-              n.onclick = () => {
-                window.focus();
-                if (mapped.link) router.push(mapped.link);
-                n.close();
-              };
-            }
-          }
+        // Request permission / display desktop notification
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+          const n = new Notification(mapped.title, {
+            body: mapped.body || undefined,
+            icon: "/icon-192.png",
+          });
+          n.onclick = () => {
+            window.focus();
+            if (mapped.link) router.push(mapped.link);
+            n.close();
+          };
         }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [restaurantId, authUser, router]);
+      },
+      [authUser, router]
+    )
+  );
 
   async function handleOpenChange(next: boolean) {
     setOpen(next);

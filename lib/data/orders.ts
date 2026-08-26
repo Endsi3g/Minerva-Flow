@@ -4,6 +4,7 @@ import { recordSale } from "@/lib/data/menu";
 import { getRecipeItemsForMenuItems } from "@/lib/data/recipes";
 import { logMovement } from "@/lib/data/inventory";
 import { logVisit } from "@/lib/data/customers";
+import { computeOrderPricing } from "@/lib/data/order-pricing";
 import type { Order, OrderItem, OrderStatus, OrderPaymentStatus } from "@/lib/types";
 
 type OrderRow = {
@@ -71,6 +72,105 @@ function mapOrder(row: OrderRow, items: OrderItemRow[]): Order {
     createdAt: row.created_at,
     items: items.filter((i) => i.order_id === row.id).map(mapOrderItem),
   };
+}
+
+export type CreateOrderInput = {
+  guestName: string;
+  guestPhone?: string | null;
+  items: { menuItemId: string; quantity: number }[];
+  notes?: string | null;
+  customerId?: string | null;
+};
+
+/**
+ * Staff-entered order (phone/walk-in/counter) — the counterpart to
+ * submitPortalOrder/submitPublicOrder (customer self-service), which were
+ * the only two paths that ever created a row here before this. Runs on the
+ * session-scoped client, not the admin client: orders_insert's RLS policy
+ * already allows any restaurant member to insert for their own restaurant,
+ * so no rate limiting or admin bypass is needed the way the public/portal
+ * paths need it. is_public_request: false is what distinguishes it from
+ * customer-originated orders in the Commandes channel filter.
+ */
+export async function createOrder(restaurantId: string, input: CreateOrderInput): Promise<Order | null> {
+  if (!input.guestName.trim() || input.items.length === 0) return null;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [{ data: restaurant }, { data: menuItemsData }] = await Promise.all([
+    supabase.from("restaurants").select("tax_rate").eq("id", restaurantId).maybeSingle(),
+    supabase
+      .from("menu_items")
+      .select("id, name, price")
+      .eq("restaurant_id", restaurantId)
+      .eq("active", true)
+      .in(
+        "id",
+        input.items.map((i) => i.menuItemId)
+      ),
+  ]);
+  if (!restaurant) return null;
+
+  const menuItemById = new Map(
+    ((menuItemsData as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
+  );
+  const pricing = computeOrderPricing({
+    cart: input.items,
+    menuItemById,
+    taxRate: (restaurant as { tax_rate: number }).tax_rate,
+    acceptsTips: false,
+    requestedTipAmount: 0,
+  });
+  if (!pricing) return null;
+
+  const { data: order, error } = await supabase
+    .from("orders")
+    .insert({
+      restaurant_id: restaurantId,
+      status: "soumise",
+      guest_name: input.guestName,
+      guest_phone: input.guestPhone ?? null,
+      subtotal: pricing.subtotal,
+      tax_amount: pricing.taxAmount,
+      tip_amount: 0,
+      total: pricing.total,
+      payment_status: "non_requis",
+      is_public_request: false,
+      customer_id: input.customerId ?? null,
+      notes: input.notes ?? null,
+      created_by: user?.id ?? null,
+    })
+    .select("*")
+    .single();
+  if (error || !order) return null;
+
+  const orderRow = order as OrderRow;
+
+  const { data: itemRows } = await supabase
+    .from("order_items")
+    .insert(
+      pricing.lineItems.map((l) => ({
+        order_id: orderRow.id,
+        menu_item_id: l.menuItemId,
+        item_name: l.itemName,
+        unit_price: l.unitPrice,
+        quantity: l.quantity,
+      }))
+    )
+    .select("*");
+
+  await logActivity({
+    restaurantId,
+    actionType: "order.create",
+    entityType: "order",
+    entityId: orderRow.id,
+    description: `A créé une commande manuelle pour "${input.guestName}"`,
+  });
+
+  return mapOrder(orderRow, (itemRows as OrderItemRow[]) ?? []);
 }
 
 export async function getOrdersForDay(restaurantId: string, dayStart: string, dayEnd: string): Promise<Order[]> {

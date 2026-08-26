@@ -8,9 +8,33 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import { InviteEmployeeModal, LogShiftForm, NewReviewForm, NewTaskForm, StarRating, PaySummaryInline } from "../EmployeesView";
-import { setEmployeeActiveAction, setEmployeeTaskStatusAction, clockInEmployeeAction, clockOutEmployeeAction } from "../actions";
+import {
+  setEmployeeActiveAction,
+  setEmployeeTaskStatusAction,
+  clockInEmployeeAction,
+  clockOutEmployeeAction,
+  updateEmployeeShiftAction,
+  deleteEmployeeShiftAction,
+} from "../actions";
 import type { Employee, EmployeeReview, EmployeeShift, EmployeeTask } from "@/lib/types";
-import { ArrowLeft, Phone, Mail, DollarSign, Calendar, Award, Printer, Clock, KeyRound, CheckCircle2, LogIn, LogOut } from "lucide-react";
+import {
+  ArrowLeft,
+  Phone,
+  Mail,
+  DollarSign,
+  Calendar,
+  Award,
+  Printer,
+  Clock,
+  KeyRound,
+  CheckCircle2,
+  LogIn,
+  LogOut,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+} from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -41,6 +65,8 @@ export function EmployeeDetailView({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [clockPending, setClockPending] = useState(false);
+  const [editingShiftId, setEditingShiftId] = useState<string | null>(null);
+  const [editHours, setEditHours] = useState("");
 
   const canManage = role === "owner" || role === "manager";
   const totalHours = shifts.reduce((sum, s) => sum + s.hoursWorked, 0);
@@ -57,6 +83,38 @@ export function EmployeeDetailView({
       toast.success(`${employee.fullName} a été pointé·e.`);
     } else {
       toast.error("Impossible de pointer.");
+    }
+  }
+
+  function startEditShift(s: EmployeeShift) {
+    setEditingShiftId(s.id);
+    setEditHours(String(s.hoursWorked));
+  }
+
+  async function saveEditShift(shiftId: string) {
+    const hoursWorked = Number(editHours);
+    if (!Number.isFinite(hoursWorked) || hoursWorked < 0) {
+      toast.error("Le nombre d'heures doit être un nombre positif.");
+      return;
+    }
+    const updated = await updateEmployeeShiftAction(restaurantId, shiftId, { hoursWorked });
+    if (updated) {
+      setShifts((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+      setEditingShiftId(null);
+      toast.success("Quart corrigé.");
+    } else {
+      toast.error("La modification a échoué.");
+    }
+  }
+
+  async function handleDeleteShift(s: EmployeeShift) {
+    if (!window.confirm(`Supprimer le quart du ${formatDate(s.shiftDate)} (${s.hoursWorked.toFixed(2)} h) ?`)) return;
+    const ok = await deleteEmployeeShiftAction(restaurantId, s.id);
+    if (ok) {
+      setShifts((prev) => prev.filter((row) => row.id !== s.id));
+      toast.success("Quart supprimé.");
+    } else {
+      toast.error("La suppression a échoué.");
     }
   }
 
@@ -266,18 +324,70 @@ export function EmployeeDetailView({
                 {shifts.length === 0 ? (
                   <p className="text-[13px] text-mv-ink-faint py-2">{t("noShiftsYet")}</p>
                 ) : (
-                  shifts.map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2 text-[13px]"
-                    >
-                      <span className="font-medium text-mv-ink">{formatDate(s.shiftDate)}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-mv-green-dark">{t("hoursSuffix", { hours: s.hoursWorked })}</span>
-                        {s.wasLate && <Badge tone="red">{t("late")}</Badge>}
+                  shifts.map((s) =>
+                    editingShiftId === s.id ? (
+                      <div
+                        key={s.id}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2 text-[13px]"
+                      >
+                        <span className="font-medium text-mv-ink">{formatDate(s.shiftDate)}</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            min={0}
+                            step={0.25}
+                            value={editHours}
+                            onChange={(e) => setEditHours(e.target.value)}
+                            className="w-16 rounded-md border border-mv-border px-1.5 py-0.5 text-[13px] text-mv-ink"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => saveEditShift(s.id)}
+                            className="flex h-6 w-6 items-center justify-center rounded-md text-mv-green-dark hover:bg-mv-green/10"
+                            aria-label="Enregistrer"
+                          >
+                            <Check size={14} />
+                          </button>
+                          <button
+                            onClick={() => setEditingShiftId(null)}
+                            className="flex h-6 w-6 items-center justify-center rounded-md text-mv-ink-soft hover:bg-mv-ink/5"
+                            aria-label="Annuler"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ) : (
+                      <div
+                        key={s.id}
+                        className="group flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2 text-[13px]"
+                      >
+                        <span className="font-medium text-mv-ink">{formatDate(s.shiftDate)}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-mv-green-dark">{t("hoursSuffix", { hours: s.hoursWorked })}</span>
+                          {s.wasLate && <Badge tone="red">{t("late")}</Badge>}
+                          {canManage && (
+                            <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                              <button
+                                onClick={() => startEditShift(s)}
+                                className="flex h-6 w-6 items-center justify-center rounded-md text-mv-ink-soft hover:bg-mv-ink/5"
+                                aria-label="Modifier"
+                              >
+                                <Pencil size={12} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteShift(s)}
+                                className="flex h-6 w-6 items-center justify-center rounded-md text-mv-red hover:bg-mv-red/10"
+                                aria-label="Supprimer"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  )
                 )}
               </div>
 

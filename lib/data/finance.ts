@@ -241,6 +241,21 @@ export async function updateFinancialTransaction(
   return mapTransaction(data as TransactionRow);
 }
 
+export async function deleteFinancialTransaction(restaurantId: string, id: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("financial_transactions").delete().eq("restaurant_id", restaurantId).eq("id", id);
+  if (!error) {
+    await logActivity({
+      restaurantId,
+      actionType: "transaction.delete",
+      entityType: "financial_transaction",
+      entityId: id,
+      description: "A supprimé une transaction",
+    });
+  }
+  return !error;
+}
+
 type ExpenseCategoryRow = {
   id: string;
   restaurant_id: string;

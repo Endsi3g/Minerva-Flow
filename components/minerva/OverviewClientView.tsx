@@ -15,6 +15,7 @@ import { RecommendationsPanel } from "@/components/minerva/RecommendationsPanel"
 import { StartupChecklist } from "@/components/minerva/StartupChecklist";
 import { WidgetManagerModal, useWidgetVisibility } from "@/components/minerva/WidgetManagerModal";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
+import { HelperTooltip } from "@/components/ui/HelperTooltip";
 import { formatCurrency, formatDateFull } from "@/lib/utils";
 import {
   CalendarCheck2,
@@ -57,6 +58,7 @@ export function OverviewClientView({
   greeting,
   firstName,
   monthMarge,
+  monthMargeIsEstimated,
   todayLabel,
   revTrend,
   margTrend,
@@ -80,6 +82,7 @@ export function OverviewClientView({
   greeting: string;
   firstName: string | null;
   monthMarge: number;
+  monthMargeIsEstimated: boolean;
   todayLabel: string;
   revTrend: { date: string; revenue: number }[];
   margTrend: { date: string; revenue: number }[];
@@ -132,7 +135,14 @@ export function OverviewClientView({
       <PageHeader
         eyebrow="Vue globale"
         title={firstName ? `${greeting}, ${firstName}` : greeting}
-        description={`Voici votre marge cumulée du mois — ${formatCurrency(monthMarge)} au ${todayLabel}.`}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-1">
+            {`Voici votre marge cumulée du mois — ${formatCurrency(monthMarge)} au ${todayLabel}${monthMargeIsEstimated ? " (estimée)" : ""}.`}
+            {monthMargeIsEstimated && (
+              <HelperTooltip content="Vous n'avez pas encore entré de dépenses pour certaines journées — la marge de ces jours-là est estimée à 52,4 % du revenu plutôt que calculée sur vos vrais coûts. Ajoutez vos dépenses par journée pour un chiffre exact." />
+            )}
+          </span>
+        }
         action={
           <div className="flex items-center gap-2">
             <Button
@@ -198,10 +208,10 @@ export function OverviewClientView({
             />
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                <TrendingUp size={13} /> Marge gagnée sur le menu
+                <TrendingUp size={13} /> Marge du menu actif
               </p>
               <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
-                Marge des plats que vous mettez de l&apos;avant, comparée à l&apos;ensemble du menu.
+                Marge de ce qui est au menu aujourd&apos;hui, vs le menu complet (plats retirés inclus).
               </p>
               <p className="mt-1 font-display text-[19px] font-medium text-mv-ink">
                 {ltvImpact.marginGainPct >= 0 ? "+" : ""}

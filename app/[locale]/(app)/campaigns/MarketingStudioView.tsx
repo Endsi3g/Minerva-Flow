@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { toPng } from "html-to-image";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { Badge } from "@/components/ui/Badge";
+import { Link } from "@/i18n/navigation";
+import { useApp, useCurrentRestaurant } from "@/lib/app-context";
+import { updateRetentionSettingsAction } from "@/app/[locale]/(app)/fidelisation/actions";
 import {
   Sparkles,
   Download,
@@ -98,6 +102,10 @@ const MENU_PRESETS = [
 ];
 
 export function MarketingStudioView() {
+  const { restaurantId } = useApp();
+  const restaurant = useCurrentRestaurant();
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<VisualFormat>("story");
   const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(COLOR_THEMES[0]);
   const [selectedPresetIndex, setSelectedPresetIndex] = useState(0);
@@ -111,9 +119,13 @@ export function MarketingStudioView() {
   const [ctaText, setCtaText] = useState("Lien en Bio · Commande Directe 0%");
   const [fontStyle, setFontStyle] = useState<"display" | "sans" | "serif">("display");
 
-  // Re-engagement scenarios state
-  const [autoSms30Days, setAutoSms30Days] = useState(true);
-  const [autoBirthday, setAutoBirthday] = useState(true);
+  // Re-engagement automation — reflects the real retention engine
+  // (lib/engine/retention.ts + the daily /api/cron/retention-engine job),
+  // not a page-local toggle: it's the same restaurants.retention_engine_enabled
+  // switch as Fidélisation's "Relance automatique" setting, so it always
+  // shows the account's actual current state and any change here persists.
+  const [retentionEnabled, setRetentionEnabled] = useState(restaurant?.retentionEngineEnabled ?? false);
+  const [isTogglingRetention, setIsTogglingRetention] = useState(false);
 
   const [copiedCaption, setCopiedCaption] = useState(false);
 
@@ -141,8 +153,35 @@ ${itemDesc}
     toast.success("Légende Instagram copiée !");
   }
 
-  function handleDownloadVisual() {
-    toast.success("Kit Visuel HD prêt & téléchargé !");
+  async function handleDownloadVisual() {
+    if (!canvasRef.current) return;
+    setIsExporting(true);
+    try {
+      const dataUrl = await toPng(canvasRef.current, { pixelRatio: 3, cacheBust: true });
+      const link = document.createElement("a");
+      link.download = `visuel-${selectedFormat}-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Kit visuel téléchargé.");
+    } catch {
+      toast.error("Le téléchargement a échoué. Réessayez.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  async function handleToggleRetention(next: boolean) {
+    if (!restaurantId) return;
+    setRetentionEnabled(next);
+    setIsTogglingRetention(true);
+    const ok = await updateRetentionSettingsAction(restaurantId, { enabled: next });
+    setIsTogglingRetention(false);
+    if (ok) {
+      toast.success(next ? "Relances automatiques activées." : "Relances automatiques désactivées.");
+    } else {
+      setRetentionEnabled(!next);
+      toast.error("La mise à jour a échoué.");
+    }
   }
 
   return (
@@ -332,6 +371,7 @@ ${itemDesc}
 
             {/* Render Canvas Box */}
             <div
+              ref={canvasRef}
               className={cn(
                 "w-full transition-all duration-300 rounded-2xl p-6 shadow-mv-md flex flex-col justify-between relative overflow-hidden text-center",
                 selectedFormat === "story" ? "aspect-[9/16] max-w-[280px]" : selectedFormat === "carousel" ? "aspect-[4/5] max-w-[300px]" : "aspect-square max-w-[300px]"
@@ -375,8 +415,8 @@ ${itemDesc}
 
             {/* Actions */}
             <div className="w-full flex items-center gap-2 pt-2">
-              <Button onClick={handleDownloadVisual} className="flex-1">
-                <Download size={15} /> Télécharger le Kit Visuel HD
+              <Button onClick={handleDownloadVisual} disabled={isExporting} className="flex-1">
+                <Download size={15} /> {isExporting ? "Génération…" : "Télécharger le Kit Visuel HD"}
               </Button>
             </div>
           </Card>
@@ -399,40 +439,33 @@ ${itemDesc}
             </pre>
           </Card>
 
-          {/* Automated Customer Re-engagement Scenarios Card */}
+          {/* Automated Customer Re-engagement — the real retention engine */}
           <Card className="p-5 space-y-4 border-mv-border">
             <div className="flex items-center gap-2">
               <MessageSquare size={18} className="text-mv-green-dark" />
-              <h4 className="font-semibold text-[14.5px] text-mv-ink">Automatisations de Relance Clients (SMS & Email)</h4>
+              <h4 className="font-semibold text-[14.5px] text-mv-ink">Relances automatiques</h4>
             </div>
 
-            <div className="space-y-3 pt-1">
-              <div className="flex items-center justify-between p-3 border border-mv-border-soft rounded-xl bg-mv-surface">
-                <div>
-                  <p className="text-[13px] font-semibold text-mv-ink">Relance Clients Inactifs (30+ jours)</p>
-                  <p className="text-[11.5px] text-mv-ink-faint">SMS avec code promo 10% sur la commande directe</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={autoSms30Days}
-                  onChange={(e) => setAutoSms30Days(e.target.checked)}
-                  className="h-4 w-4 accent-mv-green rounded cursor-pointer"
-                />
+            <div className="flex items-center justify-between p-3 border border-mv-border-soft rounded-xl bg-mv-surface">
+              <div>
+                <p className="text-[13px] font-semibold text-mv-ink">Clients inactifs & anniversaires</p>
+                <p className="text-[11.5px] text-mv-ink-faint">
+                  Un message (courriel, ou SMS si configuré) envoyé automatiquement aux clients inactifs depuis
+                  un moment et pour leur anniversaire — avec leur consentement seulement.
+                </p>
               </div>
-
-              <div className="flex items-center justify-between p-3 border border-mv-border-soft rounded-xl bg-mv-surface">
-                <div>
-                  <p className="text-[13px] font-semibold text-mv-ink">Rappel Anniversaire Client</p>
-                  <p className="text-[11.5px] text-mv-ink-faint">Offre dessert offert lors de leur prochaine visite</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={autoBirthday}
-                  onChange={(e) => setAutoBirthday(e.target.checked)}
-                  className="h-4 w-4 accent-mv-green rounded cursor-pointer"
-                />
-              </div>
+              <input
+                type="checkbox"
+                checked={retentionEnabled}
+                onChange={(e) => handleToggleRetention(e.target.checked)}
+                disabled={isTogglingRetention}
+                className="h-4 w-4 shrink-0 accent-mv-green rounded cursor-pointer disabled:opacity-50"
+              />
             </div>
+
+            <Link href="/fidelisation" className="inline-flex items-center gap-1 text-[12px] font-medium text-mv-green-dark hover:underline">
+              Régler le délai d&apos;inactivité et la fréquence des relances →
+            </Link>
           </Card>
         </div>
       </div>

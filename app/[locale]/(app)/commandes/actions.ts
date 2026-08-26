@@ -1,9 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getOrdersForDay, updateOrderStatus, deleteOrder } from "@/lib/data/orders";
+import { getOrdersForDay, updateOrderStatus, deleteOrder, createOrder, type CreateOrderInput } from "@/lib/data/orders";
 import { creditReferralConversionForOrder } from "@/lib/data/customer-referrals";
 import type { Order, OrderStatus } from "@/lib/types";
+
+export async function createOrderAction(restaurantId: string, input: CreateOrderInput): Promise<Order | null> {
+  if (!restaurantId) return null;
+  const order = await createOrder(restaurantId, input);
+  if (order) revalidatePath("/commandes");
+  return order;
+}
 
 export async function getOrdersForDayAction(
   restaurantId: string,

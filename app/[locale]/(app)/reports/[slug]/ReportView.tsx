@@ -3,16 +3,18 @@
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Switch } from "@/components/ui/Switch";
 import { CurrentUserAvatar } from "@/components/minerva/CurrentUserAvatar";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 import { FlowBars } from "@/components/charts/FlowBars";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { ReportWatermark } from "@/components/minerva/ReportWatermark";
 import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import type { ReportDef } from "@/lib/reports";
 import type { Campaign, FlowLine } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import {
   ChevronLeft,
   Star,
@@ -22,12 +24,14 @@ import {
   Store,
   Plus,
   FileSpreadsheet,
+  FileText,
+  ImageDown,
   Loader2,
   Check,
   Copy,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { exportReportAction, getReportDataAction, shareReportAction } from "@/app/[locale]/(app)/reports/actions";
@@ -65,6 +69,10 @@ export function ReportView({
   const [sharing, setSharing] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [shareWatermark, setShareWatermark] = useState(true);
+  const [shareExpiresInDays, setShareExpiresInDays] = useState<number | null>(30);
+  const [exportingPng, setExportingPng] = useState(false);
+  const reportCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -114,12 +122,17 @@ export function ReportView({
     setFilterOpen(false);
   }
 
-  async function handleShareOpenChange(next: boolean) {
+  function handleShareOpenChange(next: boolean) {
     setShareOpen(next);
-    if (!next || shareLink) return;
+  }
+
+  async function handleGenerateShareLink() {
     setSharing(true);
     try {
-      const token = await shareReportAction(report.slug, range ?? undefined);
+      const token = await shareReportAction(report.slug, range ?? undefined, {
+        watermark: shareWatermark,
+        expiresInDays: shareExpiresInDays,
+      });
       setShareLink(token ? `${window.location.origin}/r/${token}` : null);
       if (!token) toast.error(t("shareLinkFailed"));
     } finally {
@@ -134,9 +147,34 @@ export function ReportView({
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function handleResetShareLink() {
+    setShareLink(null);
+  }
+
+  function handleExportPdf() {
+    window.print();
+  }
+
+  async function handleExportPng() {
+    if (!reportCardRef.current) return;
+    setExportingPng(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(reportCardRef.current, { pixelRatio: 2 });
+      const link = document.createElement("a");
+      link.download = `${view.report.slug}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      toast.error(t("exportFailed"));
+    } finally {
+      setExportingPng(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-4xl w-full mv-animate-in">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="no-print mb-4 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[13px] text-mv-ink-faint">
           <Link href="/overview" className="flex items-center gap-1 hover:text-mv-ink">
             <ChevronLeft size={14} /> {t("breadcrumbReports")}
@@ -194,6 +232,15 @@ export function ReportView({
             </Button>
           )}
 
+          <Button size="sm" variant="secondary" onClick={handleExportPdf}>
+            <FileText size={14} /> PDF
+          </Button>
+
+          <Button size="sm" variant="secondary" onClick={handleExportPng} disabled={exportingPng}>
+            {exportingPng ? <Loader2 size={14} className="animate-spin" /> : <ImageDown size={14} />}
+            PNG
+          </Button>
+
           <Popover open={shareOpen} onOpenChange={handleShareOpenChange}>
             <PopoverTrigger
               render={
@@ -203,28 +250,82 @@ export function ReportView({
               }
             />
             <PopoverContent align="end" className="w-80">
-              <p className="text-[12.5px] font-semibold text-mv-ink">{t("publicReadOnlyLink")}</p>
-              {sharing ? (
-                <p className="text-[12.5px] text-mv-ink-faint">{t("generating")}</p>
-              ) : shareLink ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-2.5 py-2">
-                    <p className="flex-1 truncate text-[12px] text-mv-ink-soft">{shareLink}</p>
-                    <button
-                      onClick={handleCopyShareLink}
-                      aria-label={t("copyLink")}
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
-                    >
-                      {copied ? <Check size={13} className="text-mv-green-dark" /> : <Copy size={13} />}
-                    </button>
-                  </div>
-                  <p className="text-[11.5px] text-mv-ink-faint">
-                    {t("snapshotNote")}
+              <p className="mb-3 text-[12.5px] font-semibold text-mv-ink">{t("publicReadOnlyLink")}</p>
+
+              <div
+                className={cn(
+                  "mb-3 flex items-start justify-between gap-3 rounded-lg border border-mv-border-soft bg-mv-cream-soft/60 p-2.5",
+                  shareLink && "opacity-60"
+                )}
+              >
+                <div>
+                  <p className="text-[12.5px] font-semibold text-mv-ink">Filigrane Minerva Flow</p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-mv-ink-faint">
+                    Recommandé pour tout rapport partagé hors de votre équipe.
                   </p>
                 </div>
-              ) : (
-                <p className="text-[12.5px] text-mv-red">{t("linkGenerationFailed")}</p>
-              )}
+                <Switch
+                  checked={shareWatermark}
+                  onCheckedChange={setShareWatermark}
+                  disabled={Boolean(shareLink)}
+                  className="mt-0.5 shrink-0 data-checked:bg-mv-green"
+                  aria-label={shareWatermark ? "Désactiver le filigrane" : "Activer le filigrane"}
+                />
+              </div>
+
+              <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Expiration du lien</p>
+              <div className={cn("mb-3 flex gap-1.5", shareLink && "opacity-60")}>
+                {[
+                  { label: "7j", value: 7 },
+                  { label: "30j", value: 30 },
+                  { label: "Jamais", value: null },
+                ].map((opt) => (
+                  <button
+                    key={opt.label}
+                    onClick={() => setShareExpiresInDays(opt.value)}
+                    disabled={Boolean(shareLink)}
+                    className={cn(
+                      "h-7 flex-1 rounded-md text-[12px] font-semibold transition-colors disabled:cursor-not-allowed",
+                      shareExpiresInDays === opt.value
+                        ? "bg-mv-green text-mv-cream-soft"
+                        : "border border-mv-border text-mv-ink-soft hover:bg-mv-ink/5"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="border-t border-mv-border-soft pt-3">
+                {shareLink ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-2.5 py-2">
+                      <p className="flex-1 truncate text-[12px] text-mv-ink-soft">{shareLink}</p>
+                      <button
+                        onClick={handleCopyShareLink}
+                        aria-label={t("copyLink")}
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                      >
+                        {copied ? <Check size={13} className="text-mv-green-dark" /> : <Copy size={13} />}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11.5px] text-mv-ink-faint">{t("snapshotNote")}</p>
+                      <button
+                        onClick={handleResetShareLink}
+                        className="shrink-0 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                      >
+                        Nouveau lien
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button size="sm" className="w-full" onClick={handleGenerateShareLink} disabled={sharing}>
+                    {sharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+                    {sharing ? t("generating") : t("share")}
+                  </Button>
+                )}
+              </div>
             </PopoverContent>
           </Popover>
         </div>
@@ -268,7 +369,11 @@ export function ReportView({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-7">
-          <div className="relative rounded-2xl border-2 border-mv-green bg-mv-surface p-5 shadow-mv-md">
+          <div
+            ref={reportCardRef}
+            className="relative overflow-hidden rounded-2xl border-2 border-mv-green bg-mv-surface p-5 shadow-mv-md"
+          >
+            {shareWatermark && <ReportWatermark />}
             <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {tr(`labels.${view.report.slug}`)}
             </p>

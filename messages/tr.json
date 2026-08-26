@@ -219,6 +219,8 @@
       "inflowsBreakdown": "Tahsilat kaynaklarının dağılımı",
       "noInflowsThisMonth": "Bu ay giriş yok.",
       "noInflowsHint": "Gelirlerinizin burada görünmesi için manuel bir işlem ekleyin veya bir ekstre içe aktarın.",
+      "noInflowsButServiceDaysRevenue": "Bu ay hizmet günleri ve siparişler üzerinden kaydedilmiş {amount} geliriniz var.",
+      "noInflowsButServiceDaysRevenueHint": "Bu rakam aşağıdaki işlemlerden ayrı olarak izlenir — gerçek bir nakit akışı takibi için burada da bir işlem ekleyin.",
       "addTransactionCta": "İşlem ekle",
       "whereMoneyGoes": "Paranın nereye gittiği",
       "expenseOutflows": "Gider Çıkışları",
@@ -607,7 +609,8 @@
     "saleQuickAdd": {
       "quantityAria": "Satılan miktar",
       "sales": "satış",
-      "recordFailed": "Kayıt başarısız oldu."
+      "recordFailed": "Kayıt başarısız oldu.",
+      "scopeNote": "Yalnızca yemeklerinizi sıralamak için kullanılan popülerlik sayacını artırır — gelirinize hiçbir şey eklemez ve stokunuzu etkilemez. Bunun için Siparişler'i kullanın."
     },
     "editItem": {
       "modalTitle": "Ürünü düzenle",

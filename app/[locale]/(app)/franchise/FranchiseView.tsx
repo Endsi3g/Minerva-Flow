@@ -76,10 +76,10 @@ export function FranchiseView({
           />
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              <TrendingUp size={13} /> Marge gagnée sur le menu
+              <TrendingUp size={13} /> Marge du menu actif
             </p>
             <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
-              Marge des plats que vous mettez de l&apos;avant, comparée à l&apos;ensemble du menu.
+              Marge de ce qui est au menu aujourd&apos;hui, vs le menu complet (plats retirés inclus).
             </p>
             <p className="mt-1 text-[12px] text-mv-ink-soft">
               {rollup.avgMarginGainPct >= 0 ? "+" : ""}
@@ -115,7 +115,7 @@ export function FranchiseView({
               <Tr>
                 <Th>Établissement</Th>
                 <Th>Ventes grâce à la fidélisation</Th>
-                <Th>Marge gagnée</Th>
+                <Th>Marge du menu actif</Th>
                 <Th>Reviennent (×)</Th>
               </Tr>
             </THead>

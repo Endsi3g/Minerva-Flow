@@ -8,6 +8,7 @@ import { WorkspaceSetupBanner } from "@/components/shell/WorkspaceSetupBanner";
 import { UpdateBanner } from "@/components/shell/UpdateBanner";
 import { PageTransition } from "@/components/shell/PageTransition";
 import { PresenceProvider } from "@/lib/presence/context";
+import { RealtimeProvider } from "@/lib/realtime/RealtimeProvider";
 import { useApp } from "@/lib/app-context";
 import { cn } from "@/lib/utils";
 import { PanelLeft } from "lucide-react";
@@ -24,8 +25,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isFullBleed = FULL_BLEED_ROUTES.some((r) => pathname.startsWith(r));
 
   return (
-    <PresenceProvider>
-      <div className="flex h-screen w-full overflow-hidden bg-mv-cream">
+    <RealtimeProvider>
+      <PresenceProvider>
+        <div className="flex h-screen w-full overflow-hidden bg-mv-cream">
         <div className="no-print hidden md:flex">
           <AppSidebar />
         </div>
@@ -76,5 +78,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     </PresenceProvider>
+    </RealtimeProvider>
   );
 }

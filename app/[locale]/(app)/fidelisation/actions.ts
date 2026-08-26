@@ -9,10 +9,11 @@ import {
   createLoyaltyReward,
   deleteLoyaltyReward,
   claimRewardRedemption,
+  mapCustomer,
   type CustomerInput,
 } from "@/lib/data/customers";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
-import { updateRetentionSettings, updateLoyaltyTierThresholds } from "@/lib/data/restaurants";
+import { updateRetentionSettings, updateLoyaltyTierThresholds, updateVisitRewardTiers } from "@/lib/data/restaurants";
 import {
   createReferralProgram,
   updateReferralProgramActive,
@@ -26,7 +27,7 @@ import {
   createLoyaltyShare,
   deleteLoyaltyShare,
 } from "@/lib/data/loyalty-shares";
-import type { Customer, LoyaltyReward, LoyaltyShare, ReferralProgram } from "@/lib/types";
+import type { Customer, LoyaltyReward, LoyaltyShare, ReferralProgram, VisitRewardTier } from "@/lib/types";
 
 export async function createCustomerAction(
   restaurantId: string,
@@ -196,4 +197,57 @@ export async function updateLoyaltyTierThresholdsAction(
   const ok = await updateLoyaltyTierThresholds(restaurantId, patch);
   if (ok) revalidatePath("/fidelisation");
   return ok;
+}
+
+export async function updateVisitRewardTiersAction(
+  restaurantId: string,
+  patch: { enabled?: boolean; tiers?: VisitRewardTier[] }
+): Promise<boolean> {
+  const ok = await updateVisitRewardTiers(restaurantId, patch);
+  if (ok) {
+    revalidatePath("/fidelisation");
+    revalidatePath("/fidelisation/recompenses");
+  }
+  return ok;
+}
+
+export async function grantBirthdayBonusAction(
+  restaurantId: string,
+  customerId: string,
+  bonusPoints: number = 50
+): Promise<Customer | null> {
+  const supabase = createAdminClient();
+  const { data: current } = await supabase
+    .from("customers")
+    .select("loyalty_points")
+    .eq("restaurant_id", restaurantId)
+    .eq("id", customerId)
+    .single();
+
+  const newPoints = (current?.loyalty_points ?? 0) + bonusPoints;
+
+  const { data, error } = await supabase
+    .from("customers")
+    .update({ loyalty_points: newPoints })
+    .eq("restaurant_id", restaurantId)
+    .eq("id", customerId)
+    .select()
+    .single();
+
+  if (error || !data) return null;
+
+  // Insert loyalty transaction log if table exists
+  try {
+    await supabase.from("loyalty_transactions").insert({
+      restaurant_id: restaurantId,
+      customer_id: customerId,
+      points_delta: bonusPoints,
+      reason: "Bonus Anniversaire 🎂",
+    });
+  } catch {
+    // Non-critical audit log failure
+  }
+
+  revalidatePath("/fidelisation");
+  return mapCustomer(data, []);
 }

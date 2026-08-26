@@ -8,7 +8,7 @@ import {
 } from "@/lib/loyalty-tiers";
 import { sendRetentionEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
-import type { Customer, LoyaltyReward, LoyaltyTransaction, LoyaltyTransactionType } from "@/lib/types";
+import type { Customer, LoyaltyReward, LoyaltyTransaction, LoyaltyTransactionType, VisitRewardTier } from "@/lib/types";
 
 export type CustomerRow = {
   id: string;
@@ -223,7 +223,9 @@ export async function logVisit(
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("name, loyalty_points_per_dollar, loyalty_tier_2_threshold, loyalty_tier_3_threshold")
+    .select(
+      "name, loyalty_points_per_dollar, loyalty_tier_2_threshold, loyalty_tier_3_threshold, visit_rewards_enabled, visit_reward_tiers"
+    )
     .eq("id", restaurantId)
     .maybeSingle();
 
@@ -232,6 +234,8 @@ export async function logVisit(
     loyalty_points_per_dollar: number;
     loyalty_tier_2_threshold: number | null;
     loyalty_tier_3_threshold: number | null;
+    visit_rewards_enabled: boolean | null;
+    visit_reward_tiers: VisitRewardTier[] | null;
   } | null;
   const rate = restaurantRow?.loyalty_points_per_dollar ?? 1;
   const pointsEarned = Math.round(amountSpent * rate * getVisitBonusMultiplier(amountSpent));
@@ -285,6 +289,35 @@ export async function logVisit(
         { title: `Vous passez au palier ${tierName} !`, body: `${restaurantRow.name} vous récompense pour votre fidélité.`, link: "/portal" },
         restaurantId
       );
+    }
+  }
+
+  // Visit-count reward ladder (V1→V2→V3) — separate from the spend-tier
+  // system above. Edge-detected on this single visit (visitBefore <
+  // threshold <= visitAfter) so a customer already past a threshold before
+  // the ladder was configured is never retroactively notified.
+  if (restaurantRow?.visit_rewards_enabled) {
+    const visitBefore = customer.visit_count - 1;
+    const visitAfter = customer.visit_count;
+    const crossedTiers = (restaurantRow.visit_reward_tiers ?? []).filter(
+      (t) => t.active !== false && visitBefore < t.visits && visitAfter >= t.visits
+    );
+    for (const tier of crossedTiers) {
+      const firstName = customer.name.trim().split(/\s+/)[0] || customer.name;
+      if (customer.email) {
+        await sendRetentionEmail({
+          to: customer.email,
+          subject: `${firstName}, vous avez débloqué « ${tier.reward} » chez ${restaurantRow.name} !`,
+          bodyHtml: `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">Bravo ${firstName} ! Avec cette ${visitAfter}e visite chez ${restaurantRow.name}, vous débloquez <strong>${tier.reward}</strong>. Passez nous voir pour en profiter !</p>`,
+        });
+      }
+      await logActivity({
+        restaurantId,
+        actionType: "customer.visit_reward",
+        entityType: "customer",
+        entityId: customerId,
+        description: `Récompense automatique débloquée pour "${customer.name}" — ${tier.reward} (${tier.label})`,
+      });
     }
   }
 

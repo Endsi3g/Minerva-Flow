@@ -275,22 +275,26 @@ export function IntegrationsView({
                     ))}
                 </div>
 
-                {/* Connection Status Overview */}
-                <div>
-                  <h4 className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                    Accès & Sécurité
-                  </h4>
-                  <div className="mt-2 space-y-2 text-[12.5px] text-mv-ink-soft">
-                    <div className="flex items-center gap-2">
-                      <Shield size={14} className="text-mv-green-dark" />
-                      <span>Authentification OAuth 2.0 vérifiée</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Key size={14} className="text-mv-green-dark" />
-                      <span>Chiffrement des clés d&apos;API de bout en bout</span>
+                {/* Connection Status Overview — only shown once actually
+                    connected, since these are facts about the live
+                    connection, not a generic badge every card should wear. */}
+                {selectedIntegration.status === "connected" && (
+                  <div>
+                    <h4 className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
+                      Accès & Sécurité
+                    </h4>
+                    <div className="mt-2 space-y-2 text-[12.5px] text-mv-ink-soft">
+                      <div className="flex items-center gap-2">
+                        <Shield size={14} className="text-mv-green-dark" />
+                        <span>Authentification OAuth 2.0 vérifiée</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Key size={14} className="text-mv-green-dark" />
+                        <span>Clés d&apos;API stockées de façon sécurisée, jamais en clair</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Actions */}
                 <div className="space-y-2.5 pt-2">

@@ -6,6 +6,8 @@ import {
   setEmployeeActive,
   updateEmployee,
   createEmployeeShift,
+  updateEmployeeShift,
+  deleteEmployeeShift,
   getEmployeeShifts,
   createEmployeeReview,
   getEmployeeReviews,
@@ -16,6 +18,7 @@ import {
   type EmployeeInput,
   type EmployeeUpdateInput,
   type EmployeeShiftInput,
+  type EmployeeShiftPatch,
   type EmployeeReviewInput,
   type PayPeriod,
   type EmployeePaySummary,
@@ -90,6 +93,34 @@ export async function createEmployeeShiftAction(input: EmployeeShiftInput): Prom
 export async function getEmployeeShiftsAction(employeeId: string): Promise<EmployeeShift[]> {
   if (!employeeId) return [];
   return getEmployeeShifts(employeeId);
+}
+
+export async function updateEmployeeShiftAction(
+  restaurantId: string,
+  shiftId: string,
+  patch: EmployeeShiftPatch
+): Promise<EmployeeShift | null> {
+  if (!restaurantId || !shiftId) return null;
+  if (!(await requireManager(restaurantId))) return null;
+
+  const shift = await updateEmployeeShift(restaurantId, shiftId, patch);
+  if (shift) {
+    revalidatePath("/employees");
+    revalidatePath("/finance");
+  }
+  return shift;
+}
+
+export async function deleteEmployeeShiftAction(restaurantId: string, shiftId: string): Promise<boolean> {
+  if (!restaurantId || !shiftId) return false;
+  if (!(await requireManager(restaurantId))) return false;
+
+  const ok = await deleteEmployeeShift(restaurantId, shiftId);
+  if (ok) {
+    revalidatePath("/employees");
+    revalidatePath("/finance");
+  }
+  return ok;
 }
 
 export async function createEmployeeReviewAction(

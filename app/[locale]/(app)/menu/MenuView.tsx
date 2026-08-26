@@ -192,6 +192,7 @@ function SaleQuickAdd({
       >
         <TrendingUp size={12} /> {t("sales")}
       </button>
+      <HelperTooltip content={t("scopeNote")} />
     </div>
   );
 }

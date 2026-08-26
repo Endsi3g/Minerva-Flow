@@ -97,6 +97,40 @@ export async function createShiftSchedule(
   return mapShiftSchedule(data as ShiftScheduleRow);
 }
 
+export type ShiftScheduleUpdateInput = Partial<ShiftScheduleInput>;
+
+export async function updateShiftSchedule(
+  restaurantId: string,
+  id: string,
+  patch: ShiftScheduleUpdateInput
+): Promise<ShiftSchedule | null> {
+  const supabase = await createClient();
+
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.employeeId !== undefined) dbPatch.employee_id = patch.employeeId;
+  if (patch.shiftDate !== undefined) dbPatch.shift_date = patch.shiftDate;
+  if (patch.startTime !== undefined) dbPatch.start_time = patch.startTime;
+  if (patch.endTime !== undefined) dbPatch.end_time = patch.endTime;
+  if (patch.positionLabel !== undefined) dbPatch.position_label = patch.positionLabel;
+
+  const { data, error } = await supabase
+    .from("shift_schedules")
+    .update(dbPatch)
+    .eq("restaurant_id", restaurantId)
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error || !data) return null;
+
+  await logActivity({
+    restaurantId,
+    actionType: "shift_schedule.update",
+    description: `A modifié un quart planifié le ${(data as ShiftScheduleRow).shift_date}`,
+  });
+
+  return mapShiftSchedule(data as ShiftScheduleRow);
+}
+
 export async function updateShiftScheduleStatus(
   restaurantId: string,
   id: string,

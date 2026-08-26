@@ -16,6 +16,7 @@ import {
   createPurchaseOrderAction,
   updatePurchaseOrderStatusAction,
   deletePurchaseOrderAction,
+  logPurchaseOrderExpenseAction,
 } from "./actions";
 import { useApp } from "@/lib/app-context";
 import { DeliveryTrackerCard } from "@/components/minerva/DeliveryTrackerCard";
@@ -315,6 +316,19 @@ export function FournisseursView({
       toast.warning(
         `Commande reçue, mais le stock n'a pas été mis à jour pour : ${result.unmatchedItemNames.join(", ")} — ces noms d'article ne correspondent à aucun article d'inventaire existant.`
       );
+    }
+    if (result.receivedTotalCost && result.receivedTotalCost > 0) {
+      toast(`Commande reçue — ${formatCurrency(result.receivedTotalCost)} d'inventaire.`, {
+        description: "L'enregistrer aussi comme dépense dans Finance ?",
+        action: {
+          label: "Enregistrer",
+          onClick: async () => {
+            const ok = await logPurchaseOrderExpenseAction(restaurantId, id);
+            if (ok) toast.success("Dépense enregistrée dans Finance.");
+            else notifyError("L'enregistrement de la dépense a échoué.");
+          },
+        },
+      });
     }
   }
 
