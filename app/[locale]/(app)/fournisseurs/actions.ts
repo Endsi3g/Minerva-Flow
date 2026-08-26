@@ -11,6 +11,7 @@ import {
   type PurchaseOrderInput,
 } from "@/lib/data/purchase-orders";
 import { receivePurchaseOrderItems } from "@/lib/data/inventory";
+import { createFinancialTransaction } from "@/lib/data/finance";
 import { notifyRestaurant } from "@/lib/data/notifications";
 import type { PurchaseOrder, PurchaseOrderStatus, Supplier } from "@/lib/types";
 
@@ -52,6 +53,11 @@ export async function createPurchaseOrderAction(
 export type UpdatePurchaseOrderStatusResult = {
   ok: boolean;
   unmatchedItemNames?: string[];
+  /** Total cost of a just-received order (sum of quantity × unitCost), so the
+   * UI can offer to log it as a Finance expense — not done automatically,
+   * since a restaurant that later reconciles a bank feed for the same
+   * supplier payment would otherwise get it double-counted. */
+  receivedTotalCost?: number;
 };
 
 export async function updatePurchaseOrderStatusAction(
@@ -82,10 +88,42 @@ export async function updatePurchaseOrderStatusAction(
         order.items.map((i) => ({ itemName: i.itemName, quantity: i.quantity }))
       );
       if (matchedCount > 0) revalidatePath("/inventaire");
-      if (unmatchedNames.length > 0) return { ok: true, unmatchedItemNames: unmatchedNames };
+      const receivedTotalCost = order.items.reduce((sum, i) => sum + i.quantity * i.unitCost, 0);
+      if (unmatchedNames.length > 0) {
+        return { ok: true, unmatchedItemNames: unmatchedNames, receivedTotalCost };
+      }
+      return { ok: true, receivedTotalCost };
     }
   }
   return { ok: true };
+}
+
+/**
+ * Opt-in logging of a received purchase order's total cost as a Finance
+ * expense — a deliberate click from the "Enregistrer comme dépense ?" toast
+ * offered right after receiving, never automatic (see receivedTotalCost).
+ */
+export async function logPurchaseOrderExpenseAction(restaurantId: string, purchaseOrderId: string): Promise<boolean> {
+  const order = await getPurchaseOrder(restaurantId, purchaseOrderId);
+  if (!order || order.items.length === 0) return false;
+
+  const totalCost = order.items.reduce((sum, i) => sum + i.quantity * i.unitCost, 0);
+  if (totalCost <= 0) return false;
+
+  const suppliers = await getSuppliers(restaurantId);
+  const supplierName = suppliers.find((s) => s.id === order.supplierId)?.name ?? "fournisseur";
+
+  const transaction = await createFinancialTransaction(restaurantId, {
+    date: new Date().toISOString().slice(0, 10),
+    description: `Commande reçue — ${supplierName}`,
+    amount: totalCost,
+    direction: "out",
+    category: "Fournisseurs",
+    sourceAccount: "Commande fournisseur",
+  });
+
+  if (transaction) revalidatePath("/finance");
+  return Boolean(transaction);
 }
 
 export async function deletePurchaseOrderAction(restaurantId: string, id: string): Promise<boolean> {
