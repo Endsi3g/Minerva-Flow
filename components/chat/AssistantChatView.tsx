@@ -20,7 +20,7 @@ import { DefaultChatTransport, type FileUIPart } from "ai";
 import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
 import { Bot, PanelLeft, Sparkles, FileText, Plus, TrendingUp, Utensils, Users, PackageCheck, PlusCircle, Share2 } from "lucide-react";
-import { useState, useEffect, useRef, useOptimistic } from "react";
+import { useState, useEffect, useRef, useOptimistic, useTransition } from "react";
 import { useApp } from "@/lib/app-context";
 import { updateConversationTitleAction, createConversationAction } from "@/app/[locale]/(chat)/assistant/actions";
 import { useRouter } from "next/navigation";
@@ -102,6 +102,7 @@ export function AssistantChatView({
   });
   
   // React 19 Optimistic Rendering hook for immediate message feedback
+  const [, startOptimisticTransition] = useTransition();
   const [optimisticMessages, addOptimisticMessage] = useOptimistic<ChatMessage[], string>(
     validInitialMessages,
     (currentMessages, newPromptText) => [
@@ -177,8 +178,13 @@ export function AssistantChatView({
   }
 
   function handleSubmit(text: string, attachments: { path: string; fileName: string; mimeType: string; sizeBytes: number; signedUrl: string }[]) {
-    // 1. Instant Optimistic Rendering update
-    addOptimisticMessage(text);
+    // 1. Instant Optimistic Rendering update — useOptimistic requires its
+    // setter to run inside a transition, or React can't reconcile/roll back
+    // the optimistic entry once the real message arrives (or the request
+    // fails), leaving a stuck duplicate in the thread.
+    startOptimisticTransition(() => {
+      addOptimisticMessage(text);
+    });
 
     // 2. Real AI SDK dispatch
     const files: FileUIPart[] = attachments.map((a) => ({
