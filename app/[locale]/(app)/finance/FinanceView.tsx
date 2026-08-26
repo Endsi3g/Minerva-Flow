@@ -186,7 +186,17 @@ function OverviewTab({
             <EmptyState
               icon={ArrowDownLeft}
               title={t("overview.noInflowsThisMonth")}
-              description={t("overview.noInflowsHint")}
+              description={
+                monthRevenue > 0 ? (
+                  <>
+                    {t("overview.noInflowsButServiceDaysRevenue", { amount: formatCurrency(monthRevenue) })}
+                    <br />
+                    {t("overview.noInflowsButServiceDaysRevenueHint")}
+                  </>
+                ) : (
+                  t("overview.noInflowsHint")
+                )
+              }
               action={
                 <Button size="sm" variant="secondary" onClick={onGoToTransactions}>
                   {t("overview.addTransactionCta")}

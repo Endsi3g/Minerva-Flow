@@ -219,6 +219,8 @@
       "inflowsBreakdown": "Répartition des sources d'encaissement",
       "noInflowsThisMonth": "Aucune entrée ce mois-ci.",
       "noInflowsHint": "Ajoutez une transaction manuellement ou importez un relevé pour voir vos revenus se répartir ici.",
+      "noInflowsButServiceDaysRevenue": "Vous avez {amount} de revenu enregistré via vos journées de service et commandes ce mois-ci.",
+      "noInflowsButServiceDaysRevenueHint": "Ce chiffre est suivi séparément des transactions ci-dessous — ajoutez-en une pour un vrai suivi de trésorerie et de flux net.",
       "addTransactionCta": "Ajouter une transaction",
       "whereMoneyGoes": "Où l'argent part",
       "expenseOutflows": "Sorties de charges",
