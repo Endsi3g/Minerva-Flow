@@ -21,28 +21,6 @@ export async function proxy(request: NextRequest) {
   const response =
     isApiRoute || isAuthCallbackRoute ? NextResponse.next({ request }) : handleI18nRouting(request);
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   // Strip a leading /tr (or any other non-default locale) so route checks
   // below match against the same paths regardless of locale prefix.
   const localePattern = new RegExp(`^/(${routing.locales.join("|")})(?=/|$)`);
@@ -99,10 +77,55 @@ export async function proxy(request: NextRequest) {
     pathWithoutLocale.startsWith("/api/system/") ||
     pathWithoutLocale === "/api/stripe/webhook";
 
+  // Fast-path for completely public routes when no auth cookies exist:
+  // Skip the remote Supabase Auth network call to achieve single-digit millisecond TTFB at the edge.
+  const hasAuthCookies = request.cookies.getAll().some((c) => c.name.startsWith("sb-") || c.name.includes("auth-token"));
+
+  if (!hasAuthCookies && (isAuthRoute || isServerCallbackRoute || pathWithoutLocale === "/")) {
+    if (pathWithoutLocale.startsWith("/legal/")) {
+      response.headers.set("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=604800");
+    } else if (
+      pathWithoutLocale.startsWith("/m/") ||
+      pathWithoutLocale.startsWith("/demo/") ||
+      pathWithoutLocale.startsWith("/p/") ||
+      pathWithoutLocale.startsWith("/r/")
+    ) {
+      response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    }
+    return response;
+  }
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user && !isAuthRoute && !isServerCallbackRoute && pathWithoutLocale !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = locale === routing.defaultLocale ? "/login" : `/${locale}/login`;
     return NextResponse.redirect(url);
+  }
+
+  if (user) {
+    // Prevent intermediate edge/browser proxies from caching private authenticated dashboards
+    response.headers.set("Cache-Control", "private, no-cache, no-store, must-revalidate");
   }
 
   return response;

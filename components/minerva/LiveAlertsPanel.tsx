@@ -2,10 +2,10 @@
 
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
-import { createClient } from "@/lib/supabase/client";
 import { formatDate } from "@/lib/utils";
 import type { Alert, AlertSeverity } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useRealtimeAlertSubscription } from "@/lib/realtime/RealtimeProvider";
 
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -85,31 +85,11 @@ export function LiveAlertsPanel({
 }) {
   const [alerts, setAlerts] = useState(initial);
 
-  useEffect(() => {
-    if (!restaurantId) return;
-
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`overview-alerts-${restaurantId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "alerts",
-          filter: `restaurant_id=eq.${restaurantId}`,
-        },
-        (payload) => {
-          const row = payload.new as AlertRow;
-          setAlerts((prev) => [mapAlertRow(row), ...prev.filter((a) => a.id !== row.id)]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [restaurantId]);
+  useRealtimeAlertSubscription(
+    useCallback((row) => {
+      setAlerts((prev) => [mapAlertRow(row as AlertRow), ...prev.filter((a) => a.id !== row.id)]);
+    }, [])
+  );
 
   return (
     <Card className={cn("flex flex-col h-full xl:sticky xl:top-6", className)}>

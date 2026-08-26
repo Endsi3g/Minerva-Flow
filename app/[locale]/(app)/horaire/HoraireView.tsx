@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { GoogleCalendarCard } from "@/components/minerva/GoogleCalendarCard";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, formatCurrency } from "@/lib/utils";
 import {
   createShiftScheduleAction,
   updateShiftScheduleStatusAction,
@@ -36,6 +36,10 @@ import {
   Users,
   Clock,
   Trash2,
+  DollarSign,
+  TrendingUp,
+  Percent,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -516,6 +520,31 @@ export function HoraireView({
 
   const weekDays = weekDates(weekStart);
 
+  // Compute labor metrics
+  const employeeMap = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
+
+  const totalPlannedHours = useMemo(() => {
+    return shifts.reduce((acc, s) => {
+      const [sh, sm] = s.startTime.split(":").map(Number);
+      const [eh, em] = s.endTime.split(":").map(Number);
+      let mins = (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0));
+      if (mins < 0) mins += 24 * 60;
+      return acc + Math.max(0, mins / 60);
+    }, 0);
+  }, [shifts]);
+
+  const totalLaborCost = useMemo(() => {
+    return shifts.reduce((acc, s) => {
+      const emp = employeeMap.get(s.employeeId);
+      const wage = emp?.hourlyWage ?? 16.50;
+      const [sh, sm] = s.startTime.split(":").map(Number);
+      const [eh, em] = s.endTime.split(":").map(Number);
+      let mins = (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0));
+      if (mins < 0) mins += 24 * 60;
+      return acc + Math.max(0, mins / 60) * wage;
+    }, 0);
+  }, [shifts, employeeMap]);
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -568,6 +597,51 @@ export function HoraireView({
           </div>
         }
       />
+
+      {/* Labor Cost & Staffing Efficiency Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div className="rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-xs flex items-center justify-between">
+          <div>
+            <span className="text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+              Heures Planifiées
+            </span>
+            <p className="font-display text-[22px] font-bold text-mv-ink mt-0.5">
+              {totalPlannedHours.toFixed(1)} <span className="text-[14px] font-normal text-mv-ink-soft">heures</span>
+            </p>
+          </div>
+          <div className="h-9 w-9 rounded-xl bg-mv-cream flex items-center justify-center text-mv-ink-soft">
+            <Clock size={18} />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-xs flex items-center justify-between">
+          <div>
+            <span className="text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+              Masse Salariale Estimée
+            </span>
+            <p className="font-display text-[22px] font-bold text-mv-ink mt-0.5">
+              {formatCurrency(totalLaborCost)}
+            </p>
+          </div>
+          <div className="h-9 w-9 rounded-xl bg-mv-green-tint/50 flex items-center justify-center text-mv-green-dark">
+            <DollarSign size={18} />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-xs flex items-center justify-between">
+          <div>
+            <span className="text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+              Quarts en Registre
+            </span>
+            <p className="font-display text-[22px] font-bold text-mv-ink mt-0.5">
+              {shifts.length} <span className="text-[14px] font-normal text-mv-ink-soft">quarts</span>
+            </p>
+          </div>
+          <div className="h-9 w-9 rounded-xl bg-mv-cream flex items-center justify-center text-mv-ink-soft">
+            <Users size={18} />
+          </div>
+        </div>
+      </div>
 
       {/* ── View 1: Month Calendar View ── */}
       {viewMode === "month" && (

@@ -1,6 +1,8 @@
 import { LogoMark } from "@/components/shell/Logo";
 import Link from "next/link";
 
+export const revalidate = 86400;
+
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-mv-cream px-6 py-12 text-mv-ink">

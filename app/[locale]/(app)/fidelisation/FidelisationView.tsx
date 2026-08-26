@@ -21,7 +21,27 @@ import {
 } from "@/lib/loyalty-tiers";
 import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
 import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
-import { Heart, Plus, Trash2, Search, Link2, MousePointerClick, Copy, Check, Share2, Download, QrCode, Zap, ExternalLink, MapPin, Gift } from "lucide-react";
+import {
+  Heart,
+  Plus,
+  Trash2,
+  Search,
+  Link2,
+  MousePointerClick,
+  Copy,
+  Check,
+  Share2,
+  Download,
+  QrCode,
+  Zap,
+  ExternalLink,
+  MapPin,
+  Gift,
+  Cake,
+  CreditCard,
+  Sparkles,
+  Award,
+} from "lucide-react";
 import { Switch } from "@/components/ui/Switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
@@ -40,11 +60,14 @@ import {
   updateRetentionSettingsAction,
   updateLoyaltyTierThresholdsAction,
   claimRewardRedemptionAction,
+  grantBirthdayBonusAction,
 } from "./actions";
 import { ReferralRoiDashboard } from "@/components/fidelisation/ReferralRoiDashboard";
 import { QrTableStandStudio } from "@/components/fidelisation/QrTableStandStudio";
 import type { ReferralRoiMetrics, TopAmbassador } from "@/lib/data/referral-roi";
 import { notifyError } from "@/lib/notify-error";
+import { toast } from "sonner";
+import { getLoyaltyTier } from "@/lib/loyalty-tiers";
 
 function NewCustomerModal({
   restaurantId,
@@ -933,6 +956,261 @@ function LoyaltyShareCard({
   );
 }
 
+function getDaysUntilBirthday(birthdayStr?: string | null): number | null {
+  if (!birthdayStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const currentYear = today.getFullYear();
+  const parts = birthdayStr.split("-");
+  const month = parseInt(parts.length === 3 ? parts[1] : parts[0], 10) - 1;
+  const day = parseInt(parts.length === 3 ? parts[2] : parts[1], 10);
+  if (isNaN(month) || isNaN(day)) return null;
+
+  let nextBday = new Date(currentYear, month, day);
+  nextBday.setHours(0, 0, 0, 0);
+  if (nextBday.getTime() < today.getTime()) {
+    nextBday = new Date(currentYear + 1, month, day);
+    nextBday.setHours(0, 0, 0, 0);
+  }
+  const diffMs = nextBday.getTime() - today.getTime();
+  return Math.round(diffMs / (1000 * 60 * 60 * 24));
+}
+
+function DigitalLoyaltyPassModal({
+  customer,
+  restaurantName,
+  rate,
+  thresholds,
+  open,
+  onClose,
+}: {
+  customer: Customer | null;
+  restaurantName: string;
+  rate: number;
+  thresholds: LoyaltyTierThresholds;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!customer) return;
+    const memberCode = `MEMBER-${customer.id.slice(0, 8).toUpperCase()}`;
+    QRCode.toDataURL(memberCode, { width: 400, margin: 1 })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
+  }, [customer]);
+
+  if (!customer) return null;
+
+  const tier = getLoyaltyTier(customer.totalSpent, thresholds);
+  const tierInfo = {
+    ambassadeur: {
+      gradient: "from-emerald-950 via-teal-900 to-slate-950",
+      accent: "text-emerald-300",
+      border: "border-emerald-500/40",
+      glow: "shadow-emerald-900/30",
+      label: "Membre Ambassadeur (VIP)",
+    },
+    privilegie: {
+      gradient: "from-amber-950 via-amber-900 to-stone-950",
+      accent: "text-amber-300",
+      border: "border-amber-500/40",
+      glow: "shadow-amber-900/30",
+      label: "Membre Privilégié",
+    },
+    habitue: {
+      gradient: "from-stone-900 via-stone-950 to-black",
+      accent: "text-mv-green-light",
+      border: "border-stone-700/60",
+      glow: "shadow-black/40",
+      label: "Membre Habitué",
+    },
+  }[tier];
+
+  const dollarValuation = customer.loyaltyPoints / (rate > 0 ? rate : 1);
+  const memberCode = `FLOW-${customer.id.slice(0, 8).toUpperCase()}`;
+
+  function handleCopy() {
+    navigator.clipboard.writeText(memberCode);
+    setCopied(true);
+    toast.success("Code membre copié !");
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleDownload() {
+    if (!qrDataUrl) return;
+    const a = document.createElement("a");
+    a.href = qrDataUrl;
+    a.download = `pass-fidelite-${customer?.name.toLowerCase().replace(/\s+/g, "-")}.png`;
+    a.click();
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Pass Fidélité Numérique"
+      description="Carte virtuelle avec code de scan pour caisse et service à table."
+    >
+      <div className="space-y-4">
+        {/* Luxury Virtual Membership Card */}
+        <div
+          className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${tierInfo.gradient} ${tierInfo.border} ${tierInfo.glow} p-5 text-white shadow-2xl border`}
+        >
+          {/* Holographic Header Bar */}
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className={tierInfo.accent} />
+              <span className="font-display text-[15px] font-bold tracking-wide text-white">{restaurantName}</span>
+            </div>
+            <span className={`text-[11px] font-bold uppercase tracking-wider ${tierInfo.accent}`}>
+              {tierInfo.label}
+            </span>
+          </div>
+
+          {/* Member Details */}
+          <div className="mt-4 flex items-end justify-between">
+            <div>
+              <p className="text-[10.5px] uppercase font-semibold tracking-wider text-white/60">Titulaire</p>
+              <p className="font-display text-[18px] font-bold text-white mt-0.5">{customer.name}</p>
+              <p className="font-mono text-[11.5px] text-white/70 mt-0.5">{memberCode}</p>
+            </div>
+
+            {/* QR Code */}
+            {qrDataUrl && (
+              <div className="rounded-xl bg-white p-1.5 shadow-md">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qrDataUrl} alt="Code Membre" className="h-16 w-16" />
+              </div>
+            )}
+          </div>
+
+          {/* Points & Perks Footer */}
+          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
+            <div>
+              <span className="text-[10.5px] uppercase font-medium text-white/60">Solde de Points</span>
+              <p className="font-display text-[20px] font-bold text-white leading-tight">
+                {customer.loyaltyPoints} <span className="text-[13px] font-normal text-white/70">pts</span>
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-[10.5px] uppercase font-medium text-white/60">Valeur récompense</span>
+              <p className={`font-mono text-[15px] font-bold ${tierInfo.accent}`}>
+                ~{formatCurrency(dollarValuation)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+          <Button variant="secondary" size="sm" onClick={handleCopy} className="text-[12px] gap-1.5">
+            {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />} Copier code membre
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleDownload} disabled={!qrDataUrl} className="text-[12px] gap-1.5">
+            <Download size={14} /> Télécharger QR Pass
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function BirthdayPerksCard({
+  restaurantId,
+  customers,
+  onGranted,
+}: {
+  restaurantId: string | null;
+  customers: Customer[];
+  onGranted: (updated: Customer) => void;
+}) {
+  const [grantingId, setGrantingId] = useState<string | null>(null);
+
+  const upcomingBirthdays = useMemo(() => {
+    return customers
+      .map((c) => ({
+        customer: c,
+        daysUntil: getDaysUntilBirthday(c.birthday),
+      }))
+      .filter((item): item is { customer: Customer; daysUntil: number } => item.daysUntil !== null && item.daysUntil <= 14)
+      .sort((a, b) => a.daysUntil - b.daysUntil);
+  }, [customers]);
+
+  async function handleGrantBonus(customer: Customer) {
+    if (!restaurantId) return;
+    setGrantingId(customer.id);
+    try {
+      const updated = await grantBirthdayBonusAction(restaurantId, customer.id, 50);
+      if (updated) {
+        onGranted(updated);
+        toast.success(`Cadeau d'anniversaire (+50 pts) accordé à ${customer.name} ! 🎂`);
+      } else {
+        notifyError("L'attribution du bonus a échoué.");
+      }
+    } finally {
+      setGrantingId(null);
+    }
+  }
+
+  return (
+    <Card className="border-mv-amber/40 bg-gradient-to-br from-mv-amber-tint/30 to-mv-surface p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-mv-amber-tint text-mv-amber-dark border border-mv-amber/30">
+            <Cake size={16} />
+          </div>
+          <div>
+            <h3 className="font-display text-[15px] font-bold text-mv-ink">Anniversaires à Venir</h3>
+            <p className="text-[11.5px] text-mv-ink-soft">Attribution de bonus & surprises clients</p>
+          </div>
+        </div>
+        <Badge tone={upcomingBirthdays.length > 0 ? "amber" : "neutral"}>
+          {upcomingBirthdays.length} à célébrer
+        </Badge>
+      </div>
+
+      {upcomingBirthdays.length === 0 ? (
+        <p className="text-[12px] text-mv-ink-faint py-4 text-center">
+          Aucun anniversaire client dans les 14 prochains jours.
+        </p>
+      ) : (
+        <div className="space-y-2 mt-3 max-h-[220px] overflow-y-auto pr-1">
+          {upcomingBirthdays.map(({ customer, daysUntil }) => (
+            <div
+              key={customer.id}
+              className="flex items-center justify-between rounded-xl border border-mv-amber/20 bg-mv-surface p-2.5 shadow-mv-xs"
+            >
+              <div>
+                <p className="font-semibold text-[13px] text-mv-ink">{customer.name}</p>
+                <p className="text-[11px] text-mv-ink-faint">
+                  {daysUntil === 0 ? (
+                    <span className="font-bold text-mv-amber-dark">🎂 C&apos;est son anniversaire aujourd&apos;hui !</span>
+                  ) : (
+                    `Dans ${daysUntil} jour${daysUntil > 1 ? "s" : ""}`
+                  )}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => handleGrantBonus(customer)}
+                disabled={grantingId === customer.id}
+                className="text-[11.5px] h-7 px-2.5 bg-mv-amber-tint hover:bg-mv-amber hover:text-white text-mv-amber-dark border-mv-amber/30"
+              >
+                <Gift size={12} /> {grantingId === customer.id ? "Offert…" : "Offrir +50 pts"}
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+
 export function FidelisationView({
   restaurantId,
   restaurantName = "Restaurant",
@@ -983,6 +1261,7 @@ export function FidelisationView({
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [qrStudioOpen, setQrStudioOpen] = useState(false);
+  const [passCustomer, setPassCustomer] = useState<Customer | null>(null);
   const [visibleCount, setVisibleCount] = useState(10);
 
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
@@ -1017,7 +1296,7 @@ export function FidelisationView({
       <PageHeader
         eyebrow="Clients"
         title="Fidélisation"
-        description="Fiches clients, visites, parrainage viral et points de fidélité."
+        description="Fiches clients, visites, parrainage viral, passes numériques et points de fidélité."
         action={
           <div className="flex items-center gap-2">
             {canManage && (
@@ -1039,8 +1318,15 @@ export function FidelisationView({
         }
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <RewardValidationCard restaurantId={restaurantId!} />
+        <BirthdayPerksCard
+          restaurantId={restaurantId}
+          customers={customers}
+          onGranted={(updated) => {
+            setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+          }}
+        />
         <CustomerOriginCard customers={customers} />
       </div>
 
@@ -1099,24 +1385,46 @@ export function FidelisationView({
               <Th className="text-right">Visites</Th>
               <Th className="text-right">Total dépensé</Th>
               <Th className="text-right">Points</Th>
+              <Th className="text-right">Carte & Pass</Th>
             </THead>
             <tbody>
-              {visible.map((c) => (
-                <Tr key={c.id} onClick={() => router.push(`/fidelisation/${c.id}`)}>
-                  <Td className="font-semibold">
-                    <div className="flex items-center gap-2">
-                      {c.name}
-                      <LoyaltyTierBadge totalSpent={c.totalSpent} thresholds={loyaltyTierThresholds} size="xs" />
-                    </div>
-                  </Td>
-                  <Td className="text-mv-ink-soft">{c.lastVisitAt ? formatDate(c.lastVisitAt) : "—"}</Td>
-                  <Td className="text-right">{c.visitCount}</Td>
-                  <Td className="text-right font-medium">{formatCurrency(c.totalSpent)}</Td>
-                  <Td className="text-right">
-                    <Badge tone="green">{c.loyaltyPoints} pts</Badge>
-                  </Td>
-                </Tr>
-              ))}
+              {visible.map((c) => {
+                const daysUntilBday = getDaysUntilBirthday(c.birthday);
+                return (
+                  <Tr key={c.id} onClick={() => router.push(`/fidelisation/${c.id}`)}>
+                    <Td className="font-semibold">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{c.name}</span>
+                        <LoyaltyTierBadge totalSpent={c.totalSpent} thresholds={loyaltyTierThresholds} size="xs" />
+                        {daysUntilBday !== null && daysUntilBday <= 14 && (
+                          <Badge tone="amber" className="text-[10.5px] px-1.5 py-0">
+                            🎂 {daysUntilBday === 0 ? "Anniv. aujourd'hui" : `Anniv. dans ${daysUntilBday}j`}
+                          </Badge>
+                        )}
+                      </div>
+                    </Td>
+                    <Td className="text-mv-ink-soft">{c.lastVisitAt ? formatDate(c.lastVisitAt) : "—"}</Td>
+                    <Td className="text-right">{c.visitCount}</Td>
+                    <Td className="text-right font-medium">{formatCurrency(c.totalSpent)}</Td>
+                    <Td className="text-right">
+                      <Badge tone="green">{c.loyaltyPoints} pts</Badge>
+                    </Td>
+                    <Td className="text-right">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPassCustomer(c);
+                        }}
+                        className="h-7 px-2 text-[11.5px] gap-1 border-mv-border text-mv-ink-soft hover:text-mv-ink"
+                      >
+                        <CreditCard size={12} /> Pass Numérique
+                      </Button>
+                    </Td>
+                  </Tr>
+                );
+              })}
             </tbody>
           </Table>
           {filtered.length > visibleCount && (
@@ -1162,6 +1470,15 @@ export function FidelisationView({
           }}
         />
       )}
+
+      <DigitalLoyaltyPassModal
+        customer={passCustomer}
+        restaurantName={restaurantName}
+        rate={rate}
+        thresholds={loyaltyTierThresholds}
+        open={Boolean(passCustomer)}
+        onClose={() => setPassCustomer(null)}
+      />
 
       <QrTableStandStudio
         restaurantName={restaurantName}

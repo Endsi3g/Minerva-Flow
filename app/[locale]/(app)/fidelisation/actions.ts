@@ -9,6 +9,7 @@ import {
   createLoyaltyReward,
   deleteLoyaltyReward,
   claimRewardRedemption,
+  mapCustomer,
   type CustomerInput,
 } from "@/lib/data/customers";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
@@ -208,4 +209,45 @@ export async function updateVisitRewardTiersAction(
     revalidatePath("/fidelisation/recompenses");
   }
   return ok;
+}
+
+export async function grantBirthdayBonusAction(
+  restaurantId: string,
+  customerId: string,
+  bonusPoints: number = 50
+): Promise<Customer | null> {
+  const supabase = createAdminClient();
+  const { data: current } = await supabase
+    .from("customers")
+    .select("loyalty_points")
+    .eq("restaurant_id", restaurantId)
+    .eq("id", customerId)
+    .single();
+
+  const newPoints = (current?.loyalty_points ?? 0) + bonusPoints;
+
+  const { data, error } = await supabase
+    .from("customers")
+    .update({ loyalty_points: newPoints })
+    .eq("restaurant_id", restaurantId)
+    .eq("id", customerId)
+    .select()
+    .single();
+
+  if (error || !data) return null;
+
+  // Insert loyalty transaction log if table exists
+  try {
+    await supabase.from("loyalty_transactions").insert({
+      restaurant_id: restaurantId,
+      customer_id: customerId,
+      points_delta: bonusPoints,
+      reason: "Bonus Anniversaire 🎂",
+    });
+  } catch {
+    // Non-critical audit log failure
+  }
+
+  revalidatePath("/fidelisation");
+  return mapCustomer(data, []);
 }
