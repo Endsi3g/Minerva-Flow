@@ -18,5 +18,5 @@ export default async function LibraryPage() {
 
   const assets = await getRestaurantLibraryAssets(restaurant.id);
 
-  return <LibraryView initialAssets={assets} restaurantName={restaurant.name} />;
+  return <LibraryView initialAssets={assets} restaurantId={restaurant.id} restaurantName={restaurant.name} />;
 }
