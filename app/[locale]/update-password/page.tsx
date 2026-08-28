@@ -1,13 +1,11 @@
 "use client";
 
-import { LogoMark } from "@/components/shell/Logo";
-import { Card } from "@/components/minerva/PageCard";
-import { Button } from "@/components/ui/Button";
-import { Field, Input } from "@/components/minerva/FormField";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
+import { MeshDriftBackground } from "@/components/ui/MeshDriftBackground";
+import { Loader2, Lock } from "lucide-react";
 
 export default function UpdatePasswordPage() {
   const t = useTranslations("auth");
@@ -22,8 +20,8 @@ export default function UpdatePasswordPage() {
     setError(null);
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      const { error: updateErr } = await supabase.auth.updateUser({ password });
+      if (updateErr) throw updateErr;
       router.push("/overview");
       router.refresh();
     } catch (err) {
@@ -34,37 +32,61 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-mv-cream px-6 py-10">
-      <div className="mb-6 flex items-center gap-2.5">
-        <LogoMark size={30} />
-        <span className="font-display text-[17px] font-medium text-mv-ink">
-          Flow <span className="text-mv-green-dark">par Minerva</span>
-        </span>
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-x-hidden text-white">
+      <MeshDriftBackground />
+
+      <div className="w-full max-w-[420px] z-10 animate-in fade-in zoom-in-95 duration-200">
+        <div className="bg-[#181816] border border-[#2E2E2A] rounded-3xl p-7 sm:p-9 shadow-[0_24px_70px_rgba(0,0,0,0.85)]">
+          <div className="text-center space-y-2 mb-6">
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-[#0E7C5A] text-white font-serif font-bold text-lg shadow-md border border-[#7CE577]/30 mb-1">
+              <Lock size={18} />
+            </div>
+            <h1 className="font-serif text-2xl font-bold tracking-tight text-[#F4FFC7]">
+              Nouveau mot de passe
+            </h1>
+            <p className="text-xs sm:text-[13px] text-[#A8A7A0] leading-relaxed">
+              Définissez votre nouveau mot de passe pour sécuriser votre compte.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-[11.5px] font-semibold text-[#C2C0B8] mb-1.5">
+                Nouveau mot de passe
+              </label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full h-11 rounded-xl bg-[#121211] border border-[#2E2E2A] px-3.5 text-xs sm:text-sm text-white placeholder:text-[#6A6860] focus:border-[#7CE577] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/30 transition-colors"
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-xl bg-red-950/60 border border-red-800/80 p-3 text-xs text-red-200">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-11 rounded-xl bg-[#0E7C5A] hover:bg-[#0A6348] text-white text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  <span>Enregistrement...</span>
+                </>
+              ) : (
+                <span>Mettre à jour le mot de passe</span>
+              )}
+            </button>
+          </form>
+        </div>
       </div>
-
-      <Card className="w-full max-w-sm">
-        <h1 className="font-display text-[20px] font-medium text-mv-ink">
-          {t("updatePasswordPage.title")}
-        </h1>
-        <p className="mt-1 text-[13px] text-mv-ink-soft">{t("updatePasswordPage.subtitle")}</p>
-
-        <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
-          <Field label={t("updatePasswordPage.newPasswordLabel")}>
-            <Input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </Field>
-
-          {error && <p className="text-[12.5px] text-mv-red">{error}</p>}
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? t("updatePasswordPage.saving") : t("updatePasswordPage.save")}
-          </Button>
-        </form>
-      </Card>
     </div>
   );
 }

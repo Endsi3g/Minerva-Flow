@@ -1,124 +1,21 @@
 "use client";
 
-import { LogoMark } from "@/components/shell/Logo";
-import { Field, Input } from "@/components/minerva/FormField";
 import { createClient } from "@/lib/supabase/client";
 import posthog from "posthog-js";
 import { Link, getPathname, useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState, type FormEvent } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { Sparkles, Star } from "lucide-react";
+import { Suspense, useState, type FormEvent } from "react";
+import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { Google } from "@/components/ui/BrandIcons";
+import { MeshDriftBackground } from "@/components/ui/MeshDriftBackground";
+import { cn } from "@/lib/utils";
 
-export function OriginRightPanel() {
-  return (
-    <div className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-[#06140d] p-8 xl:p-14 text-white">
-      {/* Background starry night gradient & ambient radial glows */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#113824] via-[#081e13] to-[#040d08]" />
-      <div className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl" />
-      <div className="pointer-events-none absolute -left-20 -bottom-20 h-96 w-96 rounded-full bg-teal-500/10 blur-3xl" />
-
-      {/* Subtle Star Particles Grid */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-40"
-        style={{
-          backgroundImage: `radial-gradient(circle at 50% 50%, rgba(255,255,255,0.6) 1px, transparent 1px)`,
-          backgroundSize: "32px 32px",
-        }}
-      />
-
-      {/* Content Center */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center items-center text-center max-w-lg mx-auto">
-        {/* Decorative thin accent line */}
-        <div className="mb-6 h-px w-16 bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
-
-        {/* Headline in Serif (New York / Playfair Display) */}
-        <h2 className="font-display text-[32px] sm:text-[36px] xl:text-[42px] font-normal leading-[1.18] text-white/95 tracking-tight">
-          Pilotez vos revenus,<br />
-          posez n&apos;importe quelle question.<br />
-          <span className="italic font-light text-emerald-200">Maîtrisez votre restaurant.</span>
-        </h2>
-
-        {/* Laurel Star Rating Badge */}
-        <div className="mt-8 flex items-center justify-center gap-2">
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
-            ))}
-          </div>
-          <span className="text-[11.5px] font-bold tracking-widest text-emerald-300 uppercase">
-            100+ Établissements
-          </span>
-        </div>
-
-        {/* Glassmorphism KPI Card (Origin style chart) */}
-        <div className="mt-10 w-full max-w-[340px] rounded-2xl border border-white/15 bg-white/[0.07] p-6 shadow-2xl backdrop-blur-xl">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono tracking-wider text-white/60 uppercase">
-              REVENU CE MOIS
-            </span>
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
-              <Sparkles size={12} />
-            </div>
-          </div>
-
-          <div className="mt-3 text-left">
-            <p className="font-display text-[34px] font-semibold text-white tracking-tight">
-              24 850 $
-            </p>
-            <p className="text-[11.5px] font-medium text-emerald-400 flex items-center gap-1 mt-0.5">
-              <span>● Juillet 2026</span>
-              <span className="ml-auto text-emerald-300 font-semibold">+18.4%</span>
-            </p>
-          </div>
-
-          {/* Smooth Curved SVG Line Chart (Static, no pulse animation) */}
-          <div className="mt-5 h-20 w-full">
-            <svg className="h-full w-full overflow-visible" viewBox="0 0 300 60" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="originChartGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {/* Fill area */}
-              <path
-                d="M 0 50 Q 50 45, 75 35 T 150 25 T 225 15 T 300 8 L 300 60 L 0 60 Z"
-                fill="url(#originChartGrad)"
-              />
-              {/* Stroke line */}
-              <path
-                d="M 0 50 Q 50 45, 75 35 T 150 25 T 225 15 T 300 8"
-                fill="none"
-                stroke="#34d399"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-              />
-              {/* Dot on last point */}
-              <circle cx="300" cy="8" r="4" fill="#34d399" />
-              <circle cx="300" cy="8" r="2.5" fill="#ffffff" />
-            </svg>
-          </div>
-
-          {/* X-Axis dates */}
-          <div className="mt-2 flex justify-between font-mono text-[10px] text-white/40">
-            <span>01</span>
-            <span>07</span>
-            <span>14</span>
-            <span>21</span>
-            <span>28</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
+function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
   const t = useTranslations("auth");
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [email, setEmail] = useState("");
@@ -127,19 +24,9 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [referralCode, setReferralCode] = useState<string | null>(null);
-  const [inviteToken, setInviteToken] = useState<string | null>(null);
-  const [workspaceInviteToken, setWorkspaceInviteToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get("ref");
-    if (ref) setReferralCode(ref);
-    const token = params.get("inviteToken");
-    if (token) setInviteToken(token);
-    const wToken = params.get("wInviteToken");
-    if (wToken) setWorkspaceInviteToken(wToken);
-  }, []);
+  const referralCode = searchParams?.get("ref") ?? null;
+  const inviteToken = searchParams?.get("inviteToken") ?? null;
+  const workspaceInviteToken = searchParams?.get("wInviteToken") ?? null;
 
   const postAuthPath = workspaceInviteToken
     ? `/invite/w/${workspaceInviteToken}`
@@ -152,7 +39,13 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   const mapErrorMessage = (msg: string): string => {
     const normalized = msg.toLowerCase();
     if (normalized.includes("invalid login credentials")) return t("errorInvalidCredentials");
-    if (normalized.includes("already registered") || normalized.includes("user already registered") || normalized.includes("already exists")) return t("errorAlreadyRegistered");
+    if (
+      normalized.includes("already registered") ||
+      normalized.includes("user already registered") ||
+      normalized.includes("already exists")
+    ) {
+      return t("errorAlreadyRegistered");
+    }
     return msg;
   };
 
@@ -164,8 +57,8 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     try {
       const supabase = createClient();
       if (mode === "login") {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+        if (authErr) throw authErr;
         if (data.user) {
           posthog.identify(data.user.id, { email: data.user.email });
           posthog.capture("user_logged_in", { method: "email" });
@@ -179,7 +72,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
         if (inviteToken) signUpMetadata.invite_token = inviteToken;
         if (workspaceInviteToken) signUpMetadata.workspace_invite_token = workspaceInviteToken;
 
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error: authErr } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -187,7 +80,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
             data: Object.keys(signUpMetadata).length > 0 ? signUpMetadata : undefined,
           },
         });
-        if (error) throw error;
+        if (authErr) throw authErr;
         if (data.user) {
           posthog.identify(data.user.id, { email: data.user.email });
           posthog.capture("user_signed_up", {
@@ -219,165 +112,215 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
       has_invite: Boolean(inviteToken || workspaceInviteToken),
     });
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: authErr } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/auth/confirm?next=${localizedPostAuthPath}` },
     });
-    if (error) {
-      posthog.captureException(error);
-      setError(mapErrorMessage(error.message));
+    if (authErr) {
+      posthog.captureException(authErr);
+      setError(mapErrorMessage(authErr.message));
     }
   }
 
-  function toggleMode() {
+  function toggleMode(newMode: "login" | "signup") {
     setError(null);
-    const newMode = mode === "login" ? "signup" : "login";
     setMode(newMode);
     const href = getPathname({ href: newMode === "login" ? "/login" : "/sign-up", locale });
     window.history.pushState(null, "", href);
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-white">
-      {/* ── LEFT PANEL: Full Screen Edge-to-Edge Form (55% width) ── */}
-      <div className="flex w-full flex-col justify-between p-8 sm:p-12 lg:w-[55%] xl:w-[50%] lg:p-16">
-        {/* Top Logo */}
-        <div className="flex items-center gap-3">
-          <LogoMark size={28} />
-          <div className="flex flex-col leading-tight">
-            <span className="font-sans text-[15px] font-bold text-mv-ink leading-none">Minerva Flow</span>
-            <span className="text-[10px] font-semibold text-mv-ink-soft leading-none mt-0.5">par Minerva</span>
-          </div>
-        </div>
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-x-hidden">
+      {/* Animated WebGL Mesh Drift Background */}
+      <MeshDriftBackground />
 
-        {/* Form Content */}
-        <div className="my-auto mx-auto w-full max-w-[360px] py-8">
-          <div>
-            <h1 className="font-display text-[30px] sm:text-[34px] font-bold tracking-tight text-mv-ink leading-tight text-center">
-              {mode === "login" ? "Connexion" : "Créer un compte"}
+      {/* Main Solid Opaque Auth Container (Strictly NO Glassmorphism) */}
+      <div className="w-full max-w-[440px] my-auto z-10 animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* Solid Opaque Card */}
+        <div className="bg-[#181816] border border-[#2E2E2A] rounded-3xl p-7 sm:p-9 shadow-[0_24px_70px_rgba(0,0,0,0.85)] text-white">
+          
+          {/* Logo & Header */}
+          <div className="text-center space-y-2 mb-6">
+            <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-[#0E7C5A] text-white font-serif font-bold text-xl shadow-md border border-[#7CE577]/30 mb-1">
+              M
+            </div>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#F4FFC7]">
+              Minerva Flow
             </h1>
-            <p className="mt-2 text-center text-[13.5px] text-mv-ink-soft">
+            <p className="text-xs sm:text-[13px] text-[#A8A7A0] max-w-xs mx-auto leading-relaxed">
               {mode === "login"
-                ? "Pilotez l'exploitation de votre établissement."
-                : "Rejoignez la plateforme unifiée pour restaurants & cafés."}
+                ? "Plateforme d'intelligence et pilotage pour restaurateurs"
+                : "Rejoignez plus de 100+ établissements innovants"}
             </p>
           </div>
 
-          <form onSubmit={handleAuth} className="mt-8 flex flex-col gap-4">
-            {/* Google OAuth */}
+          {/* Mode Switcher Tabs (Solid Opaque) */}
+          <div className="flex bg-[#121211] border border-[#2A2A26] rounded-2xl p-1 mb-6">
             <button
               type="button"
-              onClick={() => handleOAuth("google")}
-              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-[#e2e8f0] bg-white text-[13.5px] font-semibold text-mv-ink shadow-sm transition-all hover:bg-gray-50 hover:shadow focus:outline-none focus:ring-2 focus:ring-mv-green/20"
+              onClick={() => toggleMode("login")}
+              className={cn(
+                "flex-1 py-2 text-xs font-bold rounded-xl transition-all",
+                mode === "login"
+                  ? "bg-[#262624] text-white shadow-sm border border-[#3E3E3A]"
+                  : "text-[#8A887F] hover:text-white"
+              )}
             >
-              <Google size={17} />
-              Continuer avec Google
+              Se connecter
             </button>
+            <button
+              type="button"
+              onClick={() => toggleMode("signup")}
+              className={cn(
+                "flex-1 py-2 text-xs font-bold rounded-xl transition-all",
+                mode === "signup"
+                  ? "bg-[#262624] text-white shadow-sm border border-[#3E3E3A]"
+                  : "text-[#8A887F] hover:text-white"
+              )}
+            >
+              Créer un compte
+            </button>
+          </div>
 
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-1">
-              <div className="h-px flex-1 bg-[#e8e8e6]" />
-              <span className="text-[11.5px] font-medium text-mv-ink-faint">ou avec votre courriel</span>
-              <div className="h-px flex-1 bg-[#e8e8e6]" />
-            </div>
+          {/* Google OAuth (Solid Button) */}
+          <button
+            type="button"
+            onClick={() => handleOAuth("google")}
+            className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-[#262624] hover:bg-[#30302E] border border-[#3E3E3A] text-xs font-bold text-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#7CE577]/30"
+          >
+            <Google size={16} />
+            <span>Continuer avec Google</span>
+          </button>
 
-            {/* Email Input */}
-            <Field label="Adresse courriel">
-              <Input
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-5">
+            <div className="h-px flex-1 bg-[#2E2E2A]" />
+            <span className="text-[11px] font-mono text-[#7A7870] uppercase">ou par courriel</span>
+            <div className="h-px flex-1 bg-[#2E2E2A]" />
+          </div>
+
+          {/* Email / Password Form */}
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div>
+              <label className="block text-[11.5px] font-semibold text-[#C2C0B8] mb-1.5">
+                Adresse courriel
+              </label>
+              <input
                 type="email"
                 placeholder="nom@restaurant.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] placeholder:text-mv-ink-faint focus:border-mv-green/60 focus:ring-mv-green/20"
+                className="w-full h-11 rounded-xl bg-[#121211] border border-[#2E2E2A] px-3.5 text-xs sm:text-sm text-white placeholder:text-[#6A6860] focus:border-[#7CE577] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/30 transition-colors"
               />
-            </Field>
+            </div>
 
-            {/* Password Input */}
-            <Field label="Mot de passe">
-              <div className="flex items-center justify-between mb-1">
-                <span />
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11.5px] font-semibold text-[#C2C0B8]">
+                  Mot de passe
+                </label>
                 {mode === "login" && (
                   <Link
                     href="/forgot-password"
-                    className="text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                    className="text-[11px] font-medium text-[#7CE577] hover:underline"
                   >
-                    Mot de passe oublié ?
+                    Oublié ?
                   </Link>
                 )}
               </div>
-              <Input
+              <input
                 type="password"
+                placeholder="••••••••"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] focus:border-mv-green/60 focus:ring-mv-green/20"
+                className="w-full h-11 rounded-xl bg-[#121211] border border-[#2E2E2A] px-3.5 text-xs sm:text-sm text-white placeholder:text-[#6A6860] focus:border-[#7CE577] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/30 transition-colors"
               />
-            </Field>
+            </div>
 
-            {/* Repeat Password (Signup) */}
             {mode === "signup" && (
-              <Field label="Confirmer le mot de passe">
-                <Input
+              <div>
+                <label className="block text-[11.5px] font-semibold text-[#C2C0B8] mb-1.5">
+                  Confirmer le mot de passe
+                </label>
+                <input
                   type="password"
+                  placeholder="••••••••"
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
-                  className="h-11 rounded-xl border-[#e2e8f0] bg-white text-[13.5px] focus:border-mv-green/60 focus:ring-mv-green/20"
+                  className="w-full h-11 rounded-xl bg-[#121211] border border-[#2E2E2A] px-3.5 text-xs sm:text-sm text-white placeholder:text-[#6A6860] focus:border-[#7CE577] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/30 transition-colors"
                 />
-              </Field>
+              </div>
             )}
 
-            {/* Error Message */}
+            {/* Error Banner */}
             {error && (
-              <p className="rounded-lg bg-red-50 px-3 py-2 text-[12.5px] font-medium text-red-600">{error}</p>
+              <div className="rounded-xl bg-red-950/60 border border-red-800/80 p-3 text-xs text-red-200">
+                {error}
+              </div>
             )}
 
-            {/* Submit Button */}
+            {/* Primary Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="mt-2 flex h-11 w-full items-center justify-center rounded-xl bg-mv-ink text-[13.5px] font-bold text-white transition-all hover:bg-mv-ink/90 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-mv-ink/30 shadow-mv-sm"
+              className="w-full h-11 rounded-xl bg-[#0E7C5A] hover:bg-[#0A6348] active:translate-y-px text-white text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {isLoading
-                ? "Traitement..."
-                : mode === "login"
-                  ? "Se connecter"
-                  : "S'inscrire"}
+              {isLoading ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  <span>Vérification...</span>
+                </>
+              ) : (
+                <>
+                  <span>{mode === "login" ? "Accéder à l'espace" : "Créer mon compte"}</span>
+                  <ArrowRight size={14} />
+                </>
+              )}
             </button>
-
-            {/* Mode Toggle Link */}
-            <p className="mt-3 text-center text-[12.5px] text-mv-ink-faint">
-              {mode === "login" ? "Déjà membre ?" : "Vous avez un compte ?"}{" "}
-              <button
-                type="button"
-                onClick={toggleMode}
-                className="font-semibold text-mv-green-dark hover:underline focus:outline-none"
-              >
-                {mode === "login" ? "Créer un compte" : "Se connecter"}
-              </button>
-            </p>
           </form>
+
+          {/* Guarantee Pill */}
+          <div className="mt-6 pt-5 border-t border-[#262624] flex items-center justify-center gap-2 text-[11px] text-[#8A887F]">
+            <ShieldCheck size={13} className="text-[#7CE577]" />
+            <span>Sécurisé · Conforme données de restauration</span>
+          </div>
+
         </div>
 
-        {/* Footer Terms */}
-        <p className="text-center text-[11px] text-mv-ink-faint">
-          En continuant, vous acceptez nos{" "}
-          <Link href="/legal/terms" className="underline hover:text-mv-ink">
-            Conditions
+        {/* Footer Links */}
+        <p className="mt-4 text-center text-[11px] text-white/50">
+          En continuant, vous acceptez les{" "}
+          <Link href="/legal/terms" className="underline hover:text-white">
+            Conditions d&apos;utilisation
           </Link>{" "}
-          et{" "}
-          <Link href="/legal/privacy" className="underline hover:text-mv-ink">
-            Confidentialité
+          et la{" "}
+          <Link href="/legal/privacy" className="underline hover:text-white">
+            Politique de confidentialité
           </Link>
           .
         </p>
-      </div>
 
-      {/* ── RIGHT PANEL: Edge-to-Edge Full Screen (45-50% width) ── */}
-      <div className="hidden lg:block lg:w-[45%] xl:w-[50%]">
-        <OriginRightPanel />
       </div>
     </div>
   );
 }
+
+export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-[#03120E] text-white">
+          <MeshDriftBackground />
+          <div className="w-full max-w-[440px] h-[520px] bg-[#181816] border border-[#2E2E2A] rounded-3xl animate-pulse" />
+        </div>
+      }
+    >
+      <AuthCardInner initialMode={initialMode} />
+    </Suspense>
+  );
+}
+
