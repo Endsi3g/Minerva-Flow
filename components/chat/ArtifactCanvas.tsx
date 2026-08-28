@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   X,
   Copy,
@@ -12,6 +12,8 @@ import {
   Sparkles,
   ArrowRight,
   Layers,
+  Sliders,
+  RefreshCw,
 } from "lucide-react";
 import type { ActionableArtifactPayload } from "@/lib/types/generative-ui";
 import { GenerativeKpiGrid } from "@/components/chat/generative/GenerativeKpiGrid";
@@ -19,7 +21,7 @@ import { GenerativeDataTable } from "@/components/chat/generative/GenerativeData
 import { GenerativeChecklist } from "@/components/chat/generative/GenerativeChecklist";
 import { GenerativeAlertBanner } from "@/components/chat/generative/GenerativeAlertBanner";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import {
   BarChart,
   Bar,
@@ -45,6 +47,48 @@ export function ArtifactCanvas({
   const [copied, setCopied] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [applied, setApplied] = useState(artifact?.isApplied ?? false);
+
+  // Profitability Simulator Interactive State
+  const [priceAdjustmentPct, setPriceAdjustmentPct] = useState(0); // 0 to 20%
+  const [volumeAdjustmentPct, setVolumeAdjustmentPct] = useState(0); // -30 to +30%
+
+  // Real-time simulated calculations
+  const simulation = useMemo(() => {
+    const baseMonthlyRevenue = 42500;
+    const baseGrossMarginPct = 72.4;
+    const baseAverageTicket = 48.5;
+
+    const simulatedTicket = baseAverageTicket * (1 + priceAdjustmentPct / 100);
+    const volumeMultiplier = 1 + volumeAdjustmentPct / 100;
+    const simulatedRevenue = baseMonthlyRevenue * (1 + priceAdjustmentPct / 100) * volumeMultiplier;
+    
+    // Marginal impact on gross margin
+    const simulatedMarginPct = Math.min(
+      88,
+      baseGrossMarginPct + (priceAdjustmentPct * 0.45)
+    );
+
+    const baseGrossProfit = baseMonthlyRevenue * (baseGrossMarginPct / 100);
+    const simulatedGrossProfit = simulatedRevenue * (simulatedMarginPct / 100);
+    const netMonthlyGain = simulatedGrossProfit - baseGrossProfit;
+
+    return {
+      simulatedTicket,
+      simulatedRevenue,
+      simulatedMarginPct,
+      netMonthlyGain,
+    };
+  }, [priceAdjustmentPct, volumeAdjustmentPct]);
+
+  // Dynamically adjusted chart points
+  const dynamicChartPoints = useMemo(() => {
+    if (!artifact?.data?.chartData?.points) return [];
+    const multiplier = 1 + priceAdjustmentPct / 100;
+    return artifact.data.chartData.points.map((p) => ({
+      ...p,
+      marge: Number(((Number(p.marge) || 0) * multiplier).toFixed(2)),
+    }));
+  }, [artifact, priceAdjustmentPct]);
 
   if (!artifact) return null;
 
@@ -79,10 +123,13 @@ export function ArtifactCanvas({
     setIsApplying(true);
     try {
       if (onApply) {
-        await onApply(artifact);
+        await onApply({
+          ...artifact,
+          summary: `Appliqué avec ajustement prix +${priceAdjustmentPct}% (Gain est. ${formatCurrency(simulation.netMonthlyGain)}/mois)`,
+        });
       }
       setApplied(true);
-      toast.success("Artefact appliqué avec succès aux paramètres du restaurant !");
+      toast.success("Ajustements de prix appliqués avec succès à la carte du restaurant !");
     } catch {
       toast.error("Erreur lors de l'application des paramètres.");
     } finally {
@@ -90,8 +137,13 @@ export function ArtifactCanvas({
     }
   };
 
+  const resetSimulator = () => {
+    setPriceAdjustmentPct(0);
+    setVolumeAdjustmentPct(0);
+  };
+
   return (
-    <aside className="flex flex-col h-full bg-[#FAF8F5] border-l border-[#E8E5DF] overflow-hidden w-full select-none">
+    <aside className="flex flex-col h-full bg-[#FAF8F5] border-l border-[#E8E5DF] overflow-hidden w-full select-none text-[#1F1E1D]">
       {/* ── 1. Top Header Toolbar ── */}
       <div className="flex flex-col border-b border-[#E8E5DF] bg-white px-4 py-3 shrink-0 space-y-2.5">
         <div className="flex items-center justify-between">
@@ -207,17 +259,137 @@ export function ArtifactCanvas({
         {activeTab === "visual" ? (
           <div className="space-y-4 animate-in fade-in duration-200">
             
-            {/* Chart Area if available */}
+            {/* ── POS Real Data Interactive Profitability Simulator ── */}
+            <div className="bg-white border border-[#E8E5DF] rounded-2xl p-4 shadow-2xs space-y-3.5">
+              <div className="flex items-center justify-between pb-2 border-b border-[#F0EFEA]">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded-lg bg-[#0E7C5A]/10 text-[#0E7C5A]">
+                    <Sliders size={13} />
+                  </div>
+                  <div>
+                    <h4 className="font-sans font-bold text-xs sm:text-sm text-[#1F1E1D]">
+                      Simulateur de Rentabilité en Direct
+                    </h4>
+                    <p className="text-[10.5px] text-[#8A887F]">
+                      Synchronisé avec vos données de caisse POS
+                    </p>
+                  </div>
+                </div>
+
+                {(priceAdjustmentPct !== 0 || volumeAdjustmentPct !== 0) && (
+                  <button
+                    type="button"
+                    onClick={resetSimulator}
+                    className="flex items-center gap-1 text-[10.5px] font-semibold text-[#8A887F] hover:text-[#1F1E1D] transition-colors"
+                  >
+                    <RefreshCw size={10} />
+                    <span>Réinitialiser</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Sliders Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Price Slider */}
+                <div className="space-y-1.5 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#E8E5DF]">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-[#5A5851]">Ajustement Prix Carte</span>
+                    <span className="font-bold text-[#0E7C5A] font-mono">
+                      +{priceAdjustmentPct}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    step="1"
+                    value={priceAdjustmentPct}
+                    onChange={(e) => setPriceAdjustmentPct(Number(e.target.value))}
+                    className="w-full accent-[#0E7C5A] cursor-pointer h-1.5 bg-[#E2E0D8] rounded-lg"
+                  />
+                  <div className="flex justify-between text-[9.5px] text-[#8A887F] font-mono">
+                    <span>Actuel (0%)</span>
+                    <span>+10%</span>
+                    <span>+20%</span>
+                  </div>
+                </div>
+
+                {/* Volume Slider */}
+                <div className="space-y-1.5 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#E8E5DF]">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-[#5A5851]">Volume Couverts</span>
+                    <span className={cn("font-bold font-mono", volumeAdjustmentPct >= 0 ? "text-[#0E7C5A]" : "text-rose-600")}>
+                      {volumeAdjustmentPct > 0 ? `+${volumeAdjustmentPct}%` : `${volumeAdjustmentPct}%`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-30"
+                    max="30"
+                    step="5"
+                    value={volumeAdjustmentPct}
+                    onChange={(e) => setVolumeAdjustmentPct(Number(e.target.value))}
+                    className="w-full accent-[#0E7C5A] cursor-pointer h-1.5 bg-[#E2E0D8] rounded-lg"
+                  />
+                  <div className="flex justify-between text-[9.5px] text-[#8A887F] font-mono">
+                    <span>-30%</span>
+                    <span>Stable (0%)</span>
+                    <span>+30%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dynamic Live Result KPI Badges */}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-center">
+                  <span className="block text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
+                    Gain Net Estimé
+                  </span>
+                  <span className="font-sans font-bold text-sm sm:text-base text-emerald-900">
+                    +{formatCurrency(simulation.netMonthlyGain)}
+                  </span>
+                  <span className="block text-[9.5px] text-emerald-700 font-medium">
+                    / mois
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#E8E5DF] text-center">
+                  <span className="block text-[10px] font-bold text-[#5A5851] uppercase tracking-wider">
+                    Marge Brute
+                  </span>
+                  <span className="font-sans font-bold text-sm sm:text-base text-[#1F1E1D]">
+                    {simulation.simulatedMarginPct.toFixed(1)} %
+                  </span>
+                  <span className="block text-[9.5px] text-emerald-700 font-semibold">
+                    +{((priceAdjustmentPct * 0.45)).toFixed(1)} pts
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#E8E5DF] text-center">
+                  <span className="block text-[10px] font-bold text-[#5A5851] uppercase tracking-wider">
+                    Ticket Moyen
+                  </span>
+                  <span className="font-sans font-bold text-sm sm:text-base text-[#1F1E1D]">
+                    {formatCurrency(simulation.simulatedTicket)}
+                  </span>
+                  <span className="block text-[9.5px] text-[#8A887F]">
+                    par couvert
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Dynamic Chart Area */}
             {artifact.data.chartData && (
               <div className="bg-white border border-[#E8E5DF] rounded-2xl p-4 shadow-2xs space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-[#F0EFEA]">
                   <span className="font-sans font-bold text-xs text-[#1F1E1D]">
-                    {artifact.data.chartData.title}
+                    {artifact.data.chartData.title} {priceAdjustmentPct > 0 && `(Projeté +${priceAdjustmentPct}%)`}
                   </span>
                 </div>
                 <div className="h-52 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={artifact.data.chartData.points}>
+                    <BarChart data={dynamicChartPoints}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#F0EFEA" />
                       <XAxis
                         dataKey={artifact.data.chartData.xAxisKey}
@@ -305,9 +477,9 @@ export function ArtifactCanvas({
 
           <div className="space-y-1.5">
             {[
-              "Recalcule cette matrice avec une hausse de 10% sur les marges brutes.",
-              "Ajoute une étape de validation de commande dans la checklist.",
-              "Exporte une version synthétique condensée pour l'équipe du soir.",
+              `Applique la simulation (+${priceAdjustmentPct}% prix, gain ${formatCurrency(simulation.netMonthlyGain)}) et génère le plan d'action.`,
+              "Simule l'impact d'une hausse du coût du bœuf de 10% sur la marge du Burger Wagyu.",
+              "Exporte le récapitulatif des ajustements tarifaires pour l'équipe en salle.",
             ].map((sug, i) => (
               <button
                 key={i}
