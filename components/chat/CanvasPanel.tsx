@@ -4,8 +4,20 @@ import { CanvasDefaultContext, type CanvasContextData } from "@/components/chat/
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { ChatArtifact } from "@/lib/types";
 import Link from "next/link";
-import { ArrowRight, TrendingDown, TrendingUp, X, Plus, Loader2, BarChart2, Table as TableIcon, Check } from "lucide-react";
-import { useState, useTransition, useEffect } from "react";
+import { 
+  ArrowRight, 
+  TrendingDown, 
+  TrendingUp, 
+  X, 
+  Plus, 
+  Loader2, 
+  BarChart2, 
+  Table as TableIcon, 
+  Check, 
+  Activity, 
+  FileText 
+} from "lucide-react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { publishReportAction } from "@/app/[locale]/(app)/reports/actions";
 import { useRouter } from "next/navigation";
@@ -25,44 +37,26 @@ import {
 
 type TrendPoint = { date: string; value: number };
 
-/**
- * Right-hand Canvas panel: renders the latest artifact for the active
- * conversation, or the default KPI/alerts/programs context if none exists
- * yet.
- */
 export function CanvasPanel({
   artifact,
   defaultContext,
   onClose,
-  restaurantId,
-  conversationId,
+  onSendPrompt,
 }: {
   artifact: ChatArtifact | null;
   defaultContext: CanvasContextData;
   onClose?: () => void;
+  onSendPrompt?: (promptText: string) => void;
   restaurantId?: string;
   conversationId?: string;
 }) {
+  const [activeMode, setActiveMode] = useState<"context" | "artifact">(artifact ? "artifact" : "context");
   const [tab, setTab] = useState<"visual" | "data">("visual");
   const [isPending, startTransition] = useTransition();
-  const [published, setPublished] = useState(false);
+  const [published, setPublished] = useState<boolean>(
+    Boolean(artifact?.data && typeof artifact.data === "object" && (artifact.data as Record<string, unknown>).isPublished)
+  );
   const router = useRouter();
-
-  // Reset published status when artifact changes
-  useEffect(() => {
-    setPublished(Boolean(artifact?.data && (artifact.data as any).isPublished));
-    setTab("visual");
-  }, [artifact]);
-
-  if (!artifact) {
-    return (
-      <aside className="hidden w-80 shrink-0 border-l border-mv-border-soft lg:block">
-        <CanvasDefaultContext data={defaultContext} />
-      </aside>
-    );
-  }
-
-  const wide = artifact.type === "comparison";
 
   async function handlePublish() {
     if (!artifact) return;
@@ -88,86 +82,144 @@ export function CanvasPanel({
     });
   }
 
+  const wide = artifact?.type === "comparison";
+
   return (
     <aside
       className={cn(
-        "flex flex-col h-full bg-mv-cream-soft p-5 border-l border-mv-border-soft overflow-hidden w-full",
-        wide ? "lg:w-[28rem]" : "lg:w-80"
+        "flex flex-col h-full bg-mv-cream-soft border-l border-mv-border-soft overflow-hidden w-full transition-all duration-200",
+        wide && activeMode === "artifact" ? "lg:w-[28rem]" : "lg:w-80"
       )}
     >
-      {/* Canvas Header */}
-      <div className="flex items-center justify-between border-b border-mv-border/40 pb-3 mb-3 shrink-0">
-        <div className="min-w-0 flex-1 pr-2">
-          <h3 className="font-display text-[14.5px] font-semibold text-mv-ink truncate">
-            {artifact.title}
-          </h3>
-          <p className="text-[10.5px] text-mv-ink-faint">Rapport d&apos;analyse IA</p>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          {!published ? (
-            <Button
-              size="xs"
-              onClick={handlePublish}
-              disabled={isPending}
-              className="h-6.5 text-[11px] px-2 bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark"
-            >
-              {isPending ? (
-                <Loader2 size={11} className="animate-spin mr-1" />
-              ) : (
-                <Plus size={11} className="mr-1" />
-              )}
-              Créer un rapport
-            </Button>
+      {/* Top Header with Switcher */}
+      <div className="flex flex-col border-b border-mv-border/60 bg-mv-surface/70 px-4 py-3 shrink-0">
+        <div className="flex items-center justify-between">
+          {/* Main Mode Switcher if artifact exists */}
+          {artifact ? (
+            <div className="flex items-center rounded-xl bg-mv-cream border border-mv-border/80 p-0.5 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setActiveMode("context")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all",
+                  activeMode === "context"
+                    ? "bg-mv-surface text-mv-ink shadow-mv-sm"
+                    : "text-mv-ink-faint hover:text-mv-ink"
+                )}
+              >
+                <Activity size={12} className={activeMode === "context" ? "text-mv-green-dark" : ""} />
+                <span>Contexte</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMode("artifact")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all",
+                  activeMode === "artifact"
+                    ? "bg-mv-surface text-mv-ink shadow-mv-sm"
+                    : "text-mv-ink-faint hover:text-mv-ink"
+                )}
+              >
+                <FileText size={12} className={activeMode === "artifact" ? "text-mv-green-dark" : ""} />
+                <span className="truncate max-w-[110px]">{artifact.title}</span>
+              </button>
+            </div>
           ) : (
-            <span className="flex items-center gap-1 text-[10.5px] font-semibold text-mv-green-dark bg-mv-green-tint px-2 py-0.5 rounded-full border border-mv-green/20">
-              <Check size={10} /> Enregistré
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-display text-[14px] font-bold text-mv-ink">
+                Tableau de bord IA
+              </span>
+            </div>
           )}
 
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="flex h-6.5 w-6.5 items-center justify-center rounded-full text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink"
-              aria-label="Fermer"
-            >
-              <X size={14} />
-            </button>
-          )}
+          {/* Actions for Artifact */}
+          <div className="flex items-center gap-1.5">
+            {artifact && activeMode === "artifact" && (
+              <>
+                {!published ? (
+                  <Button
+                    size="xs"
+                    onClick={handlePublish}
+                    disabled={isPending}
+                    className="h-6.5 text-[11px] px-2 bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark"
+                  >
+                    {isPending ? (
+                      <Loader2 size={11} className="animate-spin mr-1" />
+                    ) : (
+                      <Plus size={11} className="mr-1" />
+                    )}
+                    Créer rapport
+                  </Button>
+                ) : (
+                  <span className="flex items-center gap-1 text-[10px] font-semibold text-mv-green-dark bg-mv-green-tint px-2 py-0.5 rounded-full border border-mv-green/20">
+                    <Check size={10} /> Enregistré
+                  </span>
+                )}
+              </>
+            )}
+
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
+                aria-label="Fermer le volet"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Tabs selectors (only for chart or comparison) */}
-      {(artifact.type === "comparison" || artifact.type === "chart") && (
-        <div className="flex border border-mv-border/60 bg-mv-cream-soft rounded-lg mb-4 p-0.5 w-fit shrink-0 shadow-mv-sm">
-          <button
-            onClick={() => setTab("visual")}
-            className={cn(
-              "flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all",
-              tab === "visual" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint"
+      {/* Body: Context OR Artifact */}
+      {activeMode === "context" || !artifact ? (
+        <CanvasDefaultContext data={defaultContext} onSendPrompt={onSendPrompt} />
+      ) : (
+        <div className="flex flex-col flex-1 min-h-0 p-4 sm:p-5 overflow-y-auto">
+          {/* Subheader */}
+          <div className="mb-3">
+            <h3 className="font-display text-[14.5px] font-semibold text-mv-ink leading-snug">
+              {artifact.title}
+            </h3>
+            <p className="text-[10.5px] text-mv-ink-faint">Rapport d&apos;analyse copilote</p>
+          </div>
+
+          {/* Tabs selectors (only for chart or comparison) */}
+          {(artifact.type === "comparison" || artifact.type === "chart") && (
+            <div className="flex border border-mv-border/60 bg-mv-cream-soft rounded-lg mb-4 p-0.5 w-fit shrink-0 shadow-mv-sm">
+              <button
+                type="button"
+                onClick={() => setTab("visual")}
+                className={cn(
+                  "flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all",
+                  tab === "visual" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint"
+                )}
+              >
+                <BarChart2 size={12} /> Rapport
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("data")}
+                className={cn(
+                  "flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all",
+                  tab === "data" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint"
+                )}
+              >
+                <TableIcon size={12} /> Données
+              </button>
+            </div>
+          )}
+
+          {/* Canvas Content */}
+          <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+            {tab === "visual" ? (
+              <ArtifactBody artifact={artifact} />
+            ) : (
+              <ArtifactRawData artifact={artifact} />
             )}
-          >
-            <BarChart2 size={12} /> Rapport
-          </button>
-          <button
-            onClick={() => setTab("data")}
-            className={cn(
-              "flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all",
-              tab === "data" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint"
-            )}
-          >
-            <TableIcon size={12} /> Données
-          </button>
+          </div>
         </div>
       )}
-
-      {/* Canvas Body */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        {tab === "visual" ? (
-          <ArtifactBody artifact={artifact} />
-        ) : (
-          <ArtifactRawData artifact={artifact} />
-        )}
-      </div>
     </aside>
   );
 }

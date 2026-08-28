@@ -1,8 +1,9 @@
 import { isCloudflareAiConfigured } from "@/lib/ai/cloudflare";
 import { isNvidiaAiConfigured } from "@/lib/ai/nvidia";
+import { isGeminiAiConfigured } from "@/lib/ai/gemini";
 
 /**
- * Central place for AI Gateway / Cloudflare / NVIDIA API Catalog model choice.
+ * Central place for AI Gateway / Cloudflare / NVIDIA / Gemini model choice.
  * Returns true if ANY supported provider key is set.
  */
 export const AI_MODEL = process.env.CLOUDFLARE_AI_MODEL || "anthropic/claude-sonnet-5";
@@ -12,6 +13,7 @@ export function isAiConfigured() {
     process.env.AI_GATEWAY_API_KEY ||
       process.env.OPENAI_API_KEY ||
       process.env.ANTHROPIC_API_KEY ||
+      isGeminiAiConfigured() ||
       isNvidiaAiConfigured() ||
       isCloudflareAiConfigured()
   );

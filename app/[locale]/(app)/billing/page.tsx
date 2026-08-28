@@ -9,12 +9,13 @@ import { formatDate } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Stripe } from "@/components/ui/BrandIcons";
 import { toast } from "sonner";
-import { CheckCircle2, Sparkles } from "lucide-react";
+import { CheckCircle2, Sparkles, Zap, Cpu, ArrowUpRight } from "lucide-react";
+import { PLAN_NAMES, PLAN_AI_QUOTAS, type PlanTier } from "@/lib/ai/quotas";
 
 const INCLUDED_FEATURES = [
   "Finance, inventaire et ingénierie de menu illimités",
   "Commande directe 0% commission",
-  "Flow AI et rapports automatisés",
+  "Flow AI propulsé par Gemini 3.7 Flash",
   "Établissements et collaborateurs illimités",
 ];
 
@@ -66,17 +67,24 @@ export default function BillingPage() {
     }
   }
 
+  const aiUsage = status?.aiUsage;
+  const planTier = (aiUsage?.planTier ?? "starter") as PlanTier;
+  const quota = aiUsage?.monthlyQuota ?? PLAN_AI_QUOTAS.starter;
+  const used = aiUsage?.tokensUsed ?? 0;
+  const percentUsed = Math.min(100, Math.round((used / Math.max(1, quota)) * 100));
+
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Workspace"
-        title="Facturation"
-        description="Votre abonnement Flow par Minerva — un tarif mensuel fixe par workspace, qui couvre tous vos établissements."
+        title="Facturation & Quotas IA"
+        description="Votre abonnement Flow par Minerva — gestion du forfait mensuel et consommation du moteur IA Gemini 3.7 Flash."
       />
 
-      <div className="mx-auto max-w-xl w-full">
+      <div className="mx-auto max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Subscription Plan Card */}
         <Card>
-          <CardHeader eyebrow="Abonnement" title="Plan Flow par Minerva" />
+          <CardHeader eyebrow="Abonnement" title="Forfait Workspace" />
 
           {!status ? (
             <p className="text-[13px] text-mv-ink-faint">Chargement…</p>
@@ -109,7 +117,7 @@ export default function BillingPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Stripe width={16} height={16} />
-                  <span className="text-[13.5px] font-medium text-mv-ink">Abonnement mensuel</span>
+                  <span className="text-[13.5px] font-medium text-mv-ink">Plan {PLAN_NAMES[planTier]}</span>
                 </div>
                 <Badge tone={statusTone[status.subscription.status] ?? "neutral"}>
                   {statusLabel[status.subscription.status] ?? status.subscription.status}
@@ -135,6 +143,80 @@ export default function BillingPage() {
               </Button>
             </div>
           )}
+        </Card>
+
+        {/* AI Quota & Token Consumption Card */}
+        <Card>
+          <CardHeader eyebrow="Intelligence Artificielle" title="Consommation Tokens IA" />
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-green-tint text-mv-green-dark">
+                  <Cpu size={15} />
+                </div>
+                <span className="text-[13px] font-bold text-mv-ink">Gemini 3.7 Flash</span>
+              </div>
+              <Badge tone={percentUsed >= 90 ? "red" : percentUsed >= 70 ? "amber" : "green"}>
+                {percentUsed}% utilisé
+              </Badge>
+            </div>
+
+            {/* Gauge progress bar */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="font-medium text-mv-ink">{used.toLocaleString("fr-FR")} tokens</span>
+                <span className="text-mv-ink-soft">Quota: {quota.toLocaleString("fr-FR")} tokens/mois</span>
+              </div>
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-mv-cream-soft border border-mv-border">
+                <div
+                  className={`h-full transition-all duration-500 rounded-full ${
+                    percentUsed >= 90
+                      ? "bg-mv-red"
+                      : percentUsed >= 70
+                      ? "bg-mv-amber"
+                      : "bg-mv-green-dark"
+                  }`}
+                  style={{ width: `${percentUsed}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Plans comparison */}
+            <div className="pt-2 border-t border-mv-border space-y-2">
+              <p className="text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                Quotas IA inclus par plan
+              </p>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className={`p-2 rounded-xl border ${planTier === "starter" ? "border-mv-green bg-mv-green-tint/30 font-bold" : "border-mv-border bg-mv-surface"}`}>
+                  <p className="text-mv-ink">Starter</p>
+                  <p className="text-mv-ink-soft text-[11px]">100k / mois</p>
+                </div>
+                <div className={`p-2 rounded-xl border ${planTier === "pro" ? "border-mv-green bg-mv-green-tint/30 font-bold" : "border-mv-border bg-mv-surface"}`}>
+                  <p className="text-mv-ink">Pro</p>
+                  <p className="text-mv-ink-soft text-[11px]">500k / mois</p>
+                </div>
+                <div className={`p-2 rounded-xl border ${planTier === "enterprise" ? "border-mv-green bg-mv-green-tint/30 font-bold" : "border-mv-border bg-mv-surface"}`}>
+                  <p className="text-mv-ink">Entreprise</p>
+                  <p className="text-mv-ink-soft text-[11px]">2M / mois</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-1">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full text-xs font-semibold gap-1.5"
+                onClick={handleManage}
+                disabled={loading || !status?.configured}
+              >
+                <Zap size={13} className="text-mv-amber" />
+                <span>Recharger ou modifier mon forfait</span>
+                <ArrowUpRight size={13} />
+              </Button>
+            </div>
+          </div>
         </Card>
       </div>
     </div>

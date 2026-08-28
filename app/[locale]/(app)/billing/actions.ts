@@ -3,6 +3,7 @@
 import { getStripeClient, isStripeConfigured, stripePriceId } from "@/lib/stripe/config";
 import { getCurrentWorkspaceMembership } from "@/lib/data/current-workspace";
 import { getSubscription } from "@/lib/data/subscriptions";
+import { getWorkspaceAiUsage, type WorkspaceAiUsage } from "@/lib/data/ai-usage";
 import { headers } from "next/headers";
 
 async function requireWorkspaceOwner() {
@@ -61,10 +62,17 @@ export async function createBillingPortalSessionAction(): Promise<string | null>
 export async function getBillingStatusAction(): Promise<{
   configured: boolean;
   subscription: Awaited<ReturnType<typeof getSubscription>>;
+  aiUsage: WorkspaceAiUsage | null;
 }> {
   const membership = await getCurrentWorkspaceMembership();
-  if (!membership) return { configured: isStripeConfigured(), subscription: null };
+  if (!membership) {
+    return { configured: isStripeConfigured(), subscription: null, aiUsage: null };
+  }
 
-  const subscription = await getSubscription(membership.workspaceId);
-  return { configured: isStripeConfigured(), subscription };
+  const [subscription, aiUsage] = await Promise.all([
+    getSubscription(membership.workspaceId),
+    getWorkspaceAiUsage(membership.workspaceId),
+  ]);
+
+  return { configured: isStripeConfigured(), subscription, aiUsage };
 }
