@@ -4,8 +4,10 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { LogoMark } from "@/components/shell/Logo";
+import { MeshDriftBackground } from "@/components/ui/MeshDriftBackground";
 
 export default function UpdatePasswordPage() {
   const t = useTranslations("auth");
@@ -32,12 +34,17 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-[#FAF8F5] text-[#1F1E1D]">
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden text-[#1F1E1D]">
+      <MeshDriftBackground variant="soft-emerald" />
+
       <div className="w-full max-w-[420px] z-10 animate-in fade-in zoom-in-95 duration-200">
-        <div className="bg-white border border-[#E8E5DF] rounded-3xl p-7 sm:p-9 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+        <div className="bg-white border-2 border-[#0E7C5A]/30 rounded-3xl p-7 sm:p-9 shadow-[0_16px_50px_rgba(14,124,90,0.12),0_4px_20px_rgba(0,0,0,0.06)] ring-1 ring-[#0E7C5A]/20">
           <div className="text-center space-y-2 mb-6">
-            <Link href="/overview" className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-[#0E7C5A] text-white font-serif font-bold text-lg shadow-xs border border-[#0E7C5A]/30 mb-1 hover:scale-105 transition-transform">
-              <Lock size={18} />
+            <Link
+              href="/overview"
+              className="inline-flex items-center justify-center p-2 rounded-2xl bg-[#0E7C5A]/10 border border-[#0E7C5A]/25 shadow-xs mb-1 hover:scale-105 transition-transform"
+            >
+              <LogoMark size={36} />
             </Link>
             <h1 className="font-serif text-2xl font-bold tracking-tight text-[#0A3F2F]">
               Nouveau mot de passe

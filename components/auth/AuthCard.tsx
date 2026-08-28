@@ -8,6 +8,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { Suspense, useState, type FormEvent } from "react";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { Google } from "@/components/ui/BrandIcons";
+import { LogoMark } from "@/components/shell/Logo";
+import { MeshDriftBackground } from "@/components/ui/MeshDriftBackground";
 import { cn } from "@/lib/utils";
 
 function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
@@ -129,16 +131,23 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
   }
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-[#FAF8F5] text-[#1F1E1D]">
-      {/* Centered Solid Opaque Light Mode Card */}
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden text-[#1F1E1D]">
+      {/* ── 0. Soft Emerald WebGL Mesh Drift Shader Background ── */}
+      <MeshDriftBackground variant="soft-emerald" />
+
+      {/* ── 1. Centered Auth Card with Double-Teinte Emerald Border ── */}
       <div className="w-full max-w-[440px] my-auto z-10 animate-in fade-in zoom-in-95 duration-200">
         
-        <div className="bg-white border border-[#E8E5DF] rounded-3xl p-7 sm:p-9 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+        {/* Solid White Card with Emerald Double-Border & Soft Shadow */}
+        <div className="bg-white border-2 border-[#0E7C5A]/30 rounded-3xl p-7 sm:p-9 shadow-[0_16px_50px_rgba(14,124,90,0.12),0_4px_20px_rgba(0,0,0,0.06)] ring-1 ring-[#0E7C5A]/20">
           
-          {/* Logo & Header */}
+          {/* Official App Logo & Branding */}
           <div className="text-center space-y-2 mb-6">
-            <Link href="/overview" className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-[#0E7C5A] text-white font-serif font-bold text-xl shadow-xs border border-[#0E7C5A]/30 mb-1 hover:scale-105 transition-transform">
-              M
+            <Link
+              href="/overview"
+              className="inline-flex items-center justify-center p-2 rounded-2xl bg-[#0E7C5A]/10 border border-[#0E7C5A]/25 shadow-xs mb-1 hover:scale-105 transition-transform"
+            >
+              <LogoMark size={40} />
             </Link>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#0A3F2F]">
               Minerva Flow
@@ -150,7 +159,7 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
             </p>
           </div>
 
-          {/* Mode Switcher Tabs (Solid Light Mode) */}
+          {/* Mode Switcher Tabs */}
           <div className="flex bg-[#FAF8F5] border border-[#E8E5DF] rounded-2xl p-1 mb-6">
             <button
               type="button"
@@ -178,7 +187,7 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
             </button>
           </div>
 
-          {/* Google OAuth (Solid Light Button) */}
+          {/* Google OAuth Button */}
           <button
             type="button"
             onClick={() => handleOAuth("google")}
@@ -219,9 +228,9 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
                 {mode === "login" && (
                   <Link
                     href="/forgot-password"
-                    className="text-[11px] font-semibold text-[#0E7C5A] hover:underline"
+                    className="text-[11.5px] font-semibold text-[#0E7C5A] hover:underline"
                   >
-                    Oublié ?
+                    Mot de passe oublié ?
                   </Link>
                 )}
               </div>
@@ -308,7 +317,7 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen w-full flex items-center justify-center p-4 bg-[#FAF8F5]">
+        <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-[#FAF8F5]">
           <div className="w-full max-w-[440px] h-[520px] bg-white border border-[#E8E5DF] rounded-3xl animate-pulse" />
         </div>
       }

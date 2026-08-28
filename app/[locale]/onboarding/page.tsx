@@ -4,6 +4,8 @@ import { getMyProfile } from "@/lib/data/profile";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { LogoMark } from "@/components/shell/Logo";
+import { MeshDriftBackground } from "@/components/ui/MeshDriftBackground";
 import Link from "next/link";
 
 export default async function OnboardingPage({
@@ -37,17 +39,20 @@ export default async function OnboardingPage({
   const restaurant = membership ? await getRestaurant(membership.restaurantId) : null;
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-[#FAF8F5] text-[#1F1E1D]">
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden text-[#1F1E1D]">
+      {/* Soft Emerald WebGL Mesh Drift Shader Background */}
+      <MeshDriftBackground variant="soft-emerald" />
+
       <div className="w-full max-w-xl my-auto z-10 animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Solid Opaque Light Mode Card */}
-        <div className="bg-white border border-[#E8E5DF] rounded-3xl p-6 sm:p-9 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+        {/* Solid White Card with Emerald Double-Border */}
+        <div className="bg-white border-2 border-[#0E7C5A]/30 rounded-3xl p-6 sm:p-9 shadow-[0_16px_50px_rgba(14,124,90,0.12),0_4px_20px_rgba(0,0,0,0.06)] ring-1 ring-[#0E7C5A]/20">
           
           {/* Header Logo & Title */}
           <div className="flex items-center justify-between border-b border-[#F0EFEA] pb-5 mb-6">
             <Link href="/overview" className="flex items-center gap-3 group">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#0E7C5A] text-white font-serif font-bold text-base shadow-xs border border-[#0E7C5A]/30 group-hover:scale-105 transition-transform">
-                M
+              <div className="flex items-center justify-center p-1.5 rounded-xl bg-[#0E7C5A]/10 border border-[#0E7C5A]/25 shadow-xs group-hover:scale-105 transition-transform">
+                <LogoMark size={30} />
               </div>
               <div>
                 <h1 className="font-serif text-lg font-bold text-[#0A3F2F] leading-none group-hover:text-[#0E7C5A] transition-colors">

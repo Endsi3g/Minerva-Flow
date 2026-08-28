@@ -121,129 +121,218 @@ vec3 oklabToLin(vec3 c) {
     -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
     -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s);
 }
-vec3 mixColour(vec3 a, vec3 b, float t) {
-  if (u_oklab > 0.5) {
-    vec3 la = linToOklab(srgbToLinear(a));
-    vec3 lb = linToOklab(srgbToLinear(b));
-    return clamp(linearToSrgb(oklabToLin(mix(la, lb, t))), 0.0, 1.0);
-  }
-  return mix(a, b, t);
-}
 
-vec3 hueRotate(vec3 col, float a) {
-  const mat3 toYIQ = mat3(0.299, 0.596, 0.211,
-                          0.587, -0.274, -0.523,
-                          0.114, -0.322, 0.312);
-  const mat3 toRGB = mat3(1.0, 1.0, 1.0,
-                          0.956, -0.272, -1.106,
-                          0.621, -0.647, 1.703);
-  vec3 yiq = toYIQ * col;
-  float ca = cos(a), sa = sin(a);
-  yiq = vec3(yiq.x, yiq.y * ca - yiq.z * sa, yiq.y * sa + yiq.z * ca);
-  return toRGB * yiq;
-}
-
-vec3 shade(vec2 uv, vec2 p, float t) {
-  vec3 acc = u_colors[0] * 0.15;
-  float total = 0.15;
+vec3 sampleGradientLinear(float t) {
+  t = clamp(t, 0.0, 1.0) * (u_colorCount - 1.0);
+  int idx = int(floor(t));
+  float f = fract(t);
+  vec3 c0 = vec3(0.0);
+  vec3 c1 = vec3(0.0);
   for (int i = 0; i < 8; i++) {
-    if (float(i) >= u_colorCount) break;
-    float fi = float(i);
-    vec2 c = vec2(
-      sin(t * (0.21 + fi * 0.071) + fi * 2.4 + u_seed),
-      cos(t * (0.17 + fi * 0.093) + fi * 1.7)) * (0.45 + u_intensity * 0.35);
-    float w = exp(-dot(p - c, p - c) * 6.0);
-    acc += u_colors[i] * w;
-    total += w;
+    if (i == idx) c0 = u_colors[i];
+    if (i == idx + 1) c1 = u_colors[i];
   }
-  return acc / total;
+  return mix(c0, c1, f);
+}
+
+vec3 sampleGradientOklab(float t) {
+  t = clamp(t, 0.0, 1.0) * (u_colorCount - 1.0);
+  int idx = int(floor(t));
+  float f = fract(t);
+  vec3 c0 = vec3(0.0);
+  vec3 c1 = vec3(0.0);
+  for (int i = 0; i < 8; i++) {
+    if (i == idx) c0 = u_colors[i];
+    if (i == idx + 1) c1 = u_colors[i];
+  }
+  vec3 lab0 = linToOklab(srgbToLinear(c0));
+  vec3 lab1 = linToOklab(srgbToLinear(c1));
+  vec3 lab = mix(lab0, lab1, f);
+  return linearToSrgb(oklabToLin(lab));
+}
+
+vec3 sampleGradient(float t) {
+  if (u_oklab > 0.5) {
+    return sampleGradientOklab(t);
+  }
+  return sampleGradientLinear(t);
+}
+
+vec3 adjustHue(vec3 color, float deg) {
+  float rad = radians(deg);
+  vec3 k = vec3(0.57735, 0.57735, 0.57735);
+  float cosAngle = cos(rad);
+  return vec3(
+    color * cosAngle +
+    cross(k, color) * sin(rad) +
+    k * dot(k, color) * (1.0 - cosAngle));
+}
+
+vec3 adjustContrast(vec3 color, float c) {
+  return clamp((color - 0.5) * c + 0.5, 0.0, 1.0);
+}
+
+vec3 adjustSaturation(vec3 color, float s) {
+  float gray = dot(color, vec3(0.299, 0.587, 0.114));
+  return clamp(mix(vec3(gray), color, s), 0.0, 1.0);
+}
+
+vec3 adjustBrightness(vec3 color, float b) {
+  return clamp(color + b, 0.0, 1.0);
+}
+
+vec3 applyVignette(vec3 color, vec2 uv, float amount) {
+  float d = length((uv - 0.5) * vec2(1.0, u_resolution.y / u_resolution.x));
+  float v = smoothstep(0.8, 0.2, d * amount);
+  return color * v;
+}
+
+vec3 applyFilmGrain(vec3 color, vec2 uv, float amount) {
+  float g = grainHash(uv * u_resolution + fract(u_time * 7.13) * 100.0);
+  return clamp(color + (g - 0.5) * amount, 0.0, 1.0);
+}
+
+mat2 makeRot(float angle) {
+  float c = cos(angle);
+  float s = sin(angle);
+  return mat2(c, -s, s, c);
+}
+
+float cursorDistance(vec2 p) {
+  if (u_cursorPresence <= 0.0) return 1000.0;
+  vec2 cursorUv = u_mouse;
+  vec2 diff = (p - cursorUv) * vec2(u_resolution.x / u_resolution.y, 1.0);
+  return length(diff);
+}
+
+vec2 cursorDisplace(vec2 p) {
+  if (u_cursorPresence <= 0.0 || u_cursorRadius <= 0.001) return p;
+  float d = cursorDistance(p);
+  float r = u_cursorRadius;
+  if (d < r) {
+    float f = 1.0 - smoothstep(0.0, r, d);
+    f = f * f;
+    vec2 dir = normalize(p - u_mouse + vec2(0.0001));
+    if (u_cursorEffect < 0.5) {
+      p += dir * f * u_cursorStrength * 0.2;
+    } else if (u_cursorEffect < 1.5) {
+      p -= dir * f * u_cursorStrength * 0.2;
+    } else if (u_cursorEffect < 2.5) {
+      p += vec2(-dir.y, dir.x) * f * u_cursorStrength * 0.3;
+    }
+  }
+  return p;
 }
 
 void main() {
-  vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-  vec2 screenUv = uv;
-  vec2 p = (gl_FragCoord.xy - 0.5 * u_resolution.xy)
-    / min(u_resolution.x, u_resolution.y);
-  float cursorMask = 0.0;
+  vec2 uv = gl_FragCoord.xy / u_resolution;
+  vec2 p = uv * 2.0 - 1.0;
+  p.x *= u_resolution.x / u_resolution.y;
 
-  if (u_cursorPresence > 0.001) {
-    vec2 cursor = (0.5 * u_mouse * u_resolution.xy)
-      / min(u_resolution.x, u_resolution.y);
-    vec2 cursorDelta = p - cursor;
-    if (u_cursorEffect < 0.5) {
-      p += cursor * u_cursorPresence * u_cursorStrength * 0.55;
-    } else {
-      float cursorDistance = length(cursorDelta);
-      vec2 cursorDirection = cursorDelta / max(cursorDistance, 0.0001);
-      cursorMask = u_cursorPresence
-        * (1.0 - smoothstep(0.0, u_cursorRadius, cursorDistance));
-      if (u_cursorEffect < 1.5) {
-        p -= cursorDirection * cursorMask * u_cursorStrength * 0.24;
-      } else if (u_cursorEffect < 2.5) {
-        float cursorAngle = cursorMask * u_cursorStrength * 2.2;
-        float cc = cos(cursorAngle), cs = sin(cursorAngle);
-        p = cursor + mat2(cc, -cs, cs, cc) * cursorDelta;
-      } else if (u_cursorEffect < 3.5) {
-        float ripple = sin(
-          cursorDistance / max(u_cursorRadius, 0.001) * 18.0 - u_time * 5.0);
-        p -= cursorDirection * ripple * cursorMask * u_cursorStrength * 0.07;
-      }
+  p = cursorDisplace(p);
+
+  float rotAngle = radians(u_rotate);
+  p = makeRot(rotAngle) * p;
+
+  p += u_offset;
+
+  float seedOffset = u_seed * 19.17;
+  vec2 driftVec = vec2(cos(u_drift), sin(u_drift)) * u_time * 0.05;
+  p += driftVec + vec2(seedOffset);
+
+  vec2 q = vec2(0.0);
+  vec2 r = vec2(0.0);
+
+  float s = max(u_scale, 0.01);
+  vec2 sp = p * s;
+
+  q.x = fbm(sp + vec2(0.0, 0.0) + u_time * 0.02 * u_paramA);
+  q.y = fbm(sp + vec2(5.2, 1.3) + u_time * 0.025 * u_paramA);
+
+  float warpAmount = u_warp * 2.0;
+  r.x = fbm(sp + 4.0 * q + vec2(1.7, 9.2) + u_time * 0.015);
+  r.y = fbm(sp + 4.0 * q + vec2(8.3, 2.8) + u_time * 0.012);
+
+  vec2 warpP = sp + warpAmount * r;
+  float f = fbm(warpP);
+
+  float pattern = f;
+  pattern = mix(pattern, (pattern + q.x - q.y) * 0.5, u_intensity);
+
+  float t = clamp(pattern * u_detail, 0.0, 1.0);
+
+  if (u_cursorPresence > 0.0 && u_cursorEffect > 2.5) {
+    float cd = cursorDistance(uv * 2.0 - 1.0);
+    if (cd < u_cursorRadius) {
+      float ripple = sin(cd * 30.0 - u_time * 5.0) * 0.5 + 0.5;
+      float falloff = 1.0 - smoothstep(0.0, u_cursorRadius, cd);
+      t = clamp(t + ripple * falloff * u_cursorStrength * 0.3, 0.0, 1.0);
     }
   }
 
-  uv = p * min(u_resolution.x, u_resolution.y) / u_resolution.xy + 0.5;
-  p *= u_scale;
-  if (abs(u_rotate) > 0.0001) {
-    float cr = cos(u_rotate), sr = sin(u_rotate);
-    p = mat2(cr, -sr, sr, cr) * p;
+  vec3 col = sampleGradient(t);
+
+  if (abs(u_hue) > 0.01) {
+    col = adjustHue(col, u_hue);
   }
-  p += u_offset;
-  if (u_drift > 0.0001)
-    p += u_drift * vec2(sin(u_time * 0.31), cos(u_time * 0.23));
-  if (u_warp > 0.0) {
-    p += u_warp * (vec2(
-      fbm(p * u_detail + u_seed),
-      fbm(p * u_detail + vec2(5.2, 1.3))) - 0.5);
+  if (abs(u_contrast - 1.0) > 0.01) {
+    col = adjustContrast(col, u_contrast);
+  }
+  if (abs(u_brightness) > 0.001) {
+    col = adjustBrightness(col, u_brightness);
+  }
+  if (abs(u_saturation - 1.0) > 0.01) {
+    col = adjustSaturation(col, u_saturation);
+  }
+  if (u_vignette > 0.01) {
+    col = applyVignette(col, uv, u_vignette);
+  }
+  if (u_grain > 0.001) {
+    col = applyFilmGrain(col, uv, u_grain);
   }
 
-  vec3 col;
-  if (u_blur > 0.0) {
-    float e = u_blur;
-    float pe = e * u_scale;
-    vec2 uvE = vec2(e) * min(u_resolution.x, u_resolution.y) / u_resolution.xy;
-    col  = shade(uv, p, u_time) * 0.36;
-    col += shade(uv + vec2(uvE.x, 0.0), p + vec2(pe, 0.0), u_time) * 0.16;
-    col += shade(uv - vec2(uvE.x, 0.0), p - vec2(pe, 0.0), u_time) * 0.16;
-    col += shade(uv + vec2(0.0, uvE.y), p + vec2(0.0, pe), u_time) * 0.16;
-    col += shade(uv - vec2(0.0, uvE.y), p - vec2(0.0, pe), u_time) * 0.16;
-  } else {
-    col = shade(uv, p, u_time);
-  }
-
-  if (abs(u_contrast - 1.0) > 0.0001)
-    col = (col - 0.5) * u_contrast + 0.5;
-  if (abs(u_saturation - 1.0) > 0.0001) {
-    float luma = dot(col, vec3(0.299, 0.587, 0.114));
-    col = mix(vec3(luma), col, u_saturation);
-  }
-  if (abs(u_hue) > 0.0001)
-    col = hueRotate(col, u_hue);
-  if (abs(u_brightness) > 0.0001)
-    col += u_brightness;
-  if (u_vignette > 0.0001) {
-    float vd = length(screenUv - 0.5) * 1.41421356;
-    col *= 1.0 - u_vignette * smoothstep(0.35, 1.0, vd);
-  }
-  if (u_cursorPresence > 0.001 && u_cursorEffect > 3.5)
-    col += (vec3(0.18) + col * 0.12) * cursorMask * u_cursorStrength;
-  if (u_grain > 0.0001)
-    col += (grainHash(
-      gl_FragCoord.xy + vec2(u_seed * 17.0, u_seed * 31.0)) - 0.5) * u_grain;
-  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+  gl_FragColor = vec4(col, 1.0);
 }
 `;
 
-export function MeshDriftBackground({ className = "" }: { className?: string }) {
+function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+  const shader = gl.createShader(type);
+  if (!shader) return null;
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+function createProgram(
+  gl: WebGLRenderingContext,
+  vertexShader: WebGLShader,
+  fragmentShader: WebGLShader
+) {
+  const program = gl.createProgram();
+  if (!program) return null;
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    gl.deleteProgram(program);
+    return null;
+  }
+  return program;
+}
+
+export interface MeshDriftBackgroundProps {
+  className?: string;
+  variant?: "soft-emerald" | "dark";
+}
+
+export function MeshDriftBackground({
+  className = "",
+  variant = "soft-emerald",
+}: MeshDriftBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -252,46 +341,24 @@ export function MeshDriftBackground({ className = "" }: { className?: string }) 
 
     const gl = canvas.getContext("webgl", {
       alpha: false,
-      antialias: false,
       depth: false,
       stencil: false,
-      powerPreference: "high-performance",
+      antialias: false,
+      preserveDrawingBuffer: false,
     });
+
     if (!gl) return;
 
-    // Create Shaders
-    function createShader(type: number, source: string) {
-      if (!gl) return null;
-      const shader = gl.createShader(type);
-      if (!shader) return null;
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error("Shader compile error:", gl.getShaderInfoLog(shader));
-        gl.deleteShader(shader);
-        return null;
-      }
-      return shader;
-    }
-
-    const vertexShader = createShader(gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
-    const fragmentShader = createShader(gl.FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER_SOURCE);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER_SOURCE);
     if (!vertexShader || !fragmentShader) return;
 
-    const program = gl.createProgram();
+    const program = createProgram(gl, vertexShader, fragmentShader);
     if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error("Program link error:", gl.getProgramInfoLog(program));
-      return;
-    }
 
     gl.useProgram(program);
 
-    // Fullscreen Triangle buffer
+    // Fullscreen Triangle
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(
@@ -314,17 +381,31 @@ export function MeshDriftBackground({ className = "" }: { className?: string }) 
     const uSpaceLoc = gl.getUniformLocation(program, "u_space");
     const uCursorLoc = gl.getUniformLocation(program, "u_cursor");
 
-    // Colors: #03120E, #0E7C5A, #7CE577, #F4FFC7
-    const colors = new Float32Array([
-      0.012, 0.071, 0.055, // #03120E
-      0.055, 0.486, 0.353, // #0E7C5A
-      0.486, 0.898, 0.467, // #7CE577
-      0.957, 1.000, 0.780, // #F4FFC7
-      0.000, 0.000, 0.000,
-      0.000, 0.000, 0.000,
-      0.000, 0.000, 0.000,
-      0.000, 0.000, 0.000,
-    ]);
+    // Colors according to variant
+    // Soft Emerald (Light): #F2FAF6, #BCE7D7, #62C49F, #0E7C5A
+    // Dark: #03120E, #0E7C5A, #7CE577, #F4FFC7
+    const colors =
+      variant === "soft-emerald"
+        ? new Float32Array([
+            0.949, 0.980, 0.965, // #F2FAF6
+            0.737, 0.906, 0.843, // #BCE7D7
+            0.384, 0.769, 0.624, // #62C49F
+            0.055, 0.486, 0.353, // #0E7C5A
+            0.000, 0.000, 0.000,
+            0.000, 0.000, 0.000,
+            0.000, 0.000, 0.000,
+            0.000, 0.000, 0.000,
+          ])
+        : new Float32Array([
+            0.012, 0.071, 0.055, // #03120E
+            0.055, 0.486, 0.353, // #0E7C5A
+            0.486, 0.898, 0.467, // #7CE577
+            0.957, 1.000, 0.780, // #F4FFC7
+            0.000, 0.000, 0.000,
+            0.000, 0.000, 0.000,
+            0.000, 0.000, 0.000,
+            0.000, 0.000, 0.000,
+          ]);
 
     if (uColorsLoc) gl.uniform3fv(uColorsLoc, colors);
     if (uShapeLoc) gl.uniform4f(uShapeLoc, 1.16, 0.34, 0.50, 0.00);
@@ -335,7 +416,7 @@ export function MeshDriftBackground({ className = "" }: { className?: string }) 
     if (uCursorLoc) gl.uniform4f(uCursorLoc, 0.00, 2.0, 0.65, 0.46);
 
     let animationFrameId: number;
-    let startTime = performance.now();
+    const startTime = performance.now();
     let isRunning = true;
 
     function resize() {
@@ -372,7 +453,6 @@ export function MeshDriftBackground({ className = "" }: { className?: string }) 
         cancelAnimationFrame(animationFrameId);
       } else {
         isRunning = true;
-        startTime = performance.now();
         animationFrameId = requestAnimationFrame(render);
       }
     };
@@ -395,13 +475,13 @@ export function MeshDriftBackground({ className = "" }: { className?: string }) 
         gl.deleteBuffer(positionBuffer);
       }
     };
-  }, []);
+  }, [variant]);
 
   return (
     <canvas
       ref={canvasRef}
       className={`pointer-events-none fixed inset-0 -z-10 h-full w-full object-cover select-none ${className}`}
-      style={{ background: "#03120E" }}
+      style={{ background: variant === "soft-emerald" ? "#F2FAF6" : "#03120E" }}
     />
   );
 }
