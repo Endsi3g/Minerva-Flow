@@ -29,6 +29,7 @@ import {
   ArrowDown,
   Sparkles,
   ExternalLink,
+  Clock,
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
@@ -37,7 +38,9 @@ import { cn } from "@/lib/utils";
 const ACTION_SUGGESTIONS = [
   {
     badge: "Rentabilité",
-    badgeTone: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    badgeTone: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    impact: "+3 400 $ marge est.",
+    duration: "2 min",
     title: "Analyse des revenus & marges",
     desc: "Identifier les tendances de vente et détecter les anomalies de food cost hebdomadaires.",
     icon: TrendingUp,
@@ -45,24 +48,30 @@ const ACTION_SUGGESTIONS = [
   },
   {
     badge: "Opérations",
-    badgeTone: "bg-blue-50 text-blue-700 border-blue-200",
+    badgeTone: "bg-blue-50 text-blue-800 border-blue-200",
+    impact: "-12% gaspillage",
+    duration: "1 min",
     title: "Plan d'action opérationnel",
-    desc: "Optimiser les réapprovisionnements, la rotation des stocks et réduire le gaspillage.",
+    desc: "Optimiser les réapprovisionnements, la rotation des stocks et sécuriser le service du week-end.",
     icon: PackageCheck,
     prompt: "Propose un plan d'action d'optimisation des achats et de gestion des stocks pour la semaine à venir.",
   },
   {
     badge: "Menu Engineering",
-    badgeTone: "bg-amber-50 text-amber-700 border-amber-200",
+    badgeTone: "bg-amber-50 text-amber-800 border-amber-200",
+    impact: "+1.80 $ ticket moy.",
+    duration: "2 min",
     title: "Ingénierie du menu & plats étoiles",
     desc: "Catégoriser les plats Stars, Plowhorses, Puzzles et Dogs pour ajuster la carte.",
     icon: UtensilsCrossed,
     prompt: "Analyse mes plats phares et mes marges pour catégoriser la carte selon la matrice de rentabilité du menu engineering.",
   },
   {
-    badge: "Rapports",
-    badgeTone: "bg-purple-50 text-purple-700 border-purple-200",
-    title: "Évolution du panier moyen",
+    badge: "Rapports & Clôture",
+    badgeTone: "bg-purple-50 text-purple-800 border-purple-200",
+    impact: "100% synchronisé",
+    duration: "Instant",
+    title: "Évolution du panier moyen & POS",
     desc: "Comparer les volumes de couverts et tracer la progression du ticket moyen.",
     icon: BarChart3,
     prompt: "Génère une synthèse de l'évolution du panier moyen et des volumes de couverts par rapport aux programmes actifs.",
@@ -75,22 +84,22 @@ export function Thread({
   userName?: string;
 }) {
   return (
-    <ThreadPrimitive.Root className="flex h-full w-full flex-col bg-mv-cream overflow-hidden relative font-sans">
+    <ThreadPrimitive.Root className="flex h-full w-full flex-col bg-[#FAF8F5] overflow-hidden relative font-sans text-[#1F1E1D]">
       <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 scroll-smooth">
         <div className="max-w-3xl mx-auto space-y-6">
           {/* Editorial Welcome Screen */}
           <ThreadPrimitive.Empty>
             <div className="pt-6 pb-4 space-y-7 max-w-2xl mx-auto">
               <div className="space-y-1.5 text-center sm:text-left">
-                <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-mv-ink">
-                  Bonjour, <span className="text-mv-green-dark font-serif italic font-normal">{userName}</span>
+                <h1 className="font-sans font-bold text-3xl sm:text-4xl tracking-tight text-[#0A3F2F]">
+                  Bonjour, <span className="font-serif italic font-normal text-[#0E7C5A]">{userName}</span>
                 </h1>
-                <p className="font-display text-base sm:text-lg text-mv-ink-soft">
+                <p className="font-sans text-sm sm:text-base text-[#6A6860]">
                   Quelles métriques de performance souhaitez-vous auditer aujourd&apos;hui ?
                 </p>
               </div>
 
-              {/* 2x2 SaaS Action Suggestion Cards */}
+              {/* 2x2 SaaS Action Suggestion Cards with Impact Badges */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                 {ACTION_SUGGESTIONS.map((card, idx) => {
                   const Icon = card.icon;
@@ -105,28 +114,35 @@ export function Thread({
                       <button
                         type="button"
                         aria-label={`Prompt suggéré: ${card.title}`}
-                        className="group flex flex-col justify-between p-4 rounded-2xl border border-mv-border/80 bg-mv-surface text-left transition-all duration-200 hover:border-mv-green/50 hover:shadow-mv-sm hover:-translate-y-0.5 min-h-[140px]"
+                        className="group flex flex-col justify-between p-4 rounded-2xl border border-[#E8E5DF] bg-white text-left transition-all duration-200 hover:border-[#0E7C5A]/50 hover:shadow-sm hover:-translate-y-0.5 min-h-[145px]"
                       >
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", card.badgeTone)}>
-                              {card.badge}
+                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1", card.badgeTone)}>
+                              <Icon size={11} />
+                              <span>{card.badge}</span>
                             </span>
-                            <div className="p-1.5 rounded-lg bg-mv-cream-soft text-mv-ink-soft group-hover:bg-mv-green-tint group-hover:text-mv-green-dark transition-colors">
-                              <Icon size={14} />
-                            </div>
+                            <span className="text-[10.5px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                              {card.impact}
+                            </span>
                           </div>
-                          <h3 className="font-display text-[13.5px] font-bold text-mv-ink group-hover:text-mv-green-dark transition-colors">
+                          <h3 className="font-sans text-[13.5px] font-bold text-[#1F1E1D] group-hover:text-[#0E7C5A] transition-colors">
                             {card.title}
                           </h3>
-                          <p className="text-[11.5px] text-mv-ink-soft mt-1 leading-relaxed line-clamp-2">
+                          <p className="text-[11.5px] text-[#6A6860] mt-1 leading-relaxed line-clamp-2">
                             {card.desc}
                           </p>
                         </div>
 
-                        <div className="flex items-center justify-between text-[11px] text-mv-ink-faint group-hover:text-mv-green-dark font-medium pt-2 border-t border-mv-border/40 mt-3">
-                          <span>Lancer l&apos;audit</span>
-                          <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                        <div className="flex items-center justify-between text-[11px] text-[#8A887F] group-hover:text-[#0E7C5A] font-semibold pt-2.5 border-t border-[#F0EFEA] mt-3">
+                          <span className="flex items-center gap-1">
+                            <Clock size={11} />
+                            {card.duration}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span>Lancer l&apos;audit</span>
+                            <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                          </span>
                         </div>
                       </button>
                     </ThreadPrimitive.Suggestion>
@@ -151,14 +167,14 @@ export function Thread({
         <button
           type="button"
           aria-label="Faire défiler vers le bas"
-          className="absolute bottom-24 right-6 flex h-8 w-8 items-center justify-center rounded-full border border-mv-border bg-mv-surface text-mv-ink shadow-mv-sm hover:bg-mv-cream-soft transition-all"
+          className="absolute bottom-24 right-6 flex h-8 w-8 items-center justify-center rounded-full border border-[#E2E0D8] bg-white text-[#1F1E1D] shadow-sm hover:bg-gray-50 transition-all"
         >
           <ArrowDown size={14} />
         </button>
       </ThreadPrimitive.ScrollToBottom>
 
       {/* Floating Modernized Composer */}
-      <div className="p-3 sm:p-5 bg-gradient-to-t from-mv-cream via-mv-cream to-transparent">
+      <div className="p-3 sm:p-5 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5] to-transparent">
         <div className="max-w-3xl mx-auto">
           <MultifunctionComposer />
         </div>
@@ -178,7 +194,7 @@ function UserMessage() {
           }}
         />
 
-        <div className="rounded-2xl rounded-tr-sm bg-mv-green px-4 py-2.5 text-[13.5px] text-white shadow-mv-sm leading-relaxed">
+        <div className="rounded-2xl rounded-tr-sm bg-[#0E7C5A] px-4 py-2.5 text-[13.5px] text-white shadow-xs leading-relaxed font-sans font-medium">
           <MessagePrimitive.Content />
         </div>
 
@@ -192,7 +208,7 @@ function UserMessage() {
 function AssistantMessage() {
   return (
     <MessagePrimitive.Root className="flex gap-3.5 group">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-mv-surface border border-mv-border text-mv-green-dark shadow-mv-sm mt-0.5">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white border border-[#E2E0D8] text-[#0E7C5A] shadow-xs mt-0.5">
         <Bot size={15} />
       </div>
 
@@ -201,7 +217,7 @@ function AssistantMessage() {
         <ReasoningAccordion />
 
         {/* Markdown Content */}
-        <div className="rounded-2xl rounded-tl-sm border border-mv-border/80 bg-mv-surface px-4.5 py-3.5 text-mv-ink shadow-mv-sm space-y-3">
+        <div className="rounded-2xl rounded-tl-sm border border-[#E8E5DF] bg-white px-4.5 py-3.5 text-[#1F1E1D] shadow-xs space-y-3">
           <MessagePrimitive.Content
             components={{
               Text: MarkdownText,
@@ -213,15 +229,15 @@ function AssistantMessage() {
         </div>
 
         {/* Action Bar */}
-        <div className="flex items-center gap-1 text-mv-ink-faint opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 text-[#8A887F] opacity-0 group-hover:opacity-100 transition-opacity">
           <ActionBarPrimitive.Copy asChild>
             <button
               type="button"
-              className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-mv-cream-soft hover:text-mv-ink transition-colors"
+              className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white hover:text-[#1F1E1D] transition-colors"
               title="Copier la réponse"
             >
               <MessagePrimitive.If copied>
-                <Check size={13} className="text-mv-green-dark" />
+                <Check size={13} className="text-[#0E7C5A]" />
               </MessagePrimitive.If>
               <MessagePrimitive.If copied={false}>
                 <Copy size={13} />
@@ -232,7 +248,7 @@ function AssistantMessage() {
           <ActionBarPrimitive.Reload asChild>
             <button
               type="button"
-              className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-mv-cream-soft hover:text-mv-ink transition-colors"
+              className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white hover:text-[#1F1E1D] transition-colors"
               title="Régénérer"
             >
               <RotateCcw size={13} />
@@ -254,19 +270,19 @@ function GenerativeActionCard() {
   };
 
   return (
-    <div className="pt-2 border-t border-mv-border/50">
-      <div className="rounded-xl bg-mv-cream-soft border border-mv-border/70 p-3 space-y-2.5">
+    <div className="pt-2 border-t border-[#F0EFEA]">
+      <div className="rounded-2xl bg-[#FAF8F5] border border-[#E8E5DF] p-3.5 space-y-2.5">
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-[11.5px] font-bold text-mv-ink">
-            <Sparkles size={12} className="text-mv-green-dark" />
-            Recommandations &amp; Actions immédiates
+          <span className="flex items-center gap-1.5 text-[11.5px] font-bold text-[#0A3F2F]">
+            <Sparkles size={12} className="text-[#0E7C5A]" />
+            Recommandations d&apos;action immédiate
           </span>
           <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 text-[10px] font-bold">
             +3 400 $ marge est.
           </span>
         </div>
 
-        <div className="space-y-1.5 text-[11.5px] text-mv-ink-soft">
+        <div className="space-y-1.5 text-[11.5px] text-[#5A5851]">
           {[
             "Réajuster la tarification des cocktails du programme '5 à 7' (+8% marge brute).",
             "Vérifier les réapprovisionnements critiques pour sécuriser le service de ce week-end.",
@@ -275,19 +291,19 @@ function GenerativeActionCard() {
             <label
               key={i}
               onClick={() => toggleItem(i)}
-              className="flex items-start gap-2 cursor-pointer rounded-lg p-1 hover:bg-mv-cream/70 transition-colors"
+              className="flex items-start gap-2 cursor-pointer rounded-lg p-1 hover:bg-white transition-colors"
             >
               <div
                 className={cn(
                   "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
                   completedItems[i]
-                    ? "bg-mv-green border-mv-green text-white"
-                    : "border-mv-border-soft bg-mv-surface"
+                    ? "bg-[#0E7C5A] border-[#0E7C5A] text-white"
+                    : "border-[#D1CECA] bg-white"
                 )}
               >
-                {completedItems[i] && <Check size={11} />}
+                {completedItems[i] && <Check size={11} strokeWidth={3} />}
               </div>
-              <span className={cn(completedItems[i] && "line-through opacity-60 text-mv-ink-faint")}>
+              <span className={cn(completedItems[i] && "line-through opacity-60 text-[#8A887F]")}>
                 {action}
               </span>
             </label>
@@ -295,17 +311,17 @@ function GenerativeActionCard() {
         </div>
 
         {/* Action CTAs */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-mv-border/40">
+        <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-[#E8E5DF]">
           <Link
             href="/menu"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-mv-green-dark bg-mv-surface border border-mv-border/80 px-2.5 py-1 rounded-lg hover:bg-mv-cream transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0E7C5A] bg-white border border-[#E2E0D8] px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors shadow-2xs"
           >
             <span>Menu Engineering</span>
             <ExternalLink size={10} />
           </Link>
           <Link
-            href="/stocks"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-mv-ink-soft bg-mv-surface border border-mv-border/80 px-2.5 py-1 rounded-lg hover:bg-mv-cream hover:text-mv-ink transition-colors shadow-2xs"
+            href="/inventaire"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#5A5851] bg-white border border-[#E2E0D8] px-2.5 py-1 rounded-lg hover:bg-gray-50 hover:text-[#1F1E1D] transition-colors shadow-2xs"
           >
             <span>Gestion des Stocks</span>
             <ExternalLink size={10} />
@@ -318,11 +334,11 @@ function GenerativeActionCard() {
 
 function BranchPicker() {
   return (
-    <BranchPickerPrimitive.Root className="flex items-center gap-1 text-xs text-mv-ink-soft">
+    <BranchPickerPrimitive.Root className="flex items-center gap-1 text-xs text-[#8A887F]">
       <BranchPickerPrimitive.Previous asChild>
         <button
           type="button"
-          className="flex h-5 w-5 items-center justify-center rounded hover:bg-mv-cream-soft"
+          className="flex h-5 w-5 items-center justify-center rounded hover:bg-white"
         >
           <ChevronLeft size={12} />
         </button>
@@ -335,7 +351,7 @@ function BranchPicker() {
       <BranchPickerPrimitive.Next asChild>
         <button
           type="button"
-          className="flex h-5 w-5 items-center justify-center rounded hover:bg-mv-cream-soft"
+          className="flex h-5 w-5 items-center justify-center rounded hover:bg-white"
         >
           <ChevronRight size={12} />
         </button>
@@ -368,7 +384,7 @@ function MultifunctionComposer() {
   const handleSelectCommand = (item: CommandItem) => {
     const currentText = aui.composer.getState().text || "";
     const words = currentText.split(/\s+/);
-    words.pop(); // Remove the partial trigger word
+    words.pop();
     const prefix = words.length > 0 ? words.join(" ") + " " : "";
     
     aui.composer.setText(prefix + item.promptSnippet);
@@ -377,7 +393,7 @@ function MultifunctionComposer() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative select-none">
       {/* Autocomplete Popover */}
       {popoverTrigger && (
         <ChatCommandPopover
@@ -388,7 +404,7 @@ function MultifunctionComposer() {
         />
       )}
 
-      <ComposerPrimitive.Root className="flex flex-col rounded-2xl border border-mv-border bg-mv-surface shadow-mv-sm transition-all focus-within:border-mv-green/60 focus-within:ring-2 focus-within:ring-mv-green/10">
+      <ComposerPrimitive.Root className="flex flex-col rounded-2xl border border-[#E2E0D8] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all focus-within:border-[#0E7C5A] focus-within:ring-2 focus-within:ring-[#0E7C5A]/15">
         {/* Attachments preview list */}
         <div className="flex flex-wrap gap-2 p-2.5 pb-0 empty:hidden">
           <ComposerPrimitive.Attachments
@@ -403,7 +419,7 @@ function MultifunctionComposer() {
           <ComposerPrimitive.AddAttachment asChild>
             <button
               type="button"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-mv-ink-soft hover:bg-mv-cream-soft hover:text-mv-ink transition-colors"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#5A5851] hover:bg-gray-100 hover:text-[#1F1E1D] transition-colors"
               title="Ajouter un fichier"
             >
               <Paperclip size={16} />
@@ -415,15 +431,15 @@ function MultifunctionComposer() {
             rows={1}
             autoFocus
             onChange={handleInputChange}
-            placeholder="Posez une question sur vos ventes, tapez '/' pour les commandes ou '@' pour les données..."
-            className="flex-1 max-h-36 resize-none bg-transparent py-1 text-[13px] sm:text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint focus:outline-none leading-relaxed"
+            placeholder="Posez une question, tapez '/' pour les commandes ou '@' pour les données POS..."
+            className="flex-1 max-h-36 resize-none bg-transparent py-1 text-[13px] sm:text-[13.5px] text-[#1F1E1D] placeholder:text-[#8A887F] focus:outline-none leading-relaxed"
           />
 
           {/* Send / Cancel Button */}
           <ComposerPrimitive.Send asChild>
             <button
               type="button"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-mv-green text-white shadow-mv-sm hover:bg-mv-green-dark transition-all disabled:opacity-35"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#0E7C5A] text-white shadow-xs hover:bg-[#0A6348] transition-all disabled:opacity-35"
             >
               <ArrowUp size={15} />
             </button>
@@ -432,7 +448,7 @@ function MultifunctionComposer() {
           <ComposerPrimitive.Cancel asChild>
             <button
               type="button"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-mv-ink-soft text-white shadow-mv-sm hover:bg-mv-ink transition-all"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1F1E1D] text-white shadow-xs hover:bg-black transition-all"
             >
               <Square size={13} />
             </button>
@@ -441,37 +457,35 @@ function MultifunctionComposer() {
       </ComposerPrimitive.Root>
 
       {/* Sub-bar with clickable shortcut helpers */}
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-[10.5px] text-mv-ink-faint select-none">
+      <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2 text-[10.5px] text-[#8A887F]">
         <button
           type="button"
           onClick={() => {
             aui.composer.setText("Génère un plan d'action opérationnel complet pour optimiser les achats et la gestion des stocks.");
           }}
-          className="flex items-center gap-1 hover:text-mv-ink transition-colors"
+          className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E8E5DF] hover:border-[#0E7C5A] hover:text-[#1F1E1D] transition-colors shadow-2xs"
         >
-          <kbd className="bg-mv-cream-soft px-1.5 py-0.5 rounded font-mono text-mv-ink border border-mv-border/60">/plan</kbd>
+          <kbd className="bg-[#FAF8F5] px-1.5 py-0.5 rounded font-mono text-[#1F1E1D] border border-[#E8E5DF]">/plan</kbd>
           <span>Plan opérationnel</span>
         </button>
-        <span>•</span>
         <button
           type="button"
           onClick={() => {
             aui.composer.setText("[Données Ventes] Analyse détaillée des ventes et marges du mois en cours : ");
           }}
-          className="flex items-center gap-1 hover:text-mv-ink transition-colors"
+          className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E8E5DF] hover:border-[#0E7C5A] hover:text-[#1F1E1D] transition-colors shadow-2xs"
         >
-          <kbd className="bg-mv-cream-soft px-1.5 py-0.5 rounded font-mono text-mv-ink border border-mv-border/60">@ventes</kbd>
+          <kbd className="bg-[#FAF8F5] px-1.5 py-0.5 rounded font-mono text-[#1F1E1D] border border-[#E8E5DF]">@ventes</kbd>
           <span>Données POS</span>
         </button>
-        <span>•</span>
         <button
           type="button"
           onClick={() => {
             aui.composer.setText("Analyse mes plats phares selon la matrice d'ingénierie de menu (Stars, Plowhorses, Puzzles, Dogs).");
           }}
-          className="flex items-center gap-1 hover:text-mv-ink transition-colors"
+          className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E8E5DF] hover:border-[#0E7C5A] hover:text-[#1F1E1D] transition-colors shadow-2xs"
         >
-          <kbd className="bg-mv-cream-soft px-1.5 py-0.5 rounded font-mono text-mv-ink border border-mv-border/60">/menu</kbd>
+          <kbd className="bg-[#FAF8F5] px-1.5 py-0.5 rounded font-mono text-[#1F1E1D] border border-[#E8E5DF]">/menu</kbd>
           <span>Menu Engineering</span>
         </button>
       </div>
