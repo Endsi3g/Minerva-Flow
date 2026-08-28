@@ -43,6 +43,8 @@ export interface ModelOption {
 }
 
 export interface ChatInputProps {
+  value?: string;
+  onChange?: (value: string) => void;
   onSendMessage?: (
     message: string,
     files: FileWithPreview[],
@@ -51,7 +53,7 @@ export interface ChatInputProps {
   disabled?: boolean;
   placeholder?: string;
   maxFiles?: number;
-  maxFileSize?: number; // in bytes
+  maxFileSize?: number;
   acceptedFileTypes?: string[];
   models?: ModelOption[];
   defaultModel?: string;
@@ -62,12 +64,12 @@ export interface ChatInputProps {
 // Constants
 const MAX_FILES = 10;
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const PASTE_THRESHOLD = 200; // characters threshold for showing as pasted content
+const PASTE_THRESHOLD = 200;
 const DEFAULT_MODELS_INTERNAL: ModelOption[] = [
   {
     id: "gemini-3.7-flash",
     name: "Gemini 3.7 Flash",
-    description: "Modèle hybride vitesse et raisonnement profond",
+    description: "Modèle hybride vitesse et analyse d'exploitation avancée",
     badge: "Actif",
   },
   {
@@ -79,16 +81,15 @@ const DEFAULT_MODELS_INTERNAL: ModelOption[] = [
   {
     id: "claude-opus-3.5",
     name: "Claude Opus 3.5",
-    description: "Intelligence maximale",
+    description: "Intelligence maximale pour audits complexes",
   },
   {
     id: "claude-haiku-3",
     name: "Claude Haiku 3",
-    description: "Réponses ultra-rapides",
+    description: "Réponses ultra-rapides du quotidien",
   },
 ];
 
-// File type helpers
 const getFileTypeLabel = (type: string): string => {
   const parts = type.split("/");
   let label = parts[parts.length - 1].toUpperCase();
@@ -197,6 +198,7 @@ const getFileExtension = (filename: string): string => {
   return extension.length > 8 ? extension.substring(0, 8) + "..." : extension;
 };
 
+// Textual File Preview Card (Light Mode)
 const TextualFilePreviewCard: React.FC<{
   file: FileWithPreview;
   onRemove: (id: string) => void;
@@ -207,8 +209,8 @@ const TextualFilePreviewCard: React.FC<{
   const fileExtension = getFileExtension(file.file.name);
 
   return (
-    <div className="bg-[#2a2a28] border border-[#3e3e3a] relative rounded-xl p-3 size-[125px] shadow-md shrink-0 overflow-hidden text-left">
-      <div className="text-[9px] text-zinc-300 whitespace-pre-wrap break-words max-h-24 overflow-y-auto">
+    <div className="bg-[#FAF8F5] border border-[#E2E0D8] relative rounded-xl p-3 size-[125px] shadow-sm shrink-0 overflow-hidden text-left">
+      <div className="text-[9.5px] text-[#4A4840] whitespace-pre-wrap break-words max-h-24 overflow-y-auto">
         {file.textContent ? (
           <>
             {isExpanded || !needsTruncation ? file.textContent : previewText}
@@ -216,29 +218,29 @@ const TextualFilePreviewCard: React.FC<{
           </>
         ) : (
           <div className="flex items-center justify-center h-full text-zinc-400">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin text-[#0E7C5A]" />
           </div>
         )}
       </div>
-      <div className="group absolute flex justify-start items-end p-2 inset-0 bg-gradient-to-b to-[#1f1e1d] from-transparent overflow-hidden">
-        <p className="capitalize text-white text-[10px] font-mono bg-[#181816] border border-[#3e3e3a] px-1.5 py-0.5 rounded-md">
+      <div className="group absolute flex justify-start items-end p-2 inset-0 bg-gradient-to-b to-[#FFFFFF]/90 from-transparent overflow-hidden">
+        <p className="capitalize text-[#1F1E1D] text-[10px] font-mono font-bold bg-white border border-[#E2E0D8] px-1.5 py-0.5 rounded-md shadow-xs">
           {fileExtension}
         </p>
         {file.uploadStatus === "uploading" && (
           <div className="absolute top-2 left-2">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0E7C5A]" />
           </div>
         )}
         {file.uploadStatus === "error" && (
           <div className="absolute top-2 left-2">
-            <AlertCircle className="h-3.5 w-3.5 text-red-400" />
+            <AlertCircle className="h-3.5 w-3.5 text-red-500" />
           </div>
         )}
         <div className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 flex items-center gap-1 absolute top-2 right-2">
           {file.textContent && (
             <button
               type="button"
-              className="h-6 w-6 rounded bg-[#181816] border border-[#3e3e3a] text-zinc-300 hover:text-white flex items-center justify-center"
+              className="h-6 w-6 rounded-md bg-white border border-[#E2E0D8] text-[#5A5851] hover:text-[#1F1E1D] hover:bg-gray-50 flex items-center justify-center shadow-xs"
               onClick={() => navigator.clipboard.writeText(file.textContent || "")}
               title="Copier le contenu"
             >
@@ -247,7 +249,7 @@ const TextualFilePreviewCard: React.FC<{
           )}
           <button
             type="button"
-            className="h-6 w-6 rounded bg-[#181816] border border-[#3e3e3a] text-zinc-300 hover:text-white flex items-center justify-center"
+            className="h-6 w-6 rounded-md bg-white border border-[#E2E0D8] text-[#5A5851] hover:text-[#1F1E1D] hover:bg-gray-50 flex items-center justify-center shadow-xs"
             onClick={() => onRemove(file.id)}
             title="Supprimer"
           >
@@ -259,6 +261,7 @@ const TextualFilePreviewCard: React.FC<{
   );
 };
 
+// File Preview Card (Light Mode)
 const FilePreviewCard: React.FC<{
   file: FileWithPreview;
   onRemove: (id: string) => void;
@@ -273,13 +276,13 @@ const FilePreviewCard: React.FC<{
   return (
     <div
       className={cn(
-        "relative group bg-[#2a2a28] border w-fit border-[#3e3e3a] rounded-xl size-[125px] shadow-md shrink-0 overflow-hidden text-left",
+        "relative group bg-[#FAF8F5] border border-[#E2E0D8] rounded-xl size-[125px] shadow-sm shrink-0 overflow-hidden text-left",
         isImage ? "p-0" : "p-3"
       )}
     >
       <div className="flex items-start gap-3 size-[125px] overflow-hidden">
         {isImage && file.preview ? (
-          <div className="relative size-full rounded-md overflow-hidden bg-zinc-800">
+          <div className="relative size-full rounded-md overflow-hidden bg-gray-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={file.preview}
@@ -291,26 +294,26 @@ const FilePreviewCard: React.FC<{
         {!isImage && (
           <div className="flex-1 min-w-0 overflow-hidden">
             <div className="flex items-center gap-1.5 mb-1">
-              <div className="group absolute flex justify-start items-end p-2 inset-0 bg-gradient-to-b to-[#1f1e1d] from-transparent overflow-hidden">
-                <p className="absolute bottom-2 left-2 capitalize text-white text-[10px] font-mono bg-[#181816] border border-[#3e3e3a] px-1.5 py-0.5 rounded-md">
+              <div className="group absolute flex justify-start items-end p-2 inset-0 bg-gradient-to-b to-[#FFFFFF]/90 from-transparent overflow-hidden">
+                <p className="capitalize text-[#1F1E1D] text-[10px] font-mono font-bold bg-white border border-[#E2E0D8] px-1.5 py-0.5 rounded-md shadow-xs">
                   {getFileTypeLabel(file.type)}
                 </p>
               </div>
               {file.uploadStatus === "uploading" && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0E7C5A]" />
               )}
               {file.uploadStatus === "error" && (
-                <AlertCircle className="h-3.5 w-3.5 text-red-400" />
+                <AlertCircle className="h-3.5 w-3.5 text-red-500" />
               )}
             </div>
 
             <p
-              className="max-w-[90%] text-xs font-medium text-zinc-100 truncate"
+              className="max-w-[90%] text-xs font-semibold text-[#1F1E1D] truncate"
               title={file.file.name}
             >
               {file.file.name}
             </p>
-            <p className="text-[10px] text-zinc-400 mt-1">
+            <p className="text-[10px] text-[#8A887F] mt-1">
               {formatFileSize(file.file.size)}
             </p>
           </div>
@@ -318,7 +321,7 @@ const FilePreviewCard: React.FC<{
       </div>
       <button
         type="button"
-        className="absolute top-1.5 right-1.5 h-6 w-6 rounded bg-[#181816] border border-[#3e3e3a] text-zinc-300 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-1.5 right-1.5 h-6 w-6 rounded-md bg-white border border-[#E2E0D8] text-[#5A5851] hover:text-[#1F1E1D] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xs"
         onClick={() => onRemove(file.id)}
       >
         <X className="h-3.5 w-3.5" />
@@ -327,6 +330,7 @@ const FilePreviewCard: React.FC<{
   );
 };
 
+// Pasted Content Card (Light Mode)
 const PastedContentCard: React.FC<{
   content: PastedContent;
   onRemove: (id: string) => void;
@@ -336,19 +340,19 @@ const PastedContentCard: React.FC<{
   const needsTruncation = content.content.length > 150;
 
   return (
-    <div className="bg-[#2a2a28] border border-[#3e3e3a] relative rounded-xl p-3 size-[125px] shadow-md shrink-0 overflow-hidden text-left">
-      <div className="text-[9px] text-zinc-300 whitespace-pre-wrap break-words max-h-24 overflow-y-auto">
+    <div className="bg-[#FAF8F5] border border-[#E2E0D8] relative rounded-xl p-3 size-[125px] shadow-sm shrink-0 overflow-hidden text-left">
+      <div className="text-[9.5px] text-[#4A4840] whitespace-pre-wrap break-words max-h-24 overflow-y-auto">
         {isExpanded || !needsTruncation ? content.content : previewText}
         {!isExpanded && needsTruncation && "..."}
       </div>
-      <div className="group absolute flex justify-start items-end p-2 inset-0 bg-gradient-to-b to-[#1f1e1d] from-transparent overflow-hidden">
-        <p className="capitalize text-white text-[10px] font-mono bg-[#181816] border border-[#3e3e3a] px-1.5 py-0.5 rounded-md">
+      <div className="group absolute flex justify-start items-end p-2 inset-0 bg-gradient-to-b to-[#FFFFFF]/90 from-transparent overflow-hidden">
+        <p className="capitalize text-[#1F1E1D] text-[10px] font-mono font-bold bg-white border border-[#E2E0D8] px-1.5 py-0.5 rounded-md shadow-xs">
           COLLÉ
         </p>
         <div className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 flex items-center gap-1 absolute top-2 right-2">
           <button
             type="button"
-            className="h-6 w-6 rounded bg-[#181816] border border-[#3e3e3a] text-zinc-300 hover:text-white flex items-center justify-center"
+            className="h-6 w-6 rounded-md bg-white border border-[#E2E0D8] text-[#5A5851] hover:text-[#1F1E1D] flex items-center justify-center shadow-xs"
             onClick={() => navigator.clipboard.writeText(content.content)}
             title="Copier le texte"
           >
@@ -356,7 +360,7 @@ const PastedContentCard: React.FC<{
           </button>
           <button
             type="button"
-            className="h-6 w-6 rounded bg-[#181816] border border-[#3e3e3a] text-zinc-300 hover:text-white flex items-center justify-center"
+            className="h-6 w-6 rounded-md bg-white border border-[#E2E0D8] text-[#5A5851] hover:text-[#1F1E1D] flex items-center justify-center shadow-xs"
             onClick={() => onRemove(content.id)}
             title="Supprimer"
           >
@@ -368,6 +372,7 @@ const PastedContentCard: React.FC<{
   );
 };
 
+// Model Selector Dropdown (Light Mode)
 const ModelSelectorDropdown: React.FC<{
   models: ModelOption[];
   selectedModel: string;
@@ -395,7 +400,7 @@ const ModelSelectorDropdown: React.FC<{
     <div className="relative" ref={dropdownRef}>
       <button
         type="button"
-        className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-colors"
+        className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-[#5A5851] hover:text-[#1F1E1D] hover:bg-black/[0.05] transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="truncate max-w-[130px] sm:max-w-[170px]">
@@ -410,14 +415,14 @@ const ModelSelectorDropdown: React.FC<{
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full right-0 mb-2 w-72 bg-[#181816] border border-[#3e3e3a] rounded-2xl shadow-2xl z-30 p-1.5 text-left">
+        <div className="absolute bottom-full right-0 mb-2 w-72 bg-white border border-[#E2E0D8] rounded-2xl shadow-xl z-30 p-1.5 text-left">
           {models.map((model) => (
             <button
               key={model.id}
               type="button"
               className={cn(
-                "w-full text-left p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors flex items-center justify-between",
-                model.id === selectedModel && "bg-white/[0.08]"
+                "w-full text-left p-2.5 rounded-xl hover:bg-black/[0.04] transition-colors flex items-center justify-between",
+                model.id === selectedModel && "bg-[#0E7C5A]/10 text-[#0E7C5A]"
               )}
               onClick={() => {
                 onModelChange(model.id);
@@ -426,21 +431,21 @@ const ModelSelectorDropdown: React.FC<{
             >
               <div className="min-w-0 pr-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-xs text-zinc-100">
+                  <span className="font-semibold text-xs text-[#1F1E1D]">
                     {model.name}
                   </span>
                   {model.badge && (
-                    <span className="px-1.5 py-0.2 text-[9.5px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full font-semibold">
+                    <span className="px-1.5 py-0.2 text-[9.5px] bg-[#0E7C5A]/15 text-[#0E7C5A] border border-[#0E7C5A]/30 rounded-full font-semibold">
                       {model.badge}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
+                <p className="text-[11px] text-[#8A887F] mt-0.5 truncate">
                   {model.description}
                 </p>
               </div>
               {model.id === selectedModel && (
-                <Check className="h-4 w-4 text-emerald-400 shrink-0" />
+                <Check className="h-4 w-4 text-[#0E7C5A] shrink-0" />
               )}
             </button>
           ))}
@@ -450,6 +455,7 @@ const ModelSelectorDropdown: React.FC<{
   );
 };
 
+// Main ClaudeChatInput (100% Light Mode)
 export const ClaudeChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   disabled = false,
@@ -461,8 +467,24 @@ export const ClaudeChatInput: React.FC<ChatInputProps> = ({
   defaultModel,
   onModelChange,
   className = "",
+  value,
+  onChange,
 }) => {
-  const [message, setMessage] = useState("");
+  const [internalMessage, setInternalMessage] = useState("");
+  const isControlled = value !== undefined;
+  const message = isControlled ? value : internalMessage;
+
+  const setMessage = useCallback(
+    (val: string) => {
+      if (isControlled) {
+        onChange?.(val);
+      } else {
+        setInternalMessage(val);
+      }
+    },
+    [isControlled, onChange]
+  );
+
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [pastedContent, setPastedContent] = useState<PastedContent[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -490,9 +512,7 @@ export const ClaudeChatInput: React.FC<ChatInputProps> = ({
 
       const currentFileCount = files.length;
       if (currentFileCount >= maxFiles) {
-        alert(
-          `Maximum ${maxFiles} fichiers autorisés.`
-        );
+        alert(`Maximum ${maxFiles} fichiers autorisés.`);
         return;
       }
 
@@ -615,7 +635,7 @@ export const ClaudeChatInput: React.FC<ChatInputProps> = ({
         pastedContent.length < 5
       ) {
         e.preventDefault();
-        setMessage((prev) => prev + textData.slice(0, PASTE_THRESHOLD) + "...");
+        setMessage(message + textData.slice(0, PASTE_THRESHOLD) + "...");
 
         const pastedItem: PastedContent = {
           id: String(Date.now() + Math.random()),
@@ -627,7 +647,7 @@ export const ClaudeChatInput: React.FC<ChatInputProps> = ({
         setPastedContent((prev) => [...prev, pastedItem]);
       }
     },
-    [handleFileSelect, files.length, maxFiles, pastedContent.length]
+    [handleFileSelect, files.length, maxFiles, pastedContent.length, message, setMessage]
   );
 
   const handleSend = useCallback(() => {
@@ -650,7 +670,7 @@ export const ClaudeChatInput: React.FC<ChatInputProps> = ({
     setFiles([]);
     setPastedContent([]);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-  }, [message, files, pastedContent, disabled, onSendMessage]);
+  }, [message, files, pastedContent, disabled, onSendMessage, setMessage]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -681,16 +701,16 @@ export const ClaudeChatInput: React.FC<ChatInputProps> = ({
       }}
     >
       {isDragging && (
-        <div className="absolute inset-0 z-50 bg-[#0E7C5A]/30 border-2 border-dashed border-[#7CE577] rounded-2xl flex flex-col items-center justify-center pointer-events-none">
-          <p className="text-sm font-semibold text-[#7CE577] flex items-center gap-2">
+        <div className="absolute inset-0 z-50 bg-[#0E7C5A]/10 border-2 border-dashed border-[#0E7C5A] rounded-2xl flex flex-col items-center justify-center pointer-events-none">
+          <p className="text-sm font-semibold text-[#0E7C5A] flex items-center gap-2">
             <ImageIcon className="size-4" />
             Déposez vos fichiers pour les analyser
           </p>
         </div>
       )}
 
-      {/* Solid Opaque Claude-Style Card */}
-      <div className="bg-[#181816] border border-[#32322e] rounded-2xl shadow-xl flex flex-col transition-all focus-within:border-[#0E7C5A] focus-within:ring-2 focus-within:ring-[#0E7C5A]/20">
+      {/* Solid Opaque Light Mode Card */}
+      <div className="bg-white border border-[#E2E0D8] rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] flex flex-col transition-all focus-within:border-[#0E7C5A] focus-within:ring-2 focus-within:ring-[#0E7C5A]/15">
         <textarea
           ref={textareaRef}
           value={message}
@@ -699,24 +719,24 @@ export const ClaudeChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full p-4 bg-transparent text-zinc-100 placeholder:text-zinc-500 focus:outline-none resize-none text-sm sm:text-base leading-relaxed max-h-48 min-h-[96px]"
+          className="w-full p-4 bg-transparent text-[#1F1E1D] placeholder:text-[#8A887F] focus:outline-none resize-none text-sm sm:text-base leading-relaxed max-h-48 min-h-[96px]"
           rows={1}
         />
 
-        <div className="flex items-center justify-between w-full px-3 py-2 border-t border-[#262624]">
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between w-full px-3 py-2 border-t border-[#F0EFEA]">
+          <div className="flex items-center gap-1">
             <button
               type="button"
-              className="h-8 w-8 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.08] transition-colors flex items-center justify-center"
+              className="h-8 w-8 rounded-lg text-[#5A5851] hover:text-[#1F1E1D] hover:bg-black/[0.05] transition-colors flex items-center justify-center"
               onClick={() => fileInputRef.current?.click()}
               disabled={disabled || files.length >= maxFiles}
-              title="Joindre un fichier"
+              title="Joindre un fichier (menu, facture, export caisse)"
             >
               <Plus className="h-4 w-4" />
             </button>
             <button
               type="button"
-              className="h-8 w-8 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.08] transition-colors flex items-center justify-center"
+              className="h-8 w-8 rounded-lg text-[#5A5851] hover:text-[#1F1E1D] hover:bg-black/[0.05] transition-colors flex items-center justify-center"
               disabled={disabled}
               title="Options d'analyse"
             >
@@ -739,10 +759,10 @@ export const ClaudeChatInput: React.FC<ChatInputProps> = ({
             <button
               type="button"
               className={cn(
-                "h-8 w-8 rounded-lg transition-all flex items-center justify-center shadow-sm",
+                "h-8 w-8 rounded-lg transition-all flex items-center justify-center shadow-xs",
                 canSend
-                  ? "bg-[#0E7C5A] hover:bg-[#095a41] text-white"
-                  : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
+                  ? "bg-[#0E7C5A] hover:bg-[#0A6348] text-white"
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
               )}
               onClick={handleSend}
               disabled={!canSend}
@@ -754,7 +774,7 @@ export const ClaudeChatInput: React.FC<ChatInputProps> = ({
         </div>
 
         {(files.length > 0 || pastedContent.length > 0) && (
-          <div className="overflow-x-auto border-t border-[#262624] p-3 w-full bg-[#121211] rounded-b-2xl">
+          <div className="overflow-x-auto border-t border-[#F0EFEA] p-3 w-full bg-[#FAF8F5] rounded-b-2xl">
             <div className="flex gap-3">
               {pastedContent.map((content) => (
                 <PastedContentCard
@@ -788,27 +808,6 @@ export const ClaudeChatInput: React.FC<ChatInputProps> = ({
           if (e.target) e.target.value = "";
         }}
       />
-    </div>
-  );
-};
-
-export const ClaudeInputDemo = () => {
-  const handleSendMessage = (
-    msg: string,
-    fls: FileWithPreview[],
-    pasted: PastedContent[]
-  ) => {
-    alert(`Message envoyé !\nTexte : ${msg}\nFichiers : ${fls.length}\nContenus collés : ${pasted.length}`);
-  };
-
-  return (
-    <div className="min-h-screen w-full bg-[#121211] flex flex-col items-center justify-center p-6 text-white">
-      <div className="w-full max-w-3xl text-center space-y-6">
-        <h1 className="font-serif text-3xl sm:text-4xl font-normal text-[#F4FFC7] tracking-tight">
-          Quelles métriques auditer aujourd&apos;hui ?
-        </h1>
-        <ClaudeChatInput onSendMessage={handleSendMessage} />
-      </div>
     </div>
   );
 };

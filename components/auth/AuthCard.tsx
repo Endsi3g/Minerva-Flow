@@ -8,7 +8,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { Suspense, useState, type FormEvent } from "react";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { Google } from "@/components/ui/BrandIcons";
-import { MeshDriftBackground } from "@/components/ui/MeshDriftBackground";
 import { cn } from "@/lib/utils";
 
 function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
@@ -130,41 +129,37 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
   }
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-x-hidden">
-      {/* Animated WebGL Mesh Drift Background */}
-      <MeshDriftBackground />
-
-      {/* Main Solid Opaque Auth Container (Strictly NO Glassmorphism) */}
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-[#FAF8F5] text-[#1F1E1D]">
+      {/* Centered Solid Opaque Light Mode Card */}
       <div className="w-full max-w-[440px] my-auto z-10 animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Solid Opaque Card */}
-        <div className="bg-[#181816] border border-[#2E2E2A] rounded-3xl p-7 sm:p-9 shadow-[0_24px_70px_rgba(0,0,0,0.85)] text-white">
+        <div className="bg-white border border-[#E8E5DF] rounded-3xl p-7 sm:p-9 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
           
           {/* Logo & Header */}
           <div className="text-center space-y-2 mb-6">
-            <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-[#0E7C5A] text-white font-serif font-bold text-xl shadow-md border border-[#7CE577]/30 mb-1">
+            <Link href="/overview" className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-[#0E7C5A] text-white font-serif font-bold text-xl shadow-xs border border-[#0E7C5A]/30 mb-1 hover:scale-105 transition-transform">
               M
-            </div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#F4FFC7]">
+            </Link>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#0A3F2F]">
               Minerva Flow
             </h1>
-            <p className="text-xs sm:text-[13px] text-[#A8A7A0] max-w-xs mx-auto leading-relaxed">
+            <p className="text-xs sm:text-[13px] text-[#6A6860] max-w-xs mx-auto leading-relaxed">
               {mode === "login"
-                ? "Plateforme d'intelligence et pilotage pour restaurateurs"
+                ? "Plateforme d'intelligence et pilotage pour restaurateurs & cafés"
                 : "Rejoignez plus de 100+ établissements innovants"}
             </p>
           </div>
 
-          {/* Mode Switcher Tabs (Solid Opaque) */}
-          <div className="flex bg-[#121211] border border-[#2A2A26] rounded-2xl p-1 mb-6">
+          {/* Mode Switcher Tabs (Solid Light Mode) */}
+          <div className="flex bg-[#FAF8F5] border border-[#E8E5DF] rounded-2xl p-1 mb-6">
             <button
               type="button"
               onClick={() => toggleMode("login")}
               className={cn(
                 "flex-1 py-2 text-xs font-bold rounded-xl transition-all",
                 mode === "login"
-                  ? "bg-[#262624] text-white shadow-sm border border-[#3E3E3A]"
-                  : "text-[#8A887F] hover:text-white"
+                  ? "bg-white text-[#0A3F2F] shadow-xs border border-[#E8E5DF]"
+                  : "text-[#8A887F] hover:text-[#1F1E1D]"
               )}
             >
               Se connecter
@@ -175,19 +170,19 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
               className={cn(
                 "flex-1 py-2 text-xs font-bold rounded-xl transition-all",
                 mode === "signup"
-                  ? "bg-[#262624] text-white shadow-sm border border-[#3E3E3A]"
-                  : "text-[#8A887F] hover:text-white"
+                  ? "bg-white text-[#0A3F2F] shadow-xs border border-[#E8E5DF]"
+                  : "text-[#8A887F] hover:text-[#1F1E1D]"
               )}
             >
               Créer un compte
             </button>
           </div>
 
-          {/* Google OAuth (Solid Button) */}
+          {/* Google OAuth (Solid Light Button) */}
           <button
             type="button"
             onClick={() => handleOAuth("google")}
-            className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-[#262624] hover:bg-[#30302E] border border-[#3E3E3A] text-xs font-bold text-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#7CE577]/30"
+            className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-gray-50 border border-[#E2E0D8] text-xs font-bold text-[#1F1E1D] shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/20"
           >
             <Google size={16} />
             <span>Continuer avec Google</span>
@@ -195,15 +190,15 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-5">
-            <div className="h-px flex-1 bg-[#2E2E2A]" />
-            <span className="text-[11px] font-mono text-[#7A7870] uppercase">ou par courriel</span>
-            <div className="h-px flex-1 bg-[#2E2E2A]" />
+            <div className="h-px flex-1 bg-[#E8E5DF]" />
+            <span className="text-[11px] font-mono text-[#8A887F] uppercase">ou par courriel</span>
+            <div className="h-px flex-1 bg-[#E8E5DF]" />
           </div>
 
           {/* Email / Password Form */}
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
-              <label className="block text-[11.5px] font-semibold text-[#C2C0B8] mb-1.5">
+              <label className="block text-[11.5px] font-semibold text-[#5A5851] mb-1.5">
                 Adresse courriel
               </label>
               <input
@@ -212,19 +207,19 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-11 rounded-xl bg-[#121211] border border-[#2E2E2A] px-3.5 text-xs sm:text-sm text-white placeholder:text-[#6A6860] focus:border-[#7CE577] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/30 transition-colors"
+                className="w-full h-11 rounded-xl bg-[#FAF8F5] border border-[#E2E0D8] px-3.5 text-xs sm:text-sm text-[#1F1E1D] placeholder:text-[#8A887F] focus:bg-white focus:border-[#0E7C5A] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/15 transition-colors"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[11.5px] font-semibold text-[#C2C0B8]">
+                <label className="text-[11.5px] font-semibold text-[#5A5851]">
                   Mot de passe
                 </label>
                 {mode === "login" && (
                   <Link
                     href="/forgot-password"
-                    className="text-[11px] font-medium text-[#7CE577] hover:underline"
+                    className="text-[11px] font-semibold text-[#0E7C5A] hover:underline"
                   >
                     Oublié ?
                   </Link>
@@ -236,13 +231,13 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-11 rounded-xl bg-[#121211] border border-[#2E2E2A] px-3.5 text-xs sm:text-sm text-white placeholder:text-[#6A6860] focus:border-[#7CE577] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/30 transition-colors"
+                className="w-full h-11 rounded-xl bg-[#FAF8F5] border border-[#E2E0D8] px-3.5 text-xs sm:text-sm text-[#1F1E1D] placeholder:text-[#8A887F] focus:bg-white focus:border-[#0E7C5A] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/15 transition-colors"
               />
             </div>
 
             {mode === "signup" && (
               <div>
-                <label className="block text-[11.5px] font-semibold text-[#C2C0B8] mb-1.5">
+                <label className="block text-[11.5px] font-semibold text-[#5A5851] mb-1.5">
                   Confirmer le mot de passe
                 </label>
                 <input
@@ -251,14 +246,14 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
-                  className="w-full h-11 rounded-xl bg-[#121211] border border-[#2E2E2A] px-3.5 text-xs sm:text-sm text-white placeholder:text-[#6A6860] focus:border-[#7CE577] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/30 transition-colors"
+                  className="w-full h-11 rounded-xl bg-[#FAF8F5] border border-[#E2E0D8] px-3.5 text-xs sm:text-sm text-[#1F1E1D] placeholder:text-[#8A887F] focus:bg-white focus:border-[#0E7C5A] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/15 transition-colors"
                 />
               </div>
             )}
 
             {/* Error Banner */}
             {error && (
-              <div className="rounded-xl bg-red-950/60 border border-red-800/80 p-3 text-xs text-red-200">
+              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700">
                 {error}
               </div>
             )}
@@ -267,7 +262,7 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 rounded-xl bg-[#0E7C5A] hover:bg-[#0A6348] active:translate-y-px text-white text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full h-11 rounded-xl bg-[#0E7C5A] hover:bg-[#0A6348] active:translate-y-px text-white text-xs font-bold tracking-wide transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isLoading ? (
                 <>
@@ -284,21 +279,21 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
           </form>
 
           {/* Guarantee Pill */}
-          <div className="mt-6 pt-5 border-t border-[#262624] flex items-center justify-center gap-2 text-[11px] text-[#8A887F]">
-            <ShieldCheck size={13} className="text-[#7CE577]" />
-            <span>Sécurisé · Conforme données de restauration</span>
+          <div className="mt-6 pt-5 border-t border-[#F0EFEA] flex items-center justify-center gap-2 text-[11px] text-[#8A887F]">
+            <ShieldCheck size={13} className="text-[#0E7C5A]" />
+            <span>Sécurisé · Conforme données d&apos;exploitation</span>
           </div>
 
         </div>
 
         {/* Footer Links */}
-        <p className="mt-4 text-center text-[11px] text-white/50">
+        <p className="mt-4 text-center text-[11px] text-[#8A887F]">
           En continuant, vous acceptez les{" "}
-          <Link href="/legal/terms" className="underline hover:text-white">
+          <Link href="/legal/terms" className="underline hover:text-[#1F1E1D]">
             Conditions d&apos;utilisation
           </Link>{" "}
           et la{" "}
-          <Link href="/legal/privacy" className="underline hover:text-white">
+          <Link href="/legal/privacy" className="underline hover:text-[#1F1E1D]">
             Politique de confidentialité
           </Link>
           .
@@ -313,9 +308,8 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   return (
     <Suspense
       fallback={
-        <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-[#03120E] text-white">
-          <MeshDriftBackground />
-          <div className="w-full max-w-[440px] h-[520px] bg-[#181816] border border-[#2E2E2A] rounded-3xl animate-pulse" />
+        <div className="min-h-screen w-full flex items-center justify-center p-4 bg-[#FAF8F5]">
+          <div className="w-full max-w-[440px] h-[520px] bg-white border border-[#E8E5DF] rounded-3xl animate-pulse" />
         </div>
       }
     >
@@ -323,4 +317,3 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
     </Suspense>
   );
 }
-

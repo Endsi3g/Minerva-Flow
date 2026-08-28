@@ -5,7 +5,6 @@ import { MailCheck, ArrowLeft, Loader2 } from "lucide-react";
 import { Link, getPathname } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
-import { MeshDriftBackground } from "@/components/ui/MeshDriftBackground";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
@@ -35,40 +34,38 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-x-hidden text-white">
-      <MeshDriftBackground />
-
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-[#FAF8F5] text-[#1F1E1D]">
       <div className="w-full max-w-[420px] z-10 animate-in fade-in zoom-in-95 duration-200">
-        <div className="bg-[#181816] border border-[#2E2E2A] rounded-3xl p-7 sm:p-9 shadow-[0_24px_70px_rgba(0,0,0,0.85)]">
+        <div className="bg-white border border-[#E8E5DF] rounded-3xl p-7 sm:p-9 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
           {success ? (
             <div className="text-center space-y-4">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0E7C5A]/20 border border-[#7CE577]/30 text-[#7CE577]">
-                <MailCheck size={22} />
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0E7C5A]/10 border border-[#0E7C5A]/20 text-[#0E7C5A]">
+                <MailCheck size={24} />
               </div>
-              <h1 className="font-serif text-xl sm:text-2xl font-bold text-[#F4FFC7]">
+              <h1 className="font-serif text-xl sm:text-2xl font-bold text-[#0A3F2F]">
                 Vérifiez vos courriels
               </h1>
-              <p className="text-xs sm:text-[13px] leading-relaxed text-[#A8A7A0]">
-                Un lien de réinitialisation a été envoyé à l&apos;adresse <strong className="text-white">{email}</strong>.
+              <p className="text-xs sm:text-[13px] leading-relaxed text-[#6A6860]">
+                Un lien de réinitialisation a été envoyé à l&apos;adresse <strong className="text-[#1F1E1D]">{email}</strong>.
               </p>
             </div>
           ) : (
             <>
               <div className="text-center space-y-2 mb-6">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-[#0E7C5A] text-white font-serif font-bold text-lg shadow-md border border-[#7CE577]/30 mb-1">
+                <Link href="/overview" className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-[#0E7C5A] text-white font-serif font-bold text-lg shadow-xs border border-[#0E7C5A]/30 mb-1 hover:scale-105 transition-transform">
                   M
-                </div>
-                <h1 className="font-serif text-2xl font-bold tracking-tight text-[#F4FFC7]">
+                </Link>
+                <h1 className="font-serif text-2xl font-bold tracking-tight text-[#0A3F2F]">
                   Mot de passe oublié
                 </h1>
-                <p className="text-xs sm:text-[13px] text-[#A8A7A0] leading-relaxed">
+                <p className="text-xs sm:text-[13px] text-[#6A6860] leading-relaxed">
                   Saisissez votre courriel pour recevoir un lien de réinitialisation sécurisé.
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-[11.5px] font-semibold text-[#C2C0B8] mb-1.5">
+                  <label className="block text-[11.5px] font-semibold text-[#5A5851] mb-1.5">
                     Adresse courriel
                   </label>
                   <input
@@ -77,12 +74,12 @@ export default function ForgotPasswordPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-11 rounded-xl bg-[#121211] border border-[#2E2E2A] px-3.5 text-xs sm:text-sm text-white placeholder:text-[#6A6860] focus:border-[#7CE577] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/30 transition-colors"
+                    className="w-full h-11 rounded-xl bg-[#FAF8F5] border border-[#E2E0D8] px-3.5 text-xs sm:text-sm text-[#1F1E1D] placeholder:text-[#8A887F] focus:bg-white focus:border-[#0E7C5A] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/15 transition-colors"
                   />
                 </div>
 
                 {error && (
-                  <div className="rounded-xl bg-red-950/60 border border-red-800/80 p-3 text-xs text-red-200">
+                  <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700">
                     {error}
                   </div>
                 )}
@@ -90,7 +87,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-11 rounded-xl bg-[#0E7C5A] hover:bg-[#0A6348] text-white text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full h-11 rounded-xl bg-[#0E7C5A] hover:bg-[#0A6348] text-white text-xs font-bold tracking-wide transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isLoading ? (
                     <>
@@ -105,10 +102,10 @@ export default function ForgotPasswordPage() {
             </>
           )}
 
-          <div className="mt-6 pt-5 border-t border-[#262624] text-center">
+          <div className="mt-6 pt-5 border-t border-[#F0EFEA] text-center">
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#7CE577] hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0E7C5A] hover:underline"
             >
               <ArrowLeft size={13} />
               <span>Retour à la connexion</span>
