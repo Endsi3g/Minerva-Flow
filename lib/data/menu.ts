@@ -112,6 +112,42 @@ export async function createMenuItem(restaurantId: string, input: MenuItemInput)
   return mapMenuItem(data as MenuItemRow);
 }
 
+/**
+ * Bulk insert (e.g. from the PDF menu-scan import review screen) — one
+ * activity-log entry for the whole batch instead of one per item, unlike
+ * createMenuItem, since importing 30 items shouldn't spam the feed 30 times.
+ */
+export async function createMenuItems(restaurantId: string, inputs: MenuItemInput[]): Promise<MenuItem[]> {
+  if (inputs.length === 0) return [];
+  const supabase = await createClient();
+  const rows = inputs.map((input) => ({
+    restaurant_id: restaurantId,
+    name: input.name,
+    category: input.category ?? null,
+    price: input.price,
+    food_cost: input.foodCost,
+    description: input.description ?? null,
+    active: input.active ?? true,
+    image_url: input.imageUrl ?? null,
+  }));
+
+  const { data, error } = await supabase.from("menu_items").insert(rows).select("*");
+  if (error || !data) {
+    if (error) console.error("createMenuItems failed:", error.message);
+    return [];
+  }
+
+  await logActivity({
+    restaurantId,
+    actionType: "menu_item.create",
+    entityType: "menu_item",
+    entityId: (data[0] as MenuItemRow).id,
+    description: `A importé ${data.length} plat${data.length > 1 ? "s" : ""} au menu depuis un PDF`,
+  });
+
+  return (data as MenuItemRow[]).map(mapMenuItem);
+}
+
 export async function updateMenuItem(
   restaurantId: string,
   id: string,

@@ -29,6 +29,7 @@ import {
   Copy,
   Check,
   Download,
+  FileUp,
   Megaphone,
   EyeOff,
   ChefHat,
@@ -54,6 +55,7 @@ import {
 } from "./actions";
 import { notifyError } from "@/lib/notify-error";
 import { MenuImageUpload } from "@/components/menu/MenuImageUpload";
+import { ImportMenuPdfModal } from "@/components/menu/ImportMenuPdfModal";
 import { toast } from "sonner";
 import { createCampaignAction } from "@/app/[locale]/(app)/campaigns/actions";
 
@@ -1043,6 +1045,7 @@ export function MenuView({
   const [recipesByMenuItem] = useState(initialRecipes);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [shares, setShares] = useState(initialShares);
   const [shareOpen, setShareOpen] = useState(false);
@@ -1123,6 +1126,11 @@ export function MenuView({
             {items.length > 0 && (
               <Button size="sm" variant="secondary" onClick={() => setShareOpen(true)}>
                 <Share2 size={14} /> {t("shareMenu")}
+              </Button>
+            )}
+            {canCreate && (
+              <Button size="sm" variant="secondary" onClick={() => setImportOpen(true)}>
+                <FileUp size={14} /> Importer un PDF
               </Button>
             )}
             {canCreate && (
@@ -1287,6 +1295,15 @@ export function MenuView({
           open={createOpen}
           onClose={() => setCreateOpen(false)}
           onCreated={(item) => setItems((prev) => [...prev, item])}
+        />
+      )}
+
+      {restaurantId && (
+        <ImportMenuPdfModal
+          restaurantId={restaurantId}
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+          onImported={(newItems) => setItems((prev) => [...prev, ...newItems])}
         />
       )}
 

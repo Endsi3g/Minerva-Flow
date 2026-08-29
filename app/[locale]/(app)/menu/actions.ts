@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   createMenuItem,
+  createMenuItems,
   updateMenuItem,
   deleteMenuItem,
   recordSale,
@@ -22,6 +23,14 @@ export async function createMenuItemAction(
   const item = await createMenuItem(restaurantId, input);
   if (item) revalidatePath("/menu");
   return item;
+}
+
+export async function createMenuItemsAction(restaurantId: string, inputs: MenuItemInput[]): Promise<MenuItem[]> {
+  const valid = inputs.filter((i) => i.name.trim().length > 0 && Number.isFinite(i.price) && i.price >= 0);
+  if (valid.length === 0) return [];
+  const items = await createMenuItems(restaurantId, valid);
+  if (items.length > 0) revalidatePath("/menu");
+  return items;
 }
 
 export async function updateMenuItemAction(
