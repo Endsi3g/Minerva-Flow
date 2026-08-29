@@ -2,7 +2,7 @@ import { getGoogleTokens, getGoogleConnection, updateGoogleConnectionMeta } from
 import type { ServiceDay } from "@/lib/types";
 
 const CALENDAR_BASE_URL = "https://www.googleapis.com/calendar/v3";
-const CALENDAR_NAME = "Flow par Minerva";
+const CALENDAR_NAME = "Minerva Flow";
 
 export type GoogleCalendarItem = {
   id: string;

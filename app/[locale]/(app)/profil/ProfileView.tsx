@@ -226,7 +226,7 @@ export function ProfileView({
           <CardHeader
             eyebrow="Historique"
             title="Activité"
-            description="Vos dernières actions dans Flow par Minerva."
+            description="Vos dernières actions dans Minerva Flow."
           />
           {activity.length === 0 ? (
             <p className="text-[12.5px] text-mv-ink-faint">

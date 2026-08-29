@@ -147,7 +147,7 @@ export async function POST(req: Request) {
 
   const system = restaurantId
     ? await buildRestaurantDataSnapshot(restaurantId)
-    : "Tu es l'assistant de Flow par Minerva. Aucun établissement n'est encore associé à ce compte.";
+    : "Tu es l'assistant de Minerva Flow. Aucun établissement n'est encore associé à ce compte.";
 
   // Token-efficient sliding window : conserver uniquement les 6 derniers messages pour limiter la consommation de prompt tokens.
   const slidingWindowMessages = messages.slice(-6);

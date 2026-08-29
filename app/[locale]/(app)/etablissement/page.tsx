@@ -392,7 +392,7 @@ function OtherEstablishments() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         title="Ajouter un établissement"
-        description="Créez un nouveau restaurant à gérer dans Flow par Minerva."
+        description="Créez un nouveau restaurant à gérer dans Minerva Flow."
       >
         <div className="space-y-4">
           <RestaurantFormFields values={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />

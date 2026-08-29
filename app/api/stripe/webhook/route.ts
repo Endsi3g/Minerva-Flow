@@ -52,7 +52,7 @@ export async function POST(req: Request) {
           workspaceId,
           type: "billing.subscription_activated",
           title: "Abonnement activé",
-          body: "Votre abonnement Flow par Minerva est maintenant actif. Merci de votre confiance !",
+          body: "Votre abonnement Minerva Flow est maintenant actif. Merci de votre confiance !",
           link: "/billing",
         });
       }
@@ -120,7 +120,7 @@ export async function POST(req: Request) {
           workspaceId: existing.workspaceId,
           type: "billing.subscription_canceled",
           title: "Abonnement annulé",
-          body: "Votre abonnement Flow par Minerva a été annulé.",
+          body: "Votre abonnement Minerva Flow a été annulé.",
           link: "/billing",
         });
       }
@@ -137,7 +137,7 @@ export async function POST(req: Request) {
           workspaceId: existing.workspaceId,
           type: "billing.trial_ending",
           title: "Votre essai gratuit se termine bientôt",
-          body: "Ajoutez une méthode de paiement pour continuer à utiliser Flow par Minerva sans interruption.",
+          body: "Ajoutez une méthode de paiement pour continuer à utiliser Minerva Flow sans interruption.",
           link: "/billing",
         });
       }

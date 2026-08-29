@@ -6,7 +6,7 @@ import { getDemoUrl } from "@/lib/prospects/demo-url";
 import { estimateMargin } from "@/lib/prospects/margin";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Flow par Minerva <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Minerva Flow <onboarding@resend.dev>";
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app";
 
 function escapeHtml(str: string): string {
@@ -219,7 +219,7 @@ export async function sendProspectRelanceEmail({
           : ""
       }
       <p style="margin:0 0 16px; font-size:14px; line-height:1.6; color:#4B5563;">
-        Avec Flow par Minerva, vous disposez d'un portail de commande directe &agrave; votre image, sans interm&eacute;diaire ni commissions sur vos ventes.
+        Avec Minerva Flow, vous disposez d'un portail de commande directe &agrave; votre image, sans interm&eacute;diaire ni commissions sur vos ventes.
       </p>
     `;
   } else {

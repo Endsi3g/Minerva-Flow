@@ -40,7 +40,7 @@ export function ChangelogView({ initialEntries }: { initialEntries: ChangelogEnt
       <PageHeader
         eyebrow="Système & Mises à Jour"
         title="Journal des évolutions"
-        description="Nouveautés, améliorations et correctifs apportés à Flow par Minerva."
+        description="Nouveautés, améliorations et correctifs apportés à Minerva Flow."
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">

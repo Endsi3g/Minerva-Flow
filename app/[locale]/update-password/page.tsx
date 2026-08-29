@@ -5,9 +5,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
-import Link from "next/link";
-import { LogoMark } from "@/components/shell/Logo";
-import { MeshDriftBackground } from "@/components/ui/MeshDriftBackground";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function UpdatePasswordPage() {
   const t = useTranslations("auth");
@@ -34,64 +32,46 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden text-[#1F1E1D]">
-      <MeshDriftBackground variant="soft-emerald" />
+    <AuthShell panelHeadline="Pilotez votre restaurant, sereinement.">
+      <h1 className="font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[32px]">
+        Nouveau mot de passe
+      </h1>
+      <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
+        Définissez votre nouveau mot de passe pour sécuriser votre compte.
+      </p>
 
-      <div className="w-full max-w-[420px] z-10 animate-in fade-in zoom-in-95 duration-200">
-        <div className="bg-white border-2 border-[#0E7C5A]/30 rounded-3xl p-7 sm:p-9 shadow-[0_16px_50px_rgba(14,124,90,0.12),0_4px_20px_rgba(0,0,0,0.06)] ring-1 ring-[#0E7C5A]/20">
-          <div className="text-center space-y-2 mb-6">
-            <Link
-              href="/overview"
-              className="inline-flex items-center justify-center p-2 rounded-2xl bg-[#0E7C5A]/10 border border-[#0E7C5A]/25 shadow-xs mb-1 hover:scale-105 transition-transform"
-            >
-              <LogoMark size={36} />
-            </Link>
-            <h1 className="font-serif text-2xl font-bold tracking-tight text-[#0A3F2F]">
-              Nouveau mot de passe
-            </h1>
-            <p className="text-xs sm:text-[13px] text-[#6A6860] leading-relaxed">
-              Définissez votre nouveau mot de passe pour sécuriser votre compte.
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-[11.5px] font-semibold text-[#5A5851] mb-1.5">
-                Nouveau mot de passe
-              </label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-11 rounded-xl bg-[#FAF8F5] border border-[#E2E0D8] px-3.5 text-xs sm:text-sm text-[#1F1E1D] placeholder:text-[#8A887F] focus:bg-white focus:border-[#0E7C5A] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/15 transition-colors"
-              />
-            </div>
-
-            {error && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-11 rounded-xl bg-[#0E7C5A] hover:bg-[#0A6348] text-white text-xs font-bold tracking-wide transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={15} className="animate-spin" />
-                  <span>Enregistrement...</span>
-                </>
-              ) : (
-                <span>Mettre à jour le mot de passe</span>
-              )}
-            </button>
-          </form>
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <div>
+          <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Nouveau mot de passe</label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="h-11 w-full rounded-xl border border-mv-border bg-mv-cream-soft px-3.5 text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint transition-colors focus:border-mv-green focus:bg-mv-surface focus:outline-none focus:ring-2 focus:ring-mv-green/15"
+          />
         </div>
-      </div>
-    </div>
+
+        {error && (
+          <div className="rounded-xl border border-mv-red/25 bg-mv-red-bg p-3 text-[12.5px] text-mv-red">{error}</div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-mv-green text-[13px] font-semibold tracking-wide text-white shadow-mv-sm transition-all hover:bg-mv-green-dark disabled:opacity-50"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 size={15} className="animate-spin" />
+              <span>Enregistrement…</span>
+            </>
+          ) : (
+            <span>Mettre à jour le mot de passe</span>
+          )}
+        </button>
+      </form>
+    </AuthShell>
   );
 }

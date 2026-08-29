@@ -133,7 +133,7 @@
   "auth": {
     "login": {
       "title": "Bon retour",
-      "subtitle": "Connectez-vous à votre cockpit Flow par Minerva."
+      "subtitle": "Connectez-vous à votre cockpit Minerva Flow."
     },
     "signup": {
       "title": "Créer un compte",

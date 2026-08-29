@@ -7,7 +7,7 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 // Resend's shared sandbox sender — works immediately with no domain
 // verification, good enough to start sending. Swap RESEND_FROM_EMAIL once a
 // verified sending domain is set up.
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Flow par Minerva <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Minerva Flow <onboarding@resend.dev>";
 
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app";
 
@@ -45,9 +45,9 @@ export async function sendInviteEmail({
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to,
-    subject: `Invitation à rejoindre ${workspaceName} sur Flow par Minerva`,
+    subject: `Invitation à rejoindre ${workspaceName} sur Minerva Flow`,
     html: emailShell(
-      `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">Vous avez été invité·e à rejoindre <strong>${workspaceName}</strong> en tant que <strong>${role}</strong> sur Flow par Minerva.</p>`,
+      `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">Vous avez été invité·e à rejoindre <strong>${workspaceName}</strong> en tant que <strong>${role}</strong> sur Minerva Flow.</p>`,
       "Accepter l'invitation",
       inviteUrl
     ),
@@ -208,10 +208,10 @@ function campaignEmailHtml({
             <tr>
               <td style="padding:28px 8px 0;">
                 <p style="margin:0 0 6px; font-size:12px; line-height:1.6; color:#8d9488;">
-                  Vous recevez ce courriel parce que vous avez un compte actif sur Flow par Minerva.
+                  Vous recevez ce courriel parce que vous avez un compte actif sur Minerva Flow.
                 </p>
                 <p style="margin:0; font-size:12px; line-height:1.6; color:#8d9488;">
-                  <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#8d9488; text-decoration:underline;">Se désabonner des annonces</a> · Flow par Minerva
+                  <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#8d9488; text-decoration:underline;">Se désabonner des annonces</a> · Minerva Flow
                 </p>
               </td>
             </tr>
@@ -223,7 +223,7 @@ function campaignEmailHtml({
 </html>`;
 }
 
-const UPDATES_SEGMENT_NAME = "Mises à jour — Flow par Minerva";
+const UPDATES_SEGMENT_NAME = "Mises à jour — Minerva Flow";
 
 /**
  * Resend Segments (formerly "Audiences") hold the contact list a Broadcast
@@ -305,7 +305,7 @@ export async function sendChangelogCampaignEmail({
   const { error } = await resend.broadcasts.create({
     segmentId,
     from: FROM_EMAIL,
-    subject: `Nouveauté sur Flow par Minerva : ${title}`,
+    subject: `Nouveauté sur Minerva Flow : ${title}`,
     previewText: description.slice(0, 120),
     html: campaignEmailHtml({ title, description, category, ctaUrl }),
     text: `${CAMPAIGN_CATEGORY_LABEL[category]}\n${title}\n\n${description}\n\n${ctaUrl}`,
@@ -349,7 +349,7 @@ export async function sendFeatureFeedbackEmail({
     from: FROM_EMAIL,
     to: FEEDBACK_RECIPIENT,
     replyTo: submitterEmail,
-    subject: `Feedback Flow par Minerva — ${submitterName}`,
+    subject: `Feedback Minerva Flow — ${submitterName}`,
     html: `<div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">${bodyHtml}</div>`,
   });
   return { ok: !error };

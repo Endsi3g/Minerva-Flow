@@ -59,7 +59,7 @@ export default async function SharedSchedulePage({ params }: { params: Promise<{
         )}
 
         <p className="mt-8 text-[11.5px] text-mv-ink-faint">
-          Lien généré via Flow par Minerva — mis à jour au moment de sa création, pas en temps réel.
+          Lien généré via Minerva Flow — mis à jour au moment de sa création, pas en temps réel.
         </p>
       </div>
     </div>

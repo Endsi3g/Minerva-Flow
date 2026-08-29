@@ -156,7 +156,7 @@ const SETTINGS_DEEP_LINKS: SearchResult[] = [
     id: "setting-guide",
     type: "setting",
     title: "Guide & Raccourcis Clavier",
-    subtitle: "Documentation complète d'utilisation de Flow par Minerva",
+    subtitle: "Documentation complète d'utilisation de Minerva Flow",
     href: "/guide",
     badge: "Aide",
   },

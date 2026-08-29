@@ -3,7 +3,7 @@
 import { useCurrentRestaurant } from "@/lib/app-context";
 import { getStartupProgressAction } from "@/app/[locale]/(app)/overview/actions";
 import { cn } from "@/lib/utils";
-import { Check, ChevronDown, Building2, CalendarPlus, UserPlus, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Building2, MapPin, Plug, CalendarPlus, UserPlus, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -20,7 +20,12 @@ type ChecklistItem = {
 
 export function StartupChecklist() {
   const restaurant = useCurrentRestaurant();
-  const [progress, setProgress] = useState<{ serviceDaysCount: number; memberCount: number } | null>(null);
+  const [progress, setProgress] = useState<{
+    serviceDaysCount: number;
+    memberCount: number;
+    hasAddress: boolean;
+    toolsConnectedCount: number;
+  } | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [dismissedForGood, setDismissedForGood] = useState(true);
 
@@ -50,12 +55,28 @@ export function StartupChecklist() {
       done: progress.serviceDaysCount > 0,
     },
     {
+      key: "address",
+      label: "Compléter l'adresse",
+      description: "Adresse, horaires et site web — importables automatiquement via Google.",
+      href: "/etablissement",
+      icon: MapPin,
+      done: progress.hasAddress,
+    },
+    {
       key: "team",
       label: "Inviter un collaborateur",
       description: "Générez un lien d'invitation à partager.",
       href: "/collaborateurs",
       icon: UserPlus,
       done: progress.memberCount > 1,
+    },
+    {
+      key: "integrations",
+      label: "Connecter vos outils",
+      description: "Square, Stripe, Google Calendar, Meta — synchronisez vos données.",
+      href: "/settings?tab=integrations",
+      icon: Plug,
+      done: progress.toolsConnectedCount > 0,
     },
     {
       key: "insight",

@@ -176,7 +176,7 @@ export async function sendScheduleEmailAction(
 
   const sent = await sendReportEmail(restaurantId, {
     to: employee.contactEmail,
-    subject: `Votre horaire — ${restaurant?.name ?? "Flow par Minerva"}`,
+    subject: `Votre horaire — ${restaurant?.name ?? "Minerva Flow"}`,
     html: scheduleEmailHtml(employee.fullName, restaurant?.name ?? "", shifts),
   });
 

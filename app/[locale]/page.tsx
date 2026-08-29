@@ -258,7 +258,7 @@ export default async function RootPage() {
             </h2>
 
             <p className="text-[14.5px] leading-relaxed text-mv-ink-soft">
-              Flow par Minerva utilise les standards de sécurité industriels les plus stricts. Vos connexions par **Google OAuth** s&apos;effectuent de manière totalement chiffrée. Nous respectons la politique d&apos;utilisation des données des API Google (<strong>Google API Services User Data Policy</strong>) et la loi 25 du Québec.
+              Minerva Flow utilise les standards de sécurité industriels les plus stricts. Vos connexions par **Google OAuth** s&apos;effectuent de manière totalement chiffrée. Nous respectons la politique d&apos;utilisation des données des API Google (<strong>Google API Services User Data Policy</strong>) et la loi 25 du Québec.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-[13px] font-semibold text-mv-ink">
@@ -298,7 +298,7 @@ export default async function RootPage() {
               Plateforme SaaS de pilotage opérationnel pour restaurants et cafés. Québec, Canada.
             </p>
             <p className="text-[12px] text-mv-ink-faint">
-              © 2026 Flow par Minerva. Tous droits réservés.
+              © 2026 Minerva Flow. Tous droits réservés.
             </p>
           </div>
 

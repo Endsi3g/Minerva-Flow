@@ -5,8 +5,7 @@ import { MailCheck, ArrowLeft, Loader2 } from "lucide-react";
 import { Link, getPathname } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
-import { LogoMark } from "@/components/shell/Logo";
-import { MeshDriftBackground } from "@/components/ui/MeshDriftBackground";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("auth");
@@ -36,91 +35,67 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden text-[#1F1E1D]">
-      {/* Soft Emerald WebGL Mesh Drift Shader Background */}
-      <MeshDriftBackground variant="soft-emerald" />
-
-      <div className="w-full max-w-[420px] z-10 animate-in fade-in zoom-in-95 duration-200">
-        <div className="bg-white border-2 border-[#0E7C5A]/30 rounded-3xl p-7 sm:p-9 shadow-[0_16px_50px_rgba(14,124,90,0.12),0_4px_20px_rgba(0,0,0,0.06)] ring-1 ring-[#0E7C5A]/20">
-          {success ? (
-            <div className="text-center space-y-4">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0E7C5A]/10 border border-[#0E7C5A]/20 text-[#0E7C5A]">
-                <MailCheck size={24} />
-              </div>
-              <h1 className="font-serif text-xl sm:text-2xl font-bold text-[#0A3F2F]">
-                Vérifiez vos courriels
-              </h1>
-              <p className="text-xs sm:text-[13px] leading-relaxed text-[#6A6860]">
-                Un lien de réinitialisation a été envoyé à l&apos;adresse <strong className="text-[#1F1E1D]">{email}</strong>.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="text-center space-y-2 mb-6">
-                <Link
-                  href="/overview"
-                  className="inline-flex items-center justify-center p-2 rounded-2xl bg-[#0E7C5A]/10 border border-[#0E7C5A]/25 shadow-xs mb-1 hover:scale-105 transition-transform"
-                >
-                  <LogoMark size={36} />
-                </Link>
-                <h1 className="font-serif text-2xl font-bold tracking-tight text-[#0A3F2F]">
-                  Mot de passe oublié
-                </h1>
-                <p className="text-xs sm:text-[13px] text-[#6A6860] leading-relaxed">
-                  Saisissez votre courriel pour recevoir un lien de réinitialisation sécurisé.
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-[11.5px] font-semibold text-[#5A5851] mb-1.5">
-                    Adresse courriel
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="nom@restaurant.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-11 rounded-xl bg-[#FAF8F5] border border-[#E2E0D8] px-3.5 text-xs sm:text-sm text-[#1F1E1D] placeholder:text-[#8A887F] focus:bg-white focus:border-[#0E7C5A] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/15 transition-colors"
-                  />
-                </div>
-
-                {error && (
-                  <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700">
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-11 rounded-xl bg-[#0E7C5A] hover:bg-[#0A6348] text-white text-xs font-bold tracking-wide transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 size={15} className="animate-spin" />
-                      <span>Envoi en cours...</span>
-                    </>
-                  ) : (
-                    <span>Envoyer le lien</span>
-                  )}
-                </button>
-              </form>
-            </>
-          )}
-
-          <div className="mt-6 pt-5 border-t border-[#F0EFEA] text-center">
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0E7C5A] hover:underline"
-            >
-              <ArrowLeft size={13} />
-              <span>Retour à la connexion</span>
-            </Link>
+    <AuthShell panelHeadline="Pilotez votre restaurant, sereinement.">
+      {success ? (
+        <div className="space-y-4 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-mv-green/10 text-mv-green-dark">
+            <MailCheck size={24} />
           </div>
+          <h1 className="font-display text-[26px] font-medium text-mv-ink">Vérifiez vos courriels</h1>
+          <p className="text-[13.5px] leading-relaxed text-mv-ink-soft">
+            Un lien de réinitialisation a été envoyé à l&apos;adresse <strong className="text-mv-ink">{email}</strong>.
+          </p>
         </div>
+      ) : (
+        <>
+          <h1 className="font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[32px]">
+            Mot de passe oublié
+          </h1>
+          <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
+            Saisissez votre courriel pour recevoir un lien de réinitialisation sécurisé.
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <div>
+              <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Adresse courriel</label>
+              <input
+                type="email"
+                placeholder="nom@restaurant.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-11 w-full rounded-xl border border-mv-border bg-mv-cream-soft px-3.5 text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint transition-colors focus:border-mv-green focus:bg-mv-surface focus:outline-none focus:ring-2 focus:ring-mv-green/15"
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-xl border border-mv-red/25 bg-mv-red-bg p-3 text-[12.5px] text-mv-red">{error}</div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-mv-green text-[13px] font-semibold tracking-wide text-white shadow-mv-sm transition-all hover:bg-mv-green-dark disabled:opacity-50"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  <span>Envoi en cours…</span>
+                </>
+              ) : (
+                <span>Envoyer le lien</span>
+              )}
+            </button>
+          </form>
+        </>
+      )}
+
+      <div className="mt-6 border-t border-mv-border-soft pt-5 text-center">
+        <Link href="/login" className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-mv-green-dark hover:underline">
+          <ArrowLeft size={13} />
+          <span>Retour à la connexion</span>
+        </Link>
       </div>
-    </div>
+    </AuthShell>
   );
 }

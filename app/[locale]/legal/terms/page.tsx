@@ -25,14 +25,14 @@ export default function TermsPage() {
           <section className="rounded-2xl border border-mv-border bg-mv-surface p-6 shadow-mv-sm">
             <h2 className="mb-2 font-display text-[17px] font-bold text-mv-ink">1. Acceptation des conditions</h2>
             <p>
-              En créant un compte ou en accédant à l&apos;application Flow par Minerva (« le Service »), vous acceptez pleinement et sans réserve les présentes Conditions d&apos;utilisation. Si vous agissez au nom d&apos;un restaurant, café ou établissement commercial, vous garantissez disposer de l&apos;autorité nécessaire pour engager cet établissement.
+              En créant un compte ou en accédant à l&apos;application Minerva Flow (« le Service »), vous acceptez pleinement et sans réserve les présentes Conditions d&apos;utilisation. Si vous agissez au nom d&apos;un restaurant, café ou établissement commercial, vous garantissez disposer de l&apos;autorité nécessaire pour engager cet établissement.
             </p>
           </section>
 
           <section>
             <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">2. Description du Service</h2>
             <p>
-              Flow par Minerva est une plateforme SaaS de gestion opérationnelle et financière dédiée aux restaurants et cafés au Québec. Le Service permet le suivi du chiffre d&apos;affaires, des dépenses, de l&apos;inventaire, de la gestion de l&apos;équipe, de l&apos;ingénierie de menu, ainsi que l&apos;intégration de services tiers (tels que Square POS, Stripe Connect et Google Business).
+              Minerva Flow est une plateforme SaaS de gestion opérationnelle et financière dédiée aux restaurants et cafés au Québec. Le Service permet le suivi du chiffre d&apos;affaires, des dépenses, de l&apos;inventaire, de la gestion de l&apos;équipe, de l&apos;ingénierie de menu, ainsi que l&apos;intégration de services tiers (tels que Square POS, Stripe Connect et Google Business).
             </p>
           </section>
 
@@ -46,7 +46,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">4. Propriété des données</h2>
             <p>
-              L&apos;exploitant conserve l&apos;entière propriété de toutes les données d&apos;exploitation saisies dans le Service (chiffre d&apos;affaires, menus, listes de clients, données d&apos;équipe). Flow par Minerva traite ces données uniquement dans la mesure nécessaire à la prestation des services souscrits.
+              L&apos;exploitant conserve l&apos;entière propriété de toutes les données d&apos;exploitation saisies dans le Service (chiffre d&apos;affaires, menus, listes de clients, données d&apos;équipe). Minerva Flow traite ces données uniquement dans la mesure nécessaire à la prestation des services souscrits.
             </p>
           </section>
 

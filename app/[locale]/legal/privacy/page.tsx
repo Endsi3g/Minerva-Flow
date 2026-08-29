@@ -25,7 +25,7 @@ export default function PrivacyPage() {
           <section className="rounded-2xl border border-mv-border bg-mv-surface p-6 shadow-mv-sm">
             <h2 className="mb-2 font-display text-[17px] font-bold text-mv-ink">Introduction</h2>
             <p>
-              Flow par Minerva (« nous », « notre » ou « le Service ») s&apos;engage à protéger les renseignements personnels de ses utilisateurs et de leurs clients. La présente Politique de confidentialité détaille les types de données que nous recueillons, la manière dont elles sont utilisées, sécurisées et conservées, conformément à la <strong>Loi 25 du Québec</strong> et aux standards internationaux de protection de la vie privée.
+              Minerva Flow (« nous », « notre » ou « le Service ») s&apos;engage à protéger les renseignements personnels de ses utilisateurs et de leurs clients. La présente Politique de confidentialité détaille les types de données que nous recueillons, la manière dont elles sont utilisées, sécurisées et conservées, conformément à la <strong>Loi 25 du Québec</strong> et aux standards internationaux de protection de la vie privée.
             </p>
           </section>
 
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
               <span>2. Utilisation des données via les API Google (Google API Disclosure)</span>
             </h2>
             <p className="mb-3 text-[13.5px] leading-relaxed text-mv-ink">
-              L&apos;utilisation et le transfert par Flow par Minerva vers tout autre outil des informations reçues des API Google respectent scrupuleusement la politique d&apos;utilisation des données utilisateur des services API Google (<strong>Google API Services User Data Policy</strong>), y compris les exigences d&apos;utilisation limitée (<strong>Limited Use requirements</strong>).
+              L&apos;utilisation et le transfert par Minerva Flow vers tout autre outil des informations reçues des API Google respectent scrupuleusement la politique d&apos;utilisation des données utilisateur des services API Google (<strong>Google API Services User Data Policy</strong>), y compris les exigences d&apos;utilisation limitée (<strong>Limited Use requirements</strong>).
             </p>
             <ul className="list-disc space-y-2 pl-6 text-[13px] text-mv-ink-soft">
               <li>Les données obtenues via les API Google (telles que les informations de profil d&apos;authentification OAuth ou l&apos;intégration Google Business/Places) ne sont utilisées que pour fournir et améliorer les fonctionnalités d&apos;exploitation de votre établissement dans l&apos;application.</li>

@@ -78,7 +78,7 @@ export default function BillingPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Facturation & Quotas IA"
-        description="Votre abonnement Flow par Minerva — gestion du forfait mensuel et consommation du moteur IA Gemini 3.7 Flash."
+        description="Votre abonnement Minerva Flow — gestion du forfait mensuel et consommation du moteur IA Gemini 3.7 Flash."
       />
 
       <div className="mx-auto max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -97,7 +97,7 @@ export default function BillingPage() {
                 <div>
                   <p className="text-[13.5px] font-semibold text-mv-ink">Période pilote gratuite</p>
                   <p className="mt-0.5 text-[12.5px] text-mv-ink-soft">
-                    La facturation n&apos;est pas encore activée pour votre workspace — profitez de Flow par Minerva
+                    La facturation n&apos;est pas encore activée pour votre workspace — profitez de Minerva Flow
                     gratuitement pendant votre période pilote.
                   </p>
                 </div>
@@ -135,7 +135,7 @@ export default function BillingPage() {
           ) : (
             <div className="space-y-4">
               <p className="text-[13px] text-mv-ink-soft">
-                Vous n&apos;avez pas encore d&apos;abonnement actif. Souscrivez pour continuer à utiliser Flow par Minerva
+                Vous n&apos;avez pas encore d&apos;abonnement actif. Souscrivez pour continuer à utiliser Minerva Flow
                 après votre période pilote.
               </p>
               <Button className="w-full" onClick={handleSubscribe} disabled={loading}>

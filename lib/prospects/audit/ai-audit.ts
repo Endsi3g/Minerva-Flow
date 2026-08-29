@@ -114,7 +114,7 @@ export async function generateEnrichedProspectAudit({
   if (margin.monthlyLossCents > 0) {
     const basis = menuSource === "captured" ? "" : " (estimation générique, menu non capturé)";
     weaknesses.push(`Pertes de marge estimées à ~${monthlyLossFormatted}/mois reversées aux plateformes tierces${basis}.`);
-    opportunities.push(`Récupérer jusqu'à ${monthlyLossFormatted}/mois en marge brute avec Flow par Minerva.`);
+    opportunities.push(`Récupérer jusqu'à ${monthlyLossFormatted}/mois en marge brute avec Minerva Flow.`);
   }
 
   if (strengths.length === 0) {

@@ -8,10 +8,15 @@ import { useLocale, useTranslations } from "next-intl";
 import { Suspense, useState, type FormEvent } from "react";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { Google } from "@/components/ui/BrandIcons";
-import { LogoMark } from "@/components/shell/Logo";
-import { MeshDriftBackground } from "@/components/ui/MeshDriftBackground";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { SplashLoadingTips } from "@/components/auth/SplashLoadingTips";
 import { cn } from "@/lib/utils";
+
+const PANEL_POINTS = [
+  { title: "Vue d'ensemble en temps réel", description: "Revenu, marge et anomalies mis à jour à mesure que la journée avance." },
+  { title: "Un copilote IA qui connaît vos chiffres", description: "Posez une question en langage courant, obtenez le graphique et la réponse." },
+  { title: "Rapports automatisés", description: "Un résumé de la performance de votre établissement, chaque semaine, sans y penser." },
+];
 
 function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
   const t = useTranslations("auth");
@@ -144,185 +149,147 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
   }
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden text-[#1F1E1D]">
-      {/* ── 0. Animated Green WebGL Mesh Drift Shader Background All Around ── */}
-      <MeshDriftBackground variant="dark" />
-
-      {/* ── 1. Centered Auth Card Matching Image 1 Exactly ── */}
-      <div className="w-full max-w-[440px] my-auto z-10 animate-in fade-in zoom-in-95 duration-200">
-        
-        {/* Solid Pure White Card with Clean Subtle Border */}
-        <div className="bg-white border border-[#E2E0D8] rounded-3xl p-7 sm:p-9 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
-          
-          {/* Official App Logo & Non-Serif Typography */}
-          <div className="text-center space-y-2 mb-6">
-            <Link
-              href="/overview"
-              className="inline-flex items-center justify-center mb-1 hover:scale-105 transition-transform"
-            >
-              <LogoMark size={46} />
-            </Link>
-            <h1 className="font-sans font-bold text-2xl sm:text-3xl tracking-tight text-[#0A3F2F]">
-              Minerva Flow
-            </h1>
-            <p className="font-sans text-xs sm:text-[13px] text-[#6A6860] max-w-xs mx-auto leading-relaxed">
-              {mode === "login"
-                ? "Plateforme d'intelligence et pilotage pour restaurateurs & cafés"
-                : "Rejoignez plus de 100+ établissements innovants"}
-            </p>
-          </div>
-
-          {/* Mode Switcher Tabs */}
-          <div className="flex bg-[#F5F3ED] border border-[#E8E5DF] rounded-2xl p-1 mb-6">
-            <button
-              type="button"
-              onClick={() => toggleMode("login")}
-              className={cn(
-                "flex-1 py-2 font-sans text-xs font-bold rounded-xl transition-all",
-                mode === "login"
-                  ? "bg-white text-[#0A3F2F] shadow-xs border border-[#E8E5DF]"
-                  : "text-[#8A887F] hover:text-[#1F1E1D]"
-              )}
-            >
-              Se connecter
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleMode("signup")}
-              className={cn(
-                "flex-1 py-2 font-sans text-xs font-bold rounded-xl transition-all",
-                mode === "signup"
-                  ? "bg-white text-[#0A3F2F] shadow-xs border border-[#E8E5DF]"
-                  : "text-[#8A887F] hover:text-[#1F1E1D]"
-              )}
-            >
-              Créer un compte
-            </button>
-          </div>
-
-          {/* Google OAuth Button */}
-          <button
-            type="button"
-            onClick={() => handleOAuth("google")}
-            className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-white hover:bg-gray-50 border border-[#E2E0D8] font-sans text-xs font-bold text-[#1F1E1D] shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/20"
-          >
-            <Google size={16} />
-            <span>Continuer avec Google</span>
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-5">
-            <div className="h-px flex-1 bg-[#E8E5DF]" />
-            <span className="text-[10.5px] font-mono text-[#8A887F] uppercase tracking-wider">OU PAR COURRIEL</span>
-            <div className="h-px flex-1 bg-[#E8E5DF]" />
-          </div>
-
-          {/* Email / Password Form */}
-          <form onSubmit={handleAuth} className="space-y-4">
-            <div>
-              <label className="block font-sans text-[11.5px] font-semibold text-[#5A5851] mb-1.5">
-                Adresse courriel
-              </label>
-              <input
-                type="email"
-                placeholder="demo@minervaflow.app"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-11 rounded-xl bg-[#F8F7F4] border border-[#E2E0D8] px-3.5 font-sans text-xs sm:text-sm text-[#1F1E1D] placeholder:text-[#8A887F] focus:bg-white focus:border-[#0E7C5A] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/15 transition-colors"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="font-sans text-[11.5px] font-semibold text-[#5A5851]">
-                  Mot de passe
-                </label>
-                {mode === "login" && (
-                  <Link
-                    href="/forgot-password"
-                    className="font-sans text-[11.5px] font-semibold text-[#0E7C5A] hover:underline"
-                  >
-                    Oublié ?
-                  </Link>
-                )}
-              </div>
-              <input
-                type="password"
-                placeholder="••••••••••••"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-11 rounded-xl bg-[#F8F7F4] border border-[#E2E0D8] px-3.5 font-sans text-xs sm:text-sm text-[#1F1E1D] placeholder:text-[#8A887F] focus:bg-white focus:border-[#0E7C5A] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/15 transition-colors"
-              />
-            </div>
-
-            {mode === "signup" && (
-              <div>
-                <label className="block font-sans text-[11.5px] font-semibold text-[#5A5851] mb-1.5">
-                  Confirmer le mot de passe
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  required
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                  className="w-full h-11 rounded-xl bg-[#F8F7F4] border border-[#E2E0D8] px-3.5 font-sans text-xs sm:text-sm text-[#1F1E1D] placeholder:text-[#8A887F] focus:bg-white focus:border-[#0E7C5A] focus:outline-none focus:ring-2 focus:ring-[#0E7C5A]/15 transition-colors"
-                />
-              </div>
-            )}
-
-            {/* Error Banner */}
-            {error && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3 font-sans text-xs text-red-700">
-                {error}
-              </div>
-            )}
-
-            {/* Primary Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-11 rounded-xl bg-[#0E7C5A] hover:bg-[#0A6348] active:translate-y-px text-white font-sans text-xs font-bold tracking-wide transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={15} className="animate-spin" />
-                  <span>Vérification...</span>
-                </>
-              ) : (
-                <>
-                  <span>{mode === "login" ? "Accéder à l'espace" : "Créer mon compte"}</span>
-                  <ArrowRight size={14} />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Guarantee Pill */}
-          <div className="mt-6 pt-5 border-t border-[#F0EFEA] flex items-center justify-center gap-2 text-[11px] text-[#8A887F]">
-            <ShieldCheck size={13} className="text-[#0E7C5A]" />
-            <span>Sécurisé · Conforme données d&apos;exploitation</span>
-          </div>
-
-        </div>
-
-        {/* Footer Links */}
-        <p className="mt-4 text-center font-sans text-[11px] text-white/80 drop-shadow-sm">
+    <AuthShell
+      step={mode === "signup" ? { current: 1, total: 2, label: "Compte" } : undefined}
+      panelHeadline={mode === "login" ? "Pilotez votre restaurant, sereinement." : "Vos revenus, votre équipe, votre IA — en un seul endroit."}
+      panelPoints={PANEL_POINTS}
+      footer={
+        <p className="text-center text-[11.5px] leading-relaxed text-mv-ink-faint">
           En continuant, vous acceptez les{" "}
-          <Link href="/legal/terms" className="underline hover:text-white">
+          <Link href="/legal/terms" className="font-medium text-mv-ink-soft underline underline-offset-2 hover:text-mv-ink">
             Conditions d&apos;utilisation
           </Link>{" "}
           et la{" "}
-          <Link href="/legal/privacy" className="underline hover:text-white">
+          <Link href="/legal/privacy" className="font-medium text-mv-ink-soft underline underline-offset-2 hover:text-mv-ink">
             Politique de confidentialité
           </Link>
           .
         </p>
+      }
+    >
+      <h1 className="font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[32px]">
+        {mode === "login" ? "Content de vous revoir" : "Créer votre compte"}
+      </h1>
+      <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
+        {mode === "login"
+          ? "Accédez à votre espace de pilotage."
+          : "Aucune carte requise — configurez votre établissement en deux minutes."}
+      </p>
 
+      {/* Mode switcher */}
+      <div className="mt-6 flex rounded-xl border border-mv-border bg-mv-cream-soft p-1">
+        <button
+          type="button"
+          onClick={() => toggleMode("login")}
+          className={cn(
+            "flex-1 rounded-lg py-2 text-[12.5px] font-semibold transition-all",
+            mode === "login" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint hover:text-mv-ink-soft"
+          )}
+        >
+          Se connecter
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleMode("signup")}
+          className={cn(
+            "flex-1 rounded-lg py-2 text-[12.5px] font-semibold transition-all",
+            mode === "signup" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint hover:text-mv-ink-soft"
+          )}
+        >
+          Créer un compte
+        </button>
       </div>
-    </div>
+
+      {/* Google OAuth */}
+      <button
+        type="button"
+        onClick={() => handleOAuth("google")}
+        className="mt-5 flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-mv-border bg-mv-surface text-[13px] font-semibold text-mv-ink shadow-mv-sm transition-colors hover:bg-mv-cream-soft focus:outline-none focus:ring-2 focus:ring-mv-green/20"
+      >
+        <Google size={16} />
+        <span>Continuer avec Google</span>
+      </button>
+
+      <div className="my-5 flex items-center gap-3">
+        <div className="h-px flex-1 bg-mv-border" />
+        <span className="font-mono text-[10px] uppercase tracking-wider text-mv-ink-faint">Ou par courriel</span>
+        <div className="h-px flex-1 bg-mv-border" />
+      </div>
+
+      <form onSubmit={handleAuth} className="space-y-4">
+        <div>
+          <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Adresse courriel</label>
+          <input
+            type="email"
+            placeholder="demo@minervaflow.app"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-11 w-full rounded-xl border border-mv-border bg-mv-cream-soft px-3.5 text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint transition-colors focus:border-mv-green focus:bg-mv-surface focus:outline-none focus:ring-2 focus:ring-mv-green/15"
+          />
+        </div>
+
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="text-[11.5px] font-semibold text-mv-ink-soft">Mot de passe</label>
+            {mode === "login" && (
+              <Link href="/forgot-password" className="text-[11.5px] font-semibold text-mv-green-dark hover:underline">
+                Oublié ?
+              </Link>
+            )}
+          </div>
+          <input
+            type="password"
+            placeholder="••••••••••••"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="h-11 w-full rounded-xl border border-mv-border bg-mv-cream-soft px-3.5 text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint transition-colors focus:border-mv-green focus:bg-mv-surface focus:outline-none focus:ring-2 focus:ring-mv-green/15"
+          />
+        </div>
+
+        {mode === "signup" && (
+          <div>
+            <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Confirmer le mot de passe</label>
+            <input
+              type="password"
+              placeholder="••••••••••••"
+              required
+              value={repeatPassword}
+              onChange={(e) => setRepeatPassword(e.target.value)}
+              className="h-11 w-full rounded-xl border border-mv-border bg-mv-cream-soft px-3.5 text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint transition-colors focus:border-mv-green focus:bg-mv-surface focus:outline-none focus:ring-2 focus:ring-mv-green/15"
+            />
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-xl border border-mv-red/25 bg-mv-red-bg p-3 text-[12.5px] text-mv-red">{error}</div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-mv-green text-[13px] font-semibold tracking-wide text-white shadow-mv-sm transition-all hover:bg-mv-green-dark active:translate-y-px disabled:opacity-50"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 size={15} className="animate-spin" />
+              <span>Vérification…</span>
+            </>
+          ) : (
+            <>
+              <span>{mode === "login" ? "Accéder à l'espace" : "Continuer"}</span>
+              <ArrowRight size={14} />
+            </>
+          )}
+        </button>
+      </form>
+
+      <div className="mt-6 flex items-center justify-center gap-2 border-t border-mv-border-soft pt-5 text-[11px] text-mv-ink-faint">
+        <ShieldCheck size={13} className="text-mv-green-dark" />
+        <span>Sécurisé · Conforme données d&apos;exploitation</span>
+      </div>
+    </AuthShell>
   );
 }
 
@@ -330,9 +297,8 @@ export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   return (
     <Suspense
       fallback={
-        <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-[#03120E]">
-          <MeshDriftBackground variant="dark" />
-          <div className="w-full max-w-[440px] h-[520px] bg-white border border-[#E2E0D8] rounded-3xl animate-pulse" />
+        <div className="flex min-h-screen w-full items-center justify-center bg-mv-cream p-4">
+          <div className="h-[560px] w-full max-w-[440px] animate-pulse rounded-3xl border border-mv-border bg-mv-surface" />
         </div>
       }
     >

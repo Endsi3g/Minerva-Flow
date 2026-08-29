@@ -68,7 +68,7 @@ export function StripeConnectCard() {
       <CardHeader
         eyebrow="Paiements"
         title="Paiements en ligne des clients"
-        description="Recevez les paiements de vos clients directement dans votre propre compte Stripe — distinct de votre abonnement Flow par Minerva (voir Facturation)."
+        description="Recevez les paiements de vos clients directement dans votre propre compte Stripe — distinct de votre abonnement Minerva Flow (voir Facturation)."
       />
       <div className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3.5 py-3">
         <div className="flex items-center gap-3">
