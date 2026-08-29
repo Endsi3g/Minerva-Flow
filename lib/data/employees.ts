@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import { notifyRestaurant, notifyRestaurantManagement } from "@/lib/data/notifications";
 import { createFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction } from "@/lib/data/finance";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Employee, EmployeeReview, EmployeeShift } from "@/lib/types";
 
 type EmployeeRow = {
@@ -34,8 +35,8 @@ function mapEmployee(row: EmployeeRow): Employee {
   };
 }
 
-export async function getEmployees(restaurantId: string): Promise<Employee[]> {
-  const supabase = await createClient();
+export async function getEmployees(restaurantId: string, client?: SupabaseClient): Promise<Employee[]> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
     .from("employees")
     .select("*")

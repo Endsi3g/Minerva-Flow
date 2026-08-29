@@ -10,7 +10,6 @@ import {
 } from "@assistant-ui/react";
 import { MarkdownText } from "@/components/assistant-ui/markdown-text";
 import { AttachmentPreview, UserMessageAttachment } from "@/components/assistant-ui/attachment";
-import { ReasoningAccordion } from "@/components/assistant-ui/reasoning";
 import { ChatCommandPopover, type CommandItem } from "@/components/chat/ChatCommandPopover";
 import {
   Bot,
@@ -213,9 +212,6 @@ function AssistantMessage() {
       </div>
 
       <div className="flex flex-1 flex-col gap-2 min-w-0">
-        {/* Reasoning / Thinking accordion */}
-        <ReasoningAccordion />
-
         {/* Markdown Content */}
         <div className="rounded-2xl rounded-tl-sm border border-[#E8E5DF] bg-white px-4.5 py-3.5 text-[#1F1E1D] shadow-xs space-y-3">
           <MessagePrimitive.Content

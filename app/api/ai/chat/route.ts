@@ -1,10 +1,9 @@
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { AI_MODEL, isAiConfigured } from "@/lib/ai/config";
-import { isGeminiAiConfigured, runGeminiWithUsage } from "@/lib/ai/gemini";
-import { isCloudflareAiConfigured, runCloudflareAiModel } from "@/lib/ai/cloudflare";
-import { isNvidiaAiConfigured, runNvidiaAiModel } from "@/lib/ai/nvidia";
+import { GEMINI_FALLBACK_MODEL, getGeminiApiKey } from "@/lib/ai/gemini";
 import { buildRestaurantDataSnapshot } from "@/lib/ai/context";
 import { saveArtifact, saveAttachment, saveMessage } from "@/lib/data/chat";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
@@ -103,15 +102,16 @@ export async function POST(req: Request) {
   if (workspaceId) {
     const usage = await getWorkspaceAiUsage(workspaceId);
     if (usage.isExceeded) {
-      return new Response(
-        "Vous avez atteint le quota de tokens IA inclus dans votre plan actuel (" +
-          usage.tokensUsed.toLocaleString("fr-FR") +
-          " / " +
-          usage.monthlyQuota.toLocaleString("fr-FR") +
-          " tokens). Rendez-vous dans la section Facturation pour recharger votre quota.",
+      return NextResponse.json(
         {
-          headers: { "Content-Type": "text/plain; charset=utf-8" },
-        }
+          error:
+            "Vous avez atteint le quota de tokens IA inclus dans votre plan actuel (" +
+            usage.tokensUsed.toLocaleString("fr-FR") +
+            " / " +
+            usage.monthlyQuota.toLocaleString("fr-FR") +
+            " tokens). Rendez-vous dans la section Facturation pour recharger votre quota.",
+        },
+        { status: 429 }
       );
     }
   }
@@ -149,96 +149,35 @@ export async function POST(req: Request) {
     ? await buildRestaurantDataSnapshot(restaurantId)
     : "Tu es l'assistant de Flow par Minerva. Aucun établissement n'est encore associé à ce compte.";
 
-  // Token-efficient sliding window: conserver uniquement les 6 derniers messages pour limiter la consommation de prompt tokens
+  // Token-efficient sliding window : conserver uniquement les 6 derniers messages pour limiter la consommation de prompt tokens.
   const slidingWindowMessages = messages.slice(-6);
-  const recentHistoryFormatted = slidingWindowMessages
-    .map((m) => {
-      const txt = m.parts
-        ?.filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
-        .map((p) => p.text)
-        .join("\n");
-      return `${m.role === "user" ? "Utilisateur" : "Assistant"}: ${txt}`;
-    })
-    .join("\n");
 
-  // 1. Priorité à Google Gemini 3.7 Flash avec optimisation maximale des tokens
-  if (isGeminiAiConfigured()) {
-    const userPrompt = recentHistoryFormatted || "Bonjour";
+  // Modèle : priorité à Gemini en appel direct (clé GEMINI_API_KEY fournie par l'utilisateur — pas besoin
+  // du Vercel AI Gateway, qui exige une carte de crédit sur le compte). Sinon, AI_MODEL via le Gateway.
+  // Tout passe par streamText/toUIMessageStreamResponse — c'est le seul format que le client (AssistantChatTransport)
+  // sait consommer ; un fetch direct qui renvoie du texte brut casse le rendu côté client.
+  //
+  // Modèle fixé à gemini-3.5-flash (pas GEMINI_AI_MODEL/gemini-3.7-flash) pour ce chat standard en
+  // direct : mesuré en conditions réelles, 3.7-flash ignore silencieusement thinkingConfig.thinkingBudget=0
+  // et brûle des tokens de pensée quand même (12s-2.9min, jusqu'à 173 tokens de pensée pour un "bonjour"),
+  // alors que 3.5-flash respecte le budget et répond en <1s avec 0 token de pensée — un chat "en direct" ne
+  // peut pas se permettre cette latence imprévisible.
+  const geminiApiKey = getGeminiApiKey();
+  const model = geminiApiKey
+    ? createGoogleGenerativeAI({ apiKey: geminiApiKey })(GEMINI_FALLBACK_MODEL)
+    : AI_MODEL;
 
-    // Thinking budget = 0 pour le chat standard en direct (réponse instantanée, 0 token de pensée gaspillé)
-    const geminiResult = await runGeminiWithUsage(userPrompt, {
-      systemPrompt: system,
-      thinkingBudget: 0,
-      maxOutputTokens: 2048,
-    });
-
-    const contentText =
-      geminiResult?.text || "Désolé, impossible d'obtenir une réponse du modèle Google Gemini 3.7 Flash.";
-
-    // Enregistrement des tokens consommés
-    if (workspaceId && geminiResult?.usage?.totalTokens) {
-      await trackAiTokenUsage(workspaceId, geminiResult.usage.totalTokens);
-    }
-
-    if (canPersist) {
-      await saveMessage({
-        conversationId: conversationId!,
-        restaurantId: restaurantId!,
-        role: "assistant",
-        content: contentText,
-      });
-    }
-
-    return new Response(contentText, {
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
-  }
-
-  // 2. Si NVIDIA API est configurée
-  if (isNvidiaAiConfigured() && !process.env.AI_GATEWAY_API_KEY) {
-    const userPrompt = recentHistoryFormatted || "Bonjour";
-    const responseText = await runNvidiaAiModel(userPrompt, system);
-    const contentText = responseText || "Désolé, impossible d'obtenir une réponse du modèle NVIDIA GLM-5.2.";
-
-    if (canPersist) {
-      await saveMessage({
-        conversationId: conversationId!,
-        restaurantId: restaurantId!,
-        role: "assistant",
-        content: contentText,
-      });
-    }
-
-    return new Response(contentText, {
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
-  }
-
-  // 3. Si Cloudflare AI est configuré
-  if (isCloudflareAiConfigured() && !process.env.AI_GATEWAY_API_KEY) {
-    const userPrompt = recentHistoryFormatted || "Bonjour";
-    const responseText = await runCloudflareAiModel(userPrompt, system);
-    const contentText = responseText || "Désolé, impossible d'obtenir une réponse de Cloudflare AI.";
-
-    if (canPersist) {
-      await saveMessage({
-        conversationId: conversationId!,
-        restaurantId: restaurantId!,
-        role: "assistant",
-        content: contentText,
-      });
-    }
-
-    return new Response(contentText, {
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
-  }
-
-  // 4. StreamText / AI Gateway fallback
   const result = streamText({
-    model: AI_MODEL,
+    model,
     system,
-    messages: await convertToModelMessages(messages),
+    messages: await convertToModelMessages(slidingWindowMessages),
+    // Chat standard en direct : thinkingBudget=0 pour une réponse instantanée, sans tokens de pensée gaspillés
+    // (ignoré silencieusement par les modèles non-Google, donc sûr même quand AI_MODEL/gateway est utilisé).
+    providerOptions: {
+      google: {
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    },
     tools: {
       createArtifact: {
         description:

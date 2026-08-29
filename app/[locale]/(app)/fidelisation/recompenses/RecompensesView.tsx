@@ -1,27 +1,116 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card } from "@/components/minerva/PageCard";
+import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
+import { Field, Input } from "@/components/minerva/FormField";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Link } from "@/i18n/navigation";
-import { ChevronLeft, Bell, Store, AlertTriangle } from "lucide-react";
+import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
+import { Bell, Store, AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { loyaltyTierOrder, loyaltyTierBadge } from "@/lib/loyalty-tiers";
 import { cn } from "@/lib/utils";
-import type { VisitRewardTier } from "@/lib/types";
-import { updateVisitRewardTiersAction } from "../actions";
+import type { LoyaltyReward, VisitRewardTier } from "@/lib/types";
+import { updateVisitRewardTiersAction, createLoyaltyRewardAction, deleteLoyaltyRewardAction } from "../actions";
 import { notifyError } from "@/lib/notify-error";
+
+function RewardsCatalogCard({
+  restaurantId,
+  initialRewards,
+}: {
+  restaurantId: string;
+  initialRewards: LoyaltyReward[];
+}) {
+  const [rewards, setRewards] = useState(initialRewards);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleAdd(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setIsSubmitting(true);
+    try {
+      const reward = await createLoyaltyRewardAction(restaurantId, {
+        name: String(form.get("name") ?? ""),
+        description: String(form.get("description") ?? "") || undefined,
+        pointsCost: Number(form.get("pointsCost") ?? 0),
+      });
+      if (reward) {
+        setRewards((prev) => [...prev, reward].sort((a, b) => a.pointsCost - b.pointsCost));
+        (e.target as HTMLFormElement).reset();
+      } else {
+        notifyError("L'ajout de la récompense a échoué.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDelete(id: string, name: string) {
+    if (!window.confirm(`Retirer la récompense "${name}" ?`)) return;
+    const ok = await deleteLoyaltyRewardAction(restaurantId, id);
+    if (ok) setRewards((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Catalogue"
+        title="Récompenses par points"
+        description="Ce que les clients peuvent échanger contre leurs points de fidélité."
+      />
+      <div className="mb-3 space-y-1.5">
+        {rewards.length === 0 && <p className="text-[12.5px] text-mv-ink-faint">Aucune récompense configurée.</p>}
+        {rewards.map((r) => (
+          <div key={r.id} className="flex items-start justify-between gap-3 rounded-lg border border-mv-border-soft px-3 py-2">
+            <div className="min-w-0">
+              <span className="text-[13px] font-medium text-mv-ink">{r.name}</span>
+              {r.description && <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">{r.description}</p>}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Badge tone="neutral">{r.pointsCost} pts</Badge>
+              <button
+                onClick={() => handleDelete(r.id, r.name)}
+                aria-label="Retirer la récompense"
+                className="text-mv-ink-faint transition-colors hover:text-mv-red"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <form onSubmit={handleAdd} className="space-y-2 border-t border-mv-border-soft pt-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <Field label="Nom">
+            <Input name="name" placeholder="Ex : Café gratuit" required className="w-56" />
+          </Field>
+          <Field label="Coût en points">
+            <Input name="pointsCost" type="number" min="1" step="1" required className="w-28" />
+          </Field>
+          <Button type="submit" size="sm" disabled={isSubmitting}>
+            <Plus size={14} /> Ajouter
+          </Button>
+        </div>
+        <Field label="Description (optionnel)">
+          <Input name="description" placeholder="Ex : Tout format, toute la journée" className="w-full" />
+        </Field>
+      </form>
+    </Card>
+  );
+}
 
 export function RecompensesView({
   restaurantId,
   initialEnabled,
   initialTiers,
+  initialRewards,
 }: {
   restaurantId: string | null;
   initialEnabled: boolean;
   initialTiers: VisitRewardTier[];
+  initialRewards: LoyaltyReward[];
 }) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [tiers, setTiers] = useState(initialTiers);
@@ -89,7 +178,8 @@ export function RecompensesView({
   if (!restaurantId) {
     return (
       <div>
-        <PageHeader eyebrow="Fidélisation" title="Récompenses par palier de visite" />
+        <FidelisationSubNav />
+        <PageHeader eyebrow="Fidélisation" title="Récompenses" />
         <EmptyState icon={Store} title="Aucun restaurant sélectionné" description="Configurez un restaurant pour activer cette fonctionnalité." />
       </div>
     );
@@ -97,9 +187,7 @@ export function RecompensesView({
 
   return (
     <div className="mx-auto max-w-5xl w-full">
-      <Link href="/fidelisation" className="mb-3 inline-flex items-center gap-1 text-[13px] text-mv-ink-faint hover:text-mv-ink">
-        <ChevronLeft size={14} /> Fidélisation
-      </Link>
+      <FidelisationSubNav />
 
       <PageHeader
         eyebrow="Fidélisation"
@@ -234,6 +322,10 @@ export function RecompensesView({
               : "Palier maximum atteint."}
           </p>
         </Card>
+      </div>
+
+      <div className="mt-6">
+        <RewardsCatalogCard restaurantId={restaurantId} initialRewards={initialRewards} />
       </div>
     </div>
   );

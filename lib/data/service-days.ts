@@ -4,6 +4,7 @@ import { logActivity } from "@/lib/data/activity";
 import { hasGoogleScope } from "@/lib/data/google-connections";
 import { formatDateFull } from "@/lib/utils";
 import { after } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Anomaly, RushLevel, ServiceDay, ServiceSource } from "@/lib/types";
 import type { PosProvider } from "@/lib/data/pos-connections";
 
@@ -198,9 +199,10 @@ export async function bulkImportServiceDays(
 
 export async function getServiceDays(
   restaurantId: string,
-  range?: { from?: string; to?: string }
+  range?: { from?: string; to?: string },
+  client?: SupabaseClient
 ): Promise<ServiceDay[]> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   let query = supabase
     .from("service_days")
     .select("*")
@@ -372,6 +374,14 @@ export async function deleteServiceDay(restaurantId: string, id: string): Promis
  * session. Never overwrites a day the owner already filled in by hand:
  * once revenue_source is "manuel" it stays that way until they delete the
  * row themselves.
+ *
+ * `revenue` on a given day can be the sum of THIS sync's contribution plus
+ * revenue from direct/self-service orders served since the last sync
+ * (incrementServiceDayRevenue in lib/data/orders.ts, tagged "commandes" —
+ * never "manuel"). So this replaces only the portion IT last wrote
+ * (tracked in revenue_pos_amount), rather than the whole day's revenue —
+ * a blind overwrite here would silently discard that order revenue on
+ * every resync.
  */
 export async function upsertSyncedServiceDayRevenue(
   restaurantId: string,
@@ -383,19 +393,24 @@ export async function upsertSyncedServiceDayRevenue(
 
   const { data: existing } = await admin
     .from("service_days")
-    .select("revenue_source")
+    .select("revenue, revenue_source, revenue_pos_amount")
     .eq("restaurant_id", restaurantId)
     .eq("date", date)
     .maybeSingle();
 
   if (existing && existing.revenue_source === "manuel") return "skipped_manual";
 
+  const otherSourcesRevenue = existing
+    ? Math.max(0, existing.revenue - (existing.revenue_pos_amount ?? 0))
+    : 0;
+
   await admin.from("service_days").upsert(
     {
       restaurant_id: restaurantId,
       date,
-      revenue,
+      revenue: otherSourcesRevenue + revenue,
       revenue_source: source,
+      revenue_pos_amount: revenue,
       revenue_synced_at: new Date().toISOString(),
     },
     { onConflict: "restaurant_id,date" }

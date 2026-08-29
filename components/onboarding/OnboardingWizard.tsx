@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, Camera, MessagesSquare, FileText, Loader2, Check, Zap, ExternalLink } from "lucide-react";
+import { BarChart3, Camera, MessagesSquare, FileText, Loader2, Zap, ExternalLink } from "lucide-react";
 import {
   Onboarding,
   ChoiceGroup,
@@ -19,11 +19,17 @@ import { useAvatarUpload } from "@/hooks/use-avatar-upload";
 import { updateProfileNameAction } from "@/app/[locale]/(app)/profil/actions";
 import { updateRestaurantAction, createRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
 import { updateBreakEvenSettingsAction } from "@/app/[locale]/(app)/finance/actions";
-import { setMyRoleAction, finishOnboardingAction } from "@/app/[locale]/onboarding/actions";
+import {
+  setMyRoleAction,
+  finishOnboardingAction,
+  getConnectedToolsStatusAction,
+  type ConnectedToolsStatus,
+} from "@/app/[locale]/onboarding/actions";
 import { BREAK_EVEN_DEFAULTS, CAFE_BREAK_EVEN_DEFAULTS } from "@/lib/engine/break-even";
 import type { RestaurantInput } from "@/lib/data/restaurants";
 import type { Role } from "@/lib/types";
 import { Square, Stripe, GoogleCalendar, Meta, GoogleDrive } from "@/components/ui/BrandIcons";
+import { Button, Badge } from "@/components/ui";
 
 const FEATURES = [
   {
@@ -297,7 +303,7 @@ export function OnboardingWizard({
           title="Connectez vos outils"
           description="Synchronisez vos comptes clés pour centraliser toutes vos données d'exploitation."
         />
-        <ConnectToolsStep />
+        <ConnectToolsStep restaurantId={restaurantId} />
       </Onboarding.Step>
 
       <Onboarding.Step step={6}>
@@ -360,79 +366,83 @@ function FeatureStep() {
   );
 }
 
-function ConnectToolsStep() {
-  const [connected, setConnected] = useState<Record<string, boolean>>({});
+function ConnectToolsStep({ restaurantId }: { restaurantId: string }) {
+  const [connected, setConnected] = useState<Partial<ConnectedToolsStatus>>({});
+  const [pending, setPending] = useState<Record<string, boolean>>({});
+
+  const refreshStatus = useCallback(async () => {
+    const status = await getConnectedToolsStatusAction(restaurantId);
+    setConnected(status);
+  }, [restaurantId]);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("minerva_connected_tools");
-      if (saved) {
-        setConnected(JSON.parse(saved));
-      }
-    } catch {
-      // Ignore storage read errors
-    }
-  }, []);
+    refreshStatus();
+  }, [refreshStatus]);
 
   const tools = [
     {
-      id: "square",
+      id: "square" as const,
       name: "Square POS",
       desc: "Synchronisation des ventes & caisse",
       icon: Square,
       href: "/api/oauth/square",
     },
     {
-      id: "stripe",
+      id: "stripe" as const,
       name: "Stripe",
       desc: "Gestion des paiements & factures",
       icon: Stripe,
       href: "/billing",
     },
     {
-      id: "google-calendar",
+      id: "google-calendar" as const,
       name: "Google Calendar",
       desc: "Réservations & plannings d'équipe",
       icon: GoogleCalendar,
       href: "/api/oauth/google-calendar",
     },
     {
-      id: "meta",
+      id: "meta" as const,
       name: "Meta (FB & IG)",
       desc: "Avis clients & réseaux sociaux",
       icon: Meta,
       href: "/api/oauth/meta",
     },
     {
-      id: "workspace",
+      id: "workspace" as const,
       name: "Google Workspace",
       desc: "Documents & fichiers d'exploitation",
       icon: GoogleDrive,
-      href: "/api/oauth/google-workspace",
+      href: "/api/oauth/google-workspace?feature=drive&feature=sheets",
     },
   ];
 
-  function toggleConnect(id: string, href: string) {
-    const nextState = !connected[id];
-    const newConnected = { ...connected, [id]: nextState };
-    setConnected(newConnected);
-
-    try {
-      localStorage.setItem("minerva_connected_tools", JSON.stringify(newConnected));
-    } catch {
-      // Ignore storage write errors
+  /**
+   * Stripe billing setup is deliberately deferred (not part of this onboarding flow) —
+   * this just opens the real billing page, never claims a fake "Connecté" state.
+   * Every other tool opens a real OAuth popup and, once it closes, re-checks REAL
+   * DB-backed status (never optimistic client state — a blocked/cancelled/failed
+   * popup must not show as connected).
+   */
+  function connect(id: (typeof tools)[number]["id"], href: string) {
+    if (id === "stripe") {
+      window.open(href, "_blank", "noopener,noreferrer");
+      return;
     }
 
-    if (nextState && href.startsWith("/api/oauth")) {
-      const popup = window.open(href, `oauth_${id}`, "width=600,height=720");
-      if (popup) {
-        const timer = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(timer);
-          }
-        }, 800);
+    setPending((p) => ({ ...p, [id]: true }));
+    const popup = window.open(href, `oauth_${id}`, "width=600,height=720");
+    if (!popup) {
+      setPending((p) => ({ ...p, [id]: false }));
+      return;
+    }
+    const timer = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(timer);
+        setPending((p) => ({ ...p, [id]: false }));
+        void refreshStatus();
       }
-    }
+    }, 800);
   }
 
   return (
@@ -469,7 +479,9 @@ function ConnectToolsStep() {
       <div className="space-y-2.5">
         {tools.map((t) => {
           const Icon = t.icon;
-          const isConnected = Boolean(connected[t.id]);
+          const isStripe = t.id === "stripe";
+          const isConnected = !isStripe && Boolean(connected[t.id]);
+          const isPending = Boolean(pending[t.id]);
           return (
             <div
               key={t.id}
@@ -485,27 +497,23 @@ function ConnectToolsStep() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => toggleConnect(t.id, t.href)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[12px] font-semibold transition-all ${
-                  isConnected
-                    ? "bg-mv-green-tint text-mv-green-dark border border-mv-green/30"
-                    : "bg-mv-ink text-white hover:bg-mv-ink/90 shadow-mv-sm"
-                }`}
-              >
-                {isConnected ? (
-                  <>
-                    <Check size={13} />
-                    Connecté
-                  </>
-                ) : (
-                  <>
-                    Connecter
-                    <ExternalLink size={11} />
-                  </>
-                )}
-              </button>
+              {isConnected ? (
+                <Badge tone="green" dot size="sm" className="shrink-0">
+                  Connecté
+                </Badge>
+              ) : (
+                <Button
+                  type="button"
+                  variant={isStripe ? "secondary" : "default"}
+                  size="sm"
+                  loading={isPending}
+                  onClick={() => connect(t.id, t.href)}
+                  className="shrink-0"
+                >
+                  {isPending ? "Connexion…" : isStripe ? "Configurer" : "Connecter"}
+                  {!isPending && <ExternalLink size={11} />}
+                </Button>
+              )}
             </div>
           );
         })}

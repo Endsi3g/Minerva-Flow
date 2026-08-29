@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import { formatRelativeTime } from "@/lib/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Connection,
   ConnectionStatus,
@@ -59,9 +60,10 @@ export async function getFinancialTransaction(restaurantId: string, id: string):
 
 export async function getFinancialTransactions(
   restaurantId: string,
-  opts?: { from?: string; to?: string; direction?: TransactionDirection }
+  opts?: { from?: string; to?: string; direction?: TransactionDirection },
+  client?: SupabaseClient
 ): Promise<FinancialTransaction[]> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   let query = supabase
     .from("financial_transactions")
     .select("*")
@@ -340,8 +342,8 @@ function mapConnection(row: ConnectionRow): Connection {
   };
 }
 
-export async function getConnections(restaurantId: string): Promise<Connection[]> {
-  const supabase = await createClient();
+export async function getConnections(restaurantId: string, client?: SupabaseClient): Promise<Connection[]> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
     .from("connections")
     .select("*")

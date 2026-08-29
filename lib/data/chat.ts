@@ -185,7 +185,10 @@ export async function saveMessage(input: SaveMessageInput): Promise<ChatMessage 
     .select("*")
     .single();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    console.error("saveMessage failed:", error?.message);
+    return null;
+  }
 
   await supabase
     .from("chat_conversations")

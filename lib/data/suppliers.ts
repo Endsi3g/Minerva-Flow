@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { geocodeAddress } from "@/lib/geocode";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Supplier } from "@/lib/types";
 
 type SupplierRow = {
@@ -32,8 +33,8 @@ function mapSupplier(row: SupplierRow): Supplier {
   };
 }
 
-export async function getSuppliers(restaurantId: string): Promise<Supplier[]> {
-  const supabase = await createClient();
+export async function getSuppliers(restaurantId: string, client?: SupabaseClient): Promise<Supplier[]> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
     .from("suppliers")
     .select("*")

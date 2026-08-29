@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import { notifyRestaurant } from "@/lib/data/notifications";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Campaign, CampaignAsset, CampaignChannel, CampaignStatus, CampaignType } from "@/lib/types";
 
 type CampaignRow = {
@@ -110,9 +111,10 @@ async function notesForCampaigns(
 
 export async function getCampaigns(
   restaurantId: string,
-  opts?: { programId?: string }
+  opts?: { programId?: string },
+  client?: SupabaseClient
 ): Promise<Campaign[]> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   let query = supabase
     .from("campaigns")
     .select("*")

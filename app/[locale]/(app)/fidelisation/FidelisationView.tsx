@@ -5,69 +5,23 @@ import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Field, Input, Select } from "@/components/minerva/FormField";
+import { Field, Input } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { HelperTooltip } from "@/components/ui/HelperTooltip";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
-import type { Customer, LoyaltyReward, LoyaltyShare, ReferralProgram } from "@/lib/types";
-import {
-  loyaltyTierOrder,
-  loyaltyTierLabel,
-  loyaltyTierDescription,
-  loyaltyTierBadge,
-  type LoyaltyTierThresholds,
-} from "@/lib/loyalty-tiers";
+import type { Customer } from "@/lib/types";
+import { type LoyaltyTierThresholds, getLoyaltyTier } from "@/lib/loyalty-tiers";
 import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
-import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
-import {
-  Heart,
-  Plus,
-  Trash2,
-  Search,
-  Link2,
-  MousePointerClick,
-  Copy,
-  Check,
-  Share2,
-  Download,
-  QrCode,
-  Zap,
-  ExternalLink,
-  MapPin,
-  Gift,
-  Cake,
-  CreditCard,
-  Sparkles,
-  Award,
-} from "lucide-react";
-import { Switch } from "@/components/ui/Switch";
+import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
+import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import QRCode from "qrcode";
-import {
-  createCustomerAction,
-  createLoyaltyRewardAction,
-  deleteLoyaltyRewardAction,
-  updateLoyaltyRateAction,
-  createReferralProgramAction,
-  updateReferralProgramActiveAction,
-  deleteReferralProgramAction,
-  createLoyaltyShareAction,
-  deleteLoyaltyShareAction,
-  updateRetentionSettingsAction,
-  updateLoyaltyTierThresholdsAction,
-  claimRewardRedemptionAction,
-  grantBirthdayBonusAction,
-} from "./actions";
-import { ReferralRoiDashboard } from "@/components/fidelisation/ReferralRoiDashboard";
-import { QrTableStandStudio } from "@/components/fidelisation/QrTableStandStudio";
-import type { ReferralRoiMetrics, TopAmbassador } from "@/lib/data/referral-roi";
+import { createCustomerAction, claimRewardRedemptionAction, grantBirthdayBonusAction } from "./actions";
 import { notifyError } from "@/lib/notify-error";
 import { toast } from "sonner";
-import { getLoyaltyTier } from "@/lib/loyalty-tiers";
 
 function NewCustomerModal({
   restaurantId,
@@ -157,216 +111,64 @@ function NewCustomerModal({
   );
 }
 
-function RetentionSettingsCard({
-  restaurantId,
-  initialEnabled,
-  initialInactivityDays,
-}: {
-  restaurantId: string;
-  initialEnabled: boolean;
-  initialInactivityDays: number;
-}) {
-  const [enabled, setEnabled] = useState(initialEnabled);
-  const [inactivityDays, setInactivityDays] = useState(initialInactivityDays);
-  const [isSaving, setIsSaving] = useState(false);
-
-  async function handleToggle(next: boolean) {
-    setEnabled(next);
-    setIsSaving(true);
-    try {
-      const ok = await updateRetentionSettingsAction(restaurantId, { enabled: next });
-      if (!ok) {
-        setEnabled(!next);
-        notifyError("La mise à jour a échoué.");
-      }
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function handleInactivityBlur() {
-    if (inactivityDays === initialInactivityDays) return;
-    await updateRetentionSettingsAction(restaurantId, { inactivityDays });
-  }
-
-  return (
-    <Card>
-      <CardHeader
-        eyebrow="Automatisation"
-        title="Rétention automatique"
-        description="Relance par courriel/SMS/notification les clients inactifs, ceux qui décrochent, et pour leur anniversaire — sans intervention."
-        action={
-          <Switch
-            checked={enabled}
-            onCheckedChange={handleToggle}
-            disabled={isSaving}
-            className="data-checked:bg-mv-green"
-            aria-label={enabled ? "Désactiver la rétention automatique" : "Activer la rétention automatique"}
-          />
-        }
-      />
-      <div className="flex items-center gap-2 text-[12.5px] text-mv-ink-soft">
-        <Zap size={13} className="text-mv-green-dark" />
-        Considérer un client inactif après
-        <input
-          type="number"
-          min="1"
-          value={inactivityDays}
-          onChange={(e) => setInactivityDays(Number(e.target.value))}
-          onBlur={handleInactivityBlur}
-          className="h-7 w-16 rounded-md border border-mv-border bg-mv-surface px-2 text-center text-[12.5px]"
-        />
-        jours sans visite. Seuls les clients ayant consenti à recevoir des offres sont ciblés.
-        <HelperTooltip content="Un même client n'est jamais relancé deux fois pour la même chose : anniversaire, décrochage et inactivité sont priorisés dans cet ordre, et un délai minimal (30 jours par défaut) s'applique toujours entre deux relances." />
-      </div>
-    </Card>
-  );
-}
-
-function LoyaltyTierSettingsCard({
-  restaurantId,
-  initialThresholds,
-}: {
-  restaurantId: string;
-  initialThresholds: LoyaltyTierThresholds;
-}) {
-  const [tier2, setTier2] = useState(initialThresholds.tier2);
-  const [tier3, setTier3] = useState(initialThresholds.tier3);
-
-  async function handleBlur(patch: { tier2?: number; tier3?: number }) {
-    await updateLoyaltyTierThresholdsAction(restaurantId, patch);
-  }
-
-  return (
-    <Card>
-      <CardHeader
-        eyebrow="Statut client"
-        title={
-          <span className="flex items-center gap-1.5">
-            Paliers de fidélité
-            <HelperTooltip content="Le seuil correspond à la dépense cumulée à vie du client (total_spent), recalculée automatiquement à chaque visite — aucune attribution manuelle n'est nécessaire." />
-          </span>
-        }
-        description="Une progression premium plutôt que des paliers génériques — le palier le plus élevé est le meilleur candidat pour parrainer."
-      />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {loyaltyTierOrder.map((tier, i) => {
-          const { tone, variant, icon: Icon } = loyaltyTierBadge[tier];
-          return (
-            <div key={tier} className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 p-3">
-              <Badge tone={tone} variant={variant}>
-                <Icon size={12} strokeWidth={2.4} />
-                {loyaltyTierLabel[tier]}
-              </Badge>
-              <p className="mt-2 text-[11.5px] leading-snug text-mv-ink-faint">{loyaltyTierDescription[tier]}</p>
-              <p className="mt-2 text-[12px] text-mv-ink-soft">
-                {i === 0 ? (
-                  "Dès l'inscription"
-                ) : (
-                  <>
-                    Dès{" "}
-                    <input
-                      type="number"
-                      min="0"
-                      value={i === 1 ? tier2 : tier3}
-                      onChange={(e) => (i === 1 ? setTier2(Number(e.target.value)) : setTier3(Number(e.target.value)))}
-                      onBlur={() => handleBlur(i === 1 ? { tier2 } : { tier3 })}
-                      className="h-7 w-20 rounded-md border border-mv-border bg-mv-surface px-2 text-center text-[12px]"
-                    />{" "}
-                    $ dépensés
-                  </>
-                )}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-    </Card>
-  );
-}
-
-function RewardsCard({
-  restaurantId,
-  rewards,
-  onChange,
-}: {
-  restaurantId: string;
-  rewards: LoyaltyReward[];
-  onChange: (rewards: LoyaltyReward[]) => void;
-}) {
+function RewardValidationCard({ restaurantId }: { restaurantId: string }) {
+  const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [result, setResult] = useState<{
+    rewardName: string;
+    pointsSpent: number;
+    customerName: string;
+    claimedAt: string;
+  } | null>(null);
 
-  async function handleAdd(e: FormEvent<HTMLFormElement>) {
+  async function handleValidate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
+    if (!code.trim()) return;
     setIsSubmitting(true);
+    setResult(null);
     try {
-      const reward = await createLoyaltyRewardAction(restaurantId, {
-        name: String(form.get("name") ?? ""),
-        description: String(form.get("description") ?? "") || undefined,
-        pointsCost: Number(form.get("pointsCost") ?? 0),
-      });
-      if (reward) {
-        onChange([...rewards, reward].sort((a, b) => a.pointsCost - b.pointsCost));
-        (e.target as HTMLFormElement).reset();
+      const claimed = await claimRewardRedemptionAction(restaurantId, code);
+      if (claimed) {
+        setResult(claimed);
+        setCode("");
       } else {
-        notifyError("L'ajout de la récompense a échoué.");
+        notifyError("Code introuvable ou déjà utilisé.");
       }
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!window.confirm(`Retirer la récompense "${name}" ?`)) return;
-    const ok = await deleteLoyaltyRewardAction(restaurantId, id);
-    if (ok) onChange(rewards.filter((r) => r.id !== id));
-  }
-
   return (
     <Card>
       <CardHeader
-        eyebrow="Catalogue"
-        title="Récompenses"
-        description="Ce que les clients peuvent échanger contre leurs points."
+        eyebrow="Au comptoir"
+        title="Valider une récompense"
+        description="Le client échange ses points depuis son espace client et reçoit un code — entrez-le ici pour confirmer."
       />
-      <div className="mb-3 space-y-1.5">
-        {rewards.length === 0 && <p className="text-[12.5px] text-mv-ink-faint">Aucune récompense configurée.</p>}
-        {rewards.map((r) => (
-          <div key={r.id} className="flex items-start justify-between gap-3 rounded-lg border border-mv-border-soft px-3 py-2">
-            <div className="min-w-0">
-              <span className="text-[13px] font-medium text-mv-ink">{r.name}</span>
-              {r.description && <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">{r.description}</p>}
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Badge tone="neutral">{r.pointsCost} pts</Badge>
-              <button
-                onClick={() => handleDelete(r.id, r.name)}
-                aria-label="Retirer la récompense"
-                className="text-mv-ink-faint transition-colors hover:text-mv-red"
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-      <form onSubmit={handleAdd} className="space-y-2 border-t border-mv-border-soft pt-3">
-        <div className="flex flex-wrap items-end gap-2">
-          <Field label="Nom">
-            <Input name="name" placeholder="Ex : Café gratuit" required className="w-56" />
-          </Field>
-          <Field label="Coût en points">
-            <Input name="pointsCost" type="number" min="1" step="1" required className="w-28" />
-          </Field>
-          <Button type="submit" size="sm" disabled={isSubmitting}>
-            <Plus size={14} /> Ajouter
-          </Button>
-        </div>
-        <Field label="Description (optionnel)">
-          <Input name="description" placeholder="Ex : Tout format, toute la journée" className="w-full" />
+      <form onSubmit={handleValidate} className="flex flex-wrap items-end gap-2">
+        <Field label="Code du client">
+          <Input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="Ex : A1B2C3"
+            className="w-40 font-mono uppercase tracking-wider"
+            maxLength={6}
+          />
         </Field>
+        <Button type="submit" size="sm" disabled={isSubmitting || !code.trim()}>
+          <Check size={14} /> Valider
+        </Button>
       </form>
+      {result && (
+        <div className="mv-check-pop mt-3 flex items-start gap-2.5 rounded-lg border border-mv-green/20 bg-mv-green-tint px-3 py-2.5">
+          <Check size={15} className="mt-0.5 shrink-0 text-mv-green-dark" />
+          <p className="text-[12.5px] leading-relaxed text-mv-green-darker">
+            <strong className="font-semibold">{result.rewardName}</strong> validée pour {result.customerName}
+            {" "}(-{result.pointsSpent} pts).
+          </p>
+        </div>
+      )}
     </Card>
   );
 }
@@ -374,12 +176,10 @@ function RewardsCard({
 /**
  * Ranked "where do my customers come from" list, grouped by the city each
  * customer entered (portal self-serve, or staff at creation — see
- * ProfileSettingsCard / NewCustomerModal). Sorted by total visits rather
- * than customer count so a smaller but highly repeat-visiting city can
- * outrank a bigger one-and-done crowd — the actual ask was to spot where
- * the people who "come back often" live, not just where headcount is
- * highest. Replaces the map's old ad-attribution tab, which tracked ad
- * channels, not geography.
+ * NewCustomerModal). Sorted by total visits rather than customer count so a
+ * smaller but highly repeat-visiting city can outrank a bigger one-and-done
+ * crowd — the actual ask was to spot where the people who "come back often"
+ * live, not just where headcount is highest.
  */
 function CustomerOriginCard({ customers }: { customers: Customer[] }) {
   const byCity = useMemo(() => {
@@ -445,513 +245,6 @@ function CustomerOriginCard({ customers }: { customers: Customer[] }) {
           ))}
         </div>
       )}
-    </Card>
-  );
-}
-
-function RewardValidationCard({ restaurantId }: { restaurantId: string }) {
-  const [code, setCode] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [result, setResult] = useState<{
-    rewardName: string;
-    pointsSpent: number;
-    customerName: string;
-    claimedAt: string;
-  } | null>(null);
-
-  async function handleValidate(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!code.trim()) return;
-    setIsSubmitting(true);
-    setResult(null);
-    try {
-      const claimed = await claimRewardRedemptionAction(restaurantId, code);
-      if (claimed) {
-        setResult(claimed);
-        setCode("");
-      } else {
-        notifyError("Code introuvable ou déjà utilisé.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader
-        eyebrow="Au comptoir"
-        title="Valider une récompense"
-        description="Le client échange ses points depuis son espace client et reçoit un code — entrez-le ici pour confirmer."
-      />
-      <form onSubmit={handleValidate} className="flex flex-wrap items-end gap-2">
-        <Field label="Code du client">
-          <Input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="Ex : A1B2C3"
-            className="w-40 font-mono uppercase tracking-wider"
-            maxLength={6}
-          />
-        </Field>
-        <Button type="submit" size="sm" disabled={isSubmitting || !code.trim()}>
-          <Check size={14} /> Valider
-        </Button>
-      </form>
-      {result && (
-        <div className="mv-check-pop mt-3 flex items-start gap-2.5 rounded-lg border border-mv-green/20 bg-mv-green-tint px-3 py-2.5">
-          <Check size={15} className="mt-0.5 shrink-0 text-mv-green-dark" />
-          <p className="text-[12.5px] leading-relaxed text-mv-green-darker">
-            <strong className="font-semibold">{result.rewardName}</strong> validée pour {result.customerName}
-            {" "}(-{result.pointsSpent} pts).
-          </p>
-        </div>
-      )}
-    </Card>
-  );
-}
-
-function NewReferralProgramModal({
-  restaurantId,
-  rewards,
-  open,
-  onClose,
-  onCreated,
-}: {
-  restaurantId: string;
-  rewards: LoyaltyReward[];
-  open: boolean;
-  onClose: () => void;
-  onCreated: (program: ReferralProgram) => void;
-}) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    setIsSubmitting(true);
-    try {
-      const program = await createReferralProgramAction(restaurantId, {
-        name: String(form.get("name") ?? ""),
-        description: String(form.get("description") ?? "") || null,
-        goalCount: Number(form.get("goalCount") ?? 1),
-        rewardId: String(form.get("rewardId") ?? "") || null,
-        rewardDescription: String(form.get("rewardDescription") ?? "") || null,
-        referrerBonusPoints: Number(form.get("referrerBonusPoints") ?? 0),
-        newCustomerBonusPoints: Number(form.get("newCustomerBonusPoints") ?? 0),
-      });
-      if (program) {
-        onCreated(program);
-        onClose();
-        (e.target as HTMLFormElement).reset();
-      } else {
-        notifyError("La création du programme a échoué.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Nouveau programme de parrainage"
-      description="Vos clients partagent un lien ; une fois l'objectif atteint, ils débloquent la récompense."
-    >
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Nom">
-          <Input name="name" placeholder="Ex : Amenez un ami" required autoFocus />
-        </Field>
-        <Field label="Description" hint="Optionnel">
-          <Input name="description" placeholder="Ex : valable jusqu'à la fin de l'été" />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Objectif" hint="Nombre de parrainages réussis requis">
-            <Input name="goalCount" type="number" min="1" step="1" defaultValue="1" required />
-          </Field>
-          <Field label="Récompense du catalogue" hint="Optionnel">
-            <Select name="rewardId" defaultValue="">
-              <option value="">—</option>
-              {rewards.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
-        <Field label="Ou décrivez la récompense librement" hint="Optionnel — affiché au client">
-          <Input name="rewardDescription" placeholder="Ex : dessert offert" />
-        </Field>
-        <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 p-3">
-          <p className="mb-2 text-[12px] font-semibold text-mv-ink">Bonus immédiat à la conversion</p>
-          <p className="mb-3 text-[11.5px] leading-snug text-mv-ink-faint">
-            Crédité en points dès qu&apos;un ami parrainé devient client — en plus de la récompense d&apos;objectif ci-dessus, qui reste remise à la main.
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Pour le parrain" hint="Points">
-              <Input name="referrerBonusPoints" type="number" min="0" step="1" defaultValue="0" />
-            </Field>
-            <Field label="Pour le nouveau client" hint="Points">
-              <Input name="newCustomerBonusPoints" type="number" min="0" step="1" defaultValue="0" />
-            </Field>
-          </div>
-        </div>
-        <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Annuler
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Créer"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function ReferralLinkRow({ tracking }: { tracking: ReferralLinkTracking }) {
-  const [copied, setCopied] = useState(false);
-  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/p/${tracking.link.code}`;
-
-  function handleCopy() {
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  return (
-    <div className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2 text-[12.5px]">
-      <div className="min-w-0">
-        <span className="font-medium text-mv-ink">{tracking.customerName}</span>
-        <span className="text-mv-ink-faint"> — {tracking.programName}</span>
-      </div>
-      <div className="flex shrink-0 items-center gap-3 text-mv-ink-soft">
-        <HelperTooltip content="Nombre de fois où quelqu'un a cliqué sur ce lien de parrainage.">
-          <span className="flex items-center gap-1 cursor-help">
-            <MousePointerClick size={12} /> {tracking.link.clicks}
-          </span>
-        </HelperTooltip>
-        <HelperTooltip content="Nombre de filleuls qui sont devenus clients grâce à ce lien.">
-          <span className="flex items-center gap-1 cursor-help">
-            <Link2 size={12} /> {tracking.link.convertedCount}
-          </span>
-        </HelperTooltip>
-        {tracking.link.rewardClaimedAt && <Badge tone="green">Débloquée</Badge>}
-        <button
-          onClick={() => window.open(url, "_blank")}
-          aria-label="Ouvrir le lien de parrainage"
-          title="Ouvrir le lien"
-          className="text-mv-ink-faint transition-colors hover:text-mv-ink"
-        >
-          <ExternalLink size={13} />
-        </button>
-        <button
-          onClick={handleCopy}
-          aria-label="Copier le lien de parrainage"
-          title="Copier le lien de parrainage"
-          className="text-mv-ink-faint transition-colors hover:text-mv-ink"
-        >
-          {copied ? <Check size={13} className="text-mv-green-dark" /> : <Copy size={13} />}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ReferralProgramsCard({
-  restaurantId,
-  programs,
-  rewards,
-  links,
-  onChange,
-}: {
-  restaurantId: string;
-  programs: ReferralProgram[];
-  rewards: LoyaltyReward[];
-  links: ReferralLinkTracking[];
-  onChange: (programs: ReferralProgram[]) => void;
-}) {
-  const [createOpen, setCreateOpen] = useState(false);
-  const [showAllLinks, setShowAllLinks] = useState(false);
-  const visibleLinks = showAllLinks ? links : links.slice(0, 5);
-
-  async function handleToggleActive(program: ReferralProgram) {
-    const ok = await updateReferralProgramActiveAction(restaurantId, program.id, !program.active);
-    if (ok) {
-      onChange(programs.map((p) => (p.id === program.id ? { ...p, active: !p.active } : p)));
-    } else {
-      notifyError("La mise à jour a échoué.");
-    }
-  }
-
-  async function handleDelete(id: string, name: string) {
-    if (
-      !window.confirm(
-        `Supprimer le programme "${name}" ? Tous les liens de parrainage et l'historique des filleuls de ce programme seront définitivement supprimés.`
-      )
-    ) {
-      return;
-    }
-    const ok = await deleteReferralProgramAction(restaurantId, id);
-    if (ok) onChange(programs.filter((p) => p.id !== id));
-  }
-
-  return (
-    <>
-      <Card>
-        <CardHeader
-          eyebrow="Parrainage"
-          title="Programmes de parrainage"
-          description="Vos clients partagent un lien depuis leur espace client — suivez qui génère quoi."
-          action={
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus size={14} /> Nouveau programme
-            </Button>
-          }
-        />
-
-        {programs.length === 0 ? (
-          <p className="text-[12.5px] text-mv-ink-faint">Aucun programme de parrainage pour l&apos;instant.</p>
-        ) : (
-          <div className="mb-4 space-y-1.5">
-            {programs.map((p) => (
-              <div key={p.id} className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2">
-                <div>
-                  <p className="text-[13px] font-medium text-mv-ink">{p.name}</p>
-                  <p className="text-[11.5px] text-mv-ink-faint">
-                    Objectif : {p.goalCount} parrainage{p.goalCount > 1 ? "s" : ""}
-                    {p.rewardDescription ? ` — ${p.rewardDescription}` : ""}
-                  </p>
-                  {(p.referrerBonusPoints > 0 || p.newCustomerBonusPoints > 0) && (
-                    <p className="mt-0.5 text-[11.5px] text-mv-green-dark">
-                      Bonus immédiat : +{p.referrerBonusPoints} pts parrain / +{p.newCustomerBonusPoints} pts filleul
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge tone={p.active ? "green" : "neutral"}>{p.active ? "Actif" : "Inactif"}</Badge>
-                  <button
-                    onClick={() => handleToggleActive(p)}
-                    className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-ink-soft hover:bg-mv-ink/5"
-                  >
-                    {p.active ? "Désactiver" : "Activer"}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(p.id, p.name)}
-                    aria-label="Supprimer le programme"
-                    className="text-mv-ink-faint transition-colors hover:text-mv-red"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {links.length > 0 && (
-          <div className="border-t border-mv-border-soft pt-3">
-            <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              Suivi des liens
-            </p>
-            <div className="space-y-1.5">
-              {visibleLinks.map((t) => (
-                <ReferralLinkRow key={t.link.id} tracking={t} />
-              ))}
-            </div>
-            {links.length > 5 && (
-              <button
-                onClick={() => setShowAllLinks((v) => !v)}
-                className="mt-2 text-[12px] font-semibold text-mv-green-dark hover:underline"
-              >
-                {showAllLinks ? "Afficher moins" : `Afficher les ${links.length - 5} autre(s)`}
-              </button>
-            )}
-          </div>
-        )}
-      </Card>
-
-      <NewReferralProgramModal
-        restaurantId={restaurantId}
-        rewards={rewards}
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={(program) => onChange([program, ...programs])}
-      />
-    </>
-  );
-}
-
-function LoyaltyShareRow({ share, onDeleted }: { share: LoyaltyShare; onDeleted: (id: string) => void }) {
-  const [copied, setCopied] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const url = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/f/${share.token}`;
-
-  useEffect(() => {
-    QRCode.toDataURL(url, { width: 512, margin: 1 }).then(setQrDataUrl).catch(() => setQrDataUrl(null));
-  }, [url]);
-
-  function handleCopy() {
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  function handleDownload() {
-    if (!qrDataUrl) return;
-    const a = document.createElement("a");
-    a.href = qrDataUrl;
-    a.download = `qr-${share.title.toLowerCase().replace(/\s+/g, "-")}.png`;
-    a.click();
-  }
-
-  return (
-    <div className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
-      <div className="flex min-w-0 items-center gap-2.5">
-        {qrDataUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={qrDataUrl} alt="" className="h-9 w-9 shrink-0 rounded border border-mv-border-soft" />
-        )}
-        <div className="min-w-0">
-          <p className="truncate text-[12.5px] font-medium text-mv-ink">{share.title}</p>
-          <p className="truncate text-[11.5px] text-mv-ink-faint">/f/{share.token}</p>
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-1.5">
-        <button
-          onClick={handleDownload}
-          disabled={!qrDataUrl}
-          className="text-mv-ink-faint hover:text-mv-ink disabled:opacity-40"
-          aria-label="Télécharger le code QR"
-        >
-          <Download size={14} />
-        </button>
-        <button
-          onClick={() => window.open(url, "_blank")}
-          className="text-mv-ink-faint hover:text-mv-ink"
-          aria-label="Ouvrir le lien"
-          title="Ouvrir le lien"
-        >
-          <ExternalLink size={14} />
-        </button>
-        <button onClick={handleCopy} className="text-mv-ink-faint hover:text-mv-ink" aria-label="Copier le lien">
-          {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
-        </button>
-        <button
-          onClick={() => onDeleted(share.id)}
-          className="text-mv-ink-faint hover:text-mv-red"
-          aria-label="Supprimer le lien"
-        >
-          <Trash2 size={13} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ShareLoyaltyModal({
-  restaurantId,
-  open,
-  onClose,
-  onCreated,
-}: {
-  restaurantId: string;
-  open: boolean;
-  onClose: () => void;
-  onCreated: (share: LoyaltyShare) => void;
-}) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    setIsSubmitting(true);
-    try {
-      const share = await createLoyaltyShareAction(restaurantId, String(form.get("title") ?? "") || "Fidélité");
-      if (share) {
-        onCreated(share);
-        onClose();
-      } else {
-        notifyError("La création du lien a échoué.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Partager la fidélité"
-      description="Génère un lien public — un nouveau client peut rejoindre le programme sans avoir de fiche existante."
-    >
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Titre" hint="Affiché sur la page publique">
-          <Input name="title" placeholder="Fidélité" defaultValue="Fidélité" required autoFocus />
-        </Field>
-        <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Annuler
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Générer le lien"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function LoyaltyShareCard({
-  restaurantId,
-  shares,
-  onChange,
-}: {
-  restaurantId: string;
-  shares: LoyaltyShare[];
-  onChange: (shares: LoyaltyShare[]) => void;
-}) {
-  const [shareOpen, setShareOpen] = useState(false);
-
-  function handleDeleted(id: string) {
-    deleteLoyaltyShareAction(restaurantId, id).then((ok) => {
-      if (ok) onChange(shares.filter((s) => s.id !== id));
-      else notifyError("La suppression a échoué.");
-    });
-  }
-
-  return (
-    <Card>
-      <CardHeader
-        eyebrow="Croissance"
-        title="Partager la fidélité"
-        description="Un lien ou un code QR pour qu'un nouveau client rejoigne le programme lui-même."
-        action={
-          <Button size="sm" variant="secondary" onClick={() => setShareOpen(true)}>
-            <Share2 size={14} /> Nouveau lien
-          </Button>
-        }
-      />
-      {shares.length === 0 ? (
-        <p className="flex items-center gap-2 text-[12.5px] text-mv-ink-faint">
-          <QrCode size={14} /> Aucun lien généré pour l&apos;instant.
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {shares.map((s) => (
-            <LoyaltyShareRow key={s.id} share={s} onDeleted={handleDeleted} />
-          ))}
-        </div>
-      )}
-      <ShareLoyaltyModal
-        restaurantId={restaurantId}
-        open={shareOpen}
-        onClose={() => setShareOpen(false)}
-        onCreated={(s) => onChange([s, ...shares])}
-      />
     </Card>
   );
 }
@@ -1055,11 +348,9 @@ function DigitalLoyaltyPassModal({
       description="Carte virtuelle avec code de scan pour caisse et service à table."
     >
       <div className="space-y-4">
-        {/* Luxury Virtual Membership Card */}
         <div
           className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${tierInfo.gradient} ${tierInfo.border} ${tierInfo.glow} p-5 text-white shadow-2xl border`}
         >
-          {/* Holographic Header Bar */}
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <div className="flex items-center gap-2">
               <Sparkles size={16} className={tierInfo.accent} />
@@ -1070,7 +361,6 @@ function DigitalLoyaltyPassModal({
             </span>
           </div>
 
-          {/* Member Details */}
           <div className="mt-4 flex items-end justify-between">
             <div>
               <p className="text-[10.5px] uppercase font-semibold tracking-wider text-white/60">Titulaire</p>
@@ -1078,7 +368,6 @@ function DigitalLoyaltyPassModal({
               <p className="font-mono text-[11.5px] text-white/70 mt-0.5">{memberCode}</p>
             </div>
 
-            {/* QR Code */}
             {qrDataUrl && (
               <div className="rounded-xl bg-white p-1.5 shadow-md">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1087,7 +376,6 @@ function DigitalLoyaltyPassModal({
             )}
           </div>
 
-          {/* Points & Perks Footer */}
           <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
             <div>
               <span className="text-[10.5px] uppercase font-medium text-white/60">Solde de Points</span>
@@ -1104,7 +392,6 @@ function DigitalLoyaltyPassModal({
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
           <Button variant="secondary" size="sm" onClick={handleCopy} className="text-[12px] gap-1.5">
             {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />} Copier code membre
@@ -1210,71 +497,29 @@ function BirthdayPerksCard({
   );
 }
 
-
 export function FidelisationView({
   restaurantId,
   restaurantName = "Restaurant",
   initialCustomers,
-  initialRewards,
   loyaltyPointsPerDollar,
-  initialReferralPrograms,
-  referralLinks,
-  initialLoyaltyShares,
-  retentionEngineEnabled,
-  retentionInactivityDays,
   loyaltyTierThresholds,
-  referralRoi = {
-    totalClicks: 0,
-    totalConversions: 0,
-    conversionRatePct: 0,
-    totalRevenueGenerated: 0,
-    estimatedRewardsCost: 0,
-    netProfitGenerated: 0,
-    roiMultiplier: 0,
-    activeProgramsCount: 0,
-    activeAmbassadorsCount: 0,
-  },
-  topAmbassadors = [],
 }: {
   restaurantId: string | null;
   restaurantName?: string;
   initialCustomers: Customer[];
-  initialRewards: LoyaltyReward[];
   loyaltyPointsPerDollar: number;
-  initialReferralPrograms: ReferralProgram[];
-  referralLinks: ReferralLinkTracking[];
-  initialLoyaltyShares: LoyaltyShare[];
-  retentionEngineEnabled: boolean;
-  retentionInactivityDays: number;
   loyaltyTierThresholds: LoyaltyTierThresholds;
-  referralRoi?: ReferralRoiMetrics;
-  topAmbassadors?: TopAmbassador[];
 }) {
   const { role } = useApp();
   const router = useRouter();
 
   const [customers, setCustomers] = useState(initialCustomers);
-  const [rewards, setRewards] = useState(initialRewards);
-  const [referralPrograms, setReferralPrograms] = useState(initialReferralPrograms);
-  const [loyaltyShares, setLoyaltyShares] = useState(initialLoyaltyShares);
-  const [rate, setRate] = useState(loyaltyPointsPerDollar);
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
-  const [qrStudioOpen, setQrStudioOpen] = useState(false);
   const [passCustomer, setPassCustomer] = useState<Customer | null>(null);
   const [visibleCount, setVisibleCount] = useState(10);
 
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
-  const canManage = role === "owner" || role === "manager";
-
-  const defaultShareUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/portal`
-    : "https://minerva-flow.vercel.app/portal";
-
-  const firstShareToken = loyaltyShares[0]?.token;
-  const activeQrPortalUrl = firstShareToken
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/rejoindre/${firstShareToken}`
-    : defaultShareUrl;
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -1286,35 +531,20 @@ export function FidelisationView({
 
   const visible = filtered.slice(0, visibleCount);
 
-  async function handleRateBlur() {
-    if (!restaurantId || !canManage) return;
-    await updateLoyaltyRateAction(restaurantId, rate);
-  }
-
   return (
     <div>
+      <FidelisationSubNav />
+
       <PageHeader
         eyebrow="Clients"
         title="Fidélisation"
-        description="Fiches clients, visites, parrainage viral, passes numériques et points de fidélité."
+        description="Fiches clients, visites, passes numériques et points de fidélité."
         action={
-          <div className="flex items-center gap-2">
-            {canManage && (
-              <Button href="/fidelisation/recompenses" size="sm" variant="secondary">
-                <Gift size={14} /> Récompenses par palier
-              </Button>
-            )}
-            {canManage && (
-              <Button size="sm" variant="secondary" onClick={() => setQrStudioOpen(true)}>
-                <QrCode size={14} /> Studio QR & Affiches
-              </Button>
-            )}
-            {canCreate && (
-              <Button size="sm" onClick={() => setCreateOpen(true)}>
-                <Plus size={15} /> Nouveau client
-              </Button>
-            )}
-          </div>
+          canCreate && (
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus size={15} /> Nouveau client
+            </Button>
+          )
         }
       />
 
@@ -1340,24 +570,6 @@ export function FidelisationView({
             className="pl-8"
           />
         </div>
-        {canManage && (
-          <label
-            className="flex items-center gap-1.5 text-[12.5px] text-mv-ink-soft"
-            title="Points attribués par dollar dépensé — s'applique aux prochaines visites"
-          >
-            Taux :
-            <input
-              type="number"
-              min="0"
-              step="0.5"
-              value={rate}
-              onChange={(e) => setRate(Number(e.target.value))}
-              onBlur={handleRateBlur}
-              className="h-8 w-16 rounded-md border border-mv-border bg-mv-surface px-2 text-[12.5px]"
-            />
-            pts/$
-          </label>
-        )}
         <span className="text-[12.5px] text-mv-ink-faint">
           {filtered.length} client{filtered.length > 1 ? "s" : ""}
         </span>
@@ -1365,7 +577,7 @@ export function FidelisationView({
 
       {filtered.length === 0 ? (
         <EmptyState
-          icon={Heart}
+          icon={Gift}
           title="Aucun client"
           description="Ajoutez votre première fiche client pour commencer à suivre les visites et les points."
           action={
@@ -1438,27 +650,6 @@ export function FidelisationView({
         </>
       )}
 
-      {canManage && (
-        <div className="mt-6 space-y-6">
-          <ReferralRoiDashboard metrics={referralRoi} ambassadors={topAmbassadors} />
-          <LoyaltyTierSettingsCard restaurantId={restaurantId!} initialThresholds={loyaltyTierThresholds} />
-          <RetentionSettingsCard
-            restaurantId={restaurantId!}
-            initialEnabled={retentionEngineEnabled}
-            initialInactivityDays={retentionInactivityDays}
-          />
-          <RewardsCard restaurantId={restaurantId!} rewards={rewards} onChange={setRewards} />
-          <LoyaltyShareCard restaurantId={restaurantId!} shares={loyaltyShares} onChange={setLoyaltyShares} />
-          <ReferralProgramsCard
-            restaurantId={restaurantId!}
-            programs={referralPrograms}
-            rewards={rewards}
-            links={referralLinks}
-            onChange={setReferralPrograms}
-          />
-        </div>
-      )}
-
       {restaurantId && (
         <NewCustomerModal
           restaurantId={restaurantId}
@@ -1474,17 +665,10 @@ export function FidelisationView({
       <DigitalLoyaltyPassModal
         customer={passCustomer}
         restaurantName={restaurantName}
-        rate={rate}
+        rate={loyaltyPointsPerDollar}
         thresholds={loyaltyTierThresholds}
         open={Boolean(passCustomer)}
         onClose={() => setPassCustomer(null)}
-      />
-
-      <QrTableStandStudio
-        restaurantName={restaurantName}
-        portalUrl={activeQrPortalUrl}
-        open={qrStudioOpen}
-        onClose={() => setQrStudioOpen(false)}
       />
     </div>
   );

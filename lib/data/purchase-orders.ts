@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from "@/lib/types";
 
 type PurchaseOrderRow = {
@@ -47,8 +48,8 @@ function mapOrder(row: PurchaseOrderRow, items: PurchaseOrderItemRow[]): Purchas
   };
 }
 
-export async function getPurchaseOrders(restaurantId: string): Promise<PurchaseOrder[]> {
-  const supabase = await createClient();
+export async function getPurchaseOrders(restaurantId: string, client?: SupabaseClient): Promise<PurchaseOrder[]> {
+  const supabase = client ?? (await createClient());
   const { data: orders, error } = await supabase
     .from("purchase_orders")
     .select("*")

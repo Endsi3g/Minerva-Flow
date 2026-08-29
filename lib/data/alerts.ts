@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Alert, AlertRule, AlertRuleType, AlertSeverity } from "@/lib/types";
 
 type AlertRow = {
@@ -168,8 +170,8 @@ type AlertRuleRow = {
   notify: boolean;
 };
 
-export async function getAlertRules(restaurantId: string): Promise<AlertRule[]> {
-  const supabase = await createClient();
+export async function getAlertRules(restaurantId: string, client?: SupabaseClient): Promise<AlertRule[]> {
+  const supabase = client ?? (await createClient());
   const { data } = await supabase
     .from("alert_rules")
     .select("*")
@@ -236,4 +238,85 @@ export async function upsertAlertRule(
     enabled: row.enabled,
     notify: row.notify,
   };
+}
+
+// computeAlerts() (lib/engine/alerts.ts) builds deterministic per-alert ids like
+// `low-stock-<itemId>` — this recovers the rule type from that prefix so synced rows
+// carry a real `type` (used nowhere yet, but matches what a persisted alert should have).
+const ALERT_TYPE_PREFIXES: [prefix: string, type: AlertRuleType][] = [
+  ["revenue-drop-", "revenue_drop"],
+  ["expense-spike-", "expense_spike"],
+  ["missing-day-input", "missing_day_input"],
+  ["broken-sync-", "broken_sync"],
+  ["low-stock-", "low_stock"],
+  ["unfilled-shift-", "unfilled_shift"],
+  ["late-supplier-order-", "late_supplier_order"],
+];
+
+function alertTypeFromComputedKey(key: string): string {
+  return ALERT_TYPE_PREFIXES.find(([prefix]) => key.startsWith(prefix))?.[1] ?? "other";
+}
+
+/**
+ * Persists computeAlerts()'s live output for one restaurant — run periodically
+ * (app/api/cron/sync-alerts) since `alerts` is otherwise never written to, which
+ * left the notification bell always empty and Overview's own `unreadTableAlerts`
+ * merge silently dead. Idempotent: upserts on (restaurant_id, computed_key), so a
+ * re-sync of the same underlying condition updates severity/title/detail without
+ * resetting `status` (a review a staff member already marked stays marked) or
+ * `created_at`. Alerts whose condition no longer holds (key missing from the fresh
+ * set) are deleted — this table only ever reflects what's currently true, same as
+ * computeAlerts() itself.
+ */
+export async function syncComputedAlerts(
+  restaurantId: string,
+  computed: Alert[]
+): Promise<{ synced: number; error?: string }> {
+  const admin = createAdminClient();
+
+  const { data: existing, error: readError } = await admin
+    .from("alerts")
+    .select("computed_key")
+    .eq("restaurant_id", restaurantId)
+    .not("computed_key", "is", null);
+
+  if (readError) {
+    console.error("syncComputedAlerts read failed:", readError.message);
+    return { synced: 0, error: readError.message };
+  }
+
+  const freshKeys = new Set(computed.map((a) => a.id));
+  const staleKeys = ((existing as { computed_key: string }[] | null) ?? [])
+    .map((r) => r.computed_key)
+    .filter((key) => !freshKeys.has(key));
+
+  if (staleKeys.length > 0) {
+    const { error: deleteError } = await admin
+      .from("alerts")
+      .delete()
+      .eq("restaurant_id", restaurantId)
+      .in("computed_key", staleKeys);
+    if (deleteError) console.error("syncComputedAlerts delete failed:", deleteError.message);
+  }
+
+  if (computed.length === 0) return { synced: 0 };
+
+  const { error: upsertError } = await admin.from("alerts").upsert(
+    computed.map((a) => ({
+      restaurant_id: restaurantId,
+      computed_key: a.id,
+      type: alertTypeFromComputedKey(a.id),
+      severity: a.severity,
+      title: a.title,
+      detail: a.detail,
+    })),
+    { onConflict: "restaurant_id,computed_key" }
+  );
+
+  if (upsertError) {
+    console.error("syncComputedAlerts upsert failed:", upsertError.message);
+    return { synced: 0, error: upsertError.message };
+  }
+
+  return { synced: computed.length };
 }

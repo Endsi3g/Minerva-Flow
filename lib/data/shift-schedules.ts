@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ShiftSchedule, ShiftScheduleStatus } from "@/lib/types";
 
 type ShiftScheduleRow = {
@@ -39,9 +40,10 @@ export async function getShiftSchedulesForWeek(
 export async function getShiftSchedulesForRange(
   restaurantId: string,
   startDate: string,
-  endDate: string
+  endDate: string,
+  client?: SupabaseClient
 ): Promise<ShiftSchedule[]> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
     .from("shift_schedules")
     .select("*")

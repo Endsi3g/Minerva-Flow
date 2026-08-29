@@ -6,10 +6,11 @@ import { getRestaurant } from "@/lib/data/restaurants";
 import { getServiceDays } from "@/lib/data/service-days";
 import { getPrograms } from "@/lib/data/programs";
 import { getCampaigns } from "@/lib/data/campaigns";
-import { getAlerts, getAlertRules } from "@/lib/data/alerts";
+import { getAlertRules } from "@/lib/data/alerts";
 import { getConnections, getFinancialTransactions } from "@/lib/data/finance";
 import { getMenuItems } from "@/lib/data/menu";
 import { getCustomers } from "@/lib/data/customers";
+import { getInventoryItems } from "@/lib/data/inventory";
 import { classifyMenuItems, getMarginDriftItems, quadrantLabel, MARGIN_DRIFT_FOOD_COST_PCT } from "@/lib/menu-engineering";
 import { getInactiveCustomers } from "@/lib/engine/retention";
 import { simpleTrendForecast } from "@/lib/engine/forecast";
@@ -21,17 +22,41 @@ import type { Recommendation } from "@/lib/types";
  * Supprime le verbiage redondant et utilise des représentations concises.
  */
 export async function buildRestaurantDataSnapshot(restaurantId: string): Promise<string> {
-  const [restaurant, days, restaurantPrograms, restaurantCampaigns, alerts, restaurantConnections, menuItems, customers] =
-    await Promise.all([
-      getRestaurant(restaurantId),
-      getServiceDays(restaurantId, { from: isoDaysAgo(CONTEXT_WINDOW_DAYS) }),
-      getPrograms(restaurantId),
-      getCampaigns(restaurantId),
-      getAlerts(restaurantId),
-      getConnections(restaurantId),
-      getMenuItems(restaurantId),
-      getCustomers(restaurantId),
-    ]);
+  const [
+    restaurant,
+    days,
+    restaurantPrograms,
+    restaurantCampaigns,
+    alertRules,
+    financialTransactions,
+    restaurantConnections,
+    menuItems,
+    customers,
+    inventoryItems,
+  ] = await Promise.all([
+    getRestaurant(restaurantId),
+    getServiceDays(restaurantId, { from: isoDaysAgo(CONTEXT_WINDOW_DAYS) }),
+    getPrograms(restaurantId),
+    getCampaigns(restaurantId),
+    getAlertRules(restaurantId),
+    getFinancialTransactions(restaurantId, { from: isoDaysAgo(CONTEXT_WINDOW_DAYS) }),
+    getConnections(restaurantId),
+    getMenuItems(restaurantId),
+    getCustomers(restaurantId),
+    getInventoryItems(restaurantId),
+  ]);
+
+  // computeAlerts() est le même moteur d'alertes en direct que /overview — la table `alerts` n'est
+  // jamais peuplée par ailleurs dans l'app, donc la lire directement ici renverrait toujours "aucune alerte".
+  const alerts = computeAlerts({
+    serviceDays: days,
+    connections: restaurantConnections,
+    alertRules,
+    financialTransactions,
+    inventoryItems,
+  });
+
+  const lowStockItems = inventoryItems.filter((i) => i.parLevel !== null && i.quantityOnHand <= i.parLevel);
 
   const totalRevenue = days.reduce((sum, d) => sum + d.revenue, 0);
 
@@ -90,6 +115,11 @@ export async function buildRestaurantDataSnapshot(restaurantId: string): Promise
     .map((a) => `[${a.severity}] ${a.title}: ${a.detail}`)
     .join("; ");
 
+  const lowStockLines = lowStockItems
+    .slice(0, 6)
+    .map((i) => `${i.name}: ${i.quantityOnHand} ${i.unit} (seuil ${i.parLevel} ${i.unit})`)
+    .join("; ");
+
   const connectionLines = restaurantConnections
     .map((c) => `${c.name}: ${c.status}`)
     .join(", ");
@@ -112,6 +142,7 @@ export async function buildRestaurantDataSnapshot(restaurantId: string): Promise
 ${marginDriftLines ? `- Dérives marge: ${marginDriftLines}\n` : ""}- Fidélité: ${customers.length} clients (${inactiveCustomersAll.length} inactifs ${inactivityThresholdDays}+ j). Top inactifs à relancer: ${topInactiveStr}
 - Campagnes: ${campaignLines || "Aucune"}
 - Alertes: ${alertLines || "Aucune alerte"}
+- Stock bas: ${lowStockLines || "Aucun article sous le seuil"}
 - Intégrations: ${connectionLines || "Aucune"}
 - Prévision CA (7j): ${forecastLines || "Non disponible"}
 

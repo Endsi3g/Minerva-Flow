@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import { createFinancialTransaction } from "@/lib/data/finance";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { InventoryItem, InventoryMovement, InventoryMovementType } from "@/lib/types";
 
 type InventoryItemRow = {
@@ -53,8 +54,8 @@ function mapMovement(row: InventoryMovementRow): InventoryMovement {
   };
 }
 
-export async function getInventoryItems(restaurantId: string): Promise<InventoryItem[]> {
-  const supabase = await createClient();
+export async function getInventoryItems(restaurantId: string, client?: SupabaseClient): Promise<InventoryItem[]> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
     .from("inventory_items")
     .select("*")
@@ -242,9 +243,10 @@ export async function logMovement(
  */
 export async function getWasteSummary(
   restaurantId: string,
-  opts?: { from?: string; to?: string }
+  opts?: { from?: string; to?: string },
+  client?: SupabaseClient
 ): Promise<{ itemId: string; itemName: string; cost: number }[]> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const { data: items } = await supabase
     .from("inventory_items")
     .select("id, name, unit_cost")

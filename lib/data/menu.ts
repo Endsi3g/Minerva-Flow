@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MenuItem } from "@/lib/types";
 
 export type MenuItemRow = {
@@ -33,8 +34,8 @@ export function mapMenuItem(row: MenuItemRow): MenuItem {
   };
 }
 
-export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {
-  const supabase = await createClient();
+export async function getMenuItems(restaurantId: string, client?: SupabaseClient): Promise<MenuItem[]> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
     .from("menu_items")
     .select("*")

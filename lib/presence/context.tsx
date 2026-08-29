@@ -71,7 +71,14 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
 
     channel.on("presence", { event: "sync" }, () => {
       const state = channel.presenceState<PresenceMember>();
-      setMembers(Object.values(state).flatMap((entries) => entries as unknown as PresenceMember[]));
+      // Each presence key (== userId, per the `key: authUser.id` config below) can hold
+      // multiple entries — one per open tab/connection for that same person. Take the
+      // most recent entry per key rather than flattening, or the same user renders twice.
+      setMembers(
+        Object.values(state)
+          .map((entries) => (entries as unknown as PresenceMember[]).at(-1))
+          .filter((m): m is PresenceMember => m != null)
+      );
     });
 
     channel.subscribe((status) => {

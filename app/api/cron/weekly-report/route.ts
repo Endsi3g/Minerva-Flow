@@ -47,6 +47,14 @@ function previousWeekRange(now = new Date()) {
  * Runs every Monday at 8am (see vercel.json crons config). Protected by
  * CRON_SECRET so it can't be triggered by anyone who finds the URL — Vercel
  * Cron sends this as a Bearer token automatically when the env var is set.
+ *
+ * All `lib/data/*` getters below get an explicit admin (service-role) client: a
+ * cron request has no browser session/cookies, so their default session-scoped
+ * client would hit RLS as an anonymous user and silently return empty data for
+ * every restaurant — this was happening here before the client param existed,
+ * so every weekly report/digest/AI review this cron ever generated was built
+ * from empty inputs. restaurantId scoping is still enforced by each getter's
+ * own .eq("restaurant_id", ...) query.
  */
 export async function GET(req: Request) {
   const authHeader = req.headers.get("authorization");
@@ -54,6 +62,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
+  const admin = createAdminClient();
   const { from, to, weekStart } = previousWeekRange();
   const restaurantIds = await getAllActiveRestaurantIds();
   const origin = new URL(req.url).origin;
@@ -61,10 +70,10 @@ export async function GET(req: Request) {
   const results = await Promise.all(
     restaurantIds.map(async (restaurantId) => {
       const [serviceDays, programs, campaigns, financialTransactions] = await Promise.all([
-        getServiceDays(restaurantId, { from, to }),
-        getPrograms(restaurantId),
-        getCampaigns(restaurantId),
-        getFinancialTransactions(restaurantId, { from, to }),
+        getServiceDays(restaurantId, { from, to }, admin),
+        getPrograms(restaurantId, admin),
+        getCampaigns(restaurantId, undefined, admin),
+        getFinancialTransactions(restaurantId, { from, to }, admin),
       ]);
 
       const reportData: ReportData = { serviceDays, programs, campaigns, financialTransactions };
@@ -102,8 +111,8 @@ export async function GET(req: Request) {
       // one place they get surfaced as a notification rather than only
       // showing up live on /overview when someone happens to look.
       const [connections, alertRules] = await Promise.all([
-        getConnections(restaurantId),
-        getAlertRules(restaurantId),
+        getConnections(restaurantId, admin),
+        getAlertRules(restaurantId, admin),
       ]);
       const urgentAlerts = computeAlerts({
         serviceDays,
@@ -129,8 +138,8 @@ export async function GET(req: Request) {
       // elsewhere. Uses the admin client: a cron run has no user session,
       // so the RLS-scoped client can't satisfy ai_reviews' insert policy.
       const [menuItems, wasteSummary] = await Promise.all([
-        getMenuItems(restaurantId),
-        getWasteSummary(restaurantId, { from, to }),
+        getMenuItems(restaurantId, admin),
+        getWasteSummary(restaurantId, { from, to }, admin),
       ]);
       const menuWasteContext = buildMenuWasteContext(menuItems, wasteSummary);
 

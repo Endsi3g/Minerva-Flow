@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Program, ProgramStatus, ProgramType } from "@/lib/types";
 
 type ProgramRow = {
@@ -127,8 +128,8 @@ async function campaignIdsForPrograms(
   return map;
 }
 
-export async function getPrograms(restaurantId: string): Promise<Program[]> {
-  const supabase = await createClient();
+export async function getPrograms(restaurantId: string, client?: SupabaseClient): Promise<Program[]> {
+  const supabase = client ?? (await createClient());
   const { data, error } = await supabase
     .from("revenue_programs")
     .select("*")

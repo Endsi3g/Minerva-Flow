@@ -8,6 +8,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { cn } from "@/lib/utils";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
+import type { UIMessage } from "ai";
 import { Thread } from "@/components/assistant-ui/thread";
 import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
@@ -29,10 +30,21 @@ import { useApp } from "@/lib/app-context";
 import { createConversationAction } from "@/app/[locale]/(chat)/assistant/actions";
 import { useRouter } from "next/navigation";
 
+/** Maps this app's DB-shaped chat history into the AI SDK's UIMessage wire format,
+ *  the only shape useChatRuntime's `messages` seed option accepts. */
+function toUIMessages(messages: ChatMessage[]): UIMessage[] {
+  return messages.map((m) => ({
+    id: m.id,
+    role: m.role,
+    parts: [{ type: "text" as const, text: m.content }],
+  }));
+}
+
 export function AssistantChatView({
   restaurantId,
   conversationId,
   conversations,
+  initialMessages,
   initialArtifact,
   defaultContext,
 }: {
@@ -58,6 +70,7 @@ export function AssistantChatView({
 
   const runtime = useChatRuntime({
     id: conversationId,
+    messages: toUIMessages(initialMessages),
     transport: new AssistantChatTransport({
       api: "/api/ai/chat",
       body: {
