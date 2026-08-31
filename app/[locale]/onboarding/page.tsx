@@ -6,6 +6,12 @@ import { getRestaurant } from "@/lib/data/restaurants";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { AuthShell } from "@/components/auth/AuthShell";
 
+const ONBOARDING_PANEL_POINTS = [
+  { title: "Aucune carte requise", description: "Vous entrez dans l'application dès cette étape — aucun engagement, aucun paiement." },
+  { title: "Rien n'est figé", description: "Nom, adresse, équipe, outils connectés : tout se modifie à tout moment depuis vos paramètres." },
+  { title: "Vos données restent les vôtres", description: "Hébergées au Canada, jamais revendues, exportables en un clic si vous partez un jour." },
+];
+
 export default async function OnboardingPage() {
   const supabase = await createClient();
   const {
@@ -16,24 +22,32 @@ export default async function OnboardingPage() {
     redirect("/login");
   }
 
-  const { data: profileRow } = await supabase
-    .from("profiles")
-    .select("onboarding_completed")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [profileRow, membership] = await Promise.all([
+    supabase.from("profiles").select("onboarding_completed").eq("id", user.id).maybeSingle(),
+    getCurrentMembership(),
+  ]);
 
-  if ((profileRow as { onboarding_completed: boolean } | null)?.onboarding_completed) {
+  // Redirect to the app only when onboarding is done AND the user actually
+  // has an active restaurant — an account whose membership got orphaned
+  // after onboarding (deleted restaurant, revoked membership, ...) would
+  // otherwise be bounced straight back to an empty Overview by this guard,
+  // with no way to reach the wizard that could fix it.
+  const onboardingCompleted = (profileRow.data as { onboarding_completed: boolean } | null)?.onboarding_completed;
+  if (onboardingCompleted && membership) {
     redirect("/overview");
   }
 
-  const [profile, membership] = await Promise.all([getMyProfile(), getCurrentMembership()]);
-  const restaurant = membership ? await getRestaurant(membership.restaurantId) : null;
+  const [profile, restaurant] = await Promise.all([
+    getMyProfile(),
+    membership ? getRestaurant(membership.restaurantId) : Promise.resolve(null),
+  ]);
 
   return (
     <AuthShell
       step={{ current: 2, total: 2, label: "Restaurant" }}
       panelHeadline="Presque prêt. Configurons votre établissement."
       panelSubline="Le reste — adresse, chiffres clés, outils — se complète en tout temps depuis l'application, sans bloquer votre accès."
+      panelPoints={ONBOARDING_PANEL_POINTS}
       footer={
         <p className="text-center text-[11.5px] text-mv-ink-faint">
           Besoin d&apos;aide ? L&apos;équipe Minerva reste disponible à tout moment.
