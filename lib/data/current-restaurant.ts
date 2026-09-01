@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getUserRestaurants } from "@/lib/data/restaurants";
+import { getVerifiedUser } from "@/lib/supabase/auth-user";
 import type { Role } from "@/lib/types";
 
 const COOKIE_NAME = "mv_restaurant_id";
@@ -46,23 +47,28 @@ export type CurrentMembership = {
  */
 export async function getCurrentMembership(): Promise<CurrentMembership | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getVerifiedUser(supabase);
   if (!user) return null;
 
   const restaurantId = await getCurrentRestaurantId();
   if (!restaurantId) return null;
 
-  const { data, error } = await supabase
-    .from("restaurant_members")
-    .select("role, sidebar_permissions")
-    .eq("restaurant_id", restaurantId)
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (error || !data) return null;
+  // Same reasoning as getUserRestaurants(): a transient query error must not
+  // read the same as "not a member of this restaurant" and silently drop the
+  // user's role/permissions on a bad reload.
+  let data: { role: string; sidebar_permissions: string[] | null } | null = null;
+  for (let attempt = 0; attempt < 2 && data === null; attempt++) {
+    const result = await supabase
+      .from("restaurant_members")
+      .select("role, sidebar_permissions")
+      .eq("restaurant_id", restaurantId)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    if (!result.error) data = result.data;
+    else if (attempt === 0) await new Promise((r) => setTimeout(r, 300));
+  }
+  if (!data) return null;
 
   return {
     restaurantId,

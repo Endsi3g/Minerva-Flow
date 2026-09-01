@@ -277,6 +277,7 @@
       "chooseCategory": "Choisir une catégorie…",
       "categorize": "Catégoriser ({count})",
       "addExpense": "Ajouter une dépense",
+      "export": "Exporter",
       "exportCsv": "Export CSV",
       "exportQuickBooks": "Exporter vers QuickBooks",
       "emptyTitleNone": "Aucune transaction pour l'instant",
@@ -1020,6 +1021,8 @@
     "page": {
       "noCustomerTitle": "Aucune fiche client trouvée",
       "noCustomerDescription": "Ce courriel n'est associé à aucun restaurant pour l'instant. Demandez au personnel de vous ajouter comme client.",
+      "signInDifferentEmail": "Se connecter avec un autre courriel",
+      "switchingAccount": "Déconnexion…",
       "chooseEstablishment": "Choisissez un établissement",
       "establishmentFallback": "Établissement"
     },

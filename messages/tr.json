@@ -277,6 +277,7 @@
       "chooseCategory": "Kategori seçin…",
       "categorize": "Kategorize et ({count})",
       "addExpense": "Gider ekle",
+      "export": "Dışa aktar",
       "exportCsv": "CSV dışa aktar",
       "exportQuickBooks": "QuickBooks'a aktar",
       "emptyTitleNone": "Henüz işlem yok",
@@ -1005,6 +1006,8 @@
     "page": {
       "noCustomerTitle": "Müşteri kaydı bulunamadı",
       "noCustomerDescription": "Bu e-posta şu anda herhangi bir restorana bağlı değil. Sizi müşteri olarak eklemelerini personelden isteyin.",
+      "signInDifferentEmail": "Başka bir e-posta ile giriş yap",
+      "switchingAccount": "Çıkış yapılıyor…",
       "chooseEstablishment": "Bir işletme seçin",
       "establishmentFallback": "İşletme"
     },

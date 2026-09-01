@@ -6,6 +6,7 @@ import { getActiveMenuItemsForCustomers } from "@/lib/data/menu";
 import { getActiveOffersForCustomers } from "@/lib/data/offers";
 import { LogoMark } from "@/components/shell/Logo";
 import { PortalView } from "./PortalView";
+import { NoCustomerFoundActions } from "./NoCustomerFound";
 import { Link } from "@/i18n/navigation";
 import { ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -33,6 +34,7 @@ export default async function PortalPage({
           <p className="mt-1.5 max-w-sm text-[13px] text-mv-ink-soft">
             {t("noCustomerDescription")}
           </p>
+          <NoCustomerFoundActions />
         </div>
       </div>
     );

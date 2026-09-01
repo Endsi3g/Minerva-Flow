@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserRestaurants } from "@/lib/data/restaurants";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { isPlatformAdmin } from "@/lib/data/admin";
+import { getVerifiedUser } from "@/lib/supabase/auth-user";
 import type { AuthUser } from "@/lib/app-context";
 import type { Restaurant, Role } from "@/lib/types";
 
@@ -22,9 +23,7 @@ export type AppSessionData = {
  */
 export async function getAppSessionData(): Promise<AppSessionData> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getVerifiedUser(supabase);
 
   const authUser: AuthUser | null = user
     ? {

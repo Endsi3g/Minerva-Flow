@@ -11,18 +11,24 @@ import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import { FlowBars } from "@/components/charts/FlowBars";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { TablePagination } from "@/components/minerva/TablePagination";
 import {
   Dropzone,
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/dropzone";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import posthog from "posthog-js";
 import { useCsvTransactionImport } from "@/hooks/use-csv-transaction-import";
 import { createCategoryAction, categorizeTransactionsAction, createTransactionAction } from "./actions";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
-import { BreakEvenSimulator } from "@/components/finance/BreakEvenSimulator";
 import { computeLaborCostPct, sumLaborCost, LABOR_COST_TARGET_PCT } from "@/lib/engine/labor-cost";
 import type {
   Connection,
@@ -100,13 +106,11 @@ function isCurrentMonth(dateIso: string): boolean {
 function OverviewTab({
   transactions,
   serviceDays,
-  breakEvenSettings,
   onGoToAccounts,
   onGoToTransactions,
 }: {
   transactions: FinancialTransaction[];
   serviceDays: ServiceDay[];
-  breakEvenSettings?: { fixedCosts: number | null; grossMarginPct: number | null; avgBasket: number | null };
   onGoToAccounts: () => void;
   onGoToTransactions: () => void;
 }) {
@@ -226,15 +230,6 @@ function OverviewTab({
             />
           )}
         </Card>
-      </div>
-
-      {/* Break-Even Simulator Section (Valeur ++) */}
-      <div className="mt-8">
-        <BreakEvenSimulator
-          initialFixedCosts={breakEvenSettings?.fixedCosts ?? undefined}
-          initialGrossMarginPct={breakEvenSettings?.grossMarginPct ?? undefined}
-          initialAvgBasket={breakEvenSettings?.avgBasket ?? undefined}
-        />
       </div>
     </div>
   );
@@ -441,6 +436,8 @@ function TransactionsTab({
   const [bulkCategory, setBulkCategory] = useState("");
   const [applyingBulk, setApplyingBulk] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
@@ -450,6 +447,23 @@ function TransactionsTab({
       return true;
     });
   }, [transactions, search, direction, category]);
+
+  // Reset to page 1 whenever the filters actually change — adjusted during
+  // render (React's documented pattern for this) rather than in a useEffect,
+  // which would cause an extra cascading render.
+  const filterKey = `${search}|${direction}|${category}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
+    setPage(1);
+  }
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const paginated = useMemo(
+    () => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filtered, safePage]
+  );
 
   const unreviewedCount = transactions.filter((t) => !t.reviewed).length;
 
@@ -540,12 +554,19 @@ function TransactionsTab({
           <Button size="sm" onClick={() => setAddOpen(true)}>
             <Plus size={14} /> {t("transactions.addExpense")}
           </Button>
-          <Button size="sm" variant="secondary" onClick={() => downloadCsv(filtered, t.raw("csv"))}>
-            <Download size={14} /> {t("transactions.exportCsv")}
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => downloadQuickBooksCsv(filtered)}>
-            <Download size={14} /> {t("transactions.exportQuickBooks")}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-2.5 text-[12.5px] font-semibold text-mv-ink shadow-mv-sm transition-colors hover:bg-mv-cream-soft">
+              <Download size={14} /> {t("transactions.export")}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => downloadCsv(filtered, t.raw("csv"))}>
+                {t("transactions.exportCsv")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => downloadQuickBooksCsv(filtered)}>
+                {t("transactions.exportQuickBooks")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -585,7 +606,7 @@ function TransactionsTab({
             <Th>{t("transactions.colStatus")}</Th>
           </THead>
           <tbody>
-            {filtered.map((row) => (
+            {paginated.map((row) => (
               <Tr key={row.id}>
                 <Td>
                   <input
@@ -617,6 +638,7 @@ function TransactionsTab({
           </tbody>
         </Table>
       )}
+      <TablePagination page={safePage} pageCount={pageCount} onPageChange={setPage} className="mt-3" />
 
       <Card className="mt-6">
         <CardHeader
@@ -731,13 +753,11 @@ export function FinanceView({
   expenseCategories,
   connections,
   serviceDays,
-  breakEvenSettings,
 }: {
   transactions: FinancialTransaction[];
   expenseCategories: ExpenseCategory[];
   connections: Connection[];
   serviceDays: ServiceDay[];
-  breakEvenSettings?: { fixedCosts: number | null; grossMarginPct: number | null; avgBasket: number | null };
 }) {
   const t = useTranslations("finance");
   const [tab, setTab] = useState("apercu");
@@ -781,7 +801,6 @@ export function FinanceView({
           <OverviewTab
             transactions={transactions}
             serviceDays={serviceDays}
-            breakEvenSettings={breakEvenSettings}
             onGoToAccounts={() => setTab("comptes")}
             onGoToTransactions={() => setTab("transactions")}
           />

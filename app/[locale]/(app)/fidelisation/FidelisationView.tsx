@@ -14,6 +14,7 @@ import type { Customer } from "@/lib/types";
 import { type LoyaltyTierThresholds, getLoyaltyTier } from "@/lib/loyalty-tiers";
 import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
 import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
+import { TablePagination } from "@/components/minerva/TablePagination";
 import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
@@ -517,7 +518,8 @@ export function FidelisationView({
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [passCustomer, setPassCustomer] = useState<Customer | null>(null);
-  const [visibleCount, setVisibleCount] = useState(10);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
 
@@ -529,7 +531,18 @@ export function FidelisationView({
     );
   }, [customers, search]);
 
-  const visible = filtered.slice(0, visibleCount);
+  // Reset to page 1 whenever the search term actually changes — adjusted
+  // during render (React's documented pattern) rather than in a useEffect,
+  // which would cause an extra cascading render.
+  const [prevSearch, setPrevSearch] = useState(search);
+  if (search !== prevSearch) {
+    setPrevSearch(search);
+    setPage(1);
+  }
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const visible = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <div>
@@ -639,14 +652,7 @@ export function FidelisationView({
               })}
             </tbody>
           </Table>
-          {filtered.length > visibleCount && (
-            <button
-              onClick={() => setVisibleCount((n) => n + 10)}
-              className="mt-3 text-[12.5px] font-semibold text-mv-green-dark hover:underline"
-            >
-              Voir plus ({filtered.length - visibleCount} restant{filtered.length - visibleCount > 1 ? "s" : ""})
-            </button>
-          )}
+          <TablePagination page={safePage} pageCount={pageCount} onPageChange={setPage} className="mt-3" />
         </>
       )}
 
