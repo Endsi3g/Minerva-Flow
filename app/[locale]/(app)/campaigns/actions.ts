@@ -10,6 +10,8 @@ import {
   type CampaignInput,
   type SaveCampaignAssetInput,
 } from "@/lib/data/campaigns";
+import { getCurrentMembership } from "@/lib/data/current-restaurant";
+import { publishToInstagram, getInstagramConnectionStatus } from "@/lib/meta/instagram";
 import type { Campaign, CampaignAsset } from "@/lib/types";
 
 /**
@@ -54,6 +56,48 @@ export async function updateCampaignStatusAction(
   const campaign = await updateCampaign(restaurantId, campaignId, { status });
   if (campaign) revalidatePath("/campaigns");
   return campaign;
+}
+
+export async function getInstagramConnectionStatusAction(
+  restaurantId: string
+): Promise<{ connected: boolean; instagramBusinessAccountId: string | null }> {
+  if (!restaurantId) return { connected: false, instagramBusinessAccountId: null };
+  return getInstagramConnectionStatus(restaurantId);
+}
+
+/**
+ * Takes the Marketing Studio's client-rendered PNG (a data: URL from
+ * html-to-image) and actually publishes it to the connected Instagram
+ * professional account: uploads to the public marketing-exports bucket
+ * (Instagram's API fetches image_url itself, it won't accept a direct
+ * upload) then runs the real two-step Graph API publish flow.
+ */
+export async function publishToInstagramAction(
+  restaurantId: string,
+  imageDataUrl: string,
+  caption: string
+): Promise<{ ok: boolean; error?: string }> {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return { ok: false, error: "Non autorisé." };
+  }
+
+  const match = imageDataUrl.match(/^data:image\/png;base64,(.+)$/);
+  if (!match) return { ok: false, error: "Format d'image invalide." };
+  const bytes = Buffer.from(match[1], "base64");
+
+  const supabase = await createClient();
+  const path = `${restaurantId}/${Date.now()}.png`;
+  const { error: uploadError } = await supabase.storage
+    .from("marketing-exports")
+    .upload(path, bytes, { contentType: "image/png", upsert: false });
+  if (uploadError) return { ok: false, error: "Échec du téléversement de l'image." };
+
+  const { data: publicUrlData } = supabase.storage.from("marketing-exports").getPublicUrl(path);
+
+  const result = await publishToInstagram(restaurantId, publicUrlData.publicUrl, caption);
+  if (!result.ok) return { ok: false, error: result.error };
+  return { ok: true };
 }
 
 /** Fetches a campaign's attached images/files with short-lived signed URLs for display. */

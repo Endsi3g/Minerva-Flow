@@ -8,6 +8,7 @@ import GmailSvg from "@thesvg/react/gmail";
 import GoogleAnalyticsSvg from "@thesvg/react/google-analytics";
 import GoogleAdsSvg from "@thesvg/react/google-ads";
 import MetaSvg from "@thesvg/react/meta";
+import InstagramSvg from "@thesvg/react/instagram";
 import StripeSvg from "@thesvg/react/stripe";
 import AppleSvg from "@thesvg/react/apple";
 import MicrosoftSvg from "@thesvg/react/microsoft";
@@ -71,6 +72,12 @@ export function Meta({ size = 20, width, height, className, ...props }: BrandIco
   const w = width || size;
   const h = height || size;
   return <MetaSvg width={w} height={h} className={className} {...props} />;
+}
+
+export function Instagram({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return <InstagramSvg width={w} height={h} className={className} {...props} />;
 }
 
 export function Stripe({ size = 20, width, height, className, ...props }: BrandIconProps) {

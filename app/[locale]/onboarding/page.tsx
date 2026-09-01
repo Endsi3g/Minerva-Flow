@@ -66,6 +66,7 @@ export default async function OnboardingPage() {
           userId={user.id}
           restaurantId={membership?.restaurantId ?? ""}
           restaurantName={restaurant?.name ?? "Mon restaurant"}
+          initialServiceModel={restaurant?.serviceModel === "cafe" ? "cafe" : "restaurant"}
           initialFullName={profile?.fullName ?? ""}
           initialAvatarUrl={profile?.avatarUrl ?? null}
           initialRole={membership?.role ?? "owner"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +9,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Link } from "@/i18n/navigation";
 import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import { updateRetentionSettingsAction } from "@/app/[locale]/(app)/fidelisation/actions";
+import {
+  getInstagramConnectionStatusAction,
+  publishToInstagramAction,
+} from "@/app/[locale]/(app)/campaigns/actions";
+import { Instagram } from "@/components/ui/BrandIcons";
 import {
   Sparkles,
   Download,
@@ -27,6 +32,7 @@ import {
   Send,
   Calendar,
   Eye,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -129,6 +135,14 @@ export function MarketingStudioView() {
 
   const [copiedCaption, setCopiedCaption] = useState(false);
 
+  const [instagramStatus, setInstagramStatus] = useState<{ connected: boolean } | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    getInstagramConnectionStatusAction(restaurantId).then(setInstagramStatus);
+  }, [restaurantId]);
+
   const generatedCaption = `✨ ${itemName} à déguster chez nous ou en livraison directe !
 
 ${itemDesc}
@@ -167,6 +181,24 @@ ${itemDesc}
       toast.error("Le téléchargement a échoué. Réessayez.");
     } finally {
       setIsExporting(false);
+    }
+  }
+
+  async function handlePublishToInstagram() {
+    if (!canvasRef.current || !restaurantId) return;
+    setIsPublishing(true);
+    try {
+      const dataUrl = await toPng(canvasRef.current, { pixelRatio: 3, cacheBust: true });
+      const result = await publishToInstagramAction(restaurantId, dataUrl, generatedCaption);
+      if (result.ok) {
+        toast.success("Publié sur Instagram !");
+      } else {
+        toast.error(result.error ?? "La publication a échoué.");
+      }
+    } catch {
+      toast.error("La publication a échoué. Réessayez.");
+    } finally {
+      setIsPublishing(false);
     }
   }
 
@@ -418,6 +450,24 @@ ${itemDesc}
               <Button onClick={handleDownloadVisual} disabled={isExporting} className="flex-1">
                 <Download size={15} /> {isExporting ? "Génération…" : "Télécharger le Kit Visuel HD"}
               </Button>
+              {instagramStatus?.connected ? (
+                <Button
+                  onClick={handlePublishToInstagram}
+                  disabled={isPublishing}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {isPublishing ? <Loader2 size={15} className="animate-spin" /> : <Instagram size={15} />}
+                  {isPublishing ? "Publication…" : "Publier sur Instagram"}
+                </Button>
+              ) : (
+                <Link
+                  href="/settings?tab=integrations"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-mv-border px-4 py-2.5 text-[13px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-cream-soft"
+                >
+                  <Instagram size={15} /> Connecter Instagram pour publier
+                </Link>
+              )}
             </div>
           </Card>
 
