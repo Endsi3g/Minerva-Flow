@@ -1,6 +1,7 @@
 "use client";
 
 import { GrainGradient } from "@paper-design/shaders-react";
+import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { Logo } from "@/components/shell/Logo";
@@ -18,6 +19,7 @@ export type AuthStep = { current: number; total: number; label: string };
  */
 export function AuthShell({
   step,
+  panelKey,
   panelHeadline,
   panelSubline,
   panelPoints,
@@ -26,6 +28,11 @@ export function AuthShell({
   cardClassName,
 }: {
   step?: AuthStep;
+  /** When set, the panel content crossfades whenever this value changes
+   * (e.g. the caller's login/signup mode) instead of snapping instantly —
+   * the reciprocal half of the form-side transition. Omit for screens whose
+   * panel content never changes in place. */
+  panelKey?: string;
   panelHeadline: ReactNode;
   panelSubline?: string;
   panelPoints?: { title: string; description: string }[];
@@ -77,24 +84,32 @@ export function AuthShell({
           />
           <div className="relative z-10 flex h-full w-full flex-col justify-between p-10 xl:p-14">
             <div />
-            <div>
-              <h2 className="max-w-[480px] font-display text-[34px] font-medium leading-[1.08] tracking-[-0.02em] text-mv-green-darker xl:text-[42px]">
-                {panelHeadline}
-              </h2>
-              {panelSubline && (
-                <p className="mt-4 max-w-[420px] text-[15px] leading-relaxed text-mv-ink-soft">{panelSubline}</p>
-              )}
-              {panelPoints && (
-                <div className="mt-8 space-y-4">
-                  {panelPoints.map((p) => (
-                    <div key={p.title} className="rounded-2xl border border-mv-green-dark/15 bg-mv-surface/70 p-4 backdrop-blur-sm">
-                      <p className="font-display text-[14.5px] font-medium text-mv-ink">{p.title}</p>
-                      <p className="mt-1 text-[12.5px] leading-relaxed text-mv-ink-soft">{p.description}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={panelKey ?? "static"}
+                initial={panelKey ? { opacity: 0, y: 6 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+              >
+                <h2 className="max-w-[480px] font-display text-[34px] font-medium leading-[1.08] tracking-[-0.02em] text-mv-green-darker xl:text-[42px]">
+                  {panelHeadline}
+                </h2>
+                {panelSubline && (
+                  <p className="mt-4 max-w-[420px] text-[15px] leading-relaxed text-mv-ink-soft">{panelSubline}</p>
+                )}
+                {panelPoints && (
+                  <div className="mt-8 space-y-4">
+                    {panelPoints.map((p) => (
+                      <div key={p.title} className="rounded-2xl border border-mv-green-dark/15 bg-mv-surface/70 p-4 backdrop-blur-sm">
+                        <p className="font-display text-[14.5px] font-medium text-mv-ink">{p.title}</p>
+                        <p className="mt-1 text-[12.5px] leading-relaxed text-mv-ink-soft">{p.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>

@@ -52,6 +52,9 @@ next-env.d.ts
 # not intentional project assets — real images live under public/
 /image.png
 /image copy*.png
+
+# throwaway local scripts (e.g. one-off Playwright probes), never committed
+.sim-scratch/
 /screencapture-*.png
 
 # design-sync: staged converter scripts, build output, and machine state.

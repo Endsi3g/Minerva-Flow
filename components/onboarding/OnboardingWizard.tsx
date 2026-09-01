@@ -51,6 +51,13 @@ export function OnboardingWizard({
   const [restaurantNameInput, setRestaurantNameInput] = useState(
     restaurantName === "Mon restaurant" ? "" : restaurantName
   );
+  // Tracks the restaurant once created, separately from the `restaurantId`
+  // prop: an account that reaches this step with no restaurant (e.g. an
+  // orphaned membership) only creates one once. Without this, retrying
+  // after a downstream failure (finishOnboardingAction erroring, say) would
+  // call createRestaurantAction again on the still-empty prop and leave the
+  // user owning two restaurants.
+  const [currentRestaurantId, setCurrentRestaurantId] = useState(restaurantId);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -69,16 +76,25 @@ export function OnboardingWizard({
         const result = await updateProfileNameAction(trimmed);
         if (!result.ok) throw new Error(result.error);
       }
-      await setMyRoleAction(restaurantId, role);
 
       const finalName = restaurantNameInput.trim() || restaurantName;
-      if (restaurantId) {
+      let targetRestaurantId = currentRestaurantId;
+      if (targetRestaurantId) {
         if (finalName !== restaurantName) {
-          await updateRestaurantAction(restaurantId, { name: finalName }).catch(() => null);
+          await updateRestaurantAction(targetRestaurantId, { name: finalName }).catch(() => null);
         }
       } else {
-        await createRestaurantAction({ name: finalName }).catch(() => null);
+        const created = await createRestaurantAction({ name: finalName });
+        if (!created) throw new Error("Impossible de créer votre établissement. Réessayez.");
+        targetRestaurantId = created.id;
+        setCurrentRestaurantId(created.id);
       }
+
+      // createRestaurantAction always inserts the new membership as
+      // "owner" — applying the chosen role here (a no-op update when it
+      // already matches) covers both the newly-created and pre-existing
+      // restaurant cases with the same call.
+      await setMyRoleAction(targetRestaurantId, role);
 
       const finished = await finishOnboardingAction();
       if (!finished) throw new Error("Impossible de terminer la configuration. Réessayez.");
