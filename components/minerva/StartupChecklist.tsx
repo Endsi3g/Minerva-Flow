@@ -73,7 +73,7 @@ export function StartupChecklist() {
     {
       key: "integrations",
       label: "Connecter vos outils",
-      description: "Square, Stripe, Google Calendar, Meta — synchronisez vos données.",
+      description: "Square, Stripe, Google Calendar, Meta, Instagram — synchronisez vos données.",
       href: "/settings?tab=integrations",
       icon: Plug,
       done: progress.toolsConnectedCount > 0,
@@ -105,6 +105,10 @@ export function StartupChecklist() {
         <div className="flex-1">
           <p className="font-display text-[15px] font-medium text-mv-ink">
             Démarrage — {doneCount}/{items.length} étapes complétées
+          </p>
+          <p className="mt-0.5 text-[12px] text-mv-ink-faint">
+            Ces étapes activent votre copilote IA et vos premiers rapports — l&apos;écran ci-dessous se remplit au
+            fur et à mesure.
           </p>
           <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-mv-border-soft">
             <div

@@ -508,9 +508,9 @@ export type Referral = {
   rewardedAt: string | null;
 };
 
-export type AdProvider = "meta" | "google";
+export type AdProvider = "meta" | "google" | "instagram";
 export type AdConnectionStatus = "connecte" | "erreur" | "attente";
-export type AdChannel = "organic" | "meta" | "google";
+export type AdChannel = "organic" | "meta" | "google" | "instagram";
 
 export type AdPlatformConnection = {
   id: string;

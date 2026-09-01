@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/Switch";
 import { useApp } from "@/lib/app-context";
 import { ReferralSettingsTab } from "@/components/chat/ReferralSettingsTab";
 import { AppearanceTab } from "@/components/settings/AppearanceTab";
-import { AdPlatformsCard } from "@/components/minerva/AdPlatformsCard";
+import { AdPlatformsCard, InstagramCard } from "@/components/minerva/AdPlatformsCard";
 import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
 import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
 import { ReservationDeliveryConnectionsCard } from "@/components/minerva/ReservationDeliveryConnectionsCard";
@@ -259,6 +259,7 @@ function IntegrationsTab() {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <AdPlatformsCard />
+      <InstagramCard />
       <GoogleWorkspaceCard />
       <PosConnectionsCard />
       <ReservationDeliveryConnectionsCard />
