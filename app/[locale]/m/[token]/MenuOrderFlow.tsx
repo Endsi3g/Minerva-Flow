@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
 import { Field, Input } from "@/components/minerva/FormField";
@@ -39,6 +39,7 @@ function CheckoutModal({
   onOrdered,
   shareProgramId,
   restaurantName,
+  mentionedOfferTitle,
 }: {
   open: boolean;
   onClose: () => void;
@@ -54,6 +55,7 @@ function CheckoutModal({
   onOrdered: () => void;
   shareProgramId: string | null;
   restaurantName: string;
+  mentionedOfferTitle: string | null;
 }) {
   const { subtotal, taxAmount, tipAmount, total } = totals;
   const [email, setEmail] = useState("");
@@ -122,6 +124,7 @@ function CheckoutModal({
         paymentMethod: payOnline ? null : String(form.get("paymentMethod") ?? "") || null,
         tipAmount,
         payOnline,
+        mentionedOfferTitle,
       }
     );
     if (!result.ok) {
@@ -197,6 +200,11 @@ function CheckoutModal({
         </div>
       ) : (
         <div className="space-y-4">
+          {mentionedOfferTitle && (
+            <div className="flex items-center gap-1.5 rounded-lg bg-mv-lime-tint px-3 py-2 text-[12px] font-medium text-mv-green-darker">
+              <Sparkles size={13} /> Offre mentionnée : {mentionedOfferTitle}
+            </div>
+          )}
           <div className="space-y-1.5">
             {cartLines.map((l) => (
               <div key={l.item.id} className="flex items-center justify-between text-[12.5px]">
@@ -346,6 +354,14 @@ export function MenuOrderFlow({
   const [cart, setCart] = useState<Record<string, number>>({});
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [tipPct, setTipPct] = useState<number | null>(acceptsTips ? 0.15 : null);
+  const [activeOffer, setActiveOffer] = useState<string | null>(null);
+  const menuSectionRef = useRef<HTMLDivElement | null>(null);
+
+  function handleClaimOffer(title: string) {
+    setActiveOffer(title);
+    menuSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    toast.success("Mentionnez cette offre à la commande — ajoutée à votre commande.");
+  }
 
   // Cart survives the magic-link round trip (a full page reload) via
   // localStorage — otherwise a customer who clicks the emailed link would
@@ -467,6 +483,18 @@ export function MenuOrderFlow({
                       <p className="text-[12px] leading-relaxed text-mv-ink-soft">{offer.description}</p>
                     )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleClaimOffer(offer.title)}
+                    className={cn(
+                      "shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors",
+                      activeOffer === offer.title
+                        ? "bg-mv-green-dark text-mv-cream-soft"
+                        : "bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark"
+                    )}
+                  >
+                    {activeOffer === offer.title ? "Ajoutée ✓" : "J'en profite"}
+                  </button>
                 </Card>
               ))}
             </div>
@@ -476,7 +504,8 @@ export function MenuOrderFlow({
         {items.length === 0 ? (
           <p className="text-[13px] text-mv-ink-faint">Aucun plat disponible pour l&apos;instant.</p>
         ) : (
-          categories.map(([category, catItems]) => (
+          <div ref={menuSectionRef}>
+          {categories.map(([category, catItems]) => (
             <div key={category} className="mb-6">
               <p className="mb-2 text-[13px] font-semibold text-mv-ink">{category}</p>
               <div className="space-y-2">
@@ -520,7 +549,8 @@ export function MenuOrderFlow({
                 ))}
               </div>
             </div>
-          ))
+          ))}
+          </div>
         )}
       </div>
 
@@ -552,6 +582,7 @@ export function MenuOrderFlow({
         onOrdered={handleOrdered}
         shareProgramId={shareProgramId}
         restaurantName={restaurantName}
+        mentionedOfferTitle={activeOffer}
       />
     </div>
   );
