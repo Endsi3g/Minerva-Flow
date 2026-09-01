@@ -10,12 +10,14 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { RadialGauge } from "@/components/charts/RadialGauge";
+import { Modal } from "@/components/ui/Modal";
+import { Field, Input } from "@/components/minerva/FormField";
 import { formatCurrency } from "@/lib/utils";
 import { notifyError } from "@/lib/notify-error";
-import { sendManualRetentionNudgeAction } from "./actions";
+import { sendManualRetentionNudgeAction, shareImpactResultsAction } from "./actions";
 import type { LtvImpact } from "@/lib/engine/impact";
 import type { AtRiskCustomer } from "@/lib/data/impact";
-import { DollarSign, TrendingUp, Repeat, Users, Send, Clock, TrendingDown, Gift } from "lucide-react";
+import { DollarSign, TrendingUp, Repeat, Users, Send, Clock, TrendingDown, Gift, Share2 } from "lucide-react";
 
 const triggerLabel: Record<AtRiskCustomer["trigger"], string> = {
   inactivity: "N'est pas revenu depuis un moment",
@@ -73,6 +75,7 @@ export function ImpactView({
             ? `Ce que vos relances automatiques rapportent chez ${restaurantName} — et les clients à relancer dès maintenant.`
             : "Ce que vos relances automatiques rapportent — et les clients à relancer dès maintenant."
         }
+        action={<ShareResultsButton incrementalRevenue={impact.incrementalRevenue} />}
       />
 
       <ActionableCustomersCard retentionEngineEnabled={retentionEngineEnabled} initialCustomers={atRiskCustomers} />
@@ -181,6 +184,60 @@ export function ImpactView({
         </Card>
       </div>
     </div>
+  );
+}
+
+function ShareResultsButton({ incrementalRevenue }: { incrementalRevenue: number }) {
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function handleShare() {
+    setSending(true);
+    try {
+      const ok = await shareImpactResultsAction(incrementalRevenue, note);
+      if (ok) {
+        toast.success("Résultats partagés avec l'équipe.");
+        setOpen(false);
+        setNote("");
+      } else {
+        notifyError("Le partage a échoué.");
+      }
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <>
+      <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
+        <Share2 size={14} /> Partager avec l&apos;équipe
+      </Button>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Partager avec l'équipe"
+        description="Envoie une notification à tous les membres actifs de l'établissement, avec un lien vers cette page."
+      >
+        <div className="space-y-4">
+          <Field label="Message" hint="Optionnel">
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={`Ex. : ${formatCurrency(incrementalRevenue)} générés ce mois grâce à la fidélisation !`}
+            />
+          </Field>
+          <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={sending}>
+              Annuler
+            </Button>
+            <Button onClick={handleShare} disabled={sending}>
+              {sending ? "Envoi…" : "Partager"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
 }
 
