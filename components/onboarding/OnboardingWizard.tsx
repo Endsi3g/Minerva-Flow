@@ -116,14 +116,23 @@ export function OnboardingWizard({
     return null;
   }
 
-  /** Optional step 3: sends the invite only if an email was actually typed. */
+  /**
+   * Optional step 3: sends the invite only if an email was actually typed.
+   * Never throws — this must not be able to block finishing onboarding
+   * (see sendTeamInviteAction's doc comment for why that matters).
+   */
   async function sendInviteIfFilled(): Promise<void> {
     const email = inviteEmail.trim();
     if (!email || !currentRestaurantId) return;
     setInviting(true);
-    const result = await sendTeamInviteAction(currentRestaurantId, email);
-    setInviting(false);
-    if (result.ok) setInviteSent(true);
+    try {
+      const result = await sendTeamInviteAction(currentRestaurantId, email);
+      if (result.ok) setInviteSent(true);
+    } catch {
+      // best-effort — swallow, onboarding still finishes
+    } finally {
+      setInviting(false);
+    }
   }
 
   async function handleFinish() {
