@@ -41,13 +41,25 @@ export function ReferralRoiDashboard({
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="font-display text-[22px] font-semibold text-mv-green-darker">
-              {metrics.roiMultiplier > 0 ? `${metrics.roiMultiplier}x` : "—"}
+              {metrics.roiMultiplier > 0
+                ? `${metrics.roiMultiplier}x`
+                : metrics.totalRevenueGenerated > 0
+                  ? "Coût $0"
+                  : "—"}
             </span>
-            <Badge tone="lime" size="xs">
-              Net +{formatCurrency(metrics.netProfitGenerated)}
-            </Badge>
+            {metrics.totalRevenueGenerated > 0 && (
+              <Badge tone="lime" size="xs">
+                Net +{formatCurrency(metrics.netProfitGenerated)}
+              </Badge>
+            )}
           </div>
-          <p className="mt-1 text-[11.5px] text-mv-ink-soft">Rendement net par dollar investi</p>
+          <p className="mt-1 text-[11.5px] text-mv-ink-soft">
+            {metrics.roiMultiplier > 0
+              ? "Rendement net par dollar investi"
+              : metrics.totalRevenueGenerated > 0
+                ? "Récompenses pas encore réclamées — coût réel à venir"
+                : "Rendement net par dollar investi"}
+          </p>
         </div>
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">

@@ -7,6 +7,7 @@ export type LtvImpact = {
   incrementalRevenue: number;
   marginGainPct: number;
   activeMarginPct: number;
+  hasMenuMarginData: boolean;
   visitFrequency: ReturnType<typeof getVisitFrequencyImpact>;
 };
 
@@ -33,6 +34,7 @@ export function computeLtvImpact(
     incrementalRevenue,
     marginGainPct: margin.gainPct,
     activeMarginPct: margin.activeMarginPct,
+    hasMenuMarginData: margin.hasData,
     visitFrequency,
   };
 }

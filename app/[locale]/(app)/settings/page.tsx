@@ -7,7 +7,6 @@ import { Input } from "@/components/minerva/FormField";
 import { Switch } from "@/components/ui/Switch";
 import { useApp } from "@/lib/app-context";
 import { ReferralSettingsTab } from "@/components/chat/ReferralSettingsTab";
-import { AppearanceTab } from "@/components/settings/AppearanceTab";
 import { AdPlatformsCard, InstagramCard } from "@/components/minerva/AdPlatformsCard";
 import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
 import { PosConnectionsCard, QuickBooksCard } from "@/components/minerva/PosConnectionsCard";
@@ -304,12 +303,6 @@ export default function SettingsPage() {
             Parrainage
           </TabsTrigger>
           <TabsTrigger
-            value="apparence"
-            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
-          >
-            Apparence
-          </TabsTrigger>
-          <TabsTrigger
             value="securite"
             className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
           >
@@ -331,10 +324,6 @@ export default function SettingsPage() {
 
         <TabsContent value="parrainage">
           <ReferralSettingsTab />
-        </TabsContent>
-
-        <TabsContent value="apparence">
-          <AppearanceTab />
         </TabsContent>
 
         <TabsContent value="securite">

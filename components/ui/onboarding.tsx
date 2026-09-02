@@ -267,17 +267,23 @@ function OnboardingStep({ step, children, className, ...props }: OnboardingStepP
   const { currentStep } = useOnboarding();
   const isActive = currentStep === step;
 
-  if (!isActive) return null;
-
   return (
-    <div
-      className={cn(className)}
-      data-slot="onboarding-step"
-      data-state="active"
-      {...(props as any)}
-    >
-      {children}
-    </div>
+    <AnimatePresence>
+      {isActive && (
+        <motion.div
+          initial={{ opacity: 0, x: 14 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -14 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          className={cn(className)}
+          data-slot="onboarding-step"
+          data-state="active"
+          {...(props as any)}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
