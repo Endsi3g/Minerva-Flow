@@ -13,9 +13,10 @@ import { formatCurrency, roundToCents, cn } from "@/lib/utils";
 import { InstallAppPrompt } from "@/components/pwa/InstallAppPrompt";
 import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
 import type { MenuItem, Offer } from "@/lib/types";
-import type { PublicMenuLanding } from "@/lib/data/menu-shares";
+import type { PublicMenuLanding, SiblingLocation } from "@/lib/data/menu-shares";
+import { Map as MapView, MapControls, MapMarker, MarkerContent, MarkerLabel, MarkerPopup } from "@/components/ui/map";
 import Link from "next/link";
-import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart, Share2, Sparkles, UtensilsCrossed, X } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart, Share2, Sparkles, UtensilsCrossed, X, MapPin, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { getOrCreateReferralLinkAction } from "@/app/[locale]/portal/actions";
 
@@ -495,6 +496,88 @@ function MenuItemDetailModal({
   );
 }
 
+/** Concept/demo scope: lets a customer switch to another location of the
+ * same franchise/workspace — real coordinates and a real menu link per
+ * sibling (see getSiblingLocationsForPublicMenu), not a mocked list. */
+function LocationPickerModal({
+  open,
+  onClose,
+  currentRestaurantName,
+  locations,
+}: {
+  open: boolean;
+  onClose: () => void;
+  currentRestaurantName: string;
+  locations: SiblingLocation[];
+}) {
+  if (!open) return null;
+  const center: [number, number] = [
+    locations.reduce((sum, l) => sum + l.lng, 0) / locations.length,
+    locations.reduce((sum, l) => sum + l.lat, 0) / locations.length,
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-mv-surface sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-mv-border-soft p-4">
+          <div>
+            <p className="font-display text-[16px] font-medium text-mv-ink">Choisir un établissement</p>
+            <p className="text-[12px] text-mv-ink-faint">Vous consultez actuellement {currentRestaurantName}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-mv-ink-faint hover:bg-mv-cream-soft"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className="h-56 shrink-0">
+          <MapView center={center} zoom={locations.length > 1 ? 9 : 12} theme="light" className="h-full w-full">
+            <MapControls position="bottom-right" showZoom />
+            {locations.map((loc) => (
+              <MapMarker key={loc.id} longitude={loc.lng} latitude={loc.lat}>
+                <MarkerContent>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-mv-green text-white shadow-mv-md">
+                    <MapPin size={13} />
+                  </span>
+                  <MarkerLabel position="bottom">{loc.name}</MarkerLabel>
+                </MarkerContent>
+                <MarkerPopup className="w-56 p-3">
+                  <p className="text-[13px] font-medium text-mv-ink">{loc.name}</p>
+                  <p className="text-[11.5px] text-mv-ink-faint">{loc.address}</p>
+                </MarkerPopup>
+              </MapMarker>
+            ))}
+          </MapView>
+        </div>
+        <div className="flex-1 space-y-2 overflow-y-auto p-4">
+          {locations.map((loc) => (
+            <a
+              key={loc.id}
+              href={`/m/${loc.token}`}
+              className="flex items-center justify-between gap-3 rounded-xl border border-mv-border-soft px-3.5 py-3 transition-colors hover:bg-mv-cream-soft"
+            >
+              <div className="min-w-0">
+                <p className="text-[13.5px] font-medium text-mv-ink">{loc.name}</p>
+                <p className="truncate text-[11.5px] text-mv-ink-faint">
+                  {loc.address}
+                  {loc.city ? `, ${loc.city}` : ""}
+                </p>
+              </div>
+              <ArrowRight size={14} className="shrink-0 text-mv-ink-faint" />
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MenuOrderFlow({
   token,
   referralCode,
@@ -502,6 +585,7 @@ export function MenuOrderFlow({
   offers,
   authenticated,
   shareProgramId,
+  siblingLocations,
 }: {
   token: string;
   referralCode: string | null;
@@ -509,6 +593,7 @@ export function MenuOrderFlow({
   offers: Offer[];
   authenticated: boolean;
   shareProgramId: string | null;
+  siblingLocations: SiblingLocation[];
 }) {
   const { restaurantName, items, taxRate, acceptsTips, onlinePaymentEnabled } = landing;
 
@@ -535,6 +620,7 @@ export function MenuOrderFlow({
   );
   const [tipPct, setTipPct] = useState<number | null>(acceptsTips ? 0.15 : null);
   const [activeOffer, setActiveOffer] = useState<string | null>(null);
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const menuSectionRef = useRef<HTMLDivElement | null>(null);
 
   function handleClaimOffer(title: string) {
@@ -616,6 +702,15 @@ export function MenuOrderFlow({
         <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
           <h1 className="font-display text-[26px] font-medium text-mv-ink">{restaurantName}</h1>
           <div className="flex shrink-0 items-center gap-2">
+            {siblingLocations.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setLocationPickerOpen(true)}
+                className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3.5 py-2 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-cream-soft hover:text-mv-ink"
+              >
+                <MapPin size={14} className="text-mv-green-dark" /> Autres établissements
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -751,6 +846,13 @@ export function MenuOrderFlow({
         onClose={() => setDetailItem(null)}
         onQtyChange={(delta) => setDetailQty((q) => Math.max(1, q + delta))}
         onConfirm={confirmDetailAdd}
+      />
+
+      <LocationPickerModal
+        open={locationPickerOpen}
+        onClose={() => setLocationPickerOpen(false)}
+        currentRestaurantName={restaurantName}
+        locations={siblingLocations}
       />
     </div>
   );

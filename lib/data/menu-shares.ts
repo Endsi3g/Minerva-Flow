@@ -189,3 +189,67 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     items,
   };
 }
+
+export type SiblingLocation = {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  lng: number;
+  lat: number;
+  token: string;
+};
+
+/**
+ * Other locations of the same franchise/workspace, for the public menu's
+ * "choisir un autre établissement" picker — concept/demo scope: a sibling
+ * only appears once it has both real coordinates (geocoded on the owner
+ * side) and its own default full-menu share link already generated from
+ * /etablissement. Admin client because an anonymous customer viewing a
+ * public menu link has no session/RLS access of their own.
+ */
+export async function getSiblingLocationsForPublicMenu(restaurantId: string): Promise<SiblingLocation[]> {
+  const admin = createAdminClient();
+
+  const { data: selfRow } = await admin
+    .from("restaurants")
+    .select("workspace_id")
+    .eq("id", restaurantId)
+    .maybeSingle();
+  const workspaceId = (selfRow as { workspace_id: string | null } | null)?.workspace_id;
+  if (!workspaceId) return [];
+
+  const { data: siblingRows } = await admin
+    .from("restaurants")
+    .select("id, name, address, city, lng, lat")
+    .eq("workspace_id", workspaceId)
+    .neq("id", restaurantId)
+    .not("lng", "is", null)
+    .not("lat", "is", null);
+
+  const siblings = (siblingRows as { id: string; name: string; address: string | null; city: string | null; lng: number; lat: number }[]) ?? [];
+  if (siblings.length === 0) return [];
+
+  const { data: shareRows } = await admin
+    .from("menu_shares")
+    .select("restaurant_id, token, item_ids, created_at")
+    .in(
+      "restaurant_id",
+      siblings.map((s) => s.id)
+    )
+    .is("item_ids", null)
+    .order("created_at", { ascending: true });
+
+  const tokenByRestaurant = new Map<string, string>();
+  for (const row of (shareRows as { restaurant_id: string; token: string }[]) ?? []) {
+    if (!tokenByRestaurant.has(row.restaurant_id)) tokenByRestaurant.set(row.restaurant_id, row.token);
+  }
+
+  return siblings
+    .map((s) => {
+      const token = tokenByRestaurant.get(s.id);
+      if (!token) return null;
+      return { id: s.id, name: s.name, address: s.address ?? "", city: s.city ?? "", lng: s.lng, lat: s.lat, token };
+    })
+    .filter((s): s is SiblingLocation => s !== null);
+}
