@@ -38,7 +38,7 @@ export function DirectOrderingWidgetGenerator({
   const [orderMode, setOrderMode] = useState<OrderMode>("clickcollect");
   const [monthlySales, setMonthlySales] = useState("8000");
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
   const publicMenuUrl = `${baseUrl}/m/${menuToken}`;
   const tableQrUrl = `${publicMenuUrl}?table=${tableNumber}`;
 

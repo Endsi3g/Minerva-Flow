@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://minerva-flow.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://minervaflow.app";
   const locales = ["fr", "tr"];
   const pages = [
     "",

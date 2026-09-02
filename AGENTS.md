@@ -21,3 +21,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Title & Heading Font**: `"New York"`, `-apple-system-serif`, with fallback to `Playfair Display`.
 - **UI & Body Font**: `Plus Jakarta Sans`.
 - **Monospace Font**: `JetBrains Mono`.
+
+## 4. Brand Identity & Strict Naming Conventions
+- **Official Brand Name**: **`Minerva Flow`** (or **`Flow`** in short context when clear).
+- **STRICT FORBIDDEN TERM**: **`Flow par Minerva`** is STRICTLY FORBIDDEN across all UI, emails, documentation, marketing copy, titles, and AI prompts. Never use "Flow par Minerva".
+- **Legal Entity**: `Minerva Technologies Inc.`
+- **Domain**: `https://minervaflow.app`
+- **Sender Address**: `Minerva Flow <flow@minervaflow.app>`
+- **Aesthetic Excellence**: All emails and UI surfaces must follow the luxury editorial design system: warm cream surfaces (`#f5f1e6`, `#fafaf5`), emerald/forest tones (`#167f5b`, `#0e5a40`), New York serif headings, metric cards, and refined visual hierarchy. Plain unstyled text emails are strictly prohibited.

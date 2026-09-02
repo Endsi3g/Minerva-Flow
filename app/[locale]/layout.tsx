@@ -54,76 +54,86 @@ export async function generateMetadata({
   const title = "Minerva Flow — Système d'Analyse & Gestion Intelligente pour Restaurants (Québec & France)";
   const description = "Minerva Flow est la plateforme SaaS de gestion opérationnelle pour restaurants et cafés au Québec. Centralisez finances, inventaire, équipe et analyse IA dans une interface unifiée.";
 
-  return {
-    title: {
-      default: title,
-      template: "%s | Minerva Flow",
-    },
-    description,
-    applicationName: "Minerva Flow",
-    verification: {
-      google: "2k08zY7Mxenx_aiBOJ-Tlto9kEVG6nYdbitk6K5OQ-8",
-    },
-    keywords: [
-      "Minerva Flow",
-      "Gestion Restaurant Québec",
-      "Logiciel Restaurant Montréal",
-      "Seuil de rentabilité restaurant",
-      "Analyse financière bistro",
-      "POS Square integration",
-      "Food Cost calcul",
-      "IA Restauration",
-      "Gestion d'équipe restaurant",
-    ],
-    authors: [{ name: "Minerva Flow Team", url: "https://minerva-flow.vercel.app" }],
-    creator: "Minerva Flow",
-    publisher: "Minerva Flow Inc.",
-    manifest: "/manifest.webmanifest",
-    metadataBase: new URL("https://minerva-flow.vercel.app"),
-    alternates: {
-      canonical: `https://minerva-flow.vercel.app/${locale}`,
-      languages: {
-        "fr-CA": "https://minerva-flow.vercel.app/fr",
-        "fr-FR": "https://minerva-flow.vercel.app/fr",
-        "tr-TR": "https://minerva-flow.vercel.app/tr",
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "https://minervaflow.app");
+
+    return {
+      title: {
+        default: title,
+        template: "%s | Minerva Flow",
       },
-    },
-    icons: {
-      icon: [
-        { url: "/favicon.ico", sizes: "any" },
-        { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-        { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
-      ],
-      apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
-    },
-    openGraph: {
-      type: "website",
-      siteName: "Minerva Flow",
-      title,
       description,
-      url: `https://minerva-flow.vercel.app/${locale}`,
-      locale: ogLocale,
-      images: [
-        {
-          url: "https://minerva-flow.vercel.app/icon-512.png",
-          width: 512,
-          height: 512,
-          alt: "Minerva Flow — Système de Gestion de Restaurant Intelligente",
+      applicationName: "Minerva Flow",
+      verification: {
+        google: "2k08zY7Mxenx_aiBOJ-Tlto9kEVG6nYdbitk6K5OQ-8",
+      },
+      keywords: [
+        "Minerva Flow",
+        "Gestion Restaurant Québec",
+        "Logiciel Restaurant Montréal",
+        "Seuil de rentabilité restaurant",
+        "Analyse financière bistro",
+        "POS Square integration",
+        "Food Cost calcul",
+        "IA Restauration",
+        "Gestion d'équipe restaurant",
+      ],
+      authors: [{ name: "Minerva Flow Team", url: "https://minervaflow.app" }],
+      creator: "Minerva Flow",
+      publisher: "Minerva Flow Inc.",
+      manifest: "/manifest.webmanifest",
+      metadataBase: new URL(baseUrl),
+      alternates: {
+        canonical: `${baseUrl}/${locale}`,
+        languages: {
+          "fr-CA": `${baseUrl}/fr`,
+          "fr-FR": `${baseUrl}/fr`,
+          "tr-TR": `${baseUrl}/tr`,
         },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: ["https://minerva-flow.vercel.app/icon-512.png"],
-      creator: "@MinervaFlow",
-    },
+      },
+      icons: {
+        icon: [
+          { url: "/favicon.ico", sizes: "any" },
+          { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+          { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+        ],
+        apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+      },
+      openGraph: {
+        type: "website",
+        siteName: "Minerva Flow",
+        title,
+        description,
+        url: `${baseUrl}/${locale}`,
+        locale: ogLocale,
+        images: [
+          {
+            url: "/og.png",
+            secureUrl: `${baseUrl}/og.png`,
+            width: 1200,
+            height: 630,
+            alt: "Minerva Flow — Système de Gestion & Rentabilité pour Restaurants",
+            type: "image/png",
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: ["/og.png"],
+        creator: "@MinervaFlow",
+      },
     other: {
       "geo.region": "CA-QC",
       "geo.placename": "Montréal",
       "geo.position": "45.5017;-73.5673",
-      ICBM: "45.5017, -73.5673",
+      "geo.country": "CA",
     },
   };
 }
@@ -165,7 +175,7 @@ export default async function LocaleLayout({
     author: {
       "@type": "Organization",
       name: "Minerva Flow",
-      url: "https://minerva-flow.vercel.app",
+      url: "https://minervaflow.app",
     },
   };
 

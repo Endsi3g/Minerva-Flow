@@ -12,6 +12,7 @@ import { getMyCalendarConnection } from "@/lib/data/member-calendar";
 import { createInviteLink as createWorkspaceInviteLink } from "@/lib/data/workspace-invites";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendLifecycleEmail } from "@/lib/email/lifecycle";
 import type { Role } from "@/lib/types";
 
 export type ConnectedToolsStatus = {
@@ -131,9 +132,28 @@ export async function finishOnboardingAction(): Promise<boolean> {
       await posthog.flush();
 
       const referralCode = user.user_metadata?.referral_code as string | undefined;
-      if (referralCode && user.email) {
-        const restaurantId = await getCurrentRestaurantId();
-        if (restaurantId) await activateReferral(referralCode, user.email, restaurantId);
+      const restaurantId = await getCurrentRestaurantId();
+      if (referralCode && user.email && restaurantId) {
+        await activateReferral(referralCode, user.email, restaurantId);
+      }
+
+      // Déclenchement immédiat de l'Email 1 (Bienvenue & première action)
+      if (user.email) {
+        let restaurantName: string | null = null;
+        if (restaurantId) {
+          const restaurant = await getRestaurant(restaurantId);
+          restaurantName = restaurant?.name ?? null;
+        }
+        sendLifecycleEmail({
+          userId: user.id,
+          email: user.email,
+          step: "welcome",
+          params: {
+            firstName: (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ?? null,
+            restaurantName,
+            hasRestaurant: Boolean(restaurantId),
+          },
+        }).catch((err) => console.error("[Onboarding] Erreur envoi email bienvenue:", err));
       }
     }
   }

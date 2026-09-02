@@ -16,6 +16,15 @@ export function ServiceWorkerManager() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
+    // Never register or run service worker caching in development to avoid
+    // intercepting hot reloads or trapping developers in offline fallbacks.
+    if (process.env.NODE_ENV === "development") {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => registration.unregister());
+      });
+      return;
+    }
+
     navigator.serviceWorker.register("/sw.js").then((registration) => {
       if (registration.waiting && navigator.serviceWorker.controller) {
         setWaitingWorker(registration.waiting);
