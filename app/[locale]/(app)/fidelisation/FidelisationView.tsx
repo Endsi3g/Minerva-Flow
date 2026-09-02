@@ -17,8 +17,7 @@ import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav
 import { TablePagination } from "@/components/minerva/TablePagination";
 import { CustomerOriginMap } from "@/components/fidelisation/CustomerOriginMap";
 import { getCustomerOriginByCity } from "@/lib/customer-origin";
-import { Link } from "@/i18n/navigation";
-import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download, ArrowRight } from "lucide-react";
+import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -198,18 +197,8 @@ function CustomerOriginCard({ customers }: { customers: Customer[] }) {
         title="Provenance des clients"
         description={
           withCity > 0
-            ? `${withCity} client${withCity > 1 ? "s ont" : " a"} indiqué sa ville — classé par visites cumulées.`
+            ? `${withCity} client${withCity > 1 ? "s ont" : " a"} indiqué sa ville, dans ${byCity.length} ville${byCity.length > 1 ? "s" : ""} — classées par visites cumulées.`
             : "Aucun client n'a encore indiqué sa ville — ça se remplit dès qu'un client le fait depuis son portail."
-        }
-        action={
-          byCity.length > 0 && (
-            <Link
-              href="/fidelisation/geographie"
-              className="flex items-center gap-1 text-[12.5px] font-semibold text-mv-green-dark hover:underline"
-            >
-              Voir la carte complète <ArrowRight size={12} />
-            </Link>
-          )
         }
       />
       {byCity.length === 0 ? (
@@ -221,13 +210,13 @@ function CustomerOriginCard({ customers }: { customers: Customer[] }) {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          <div className="h-36 overflow-hidden rounded-xl">
-            <CustomerOriginMap cities={byCity} maxGeocode={6} />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="h-72 overflow-hidden rounded-xl lg:h-80">
+            <CustomerOriginMap cities={byCity} maxGeocode={30} />
           </div>
-          <div className="space-y-1.5">
-            {byCity.slice(0, 3).map((c) => (
-              <div key={c.city} className="relative overflow-hidden rounded-lg bg-mv-cream-soft p-2">
+          <div className="max-h-80 space-y-1.5 overflow-y-auto">
+            {byCity.map((c) => (
+              <div key={c.city} className="relative overflow-hidden rounded-lg bg-mv-cream-soft p-2.5">
                 <div
                   className="absolute inset-y-0 left-0 bg-mv-green/10"
                   style={{ width: `${Math.max(6, (c.visits / maxVisits) * 100)}%` }}
@@ -560,7 +549,7 @@ export function FidelisationView({
         }
       />
 
-      <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
         <RewardValidationCard restaurantId={restaurantId!} />
         <BirthdayPerksCard
           restaurantId={restaurantId}
@@ -569,6 +558,9 @@ export function FidelisationView({
             setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
           }}
         />
+      </div>
+
+      <div className="mb-5">
         <CustomerOriginCard customers={customers} />
       </div>
 
