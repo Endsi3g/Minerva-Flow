@@ -1,12 +1,12 @@
 "use client";
 
+import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input } from "@/components/minerva/FormField";
 import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
-import { QrTableStandStudio } from "@/components/fidelisation/QrTableStandStudio";
 import type { LoyaltyShare } from "@/lib/types";
 import { Share2, QrCode, Download, ExternalLink, Copy, Check, Trash2 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
@@ -137,24 +137,13 @@ function ShareLoyaltyModal({
 
 export function PartageView({
   restaurantId,
-  restaurantName,
   initialLoyaltyShares,
 }: {
   restaurantId: string | null;
-  restaurantName: string;
   initialLoyaltyShares: LoyaltyShare[];
 }) {
   const [shares, setShares] = useState(initialLoyaltyShares);
   const [shareOpen, setShareOpen] = useState(false);
-  const [qrStudioOpen, setQrStudioOpen] = useState(false);
-
-  const defaultShareUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/portal`
-    : "https://minerva-flow.vercel.app/portal";
-  const firstShareToken = shares[0]?.token;
-  const activeQrPortalUrl = firstShareToken
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/rejoindre/${firstShareToken}`
-    : defaultShareUrl;
 
   function handleDeleted(id: string) {
     if (!restaurantId) return;
@@ -172,7 +161,7 @@ export function PartageView({
         title="Partage"
         description="Liens et codes QR pour que de nouveaux clients rejoignent votre programme de fidélité eux-mêmes."
         action={
-          <Button size="sm" variant="secondary" onClick={() => setQrStudioOpen(true)}>
+          <Button size="sm" variant="secondary" nativeButton={false} render={<Link href="/fidelisation/partage/studio-qr" />}>
             <QrCode size={14} /> Studio QR & Affiches
           </Button>
         }
@@ -210,13 +199,6 @@ export function PartageView({
           />
         )}
       </Card>
-
-      <QrTableStandStudio
-        restaurantName={restaurantName}
-        portalUrl={activeQrPortalUrl}
-        open={qrStudioOpen}
-        onClose={() => setQrStudioOpen(false)}
-      />
     </div>
   );
 }
