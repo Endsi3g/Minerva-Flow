@@ -2,7 +2,7 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
-## [v2.24.0] - 2026-09-02
+## [v2.25.0] - 2026-09-02
 
 ### 📱 Portail client repensé en 4 onglets
 - Le portail client passe d'un long défilement à 4 onglets fixes en bas d'écran (Accueil, Commander, Récompenses, Profil) — inspiré des applications de fidélité que vos clients utilisent déjà tous les jours.
@@ -13,8 +13,23 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Les 3 premières cartes de la page Clients ne sont plus coincées sur 3 colonnes — chacune respire sur sa propre ligne.
 - La carte de provenance géographique des clients est maintenant directement sur la page Clients plutôt que dans une sous-page à part.
 
+### ✨ Votre nom de marque, corrigé partout
+- « Flow par Minerva » apparaissait encore à plusieurs endroits vus par vos clients — tout affiche maintenant « Minerva Flow », votre vrai nom, sur l'ensemble de l'application.
+
 ### 🌤️ Correctif cron quotidien (plan Vercel Hobby)
 - La synchronisation des alertes tournait plus d'une fois par jour, ce qui dépassait la limite du plan Vercel Hobby et bloquait le déploiement — remise à une fois par jour.
+
+## [v2.24.0] - 2026-09-02
+
+### 💌 Refonte complète des courriels
+- Tous les courriels envoyés par Minerva Flow (bienvenue, invitations, relances de fidélité, rapports hebdomadaires, offres spéciales) ont été redessinés avec un style plus sobre et cohérent, et sont deux fois plus riches en contenu utile.
+- Une séquence automatique de courriels accompagne maintenant chaque nouveau compte dans ses premiers jours sur Minerva Flow.
+
+### 🛟 Bascule automatique en cas de panne de domaine
+- Si votre nom de domaine personnalisé devient inaccessible, l'application bascule maintenant automatiquement vers une adresse de secours pour que vos données restent disponibles.
+
+### 🖼️ Aperçus de partage sur les réseaux sociaux
+- Les liens Minerva Flow partagés sur les réseaux sociaux affichent maintenant un aperçu visuel avec image, plutôt qu'un simple lien texte.
 
 ## [v2.23.0] - 2026-08-25
 
