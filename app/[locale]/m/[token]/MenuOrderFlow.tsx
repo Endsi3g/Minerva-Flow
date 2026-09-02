@@ -15,12 +15,24 @@ import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
 import type { MenuItem, Offer } from "@/lib/types";
 import type { PublicMenuLanding } from "@/lib/data/menu-shares";
 import Link from "next/link";
-import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart, Share2, Sparkles } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart, Share2, Sparkles, UtensilsCrossed, X } from "lucide-react";
 import { toast } from "sonner";
 import { getOrCreateReferralLinkAction } from "@/app/[locale]/portal/actions";
 
 type CartLine = { item: MenuItem; quantity: number };
 type OrderTotals = { subtotal: number; taxAmount: number; tipAmount: number; total: number };
+
+/** Category names can hold spaces/accents/punctuation — not safe as a raw
+ * DOM id or anchor fragment, so scrolling-to-category uses a slug instead. */
+function categorySlug(category: string, index: number): string {
+  const slug = category
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || `cat-${index}`;
+}
 
 const TIP_PRESETS = [0, 0.1, 0.15, 0.2];
 
@@ -335,6 +347,154 @@ function CheckoutModal({
   );
 }
 
+/** Grid tile for one menu item — image up top so the menu reads as a real
+ * ordering app instead of a plain price list, quick-add without opening
+ * the detail view for the common case. */
+function MenuItemGridCard({
+  item,
+  quantity,
+  onOpen,
+  onQuickAdd,
+}: {
+  item: MenuItem;
+  quantity: number;
+  onOpen: () => void;
+  onQuickAdd: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex flex-col overflow-hidden rounded-2xl border border-mv-border bg-mv-surface text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
+    >
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-mv-cream-soft">
+        {item.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.imageUrl}
+            alt=""
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <UtensilsCrossed size={26} className="text-mv-ink-faint" />
+          </div>
+        )}
+        <span
+          role="button"
+          tabIndex={0}
+          aria-label={`Ajouter ${item.name}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onQuickAdd();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.stopPropagation();
+              onQuickAdd();
+            }
+          }}
+          className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft shadow-mv-md transition-transform hover:scale-110"
+        >
+          <Plus size={15} />
+        </span>
+        {quantity > 0 && (
+          <span className="absolute left-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-mv-ink px-1.5 text-[11px] font-bold text-white shadow-mv-md">
+            {quantity}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-1 p-3">
+        <p className="line-clamp-1 text-[13.5px] font-medium text-mv-ink">{item.name}</p>
+        {item.description && (
+          <p className="line-clamp-2 text-[11.5px] leading-snug text-mv-ink-faint">{item.description}</p>
+        )}
+        <p className="mt-auto pt-1 text-[13px] font-semibold text-mv-green-dark">{formatCurrency(item.price)}</p>
+      </div>
+    </button>
+  );
+}
+
+/** Full item detail — the McDonald's-style "tap a tile, see the big
+ * picture + description + a quantity stepper" pattern. */
+function MenuItemDetailModal({
+  item,
+  quantity,
+  onClose,
+  onQtyChange,
+  onConfirm,
+}: {
+  item: MenuItem | null;
+  quantity: number;
+  onClose: () => void;
+  onQtyChange: (delta: number) => void;
+  onConfirm: () => void;
+}) {
+  if (!item) return null;
+  const displayQty = Math.max(1, quantity);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-mv-surface sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-mv-cream-soft">
+          {item.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <UtensilsCrossed size={40} className="text-mv-ink-faint" />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-mv-surface/90 text-mv-ink shadow-mv-md backdrop-blur-sm"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5">
+          <h3 className="font-display text-[20px] font-medium text-mv-ink">{item.name}</h3>
+          <p className="mt-1 text-[15px] font-semibold text-mv-green-dark">{formatCurrency(item.price)}</p>
+          {item.description && (
+            <p className="mt-3 text-[13.5px] leading-relaxed text-mv-ink-soft">{item.description}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-3 border-t border-mv-border-soft p-4">
+          <div className="flex shrink-0 items-center gap-3 rounded-full border border-mv-border px-2 py-1.5">
+            <button
+              type="button"
+              onClick={() => onQtyChange(-1)}
+              disabled={displayQty <= 1}
+              aria-label="Retirer un"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-mv-ink-soft disabled:opacity-30"
+            >
+              <Minus size={14} />
+            </button>
+            <span className="w-5 text-center text-[14px] font-semibold text-mv-ink">{displayQty}</span>
+            <button
+              type="button"
+              onClick={() => onQtyChange(1)}
+              aria-label="Ajouter un"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-mv-ink-soft"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+          <Button onClick={onConfirm} className="flex-1">
+            Ajouter — {formatCurrency(item.price * displayQty)}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MenuOrderFlow({
   token,
   referralCode,
@@ -351,8 +511,28 @@ export function MenuOrderFlow({
   shareProgramId: string | null;
 }) {
   const { restaurantName, items, taxRate, acceptsTips, onlinePaymentEnabled } = landing;
-  const [cart, setCart] = useState<Record<string, number>>({});
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  // Cart survives the magic-link round trip (a full page reload) via
+  // localStorage — otherwise a customer who clicks the emailed link would
+  // come back to find their cart empty. Read as lazy initial state (not an
+  // effect) so it's ready on first render instead of popping in a tick
+  // later; the try/catch also makes this safe during SSR, where
+  // `localStorage` doesn't exist.
+  function readSavedCart(): Record<string, number> {
+    try {
+      const saved = localStorage.getItem(`mv-cart-${token}`);
+      return saved ? (JSON.parse(saved) as Record<string, number>) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  const [cart, setCart] = useState<Record<string, number>>(readSavedCart);
+  // Re-opens checkout automatically once authenticated if there's still
+  // something in the cart from before the magic-link round trip.
+  const [checkoutOpen, setCheckoutOpen] = useState(
+    () => authenticated && Object.values(readSavedCart()).some((q) => q > 0)
+  );
   const [tipPct, setTipPct] = useState<number | null>(acceptsTips ? 0.15 : null);
   const [activeOffer, setActiveOffer] = useState<string | null>(null);
   const menuSectionRef = useRef<HTMLDivElement | null>(null);
@@ -362,24 +542,6 @@ export function MenuOrderFlow({
     menuSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     toast.success("Mentionnez cette offre à la commande — ajoutée à votre commande.");
   }
-
-  // Cart survives the magic-link round trip (a full page reload) via
-  // localStorage — otherwise a customer who clicks the emailed link would
-  // come back to find their cart empty. Re-opens checkout automatically
-  // once authenticated if there's still something in the cart.
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`mv-cart-${token}`);
-      const parsed = saved ? (JSON.parse(saved) as Record<string, number>) : {};
-      setCart(parsed);
-      if (authenticated && Object.values(parsed).some((q) => q > 0)) {
-        setCheckoutOpen(true);
-      }
-    } catch {
-      // ignore malformed/unavailable storage
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     try {
@@ -414,6 +576,20 @@ export function MenuOrderFlow({
 
   function updateQty(itemId: string, delta: number) {
     setCart((prev) => ({ ...prev, [itemId]: Math.max(0, (prev[itemId] ?? 0) + delta) }));
+  }
+
+  const [detailItem, setDetailItem] = useState<MenuItem | null>(null);
+  const [detailQty, setDetailQty] = useState(1);
+
+  function openDetail(item: MenuItem) {
+    setDetailItem(item);
+    setDetailQty(Math.max(1, cart[item.id] ?? 1));
+  }
+
+  function confirmDetailAdd() {
+    if (!detailItem) return;
+    setCart((prev) => ({ ...prev, [detailItem.id]: detailQty }));
+    setDetailItem(null);
   }
 
   function handleOrdered() {
@@ -505,51 +681,35 @@ export function MenuOrderFlow({
           <p className="text-[13px] text-mv-ink-faint">Aucun plat disponible pour l&apos;instant.</p>
         ) : (
           <div ref={menuSectionRef}>
-          {categories.map(([category, catItems]) => (
-            <div key={category} className="mb-6">
-              <p className="mb-2 text-[13px] font-semibold text-mv-ink">{category}</p>
-              <div className="space-y-2">
-                {catItems.map((item) => (
-                  <Card key={item.id} className="flex items-center gap-3">
-                    {item.imageUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.imageUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13.5px] font-medium text-mv-ink">{item.name}</p>
-                      {item.description && (
-                        <p className="line-clamp-2 text-[11.5px] text-mv-ink-faint">{item.description}</p>
-                      )}
-                      <p className="mt-0.5 text-[12.5px] font-semibold text-mv-green-dark">
-                        {formatCurrency(item.price)}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {(cart[item.id] ?? 0) > 0 && (
-                        <>
-                          <button
-                            onClick={() => updateQty(item.id, -1)}
-                            aria-label="Retirer un"
-                            className="flex h-7 w-7 items-center justify-center rounded-full border border-mv-border text-mv-ink-soft"
-                          >
-                            <Minus size={13} />
-                          </button>
-                          <span className="w-4 text-center text-[13px] font-medium">{cart[item.id]}</span>
-                        </>
-                      )}
-                      <button
-                        onClick={() => updateQty(item.id, 1)}
-                        aria-label="Ajouter un"
-                        className="flex h-7 w-7 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft"
-                      >
-                        <Plus size={13} />
-                      </button>
-                    </div>
-                  </Card>
+            {categories.length > 1 && (
+              <div className="sticky top-0 z-10 -mx-6 mb-6 flex gap-2 overflow-x-auto bg-mv-cream/95 px-6 py-2.5 backdrop-blur-sm">
+                {categories.map(([category], i) => (
+                  <a
+                    key={category}
+                    href={`#${categorySlug(category, i)}`}
+                    className="shrink-0 rounded-full border border-mv-border bg-mv-surface px-3.5 py-1.5 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:border-mv-green hover:text-mv-ink"
+                  >
+                    {category}
+                  </a>
                 ))}
               </div>
-            </div>
-          ))}
+            )}
+            {categories.map(([category, catItems], i) => (
+              <div key={category} id={categorySlug(category, i)} className="mb-8 scroll-mt-16">
+                <p className="mb-3 text-[13px] font-semibold text-mv-ink">{category}</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {catItems.map((item) => (
+                    <MenuItemGridCard
+                      key={item.id}
+                      item={item}
+                      quantity={cart[item.id] ?? 0}
+                      onOpen={() => openDetail(item)}
+                      onQuickAdd={() => updateQty(item.id, 1)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -583,6 +743,14 @@ export function MenuOrderFlow({
         shareProgramId={shareProgramId}
         restaurantName={restaurantName}
         mentionedOfferTitle={activeOffer}
+      />
+
+      <MenuItemDetailModal
+        item={detailItem}
+        quantity={detailQty}
+        onClose={() => setDetailItem(null)}
+        onQtyChange={(delta) => setDetailQty((q) => Math.max(1, q + delta))}
+        onConfirm={confirmDetailAdd}
       />
     </div>
   );
