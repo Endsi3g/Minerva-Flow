@@ -60,3 +60,28 @@ export function lightspeedApiBaseUrl(): string {
     ? "https://api.lsk.lightspeed.app"
     : "https://api.trial.lsk.lightspeed.app";
 }
+
+/**
+ * QuickBooks Online (Intuit) config — same "gracefully absent until
+ * configured" pattern as Square above. Requires registering an app at
+ * https://developer.intuit.com/app/developer/myapps and adding the
+ * redirect URL below there. UNVERIFIED against a live QuickBooks account —
+ * built from Intuit's public OAuth 2.0 docs, confirm against a real
+ * sandbox app before relying on it in production.
+ */
+export function isQuickBooksConfigured() {
+  return Boolean(process.env.QUICKBOOKS_CLIENT_ID && process.env.QUICKBOOKS_CLIENT_SECRET);
+}
+
+export function quickBooksEnvironment(): "sandbox" | "production" {
+  return process.env.QUICKBOOKS_ENVIRONMENT === "production" ? "production" : "sandbox";
+}
+
+export const QUICKBOOKS_AUTHORIZE_URL = "https://appcenter.intuit.com/connect/oauth2";
+export const QUICKBOOKS_TOKEN_URL = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer";
+
+export function quickBooksApiBaseUrl(): string {
+  return quickBooksEnvironment() === "production"
+    ? "https://quickbooks.api.intuit.com"
+    : "https://sandbox-quickbooks.api.intuit.com";
+}

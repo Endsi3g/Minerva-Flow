@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { isSquareConfigured, isLightspeedConfigured } from "@/lib/pos/config";
+import { isSquareConfigured, isLightspeedConfigured, isQuickBooksConfigured } from "@/lib/pos/config";
 import {
   getPosConnections,
   getRestaurantTimezoneAdmin,
@@ -19,11 +19,16 @@ export async function getPosStatusAction(
   restaurantId: string
 ): Promise<{ configured: PosProviderConfigured; connections: PosConnection[] }> {
   if (!restaurantId) {
-    return { configured: { square: false, lightspeed: false, clover: false }, connections: [] };
+    return { configured: { square: false, lightspeed: false, clover: false, quickbooks: false }, connections: [] };
   }
   const connections = await getPosConnections(restaurantId);
   return {
-    configured: { square: isSquareConfigured(), lightspeed: isLightspeedConfigured(), clover: false },
+    configured: {
+      square: isSquareConfigured(),
+      lightspeed: isLightspeedConfigured(),
+      clover: false,
+      quickbooks: isQuickBooksConfigured(),
+    },
     connections,
   };
 }
