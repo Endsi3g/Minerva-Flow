@@ -561,7 +561,7 @@ export function FidelisationView({
         }
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
         <RewardValidationCard restaurantId={restaurantId!} />
         <BirthdayPerksCard
           restaurantId={restaurantId}
@@ -573,7 +573,7 @@ export function FidelisationView({
         <CustomerOriginCard customers={customers} />
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2.5">
+      <div className="mb-3 flex flex-wrap items-center gap-2.5">
         <div className="relative w-64">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-mv-ink-faint" />
           <Input
