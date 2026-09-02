@@ -34,7 +34,8 @@ describe("Lifecycle Email Templates", () => {
       expect(result.preheader).toBeDefined();
       expect(result.preheader.length).toBeGreaterThan(5);
 
-      expect(result.html).toContain("Minerva <span style=\"color: #167F5B;\">Flow</span>");
+      expect(result.html).toContain("https://minervaflow.app/icon-192.png");
+      expect(result.html).toContain("Minerva Flow");
       expect(result.html).toContain("Montréal (Québec), Canada");
       expect(result.html).toContain("Alexandre");
 

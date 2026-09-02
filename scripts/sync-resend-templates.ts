@@ -34,18 +34,19 @@ function getTransactionalShell(bodyHtml: string, ctaLabel: string, ctaUrl: strin
 <html lang="fr">
 <head><meta charset="utf-8" /></head>
 <body style="margin:0; padding:24px; background-color:#f5f1e6; font-family:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color:#1a1e16;">
-  <div style="max-width:500px; margin:0 auto; padding:36px 28px; background:#fffefa; border:1px solid #e6e0d0; border-radius:18px; box-shadow:0 6px 20px rgba(26, 30, 22, 0.04);">
-    <p style="font-family:'New York', Georgia, serif; font-size:20px; font-weight:700; color:#1a1e16; margin:0 0 20px; letter-spacing:-0.02em;">
-      Minerva <span style="color:#167f5b;">Flow</span>
-    </p>
-    <div style="font-size:14.5px; line-height:1.65; color:#4a5245;">
+  <div style="max-width:500px; margin:0 auto; padding:38px 28px; background:#fffefa; border:1px solid #e6e0d0; border-radius:22px; box-shadow:0 8px 24px rgba(26, 30, 22, 0.05); text-align:center;">
+    <div style="margin-bottom:20px;">
+      <img src="https://minervaflow.app/icon-192.png" width="56" height="56" alt="Minerva Flow" style="display:inline-block; border-radius:15px; box-shadow:0 4px 14px rgba(22,127,91,0.20);" />
+    </div>
+    <div style="font-size:14.5px; line-height:1.65; color:#4a5245; text-align:left; margin-bottom:24px;">
       ${bodyHtml}
     </div>
-    <div style="margin-top:24px;">
-      <a href="${ctaUrl}" style="display:inline-block; padding:12px 24px; background-color:#167f5b; color:#fffefa; text-decoration:none; border-radius:10px; font-size:14px; font-weight:700; box-shadow:0 3px 10px rgba(22, 127, 91, 0.28);">${ctaLabel} →</a>
+    <div style="margin:24px 0 10px; text-align:center;">
+      <a href="${ctaUrl}" style="display:inline-block; padding:13px 30px; background-color:#167f5b; color:#fffefa; text-decoration:none; border-radius:999px; font-size:14.5px; font-weight:700; box-shadow:0 4px 14px rgba(22, 127, 91, 0.28);">${ctaLabel} →</a>
     </div>
-    <p style="margin-top:28px; padding-top:18px; border-top:1px solid #eee9db; font-size:12px; line-height:1.5; color:#8d9488;">
-      Ce lien expire dans 7 jours. Si vous n'êtes pas à l'origine de cette demande, ignorez ce courriel.
+    <p style="margin-top:28px; padding-top:18px; border-top:1px solid #eee9db; font-size:12px; line-height:1.5; color:#8d9488; text-align:center;">
+      Ce lien expire dans 7 jours. Si vous n'êtes pas à l'origine de cette demande, ignorez ce courriel.<br />
+      © 2026 Minerva Flow · Minerva Technologies Inc.
     </p>
   </div>
 </body>

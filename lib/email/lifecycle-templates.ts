@@ -32,10 +32,9 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * Shell Email Haute Couture & Éditorial — Minerva Flow
- * Aligné avec l'identité de marque : https://minervaflow.framer.website/
- * Typographie : New York / Playfair Display (Titres & Chiffres) + Plus Jakarta Sans (Corps)
- * Palette : Fond papier crème #F5F1E6, Carte surface #FFFEFA, Vert Émeraude #167F5B, Forêt #0E5A40, Encre #1A1E16, Doré #AB7D1F
+ * Shell Email Moderne avec Emblème Logo & Carte Centrée
+ * Inspiré des interfaces de référence : Emblème squircle, carte d'action menthe/crème,
+ * étapes en capsules numérotées, métriques d'impact et bouton CTA arrondi.
  */
 function luxuryShell({
   title,
@@ -65,7 +64,7 @@ function luxuryShell({
   const safeCtaText = escapeHtml(ctaText);
 
   const badgeStyles = {
-    green: "background-color: #DCECE3; color: #0E5A40; border: 1px solid #B8DCC8;",
+    green: "background-color: #E2EFE7; color: #0E5A40; border: 1px solid #B8DCC8;",
     gold: "background-color: #F6EFD9; color: #8A6414; border: 1px solid #E5D6A7;",
     lime: "background-color: #DFFF5F; color: #0A4531; border: 1px solid #C4E83E;",
   }[badgeTone];
@@ -103,9 +102,8 @@ function luxuryShell({
     }
     @media screen and (max-width: 600px) {
       .email-container { width: 100% !important; max-width: 100% !important; }
-      .content-cell { padding: 28px 18px 24px !important; }
-      .stat-col { display: block !important; width: 100% !important; margin-bottom: 12px !important; }
-      .stack-row { display: block !important; width: 100% !important; }
+      .content-cell { padding: 32px 20px 28px !important; }
+      .stat-col { display: block !important; width: 100% !important; margin-bottom: 10px !important; }
       .cta-button { display: block !important; width: 100% !important; text-align: center !important; }
     }
   </style>
@@ -121,43 +119,26 @@ function luxuryShell({
     <tr>
       <td align="center" style="padding: 40px 14px 50px;">
         
-        <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; margin: 0 auto;">
+        <table role="presentation" class="email-container" width="580" cellpadding="0" cellspacing="0" border="0" style="width: 580px; max-width: 580px; margin: 0 auto;">
           
-          <!-- En-tête supérieur de marque -->
-          <tr>
-            <td style="padding: 0 8px 24px;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td>
-                    <span class="font-serif" style="font-size: 22px; font-weight: 700; color: #1A1E16; letter-spacing: -0.02em;">
-                      Minerva <span style="color: #167F5B;">Flow</span>
-                    </span>
-                  </td>
-                  <td align="right">
-                    <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #565F52; background-color: #EEE9DB; padding: 5px 12px; border-radius: 999px; display: inline-block;">
-                      Édition Restauration
-                    </span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
           <!-- Carte Principale Haute Définition -->
           <tr>
-            <td class="content-cell" style="background-color: #FFFEFA; border: 1px solid #E6E0D0; border-radius: 20px; padding: 40px 36px 36px; box-shadow: 0 8px 24px rgba(26, 30, 22, 0.04);">
+            <td class="content-cell" style="background-color: #FFFEFA; border: 1px solid #E6E0D0; border-radius: 24px; padding: 44px 38px 38px; box-shadow: 0 10px 30px rgba(26, 30, 22, 0.05);">
               
-              <!-- Badge de catégorie stylisé -->
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 22px;">
-                <tr>
-                  <td style="${badgeStyles} font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px;">
-                    ✦ ${escapeHtml(badgeText)}
-                  </td>
-                </tr>
-              </table>
+              <!-- Emblème / Logo Officiel de la Compagnie (Squircle centré) -->
+              <div style="text-align: center; margin-bottom: 24px;">
+                <img src="https://minervaflow.app/icon-192.png" width="62" height="62" alt="Minerva Flow" style="display: inline-block; border-radius: 17px; box-shadow: 0 4px 16px rgba(22, 127, 91, 0.22); border: 0;" />
+              </div>
 
-              <!-- Titre Héroïque Serif -->
-              <h1 class="font-serif" style="margin: 0 0 18px; font-size: 26px; line-height: 1.3; font-weight: 700; color: #1A1E16; letter-spacing: -0.02em;">
+              <!-- Badge de catégorie centré -->
+              <div style="text-align: center; margin-bottom: 18px;">
+                <span style="${badgeStyles} display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 14px; border-radius: 999px;">
+                  ✦ ${escapeHtml(badgeText)}
+                </span>
+              </div>
+
+              <!-- Titre Héroïque Centré -->
+              <h1 class="font-serif" style="margin: 0 0 14px; font-size: 26px; line-height: 1.3; font-weight: 700; color: #1A1E16; letter-spacing: -0.02em; text-align: center;">
                 ${safeTitle}
               </h1>
 
@@ -169,26 +150,25 @@ function luxuryShell({
               <!-- Bloc KPI / Statistiques Optionnel -->
               ${
                 secondaryStatsHtml
-                  ? `<div style="margin: 28px 0 24px;">${secondaryStatsHtml}</div>`
+                  ? `<div style="margin: 26px 0 20px;">${secondaryStatsHtml}</div>`
                   : ""
               }
 
-              <!-- Bouton d'Action Primaire Signature -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0 20px;">
+              <!-- Bouton d'Action Arrondi Signature (Pill Button Centré) -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0 24px;">
                 <tr>
-                  <td align="left">
-                    <a href="${ctaUrl}" class="cta-button" style="display: inline-block; padding: 14px 30px; background-color: #167F5B; background-image: linear-gradient(180deg, #188a63 0%, #167f5b 100%); color: #FFFEFA; text-decoration: none; border-radius: 12px; font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; box-shadow: 0 4px 14px rgba(22, 127, 91, 0.32);">
+                  <td align="center">
+                    <a href="${ctaUrl}" class="cta-button" style="display: inline-block; padding: 14px 34px; background-color: #167F5B; background-image: linear-gradient(180deg, #198c64 0%, #167f5b 100%); color: #FFFEFA; text-decoration: none; border-radius: 999px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; box-shadow: 0 4px 16px rgba(22, 127, 91, 0.32);">
                       ${safeCtaText} →
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <!-- Signature Éditoriale -->
-              <div style="margin-top: 32px; padding-top: 22px; border-top: 1px solid #EEE9DB; font-size: 13.5px; line-height: 1.55; color: #6F786B;">
-                <p style="margin: 0 0 4px;">Avec toute notre rigueur,</p>
+              <!-- Signature Éditoriale Centrée -->
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #EEE9DB; text-align: center; font-size: 13px; line-height: 1.55; color: #6F786B;">
                 <p style="margin: 0; font-weight: 700; color: #1A1E16;">L'équipe Minerva Flow</p>
-                <p style="margin: 2px 0 0; font-size: 12px; color: #8D9488;">Cockpit d'exploitation & d'intelligence financière pour restaurants et cafés</p>
+                <p style="margin: 3px 0 0; font-size: 11.5px; color: #8D9488;">Le standard d'excellence opérationnelle pour restaurants et cafés</p>
               </div>
 
             </td>
@@ -196,21 +176,21 @@ function luxuryShell({
 
           <!-- Pied de page LCAP Canada -->
           <tr>
-            <td style="padding: 28px 10px 0; text-align: center; font-size: 12px; line-height: 1.65; color: #8D9488;">
+            <td style="padding: 26px 10px 0; text-align: center; font-size: 12px; line-height: 1.65; color: #8D9488;">
               <p style="margin: 0 0 6px;">
                 <strong style="color: #565F52;">Minerva Flow</strong> · Minerva Technologies Inc.
               </p>
               <p style="margin: 0 0 10px;">
-                Montréal (Québec), Canada · Le standard d'excellence opérationnelle en restauration
+                Montréal (Québec), Canada · Standards LCAP / CASL
               </p>
               <p style="margin: 0;">
                 ${
                   isPromotional
-                    ? `<a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color: #8D9488; text-decoration: underline;">Se désabonner de ces annonces</a> · `
+                    ? `<a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color: #8D9488; text-decoration: underline;">Se désabonner</a> · `
                     : ""
                 }
                 <a href="${appUrl}" style="color: #8D9488; text-decoration: underline;">Ouvrir l'application</a> · 
-                <a href="mailto:support@minervaflow.app" style="color: #8D9488; text-decoration: underline;">Contacter le support</a>
+                <a href="mailto:support@minervaflow.app" style="color: #8D9488; text-decoration: underline;">Support</a>
               </p>
             </td>
           </tr>
@@ -232,80 +212,86 @@ export function renderWelcomeEmail(params: LifecycleTemplateParams): EmailRender
   const restaurant = params.restaurantName ? ` pour <strong>${escapeHtml(params.restaurantName)}</strong>` : "";
   const ctaUrl = `${params.appUrl}/onboarding`;
 
-  const title = "Bienvenue sur Minerva Flow — Votre cockpit est prêt";
+  const title = "Votre cockpit Minerva Flow est prêt";
   const preheader = "Vos ratios financiers, vos clôtures de caisse et votre équipe centralisés en un seul endroit.";
 
   const contentHtml = `
-    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 18px;">
-      Votre espace <strong>Minerva Flow</strong>${restaurant} est officiellement déployé. Vous disposez désormais d'un standard d'excellence conçu sur-mesure pour les restaurateurs, cafés et groupes d'ici.
-    </p>
-
-    <!-- Carte des 3 étapes d'initialisation -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #FBF9F3; border: 1px solid #E6E0D0; border-radius: 14px; margin: 22px 0 20px;">
+    <p style="margin: 0 0 16px; text-align: center;">Bonjour ${name}, votre espace${restaurant} est officiellement opérationnel.</p>
+    
+    <!-- Encadré Héroïque Doux Menthe (Style Check Your Inbox) -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #EEF8F3; border: 1px solid #D4EADB; border-radius: 18px; margin: 18px 0 24px; text-align: center;">
       <tr>
-        <td style="padding: 22px 20px;">
-          <p class="font-serif" style="margin: 0 0 16px; font-size: 16px; font-weight: 700; color: #167F5B;">
-            🚀 Vos 3 actions prioritaires :
+        <td style="padding: 22px 18px;">
+          <div style="display: inline-block; width: 36px; height: 36px; background-color: #FFFFFF; border-radius: 10px; line-height: 36px; font-size: 18px; margin-bottom: 8px; box-shadow: 0 2px 6px rgba(22, 127, 91, 0.12);">
+            🚀
+          </div>
+          <p class="font-serif" style="margin: 0 0 6px; font-size: 17px; font-weight: 700; color: #0E5A40;">
+            Initialisation en moins de 3 minutes
           </p>
-          
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td valign="top" width="28" style="padding-bottom: 14px;">
-                <span style="display: inline-block; width: 22px; height: 22px; background-color: #167F5B; color: #FFFEFA; border-radius: 50%; text-align: center; font-size: 12px; font-weight: 700; line-height: 22px;">1</span>
-              </td>
-              <td style="padding-bottom: 14px; font-size: 14px; line-height: 1.55; color: #1A1E16;">
-                <strong>Configuration de l'établissement</strong> — Confirmez votre adresse civique, vos heures de service et vos taxes.
-              </td>
-            </tr>
-            <tr>
-              <td valign="top" width="28" style="padding-bottom: 14px;">
-                <span style="display: inline-block; width: 22px; height: 22px; background-color: #167F5B; color: #FFFEFA; border-radius: 50%; text-align: center; font-size: 12px; font-weight: 700; line-height: 22px;">2</span>
-              </td>
-              <td style="padding-bottom: 14px; font-size: 14px; line-height: 1.55; color: #1A1E16;">
-                <strong>Synchronisation de votre caisse (POS)</strong> — Connectez Square, Lightspeed ou Stripe pour automatiser l'import de vos ventes.
-              </td>
-            </tr>
-            <tr>
-              <td valign="top" width="28">
-                <span style="display: inline-block; width: 22px; height: 22px; background-color: #167F5B; color: #FFFEFA; border-radius: 50%; text-align: center; font-size: 12px; font-weight: 700; line-height: 22px;">3</span>
-              </td>
-              <td style="font-size: 14px; line-height: 1.55; color: #1A1E16;">
-                <strong>Ajout de l'équipe</strong> — Invitez vos gérants et chefs de cuisine pour la gestion des quarts et des coûts salariaux.
-              </td>
-            </tr>
-          </table>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #4A5245;">
+            Configurez votre menu, connectez votre système POS et lancez votre premier service sans tableurs complexes.
+          </p>
         </td>
       </tr>
     </table>
 
-    <p style="margin: 0 0 6px;">
-      Notre équipe à Montréal est à vos côtés. Pour toute question, répondez directement à ce message.
-    </p>
+    <!-- Section WHAT'S NEXT / ÉTAPES -->
+    <div style="margin-top: 24px;">
+      <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8D9488; margin: 0 0 14px; text-align: center;">
+        Vos prochaines étapes
+      </p>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td valign="top" width="32" style="padding-bottom: 12px;">
+            <span style="display: inline-block; width: 24px; height: 24px; background-color: #E2EFE7; color: #167F5B; border-radius: 50%; text-align: center; font-size: 12px; font-weight: 700; line-height: 24px;">1</span>
+          </td>
+          <td style="padding-bottom: 12px; font-size: 14px; line-height: 1.5; color: #1A1E16;">
+            <strong>Profil de l'établissement</strong> — Confirmez vos horaires et paramètres de taxes.
+          </td>
+        </tr>
+        <tr>
+          <td valign="top" width="32" style="padding-bottom: 12px;">
+            <span style="display: inline-block; width: 24px; height: 24px; background-color: #E2EFE7; color: #167F5B; border-radius: 50%; text-align: center; font-size: 12px; font-weight: 700; line-height: 24px;">2</span>
+          </td>
+          <td style="padding-bottom: 12px; font-size: 14px; line-height: 1.5; color: #1A1E16;">
+            <strong>Connexion Caisse (POS)</strong> — Synchronisez Square, Lightspeed ou Stripe.
+          </td>
+        </tr>
+        <tr>
+          <td valign="top" width="32">
+            <span style="display: inline-block; width: 24px; height: 24px; background-color: #E2EFE7; color: #167F5B; border-radius: 50%; text-align: center; font-size: 12px; font-weight: 700; line-height: 24px;">3</span>
+          </td>
+          <td style="font-size: 14px; line-height: 1.5; color: #1A1E16;">
+            <strong>Équipe &amp; Quarts</strong> — Invitez vos chefs et gérants pour le suivi salarial.
+          </td>
+        </tr>
+      </table>
+    </div>
   `;
 
   const secondaryStatsHtml = `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 10px;">
       <tr>
-        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 12px; text-align: center;">
           <span class="font-serif" style="font-size: 20px; font-weight: 700; color: #167F5B; display: block;">2 min</span>
-          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Temps de clôture</span>
+          <span style="font-size: 11px; color: #565F52; font-weight: 600;">Saisie de clôture</span>
         </td>
         <td width="2%"></td>
-        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 12px; text-align: center;">
           <span class="font-serif" style="font-size: 20px; font-weight: 700; color: #167F5B; display: block;">100%</span>
-          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Ratios en temps réel</span>
+          <span style="font-size: 11px; color: #565F52; font-weight: 600;">Ratios en direct</span>
         </td>
         <td width="2%"></td>
-        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 12px; text-align: center;">
           <span class="font-serif" style="font-size: 20px; font-weight: 700; color: #167F5B; display: block;">24/7</span>
-          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Assistant Flow AI</span>
+          <span style="font-size: 11px; color: #565F52; font-weight: 600;">Assistant Flow AI</span>
         </td>
       </tr>
     </table>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nBienvenue sur Minerva Flow ! Votre espace de gestion est prêt.\n\nPour démarrer :\n1. Configurez votre établissement\n2. Connectez votre caisse (Square/Lightspeed/Stripe)\n3. Invitez votre équipe\n\nAccédez à votre cockpit : ${ctaUrl}\n\nL'équipe Minerva Flow`;
+  const text = `Bonjour ${params.firstName ?? ""},\n\nVotre espace Minerva Flow est prêt.\n\nPour démarrer :\n1. Configurez votre établissement\n2. Connectez votre caisse (Square/Lightspeed/Stripe)\n3. Invitez votre équipe\n\nAccédez à votre cockpit : ${ctaUrl}\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
@@ -317,7 +303,7 @@ export function renderWelcomeEmail(params: LifecycleTemplateParams): EmailRender
       badgeTone: "green",
       contentHtml,
       secondaryStatsHtml,
-      ctaText: "Accéder à mon espace Minerva Flow",
+      ctaText: "Accéder à mon espace",
       ctaUrl,
       appUrl: params.appUrl,
     }),
@@ -332,46 +318,49 @@ export function renderActivationEmail(params: LifecycleTemplateParams): EmailRen
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/days`;
 
-  const title = "Maîtrisez votre Prime Cost dès votre premier service";
+  const title = "Maîtrisez votre Prime Cost en 2 minutes";
   const preheader = "Saisissez 3 chiffres et visualisez instantanément votre rentabilité brute.";
 
   const contentHtml = `
-    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 18px;">
-      Le secret de la rentabilité en restauration réside dans le <strong>Prime Cost</strong> (coût des matières premières + masse salariale). Sur Minerva Flow, calculer ce ratio ne prend que 2 minutes par jour.
-    </p>
+    <p style="margin: 0 0 16px; text-align: center;">Bonjour ${name}, découvrez la métrique reine de la restauration.</p>
 
-    <!-- Bloc d'explication pédagogique avec formule -->
-    <div style="background-color: #F3EFE4; border-left: 4px solid #167F5B; padding: 18px 20px; border-radius: 8px; margin: 0 0 22px;">
-      <p class="font-serif" style="margin: 0 0 8px; font-size: 15px; font-weight: 700; color: #1A1E16;">
-        ✦ La formule d'or de Minerva Flow :
-      </p>
-      <p style="margin: 0 0 8px; font-size: 13.5px; line-height: 1.6; color: #167F5B; font-weight: 600;">
-        Prime Cost % = (Coût Nourriture & Boissons + Salaires Service) ÷ Ventes Nettes
-      </p>
-      <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #565F52;">
-        <em>Objectif optimal : maintenir ce ratio sous la barre des <strong>58 % à 62 %</strong> pour dégager un bénéfice net pérenne.</em>
-      </p>
-    </div>
-
-    <p style="margin: 0 0 12px; font-weight: 600; color: #1A1E16;">Comment tester dès aujourd'hui :</p>
-    <ol style="margin: 0 0 18px; padding-left: 20px; line-height: 1.7; font-size: 14.5px;">
-      <li>Ouvrez l'onglet <strong>Journées</strong> dans Minerva Flow.</li>
-      <li>Inscrivez vos ventes du jour et les heures de vos employés.</li>
-      <li>Obtenez immédiatement vos graphiques de rentabilité et vos alertes de dérive.</li>
-    </ol>
-  `;
-
-  const secondaryStatsHtml = `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #EBF5F0; border: 1px solid #CEE8DB; border-radius: 12px; padding: 16px;">
+    <!-- Encadré Formule Stylisé -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #EEF8F3; border: 1px solid #D4EADB; border-radius: 18px; margin: 18px 0 22px; text-align: center;">
       <tr>
-        <td>
-          <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #0E5A40; letter-spacing: 0.04em;">Cible de Rentabilité</span>
-          <p class="font-serif" style="margin: 4px 0 2px; font-size: 22px; font-weight: 700; color: #167F5B;">&lt; 60% Prime Cost</p>
-          <span style="font-size: 12.5px; color: #4A5245;">Minerva Flow vous avertit en rouge dès qu'un quart dépasse le seuil critique.</span>
+        <td style="padding: 22px 18px;">
+          <div style="display: inline-block; width: 36px; height: 36px; background-color: #FFFFFF; border-radius: 10px; line-height: 36px; font-size: 18px; margin-bottom: 8px; box-shadow: 0 2px 6px rgba(22, 127, 91, 0.12);">
+            ⚖️
+          </div>
+          <p class="font-serif" style="margin: 0 0 6px; font-size: 16px; font-weight: 700; color: #0E5A40;">
+            Prime Cost = Coût Matières + Masse Salariale
+          </p>
+          <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #4A5245;">
+            Cible idéale : <strong>&lt; 58 % à 62 %</strong> des ventes nettes pour sécuriser vos bénéfices.
+          </p>
         </td>
       </tr>
     </table>
+
+    <div style="margin-top: 20px;">
+      <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8D9488; margin: 0 0 14px; text-align: center;">
+        Comment tester sur votre service
+      </p>
+      
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td valign="top" width="28" style="padding-bottom: 10px; font-size: 15px;">⚡</td>
+          <td style="padding-bottom: 10px; font-size: 14px; line-height: 1.5; color: #1A1E16;">
+            <strong>Onglet Journées</strong> : Entrez vos ventes et heures de service.
+          </td>
+        </tr>
+        <tr>
+          <td valign="top" width="28" style="font-size: 15px;">📊</td>
+          <td style="font-size: 14px; line-height: 1.5; color: #1A1E16;">
+            <strong>Alertes en direct</strong> : Minerva Flow signale tout dépassement de ratio.
+          </td>
+        </tr>
+      </table>
+    </div>
   `;
 
   const text = `Bonjour ${params.firstName ?? ""},\n\nCalculez votre Prime Cost en 2 minutes avec Minerva Flow et maîtrisez vos marges réelles dès aujourd'hui.\n\nSaisir ma première journée : ${ctaUrl}\n\nL'équipe Minerva Flow`;
@@ -385,7 +374,6 @@ export function renderActivationEmail(params: LifecycleTemplateParams): EmailRen
       badgeText: "Activation Quotidienne",
       badgeTone: "green",
       contentHtml,
-      secondaryStatsHtml,
       ctaText: "Enregistrer une journée de service",
       ctaUrl,
       appUrl: params.appUrl,
@@ -401,38 +389,31 @@ export function renderFeatureHighlightEmail(params: LifecycleTemplateParams): Em
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/assistant`;
 
-  const title = "Votre copilote Flow AI : L'intelligence au service de vos marges";
+  const title = "Votre copilote Flow AI au service de vos marges";
   const preheader = "Posez une question en langage naturel et obtenez des analyses financières instantanées.";
 
   const contentHtml = `
-    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 18px;">
-      Finie l'époque des classeurs Excel illisibles et des analyses comptables livrées avec 3 semaines de retard. Avec <strong>Flow AI</strong>, vous disposez d'un directeur financier virtuel accessible 24/7.
-    </p>
+    <p style="margin: 0 0 16px; text-align: center;">Bonjour ${name}, obtenez des réponses financières instantanées 24/7.</p>
 
-    <!-- Simulation d'interaction Flow AI -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #1A1E16; border-radius: 14px; margin: 20px 0 22px; color: #F5F1E6;">
+    <!-- Simulation d'interaction Flow AI (Style Dark Card) -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #1A1E16; border-radius: 18px; margin: 18px 0 22px; color: #F5F1E6;">
       <tr>
         <td style="padding: 22px 20px;">
-          <div style="margin-bottom: 12px;">
+          <div style="margin-bottom: 10px;">
             <span style="background-color: #DFFF5F; color: #0A4531; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase;">Exemple d'invite Flow AI</span>
           </div>
           <p class="font-serif" style="margin: 0 0 10px; font-size: 15px; font-style: italic; color: #DFFF5F;">
-            « Quels sont nos 3 plats les plus rentables cette semaine et quel poste a généré le plus d'heures supplémentaires ? »
+            « Quels sont nos 3 plats les plus rentables cette semaine ? »
           </p>
           <div style="border-top: 1px solid #33392A; padding-top: 10px; font-size: 13px; line-height: 1.6; color: #D7DEC9;">
-            ✦ <strong>Réponse Flow AI :</strong> « Votre Tartare de Saumon dégage 74% de marge brute. Cependant, la cuisine du soir a enregistré 6.5h d'overtime vendredi. Recommandation : décaler l'arrivée du second de 45 min. »
+            ✦ <strong>Réponse Flow AI :</strong> « Votre Tartare dégage 74% de marge brute. Recommandation : ajuster la portion d'accompagnement pour stabiliser le coût matière. »
           </div>
         </td>
       </tr>
     </table>
-
-    <p style="margin: 0 0 6px;">
-      Flow AI analyse vos données de ventes, vos fiches techniques de recettes et vos quarts d'employés pour vous souffler les meilleures décisions opérationnelles.
-    </p>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez comment Flow AI agit comme votre directeur financier virtuel pour optimiser vos menus et vos coûts d'équipe.\n\nTester l'assistant Flow AI : ${ctaUrl}\n\nL'équipe Minerva Flow`;
+  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez comment Flow AI agit comme votre directeur financier virtuel pour optimiser vos menus.\n\nTester Flow AI : ${ctaUrl}\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
@@ -458,46 +439,44 @@ export function renderSupportCheckinEmail(params: LifecycleTemplateParams): Emai
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/support`;
 
-  const title = "Besoin d'un coup de pouce pour paramétrer votre espace ?";
+  const title = "Besoin d'un coup de pouce pour votre espace ?";
   const preheader = "Notre équipe d'experts en restauration est là pour adapter Minerva Flow à vos spécificités.";
 
   const contentHtml = `
-    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 18px;">
-      Gérer un restaurant ou un café est un métier de terrain exigeant. Si vous n'avez pas encore finalisé votre configuration, voici les questions les plus fréquemment posées par nos partenaires :
-    </p>
+    <p style="margin: 0 0 16px; text-align: center;">Bonjour ${name}, notre équipe basée à Montréal est à vos côtés.</p>
 
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 18px 0;">
+    <!-- 3 FAQ rapides -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 16px 0;">
       <tr>
-        <td style="padding: 14px 16px; background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 10px; margin-bottom: 10px;">
-          <strong style="color: #167F5B; font-size: 14px;">1. Comment importer mes ventes automatiquement ?</strong>
-          <p style="margin: 4px 0 0; font-size: 13px; color: #565F52; line-height: 1.5;">
-            Dans <em>Paramètres > Intégrations</em>, connectez votre compte Square, Lightspeed ou Stripe. Les rapports de ventes se synchronisent chaque nuit sans intervention manuelle.
+        <td style="padding: 14px 16px; background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px;">
+          <strong style="color: #167F5B; font-size: 13.5px;">1. Import automatique des ventes</strong>
+          <p style="margin: 4px 0 0; font-size: 12.5px; color: #565F52; line-height: 1.5;">
+            Connectez Square, Lightspeed ou Stripe dans <em>Paramètres > Intégrations</em>.
           </p>
         </td>
       </tr>
-      <tr><td height="10"></td></tr>
+      <tr><td height="8"></td></tr>
       <tr>
-        <td style="padding: 14px 16px; background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 10px; margin-bottom: 10px;">
-          <strong style="color: #167F5B; font-size: 14px;">2. Comment gérer les pourboires et le taux horaire réel ?</strong>
-          <p style="margin: 4px 0 0; font-size: 13px; color: #565F52; line-height: 1.5;">
-            Ajoutez vos collaborateurs avec leurs rôles (Service, Cuisine, Bar) et leurs taux pour calculer fidèlement le ratio masse salariale.
+        <td style="padding: 14px 16px; background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px;">
+          <strong style="color: #167F5B; font-size: 13.5px;">2. Gestion des quarts et masse salariale</strong>
+          <p style="margin: 4px 0 0; font-size: 12.5px; color: #565F52; line-height: 1.5;">
+            Définissez les taux horaires et suivez le ratio de masse salariale en temps réel.
           </p>
         </td>
       </tr>
-      <tr><td height="10"></td></tr>
+      <tr><td height="8"></td></tr>
       <tr>
-        <td style="padding: 14px 16px; background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 10px;">
-          <strong style="color: #167F5B; font-size: 14px;">3. Vous souhaitez un onboarding guidé de 15 minutes ?</strong>
-          <p style="margin: 4px 0 0; font-size: 13px; color: #565F52; line-height: 1.5;">
-            Répondez simplement à cet email en nous indiquant vos disponibilités : un spécialiste produit prendra en main la configuration avec vous.
+        <td style="padding: 14px 16px; background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px;">
+          <strong style="color: #167F5B; font-size: 13.5px;">3. Onboarding guidé de 15 minutes</strong>
+          <p style="margin: 4px 0 0; font-size: 12.5px; color: #565F52; line-height: 1.5;">
+            Répondez simplement à ce courriel avec vos disponibilités.
           </p>
         </td>
       </tr>
     </table>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nBesoin d'assistance pour configurer votre établissement sur Minerva Flow ? Notre équipe est à votre disposition.\n\nAccéder au centre d'aide : ${ctaUrl}\nOu répondez directement à ce courriel.\n\nL'équipe Minerva Flow`;
+  const text = `Bonjour ${params.firstName ?? ""},\n\nBesoin d'assistance pour configurer votre établissement sur Minerva Flow ? Notre équipe est à votre disposition.\n\nAccéder au support : ${ctaUrl}\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
@@ -524,96 +503,83 @@ export function renderCaseStudyEmail(params: LifecycleTemplateParams): EmailRend
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/overview`;
 
-  const title = "Du petit café de quartier au grand bistro : 6 études de cas concrètes";
+  const title = "Du petit café au grand bistro : 6 cas réels";
   const preheader = "Découvrez comment 6 commerces québécois génèrent entre 75 % et 100 % de rétention.";
 
   const contentHtml = `
-    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 18px;">
-      Le système <strong>Minerva Flow</strong> aide-t-il uniquement les commerces déjà établis, ou apporte-t-il une valeur réelle même à un tout jeune établissement sans historique ?
-    </p>
-    <p style="margin: 0 0 20px;">
-      Voici les résultats réels observés sur <strong>6 profils d'exploitation</strong> (3 cafés et 3 restaurants répartis sur 3 échelles de maturité) :
-    </p>
+    <p style="margin: 0 0 16px; text-align: center;">Bonjour ${name}, voici les résultats réels observés sur 6 profils d'exploitation :</p>
 
     <!-- Grille des 3 Échelles de Maturité -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 20px 0 24px; border: 1px solid #E6E0D0; border-radius: 14px; overflow: hidden; background-color: #FAF8F2;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 18px 0 20px; border: 1px solid #E6E0D0; border-radius: 16px; overflow: hidden; background-color: #FAF8F2;">
       <!-- Échelle 1 : Petit qui débute -->
-      <tr style="border-bottom: 1px solid #E6E0D0;">
-        <td style="padding: 18px; border-bottom: 1px solid #EEE9DB;">
-          <div style="display: inline-block; padding: 3px 10px; background-color: #DCECE3; color: #0E5A40; font-size: 11px; font-weight: 700; border-radius: 999px; text-transform: uppercase;">
-            Échelle 1 · Débutant (18 jours)
+      <tr>
+        <td style="padding: 16px; border-bottom: 1px solid #EEE9DB;">
+          <div style="display: inline-block; padding: 2px 8px; background-color: #DCECE3; color: #0E5A40; font-size: 10.5px; font-weight: 700; border-radius: 999px; text-transform: uppercase;">
+            Petit · Câlin Café &amp; Poutine &amp; Cie (18 j)
           </div>
-          <p class="font-serif" style="margin: 8px 0 4px; font-size: 16px; font-weight: 700; color: #1A1E16;">
-            Câlin Café &amp; Poutine &amp; Cie : 75% de rétention immédiate
+          <p class="font-serif" style="margin: 6px 0 2px; font-size: 15px; font-weight: 700; color: #1A1E16;">
+            75 % de clients revenus 2 fois ou +
           </p>
-          <p style="margin: 0 0 8px; font-size: 13.5px; line-height: 1.55; color: #565F52;">
-            <em>« Je m'attendais à devoir attendre des mois avant de voir un client revenir une deuxième fois. Trois sur quatre l'ont déjà fait. »</em> — Denis Paquette, Câlin Café (19,98 $ panier moy.)
+          <p style="margin: 0; font-size: 12.5px; color: #565F52; line-height: 1.45;">
+            <em>« 15 des 20 clients sont déjà revenus sans budget marketing. »</em> — Denis Paquette
           </p>
-          <span style="font-size: 12px; font-weight: 700; color: #167F5B;">✦ Résultat : 15 des 20 premiers clients sont déjà revenus au moins une fois sans budget publicitaire.</span>
         </td>
       </tr>
 
       <!-- Échelle 2 : Moyen établi -->
-      <tr style="border-bottom: 1px solid #E6E0D0;">
-        <td style="padding: 18px; border-bottom: 1px solid #EEE9DB;">
-          <div style="display: inline-block; padding: 3px 10px; background-color: #F6EFD9; color: #8A6414; font-size: 11px; font-weight: 700; border-radius: 999px; text-transform: uppercase;">
-            Échelle 2 · Établi (30 jours)
+      <tr>
+        <td style="padding: 16px; border-bottom: 1px solid #EEE9DB;">
+          <div style="display: inline-block; padding: 2px 8px; background-color: #F6EFD9; color: #8A6414; font-size: 10.5px; font-weight: 700; border-radius: 999px; text-transform: uppercase;">
+            Moyen · Café Lucide &amp; Burger Nomade (30 j)
           </div>
-          <p class="font-serif" style="margin: 8px 0 4px; font-size: 16px; font-weight: 700; color: #1A1E16;">
-            Café Lucide &amp; Burger Nomade : 100% de retour &amp; 4,4 visites moy.
+          <p class="font-serif" style="margin: 6px 0 2px; font-size: 15px; font-weight: 700; color: #1A1E16;">
+            100 % de rétention &amp; 4,4 visites moyennes
           </p>
-          <p style="margin: 0 0 8px; font-size: 13.5px; line-height: 1.55; color: #565F52;">
-            <em>« Le vrai changement, c'est que je n'ai plus à me demander qui revient — le tableau de clients me le dit d'un coup d'œil. »</em> — Théo Bernier, Café Lucide (15 144 $ CA)
+          <p style="margin: 0; font-size: 12.5px; color: #565F52; line-height: 1.45;">
+            <em>« Le tableau de clients me dit qui revient d'un coup d'œil. »</em> — Théo Bernier
           </p>
-          <span style="font-size: 12px; font-weight: 700; color: #167F5B;">✦ Résultat : 100 % des clients sont revenus 2 fois ou plus. Fréquence moyenne doublée.</span>
         </td>
       </tr>
 
       <!-- Échelle 3 : Grand mature -->
       <tr>
-        <td style="padding: 18px;">
-          <div style="display: inline-block; padding: 3px 10px; background-color: #DFFF5F; color: #0A4531; font-size: 11px; font-weight: 700; border-radius: 999px; text-transform: uppercase;">
-            Échelle 3 · Mature (43 jours)
+        <td style="padding: 16px;">
+          <div style="display: inline-block; padding: 2px 8px; background-color: #DFFF5F; color: #0A4531; font-size: 10.5px; font-weight: 700; border-radius: 999px; text-transform: uppercase;">
+            Grand · Bureau &amp; Brew &amp; Le Trèfle Doré (43 j)
           </div>
-          <p class="font-serif" style="margin: 8px 0 4px; font-size: 16px; font-weight: 700; color: #1A1E16;">
-            Bureau &amp; Brew &amp; Le Trèfle Doré : 9,1 visites moy. &amp; 86 392 $ CA
+          <p class="font-serif" style="margin: 6px 0 2px; font-size: 15px; font-weight: 700; color: #1A1E16;">
+            9,1 visites / client &amp; 86 392 $ CA
           </p>
-          <p style="margin: 0 0 8px; font-size: 13.5px; line-height: 1.55; color: #565F52;">
-            <em>« Flow nous a donné les chiffres pour repérer exactement ceux qui commencent à s'éloigner avant qu'il ne soit trop tard. »</em> — Marc-André Fournier, Le Trèfle Doré (206,64 $ panier)
+          <p style="margin: 0; font-size: 12.5px; color: #565F52; line-height: 1.45;">
+            <em>« Détection prédictive de l'attrition des habitués. »</em> — Marc-André Fournier
           </p>
-          <span style="font-size: 12px; font-weight: 700; color: #167F5B;">✦ Résultat : Fréquence multipliée par ×3,6. Détection automatique de l'attrition.</span>
         </td>
       </tr>
     </table>
-
-    <p style="margin: 0 0 6px;">
-      Peu importe votre échelle, Minerva Flow amplifie ce que vous faites déjà de mieux : fidéliser vos clients et sécuriser votre marge brute.
-    </p>
   `;
 
   const secondaryStatsHtml = `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       <tr>
-        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
-          <span class="font-serif" style="font-size: 22px; font-weight: 700; color: #167F5B; display: block;">75 %</span>
-          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Rétention palier 1</span>
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 12px; text-align: center;">
+          <span class="font-serif" style="font-size: 20px; font-weight: 700; color: #167F5B; display: block;">75 %</span>
+          <span style="font-size: 11px; color: #565F52; font-weight: 600;">Rétention palier 1</span>
         </td>
         <td width="2%"></td>
-        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
-          <span class="font-serif" style="font-size: 22px; font-weight: 700; color: #167F5B; display: block;">100 %</span>
-          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Rétention paliers 2 &amp; 3</span>
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 12px; text-align: center;">
+          <span class="font-serif" style="font-size: 20px; font-weight: 700; color: #167F5B; display: block;">100 %</span>
+          <span style="font-size: 11px; color: #565F52; font-weight: 600;">Rétention paliers 2-3</span>
         </td>
         <td width="2%"></td>
-        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
-          <span class="font-serif" style="font-size: 22px; font-weight: 700; color: #167F5B; display: block;">×3,6</span>
-          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Gain de fréquence</span>
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 12px; text-align: center;">
+          <span class="font-serif" style="font-size: 20px; font-weight: 700; color: #167F5B; display: block;">×3,6</span>
+          <span style="font-size: 11px; color: #565F52; font-weight: 600;">Gain fréquence</span>
         </td>
       </tr>
     </table>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez les 6 études de cas réelles de Minerva Flow (Câlin Café, Poutine & Cie, Café Lucide, Burger Nomade, Bureau & Brew, Le Trèfle Doré) : 75% à 100% de rétention et fréquence multipliée par 3,6.\n\nConsulter mon tableau de bord : ${ctaUrl}\n\nL'équipe Minerva Flow`;
+  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez les 6 études de cas de Minerva Flow (Câlin Café, Poutine & Cie, Café Lucide, Burger Nomade, Bureau & Brew, Le Trèfle Doré) : 75% à 100% de rétention.\n\nConsulter mon tableau de bord : ${ctaUrl}\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
@@ -621,7 +587,7 @@ export function renderCaseStudyEmail(params: LifecycleTemplateParams): EmailRend
     html: luxuryShell({
       title,
       preheader,
-      badgeText: "6 Études de Cas Réelles",
+      badgeText: "6 Cas Réels",
       badgeTone: "gold",
       contentHtml,
       secondaryStatsHtml,
@@ -641,44 +607,29 @@ export function renderConversionEmail(params: LifecycleTemplateParams): EmailRen
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/settings`;
 
-  const title = "Passez au niveau supérieur avec Minerva Flow Pro";
+  const title = "Passez à la vitesse supérieure avec Flow Pro";
   const preheader = "Débloquez les analyses prédictives, les connexions POS multi-sites et le moteur de fidélité.";
 
   const contentHtml = `
-    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 18px;">
-      Vous avez posé les bases solides de votre exploitation sur Minerva Flow. Pour automatiser l'intégralité de votre chaîne de valeur et maximiser vos marges, passez à la vitesse supérieure avec <strong>Minerva Flow Pro</strong> :
-    </p>
+    <p style="margin: 0 0 16px; text-align: center;">Bonjour ${name}, débloquez l'automatisation complète de votre exploitation.</p>
 
     <!-- Grille des fonctionnalités Pro -->
-    <div style="background-color: #FAF8F2; border: 1px solid #E6E0D0; border-radius: 14px; padding: 22px 20px; margin: 20px 0 24px;">
-      <p class="font-serif" style="margin: 0 0 14px; font-size: 16px; font-weight: 700; color: #167F5B;">
-        ✦ Tout ce qui est inclus dans le plan Pro :
-      </p>
-      
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 14px; line-height: 1.6;">
+    <div style="background-color: #FAF8F2; border: 1px solid #E6E0D0; border-radius: 16px; padding: 20px 18px; margin: 18px 0 22px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13.5px; line-height: 1.55;">
         <tr>
-          <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
-          <td style="padding-bottom: 10px;"><strong>Synchronisations POS &amp; Banques illimitées</strong> — Square, Lightspeed, Stripe sans limite de volume.</td>
+          <td valign="top" width="22" style="color: #167F5B; font-weight: 700;">✓</td>
+          <td style="padding-bottom: 8px;"><strong>POS &amp; Banques illimités</strong> — Square, Lightspeed, Stripe sans friction.</td>
         </tr>
         <tr>
-          <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
-          <td style="padding-bottom: 10px;"><strong>Assistant Flow AI illimité</strong> — Recommandations de prix, détection d'anomalies et audits de rentabilité.</td>
+          <td valign="top" width="22" style="color: #167F5B; font-weight: 700;">✓</td>
+          <td style="padding-bottom: 8px;"><strong>Assistant Flow AI illimité</strong> — Audits de rentabilité et détection d'anomalies.</td>
         </tr>
         <tr>
-          <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
-          <td style="padding-bottom: 10px;"><strong>Moteur de fidélisation &amp; CRM</strong> — Récompenses automatiques, invitations QR studio et relances anniversaire.</td>
-        </tr>
-        <tr>
-          <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
-          <td><strong>Support VIP Prioritaire</strong> — Ligne directe dédiée pour votre établissement 7j/7.</td>
+          <td valign="top" width="22" style="color: #167F5B; font-weight: 700;">✓</td>
+          <td><strong>Moteur de fidélité &amp; CRM</strong> — Récompenses automatiques et QR studio.</td>
         </tr>
       </table>
     </div>
-
-    <p style="margin: 0 0 6px;">
-      Nos plans sont sans engagement à long terme et calibrés pour être rentabilisés dès la première semaine d'utilisation.
-    </p>
   `;
 
   const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez Minerva Flow Pro : synchronisations illimitées, Flow AI avancé et moteur de fidélisation.\n\nExplorer les forfaits : ${ctaUrl}\n\nL'équipe Minerva Flow`;
@@ -689,7 +640,7 @@ export function renderConversionEmail(params: LifecycleTemplateParams): EmailRen
     html: luxuryShell({
       title,
       preheader,
-      badgeText: "Offres & Évolution",
+      badgeText: "Offres Pro",
       badgeTone: "lime",
       contentHtml,
       ctaText: "Découvrir les forfaits Flow Pro",
@@ -708,34 +659,24 @@ export function renderReactivationEmail(params: LifecycleTemplateParams): EmailR
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/overview`;
 
-  const title = "Votre cockpit Minerva Flow est toujours prêt pour le service";
+  const title = "Votre cockpit est toujours prêt pour le service";
   const preheader = "Reprenez le pilotage de vos marges là où vous vous étiez arrêté.";
 
   const contentHtml = `
-    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 18px;">
-      Le rythme en établissement ne laisse que peu de répit. Si vous souhaitez reprendre le contrôle de vos coûts et simplifier vos clôtures de service, votre espace est parfaitement sauvegardé et prêt à l'emploi.
-    </p>
+    <p style="margin: 0 0 16px; text-align: center;">Bonjour ${name}, votre espace est sauvegardé et prêt pour votre prochain service.</p>
 
     <!-- Nouveautés ajoutées récemment -->
-    <div style="background-color: #F8F6EF; border-left: 4px solid #167F5B; padding: 18px 20px; border-radius: 8px; margin: 20px 0 22px;">
-      <p class="font-serif" style="margin: 0 0 8px; font-size: 15px; font-weight: 700; color: #1A1E16;">
-        ✦ Nouveautés déployées récemment sur Minerva Flow :
+    <div style="background-color: #F8F6EF; border-left: 4px solid #167F5B; padding: 16px 18px; border-radius: 10px; margin: 18px 0 20px;">
+      <p class="font-serif" style="margin: 0 0 6px; font-size: 14.5px; font-weight: 700; color: #1A1E16;">
+        ✦ Nouveautés déployées :
       </p>
-      <p style="margin: 0 0 6px; font-size: 13.5px; line-height: 1.55; color: #4A5245;">
-        • <strong>Nouveaux rapports d'audit de marge</strong> avec alertes de dépassement de ratios.
+      <p style="margin: 0 0 4px; font-size: 13px; color: #4A5245;">
+        • Nouveaux rapports de rentabilité par plat et quart de travail.
       </p>
-      <p style="margin: 0 0 6px; font-size: 13.5px; line-height: 1.55; color: #4A5245;">
-        • <strong>Module Flow AI enrichi</strong> pour répondre avec une précision accrue sur vos coûts matières.
-      </p>
-      <p style="margin: 0; font-size: 13.5px; line-height: 1.55; color: #4A5245;">
-        • <strong>Export simplifié pour votre comptable</strong> en un seul clic.
+      <p style="margin: 0; font-size: 13px; color: #4A5245;">
+        • Export comptable automatisé en un clic.
       </p>
     </div>
-
-    <p style="margin: 0 0 6px;">
-      Si un élément technique ou une question vous a freiné, répondez directement à ce message : nous prendrons le temps de vous aider personnellement.
-    </p>
   `;
 
   const text = `Bonjour ${params.firstName ?? ""},\n\nVotre espace Minerva Flow est toujours prêt. Reprenez le pilotage de vos opérations en un clic.\n\nAccéder à mon espace : ${ctaUrl}\n\nL'équipe Minerva Flow`;
@@ -746,10 +687,10 @@ export function renderReactivationEmail(params: LifecycleTemplateParams): EmailR
     html: luxuryShell({
       title,
       preheader,
-      badgeText: "Reprise d'Activité",
+      badgeText: "Reprise de Service",
       badgeTone: "green",
       contentHtml,
-      ctaText: "Reprendre mon activité sur Flow",
+      ctaText: "Reprendre mon activité",
       ctaUrl,
       appUrl: params.appUrl,
       isPromotional: true,
