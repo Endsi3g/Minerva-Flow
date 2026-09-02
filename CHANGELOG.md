@@ -2,6 +2,37 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.24.0] - 2026-09-02
+
+### 📱 Portail client repensé en 4 onglets
+- Le portail client passe d'un long défilement à 4 onglets fixes en bas d'écran (Accueil, Commander, Récompenses, Profil) — inspiré des applications de fidélité que vos clients utilisent déjà tous les jours.
+- Le solde de points et le bouton « Commander maintenant » sont mis en évidence sur l'accueil ; un badge sur l'onglet Commander indique le nombre d'articles dans le panier.
+- La confirmation de commande et l'enregistrement du profil donnent maintenant un retour visuel immédiat.
+
+### 💚 Page Fidélisation : cartes séparées, structure simplifiée
+- Les 3 premières cartes de la page Clients ne sont plus coincées sur 3 colonnes — chacune respire sur sa propre ligne.
+- La carte de provenance géographique des clients est maintenant directement sur la page Clients plutôt que dans une sous-page à part.
+
+### 🌤️ Correctif cron quotidien (plan Vercel Hobby)
+- La synchronisation des alertes tournait plus d'une fois par jour, ce qui dépassait la limite du plan Vercel Hobby et bloquait le déploiement — remise à une fois par jour.
+
+## [v2.23.0] - 2026-08-25
+
+### 🔒 Cloisonnement des données par restaurant
+- Une clé API propre à un restaurant ne peut plus jamais lire ou modifier les données d'un autre restaurant sur le serveur MCP (`/api/mcp`, `/api/v1`) — faille corrigée et vérifiée en production.
+
+### 📞 Prospection Reach réparée
+- Le pipeline de relance automatisée (`audit_envoyé` → `relance_1` → `relance_2`) était bloqué en base depuis sa création — il fonctionne maintenant de bout en bout, et la relance automatique quotidienne est enfin active.
+
+### 🎁 Fidélisation
+- Les messages de parrainage envoyés par vos clients utilisent maintenant le vrai nom de votre restaurant, le Studio QR & Affiches respecte les couleurs de chaque thème visuel, et les affiches exportées embarquent une vraie métadonnée d'impression 300 DPI.
+
+### 📇 Suivi des prospects
+- Ajout d'un vrai champ « Nom du contact » sur chaque fiche prospect, visible et modifiable depuis le panneau opérateur.
+
+### 🔌 Outils API
+- Les outils de statut de commande/réservation et d'avis clients utilisaient de mauvaises valeurs et une mauvaise table — corrigés et re-testés en production.
+
 ## [v2.22.0] - 2026-08-24
 
 ### 🎯 Impact devient actionnable
