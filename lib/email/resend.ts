@@ -8,7 +8,12 @@ const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Minerva Flow <flow@minervaf
 const REPLY_TO = process.env.RESEND_REPLY_TO ?? "support@minervaflow.app";
 
 export { sendLifecycleEmail, processLifecycleEngine } from "./lifecycle";
-export { renderLifecycleEmail } from "./lifecycle-templates";
+export {
+  renderLifecycleEmail,
+  renderLoyaltyRetentionEmail,
+  renderWeeklyReportEmail,
+  renderSpecialOfferEmail,
+} from "./lifecycle-templates";
 
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
 

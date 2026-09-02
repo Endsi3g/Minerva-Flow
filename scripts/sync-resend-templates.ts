@@ -9,6 +9,9 @@ import {
   renderCaseStudyEmail,
   renderConversionEmail,
   renderReactivationEmail,
+  renderWeeklyReportEmail,
+  renderSpecialOfferEmail,
+  renderLoyaltyRetentionEmail,
 } from "../lib/email/lifecycle-templates";
 
 const apiKey = process.env.RESEND_API_KEY;
@@ -34,19 +37,19 @@ function getTransactionalShell(bodyHtml: string, ctaLabel: string, ctaUrl: strin
 <html lang="fr">
 <head><meta charset="utf-8" /></head>
 <body style="margin:0; padding:24px; background-color:#f5f1e6; font-family:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color:#1a1e16;">
-  <div style="max-width:500px; margin:0 auto; padding:38px 28px; background:#fffefa; border:1px solid #e6e0d0; border-radius:22px; box-shadow:0 8px 24px rgba(26, 30, 22, 0.05); text-align:center;">
-    <div style="margin-bottom:20px;">
-      <img src="https://minervaflow.app/icon-192.png" width="56" height="56" alt="Minerva Flow" style="display:inline-block; border-radius:15px; box-shadow:0 4px 14px rgba(22,127,91,0.20);" />
+  <div style="max-width:520px; margin:0 auto; padding:36px 28px; background:#fffefa; border:1px solid #e6e0d0; border-radius:20px; text-align:center;">
+    <div style="margin-bottom:18px;">
+      <img src="https://minervaflow.app/icon-192.png" width="54" height="54" alt="Minerva Flow" style="display:inline-block; border-radius:14px; border:0;" />
     </div>
-    <div style="font-size:14.5px; line-height:1.65; color:#4a5245; text-align:left; margin-bottom:24px;">
+    <div style="font-size:14px; line-height:1.65; color:#4a5245; text-align:left; margin-bottom:22px;">
       ${bodyHtml}
     </div>
-    <div style="margin:24px 0 10px; text-align:center;">
-      <a href="${ctaUrl}" style="display:inline-block; padding:13px 30px; background-color:#167f5b; color:#fffefa; text-decoration:none; border-radius:999px; font-size:14.5px; font-weight:700;">${ctaLabel} →</a>
+    <div style="margin:22px 0 10px; text-align:center;">
+      <a href="${ctaUrl}" style="display:inline-block; padding:12px 28px; background-color:#167f5b; color:#fffefa; text-decoration:none; border-radius:999px; font-size:14px; font-weight:600;">${ctaLabel} →</a>
     </div>
-    <p style="margin-top:28px; padding-top:18px; border-top:1px solid #eee9db; font-size:12px; line-height:1.5; color:#8d9488; text-align:center;">
+    <p style="margin-top:24px; padding-top:16px; border-top:1px solid #eee9db; font-size:11.5px; line-height:1.5; color:#8d9488; text-align:center;">
       Ce lien expire dans 7 jours. Si vous n'êtes pas à l'origine de cette demande, ignorez ce courriel.<br />
-      © 2026 Minerva Flow · Minerva Technologies Inc.
+      Minerva Flow · Minerva Technologies Inc. · Montréal (Québec), Canada
     </p>
   </div>
 </body>
@@ -61,52 +64,124 @@ interface TemplateDef {
 }
 
 async function syncTemplates() {
-  console.log("=== Synchronisation intégrale des Templates vers le Dashboard Resend ===");
+  console.log("=== Synchronisation intégrale des 13 Templates vers le Dashboard Resend ===");
 
   const welcomeHtmlPath = path.join(__dirname, "../emails/flow-bienvenue.html");
   let welcomeHtmlContent = "";
   try {
     welcomeHtmlContent = fs.readFileSync(welcomeHtmlPath, "utf-8");
   } catch {
-    welcomeHtmlContent = "<p>Bienvenue sur Minerva Flow</p>";
+    welcomeHtmlContent = renderWelcomeEmail(templateVariablesParams).html;
   }
 
   const templatesToSync: TemplateDef[] = [
     {
-      name: "Flow — 01. Bienvenue & Action",
-      subject: "Bienvenue sur Minerva Flow — Votre cockpit est prêt",
+      name: "Flow — 01. Bienvenue & Démarrage",
+      subject: "Bienvenue sur Minerva Flow",
       html: renderWelcomeEmail(templateVariablesParams).html,
       variables: [{ key: "RESTAURANT_NAME", type: "string", fallback: "votre établissement" }],
     },
     {
-      name: "Flow — 02. Première Activation J+1",
-      subject: "Maîtrisez votre Prime Cost dès votre premier service",
+      name: "Flow — 02. Suivi des Coûts J+1",
+      subject: "Suivre vos coûts de nourriture et de personnel",
       html: renderActivationEmail(templateVariablesParams).html,
+      variables: [{ key: "RESTAURANT_NAME", type: "string", fallback: "votre établissement" }],
     },
     {
-      name: "Flow — 03. Démo Marge & Flow AI J+3",
-      subject: "Votre copilote Flow AI : L'intelligence au service de vos marges",
+      name: "Flow — 03. Assistant & Marges J+3",
+      subject: "Poser une question sur vos ventes et vos marges",
       html: renderFeatureHighlightEmail(templateVariablesParams).html,
+      variables: [{ key: "RESTAURANT_NAME", type: "string", fallback: "votre établissement" }],
     },
     {
-      name: "Flow — 04. Aide & Diagnostic J+5",
-      subject: "Besoin d'un coup de pouce pour paramétrer votre espace ?",
+      name: "Flow — 04. Aide & Support J+5",
+      subject: "Besoin d'aide pour configurer votre compte ?",
       html: renderSupportCheckinEmail(templateVariablesParams).html,
+      variables: [{ key: "RESTAURANT_NAME", type: "string", fallback: "votre établissement" }],
     },
     {
-      name: "Flow — 05. Cas d'Usage & ROI J+7",
-      subject: "Du petit café au grand bistro : 6 études de cas concrètes",
+      name: "Flow — 05. Exemples Concrets J+7",
+      subject: "Comment 6 commerces d'ici utilisent Minerva Flow",
       html: renderCaseStudyEmail(templateVariablesParams).html,
+      variables: [{ key: "RESTAURANT_NAME", type: "string", fallback: "votre établissement" }],
     },
     {
-      name: "Flow — 06. Conversion Flow Pro J+10",
-      subject: "Passez au niveau supérieur avec Minerva Flow Pro",
+      name: "Flow — 06. Options Avancées J+10",
+      subject: "Les options avancées de Minerva Flow",
       html: renderConversionEmail(templateVariablesParams).html,
+      variables: [{ key: "RESTAURANT_NAME", type: "string", fallback: "votre établissement" }],
     },
     {
-      name: "Flow — 07. Réactivation Inactivité",
-      subject: "Votre cockpit Minerva Flow est toujours prêt pour le service",
+      name: "Flow — 07. Données de Service",
+      subject: "Vos données de service restent accessibles",
       html: renderReactivationEmail(templateVariablesParams).html,
+      variables: [{ key: "RESTAURANT_NAME", type: "string", fallback: "votre établissement" }],
+    },
+    {
+      name: "Flow — Rapport Hebdomadaire",
+      subject: "Rapport de la semaine : {{{RESTAURANT_NAME}}}",
+      html: renderWeeklyReportEmail({
+        firstName: "{{{FIRST_NAME}}}",
+        restaurantName: "{{{RESTAURANT_NAME}}}",
+        weekRange: "{{{WEEK_RANGE}}}",
+        totalSales: "{{{TOTAL_SALES}}}",
+        primeCostRatio: "{{{PRIME_COST_RATIO}}}",
+        foodCostRatio: "{{{FOOD_COST_RATIO}}}",
+        laborCostRatio: "{{{LABOR_COST_RATIO}}}",
+        totalHoursWorked: "{{{TOTAL_HOURS}}}",
+        comparisonPreviousWeek: "{{{COMPARISON}}}",
+        appUrl: APP_ORIGIN,
+      }).html,
+      variables: [
+        { key: "RESTAURANT_NAME", type: "string", fallback: "votre établissement" },
+        { key: "WEEK_RANGE", type: "string", fallback: "la semaine écoulée" },
+        { key: "TOTAL_SALES", type: "string", fallback: "14 820 $" },
+        { key: "PRIME_COST_RATIO", type: "string", fallback: "58,4 %" },
+        { key: "FOOD_COST_RATIO", type: "string", fallback: "29,6 %" },
+        { key: "LABOR_COST_RATIO", type: "string", fallback: "28,8 %" },
+        { key: "TOTAL_HOURS", type: "string", fallback: "246 h" },
+        { key: "COMPARISON", type: "string", fallback: "+3,2 % vs semaine précédente" },
+      ],
+    },
+    {
+      name: "Flow — Offre Spéciale & Forfaits",
+      subject: "Offre spéciale : 2 mois offerts sur l'abonnement annuel",
+      html: renderSpecialOfferEmail({
+        firstName: "{{{FIRST_NAME}}}",
+        restaurantName: "{{{RESTAURANT_NAME}}}",
+        discountSummary: "{{{DISCOUNT_SUMMARY}}}",
+        ctaUrl: `${APP_ORIGIN}/settings`,
+        appUrl: APP_ORIGIN,
+      }).html,
+      variables: [
+        { key: "RESTAURANT_NAME", type: "string", fallback: "votre établissement" },
+        { key: "DISCOUNT_SUMMARY", type: "string", fallback: "2 mois offerts sur l'abonnement annuel" },
+      ],
+    },
+    {
+      name: "Flow — Fidélisation Relance Client",
+      subject: "Vos points de fidélité vous attendent chez {{{RESTAURANT_NAME}}}",
+      html: renderLoyaltyRetentionEmail({
+        customerName: "{{{CUSTOMER_NAME}}}",
+        restaurantName: "{{{RESTAURANT_NAME}}}",
+        pointsBalance: "{{{POINTS_BALANCE}}}",
+        tierName: "{{{TIER_NAME}}}",
+        nextTierPoints: "{{{NEXT_TIER_POINTS}}}",
+        rewardTitle: "{{{REWARD_TITLE}}}",
+        retentionMessage: "{{{RETENTION_MESSAGE}}}",
+        portalUrl: "{{{PORTAL_URL}}}",
+        appUrl: APP_ORIGIN,
+      }).html,
+      variables: [
+        { key: "CUSTOMER_NAME", type: "string", fallback: "Cher client" },
+        { key: "RESTAURANT_NAME", type: "string", fallback: "votre restaurant favori" },
+        { key: "POINTS_BALANCE", type: "string", fallback: "85" },
+        { key: "TIER_NAME", type: "string", fallback: "Habitué" },
+        { key: "NEXT_TIER_POINTS", type: "string", fallback: "15" },
+        { key: "REWARD_TITLE", type: "string", fallback: "Boisson ou dessert offert à votre prochaine visite" },
+        { key: "RETENTION_MESSAGE", type: "string", fallback: "Merci pour votre fidélité ! Vos récompenses sont disponibles." },
+        { key: "PORTAL_URL", type: "string", fallback: `${APP_ORIGIN}/portal` },
+      ],
     },
     {
       name: "Flow — Invite Collaborateur",
@@ -137,67 +212,60 @@ async function syncTemplates() {
       ],
     },
     {
-      name: "Flow — Fidélisation Relance",
-      subject: "{{{RESTAURANT_NAME}}} : vos points de fidélité vous attendent",
-      html: getTransactionalShell(
-        `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">{{{RETENTION_MESSAGE}}}</p>`,
-        "Voir mes points",
-        `${APP_ORIGIN}/portal`
-      ),
-      variables: [
-        { key: "RESTAURANT_NAME", type: "string", fallback: "votre restaurant favori" },
-        { key: "RETENTION_MESSAGE", type: "string", fallback: "Vos récompenses exclusives sont disponibles." },
-      ],
-    },
-    {
       name: "Flow — Bienvenue Plateforme",
-      subject: "Bienvenue sur Minerva Flow — Votre plateforme de gestion",
+      subject: "Bienvenue sur Minerva Flow",
       html: welcomeHtmlContent,
     },
   ];
 
   // 1. Récupérer les templates existants sur Resend
   const { data: existingList } = await resend.templates.list();
-  const existingMap = new Map((existingList?.data ?? []).map((t) => [t.name, t.id]));
+  const existingTemplates = existingList?.data || [];
+  console.log(`Templates existants trouvés sur Resend: ${existingTemplates.length}`);
 
-  console.log(`Templates existants trouvés sur Resend: ${existingMap.size}`);
-
-  // 2. Nettoyer les anciens templates pour assurer un remplacement propre avec le nouveau design
-  for (const [name, id] of existingMap.entries()) {
-    try {
-      console.log(`🗑️ Remplacement de l'ancien template : "${name}" (${id})...`);
-      await resend.templates.remove(id);
-    } catch (err) {
-      console.warn(`Erreur lors de la suppression de "${name}":`, err);
+  // 2. Supprimer les anciens templates
+  for (const existing of existingTemplates) {
+    if (existing.name.startsWith("Flow —")) {
+      console.log(`🗑️ Remplacement de l'ancien template : "${existing.name}" (${existing.id})...`);
+      try {
+        await resend.templates.remove(existing.id);
+      } catch (err: any) {
+        console.warn(`Impossible de supprimer ${existing.name}:`, err?.message);
+      }
     }
   }
 
-  // 3. Créer chaque nouveau template haute couture
+  // 3. Créer les nouveaux templates enrichis
   for (const tpl of templatesToSync) {
     console.log(`➕ Publication du nouveau template : "${tpl.name}"...`);
-    const { data: created, error } = await resend.templates.create({
-      name: tpl.name,
-      subject: tpl.subject,
-      html: tpl.html,
-      variables: tpl.variables,
-    });
-
-    if (error) {
-      console.error(`❌ Échec création "${tpl.name}":`, error.message);
-    } else {
-      console.log(`✓ Créé avec succès : "${tpl.name}" (ID: ${created?.id})`);
+    try {
+      const payload: any = {
+        name: tpl.name,
+        subject: tpl.subject,
+        html: tpl.html,
+      };
+      if (tpl.variables && tpl.variables.length > 0) {
+        payload.variables = tpl.variables;
+      }
+      const res = await resend.templates.create(payload);
+      if (res.error) {
+        console.error(`❌ Erreur création "${tpl.name}":`, res.error);
+      } else {
+        console.log(`✓ Créé avec succès : "${tpl.name}" (ID: ${res.data?.id})`);
+      }
+    } catch (err: any) {
+      console.error(`❌ Exception création "${tpl.name}":`, err?.message);
     }
   }
 
   // 4. Liste finale
   const { data: finalList } = await resend.templates.list();
-  console.log(`\n📋 ${finalList?.data?.length ?? 0} templates présents dans votre Dashboard Resend :`);
-  console.log(finalList?.data?.map((t) => `  • ${t.name} (ID: ${t.id})`).join("\n"));
-
-  console.log("\n🎉 Tous les 11 templates luxueux sont maintenant publiés et visibles dans https://resend.com/templates !");
+  console.log(`\n📋 ${finalList?.data?.length || 0} templates présents dans votre Dashboard Resend :`);
+  finalList?.data?.forEach((t) => console.log(`  • ${t.name} (ID: ${t.id})`));
+  console.log("\n🎉 Tous les 13 templates enrichis sont maintenant publiés et visibles dans https://resend.com/templates !");
 }
 
-syncTemplates().catch((err) => {
-  console.error("Erreur générale :", err);
+syncTemplates().catch((e) => {
+  console.error("Erreur générale :", e);
   process.exit(1);
 });
