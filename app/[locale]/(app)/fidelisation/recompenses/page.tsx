@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { getLoyaltyRewards } from "@/lib/data/customers";
+import { getMenuItems } from "@/lib/data/menu";
 import { RecompensesView } from "./RecompensesView";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -10,9 +11,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RecompensesPage() {
   const restaurantId = await getCurrentRestaurantId();
-  const [restaurant, rewards] = restaurantId
-    ? await Promise.all([getRestaurant(restaurantId), getLoyaltyRewards(restaurantId)])
-    : [null, []];
+  const [restaurant, rewards, menuItems] = restaurantId
+    ? await Promise.all([getRestaurant(restaurantId), getLoyaltyRewards(restaurantId), getMenuItems(restaurantId)])
+    : [null, [], []];
 
   return (
     <RecompensesView
@@ -20,6 +21,7 @@ export default async function RecompensesPage() {
       initialEnabled={restaurant?.visitRewardsEnabled ?? false}
       initialTiers={restaurant?.visitRewardTiers ?? []}
       initialRewards={rewards}
+      menuItems={menuItems}
     />
   );
 }

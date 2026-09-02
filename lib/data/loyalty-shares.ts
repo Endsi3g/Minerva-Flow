@@ -102,6 +102,7 @@ export async function getLoyaltyShareByToken(token: string): Promise<PublicLoyal
       points_cost: number;
       active: boolean;
       created_at: string;
+      menu_item_id: string | null;
     }[]) ?? []
   ).map(mapReward);
 

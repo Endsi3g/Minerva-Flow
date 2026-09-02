@@ -17,7 +17,7 @@ import { notifyError } from "@/lib/notify-error";
 import { sendManualRetentionNudgeAction, shareImpactResultsAction } from "./actions";
 import type { LtvImpact } from "@/lib/engine/impact";
 import type { AtRiskCustomer } from "@/lib/data/impact";
-import { DollarSign, TrendingUp, Repeat, Users, Send, Clock, TrendingDown, Gift, Share2 } from "lucide-react";
+import { DollarSign, TrendingUp, Repeat, Users, Send, Clock, TrendingDown, Gift, Share2, UtensilsCrossed, ArrowRight } from "lucide-react";
 
 const triggerLabel: Record<AtRiskCustomer["trigger"], string> = {
   inactivity: "N'est pas revenu depuis un moment",
@@ -109,12 +109,18 @@ export function ImpactView({
         </Card>
 
         <Card className="flex items-center gap-4">
-          <RadialGauge
-            value={impact.activeMarginPct}
-            color="var(--mv-green)"
-            centerValue={`${impact.activeMarginPct.toFixed(0)}%`}
-            centerLabel="marge"
-          />
+          {impact.hasMenuMarginData ? (
+            <RadialGauge
+              value={impact.activeMarginPct}
+              color="var(--mv-green)"
+              centerValue={`${impact.activeMarginPct.toFixed(0)}%`}
+              centerLabel="marge"
+            />
+          ) : (
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-mv-cream-soft text-mv-ink-faint">
+              <UtensilsCrossed size={22} />
+            </span>
+          )}
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               <TrendingUp size={13} /> Marge du menu actif
@@ -122,10 +128,17 @@ export function ImpactView({
             <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
               Marge de ce qui est au menu aujourd&apos;hui — retirez un plat à faible marge pour voir ce chiffre bouger.
             </p>
-            <p className="mt-1 text-[12px] text-mv-ink-soft">
-              {impact.marginGainPct >= 0 ? "+" : ""}
-              {impact.marginGainPct.toFixed(1)} pt vs le menu complet (plats retirés inclus)
-            </p>
+            {impact.hasMenuMarginData ? (
+              <p className="mt-1 text-[12px] text-mv-ink-soft">
+                {impact.marginGainPct >= 0 ? "+" : ""}
+                {impact.marginGainPct.toFixed(1)} pt vs le menu complet (plats retirés inclus)
+              </p>
+            ) : (
+              <Link href="/menu" className="mt-1 flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark">
+                Ajoutez vos plats et leur coût pour voir votre marge
+                <ArrowRight size={12} />
+              </Link>
+            )}
           </div>
         </Card>
 

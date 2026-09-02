@@ -4,6 +4,7 @@ import { getCustomersForUser, getPortalData } from "@/lib/data/customer-portal";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { getActiveMenuItemsForCustomers } from "@/lib/data/menu";
 import { getActiveOffersForCustomers } from "@/lib/data/offers";
+import { isAppleWalletConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config";
 import { LogoMark } from "@/components/shell/Logo";
 import { PortalView } from "./PortalView";
 import { NoCustomerFoundActions } from "./NoCustomerFound";
@@ -101,6 +102,8 @@ export default async function PortalPage({
       taxRate={restaurant?.taxRate ?? 0.14975}
       acceptsTips={restaurant?.acceptsTips ?? false}
       restaurantName={restaurant?.name ?? null}
+      appleWalletEnabled={isAppleWalletConfigured()}
+      googleWalletEnabled={isGoogleWalletConfigured()}
     />
   );
 }

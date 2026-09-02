@@ -75,13 +75,28 @@ export async function computeReferralRoiMetrics(restaurantId: string): Promise<R
       .select("id, referral_program_id, customer_id, clicks, converted_count, reward_claimed_at")
       .in("referral_program_id", programIds),
     rewardIds.length > 0
-      ? supabase.from("loyalty_rewards").select("id, points_cost").in("id", rewardIds)
-      : Promise.resolve({ data: [] as { id: string; points_cost: number }[] }),
+      ? supabase.from("loyalty_rewards").select("id, points_cost, menu_item_id").in("id", rewardIds)
+      : Promise.resolve({ data: [] as { id: string; points_cost: number; menu_item_id: string | null }[] }),
   ]);
 
   const links = (linkRows as { id: string; referral_program_id: string; customer_id: string; clicks: number; converted_count: number; reward_claimed_at: string | null }[]) ?? [];
-  const rewardPointsById = new Map(((rewardRows as { id: string; points_cost: number }[]) ?? []).map((r) => [r.id, r.points_cost]));
+  const rewardRowsTyped = (rewardRows as { id: string; points_cost: number; menu_item_id: string | null }[]) ?? [];
+  const rewardById = new Map(rewardRowsTyped.map((r) => [r.id, r]));
   const programById = new Map(programs.map((p) => [p.id, p]));
+
+  // A milestone reward that gives away a real menu item carries its actual
+  // food cost — pulled straight from the menu, not guessed via the
+  // points-per-dollar rate, so its ROI impact is exact rather than estimated.
+  const linkedMenuItemIds = Array.from(
+    new Set(rewardRowsTyped.map((r) => r.menu_item_id).filter((id): id is string => Boolean(id)))
+  );
+  const { data: linkedMenuItemRows } =
+    linkedMenuItemIds.length > 0
+      ? await supabase.from("menu_items").select("id, food_cost").in("id", linkedMenuItemIds)
+      : { data: [] as { id: string; food_cost: number }[] };
+  const foodCostByMenuItemId = new Map(
+    ((linkedMenuItemRows as { id: string; food_cost: number }[]) ?? []).map((m) => [m.id, m.food_cost])
+  );
 
   const totalClicks = links.reduce((sum, l) => sum + (l.clicks || 0), 0);
   const totalConversions = links.reduce((sum, l) => sum + (l.converted_count || 0), 0);
@@ -104,20 +119,29 @@ export async function computeReferralRoiMetrics(restaurantId: string): Promise<R
   const totalRevenueGenerated = Math.round((orderRevenue + unlinkedConversions * realAverageOrderValue) * 100) / 100;
 
   // Real reward cost: what each program actually pays out — the referrer +
-  // new-customer bonus points per conversion, plus the milestone reward's
-  // points_cost on each claim — converted to dollars at this restaurant's
-  // own points-per-dollar rate, not a flat guess shared by every restaurant.
-  let rawRewardsCost = 0;
+  // new-customer bonus points per conversion, plus the milestone reward on
+  // each claim. A milestone reward linked to a real menu item contributes
+  // its actual food cost in dollars; everything else (bonus points, an
+  // unlinked reward's points_cost) is converted at this restaurant's own
+  // points-per-dollar rate, not a flat guess shared by every restaurant.
+  let rawRewardsPoints = 0;
+  let realRewardDollarCost = 0;
   for (const link of links) {
     const program = programById.get(link.referral_program_id);
     if (!program) continue;
     const perConversionPoints = (program.referrer_bonus_points || 0) + (program.new_customer_bonus_points || 0);
-    rawRewardsCost += (link.converted_count || 0) * perConversionPoints;
-    if (link.reward_claimed_at) {
-      rawRewardsCost += (program.reward_id ? rewardPointsById.get(program.reward_id) : 0) || 0;
+    rawRewardsPoints += (link.converted_count || 0) * perConversionPoints;
+    if (link.reward_claimed_at && program.reward_id) {
+      const reward = rewardById.get(program.reward_id);
+      const linkedFoodCost = reward?.menu_item_id ? foodCostByMenuItemId.get(reward.menu_item_id) : undefined;
+      if (linkedFoodCost !== undefined) {
+        realRewardDollarCost += linkedFoodCost;
+      } else {
+        rawRewardsPoints += reward?.points_cost || 0;
+      }
     }
   }
-  const estimatedRewardsCost = Math.round((rawRewardsCost / pointsPerDollar) * 100) / 100;
+  const estimatedRewardsCost = Math.round((rawRewardsPoints / pointsPerDollar + realRewardDollarCost) * 100) / 100;
 
   const netProfitGenerated = Math.round((totalRevenueGenerated - estimatedRewardsCost) * 100) / 100;
   // No cost basis to divide by means no multiplier to report — not a fabricated placeholder.

@@ -386,6 +386,7 @@ type LoyaltyRewardRow = {
   points_cost: number;
   active: boolean;
   created_at: string;
+  menu_item_id: string | null;
 };
 
 export function mapReward(row: LoyaltyRewardRow): LoyaltyReward {
@@ -397,6 +398,7 @@ export function mapReward(row: LoyaltyRewardRow): LoyaltyReward {
     pointsCost: row.points_cost,
     active: row.active,
     createdAt: row.created_at,
+    menuItemId: row.menu_item_id,
   };
 }
 
@@ -414,7 +416,7 @@ export async function getLoyaltyRewards(restaurantId: string): Promise<LoyaltyRe
 
 export async function createLoyaltyReward(
   restaurantId: string,
-  input: { name: string; description?: string; pointsCost: number }
+  input: { name: string; description?: string; pointsCost: number; menuItemId?: string | null }
 ): Promise<LoyaltyReward | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -424,6 +426,7 @@ export async function createLoyaltyReward(
       name: input.name,
       description: input.description || null,
       points_cost: input.pointsCost,
+      menu_item_id: input.menuItemId || null,
     })
     .select("*")
     .single();

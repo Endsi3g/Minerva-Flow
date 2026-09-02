@@ -22,6 +22,7 @@ import {
 } from "@/lib/data/referral-programs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCachedCityCoordinates, geocodeCityIfMissing, type CityCoordinates } from "@/lib/data/city-geocodes";
 import {
   getLoyaltySharesForRestaurant,
   createLoyaltyShare,
@@ -68,7 +69,7 @@ export async function redeemRewardAction(
 
 export async function createLoyaltyRewardAction(
   restaurantId: string,
-  input: { name: string; description?: string; pointsCost: number }
+  input: { name: string; description?: string; pointsCost: number; menuItemId?: string | null }
 ): Promise<LoyaltyReward | null> {
   if (!input.name.trim() || !Number.isFinite(input.pointsCost) || input.pointsCost <= 0) return null;
   const reward = await createLoyaltyReward(restaurantId, input);
@@ -250,4 +251,13 @@ export async function grantBirthdayBonusAction(
 
   revalidatePath("/fidelisation");
   return mapCustomer(data, []);
+}
+
+export async function getCachedCityCoordinatesAction(cities: string[]): Promise<Record<string, CityCoordinates>> {
+  return getCachedCityCoordinates(cities);
+}
+
+/** Geocodes one city at a time from the client — mirrors the /maps lazy-backfill pattern. */
+export async function geocodeCityIfMissingAction(city: string): Promise<CityCoordinates | null> {
+  return geocodeCityIfMissing(city);
 }

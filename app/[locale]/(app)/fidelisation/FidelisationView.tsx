@@ -15,7 +15,10 @@ import { type LoyaltyTierThresholds, getLoyaltyTier } from "@/lib/loyalty-tiers"
 import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
 import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
 import { TablePagination } from "@/components/minerva/TablePagination";
-import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download } from "lucide-react";
+import { CustomerOriginMap } from "@/components/fidelisation/CustomerOriginMap";
+import { getCustomerOriginByCity } from "@/lib/customer-origin";
+import { Link } from "@/i18n/navigation";
+import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download, ArrowRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -183,20 +186,7 @@ function RewardValidationCard({ restaurantId }: { restaurantId: string }) {
  * live, not just where headcount is highest.
  */
 function CustomerOriginCard({ customers }: { customers: Customer[] }) {
-  const byCity = useMemo(() => {
-    const map = new Map<string, { city: string; customerCount: number; visits: number; spent: number }>();
-    for (const c of customers) {
-      const raw = c.city?.trim();
-      if (!raw) continue;
-      const key = raw.toLowerCase();
-      const entry = map.get(key) ?? { city: raw, customerCount: 0, visits: 0, spent: 0 };
-      entry.customerCount += 1;
-      entry.visits += c.visitCount;
-      entry.spent += c.totalSpent;
-      map.set(key, entry);
-    }
-    return Array.from(map.values()).sort((a, b) => b.visits - a.visits);
-  }, [customers]);
+  const byCity = useMemo(() => getCustomerOriginByCity(customers), [customers]);
 
   const withCity = customers.filter((c) => c.city?.trim()).length;
   const maxVisits = Math.max(1, ...byCity.map((c) => c.visits));
@@ -211,6 +201,16 @@ function CustomerOriginCard({ customers }: { customers: Customer[] }) {
             ? `${withCity} client${withCity > 1 ? "s ont" : " a"} indiqué sa ville — classé par visites cumulées.`
             : "Aucun client n'a encore indiqué sa ville — ça se remplit dès qu'un client le fait depuis son portail."
         }
+        action={
+          byCity.length > 0 && (
+            <Link
+              href="/fidelisation/geographie"
+              className="flex items-center gap-1 text-[12.5px] font-semibold text-mv-green-dark hover:underline"
+            >
+              Voir la carte complète <ArrowRight size={12} />
+            </Link>
+          )
+        }
       />
       {byCity.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-6 text-center">
@@ -221,29 +221,28 @@ function CustomerOriginCard({ customers }: { customers: Customer[] }) {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {byCity.slice(0, 8).map((c) => (
-            <div key={c.city} className="relative overflow-hidden rounded-lg bg-mv-cream-soft p-2.5">
-              <div
-                className="absolute inset-y-0 left-0 bg-mv-green/10"
-                style={{ width: `${Math.max(6, (c.visits / maxVisits) * 100)}%` }}
-              />
-              <div className="relative flex items-center justify-between gap-3">
-                <span className="flex items-center gap-1.5 text-[13px] font-medium text-mv-ink">
-                  <MapPin size={13} className="text-mv-green-dark" /> {c.city}
-                </span>
-                <span className="flex shrink-0 items-center gap-3 text-[12px] text-mv-ink-soft">
-                  <span>
-                    {c.customerCount} client{c.customerCount > 1 ? "s" : ""}
+        <div className="space-y-3">
+          <div className="h-36 overflow-hidden rounded-xl">
+            <CustomerOriginMap cities={byCity} maxGeocode={6} />
+          </div>
+          <div className="space-y-1.5">
+            {byCity.slice(0, 3).map((c) => (
+              <div key={c.city} className="relative overflow-hidden rounded-lg bg-mv-cream-soft p-2">
+                <div
+                  className="absolute inset-y-0 left-0 bg-mv-green/10"
+                  style={{ width: `${Math.max(6, (c.visits / maxVisits) * 100)}%` }}
+                />
+                <div className="relative flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-1.5 truncate text-[12.5px] font-medium text-mv-ink">
+                    <MapPin size={12} className="shrink-0 text-mv-green-dark" /> {c.city}
                   </span>
-                  <span className="font-semibold text-mv-ink">
+                  <span className="shrink-0 text-[11.5px] font-semibold text-mv-ink-soft">
                     {c.visits} visite{c.visits > 1 ? "s" : ""}
                   </span>
-                  <span>{formatCurrency(c.spent)}</span>
-                </span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </Card>

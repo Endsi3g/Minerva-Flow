@@ -1,4 +1,4 @@
-import { getMenuShareByToken } from "@/lib/data/menu-shares";
+import { getMenuShareByToken, getSiblingLocationsForPublicMenu } from "@/lib/data/menu-shares";
 import { getActiveOffersForRestaurant } from "@/lib/data/offers";
 import { getActiveReferralProgramForRestaurant } from "@/lib/data/referral-programs";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -30,9 +30,10 @@ export default async function PublicMenuPage({
   const [landing, authResult] = await Promise.all([getMenuShareByToken(token), supabase.auth.getUser()]);
   if (!landing) notFound();
   const user = authResult.data.user;
-  const [offers, shareProgram] = await Promise.all([
+  const [offers, shareProgram, siblingLocations] = await Promise.all([
     getActiveOffersForRestaurant(landing.restaurantId),
     getActiveReferralProgramForRestaurant(landing.restaurantId),
+    getSiblingLocationsForPublicMenu(landing.restaurantId),
   ]);
 
   return (
@@ -43,6 +44,7 @@ export default async function PublicMenuPage({
       offers={offers}
       authenticated={Boolean(user)}
       shareProgramId={shareProgram?.id ?? null}
+      siblingLocations={siblingLocations}
     />
   );
 }

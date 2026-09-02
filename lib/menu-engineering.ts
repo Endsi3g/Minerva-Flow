@@ -38,7 +38,9 @@ export function getMarginDriftItems(items: MenuItemWithQuadrant[]): MenuItemWith
  * "before/after" a specific date, so this compares acted-on vs not-acted-on
  * items instead — same segmentation spirit as getIncrementalRetentionRevenue.
  */
-export function getMenuMarginImpact(items: MenuItem[]): { activeMarginPct: number; allMarginPct: number; gainPct: number } {
+export function getMenuMarginImpact(
+  items: MenuItem[]
+): { activeMarginPct: number; allMarginPct: number; gainPct: number; hasData: boolean } {
   function weightedAvgMarginPct(list: MenuItem[]): number {
     let weightedSum = 0;
     let totalWeight = 0;
@@ -55,10 +57,16 @@ export function getMenuMarginImpact(items: MenuItem[]): { activeMarginPct: numbe
   const activeMarginPct = weightedAvgMarginPct(activeItems);
   const allMarginPct = weightedAvgMarginPct(items);
 
+  // Distinguishes "we computed a real 0% margin" from "there's nothing to
+  // compute yet" — an empty or cost-less menu produces the same 0s as a
+  // menu that's genuinely break-even, and the two need different UI.
+  const hasData = activeItems.some((i) => i.price > 0);
+
   return {
     activeMarginPct: Math.round(activeMarginPct * 1000) / 10,
     allMarginPct: Math.round(allMarginPct * 1000) / 10,
     gainPct: Math.round((activeMarginPct - allMarginPct) * 1000) / 10,
+    hasData,
   };
 }
 

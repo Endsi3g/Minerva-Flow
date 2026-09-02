@@ -36,19 +36,29 @@ const walletTierBg: Record<LoyaltyTier, string> = {
 };
 
 function LoyaltyWalletCard({
+  customerId,
   points,
   visitCount,
   totalSpent,
   thresholds,
+  appleWalletEnabled,
+  googleWalletEnabled,
 }: {
+  customerId: string;
   points: number;
   visitCount: number;
   totalSpent: number;
   thresholds: LoyaltyTierThresholds;
+  appleWalletEnabled: boolean;
+  googleWalletEnabled: boolean;
 }) {
   const t = useTranslations("portal.view");
   const tier = getLoyaltyTier(totalSpent, thresholds);
   const { icon: Icon } = loyaltyTierBadge[tier];
+
+  function handleUnavailableWallet(platform: string) {
+    toast.info(`Ajout à ${platform} bientôt disponible — le restaurant doit d'abord l'activer.`);
+  }
 
   const prevTarget = tier === "ambassadeur" ? thresholds.tier3 : tier === "privilegie" ? thresholds.tier2 : 0;
   const nextTarget = tier === "habitue" ? thresholds.tier2 : tier === "privilegie" ? thresholds.tier3 : null;
@@ -82,6 +92,41 @@ function LoyaltyWalletCard({
           {visitCount} {t("visits").toLowerCase()}
         </span>
         <span>{formatCurrency(totalSpent)}</span>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2 border-t border-white/15 pt-3">
+        {googleWalletEnabled ? (
+          <a
+            href={`/api/wallet/google?customerId=${customerId}`}
+            className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11.5px] font-semibold transition-colors hover:bg-white/25"
+          >
+            <Smartphone size={13} /> Ajouter à Google Wallet
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={() => handleUnavailableWallet("Google Wallet")}
+            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11.5px] font-semibold opacity-70 transition-colors hover:opacity-90"
+          >
+            <Smartphone size={13} /> Ajouter à Google Wallet
+          </button>
+        )}
+        {appleWalletEnabled ? (
+          <a
+            href={`/api/wallet/apple?customerId=${customerId}`}
+            className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11.5px] font-semibold transition-colors hover:bg-white/25"
+          >
+            <Smartphone size={13} /> Ajouter à Apple Wallet
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={() => handleUnavailableWallet("Apple Wallet")}
+            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11.5px] font-semibold opacity-70 transition-colors hover:opacity-90"
+          >
+            <Smartphone size={13} /> Ajouter à Apple Wallet
+          </button>
+        )}
       </div>
     </div>
   );
@@ -699,6 +744,8 @@ export function PortalView({
   taxRate,
   acceptsTips,
   restaurantName,
+  appleWalletEnabled,
+  googleWalletEnabled,
 }: {
   customer: Customer;
   data: PortalData;
@@ -708,6 +755,8 @@ export function PortalView({
   taxRate: number;
   acceptsTips: boolean;
   restaurantName?: string | null;
+  appleWalletEnabled: boolean;
+  googleWalletEnabled: boolean;
 }) {
   const t = useTranslations("portal.view");
   const [programs, setPrograms] = useState<PortalReferralProgress[]>(data.programs);
@@ -753,10 +802,13 @@ export function PortalView({
         </h1>
 
         <LoyaltyWalletCard
+          customerId={customer.id}
           points={points}
           visitCount={customer.visitCount}
           totalSpent={customer.totalSpent}
           thresholds={loyaltyTierThresholds}
+          appleWalletEnabled={appleWalletEnabled}
+          googleWalletEnabled={googleWalletEnabled}
         />
 
         <MenuBrowserCard

@@ -197,15 +197,21 @@ export function OverviewClientView({
           </button>
 
           <button
-            onClick={() => router.push("/impact")}
+            onClick={() => router.push(ltvImpact.hasMenuMarginData ? "/impact" : "/menu")}
             className="group flex items-center gap-4 rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
           >
-            <RadialGauge
-              value={ltvImpact.activeMarginPct}
-              color="var(--mv-green)"
-              centerValue={`${ltvImpact.activeMarginPct.toFixed(0)}%`}
-              centerLabel="de marge"
-            />
+            {ltvImpact.hasMenuMarginData ? (
+              <RadialGauge
+                value={ltvImpact.activeMarginPct}
+                color="var(--mv-green)"
+                centerValue={`${ltvImpact.activeMarginPct.toFixed(0)}%`}
+                centerLabel="de marge"
+              />
+            ) : (
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-mv-cream-soft text-mv-ink-faint">
+                <UtensilsCrossed size={22} />
+              </span>
+            )}
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                 <TrendingUp size={13} /> Marge du menu actif
@@ -213,14 +219,23 @@ export function OverviewClientView({
               <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
                 Marge de ce qui est au menu aujourd&apos;hui, vs le menu complet (plats retirés inclus).
               </p>
-              <p className="mt-1 font-display text-[19px] font-medium text-mv-ink">
-                {ltvImpact.marginGainPct >= 0 ? "+" : ""}
-                {ltvImpact.marginGainPct.toFixed(1)} pt
-              </p>
-              <p className="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark">
-                Voir le détail
-                <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
-              </p>
+              {ltvImpact.hasMenuMarginData ? (
+                <>
+                  <p className="mt-1 font-display text-[19px] font-medium text-mv-ink">
+                    {ltvImpact.marginGainPct >= 0 ? "+" : ""}
+                    {ltvImpact.marginGainPct.toFixed(1)} pt
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark">
+                    Voir le détail
+                    <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                  </p>
+                </>
+              ) : (
+                <p className="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark">
+                  Ajoutez vos plats et leur coût pour voir votre marge
+                  <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                </p>
+              )}
             </div>
           </button>
 

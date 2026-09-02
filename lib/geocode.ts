@@ -33,3 +33,8 @@ export async function geocodeAddress(
     return null;
   }
 }
+
+/** City-level geocoding — no street address, just "city, Canada". */
+export async function geocodeCity(city: string): Promise<{ lng: number; lat: number } | null> {
+  return geocodeAddress("", city, undefined);
+}

@@ -6,35 +6,41 @@ import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
-import { Field, Input } from "@/components/minerva/FormField";
+import { Field, Input, Select } from "@/components/minerva/FormField";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
-import { Bell, Store, AlertTriangle, Plus, Trash2 } from "lucide-react";
+import { Bell, Store, AlertTriangle, Plus, Trash2, UtensilsCrossed } from "lucide-react";
 import { loyaltyTierOrder, loyaltyTierBadge } from "@/lib/loyalty-tiers";
-import { cn } from "@/lib/utils";
-import type { LoyaltyReward, VisitRewardTier } from "@/lib/types";
+import { cn, formatCurrency } from "@/lib/utils";
+import type { LoyaltyReward, MenuItem, VisitRewardTier } from "@/lib/types";
 import { updateVisitRewardTiersAction, createLoyaltyRewardAction, deleteLoyaltyRewardAction } from "../actions";
 import { notifyError } from "@/lib/notify-error";
 
 function RewardsCatalogCard({
   restaurantId,
   initialRewards,
+  menuItems,
 }: {
   restaurantId: string;
   initialRewards: LoyaltyReward[];
+  menuItems: MenuItem[];
 }) {
   const [rewards, setRewards] = useState(initialRewards);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const menuItemById = useMemo(() => new Map(menuItems.map((m) => [m.id, m])), [menuItems]);
+  const activeMenuItems = useMemo(() => menuItems.filter((m) => m.active), [menuItems]);
 
   async function handleAdd(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const menuItemId = String(form.get("menuItemId") ?? "");
     setIsSubmitting(true);
     try {
       const reward = await createLoyaltyRewardAction(restaurantId, {
         name: String(form.get("name") ?? ""),
         description: String(form.get("description") ?? "") || undefined,
         pointsCost: Number(form.get("pointsCost") ?? 0),
+        menuItemId: menuItemId || null,
       });
       if (reward) {
         setRewards((prev) => [...prev, reward].sort((a, b) => a.pointsCost - b.pointsCost));
@@ -62,24 +68,34 @@ function RewardsCatalogCard({
       />
       <div className="mb-3 space-y-1.5">
         {rewards.length === 0 && <p className="text-[12.5px] text-mv-ink-faint">Aucune récompense configurée.</p>}
-        {rewards.map((r) => (
-          <div key={r.id} className="flex items-start justify-between gap-3 rounded-lg border border-mv-border-soft px-3 py-2">
-            <div className="min-w-0">
-              <span className="text-[13px] font-medium text-mv-ink">{r.name}</span>
-              {r.description && <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">{r.description}</p>}
+        {rewards.map((r) => {
+          const linkedItem = r.menuItemId ? menuItemById.get(r.menuItemId) : undefined;
+          return (
+            <div key={r.id} className="flex items-start justify-between gap-3 rounded-lg border border-mv-border-soft px-3 py-2">
+              <div className="min-w-0">
+                <span className="text-[13px] font-medium text-mv-ink">{r.name}</span>
+                {r.description && <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">{r.description}</p>}
+                {linkedItem ? (
+                  <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-mv-green-dark">
+                    <UtensilsCrossed size={11} /> {linkedItem.name} — coût réel {formatCurrency(linkedItem.foodCost)}
+                  </p>
+                ) : r.menuItemId ? (
+                  <p className="mt-0.5 text-[11.5px] text-mv-amber">Plat lié introuvable (retiré du menu ?)</p>
+                ) : null}
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <Badge tone="neutral">{r.pointsCost} pts</Badge>
+                <button
+                  onClick={() => handleDelete(r.id, r.name)}
+                  aria-label="Retirer la récompense"
+                  className="text-mv-ink-faint transition-colors hover:text-mv-red"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Badge tone="neutral">{r.pointsCost} pts</Badge>
-              <button
-                onClick={() => handleDelete(r.id, r.name)}
-                aria-label="Retirer la récompense"
-                className="text-mv-ink-faint transition-colors hover:text-mv-red"
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <form onSubmit={handleAdd} className="space-y-2 border-t border-mv-border-soft pt-3">
         <div className="flex flex-wrap items-end gap-2">
@@ -96,6 +112,19 @@ function RewardsCatalogCard({
         <Field label="Description (optionnel)">
           <Input name="description" placeholder="Ex : Tout format, toute la journée" className="w-full" />
         </Field>
+        <Field
+          label="Plat offert (optionnel)"
+          hint="Reliez cette récompense à un item du menu pour en suivre le coût réel plutôt qu'une estimation."
+        >
+          <Select name="menuItemId" defaultValue="" className="w-full max-w-sm">
+            <option value="">Aucun — récompense sans plat lié (rabais, points bonus...)</option>
+            {activeMenuItems.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name} — coût {formatCurrency(item.foodCost)}
+              </option>
+            ))}
+          </Select>
+        </Field>
       </form>
     </Card>
   );
@@ -106,11 +135,13 @@ export function RecompensesView({
   initialEnabled,
   initialTiers,
   initialRewards,
+  menuItems,
 }: {
   restaurantId: string | null;
   initialEnabled: boolean;
   initialTiers: VisitRewardTier[];
   initialRewards: LoyaltyReward[];
+  menuItems: MenuItem[];
 }) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [tiers, setTiers] = useState(initialTiers);
@@ -211,6 +242,39 @@ export function RecompensesView({
           <AlertTriangle size={14} className="shrink-0" />
           Corrigez les champs en rouge ci-dessous — vos changements ne sont pas encore enregistrés.
         </div>
+      )}
+
+      {sortedTiers.length > 0 && (
+        <Card className="mb-5">
+          <p className="mb-5 text-[11px] font-bold uppercase tracking-wide text-mv-ink-faint">
+            Échelle des paliers — visite n° → récompense
+          </p>
+          <div className="relative pb-7 pt-1">
+            <div className="absolute left-0 right-0 top-3 h-1 rounded-full bg-mv-border" />
+            {sortedTiers.map((tier, i) => {
+              const toneKey = loyaltyTierOrder[i] ?? loyaltyTierOrder[loyaltyTierOrder.length - 1];
+              const { tone, icon: Icon } = loyaltyTierBadge[toneKey];
+              const leftPct = maxVisits > 0 ? Math.min(100, (tier.visits / maxVisits) * 100) : 0;
+              return (
+                <div
+                  key={tier.id}
+                  className="absolute top-0 flex -translate-x-1/2 flex-col items-center"
+                  style={{ left: `${leftPct}%` }}
+                >
+                  <Badge tone={tone} size="xs" className="mb-1.5 h-7 w-7 shrink-0 justify-center rounded-full p-0">
+                    <Icon size={13} strokeWidth={2.2} />
+                  </Badge>
+                  <span className="whitespace-nowrap text-[11px] font-semibold text-mv-ink">
+                    {tier.visits} visite{tier.visits > 1 ? "s" : ""}
+                  </span>
+                  <span className="mt-0.5 max-w-[110px] truncate text-[10.5px] text-mv-ink-faint" title={tier.reward || tier.label}>
+                    {tier.reward || tier.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -325,7 +389,7 @@ export function RecompensesView({
       </div>
 
       <div className="mt-6">
-        <RewardsCatalogCard restaurantId={restaurantId} initialRewards={initialRewards} />
+        <RewardsCatalogCard restaurantId={restaurantId} initialRewards={initialRewards} menuItems={menuItems} />
       </div>
     </div>
   );

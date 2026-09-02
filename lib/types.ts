@@ -579,6 +579,10 @@ export type LoyaltyReward = {
   pointsCost: number;
   active: boolean;
   createdAt: string;
+  /** When set, this reward gives away this specific menu item — its real
+   * cost (menu_items.foodCost) is used instead of a flat points-to-dollar
+   * guess wherever reward cost is computed (e.g. referral ROI). */
+  menuItemId: string | null;
 };
 
 export type RewardRedemptionStatus = "pending" | "claimed";
