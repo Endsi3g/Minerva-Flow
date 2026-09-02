@@ -46,7 +46,7 @@ export function ReferralSettingsTab() {
     getReferralsListAction(restaurantId).then(setReferrals);
   }, [restaurantId]);
 
-  const link = code ? `${process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app"}/sign-up?ref=${code}` : null;
+  const link = code ? `${process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app"}/sign-up?ref=${code}` : null;
 
   function copyLink() {
     if (!link) return;

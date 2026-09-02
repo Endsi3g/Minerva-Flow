@@ -29,7 +29,7 @@ export async function joinLoyaltyProgramAction(
   const { ok } = await joinLoyaltyProgram(landing.restaurantId, input);
   if (!ok) return { ok: false, error: "Une erreur est survenue." };
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app";
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
   const admin = createAdminClient();
   const { error } = await admin.auth.signInWithOtp({
     email: input.email.trim(),

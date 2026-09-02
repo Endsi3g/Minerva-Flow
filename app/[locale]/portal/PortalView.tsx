@@ -261,7 +261,7 @@ function ReferralProgramCard({
 
   const shareUrl = typeof window !== "undefined"
     ? `${window.location.origin}/p/${link?.code}`
-    : `https://minerva-flow.vercel.app/p/${link?.code}`;
+    : `https://minervaflow.app/p/${link?.code}`;
 
   const shareText = `Je t'invite chez ${restaurantName || "notre restaurant"} ! Utilise mon lien pour découvrir la carte et recevoir ton cadeau de bienvenue : ${shareUrl}`;
 

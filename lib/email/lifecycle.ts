@@ -10,7 +10,7 @@ import {
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Minerva Flow <flow@minervaflow.app>";
 const REPLY_TO = process.env.RESEND_REPLY_TO ?? "support@minervaflow.app";
-const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app";
+const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
 
 /**
  * Envoie un email spécifique de la séquence lifecycle à un utilisateur

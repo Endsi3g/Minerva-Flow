@@ -10,7 +10,7 @@ const REPLY_TO = process.env.RESEND_REPLY_TO ?? "support@minervaflow.app";
 export { sendLifecycleEmail, processLifecycleEngine } from "./lifecycle";
 export { renderLifecycleEmail } from "./lifecycle-templates";
 
-const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app";
+const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
 
 function emailShell(bodyHtml: string, ctaLabel: string, ctaUrl: string): string {
   return `

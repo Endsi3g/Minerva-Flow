@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin/"],
       },
     ],
-    sitemap: "https://minerva-flow.vercel.app/sitemap.xml",
+    sitemap: `${process.env.NEXT_PUBLIC_APP_URL || "https://minervaflow.app"}/sitemap.xml`,
   };
 }

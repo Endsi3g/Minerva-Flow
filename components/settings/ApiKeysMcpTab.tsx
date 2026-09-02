@@ -81,7 +81,7 @@ export function ApiKeysMcpTab() {
     };
   }, [restaurantId, selectedTool]);
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://minerva-flow.vercel.app";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://minervaflow.app";
   const mcpUrl = `${origin}/api/mcp`;
   const openApiUrl = `${origin}/api/openapi.json`;
   const activeKeyPlaceholder = keys.find((k) => !k.revoked)?.keyPrefix || "votre_cle_mcp_ici";

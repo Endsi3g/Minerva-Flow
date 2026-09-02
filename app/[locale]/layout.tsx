@@ -75,17 +75,17 @@ export async function generateMetadata({
       "IA Restauration",
       "Gestion d'équipe restaurant",
     ],
-    authors: [{ name: "Minerva Flow Team", url: "https://minerva-flow.vercel.app" }],
+    authors: [{ name: "Minerva Flow Team", url: "https://minervaflow.app" }],
     creator: "Minerva Flow",
     publisher: "Minerva Flow Inc.",
     manifest: "/manifest.webmanifest",
-    metadataBase: new URL("https://minerva-flow.vercel.app"),
+    metadataBase: new URL("https://minervaflow.app"),
     alternates: {
-      canonical: `https://minerva-flow.vercel.app/${locale}`,
+      canonical: `https://minervaflow.app/${locale}`,
       languages: {
-        "fr-CA": "https://minerva-flow.vercel.app/fr",
-        "fr-FR": "https://minerva-flow.vercel.app/fr",
-        "tr-TR": "https://minerva-flow.vercel.app/tr",
+        "fr-CA": "https://minervaflow.app/fr",
+        "fr-FR": "https://minervaflow.app/fr",
+        "tr-TR": "https://minervaflow.app/tr",
       },
     },
     icons: {
@@ -101,11 +101,11 @@ export async function generateMetadata({
       siteName: "Minerva Flow",
       title,
       description,
-      url: `https://minerva-flow.vercel.app/${locale}`,
+      url: `https://minervaflow.app/${locale}`,
       locale: ogLocale,
       images: [
         {
-          url: "https://minerva-flow.vercel.app/icon-512.png",
+          url: "https://minervaflow.app/icon-512.png",
           width: 512,
           height: 512,
           alt: "Minerva Flow — Système de Gestion de Restaurant Intelligente",
@@ -116,14 +116,14 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: ["https://minerva-flow.vercel.app/icon-512.png"],
+      images: ["https://minervaflow.app/icon-512.png"],
       creator: "@MinervaFlow",
     },
     other: {
       "geo.region": "CA-QC",
       "geo.placename": "Montréal",
       "geo.position": "45.5017;-73.5673",
-      ICBM: "45.5017, -73.5673",
+      "geo.country": "CA",
     },
   };
 }
@@ -165,7 +165,7 @@ export default async function LocaleLayout({
     author: {
       "@type": "Organization",
       name: "Minerva Flow",
-      url: "https://minerva-flow.vercel.app",
+      url: "https://minervaflow.app",
     },
   };
 

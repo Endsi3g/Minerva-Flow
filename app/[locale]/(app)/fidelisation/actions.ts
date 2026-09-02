@@ -150,7 +150,7 @@ export async function sendPortalLinkAction(
   if (!customer) return { ok: false, error: "Client introuvable." };
   if (!customer.email) return { ok: false, error: `${customer.name} n'a pas de courriel enregistré.` };
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app";
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
   const admin = createAdminClient();
   const { error } = await admin.auth.signInWithOtp({
     email: customer.email,

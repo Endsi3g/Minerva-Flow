@@ -4,7 +4,7 @@ import { MCP_TOOLS_CATALOG } from "@/lib/mcp/tools-registry";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
-  const origin = req.nextUrl.origin || "https://minerva-flow.vercel.app";
+  const origin = req.nextUrl.origin || "https://minervaflow.app";
 
   const paths: Record<string, unknown> = {};
 
@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
         "API complète et token-efficient pour la gestion de restaurants, fidélisation, parrainage viral et prospection autonome (25 outils connectés en direct à Supabase).",
       contact: {
         name: "Minerva Flow Support",
-        url: "https://minerva-flow.vercel.app",
+        url: "https://minervaflow.app",
       },
     },
     servers: [
@@ -133,8 +133,8 @@ export async function GET(req: NextRequest) {
         description: "Serveur actif Minerva Flow",
       },
       {
-        url: "https://minerva-flow.vercel.app",
-        description: "Production Vercel",
+        url: "https://minervaflow.app",
+        description: "Production Minerva Flow",
       },
     ],
     security: [
