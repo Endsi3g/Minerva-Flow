@@ -53,7 +53,7 @@ function emailLayout({
               <td style="background-color:#FAFAF5; border:1px solid #E6E0D0; border-radius:18px; padding:36px 36px 32px; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
                 ${contentHtml}
                 <div style="margin-top:32px; text-align:center;">
-                  <a href="${ctaUrl}" style="display:inline-block; padding:14px 28px; background-color:#059669; color:#FAFAF5; text-decoration:none; border-radius:10px; font-size:14.5px; font-weight:600; box-shadow:0 2px 6px rgba(5,150,105,0.25);">
+                  <a href="${ctaUrl}" style="display:inline-block; padding:14px 28px; background-color:#167F5B; color:#FAFAF5; text-decoration:none; border-radius:999px; font-size:14.5px; font-weight:700;">
                     ${escapeHtml(ctaText)} →
                   </a>
                 </div>

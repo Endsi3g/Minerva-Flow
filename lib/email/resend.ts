@@ -25,7 +25,7 @@ function emailShell(bodyHtml: string, ctaLabel: string, ctaUrl: string): string 
       ${bodyHtml}
     </div>
     <div style="margin:24px 0 10px; text-align:center;">
-      <a href="${ctaUrl}" style="display:inline-block; padding:13px 30px; background-color:#167f5b; color:#fffefa; text-decoration:none; border-radius:999px; font-size:14.5px; font-weight:700; box-shadow:0 4px 14px rgba(22, 127, 91, 0.28);">${ctaLabel} →</a>
+      <a href="${ctaUrl}" style="display:inline-block; padding:13px 30px; background-color:#167f5b; color:#fffefa; text-decoration:none; border-radius:999px; font-size:14.5px; font-weight:700;">${ctaLabel} →</a>
     </div>
     <p style="margin-top:28px; padding-top:18px; border-top:1px solid #eee9db; font-size:12px; line-height:1.5; color:#8d9488; text-align:center;">
       Ce lien expire dans 7 jours. Si vous n'êtes pas à l'origine de cette demande, ignorez ce courriel.<br />

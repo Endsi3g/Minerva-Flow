@@ -154,11 +154,11 @@ function luxuryShell({
                   : ""
               }
 
-              <!-- Bouton d'Action Arrondi Signature (Pill Button Centré) -->
+              <!-- Bouton d'Action Arrondi Signature (Pill Button Centré - Sans effet glow) -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0 24px;">
                 <tr>
                   <td align="center">
-                    <a href="${ctaUrl}" class="cta-button" style="display: inline-block; padding: 14px 34px; background-color: #167F5B; background-image: linear-gradient(180deg, #198c64 0%, #167f5b 100%); color: #FFFEFA; text-decoration: none; border-radius: 999px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; box-shadow: 0 4px 16px rgba(22, 127, 91, 0.32);">
+                    <a href="${ctaUrl}" class="cta-button" style="display: inline-block; padding: 14px 34px; background-color: #167F5B; color: #FFFEFA; text-decoration: none; border-radius: 999px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em;">
                       ${safeCtaText} →
                     </a>
                   </td>
