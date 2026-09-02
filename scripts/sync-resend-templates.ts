@@ -33,12 +33,20 @@ function getTransactionalShell(bodyHtml: string, ctaLabel: string, ctaUrl: strin
   return `<!doctype html>
 <html lang="fr">
 <head><meta charset="utf-8" /></head>
-<body style="margin:0; padding:24px; background-color:#f5f1e6; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:#1a1e16;">
-  <div style="max-width:480px; margin:0 auto; padding:32px 24px; background:#fafaf5; border:1px solid #e6e0d0; border-radius:16px;">
-    <p style="font-size:16px; font-weight:700; color:#1a1e16; margin:0 0 20px;">Flow <span style="color:#167f5b;">par Minerva</span></p>
-    ${bodyHtml}
-    <a href="${ctaUrl}" style="display:inline-block; margin-top:20px; padding:12px 24px; background:#167f5b; color:#fffefa; text-decoration:none; border-radius:8px; font-size:14px; font-weight:600;">${ctaLabel} →</a>
-    <p style="margin-top:24px; font-size:12px; color:#8d9488;">Ce lien expire dans 7 jours. Si vous n'êtes pas à l'origine de cette demande, ignorez ce courriel.</p>
+<body style="margin:0; padding:24px; background-color:#f5f1e6; font-family:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color:#1a1e16;">
+  <div style="max-width:500px; margin:0 auto; padding:36px 28px; background:#fffefa; border:1px solid #e6e0d0; border-radius:18px; box-shadow:0 6px 20px rgba(26, 30, 22, 0.04);">
+    <p style="font-family:'New York', Georgia, serif; font-size:20px; font-weight:700; color:#1a1e16; margin:0 0 20px; letter-spacing:-0.02em;">
+      Minerva <span style="color:#167f5b;">Flow</span>
+    </p>
+    <div style="font-size:14.5px; line-height:1.65; color:#4a5245;">
+      ${bodyHtml}
+    </div>
+    <div style="margin-top:24px;">
+      <a href="${ctaUrl}" style="display:inline-block; padding:12px 24px; background-color:#167f5b; color:#fffefa; text-decoration:none; border-radius:10px; font-size:14px; font-weight:700; box-shadow:0 3px 10px rgba(22, 127, 91, 0.28);">${ctaLabel} →</a>
+    </div>
+    <p style="margin-top:28px; padding-top:18px; border-top:1px solid #eee9db; font-size:12px; line-height:1.5; color:#8d9488;">
+      Ce lien expire dans 7 jours. Si vous n'êtes pas à l'origine de cette demande, ignorez ce courriel.
+    </p>
   </div>
 </body>
 </html>`;
@@ -59,44 +67,44 @@ async function syncTemplates() {
   try {
     welcomeHtmlContent = fs.readFileSync(welcomeHtmlPath, "utf-8");
   } catch {
-    welcomeHtmlContent = "<p>Bienvenue sur Flow par Minerva</p>";
+    welcomeHtmlContent = "<p>Bienvenue sur Minerva Flow</p>";
   }
 
   const templatesToSync: TemplateDef[] = [
     {
       name: "Flow — 01. Bienvenue & Action",
-      subject: "Bienvenue sur Flow par Minerva — commençons",
+      subject: "Bienvenue sur Minerva Flow — Votre cockpit est prêt",
       html: renderWelcomeEmail(templateVariablesParams).html,
       variables: [{ key: "RESTAURANT_NAME", type: "string", fallback: "votre établissement" }],
     },
     {
       name: "Flow — 02. Première Activation J+1",
-      subject: "Faites votre première saisie en 2 minutes",
+      subject: "Maîtrisez votre Prime Cost dès votre premier service",
       html: renderActivationEmail(templateVariablesParams).html,
     },
     {
       name: "Flow — 03. Démo Marge & Flow AI J+3",
-      subject: "Comment Flow vous aide à maîtriser votre marge réelle",
+      subject: "Votre copilote Flow AI : L'intelligence au service de vos marges",
       html: renderFeatureHighlightEmail(templateVariablesParams).html,
     },
     {
       name: "Flow — 04. Aide & Diagnostic J+5",
-      subject: "Besoin d'aide pour configurer votre espace Flow ?",
+      subject: "Besoin d'un coup de pouce pour paramétrer votre espace ?",
       html: renderSupportCheckinEmail(templateVariablesParams).html,
     },
     {
       name: "Flow — 05. Cas d'Usage & ROI J+7",
-      subject: "Comment un restaurateur gagne 4h par semaine avec Flow",
+      subject: "Comment un restaurant québécois gagne 4.5 heures chaque semaine",
       html: renderCaseStudyEmail(templateVariablesParams).html,
     },
     {
       name: "Flow — 06. Conversion Flow Pro J+10",
-      subject: "Passez à la vitesse supérieure avec Flow Pro",
+      subject: "Passez au niveau supérieur avec Minerva Flow Pro",
       html: renderConversionEmail(templateVariablesParams).html,
     },
     {
       name: "Flow — 07. Réactivation Inactivité",
-      subject: "Votre espace Flow par Minerva est toujours prêt",
+      subject: "Votre cockpit Minerva Flow est toujours prêt pour le service",
       html: renderReactivationEmail(templateVariablesParams).html,
     },
     {
@@ -142,56 +150,50 @@ async function syncTemplates() {
     },
     {
       name: "Flow — Bienvenue Plateforme",
-      subject: "Bienvenue sur Flow par Minerva — Votre plateforme de gestion",
+      subject: "Bienvenue sur Minerva Flow — Votre plateforme de gestion",
       html: welcomeHtmlContent,
     },
   ];
 
+  // 1. Récupérer les templates existants sur Resend
   const { data: existingList } = await resend.templates.list();
   const existingMap = new Map((existingList?.data ?? []).map((t) => [t.name, t.id]));
 
-  for (const tpl of templatesToSync) {
-    const existingId = existingMap.get(tpl.name);
-    if (existingId) {
-      console.log(`⚡ Mise à jour du template : "${tpl.name}" (${existingId})...`);
-      try {
-        const { error } = await resend.templates.update({
-          id: existingId,
-          name: tpl.name,
-          subject: tpl.subject,
-          html: tpl.html,
-          variables: tpl.variables,
-        });
-        if (error) {
-          console.warn(`❌ Erreur mise à jour "${tpl.name}":`, error.message);
-        } else {
-          console.log(`✓ Mis à jour avec succès : "${tpl.name}"`);
-        }
-      } catch (err) {
-        console.warn(`Erreur API pour "${tpl.name}":`, err);
-      }
-    } else {
-      console.log(`➕ Création du template : "${tpl.name}"...`);
-      const { data: created, error } = await resend.templates.create({
-        name: tpl.name,
-        subject: tpl.subject,
-        html: tpl.html,
-        variables: tpl.variables,
-      });
+  console.log(`Templates existants trouvés sur Resend: ${existingMap.size}`);
 
-      if (error) {
-        console.error(`❌ Échec création "${tpl.name}":`, error.message);
-      } else {
-        console.log(`✓ Créé avec succès : "${tpl.name}" (ID: ${created?.id})`);
-      }
+  // 2. Nettoyer les anciens templates pour assurer un remplacement propre avec le nouveau design
+  for (const [name, id] of existingMap.entries()) {
+    try {
+      console.log(`🗑️ Remplacement de l'ancien template : "${name}" (${id})...`);
+      await resend.templates.remove(id);
+    } catch (err) {
+      console.warn(`Erreur lors de la suppression de "${name}":`, err);
     }
   }
 
+  // 3. Créer chaque nouveau template haute couture
+  for (const tpl of templatesToSync) {
+    console.log(`➕ Publication du nouveau template : "${tpl.name}"...`);
+    const { data: created, error } = await resend.templates.create({
+      name: tpl.name,
+      subject: tpl.subject,
+      html: tpl.html,
+      variables: tpl.variables,
+    });
+
+    if (error) {
+      console.error(`❌ Échec création "${tpl.name}":`, error.message);
+    } else {
+      console.log(`✓ Créé avec succès : "${tpl.name}" (ID: ${created?.id})`);
+    }
+  }
+
+  // 4. Liste finale
   const { data: finalList } = await resend.templates.list();
   console.log(`\n📋 ${finalList?.data?.length ?? 0} templates présents dans votre Dashboard Resend :`);
   console.log(finalList?.data?.map((t) => `  • ${t.name} (ID: ${t.id})`).join("\n"));
 
-  console.log("\n🎉 Tous les 11 templates sont maintenant publiés et visibles dans https://resend.com/templates !");
+  console.log("\n🎉 Tous les 11 templates luxueux sont maintenant publiés et visibles dans https://resend.com/templates !");
 }
 
 syncTemplates().catch((err) => {

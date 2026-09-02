@@ -13,14 +13,26 @@ export { renderLifecycleEmail } from "./lifecycle-templates";
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
 
 function emailShell(bodyHtml: string, ctaLabel: string, ctaUrl: string): string {
-  return `
-    <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
-      <p style="font-size: 15px; font-weight: 600; color: #1a2e22; margin: 0 0 24px;">Flow <span style="color: #2f6f4f;">par Minerva</span></p>
+  return `<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8" /></head>
+<body style="margin:0; padding:24px; background-color:#f5f1e6; font-family:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color:#1a1e16;">
+  <div style="max-width:500px; margin:0 auto; padding:36px 28px; background:#fffefa; border:1px solid #e6e0d0; border-radius:18px; box-shadow:0 6px 20px rgba(26, 30, 22, 0.04);">
+    <p style="font-family:'New York', Georgia, serif; font-size:20px; font-weight:700; color:#1a1e16; margin:0 0 20px; letter-spacing:-0.02em;">
+      Minerva <span style="color:#167f5b;">Flow</span>
+    </p>
+    <div style="font-size:14.5px; line-height:1.65; color:#4a5245;">
       ${bodyHtml}
-      <a href="${ctaUrl}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #1a4d33; color: #fff; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;">${ctaLabel}</a>
-      <p style="margin-top: 24px; font-size: 12px; color: #8a8578;">Ce lien expire dans 7 jours. Si vous n'êtes pas à l'origine de cette invitation, ignorez ce courriel.</p>
     </div>
-  `;
+    <div style="margin-top:24px;">
+      <a href="${ctaUrl}" style="display:inline-block; padding:12px 24px; background-color:#167f5b; color:#fffefa; text-decoration:none; border-radius:10px; font-size:14px; font-weight:700; box-shadow:0 3px 10px rgba(22, 127, 91, 0.28);">${ctaLabel} →</a>
+    </div>
+    <p style="margin-top:28px; padding-top:18px; border-top:1px solid #eee9db; font-size:12px; line-height:1.5; color:#8d9488;">
+      Ce lien expire dans 7 jours. Si vous n'êtes pas à l'origine de cette demande, ignorez ce courriel.
+    </p>
+  </div>
+</body>
+</html>`;
 }
 
 /**
@@ -183,7 +195,7 @@ function campaignEmailHtml({
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
             <tr>
               <td style="padding:0 8px 24px;">
-                <span style="font-size:16px; font-weight:700; color:#1a1e16; letter-spacing:-0.01em;">Flow <span style="color:#167f5b;">par Minerva</span></span>
+                <span style="font-family:'New York', Georgia, serif; font-size:20px; font-weight:700; color:#1a1e16; letter-spacing:-0.02em;">Minerva <span style="color:#167f5b;">Flow</span></span>
               </td>
             </tr>
             <tr>

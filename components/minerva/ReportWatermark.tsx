@@ -9,7 +9,7 @@ export function ReportWatermark() {
       >
         {tiles.map((_, i) => (
           <span key={i} className="whitespace-nowrap font-display text-[13px] font-semibold text-mv-ink/[0.07]">
-            FLOW PAR MINERVA
+            MINERVA FLOW
           </span>
         ))}
       </div>

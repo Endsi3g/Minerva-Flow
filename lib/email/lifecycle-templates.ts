@@ -1,4 +1,3 @@
-
 export type LifecycleStep =
   | "welcome"
   | "activation"
@@ -33,38 +32,50 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * Shell email responsive & optimisé conforme à la LCAP (Loi canadienne antipourriel)
- * Charte visuelle : Minerva Flow (#167F5B vert sauge profond, #FBF9F3 fond crème doux, #1A1E16 texte sombre)
+ * Shell Email Haute Couture & Éditorial — Minerva Flow
+ * Typographie : New York / Playfair Display (Titres & Chiffres) + Plus Jakarta Sans (Corps)
+ * Palette : Fond papier crème #F5F1E6, Carte surface #FFFEFA, Vert Émeraude #167F5B, Forêt #0E5A40, Encre #1A1E16, Doré #AB7D1F
  */
-function baseShell({
+function luxuryShell({
   title,
   preheader,
   badgeText,
+  badgeTone = "green",
   contentHtml,
   ctaText,
   ctaUrl,
   appUrl,
+  secondaryStatsHtml,
   isPromotional = false,
 }: {
   title: string;
   preheader: string;
   badgeText: string;
+  badgeTone?: "green" | "gold" | "lime";
   contentHtml: string;
   ctaText: string;
   ctaUrl: string;
   appUrl: string;
+  secondaryStatsHtml?: string;
   isPromotional?: boolean;
 }): string {
   const safePreheader = escapeHtml(preheader);
   const safeTitle = escapeHtml(title);
   const safeCtaText = escapeHtml(ctaText);
 
+  const badgeStyles = {
+    green: "background-color: #DCECE3; color: #0E5A40; border: 1px solid #B8DCC8;",
+    gold: "background-color: #F6EFD9; color: #8A6414; border: 1px solid #E5D6A7;",
+    lime: "background-color: #DFFF5F; color: #0A4531; border: 1px solid #C4E83E;",
+  }[badgeTone];
+
   return `<!doctype html>
-<html lang="fr">
+<html lang="fr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
   <title>${safeTitle}</title>
   <!--[if mso]>
   <noscript>
@@ -76,39 +87,54 @@ function baseShell({
   </noscript>
   <![endif]-->
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: #F5F1E6 !important;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+      -webkit-font-smoothing: antialiased;
+      color: #1A1E16;
+    }
+    .font-serif {
+      font-family: 'New York', 'Playfair Display', Georgia, serif !important;
+    }
     @media screen and (max-width: 600px) {
-      .email-wrap { width: 100% !important; max-width: 100% !important; }
-      .card-pad { padding: 24px 18px !important; }
-      .cta-btn { display: block !important; width: 100% !important; text-align: center !important; }
+      .email-container { width: 100% !important; max-width: 100% !important; }
+      .content-cell { padding: 28px 18px 24px !important; }
+      .stat-col { display: block !important; width: 100% !important; margin-bottom: 12px !important; }
+      .stack-row { display: block !important; width: 100% !important; }
+      .cta-button { display: block !important; width: 100% !important; text-align: center !important; }
     }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #F5F1E6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #1A1E16;">
+<body style="margin: 0; padding: 0; background-color: #F5F1E6;">
   
-  <!-- Preheader -->
+  <!-- Preheader invisible -->
   <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; font-size: 1px; line-height: 1px; color: #F5F1E6;">
     ${safePreheader}
   </div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F5F1E6;">
     <tr>
-      <td align="center" style="padding: 36px 14px 48px;">
+      <td align="center" style="padding: 40px 14px 50px;">
         
-        <table role="presentation" class="email-wrap" width="580" cellpadding="0" cellspacing="0" border="0" style="width: 580px; max-width: 580px; margin: 0 auto;">
+        <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; margin: 0 auto;">
           
-          <!-- Header Logo -->
+          <!-- En-tête supérieur de marque -->
           <tr>
-            <td style="padding: 0 6px 20px;">
+            <td style="padding: 0 8px 24px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td>
-                    <span style="font-size: 18px; font-weight: 800; color: #1A1E16; letter-spacing: -0.02em;">
-                      Flow <span style="color: #167F5B;">par Minerva</span>
+                    <span class="font-serif" style="font-size: 22px; font-weight: 700; color: #1A1E16; letter-spacing: -0.02em;">
+                      Minerva <span style="color: #167F5B;">Flow</span>
                     </span>
                   </td>
                   <td align="right">
-                    <span style="font-size: 11.5px; font-weight: 600; color: #565F52; background-color: #EEE9DB; padding: 4px 10px; border-radius: 999px; display: inline-block;">
-                      Québec, CA
+                    <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #565F52; background-color: #EEE9DB; padding: 5px 12px; border-radius: 999px; display: inline-block;">
+                      Cockpit Restauration
                     </span>
                   </td>
                 </tr>
@@ -116,66 +142,74 @@ function baseShell({
             </td>
           </tr>
 
-          <!-- Main Card -->
+          <!-- Carte Principale Haute Définition -->
           <tr>
-            <td class="card-pad" style="background-color: #FAFAF5; border: 1px solid #E6E0D0; border-radius: 16px; padding: 36px 32px 32px; box-shadow: 0 4px 12px rgba(26, 30, 22, 0.03);">
+            <td class="content-cell" style="background-color: #FFFEFA; border: 1px solid #E6E0D0; border-radius: 20px; padding: 40px 36px 36px; box-shadow: 0 8px 24px rgba(26, 30, 22, 0.04);">
               
-              <!-- Category Badge -->
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 18px;">
+              <!-- Badge de catégorie stylisé -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 22px;">
                 <tr>
-                  <td style="background-color: #DCECE3; color: #0E5A40; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px;">
+                  <td style="${badgeStyles} font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px;">
                     ✦ ${escapeHtml(badgeText)}
                   </td>
                 </tr>
               </table>
 
-              <!-- Main Title -->
-              <h1 style="margin: 0 0 16px; font-size: 22px; line-height: 1.35; font-weight: 700; color: #1A1E16; letter-spacing: -0.01em;">
+              <!-- Titre Héroïque Serif -->
+              <h1 class="font-serif" style="margin: 0 0 18px; font-size: 26px; line-height: 1.3; font-weight: 700; color: #1A1E16; letter-spacing: -0.02em;">
                 ${safeTitle}
               </h1>
 
-              <!-- Dynamic Body Content -->
-              <div style="font-size: 14.5px; line-height: 1.65; color: #4A5245;">
+              <!-- Corps Dynamique & Riche -->
+              <div style="font-size: 15px; line-height: 1.68; color: #4A5245;">
                 ${contentHtml}
               </div>
 
-              <!-- Single Primary Call-to-Action -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 28px 0 16px;">
+              <!-- Bloc KPI / Statistiques Optionnel -->
+              ${
+                secondaryStatsHtml
+                  ? `<div style="margin: 28px 0 24px;">${secondaryStatsHtml}</div>`
+                  : ""
+              }
+
+              <!-- Bouton d'Action Primaire Signature -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0 20px;">
                 <tr>
                   <td align="left">
-                    <a href="${ctaUrl}" class="cta-btn" style="display: inline-block; padding: 13px 26px; background-color: #167F5B; color: #FAFAF5; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 2px 6px rgba(22, 127, 91, 0.25);">
+                    <a href="${ctaUrl}" class="cta-button" style="display: inline-block; padding: 14px 30px; background-color: #167F5B; background-image: linear-gradient(180deg, #188a63 0%, #167f5b 100%); color: #FFFEFA; text-decoration: none; border-radius: 12px; font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; box-shadow: 0 4px 14px rgba(22, 127, 91, 0.32);">
                       ${safeCtaText} →
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <!-- Sign-off -->
-              <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid #EEE9DB; font-size: 13.5px; line-height: 1.5; color: #6F786B;">
-                <p style="margin: 0 0 4px;">À votre disposition,</p>
-                <p style="margin: 0; font-weight: 600; color: #1A1E16;">L'équipe Minerva Flow</p>
+              <!-- Signature Éditoriale -->
+              <div style="margin-top: 32px; padding-top: 22px; border-top: 1px solid #EEE9DB; font-size: 13.5px; line-height: 1.55; color: #6F786B;">
+                <p style="margin: 0 0 4px;">Avec toute notre rigueur,</p>
+                <p style="margin: 0; font-weight: 700; color: #1A1E16;">L'équipe Minerva Flow</p>
+                <p style="margin: 2px 0 0; font-size: 12px; color: #8D9488;">Plateforme d'exploitation et d'intelligence financière pour restaurants</p>
               </div>
 
             </td>
           </tr>
 
-          <!-- LCAP / CASL Compliant Footer -->
+          <!-- Pied de page LCAP Canada -->
           <tr>
-            <td style="padding: 24px 8px 0; text-align: center; font-size: 12px; line-height: 1.6; color: #8D9488;">
+            <td style="padding: 28px 10px 0; text-align: center; font-size: 12px; line-height: 1.65; color: #8D9488;">
               <p style="margin: 0 0 6px;">
-                <strong>Flow par Minerva</strong> · Minerva Technologies Inc.
+                <strong style="color: #565F52;">Minerva Flow</strong> · Minerva Technologies Inc.
               </p>
               <p style="margin: 0 0 10px;">
-                Montréal (Québec), Canada · Conçu pour les restaurateurs et cafetiers d'ici
+                Montréal (Québec), Canada · Le standard d'excellence opérationnelle en restauration
               </p>
               <p style="margin: 0;">
                 ${
                   isPromotional
-                    ? `<a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color: #8D9488; text-decoration: underline;">Se désabonner des communications</a> · `
+                    ? `<a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color: #8D9488; text-decoration: underline;">Se désabonner de ces annonces</a> · `
                     : ""
                 }
-                <a href="${appUrl}" style="color: #8D9488; text-decoration: underline;">Accéder à l'application</a> · 
-                <a href="mailto:support@minervaflow.app" style="color: #8D9488; text-decoration: underline;">Support & aide</a>
+                <a href="${appUrl}" style="color: #8D9488; text-decoration: underline;">Ouvrir l'application</a> · 
+                <a href="mailto:support@minervaflow.app" style="color: #8D9488; text-decoration: underline;">Contacter le support</a>
               </p>
             </td>
           </tr>
@@ -190,44 +224,99 @@ function baseShell({
 }
 
 /**
- * 1. BIENVENUE (Immédiat)
- * Objectif : Confirmer l'inscription + lancer la 1ère action (configurer le restaurant / première journée)
+ * 1. BIENVENUE (Immédiat) — Confirmation & Décollage opérationnel
  */
 export function renderWelcomeEmail(params: LifecycleTemplateParams): EmailRenderOutput {
   const name = params.firstName ? escapeHtml(params.firstName) : "bonjour";
   const restaurant = params.restaurantName ? ` pour <strong>${escapeHtml(params.restaurantName)}</strong>` : "";
   const ctaUrl = `${params.appUrl}/onboarding`;
 
-  const title = "Bienvenue sur Flow par Minerva — commençons";
-  const preheader = "Votre compte Flow est prêt. Lancez votre première action en moins de 3 minutes.";
+  const title = "Bienvenue sur Minerva Flow — Votre cockpit est prêt";
+  const preheader = "Vos ratios financiers, vos clôtures de caisse et votre équipe centralisés en un seul endroit.";
 
   const contentHtml = `
-    <p style="margin: 0 0 14px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 16px;">
-      Bienvenue sur <strong>Flow par Minerva</strong> ! Votre espace de pilotage opérationnel${restaurant} est officiellement créé. Vous pouvez désormais centraliser vos ventes, vos ratios de rentabilité et votre équipe, sans tableurs complexes ni pertes de temps.
+    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
+    <p style="margin: 0 0 18px;">
+      Votre espace <strong>Minerva Flow</strong>${restaurant} est officiellement déployé. Vous disposez désormais d'un standard d'excellence conçu sur-mesure pour les restaurateurs, cafés et groupes d'ici.
     </p>
-    <p style="margin: 0 0 12px; font-weight: 600; color: #1A1E16;">Pour bien démarrer dès aujourd'hui :</p>
-    <ol style="margin: 0 0 18px; padding-left: 20px; line-height: 1.7;">
-      <li>Complétez les informations de votre établissement (adresse et horaires).</li>
-      <li>Ajoutez vos premiers postes ou invitez vos collaborateurs.</li>
-      <li>Enregistrez votre première journée ou synchronisez votre POS.</li>
-    </ol>
+
+    <!-- Carte des 3 étapes d'initialisation -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #FBF9F3; border: 1px solid #E6E0D0; border-radius: 14px; margin: 22px 0 20px;">
+      <tr>
+        <td style="padding: 22px 20px;">
+          <p class="font-serif" style="margin: 0 0 16px; font-size: 16px; font-weight: 700; color: #167F5B;">
+            🚀 Vos 3 actions prioritaires :
+          </p>
+          
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td valign="top" width="28" style="padding-bottom: 14px;">
+                <span style="display: inline-block; width: 22px; height: 22px; background-color: #167F5B; color: #FFFEFA; border-radius: 50%; text-align: center; font-size: 12px; font-weight: 700; line-height: 22px;">1</span>
+              </td>
+              <td style="padding-bottom: 14px; font-size: 14px; line-height: 1.55; color: #1A1E16;">
+                <strong>Configuration de l'établissement</strong> — Confirmez votre adresse civique, vos heures de service et vos taxes.
+              </td>
+            </tr>
+            <tr>
+              <td valign="top" width="28" style="padding-bottom: 14px;">
+                <span style="display: inline-block; width: 22px; height: 22px; background-color: #167F5B; color: #FFFEFA; border-radius: 50%; text-align: center; font-size: 12px; font-weight: 700; line-height: 22px;">2</span>
+              </td>
+              <td style="padding-bottom: 14px; font-size: 14px; line-height: 1.55; color: #1A1E16;">
+                <strong>Synchronisation de votre caisse (POS)</strong> — Connectez Square, Lightspeed ou Stripe pour automatiser l'import de vos ventes.
+              </td>
+            </tr>
+            <tr>
+              <td valign="top" width="28">
+                <span style="display: inline-block; width: 22px; height: 22px; background-color: #167F5B; color: #FFFEFA; border-radius: 50%; text-align: center; font-size: 12px; font-weight: 700; line-height: 22px;">3</span>
+              </td>
+              <td style="font-size: 14px; line-height: 1.55; color: #1A1E16;">
+                <strong>Ajout de l'équipe</strong> — Invitez vos gérants et chefs de cuisine pour la gestion des quarts et des coûts salariaux.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
     <p style="margin: 0 0 6px;">
-      Si vous avez la moindre question, répondez directement à ce courriel : notre équipe est là pour vous accompagner.
+      Notre équipe à Montréal est à vos côtés. Pour toute question, répondez directement à ce message.
     </p>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nBienvenue sur Flow par Minerva ! Votre compte est prêt.\n\nPour commencer :\n1. Complétez votre profil d'établissement\n2. Invitez votre équipe\n3. Saisissez votre première journée\n\nCommencez ici : ${ctaUrl}\n\nL'équipe Minerva Flow`;
+  const secondaryStatsHtml = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
+          <span class="font-serif" style="font-size: 20px; font-weight: 700; color: #167F5B; display: block;">2 min</span>
+          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Temps de clôture</span>
+        </td>
+        <td width="2%"></td>
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
+          <span class="font-serif" style="font-size: 20px; font-weight: 700; color: #167F5B; display: block;">100%</span>
+          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Ratios en temps réel</span>
+        </td>
+        <td width="2%"></td>
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
+          <span class="font-serif" style="font-size: 20px; font-weight: 700; color: #167F5B; display: block;">24/7</span>
+          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Assistant Flow AI</span>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  const text = `Bonjour ${params.firstName ?? ""},\n\nBienvenue sur Minerva Flow ! Votre espace de gestion est prêt.\n\nPour démarrer :\n1. Configurez votre établissement\n2. Connectez votre caisse (Square/Lightspeed/Stripe)\n3. Invitez votre équipe\n\nAccédez à votre cockpit : ${ctaUrl}\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
     preheader,
-    html: baseShell({
+    html: luxuryShell({
       title,
       preheader,
-      badgeText: "Bienvenue sur Flow",
+      badgeText: "Décollage Opérationnel",
+      badgeTone: "green",
       contentHtml,
-      ctaText: "Configurer mon établissement",
+      secondaryStatsHtml,
+      ctaText: "Accéder à mon espace Minerva Flow",
       ctaUrl,
       appUrl: params.appUrl,
     }),
@@ -236,96 +325,67 @@ export function renderWelcomeEmail(params: LifecycleTemplateParams): EmailRender
 }
 
 /**
- * 2. PREMIÈRE ACTIVATION (Jour 1 / 24h)
- * Objectif : Conduire l'utilisateur vers son premier résultat concret (moment "aha" : saisie de journée ou connexion POS)
+ * 2. PREMIÈRE ACTIVATION (Jour 1 / 24h) — La saisie en 2 minutes & Prime Cost
  */
 export function renderActivationEmail(params: LifecycleTemplateParams): EmailRenderOutput {
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/days`;
 
-  const title = "Faites votre première saisie en 2 minutes";
-  const preheader = "Le moyen le plus rapide de voir l'impact de Flow sur votre marge brute.";
+  const title = "Maîtrisez votre Prime Cost dès votre premier service";
+  const preheader = "Saisissez 3 chiffres et visualisez instantanément votre rentabilité brute.";
 
   const contentHtml = `
-    <p style="margin: 0 0 14px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 16px;">
-      Le moyen le plus rapide de constater la valeur de Flow par Minerva est d'enregistrer une première journée de service. En moins de 2 minutes, vous visualisez votre marge brute, votre coût de main-d'œuvre et vos alertes du jour.
+    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
+    <p style="margin: 0 0 18px;">
+      Le secret de la rentabilité en restauration réside dans le <strong>Prime Cost</strong> (coût des matières premières + masse salariale). Sur Minerva Flow, calculer ce ratio ne prend que 2 minutes par jour.
     </p>
-    <div style="background-color: #F3EFE4; border-left: 3px solid #167F5B; padding: 14px 16px; border-radius: 6px; margin: 0 0 18px;">
-      <p style="margin: 0 0 6px; font-weight: 600; color: #1A1E16;">Comment procéder en 3 étapes :</p>
-      <p style="margin: 0; line-height: 1.6;">
-        1. Rendez-vous dans l'onglet <strong>Journées</strong>.<br />
-        2. Saisissez le chiffre d'affaires du jour et les heures travaillées.<br />
-        3. Obtenez instantanément votre <strong>Prime Cost</strong> et vos ratios réels.
+
+    <!-- Bloc d'explication pédagogique avec formule -->
+    <div style="background-color: #F3EFE4; border-left: 4px solid #167F5B; padding: 18px 20px; border-radius: 8px; margin: 0 0 22px;">
+      <p class="font-serif" style="margin: 0 0 8px; font-size: 15px; font-weight: 700; color: #1A1E16;">
+        ✦ La formule d'or de Minerva Flow :
+      </p>
+      <p style="margin: 0 0 8px; font-size: 13.5px; line-height: 1.6; color: #167F5B; font-weight: 600;">
+        Prime Cost % = (Coût Nourriture & Boissons + Salaires Service) ÷ Ventes Nettes
+      </p>
+      <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #565F52;">
+        <em>Objectif optimal : maintenir ce ratio sous la barre des <strong>58 % à 62 %</strong> pour dégager un bénéfice net pérenne.</em>
       </p>
     </div>
-    <p style="margin: 0 0 6px;">
-      Vous utilisez déjà Square, Lightspeed ou Stripe ? Vous pouvez aussi les connecter en un clic pour automatiser l'import.
-    </p>
+
+    <p style="margin: 0 0 12px; font-weight: 600; color: #1A1E16;">Comment tester dès aujourd'hui :</p>
+    <ol style="margin: 0 0 18px; padding-left: 20px; line-height: 1.7; font-size: 14.5px;">
+      <li>Ouvrez l'onglet <strong>Journées</strong> dans Minerva Flow.</li>
+      <li>Inscrivez vos ventes du jour et les heures de vos employés.</li>
+      <li>Obtenez immédiatement vos graphiques de rentabilité et vos alertes de dérive.</li>
+    </ol>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nEnregistrez votre première journée en 2 minutes pour découvrir votre marge brute et votre prime cost en temps réel.\n\nAccédez à la saisie de journée : ${ctaUrl}\n\nL'équipe Minerva Flow`;
-
-  return {
-    subject: title,
-    preheader,
-    html: baseShell({
-      title,
-      preheader,
-      badgeText: "Première action rapide",
-      contentHtml,
-      ctaText: "Saisir ma première journée",
-      ctaUrl,
-      appUrl: params.appUrl,
-    }),
-    text,
-  };
-}
-
-/**
- * 3. DÉMONSTRATION FONCTION CLÉ (Jour 3)
- * Objectif : Montrer comment résoudre le problème principal (Food Cost, Marge Réelle, Flow AI)
- */
-export function renderFeatureHighlightEmail(params: LifecycleTemplateParams): EmailRenderOutput {
-  const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
-  const ctaUrl = `${params.appUrl}/chat`;
-
-  const title = "Comment Flow vous aide à maîtriser votre marge réelle";
-  const preheader = "Fini les calculs manuels : analysez vos écarts de coûts en temps réel.";
-
-  const contentHtml = `
-    <p style="margin: 0 0 14px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 16px;">
-      Saviez-vous que vous pouvez utiliser l'assistant <strong>Flow AI</strong> et le module <strong>Finance</strong> pour détecter instantanément les dérives de coûts sur vos matières premières et votre masse salariale ?
-    </p>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 18px; font-size: 13.5px;">
+  const secondaryStatsHtml = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #EBF5F0; border: 1px solid #CEE8DB; border-radius: 12px; padding: 16px;">
       <tr>
-        <td style="padding: 12px; background-color: #F8ECE8; border-radius: 8px 8px 0 0; border: 1px solid #ECD4CE;">
-          <strong style="color: #9C331B;">Avant :</strong> Calculs manuels en fin de mois sur Excel, retards de détection sur les pertes et les hausses fournisseurs.
-        </td>
-      </tr>
-      <tr>
-        <td style="padding: 12px; background-color: #EBF5F0; border-radius: 0 0 8px 8px; border: 1px solid #CEE8DB; border-top: none;">
-          <strong style="color: #0E5A40;">Avec Flow :</strong> Vos ratios (Food Cost %, Labor Cost %, Prime Cost) sont recalculés automatiquement à chaque service avec des alertes ciblées.
+        <td>
+          <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #0E5A40; letter-spacing: 0.04em;">Cible de Rentabilité</span>
+          <p class="font-serif" style="margin: 4px 0 2px; font-size: 22px; font-weight: 700; color: #167F5B;">&lt; 60% Prime Cost</p>
+          <span style="font-size: 12.5px; color: #4A5245;">Minerva Flow vous avertit en rouge dès qu'un quart dépasse le seuil critique.</span>
         </td>
       </tr>
     </table>
-    <p style="margin: 0 0 6px;">
-      Posez simplement une question à Flow AI : <em>« Quel a été notre coût de main-d'œuvre cette semaine comparé aux ventes ? »</em>
-    </p>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez comment Flow analyse vos ratios de rentabilité en direct et vous alerte en cas de dérive.\n\nTester l'assistant Flow AI : ${ctaUrl}\n\nL'équipe Minerva Flow`;
+  const text = `Bonjour ${params.firstName ?? ""},\n\nCalculez votre Prime Cost en 2 minutes avec Minerva Flow et maîtrisez vos marges réelles dès aujourd'hui.\n\nSaisir ma première journée : ${ctaUrl}\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
     preheader,
-    html: baseShell({
+    html: luxuryShell({
       title,
       preheader,
-      badgeText: "Fonctionnalité clé",
+      badgeText: "Activation Quotidienne",
+      badgeTone: "green",
       contentHtml,
-      ctaText: "Interroger Flow AI",
+      secondaryStatsHtml,
+      ctaText: "Enregistrer une journée de service",
       ctaUrl,
       appUrl: params.appUrl,
     }),
@@ -334,42 +394,120 @@ export function renderFeatureHighlightEmail(params: LifecycleTemplateParams): Em
 }
 
 /**
- * 4. AIDE ET SUPPORT PERSONNALISÉ (Jour 5)
- * Objectif : Lever les blocages selon le statut de l'utilisateur
+ * 3. DÉMONSTRATION FONCTION CLÉ (Jour 3) — Flow AI & Ingénierie de Menu
+ */
+export function renderFeatureHighlightEmail(params: LifecycleTemplateParams): EmailRenderOutput {
+  const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
+  const ctaUrl = `${params.appUrl}/assistant`;
+
+  const title = "Votre copilote Flow AI : L'intelligence au service de vos marges";
+  const preheader = "Posez une question en langage naturel et obtenez des analyses financières instantanées.";
+
+  const contentHtml = `
+    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
+    <p style="margin: 0 0 18px;">
+      Finie l'époque des classeurs Excel illisibles et des analyses comptables livrées avec 3 semaines de retard. Avec <strong>Flow AI</strong>, vous disposez d'un directeur financier virtuel accessible 24/7.
+    </p>
+
+    <!-- Simulation d'interaction Flow AI -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #1A1E16; border-radius: 14px; margin: 20px 0 22px; color: #F5F1E6;">
+      <tr>
+        <td style="padding: 22px 20px;">
+          <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <span style="background-color: #DFFF5F; color: #0A4531; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase;">Exemple d'invite Flow AI</span>
+          </div>
+          <p class="font-serif" style="margin: 0 0 10px; font-size: 15px; font-style: italic; color: #DFFF5F;">
+            « Quels sont nos 3 plats les plus rentables cette semaine et quel poste a généré le plus d'heures supplémentaires ? »
+          </p>
+          <div style="border-top: 1px solid #33392A; padding-top: 10px; font-size: 13px; line-height: 1.6; color: #D7DEC9;">
+            ✦ <strong>Réponse Flow AI :</strong> « Votre Tartare de Saumon dégage 74% de marge brute. Cependant, la cuisine du soir a enregistré 6.5h d'overtime vendredi. Recommandation : décaler l'arrivée du second de 45 min. »
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin: 0 0 6px;">
+      Flow AI analyse vos données de ventes, vos fiches techniques de recettes et vos quarts d'employés pour vous souffler les meilleures décisions opérationnelles.
+    </p>
+  `;
+
+  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez comment Flow AI agit comme votre directeur financier virtuel pour optimiser vos menus et vos coûts d'équipe.\n\nTester l'assistant Flow AI : ${ctaUrl}\n\nL'équipe Minerva Flow`;
+
+  return {
+    subject: title,
+    preheader,
+    html: luxuryShell({
+      title,
+      preheader,
+      badgeText: "Intelligence Artificielle",
+      badgeTone: "lime",
+      contentHtml,
+      ctaText: "Discuter avec Flow AI",
+      ctaUrl,
+      appUrl: params.appUrl,
+    }),
+    text,
+  };
+}
+
+/**
+ * 4. AIDE ET SUPPORT PERSONNALISÉ (Jour 5) — Diagnostics & Solutions
  */
 export function renderSupportCheckinEmail(params: LifecycleTemplateParams): EmailRenderOutput {
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/support`;
 
-  const title = "Besoin d'aide pour configurer votre espace Flow ?";
-  const preheader = "Notre équipe est disponible pour vous guider selon les besoins de votre restaurant.";
+  const title = "Besoin d'un coup de pouce pour paramétrer votre espace ?";
+  const preheader = "Notre équipe d'experts en restauration est là pour adapter Minerva Flow à vos spécificités.";
 
   const contentHtml = `
-    <p style="margin: 0 0 14px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 16px;">
-      Vous avez créé votre compte il y a quelques jours, mais votre quotidien en restauration est souvent intense. Si vous avez rencontré le moindre obstacle, voici les solutions aux questions les plus fréquentes :
+    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
+    <p style="margin: 0 0 18px;">
+      Gérer un restaurant ou un café est un métier de terrain exigeant. Si vous n'avez pas encore finalisé votre configuration, voici les questions les plus fréquemment posées par nos partenaires :
     </p>
-    <ul style="margin: 0 0 18px; padding-left: 20px; line-height: 1.7;">
-      <li><strong>Intégration POS / Caisse :</strong> Connectez votre système en 2 minutes dans les Paramètres > Intégrations.</li>
-      <li><strong>Horaires & Équipe :</strong> Ajoutez vos employés et définissez leurs taux horaires pour le calcul automatique de la masse salariale.</li>
-      <li><strong>Import de données :</strong> Nous pouvons vous aider à importer votre historique si nécessaire.</li>
-    </ul>
-    <p style="margin: 0 0 6px;">
-      Préférez-vous un échange direct ? Répondez simplement à ce courriel avec votre objectif principal, et nous vous orienterons pas à pas.
-    </p>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 18px 0;">
+      <tr>
+        <td style="padding: 14px 16px; background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 10px; margin-bottom: 10px;">
+          <strong style="color: #167F5B; font-size: 14px;">1. Comment importer mes ventes automatiquement ?</strong>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #565F52; line-height: 1.5;">
+            Dans <em>Paramètres > Intégrations</em>, connectez votre compte Square, Lightspeed ou Stripe. Les rapports de ventes se synchronisent chaque nuit sans intervention manuelle.
+          </p>
+        </td>
+      </tr>
+      <tr><td height="10"></td></tr>
+      <tr>
+        <td style="padding: 14px 16px; background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 10px; margin-bottom: 10px;">
+          <strong style="color: #167F5B; font-size: 14px;">2. Comment gérer les pourboires et le taux horaire réel ?</strong>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #565F52; line-height: 1.5;">
+            Ajoutez vos collaborateurs avec leurs rôles (Service, Cuisine, Bar) et leurs taux pour calculer fidèlement le ratio masse salariale.
+          </p>
+        </td>
+      </tr>
+      <tr><td height="10"></td></tr>
+      <tr>
+        <td style="padding: 14px 16px; background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 10px;">
+          <strong style="color: #167F5B; font-size: 14px;">3. Vous souhaitez un onboarding guidé de 15 minutes ?</strong>
+          <p style="margin: 4px 0 0; font-size: 13px; color: #565F52; line-height: 1.5;">
+            Répondez simplement à cet email en nous indiquant vos disponibilités : un spécialiste produit prendra en main la configuration avec vous.
+          </p>
+        </td>
+      </tr>
+    </table>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nBesoin d'aide pour configurer votre établissement sur Flow ?\n\nAccéder au support : ${ctaUrl}\nOu répondez directement à ce courriel.\n\nL'équipe Minerva Flow`;
+  const text = `Bonjour ${params.firstName ?? ""},\n\nBesoin d'assistance pour configurer votre établissement sur Minerva Flow ? Notre équipe est à votre disposition.\n\nAccéder au centre d'aide : ${ctaUrl}\nOu répondez directement à ce courriel.\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
     preheader,
-    html: baseShell({
+    html: luxuryShell({
       title,
       preheader,
-      badgeText: "Support & Accompagnement",
+      badgeText: "Accompagnement Dédié",
+      badgeTone: "gold",
       contentHtml,
-      ctaText: "Accéder au centre d'aide",
+      ctaText: "Consulter le centre d'aide",
       ctaUrl,
       appUrl: params.appUrl,
     }),
@@ -378,49 +516,75 @@ export function renderSupportCheckinEmail(params: LifecycleTemplateParams): Emai
 }
 
 /**
- * 5. EXEMPLE ET CAS D'USAGE (Jour 7)
- * Objectif : Illustrer la valeur concrète et le temps gagné
+ * 5. EXEMPLE ET CAS D'USAGE (Jour 7) — Gain de 4h/semaine & Ratios
  */
 export function renderCaseStudyEmail(params: LifecycleTemplateParams): EmailRenderOutput {
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/overview`;
 
-  const title = "Comment un restaurateur gagne 4h par semaine avec Flow";
-  const preheader = "Découvrez comment optimiser la clôture de service et le suivi de rentabilité.";
+  const title = "Comment un restaurant québécois gagne 4.5 heures chaque semaine";
+  const preheader = "Découvrez la méthode éprouvée pour fluidifier la clôture et éliminer les gaspillages.";
 
   const contentHtml = `
-    <p style="margin: 0 0 14px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 16px;">
-      Gérer un restaurant au Québec exige de jongler entre service en salle, gestion des stocks, horaires d'équipe et marge nette. Voici comment les gérants utilisant Flow transforment leur routine :
+    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
+    <p style="margin: 0 0 18px;">
+      Entre les fiches de paie, la commande des stocks et le contrôle des ventes, la gestion administrative d'un restaurant gruge souvent vos soirées. Voici comment les établissements équipés de <strong>Minerva Flow</strong> transforment leur semaine :
     </p>
-    <div style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 10px; padding: 18px 20px; margin: 0 0 18px;">
-      <p style="margin: 0 0 8px; font-weight: 700; color: #167F5B;">✦ Les 3 gains majeurs constatés :</p>
-      <p style="margin: 0 0 6px; font-size: 13.5px;">
-        <strong>1. Clôture de service en 5 min</strong> — Les chiffres de ventes et d'heures sont centralisés sans ressaisie.
-      </p>
-      <p style="margin: 0 0 6px; font-size: 13.5px;">
-        <strong>2. Contrôle du Prime Cost</strong> — Visibilité immédiate sur le ratio combiné (nourriture + main-d'œuvre).
-      </p>
-      <p style="margin: 0; font-size: 13.5px;">
-        <strong>3. Anticipation des besoins</strong> — Alertes prédictives sur les prévisions d'achats et de staffing.
-      </p>
-    </div>
+
+    <!-- Tableau Comparatif Éditorial Avant / Après -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 22px 0; border: 1px solid #E6E0D0; border-radius: 12px; overflow: hidden;">
+      <tr style="background-color: #F8ECE8;">
+        <td style="padding: 16px; border-bottom: 1px solid #ECD4CE;">
+          <strong style="color: #9C331B; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.04em;">✕ Avant Minerva Flow :</strong>
+          <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.55; color: #5A2014;">
+            Rapprochement bancaire manuel de 45 min chaque soir, calculs de marges approximatifs et surprises désagréables à la réception du rapport comptable mensuel.
+          </p>
+        </td>
+      </tr>
+      <tr style="background-color: #EBF5F0;">
+        <td style="padding: 16px;">
+          <strong style="color: #0E5A40; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.04em;">✓ Avec Minerva Flow :</strong>
+          <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.55; color: #16563E;">
+            Clôture en 3 minutes, calcul automatisé du ratio Food Cost / Labor Cost par quart de travail, et projection de rentabilité en temps réel sur mobile.
+          </p>
+        </td>
+      </tr>
+    </table>
+
     <p style="margin: 0 0 6px;">
-      Votre tableau de bord récapitule vos indicateurs en un coup d'œil.
+      Consultez votre tableau de bord pour découvrir les tendances financières de votre établissement.
     </p>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez comment Flow permet d'économiser 4 heures par semaine sur la gestion quotidienne.\n\nVoir mon tableau de bord : ${ctaUrl}\n\nL'équipe Minerva Flow`;
+  const secondaryStatsHtml = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td class="stat-col" width="48%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 16px; text-align: center;">
+          <span class="font-serif" style="font-size: 24px; font-weight: 700; color: #167F5B; display: block;">+4.5h</span>
+          <span style="font-size: 12px; color: #565F52; font-weight: 600;">Temps sauvé par semaine</span>
+        </td>
+        <td width="4%"></td>
+        <td class="stat-col" width="48%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 16px; text-align: center;">
+          <span class="font-serif" style="font-size: 24px; font-weight: 700; color: #167F5B; display: block;">-3.2%</span>
+          <span style="font-size: 12px; color: #565F52; font-weight: 600;">Réduction des pertes matières</span>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez comment Minerva Flow permet d'économiser 4.5 heures par semaine sur la gestion d'établissement.\n\nVoir mon tableau de bord : ${ctaUrl}\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
     preheader,
-    html: baseShell({
+    html: luxuryShell({
       title,
       preheader,
-      badgeText: "Cas d'usage & ROI",
+      badgeText: "Étude d'Impact Réel",
+      badgeTone: "gold",
       contentHtml,
-      ctaText: "Voir mon tableau de bord",
+      secondaryStatsHtml,
+      ctaText: "Ouvrir mon tableau de bord",
       ctaUrl,
       appUrl: params.appUrl,
       isPromotional: true,
@@ -430,43 +594,64 @@ export function renderCaseStudyEmail(params: LifecycleTemplateParams): EmailRend
 }
 
 /**
- * 6. CONVERSION / PLAN PRO (Jour 10-14)
- * Objectif : Présenter le plan payant et les fonctionnalités avancées
+ * 6. CONVERSION / FORFAITS FLOW PRO (Jour 10-14) — Débloquer la puissance totale
  */
 export function renderConversionEmail(params: LifecycleTemplateParams): EmailRenderOutput {
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/settings`;
 
-  const title = "Passez à la vitesse supérieure avec Flow Pro";
-  const preheader = "Bénéficiez de la puissance complète de Flow pour maximiser votre rentabilité.";
+  const title = "Passez au niveau supérieur avec Minerva Flow Pro";
+  const preheader = "Débloquez les analyses prédictives, les connexions POS multi-sites et le moteur de fidélité.";
 
   const contentHtml = `
-    <p style="margin: 0 0 14px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 16px;">
-      Vous utilisez maintenant Flow par Minerva pour structurer vos opérations. Pour débloquer l'ensemble des capacités d'automatisation, découvrez les fonctionnalités du plan <strong>Flow Pro</strong> :
+    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
+    <p style="margin: 0 0 18px;">
+      Vous avez posé les bases solides de votre exploitation sur Minerva Flow. Pour automatiser l'intégralité de votre chaîne de valeur et maximiser vos marges, passez à la vitesse supérieure avec <strong>Minerva Flow Pro</strong> :
     </p>
-    <ul style="margin: 0 0 18px; padding-left: 20px; line-height: 1.7;">
-      <li><strong>Synchronisations illimitées :</strong> Connecteurs POS, passerelles Stripe et alertes en temps réel.</li>
-      <li><strong>Intelligence Artificielle Flow AI :</strong> Analyses de rentabilité approfondies et recommandations sur mesure.</li>
-      <li><strong>Moteur de fidélisation & campagnes :</strong> Relances automatiques pour fidéliser vos clients réguliers.</li>
-      <li><strong>Support prioritaire dédié :</strong> Accompagnement personnalisé par nos experts en opérations de restauration.</li>
-    </ul>
+
+    <!-- Grille des fonctionnalités Pro -->
+    <div style="background-color: #FAF8F2; border: 1px solid #E6E0D0; border-radius: 14px; padding: 22px 20px; margin: 20px 0 24px;">
+      <p class="font-serif" style="margin: 0 0 14px; font-size: 16px; font-weight: 700; color: #167F5B;">
+        ✦ Tout ce qui est inclus dans le plan Pro :
+      </p>
+      
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 14px; line-height: 1.6;">
+        <tr>
+          <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
+          <td style="padding-bottom: 10px;"><strong>Synchronisations POS & Banques illimitées</strong> — Square, Lightspeed, Stripe sans limite de volume.</td>
+        </tr>
+        <tr>
+          <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
+          <td style="padding-bottom: 10px;"><strong>Assistant Flow AI illimité</strong> — Recommandations de prix, détection d'anomalies et audits de rentabilité.</td>
+        </tr>
+        <tr>
+          <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
+          <td style="padding-bottom: 10px;"><strong>Moteur de fidélisation & CRM</strong> — Récompenses automatiques, invitations QR studio et relances anniversaire.</td>
+        </tr>
+        <tr>
+          <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
+          <td><strong>Support VIP Prioritaire</strong> — Ligne directe dédiée pour votre établissement 7j/7.</td>
+        </tr>
+      </table>
+    </div>
+
     <p style="margin: 0 0 6px;">
-      Découvrez nos forfaits flexibles adaptés à la taille de votre établissement.
+      Nos plans sont sans engagement à long terme et calibrés pour être rentabilisés dès la première semaine d'utilisation.
     </p>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nPassez à la vitesse supérieure avec Flow Pro : synchronisations illimitées, IA avancée et support prioritaire.\n\nDécouvrir les forfaits : ${ctaUrl}\n\nL'équipe Minerva Flow`;
+  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez Minerva Flow Pro : synchronisations illimitées, Flow AI avancé et moteur de fidélisation.\n\nExplorer les forfaits : ${ctaUrl}\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
     preheader,
-    html: baseShell({
+    html: luxuryShell({
       title,
       preheader,
       badgeText: "Offres & Évolution",
+      badgeTone: "lime",
       contentHtml,
-      ctaText: "Découvrir le plan Flow Pro",
+      ctaText: "Découvrir les forfaits Flow Pro",
       ctaUrl,
       appUrl: params.appUrl,
       isPromotional: true,
@@ -476,45 +661,54 @@ export function renderConversionEmail(params: LifecycleTemplateParams): EmailRen
 }
 
 /**
- * 7. RÉACTIVATION (Inactivité 7+ jours)
- * Objectif : Réengager l'utilisateur avec bienveillance sans culpabilisation
+ * 7. RÉACTIVATION (Inactivité 7+ jours) — Retour sans culpabilité
  */
 export function renderReactivationEmail(params: LifecycleTemplateParams): EmailRenderOutput {
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/overview`;
 
-  const title = "Votre espace Flow par Minerva est toujours prêt";
-  const preheader = "Reprenez le pilotage de votre restaurant là où vous vous étiez arrêté.";
+  const title = "Votre cockpit Minerva Flow est toujours prêt pour le service";
+  const preheader = "Reprenez le pilotage de vos marges là où vous vous étiez arrêté.";
 
   const contentHtml = `
-    <p style="margin: 0 0 14px;">Bonjour ${name},</p>
-    <p style="margin: 0 0 16px;">
-      Nous savons que le quotidien en établissement ne laisse que peu de répit. Si vous souhaitez reprendre l'optimisation de vos marges et la gestion de vos opérations, votre espace est parfaitement sauvegardé et prêt à l'emploi.
+    <p style="margin: 0 0 16px;">Bonjour ${name},</p>
+    <p style="margin: 0 0 18px;">
+      Le rythme en établissement ne laisse que peu de répit. Si vous souhaitez reprendre le contrôle de vos coûts et simplifier vos clôtures de service, votre espace est parfaitement sauvegardé et prêt à l'emploi.
     </p>
-    <div style="background-color: #F8F6EF; border-left: 3px solid #167F5B; padding: 14px 16px; border-radius: 6px; margin: 0 0 18px;">
-      <p style="margin: 0 0 6px; font-weight: 600; color: #1A1E16;">Récemment ajouté sur Flow :</p>
-      <p style="margin: 0; line-height: 1.6;">
-        ✦ Nouveaux rapports d'analyse financière hebdomadaires.<br />
-        ✦ Amélioration des réponses et de la précision de Flow AI.<br />
-        ✦ Synchronisation encore plus rapide de vos terminaux de paiement.
+
+    <!-- Nouveautés ajoutées récemment -->
+    <div style="background-color: #F8F6EF; border-left: 4px solid #167F5B; padding: 18px 20px; border-radius: 8px; margin: 20px 0 22px;">
+      <p class="font-serif" style="margin: 0 0 8px; font-size: 15px; font-weight: 700; color: #1A1E16;">
+        ✦ Nouveautés déployées récemment sur Minerva Flow :
+      </p>
+      <p style="margin: 0 0 6px; font-size: 13.5px; line-height: 1.55; color: #4A5245;">
+        • <strong>Nouveaux rapports d'audit de marge</strong> avec alertes de dépassement de ratios.
+      </p>
+      <p style="margin: 0 0 6px; font-size: 13.5px; line-height: 1.55; color: #4A5245;">
+        • <strong>Module Flow AI enrichi</strong> pour répondre avec une précision accrue sur vos coûts matières.
+      </p>
+      <p style="margin: 0; font-size: 13.5px; line-height: 1.55; color: #4A5245;">
+        • <strong>Export simplifié pour votre comptable</strong> en un seul clic.
       </p>
     </div>
+
     <p style="margin: 0 0 6px;">
-      Si quelque chose vous a bloqué lors de votre utilisation, répondez simplement à ce message : vos retours nous sont précieux pour continuer d'améliorer l'outil.
+      Si un élément technique ou une question vous a freiné, répondez directement à ce message : nous prendrons le temps de vous aider personnellement.
     </p>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nVotre espace Flow par Minerva est toujours prêt. Reprenez vos opérations en un clic.\n\nAccéder à mon espace : ${ctaUrl}\n\nL'équipe Minerva Flow`;
+  const text = `Bonjour ${params.firstName ?? ""},\n\nVotre espace Minerva Flow est toujours prêt. Reprenez le pilotage de vos opérations en un clic.\n\nAccéder à mon espace : ${ctaUrl}\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
     preheader,
-    html: baseShell({
+    html: luxuryShell({
       title,
       preheader,
-      badgeText: "Reprise d'activité",
+      badgeText: "Reprise d'Activité",
+      badgeTone: "green",
       contentHtml,
-      ctaText: "Reprendre mon activité",
+      ctaText: "Reprendre mon activité sur Flow",
       ctaUrl,
       appUrl: params.appUrl,
       isPromotional: true,
