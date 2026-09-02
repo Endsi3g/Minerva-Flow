@@ -45,7 +45,7 @@ function emailLayout({
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
             <tr>
               <td style="padding:0 8px 20px;">
-                <span style="font-size:17px; font-weight:700; color:#1A1E16; letter-spacing:-0.01em;">Flow <span style="color:#059669;">par Minerva</span></span>
+                <span style="font-size:17px; font-weight:700; color:#1A1E16; letter-spacing:-0.01em;">Minerva <span style="color:#059669;">Flow</span></span>
               </td>
             </tr>
             <tr>

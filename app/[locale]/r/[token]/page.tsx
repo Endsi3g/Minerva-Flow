@@ -35,7 +35,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
           <div className="mb-6 flex items-center justify-center gap-2.5">
             <LogoMark size={28} />
             <span className="font-display text-[16px] font-medium text-mv-ink">
-              Flow <span className="text-mv-green-dark">par Minerva</span>
+              Minerva <span className="text-mv-green-dark">Flow</span>
             </span>
           </div>
           <Clock size={22} className="mx-auto mb-3 text-mv-ink-faint" />
@@ -54,7 +54,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
         <div className="mb-8 flex items-center gap-2.5">
           <LogoMark size={28} />
           <span className="font-sans text-[16px] font-medium text-mv-ink">
-            Flow <span className="text-mv-green-dark">par Minerva</span>
+            Minerva <span className="text-mv-green-dark">Flow</span>
           </span>
         </div>
 

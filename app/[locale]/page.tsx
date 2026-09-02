@@ -33,12 +33,9 @@ export default async function RootPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-3">
             <LogoMark size={32} />
-            <div className="flex flex-col leading-tight">
-              <span className="font-sans text-[17px] font-bold text-mv-ink leading-none">
-                Minerva Flow
-              </span>
-              <span className="text-[10.5px] font-semibold text-mv-ink-soft leading-none mt-0.5">par Minerva</span>
-            </div>
+            <span className="font-sans text-[17px] font-bold text-mv-ink leading-none">
+              Minerva Flow
+            </span>
           </Link>
 
           <nav className="hidden items-center gap-8 text-[13.5px] font-semibold text-mv-ink-soft md:flex">
@@ -289,10 +286,7 @@ export default async function RootPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2.5">
               <LogoMark size={24} />
-              <div className="flex flex-col leading-tight">
-                <span className="font-bold text-[15px] text-mv-ink leading-none">Minerva Flow</span>
-                <span className="text-[10px] text-mv-ink-faint leading-none mt-0.5">par Minerva</span>
-              </div>
+              <span className="font-bold text-[15px] text-mv-ink leading-none">Minerva Flow</span>
             </div>
             <p className="text-[12.5px] text-mv-ink-faint max-w-md">
               Plateforme SaaS de pilotage opérationnel pour restaurants et cafés. Québec, Canada.

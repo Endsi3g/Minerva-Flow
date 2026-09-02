@@ -782,7 +782,7 @@
       "colCreatedAt": "Créé le",
       "untitled": "Sans nom",
       "newPageTitle": "Nouveau prospect",
-      "newPageDescription": "Collez le lien de la plateforme de livraison (ou du site du resto) et le menu, et Minerva-Flow génère instantanément une démo à ses couleurs avec l'audit de marge du restaurateur.",
+      "newPageDescription": "Collez le lien de la plateforme de livraison (ou du site du resto) et le menu, et Minerva Flow génère instantanément une démo à ses couleurs avec l'audit de marge du restaurateur.",
       "status": {
         "draft": "Brouillon",
         "nouveau": "Nouveau lead Reach",
@@ -957,7 +957,7 @@
     }
   },
   "demo": {
-    "poweredBy": "Propulsé par Minerva-Flow",
+    "poweredBy": "Propulsé par Minerva Flow",
     "previewBadge": "Aperçu de démonstration",
     "savingsBannerPrefix": "C'est votre menu, dans notre infrastructure. Vous perdez environ",
     "savingsBannerSuffix": "par mois en commissions de livraison — colmatez la fuite ici.",
@@ -969,7 +969,7 @@
       "title": "Ce qu'on peut faire pour vous",
       "body": "On n'a pas trouvé de menu en ligne pour {restaurantName} — mais si vous prenez des commandes (téléphone, réseaux sociaux, appli de livraison), vous avez probablement la même fuite que la plupart des restaurants indépendants : des commissions de 20 à 30 % versées à chaque commande, et aucun portail à vous pour vendre en direct.",
       "steps": [
-        "On configure votre portail de commande directe Minerva-Flow, à vos couleurs.",
+        "On configure votre portail de commande directe Minerva Flow, à vos couleurs.",
         "On l'installe avec vous — menu, photos, prix — sans que vous ayez à apprendre un nouvel outil seul.",
         "Vous gardez 100 % de chaque commande directe, et tout le reste de l'écosystème Minerva suit automatiquement."
       ],
@@ -980,14 +980,14 @@
       "title": "Comment colmater cette fuite",
       "body": "Chaque commande passée sur une appli de livraison verse une commission de 20 à 30 % à la plateforme. Un portail de commande directe récupère cet argent — sans changer votre menu, vos prix ni votre façon de cuisiner.",
       "steps": [
-        "On active votre portail de commande directe Minerva-Flow — à vos couleurs, prêt en un jour.",
+        "On active votre portail de commande directe Minerva Flow — à vos couleurs, prêt en un jour.",
         "On relie votre fiche Google et vos réseaux sociaux à ce lien plutôt qu'à Uber Eats ou DoorDash.",
         "0 % de commission sur chaque commande directe — et le reste de l'écosystème (finances, équipe, inventaire) suit automatiquement."
       ],
       "cta": "Prendre rendez-vous"
     },
     "ecosystem": {
-      "title": "Ce que Minerva-Flow fait pour vous",
+      "title": "Ce que Minerva Flow fait pour vous",
       "intro": "Ce portail de commande n'est qu'un point de départ. Voici, en bref, ce qu'on recommande pour un restaurant comme le vôtre :",
       "items": {
         "overview": {

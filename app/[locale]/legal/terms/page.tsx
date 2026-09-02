@@ -10,7 +10,7 @@ export default function TermsPage() {
         <Link href="/" className="mb-8 flex items-center gap-2.5">
           <LogoMark size={28} />
           <span className="font-sans text-[17px] font-bold text-mv-ink">
-            Flow <span className="text-mv-green-dark">par Minerva</span>
+            Minerva <span className="text-mv-green-dark">Flow</span>
           </span>
         </Link>
 

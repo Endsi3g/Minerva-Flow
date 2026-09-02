@@ -14,7 +14,7 @@ const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.verc
 function emailShell(bodyHtml: string, ctaLabel: string, ctaUrl: string): string {
   return `
     <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
-      <p style="font-size: 15px; font-weight: 600; color: #1a2e22; margin: 0 0 24px;">Flow <span style="color: #2f6f4f;">par Minerva</span></p>
+      <p style="font-size: 15px; font-weight: 600; color: #1a2e22; margin: 0 0 24px;">Minerva <span style="color: #2f6f4f;">Flow</span></p>
       ${bodyHtml}
       <a href="${ctaUrl}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #1a4d33; color: #fff; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;">${ctaLabel}</a>
       <p style="margin-top: 24px; font-size: 12px; color: #8a8578;">Ce lien expire dans 7 jours. Si vous n'êtes pas à l'origine de cette invitation, ignorez ce courriel.</p>
@@ -182,7 +182,7 @@ function campaignEmailHtml({
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
             <tr>
               <td style="padding:0 8px 24px;">
-                <span style="font-size:16px; font-weight:700; color:#1a1e16; letter-spacing:-0.01em;">Flow <span style="color:#167f5b;">par Minerva</span></span>
+                <span style="font-size:16px; font-weight:700; color:#1a1e16; letter-spacing:-0.01em;">Minerva <span style="color:#167f5b;">Flow</span></span>
               </td>
             </tr>
             <tr>
