@@ -704,7 +704,7 @@ function CategoriesTab({ expenseCategories }: { expenseCategories: ExpenseCatego
             </THead>
             <tbody>
               {expenseCategories.map((c) => (
-                <Tr key={c.id}>
+                <Tr key={c.id} onClick={() => router.push(`/finance/categories/${c.id}`)}>
                   <Td className="font-medium">{c.name}</Td>
                   <Td>
                     <Badge tone={c.isDefault ? "neutral" : "lime"}>
@@ -713,7 +713,13 @@ function CategoriesTab({ expenseCategories }: { expenseCategories: ExpenseCatego
                   </Td>
                   <Td className="text-right text-mv-ink-soft">{c.transactionCount}</Td>
                   <Td>
-                    <button className="flex h-7 w-7 items-center justify-center rounded-md text-mv-ink-faint hover:bg-mv-ink/5 hover:text-mv-ink">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/finance/categories/${c.id}`);
+                      }}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-mv-ink-faint hover:bg-mv-ink/5 hover:text-mv-ink"
+                    >
                       <Pencil size={13} />
                     </button>
                   </Td>

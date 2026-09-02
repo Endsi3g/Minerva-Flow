@@ -399,6 +399,7 @@ export type FinancialTransaction = {
 export type ExpenseCategory = {
   id: string;
   name: string;
+  description: string | null;
   isDefault: boolean;
   transactionCount: number;
 };
