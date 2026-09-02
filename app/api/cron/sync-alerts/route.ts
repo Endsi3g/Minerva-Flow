@@ -13,7 +13,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 
 /**
- * Runs every few hours (see vercel.json) so the notification bell and Overview's
+ * Runs once daily (see vercel.json — Vercel's Hobby plan only allows daily
+ * cron jobs) so the notification bell and Overview's
  * `unreadTableAlerts` merge — both already written against a persisted `alerts`
  * table — actually have something to read. Mirrors the exact computeAlerts() input
  * set Overview/page.tsx already uses, so the bell never disagrees with what an
