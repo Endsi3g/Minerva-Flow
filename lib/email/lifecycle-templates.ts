@@ -33,6 +33,7 @@ function escapeHtml(str: string): string {
 
 /**
  * Shell Email Haute Couture & Éditorial — Minerva Flow
+ * Aligné avec l'identité de marque : https://minervaflow.framer.website/
  * Typographie : New York / Playfair Display (Titres & Chiffres) + Plus Jakarta Sans (Corps)
  * Palette : Fond papier crème #F5F1E6, Carte surface #FFFEFA, Vert Émeraude #167F5B, Forêt #0E5A40, Encre #1A1E16, Doré #AB7D1F
  */
@@ -134,7 +135,7 @@ function luxuryShell({
                   </td>
                   <td align="right">
                     <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #565F52; background-color: #EEE9DB; padding: 5px 12px; border-radius: 999px; display: inline-block;">
-                      Cockpit Restauration
+                      Édition Restauration
                     </span>
                   </td>
                 </tr>
@@ -187,7 +188,7 @@ function luxuryShell({
               <div style="margin-top: 32px; padding-top: 22px; border-top: 1px solid #EEE9DB; font-size: 13.5px; line-height: 1.55; color: #6F786B;">
                 <p style="margin: 0 0 4px;">Avec toute notre rigueur,</p>
                 <p style="margin: 0; font-weight: 700; color: #1A1E16;">L'équipe Minerva Flow</p>
-                <p style="margin: 2px 0 0; font-size: 12px; color: #8D9488;">Plateforme d'exploitation et d'intelligence financière pour restaurants</p>
+                <p style="margin: 2px 0 0; font-size: 12px; color: #8D9488;">Cockpit d'exploitation & d'intelligence financière pour restaurants et cafés</p>
               </div>
 
             </td>
@@ -413,7 +414,7 @@ export function renderFeatureHighlightEmail(params: LifecycleTemplateParams): Em
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #1A1E16; border-radius: 14px; margin: 20px 0 22px; color: #F5F1E6;">
       <tr>
         <td style="padding: 22px 20px;">
-          <div style="display: flex; align-items: center; margin-bottom: 12px;">
+          <div style="margin-bottom: 12px;">
             <span style="background-color: #DFFF5F; color: #0A4531; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase;">Exemple d'invite Flow AI</span>
           </div>
           <p class="font-serif" style="margin: 0 0 10px; font-size: 15px; font-style: italic; color: #DFFF5F;">
@@ -516,63 +517,103 @@ export function renderSupportCheckinEmail(params: LifecycleTemplateParams): Emai
 }
 
 /**
- * 5. EXEMPLE ET CAS D'USAGE (Jour 7) — Gain de 4h/semaine & Ratios
+ * 5. ÉTUDES DE CAS RÉELLES (Jour 7) — 6 Profils Audités & Rétention 75% à 100%
+ * Source : https://minervaflow.framer.website/
  */
 export function renderCaseStudyEmail(params: LifecycleTemplateParams): EmailRenderOutput {
   const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
   const ctaUrl = `${params.appUrl}/overview`;
 
-  const title = "Comment un restaurant québécois gagne 4.5 heures chaque semaine";
-  const preheader = "Découvrez la méthode éprouvée pour fluidifier la clôture et éliminer les gaspillages.";
+  const title = "Du petit café de quartier au grand bistro : 6 études de cas concrètes";
+  const preheader = "Découvrez comment 6 commerces québécois génèrent entre 75 % et 100 % de rétention.";
 
   const contentHtml = `
     <p style="margin: 0 0 16px;">Bonjour ${name},</p>
     <p style="margin: 0 0 18px;">
-      Entre les fiches de paie, la commande des stocks et le contrôle des ventes, la gestion administrative d'un restaurant gruge souvent vos soirées. Voici comment les établissements équipés de <strong>Minerva Flow</strong> transforment leur semaine :
+      Le système <strong>Minerva Flow</strong> aide-t-il uniquement les commerces déjà établis, ou apporte-t-il une valeur réelle même à un tout jeune établissement sans historique ?
+    </p>
+    <p style="margin: 0 0 20px;">
+      Voici les résultats réels observés sur <strong>6 profils d'exploitation</strong> (3 cafés et 3 restaurants répartis sur 3 échelles de maturité) :
     </p>
 
-    <!-- Tableau Comparatif Éditorial Avant / Après -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 22px 0; border: 1px solid #E6E0D0; border-radius: 12px; overflow: hidden;">
-      <tr style="background-color: #F8ECE8;">
-        <td style="padding: 16px; border-bottom: 1px solid #ECD4CE;">
-          <strong style="color: #9C331B; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.04em;">✕ Avant Minerva Flow :</strong>
-          <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.55; color: #5A2014;">
-            Rapprochement bancaire manuel de 45 min chaque soir, calculs de marges approximatifs et surprises désagréables à la réception du rapport comptable mensuel.
+    <!-- Grille des 3 Échelles de Maturité -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 20px 0 24px; border: 1px solid #E6E0D0; border-radius: 14px; overflow: hidden; background-color: #FAF8F2;">
+      <!-- Échelle 1 : Petit qui débute -->
+      <tr style="border-bottom: 1px solid #E6E0D0;">
+        <td style="padding: 18px; border-bottom: 1px solid #EEE9DB;">
+          <div style="display: inline-block; padding: 3px 10px; background-color: #DCECE3; color: #0E5A40; font-size: 11px; font-weight: 700; border-radius: 999px; text-transform: uppercase;">
+            Échelle 1 · Débutant (18 jours)
+          </div>
+          <p class="font-serif" style="margin: 8px 0 4px; font-size: 16px; font-weight: 700; color: #1A1E16;">
+            Câlin Café &amp; Poutine &amp; Cie : 75% de rétention immédiate
           </p>
+          <p style="margin: 0 0 8px; font-size: 13.5px; line-height: 1.55; color: #565F52;">
+            <em>« Je m'attendais à devoir attendre des mois avant de voir un client revenir une deuxième fois. Trois sur quatre l'ont déjà fait. »</em> — Denis Paquette, Câlin Café (19,98 $ panier moy.)
+          </p>
+          <span style="font-size: 12px; font-weight: 700; color: #167F5B;">✦ Résultat : 15 des 20 premiers clients sont déjà revenus au moins une fois sans budget publicitaire.</span>
         </td>
       </tr>
-      <tr style="background-color: #EBF5F0;">
-        <td style="padding: 16px;">
-          <strong style="color: #0E5A40; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.04em;">✓ Avec Minerva Flow :</strong>
-          <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.55; color: #16563E;">
-            Clôture en 3 minutes, calcul automatisé du ratio Food Cost / Labor Cost par quart de travail, et projection de rentabilité en temps réel sur mobile.
+
+      <!-- Échelle 2 : Moyen établi -->
+      <tr style="border-bottom: 1px solid #E6E0D0;">
+        <td style="padding: 18px; border-bottom: 1px solid #EEE9DB;">
+          <div style="display: inline-block; padding: 3px 10px; background-color: #F6EFD9; color: #8A6414; font-size: 11px; font-weight: 700; border-radius: 999px; text-transform: uppercase;">
+            Échelle 2 · Établi (30 jours)
+          </div>
+          <p class="font-serif" style="margin: 8px 0 4px; font-size: 16px; font-weight: 700; color: #1A1E16;">
+            Café Lucide &amp; Burger Nomade : 100% de retour &amp; 4,4 visites moy.
           </p>
+          <p style="margin: 0 0 8px; font-size: 13.5px; line-height: 1.55; color: #565F52;">
+            <em>« Le vrai changement, c'est que je n'ai plus à me demander qui revient — le tableau de clients me le dit d'un coup d'œil. »</em> — Théo Bernier, Café Lucide (15 144 $ CA)
+          </p>
+          <span style="font-size: 12px; font-weight: 700; color: #167F5B;">✦ Résultat : 100 % des clients sont revenus 2 fois ou plus. Fréquence moyenne doublée.</span>
+        </td>
+      </tr>
+
+      <!-- Échelle 3 : Grand mature -->
+      <tr>
+        <td style="padding: 18px;">
+          <div style="display: inline-block; padding: 3px 10px; background-color: #DFFF5F; color: #0A4531; font-size: 11px; font-weight: 700; border-radius: 999px; text-transform: uppercase;">
+            Échelle 3 · Mature (43 jours)
+          </div>
+          <p class="font-serif" style="margin: 8px 0 4px; font-size: 16px; font-weight: 700; color: #1A1E16;">
+            Bureau &amp; Brew &amp; Le Trèfle Doré : 9,1 visites moy. &amp; 86 392 $ CA
+          </p>
+          <p style="margin: 0 0 8px; font-size: 13.5px; line-height: 1.55; color: #565F52;">
+            <em>« Flow nous a donné les chiffres pour repérer exactement ceux qui commencent à s'éloigner avant qu'il ne soit trop tard. »</em> — Marc-André Fournier, Le Trèfle Doré (206,64 $ panier)
+          </p>
+          <span style="font-size: 12px; font-weight: 700; color: #167F5B;">✦ Résultat : Fréquence multipliée par ×3,6. Détection automatique de l'attrition.</span>
         </td>
       </tr>
     </table>
 
     <p style="margin: 0 0 6px;">
-      Consultez votre tableau de bord pour découvrir les tendances financières de votre établissement.
+      Peu importe votre échelle, Minerva Flow amplifie ce que vous faites déjà de mieux : fidéliser vos clients et sécuriser votre marge brute.
     </p>
   `;
 
   const secondaryStatsHtml = `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       <tr>
-        <td class="stat-col" width="48%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 16px; text-align: center;">
-          <span class="font-serif" style="font-size: 24px; font-weight: 700; color: #167F5B; display: block;">+4.5h</span>
-          <span style="font-size: 12px; color: #565F52; font-weight: 600;">Temps sauvé par semaine</span>
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
+          <span class="font-serif" style="font-size: 22px; font-weight: 700; color: #167F5B; display: block;">75 %</span>
+          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Rétention palier 1</span>
         </td>
-        <td width="4%"></td>
-        <td class="stat-col" width="48%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 16px; text-align: center;">
-          <span class="font-serif" style="font-size: 24px; font-weight: 700; color: #167F5B; display: block;">-3.2%</span>
-          <span style="font-size: 12px; color: #565F52; font-weight: 600;">Réduction des pertes matières</span>
+        <td width="2%"></td>
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
+          <span class="font-serif" style="font-size: 22px; font-weight: 700; color: #167F5B; display: block;">100 %</span>
+          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Rétention paliers 2 &amp; 3</span>
+        </td>
+        <td width="2%"></td>
+        <td class="stat-col" width="32%" style="background-color: #F8F6EF; border: 1px solid #E6E0D0; border-radius: 12px; padding: 14px; text-align: center;">
+          <span class="font-serif" style="font-size: 22px; font-weight: 700; color: #167F5B; display: block;">×3,6</span>
+          <span style="font-size: 11.5px; color: #565F52; font-weight: 600;">Gain de fréquence</span>
         </td>
       </tr>
     </table>
   `;
 
-  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez comment Minerva Flow permet d'économiser 4.5 heures par semaine sur la gestion d'établissement.\n\nVoir mon tableau de bord : ${ctaUrl}\n\nL'équipe Minerva Flow`;
+  const text = `Bonjour ${params.firstName ?? ""},\n\nDécouvrez les 6 études de cas réelles de Minerva Flow (Câlin Café, Poutine & Cie, Café Lucide, Burger Nomade, Bureau & Brew, Le Trèfle Doré) : 75% à 100% de rétention et fréquence multipliée par 3,6.\n\nConsulter mon tableau de bord : ${ctaUrl}\n\nL'équipe Minerva Flow`;
 
   return {
     subject: title,
@@ -580,7 +621,7 @@ export function renderCaseStudyEmail(params: LifecycleTemplateParams): EmailRend
     html: luxuryShell({
       title,
       preheader,
-      badgeText: "Étude d'Impact Réel",
+      badgeText: "6 Études de Cas Réelles",
       badgeTone: "gold",
       contentHtml,
       secondaryStatsHtml,
@@ -618,7 +659,7 @@ export function renderConversionEmail(params: LifecycleTemplateParams): EmailRen
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 14px; line-height: 1.6;">
         <tr>
           <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
-          <td style="padding-bottom: 10px;"><strong>Synchronisations POS & Banques illimitées</strong> — Square, Lightspeed, Stripe sans limite de volume.</td>
+          <td style="padding-bottom: 10px;"><strong>Synchronisations POS &amp; Banques illimitées</strong> — Square, Lightspeed, Stripe sans limite de volume.</td>
         </tr>
         <tr>
           <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
@@ -626,7 +667,7 @@ export function renderConversionEmail(params: LifecycleTemplateParams): EmailRen
         </tr>
         <tr>
           <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>
-          <td style="padding-bottom: 10px;"><strong>Moteur de fidélisation & CRM</strong> — Récompenses automatiques, invitations QR studio et relances anniversaire.</td>
+          <td style="padding-bottom: 10px;"><strong>Moteur de fidélisation &amp; CRM</strong> — Récompenses automatiques, invitations QR studio et relances anniversaire.</td>
         </tr>
         <tr>
           <td valign="top" width="24" style="color: #167F5B; font-weight: 700;">✓</td>

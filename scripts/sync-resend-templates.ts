@@ -94,7 +94,7 @@ async function syncTemplates() {
     },
     {
       name: "Flow — 05. Cas d'Usage & ROI J+7",
-      subject: "Comment un restaurant québécois gagne 4.5 heures chaque semaine",
+      subject: "Du petit café au grand bistro : 6 études de cas concrètes",
       html: renderCaseStudyEmail(templateVariablesParams).html,
     },
     {
