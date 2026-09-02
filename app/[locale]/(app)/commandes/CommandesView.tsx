@@ -111,16 +111,24 @@ function playKdsChime() {
   }
 }
 
-/** Ticking Elapsed Time Badge for KDS Tickets */
+/**
+ * Ticking Elapsed Time Badge for KDS Tickets. Starts at 0 on both server and
+ * client — computing the real elapsed time in the useState initializer would
+ * read Date.now() during SSR and again a moment later at hydration, and
+ * those two reads never match (real wall-clock time passes in between),
+ * triggering a hydration-mismatch warning and a wasted client re-render of
+ * the whole ticket tree on every page load. The true value lands a tick
+ * later via the effect below, which only ever runs client-side.
+ */
 function ElapsedTimer({ createdAt }: { createdAt: string }) {
-  const [elapsedSeconds, setElapsedSeconds] = useState(() => {
-    return Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000));
-  });
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    function tick() {
       setElapsedSeconds(Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 1000)));
-    }, 1000);
+    }
+    tick();
+    const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, [createdAt]);
 

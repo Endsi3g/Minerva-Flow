@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type PosProvider = "square" | "lightspeed" | "clover";
+export type PosProvider = "square" | "lightspeed" | "clover" | "quickbooks";
 export type PosConnectionStatus = "connecte" | "erreur" | "attente";
 
 export type PosConnection = {

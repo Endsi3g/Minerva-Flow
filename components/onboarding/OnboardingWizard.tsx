@@ -2,12 +2,13 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Loader2, Wrench, Users, ArrowRight, Check } from "lucide-react";
+import { Camera, Loader2, Wrench, Users, ArrowRight, Check, FileText, Landmark } from "lucide-react";
 import { Onboarding, ChoiceGroup, useOnboarding } from "@/components/ui/onboarding";
 import { Instagram as InstagramIcon } from "@/components/ui/BrandIcons";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Button } from "@/components/ui/Button";
+import { ImportMenuPdfModal } from "@/components/menu/ImportMenuPdfModal";
 import { roleLabels } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
 import { updateProfileNameAction } from "@/app/[locale]/(app)/profil/actions";
@@ -72,6 +73,8 @@ export function OnboardingWizard({
   const [serviceModel, setServiceModel] = useState<ServiceModel>(initialServiceModel);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteSent, setInviteSent] = useState(false);
+  const [menuImportOpen, setMenuImportOpen] = useState(false);
+  const [menuImportedCount, setMenuImportedCount] = useState<number | null>(null);
 
   // Tracks the restaurant once created, separately from the `restaurantId`
   // prop: an account that reaches this step with no restaurant (e.g. an
@@ -116,14 +119,23 @@ export function OnboardingWizard({
     return null;
   }
 
-  /** Optional step 3: sends the invite only if an email was actually typed. */
+  /**
+   * Optional step 3: sends the invite only if an email was actually typed.
+   * Never throws — this must not be able to block finishing onboarding
+   * (see sendTeamInviteAction's doc comment for why that matters).
+   */
   async function sendInviteIfFilled(): Promise<void> {
     const email = inviteEmail.trim();
     if (!email || !currentRestaurantId) return;
     setInviting(true);
-    const result = await sendTeamInviteAction(currentRestaurantId, email);
-    setInviting(false);
-    if (result.ok) setInviteSent(true);
+    try {
+      const result = await sendTeamInviteAction(currentRestaurantId, email);
+      if (result.ok) setInviteSent(true);
+    } catch {
+      // best-effort — swallow, onboarding still finishes
+    } finally {
+      setInviting(false);
+    }
   }
 
   async function handleFinish() {
@@ -267,10 +279,56 @@ export function OnboardingWizard({
             <ArrowRight size={16} className="text-mv-ink-faint" />
           </a>
 
+          {currentRestaurantId && (
+            <button
+              type="button"
+              onClick={() => setMenuImportOpen(true)}
+              className="flex items-center justify-between rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3.5 text-left transition-colors hover:bg-mv-surface"
+            >
+              <div className="flex items-center gap-3">
+                <FileText size={20} className="text-mv-ink-soft" />
+                <div>
+                  <p className="text-[13.5px] font-semibold text-mv-ink">Importer mon menu (PDF)</p>
+                  <p className="text-[12px] text-mv-ink-faint">
+                    {menuImportedCount !== null
+                      ? `${menuImportedCount} plat${menuImportedCount > 1 ? "s" : ""} importé${menuImportedCount > 1 ? "s" : ""} ✓`
+                      : "L'IA lit votre carte et remplit votre menu en quelques secondes."}
+                  </p>
+                </div>
+              </div>
+              <ArrowRight size={16} className="text-mv-ink-faint" />
+            </button>
+          )}
+
+          <a
+            href="/api/oauth/quickbooks"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-between rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3.5 transition-colors hover:bg-mv-surface"
+          >
+            <div className="flex items-center gap-3">
+              <Landmark size={20} className="text-mv-ink-soft" />
+              <div>
+                <p className="text-[13.5px] font-semibold text-mv-ink">QuickBooks</p>
+                <p className="text-[12px] text-mv-ink-faint">Connectez vos dépenses depuis QuickBooks Online.</p>
+              </div>
+            </div>
+            <ArrowRight size={16} className="text-mv-ink-faint" />
+          </a>
+
           <p className="text-center text-[11.5px] text-mv-ink-faint">
             Une connexion faite ici est enregistrée immédiatement — revenez simplement à cet onglet et continuez.
           </p>
         </div>
+
+        {currentRestaurantId && (
+          <ImportMenuPdfModal
+            restaurantId={currentRestaurantId}
+            open={menuImportOpen}
+            onClose={() => setMenuImportOpen(false)}
+            onImported={(items) => setMenuImportedCount(items.length)}
+          />
+        )}
       </Onboarding.Step>
 
       <Onboarding.Step step={3}>

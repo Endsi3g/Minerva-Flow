@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getVerifiedUser } from "@/lib/supabase/auth-user";
 import { logActivity } from "@/lib/data/activity";
 import { geocodeAddress } from "@/lib/geocode";
 import { fetchWebsiteDescription, fetchWebsiteBusinessInfo } from "@/lib/website-description";
@@ -166,18 +167,23 @@ export async function updateBreakEvenSettings(
  */
 export async function getUserRestaurants(): Promise<Restaurant[]> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getVerifiedUser(supabase);
   if (!user) return [];
 
-  const { data, error } = await supabase
-    .from("restaurant_members")
-    .select("restaurant:restaurants(*)")
-    .eq("user_id", user.id)
-    .eq("status", "active");
-
-  if (error || !data) return [];
+  // A transient query failure (connection blip, timeout right after reload)
+  // is not the same thing as "this member belongs to zero restaurants" — one
+  // retry keeps a hiccup from blanking out an existing workspace.
+  let data: { restaurant: unknown }[] | null = null;
+  for (let attempt = 0; attempt < 2 && data === null; attempt++) {
+    const result = await supabase
+      .from("restaurant_members")
+      .select("restaurant:restaurants(*)")
+      .eq("user_id", user.id)
+      .eq("status", "active");
+    if (!result.error) data = result.data;
+    else if (attempt === 0) await new Promise((r) => setTimeout(r, 300));
+  }
+  if (!data) return [];
 
   return data
     .map((row) => row.restaurant as unknown as RestaurantRow | null)

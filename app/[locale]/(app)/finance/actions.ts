@@ -8,6 +8,9 @@ import {
   createFinancialTransaction,
   importFinancialTransactions,
   bulkCategorizeTransactions,
+  getExpenseCategory,
+  updateExpenseCategory,
+  deleteExpenseCategory,
   type TransactionInput,
 } from "@/lib/data/finance";
 import { updateBreakEvenSettings } from "@/lib/data/restaurants";
@@ -38,6 +41,31 @@ export async function createCategoryAction(
 
   revalidatePath("/finance");
   return { ok: true, category };
+}
+
+export async function getCategoryAction(id: string): Promise<ExpenseCategory | null> {
+  const restaurantId = await requireRestaurantId();
+  return getExpenseCategory(restaurantId, id);
+}
+
+export async function updateCategoryAction(
+  id: string,
+  patch: { name?: string; description?: string | null }
+): Promise<boolean> {
+  const restaurantId = await requireRestaurantId();
+  const ok = await updateExpenseCategory(restaurantId, id, patch);
+  if (ok) {
+    revalidatePath("/finance");
+    revalidatePath(`/finance/categories/${id}`);
+  }
+  return ok;
+}
+
+export async function deleteCategoryAction(id: string): Promise<boolean> {
+  const restaurantId = await requireRestaurantId();
+  const ok = await deleteExpenseCategory(restaurantId, id);
+  if (ok) revalidatePath("/finance");
+  return ok;
 }
 
 export async function createTransactionAction(

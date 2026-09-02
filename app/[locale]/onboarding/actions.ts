@@ -66,41 +66,52 @@ export async function sendTeamInviteAction(
   restaurantId: string,
   email: string
 ): Promise<{ ok: boolean; link?: string }> {
-  const membership = await getCurrentMembership();
-  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+  // Entirely best-effort, like setMyRoleAction above — this is the optional
+  // "Invitez votre équipe" onboarding step. Any failure here (misconfigured
+  // admin client, a transient DB error, whatever) must never throw past this
+  // function: the caller finishes onboarding regardless of whether the
+  // invite went out, and an uncaught exception here would otherwise block
+  // that (surfaced in testing — a missing SUPABASE_SERVICE_ROLE_KEY crashed
+  // the whole "Terminer" action instead of just skipping the invite).
+  try {
+    const membership = await getCurrentMembership();
+    if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+      return { ok: false };
+    }
+
+    const restaurant = await getRestaurant(restaurantId);
+    if (!restaurant) return { ok: false };
+
+    let workspaceId = restaurant.workspaceId;
+    if (!workspaceId) {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return { ok: false };
+
+      const admin = createAdminClient();
+      const { data: workspace, error: workspaceError } = await admin
+        .from("workspaces")
+        .insert({ name: restaurant.name })
+        .select("id")
+        .single();
+      if (workspaceError || !workspace) return { ok: false };
+      workspaceId = (workspace as { id: string }).id;
+
+      await admin
+        .from("workspace_members")
+        .insert({ workspace_id: workspaceId, user_id: user.id, role: "owner", status: "active" });
+      await admin.from("restaurants").update({ workspace_id: workspaceId }).eq("id", restaurantId);
+    }
+
+    const invite = await createWorkspaceInviteLink(workspaceId, "staff", [restaurantId], email.trim() || undefined);
+    if (!invite) return { ok: false };
+
+    return { ok: true, link: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/invite/w/${invite.token}` };
+  } catch {
     return { ok: false };
   }
-
-  const restaurant = await getRestaurant(restaurantId);
-  if (!restaurant) return { ok: false };
-
-  let workspaceId = restaurant.workspaceId;
-  if (!workspaceId) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return { ok: false };
-
-    const admin = createAdminClient();
-    const { data: workspace, error: workspaceError } = await admin
-      .from("workspaces")
-      .insert({ name: restaurant.name })
-      .select("id")
-      .single();
-    if (workspaceError || !workspace) return { ok: false };
-    workspaceId = (workspace as { id: string }).id;
-
-    await admin
-      .from("workspace_members")
-      .insert({ workspace_id: workspaceId, user_id: user.id, role: "owner", status: "active" });
-    await admin.from("restaurants").update({ workspace_id: workspaceId }).eq("id", restaurantId);
-  }
-
-  const invite = await createWorkspaceInviteLink(workspaceId, "staff", [restaurantId], email.trim() || undefined);
-  if (!invite) return { ok: false };
-
-  return { ok: true, link: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/invite/w/${invite.token}` };
 }
 
 /**

@@ -306,6 +306,14 @@ export type PublicOrderGuestInfo = {
   tipAmount: number;
   /** True if the guest picked "Payer en ligne" — only honored if the restaurant's Connect account is actually active (getRestaurantOrderSettings.onlinePaymentEnabled), otherwise silently falls back to pay-on-site. */
   payOnline: boolean;
+  /**
+   * Set when the guest tapped "J'en profite" on a live offer before
+   * ordering. Offers carry no discount schema (title/description only, see
+   * the Offer type) — this doesn't touch pricing, it just lands in the
+   * order's notes so staff sees which promo the customer means and applies
+   * it manually, the same way they'd handle a promo mentioned in person.
+   */
+  mentionedOfferTitle?: string | null;
 };
 
 export type SubmitPublicOrderResult =
@@ -419,6 +427,7 @@ export async function submitPublicOrder(
     is_public_request: true,
     customer_id: customerId,
     referral_link_id: referralLinkId,
+    notes: guestInfo.mentionedOfferTitle ? `Offre mentionnée : ${guestInfo.mentionedOfferTitle}` : null,
   };
 
   let { data: order, error: orderError } = await admin

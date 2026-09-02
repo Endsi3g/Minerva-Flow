@@ -10,7 +10,7 @@ import { ReferralSettingsTab } from "@/components/chat/ReferralSettingsTab";
 import { AppearanceTab } from "@/components/settings/AppearanceTab";
 import { AdPlatformsCard, InstagramCard } from "@/components/minerva/AdPlatformsCard";
 import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
-import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
+import { PosConnectionsCard, QuickBooksCard } from "@/components/minerva/PosConnectionsCard";
 import { ReservationDeliveryConnectionsCard } from "@/components/minerva/ReservationDeliveryConnectionsCard";
 import { StripeConnectCard } from "@/components/minerva/StripeConnectCard";
 import { ApiKeysMcpTab } from "@/components/settings/ApiKeysMcpTab";
@@ -262,6 +262,7 @@ function IntegrationsTab() {
       <InstagramCard />
       <GoogleWorkspaceCard />
       <PosConnectionsCard />
+      <QuickBooksCard />
       <ReservationDeliveryConnectionsCard />
       <StripeConnectCard />
     </div>

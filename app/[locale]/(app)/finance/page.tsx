@@ -3,7 +3,6 @@ import { getTranslations } from "next-intl/server";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getFinancialTransactions, getExpenseCategories, getConnections } from "@/lib/data/finance";
-import { getRestaurant } from "@/lib/data/restaurants";
 import { getServiceDays } from "@/lib/data/service-days";
 import { FinanceView } from "./FinanceView";
 
@@ -29,11 +28,10 @@ export default async function FinancePage() {
 
   const { from, to } = currentMonthRange();
 
-  const [transactions, expenseCategories, connections, restaurant, serviceDays] = await Promise.all([
+  const [transactions, expenseCategories, connections, serviceDays] = await Promise.all([
     getFinancialTransactions(restaurantId),
     getExpenseCategories(restaurantId),
     getConnections(restaurantId),
-    getRestaurant(restaurantId),
     getServiceDays(restaurantId, { from, to }),
   ]);
 
@@ -45,11 +43,6 @@ export default async function FinancePage() {
         expenseCategories={expenseCategories}
         connections={connections}
         serviceDays={serviceDays}
-        breakEvenSettings={{
-          fixedCosts: restaurant?.breakEvenFixedCosts ?? null,
-          grossMarginPct: restaurant?.breakEvenGrossMarginPct ?? null,
-          avgBasket: restaurant?.breakEvenAvgBasket ?? null,
-        }}
       />
     </>
   );

@@ -262,9 +262,12 @@ type ExpenseCategoryRow = {
   id: string;
   restaurant_id: string;
   name: string;
+  description: string | null;
   is_default: boolean;
   created_at: string;
 };
+
+const UNCATEGORIZED_LABEL = "Non catégorisé";
 
 export async function getExpenseCategories(restaurantId: string): Promise<ExpenseCategory[]> {
   const supabase = await createClient();
@@ -291,9 +294,37 @@ export async function getExpenseCategories(restaurantId: string): Promise<Expens
   return (categories as ExpenseCategoryRow[]).map((row) => ({
     id: row.id,
     name: row.name,
+    description: row.description,
     isDefault: row.is_default,
     transactionCount: counts.get(row.name) ?? 0,
   }));
+}
+
+export async function getExpenseCategory(restaurantId: string, id: string): Promise<ExpenseCategory | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("expense_categories")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  const row = data as ExpenseCategoryRow;
+
+  const { count } = await supabase
+    .from("financial_transactions")
+    .select("id", { count: "exact", head: true })
+    .eq("restaurant_id", restaurantId)
+    .eq("category", row.name);
+
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    isDefault: row.is_default,
+    transactionCount: count ?? 0,
+  };
 }
 
 export async function createExpenseCategory(
@@ -317,7 +348,96 @@ export async function createExpenseCategory(
     description: `A ajouté la catégorie de dépense "${name}"`,
   });
 
-  return { id: data.id, name: data.name, isDefault: data.is_default, transactionCount: 0 };
+  return { id: data.id, name: data.name, description: data.description, isDefault: data.is_default, transactionCount: 0 };
+}
+
+/**
+ * Renaming a category doesn't cascade automatically — financial_transactions
+ * matches categories by name text, not a foreign key (see NewTransactionModal
+ * writing `category: c.name`) — so a plain rename would silently orphan
+ * every transaction already filed under the old name. Updates both in the
+ * same call so nothing goes uncategorized just because someone fixed a typo.
+ */
+export async function updateExpenseCategory(
+  restaurantId: string,
+  id: string,
+  patch: { name?: string; description?: string | null }
+): Promise<boolean> {
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("expense_categories")
+    .select("name, is_default")
+    .eq("restaurant_id", restaurantId)
+    .eq("id", id)
+    .maybeSingle();
+  if (!existing) return false;
+
+  const updates: { name?: string; description?: string | null } = {};
+  if (patch.name !== undefined && patch.name.trim() && patch.name.trim() !== existing.name) {
+    updates.name = patch.name.trim();
+  }
+  if (patch.description !== undefined) updates.description = patch.description;
+  if (Object.keys(updates).length === 0) return true;
+
+  const { error } = await supabase.from("expense_categories").update(updates).eq("id", id);
+  if (error) return false;
+
+  if (updates.name) {
+    await supabase
+      .from("financial_transactions")
+      .update({ category: updates.name })
+      .eq("restaurant_id", restaurantId)
+      .eq("category", existing.name);
+  }
+
+  await logActivity({
+    restaurantId,
+    actionType: "expense_category.update",
+    entityType: "expense_category",
+    entityId: id,
+    description: updates.name
+      ? `A renommé la catégorie de dépense "${existing.name}" en "${updates.name}"`
+      : `A mis à jour la catégorie de dépense "${existing.name}"`,
+  });
+
+  return true;
+}
+
+/**
+ * Default (system-seeded) categories can't be deleted — matches the "Défaut"
+ * vs "Personnalisée" badge already shown in the UI. A custom category's
+ * transactions are reassigned to "Non catégorisé" rather than deleted along
+ * with it — a real expense record disappearing because someone tidied up a
+ * category label would be a much worse surprise than an uncategorized one.
+ */
+export async function deleteExpenseCategory(restaurantId: string, id: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("expense_categories")
+    .select("name, is_default")
+    .eq("restaurant_id", restaurantId)
+    .eq("id", id)
+    .maybeSingle();
+  if (!existing || existing.is_default) return false;
+
+  await supabase
+    .from("financial_transactions")
+    .update({ category: UNCATEGORIZED_LABEL })
+    .eq("restaurant_id", restaurantId)
+    .eq("category", existing.name);
+
+  const { error } = await supabase.from("expense_categories").delete().eq("id", id).eq("restaurant_id", restaurantId);
+  if (error) return false;
+
+  await logActivity({
+    restaurantId,
+    actionType: "expense_category.delete",
+    entityType: "expense_category",
+    entityId: id,
+    description: `A supprimé la catégorie de dépense "${existing.name}"`,
+  });
+
+  return true;
 }
 
 type ConnectionRow = {

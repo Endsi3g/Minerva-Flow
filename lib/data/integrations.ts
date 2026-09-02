@@ -2,7 +2,7 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { getPosConnections, type PosProvider } from "@/lib/data/pos-connections";
-import { isSquareConfigured, isLightspeedConfigured } from "@/lib/pos/config";
+import { isSquareConfigured, isLightspeedConfigured, isQuickBooksConfigured } from "@/lib/pos/config";
 import { formatDate } from "@/lib/utils";
 
 export type IntegrationItem = {
@@ -32,6 +32,11 @@ const posProviderMeta: Record<PosProvider, { name: string; description: string; 
     description: "Pas encore disponible.",
     iconName: "square",
   },
+  quickbooks: {
+    name: "QuickBooks",
+    description: "Synchronisation de vos dépenses depuis QuickBooks Online.",
+    iconName: "square",
+  },
 };
 
 export async function getRestaurantIntegrations(restaurantId: string): Promise<IntegrationItem[]> {
@@ -53,6 +58,7 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
     square: isSquareConfigured(),
     lightspeed: isLightspeedConfigured(),
     clover: false,
+    quickbooks: isQuickBooksConfigured(),
   };
 
   // 3. Fetch Google Connections
