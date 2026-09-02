@@ -1086,7 +1086,12 @@
       "orderError": "La commande a échoué. Réessayez.",
       "orderSuccessTitle": "Commande envoyée",
       "orderSuccessDescription": "Vous paierez sur place. Le restaurant confirmera sous peu.",
-      "orderClose": "Fermer"
+      "orderClose": "Fermer",
+      "tabHome": "Accueil",
+      "tabOrder": "Commander",
+      "tabProfile": "Profil",
+      "homeOrderCta": "Commander maintenant",
+      "offersTitle": "Offres en ce moment"
     }
   }
 }

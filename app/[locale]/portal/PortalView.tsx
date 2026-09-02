@@ -23,11 +23,33 @@ import {
   selfRedeemRewardAction,
   submitPortalOrderAction,
 } from "./actions";
-import { Copy, Check, Gift, Share2, Sparkles, ChefHat, Tag, Plus, Minus, ShoppingCart, CheckCircle2, MessageCircle, QrCode, Smartphone } from "lucide-react";
+import {
+  Copy,
+  Check,
+  Gift,
+  Share2,
+  Sparkles,
+  ChefHat,
+  Tag,
+  Plus,
+  Minus,
+  ShoppingCart,
+  CheckCircle2,
+  MessageCircle,
+  QrCode,
+  Smartphone,
+  Home,
+  UtensilsCrossed,
+  User,
+  ArrowRight,
+  Clock,
+} from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+
+type PortalTab = "home" | "order" | "rewards" | "profile";
 
 const walletTierBg: Record<LoyaltyTier, string> = {
   habitue: "bg-mv-ink text-mv-cream",
@@ -35,6 +57,14 @@ const walletTierBg: Record<LoyaltyTier, string> = {
   ambassadeur: "bg-mv-lime text-mv-green-darker",
 };
 
+/**
+ * The card is the reason someone opens this portal at all, so its number
+ * (Von Restorff: one dominant figure, everything else quieter) and its
+ * "what do I do next" action sit together — ordering is the single most
+ * likely next step after checking a balance, so the CTA lives right on the
+ * card instead of forcing a second decision about where to find it (Fitts's
+ * Law: the next action stays where attention already is).
+ */
 function LoyaltyWalletCard({
   customerId,
   points,
@@ -43,6 +73,7 @@ function LoyaltyWalletCard({
   thresholds,
   appleWalletEnabled,
   googleWalletEnabled,
+  onOrderClick,
 }: {
   customerId: string;
   points: number;
@@ -51,6 +82,7 @@ function LoyaltyWalletCard({
   thresholds: LoyaltyTierThresholds;
   appleWalletEnabled: boolean;
   googleWalletEnabled: boolean;
+  onOrderClick: () => void;
 }) {
   const t = useTranslations("portal.view");
   const tier = getLoyaltyTier(totalSpent, thresholds);
@@ -65,11 +97,11 @@ function LoyaltyWalletCard({
   const progress = nextTarget ? Math.min(1, Math.max(0, (totalSpent - prevTarget) / (nextTarget - prevTarget))) : 1;
 
   return (
-    <div className={`mb-6 overflow-hidden rounded-2xl p-5 shadow-mv-md ${walletTierBg[tier]}`}>
+    <div className={`overflow-hidden rounded-3xl p-6 shadow-mv-lg ${walletTierBg[tier]}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide opacity-70">{t("points")}</p>
-          <p className="mt-0.5 font-display text-[32px] font-medium leading-none">{points}</p>
+          <p className="mt-1 font-display text-[44px] font-medium leading-none tabular-nums">{points}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[12px] font-semibold">
           <Icon size={14} /> {loyaltyTierLabel[tier]}
@@ -77,7 +109,7 @@ function LoyaltyWalletCard({
       </div>
 
       {nextTarget !== null && (
-        <div className="mt-4">
+        <div className="mt-5">
           <div className="h-1.5 overflow-hidden rounded-full bg-white/20">
             <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.max(4, progress * 100)}%` }} />
           </div>
@@ -87,20 +119,28 @@ function LoyaltyWalletCard({
         </div>
       )}
 
-      <div className="mt-4 flex items-center gap-5 border-t border-white/15 pt-3 text-[12px] opacity-90">
+      <div className="mt-5 flex items-center gap-5 border-t border-white/15 pt-4 text-[12px] opacity-90">
         <span>
           {visitCount} {t("visits").toLowerCase()}
         </span>
         <span>{formatCurrency(totalSpent)}</span>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-white/15 pt-3">
+      <button
+        type="button"
+        onClick={onOrderClick}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-[14px] font-semibold text-mv-ink shadow-mv-md transition-transform hover:scale-[1.01] active:scale-[0.99]"
+      >
+        <UtensilsCrossed size={16} /> {t("homeOrderCta")}
+      </button>
+
+      <div className="mt-3 flex flex-wrap gap-2">
         {googleWalletEnabled ? (
           <a
             href={`/api/wallet/google?customerId=${customerId}`}
             className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11.5px] font-semibold transition-colors hover:bg-white/25"
           >
-            <Smartphone size={13} /> Ajouter à Google Wallet
+            <Smartphone size={13} /> Google Wallet
           </a>
         ) : (
           <button
@@ -108,7 +148,7 @@ function LoyaltyWalletCard({
             onClick={() => handleUnavailableWallet("Google Wallet")}
             className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11.5px] font-semibold opacity-70 transition-colors hover:opacity-90"
           >
-            <Smartphone size={13} /> Ajouter à Google Wallet
+            <Smartphone size={13} /> Google Wallet
           </button>
         )}
         {appleWalletEnabled ? (
@@ -116,7 +156,7 @@ function LoyaltyWalletCard({
             href={`/api/wallet/apple?customerId=${customerId}`}
             className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11.5px] font-semibold transition-colors hover:bg-white/25"
           >
-            <Smartphone size={13} /> Ajouter à Apple Wallet
+            <Smartphone size={13} /> Apple Wallet
           </a>
         ) : (
           <button
@@ -124,7 +164,7 @@ function LoyaltyWalletCard({
             onClick={() => handleUnavailableWallet("Apple Wallet")}
             className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11.5px] font-semibold opacity-70 transition-colors hover:opacity-90"
           >
-            <Smartphone size={13} /> Ajouter à Apple Wallet
+            <Smartphone size={13} /> Apple Wallet
           </button>
         )}
       </div>
@@ -137,6 +177,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
   const [city, setCity] = useState(customer.city ?? "");
   const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
   const [isSaving, setIsSaving] = useState(false);
+  const [savedTick, setSavedTick] = useState(false);
 
   async function handleSave() {
     setIsSaving(true);
@@ -146,8 +187,13 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         birthday: birthday || null,
         city: city.trim() || null,
       });
-      if (ok) toast.success("Profil mis à jour.");
-      else toast.error("La mise à jour a échoué.");
+      if (ok) {
+        toast.success("Profil mis à jour.");
+        setSavedTick(true);
+        setTimeout(() => setSavedTick(false), 1800);
+      } else {
+        toast.error("La mise à jour a échoué. Vos changements sont toujours dans le formulaire — réessayez.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -172,7 +218,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
           <span>J&apos;accepte de recevoir des offres et rappels par courriel ou SMS.</span>
         </label>
         <Button size="sm" onClick={handleSave} disabled={isSaving}>
-          {isSaving ? "Enregistrement…" : "Enregistrer"}
+          {isSaving ? "Enregistrement…" : savedTick ? "Enregistré ✓" : "Enregistrer"}
         </Button>
       </div>
     </Card>
@@ -311,25 +357,25 @@ function ReferralProgramCard({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               onClick={handleWhatsAppShare}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366]/10 px-3 py-2 text-[12px] font-semibold text-[#128C7E] hover:bg-[#25D366]/20 transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366]/10 px-3 py-2.5 text-[12px] font-semibold text-[#128C7E] hover:bg-[#25D366]/20 transition-colors"
             >
               <MessageCircle size={14} /> WhatsApp
             </button>
             <button
               onClick={handleSmsShare}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 px-3 py-2 text-[12px] font-semibold text-blue-600 hover:bg-blue-500/20 transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 px-3 py-2.5 text-[12px] font-semibold text-blue-600 hover:bg-blue-500/20 transition-colors"
             >
               <Smartphone size={14} /> SMS
             </button>
             <button
               onClick={handleNativeShare}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-mv-ink/[0.06] px-3 py-2 text-[12px] font-semibold text-mv-ink hover:bg-mv-ink/[0.1] transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-mv-ink/[0.06] px-3 py-2.5 text-[12px] font-semibold text-mv-ink hover:bg-mv-ink/[0.1] transition-colors"
             >
               <Share2 size={14} /> Partager
             </button>
             <button
               onClick={() => setQrModalOpen(true)}
-              className="flex items-center justify-center gap-1.5 rounded-xl bg-mv-green-tint px-3 py-2 text-[12px] font-semibold text-mv-green-dark hover:bg-mv-green-tint/80 transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-xl bg-mv-green-tint px-3 py-2.5 text-[12px] font-semibold text-mv-green-dark hover:bg-mv-green-tint/80 transition-colors"
             >
               <QrCode size={14} /> Scanner
             </button>
@@ -339,7 +385,7 @@ function ReferralProgramCard({
             <span className="flex-1 truncate font-mono text-[11.5px] text-mv-ink-soft">{shareUrl}</span>
             <button
               onClick={handleCopy}
-              className="shrink-0 text-mv-ink-faint hover:text-mv-ink transition-colors p-1"
+              className="shrink-0 text-mv-ink-faint hover:text-mv-ink transition-colors p-1.5"
               aria-label={t("copyLinkAria")}
             >
               {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
@@ -476,6 +522,40 @@ function isOfferLive(offer: Offer, now = Date.now()) {
   return true;
 }
 
+/** Home tab's discovery feed — offers live here (not buried in the ordering
+ * screen) since checking "what's new" is a browsing action, distinct from
+ * the deliberate task of building a cart. Each offer hands off to Order. */
+function OffersFeed({ offers, onOrderClick }: { offers: Offer[]; onOrderClick: () => void }) {
+  const t = useTranslations("portal.view");
+  const liveOffers = useMemo(() => offers.filter((o) => isOfferLive(o)), [offers]);
+  if (liveOffers.length === 0) return null;
+
+  return (
+    <div>
+      <p className="mb-2.5 text-[13px] font-semibold text-mv-ink">{t("offersTitle")}</p>
+      <div className="space-y-2">
+        {liveOffers.map((offer) => (
+          <button
+            key={offer.id}
+            type="button"
+            onClick={onOrderClick}
+            className="flex w-full items-center gap-3 rounded-2xl border border-mv-green/25 bg-mv-green-tint px-4 py-3.5 text-left transition-transform hover:-translate-y-0.5"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-mv-green-dark">
+              <Tag size={15} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-mv-green-darker">{offer.title}</p>
+              {offer.description && <p className="truncate text-[11.5px] text-mv-green-dark">{offer.description}</p>}
+            </div>
+            <ArrowRight size={14} className="shrink-0 text-mv-green-dark" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Browsing + ordering. Orders submit pay-on-site straight into the
  * restaurant's own /commandes queue (see submitPortalOrderAction) — same
@@ -484,19 +564,14 @@ function isOfferLive(offer: Offer, now = Date.now()) {
  */
 function MenuBrowserCard({
   menuItems,
-  offers,
   cart,
   onQtyChange,
-  onOpenCart,
 }: {
   menuItems: MenuItem[];
-  offers: Offer[];
   cart: Record<string, number>;
   onQtyChange: (itemId: string, delta: number) => void;
-  onOpenCart: () => void;
 }) {
   const t = useTranslations("portal.view");
-  const liveOffers = useMemo(() => offers.filter((o) => isOfferLive(o)), [offers]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, MenuItem[]>();
@@ -509,89 +584,68 @@ function MenuBrowserCard({
     return map;
   }, [menuItems, t]);
 
-  if (menuItems.filter((i) => i.active).length === 0) return null;
+  if (menuItems.filter((i) => i.active).length === 0) {
+    return <p className="text-[12.5px] text-mv-ink-faint">{t("menuUncategorized")}</p>;
+  }
 
   return (
-    <div className="mb-6">
-      <Card>
-        <CardHeader title={t("menuTitle")} description={t("menuDescription")} />
-
-        {liveOffers.length > 0 && (
-          <div className="mb-4 space-y-2">
-            {liveOffers.map((offer) => (
-              <div key={offer.id} className="flex items-start gap-2.5 rounded-lg border border-mv-green/25 bg-mv-green-tint px-3 py-2.5">
-                <Tag size={14} className="mt-0.5 shrink-0 text-mv-green-dark" />
-                <div className="min-w-0">
-                  <p className="text-[12.5px] font-semibold text-mv-green-darker">{offer.title}</p>
-                  {offer.description && <p className="text-[11.5px] text-mv-green-dark">{offer.description}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="space-y-5">
-          {Array.from(byCategory.entries()).map(([category, items]) => (
-            <div key={category}>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">{category}</p>
-              <div className="space-y-2">
-                {items.map((item) => {
-                  const qty = cart[item.id] ?? 0;
-                  return (
-                    <div key={item.id} className="flex items-center gap-3 rounded-lg bg-mv-cream-soft p-2.5">
-                      {item.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
-                      ) : (
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-mv-ink/5 text-mv-ink-faint">
-                          <ChefHat size={16} />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-medium text-mv-ink">{item.name}</p>
-                        {item.description && (
-                          <p className="truncate text-[11.5px] text-mv-ink-faint">{item.description}</p>
-                        )}
-                        <span className="text-[12.5px] font-semibold text-mv-ink">{formatCurrency(item.price)}</span>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {qty > 0 && (
-                          <>
-                            <button
-                              onClick={() => onQtyChange(item.id, -1)}
-                              aria-label="Retirer un"
-                              className="flex h-7 w-7 items-center justify-center rounded-full border border-mv-border text-mv-ink-soft"
-                            >
-                              <Minus size={13} />
-                            </button>
-                            <span className="w-4 text-center text-[13px] font-medium">{qty}</span>
-                          </>
-                        )}
-                        <button
-                          onClick={() => onQtyChange(item.id, 1)}
-                          aria-label="Ajouter un"
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft"
-                        >
-                          <Plus size={13} />
-                        </button>
-                      </div>
+    <div className="space-y-5">
+      {Array.from(byCategory.entries()).map(([category, items]) => (
+        <div key={category}>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">{category}</p>
+          <div className="space-y-2">
+            {items.map((item) => {
+              const qty = cart[item.id] ?? 0;
+              return (
+                <div
+                  key={item.id}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border p-2.5 transition-colors",
+                    qty > 0 ? "border-mv-green/40 bg-mv-green-tint/40" : "border-transparent bg-mv-cream-soft"
+                  )}
+                >
+                  {item.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />
+                  ) : (
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-mv-ink/5 text-mv-ink-faint">
+                      <ChefHat size={18} />
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-medium text-mv-ink">{item.name}</p>
+                    {item.description && (
+                      <p className="truncate text-[11.5px] text-mv-ink-faint">{item.description}</p>
+                    )}
+                    <span className="text-[12.5px] font-semibold text-mv-ink">{formatCurrency(item.price)}</span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {qty > 0 && (
+                      <>
+                        <button
+                          onClick={() => onQtyChange(item.id, -1)}
+                          aria-label="Retirer un"
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-mv-border text-mv-ink-soft"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="w-5 text-center text-[13.5px] font-semibold tabular-nums">{qty}</span>
+                      </>
+                    )}
+                    <button
+                      onClick={() => onQtyChange(item.id, 1)}
+                      aria-label="Ajouter un"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </Card>
-
-      {Object.values(cart).some((q) => q > 0) && (
-        <button
-          onClick={onOpenCart}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-mv-green px-4 py-3 text-[13px] font-semibold text-mv-cream-soft shadow-mv-md transition-colors hover:bg-mv-green-dark"
-        >
-          <ShoppingCart size={15} /> {t("cartViewOrder")}
-        </button>
-      )}
+      ))}
     </div>
   );
 }
@@ -649,13 +703,16 @@ function CheckoutModal({
   return (
     <Modal open={open} onClose={handleClose} title={t("checkoutTitle")} width={480}>
       {status === "done" ? (
-        <div className="py-4 text-center">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
-            <CheckCircle2 size={18} />
+        <div className="py-6 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+            <CheckCircle2 size={26} />
           </div>
-          <p className="font-display text-[17px] font-medium text-mv-ink">{t("orderSuccessTitle")}</p>
-          <p className="mt-1.5 text-[13px] text-mv-ink-soft">{t("orderSuccessDescription")}</p>
-          <Button size="sm" variant="secondary" className="mt-4" onClick={handleClose}>
+          <p className="font-display text-[19px] font-medium text-mv-ink">{t("orderSuccessTitle")}</p>
+          <p className="mx-auto mt-1.5 max-w-xs text-[13px] text-mv-ink-soft">{t("orderSuccessDescription")}</p>
+          <div className="mx-auto mt-4 flex items-center justify-center gap-1.5 text-[12px] text-mv-ink-faint">
+            <Clock size={13} /> Vous recevrez une notification dès la confirmation.
+          </div>
+          <Button size="sm" variant="secondary" className="mt-5" onClick={handleClose}>
             {t("orderClose")}
           </Button>
         </div>
@@ -682,7 +739,7 @@ function CheckoutModal({
                     type="button"
                     onClick={() => setTipPct(pct)}
                     className={cn(
-                      "flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium",
+                      "flex-1 rounded-lg border px-2 py-2 text-[12px] font-medium",
                       tipPct === pct
                         ? "border-mv-green bg-mv-green-tint text-mv-green-dark"
                         : "border-mv-border text-mv-ink-soft"
@@ -735,6 +792,62 @@ function CheckoutModal({
   );
 }
 
+const TAB_ORDER: PortalTab[] = ["home", "order", "rewards", "profile"];
+
+function BottomTabBar({
+  active,
+  onChange,
+  cartCount,
+  labels,
+}: {
+  active: PortalTab;
+  onChange: (tab: PortalTab) => void;
+  cartCount: number;
+  labels: Record<PortalTab, string>;
+}) {
+  const icons: Record<PortalTab, typeof Home> = {
+    home: Home,
+    order: UtensilsCrossed,
+    rewards: Gift,
+    profile: User,
+  };
+
+  return (
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-mv-border bg-mv-surface/95 backdrop-blur-sm"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      aria-label="Navigation principale"
+    >
+      <div className="mx-auto flex max-w-2xl">
+        {TAB_ORDER.map((tab) => {
+          const Icon = icons[tab];
+          const isActive = active === tab;
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => onChange(tab)}
+              aria-current={isActive ? "page" : undefined}
+              className="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[10.5px] font-semibold transition-colors"
+              style={{ color: isActive ? "var(--mv-green-dark)" : "var(--mv-ink-faint)" }}
+            >
+              <span className="relative flex h-6 w-6 items-center justify-center">
+                <Icon size={21} strokeWidth={isActive ? 2.3 : 1.9} />
+                {tab === "order" && cartCount > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-mv-red px-1 text-[9.5px] font-bold text-white">
+                    {cartCount}
+                  </span>
+                )}
+              </span>
+              {labels[tab]}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 export function PortalView({
   customer,
   data,
@@ -759,6 +872,7 @@ export function PortalView({
   googleWalletEnabled: boolean;
 }) {
   const t = useTranslations("portal.view");
+  const [activeTab, setActiveTab] = useState<PortalTab>("home");
   const [programs, setPrograms] = useState<PortalReferralProgress[]>(data.programs);
   const [points, setPoints] = useState(customer.loyaltyPoints);
   const [redemptions, setRedemptions] = useState<RewardRedemption[]>(data.redemptions);
@@ -772,6 +886,7 @@ export function PortalView({
   function handleRedeemed(redemption: RewardRedemption) {
     setPoints((prev) => prev - redemption.pointsSpent);
     setRedemptions((prev) => [redemption, ...prev]);
+    toast.success(t("redeemSuccessTitle"));
   }
 
   function handleQtyChange(itemId: string, delta: number) {
@@ -785,105 +900,210 @@ export function PortalView({
   const cartLines = menuItems
     .filter((i) => (cart[i.id] ?? 0) > 0)
     .map((i) => ({ item: i, quantity: cart[i.id] }));
+  const cartCount = cartLines.reduce((sum, l) => sum + l.quantity, 0);
+  const cartSubtotal = cartLines.reduce((sum, l) => sum + l.item.price * l.quantity, 0);
+  const hasActiveMenu = menuItems.some((i) => i.active);
+
+  const tabLabels: Record<PortalTab, string> = {
+    home: t("tabHome"),
+    order: t("tabOrder"),
+    rewards: t("rewardsTitle"),
+    profile: t("tabProfile"),
+  };
 
   return (
-    <div className="min-h-screen bg-mv-cream px-6 py-10">
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-8 flex items-center gap-2.5">
-          <LogoMark size={28} />
-          <span className="font-sans text-[16px] font-medium text-mv-ink">
-            Flow <span className="text-mv-green-dark">par Minerva</span>
-          </span>
+    <div className="min-h-screen bg-mv-cream pb-28">
+      <div className="mx-auto max-w-2xl px-6 pb-6 pt-10">
+        <div className="mb-6 flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <LogoMark size={28} />
+            <span className="font-sans text-[16px] font-medium text-mv-ink">
+              Flow <span className="text-mv-green-dark">par Minerva</span>
+            </span>
+          </div>
+          {restaurantName && (
+            <span className="rounded-full border border-mv-border bg-mv-surface px-3 py-1 text-[11.5px] font-semibold text-mv-ink-soft">
+              {restaurantName}
+            </span>
+          )}
         </div>
 
-        <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">{t("spaceLabel")}</p>
-        <h1 className="mb-6 font-display text-[26px] font-medium text-mv-ink">
-          {t("greeting", { name: customer.name })}
-        </h1>
+        {activeTab === "home" && (
+          <div className="space-y-6">
+            <div>
+              <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">{t("spaceLabel")}</p>
+              <h1 className="font-display text-[26px] font-medium text-mv-ink">{t("greeting", { name: customer.name })}</h1>
+            </div>
 
-        <LoyaltyWalletCard
-          customerId={customer.id}
-          points={points}
-          visitCount={customer.visitCount}
-          totalSpent={customer.totalSpent}
-          thresholds={loyaltyTierThresholds}
-          appleWalletEnabled={appleWalletEnabled}
-          googleWalletEnabled={googleWalletEnabled}
-        />
+            <LoyaltyWalletCard
+              customerId={customer.id}
+              points={points}
+              visitCount={customer.visitCount}
+              totalSpent={customer.totalSpent}
+              thresholds={loyaltyTierThresholds}
+              appleWalletEnabled={appleWalletEnabled}
+              googleWalletEnabled={googleWalletEnabled}
+              onOrderClick={() => setActiveTab("order")}
+            />
 
-        <MenuBrowserCard
-          menuItems={menuItems}
-          offers={offers}
-          cart={cart}
-          onQtyChange={handleQtyChange}
-          onOpenCart={() => setCheckoutOpen(true)}
-        />
-        <CheckoutModal
-          open={checkoutOpen}
-          onClose={() => setCheckoutOpen(false)}
-          customerId={customer.id}
-          cartLines={cartLines}
-          taxRate={taxRate}
-          acceptsTips={acceptsTips}
-          onOrdered={handleOrdered}
-        />
+            <OffersFeed offers={offers} onOrderClick={() => setActiveTab("order")} />
 
-        <div className="mb-6">
-          <RewardsRedeemCard
-            rewards={data.rewards}
-            points={points}
-            redemptions={redemptions}
-            onRedeemed={handleRedeemed}
-          />
-        </div>
+            {data.rewards.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("rewards")}
+                className="flex w-full items-center justify-between rounded-2xl border border-mv-border bg-mv-surface px-4 py-3.5 text-left shadow-mv-sm transition-transform hover:-translate-y-0.5"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-lime-tint text-mv-green-dark">
+                    <Gift size={16} />
+                  </span>
+                  <div>
+                    <p className="text-[13px] font-semibold text-mv-ink">{t("rewardsTitle")}</p>
+                    <p className="text-[11.5px] text-mv-ink-faint">
+                      {data.rewards.length} récompense{data.rewards.length > 1 ? "s" : ""} disponible
+                      {data.rewards.length > 1 ? "s" : ""} avec vos {points} pts
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight size={15} className="shrink-0 text-mv-ink-faint" />
+              </button>
+            )}
 
-        <div className="mb-6">
-          <ProfileSettingsCard customer={customer} />
-        </div>
-
-        {programs.length > 0 && (
-          <div className="mb-6 space-y-4">
-            <p className="text-[13px] font-semibold text-mv-ink">{t("referralProgramsTitle")}</p>
-            {programs.map(({ program, link }) => (
-              <ReferralProgramCard
-                key={program.id}
-                program={program}
-                link={link}
-                restaurantName={restaurantName ?? undefined}
-                onLinkCreated={(created) => handleLinkCreated(program.id, created)}
-              />
-            ))}
+            {data.transactions.length > 0 && (
+              <div>
+                <div className="mb-2.5 flex items-center justify-between">
+                  <p className="text-[13px] font-semibold text-mv-ink">{t("historyTitle")}</p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("profile")}
+                    className="text-[12px] font-semibold text-mv-green-dark hover:underline"
+                  >
+                    Tout voir
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  {data.transactions.slice(0, 3).map((tx) => (
+                    <div key={tx.id} className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2.5">
+                      <div>
+                        <p className="text-[12.5px] font-medium text-mv-ink">{t(`txLabel.${tx.type}`)}</p>
+                        <p className="text-[11px] text-mv-ink-faint">{formatDate(tx.createdAt)}</p>
+                      </div>
+                      <span
+                        className={
+                          tx.pointsDelta >= 0
+                            ? "text-[12.5px] font-semibold text-mv-green-dark"
+                            : "text-[12.5px] font-semibold text-mv-red"
+                        }
+                      >
+                        {tx.pointsDelta >= 0 ? "+" : ""}
+                        {tx.pointsDelta} {t("pts")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        <Card>
-          <CardHeader title={t("historyTitle")} description={t("transactionsCount", { count: data.transactions.length })} />
-          {data.transactions.length === 0 ? (
-            <p className="text-[12.5px] text-mv-ink-faint">{t("noTransactions")}</p>
-          ) : (
-            <div className="space-y-2">
-              {data.transactions.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2.5">
-                  <div>
-                    <p className="text-[12.5px] font-medium text-mv-ink">{t(`txLabel.${tx.type}`)}</p>
-                    <p className="text-[11px] text-mv-ink-faint">{formatDate(tx.createdAt)}</p>
-                  </div>
-                  <span
-                    className={
-                      tx.pointsDelta >= 0
-                        ? "text-[12.5px] font-semibold text-mv-green-dark"
-                        : "text-[12.5px] font-semibold text-mv-red"
-                    }
-                  >
-                    {tx.pointsDelta >= 0 ? "+" : ""}
-                    {tx.pointsDelta} {t("pts")}
-                  </span>
+        {activeTab === "order" && (
+          <div>
+            <h1 className="mb-1 font-display text-[24px] font-medium text-mv-ink">{t("menuTitle")}</h1>
+            <p className="mb-5 text-[13px] text-mv-ink-soft">{t("menuDescription")}</p>
+            {hasActiveMenu ? (
+              <Card>
+                <MenuBrowserCard menuItems={menuItems} cart={cart} onQtyChange={handleQtyChange} />
+              </Card>
+            ) : (
+              <p className="text-[12.5px] text-mv-ink-faint">Aucun plat disponible pour l&apos;instant.</p>
+            )}
+          </div>
+        )}
+
+        {activeTab === "rewards" && (
+          <div className="space-y-5">
+            <h1 className="font-display text-[24px] font-medium text-mv-ink">{t("rewardsTitle")}</h1>
+            <RewardsRedeemCard rewards={data.rewards} points={points} redemptions={redemptions} onRedeemed={handleRedeemed} />
+            {programs.length > 0 && (
+              <div className="space-y-4">
+                <p className="text-[13px] font-semibold text-mv-ink">{t("referralProgramsTitle")}</p>
+                {programs.map(({ program, link }) => (
+                  <ReferralProgramCard
+                    key={program.id}
+                    program={program}
+                    link={link}
+                    restaurantName={restaurantName ?? undefined}
+                    onLinkCreated={(created) => handleLinkCreated(program.id, created)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "profile" && (
+          <div className="space-y-5">
+            <h1 className="font-display text-[24px] font-medium text-mv-ink">{t("tabProfile")}</h1>
+            <ProfileSettingsCard customer={customer} />
+            <Card>
+              <CardHeader title={t("historyTitle")} description={t("transactionsCount", { count: data.transactions.length })} />
+              {data.transactions.length === 0 ? (
+                <p className="text-[12.5px] text-mv-ink-faint">{t("noTransactions")}</p>
+              ) : (
+                <div className="space-y-2">
+                  {data.transactions.map((tx) => (
+                    <div key={tx.id} className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2.5">
+                      <div>
+                        <p className="text-[12.5px] font-medium text-mv-ink">{t(`txLabel.${tx.type}`)}</p>
+                        <p className="text-[11px] text-mv-ink-faint">{formatDate(tx.createdAt)}</p>
+                      </div>
+                      <span
+                        className={
+                          tx.pointsDelta >= 0
+                            ? "text-[12.5px] font-semibold text-mv-green-dark"
+                            : "text-[12.5px] font-semibold text-mv-red"
+                        }
+                      >
+                        {tx.pointsDelta >= 0 ? "+" : ""}
+                        {tx.pointsDelta} {t("pts")}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
+              )}
+            </Card>
+          </div>
+        )}
       </div>
+
+      {cartCount > 0 && activeTab === "order" && (
+        <div className="fixed inset-x-0 bottom-[68px] z-30 px-6" style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}>
+          <button
+            onClick={() => setCheckoutOpen(true)}
+            className="mx-auto flex w-full max-w-2xl items-center justify-between gap-2 rounded-2xl bg-mv-green px-5 py-3.5 text-[13.5px] font-semibold text-mv-cream-soft shadow-mv-lg transition-colors hover:bg-mv-green-dark"
+          >
+            <span className="flex items-center gap-2">
+              <ShoppingCart size={16} /> {t("cartItemCount", { count: cartCount })}
+            </span>
+            <span className="flex items-center gap-1">
+              {formatCurrency(cartSubtotal)} <ArrowRight size={14} />
+            </span>
+          </button>
+        </div>
+      )}
+
+      <CheckoutModal
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        customerId={customer.id}
+        cartLines={cartLines}
+        taxRate={taxRate}
+        acceptsTips={acceptsTips}
+        onOrdered={handleOrdered}
+      />
+
+      <BottomTabBar active={activeTab} onChange={setActiveTab} cartCount={cartCount} labels={tabLabels} />
     </div>
   );
 }

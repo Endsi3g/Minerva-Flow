@@ -1071,7 +1071,12 @@
       "orderError": "Sipariş başarısız oldu. Tekrar deneyin.",
       "orderSuccessTitle": "Sipariş gönderildi",
       "orderSuccessDescription": "Yerinde ödeyeceksiniz. Restoran kısa süre içinde onaylayacak.",
-      "orderClose": "Kapat"
+      "orderClose": "Kapat",
+      "tabHome": "Ana Sayfa",
+      "tabOrder": "Sipariş",
+      "tabProfile": "Profil",
+      "homeOrderCta": "Şimdi sipariş ver",
+      "offersTitle": "Şu anki teklifler"
     }
   }
 }
