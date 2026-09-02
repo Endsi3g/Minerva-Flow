@@ -4,10 +4,11 @@ import { getActiveUserContacts } from "@/lib/data/users";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-// Resend's shared sandbox sender — works immediately with no domain
-// verification, good enough to start sending. Swap RESEND_FROM_EMAIL once a
-// verified sending domain is set up.
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Minerva Flow <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Minerva Flow <flow@minervaflow.app>";
+const REPLY_TO = process.env.RESEND_REPLY_TO ?? "support@minervaflow.app";
+
+export { sendLifecycleEmail, processLifecycleEngine } from "./lifecycle";
+export { renderLifecycleEmail } from "./lifecycle-templates";
 
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minerva-flow.vercel.app";
 

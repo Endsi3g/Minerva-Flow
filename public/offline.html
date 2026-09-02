@@ -40,7 +40,27 @@
     <div class="dot">M</div>
     <h1>Pas de connexion</h1>
     <p>Cette page n'a pas encore été visitée avec une connexion active. Vérifiez votre réseau et réessayez.</p>
-    <button onclick="location.reload()">Réessayer</button>
+    <button id="retryBtn" onclick="retryConnection()">Réessayer</button>
   </div>
+  <script>
+    function retryConnection() {
+      const btn = document.getElementById('retryBtn');
+      if (btn) btn.textContent = 'Connexion en cours...';
+      if ('serviceWorker' in navigator && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          return Promise.all(regs.map(function(r) { return r.unregister(); }));
+        }).then(function() {
+          window.location.reload();
+        }).catch(function() {
+          window.location.reload();
+        });
+      } else {
+        window.location.reload();
+      }
+    }
+    window.addEventListener('online', function() {
+      retryConnection();
+    });
+  </script>
 </body>
 </html>
