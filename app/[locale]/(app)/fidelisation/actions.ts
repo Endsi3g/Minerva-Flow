@@ -68,7 +68,7 @@ export async function redeemRewardAction(
 
 export async function createLoyaltyRewardAction(
   restaurantId: string,
-  input: { name: string; description?: string; pointsCost: number }
+  input: { name: string; description?: string; pointsCost: number; menuItemId?: string | null }
 ): Promise<LoyaltyReward | null> {
   if (!input.name.trim() || !Number.isFinite(input.pointsCost) || input.pointsCost <= 0) return null;
   const reward = await createLoyaltyReward(restaurantId, input);

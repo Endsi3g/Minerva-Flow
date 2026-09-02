@@ -2,6 +2,9 @@
 
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
+import { RadialGauge } from "@/components/charts/RadialGauge";
+import { DistributionDonut } from "@/components/charts/DistributionDonut";
+import { FlowBars } from "@/components/charts/FlowBars";
 import { formatCurrency } from "@/lib/utils";
 import type { ReferralRoiMetrics, TopAmbassador } from "@/lib/data/referral-roi";
 import { TrendingUp, Users, MousePointerClick, DollarSign, Trophy } from "lucide-react";
@@ -15,81 +18,124 @@ export function ReferralRoiDashboard({
 }) {
   return (
     <div className="space-y-6">
-      {/* Top Level KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* Top Level KPIs, each with a visual to show the effect, not just the number */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
-          <div className="flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Revenu Filleuls</span>
             <span className="rounded-lg bg-mv-green-tint p-1.5 text-mv-green-dark">
               <DollarSign size={14} />
             </span>
           </div>
-          <p className="mt-2 font-display text-[22px] font-semibold text-mv-ink">
+          <p className="mb-3 font-display text-[20px] font-semibold text-mv-ink">
             {formatCurrency(metrics.totalRevenueGenerated)}
           </p>
-          <div className="mt-1 flex items-center gap-1.5 text-[11.5px] text-mv-ink-soft">
-            <span>Coût récompenses : {formatCurrency(metrics.estimatedRewardsCost)}</span>
-          </div>
+          <FlowBars
+            lines={[
+              {
+                label: "Revenu",
+                amount: metrics.totalRevenueGenerated,
+                pct: metrics.totalRevenueGenerated > 0 ? 100 : 0,
+              },
+              {
+                label: "Coût récompenses",
+                amount: metrics.estimatedRewardsCost,
+                pct:
+                  metrics.totalRevenueGenerated > 0
+                    ? Math.min(100, (metrics.estimatedRewardsCost / metrics.totalRevenueGenerated) * 100)
+                    : 0,
+              },
+            ]}
+          />
         </div>
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
-          <div className="flex items-center justify-between">
+          <div className="mb-1 flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Multiplicateur ROI</span>
             <span className="rounded-lg bg-mv-lime-tint p-1.5 text-mv-green-darker">
               <TrendingUp size={14} />
             </span>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-display text-[22px] font-semibold text-mv-green-darker">
-              {metrics.roiMultiplier > 0
-                ? `${metrics.roiMultiplier}x`
-                : metrics.totalRevenueGenerated > 0
-                  ? "Coût $0"
-                  : "—"}
-            </span>
-            {metrics.totalRevenueGenerated > 0 && (
-              <Badge tone="lime" size="xs">
-                Net +{formatCurrency(metrics.netProfitGenerated)}
-              </Badge>
-            )}
+          <div className="flex items-center gap-3">
+            <RadialGauge
+              value={
+                metrics.totalRevenueGenerated > 0
+                  ? Math.max(0, Math.min(100, (metrics.netProfitGenerated / metrics.totalRevenueGenerated) * 100))
+                  : 0
+              }
+              size={72}
+              strokeWidth={8}
+              color="var(--mv-green)"
+              centerValue={
+                metrics.roiMultiplier > 0
+                  ? `${metrics.roiMultiplier}x`
+                  : metrics.totalRevenueGenerated > 0
+                    ? "$0"
+                    : "—"
+              }
+              centerLabel="coût"
+            />
+            <div className="min-w-0">
+              {metrics.totalRevenueGenerated > 0 && (
+                <Badge tone="lime" size="xs">
+                  Net +{formatCurrency(metrics.netProfitGenerated)}
+                </Badge>
+              )}
+              <p className="mt-1.5 text-[11.5px] leading-snug text-mv-ink-soft">
+                {metrics.roiMultiplier > 0
+                  ? "Rendement net par dollar investi"
+                  : metrics.totalRevenueGenerated > 0
+                    ? "Récompenses pas encore réclamées — coût réel à venir"
+                    : "Rendement net par dollar investi"}
+              </p>
+            </div>
           </div>
-          <p className="mt-1 text-[11.5px] text-mv-ink-soft">
-            {metrics.roiMultiplier > 0
-              ? "Rendement net par dollar investi"
-              : metrics.totalRevenueGenerated > 0
-                ? "Récompenses pas encore réclamées — coût réel à venir"
-                : "Rendement net par dollar investi"}
-          </p>
         </div>
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
-          <div className="flex items-center justify-between">
+          <div className="mb-1 flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Taux de Conversion</span>
             <span className="rounded-lg bg-blue-500/10 p-1.5 text-blue-600">
               <MousePointerClick size={14} />
             </span>
           </div>
-          <p className="mt-2 font-display text-[22px] font-semibold text-mv-ink">
-            {metrics.conversionRatePct}%
-          </p>
-          <p className="mt-1 text-[11.5px] text-mv-ink-soft">
-            {metrics.totalConversions} convertis sur {metrics.totalClicks} clics
-          </p>
+          <DistributionDonut
+            size={92}
+            data={[
+              { label: "Convertis", value: metrics.totalConversions, color: "var(--mv-green)" },
+              {
+                label: "Clics sans conversion",
+                value: Math.max(0, metrics.totalClicks - metrics.totalConversions),
+                color: "var(--mv-border)",
+              },
+            ]}
+          />
+          <p className="mt-2 text-[11.5px] text-mv-ink-soft">{metrics.conversionRatePct}% de taux de conversion</p>
         </div>
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
-          <div className="flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Ambassadeurs Actifs</span>
             <span className="rounded-lg bg-purple-500/10 p-1.5 text-purple-600">
               <Users size={14} />
             </span>
           </div>
-          <p className="mt-2 font-display text-[22px] font-semibold text-mv-ink">
-            {metrics.activeAmbassadorsCount}
-          </p>
-          <p className="mt-1 text-[11.5px] text-mv-ink-soft">
-            Clients qui partagent activement
-          </p>
+          <p className="mb-3 font-display text-[20px] font-semibold text-mv-ink">{metrics.activeAmbassadorsCount}</p>
+          {ambassadors.length > 0 ? (
+            <FlowBars
+              tone="ink"
+              lines={ambassadors.slice(0, 3).map((a) => ({
+                label: a.customerName,
+                amount: a.revenueGenerated,
+                pct:
+                  ambassadors[0].revenueGenerated > 0
+                    ? Math.max(4, (a.revenueGenerated / ambassadors[0].revenueGenerated) * 100)
+                    : 0,
+              }))}
+            />
+          ) : (
+            <p className="text-[11.5px] text-mv-ink-soft">Clients qui partagent activement</p>
+          )}
         </div>
       </div>
 
