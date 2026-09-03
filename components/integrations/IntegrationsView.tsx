@@ -28,6 +28,7 @@ import {
   Square,
   Stripe,
   Google,
+  GoogleWorkspace,
   UberEats,
   Gmail,
   GoogleCalendar,
@@ -37,6 +38,8 @@ import {
   QuickBooks,
   Xero,
   Sage,
+  FreshBooks,
+  Dext,
   Pennylane,
   Clover,
   Lightspeed,
@@ -99,7 +102,7 @@ export function IntegrationsView({
       case "google-maps":
         return <GoogleMaps size={22} />;
       case "google-workspace":
-        return <GoogleCalendar size={22} />;
+        return <GoogleWorkspace size={22} />;
       case "google-analytics":
         return <GoogleAnalytics size={22} />;
       case "google-pay":
@@ -114,6 +117,10 @@ export function IntegrationsView({
         return <Xero size={22} />;
       case "sage":
         return <Sage size={22} />;
+      case "freshbooks":
+        return <FreshBooks size={22} />;
+      case "dext":
+        return <Dext size={22} />;
       case "pennylane":
         return <Pennylane size={22} />;
       case "clover":

@@ -9,7 +9,8 @@ import { useApp } from "@/lib/app-context";
 import { ReferralSettingsTab } from "@/components/chat/ReferralSettingsTab";
 import { AdPlatformsCard, InstagramCard } from "@/components/minerva/AdPlatformsCard";
 import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
-import { PosConnectionsCard, QuickBooksCard } from "@/components/minerva/PosConnectionsCard";
+import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
+import { AccountingConnectionsCard } from "@/components/minerva/AccountingConnectionsCard";
 import { ReservationDeliveryConnectionsCard } from "@/components/minerva/ReservationDeliveryConnectionsCard";
 import { StripeConnectCard } from "@/components/minerva/StripeConnectCard";
 import {
@@ -260,7 +261,7 @@ function IntegrationsTab() {
       <InstagramCard />
       <GoogleWorkspaceCard />
       <PosConnectionsCard />
-      <QuickBooksCard />
+      <AccountingConnectionsCard />
       <ReservationDeliveryConnectionsCard />
       <StripeConnectCard />
     </div>

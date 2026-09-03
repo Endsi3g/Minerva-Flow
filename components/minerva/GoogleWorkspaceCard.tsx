@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardHeader } from "@/components/minerva/PageCard";
+import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -15,17 +15,33 @@ import {
 import type { GoogleConnection } from "@/lib/data/google-connections";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Gmail, GoogleSheets, GoogleDrive, GoogleCalendar, GoogleAnalytics } from "@/components/ui/BrandIcons";
+import {
+  Google,
+  GoogleWorkspace,
+  Gmail,
+  GoogleSheets,
+  GoogleDrive,
+  GoogleCalendar,
+  GoogleAnalytics,
+  GoogleAds,
+} from "@/components/ui/BrandIcons";
+import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 const FEATURES: GoogleFeature[] = ["gmail", "sheets", "drive", "calendar", "analytics"];
 
-const FEATURE_ICON: Record<GoogleFeature, typeof Gmail> = {
-  gmail: Gmail,
-  sheets: GoogleSheets,
-  drive: GoogleDrive,
-  calendar: GoogleCalendar,
-  analytics: GoogleAnalytics,
-};
+const ALL_GOOGLE_SERVICES: {
+  id: GoogleFeature | "ads";
+  label: string;
+  Icon: React.ComponentType<{ size?: number; width?: number; height?: number; className?: string }>;
+}[] = [
+  { id: "gmail", label: "Gmail", Icon: Gmail },
+  { id: "calendar", label: "Calendar", Icon: GoogleCalendar },
+  { id: "sheets", label: "Sheets", Icon: GoogleSheets },
+  { id: "drive", label: "Drive", Icon: GoogleDrive },
+  { id: "analytics", label: "Analytics GA4", Icon: GoogleAnalytics },
+  { id: "ads", label: "Google Ads", Icon: GoogleAds },
+];
 
 export function GoogleWorkspaceCard() {
   const { restaurantId } = useApp();
@@ -69,65 +85,107 @@ export function GoogleWorkspaceCard() {
   if (!status) return null;
 
   const connection = status.connection;
+  const isConnected = Boolean(connection && connection.status === "connecte");
   const grantedFeatures = FEATURES.filter((f) => connection?.grantedScopes.includes(GOOGLE_SCOPES[f]));
 
   return (
-    <Card>
-      <CardHeader
-        eyebrow="Google Workspace"
-        title="Google"
-        description="Gmail, Sheets, Drive, Calendar et Analytics — une seule connexion, plusieurs fonctionnalités."
-      />
-
-      {!status.configured ? (
-        <p className="text-[13px] text-mv-ink-faint">Clés API non configurées.</p>
-      ) : !connection || connection.status !== "connecte" ? (
-        <Button size="sm" onClick={() => setModalOpen(true)}>
-          Connecter Google
-        </Button>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[13px] font-semibold text-mv-ink">
-                {connection.connectedEmail ?? "Connecté"}
-              </p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {grantedFeatures.map((f) => {
-                  const Icon = FEATURE_ICON[f];
-                  return (
-                    <Badge key={f} tone="green">
-                      <Icon width={12} height={12} />
-                      {GOOGLE_FEATURE_LABELS[f].title}
-                    </Badge>
-                  );
-                })}
-              </div>
+    <Card className="flex flex-col justify-between">
+      <div>
+        {/* Header with official Google Workspace SVG icon */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-mv-border-soft bg-mv-surface shadow-mv-sm">
+              <GoogleWorkspace size={24} />
             </div>
-            <Button size="sm" variant="secondary" onClick={() => setModalOpen(true)}>
-              Gérer
-            </Button>
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+                Google Workspace
+              </span>
+              <h3 className="font-display text-[18px] font-medium text-mv-ink">Google</h3>
+            </div>
           </div>
 
-          {grantedFeatures.includes("analytics") && (
-            <Field>
-              <FieldLabel htmlFor="ga4-property-id">ID de propriété GA4</FieldLabel>
-              <div className="flex gap-2">
-                <Input
-                  id="ga4-property-id"
-                  value={ga4Input}
-                  onChange={(e) => setGa4Input(e.target.value)}
-                  placeholder="Ex : 123456789"
-                  className="flex-1"
-                />
-                <Button size="sm" variant="secondary" onClick={handleSaveGa4}>
-                  Enregistrer
-                </Button>
-              </div>
-            </Field>
+          {isConnected ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2.5 py-1 text-[11px] font-bold text-mv-green-dark">
+              <Check size={13} /> Connecté
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full border border-mv-border-soft bg-mv-cream-soft px-2.5 py-1 text-[11px] font-medium text-mv-ink-faint">
+              Non connecté
+            </span>
           )}
         </div>
-      )}
+
+        <p className="text-[12.5px] leading-relaxed text-mv-ink-soft mb-3.5">
+          Gmail, Sheets, Drive, Calendar, Analytics et Ads — une seule connexion pour automatiser vos réservations, rapports et campagnes.
+        </p>
+
+        {/* Feature Pills with Official Colorful Brand SVGs */}
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {ALL_GOOGLE_SERVICES.map((s) => {
+            const Icon = s.Icon;
+            const isGranted = isConnected && s.id !== "ads" && grantedFeatures.includes(s.id as GoogleFeature);
+            return (
+              <span
+                key={s.id}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11.5px] font-medium transition-colors",
+                  isGranted
+                    ? "border-mv-green/40 bg-mv-green-tint text-mv-green-dark font-semibold shadow-xs"
+                    : isConnected
+                    ? "border-mv-border-soft bg-mv-cream/40 text-mv-ink-faint opacity-70"
+                    : "border-mv-border bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-surface"
+                )}
+              >
+                <Icon size={14} className="shrink-0" />
+                <span>{s.label}</span>
+                {isGranted && <Check size={11} className="text-mv-green-dark stroke-[2.5]" />}
+              </span>
+            );
+          })}
+        </div>
+
+        {isConnected && connection?.connectedEmail && (
+          <div className="mb-4 rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 px-3 py-2 text-[12px] text-mv-ink-soft flex items-center justify-between">
+            <span className="font-medium truncate">{connection.connectedEmail}</span>
+            <span className="text-[11px] text-mv-ink-faint">Compte actif</span>
+          </div>
+        )}
+      </div>
+
+      <div>
+        {!status.configured ? (
+          <p className="text-[13px] text-mv-ink-faint">Clés API non configurées.</p>
+        ) : !isConnected ? (
+          <Button size="sm" onClick={() => setModalOpen(true)} className="w-full flex items-center justify-center gap-2">
+            <Google size={15} /> Connecter Google
+          </Button>
+        ) : (
+          <div className="space-y-3">
+            <Button size="sm" variant="secondary" onClick={() => setModalOpen(true)} className="w-full">
+              Gérer les accès Google
+            </Button>
+
+            {grantedFeatures.includes("analytics") && (
+              <Field>
+                <FieldLabel htmlFor="ga4-property-id">ID de propriété GA4</FieldLabel>
+                <div className="flex gap-2">
+                  <Input
+                    id="ga4-property-id"
+                    value={ga4Input}
+                    onChange={(e) => setGa4Input(e.target.value)}
+                    placeholder="Ex : 123456789"
+                    className="flex-1 text-[12.5px]"
+                  />
+                  <Button size="sm" variant="secondary" onClick={handleSaveGa4}>
+                    Enregistrer
+                  </Button>
+                </div>
+              </Field>
+            )}
+          </div>
+        )}
+      </div>
 
       <GoogleConnectModal
         open={modalOpen}

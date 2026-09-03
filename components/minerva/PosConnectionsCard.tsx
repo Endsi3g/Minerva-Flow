@@ -8,7 +8,7 @@ import type { PosConnection, PosProvider } from "@/lib/data/pos-connections";
 import { formatDate } from "@/lib/utils";
 import { RefreshCw, Store, Landmark } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
-import { Square } from "@/components/ui/BrandIcons";
+import { Square, QuickBooks } from "@/components/ui/BrandIcons";
 
 const providerLabel: Record<PosProvider, string> = {
   square: "Square",
@@ -17,11 +17,11 @@ const providerLabel: Record<PosProvider, string> = {
   quickbooks: "QuickBooks",
 };
 
-// Square has an official brand icon in @thesvg/react; Lightspeed/Clover
-// don't (niche POS brands), so they fall back to a generic store icon.
+// Square and QuickBooks have official brand icons in @thesvg/react;
+// Lightspeed/Clover fall back to a generic store icon.
 function ProviderIcon({ provider }: { provider: PosProvider }) {
   if (provider === "square") return <Square width={22} height={22} className="shrink-0" />;
-  if (provider === "quickbooks") return <Landmark size={20} className="shrink-0 text-mv-ink-soft" />;
+  if (provider === "quickbooks") return <QuickBooks width={22} height={22} className="shrink-0" />;
   return <Store size={20} className="shrink-0 text-mv-ink-faint" />;
 }
 
@@ -145,38 +145,12 @@ export function PosConnectionsCard() {
   );
 }
 
+import { AccountingConnectionsCard } from "./AccountingConnectionsCard";
+
 /**
- * Kept separate from PosConnectionsCard above — same pos_connections
- * storage (Vault-backed OAuth tokens, RLS-scoped), but QuickBooks is
- * accounting/expenses, not point-of-sale, so it gets its own card/copy
- * rather than living under "Système de caisse". Same split as
- * InstagramCard vs AdPlatformsCard for the same reason.
+ * QuickBooks & Accounting software card.
+ * Replaced by the comprehensive AccountingConnectionsCard (QuickBooks, Xero, Sage, FreshBooks, Dext, Pennylane).
  */
 export function QuickBooksCard() {
-  const { restaurantId } = useApp();
-  const [status, setStatus] = useState<{ configured: PosProviderConfigured; connections: PosConnection[] } | null>(
-    null
-  );
-
-  function refresh() {
-    if (!restaurantId) return;
-    getPosStatusAction(restaurantId).then(setStatus);
-  }
-
-  useEffect(refresh, [restaurantId]);
-
-  if (!status) return null;
-
-  const connection = status.connections.find((c) => c.provider === "quickbooks");
-
-  return (
-    <Card>
-      <CardHeader
-        eyebrow="Comptabilité"
-        title="QuickBooks"
-        description="Connectez votre compte QuickBooks Online pour préparer la synchronisation automatique de vos dépenses."
-      />
-      <ConnectRow provider="quickbooks" configured={status.configured.quickbooks} connection={connection} onSynced={refresh} />
-    </Card>
-  );
+  return <AccountingConnectionsCard />;
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import SquareSvg from "@thesvg/react/square";
 import GoogleSvg from "@thesvg/react/google";
+import GoogleWorkspaceSvg from "@thesvg/react/google-workspace";
 import GoogleCalendarSvg from "@thesvg/react/google-calendar";
 import GoogleSheetsSvg from "@thesvg/react/google-sheets";
 import GoogleDriveSvg from "@thesvg/react/google-drive";
@@ -37,6 +38,12 @@ export function Google({ size = 20, width, height, className, ...props }: BrandI
   const w = width || size;
   const h = height || size;
   return <GoogleSvg width={w} height={h} className={className} {...props} />;
+}
+
+export function GoogleWorkspace({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return <GoogleWorkspaceSvg width={w} height={h} className={className} {...props} />;
 }
 
 export function GoogleCalendar({ size = 20, width, height, className, ...props }: BrandIconProps) {
@@ -237,6 +244,42 @@ export function Moneris({ size = 20, width, height, className, ...props }: Brand
       <path
         d="M6 17V7L9.5 12.5L12 8.5L14.5 12.5L18 7V17H15.5V11L13.25 14.5H10.75L8.5 11V17H6Z"
         fill="#FFFFFF"
+      />
+    </svg>
+  );
+}
+
+export function FreshBooks({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return (
+    <svg width={w} height={h} viewBox="0 0 32 32" fill="none" className={className} {...props}>
+      <rect width="32" height="32" rx="7" fill="#0075DD" />
+      <path
+        d="M23.5 9.5L16.2 16.8C15.8 17.2 15.2 17.2 14.8 16.8L12.5 14.5C12.1 14.1 11.5 14.1 11.1 14.5L8.5 17.1C8.1 17.5 8.1 18.1 8.5 18.5L14.8 24.8C15.2 25.2 15.8 25.2 16.2 24.8L26.5 14.5C26.9 14.1 26.9 13.5 26.5 13.1L24.9 9.5C24.6 9.1 23.9 9.1 23.5 9.5Z"
+        fill="#80C342"
+      />
+      <path
+        d="M17.5 8.5L9.5 16.5C9.1 16.9 9.1 17.5 9.5 17.9L11.5 19.9C11.9 20.3 12.5 20.3 12.9 19.9L20.5 12.3C20.9 11.9 20.9 11.3 20.5 10.9L18.9 8.5C18.6 8.1 17.9 8.1 17.5 8.5Z"
+        fill="white"
+      />
+    </svg>
+  );
+}
+
+export function Dext({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return (
+    <svg width={w} height={h} viewBox="0 0 32 32" fill="none" className={className} {...props}>
+      <rect width="32" height="32" rx="7" fill="#FF5200" />
+      <path
+        d="M9 8H16.5C21.1944 8 25 11.8056 25 16.5C25 21.1944 21.1944 25 16.5 25H9V8Z"
+        fill="white"
+      />
+      <path
+        d="M14 12H16.2C18.851 12 21 14.149 21 16.8C21 19.451 18.851 21.6 16.2 21.6H14V12Z"
+        fill="#FF5200"
       />
     </svg>
   );

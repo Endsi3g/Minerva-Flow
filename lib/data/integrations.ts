@@ -26,6 +26,8 @@ export type IntegrationItem = {
     | "quickbooks"
     | "xero"
     | "sage"
+    | "freshbooks"
+    | "dext"
     | "pennylane"
     | "clover"
     | "moneris"
@@ -265,6 +267,30 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
       details: {
         disponibilite: "Bientôt disponible",
         module: "Pilotage Restauration",
+      },
+    },
+    {
+      id: "freshbooks-accounting",
+      name: "FreshBooks",
+      category: "comptabilite",
+      description: "Facturation simplifiée, notes de frais et suivi des règlements pour la restauration.",
+      status: "coming_soon",
+      iconName: "freshbooks",
+      details: {
+        disponibilite: "Bientôt disponible",
+        module: "Facturation & Dépenses",
+      },
+    },
+    {
+      id: "dext-accounting",
+      name: "Dext (Receipt Bank)",
+      category: "comptabilite",
+      description: "Numérisation et extraction automatique par IA de vos factures d'achats et reçus fournisseurs.",
+      status: "coming_soon",
+      iconName: "dext",
+      details: {
+        disponibilite: "Bientôt disponible",
+        module: "Numérisation Reçus & Factures",
       },
     },
     {
