@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   createCampaign,
   updateCampaign,
@@ -86,14 +87,14 @@ export async function publishToInstagramAction(
   if (!match) return { ok: false, error: "Format d'image invalide." };
   const bytes = Buffer.from(match[1], "base64");
 
-  const supabase = await createClient();
+  const admin = createAdminClient();
   const path = `${restaurantId}/${Date.now()}.png`;
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await admin.storage
     .from("marketing-exports")
-    .upload(path, bytes, { contentType: "image/png", upsert: false });
+    .upload(path, bytes, { contentType: "image/png", upsert: true });
   if (uploadError) return { ok: false, error: "Échec du téléversement de l'image." };
 
-  const { data: publicUrlData } = supabase.storage.from("marketing-exports").getPublicUrl(path);
+  const { data: publicUrlData } = admin.storage.from("marketing-exports").getPublicUrl(path);
 
   const result = await publishToInstagram(restaurantId, publicUrlData.publicUrl, caption);
   if (!result.ok) return { ok: false, error: result.error };

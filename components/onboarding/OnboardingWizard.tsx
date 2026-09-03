@@ -8,6 +8,7 @@ import { Instagram as InstagramIcon } from "@/components/ui/BrandIcons";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Button } from "@/components/ui/Button";
+import { toast } from "sonner";
 import { ImportMenuPdfModal } from "@/components/menu/ImportMenuPdfModal";
 import { roleLabels } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
@@ -171,7 +172,14 @@ export function OnboardingWizard({
       if (res.ok && res.code) {
         setReferralActive(true);
         setReferralLinkUrl(`${window.location.origin}${res.url}`);
+        toast.success("Programme de parrainage activé !", {
+          description: "Votre premier lien de recommandation est prêt pour vos Stories.",
+        });
+      } else {
+        toast.error("Impossible d'activer le programme pour le moment.");
       }
+    } catch {
+      toast.error("Une erreur est survenue lors de l'activation.");
     } finally {
       setActivatingReferral(false);
     }
@@ -179,9 +187,28 @@ export function OnboardingWizard({
 
   async function copyReferral() {
     if (!referralLinkUrl) return;
-    await navigator.clipboard.writeText(referralLinkUrl);
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(referralLinkUrl);
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = referralLinkUrl;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
     setCopiedReferral(true);
     setTimeout(() => setCopiedReferral(false), 2000);
+    toast.success("Lien de parrainage copié !");
   }
 
   return (

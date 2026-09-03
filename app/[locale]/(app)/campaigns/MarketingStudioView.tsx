@@ -239,7 +239,25 @@ ${itemDesc}
   }
 
   async function handleCopyStickerLink() {
-    await navigator.clipboard.writeText(referralFullUrl);
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(referralFullUrl);
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = referralFullUrl;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
     setCopiedStickerLink(true);
     setTimeout(() => setCopiedStickerLink(false), 2000);
     toast.success("Lien de sticker Story copié !", {
@@ -256,7 +274,25 @@ ${itemDesc}
   }
 
   async function handleCopyCaption() {
-    await navigator.clipboard.writeText(generatedCaption);
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(generatedCaption);
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = generatedCaption;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
     setCopiedCaption(true);
     setTimeout(() => setCopiedCaption(false), 2000);
     toast.success("Légende Instagram copiée !");
@@ -319,7 +355,7 @@ ${itemDesc}
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="bg-mv-green text-white text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
-                Studio Marketing Sans IA Forcee
+                Marketing Studio · Instagram & Facebook
               </span>
               <h2 className="font-display text-[20px] font-bold text-mv-ink">
                 Éditeur de Visuels Social Media Ultra-Personnalisable & Relances Clients
@@ -608,7 +644,7 @@ ${itemDesc}
                       </span>
                     </div>
                     <span className="mt-1 text-[9px] font-semibold uppercase tracking-wider opacity-75">
-                      👆 Toucher le sticker
+                      {selectedFormat === "story" ? "👆 Toucher le sticker" : "🔗 Lien en bio & commande"}
                     </span>
                   </div>
                 )}
