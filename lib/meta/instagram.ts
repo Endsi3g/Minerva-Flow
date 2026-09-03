@@ -45,34 +45,54 @@ export async function publishToInstagram(
     };
   }
 
-  const containerRes = await fetch(
-    `https://graph.facebook.com/${GRAPH_VERSION}/${instagramBusinessAccountId}/media`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image_url: imageUrl,
-        caption,
-        access_token: tokens.accessToken,
-      }),
+  // Direct Instagram Business Login uses graph.instagram.com, while
+  // Facebook Login uses graph.facebook.com. We attempt graph.instagram.com
+  // first and seamlessly fallback to graph.facebook.com.
+  const apiBases = [
+    `https://graph.instagram.com/${GRAPH_VERSION}/${instagramBusinessAccountId}`,
+    `https://graph.facebook.com/${GRAPH_VERSION}/${instagramBusinessAccountId}`,
+  ];
+
+  let containerId: string | null = null;
+  let activeBase = apiBases[0];
+  let lastError = "Échec de la création du média Instagram.";
+
+  for (const base of apiBases) {
+    try {
+      const containerRes = await fetch(`${base}/media`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_url: imageUrl,
+          caption,
+          access_token: tokens.accessToken,
+        }),
+      });
+      const containerData = (await containerRes.json()) as { id?: string; error?: { message: string } };
+      if (containerRes.ok && containerData.id) {
+        containerId = containerData.id;
+        activeBase = base;
+        break;
+      } else if (containerData.error?.message) {
+        lastError = containerData.error.message;
+      }
+    } catch {
+      // Try next base
     }
-  );
-  const containerData = (await containerRes.json()) as { id?: string; error?: { message: string } };
-  if (!containerRes.ok || !containerData.id) {
-    return { ok: false, error: containerData.error?.message ?? "Échec de la création du média Instagram." };
   }
 
-  const publishRes = await fetch(
-    `https://graph.facebook.com/${GRAPH_VERSION}/${instagramBusinessAccountId}/media_publish`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        creation_id: containerData.id,
-        access_token: tokens.accessToken,
-      }),
-    }
-  );
+  if (!containerId) {
+    return { ok: false, error: lastError };
+  }
+
+  const publishRes = await fetch(`${activeBase}/media_publish`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      creation_id: containerId,
+      access_token: tokens.accessToken,
+    }),
+  });
   const publishData = (await publishRes.json()) as { id?: string; error?: { message: string } };
   if (!publishRes.ok || !publishData.id) {
     return { ok: false, error: publishData.error?.message ?? "Échec de la publication Instagram." };

@@ -13,30 +13,41 @@ function secret() {
   return key;
 }
 
-export function signOAuthState(restaurantId: string): string {
+export function signOAuthState(restaurantId: string, extra?: string): string {
   const nonce = randomBytes(8).toString("hex");
   const ts = Date.now();
-  const payload = `${restaurantId}.${nonce}.${ts}`;
+  const ext = extra ? encodeURIComponent(extra) : "";
+  const payload = ext ? `${restaurantId}.${nonce}.${ts}.${ext}` : `${restaurantId}.${nonce}.${ts}`;
   const signature = createHmac("sha256", secret()).update(payload).digest("hex");
   return Buffer.from(`${payload}.${signature}`).toString("base64url");
 }
 
 const MAX_STATE_AGE_MS = 10 * 60 * 1000; // 10 minutes — the OAuth dance shouldn't take longer
 
-export function verifyOAuthState(state: string): { restaurantId: string } | null {
+export function verifyOAuthState(state: string): { restaurantId: string; extra?: string } | null {
   try {
     const decoded = Buffer.from(state, "base64url").toString("utf8");
-    const [restaurantId, nonce, tsStr, signature] = decoded.split(".");
-    if (!restaurantId || !nonce || !tsStr || !signature) return null;
-
-    const payload = `${restaurantId}.${nonce}.${tsStr}`;
-    const expected = createHmac("sha256", secret()).update(payload).digest("hex");
-    if (expected !== signature) return null;
-
-    const ts = Number(tsStr);
-    if (!Number.isFinite(ts) || Date.now() - ts > MAX_STATE_AGE_MS) return null;
-
-    return { restaurantId };
+    const parts = decoded.split(".");
+    if (parts.length === 4) {
+      const [restaurantId, nonce, tsStr, signature] = parts;
+      if (!restaurantId || !nonce || !tsStr || !signature) return null;
+      const payload = `${restaurantId}.${nonce}.${tsStr}`;
+      const expected = createHmac("sha256", secret()).update(payload).digest("hex");
+      if (expected !== signature) return null;
+      const ts = Number(tsStr);
+      if (!Number.isFinite(ts) || Date.now() - ts > MAX_STATE_AGE_MS) return null;
+      return { restaurantId };
+    } else if (parts.length === 5) {
+      const [restaurantId, nonce, tsStr, ext, signature] = parts;
+      if (!restaurantId || !nonce || !tsStr || !signature) return null;
+      const payload = `${restaurantId}.${nonce}.${tsStr}.${ext}`;
+      const expected = createHmac("sha256", secret()).update(payload).digest("hex");
+      if (expected !== signature) return null;
+      const ts = Number(tsStr);
+      if (!Number.isFinite(ts) || Date.now() - ts > MAX_STATE_AGE_MS) return null;
+      return { restaurantId, extra: ext ? decodeURIComponent(ext) : undefined };
+    }
+    return null;
   } catch {
     return null;
   }

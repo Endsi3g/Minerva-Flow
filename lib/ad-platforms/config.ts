@@ -16,15 +16,27 @@ export function isGoogleAdsConfigured() {
   return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 
-// Instagram Business publishing rides on the same Meta app as Meta Ads
-// (Facebook Login for Business — there's no separate "Instagram-only"
-// OAuth login), just a different, narrower scope grant. Same env vars,
-// its own connect flow and its own ad_platform_connections row (provider
-// "instagram") so an owner can hold ads access and publishing access
-// independently.
-export function isInstagramConfigured() {
-  return Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET);
+export function getInstagramAppId(): string | undefined {
+  return process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID;
 }
+
+export function getInstagramAppSecret(): string | undefined {
+  return process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET;
+}
+
+export function isInstagramConfigured() {
+  return Boolean(getInstagramAppId() && getInstagramAppSecret());
+}
+
+export const INSTAGRAM_DIRECT_SCOPES = [
+  "instagram_business_basic",
+  "instagram_business_content_publish",
+  "instagram_business_manage_messages",
+  "instagram_business_manage_comments",
+].join(",");
+
+export const INSTAGRAM_FACEBOOK_SCOPES =
+  "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement";
 
 export function oauthRedirectUri(provider: "meta" | "google" | "instagram", origin: string) {
   return `${canonicalOrigin(origin)}/api/oauth/${provider}/callback`;

@@ -12,7 +12,6 @@ import { GoogleWorkspaceCard } from "@/components/minerva/GoogleWorkspaceCard";
 import { PosConnectionsCard, QuickBooksCard } from "@/components/minerva/PosConnectionsCard";
 import { ReservationDeliveryConnectionsCard } from "@/components/minerva/ReservationDeliveryConnectionsCard";
 import { StripeConnectCard } from "@/components/minerva/StripeConnectCard";
-import { ApiKeysMcpTab } from "@/components/settings/ApiKeysMcpTab";
 import {
   getAlertRulesAction,
   upsertAlertRuleAction,
@@ -285,12 +284,6 @@ export default function SettingsPage() {
             Intégrations
           </TabsTrigger>
           <TabsTrigger
-            value="api-keys"
-            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
-          >
-            Clés API & MCP
-          </TabsTrigger>
-          <TabsTrigger
             value="alertes"
             className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold data-active:bg-mv-surface data-active:text-mv-ink data-active:shadow-mv-sm"
           >
@@ -312,10 +305,6 @@ export default function SettingsPage() {
 
         <TabsContent value="integrations">
           <IntegrationsTab />
-        </TabsContent>
-
-        <TabsContent value="api-keys">
-          <ApiKeysMcpTab />
         </TabsContent>
 
         <TabsContent value="alertes">

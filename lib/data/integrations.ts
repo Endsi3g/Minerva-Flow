@@ -8,34 +8,53 @@ import { formatDate } from "@/lib/utils";
 export type IntegrationItem = {
   id: string;
   name: string;
-  category: "caisse" | "paiement" | "marketing" | "livraison" | "communication";
+  category: "caisse" | "paiement" | "comptabilite" | "marketing" | "livraison" | "communication";
   description: string;
-  status: "connected" | "disconnected" | "pending" | "error";
+  status: "connected" | "disconnected" | "pending" | "error" | "coming_soon" | "on_request";
   connectedAt?: string;
-  iconName: "square" | "lightspeed" | "stripe" | "google" | "delivery" | "resend";
+  iconName:
+    | "square"
+    | "lightspeed"
+    | "stripe"
+    | "google"
+    | "google-maps"
+    | "google-workspace"
+    | "google-analytics"
+    | "google-pay"
+    | "delivery"
+    | "resend"
+    | "quickbooks"
+    | "xero"
+    | "sage"
+    | "pennylane"
+    | "clover"
+    | "moneris"
+    | "paypal"
+    | "apple-pay"
+    | "instagram";
   details?: Record<string, any>;
 };
 
 const posProviderMeta: Record<PosProvider, { name: string; description: string; iconName: IntegrationItem["iconName"] }> = {
   square: {
     name: "Square Point de Vente",
-    description: "Synchronisation automatique des ventes quotidiennes.",
+    description: "Synchronisation automatique des ventes quotidiennes et clôtures de caisse.",
     iconName: "square",
   },
   lightspeed: {
     name: "Lightspeed Restaurant",
-    description: "Synchronisation automatique des ventes quotidiennes (K-Series).",
+    description: "Synchronisation automatique des ventes quotidiennes (K-Series / L-Series).",
     iconName: "lightspeed",
   },
   clover: {
-    name: "Clover",
-    description: "Pas encore disponible.",
-    iconName: "square",
+    name: "Clover POS",
+    description: "Synchronisation des terminaux de caisse et tickets de vente.",
+    iconName: "clover",
   },
   quickbooks: {
-    name: "QuickBooks",
-    description: "Synchronisation de vos dépenses depuis QuickBooks Online.",
-    iconName: "square",
+    name: "QuickBooks Online",
+    description: "Synchronisation de vos dépenses et écritures comptables.",
+    iconName: "quickbooks",
   },
 };
 
@@ -75,9 +94,18 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
     .eq("restaurant_id", restaurantId)
     .maybeSingle();
 
+  // 5. Fetch Instagram Connection
+  const { data: instagramConn } = await supabase
+    .from("ad_platform_connections")
+    .select("id, status, external_account_id, created_at")
+    .eq("restaurant_id", restaurantId)
+    .eq("provider", "instagram")
+    .maybeSingle();
+
   const stripeConnected = Boolean(restaurant?.stripe_connect_account_id && restaurant?.stripe_connect_charges_enabled);
   const googleConnected = Boolean(googleConn?.id);
   const deliveryConnected = Boolean(deliveryConn?.id);
+  const instagramConnected = Boolean(instagramConn?.id && instagramConn?.status === "connecte");
   const resendConnected = Boolean(process.env.RESEND_API_KEY);
 
   // One card per POS provider that's either configured (env vars present)
@@ -115,6 +143,18 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
   return [
     ...posItems,
     {
+      id: "clover-pos",
+      name: "Clover POS",
+      category: "caisse",
+      description: "Synchronisation des terminaux de caisse Clover et tickets de vente en salle.",
+      status: "coming_soon",
+      iconName: "clover",
+      details: {
+        disponibilite: "Prochaine mise à jour",
+        mode: "API Directe Cloud",
+      },
+    },
+    {
       id: "stripe-connect",
       name: "Stripe Connect Paiements",
       category: "paiement",
@@ -130,20 +170,156 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
       },
     },
     {
+      id: "apple-pay",
+      name: "Apple Pay & Sans Contact",
+      category: "paiement",
+      description: "Encaissement instantané sur smartphone, commande à table QR et Apple Wallet.",
+      status: "connected",
+      connectedAt: "Actif via Stripe",
+      iconName: "apple-pay",
+      details: {
+        securite: "Biométrie FaceID / TouchID",
+        protocole: "NFC & Web Checkout",
+      },
+    },
+    {
+      id: "google-pay",
+      name: "Google Pay",
+      category: "paiement",
+      description: "Règlement sécurisé en un clic sur Android, navigateur Chrome et terminaux compatibles.",
+      status: "connected",
+      connectedAt: "Actif via Stripe",
+      iconName: "google-pay",
+      details: {
+        securite: "Tokenisation bancaire Google",
+        protocole: "NFC & Web Checkout",
+      },
+    },
+    {
+      id: "moneris-pay",
+      name: "Moneris Solutions de Paiement",
+      category: "paiement",
+      description: "Terminaux de paiement physiques et passerelle d'encaissement de référence au Canada.",
+      status: "on_request",
+      iconName: "moneris",
+      details: {
+        disponibilite: "Sur demande personnalisée",
+        compatibilite: "Terminaux Débit Interac & Crédit",
+      },
+    },
+    {
+      id: "paypal-pay",
+      name: "PayPal Restauration",
+      category: "paiement",
+      description: "Paiements en ligne, acomptes traiteur et option de règlement en 4 fois pour vos clients.",
+      status: "coming_soon",
+      iconName: "paypal",
+      details: {
+        disponibilite: "Bientôt disponible",
+        mode: "Passerelle Commerce",
+      },
+    },
+    {
+      id: "quickbooks-online",
+      name: "QuickBooks Online",
+      category: "comptabilite",
+      description: "Synchronisation automatique des ventes, TVA/TVQ et écritures comptables quotidiennes.",
+      status: posConfigured.quickbooks ? "connected" : "coming_soon",
+      iconName: "quickbooks",
+      details: {
+        module: "Rapprochement bancaire & Z de caisse",
+        statut: posConfigured.quickbooks ? "Configuré" : "Bientôt disponible",
+      },
+    },
+    {
+      id: "xero-accounting",
+      name: "Xero Restauration",
+      category: "comptabilite",
+      description: "Ventilation automatique du grand livre comptable et suivi de trésorerie multi-devises.",
+      status: "coming_soon",
+      iconName: "xero",
+      details: {
+        disponibilite: "Bientôt disponible",
+        compatibilite: "Xero Cloud Accounting",
+      },
+    },
+    {
+      id: "sage-accounting",
+      name: "Sage Business Cloud",
+      category: "comptabilite",
+      description: "Export des écritures comptables certifiées conformes pour experts-comptables et vérificateurs.",
+      status: "on_request",
+      iconName: "sage",
+      details: {
+        disponibilite: "Sur demande d'intégration",
+        format: "FEC & Journal des ventes",
+      },
+    },
+    {
+      id: "pennylane-accounting",
+      name: "Pennylane",
+      category: "comptabilite",
+      description: "Centralisation des factures fournisseurs, gestion des marges et pilotage de la trésorerie.",
+      status: "coming_soon",
+      iconName: "pennylane",
+      details: {
+        disponibilite: "Bientôt disponible",
+        module: "Pilotage Restauration",
+      },
+    },
+    {
       id: "google-business",
-      name: "Google Business & Avis",
+      name: "Google Business Profile & Avis",
       category: "marketing",
       description: "Importation des avis clients, synchronisation de la fiche établissement et analyse de réputation par IA.",
       status: googleConnected ? "connected" : "disconnected",
       connectedAt: googleConn?.updated_at ? new Date(googleConn.updated_at).toLocaleDateString("fr-CA") : undefined,
-      iconName: "google",
+      iconName: "google-maps",
       details: {
         placeId: googleConn?.place_id || "Non connecté",
+        avisSynchronises: googleConnected ? "Oui" : "En attente",
+      },
+    },
+    {
+      id: "google-workspace",
+      name: "Google Workspace & Agenda",
+      category: "marketing",
+      description: "Synchronisation de l'agenda des réservations de groupes, plannings d'équipe et alertes Gmail.",
+      status: googleConnected ? "connected" : "disconnected",
+      connectedAt: googleConnected ? "Connecté" : undefined,
+      iconName: "google-workspace",
+      details: {
+        modules: "Gmail, Calendar, Drive, Sheets",
+      },
+    },
+    {
+      id: "google-analytics",
+      name: "Google Analytics 4 (GA4)",
+      category: "marketing",
+      description: "Suivi des visites sur le menu digital, sources de trafic et taux de conversion des commandes.",
+      status: googleConnected ? "connected" : "disconnected",
+      connectedAt: googleConnected ? "Connecté" : undefined,
+      iconName: "google-analytics",
+      details: {
+        mesure: "Trafic menu public & QR codes",
+      },
+    },
+    {
+      id: "instagram-business",
+      name: "Instagram Professionnel",
+      category: "marketing",
+      description: "Publication directe des visuels Marketing Studio, modération des commentaires et synchronisation des interactions.",
+      status: instagramConnected ? "connected" : "disconnected",
+      connectedAt: instagramConn?.created_at ? new Date(instagramConn.created_at).toLocaleDateString("fr-CA") : undefined,
+      iconName: "instagram",
+      details: {
+        compteId: instagramConn?.external_account_id || "Non connecté",
+        authentification: "Business Login for Instagram (Direct)",
       },
     },
     {
       id: "ubereats-delivery",
-      name: "Plateformes de Livraison & Réservations",
+      name: "Plateformes de Livraison & Commandes",
       category: "livraison",
       description: "Agrégation des commandes UberEats, DoorDash, SkipTheDishes et OpenTable dans un flux unique.",
       status: deliveryConnected ? "connected" : "disconnected",

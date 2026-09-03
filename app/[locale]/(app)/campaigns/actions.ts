@@ -114,3 +114,55 @@ export async function getCampaignAssetsAction(
     })
   );
 }
+
+export type ReferralStoryContext = {
+  hasProgram: boolean;
+  programName: string;
+  referralCode: string | null;
+  referralUrl: string;
+  rewardText: string;
+  topAmbassadorName?: string;
+};
+
+export async function getReferralStoryContextAction(restaurantId: string): Promise<ReferralStoryContext> {
+  const { getReferralPrograms } = await import("@/lib/data/referral-programs");
+  const { getReferralLinksForRestaurant } = await import("@/lib/data/customer-referrals");
+  const { activateOnboardingReferralProgramAction } = await import("@/app/[locale]/onboarding/actions");
+
+  const programs = await getReferralPrograms(restaurantId);
+  const activeProg = programs.find((p) => p.active) ?? programs[0];
+
+  if (!activeProg) {
+    const activated = await activateOnboardingReferralProgramAction(restaurantId);
+    return {
+      hasProgram: Boolean(activated.ok),
+      programName: activated.programName ?? "Programme de Parrainage",
+      referralCode: activated.code ?? "VIP10",
+      referralUrl: activated.url ?? "/p/VIP10",
+      rewardText: "10 $ offerts",
+    };
+  }
+
+  const links = await getReferralLinksForRestaurant(restaurantId);
+  const bestLink = links[0];
+
+  if (!bestLink) {
+    const activated = await activateOnboardingReferralProgramAction(restaurantId);
+    return {
+      hasProgram: true,
+      programName: activeProg.name,
+      referralCode: activated.code ?? "VIP10",
+      referralUrl: activated.url ?? "/p/VIP10",
+      rewardText: activeProg.rewardDescription ?? "10 $ de réduction",
+    };
+  }
+
+  return {
+    hasProgram: true,
+    programName: activeProg.name,
+    referralCode: bestLink.link.code,
+    referralUrl: `/p/${bestLink.link.code}`,
+    rewardText: activeProg.rewardDescription ?? "10 $ de réduction",
+    topAmbassadorName: bestLink.customerName !== "—" ? bestLink.customerName : undefined,
+  };
+}

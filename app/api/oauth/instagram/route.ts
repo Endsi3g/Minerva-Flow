@@ -1,22 +1,21 @@
 import { NextResponse } from "next/server";
-import { isInstagramConfigured, oauthRedirectUri } from "@/lib/ad-platforms/config";
+import {
+  isInstagramConfigured,
+  getInstagramAppId,
+  oauthRedirectUri,
+  INSTAGRAM_DIRECT_SCOPES,
+  INSTAGRAM_FACEBOOK_SCOPES,
+} from "@/lib/ad-platforms/config";
 import { signOAuthState } from "@/lib/ad-platforms/state";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 
-const META_OAUTH_DIALOG = "https://www.facebook.com/v21.0/dialog/oauth";
-
-// Content-publishing scopes, deliberately separate from Meta Ads'
-// ads_read/business_management — an owner connecting Instagram to publish
-// posts hasn't necessarily granted anything about their ad account.
-// pages_show_list + pages_read_engagement are required to discover which
-// Facebook Page (and its linked Instagram professional account) to publish
-// through; instagram_content_publish is the actual publish permission.
-const INSTAGRAM_SCOPE = "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement";
+const INSTAGRAM_DIRECT_AUTHORIZE_URL = "https://www.instagram.com/oauth/authorize";
+const FACEBOOK_OAUTH_DIALOG_URL = "https://www.facebook.com/v21.0/dialog/oauth";
 
 export async function GET(req: Request) {
   if (!isInstagramConfigured()) {
     return NextResponse.json(
-      { error: "Instagram n'est pas encore configuré (META_APP_ID / META_APP_SECRET manquants)." },
+      { error: "Instagram n'est pas encore configuré (INSTAGRAM_APP_ID / META_APP_ID manquant)." },
       { status: 503 }
     );
   }
@@ -26,15 +25,33 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 403 });
   }
 
-  const origin = new URL(req.url).origin;
-  const state = signOAuthState(membership.restaurantId);
+  const url = new URL(req.url);
+  const mode = url.searchParams.get("mode") === "facebook" ? "facebook" : "direct";
+  const origin = url.origin;
+  const state = signOAuthState(membership.restaurantId, mode);
 
-  const authorizeUrl = new URL(META_OAUTH_DIALOG);
-  authorizeUrl.searchParams.set("client_id", process.env.META_APP_ID!);
-  authorizeUrl.searchParams.set("redirect_uri", oauthRedirectUri("instagram", origin));
-  authorizeUrl.searchParams.set("scope", INSTAGRAM_SCOPE);
-  authorizeUrl.searchParams.set("state", state);
-  authorizeUrl.searchParams.set("response_type", "code");
+  if (mode === "direct") {
+    // Official Business Login for Instagram (graph.instagram.com)
+    // Direct login via Instagram credentials, no Facebook Page requirement.
+    const appId = getInstagramAppId()!;
+    const authorizeUrl = new URL(INSTAGRAM_DIRECT_AUTHORIZE_URL);
+    authorizeUrl.searchParams.set("client_id", appId);
+    authorizeUrl.searchParams.set("redirect_uri", oauthRedirectUri("instagram", origin));
+    authorizeUrl.searchParams.set("response_type", "code");
+    authorizeUrl.searchParams.set("scope", INSTAGRAM_DIRECT_SCOPES);
+    authorizeUrl.searchParams.set("state", state);
+    authorizeUrl.searchParams.set("enable_fb_login", "true");
 
-  return NextResponse.redirect(authorizeUrl.toString());
+    return NextResponse.redirect(authorizeUrl.toString());
+  } else {
+    // Legacy Facebook Login for Business (for users linking Meta Ads accounts)
+    const authorizeUrl = new URL(FACEBOOK_OAUTH_DIALOG_URL);
+    authorizeUrl.searchParams.set("client_id", process.env.META_APP_ID!);
+    authorizeUrl.searchParams.set("redirect_uri", oauthRedirectUri("instagram", origin));
+    authorizeUrl.searchParams.set("scope", INSTAGRAM_FACEBOOK_SCOPES);
+    authorizeUrl.searchParams.set("state", state);
+    authorizeUrl.searchParams.set("response_type", "code");
+
+    return NextResponse.redirect(authorizeUrl.toString());
+  }
 }

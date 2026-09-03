@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Loader2, Wrench, Users, ArrowRight, Check, FileText, Landmark } from "lucide-react";
+import { Camera, Loader2, Wrench, Users, ArrowRight, Check, FileText, Landmark, Gift, Share2, Copy } from "lucide-react";
 import { Onboarding, ChoiceGroup, useOnboarding } from "@/components/ui/onboarding";
 import { Instagram as InstagramIcon } from "@/components/ui/BrandIcons";
 import { Avatar } from "@/components/minerva/PersonAvatar";
@@ -13,7 +13,12 @@ import { roleLabels } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
 import { updateProfileNameAction } from "@/app/[locale]/(app)/profil/actions";
 import { updateRestaurantAction, createRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
-import { setMyRoleAction, finishOnboardingAction, sendTeamInviteAction } from "@/app/[locale]/onboarding/actions";
+import {
+  setMyRoleAction,
+  finishOnboardingAction,
+  sendTeamInviteAction,
+  activateOnboardingReferralProgramAction,
+} from "@/app/[locale]/onboarding/actions";
 import type { Role } from "@/lib/types";
 
 const ROLE_OPTIONS: Role[] = ["owner", "manager", "staff", "consultant"];
@@ -153,6 +158,32 @@ export function OnboardingWizard({
     }
   }
 
+  const [referralActive, setReferralActive] = useState(false);
+  const [referralLinkUrl, setReferralLinkUrl] = useState<string | null>(null);
+  const [activatingReferral, setActivatingReferral] = useState(false);
+  const [copiedReferral, setCopiedReferral] = useState(false);
+
+  async function handleActivateReferral() {
+    if (!currentRestaurantId || activatingReferral) return;
+    setActivatingReferral(true);
+    try {
+      const res = await activateOnboardingReferralProgramAction(currentRestaurantId);
+      if (res.ok && res.code) {
+        setReferralActive(true);
+        setReferralLinkUrl(`${window.location.origin}${res.url}`);
+      }
+    } finally {
+      setActivatingReferral(false);
+    }
+  }
+
+  async function copyReferral() {
+    if (!referralLinkUrl) return;
+    await navigator.clipboard.writeText(referralLinkUrl);
+    setCopiedReferral(true);
+    setTimeout(() => setCopiedReferral(false), 2000);
+  }
+
   return (
     <Onboarding
       defaultValue={1}
@@ -251,7 +282,7 @@ export function OnboardingWizard({
           </div>
 
           <a
-            href="/api/oauth/instagram"
+            href="/api/oauth/instagram?mode=direct"
             target="_blank"
             rel="noreferrer"
             className="flex items-center justify-between rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3.5 transition-colors hover:bg-mv-surface"
@@ -259,12 +290,69 @@ export function OnboardingWizard({
             <div className="flex items-center gap-3">
               <InstagramIcon size={20} className="text-mv-ink-soft" />
               <div>
-                <p className="text-[13.5px] font-semibold text-mv-ink">Instagram</p>
-                <p className="text-[12px] text-mv-ink-faint">Publiez vos visuels Marketing Studio directement.</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[13.5px] font-semibold text-mv-ink">Instagram Business</p>
+                  <span className="rounded-md bg-mv-green-tint px-1.5 py-0.5 text-[10.5px] font-bold text-mv-green-dark">
+                    Direct · Sans Facebook
+                  </span>
+                </div>
+                <p className="text-[12px] text-mv-ink-faint">
+                  Publiez vos visuels Marketing Studio et relances en 1 clic.
+                </p>
               </div>
             </div>
             <ArrowRight size={16} className="text-mv-ink-faint" />
           </a>
+
+          {/* Referral Activation Card */}
+          {currentRestaurantId && (
+            <div className="rounded-xl border border-mv-border bg-mv-cream-soft p-4 transition-colors">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-mv-green/10 text-mv-green-dark">
+                    <Gift size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[13.5px] font-semibold text-mv-ink">Programme de Parrainage & Liens</p>
+                    <p className="text-[12px] text-mv-ink-faint">
+                      Offre de bienvenue (10 $ filleul / 10 $ parrain) pour vos stickers en Story.
+                    </p>
+                  </div>
+                </div>
+
+                {referralActive ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-mv-green px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+                    <Check size={13} /> Actif
+                  </span>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={handleActivateReferral}
+                    disabled={activatingReferral}
+                    className="shrink-0 text-[12px]"
+                  >
+                    {activatingReferral ? <Loader2 size={14} className="animate-spin" /> : "Activer en 1 clic"}
+                  </Button>
+                )}
+              </div>
+
+              {referralActive && referralLinkUrl && (
+                <div className="mt-3 flex items-center justify-between rounded-lg border border-mv-border-soft bg-mv-surface px-3 py-2">
+                  <span className="truncate font-mono text-[12px] text-mv-ink-soft">
+                    {referralLinkUrl}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={copyReferral}
+                    className="ml-2 flex items-center gap-1 rounded px-2 py-1 text-[11.5px] font-semibold text-mv-green-dark transition-colors hover:bg-mv-green-tint"
+                  >
+                    {copiedReferral ? <Check size={13} /> : <Copy size={13} />}
+                    {copiedReferral ? "Copié !" : "Copier"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           <a
             href="/settings?tab=integrations"

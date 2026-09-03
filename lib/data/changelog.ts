@@ -49,6 +49,16 @@ function normalizeTitle(title: string): string {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-09-03-v2-28-0",
+    title: "Version v2.28.0 : Business Login Instagram Direct, Onboarding Viral & Stickers de Story Trackables",
+    description: `- **Business Login for Instagram (Direct)** : Intégration de la nouvelle API officielle Meta 2025/2026 (\`graph.instagram.com\`) avec connexion en 1 clic sans obligation de Page Facebook liée, scopes étendus (publication, modération, messages) et tokens 60 jours renouvelables.
+- **Onboarding Viral** : Intégration de la connexion Instagram directe et activation immédiate du programme d'accueil et de son premier lien de parrainage client dès l'étape de démarrage.
+- **Marketing Studio — Story Link Stickers** : Nouveaux modes de visuels (Parrainage, Avis 5★, Carte VIP, Ambassadeur) avec incrustation d'un sticker de lien officiel Story et bouton de copie rapide avec tags UTM pour Instagram et Facebook Stories.
+- **Tracker d'Activité GitHub-style** : Grille matricielle d'intensité sur 16 semaines dans Fidélisation > Parrainage (\`/fidelisation/parrainage\`).`,
+    category: "fonctionnalite",
+    publishedAt: "2026-09-03T15:00:00.000Z",
+  },
+  {
     id: "ch-2026-07-24-v2-9-3",
     title: "Version v2.9.3 : Correctifs Dark Mode Calendrier, Support Mobile 375px & Personnalisation des Widgets",
     description: `- **Calendrier & Dark Mode** : Correction du contraste de texte en mode sombre (\`/horaire\` & \`MonthCalendar.tsx\`) et bascule vers une vue à puces d'indicateur sur mobile (< 640px).

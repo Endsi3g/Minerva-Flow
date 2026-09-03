@@ -18,11 +18,33 @@ import {
   Truck,
   Mail,
   Shield,
-  Key,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Link } from "@/i18n/navigation";
-import { Square, Stripe, Google, UberEats, Gmail } from "@/components/ui/BrandIcons";
+import {
+  Square,
+  Stripe,
+  Google,
+  UberEats,
+  Gmail,
+  GoogleCalendar,
+  GoogleAnalytics,
+  GooglePay,
+  GoogleMaps,
+  QuickBooks,
+  Xero,
+  Sage,
+  Pennylane,
+  Clover,
+  Lightspeed,
+  Moneris,
+  PayPal,
+  ApplePay,
+  Instagram,
+} from "@/components/ui/BrandIcons";
 
 import { SiteSyncCard } from "@/components/minerva/SiteSyncCard";
 import { syncPosNowAction } from "@/app/[locale]/(app)/settings/pos-actions";
@@ -43,6 +65,12 @@ export function IntegrationsView({
   );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [isSyncing, setIsSyncing] = useState(false);
+  const [requestedWaitlist, setRequestedWaitlist] = useState<Record<string, boolean>>({});
+
+  function handleRequestAccess(item: IntegrationItem) {
+    setRequestedWaitlist((prev) => ({ ...prev, [item.id]: true }));
+    toast.success(`Demande d'accès enregistrée pour ${item.name} !`);
+  }
 
   async function handleForceSync(item: IntegrationItem) {
     const provider = item.id.replace(/-pos$/, "") as PosProvider;
@@ -62,14 +90,42 @@ export function IntegrationsView({
     switch (iconName) {
       case "square":
         return <Square size={22} />;
+      case "lightspeed":
+        return <Lightspeed size={22} />;
       case "stripe":
         return <Stripe size={22} />;
       case "google":
         return <Google size={22} />;
+      case "google-maps":
+        return <GoogleMaps size={22} />;
+      case "google-workspace":
+        return <GoogleCalendar size={22} />;
+      case "google-analytics":
+        return <GoogleAnalytics size={22} />;
+      case "google-pay":
+        return <GooglePay size={22} />;
+      case "apple-pay":
+        return <ApplePay size={22} />;
+      case "paypal":
+        return <PayPal size={22} />;
+      case "quickbooks":
+        return <QuickBooks size={22} />;
+      case "xero":
+        return <Xero size={22} />;
+      case "sage":
+        return <Sage size={22} />;
+      case "pennylane":
+        return <Pennylane size={22} />;
+      case "clover":
+        return <Clover size={22} />;
+      case "moneris":
+        return <Moneris size={22} />;
       case "delivery":
         return <UberEats size={22} />;
       case "resend":
         return <Gmail size={22} />;
+      case "instagram":
+        return <Instagram size={22} />;
       default:
         return <Zap size={22} className="text-mv-green-dark" />;
     }
@@ -143,6 +199,16 @@ export function IntegrationsView({
           Point de Vente (POS)
         </button>
         <button
+          onClick={() => setSelectedCategory("comptabilite")}
+          className={`rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all ${
+            selectedCategory === "comptabilite"
+              ? "bg-mv-green text-mv-cream-soft shadow-mv-sm"
+              : "border border-mv-border bg-mv-surface text-mv-ink-soft hover:bg-mv-cream-soft"
+          }`}
+        >
+          Comptabilité
+        </button>
+        <button
           onClick={() => setSelectedCategory("paiement")}
           className={`rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-all ${
             selectedCategory === "paiement"
@@ -150,7 +216,7 @@ export function IntegrationsView({
               : "border border-mv-border bg-mv-surface text-mv-ink-soft hover:bg-mv-cream-soft"
           }`}
         >
-          Paiements & Stripe
+          Paiements & Encaissement
         </button>
         <button
           onClick={() => setSelectedCategory("marketing")}
@@ -160,7 +226,7 @@ export function IntegrationsView({
               : "border border-mv-border bg-mv-surface text-mv-ink-soft hover:bg-mv-cream-soft"
           }`}
         >
-          Google & Avis
+          Google & Marketing
         </button>
         <button
           onClick={() => setSelectedCategory("livraison")}
@@ -208,6 +274,14 @@ export function IntegrationsView({
                       <span className="flex items-center gap-1.5 rounded-full bg-mv-red-bg px-2.5 py-1 text-[11px] font-bold text-mv-red">
                         <XCircle size={13} /> Erreur — à reconnecter
                       </span>
+                    ) : item.status === "coming_soon" ? (
+                      <span className="flex items-center gap-1.5 rounded-full bg-mv-lime-tint px-2.5 py-1 text-[11px] font-bold text-mv-green-darker">
+                        <Clock size={13} /> Bientôt disponible
+                      </span>
+                    ) : item.status === "on_request" ? (
+                      <span className="flex items-center gap-1.5 rounded-full bg-mv-amber-bg px-2.5 py-1 text-[11px] font-bold text-mv-amber">
+                        <Sparkles size={13} /> Sur demande
+                      </span>
                     ) : (
                       <span className="flex items-center gap-1.5 rounded-full bg-mv-cream-soft px-2.5 py-1 text-[11px] font-bold text-mv-ink-soft">
                         <XCircle size={13} /> Non connecté
@@ -224,7 +298,7 @@ export function IntegrationsView({
                 </div>
 
                 <div className="mt-5 flex items-center justify-between border-t border-mv-border-soft pt-3 text-[11.5px] text-mv-ink-faint">
-                  <span>Catégorie : {item.category}</span>
+                  <span className="capitalize">Catégorie : {item.category}</span>
                   <span className="font-semibold text-mv-green-dark group-hover:underline">
                     Gérer →
                   </span>
@@ -244,7 +318,18 @@ export function IntegrationsView({
                   {getIcon(selectedIntegration.iconName)}
                   <div>
                     <h3 className="font-bold text-[14px] text-mv-ink">{selectedIntegration.name}</h3>
-                    <p className="text-[11px] text-mv-ink-soft">Statut : {selectedIntegration.status}</p>
+                    <p className="text-[11px] text-mv-ink-soft">
+                      Statut :{" "}
+                      {selectedIntegration.status === "connected"
+                        ? "Connecté & actif"
+                        : selectedIntegration.status === "coming_soon"
+                          ? "Bientôt disponible"
+                          : selectedIntegration.status === "on_request"
+                            ? "Disponible sur demande"
+                            : selectedIntegration.status === "error"
+                              ? "Erreur de synchro"
+                              : "Non connecté"}
+                    </p>
                   </div>
                 </div>
                 <button
@@ -275,9 +360,7 @@ export function IntegrationsView({
                     ))}
                 </div>
 
-                {/* Connection Status Overview — only shown once actually
-                    connected, since these are facts about the live
-                    connection, not a generic badge every card should wear. */}
+                {/* Connection Status Overview */}
                 {selectedIntegration.status === "connected" && (
                   <div>
                     <h4 className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
@@ -289,8 +372,8 @@ export function IntegrationsView({
                         <span>Authentification OAuth 2.0 vérifiée</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Key size={14} className="text-mv-green-dark" />
-                        <span>Clés d&apos;API stockées de façon sécurisée, jamais en clair</span>
+                        <Shield size={14} className="text-mv-green-dark" />
+                        <span>Échanges chiffrés et conformes aux normes bancaires</span>
                       </div>
                     </div>
                   </div>
@@ -299,6 +382,37 @@ export function IntegrationsView({
                 {/* Actions */}
                 <div className="space-y-2.5 pt-2">
                   {(() => {
+                    if (
+                      selectedIntegration.status === "coming_soon" ||
+                      selectedIntegration.status === "on_request"
+                    ) {
+                      const isRequested = Boolean(requestedWaitlist[selectedIntegration.id]);
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => handleRequestAccess(selectedIntegration)}
+                          disabled={isRequested}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-mv-green px-4 py-2.5 text-[13px] font-bold text-mv-cream-soft shadow-mv-sm transition-all hover:bg-mv-green-dark disabled:opacity-80"
+                        >
+                          {isRequested ? (
+                            <>
+                              <CheckCircle2 size={15} />
+                              <span>Demande transmise — priorité validée</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles size={15} />
+                              <span>
+                                {selectedIntegration.status === "on_request"
+                                  ? "Demander l'activation personnalisée"
+                                  : "Rejoindre la liste d'accès prioritaire"}
+                              </span>
+                            </>
+                          )}
+                        </button>
+                      );
+                    }
+
                     const manageHref = selectedIntegration.category === "caisse" ? "/settings" : "/etablissement";
                     if (selectedIntegration.status === "connected") {
                       return (

@@ -12,6 +12,8 @@ import { updateRetentionSettingsAction } from "@/app/[locale]/(app)/fidelisation
 import {
   getInstagramConnectionStatusAction,
   publishToInstagramAction,
+  getReferralStoryContextAction,
+  type ReferralStoryContext,
 } from "@/app/[locale]/(app)/campaigns/actions";
 import { Instagram } from "@/components/ui/BrandIcons";
 import {
@@ -33,11 +35,25 @@ import {
   Calendar,
   Eye,
   Loader2,
+  Link2,
+  Star,
+  Award,
+  Gift,
+  Crown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 type VisualFormat = "story" | "post" | "carousel";
+type StudioObjective = "menu" | "referral" | "review" | "vip" | "ambassador";
+
+const STUDIO_OBJECTIVES: { id: StudioObjective; label: string; icon: string }[] = [
+  { id: "menu", label: "Menu & Plats", icon: "🍽️" },
+  { id: "referral", label: "Parrainage & Invitation", icon: "🎁" },
+  { id: "review", label: "Avis Google 5★", icon: "⭐" },
+  { id: "vip", label: "Passeport VIP Club", icon: "💎" },
+  { id: "ambassador", label: "Ambassadeur Vedette", icon: "🏆" },
+];
 
 type ColorTheme = {
   id: string;
@@ -116,6 +132,12 @@ export function MarketingStudioView() {
   const [selectedTheme, setSelectedTheme] = useState<ColorTheme>(COLOR_THEMES[0]);
   const [selectedPresetIndex, setSelectedPresetIndex] = useState(0);
 
+  // Studio Objective state
+  const [objective, setObjective] = useState<StudioObjective>("menu");
+  const [referralContext, setReferralContext] = useState<ReferralStoryContext | null>(null);
+  const [stickerText, setStickerText] = useState("🎁 Réclamer mon 10$");
+  const [copiedStickerLink, setCopiedStickerLink] = useState(false);
+
   // Customization state
   const [headline, setHeadline] = useState("Commandez en Direct sans Frais !");
   const [itemName, setItemName] = useState(MENU_PRESETS[0].name);
@@ -141,16 +163,89 @@ export function MarketingStudioView() {
   useEffect(() => {
     if (!restaurantId) return;
     getInstagramConnectionStatusAction(restaurantId).then(setInstagramStatus);
+    getReferralStoryContextAction(restaurantId).then(setReferralContext);
   }, [restaurantId]);
 
-  const generatedCaption = `✨ ${itemName} à déguster chez nous ou en livraison directe !
+  const originUrl = typeof window !== "undefined" ? window.location.origin : "https://minervaflow.app";
+  const referralFullUrl = `${originUrl}${referralContext?.referralUrl ?? "/p/VIP10"}?utm_source=instagram_story&utm_medium=sticker`;
+
+  const generatedCaption = objective === "menu"
+    ? `✨ ${itemName} à déguster chez nous ou en livraison directe !
 
 ${itemDesc}
 
 👉 Évitez les frais des plateformes tiers : commandez directement sur notre portail web (0% commission) !
 🔗 ${ctaText}
 
-#RestoLocal #Foodie #CommandeDirecte #Gastronomie #Bistro`;
+#RestoLocal #Foodie #CommandeDirecte #Gastronomie #Bistro`
+    : `🎁 ${headline} chez ${restaurant?.name ?? "notre établissement"} !
+
+${itemName}
+${itemDesc}
+
+👉 Cliquez directement sur notre sticker Story pour activer votre privilège :
+🔗 ${referralFullUrl}
+
+#Fidelite #OffreGourmande #RestoLocal #Invitation #Bistro`;
+
+  function handleSelectObjective(newObj: StudioObjective) {
+    setObjective(newObj);
+    if (newObj === "referral") {
+      setHeadline("Offre d'Accueil & Découverte");
+      setItemName("10 $ offerts sur votre première table");
+      setItemPrice("Cadeau");
+      setItemDesc("Invitez vos proches ou venez savourer nos spécialités. Votre avantage est activé en 1 clic via le sticker !");
+      setSelectedSticker("🎁 Offre Spéciale Filleuls");
+      setStickerText("🎁 Réclamer mon 10$");
+      setCtaText("Appuyez sur le sticker pour réclamer l'offre");
+      setSelectedFormat("story");
+    } else if (newObj === "review") {
+      setHeadline("Avis Google Vérifié 5★");
+      setItemName("« Une expérience culinaire d'exception ! »");
+      setItemPrice("⭐⭐⭐⭐⭐");
+      setItemDesc("« Accueil chaleureux, saveurs authentiques et ambiance feutrée. Adresse incontournable ! » — Nos habitués");
+      setSelectedSticker("⭐ Recommandé par nos clients");
+      setStickerText("⭐ Découvrir la carte & offre");
+      setCtaText("Lien en sticker pour réserver");
+      setSelectedFormat("story");
+    } else if (newObj === "vip") {
+      setHeadline("Cercle Privilège Exclusif");
+      setItemName("Passeport VIP & Dégustations");
+      setItemPrice("Membre VIP");
+      setItemDesc("Accès prioritaire aux nouvelles créations du chef, dégustations privées et remises exclusives.");
+      setSelectedSticker("💎 Club Privilège Ouvert");
+      setStickerText("💎 Adhérer au Club VIP");
+      setCtaText("Rejoignez le programme de fidélité");
+      setSelectedFormat("story");
+    } else if (newObj === "ambassador") {
+      setHeadline("Ambassadeur Vedette du Mois");
+      setItemName(`Merci à ${referralContext?.topAmbassadorName ?? "notre clientèle fidèle"} !`);
+      setItemPrice("Top Parrain");
+      setItemDesc("Plusieurs tablées invitées et des points fidélité doublés pour notre communauté de gourmets.");
+      setSelectedSticker("🏆 Élu Ambassadeur");
+      setStickerText("🎁 10$ offerts de sa part");
+      setCtaText("Profitez de l'invitation exclusive");
+      setSelectedFormat("story");
+    } else {
+      const p = MENU_PRESETS[selectedPresetIndex];
+      setHeadline("Commandez en Direct sans Frais !");
+      setItemName(p.name);
+      setItemPrice(p.price);
+      setItemDesc(p.desc);
+      setSelectedSticker(STICKER_BADGES[0]);
+      setStickerText("🛒 Commander en direct");
+      setCtaText("Lien en Bio · Commande Directe 0%");
+    }
+  }
+
+  async function handleCopyStickerLink() {
+    await navigator.clipboard.writeText(referralFullUrl);
+    setCopiedStickerLink(true);
+    setTimeout(() => setCopiedStickerLink(false), 2000);
+    toast.success("Lien de sticker Story copié !", {
+      description: "Collez ce lien dans l'outil 'Sticker Lien' de votre Story Instagram ou Facebook.",
+    });
+  }
 
   function applyPreset(index: number) {
     setSelectedPresetIndex(index);
@@ -240,11 +335,78 @@ ${itemDesc}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Visual Customization Studio Controls (7 cols) */}
         <div className="lg:col-span-7 space-y-5">
+          {/* Objective Selection */}
+          <Card className="p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-mv-green-dark" />
+              <h3 className="font-semibold text-[15.5px] text-mv-ink">Objectif & Format du Visuel</h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {STUDIO_OBJECTIVES.map((obj) => (
+                <button
+                  key={obj.id}
+                  onClick={() => handleSelectObjective(obj.id)}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-2.5 rounded-xl border text-[11px] font-semibold transition-all text-center gap-1",
+                    objective === obj.id
+                      ? "border-mv-green bg-mv-green/10 text-mv-green-dark ring-2 ring-mv-green/30"
+                      : "border-mv-border bg-mv-surface text-mv-ink-soft hover:bg-mv-cream-soft"
+                  )}
+                >
+                  <span className="text-base">{obj.icon}</span>
+                  <span className="leading-tight">{obj.label}</span>
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          {/* Referral Sticker Configuration Card */}
+          {objective !== "menu" && (
+            <Card className="p-5 space-y-4 border-mv-green/30 bg-mv-cream-soft/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Link2 size={18} className="text-mv-green-dark" />
+                  <h3 className="font-semibold text-[15px] text-mv-ink">Sticker Story Instagram & Facebook</h3>
+                </div>
+                <Badge tone="green" dot>Trackable 100%</Badge>
+              </div>
+
+              <Field label="Texte affiché sur le Sticker de Story">
+                <Input
+                  value={stickerText}
+                  onChange={(e) => setStickerText(e.target.value)}
+                  placeholder="Ex : 🎁 Réclamer mon 10$"
+                />
+              </Field>
+
+              <div>
+                <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Lien de destination avec tag UTM :</p>
+                <div className="flex items-center gap-2 rounded-xl border border-mv-border bg-mv-surface px-3 py-2">
+                  <span className="truncate font-mono text-[11.5px] text-mv-ink-soft flex-1">
+                    {referralFullUrl}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCopyStickerLink}
+                    className="shrink-0 text-[11.5px] h-8"
+                  >
+                    {copiedStickerLink ? <Check size={13} /> : <Copy size={13} />}
+                    {copiedStickerLink ? "Copié !" : "Copier"}
+                  </Button>
+                </div>
+                <p className="mt-1.5 text-[11px] text-mv-ink-faint">
+                  Dans Instagram ou Facebook Story, collez ce lien dans l&apos;outil « Sticker Lien ». Les clics et filleuls s&apos;incrémentent en direct.
+                </p>
+              </div>
+            </Card>
+          )}
+
           <Card className="p-5 space-y-5">
             <div className="flex items-center justify-between border-b border-mv-border-soft pb-3">
               <div className="flex items-center gap-2">
                 <Sliders size={18} className="text-mv-green-dark" />
-                <h3 className="font-semibold text-[15.5px] text-mv-ink">1. Sélection du Plat & Textes</h3>
+                <h3 className="font-semibold text-[15.5px] text-mv-ink">1. Textes & Message Clé</h3>
               </div>
 
               <div className="flex items-center gap-1">
@@ -435,6 +597,21 @@ ${itemDesc}
                 <p className="text-[11.5px] opacity-90 line-clamp-3 max-w-[220px] mx-auto leading-snug">
                   {itemDesc}
                 </p>
+
+                {/* Instagram / Facebook Story Link Sticker Simulation */}
+                {(selectedFormat === "story" || objective !== "menu") && (
+                  <div className="pt-2 flex flex-col items-center">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/95 px-3.5 py-1.5 shadow-md backdrop-blur-sm">
+                      <Link2 size={13} className="text-blue-500 shrink-0" />
+                      <span className="truncate text-[11px] font-bold text-slate-900 tracking-tight max-w-[180px]">
+                        {stickerText}
+                      </span>
+                    </div>
+                    <span className="mt-1 text-[9px] font-semibold uppercase tracking-wider opacity-75">
+                      👆 Toucher le sticker
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Bottom CTA */}
@@ -446,28 +623,41 @@ ${itemDesc}
             </div>
 
             {/* Actions */}
-            <div className="w-full flex items-center gap-2 pt-2">
-              <Button onClick={handleDownloadVisual} disabled={isExporting} className="flex-1">
-                <Download size={15} /> {isExporting ? "Génération…" : "Télécharger le Kit Visuel HD"}
-              </Button>
-              {instagramStatus?.connected ? (
-                <Button
-                  onClick={handlePublishToInstagram}
-                  disabled={isPublishing}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  {isPublishing ? <Loader2 size={15} className="animate-spin" /> : <Instagram size={15} />}
-                  {isPublishing ? "Publication…" : "Publier sur Instagram"}
+            <div className="w-full space-y-2 pt-2">
+              <div className="flex items-center gap-2">
+                <Button onClick={handleDownloadVisual} disabled={isExporting} className="flex-1">
+                  <Download size={15} /> {isExporting ? "Génération…" : "Télécharger le Kit Visuel HD"}
                 </Button>
-              ) : (
-                <Link
-                  href="/settings?tab=integrations"
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-mv-border px-4 py-2.5 text-[13px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-cream-soft"
-                >
-                  <Instagram size={15} /> Connecter Instagram pour publier
-                </Link>
-              )}
+                {instagramStatus?.connected ? (
+                  <Button
+                    onClick={handlePublishToInstagram}
+                    disabled={isPublishing}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    {isPublishing ? <Loader2 size={15} className="animate-spin" /> : <Instagram size={15} />}
+                    {isPublishing ? "Publication…" : "Publier sur Instagram"}
+                  </Button>
+                ) : (
+                  <Link
+                    href="/settings?tab=integrations"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-mv-border px-4 py-2.5 text-[12.5px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-cream-soft"
+                  >
+                    <Instagram size={15} /> Connecter Instagram
+                  </Link>
+                )}
+              </div>
+
+              {/* Story Sticker Quick Copy Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCopyStickerLink}
+                className="w-full flex items-center justify-center gap-2 border-mv-green/30 bg-mv-green-tint/30 text-mv-green-dark hover:bg-mv-green-tint text-[12.5px] py-2"
+              >
+                {copiedStickerLink ? <Check size={14} /> : <Link2 size={14} />}
+                {copiedStickerLink ? "Lien de sticker copié !" : "Copier le lien pour Sticker Story (Instagram / Facebook)"}
+              </Button>
             </div>
           </Card>
 

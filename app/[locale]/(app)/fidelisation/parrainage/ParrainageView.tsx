@@ -9,9 +9,10 @@ import { Field, Input, Select } from "@/components/minerva/FormField";
 import { HelperTooltip } from "@/components/ui/HelperTooltip";
 import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
 import { ReferralRoiDashboard } from "@/components/fidelisation/ReferralRoiDashboard";
+import { ReferralActivityHeatmap } from "@/components/fidelisation/ReferralActivityHeatmap";
 import type { LoyaltyReward, ReferralProgram } from "@/lib/types";
 import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
-import type { ReferralRoiMetrics, TopAmbassador } from "@/lib/data/referral-roi";
+import type { ReferralRoiMetrics, TopAmbassador, ReferralDailyActivity } from "@/lib/data/referral-roi";
 import { Plus, Trash2, Link2, MousePointerClick, Copy, Check, ExternalLink } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import {
@@ -301,6 +302,7 @@ export function ParrainageView({
   rewards,
   referralRoi,
   topAmbassadors,
+  dailyActivity = [],
 }: {
   restaurantId: string | null;
   initialReferralPrograms: ReferralProgram[];
@@ -308,6 +310,7 @@ export function ParrainageView({
   rewards: LoyaltyReward[];
   referralRoi: ReferralRoiMetrics;
   topAmbassadors: TopAmbassador[];
+  dailyActivity?: ReferralDailyActivity[];
 }) {
   const [referralPrograms, setReferralPrograms] = useState(initialReferralPrograms);
 
@@ -321,6 +324,7 @@ export function ParrainageView({
       />
       <div className="space-y-6">
         <ReferralRoiDashboard metrics={referralRoi} ambassadors={topAmbassadors} />
+        <ReferralActivityHeatmap activity={dailyActivity} />
         {restaurantId && (
           <ReferralProgramsCard
             restaurantId={restaurantId}

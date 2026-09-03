@@ -121,14 +121,58 @@ export function InstagramCard() {
       <CardHeader
         eyebrow="Réseaux sociaux"
         title="Instagram"
-        description="Publiez vos visuels Marketing Studio directement sur votre compte Instagram professionnel."
+        description="Publiez vos visuels Marketing Studio, modérez les commentaires et activez les réponses IA sur votre compte Instagram professionnel."
       />
-      <div className="space-y-2.5">
-        <ConnectRow provider="instagram" configured={status.instagramConfigured} connection={instagramConnection} />
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 rounded-xl border border-mv-border-soft p-3.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <Instagram width={24} height={24} className="shrink-0" />
+            <div>
+              <p className="text-[13.5px] font-semibold text-mv-ink">Instagram Business</p>
+              <p className="text-[12px] text-mv-ink-faint">
+                {!status.instagramConfigured
+                  ? "Clés API non configurées"
+                  : instagramConnection
+                    ? `Connecté${instagramConnection.externalAccountId ? ` (ID: ${instagramConnection.externalAccountId})` : ""}`
+                    : "Direct via Instagram Login (aucun compte Facebook requis)"}
+              </p>
+            </div>
+          </div>
+
+          {instagramConnection ? (
+            <Badge tone="green" dot>
+              Connecté
+            </Badge>
+          ) : (
+            <a
+              href={status.instagramConfigured ? "/api/oauth/instagram?mode=direct" : undefined}
+              aria-disabled={!status.instagramConfigured}
+              className={
+                status.instagramConfigured
+                  ? "inline-flex items-center justify-center gap-1.5 rounded-lg bg-mv-green px-3.5 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-all hover:bg-mv-green-dark shadow-mv-sm"
+                  : "cursor-not-allowed rounded-lg bg-mv-ink/[0.06] px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink-faint"
+              }
+            >
+              Connecter avec Instagram
+            </a>
+          )}
+        </div>
+
+        {!instagramConnection && status.instagramConfigured && (
+          <div className="pt-1 text-center sm:text-right">
+            <a
+              href="/api/oauth/instagram?mode=facebook"
+              className="text-[11.5px] text-mv-ink-faint transition-colors hover:text-mv-green-dark hover:underline"
+            >
+              Vous gérez aussi des publicités Meta Ads ? Connecter via Facebook →
+            </a>
+          </div>
+        )}
+
         {instagramConnection && !instagramConnection.externalAccountId && (
           <p className="text-[12px] text-mv-ink-faint">
-            Connecté, mais aucun compte Instagram professionnel n&apos;est lié à votre Page Facebook — liez-en un
-            depuis Meta Business Suite, puis reconnectez.
+            Connecté en mode Facebook, mais aucun compte Instagram professionnel n&apos;est lié à votre Page — liez-en un
+            depuis Meta Business Suite, ou reconnectez via le bouton direct Instagram.
           </p>
         )}
       </div>
