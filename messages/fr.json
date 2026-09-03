@@ -782,7 +782,12 @@
         "actif": "Actif",
         "decline": "Décliné"
       },
-      "emptyState": "Aucune demande d'accès pilote pour l'instant."
+      "emptyState": "Aucune demande d'accès pilote pour l'instant.",
+      "fieldKit": {
+        "navLabel": "Matériel QR terrain",
+        "pageTitle": "Matériel QR — Déploiement terrain",
+        "pageDescription": "Générez les 3 supports imprimables (affiche de table, présentoir comptoir, autocollant caisse) pour un essai pilote — collez le lien du portail fidélité du restaurant, téléchargez, imprimez."
+      }
     },
     "prospects": {
       "pageTitle": "Prospects — Générateur de démo",

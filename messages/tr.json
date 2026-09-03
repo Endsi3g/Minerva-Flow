@@ -782,7 +782,12 @@
         "actif": "Aktif",
         "decline": "Reddedildi"
       },
-      "emptyState": "Henüz pilot erişim talebi yok."
+      "emptyState": "Henüz pilot erişim talebi yok.",
+      "fieldKit": {
+        "navLabel": "Saha QR Materyali",
+        "pageTitle": "QR Materyali — Saha Kurulumu",
+        "pageDescription": "Bir pilot deneme için 3 basılabilir materyal oluşturun (masa afişi, tezgah standı, kasa çıkartması) — restoranın sadakat portalı bağlantısını yapıştırın, indirin, yazdırın."
+      }
     },
     "prospects": {
       "pageTitle": "Adaylar — Demo Oluşturucu",
