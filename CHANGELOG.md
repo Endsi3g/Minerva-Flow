@@ -2,6 +2,17 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.27.0] - 2026-09-03
+
+### 🚀 Déploiement débloqué
+- Un conflit entre deux fichiers d'image de partage (utilisés quand un lien vers Minerva Flow s'affiche sur les réseaux sociaux) empêchait le site de se mettre en ligne. Les fichiers en double ont été retirés ; l'image de partage officielle (`/og.png`) reste inchangée.
+
+### 🚪 Fini la page d'accueil publique
+- La page de présentation qui s'affichait avant la connexion a été retirée. L'adresse principale du site mène maintenant directement à l'écran de connexion (ou à votre Aperçu si vous êtes déjà connecté).
+
+### ⚡ Connexion plus directe
+- L'écran « Initialisation de votre espace » avec ses conseils défilants, qui s'affichait après chaque connexion, a été retiré — vous arrivez maintenant directement dans votre espace de travail.
+
 ## [v2.26.0] - 2026-09-03
 
 ### 🎯 Configurer votre seuil de rentabilité
