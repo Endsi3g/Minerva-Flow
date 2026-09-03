@@ -156,7 +156,15 @@ export async function getRestaurantOrderSettings(
  */
 export async function getMenuShareByToken(token: string): Promise<PublicMenuLanding | null> {
   const admin = createAdminClient();
-  const { data: shareRow } = await admin.from("menu_shares").select("*").eq("token", token).maybeSingle();
+  const { data: shareRow, error: shareError } = await admin
+    .from("menu_shares")
+    .select("*")
+    .eq("token", token)
+    .maybeSingle();
+  if (shareError) {
+    console.error("getMenuShareByToken: lookup failed (not a real 404):", shareError.message);
+    return null;
+  }
   if (!shareRow) return null;
   const share = mapMenuShare(shareRow as MenuShareRow);
 
@@ -175,6 +183,9 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     getConnectPaymentAvailability(admin, share.restaurantId),
   ]);
 
+  if (restaurantResult.error) {
+    console.error("getMenuShareByToken: restaurant lookup failed:", restaurantResult.error.message);
+  }
   if (!restaurantResult.data) return null;
   const restaurant = restaurantResult.data as { name: string; tax_rate: number; accepts_tips: boolean };
   const items = ((itemsResult.data as MenuItemRow[]) ?? []).map(mapMenuItem);

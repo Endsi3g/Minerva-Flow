@@ -231,6 +231,21 @@
       "laborCostLabel": "İşçilik Maliyeti",
       "laborCostTarget": "Hedef: Cironun %{target}'inden az"
     },
+    "breakEven": {
+      "title": "Başabaş noktası",
+      "description": "Bu üç rakam, Genel Bakış sayfanızdaki \"Günün hedefi\" widget'ını doğrudan besler — bunlar olmadan uygulama gerçek durumunuz yerine genel bir ortalamaya döner.",
+      "fixedCostsLabel": "Aylık sabit giderler",
+      "fixedCostsHint": "Kira, sabit maaşlar, sigortalar, abonelikler — trafikten bağımsız her ay çıkan her şey.",
+      "grossMarginLabel": "Brüt kâr marjı",
+      "grossMarginHint": "Hammadde maliyetinden sonra her satıştan kalan tutar.",
+      "avgBasketLabel": "Ortalama sepet tutarı",
+      "avgBasketHint": "Bir müşterinin ziyaret başına ortalama harcaması.",
+      "previewText": "Bu rakamlarla, sabit giderlerinizi karşılamak için günde {count} müşteriye ihtiyacınız var.",
+      "saveButton": "Kaydet",
+      "saving": "Kaydediliyor...",
+      "savedToast": "Başabaş noktası güncellendi — Genel Bakış artık gerçek rakamlarınızı yansıtıyor.",
+      "saveFailedToast": "Kaydedilemedi — bir dakika sonra tekrar deneyin."
+    },
     "csv": {
       "date": "Tarih",
       "description": "Açıklama",

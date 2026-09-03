@@ -1,9 +1,9 @@
 ---
 name: verify
-description: Drive Flow par Minerva end-to-end in a real browser (Playwright) to confirm a change actually works, not just typechecks/builds.
+description: Drive Minerva Flow end-to-end in a real browser (Playwright) to confirm a change actually works, not just typechecks/builds.
 ---
 
-# Verifying Flow par Minerva end-to-end
+# Verifying Minerva Flow end-to-end
 
 No Playwright MCP tool exists in this environment. Install it locally instead:
 

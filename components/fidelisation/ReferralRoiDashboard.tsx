@@ -66,26 +66,28 @@ export function ReferralRoiDashboard({
               size={72}
               strokeWidth={8}
               color="var(--mv-green)"
-              centerValue={
-                metrics.roiMultiplier > 0
-                  ? `${metrics.roiMultiplier}x`
-                  : metrics.totalRevenueGenerated > 0
-                    ? "$0"
-                    : "—"
-              }
-              centerLabel="coût"
+              centerValue={metrics.roiMultiplier > 0 ? `${metrics.roiMultiplier}x` : "—"}
+              centerLabel={metrics.roiMultiplier > 0 ? "coût" : "bientôt"}
             />
             <div className="min-w-0">
-              {metrics.totalRevenueGenerated > 0 && (
+              {metrics.roiMultiplier > 0 && metrics.totalRevenueGenerated > 0 && (
                 <Badge tone="lime" size="xs">
                   Net +{formatCurrency(metrics.netProfitGenerated)}
                 </Badge>
               )}
-              <p className="mt-1.5 text-[11.5px] leading-snug text-mv-ink-soft">
+              <p
+                className={
+                  metrics.roiMultiplier > 0
+                    ? "mt-1.5 text-[11.5px] leading-snug text-mv-ink-soft"
+                    : metrics.totalRevenueGenerated > 0
+                      ? "text-[12.5px] font-medium leading-snug text-mv-ink"
+                      : "mt-1.5 text-[11.5px] leading-snug text-mv-ink-soft"
+                }
+              >
                 {metrics.roiMultiplier > 0
                   ? "Rendement net par dollar investi"
                   : metrics.totalRevenueGenerated > 0
-                    ? "Récompenses pas encore réclamées — coût réel à venir"
+                    ? "Récompenses pas encore réclamées — le multiplicateur s'affichera dès qu'un filleul en réclame une"
                     : "Rendement net par dollar investi"}
               </p>
             </div>

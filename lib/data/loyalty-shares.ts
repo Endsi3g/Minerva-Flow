@@ -76,7 +76,15 @@ export type PublicLoyaltyLanding = {
  */
 export async function getLoyaltyShareByToken(token: string): Promise<PublicLoyaltyLanding | null> {
   const admin = createAdminClient();
-  const { data: shareRow } = await admin.from("loyalty_shares").select("*").eq("token", token).maybeSingle();
+  const { data: shareRow, error: shareError } = await admin
+    .from("loyalty_shares")
+    .select("*")
+    .eq("token", token)
+    .maybeSingle();
+  if (shareError) {
+    console.error("getLoyaltyShareByToken: lookup failed (not a real 404):", shareError.message);
+    return null;
+  }
   if (!shareRow) return null;
   const share = mapLoyaltyShare(shareRow as LoyaltyShareRow);
 
@@ -91,6 +99,9 @@ export async function getLoyaltyShareByToken(token: string): Promise<PublicLoyal
       .limit(3),
   ]);
 
+  if (restaurantResult.error) {
+    console.error("getLoyaltyShareByToken: restaurant lookup failed:", restaurantResult.error.message);
+  }
   if (!restaurantResult.data) return null;
   const restaurant = restaurantResult.data as { name: string; loyalty_points_per_dollar: number };
   const topRewards = (

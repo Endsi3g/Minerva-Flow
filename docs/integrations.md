@@ -32,7 +32,7 @@ Après tout ajout de variable, la variable doit aussi être ajoutée à `.env.lo
 | Google Business Profile & Reserve with Google | ⏸️ Prêt côté code, en attente d'approbation Google | Demande de partenariat Google Business / Reserve with Google |
 | Meta Ads | ❌ Pas configuré | Créer une app Meta for Developers |
 | Vercel AI Gateway (Chat IA, Revue IA) | ⏸️ Clé créée, bloquée | Ajouter une carte de crédit au compte Vercel |
-| Stripe (facturation — abonnement Flow par Minerva) | ⏸️ Différé volontairement | À activer quand vous le demandez |
+| Stripe (facturation — abonnement Minerva Flow) | ⏸️ Différé volontairement | À activer quand vous le demandez |
 | Stripe Connect (paiements clients en ligne) | ⏸️ Construit, en attente | Activer Connect + clé publique + webhook connecté |
 | OpenTable | ❌ Pas configuré | Candidature de partenariat OpenTable Connect |
 | Resy | ❌ Pas configuré | Candidature de partenariat Resy API |
@@ -48,14 +48,14 @@ Légende : ✅ prêt · ⏸️ prêt côté code, bloqué par une action externe
 **Pourquoi ça compte** : tant que ce n'est pas fait, les invitations d'équipe partent de l'adresse partagée `onboarding@resend.dev` (peu professionnel, parfois filtré comme indésirable), et **la campagne email des mises à jour ne peut littéralement pas s'envoyer** — Resend refuse tout Broadcast, même en brouillon, depuis ce domaine sandbox.
 
 **Étapes** :
-1. Choisir un sous-domaine à dédier à l'envoi, p. ex. `mail.flowparminerva.com` ou `notifications.flowparminerva.com` (jamais votre domaine racine directement — un sous-domaine isole la réputation d'envoi).
+1. Choisir un sous-domaine à dédier à l'envoi, p. ex. `mail.minervaflow.app` ou `notifications.minervaflow.app` (jamais votre domaine racine directement — un sous-domaine isole la réputation d'envoi).
 2. Dans le [dashboard Resend](https://resend.com/domains) → **Add Domain** → entrer ce sous-domaine.
 3. Resend affiche 3-4 enregistrements DNS (SPF, DKIM, parfois DMARC) à ajouter chez votre registrar/hébergeur DNS. Les copier tels quels.
 4. Une fois les enregistrements propagés (quelques minutes à quelques heures), cliquer **Verify** dans Resend.
 5. Une fois vérifié :
    ```bash
    vercel env add RESEND_FROM_EMAIL production
-   # valeur : Flow par Minerva <notifications@mail.flowparminerva.com>
+   # valeur : Minerva Flow <notifications@mail.minervaflow.app>
    ```
 6. Rien d'autre à changer côté code — `lib/email/resend.ts` lit déjà `RESEND_FROM_EMAIL` et bascule automatiquement dessus. La prochaine release publiée déclenchera la première vraie campagne email.
 
@@ -110,7 +110,7 @@ Rien d'autre à faire ensuite — le Chat IA et les revues de performance IA s'a
 
 Différé volontairement — pas encore de demande de votre part pour l'activer. Quand vous voudrez :
 
-1. [Dashboard Stripe](https://dashboard.stripe.com/) → créer un produit "Flow par Minerva — Abonnement mensuel" avec un prix récurrent.
+1. [Dashboard Stripe](https://dashboard.stripe.com/) → créer un produit "Minerva Flow — Abonnement mensuel" avec un prix récurrent.
 2. Récupérer la clé secrète (**Developers → API keys**) et l'ID du prix créé.
 3. **Developers → Webhooks → Add endpoint** → `https://minerva-flow.vercel.app/api/stripe/webhook`, sélectionner les événements d'abonnement (`customer.subscription.*`, `invoice.*`).
 4. Ajouter les trois variables :

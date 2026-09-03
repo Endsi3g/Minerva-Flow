@@ -2,6 +2,26 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.26.0] - 2026-09-03
+
+### 🎯 Configurer votre seuil de rentabilité
+- La page Finance a maintenant une carte « Seuil de rentabilité » où vous entrez vos vraies charges fixes mensuelles, votre marge brute et votre panier moyen — ces chiffres alimentent directement le widget « Objectif du jour » de votre Aperçu, qui affichait jusqu'ici une moyenne générique faute d'endroit où les saisir.
+
+### 🔗 Le lien de fidélité de vos clients, plus fiable
+- Une erreur technique qui pouvait faire afficher une page introuvable à vos clients, sans jamais être signalée nulle part, est maintenant visible et consignée — pour repérer un vrai problème immédiatement plutôt que silencieusement.
+
+### 🧮 Vos vrais chiffres clients, partout
+- Le nombre de visites, l'historique et le solde de points affichés sur la fiche d'un client concordent maintenant toujours entre eux.
+
+### 📈 Une carte plus honnête sur le retour du parrainage
+- La carte « Multiplicateur ROI » n'affiche plus un « 0 $ » qui ressemblait à une erreur — elle explique maintenant clairement quand une récompense n'a pas encore été réclamée.
+
+### ✅ Le tableau de bord ne se contredit plus
+- La carte Recommandations n'affirme plus que « tout va bien » quand elle n'a simplement rien de nouveau à suggérer — un message qui pouvait contredire vos alertes actives juste à côté.
+
+### 🔁 Un calcul de fidélisation corrigé
+- Le widget « Clients qui reviennent plus souvent » compare maintenant réellement deux groupes de clients différents, plutôt que d'afficher un résultat neutre par coïncidence.
+
 ## [v2.25.0] - 2026-09-02
 
 ### 📱 Portail client repensé en 4 onglets

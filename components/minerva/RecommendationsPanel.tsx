@@ -38,7 +38,8 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
       />
       {recommendations.length === 0 ? (
         <p className="text-[12.5px] text-mv-ink-faint">
-          Rien à signaler pour l&apos;instant — tout va bien.
+          Aucune recommandation à vous faire pour l&apos;instant. Revenez plus tard, une fois que davantage de
+          données auront été enregistrées.
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

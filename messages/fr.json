@@ -231,6 +231,21 @@
       "laborCostLabel": "Masse salariale",
       "laborCostTarget": "Cible ≤ {target}% du CA"
     },
+    "breakEven": {
+      "title": "Seuil de rentabilité",
+      "description": "Ces trois chiffres alimentent directement l'« Objectif du jour » affiché sur votre Aperçu — sans eux, l'application se rabat sur une moyenne générique plutôt que votre vraie situation.",
+      "fixedCostsLabel": "Charges fixes mensuelles",
+      "fixedCostsHint": "Loyer, salaires fixes, assurances, abonnements — tout ce qui sort chaque mois peu importe l'achalandage.",
+      "grossMarginLabel": "Marge brute",
+      "grossMarginHint": "Ce qui reste sur chaque vente après le coût des matières premières.",
+      "avgBasketLabel": "Panier moyen",
+      "avgBasketHint": "Ce qu'un client dépense en moyenne par visite.",
+      "previewText": "Avec ces chiffres, il vous faut {count} client{plural} par jour pour couvrir vos charges fixes.",
+      "saveButton": "Enregistrer",
+      "saving": "Enregistrement...",
+      "savedToast": "Seuil de rentabilité mis à jour — votre Aperçu reflète maintenant vos vrais chiffres.",
+      "saveFailedToast": "Impossible d'enregistrer — réessayez dans un instant."
+    },
     "csv": {
       "date": "Date",
       "description": "Description",
