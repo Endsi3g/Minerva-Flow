@@ -5,6 +5,8 @@ import { z } from "zod";
 import { AI_MODEL, isAiConfigured } from "@/lib/ai/config";
 import { GEMINI_FALLBACK_MODEL, getGeminiApiKey } from "@/lib/ai/gemini";
 import { buildRestaurantDataSnapshot } from "@/lib/ai/context";
+import { getSpecialistById } from "@/lib/ai/specialists";
+import { buildDossierContext } from "@/lib/ai/dossiers";
 import { saveArtifact, saveAttachment, saveMessage } from "@/lib/data/chat";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getRestaurant } from "@/lib/data/restaurants";
@@ -81,11 +83,15 @@ export async function POST(req: Request) {
     restaurantId: bodyRestaurantId,
     conversationId,
     attachments,
+    agentId,
+    activeDossiers,
   }: {
     messages: UIMessage[];
     restaurantId?: string;
     conversationId?: string;
     attachments?: PendingAttachment[];
+    agentId?: string;
+    activeDossiers?: string[];
   } = await req.json();
 
   const restaurantId = bodyRestaurantId ?? (await getCurrentRestaurantId()) ?? undefined;
@@ -145,9 +151,75 @@ export async function POST(req: Request) {
     }
   }
 
-  const system = restaurantId
+  const specialist = getSpecialistById(agentId ?? "general");
+  let baseSystem = restaurantId
     ? await buildRestaurantDataSnapshot(restaurantId)
-    : "Tu es l'assistant de Minerva Flow. Aucun établissement n'est encore associé à ce compte.";
+    : "Tu es Flow AI. Aucun établissement n'est encore associé à ce compte.";
+
+  if (restaurantId && activeDossiers && activeDossiers.length > 0) {
+    try {
+      const dossierExtra = await buildDossierContext(restaurantId, activeDossiers);
+      baseSystem += `\n\n=== CONTEXTE DOSSIERS RAG SÉLECTIONNÉS ===\n${dossierExtra}`;
+    } catch (e) {
+      console.error("Error attaching dossier context:", e);
+    }
+  }
+
+  const system = `${baseSystem}
+
+=== SPÉCIALISATION ACTIVE ===
+${specialist.systemPromptAddendum}
+
+=== RÈGLES DE FORMATAGE ET ACTIONS 1-CLIC ===
+Tu as la capacité de proposer des actions directes 1-clic au gérant.
+Quand une action opérationnelle est pertinente, génère-la dans ton texte sous la forme d'un bloc JSON avec le langage spécifique:
+
+Pour un ajustement de prix ou statut plat:
+\`\`\`minerva-action:menu
+{
+  "action": "update_menu_item",
+  "title": "Mettre à jour le plat",
+  "itemId": "<id-du-plat>",
+  "name": "<nom-du-plat>",
+  "price": 18.5,
+  "active": true,
+  "reason": "Réaligner le food cost sous 32%"
+}
+\`\`\`
+
+Pour une campagne de fidélisation:
+\`\`\`minerva-action:campaign
+{
+  "action": "create_campaign",
+  "title": "Créer une campagne de fidélisation",
+  "name": "Relance Habitués 14 jours",
+  "description": "Offre un plat signature aux habitués n'étant pas revenus depuis 2 semaines",
+  "channel": "email",
+  "type": "relance",
+  "estimatedRevenue": 750
+}
+\`\`\`
+
+Pour une tâche de collaborateur:
+\`\`\`minerva-action:task
+{
+  "action": "create_task",
+  "title": "Assigner une tâche d'équipe",
+  "employeeName": "Alexandre",
+  "taskTitle": "Vérification des fiches techniques du soir",
+  "description": "Contrôler le portionnement des sauces et le respect du grammage"
+}
+\`\`\`
+
+Pour insérer un contenu directement dans le Canvas WYSIWYG latéral:
+\`\`\`minerva-action:canvas
+{
+  "action": "insert_to_canvas",
+  "title": "Fiche de rentabilité ou document",
+  "content": "Contenu Markdown ou HTML complet à transférer dans l'éditeur Canvas"
+}
+\`\`\`
+`;
 
   // Token-efficient sliding window : conserver uniquement les 6 derniers messages pour limiter la consommation de prompt tokens.
   const slidingWindowMessages = messages.slice(-6);

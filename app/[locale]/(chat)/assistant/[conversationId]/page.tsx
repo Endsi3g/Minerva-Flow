@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
-import { getConversations, getConversation, getMessages, getLatestArtifact } from "@/lib/data/chat";
+import { getConversations, getConversation, getMessages, getLatestArtifact, getCanvasDocs } from "@/lib/data/chat";
 import { getServiceDays } from "@/lib/data/service-days";
 import { getPrograms } from "@/lib/data/programs";
 import { getFinancialTransactions, getConnections } from "@/lib/data/finance";
@@ -26,7 +26,7 @@ export default async function AssistantConversationPage({
   }
 
   const historyFrom = isoDaysAgo(DEFAULT_HISTORY_WINDOW_DAYS);
-  const [conversations, messages, artifact, serviceDays, programs, financialTransactions, connections, alertRules] =
+  const [conversations, messages, artifact, serviceDays, programs, financialTransactions, connections, alertRules, canvasDocs] =
     await Promise.all([
       getConversations(restaurantId),
       getMessages(conversationId),
@@ -36,6 +36,7 @@ export default async function AssistantConversationPage({
       getFinancialTransactions(restaurantId, { from: historyFrom }),
       getConnections(restaurantId),
       getAlertRules(restaurantId),
+      getCanvasDocs(restaurantId, conversationId),
     ]);
 
   const reportData: ReportData = { serviceDays, programs, campaigns: [], financialTransactions };
@@ -56,6 +57,9 @@ export default async function AssistantConversationPage({
       initialMessages={messages}
       initialArtifact={artifact}
       defaultContext={defaultContext}
+      initialAgentId={conversation.agentId ?? "general"}
+      initialActiveDossiers={conversation.activeDossiers ?? ["menu", "finance", "loyalty", "operations"]}
+      initialCanvasDoc={canvasDocs[0] ?? null}
     />
   );
 }

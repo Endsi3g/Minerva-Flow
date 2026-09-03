@@ -1,8 +1,11 @@
 "use client";
 
+import React, { useState, useEffect, useMemo } from "react";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
-import { CanvasPanel } from "@/components/chat/CanvasPanel";
+import { FlowAiHeaderNav } from "@/components/chat/FlowAiHeaderNav";
+import { TipTapCanvas } from "@/components/chat/TipTapCanvas";
 import { ArtifactCanvas } from "@/components/chat/ArtifactCanvas";
+import { CanvasPanel } from "@/components/chat/CanvasPanel";
 import { ReferralModal } from "@/components/chat/ReferralModal";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -10,28 +13,23 @@ import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
 import type { UIMessage } from "ai";
 import { Thread } from "@/components/assistant-ui/thread";
-import type { ChatArtifact, ChatConversation, ChatMessage } from "@/lib/types";
+import type { ChatArtifact, ChatConversation, ChatMessage, ChatCanvasDoc } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
 import type { ActionableArtifactPayload } from "@/lib/types/generative-ui";
 import { SAMPLE_MENU_ENGINEERING_ARTIFACT } from "@/lib/ai/sample-artifacts";
-import { 
-  PanelLeft, 
-  PlusCircle, 
-  Share2, 
-  Bot, 
-  AlertTriangle,
+import { getSpecialistById } from "@/lib/ai/specialists";
+import {
   Layers,
+  FileEdit,
   Activity,
+  Sparkles,
+  AlertTriangle,
+  PanelRight,
   PanelRightClose,
-  PanelRight
 } from "lucide-react";
-import { useState } from "react";
-import { useApp } from "@/lib/app-context";
-import { createConversationAction } from "@/app/[locale]/(chat)/assistant/actions";
+import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import { useRouter } from "next/navigation";
 
-/** Maps this app's DB-shaped chat history into the AI SDK's UIMessage wire format,
- *  the only shape useChatRuntime's `messages` seed option accepts. */
 function toUIMessages(messages: ChatMessage[]): UIMessage[] {
   return messages.map((m) => ({
     id: m.id,
@@ -47,6 +45,9 @@ export function AssistantChatView({
   initialMessages,
   initialArtifact,
   defaultContext,
+  initialAgentId = "general",
+  initialActiveDossiers = ["menu", "finance", "loyalty", "operations"],
+  initialCanvasDoc = null,
 }: {
   restaurantId: string;
   conversationId: string;
@@ -54,20 +55,28 @@ export function AssistantChatView({
   initialMessages: ChatMessage[];
   initialArtifact: ChatArtifact | null;
   defaultContext: CanvasContextData;
+  initialAgentId?: string;
+  initialActiveDossiers?: string[];
+  initialCanvasDoc?: ChatCanvasDoc | null;
 }) {
   const { authUser } = useApp();
+  const restaurant = useCurrentRestaurant();
   const router = useRouter();
   const firstName = authUser?.fullName ? authUser.fullName.split(" ")[0] : "Collaborateur";
 
   const [shareOpen, setShareOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [canvasCollapsed, setCanvasCollapsed] = useState(false);
-  const [rightPanelView, setRightPanelView] = useState<"context" | "canvas">("canvas");
-  const [actionableArtifact, setActionableArtifact] = useState<ActionableArtifactPayload | null>(
-    SAMPLE_MENU_ENGINEERING_ARTIFACT
-  );
+  const [activeRightTab, setActiveRightTab] = useState<"tiptap" | "artifact" | "context">("tiptap");
   const [activeMobileView, setActiveMobileView] = useState<"chat" | "canvas">("chat");
 
+  const [agentId, setAgentId] = useState(initialAgentId);
+  const [activeDossiers, setActiveDossiers] = useState<string[]>(initialActiveDossiers);
+  const [currentCanvasDoc, setCurrentCanvasDoc] = useState<ChatCanvasDoc | null>(initialCanvasDoc);
+
+  const specialist = useMemo(() => getSpecialistById(agentId), [agentId]);
+
+  // Initialisation du runtime AI SDK branché à /api/ai/chat avec agentId et activeDossiers
   const runtime = useChatRuntime({
     id: conversationId,
     messages: toUIMessages(initialMessages),
@@ -76,14 +85,27 @@ export function AssistantChatView({
       body: {
         restaurantId,
         conversationId,
+        agentId,
+        activeDossiers,
       },
     }),
   });
 
-  async function handleNewChat() {
-    const conv = await createConversationAction(restaurantId);
-    if (conv) router.push(`/assistant/${conv.id}`);
-  }
+  // Raccourcis clavier : Cmd+B (Sidebar) & Cmd+J (Canvas)
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        setSidebarCollapsed((v) => !v);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault();
+        setCanvasCollapsed((v) => !v);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   function handleSendPrompt(promptText: string) {
     if (!promptText.trim()) return;
@@ -93,182 +115,173 @@ export function AssistantChatView({
     setActiveMobileView("chat");
   }
 
-  async function handleApplyArtifact(art: ActionableArtifactPayload) {
-    setActionableArtifact({ ...art, isApplied: true });
-  }
-
   const activeAlertCount = defaultContext.alerts.length;
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-[#FAF8F5] border-t border-[#E8E5DF] text-[#1F1E1D]">
-      {/* Left Chat Sidebar */}
-      <ChatSidebar
-        conversations={conversations}
-        activeConversationId={conversationId}
-        onShare={() => setShareOpen(true)}
-        collapsed={sidebarCollapsed}
-        onCollapse={setSidebarCollapsed}
+    <div className="flex flex-col h-full w-full overflow-hidden bg-mv-cream text-mv-ink">
+      {/* ── Navigation Principale par Onglets Flow AI ──────────────────────── */}
+      <FlowAiHeaderNav
+        restaurantName={restaurant?.name}
+        activeSpecialistName={specialist.name}
+        activeSpecialistAvatar={specialist.avatar}
+        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onToggleCanvas={() => setCanvasCollapsed(!canvasCollapsed)}
       />
 
-      <div className="flex flex-1 min-w-0 overflow-hidden relative flex-col">
-        {/* Modern SaaS Header Bar */}
-        <div className="flex h-14 items-center justify-between border-b border-[#E8E5DF] bg-white/80 backdrop-blur-md px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <Tooltip>
-              <TooltipTrigger
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                aria-label="Masquer ou afficher le panneau latéral"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#5A5851] hover:bg-black/[0.04] hover:text-[#1F1E1D] transition-colors"
-              >
-                <PanelLeft size={16} />
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Masquer / Afficher la barre latérale</TooltipContent>
-            </Tooltip>
+      {/* ── Contenu Principal : Volet Sessions + Chat + Volet Canvas ─────────── */}
+      <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
+        {/* 1. Volet Gauche : Sessions & Dossiers RAG */}
+        <ChatSidebar
+          conversations={conversations}
+          activeConversationId={conversationId}
+          currentAgentId={agentId}
+          currentActiveDossiers={activeDossiers}
+          onShare={() => setShareOpen(true)}
+          collapsed={sidebarCollapsed}
+          onCollapse={setSidebarCollapsed}
+          onAgentChange={setAgentId}
+          onDossiersChange={setActiveDossiers}
+        />
 
-            <div className="flex items-center gap-2">
-              <span className="font-sans font-bold text-sm sm:text-[15px] text-[#0A3F2F] tracking-tight">
-                Flow Copilot
+        {/* 2. Colonne Centrale : Chat Conversationnel & Prompts Spécialiste */}
+        <div
+          className={cn(
+            "flex flex-1 min-w-0 flex-col bg-[#FAF8F3] h-full relative overflow-hidden",
+            activeMobileView === "canvas" && "hidden sm:flex"
+          )}
+        >
+          {/* Bannière du Spécialiste Actif avec Prompts Suggérés Rapides */}
+          <div className="flex items-center justify-between px-4 py-2 bg-white/90 border-b border-mv-border-soft shrink-0">
+            <div className="flex items-center gap-2 overflow-x-auto py-0.5 no-scrollbar">
+              <span className="text-sm shrink-0">{specialist.avatar}</span>
+              <span className="text-[12px] font-semibold text-mv-ink shrink-0 mr-2">
+                {specialist.name}
               </span>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10.5px] font-semibold text-emerald-800 border border-emerald-200/80 flex items-center gap-1">
-                <Bot size={11} className="text-emerald-700" />
-                Gemini 3.7 Flash
-              </span>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {/* View Mode Switcher in Header (Context vs Canvas) */}
-            <div className="hidden md:flex items-center bg-[#FAF8F5] border border-[#E8E5DF] rounded-xl p-0.5 text-xs font-semibold shadow-2xs">
-              <button
-                type="button"
-                onClick={() => { setRightPanelView("canvas"); setCanvasCollapsed(false); }}
-                className={cn(
-                  "flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all",
-                  rightPanelView === "canvas" && !canvasCollapsed
-                    ? "bg-white text-[#0A3F2F] shadow-2xs"
-                    : "text-[#8A887F] hover:text-[#1F1E1D]"
-                )}
-              >
-                <Layers size={12} className="text-[#0E7C5A]" />
-                <span>Artefact Canvas</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setRightPanelView("context"); setCanvasCollapsed(false); }}
-                className={cn(
-                  "flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all",
-                  rightPanelView === "context" && !canvasCollapsed
-                    ? "bg-white text-[#0A3F2F] shadow-2xs"
-                    : "text-[#8A887F] hover:text-[#1F1E1D]"
-                )}
-              >
-                <Activity size={12} className="text-[#0E7C5A]" />
-                <span>Données POS</span>
-              </button>
+              {specialist.suggestedPrompts.map((prompt, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSendPrompt(prompt)}
+                  className="px-2.5 py-1 rounded-full bg-[#FAF7F0] hover:bg-mv-cream text-[11px] font-medium text-mv-ink-soft hover:text-mv-ink border border-mv-border-soft shrink-0 transition-colors flex items-center gap-1 shadow-2xs"
+                >
+                  <Sparkles size={10} className="text-mv-amber" />
+                  <span className="truncate max-w-[240px]">{prompt}</span>
+                </button>
+              ))}
             </div>
 
+            {/* Alertes d'exploitation directes */}
             {activeAlertCount > 0 && (
-              <div 
-                onClick={() => handleSendPrompt("Analyse nos alertes d'exploitation actives et propose un plan de résolution immédiat.")}
-                className="hidden lg:flex items-center gap-1.5 text-[11px] bg-amber-50 text-amber-800 border border-amber-200/90 px-2.5 py-1 rounded-lg font-medium cursor-pointer hover:bg-amber-100/70 transition-colors shadow-2xs"
+              <button
+                onClick={() =>
+                  handleSendPrompt(
+                    "Analyse nos alertes d'exploitation en cours et propose un plan d'action d'urgence."
+                  )
+                }
+                className="hidden xl:flex items-center gap-1.5 text-[11px] bg-amber-50 text-amber-900 border border-amber-200/90 px-2.5 py-1 rounded-lg font-medium hover:bg-amber-100 transition-colors shadow-2xs shrink-0 ml-2"
               >
                 <AlertTriangle size={12} className="text-amber-600 shrink-0" />
-                <span>{activeAlertCount} point{activeAlertCount > 1 ? "s" : ""} de vigilance</span>
-              </div>
+                <span>{activeAlertCount} alertes</span>
+              </button>
             )}
-
-            <Tooltip>
-              <TooltipTrigger
-                onClick={() => setShareOpen(true)}
-                aria-label="Partager cette conversation"
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#5A5851] hover:bg-black/[0.04] hover:text-[#1F1E1D] transition-colors"
-              >
-                <Share2 size={15} />
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Partager la discussion</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger
-                onClick={() => setCanvasCollapsed(!canvasCollapsed)}
-                aria-label="Masquer ou afficher le panneau droit"
-                className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg text-[#5A5851] hover:bg-black/[0.04] hover:text-[#1F1E1D] transition-colors"
-              >
-                {canvasCollapsed ? <PanelRight size={16} /> : <PanelRightClose size={16} />}
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Masquer / Afficher le Canvas</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger
-                onClick={handleNewChat}
-                aria-label="Démarrer une nouvelle discussion"
-                className="flex items-center gap-1.5 rounded-xl border border-[#E2E0D8] bg-white px-2.5 py-1 text-[12px] font-semibold text-[#1F1E1D] shadow-2xs hover:bg-[#FAF8F5] transition-all"
-              >
-                <PlusCircle size={14} className="text-[#0E7C5A]" />
-                <span className="hidden sm:inline">Nouveau chat</span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Nouvelle discussion IA</TooltipContent>
-            </Tooltip>
           </div>
-        </div>
 
-        {/* Mobile View Switcher */}
-        <div className="flex sm:hidden border-b border-[#E8E5DF] bg-white">
-          <button
-            onClick={() => setActiveMobileView("chat")}
-            className={cn(
-              "flex-1 py-2 text-center font-sans text-xs font-semibold transition-colors",
-              activeMobileView === "chat"
-                ? "border-b-2 border-[#0E7C5A] text-[#0E7C5A] bg-[#FAF8F5]"
-                : "text-[#8A887F] hover:text-[#1F1E1D]"
-            )}
-          >
-            Discussion IA
-          </button>
-          <button
-            onClick={() => setActiveMobileView("canvas")}
-            className={cn(
-              "flex-1 py-2 text-center font-sans text-xs font-semibold transition-colors flex items-center justify-center gap-1.5",
-              activeMobileView === "canvas"
-                ? "border-b-2 border-[#0E7C5A] text-[#0E7C5A] bg-[#FAF8F5]"
-                : "text-[#8A887F] hover:text-[#1F1E1D]"
-            )}
-          >
-            <span>Artefact Canvas</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-[#0E7C5A] animate-pulse" />
-          </button>
-        </div>
-
-        {/* Main Split-Screen Layout */}
-        <div className="flex flex-1 min-h-0 min-w-0">
-          <div
-            className={cn(
-              "flex-1 flex flex-col min-w-0 bg-[#FAF8F5] h-full relative",
-              activeMobileView === "canvas" && "hidden sm:flex"
-            )}
-          >
+          {/* Assistant UI Thread */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
             <AssistantRuntimeProvider runtime={runtime}>
               <Thread userName={firstName} />
             </AssistantRuntimeProvider>
           </div>
+        </div>
 
-          {/* Canvas Right Panel with Dual Mode (ArtifactCanvas vs CanvasPanel) */}
-          {!canvasCollapsed && (
-            <div
-              className={cn(
-                "w-full sm:w-[420px] lg:w-[480px] border-l border-[#E8E5DF] bg-white flex-col h-full shrink-0 transition-all duration-200",
-                activeMobileView === "canvas" ? "flex" : "hidden sm:flex"
+        {/* 3. Volet Droit : Canvas TipTap WYSIWYG & Visualisations */}
+        {!canvasCollapsed && (
+          <div
+            className={cn(
+              "w-full sm:w-[460px] lg:w-[520px] xl:w-[580px] border-l border-mv-border bg-mv-surface flex flex-col h-full shrink-0 transition-all duration-200 z-10",
+              activeMobileView === "canvas" ? "flex" : "hidden sm:flex"
+            )}
+          >
+            {/* Sélecteur de mode Canvas */}
+            <div className="flex items-center justify-between px-4 py-2 border-b border-mv-border bg-[#FAF8F5] shrink-0">
+              <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-mv-border text-[11px] font-medium">
+                <button
+                  type="button"
+                  onClick={() => setActiveRightTab("tiptap")}
+                  className={cn(
+                    "flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors",
+                    activeRightTab === "tiptap"
+                      ? "bg-mv-green text-white font-semibold shadow-2xs"
+                      : "text-mv-ink-soft hover:text-mv-ink"
+                  )}
+                >
+                  <FileEdit size={12} />
+                  <span>Éditeur TipTap</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveRightTab("artifact")}
+                  className={cn(
+                    "flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors",
+                    activeRightTab === "artifact"
+                      ? "bg-mv-green text-white font-semibold shadow-2xs"
+                      : "text-mv-ink-soft hover:text-mv-ink"
+                  )}
+                >
+                  <Layers size={12} />
+                  <span>Artefact Carte</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveRightTab("context")}
+                  className={cn(
+                    "flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors",
+                    activeRightTab === "context"
+                      ? "bg-mv-green text-white font-semibold shadow-2xs"
+                      : "text-mv-ink-soft hover:text-mv-ink"
+                  )}
+                >
+                  <Activity size={12} />
+                  <span>Données POS</span>
+                </button>
+              </div>
+
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      onClick={() => setCanvasCollapsed(true)}
+                      className="p-1 rounded-lg text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream"
+                    >
+                      <PanelRightClose size={15} />
+                    </button>
+                  }
+                />
+                <TooltipContent>Masquer le volet droit (Cmd+J)</TooltipContent>
+              </Tooltip>
+            </div>
+
+            {/* Corps du panneau droit */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {activeRightTab === "tiptap" && (
+                <TipTapCanvas
+                  restaurantId={restaurantId}
+                  conversationId={conversationId}
+                  initialDoc={currentCanvasDoc}
+                  onDocSaved={setCurrentCanvasDoc}
+                />
               )}
-            >
-              {rightPanelView === "canvas" ? (
+
+              {activeRightTab === "artifact" && (
                 <ArtifactCanvas
-                  artifact={actionableArtifact}
+                  artifact={SAMPLE_MENU_ENGINEERING_ARTIFACT}
                   onClose={() => setCanvasCollapsed(true)}
-                  onApply={handleApplyArtifact}
+                  onApply={async () => {}}
                   onSendPrompt={handleSendPrompt}
                 />
-              ) : (
+              )}
+
+              {activeRightTab === "context" && (
                 <CanvasPanel
                   artifact={initialArtifact}
                   defaultContext={defaultContext}
@@ -278,8 +291,8 @@ export function AssistantChatView({
                 />
               )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <ReferralModal open={shareOpen} onOpenChange={setShareOpen} />

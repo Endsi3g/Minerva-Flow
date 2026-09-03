@@ -449,6 +449,64 @@ export type ChatConversation = {
   createdBy: string;
   title: string | null;
   archived: boolean;
+  isPinned?: boolean;
+  agentId?: string;
+  activeDossiers?: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ChatCanvasDoc = {
+  id: string;
+  restaurantId: string;
+  conversationId: string | null;
+  title: string;
+  content: string;
+  contentJson: Record<string, unknown>;
+  version: number;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ChatProjectFolder = {
+  id: string;
+  restaurantId: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string;
+  color: string;
+  isSystem: boolean;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ChatProjectDoc = {
+  id: string;
+  folderId: string;
+  restaurantId: string;
+  title: string;
+  content: string;
+  category: string;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RestaurantCustomAgent = {
+  id: string;
+  restaurantId: string;
+  name: string;
+  role: string;
+  avatar: string;
+  description: string | null;
+  systemPrompt: string;
+  tone: string;
+  skills: string[];
+  isActive: boolean;
+  createdBy: string | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -49,6 +49,18 @@ function normalizeTitle(title: string): string {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-09-03-v2-29-0",
+    title: "Version v2.29.0 : Flow AI Studio, TipTap WYSIWYG Canvas, RAG Multi-Dossiers & Agents Store Restaurant",
+    description: `- **Workspace Flow AI 3-Colonnes** : Refonte intégrale de l'interface conversationnelle inspirée de l'architecture minerva-os-lite-desktop (Volet gauche Sessions & Dossiers RAG, Chat streaming central, Volet droit Canvas TipTap) avec raccourcis \`Cmd+B\` et \`Cmd+J\`.
+- **Canvas TipTap Restauration** : Éditeur WYSIWYG complet avec barre d'outils Notion-like, modèles métier pré-remplis (Fiche Technique Saumon, Simulateur de Marge, Briefing de Service du Soir) et export instantané TXT/Markdown.
+- **5 Dossiers RAG Connectés en Temps Réel** : Synchronisation continue avec la base restaurant (📂 Menu & Recettes, 📂 Finances & Performance, 📂 Fidélisation & Cohortes LTV, 📂 Opérations & Équipe, 📂 Dossiers Personnalisés & SOPs) pour des réponses ultra-contextualisées.
+- **Actions Directes 1-Clic (\`minerva-action\`)** : Cartes interactives injectées directement dans le flux de discussion permettant d'ajuster le prix/statut d'un plat, lancer une campagne de fidélisation ciblée, assigner une tâche d'équipe ou transférer un contenu vers le Canvas latéral en un clic.
+- **Agents Store & Studio de Spécialistes** : 4 spécialistes métier préconfigurés (👨‍🍳 Menu & Cost Engineer, 📈 Auditeur Prime Cost & Finance, 🤝 Stratège Rétention & Fidélisation LTV, 📋 Maître d'Hôtel & Coach de Service) et possibilité pour chaque restaurant de créer ses propres spécialistes sur-mesure.
+- **Pages Dédiées Capacités & Intelligence** : Registre complet des 7 compétences agentiques avec simulateur interactif (\`/assistant/skills\`) et diagnostic opérationnel quotidien avec jauge de Prime Cost (< 60 %) et 3 recommandations prioritaires (\`/assistant/intelligence\`).`,
+    category: "fonctionnalite",
+    publishedAt: "2026-09-03T16:00:00.000Z",
+  },
+  {
     id: "ch-2026-09-03-v2-28-0",
     title: "Version v2.28.0 : Business Login Instagram Direct, Onboarding Viral & Stickers de Story Trackables",
     description: `- **Business Login for Instagram (Direct)** : Intégration de la nouvelle API officielle Meta 2025/2026 (\`graph.instagram.com\`) avec connexion en 1 clic sans obligation de Page Facebook liée, scopes étendus (publication, modération, messages) et tokens 60 jours renouvelables.
