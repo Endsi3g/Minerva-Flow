@@ -217,6 +217,15 @@ export async function renameConversation(id: string, title: string): Promise<voi
     .eq("id", id);
 }
 
+export async function deleteConversation(id: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("chat_conversations")
+    .update({ archived: true, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  return !error;
+}
+
 export async function getMessages(conversationId: string): Promise<ChatMessage[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -500,16 +509,17 @@ export async function getProjectFolders(restaurantId: string): Promise<ChatProje
 export async function createProjectFolder(
   restaurantId: string,
   name: string,
-  slug: string,
+  slug?: string,
   description?: string
 ): Promise<ChatProjectFolder | null> {
   const supabase = await createClient();
+  const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const { data, error } = await supabase
     .from("chat_project_folders")
     .insert({
       restaurant_id: restaurantId,
       name,
-      slug,
+      slug: finalSlug,
       description: description ?? null,
       is_system: false,
     })
@@ -518,6 +528,12 @@ export async function createProjectFolder(
 
   if (error || !data) return null;
   return mapProjectFolder(data as ChatProjectFolderRow);
+}
+
+export async function deleteProjectFolder(id: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("chat_project_folders").delete().eq("id", id);
+  return !error;
 }
 
 function mapProjectDoc(row: ChatProjectDocRow): ChatProjectDoc {

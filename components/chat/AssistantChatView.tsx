@@ -1,34 +1,58 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { ChatSidebar } from "@/components/chat/ChatSidebar";
-import { FlowAiHeaderNav } from "@/components/chat/FlowAiHeaderNav";
-import { TipTapCanvas } from "@/components/chat/TipTapCanvas";
-import { ArtifactCanvas } from "@/components/chat/ArtifactCanvas";
-import { CanvasPanel } from "@/components/chat/CanvasPanel";
-import { ReferralModal } from "@/components/chat/ReferralModal";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
 import type { UIMessage } from "ai";
 import { Thread } from "@/components/assistant-ui/thread";
-import type { ChatArtifact, ChatConversation, ChatMessage, ChatCanvasDoc } from "@/lib/types";
+import { TipTapCanvas } from "@/components/chat/TipTapCanvas";
+import type {
+  ChatArtifact,
+  ChatConversation,
+  ChatMessage,
+  ChatCanvasDoc,
+  ChatProjectFolder,
+} from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
-import type { ActionableArtifactPayload } from "@/lib/types/generative-ui";
-import { SAMPLE_MENU_ENGINEERING_ARTIFACT } from "@/lib/ai/sample-artifacts";
 import { getSpecialistById } from "@/lib/ai/specialists";
+import { DEFAULT_DOSSIERS } from "@/lib/ai/dossier-types";
 import {
-  Layers,
-  FileEdit,
-  Activity,
+  executeTogglePinAction,
+  executeDeleteSessionAction,
+  executeDeleteCanvasDocAction,
+  executeCreateProjectFolderAction,
+  executeCanvasSaveAction,
+} from "@/app/[locale]/(chat)/assistant/flow-ai-actions";
+import {
+  Brain,
   Sparkles,
-  AlertTriangle,
-  PanelRight,
-  PanelRightClose,
+  Bot,
+  Settings,
+  Folder,
+  FolderPlus,
+  Plus,
+  Layers,
+  FileText,
+  Trash2,
+  Pin,
+  PinOff,
+  History,
+  PanelLeftClose,
+  PanelLeft,
+  Bell,
+  ArrowLeftRight,
+  BookOpen,
+  BarChart2,
+  ChevronRight,
+  X,
 } from "lucide-react";
-import { useApp, useCurrentRestaurant } from "@/lib/app-context";
-import { useRouter } from "next/navigation";
+import { useApp } from "@/lib/app-context";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/Button";
 
 function toUIMessages(messages: ChatMessage[]): UIMessage[] {
   return messages.map((m) => ({
@@ -41,13 +65,15 @@ function toUIMessages(messages: ChatMessage[]): UIMessage[] {
 export function AssistantChatView({
   restaurantId,
   conversationId,
-  conversations,
+  conversations: initialConversations,
   initialMessages,
   initialArtifact,
   defaultContext,
   initialAgentId = "general",
   initialActiveDossiers = ["menu", "finance", "loyalty", "operations"],
   initialCanvasDoc = null,
+  allCanvasDocs: initialCanvasDocs = [],
+  projectFolders: initialProjectFolders = [],
 }: {
   restaurantId: string;
   conversationId: string;
@@ -58,25 +84,45 @@ export function AssistantChatView({
   initialAgentId?: string;
   initialActiveDossiers?: string[];
   initialCanvasDoc?: ChatCanvasDoc | null;
+  allCanvasDocs?: ChatCanvasDoc[];
+  projectFolders?: ChatProjectFolder[];
 }) {
-  const { authUser } = useApp();
-  const restaurant = useCurrentRestaurant();
   const router = useRouter();
-  const firstName = authUser?.fullName ? authUser.fullName.split(" ")[0] : "Collaborateur";
+  const { authUser } = useApp();
+  const userName = authUser?.fullName || "Directeur d'exploitation";
+  const userInitials = authUser?.fullName
+    ? authUser.fullName
+        .split(" ")
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "K";
 
-  const [shareOpen, setShareOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [canvasCollapsed, setCanvasCollapsed] = useState(false);
-  const [activeRightTab, setActiveRightTab] = useState<"tiptap" | "artifact" | "context">("tiptap");
-  const [activeMobileView, setActiveMobileView] = useState<"chat" | "canvas">("chat");
+  // State
+  const [conversations, setConversations] = useState<ChatConversation[]>(initialConversations);
+  const [canvasDocs, setCanvasDocs] = useState<ChatCanvasDoc[]>(initialCanvasDocs);
+  const [projectFolders, setProjectFolders] = useState<ChatProjectFolder[]>(initialProjectFolders);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+  // Panels visibility — exactly matching Image 2
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(true);
+  const [isCanvasOpen, setIsCanvasOpen] = useState(false);
+  const [currentCanvasDoc, setCurrentCanvasDoc] = useState<ChatCanvasDoc | null>(initialCanvasDoc);
+  const [selectedModel, setSelectedModel] = useState("Gemini 3.7");
 
   const [agentId, setAgentId] = useState(initialAgentId);
   const [activeDossiers, setActiveDossiers] = useState<string[]>(initialActiveDossiers);
-  const [currentCanvasDoc, setCurrentCanvasDoc] = useState<ChatCanvasDoc | null>(initialCanvasDoc);
 
-  const specialist = useMemo(() => getSpecialistById(agentId), [agentId]);
+  // Dialogs
+  const [showNewFolderModal, setShowNewFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderDesc, setNewFolderDesc] = useState("");
 
-  // Initialisation du runtime AI SDK branché à /api/ai/chat avec agentId et activeDossiers
+  const [showNewDocModal, setShowNewDocModal] = useState(false);
+  const [newDocTitle, setNewDocTitle] = useState("");
+
+  // Assistant runtime
   const runtime = useChatRuntime({
     id: conversationId,
     messages: toUIMessages(initialMessages),
@@ -91,211 +137,659 @@ export function AssistantChatView({
     }),
   });
 
-  // Raccourcis clavier : Cmd+B (Sidebar) & Cmd+J (Canvas)
+  // Current session
+  const currentSession = useMemo(
+    () => conversations.find((c) => c.id === conversationId),
+    [conversations, conversationId]
+  );
+
+  // Filtered sessions based on selected project
+  const filteredSessions = useMemo(() => {
+    return conversations;
+  }, [conversations]);
+
+  // Keyboard shortcuts Cmd+B (Workspace) and Cmd+J (Canvas)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
         e.preventDefault();
-        setSidebarCollapsed((v) => !v);
+        setIsWorkspaceOpen((v) => !v);
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
         e.preventDefault();
-        setCanvasCollapsed((v) => !v);
+        setIsCanvasOpen((v) => !v);
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  function handleSendPrompt(promptText: string) {
-    if (!promptText.trim()) return;
-    runtime.thread.append({
-      content: [{ type: "text", text: promptText }],
-    });
-    setActiveMobileView("chat");
-  }
+  // Handlers
+  const handleTogglePin = async (e: React.MouseEvent, sessId: string, currentPin: boolean) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = !currentPin;
+    setConversations((prev) =>
+      prev.map((c) => (c.id === sessId ? { ...c, isPinned: next } : c))
+    );
+    await executeTogglePinAction(sessId, next);
+  };
 
-  const activeAlertCount = defaultContext.alerts.length;
+  const handleDeleteSession = async (e: React.MouseEvent, sessId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setConversations((prev) => prev.filter((c) => c.id !== sessId));
+    await executeDeleteSessionAction(sessId);
+    if (sessId === conversationId) {
+      router.push("/assistant");
+    }
+  };
+
+  const handleDeleteCanvasDoc = async (e: React.MouseEvent, docId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCanvasDocs((prev) => prev.filter((d) => d.id !== docId));
+    if (currentCanvasDoc?.id === docId) {
+      setCurrentCanvasDoc(null);
+      setIsCanvasOpen(false);
+    }
+    await executeDeleteCanvasDocAction(docId);
+    toast.success("Document supprimé.");
+  };
+
+  const handleCreateFolder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFolderName.trim()) return;
+    const res = await executeCreateProjectFolderAction({
+      restaurantId,
+      name: newFolderName.trim(),
+      description: newFolderDesc.trim(),
+    });
+    if (res.success && res.folder) {
+      setProjectFolders((prev) => [res.folder!, ...prev]);
+      setShowNewFolderModal(false);
+      setNewFolderName("");
+      setNewFolderDesc("");
+      toast.success("Dossier de projet créé.");
+    } else {
+      toast.error(res.error || "Erreur lors de la création du dossier.");
+    }
+  };
+
+  const handleCreateCanvasDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const title = newDocTitle.trim() || "Nouveau Document";
+    const res = await executeCanvasSaveAction({
+      restaurantId,
+      conversationId,
+      title,
+      content: "<h2>" + title + "</h2><p>Rédigez ici vos notes de service...</p>",
+    });
+    if (res.success && res.doc) {
+      setCanvasDocs((prev) => [res.doc!, ...prev]);
+      setCurrentCanvasDoc(res.doc!);
+      setIsCanvasOpen(true);
+      setShowNewDocModal(false);
+      setNewDocTitle("");
+      toast.success("Document créé dans le Canvas.");
+    } else {
+      toast.error(res.error || "Impossible de créer le document.");
+    }
+  };
 
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden bg-mv-cream text-mv-ink">
-      {/* ── Navigation Principale par Onglets Flow AI ──────────────────────── */}
-      <FlowAiHeaderNav
-        restaurantName={restaurant?.name}
-        activeSpecialistName={specialist.name}
-        activeSpecialistAvatar={specialist.avatar}
-        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-        onToggleCanvas={() => setCanvasCollapsed(!canvasCollapsed)}
-      />
-
-      {/* ── Contenu Principal : Volet Sessions + Chat + Volet Canvas ─────────── */}
-      <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
-        {/* 1. Volet Gauche : Sessions & Dossiers RAG */}
-        <ChatSidebar
-          conversations={conversations}
-          activeConversationId={conversationId}
-          currentAgentId={agentId}
-          currentActiveDossiers={activeDossiers}
-          onShare={() => setShareOpen(true)}
-          collapsed={sidebarCollapsed}
-          onCollapse={setSidebarCollapsed}
-          onAgentChange={setAgentId}
-          onDossiersChange={setActiveDossiers}
-        />
-
-        {/* 2. Colonne Centrale : Chat Conversationnel & Prompts Spécialiste */}
-        <div
-          className={cn(
-            "flex flex-1 min-w-0 flex-col bg-[#FAF8F3] h-full relative overflow-hidden",
-            activeMobileView === "canvas" && "hidden sm:flex"
-          )}
-        >
-          {/* Bannière du Spécialiste Actif avec Prompts Suggérés Rapides */}
-          <div className="flex items-center justify-between px-4 py-2 bg-white/90 border-b border-mv-border-soft shrink-0">
-            <div className="flex items-center gap-2 overflow-x-auto py-0.5 no-scrollbar">
-              <span className="text-sm shrink-0">{specialist.avatar}</span>
-              <span className="text-[12px] font-semibold text-mv-ink shrink-0 mr-2">
-                {specialist.name}
-              </span>
-
-              {specialist.suggestedPrompts.map((prompt, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSendPrompt(prompt)}
-                  className="px-2.5 py-1 rounded-full bg-[#FAF7F0] hover:bg-mv-cream text-[11px] font-medium text-mv-ink-soft hover:text-mv-ink border border-mv-border-soft shrink-0 transition-colors flex items-center gap-1 shadow-2xs"
-                >
-                  <Sparkles size={10} className="text-mv-amber" />
-                  <span className="truncate max-w-[240px]">{prompt}</span>
-                </button>
-              ))}
+    <div className="flex h-screen w-screen overflow-hidden bg-white text-[#26251e] font-sans">
+      {/* ── 1. RAIL DE NAVIGATION GAUCHE (Image 2 — 240px) ──────────────────── */}
+      <aside className="w-[240px] shrink-0 border-r border-[#e5e5e0] bg-[#f4f4f3] flex flex-col h-full select-none">
+        {/* Brand Header */}
+        <div className="flex h-12 items-center justify-between border-b border-[#e5e5e0] px-4">
+          <div className="flex items-center gap-2 font-bold text-sm tracking-tight text-[#26251e] min-w-0">
+            <div className="h-5 w-5 rounded-md bg-[#059669] flex items-center justify-center text-white shrink-0 shadow-2xs">
+              <Sparkles className="h-3 w-3" />
             </div>
-
-            {/* Alertes d'exploitation directes */}
-            {activeAlertCount > 0 && (
-              <button
-                onClick={() =>
-                  handleSendPrompt(
-                    "Analyse nos alertes d'exploitation en cours et propose un plan d'action d'urgence."
-                  )
-                }
-                className="hidden xl:flex items-center gap-1.5 text-[11px] bg-amber-50 text-amber-900 border border-amber-200/90 px-2.5 py-1 rounded-lg font-medium hover:bg-amber-100 transition-colors shadow-2xs shrink-0 ml-2"
-              >
-                <AlertTriangle size={12} className="text-amber-600 shrink-0" />
-                <span>{activeAlertCount} alertes</span>
-              </button>
-            )}
-          </div>
-
-          {/* Assistant UI Thread */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
-            <AssistantRuntimeProvider runtime={runtime}>
-              <Thread userName={firstName} />
-            </AssistantRuntimeProvider>
+            <span className="truncate">Minerva Flow</span>
+            <span className="text-[9px] font-bold text-[#059669] bg-[#059669]/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+              AI
+            </span>
           </div>
         </div>
 
-        {/* 3. Volet Droit : Canvas TipTap WYSIWYG & Visualisations */}
-        {!canvasCollapsed && (
-          <div
-            className={cn(
-              "w-full sm:w-[460px] lg:w-[520px] xl:w-[580px] border-l border-mv-border bg-mv-surface flex flex-col h-full shrink-0 transition-all duration-200 z-10",
-              activeMobileView === "canvas" ? "flex" : "hidden sm:flex"
-            )}
+        {/* Navigation Content */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+          {/* Platform switch link */}
+          <Link
+            href="/overview"
+            className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7a7a76] hover:text-[#059669] px-2 py-1.5 rounded-md hover:bg-[#e5e5e2]/60 transition-colors mb-2"
           >
-            {/* Sélecteur de mode Canvas */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-mv-border bg-[#FAF8F5] shrink-0">
-              <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-mv-border text-[11px] font-medium">
-                <button
-                  type="button"
-                  onClick={() => setActiveRightTab("tiptap")}
-                  className={cn(
-                    "flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors",
-                    activeRightTab === "tiptap"
-                      ? "bg-mv-green text-white font-semibold shadow-2xs"
-                      : "text-mv-ink-soft hover:text-mv-ink"
-                  )}
-                >
-                  <FileEdit size={12} />
-                  <span>Éditeur TipTap</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveRightTab("artifact")}
-                  className={cn(
-                    "flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors",
-                    activeRightTab === "artifact"
-                      ? "bg-mv-green text-white font-semibold shadow-2xs"
-                      : "text-mv-ink-soft hover:text-mv-ink"
-                  )}
-                >
-                  <Layers size={12} />
-                  <span>Artefact Carte</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveRightTab("context")}
-                  className={cn(
-                    "flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors",
-                    activeRightTab === "context"
-                      ? "bg-mv-green text-white font-semibold shadow-2xs"
-                      : "text-mv-ink-soft hover:text-mv-ink"
-                  )}
-                >
-                  <Activity size={12} />
-                  <span>Données POS</span>
-                </button>
-              </div>
+            <ArrowLeftRight className="h-3.5 w-3.5 shrink-0" />
+            <span>Minerva Flow</span>
+          </Link>
 
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <button
-                      onClick={() => setCanvasCollapsed(true)}
-                      className="p-1 rounded-lg text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream"
-                    >
-                      <PanelRightClose size={15} />
-                    </button>
-                  }
-                />
-                <TooltipContent>Masquer le volet droit (Cmd+J)</TooltipContent>
-              </Tooltip>
+          {/* Core AI Links */}
+          <Link
+            href="/assistant"
+            className="flex items-center gap-2.5 text-xs font-semibold px-2.5 py-2 rounded-md bg-white text-[#26251e] shadow-xs border border-[#e5e5e0] transition-colors"
+          >
+            <Brain className="h-4 w-4 text-[#059669] shrink-0" strokeWidth={2} />
+            <span>Assistant</span>
+          </Link>
+
+          <Link
+            href="/assistant/agents"
+            className="flex items-center gap-2.5 text-xs font-semibold px-2.5 py-2 rounded-md text-[#555552] hover:text-[#26251e] hover:bg-[#e5e5e2]/60 transition-colors"
+          >
+            <Bot className="h-4 w-4 text-[#555552] opacity-70 shrink-0" strokeWidth={1.5} />
+            <span>Agents Store</span>
+          </Link>
+
+          <Link
+            href="/assistant/skills"
+            className="flex items-center gap-2.5 text-xs font-semibold px-2.5 py-2 rounded-md text-[#555552] hover:text-[#26251e] hover:bg-[#e5e5e2]/60 transition-colors"
+          >
+            <BookOpen className="h-4 w-4 text-[#555552] opacity-70 shrink-0" strokeWidth={1.5} />
+            <span>Capacités (Skills)</span>
+          </Link>
+
+          <Link
+            href="/assistant/intelligence"
+            className="flex items-center gap-2.5 text-xs font-semibold px-2.5 py-2 rounded-md text-[#555552] hover:text-[#26251e] hover:bg-[#e5e5e2]/60 transition-colors"
+          >
+            <BarChart2 className="h-4 w-4 text-[#555552] opacity-70 shrink-0" strokeWidth={1.5} />
+            <span>Intelligence</span>
+          </Link>
+
+          {/* Section Historique des Discussions Réelles */}
+          <div className="mt-4 pt-3 border-t border-[#e5e5e0]/70 space-y-1">
+            <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#7a7a76]">
+              Historique
             </div>
 
-            {/* Corps du panneau droit */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-              {activeRightTab === "tiptap" && (
-                <TipTapCanvas
-                  restaurantId={restaurantId}
-                  conversationId={conversationId}
-                  initialDoc={currentCanvasDoc}
-                  onDocSaved={setCurrentCanvasDoc}
-                />
-              )}
+            <Link
+              href="/assistant"
+              className="flex items-center justify-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-[#059669] bg-[#059669]/10 border border-[#059669]/20 rounded-md hover:bg-[#059669]/15 transition-all w-full mb-2"
+            >
+              <Plus className="w-3.5 h-3.5 shrink-0" />
+              <span>Nouvelle conversation</span>
+            </Link>
 
-              {activeRightTab === "artifact" && (
-                <ArtifactCanvas
-                  artifact={SAMPLE_MENU_ENGINEERING_ARTIFACT}
-                  onClose={() => setCanvasCollapsed(true)}
-                  onApply={async () => {}}
-                  onSendPrompt={handleSendPrompt}
-                />
-              )}
+            <div className="max-h-56 overflow-y-auto space-y-0.5 pr-0.5">
+              {conversations.length === 0 ? (
+                <div className="px-2 py-1 text-[11px] text-[#807d72] italic">
+                  Aucune discussion
+                </div>
+              ) : (
+                conversations.map((sess) => {
+                  const isActive = sess.id === conversationId;
+                  return (
+                    <div
+                      key={sess.id}
+                      className={cn(
+                        "group flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-all cursor-pointer",
+                        isActive
+                          ? "bg-[#059669]/10 text-[#059669] font-semibold"
+                          : "text-[#555552] hover:bg-[#e5e5e2]/60 hover:text-[#26251e]"
+                      )}
+                    >
+                      {sess.isPinned && <Pin className="h-2.5 w-2.5 text-amber-500 shrink-0" />}
+                      <Link href={`/assistant/${sess.id}`} className="flex-1 truncate">
+                        {sess.title || "Nouvel échange Flow AI"}
+                      </Link>
 
-              {activeRightTab === "context" && (
-                <CanvasPanel
-                  artifact={initialArtifact}
-                  defaultContext={defaultContext}
-                  onSendPrompt={handleSendPrompt}
-                  restaurantId={restaurantId}
-                  conversationId={conversationId}
-                />
+                      <button
+                        type="button"
+                        onClick={(e) => handleTogglePin(e, sess.id, !!sess.isPinned)}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[#e5e5e2] text-neutral-400 hover:text-amber-500 transition-all cursor-pointer"
+                        title={sess.isPinned ? "Détacher" : "Épingler"}
+                      >
+                        {sess.isPinned ? <PinOff className="h-2.5 w-2.5" /> : <Pin className="h-2.5 w-2.5" />}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteSession(e, sess.id)}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 text-neutral-400 hover:text-red-600 transition-all cursor-pointer"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
-        )}
-      </div>
+        </nav>
 
-      <ReferralModal open={shareOpen} onOpenChange={setShareOpen} />
+        {/* Footer */}
+        <div className="border-t border-[#e5e5e0] px-3 py-2.5">
+          <Link
+            href="/settings"
+            className="flex items-center gap-2.5 text-xs font-semibold px-2 py-1.5 rounded-md text-[#555552] hover:text-[#26251e] hover:bg-[#e5e5e2]/60 transition-colors"
+          >
+            <Settings className="h-4 w-4 text-[#7a7a76]" />
+            <span>Paramètres</span>
+          </Link>
+        </div>
+      </aside>
+
+      {/* ── 2. SECOND PANNEAU: WORKSPACE & PROJETS (Image 2 — 256px) ─────────── */}
+      {isWorkspaceOpen && (
+        <aside className="w-64 shrink-0 border-r border-[#e6e5e0]/60 bg-[#fafaf9] flex flex-col h-full select-none animate-in fade-in slide-in-from-left-2 duration-200">
+          {/* Header */}
+          <div className="h-12 border-b border-[#e6e5e0]/60 px-4 flex items-center justify-between shrink-0 bg-[#fafaf9]">
+            <div className="flex items-center gap-1.5">
+              <Folder className="h-3.5 w-3.5 text-[#059669]" />
+              <span className="text-[10px] font-extrabold text-[#26251e] tracking-wider uppercase">
+                Workspace & Projets
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setShowNewFolderModal(true)}
+                className="h-7 w-7 rounded-full flex items-center justify-center text-[#7a7a76] hover:text-[#059669] hover:bg-emerald-50 transition-colors cursor-pointer"
+                title="Nouveau Dossier / Projet"
+              >
+                <FolderPlus className="h-3.5 w-3.5" />
+              </button>
+              <Link
+                href="/assistant"
+                className="h-7 w-7 rounded-full flex items-center justify-center text-[#7a7a76] hover:text-[#059669] hover:bg-emerald-50 transition-colors cursor-pointer"
+                title="Nouvelle conversation"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* List Content */}
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-4">
+            {/* DOSSIERS & PROJETS */}
+            <div className="space-y-1">
+              <div className="px-2 flex items-center justify-between">
+                <span className="text-[9px] font-bold text-[#7a7a76] uppercase tracking-wider">
+                  Dossiers & Projets
+                </span>
+                {selectedProjectId && (
+                  <button
+                    onClick={() => setSelectedProjectId(null)}
+                    className="text-[9px] text-[#059669] hover:underline font-bold cursor-pointer"
+                  >
+                    Voir tout
+                  </button>
+                )}
+              </div>
+
+              {/* Tous les projets */}
+              <div
+                onClick={() => setSelectedProjectId(null)}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer text-[11px] font-semibold transition-all",
+                  selectedProjectId === null
+                    ? "bg-emerald-50/80 text-emerald-900 border border-emerald-200/50"
+                    : "text-[#555552] hover:bg-neutral-100 hover:text-[#26251e]"
+                )}
+              >
+                <Layers className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
+                <span className="flex-1 truncate">Tous les projets</span>
+                <span className="text-[10px] text-[#7a7a76] font-mono">
+                  {conversations.length}
+                </span>
+              </div>
+
+              {/* 5 RAG Context Dossiers */}
+              {DEFAULT_DOSSIERS.map((dos) => {
+                const isActive = activeDossiers.includes(dos.slug);
+                return (
+                  <div
+                    key={dos.slug}
+                    onClick={() => {
+                      setActiveDossiers((prev) =>
+                        prev.includes(dos.slug)
+                          ? prev.filter((s) => s !== dos.slug)
+                          : [...prev, dos.slug]
+                      );
+                    }}
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer text-[11px] font-medium transition-all group",
+                      isActive
+                        ? "text-[#26251e] bg-white border border-[#e6e5e0] shadow-2xs font-semibold"
+                        : "text-[#7a7a76] hover:bg-neutral-100 hover:text-[#26251e]"
+                    )}
+                    title={dos.description}
+                  >
+                    <div
+                      className={cn(
+                        "h-2 w-2 rounded-full shrink-0",
+                        isActive ? "bg-[#059669]" : "bg-neutral-300"
+                      )}
+                    />
+                    <span className="flex-1 truncate">{dos.name}</span>
+                    <span className="text-[9px] text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {isActive ? "RAG actif" : "Désactivé"}
+                    </span>
+                  </div>
+                );
+              })}
+
+              {/* Custom Project Folders */}
+              {projectFolders.map((folder) => (
+                <div
+                  key={folder.id}
+                  onClick={() =>
+                    setSelectedProjectId((cur) => (cur === folder.id ? null : folder.id))
+                  }
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer text-[11px] font-semibold transition-all",
+                    selectedProjectId === folder.id
+                      ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+                      : "text-[#555552] hover:bg-neutral-100 hover:text-[#26251e]"
+                  )}
+                >
+                  <Folder className="h-3.5 w-3.5 text-[#059669] shrink-0" />
+                  <span className="flex-1 truncate">{folder.name}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* DISCUSSIONS */}
+            <div className="space-y-1 pt-1">
+              <div className="px-2 flex items-center justify-between">
+                <span className="text-[9px] font-bold text-[#7a7a76] uppercase tracking-wider">
+                  Discussions
+                </span>
+                {selectedProjectId && (
+                  <span className="text-[9px] text-emerald-700 bg-emerald-50 px-1 rounded font-mono">
+                    Filtré
+                  </span>
+                )}
+              </div>
+
+              {filteredSessions.length === 0 ? (
+                <div className="px-2 py-1 text-[11px] text-[#807d72] italic">
+                  Aucune discussion
+                </div>
+              ) : (
+                filteredSessions.slice(0, 8).map((sess) => {
+                  const isActive = sess.id === conversationId;
+                  return (
+                    <Link
+                      key={sess.id}
+                      href={`/assistant/${sess.id}`}
+                      className={cn(
+                        "block rounded-lg px-2 py-1.5 text-[11px] font-medium transition-all truncate",
+                        isActive
+                          ? "bg-emerald-50/80 text-emerald-900 font-semibold"
+                          : "text-[#555552] hover:bg-neutral-100 hover:text-[#26251e]"
+                      )}
+                    >
+                      {sess.title || "Nouvel échange Flow AI"}
+                    </Link>
+                  );
+                })
+              )}
+            </div>
+
+            {/* DOCUMENTS CANVAS */}
+            <div className="space-y-1 pt-1">
+              <div className="px-2 flex items-center justify-between">
+                <span className="text-[9px] font-bold text-[#7a7a76] uppercase tracking-wider">
+                  Documents Canvas
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowNewDocModal(true)}
+                  className="text-[9px] font-bold text-[#059669] hover:underline cursor-pointer"
+                  title="Ajouter un document"
+                >
+                  + Ajouter
+                </button>
+              </div>
+
+              {canvasDocs.length === 0 ? (
+                <div className="px-2 py-1 text-[11px] text-[#807d72] italic">
+                  Aucun document
+                </div>
+              ) : (
+                canvasDocs.map((doc) => {
+                  const isSelected = currentCanvasDoc?.id === doc.id && isCanvasOpen;
+                  return (
+                    <div
+                      key={doc.id}
+                      className={cn(
+                        "group flex items-center justify-between rounded-lg px-2 py-1.5 cursor-pointer text-[11px] font-medium transition-all",
+                        isSelected
+                          ? "bg-emerald-50/80 text-emerald-900 font-semibold"
+                          : "text-[#555552] hover:bg-neutral-100 hover:text-[#26251e]"
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCurrentCanvasDoc(doc);
+                          setIsCanvasOpen(true);
+                        }}
+                        className="flex-1 text-left truncate flex items-center gap-1.5 mr-1 cursor-pointer"
+                      >
+                        <FileText className="h-3 w-3 text-neutral-400 shrink-0" />
+                        <span className="truncate">{doc.title}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteCanvasDoc(e, doc.id)}
+                        className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-red-600 transition-opacity p-0.5 cursor-pointer"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </aside>
+      )}
+
+      {/* ── 3. COLONNE CENTRALE : CHAT ASSISTANT & HERO (Image 2) ─────────────── */}
+      <main className="flex-1 flex flex-col h-full min-w-0 bg-white relative overflow-hidden">
+        {/* Top bar avec Breadcrumb, bouton toggle et profil */}
+        <header className="h-12 border-b border-[#e5e5e0] px-4 flex items-center justify-between shrink-0 bg-white z-10">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsWorkspaceOpen((v) => !v)}
+              className={cn(
+                "h-7 w-7 rounded-md flex items-center justify-center text-[#7a7a76] hover:text-[#059669] hover:bg-[#f4f4f3] transition-colors cursor-pointer border border-transparent",
+                isWorkspaceOpen && "text-[#059669]"
+              )}
+              title={isWorkspaceOpen ? "Masquer le workspace" : "Afficher le workspace"}
+            >
+              {isWorkspaceOpen ? <PanelLeftClose size={15} /> : <PanelLeft size={15} />}
+            </button>
+            <span className="text-xs font-bold text-[#26251e]">Assistant</span>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#e5e5e0] bg-[#fafaf9] text-xs font-semibold text-[#26251e]">
+              <ArrowLeftRight className="h-3 w-3 text-[#059669]" />
+              <span>Minerva Flow</span>
+            </div>
+
+            <button
+              type="button"
+              className="h-8 w-8 rounded-full flex items-center justify-center text-[#7a7a76] hover:text-[#26251e] hover:bg-[#f4f4f3] transition-colors"
+              title="Notifications"
+            >
+              <Bell size={15} />
+            </button>
+
+            <div className="h-8 w-8 rounded-full bg-[#059669]/15 text-[#059669] border border-[#059669]/30 flex items-center justify-center text-xs font-bold font-mono">
+              {userInitials}
+            </div>
+          </div>
+        </header>
+
+        {/* Sub-header inside Chat Area */}
+        <div className="h-10 border-b border-[#e6e5e0]/60 px-4 flex items-center justify-between shrink-0 bg-white">
+          <div className="flex items-center gap-2 min-w-0">
+            <History className="w-3.5 h-3.5 text-[#7a7a76]" />
+            <div className="h-5 w-5 rounded-md bg-[#059669] flex items-center justify-center text-white shrink-0">
+              <Sparkles className="h-2.5 w-2.5" />
+            </div>
+            <span className="text-xs font-bold text-[#26251e] truncate">
+              Minerva Flow Assistant
+            </span>
+            {currentSession?.title && (
+              <span className="text-[10px] text-[#7a7a76] font-medium border-l border-neutral-200 pl-2 truncate max-w-[200px]">
+                {currentSession.title}
+              </span>
+            )}
+          </div>
+
+          <Link
+            href="/assistant"
+            className="flex items-center gap-1 text-[11px] font-semibold text-[#7a7a76] hover:text-[#059669] px-2 py-1 rounded-md hover:bg-[#f4f4f3] transition-colors"
+          >
+            <Plus size={13} />
+            <span>Nouveau</span>
+          </Link>
+        </div>
+
+        {/* Zone de chat active avec Thread et Claude-style composer */}
+        <div className="flex-1 overflow-hidden min-h-0">
+          <AssistantRuntimeProvider runtime={runtime}>
+            <Thread
+              userName={userName}
+              isCanvasOpen={isCanvasOpen}
+              onToggleCanvas={() => setIsCanvasOpen((v) => !v)}
+              selectedModel={selectedModel}
+              onSelectModel={setSelectedModel}
+            />
+          </AssistantRuntimeProvider>
+        </div>
+      </main>
+
+      {/* ── 4. VOLET CANVAS TIPTAP (Rétractable à droite) ────────────────────── */}
+      {isCanvasOpen && (
+        <aside className="w-full md:w-[45%] shrink-0 border-l border-[#e6e5e0] bg-[#fbf9f4] flex flex-col h-full z-20 animate-in fade-in slide-in-from-right-2 duration-200">
+          <TipTapCanvas
+            restaurantId={restaurantId}
+            conversationId={conversationId}
+            initialDoc={currentCanvasDoc}
+            onDocSaved={(doc) => {
+              setCurrentCanvasDoc(doc);
+              setCanvasDocs((prev) => {
+                const exists = prev.find((d) => d.id === doc.id);
+                if (exists) {
+                  return prev.map((d) => (d.id === doc.id ? doc : d));
+                }
+                return [doc, ...prev];
+              });
+            }}
+            onClose={() => setIsCanvasOpen(false)}
+          />
+        </aside>
+      )}
+
+      {/* ── Modal Nouveau Dossier Projet ────────────────────────────────────── */}
+      <Dialog open={showNewFolderModal} onOpenChange={setShowNewFolderModal}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold text-[#26251e]">
+              Nouveau Dossier / Projet
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateFolder} className="space-y-3 pt-2">
+            <div>
+              <label className="text-[11px] font-bold text-[#7a7a76] uppercase tracking-wider block mb-1">
+                Nom du Dossier
+              </label>
+              <input
+                type="text"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="Ex: Rénovation Carte Printemps"
+                required
+                className="w-full text-xs px-3 py-2 rounded-lg border border-[#e0e0dc] focus:outline-none focus:ring-1 focus:ring-[#059669] bg-white text-[#26251e]"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-[#7a7a76] uppercase tracking-wider block mb-1">
+                Description (Optionnelle)
+              </label>
+              <textarea
+                value={newFolderDesc}
+                onChange={(e) => setNewFolderDesc(e.target.value)}
+                placeholder="Objectifs et périmètre du dossier..."
+                rows={2}
+                className="w-full text-xs px-3 py-2 rounded-lg border border-[#e0e0dc] focus:outline-none focus:ring-1 focus:ring-[#059669] bg-white text-[#26251e] resize-none"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowNewFolderModal(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                className="bg-[#059669] hover:bg-[#047857] text-white"
+              >
+                Créer le dossier
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Modal Nouveau Document Canvas ───────────────────────────────────── */}
+      <Dialog open={showNewDocModal} onOpenChange={setShowNewDocModal}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold text-[#26251e]">
+              Créer un Document Canvas
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateCanvasDoc} className="space-y-3 pt-2">
+            <div>
+              <label className="text-[11px] font-bold text-[#7a7a76] uppercase tracking-wider block mb-1">
+                Titre du document
+              </label>
+              <input
+                type="text"
+                value={newDocTitle}
+                onChange={(e) => setNewDocTitle(e.target.value)}
+                placeholder="Ex: Fiche Technique Cocktail Signature"
+                required
+                className="w-full text-xs px-3 py-2 rounded-lg border border-[#e0e0dc] focus:outline-none focus:ring-1 focus:ring-[#059669] bg-white text-[#26251e]"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowNewDocModal(false)}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                className="bg-[#059669] hover:bg-[#047857] text-white"
+              >
+                Ouvrir dans le Canvas
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

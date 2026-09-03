@@ -36,6 +36,7 @@ import {
   Minimize2,
   Trash2,
   Share2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -124,11 +125,13 @@ export function TipTapCanvas({
   conversationId,
   initialDoc,
   onDocSaved,
+  onClose,
 }: {
   restaurantId: string;
   conversationId?: string;
   initialDoc?: ChatCanvasDoc | null;
   onDocSaved?: (doc: ChatCanvasDoc) => void;
+  onClose?: () => void;
 }) {
   const [title, setTitle] = useState(initialDoc?.title ?? "Document de Synthèse");
   const [isSaving, setIsSaving] = useState(false);
@@ -301,6 +304,18 @@ export function TipTapCanvas({
             <Save size={13} />
             {isSaving ? "Enregistrement..." : "Sauvegarder"}
           </Button>
+
+          {onClose && (
+            <Tooltip>
+              <TooltipTrigger
+                onClick={onClose}
+                className="h-8 w-8 flex items-center justify-center rounded-lg text-mv-ink-soft hover:text-red-600 hover:bg-red-50 ml-1 transition-colors"
+              >
+                <X size={15} />
+              </TooltipTrigger>
+              <TooltipContent>Fermer le Canvas</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </div>
 

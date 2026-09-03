@@ -7,6 +7,11 @@ import { createEmployeeTask } from "@/lib/data/employee-tasks";
 import { getEmployees } from "@/lib/data/employees";
 import {
   saveCanvasDoc,
+  deleteCanvasDoc,
+  createProjectFolder,
+  deleteProjectFolder,
+  deleteConversation,
+  renameConversation,
   togglePinConversation,
   updateConversationAgent,
   updateConversationDossiers,
@@ -215,6 +220,67 @@ export async function executeDeleteCustomAgentAction(id: string) {
   try {
     const ok = await deleteCustomAgent(id);
     revalidatePath("/assistant/agents");
+    return { success: ok };
+  } catch {
+    return { success: false };
+  }
+}
+
+// ── 10. Action Suppression Document Canvas ─────────────────────────────────
+export async function executeDeleteCanvasDocAction(id: string) {
+  try {
+    const ok = await deleteCanvasDoc(id);
+    revalidatePath("/assistant");
+    return { success: ok };
+  } catch {
+    return { success: false };
+  }
+}
+
+// ── 11. Action Création Dossier Projet ───────────────────────────────────────
+export async function executeCreateProjectFolderAction(input: {
+  restaurantId: string;
+  name: string;
+  description?: string;
+}) {
+  try {
+    const folder = await createProjectFolder(input.restaurantId, input.name, undefined, input.description);
+    if (!folder) return { success: false, error: "Impossible de créer le dossier." };
+    revalidatePath("/assistant");
+    return { success: true, folder };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erreur inconnue";
+    return { success: false, error: message };
+  }
+}
+
+// ── 12. Action Suppression Dossier Projet ───────────────────────────────────
+export async function executeDeleteProjectFolderAction(id: string) {
+  try {
+    const ok = await deleteProjectFolder(id);
+    revalidatePath("/assistant");
+    return { success: ok };
+  } catch {
+    return { success: false };
+  }
+}
+
+// ── 13. Action Renommage Session ───────────────────────────────────────────
+export async function executeRenameSessionAction(id: string, title: string) {
+  try {
+    await renameConversation(id, title);
+    revalidatePath("/assistant");
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}
+
+// ── 14. Action Suppression / Archivage Session ─────────────────────────────
+export async function executeDeleteSessionAction(id: string) {
+  try {
+    const ok = await deleteConversation(id);
+    revalidatePath("/assistant");
     return { success: ok };
   } catch {
     return { success: false };

@@ -29,120 +29,131 @@ import {
   Sparkles,
   ExternalLink,
   Clock,
+  Plus,
+  FileText,
+  Mic,
+  MicOff,
+  ChevronDown,
+  Star,
+  Mail,
+  Globe,
+  Target,
+  Zap,
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
-const ACTION_SUGGESTIONS = [
+const PROMPT_CHIPS = [
   {
-    badge: "Rentabilité",
-    badgeTone: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    impact: "+3 400 $ marge est.",
-    duration: "2 min",
-    title: "Analyse des revenus & marges",
-    desc: "Identifier les tendances de vente et détecter les anomalies de food cost hebdomadaires.",
+    label: "Daily Standup & Briefing",
+    icon: Zap,
+    prompt: "Génère le briefing du service de ce soir avec les objectifs de vente, les tables VIP et les consignes de suggestive selling.",
+  },
+  {
+    label: "Analyser le Prime Cost",
     icon: TrendingUp,
-    prompt: "Fais une analyse détaillée des revenus et de la marge brute. Où se situent les principales opportunités d'optimisation ?",
+    prompt: "Audite le Prime Cost actuel du restaurant en comparant le Food Cost et le Labor Cost au seuil de 60 %.",
   },
   {
-    badge: "Opérations",
-    badgeTone: "bg-blue-50 text-blue-800 border-blue-200",
-    impact: "-12% gaspillage",
-    duration: "1 min",
-    title: "Plan d'action opérationnel",
-    desc: "Optimiser les réapprovisionnements, la rotation des stocks et sécuriser le service du week-end.",
-    icon: PackageCheck,
-    prompt: "Propose un plan d'action d'optimisation des achats et de gestion des stocks pour la semaine à venir.",
+    label: "Rédiger une relance client",
+    icon: Mail,
+    prompt: "Rédige une relance personnalisée pour nos clients Habitués inactifs depuis plus de 14 jours avec une offre incitative.",
   },
   {
-    badge: "Menu Engineering",
-    badgeTone: "bg-amber-50 text-amber-800 border-amber-200",
-    impact: "+1.80 $ ticket moy.",
-    duration: "2 min",
-    title: "Ingénierie du menu & plats étoiles",
-    desc: "Catégoriser les plats Stars, Plowhorses, Puzzles et Dogs pour ajuster la carte.",
-    icon: UtensilsCrossed,
-    prompt: "Analyse mes plats phares et mes marges pour catégoriser la carte selon la matrice de rentabilité du menu engineering.",
+    label: "Plats Stars & BCG",
+    icon: Star,
+    prompt: "Analyse la carte actuelle selon la matrice BCG (Stars, Plowhorses, Puzzles, Dogs) et identifie les plats prioritaires.",
   },
   {
-    badge: "Rapports & Clôture",
-    badgeTone: "bg-purple-50 text-purple-800 border-purple-200",
-    impact: "100% synchronisé",
-    duration: "Instant",
-    title: "Évolution du panier moyen & POS",
-    desc: "Comparer les volumes de couverts et tracer la progression du ticket moyen.",
+    label: "Fiche technique & Recette",
+    icon: FileText,
+    prompt: "Rédige la fiche technique complète d'un plat signature avec grammages, coûts portions et ratio Food Cost cible.",
+  },
+  {
+    label: "Recherche dans les SOPs",
+    icon: Globe,
+    prompt: "Recherche dans nos SOPs et protocoles d'exploitation les consignes d'ouverture et de fermeture de salle.",
+  },
+  {
+    label: "Priorités du service",
+    icon: Target,
+    prompt: "Quelles sont les 3 actions opérationnelles prioritaires à mener aujourd'hui pour maximiser notre rentabilité ?",
+  },
+  {
+    label: "Rapport de clôture caisse",
     icon: BarChart3,
-    prompt: "Génère une synthèse de l'évolution du panier moyen et des volumes de couverts par rapport aux programmes actifs.",
+    prompt: "Génère un rapport de clôture de service synthétique avec le ticket moyen, les couverts et le contrôle des encaissements.",
   },
 ];
 
 export function Thread({
   userName = "Directeur d'exploitation",
+  isCanvasOpen,
+  onToggleCanvas,
+  selectedModel = "Gemini 3.7",
+  onSelectModel,
 }: {
   userName?: string;
+  isCanvasOpen?: boolean;
+  onToggleCanvas?: () => void;
+  selectedModel?: string;
+  onSelectModel?: (model: string) => void;
 }) {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bonjour" : hour < 17 ? "Bon après-midi" : "Bonsoir";
+
   return (
-    <ThreadPrimitive.Root className="flex h-full w-full flex-col bg-[#FAF8F5] overflow-hidden relative font-sans text-[#1F1E1D]">
+    <ThreadPrimitive.Root className="flex h-full w-full flex-col bg-white overflow-hidden relative font-sans text-[#1F1E1D]">
       <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 scroll-smooth">
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* Editorial Welcome Screen */}
+          {/* Editorial Welcome Screen — Exact 1:1 match with Image 2 (minerva-os-lite-desktop) */}
           <ThreadPrimitive.Empty>
-            <div className="pt-6 pb-4 space-y-7 max-w-2xl mx-auto">
-              <div className="space-y-1.5 text-center sm:text-left">
-                <h1 className="font-sans font-bold text-3xl sm:text-4xl tracking-tight text-[#0A3F2F]">
-                  Bonjour, <span className="font-serif italic font-normal text-[#0E7C5A]">{userName}</span>
-                </h1>
-                <p className="font-sans text-sm sm:text-base text-[#6A6860]">
-                  Quelles métriques de performance souhaitez-vous auditer aujourd&apos;hui ?
-                </p>
+            <div className="flex flex-col items-center justify-center min-h-[62vh] px-4 py-8 text-center animate-in fade-in zoom-in-95 duration-300">
+              {/* Emerald Minerva squircle icon */}
+              <div className="flex items-center justify-center mb-4">
+                <div className="h-14 w-14 rounded-2xl bg-[#059669] flex items-center justify-center shadow-lg shadow-[#059669]/20 border border-emerald-400/30">
+                  <Sparkles className="h-7 w-7 text-white" />
+                </div>
               </div>
 
-              {/* 2x2 SaaS Action Suggestion Cards with Impact Badges */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                {ACTION_SUGGESTIONS.map((card, idx) => {
-                  const Icon = card.icon;
+              {/* Dynamic greeting & context subtitle */}
+              <h1 className="text-2xl sm:text-3xl font-black text-[#26251e] tracking-tight">
+                {greeting}
+              </h1>
+              <p className="text-sm text-[#7a7a76] font-medium mt-1 mb-8">
+                Votre espace restaurant est prêt.
+              </p>
+
+              {/* Claude-style composer centered */}
+              <div className="w-full max-w-[680px] mb-6">
+                <MultifunctionComposer
+                  isCanvasOpen={isCanvasOpen}
+                  onToggleCanvas={onToggleCanvas}
+                  selectedModel={selectedModel}
+                  onSelectModel={onSelectModel}
+                />
+              </div>
+
+              {/* 8 Prompt Chips below composer */}
+              <div className="flex flex-wrap items-center justify-center gap-2 max-w-[720px]">
+                {PROMPT_CHIPS.map((chip, idx) => {
+                  const ChipIcon = chip.icon;
                   return (
                     <ThreadPrimitive.Suggestion
                       key={idx}
-                      prompt={card.prompt}
+                      prompt={chip.prompt}
                       method="replace"
                       autoSend
                       asChild
                     >
                       <button
                         type="button"
-                        aria-label={`Prompt suggéré: ${card.title}`}
-                        className="group flex flex-col justify-between p-4 rounded-2xl border border-[#E8E5DF] bg-white text-left transition-all duration-200 hover:border-[#0E7C5A]/50 hover:shadow-sm hover:-translate-y-0.5 min-h-[145px]"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[#e0e0dc] bg-white hover:bg-neutral-50 hover:border-neutral-300 text-xs font-semibold text-[#555552] hover:text-[#26251e] shadow-2xs transition-all active:scale-95 cursor-pointer"
                       >
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1", card.badgeTone)}>
-                              <Icon size={11} />
-                              <span>{card.badge}</span>
-                            </span>
-                            <span className="text-[10.5px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                              {card.impact}
-                            </span>
-                          </div>
-                          <h3 className="font-sans text-[13.5px] font-bold text-[#1F1E1D] group-hover:text-[#0E7C5A] transition-colors">
-                            {card.title}
-                          </h3>
-                          <p className="text-[11.5px] text-[#6A6860] mt-1 leading-relaxed line-clamp-2">
-                            {card.desc}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center justify-between text-[11px] text-[#8A887F] group-hover:text-[#0E7C5A] font-semibold pt-2.5 border-t border-[#F0EFEA] mt-3">
-                          <span className="flex items-center gap-1">
-                            <Clock size={11} />
-                            {card.duration}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span>Lancer l&apos;audit</span>
-                            <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
-                          </span>
-                        </div>
+                        <ChipIcon size={13} className="text-[#059669]" />
+                        <span>{chip.label}</span>
                       </button>
                     </ThreadPrimitive.Suggestion>
                   );
@@ -172,12 +183,19 @@ export function Thread({
         </button>
       </ThreadPrimitive.ScrollToBottom>
 
-      {/* Floating Modernized Composer */}
-      <div className="p-3 sm:p-5 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5] to-transparent">
-        <div className="max-w-3xl mx-auto">
-          <MultifunctionComposer />
+      {/* Floating Modernized Composer when conversation has messages */}
+      <ThreadPrimitive.If empty={false}>
+        <div className="p-3 sm:p-5 bg-gradient-to-t from-white via-white to-transparent sticky bottom-0 z-10">
+          <div className="max-w-3xl mx-auto">
+            <MultifunctionComposer
+              isCanvasOpen={isCanvasOpen}
+              onToggleCanvas={onToggleCanvas}
+              selectedModel={selectedModel}
+              onSelectModel={onSelectModel}
+            />
+          </div>
         </div>
-      </div>
+      </ThreadPrimitive.If>
     </ThreadPrimitive.Root>
   );
 }
@@ -356,9 +374,21 @@ function BranchPicker() {
   );
 }
 
-function MultifunctionComposer() {
+function MultifunctionComposer({
+  isCanvasOpen,
+  onToggleCanvas,
+  selectedModel = "Gemini 3.7",
+  onSelectModel,
+}: {
+  isCanvasOpen?: boolean;
+  onToggleCanvas?: () => void;
+  selectedModel?: string;
+  onSelectModel?: (model: string) => void;
+}) {
   const [popoverTrigger, setPopoverTrigger] = useState<"/" | "@" | null>(null);
   const [popoverQuery, setPopoverQuery] = useState("");
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const aui = useAui();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -388,8 +418,45 @@ function MultifunctionComposer() {
     setPopoverQuery("");
   };
 
+  const toggleListening = () => {
+    if (typeof window === "undefined") return;
+    const SpeechRecognition =
+      (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).SpeechRecognition ||
+      (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      toast.error("La reconnaissance vocale n'est pas supportée par ce navigateur.");
+      return;
+    }
+
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = "fr-FR";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          const current = aui.composer.getState().text || "";
+          aui.composer.setText(current ? `${current} ${transcript}` : transcript);
+        }
+      };
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
+  };
+
   return (
-    <div className="relative select-none">
+    <div className="relative select-none w-full">
       {/* Autocomplete Popover */}
       {popoverTrigger && (
         <ChatCommandPopover
@@ -400,9 +467,9 @@ function MultifunctionComposer() {
         />
       )}
 
-      <ComposerPrimitive.Root className="flex flex-col rounded-2xl border border-[#E2E0D8] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all focus-within:border-[#0E7C5A] focus-within:ring-2 focus-within:ring-[#0E7C5A]/15">
+      <ComposerPrimitive.Root className="w-full flex flex-col rounded-3xl border border-[#e0e0dc] bg-white shadow-md hover:shadow-lg transition-all focus-within:border-[#059669] focus-within:ring-2 focus-within:ring-[#059669]/15 p-2 sm:p-3 relative z-20">
         {/* Attachments preview list */}
-        <div className="flex flex-wrap gap-2 p-2.5 pb-0 empty:hidden">
+        <div className="flex flex-wrap gap-2 p-2 pb-0 empty:hidden">
           <ComposerPrimitive.Attachments
             components={{
               Attachment: AttachmentPreview,
@@ -410,81 +477,120 @@ function MultifunctionComposer() {
           />
         </div>
 
-        <div className="flex items-end gap-2 p-2.5 sm:p-3">
-          {/* Attachment upload button */}
-          <ComposerPrimitive.AddAttachment asChild>
+        {/* Text input */}
+        <ComposerPrimitive.Input
+          rows={2}
+          autoFocus
+          onChange={handleInputChange}
+          placeholder="Comment puis-je vous aider aujourd'hui ?"
+          className="w-full resize-none text-[14px] sm:text-[14.5px] text-[#26251e] bg-transparent outline-none placeholder:text-neutral-400 px-3 py-2 border-0 min-h-[44px] max-h-40 overflow-y-auto leading-relaxed"
+        />
+
+        {/* Controls row matching Image 2 */}
+        <div className="flex items-center justify-between px-2 pt-1 border-t border-[#f4f4f3] mt-1">
+          <div className="flex items-center gap-2">
+            <ComposerPrimitive.AddAttachment asChild>
+              <button
+                type="button"
+                className="h-8 w-8 rounded-full border border-[#e0e0dc] bg-white hover:bg-[#f4f4f3] text-[#7a7a76] flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                title="Ajouter un fichier ou document"
+              >
+                <Plus size={15} />
+              </button>
+            </ComposerPrimitive.AddAttachment>
+
             <button
               type="button"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#5A5851] hover:bg-gray-100 hover:text-[#1F1E1D] transition-colors"
-              title="Ajouter un fichier"
+              onClick={onToggleCanvas}
+              className={cn(
+                "h-8 px-3 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer",
+                isCanvasOpen
+                  ? "bg-[#059669]/10 text-[#059669] border-[#059669]/40 font-bold"
+                  : "border-[#e0e0dc] bg-white text-[#7a7a76] hover:bg-[#f4f4f3] hover:text-[#26251e]"
+              )}
+              title="Ouvrir le volet Canvas TipTap"
             >
-              <Paperclip size={16} />
+              <FileText size={13.5} />
+              <span>Canvas</span>
             </button>
-          </ComposerPrimitive.AddAttachment>
+          </div>
 
-          {/* Text Input */}
-          <ComposerPrimitive.Input
-            rows={1}
-            autoFocus
-            onChange={handleInputChange}
-            placeholder="Posez une question, tapez '/' pour les commandes ou '@' pour les données POS..."
-            className="flex-1 max-h-36 resize-none bg-transparent py-1 text-[13px] sm:text-[13.5px] text-[#1F1E1D] placeholder:text-[#8A887F] focus:outline-none leading-relaxed"
-          />
+          <div className="flex items-center gap-2">
+            {/* Model selector dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setModelMenuOpen((v) => !v)}
+                className="h-8 px-3 rounded-full border border-[#e0e0dc] bg-white hover:bg-[#f4f4f3] flex items-center gap-1.5 text-xs font-semibold text-[#555552] transition-colors shadow-2xs cursor-pointer"
+              >
+                <span>{selectedModel}</span>
+                <ChevronDown size={13} className="text-neutral-400" />
+              </button>
 
-          {/* Send / Cancel Button */}
-          <ComposerPrimitive.Send asChild>
+              {modelMenuOpen && (
+                <div className="absolute right-0 bottom-10 z-50 bg-white border border-[#e6e5e0] rounded-xl py-1 shadow-lg w-48 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-3 py-1 text-[8px] font-bold text-[#7a7a76] uppercase tracking-wider">
+                    Modèle d'Intelligence
+                  </div>
+                  {["Gemini 3.7", "Gemini 3.5 Pro"].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        onSelectModel?.(m);
+                        setModelMenuOpen(false);
+                      }}
+                      className={cn(
+                        "w-full text-left px-3 py-1.5 text-[11px] font-bold flex items-center justify-between hover:bg-neutral-50 transition-colors cursor-pointer",
+                        selectedModel === m ? "text-[#059669]" : "text-[#26251e]"
+                      )}
+                    >
+                      <span>{m}</span>
+                      {selectedModel === m && <Check size={13} />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Mic speech recognition */}
             <button
               type="button"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#0E7C5A] text-white shadow-xs hover:bg-[#0A6348] transition-all disabled:opacity-35"
+              onClick={toggleListening}
+              className={cn(
+                "h-8 w-8 rounded-full border flex items-center justify-center transition-all shadow-2xs cursor-pointer",
+                isListening
+                  ? "bg-red-50 text-red-600 border-red-300 animate-pulse"
+                  : "border-[#e0e0dc] bg-white text-[#7a7a76] hover:bg-[#f4f4f3] hover:text-[#26251e]"
+              )}
+              title={isListening ? "Arrêter la dictée" : "Dictée vocale"}
             >
-              <ArrowUp size={15} />
+              {isListening ? <MicOff size={14} /> : <Mic size={14} />}
             </button>
-          </ComposerPrimitive.Send>
 
-          <ComposerPrimitive.Cancel asChild>
-            <button
-              type="button"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1F1E1D] text-white shadow-xs hover:bg-black transition-all"
-            >
-              <Square size={13} />
-            </button>
-          </ComposerPrimitive.Cancel>
+            {/* Send circle button */}
+            <ComposerPrimitive.Send asChild>
+              <button
+                type="button"
+                className="h-8 w-8 shrink-0 rounded-full bg-[#1a1e16] hover:bg-black text-white shadow-xs flex items-center justify-center transition-all disabled:opacity-35 cursor-pointer"
+                title="Envoyer"
+              >
+                <ArrowUp size={15} />
+              </button>
+            </ComposerPrimitive.Send>
+
+            <ComposerPrimitive.Cancel asChild>
+              <button
+                type="button"
+                className="h-8 w-8 shrink-0 rounded-full bg-[#1a1e16] text-white shadow-xs hover:bg-black transition-all flex items-center justify-center cursor-pointer"
+                title="Annuler"
+              >
+                <Square size={12} />
+              </button>
+            </ComposerPrimitive.Cancel>
+          </div>
         </div>
       </ComposerPrimitive.Root>
-
-      {/* Sub-bar with clickable shortcut helpers */}
-      <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2 text-[10.5px] text-[#8A887F]">
-        <button
-          type="button"
-          onClick={() => {
-            aui.composer.setText("Génère un plan d'action opérationnel complet pour optimiser les achats et la gestion des stocks.");
-          }}
-          className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E8E5DF] hover:border-[#0E7C5A] hover:text-[#1F1E1D] transition-colors shadow-2xs"
-        >
-          <kbd className="bg-[#FAF8F5] px-1.5 py-0.5 rounded font-mono text-[#1F1E1D] border border-[#E8E5DF]">/plan</kbd>
-          <span>Plan opérationnel</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            aui.composer.setText("[Données Ventes] Analyse détaillée des ventes et marges du mois en cours : ");
-          }}
-          className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E8E5DF] hover:border-[#0E7C5A] hover:text-[#1F1E1D] transition-colors shadow-2xs"
-        >
-          <kbd className="bg-[#FAF8F5] px-1.5 py-0.5 rounded font-mono text-[#1F1E1D] border border-[#E8E5DF]">@ventes</kbd>
-          <span>Données POS</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            aui.composer.setText("Analyse mes plats phares selon la matrice d'ingénierie de menu (Stars, Plowhorses, Puzzles, Dogs).");
-          }}
-          className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E8E5DF] hover:border-[#0E7C5A] hover:text-[#1F1E1D] transition-colors shadow-2xs"
-        >
-          <kbd className="bg-[#FAF8F5] px-1.5 py-0.5 rounded font-mono text-[#1F1E1D] border border-[#E8E5DF]">/menu</kbd>
-          <span>Menu Engineering</span>
-        </button>
-      </div>
     </div>
   );
 }
