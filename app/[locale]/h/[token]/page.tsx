@@ -28,7 +28,7 @@ export default async function SharedSchedulePage({ params }: { params: Promise<{
         <div className="mb-8 flex items-center gap-2.5">
           <LogoMark size={28} />
           <span className="font-sans text-[16px] font-medium text-mv-ink">
-            Flow <span className="text-mv-green-dark">par Minerva</span>
+            Minerva <span className="text-mv-green-dark">Flow</span>
           </span>
         </div>
 

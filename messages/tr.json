@@ -231,6 +231,21 @@
       "laborCostLabel": "İşçilik Maliyeti",
       "laborCostTarget": "Hedef: Cironun %{target}'inden az"
     },
+    "breakEven": {
+      "title": "Başabaş noktası",
+      "description": "Bu üç rakam, Genel Bakış sayfanızdaki \"Günün hedefi\" widget'ını doğrudan besler — bunlar olmadan uygulama gerçek durumunuz yerine genel bir ortalamaya döner.",
+      "fixedCostsLabel": "Aylık sabit giderler",
+      "fixedCostsHint": "Kira, sabit maaşlar, sigortalar, abonelikler — trafikten bağımsız her ay çıkan her şey.",
+      "grossMarginLabel": "Brüt kâr marjı",
+      "grossMarginHint": "Hammadde maliyetinden sonra her satıştan kalan tutar.",
+      "avgBasketLabel": "Ortalama sepet tutarı",
+      "avgBasketHint": "Bir müşterinin ziyaret başına ortalama harcaması.",
+      "previewText": "Bu rakamlarla, sabit giderlerinizi karşılamak için günde {count} müşteriye ihtiyacınız var.",
+      "saveButton": "Kaydet",
+      "saving": "Kaydediliyor...",
+      "savedToast": "Başabaş noktası güncellendi — Genel Bakış artık gerçek rakamlarınızı yansıtıyor.",
+      "saveFailedToast": "Kaydedilemedi — bir dakika sonra tekrar deneyin."
+    },
     "csv": {
       "date": "Tarih",
       "description": "Açıklama",
@@ -782,7 +797,7 @@
       "colCreatedAt": "Oluşturulma",
       "untitled": "İsimsiz",
       "newPageTitle": "Yeni aday",
-      "newPageDescription": "Teslimat platformunun (veya restoran sitesinin) bağlantısını ve menüyü yapıştırın; Minerva-Flow anında kendi renkleriyle bir demo ve kâr marjı analizi oluşturur.",
+      "newPageDescription": "Teslimat platformunun (veya restoran sitesinin) bağlantısını ve menüyü yapıştırın; Minerva Flow anında kendi renkleriyle bir demo ve kâr marjı analizi oluşturur.",
       "status": {
         "draft": "Taslak",
         "ready": "Hazır",
@@ -942,7 +957,7 @@
     }
   },
   "demo": {
-    "poweredBy": "Minerva-Flow tarafından desteklenmektedir",
+    "poweredBy": "Minerva Flow tarafından desteklenmektedir",
     "previewBadge": "Demo önizlemesi",
     "savingsBannerPrefix": "Bu sizin menünüz, bizim altyapımızda. Teslimat komisyonlarında ayda yaklaşık",
     "savingsBannerSuffix": "kaybediyorsunuz — bu kaybı burada durdurun.",
@@ -954,7 +969,7 @@
       "title": "Sizin için ne yapabiliriz",
       "body": "{restaurantName} için çevrimiçi bir menü bulamadık — ancak sipariş alıyorsanız (telefon, sosyal medya, teslimat uygulaması), büyük olasılıkla çoğu bağımsız restoran gibi aynı kaybı yaşıyorsunuz: her siparişte %20-30 komisyon ve doğrudan satış yapabileceğiniz kendi bir portalınızın olmaması.",
       "steps": [
-        "Minerva-Flow doğrudan sipariş portalınızı kendi renklerinizle yapılandırıyoruz.",
+        "Minerva Flow doğrudan sipariş portalınızı kendi renklerinizle yapılandırıyoruz.",
         "Menü, fotoğraflar, fiyatlar — sizinle birlikte kuruyoruz, yeni bir aracı tek başınıza öğrenmenize gerek kalmadan.",
         "Her doğrudan siparişin %100'ünü elinizde tutarsınız ve Minerva ekosisteminin geri kalanı otomatik olarak devreye girer."
       ],
@@ -965,14 +980,14 @@
       "title": "Bu kaybı nasıl durdurursunuz",
       "body": "Teslimat uygulamaları üzerinden verilen her sipariş, platforma %20-30 komisyon öder. Doğrudan sipariş portalı bu parayı geri kazandırır — menünüzü, fiyatlarınızı veya mutfağınızı değiştirmeden.",
       "steps": [
-        "Minerva-Flow doğrudan sipariş portalınızı etkinleştiriyoruz — kendi renklerinizle, bir gün içinde hazır.",
+        "Minerva Flow doğrudan sipariş portalınızı etkinleştiriyoruz — kendi renklerinizle, bir gün içinde hazır.",
         "Google işletme sayfanızı ve sosyal medyanızı Uber Eats veya DoorDash yerine bu bağlantıya yönlendiriyoruz.",
         "Her doğrudan siparişte %0 komisyon — ve ekosistemin geri kalanı (finans, ekip, envanter) otomatik olarak devreye giriyor."
       ],
       "cta": "Randevu alın"
     },
     "ecosystem": {
-      "title": "Minerva-Flow sizin için ne yapar",
+      "title": "Minerva Flow sizin için ne yapar",
       "intro": "Bu sipariş portalı sadece bir başlangıç. Sizin gibi bir restoran için kısaca önerdiklerimiz:",
       "items": {
         "overview": {
@@ -1071,7 +1086,12 @@
       "orderError": "Sipariş başarısız oldu. Tekrar deneyin.",
       "orderSuccessTitle": "Sipariş gönderildi",
       "orderSuccessDescription": "Yerinde ödeyeceksiniz. Restoran kısa süre içinde onaylayacak.",
-      "orderClose": "Kapat"
+      "orderClose": "Kapat",
+      "tabHome": "Ana Sayfa",
+      "tabOrder": "Sipariş",
+      "tabProfile": "Profil",
+      "homeOrderCta": "Şimdi sipariş ver",
+      "offersTitle": "Şu anki teklifler"
     }
   }
 }

@@ -39,7 +39,7 @@ Minerva Flow associe l'exigence opérationnelle de la restauration et du pilotag
 - **Vert Olive & Forêt Profond** : Couleur signature (`#167f5b`), symbole de prospérité financière, d'élégance et de sérénité opérationnelle.
 - **Accent Lime Haute Énergie** : Touche moderne (`#dfff5f`), réservée aux appels à l'action stratégiques, badges clés et interactions dynamiques.
 - **Typographie à Contraste Éditorial** : Mariage d'une police serif classique (*New York / Playfair Display*) pour les titres et d'une police sans-serif géométrique (*Plus Jakarta Sans*) pour l'interface logicielle.
-- **Mode Sombre Chaleureux** : Palette sombre aux sous-tons ambrés/mousse de forêt (`#14170f`), évitant les noirs purs agressifs `#000000`.
+- **Un seul thème, toujours clair** : l'application force le thème clair (`ThemeProvider` avec `forcedTheme="light"`) — le mode sombre a été retiré délibérément de l'expérience produit pour garantir une lisibilité constante, peu importe les réglages système du visiteur.
 
 ---
 

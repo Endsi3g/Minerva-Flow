@@ -33,19 +33,17 @@ Dans un secteur où les marges sont souvent serrées et les opérations fragment
 ## Ce qu'apporte l'application aux restaurateurs
 
 ### 1. Pilotage Financier & Rentabilité Quotidienne
-Suivi en temps réel du chiffre d'affaires, des coûts fixes, du taux de marge brute (Food Cost %) et du panier moyen. Le **Simulateur de Seuil de Rentabilité** permet de calculer instantanément le point mort mensuel, l'objectif quotidien de revenus et le nombre de clients requis par jour pour atteindre l'équilibre financier.
+Suivi en temps réel du chiffre d'affaires, des coûts fixes, du taux de marge brute (Food Cost %) et du panier moyen. Le **Seuil de Rentabilité** (`/finance`, onglet Aperçu) permet à chaque restaurateur de saisir ses propres charges fixes mensuelles, sa marge brute et son panier moyen, et calcule instantanément le point mort mensuel et le nombre de clients requis par jour pour atteindre l'équilibre financier — repris directement dans le widget « Objectif du jour » de l'Aperçu.
 
 ### 2. Assistant d'Intelligence Artificielle (Flow AI)
 Un assistant virtuel spécialisé (propulsé par Cloudflare AI Gateway & Vercel AI SDK) analyse en permanence les données d'exploitation de l'établissement. Il identifie les dérives de coûts, suggère des ajustements de prix, détecte les anomalies de stock et génère des recommandations stratégiques personnalisées.
 
-### 3. Navigation Latérale Épurée & Accès Direct
-La barre de navigation (`AppSidebar.tsx`) regroupe au niveau supérieur les **6 outils indispensables** utilisés 90% du temps par les restaurateurs :
-* **Aperçu (`/overview`)** — Tableau de bord général.
-* **Flow AI (`/assistant`)** — Assistant conversationnel IA.
-* **Finance & Seuil (`/finance`)** — Simulateur de point mort et marges.
-* **Commandes & Ventes (`/commandes`)** — Suivi des ventes POS & réservations.
-* **Collaborateurs (`/collaborateurs`)** — Gestion d'équipe et employés.
-* **Inventaire & Stocks (`/inventaire`)** — Matières premières et ingrédients.
+### 3. Navigation Latérale Adaptée au Rôle
+La barre de navigation (`AppSidebar.tsx`) s'adapte au rôle de la personne connectée :
+* **Propriétaire / Gérant** — liste condensée, centrée sur l'écosystème de valeur client : **Aperçu**, **Flow AI**, **Menu**, **Fidélisation**. Finance, Commandes, Collaborateurs et Inventaire restent à un clic dans la section repliable « Gestion quotidienne ».
+* **Personnel / Consultant** — liste complète et à plat dès le premier niveau (Aperçu, Flow AI, Menu, Fidélisation, Finance, Commandes, Collaborateurs, Inventaire), pour un accès opérationnel quotidien sans clic supplémentaire.
+
+Les outils secondaires (Horaire, Fournisseurs, Réservations, Rapports, etc.) sont regroupés dans des sections repliables non intrusives : *Gestion quotidienne*, *Opérations*, *Performance & Analytics*, *Paramètres et plus*.
 
 ### 4. Planification d'Équipe & Synchronisation Google Calendar
 La gestion des horaires s'adapte à la réalité du personnel de restauration. La synchronisation bidirectionnelle avec Google Calendar permet de lire automatiquement les indisponibilités, congés et engagements personnels des employés avant la publication des plannings.
@@ -57,7 +55,7 @@ Numérisation de la relation fournisseur. Les bons de commande sont générés e
 Chaque plat de la carte est automatiquement classé selon sa popularité et sa rentabilité (*Étoiles, Poids morts, Énigmes, Chevaux de bataille*). Cette analyse permet au chef et au restaurateur de retravailler les recettes peu rentables et d'optimiser l'affichage du menu.
 
 ### 7. Fidélisation Client, Parrainage & Portail Libre-Service
-L'application intègre un programme de fidélité complet. Les clients peuvent rejoindre le programme via un QR code, accumuler des points et accéder à un portail dédié sécurisé sans mot de passe (*Lien Magique*) pour consulter leur solde et partager leur lien de parrainage.
+L'application intègre un programme de fidélité complet. Les clients peuvent rejoindre le programme via un QR code, accumuler des points et accéder à un portail client dédié — repensé en 4 onglets (Accueil, Commander, Récompenses, Profil) inspirés des meilleures applications de fidélité — pour consulter leur solde, commander directement et partager leur lien de parrainage, sans mot de passe (*Lien Magique*).
 
 ### 8. Présence Numérique, Avis Google Business & Commandes Directes
 Les avis laissés par les clients sur Google Business Profile sont centralisés pour permettre une réponse rapide. L'établissement bénéficie également d'un module de commande en ligne directe sans commission, avec paiement sécurisé Stripe Connect crédité directement au restaurant.

@@ -12,7 +12,7 @@ export default async function NotFoundPage() {
       <div className="mb-6 flex items-center gap-2.5">
         <LogoMark size={30} />
         <span className="font-display text-[17px] font-medium text-mv-ink">
-          Flow <span className="text-mv-green-dark">par Minerva</span>
+          Minerva <span className="text-mv-green-dark">Flow</span>
         </span>
       </div>
 

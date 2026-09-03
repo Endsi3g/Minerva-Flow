@@ -25,7 +25,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import posthog from "posthog-js";
 import { useCsvTransactionImport } from "@/hooks/use-csv-transaction-import";
-import { createCategoryAction, categorizeTransactionsAction, createTransactionAction } from "./actions";
+import { createCategoryAction, categorizeTransactionsAction, createTransactionAction, updateBreakEvenSettingsAction } from "./actions";
+import { computeBreakEven, type BreakEvenAssumptions } from "@/lib/engine/break-even";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { PosConnectionsCard } from "@/components/minerva/PosConnectionsCard";
@@ -56,6 +57,7 @@ import {
   Tag,
   Pencil,
   Users,
+  Target,
 } from "lucide-react";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "@/i18n/navigation";
@@ -106,11 +108,13 @@ function isCurrentMonth(dateIso: string): boolean {
 function OverviewTab({
   transactions,
   serviceDays,
+  breakEven,
   onGoToAccounts,
   onGoToTransactions,
 }: {
   transactions: FinancialTransaction[];
   serviceDays: ServiceDay[];
+  breakEven: BreakEvenAssumptions;
   onGoToAccounts: () => void;
   onGoToTransactions: () => void;
 }) {
@@ -231,7 +235,82 @@ function OverviewTab({
           )}
         </Card>
       </div>
+
+      <div className="mt-6">
+        <BreakEvenSettingsCard initial={breakEven} />
+      </div>
     </div>
+  );
+}
+
+/**
+ * The only place an owner can set the three numbers ("Objectif du jour" on
+ * Overview and this tab's own preview both derive from them) — see
+ * lib/engine/break-even.ts and updateBreakEvenSettingsAction. Before this
+ * card existed, updateBreakEvenSettings had no caller anywhere in the app:
+ * every restaurant silently ran on BREAK_EVEN_DEFAULTS forever.
+ */
+function BreakEvenSettingsCard({ initial }: { initial: BreakEvenAssumptions }) {
+  const t = useTranslations("finance.breakEven");
+  const [values, setValues] = useState(initial);
+  const [isSaving, startSaving] = useTransition();
+
+  const { dailyCoversNeeded } = computeBreakEven(values);
+
+  function handleSave() {
+    startSaving(async () => {
+      const ok = await updateBreakEvenSettingsAction(values);
+      toast[ok ? "success" : "error"](ok ? t("savedToast") : t("saveFailedToast"));
+    });
+  }
+
+  return (
+    <Card>
+      <CardHeader eyebrow={t("title")} title={t("title")} description={t("description")} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Field label={t("fixedCostsLabel")} hint={t("fixedCostsHint")}>
+          <Input
+            type="number"
+            min={0}
+            step={50}
+            value={values.fixedCosts}
+            onChange={(e) => setValues((v) => ({ ...v, fixedCosts: Number(e.target.value) || 0 }))}
+          />
+        </Field>
+        <Field label={t("grossMarginLabel")} hint={t("grossMarginHint")}>
+          <Input
+            type="number"
+            min={1}
+            max={100}
+            step={1}
+            value={values.grossMarginPct}
+            onChange={(e) => setValues((v) => ({ ...v, grossMarginPct: Number(e.target.value) || 1 }))}
+          />
+        </Field>
+        <Field label={t("avgBasketLabel")} hint={t("avgBasketHint")}>
+          <Input
+            type="number"
+            min={0.5}
+            step={0.5}
+            value={values.avgBasket}
+            onChange={(e) => setValues((v) => ({ ...v, avgBasket: Number(e.target.value) || 0.5 }))}
+          />
+        </Field>
+      </div>
+      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-mv-border bg-mv-cream-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-mv-green/20 bg-mv-green-tint text-mv-green-dark">
+            <Target size={18} />
+          </div>
+          <p className="text-[13.5px] text-mv-ink">
+            {t("previewText", { count: dailyCoversNeeded, plural: dailyCoversNeeded > 1 ? "s" : "" })}
+          </p>
+        </div>
+        <Button size="sm" onClick={handleSave} disabled={isSaving} className="shrink-0 whitespace-nowrap">
+          {isSaving ? t("saving") : t("saveButton")}
+        </Button>
+      </div>
+    </Card>
   );
 }
 
@@ -759,11 +838,13 @@ export function FinanceView({
   expenseCategories,
   connections,
   serviceDays,
+  breakEven,
 }: {
   transactions: FinancialTransaction[];
   expenseCategories: ExpenseCategory[];
   connections: Connection[];
   serviceDays: ServiceDay[];
+  breakEven: BreakEvenAssumptions;
 }) {
   const t = useTranslations("finance");
   const [tab, setTab] = useState("apercu");
@@ -807,6 +888,7 @@ export function FinanceView({
           <OverviewTab
             transactions={transactions}
             serviceDays={serviceDays}
+            breakEven={breakEven}
             onGoToAccounts={() => setTab("comptes")}
             onGoToTransactions={() => setTab("transactions")}
           />

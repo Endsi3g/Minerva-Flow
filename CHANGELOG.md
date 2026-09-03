@@ -2,6 +2,83 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.27.0] - 2026-09-03
+
+### 🚀 Déploiement débloqué
+- Un conflit entre deux fichiers d'image de partage (utilisés quand un lien vers Minerva Flow s'affiche sur les réseaux sociaux) empêchait le site de se mettre en ligne. Les fichiers en double ont été retirés ; l'image de partage officielle (`/og.png`) reste inchangée.
+
+### 🚪 Fini la page d'accueil publique
+- La page de présentation qui s'affichait avant la connexion a été retirée. L'adresse principale du site mène maintenant directement à l'écran de connexion (ou à votre Aperçu si vous êtes déjà connecté).
+
+### ⚡ Connexion plus directe
+- L'écran « Initialisation de votre espace » avec ses conseils défilants, qui s'affichait après chaque connexion, a été retiré — vous arrivez maintenant directement dans votre espace de travail.
+
+## [v2.26.0] - 2026-09-03
+
+### 🎯 Configurer votre seuil de rentabilité
+- La page Finance a maintenant une carte « Seuil de rentabilité » où vous entrez vos vraies charges fixes mensuelles, votre marge brute et votre panier moyen — ces chiffres alimentent directement le widget « Objectif du jour » de votre Aperçu, qui affichait jusqu'ici une moyenne générique faute d'endroit où les saisir.
+
+### 🔗 Le lien de fidélité de vos clients, plus fiable
+- Une erreur technique qui pouvait faire afficher une page introuvable à vos clients, sans jamais être signalée nulle part, est maintenant visible et consignée — pour repérer un vrai problème immédiatement plutôt que silencieusement.
+
+### 🧮 Vos vrais chiffres clients, partout
+- Le nombre de visites, l'historique et le solde de points affichés sur la fiche d'un client concordent maintenant toujours entre eux.
+
+### 📈 Une carte plus honnête sur le retour du parrainage
+- La carte « Multiplicateur ROI » n'affiche plus un « 0 $ » qui ressemblait à une erreur — elle explique maintenant clairement quand une récompense n'a pas encore été réclamée.
+
+### ✅ Le tableau de bord ne se contredit plus
+- La carte Recommandations n'affirme plus que « tout va bien » quand elle n'a simplement rien de nouveau à suggérer — un message qui pouvait contredire vos alertes actives juste à côté.
+
+### 🔁 Un calcul de fidélisation corrigé
+- Le widget « Clients qui reviennent plus souvent » compare maintenant réellement deux groupes de clients différents, plutôt que d'afficher un résultat neutre par coïncidence.
+
+## [v2.25.0] - 2026-09-02
+
+### 📱 Portail client repensé en 4 onglets
+- Le portail client passe d'un long défilement à 4 onglets fixes en bas d'écran (Accueil, Commander, Récompenses, Profil) — inspiré des applications de fidélité que vos clients utilisent déjà tous les jours.
+- Le solde de points et le bouton « Commander maintenant » sont mis en évidence sur l'accueil ; un badge sur l'onglet Commander indique le nombre d'articles dans le panier.
+- La confirmation de commande et l'enregistrement du profil donnent maintenant un retour visuel immédiat.
+
+### 💚 Page Fidélisation : cartes séparées, structure simplifiée
+- Les 3 premières cartes de la page Clients ne sont plus coincées sur 3 colonnes — chacune respire sur sa propre ligne.
+- La carte de provenance géographique des clients est maintenant directement sur la page Clients plutôt que dans une sous-page à part.
+
+### ✨ Votre nom de marque, corrigé partout
+- « Flow par Minerva » apparaissait encore à plusieurs endroits vus par vos clients — tout affiche maintenant « Minerva Flow », votre vrai nom, sur l'ensemble de l'application.
+
+### 🌤️ Correctif cron quotidien (plan Vercel Hobby)
+- La synchronisation des alertes tournait plus d'une fois par jour, ce qui dépassait la limite du plan Vercel Hobby et bloquait le déploiement — remise à une fois par jour.
+
+## [v2.24.0] - 2026-09-02
+
+### 💌 Refonte complète des courriels
+- Tous les courriels envoyés par Minerva Flow (bienvenue, invitations, relances de fidélité, rapports hebdomadaires, offres spéciales) ont été redessinés avec un style plus sobre et cohérent, et sont deux fois plus riches en contenu utile.
+- Une séquence automatique de courriels accompagne maintenant chaque nouveau compte dans ses premiers jours sur Minerva Flow.
+
+### 🛟 Bascule automatique en cas de panne de domaine
+- Si votre nom de domaine personnalisé devient inaccessible, l'application bascule maintenant automatiquement vers une adresse de secours pour que vos données restent disponibles.
+
+### 🖼️ Aperçus de partage sur les réseaux sociaux
+- Les liens Minerva Flow partagés sur les réseaux sociaux affichent maintenant un aperçu visuel avec image, plutôt qu'un simple lien texte.
+
+## [v2.23.0] - 2026-08-25
+
+### 🔒 Cloisonnement des données par restaurant
+- Une clé API propre à un restaurant ne peut plus jamais lire ou modifier les données d'un autre restaurant sur le serveur MCP (`/api/mcp`, `/api/v1`) — faille corrigée et vérifiée en production.
+
+### 📞 Prospection Reach réparée
+- Le pipeline de relance automatisée (`audit_envoyé` → `relance_1` → `relance_2`) était bloqué en base depuis sa création — il fonctionne maintenant de bout en bout, et la relance automatique quotidienne est enfin active.
+
+### 🎁 Fidélisation
+- Les messages de parrainage envoyés par vos clients utilisent maintenant le vrai nom de votre restaurant, le Studio QR & Affiches respecte les couleurs de chaque thème visuel, et les affiches exportées embarquent une vraie métadonnée d'impression 300 DPI.
+
+### 📇 Suivi des prospects
+- Ajout d'un vrai champ « Nom du contact » sur chaque fiche prospect, visible et modifiable depuis le panneau opérateur.
+
+### 🔌 Outils API
+- Les outils de statut de commande/réservation et d'avis clients utilisaient de mauvaises valeurs et une mauvaise table — corrigés et re-testés en production.
+
 ## [v2.22.0] - 2026-08-24
 
 ### 🎯 Impact devient actionnable

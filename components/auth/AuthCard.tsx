@@ -10,7 +10,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { Google } from "@/components/ui/BrandIcons";
 import { AuthShell } from "@/components/auth/AuthShell";
-import { SplashLoadingTips } from "@/components/auth/SplashLoadingTips";
 import { cn } from "@/lib/utils";
 
 const PANEL_POINTS = [
@@ -31,8 +30,6 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showTips, setShowTips] = useState(false);
-  const [destinationPath, setDestinationPath] = useState<string | null>(null);
 
   const referralCode = searchParams?.get("ref") ?? null;
   const inviteToken = searchParams?.get("inviteToken") ?? null;
@@ -73,8 +70,8 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
           posthog.identify(data.user.id, { email: data.user.email });
           posthog.capture("user_logged_in", { method: "email" });
         }
-        setDestinationPath(postAuthPath);
-        setShowTips(true);
+        router.push(postAuthPath);
+        router.refresh();
       } else {
         if (password !== repeatPassword) throw new Error(t("errorPasswordMismatch"));
         const signUpMetadata: Record<string, string> = {};
@@ -100,8 +97,8 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
           });
         }
         if (data.session) {
-          setDestinationPath(postAuthPath);
-          setShowTips(true);
+          router.push(postAuthPath);
+          router.refresh();
         } else {
           router.push("/sign-up-success");
         }
@@ -136,17 +133,6 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
     setMode(newMode);
     const href = getPathname({ href: newMode === "login" ? "/login" : "/sign-up", locale });
     window.history.pushState(null, "", href);
-  }
-
-  function handleCompleteTips() {
-    if (destinationPath) {
-      router.push(destinationPath);
-      router.refresh();
-    }
-  }
-
-  if (showTips) {
-    return <SplashLoadingTips onComplete={handleCompleteTips} />;
   }
 
   return (
