@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { AlertBanner } from "@/components/ui/AlertBanner";
 import { PricingTableFive } from "@/components/billingsdk/pricing-table-five";
-import { CancelSubscriptionDialog } from "@/components/billingsdk/cancel-subscription-dialog";
+import { CancelSubscriptionCard } from "@/components/billingsdk/cancel-subscription-card";
 import { InvoiceHistory } from "@/components/billingsdk/invoice-history";
 import { ProrationPreview } from "@/components/billingsdk/proration-preview";
 import { Modal } from "@/components/ui/Modal";
@@ -497,65 +497,43 @@ export default function BillingPage() {
         </div>
       </Modal>
 
-      {/* Step 2: retention warning + final confirmation (Billing SDK component) */}
+      {/* Step 2: retention warning + final confirmation (Billing SDK component) —
+          the Card variant renders inline with no dialog chrome of its own,
+          so it drops straight into our existing Modal instead of needing a
+          second, nested dialog layer. */}
       {status?.subscription && (
-        <CancelSubscriptionDialogController
+        <Modal
           open={cancelDialogOpen}
-          onOpenChange={setCancelDialogOpen}
-          planTier={planTier}
-          onKeep={handleKeepSubscription}
-          onConfirmCancel={handleConfirmCancel}
-        />
+          onClose={() => setCancelDialogOpen(false)}
+          title="On est tristes de vous voir partir…"
+          description={`Avant de confirmer, voici ce que vous garderiez avec ${PLANS[planTier].name}.`}
+          width={720}
+        >
+          <CancelSubscriptionCard
+            title=""
+            description=""
+            plan={billingSdkPlans.find((p) => p.id === planTier) ?? billingSdkPlans[0]}
+            warningTitle="Vous perdrez l'accès à votre workspace"
+            warningText="À la fin de votre période déjà payée, l'accès à Minerva Flow sera coupé pour tous les membres de l'équipe."
+            keepButtonText={`Garder mon plan ${PLANS[planTier].name}`}
+            continueButtonText="Continuer l'annulation"
+            finalTitle="Dernière étape — confirmer l'annulation"
+            finalSubtitle="Votre accès reste actif jusqu'à la fin de la période déjà payée."
+            finalWarningText="Aucun remboursement au prorata n'est effectué pour la période en cours."
+            goBackButtonText="Attendez, revenir en arrière"
+            confirmButtonText="Oui, annuler mon abonnement"
+            onCancel={async () => {
+              await handleConfirmCancel();
+              setCancelDialogOpen(false);
+            }}
+            onKeepSubscription={async () => {
+              await handleKeepSubscription();
+              setCancelDialogOpen(false);
+            }}
+            className="max-w-none border-none shadow-none"
+          />
+        </Modal>
       )}
     </div>
-  );
-}
-
-/**
- * Thin wrapper: CancelSubscriptionDialog (components/billingsdk) only
- * exposes a trigger button, not a controlled `open` prop — this drives it
- * open/closed from our own reason-collection step above via a hidden
- * trigger + a synced Dialog open state workaround isn't available upstream,
- * so instead we render the dialog's own trigger visually hidden and click
- * it programmatically when `open` flips true.
- */
-function CancelSubscriptionDialogController({
-  open,
-  onOpenChange,
-  planTier,
-  onKeep,
-  onConfirmCancel,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  planTier: PlanTier;
-  onKeep: () => Promise<void>;
-  onConfirmCancel: () => Promise<void>;
-}) {
-  const plan = PLANS[planTier];
-  const sdkPlan = billingSdkPlans.find((p) => p.id === planTier) ?? billingSdkPlans[0];
-
-  return (
-    <CancelSubscriptionDialog
-      title="On est tristes de vous voir partir…"
-      description={`Avant de confirmer, voici ce que vous garderiez avec ${plan.name}.`}
-      plan={sdkPlan}
-      hideTrigger
-      open={open}
-      onOpenChange={onOpenChange}
-      warningTitle="Vous perdrez l'accès à votre workspace"
-      warningText="À la fin de votre période déjà payée, l'accès à Minerva Flow sera coupé pour tous les membres de l'équipe."
-      keepButtonText={`Garder mon plan ${plan.name}`}
-      continueButtonText="Continuer l'annulation"
-      finalTitle="Dernière étape — confirmer l'annulation"
-      finalSubtitle="Votre accès reste actif jusqu'à la fin de la période déjà payée."
-      finalWarningText="Aucun remboursement au prorata n'est effectué pour la période en cours."
-      goBackButtonText="Attendez, revenir en arrière"
-      confirmButtonText="Oui, annuler mon abonnement"
-      onCancel={onConfirmCancel}
-      onKeepSubscription={onKeep}
-      onDialogClose={() => onOpenChange(false)}
-      className="max-w-2xl"
-    />
   );
 }
