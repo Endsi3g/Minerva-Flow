@@ -10,6 +10,7 @@ import { computeAlerts } from "@/lib/engine/alerts";
 import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { AssistantChatView } from "@/components/chat/AssistantChatView";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
+import { isFlowAiOnHold } from "@/lib/ai/config";
 
 export default async function AssistantConversationPage({
   params,
@@ -63,6 +64,7 @@ export default async function AssistantConversationPage({
       initialCanvasDoc={allCanvasDocs[0] ?? null}
       allCanvasDocs={allCanvasDocs}
       projectFolders={projectFolders}
+      onHold={isFlowAiOnHold()}
     />
   );
 }

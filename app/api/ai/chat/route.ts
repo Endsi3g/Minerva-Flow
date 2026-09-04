@@ -2,7 +2,7 @@ import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AI_MODEL, isAiConfigured } from "@/lib/ai/config";
+import { AI_MODEL, isAiConfigured, isFlowAiOnHold } from "@/lib/ai/config";
 import { GEMINI_FALLBACK_MODEL, getGeminiApiKey } from "@/lib/ai/gemini";
 import { buildRestaurantDataSnapshot } from "@/lib/ai/context";
 import { getSpecialistById } from "@/lib/ai/specialists";
@@ -68,6 +68,13 @@ type PendingAttachment = {
 };
 
 export async function POST(req: Request) {
+  if (isFlowAiOnHold()) {
+    return NextResponse.json(
+      { error: "Flow AI est temporairement en pause. Revenez bientôt !" },
+      { status: 503 }
+    );
+  }
+
   if (!isAiConfigured()) {
     return NextResponse.json(
       {
