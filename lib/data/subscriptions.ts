@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { PlanTier } from "@/lib/ai/quotas";
+import type { BillingInterval } from "@/lib/billing/plans";
 import type Stripe from "stripe";
 
 export type Subscription = {
@@ -11,6 +13,11 @@ export type Subscription = {
   stripeSubscriptionId: string | null;
   status: Stripe.Subscription.Status | "incomplete";
   currentPeriodEnd: string | null;
+  stripePriceId: string | null;
+  billingInterval: BillingInterval | null;
+  planTier: PlanTier | null;
+  pastDueSince: string | null;
+  canceledAt: string | null;
 };
 
 type SubscriptionRow = {
@@ -19,6 +26,11 @@ type SubscriptionRow = {
   stripe_subscription_id: string | null;
   status: Stripe.Subscription.Status;
   current_period_end: string | null;
+  stripe_price_id: string | null;
+  billing_interval: BillingInterval | null;
+  plan_tier: PlanTier | null;
+  past_due_since: string | null;
+  canceled_at: string | null;
 };
 
 function mapSubscription(row: SubscriptionRow): Subscription {
@@ -28,6 +40,11 @@ function mapSubscription(row: SubscriptionRow): Subscription {
     stripeSubscriptionId: row.stripe_subscription_id,
     status: row.status,
     currentPeriodEnd: row.current_period_end,
+    stripePriceId: row.stripe_price_id,
+    billingInterval: row.billing_interval,
+    planTier: row.plan_tier,
+    pastDueSince: row.past_due_since,
+    canceledAt: row.canceled_at,
   };
 }
 
@@ -58,6 +75,11 @@ export async function upsertSubscription(input: {
   stripeSubscriptionId: string | null;
   status: Stripe.Subscription.Status;
   currentPeriodEnd: string | null;
+  stripePriceId?: string | null;
+  billingInterval?: BillingInterval | null;
+  planTier?: PlanTier | null;
+  pastDueSince?: string | null;
+  canceledAt?: string | null;
 }): Promise<boolean> {
   const admin = createAdminClient();
   const { error } = await admin.from("subscriptions").upsert(
@@ -67,6 +89,11 @@ export async function upsertSubscription(input: {
       stripe_subscription_id: input.stripeSubscriptionId,
       status: input.status,
       current_period_end: input.currentPeriodEnd,
+      ...(input.stripePriceId !== undefined ? { stripe_price_id: input.stripePriceId } : {}),
+      ...(input.billingInterval !== undefined ? { billing_interval: input.billingInterval } : {}),
+      ...(input.planTier !== undefined ? { plan_tier: input.planTier } : {}),
+      ...(input.pastDueSince !== undefined ? { past_due_since: input.pastDueSince } : {}),
+      ...(input.canceledAt !== undefined ? { canceled_at: input.canceledAt } : {}),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "workspace_id" }

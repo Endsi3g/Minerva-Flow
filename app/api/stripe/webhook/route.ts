@@ -1,11 +1,33 @@
 import { NextResponse } from "next/server";
-import { getStripeClient, stripePriceId } from "@/lib/stripe/config";
+import { getStripeClient, resolveTierFromPriceId } from "@/lib/stripe/config";
 import { upsertSubscription, getSubscriptionByStripeCustomerId } from "@/lib/data/subscriptions";
+import { setWorkspacePlanTier } from "@/lib/data/ai-usage";
 import { notifyWorkspaceOwners, notifyRestaurant } from "@/lib/data/notifications";
 import { getRestaurantIdByStripeConnectAccountId, syncConnectAccountStatus } from "@/lib/data/restaurant-payments";
+import { sendBillingLifecycleEmail, getWorkspaceOwnerContact } from "@/lib/email/billing-lifecycle";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatCurrency } from "@/lib/utils";
 import type Stripe from "stripe";
+
+/** Resolves tier/interval from a subscription's first price and, if it's a
+ * self-serve tier, syncs workspace_ai_usage's quota to match — called on
+ * every checkout completion and subscription update so a plan change (or a
+ * tier we couldn't resolve, e.g. the legacy flat price) never leaves the AI
+ * quota out of sync with what the customer is actually paying for. */
+async function syncTierFromSubscription(
+  workspaceId: string,
+  subscription: Stripe.Subscription
+): Promise<{ priceId: string | null; tier: string | null; interval: string | null }> {
+  const priceId = subscription.items.data[0]?.price.id ?? null;
+  if (!priceId) return { priceId: null, tier: null, interval: null };
+
+  const resolved = await resolveTierFromPriceId(priceId);
+  if (resolved) {
+    await setWorkspacePlanTier(workspaceId, resolved.tier);
+    return { priceId, tier: resolved.tier, interval: resolved.interval };
+  }
+  return { priceId, tier: null, interval: null };
+}
 
 /**
  * Not independently testable without a live Stripe account + CLI (`stripe
@@ -40,14 +62,18 @@ export async function POST(req: Request) {
 
       if (workspaceId && customerId && subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const { priceId, tier, interval } = await syncTierFromSubscription(workspaceId, subscription);
         await upsertSubscription({
           workspaceId,
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
           status: subscription.status,
           currentPeriodEnd: new Date(subscription.items.data[0]?.current_period_end * 1000).toISOString(),
+          stripePriceId: priceId,
+          billingInterval: (interval as "monthly" | "yearly" | null) ?? null,
+          planTier: (tier as "starter" | "pro" | "enterprise" | null) ?? null,
         });
-        await applyUnappliedReferralReward(workspaceId, customerId);
+        await applyUnappliedReferralReward(workspaceId, customerId, subscription);
         await notifyWorkspaceOwners({
           workspaceId,
           type: "billing.subscription_activated",
@@ -70,6 +96,10 @@ export async function POST(req: Request) {
       // its runbook) — skip until it's manually reconciled, rather than
       // upserting a workspace-less duplicate row.
       if (existing && existing.workspaceId) {
+        const becamePastDue = subscription.status === "past_due" && previousStatus !== "past_due";
+        const leftPastDue = subscription.status !== "past_due" && previousStatus === "past_due";
+        const { priceId, tier, interval } = await syncTierFromSubscription(existing.workspaceId, subscription);
+
         await upsertSubscription({
           workspaceId: existing.workspaceId,
           stripeCustomerId: customerId,
@@ -78,9 +108,13 @@ export async function POST(req: Request) {
           currentPeriodEnd: subscription.items.data[0]
             ? new Date(subscription.items.data[0].current_period_end * 1000).toISOString()
             : null,
+          stripePriceId: priceId,
+          billingInterval: (interval as "monthly" | "yearly" | null) ?? existing.billingInterval,
+          planTier: (tier as "starter" | "pro" | "enterprise" | null) ?? existing.planTier,
+          pastDueSince: becamePastDue ? new Date().toISOString() : leftPastDue ? null : undefined,
         });
 
-        if (subscription.status === "past_due" && previousStatus !== "past_due") {
+        if (becamePastDue) {
           await notifyWorkspaceOwners({
             workspaceId: existing.workspaceId,
             type: "billing.payment_past_due",
@@ -115,6 +149,10 @@ export async function POST(req: Request) {
           currentPeriodEnd: subscription.items.data[0]
             ? new Date(subscription.items.data[0].current_period_end * 1000).toISOString()
             : null,
+          pastDueSince: null,
+          canceledAt: subscription.canceled_at
+            ? new Date(subscription.canceled_at * 1000).toISOString()
+            : new Date().toISOString(),
         });
         await notifyWorkspaceOwners({
           workspaceId: existing.workspaceId,
@@ -140,6 +178,20 @@ export async function POST(req: Request) {
           body: "Ajoutez une méthode de paiement pour continuer à utiliser Minerva Flow sans interruption.",
           link: "/billing",
         });
+        const owner = await getWorkspaceOwnerContact(existing.workspaceId);
+        if (owner) {
+          const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
+          await sendBillingLifecycleEmail({
+            workspaceId: existing.workspaceId,
+            email: owner.email,
+            step: "trial_ending",
+            dedupeKey: subscription.id,
+            params: {
+              firstName: owner.firstName,
+              trialEndDate: trialEnd ? trialEnd.toLocaleDateString("fr-CA") : undefined,
+            },
+          });
+        }
       }
       break;
     }
@@ -157,6 +209,20 @@ export async function POST(req: Request) {
             body: "Le paiement de votre dernière facture a échoué. Vérifiez votre méthode de paiement.",
             link: "/billing",
           });
+          const owner = await getWorkspaceOwnerContact(existing.workspaceId);
+          if (owner) {
+            const amount = (invoice.amount_due / 100).toLocaleString("fr-CA", {
+              style: "currency",
+              currency: invoice.currency ?? "cad",
+            });
+            await sendBillingLifecycleEmail({
+              workspaceId: existing.workspaceId,
+              email: owner.email,
+              step: "payment_failed",
+              dedupeKey: invoice.id ?? `${customerId}:${invoice.created}`,
+              params: { firstName: owner.firstName, amountDue: amount },
+            });
+          }
         }
       }
       break;
@@ -281,7 +347,11 @@ export async function POST(req: Request) {
  * for the workspace migration), so this resolves across every restaurant
  * in the workspace rather than a single one.
  */
-async function applyUnappliedReferralReward(workspaceId: string, stripeCustomerId: string) {
+async function applyUnappliedReferralReward(
+  workspaceId: string,
+  stripeCustomerId: string,
+  subscription: Stripe.Subscription
+) {
   const admin = createAdminClient();
   const { data: workspaceRestaurants } = await admin
     .from("restaurants")
@@ -302,13 +372,17 @@ async function applyUnappliedReferralReward(workspaceId: string, stripeCustomerI
   if (unapplied.length === 0) return;
 
   const stripe = getStripeClient();
-  const price = await stripe.prices.retrieve(stripePriceId());
-  const monthlyAmount = price.unit_amount ?? 0;
+  // Reads the price the customer actually subscribed to (Starter/Pro, monthly
+  // or yearly) rather than a single global price — necessary now that
+  // checkout offers multiple tiers. A yearly price is normalized to its
+  // monthly equivalent so "N free months" means the same credit either way.
+  const price = subscription.items.data[0]?.price;
+  const monthlyAmount = price?.recurring?.interval === "year" ? Math.round((price.unit_amount ?? 0) / 12) : (price?.unit_amount ?? 0);
 
   for (const reward of unapplied) {
     await stripe.customers.createBalanceTransaction(stripeCustomerId, {
       amount: -Math.round(monthlyAmount * reward.amount),
-      currency: price.currency ?? "cad",
+      currency: price?.currency ?? "cad",
       description: `Récompense de parrainage — ${reward.amount} mois gratuit(s)`,
     });
     await admin
