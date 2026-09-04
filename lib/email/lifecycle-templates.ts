@@ -1073,3 +1073,208 @@ export function renderLifecycleEmail(step: LifecycleStep, params: LifecycleTempl
       return renderReactivationEmail(params);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// FACTURATION — essai qui se termine, échec de paiement, relance de
+// paiement, quota IA atteint, reconquête post-annulation.
+// Même coquille (cleanShell) que la séquence lifecycle ci-dessus, envoyées
+// depuis lib/email/billing-lifecycle.ts (déclenchées par le webhook Stripe
+// pour les étapes ponctuelles, par le cron billing-lifecycle-engine pour
+// les relances différées).
+// ═══════════════════════════════════════════════════════════════════════
+
+export type BillingLifecycleStep =
+  | "trial_ending"
+  | "payment_failed"
+  | "payment_reminder"
+  | "quota_exceeded"
+  | "winback";
+
+export interface BillingLifecycleParams {
+  firstName?: string | null;
+  restaurantName?: string | null;
+  appUrl: string;
+  planName?: string;
+  trialEndDate?: string;
+  amountDue?: string;
+}
+
+function renderTrialEndingEmail(params: BillingLifecycleParams): EmailRenderOutput {
+  const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
+  const ctaUrl = `${params.appUrl}/billing`;
+  const title = "Votre essai Minerva Flow se termine bientôt";
+  const preheader = "Ajoutez une méthode de paiement pour continuer sans interruption.";
+
+  const contentHtml = `
+    <p style="margin: 0 0 14px; text-align: center;">
+      ${name}, votre période d'essai${params.trialEndDate ? ` se termine le <strong>${escapeHtml(params.trialEndDate)}</strong>` : " se termine bientôt"}.
+      Votre carte enregistrée prendra le relais automatiquement — aucune action requise si tout est en ordre.
+    </p>
+    <p style="margin: 0; text-align: center; font-size: 12.5px; color: #6F786B;">
+      Besoin de changer de forfait ou de méthode de paiement avant la fin de l'essai ? Tout se gère depuis votre page de facturation.
+    </p>
+  `;
+  const text = `${name}, votre essai Minerva Flow se termine bientôt. Gérez votre facturation : ${ctaUrl}`;
+
+  return {
+    subject: title,
+    preheader,
+    html: cleanShell({
+      title,
+      preheader,
+      badgeText: "Essai gratuit",
+      badgeTone: "gold",
+      contentHtml,
+      ctaText: "Voir ma facturation",
+      ctaUrl,
+      appUrl: params.appUrl,
+    }),
+    text,
+  };
+}
+
+function renderPaymentFailedEmail(params: BillingLifecycleParams): EmailRenderOutput {
+  const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
+  const ctaUrl = `${params.appUrl}/billing`;
+  const title = "Le paiement de votre abonnement a échoué";
+  const preheader = "Mettez à jour votre méthode de paiement pour éviter une interruption de service.";
+
+  const contentHtml = `
+    <p style="margin: 0 0 14px; text-align: center;">
+      ${name}, le dernier paiement de votre abonnement Minerva Flow${params.amountDue ? ` (${escapeHtml(params.amountDue)})` : ""} n'a pas pu être traité.
+      Votre accès reste actif pour l'instant — mettez à jour votre carte pour éviter toute interruption.
+    </p>
+  `;
+  const text = `${name}, le paiement de votre abonnement Minerva Flow a échoué. Mettez à jour votre carte : ${ctaUrl}`;
+
+  return {
+    subject: title,
+    preheader,
+    html: cleanShell({
+      title,
+      preheader,
+      badgeText: "Paiement à régulariser",
+      badgeTone: "slate",
+      contentHtml,
+      ctaText: "Mettre à jour ma carte",
+      ctaUrl,
+      appUrl: params.appUrl,
+    }),
+    text,
+  };
+}
+
+function renderPaymentReminderEmail(params: BillingLifecycleParams): EmailRenderOutput {
+  const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
+  const ctaUrl = `${params.appUrl}/billing`;
+  const title = "Rappel : votre abonnement est toujours en attente de paiement";
+  const preheader = "Quelques jours restent avant une possible suspension de service.";
+
+  const contentHtml = `
+    <p style="margin: 0 0 14px; text-align: center;">
+      ${name}, nous n'avons toujours pas pu traiter le paiement de votre abonnement Minerva Flow.
+      Réglez ceci dès maintenant pour garder un accès ininterrompu à vos outils de gestion.
+    </p>
+  `;
+  const text = `${name}, votre abonnement Minerva Flow est toujours en attente de paiement. Réglez ceci ici : ${ctaUrl}`;
+
+  return {
+    subject: title,
+    preheader,
+    html: cleanShell({
+      title,
+      preheader,
+      badgeText: "Dernier rappel",
+      badgeTone: "gold",
+      contentHtml,
+      ctaText: "Régulariser mon paiement",
+      ctaUrl,
+      appUrl: params.appUrl,
+    }),
+    text,
+  };
+}
+
+function renderQuotaExceededEmail(params: BillingLifecycleParams): EmailRenderOutput {
+  const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
+  const ctaUrl = `${params.appUrl}/billing`;
+  const title = "Votre quota Flow AI du mois est atteint";
+  const preheader = "Passez à un forfait supérieur pour continuer à utiliser l'IA sans interruption.";
+
+  const contentHtml = `
+    <p style="margin: 0 0 14px; text-align: center;">
+      ${name}, votre workspace${params.planName ? ` (forfait ${escapeHtml(params.planName)})` : ""} a atteint son quota mensuel de tokens Flow AI.
+      Le reste de Minerva Flow continue de fonctionner normalement — seules les réponses de l'assistant IA sont mises en pause jusqu'au renouvellement, ou vous pouvez passer à un forfait supérieur dès maintenant.
+    </p>
+  `;
+  const text = `${name}, votre quota Flow AI mensuel est atteint. Passez à un forfait supérieur : ${ctaUrl}`;
+
+  return {
+    subject: title,
+    preheader,
+    html: cleanShell({
+      title,
+      preheader,
+      badgeText: "Quota Flow AI",
+      badgeTone: "slate",
+      contentHtml,
+      ctaText: "Voir les forfaits",
+      ctaUrl,
+      appUrl: params.appUrl,
+    }),
+    text,
+  };
+}
+
+function renderWinbackEmail(params: BillingLifecycleParams): EmailRenderOutput {
+  const name = params.firstName ? escapeHtml(params.firstName) : "Bonjour";
+  const ctaUrl = `${params.appUrl}/billing`;
+  const title = "Une place vous attend chez Minerva Flow";
+  const preheader = "Revenez quand vous voulez — rien n'a été supprimé.";
+
+  const contentHtml = `
+    <p style="margin: 0 0 14px; text-align: center;">
+      ${name}, votre abonnement Minerva Flow${params.restaurantName ? ` pour ${escapeHtml(params.restaurantName)}` : ""} est terminé depuis un moment.
+      Si le contexte a changé de votre côté, votre compte et vos données sont toujours là — réactiver votre abonnement ne prend qu'une minute.
+    </p>
+    <p style="margin: 0; text-align: center; font-size: 12.5px; color: #6F786B;">
+      Une question, un frein en particulier ? Répondez simplement à ce courriel.
+    </p>
+  `;
+  const text = `${name}, votre abonnement Minerva Flow est terminé. Réactivez-le quand vous voulez : ${ctaUrl}`;
+
+  return {
+    subject: title,
+    preheader,
+    html: cleanShell({
+      title,
+      preheader,
+      badgeText: "On vous garde une place",
+      badgeTone: "green",
+      contentHtml,
+      ctaText: "Réactiver mon abonnement",
+      ctaUrl,
+      appUrl: params.appUrl,
+      isPromotional: true,
+    }),
+    text,
+  };
+}
+
+export function renderBillingLifecycleEmail(
+  step: BillingLifecycleStep,
+  params: BillingLifecycleParams
+): EmailRenderOutput {
+  switch (step) {
+    case "trial_ending":
+      return renderTrialEndingEmail(params);
+    case "payment_failed":
+      return renderPaymentFailedEmail(params);
+    case "payment_reminder":
+      return renderPaymentReminderEmail(params);
+    case "quota_exceeded":
+      return renderQuotaExceededEmail(params);
+    case "winback":
+      return renderWinbackEmail(params);
+  }
+}

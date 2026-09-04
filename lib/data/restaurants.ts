@@ -340,6 +340,21 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
         ?.workspace_id ?? null;
   }
 
+  // Defense in depth: the "Ajouter un établissement" UI pre-checks this via
+  // checkCanAddEstablishmentAction() and shows an upgrade modal instead of
+  // opening the form — this still blocks a direct call from bypassing that,
+  // silently like every other failure path in this function.
+  if (workspaceId) {
+    const { getWorkspaceAiUsage } = await import("@/lib/data/ai-usage");
+    const { checkEstablishmentLimit } = await import("@/lib/billing/limits");
+    const admin = createAdminClient();
+    const [aiUsage, { count }] = await Promise.all([
+      getWorkspaceAiUsage(workspaceId),
+      admin.from("restaurants").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+    ]);
+    if (!checkEstablishmentLimit(aiUsage.planTier, count ?? 0).allowed) return null;
+  }
+
   const isCafe = input.serviceModel === "cafe";
 
   const { data, error } = await supabase

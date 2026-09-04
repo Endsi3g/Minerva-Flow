@@ -430,6 +430,62 @@ body {
   }
 }
 
+/*
+ * Billing SDK components (components/billingsdk/*) are shadcn primitives
+ * pulled from the @billingsdk registry — they read the standard shadcn
+ * tokens (--primary, --card, --border, …) which the rest of the app leaves
+ * on the neutral "olive" shadcn default (see :root above). Rather than
+ * repainting those tokens globally — which would also restyle every other
+ * shadcn primitive already in use elsewhere (components/ui/field.tsx via
+ * label.tsx, etc.) with no audit of the fallout — this scopes the actual
+ * Minerva palette (cream surfaces, emerald primary) to just the billing
+ * screens. Wrap any billing page content in `.mv-billing-scope`.
+ */
+.mv-billing-scope {
+  --background: var(--mv-cream-soft);
+  --foreground: var(--mv-ink);
+  --card: var(--mv-surface);
+  --card-foreground: var(--mv-ink);
+  --popover: var(--mv-surface);
+  --popover-foreground: var(--mv-ink);
+  --primary: var(--mv-green-dark);
+  --primary-foreground: var(--mv-surface);
+  --secondary: var(--mv-green-tint);
+  --secondary-foreground: var(--mv-green-dark);
+  --muted: var(--mv-cream);
+  --muted-foreground: var(--mv-ink-soft);
+  --accent: var(--mv-green-light);
+  --accent-foreground: var(--mv-green-dark);
+  --destructive: var(--mv-red);
+  --destructive-foreground: var(--mv-surface);
+  --border: var(--mv-border);
+  --input: var(--mv-border);
+  --ring: var(--mv-green);
+  --radius: 0.875rem;
+}
+
+.dark .mv-billing-scope {
+  --background: var(--mv-ink);
+  --foreground: var(--mv-cream-soft);
+  --card: #23281e;
+  --card-foreground: var(--mv-cream-soft);
+  --popover: #23281e;
+  --popover-foreground: var(--mv-cream-soft);
+  --primary: var(--mv-green);
+  --primary-foreground: var(--mv-ink);
+  --secondary: #2c331f;
+  --secondary-foreground: var(--mv-green-light);
+  --muted: #2c331f;
+  --muted-foreground: var(--mv-ink-mute);
+  --accent: #33402b;
+  --accent-foreground: var(--mv-green-light);
+  --destructive: var(--mv-red);
+  --destructive-foreground: var(--mv-surface);
+  --border: #3a4231;
+  --input: #3a4231;
+  --ring: var(--mv-green);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

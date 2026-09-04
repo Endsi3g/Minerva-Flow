@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PLAN_AI_QUOTAS, PLAN_NAMES, type PlanTier, calculateQuotaUsage } from "@/lib/ai/quotas";
+import { sendBillingLifecycleEmail, getWorkspaceOwnerContact } from "@/lib/email/billing-lifecycle";
 
 export { PLAN_AI_QUOTAS, PLAN_NAMES, type PlanTier, calculateQuotaUsage };
 
@@ -110,6 +111,9 @@ export async function trackAiTokenUsage(
     }
 
     const row = data[0];
+    if (row.is_quota_exceeded) {
+      await notifyQuotaExceededOnce(workspaceId, planTier);
+    }
     return {
       tokensUsed: row.tokens_used,
       monthlyQuota: row.monthly_quota,
@@ -119,4 +123,54 @@ export async function trackAiTokenUsage(
     console.error("[trackAiTokenUsage Exception]", err);
     return null;
   }
+}
+
+/**
+ * Fires the "quota Flow AI atteint" email the first time a workspace crosses
+ * 100% in a given billing period — deduped by period_start via
+ * workspace_billing_emails, so it can't re-fire on every subsequent AI call
+ * within the same still-exceeded period.
+ */
+async function notifyQuotaExceededOnce(workspaceId: string, planTier: PlanTier): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    const { data: usageRow } = await admin
+      .from("workspace_ai_usage")
+      .select("period_start")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (!usageRow?.period_start) return;
+
+    const owner = await getWorkspaceOwnerContact(workspaceId);
+    if (!owner) return;
+
+    await sendBillingLifecycleEmail({
+      workspaceId,
+      email: owner.email,
+      step: "quota_exceeded",
+      dedupeKey: `period:${usageRow.period_start}`,
+      params: { firstName: owner.firstName, planName: PLAN_NAMES[planTier] },
+    });
+  } catch (err) {
+    console.error("[notifyQuotaExceededOnce]", err);
+  }
+}
+
+/**
+ * Updates a workspace's plan tier + monthly token quota to match its Stripe
+ * subscription — called from the checkout/webhook flow, never from the
+ * token-tracking path above. PostgREST upsert only writes the columns
+ * given here, so tokens_used_current_period/period bounds are left alone.
+ */
+export async function setWorkspacePlanTier(workspaceId: string, planTier: PlanTier): Promise<void> {
+  const admin = createAdminClient();
+  await admin.from("workspace_ai_usage").upsert(
+    {
+      workspace_id: workspaceId,
+      plan_tier: planTier,
+      monthly_token_quota: PLAN_AI_QUOTAS[planTier],
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "workspace_id" }
+  );
 }

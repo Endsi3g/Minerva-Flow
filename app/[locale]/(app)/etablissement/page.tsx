@@ -13,6 +13,8 @@ import {
   updateRestaurantAction,
 } from "@/app/[locale]/(app)/settings/actions";
 import { getOrCreateDefaultMenuShareTokenAction } from "./actions";
+import { checkCanAddEstablishmentAction } from "@/app/[locale]/(app)/billing/actions";
+import { EstablishmentLimitModal } from "@/components/billing/EstablishmentLimitModal";
 import { DirectOrderingWidgetGenerator } from "@/components/etablissement/DirectOrderingWidgetGenerator";
 import type { RestaurantInput } from "@/lib/data/restaurants";
 import type { Restaurant, OpeningHours, DayHours } from "@/lib/types";
@@ -302,11 +304,20 @@ function EstablishmentIdentityCard() {
 function OtherEstablishments() {
   const { restaurants, restaurantId, setRestaurantId } = useApp();
   const [createOpen, setCreateOpen] = useState(false);
+  const [limitOpen, setLimitOpen] = useState(false);
+  const [checkingLimit, setCheckingLimit] = useState(false);
   const [editing, setEditing] = useState<Restaurant | null>(null);
   const [form, setForm] = useState<RestaurantFormValues>(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  function openCreate() {
+  async function openCreate() {
+    setCheckingLimit(true);
+    const limit = await checkCanAddEstablishmentAction();
+    setCheckingLimit(false);
+    if (limit && !limit.allowed) {
+      setLimitOpen(true);
+      return;
+    }
     setForm(emptyForm);
     setCreateOpen(true);
   }
@@ -349,7 +360,7 @@ function OtherEstablishments() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-[16px] font-medium text-mv-ink">Autres établissements</h2>
-        <Button size="sm" variant="secondary" onClick={openCreate}>
+        <Button size="sm" variant="secondary" onClick={openCreate} disabled={checkingLimit}>
           <Plus size={15} /> Ajouter un établissement
         </Button>
       </div>
@@ -387,6 +398,8 @@ function OtherEstablishments() {
           ))}
         </div>
       )}
+
+      <EstablishmentLimitModal open={limitOpen} onClose={() => setLimitOpen(false)} />
 
       <Modal
         open={createOpen}

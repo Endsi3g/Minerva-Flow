@@ -27,6 +27,10 @@
     {
       "path": "/api/cron/lifecycle-engine",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/billing-lifecycle-engine",
+      "schedule": "0 15 * * *"
     }
   ]
 }
