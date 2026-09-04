@@ -74,6 +74,7 @@ export function AssistantChatView({
   initialCanvasDoc = null,
   allCanvasDocs: initialCanvasDocs = [],
   projectFolders: initialProjectFolders = [],
+  onHold = false,
 }: {
   restaurantId: string;
   conversationId: string;
@@ -86,6 +87,8 @@ export function AssistantChatView({
   initialCanvasDoc?: ChatCanvasDoc | null;
   allCanvasDocs?: ChatCanvasDoc[];
   projectFolders?: ChatProjectFolder[];
+  /** Flow AI kill switch (lib/ai/config.ts) — page stays reachable, sending is blocked. */
+  onHold?: boolean;
 }) {
   const router = useRouter();
   const { authUser } = useApp();
@@ -658,7 +661,14 @@ export function AssistantChatView({
         </div>
 
         {/* Zone de chat active avec Thread et Claude-style composer */}
-        <div className="flex-1 overflow-hidden min-h-0">
+        <div className="relative flex-1 overflow-hidden min-h-0">
+          {onHold && (
+            <div className="absolute inset-x-0 top-0 z-30 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[12.5px] font-medium text-amber-900">
+              <Bell size={14} className="shrink-0 text-amber-600" />
+              Flow AI est temporairement en pause — l&apos;historique reste consultable, mais l&apos;envoi de
+              messages est désactivé pour le moment.
+            </div>
+          )}
           <AssistantRuntimeProvider runtime={runtime}>
             <Thread
               userName={userName}
@@ -668,6 +678,16 @@ export function AssistantChatView({
               onSelectModel={setSelectedModel}
             />
           </AssistantRuntimeProvider>
+          {onHold && (
+            <div
+              className="absolute inset-0 z-20 cursor-not-allowed bg-[#fbf9f4]/40"
+              onClickCapture={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toast.info("Flow AI est en pause pour le moment — revenez bientôt.");
+              }}
+            />
+          )}
         </div>
       </main>
 
