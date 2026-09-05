@@ -24,6 +24,7 @@ import {
   Wallet,
   TrendingDown,
   UserCircle,
+  Lock,
 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useApp } from "@/lib/app-context";
@@ -77,8 +78,9 @@ const MORE_ITEMS: MoreItem[] = [
 export function MobileTabBar() {
   const t = useTranslations("nav");
   const pathname = usePathname();
-  const { role } = useApp();
+  const { role, isPlatformAdmin } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
+  const flowAiLocked = !isPlatformAdmin;
 
   const tabs: TabItem[] = [
     { href: "/overview", translationKey: "mobileHome", icon: LayoutGrid },
@@ -95,17 +97,21 @@ export function MobileTabBar() {
       <nav className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] items-stretch border-t border-mv-border bg-mv-cream-soft/95 backdrop-blur-sm md:hidden">
         {tabs.map((tab) => {
           const active = pathname.startsWith(tab.href);
+          const locked = tab.href === "/assistant" && flowAiLocked;
           const Icon = tab.icon;
           return (
             <Link
               key={tab.href}
               href={tab.href}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition-colors",
-                active ? "text-mv-green-dark" : "text-mv-ink-faint"
+                "relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition-colors",
+                locked ? "text-mv-ink-faint opacity-60" : active ? "text-mv-green-dark" : "text-mv-ink-faint"
               )}
             >
               <Icon size={19} strokeWidth={active ? 2.2 : 1.8} className={active ? "text-mv-green-dark" : undefined} />
+              {locked && (
+                <Lock size={10} className="absolute right-[26%] top-0.5 text-mv-ink-faint" />
+              )}
               <span>{t(tab.translationKey)}</span>
             </Link>
           );
