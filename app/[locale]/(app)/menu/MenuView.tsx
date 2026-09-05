@@ -923,7 +923,13 @@ function MarginDriftPanel({
 
 type MenuInsightIdea = { title: string; action: string };
 
-function MenuAiInsightsPanel({ restaurantId }: { restaurantId: string | null }) {
+function MenuAiInsightsPanel({
+  restaurantId,
+  isPlatformAdminUser,
+}: {
+  restaurantId: string | null;
+  isPlatformAdminUser: boolean;
+}) {
   const [ideas, setIdeas] = useState<MenuInsightIdea[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -970,6 +976,22 @@ function MenuAiInsightsPanel({ restaurantId }: { restaurantId: string | null }) 
     } finally {
       setLaunchingIndex(null);
     }
+  }
+
+  if (!isPlatformAdminUser) {
+    return (
+      <div className="mb-6 rounded-xl bg-mv-cream-soft px-4 py-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-mv-ink">
+            <Sparkles size={14} className="text-mv-green-dark" /> Idées de campagnes Flow AI
+          </p>
+          <Badge tone="neutral">Bientôt disponible</Badge>
+        </div>
+        <p className="text-[12px] text-mv-ink-faint">
+          Nous peaufinons votre copilote IA — cette carte sera bientôt fonctionnelle, en même temps que Flow AI.
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -1028,6 +1050,7 @@ export function MenuView({
   initialOffers,
   inventoryItems = [],
   initialRecipes = {},
+  isPlatformAdminUser = false,
 }: {
   restaurantId: string | null;
   initialItems: MenuItem[];
@@ -1037,6 +1060,7 @@ export function MenuView({
   initialOffers: Offer[];
   inventoryItems?: InventoryItem[];
   initialRecipes?: Record<string, RecipeItem[]>;
+  isPlatformAdminUser?: boolean;
 }) {
   const t = useTranslations("menu.page");
   const tq = useTranslations("menu.quadrant");
@@ -1212,7 +1236,9 @@ export function MenuView({
         />
       )}
 
-      {canManage && restaurantId && <MenuAiInsightsPanel restaurantId={restaurantId} />}
+      {canManage && restaurantId && (
+        <MenuAiInsightsPanel restaurantId={restaurantId} isPlatformAdminUser={isPlatformAdminUser} />
+      )}
 
       {items.length === 0 ? (
         <EmptyState

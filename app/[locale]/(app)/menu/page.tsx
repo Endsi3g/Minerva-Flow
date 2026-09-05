@@ -7,6 +7,7 @@ import { getMenuSharesForRestaurant } from "@/lib/data/menu-shares";
 import { getOffersForRestaurant } from "@/lib/data/offers";
 import { getInventoryItems } from "@/lib/data/inventory";
 import { getRecipeItemsForMenuItems } from "@/lib/data/recipes";
+import { isPlatformAdmin } from "@/lib/data/admin";
 import { MenuView } from "./MenuView";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -16,6 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function MenuPage() {
   const restaurantId = await getCurrentRestaurantId();
+  const isPlatformAdminUser = await isPlatformAdmin();
 
   const [items, restaurant, shares, offers, inventoryItems] = restaurantId
     ? await Promise.all([
@@ -44,6 +46,7 @@ export default async function MenuPage() {
       initialOffers={offers}
       inventoryItems={inventoryItems}
       initialRecipes={Object.fromEntries(recipesByMenuItem)}
+      isPlatformAdminUser={isPlatformAdminUser}
     />
   );
 }
