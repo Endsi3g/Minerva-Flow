@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Loader2, Wrench, Users, ArrowRight, Check, FileText, Landmark, Gift, Share2, Copy } from "lucide-react";
-import { Onboarding, ChoiceGroup, useOnboarding } from "@/components/ui/onboarding";
+import { Onboarding, ChoiceGroup, useOnboarding, StepIndicator } from "@/components/ui/onboarding";
 import { Instagram as InstagramIcon } from "@/components/ui/BrandIcons";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Field, Input } from "@/components/minerva/FormField";
@@ -219,6 +219,8 @@ export function OnboardingWizard({
       canGoNext={(step) => step !== 1 || (fullName.trim().length > 0 && restaurantNameInput.trim().length > 0)}
       className="border-none bg-transparent p-0 shadow-none"
     >
+      <OnboardingProgressHeader />
+
       <Onboarding.Step step={1}>
         <div className="flex flex-col items-center gap-5">
           <div className="relative">
@@ -489,6 +491,43 @@ export function OnboardingWizard({
   );
 }
 
+const STEP_LABELS: Record<number, string> = { 1: "Profil", 2: "Outils", 3: "Équipe" };
+
+/**
+ * The single source of onboarding progress shown to the user — replaces a
+ * previous setup where the page shell displayed a static "Étape 2/2" that
+ * never moved while this wizard's own 3-step state advanced invisibly
+ * underneath it (the two disagreed the moment the user left step 1). Step
+ * 1's title lives here too instead of in the page shell, since steps 2/3
+ * already carry their own heading and repeating "Faites connaissance" above
+ * them read as a leftover from step 1.
+ */
+function OnboardingProgressHeader() {
+  const { currentStep, totalSteps } = useOnboarding();
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center gap-3">
+        <StepIndicator currentStep={currentStep} totalSteps={totalSteps} variant="pills" className="max-w-[88px] flex-1 justify-start" />
+        <span className="font-mono text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+          Étape {currentStep} / {totalSteps} · {STEP_LABELS[currentStep] ?? ""}
+        </span>
+      </div>
+
+      {currentStep === 1 && (
+        <div className="mt-4">
+          <h1 className="font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[32px]">
+            Faites connaissance
+          </h1>
+          <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
+            Personnalisez votre profil et le nom de votre établissement.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * Custom per-step footer instead of the generic Onboarding.Navigation:
  * step 1's "Continuer" has async work to run (and can fail) before
@@ -582,8 +621,13 @@ function StepOneContinueButton({
       onClick={async () => {
         setPending(true);
         const error = await onContinue();
-        setPending(false);
-        if (!error) onAdvance();
+        // Only clear `pending` on failure — on success it stays true (button
+        // stays disabled, "Un instant…" stays visible) until this component
+        // unmounts on step change, instead of flashing back to an idle,
+        // clickable "Continuer" the user could double-click while nothing on
+        // screen has changed yet.
+        if (error) setPending(false);
+        else onAdvance();
       }}
     >
       {pending ? <Loader2 size={15} className="animate-spin" /> : null}

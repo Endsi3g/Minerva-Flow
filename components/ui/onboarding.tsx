@@ -273,7 +273,12 @@ function OnboardingStep({ step, children, className, ...props }: OnboardingStepP
         <motion.div
           initial={{ opacity: 0, x: 14 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -14 }}
+          // No exit delay: a lingering, still-interactive previous step
+          // behind an already-idle "Continuer" button is worse than a hard
+          // cut — see OnboardingWizard's StepOneContinueButton, whose
+          // pending state is only meaningful if the old step actually
+          // disappears the instant it does.
+          exit={{ opacity: 0, x: -14, transition: { duration: 0 } }}
           transition={{ duration: 0.22, ease: "easeOut" }}
           className={cn(className)}
           data-slot="onboarding-step"
