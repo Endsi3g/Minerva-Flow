@@ -9,6 +9,8 @@ import { buildReports, type ReportData } from "@/lib/reports";
 import { computeAlerts } from "@/lib/engine/alerts";
 import { isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { AssistantChatView } from "@/components/chat/AssistantChatView";
+import { AssistantUnavailable } from "@/components/chat/AssistantUnavailable";
+import { isPlatformAdmin } from "@/lib/data/admin";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
 import { isFlowAiOnHold } from "@/lib/ai/config";
 
@@ -17,6 +19,8 @@ export default async function AssistantConversationPage({
 }: {
   params: Promise<{ conversationId: string }>;
 }) {
+  if (!(await isPlatformAdmin())) return <AssistantUnavailable />;
+
   const { conversationId } = await params;
   const restaurantId = await getCurrentRestaurantId();
   if (!restaurantId) redirect("/overview");

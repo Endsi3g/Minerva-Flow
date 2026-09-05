@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AI_MODEL, isAiConfigured } from "@/lib/ai/config";
 import { buildRestaurantDataSnapshot } from "@/lib/ai/context";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
+import { isPlatformAdmin } from "@/lib/data/admin";
 
 const menuInsightsSchema = z.object({
   ideas: z.array(
@@ -17,6 +18,13 @@ const menuInsightsSchema = z.object({
 });
 
 export async function POST() {
+  // Flow AI is gated behind isPlatformAdmin() everywhere else right now
+  // (see AssistantUnavailable) — this card must not be the one door left
+  // unlocked, so it's gated here too, not just in the button it hides.
+  if (!(await isPlatformAdmin())) {
+    return NextResponse.json({ ideas: [], message: "Flow AI arrive bientôt." });
+  }
+
   const restaurantId = await getCurrentRestaurantId();
   if (!restaurantId) {
     return NextResponse.json({ ideas: [] });

@@ -48,6 +48,7 @@ import {
   Shield,
   TrendingUp,
   Building2,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -56,6 +57,7 @@ import { useTranslations } from "next-intl";
 import type { Role } from "@/lib/types";
 import { SearchDialog } from "./SearchDialog";
 import { LocaleSwitcher } from "./LocaleSwitcher";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const;
 // 288px (was 256) — the longer page renames this session ("Performance
@@ -176,6 +178,8 @@ function NavLink({
   onNavigate,
   isFavorite,
   onToggleFavorite,
+  locked,
+  lockedTooltip,
 }: {
   href: string;
   label: string;
@@ -184,26 +188,42 @@ function NavLink({
   onNavigate?: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: (e: React.MouseEvent) => void;
+  locked?: boolean;
+  lockedTooltip?: string;
 }) {
+  const link = (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={cn(
+        "flex flex-1 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all duration-150",
+        active
+          ? "bg-mv-green text-mv-cream-soft font-semibold shadow-sm"
+          : locked
+            ? "text-mv-ink-faint opacity-60 hover:bg-mv-ink/[0.04] hover:opacity-80"
+            : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
+      )}
+    >
+      <Icon
+        size={16}
+        strokeWidth={active ? 2.2 : 1.5}
+        className={cn("shrink-0 transition-all duration-150", active ? "text-mv-cream-soft" : "opacity-60")}
+      />
+      <span className="truncate flex-1">{label}</span>
+      {locked && <Lock size={12} className="shrink-0 opacity-60" />}
+    </Link>
+  );
+
   return (
     <div className="group relative flex items-center">
-      <Link
-        href={href}
-        onClick={onNavigate}
-        className={cn(
-          "flex flex-1 items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all duration-150",
-          active
-            ? "bg-mv-green text-mv-cream-soft font-semibold shadow-sm"
-            : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
-        )}
-      >
-        <Icon
-          size={16}
-          strokeWidth={active ? 2.2 : 1.5}
-          className={cn("shrink-0 transition-all duration-150", active ? "text-mv-cream-soft" : "opacity-60")}
-        />
-        <span className="truncate flex-1">{label}</span>
-      </Link>
+      {locked && lockedTooltip ? (
+        <Tooltip>
+          <TooltipTrigger render={link} />
+          <TooltipContent side="right">{lockedTooltip}</TooltipContent>
+        </Tooltip>
+      ) : (
+        link
+      )}
       {onToggleFavorite && (
         <button
           type="button"
@@ -381,6 +401,10 @@ export function AppSidebar() {
   const allowedByRole = (n: NavItem) =>
     n.roles.includes(role) && (!sidebarPermissions || sidebarPermissions.includes(n.key));
 
+  // Flow AI is in construction — locked for everyone except platform admins,
+  // who keep real access to build/test it.
+  const isFlowAiLocked = (n: NavItem) => n.key === "assistant" && !isPlatformAdmin;
+
   const allNavItemsList = [...coreNavItems, ...operationsItems, ...analyticsItems, ...settingsGroupItems];
   const favoriteItems = allNavItemsList.filter((item) => favoriteKeys.includes(item.key) && allowedByRole(item));
 
@@ -485,6 +509,8 @@ export function AppSidebar() {
                     onNavigate={closeMobile}
                     isFavorite={favoriteKeys.includes(item.key)}
                     onToggleFavorite={(e) => toggleFavorite(item.key, e)}
+                    locked={isFlowAiLocked(item)}
+                    lockedTooltip="Bientôt disponible"
                   />
                 ))}
                 {visibleLtvAnalyticsItems.map((item) => (
@@ -523,6 +549,8 @@ export function AppSidebar() {
                   onNavigate={closeMobile}
                   isFavorite={favoriteKeys.includes(item.key)}
                   onToggleFavorite={(e) => toggleFavorite(item.key, e)}
+                  locked={isFlowAiLocked(item)}
+                  lockedTooltip="Bientôt disponible"
                 />
               ))
             )}
