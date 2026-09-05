@@ -6,8 +6,6 @@ import { createCampaign } from "@/lib/data/campaigns";
 import { createEmployeeTask } from "@/lib/data/employee-tasks";
 import { getEmployees } from "@/lib/data/employees";
 import {
-  saveCanvasDoc,
-  deleteCanvasDoc,
   createProjectFolder,
   deleteProjectFolder,
   deleteConversation,
@@ -143,25 +141,6 @@ export async function executeStaffTaskAction(input: {
   }
 }
 
-// ── 4. Action Sauvegarde Canvas ────────────────────────────────────────────
-export async function executeCanvasSaveAction(input: {
-  id?: string;
-  restaurantId: string;
-  conversationId?: string | null;
-  title: string;
-  content: string;
-  contentJson?: Record<string, unknown>;
-}) {
-  try {
-    const doc = await saveCanvasDoc(input);
-    if (!doc) return { success: false, error: "Impossible de sauvegarder le document." };
-    return { success: true, doc };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Erreur inconnue";
-    return { success: false, error: message };
-  }
-}
-
 // ── 5. Action Épinglage Session ─────────────────────────────────────────────
 export async function executeTogglePinAction(conversationId: string, isPinned: boolean) {
   try {
@@ -220,17 +199,6 @@ export async function executeDeleteCustomAgentAction(id: string) {
   try {
     const ok = await deleteCustomAgent(id);
     revalidatePath("/assistant/agents");
-    return { success: ok };
-  } catch {
-    return { success: false };
-  }
-}
-
-// ── 10. Action Suppression Document Canvas ─────────────────────────────────
-export async function executeDeleteCanvasDocAction(id: string) {
-  try {
-    const ok = await deleteCanvasDoc(id);
-    revalidatePath("/assistant");
     return { success: ok };
   } catch {
     return { success: false };
