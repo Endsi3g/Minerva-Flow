@@ -44,7 +44,6 @@ export default async function OnboardingPage() {
 
   return (
     <AuthShell
-      step={{ current: 2, total: 2, label: "Restaurant" }}
       panelHeadline="Presque prêt. Configurons votre établissement."
       panelSubline="Le reste — adresse, chiffres clés, outils — se complète en tout temps depuis l'application, sans bloquer votre accès."
       panelPoints={ONBOARDING_PANEL_POINTS}
@@ -54,24 +53,15 @@ export default async function OnboardingPage() {
         </p>
       }
     >
-      <h1 className="font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[32px]">
-        Faites connaissance
-      </h1>
-      <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
-        Personnalisez votre profil et le nom de votre établissement.
-      </p>
-
-      <div className="mt-6">
-        <OnboardingWizard
-          userId={user.id}
-          restaurantId={membership?.restaurantId ?? ""}
-          restaurantName={restaurant?.name ?? "Mon restaurant"}
-          initialServiceModel={restaurant?.serviceModel === "cafe" ? "cafe" : "restaurant"}
-          initialFullName={profile?.fullName ?? ""}
-          initialAvatarUrl={profile?.avatarUrl ?? null}
-          initialRole={membership?.role ?? "owner"}
-        />
-      </div>
+      <OnboardingWizard
+        userId={user.id}
+        restaurantId={membership?.restaurantId ?? ""}
+        restaurantName={restaurant?.name ?? "Mon restaurant"}
+        initialServiceModel={restaurant?.serviceModel === "cafe" ? "cafe" : "restaurant"}
+        initialFullName={profile?.fullName ?? ""}
+        initialAvatarUrl={profile?.avatarUrl ?? null}
+        initialRole={membership?.role ?? "owner"}
+      />
     </AuthShell>
   );
 }

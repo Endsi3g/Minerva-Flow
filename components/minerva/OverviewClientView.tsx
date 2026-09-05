@@ -189,6 +189,11 @@ export function OverviewClientView({
               <p className="mt-1 font-display text-[19px] font-medium text-mv-ink">
                 {formatCurrency(ltvImpact.incrementalRevenue)}
               </p>
+              {ltvImpact.incrementalRevenue === 0 && (
+                <p className="mt-0.5 text-[11px] leading-snug text-mv-ink-faint">
+                  Aucune relance automatique envoyée pour l&apos;instant.
+                </p>
+              )}
               <p className="mt-0.5 flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark">
                 Voir le détail
                 <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
