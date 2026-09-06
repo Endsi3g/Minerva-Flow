@@ -12,6 +12,7 @@ struct Customer: Codable, Identifiable {
     let totalSpent: Double
     var loyaltyPoints: Int
     var notificationFrequency: String
+    var marketingConsent: Bool
     let favoriteOfferIds: [String]
 
     enum CodingKeys: String, CodingKey {
@@ -25,6 +26,7 @@ struct Customer: Codable, Identifiable {
         case totalSpent = "total_spent"
         case loyaltyPoints = "loyalty_points"
         case notificationFrequency = "notification_frequency"
+        case marketingConsent = "marketing_consent"
         case favoriteOfferIds = "favorite_offer_ids"
     }
 }

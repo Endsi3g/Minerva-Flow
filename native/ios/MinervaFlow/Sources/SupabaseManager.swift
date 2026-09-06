@@ -317,6 +317,33 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    /// Lets a customer see and change their own marketing consent after
+    /// signup — closes a real gap where the AuthView signup checkbox set
+    /// this once and there was never a way to revisit it. Mirrors the web
+    /// portal's updateMyProfileAction: opting out only flips
+    /// marketing_consent to false and leaves consent_source/consent_at
+    /// alone (an audit trail of when consent was originally given, not
+    /// something opting out should erase); opting in (re)stamps both.
+    func updateMarketingConsent(_ optedIn: Bool) async -> Bool {
+        guard let customerId = customer?.id else { return false }
+        do {
+            if optedIn {
+                struct Patch: Encodable { let marketing_consent: Bool; let consent_source: String; let consent_at: String }
+                let patch = Patch(marketing_consent: true, consent_source: "native_profile", consent_at: ISO8601DateFormatter().string(from: Date()))
+                try await client.from("customers").update(patch).eq("id", value: customerId).execute()
+            } else {
+                struct Patch: Encodable { let marketing_consent: Bool }
+                try await client.from("customers").update(Patch(marketing_consent: false)).eq("id", value: customerId).execute()
+            }
+            customer?.marketingConsent = optedIn
+            return true
+        } catch {
+            lastError = "La mise à jour de vos préférences a échoué. Réessayez."
+            print("updateMarketingConsent error: \(error)")
+            return false
+        }
+    }
+
     /// Self-serve redemption: self_redeem_reward re-derives the caller's own
     /// customer row from auth.uid() and re-checks the points balance
     /// server-side (see supabase/migrations/0040_reward_redemptions.sql) —

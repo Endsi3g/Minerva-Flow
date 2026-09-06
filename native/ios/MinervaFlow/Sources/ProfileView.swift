@@ -33,6 +33,7 @@ struct ProfileView: View {
                             identityCard(for: customer)
                             pointsHistorySection
                             notificationSection
+                            consentSection(for: customer)
                             securitySection
                             aboutSection
                             signOutButton
@@ -290,6 +291,45 @@ struct ProfileView: View {
             .padding(14)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Consent
+
+    /// A customer's marketing consent was, until now, only ever set once
+    /// (or missed entirely) at signup with no way to revisit it — this is
+    /// the missing "change your mind later" surface, mirroring the web
+    /// portal's own consent toggle in ProfileSettingsCard.
+    private func consentSection(for customer: Customer) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Communications")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Offres et nouvelles par courriel")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(MinervaColor.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Vous pouvez retirer votre consentement à tout moment.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Toggle("", isOn: Binding(
+                    get: { customer.marketingConsent },
+                    set: { newValue in
+                        Task { await supabase.updateMarketingConsent(newValue) }
+                    }
+                ))
+                .labelsHidden()
+                .tint(MinervaColor.emerald)
+            }
+            .padding(14)
+            .background(MinervaColor.creamSoft)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
     }
 
     // MARK: - Security
