@@ -75,7 +75,15 @@ export async function proxy(request: NextRequest) {
     pathWithoutLocale.startsWith("/api/cron/") ||
     pathWithoutLocale.startsWith("/api/webhooks/") ||
     pathWithoutLocale.startsWith("/api/system/") ||
-    pathWithoutLocale === "/api/stripe/webhook";
+    pathWithoutLocale === "/api/stripe/webhook" ||
+    // Supabase Auth's "Send Email" hook — a server-to-server call with no
+    // Supabase session cookie of its own (it verifies via a signed
+    // standardwebhooks payload instead, see the route itself). Redirecting
+    // it to /login the way every other unauthenticated /api/* request gets
+    // redirected would turn every auth email — including staff signup and
+    // password reset, not just the customer OTP this was built for — into
+    // a silent no-op the moment the hook is enabled in the dashboard.
+    pathWithoutLocale === "/api/auth/send-email-hook";
 
   // Fast-path for completely public routes when no auth cookies exist:
   // Skip the remote Supabase Auth network call to achieve single-digit millisecond TTFB at the edge.
