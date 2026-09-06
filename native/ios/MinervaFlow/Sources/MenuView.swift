@@ -97,6 +97,7 @@ struct MenuView: View {
                     lines: cartLines,
                     taxRate: supabase.taxRate,
                     acceptsTips: supabase.acceptsTips,
+                    googleMapsUrl: supabase.restaurantGoogleMapsUrl,
                     onOrdered: {
                         cart = [:]
                         checkoutOpen = false
@@ -394,6 +395,7 @@ struct CheckoutSheet: View {
     let lines: [(item: NativeMenuItem, quantity: Int)]
     let taxRate: Double
     let acceptsTips: Bool
+    var googleMapsUrl: String? = nil
     let onOrdered: () -> Void
 
     @EnvironmentObject var supabase: SupabaseManager
@@ -560,6 +562,23 @@ struct CheckoutSheet: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 30)
+
+            if let mapsUrlString = googleMapsUrl, let url = URL(string: mapsUrlString) {
+                Link(destination: url) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "star.fill")
+                        Text("Laisser un avis Google")
+                    }
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                }
+                .foregroundStyle(MinervaColor.emeraldDark)
+                .background(MinervaColor.emerald.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 24)
+            }
+
             Spacer()
             Button("Fermer") {
                 onOrdered()

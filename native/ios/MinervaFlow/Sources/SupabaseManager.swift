@@ -15,6 +15,7 @@ final class SupabaseManager: ObservableObject {
     @Published var redemptions: [RewardRedemption] = []
     @Published var offers: [Offer] = []
     @Published var restaurantName: String?
+    @Published var restaurantGoogleMapsUrl: String?
     @Published var loyaltyTier2Threshold: Double = 150
     @Published var loyaltyTier3Threshold: Double = 400
     @Published var menuItems: [NativeMenuItem] = []
@@ -405,6 +406,7 @@ final class SupabaseManager: ObservableObject {
             let name: String
             let loyaltyTier2Threshold: Double
             let loyaltyTier3Threshold: Double
+            let googleMapsUrl: String?
         }
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurant"))
@@ -412,6 +414,7 @@ final class SupabaseManager: ObservableObject {
             restaurantName = decoded.name
             loyaltyTier2Threshold = decoded.loyaltyTier2Threshold
             loyaltyTier3Threshold = decoded.loyaltyTier3Threshold
+            restaurantGoogleMapsUrl = decoded.googleMapsUrl
         } catch {
             print("fetchRestaurantInfo error: \(error)")
         }
