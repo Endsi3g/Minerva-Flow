@@ -209,6 +209,14 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
           <li>Partage natif, badge « en cours », plage de dates</li>
         </ul>
       </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>Lien Google Maps par restaurant</h3>
+        <ul>
+          <li>Champ configurable owner (page « Établissement ») — un bouton dédié apparaît sur la fiche restaurant native, à côté du téléphone et du site web</li>
+          <li>Base posée pour une future relance « laissez un avis » après une commande</li>
+        </ul>
+      </div>
     </div>
   </section>
 
@@ -324,7 +332,6 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
     <div class="section-head"><h2>Demandes reçues, pas encore construites</h2><span class="section-count">scope réel, pas oublié — chacune a une raison précise d'attendre</span></div>
     <div class="list-card">
       <div class="list-row"><span class="tag missing">Bloqué</span><div class="body"><strong>Paiement Apple Pay pour cueillette</strong><p>Demande un compte marchand (Stripe Connect déjà présent sur <code>restaurants</code>, mais l'intégration paiement elle-même reste à construire) et l'entitlement Apple Pay, qui exige le Developer Program payant.</p></div></div>
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Lien Google Maps par restaurant + demande d'avis post-commande</strong><p>Nécessite un nouveau champ configurable owner (URL Google Maps) sur <code>restaurants</code> — pas encore construit.</p></div></div>
       <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Notifications comportementales (menu consulté sans commande, relance WhatsApp)</strong><p>Système à concevoir : quel déclencheur exact, quel délai, WhatsApp Business API à intégrer séparément (l'envoi APNs natif, lui, est déjà prêt — voir plus haut).</p></div></div>
       <div class="list-row"><span class="tag missing">Non précisé</span><div class="body"><strong>« Système de discussion avec la carte »</strong><p>Mentionné une fois sans détail retrouvable dans nos échanges ni dans le code existant — en attente de votre précision avant de commencer quoi que ce soit ici.</p></div></div>
     </div>

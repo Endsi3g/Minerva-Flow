@@ -43,6 +43,7 @@ type RestaurantRow = {
   visit_rewards_enabled: boolean;
   visit_reward_tiers: VisitRewardTier[] | null;
   image_urls: string[] | null;
+  google_maps_url: string | null;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -81,6 +82,7 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     visitRewardsEnabled: row.visit_rewards_enabled ?? false,
     visitRewardTiers: row.visit_reward_tiers ?? [],
     imageUrls: row.image_urls ?? [],
+    googleMapsUrl: row.google_maps_url,
   };
 }
 
@@ -277,6 +279,7 @@ export type RestaurantInput = {
   acceptsTips?: boolean;
   serviceModel?: "restaurant" | "cafe" | "hybrid";
   imageUrls?: string[];
+  googleMapsUrl?: string;
 };
 
 // The 21-day retention inactivity threshold is calibrated for a sit-down
@@ -437,6 +440,7 @@ export async function updateRestaurant(
   if (patch.acceptsTips !== undefined) dbPatch.accepts_tips = patch.acceptsTips;
   if (patch.serviceModel !== undefined) dbPatch.service_model = patch.serviceModel;
   if (patch.imageUrls !== undefined) dbPatch.image_urls = patch.imageUrls;
+  if (patch.googleMapsUrl !== undefined) dbPatch.google_maps_url = patch.googleMapsUrl || null;
 
   // Explicit coordinates (e.g. a Google Places import, authoritative) take
   // priority and skip re-geocoding entirely.

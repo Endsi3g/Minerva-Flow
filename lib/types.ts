@@ -45,6 +45,7 @@ export type Restaurant = {
   visitRewardsEnabled: boolean;
   visitRewardTiers: VisitRewardTier[];
   imageUrls: string[];
+  googleMapsUrl: string | null;
 };
 
 export type Employee = {

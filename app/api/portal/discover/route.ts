@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("restaurants")
-    .select("id, name, description, address, city, province, lat, lng, phone, website, color, opening_hours, service_model, image_urls")
+    .select("id, name, description, address, city, province, lat, lng, phone, website, color, opening_hours, service_model, image_urls, google_maps_url")
     .not("lat", "is", null)
     .not("lng", "is", null);
 
@@ -49,6 +49,7 @@ export async function GET(req: Request) {
       openingHours: r.opening_hours,
       serviceModel: (r.service_model as string | null) ?? "restaurant",
       imageUrls: (r.image_urls as string[] | null) ?? [],
+      googleMapsUrl: r.google_maps_url as string | null,
     })),
   });
 }

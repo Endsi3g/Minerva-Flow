@@ -155,6 +155,17 @@ struct RestaurantDetailView: View {
                     .background(MinervaColor.emerald.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 11))
                 }
+
+                if let mapsUrlString = restaurant.googleMapsUrl, let url = URL(string: mapsUrlString) {
+                    Link(destination: url) {
+                        Image(systemName: "star.bubble.fill")
+                            .font(.system(size: 13))
+                            .frame(width: 42, height: 38)
+                    }
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .background(MinervaColor.emerald.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 11))
+                }
             }
         }
     }
