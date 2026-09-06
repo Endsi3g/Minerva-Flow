@@ -41,6 +41,59 @@ function emailShell(bodyHtml: string, ctaLabel: string, ctaUrl: string): string 
 </html>`;
 }
 
+const AUTH_ACTION_COPY: Record<string, { subject: string; body: string; cta: string }> = {
+  signup: {
+    subject: "Confirmez votre compte Minerva Flow",
+    body: "Bienvenue — confirmez votre adresse pour activer votre compte.",
+    cta: "Confirmer mon compte",
+  },
+  recovery: {
+    subject: "Réinitialisez votre mot de passe Minerva Flow",
+    body: "Une réinitialisation de mot de passe a été demandée pour ce compte. Si ce n'était pas vous, ignorez ce courriel.",
+    cta: "Choisir un nouveau mot de passe",
+  },
+  email_change: {
+    subject: "Confirmez votre nouvelle adresse — Minerva Flow",
+    body: "Confirmez le changement d'adresse courriel sur votre compte Minerva Flow.",
+    cta: "Confirmer la nouvelle adresse",
+  },
+  invite: {
+    subject: "Vous êtes invité·e sur Minerva Flow",
+    body: "Vous avez été invité·e à rejoindre un établissement sur Minerva Flow.",
+    cta: "Accepter l'invitation",
+  },
+};
+
+/**
+ * Fallback for every staff-side auth email (signup confirmation, password
+ * recovery, email change, invite) once the Send Email Auth Hook is enabled
+ * project-wide (see app/api/auth/send-email-hook) — Supabase no longer
+ * sends anything on its own for ANY auth email type once that hook exists,
+ * so this covers everything the hook doesn't route to
+ * sendCustomerOtpEmail. Builds the same verification URL Supabase's own
+ * default template would have used.
+ */
+export async function sendAuthActionEmail({
+  to,
+  actionType,
+  verifyUrl,
+}: {
+  to: string;
+  actionType: string;
+  verifyUrl: string;
+}): Promise<{ ok: boolean }> {
+  if (!resend) return { ok: false };
+  const copy = AUTH_ACTION_COPY[actionType] ?? AUTH_ACTION_COPY.signup;
+
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: copy.subject,
+    html: emailShell(`<p>${copy.body}</p>`, copy.cta, verifyUrl),
+  });
+  return { ok: !error };
+}
+
 /**
  * Best-effort: caller keeps the copyable link in the UI as the source of
  * truth regardless of what this returns — email delivery is a nicety, never

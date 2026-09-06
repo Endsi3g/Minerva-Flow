@@ -1,0 +1,67 @@
+import Foundation
+
+struct Customer: Codable, Identifiable {
+    let id: String
+    let restaurantId: String
+    let name: String
+    let visitCount: Int
+    let totalSpent: Double
+    let loyaltyPoints: Int
+    let notificationFrequency: String
+    let favoriteOfferIds: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case restaurantId = "restaurant_id"
+        case name
+        case visitCount = "visit_count"
+        case totalSpent = "total_spent"
+        case loyaltyPoints = "loyalty_points"
+        case notificationFrequency = "notification_frequency"
+        case favoriteOfferIds = "favorite_offer_ids"
+    }
+}
+
+struct LoyaltyTransaction: Codable, Identifiable {
+    let id: String
+    let type: String
+    let pointsDelta: Int
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case type
+        case pointsDelta = "points_delta"
+        case createdAt = "created_at"
+    }
+}
+
+/// Mirrors lib/loyalty-tiers.ts exactly — same thresholds, same three tiers,
+/// same "vient de rejoindre / dépense notable / candidat ambassadeur"
+/// progression, so a customer sees an identical status whether they're on
+/// the web portal or this app.
+enum LoyaltyTier: String {
+    case habitue, privilegie, ambassadeur
+
+    var label: String {
+        switch self {
+        case .habitue: return "Habitué"
+        case .privilegie: return "Privilégié"
+        case .ambassadeur: return "Ambassadeur"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .habitue: return "leaf"
+        case .privilegie: return "star.fill"
+        case .ambassadeur: return "crown.fill"
+        }
+    }
+
+    static func resolve(totalSpent: Double, tier2: Double = 150, tier3: Double = 400) -> LoyaltyTier {
+        if totalSpent >= tier3 { return .ambassadeur }
+        if totalSpent >= tier2 { return .privilegie }
+        return .habitue
+    }
+}
