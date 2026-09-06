@@ -103,10 +103,16 @@ export async function GET(req: Request) {
           });
         }
       }
-      for (const c of eligible(getInactiveCustomers(mapped, restaurantRow.retention_inactivity_days))) {
+      // "important_only" customers skip the two routine nudges (inactivity,
+      // value_drift) — birthday and reward_available stay, since those are
+      // occasion-based rather than "come back" prompts.
+      const routineEligible = (list: Customer[]) =>
+        eligible(list.filter((c) => c.notificationFrequency !== "important_only"));
+
+      for (const c of routineEligible(getInactiveCustomers(mapped, restaurantRow.retention_inactivity_days))) {
         targets.set(c.id, { customer: c, trigger: "inactivity" });
       }
-      for (const c of eligible(getDriftingHighValueCustomers(mapped))) {
+      for (const c of routineEligible(getDriftingHighValueCustomers(mapped))) {
         targets.set(c.id, { customer: c, trigger: "value_drift" });
       }
       for (const c of eligible(getUpcomingBirthdays(mapped, restaurantRow.retention_birthday_lead_days))) {

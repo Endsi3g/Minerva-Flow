@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Modal } from "@/components/ui/Modal";
+import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
 import {
   getLoyaltyTier,
   loyaltyTierLabel,
@@ -22,6 +24,8 @@ import {
   updateMyProfileAction,
   selfRedeemRewardAction,
   submitPortalOrderAction,
+  toggleFavoriteOfferAction,
+  exportMyDataAction,
 } from "./actions";
 import {
   Copy,
@@ -43,6 +47,8 @@ import {
   User,
   ArrowRight,
   Clock,
+  Star,
+  Download,
 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import QRCode from "qrcode";
@@ -176,8 +182,10 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
   const [birthday, setBirthday] = useState(customer.birthday ?? "");
   const [city, setCity] = useState(customer.city ?? "");
   const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
+  const [notificationFrequency, setNotificationFrequency] = useState(customer.notificationFrequency);
   const [isSaving, setIsSaving] = useState(false);
   const [savedTick, setSavedTick] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   async function handleSave() {
     setIsSaving(true);
@@ -186,6 +194,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         marketingConsent,
         birthday: birthday || null,
         city: city.trim() || null,
+        notificationFrequency,
       });
       if (ok) {
         toast.success("Profil mis à jour.");
@@ -199,10 +208,32 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
     }
   }
 
+  async function handleExport() {
+    setIsExporting(true);
+    try {
+      const data = await exportMyDataAction(customer.id);
+      if (!data) {
+        toast.error("L'export a échoué — réessayez.");
+        return;
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `minerva-flow-mes-donnees-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <Card>
       <CardHeader title="Mon profil" description="Reçois des offres personnalisées et un cadeau le jour de ton anniversaire." />
-      <div className="space-y-3">
+      <div className="space-y-4">
         <Field label="Date de naissance" hint="Optionnel">
           <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
         </Field>
@@ -217,9 +248,41 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
           />
           <span>J&apos;accepte de recevoir des offres et rappels par courriel ou SMS.</span>
         </label>
+
+        <div>
+          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Fréquence des rappels</p>
+          <RadioGroup
+            value={notificationFrequency}
+            onValueChange={(v) => setNotificationFrequency(v as "all" | "important_only")}
+            className="gap-2"
+          >
+            <label className="flex items-center gap-2 text-[12.5px] text-mv-ink">
+              <RadioGroupItem value="all" />
+              Tout — offres, rappels de visite, anniversaire
+            </label>
+            <label className="flex items-center gap-2 text-[12.5px] text-mv-ink">
+              <RadioGroupItem value="important_only" />
+              L&apos;essentiel seulement — anniversaire et récompenses prêtes
+            </label>
+          </RadioGroup>
+        </div>
+
+        <CustomerPushToggle restaurantId={customer.restaurantId} />
+
         <Button size="sm" onClick={handleSave} disabled={isSaving}>
           {isSaving ? "Enregistrement…" : savedTick ? "Enregistré ✓" : "Enregistrer"}
         </Button>
+      </div>
+
+      <div className="mt-5 border-t border-mv-border-soft pt-4">
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={isExporting}
+          className="flex items-center gap-1.5 text-[12px] font-semibold text-mv-ink-soft hover:text-mv-ink disabled:opacity-50"
+        >
+          <Download size={13} /> {isExporting ? "Préparation…" : "Télécharger mes données"}
+        </button>
       </div>
     </Card>
   );
@@ -524,33 +587,63 @@ function isOfferLive(offer: Offer, now = Date.now()) {
 
 /** Home tab's discovery feed — offers live here (not buried in the ordering
  * screen) since checking "what's new" is a browsing action, distinct from
- * the deliberate task of building a cart. Each offer hands off to Order. */
-function OffersFeed({ offers, onOrderClick }: { offers: Offer[]; onOrderClick: () => void }) {
+ * the deliberate task of building a cart. Each offer hands off to Order.
+ * Favorited offers (customer's own manual pins, see toggleFavoriteOfferAction)
+ * float to the top — the "personnalisation manuelle" the loyalty-benchmark
+ * doc recommends in place of a recommendation engine we don't have. */
+function OffersFeed({
+  offers,
+  favoriteIds,
+  onToggleFavorite,
+  onOrderClick,
+}: {
+  offers: Offer[];
+  favoriteIds: string[];
+  onToggleFavorite: (offerId: string) => void;
+  onOrderClick: () => void;
+}) {
   const t = useTranslations("portal.view");
-  const liveOffers = useMemo(() => offers.filter((o) => isOfferLive(o)), [offers]);
+  const liveOffers = useMemo(() => {
+    const live = offers.filter((o) => isOfferLive(o));
+    return [...live].sort((a, b) => Number(favoriteIds.includes(b.id)) - Number(favoriteIds.includes(a.id)));
+  }, [offers, favoriteIds]);
   if (liveOffers.length === 0) return null;
 
   return (
     <div>
       <p className="mb-2.5 text-[13px] font-semibold text-mv-ink">{t("offersTitle")}</p>
       <div className="space-y-2">
-        {liveOffers.map((offer) => (
-          <button
-            key={offer.id}
-            type="button"
-            onClick={onOrderClick}
-            className="flex w-full items-center gap-3 rounded-2xl border border-mv-green/25 bg-mv-green-tint px-4 py-3.5 text-left transition-transform hover:-translate-y-0.5"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-mv-green-dark">
-              <Tag size={15} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold text-mv-green-darker">{offer.title}</p>
-              {offer.description && <p className="truncate text-[11.5px] text-mv-green-dark">{offer.description}</p>}
+        {liveOffers.map((offer) => {
+          const isFavorite = favoriteIds.includes(offer.id);
+          return (
+            <div
+              key={offer.id}
+              className="flex w-full items-center gap-3 rounded-2xl border border-mv-green/25 bg-mv-green-tint px-4 py-3.5 text-left transition-transform hover:-translate-y-0.5"
+            >
+              <button type="button" onClick={onOrderClick} className="flex min-w-0 flex-1 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-mv-green-dark">
+                  <Tag size={15} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-mv-green-darker">{offer.title}</p>
+                  {offer.description && <p className="truncate text-[11.5px] text-mv-green-dark">{offer.description}</p>}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleFavorite(offer.id)}
+                aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                aria-pressed={isFavorite}
+                className="shrink-0 rounded-full p-1.5 text-mv-green-dark transition-colors hover:bg-white/60"
+              >
+                <Star size={16} fill={isFavorite ? "currentColor" : "none"} />
+              </button>
+              <button type="button" onClick={onOrderClick} aria-label="Commander">
+                <ArrowRight size={14} className="shrink-0 text-mv-green-dark" />
+              </button>
             </div>
-            <ArrowRight size={14} className="shrink-0 text-mv-green-dark" />
-          </button>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -878,6 +971,17 @@ export function PortalView({
   const [redemptions, setRedemptions] = useState<RewardRedemption[]>(data.redemptions);
   const [cart, setCart] = useState<Record<string, number>>({});
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [favoriteOfferIds, setFavoriteOfferIds] = useState<string[]>(customer.favoriteOfferIds);
+
+  async function handleToggleFavorite(offerId: string) {
+    const previous = favoriteOfferIds;
+    const optimistic = previous.includes(offerId)
+      ? previous.filter((id) => id !== offerId)
+      : [...previous, offerId];
+    setFavoriteOfferIds(optimistic);
+    const result = await toggleFavoriteOfferAction(customer.id, offerId);
+    if (result === null) setFavoriteOfferIds(previous);
+  }
 
   function handleLinkCreated(programId: string, link: CustomerReferralLink) {
     setPrograms((prev) => prev.map((p) => (p.program.id === programId ? { ...p, link } : p)));
@@ -946,7 +1050,12 @@ export function PortalView({
               onOrderClick={() => setActiveTab("order")}
             />
 
-            <OffersFeed offers={offers} onOrderClick={() => setActiveTab("order")} />
+            <OffersFeed
+              offers={offers}
+              favoriteIds={favoriteOfferIds}
+              onToggleFavorite={handleToggleFavorite}
+              onOrderClick={() => setActiveTab("order")}
+            />
 
             {data.rewards.length > 0 && (
               <button

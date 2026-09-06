@@ -627,6 +627,8 @@ export type Customer = {
   consentAt: string | null;
   birthday: string | null;
   city: string | null;
+  favoriteOfferIds: string[];
+  notificationFrequency: "all" | "important_only";
 };
 
 export type LoyaltyReward = {
