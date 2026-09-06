@@ -48,10 +48,12 @@ struct MenuView: View {
             ZStack(alignment: .bottom) {
                 Group {
                     if supabase.isLoadingMenu && supabase.menuItems.isEmpty {
-                        VStack {
-                            Spacer()
-                            ProgressView()
-                            Spacer()
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 22) {
+                                SkeletonBlock(cornerRadius: 6).frame(width: 140, height: 24)
+                                Skeletons.grid(count: 6)
+                            }
+                            .padding(18)
                         }
                     } else if supabase.menuItems.isEmpty {
                         emptyState
@@ -196,6 +198,7 @@ struct MenuView: View {
                     }
                 }
             }
+            .horizontalEdgeFade()
         }
     }
 

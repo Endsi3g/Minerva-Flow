@@ -256,7 +256,7 @@ struct MenuItemDetailView: View {
             }
 
             if isLoadingReviews {
-                ProgressView().frame(maxWidth: .infinity).padding(.vertical, 12)
+                Skeletons.list(count: 2)
             } else if reviews.isEmpty {
                 Text("Soyez le premier à donner votre avis sur ce plat.")
                     .font(.system(size: 12.5))
