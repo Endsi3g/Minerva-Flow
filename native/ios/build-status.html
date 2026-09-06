@@ -116,6 +116,10 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
       <h3><code>restaurants</code> également illisible par un client</h3>
       <p>Même famille de bogue : le nom du restaurant et les seuils de palier étaient <code>null</code> côté natif depuis le début. Corrigé via un pont dédié (<code>/api/portal/restaurant</code>) plutôt qu'une règle RLS directe, car cette table contient aussi les identifiants Stripe Connect et les données financières du restaurant.</p>
     </div>
+    <div class="bugfix-card">
+      <h3>Consentement marketing coché à l'inscription, jamais enregistré</h3>
+      <p>La case à cocher de la page de connexion native envoyait bien le choix du client, mais la fonction serveur qui crée le compte ne l'a jamais lu — <code>marketing_consent</code> restait bloqué à « non » pour tout le monde, peu importe ce qui avait été coché. Un client qui avait explicitement consenti n'a donc jamais pu recevoir les communications du programme de fidélité. Corrigé en production et vérifié directement dans la base de données ; un interrupteur a aussi été ajouté à la page Profil pour changer d'avis après coup.</p>
+    </div>
   </section>
 
   <section>
@@ -158,6 +162,7 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
         <ul>
           <li>Photo, nom, courriel (avec confirmation par lien) et téléphone, tous modifiables</li>
           <li>Historique complet des points (gagnés et dépensés) et des échanges de récompenses</li>
+          <li>Consentement aux communications marketing modifiable à tout moment (case cochée à l'inscription, interrupteur ici ensuite)</li>
           <li>Verrouillage Face ID / Touch ID, liens légaux fonctionnels, suppression de compte irréversible</li>
         </ul>
       </div>
