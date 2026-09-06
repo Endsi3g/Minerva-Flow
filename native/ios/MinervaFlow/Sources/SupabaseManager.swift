@@ -670,6 +670,7 @@ final class SupabaseManager: ObservableObject {
 
     @Published var nearbyRestaurants: [DiscoverRestaurant] = []
     @Published var isLoadingDiscover = false
+    @Published var popularNearby: [PopularMenuItem] = []
 
     /// Every restaurant with coordinates on file, via the bridge (see
     /// app/api/portal/discover/route.ts's own comment on why this can't be
@@ -684,6 +685,15 @@ final class SupabaseManager: ObservableObject {
         } catch {
             lastError = "Impossible de charger les restaurants à proximité."
             print("fetchNearbyRestaurants error: \(error)")
+        }
+    }
+
+    func fetchPopularNearby() async {
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/popular"))
+            popularNearby = try JSONDecoder().decode(PopularMenuItemsResponse.self, from: data).items
+        } catch {
+            print("fetchPopularNearby error: \(error)")
         }
     }
 
