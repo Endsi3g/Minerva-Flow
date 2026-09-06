@@ -6,6 +6,7 @@ struct Customer: Codable, Identifiable {
     let restaurantId: String
     var name: String
     var email: String?
+    var phone: String?
     var avatarUrl: String?
     let visitCount: Int
     let totalSpent: Double
@@ -18,6 +19,7 @@ struct Customer: Codable, Identifiable {
         case restaurantId = "restaurant_id"
         case name
         case email
+        case phone
         case avatarUrl = "avatar_url"
         case visitCount = "visit_count"
         case totalSpent = "total_spent"
