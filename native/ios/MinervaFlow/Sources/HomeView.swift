@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var showMyCard = false
     @State private var showRestaurantMap = false
     @State private var notificationDeniedAlert = false
+    @State private var selectedOffer: Offer?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -54,6 +55,9 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showRestaurantMap) {
             RestaurantMapView()
+        }
+        .sheet(item: $selectedOffer) { offer in
+            OfferDetailView(offer: offer)
         }
         .alert("Notifications désactivées", isPresented: $notificationDeniedAlert) {
             Button("Ouvrir Réglages") {
@@ -256,26 +260,34 @@ struct HomeView: View {
                 .foregroundStyle(MinervaColor.ink)
 
             ForEach(supabase.offers) { offer in
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(alignment: .top, spacing: 6) {
-                        Image(systemName: "tag.fill")
-                            .font(.system(size: 12))
-                            .padding(.top, 2)
-                        Text(offer.title)
-                            .font(.system(size: 14, weight: .semibold))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .foregroundStyle(MinervaColor.emeraldDark)
+                Button {
+                    selectedOffer = offer
+                } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: "tag.fill")
+                                .font(.system(size: 12))
+                                .padding(.top, 2)
+                            Text(offer.title)
+                                .font(.system(size: 14, weight: .semibold))
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 6)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundStyle(MinervaColor.emeraldDark)
 
-                    if let description = offer.description {
-                        Text(description)
-                            .font(.system(size: 12))
-                            .foregroundStyle(MinervaColor.emerald)
-                            .fixedSize(horizontal: false, vertical: true)
+                        if let description = offer.description {
+                            Text(description)
+                                .font(.system(size: 12))
+                                .foregroundStyle(MinervaColor.emerald)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .buttonStyle(.plain)
                 .background(MinervaColor.emerald.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.emerald.opacity(0.2)))

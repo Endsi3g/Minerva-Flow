@@ -411,12 +411,23 @@ final class SupabaseManager: ObservableObject {
     /// menu is: referral_programs has no customer-facing RLS policy (see
     /// app/api/portal/referrals/route.ts's own doc comment) — a loyalty
     /// customer is never a restaurant_members row.
+    /// Pre-generates any missing referral link immediately after loading —
+    /// sharing a referral should be a single tap (share the already-ready
+    /// link/QR), never "tap once to create a link, then tap again to
+    /// share it." A program the caller has never had a link for gets one
+    /// silently, right here, before the screen ever renders.
     func fetchReferrals() async {
         isLoadingReferrals = true
         defer { isLoadingReferrals = false }
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/referrals"))
-            referralPrograms = try JSONDecoder().decode(ReferralsResponse.self, from: data).programs
+            var programs = try JSONDecoder().decode(ReferralsResponse.self, from: data).programs
+            for index in programs.indices where programs[index].link == nil {
+                if let link = await createReferralLink(for: programs[index].program.id) {
+                    programs[index] = ReferralProgress(program: programs[index].program, link: link)
+                }
+            }
+            referralPrograms = programs
         } catch {
             lastError = "Les programmes de parrainage n'ont pas pu être chargés."
             print("fetchReferrals error: \(error)")

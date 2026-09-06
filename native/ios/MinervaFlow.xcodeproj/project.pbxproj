@@ -16,6 +16,7 @@
 		2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9CD9B5E79E9FE474707739 /* RewardsView.swift */; };
 		3AD982D4339D2835748F8A86 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */; };
 		442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C1D3C584B13E05EBD01750 /* MenuView.swift */; };
+		4E35352D66E4B11496D587ED /* OfferDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */; };
 		5C881A86FC3F7D67D6725336 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D70223A1891BFC32372F3C5 /* Models.swift */; };
 		7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */; };
 		81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001F62368824618EE0ACB49 /* SupabaseManager.swift */; };
@@ -53,6 +54,7 @@
 		89B5498B7D0733D7AA1958D9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		A0B3CE87BA193CEEDBA5D5D5 /* MinervaFlow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MinervaFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B8ABC1E0681608032F18B9B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferDetailView.swift; sourceTree = "<group>"; };
 		C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemDetailView.swift; sourceTree = "<group>"; };
 		CD8113A301B23FEECDBE8EDE /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
@@ -102,6 +104,7 @@
 				2D70223A1891BFC32372F3C5 /* Models.swift */,
 				471F651B424DBE91D0FC0A0E /* MyCardView.swift */,
 				2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */,
+				C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */,
 				47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */,
 				D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */,
 				D58EE17A9A62B1893F865891 /* RadialGauge.swift */,
@@ -232,6 +235,7 @@
 				5C881A86FC3F7D67D6725336 /* Models.swift in Sources */,
 				2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */,
 				3AD982D4339D2835748F8A86 /* NotificationManager.swift in Sources */,
+				4E35352D66E4B11496D587ED /* OfferDetailView.swift in Sources */,
 				7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */,
 				A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */,
 				CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */,
