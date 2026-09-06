@@ -5,9 +5,16 @@ import SwiftUI
 /// client" title, same copy tone, same cream background. The only real
 /// difference from the web: native uses a typed 6-digit code instead of a
 /// tapped magic link (deep-linking a link back into a native app is more
-/// friction-prone than typing 6 digits) — everything else, including the
-/// consent checkboxes ported from the Starbucks sign-up reference, follows
-/// the web's actual visual language, not an invented one.
+/// friction-prone than typing 6 digits).
+///
+/// Beyond the visual replica, this carries the production behavior a real
+/// OTP screen needs that a bare form does not: live email validation before
+/// the button ever becomes tappable, keyboard focus that advances itself
+/// between fields and dismisses on submit, auto-verification the instant
+/// the 6th digit lands (nobody wants to tap Confirm after typing a code
+/// meant to be typed once), a resend cooldown so a customer can't spam
+/// their own inbox, and real tappable links to the actual legal pages
+/// instead of static unlinked text next to a checkbox.
 struct AuthView: View {
     @EnvironmentObject var supabase: SupabaseManager
 
@@ -18,32 +25,60 @@ struct AuthView: View {
     @State private var marketingOptIn = true
     @State private var isBusy = false
     @State private var errorMessage: String?
+    @State private var resendCooldown = 0
+    @State private var resendTimer: Timer?
+    @State private var legalSheet: LegalDocument?
+
+    @FocusState private var focusedField: Field?
 
     enum Step { case email, code }
+    enum Field { case email, code }
+    enum LegalDocument: Identifiable {
+        case terms, privacy
+        var id: Self { self }
+        var title: String { self == .terms ? "Conditions d'utilisation" : "Politique de confidentialité" }
+        var url: URL {
+            URL(string: self == .terms ? "https://minervaflow.app/legal/terms" : "https://minervaflow.app/legal/privacy")!
+        }
+    }
 
     var body: some View {
         ZStack {
             MinervaColor.cream.ignoresSafeArea()
 
-            VStack(spacing: 32) {
-                Spacer()
+            ScrollView {
+                VStack(spacing: 32) {
+                    Spacer(minLength: 60)
 
-                HStack(spacing: 9) {
-                    Image("LogoMark")
-                        .resizable()
-                        .frame(width: 28, height: 28)
-                    (Text("Minerva ").foregroundStyle(MinervaColor.ink)
-                        + Text("Flow").foregroundStyle(MinervaColor.emeraldDark))
-                        .font(.system(size: 16, weight: .medium))
+                    HStack(spacing: 9) {
+                        Image("LogoMark")
+                            .resizable()
+                            .frame(width: 28, height: 28)
+                        (Text("Minerva ").foregroundStyle(MinervaColor.ink)
+                            + Text("Flow").foregroundStyle(MinervaColor.emeraldDark))
+                            .font(.system(size: 16, weight: .medium))
+                    }
+
+                    card
+
+                    Spacer(minLength: 60)
                 }
-
-                card
-
-                Spacer()
-                Spacer()
+                .padding(.horizontal, 28)
+                .frame(minHeight: UIScreen.main.bounds.height - 100)
             }
-            .padding(.horizontal, 28)
+            .scrollDismissesKeyboard(.interactively)
         }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("OK") { focusedField = nil }
+                    .font(.system(size: 14, weight: .semibold))
+            }
+        }
+        .sheet(item: $legalSheet) { doc in
+            LegalDocumentSheet(document: doc)
+        }
+        .onDisappear { resendTimer?.invalidate() }
     }
 
     private var card: some View {
@@ -86,25 +121,36 @@ struct AuthView: View {
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .submitLabel(.go)
+                    .focused($focusedField, equals: .email)
+                    .onSubmit { if canSubmit { Task { await primaryAction() } } }
                     .foregroundStyle(MinervaColor.ink)
                     .tint(MinervaColor.emerald)
                     .padding(12)
                     .background(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 11))
-                    .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 11)
+                            .stroke(emailLooksInvalid ? Color.red.opacity(0.5) : MinervaColor.border)
+                    )
+
+                if emailLooksInvalid {
+                    Text("Cette adresse ne semble pas valide.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             consentSection
 
             if let errorMessage {
-                Text(errorMessage)
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
+                errorBanner(errorMessage)
             }
 
             submitButton(title: "Recevoir le code", busyTitle: "Envoi…")
         }
+        .onAppear { focusedField = .email }
     }
 
     // MARK: - Step 2: code
@@ -132,40 +178,84 @@ struct AuthView: View {
 
             TextField("", text: $code, prompt: Text("123456").foregroundStyle(MinervaColor.inkFaint))
                 .keyboardType(.numberPad)
-                .font(.system(size: 22, weight: .semibold, design: .monospaced))
+                .textContentType(.oneTimeCode)
+                .font(.system(size: 24, weight: .semibold, design: .monospaced))
+                .tracking(6)
                 .multilineTextAlignment(.center)
+                .focused($focusedField, equals: .code)
                 .foregroundStyle(MinervaColor.ink)
                 .tint(MinervaColor.emerald)
                 .padding(14)
                 .background(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 11))
                 .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
+                .onChange(of: code) { _, newValue in
+                    // Keep only digits, cap at 6 — a pasted code with stray
+                    // whitespace or the "your code is" prefix some mail
+                    // clients quote shouldn't break auto-submit.
+                    let digitsOnly = String(newValue.filter(\.isNumber).prefix(6))
+                    if digitsOnly != newValue { code = digitsOnly }
+                    if digitsOnly.count == 6 && !isBusy {
+                        focusedField = nil
+                        Task { await primaryAction() }
+                    }
+                }
 
             if let errorMessage {
-                Text(errorMessage)
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
+                errorBanner(errorMessage)
             }
 
             submitButton(title: "Confirmer", busyTitle: "Vérification…")
 
+            HStack(spacing: 4) {
+                Text("Vous n'avez rien reçu ?")
+                    .font(.system(size: 12))
+                    .foregroundStyle(MinervaColor.inkFaint)
+                Button(resendCooldown > 0 ? "Renvoyer (\(resendCooldown)s)" : "Renvoyer le code") {
+                    Task { await resendCode() }
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(resendCooldown > 0 ? MinervaColor.inkFaint : MinervaColor.emeraldDark)
+                .disabled(resendCooldown > 0)
+            }
+
             Button("Changer de courriel") {
-                step = .email
-                code = ""
-                errorMessage = nil
+                withAnimation {
+                    step = .email
+                    code = ""
+                    errorMessage = nil
+                    stopResendCooldown()
+                }
             }
             .font(.system(size: 12.5, weight: .semibold))
             .foregroundStyle(MinervaColor.inkSoft)
         }
+        .onAppear { startResendCooldown() }
     }
 
     // MARK: - Shared pieces
+
+    private func errorBanner(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 12))
+                .padding(.top, 1)
+            Text(message)
+                .font(.system(size: 12.5))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .foregroundStyle(.red)
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.red.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
 
     private func submitButton(title: String, busyTitle: String) -> some View {
         Button {
             let generator = UIImpactFeedbackGenerator(style: .medium)
             generator.impactOccurred()
+            focusedField = nil
             Task { await primaryAction() }
         } label: {
             HStack {
@@ -185,9 +275,18 @@ struct AuthView: View {
         .animation(.easeInOut(duration: 0.2), value: step)
     }
 
+    private var emailLooksInvalid: Bool {
+        !email.isEmpty && !isValidEmail(email)
+    }
+
+    private func isValidEmail(_ value: String) -> Bool {
+        let pattern = #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#
+        return value.range(of: pattern, options: .regularExpression) != nil
+    }
+
     private var canSubmit: Bool {
         if step == .email {
-            return !email.isEmpty && acceptedTerms
+            return isValidEmail(email) && acceptedTerms
         }
         return code.count == 6
     }
@@ -195,31 +294,50 @@ struct AuthView: View {
     /// Real consent capture (required Terms of Use, optional marketing
     /// opt-in) instead of an implicit "you agreed by continuing" — the web
     /// portal doesn't ask this at login since staff enters the customer
-    /// first, but a native self-serve signup needs it explicitly.
+    /// first, but a native self-serve signup needs it explicitly, with real
+    /// tappable links to the actual legal pages rather than plain text.
     private var consentSection: some View {
         VStack(alignment: .leading, spacing: 9) {
-            consentRow(checked: $marketingOptIn, text: "J'aimerais recevoir des offres par courriel. Optionnel.")
-            consentRow(checked: $acceptedTerms, text: "J'accepte les Conditions d'utilisation et la Politique de confidentialité.")
+            consentRow(checked: $marketingOptIn) {
+                Text("J'aimerais recevoir des offres par courriel. Optionnel.")
+            }
+            consentRow(checked: $acceptedTerms) {
+                (Text("J'accepte les ")
+                    + Text("Conditions d'utilisation").underline()
+                    + Text(" et la ")
+                    + Text("Politique de confidentialité").underline())
+            }
         }
     }
 
-    private func consentRow(checked: Binding<Bool>, text: String) -> some View {
-        Button {
-            checked.wrappedValue.toggle()
-        } label: {
-            HStack(alignment: .top, spacing: 9) {
+    private func consentRow<Label: View>(checked: Binding<Bool>, @ViewBuilder label: () -> Label) -> some View {
+        HStack(alignment: .top, spacing: 9) {
+            Button {
+                checked.wrappedValue.toggle()
+            } label: {
                 Image(systemName: checked.wrappedValue ? "checkmark.square.fill" : "square")
                     .font(.system(size: 16))
                     .foregroundStyle(MinervaColor.emeraldDark)
-                Text(text)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(MinervaColor.inkSoft)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
             }
+            .buttonStyle(.plain)
+
+            label()
+                .font(.system(size: 11.5))
+                .foregroundStyle(MinervaColor.inkSoft)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .onTapGesture {
+                    // Tapping the sentence itself opens the relevant
+                    // document rather than toggling the checkbox — the
+                    // checkbox glyph is the only tap target for consent
+                    // itself, matching how the web's own <Link> elements
+                    // work inside a still-clickable label.
+                    legalSheet = .terms
+                }
         }
-        .buttonStyle(.plain)
     }
+
+    // MARK: - Actions
 
     private func primaryAction() async {
         errorMessage = nil
@@ -228,7 +346,7 @@ struct AuthView: View {
         do {
             if step == .email {
                 try await supabase.sendCode(email: email.trimmingCharacters(in: .whitespaces), marketingOptIn: marketingOptIn)
-                step = .code
+                withAnimation { step = .code }
             } else {
                 try await supabase.verifyCode(email: email.trimmingCharacters(in: .whitespaces), code: code)
             }
@@ -236,6 +354,63 @@ struct AuthView: View {
             errorMessage = step == .email
                 ? "Impossible d'envoyer le code. Vérifiez l'adresse et réessayez."
                 : "Code invalide ou expiré. Réessayez."
+            if step == .code {
+                // A rejected code should be retyped, not silently
+                // re-verified against the same wrong digits.
+                code = ""
+            }
+        }
+    }
+
+    private func resendCode() async {
+        guard resendCooldown == 0 else { return }
+        errorMessage = nil
+        do {
+            try await supabase.sendCode(email: email.trimmingCharacters(in: .whitespaces), marketingOptIn: marketingOptIn)
+            startResendCooldown()
+        } catch {
+            errorMessage = "Impossible de renvoyer le code pour l'instant. Réessayez dans un moment."
+        }
+    }
+
+    private func startResendCooldown() {
+        resendCooldown = 30
+        resendTimer?.invalidate()
+        resendTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            Task { @MainActor in
+                if resendCooldown > 0 {
+                    resendCooldown -= 1
+                } else {
+                    resendTimer?.invalidate()
+                }
+            }
+        }
+    }
+
+    private func stopResendCooldown() {
+        resendTimer?.invalidate()
+        resendCooldown = 0
+    }
+}
+
+/// In-app browser sheet for the two legal documents — reuses the real,
+/// already-published web pages (app/[locale]/legal/terms,
+/// app/[locale]/legal/privacy) instead of duplicating their text natively,
+/// so the legal copy has exactly one source of truth.
+struct LegalDocumentSheet: View {
+    let document: AuthView.LegalDocument
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            WebPageView(url: document.url)
+                .navigationTitle(document.title)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Fermer") { dismiss() }
+                    }
+                }
         }
     }
 }
