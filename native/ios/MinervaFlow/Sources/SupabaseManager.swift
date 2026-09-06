@@ -764,6 +764,72 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    // MARK: - Restaurant-level reviews
+
+    func fetchRestaurantReviews(restaurantId: String) async -> [RestaurantReview] {
+        do {
+            let reviews: [RestaurantReview] = try await client
+                .from("restaurant_reviews")
+                .select()
+                .eq("restaurant_id", value: restaurantId)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return reviews
+        } catch {
+            print("fetchRestaurantReviews error: \(error)")
+            return []
+        }
+    }
+
+    /// Uploads to the "review-images" bucket under this user's own folder
+    /// (review_images_owner_write RLS), returning the public URL — mirrors
+    /// uploadAvatar's pattern. Called once per photo before the review
+    /// itself is submitted, since the review row just stores URLs.
+    func uploadReviewImage(_ imageData: Data) async -> String? {
+        do {
+            guard let userId = try? await client.auth.session.user.id else { return nil }
+            let path = "\(userId)/review-\(UUID().uuidString).jpg"
+            try await client.storage.from("review-images").upload(
+                path,
+                data: imageData,
+                options: FileOptions(contentType: "image/jpeg")
+            )
+            return try client.storage.from("review-images").getPublicURL(path: path).absoluteString
+        } catch {
+            print("uploadReviewImage error: \(error)")
+            return nil
+        }
+    }
+
+    /// restaurant_reviews_customer_insert requires the caller to actually
+    /// be a loyalty customer of this specific restaurant, same RLS
+    /// pattern as the per-dish reviews.
+    func submitRestaurantReview(restaurantId: String, rating: Int, comment: String?, imageUrls: [String]) async -> Bool {
+        guard let customerId = customer?.id else { return false }
+        do {
+            struct NewReview: Encodable {
+                let restaurant_id: String
+                let customer_id: String
+                let rating: Int
+                let comment: String?
+                let image_urls: [String]
+            }
+            try await client
+                .from("restaurant_reviews")
+                .upsert(
+                    NewReview(restaurant_id: restaurantId, customer_id: customerId, rating: rating, comment: comment, image_urls: Array(imageUrls.prefix(6))),
+                    onConflict: "restaurant_id,customer_id"
+                )
+                .execute()
+            return true
+        } catch {
+            lastError = "L'envoi de votre avis a échoué. Réessayez."
+            print("submitRestaurantReview error: \(error)")
+            return false
+        }
+    }
+
     // MARK: - Push notifications
 
     /// device_push_tokens_owner_all (auth.uid() = user_id) makes this a
