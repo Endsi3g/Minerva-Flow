@@ -61,6 +61,7 @@ targets:
     scheme:
       testTargets:
         - MinervaFlowTests
+        - MinervaFlowUITests
 
   MinervaFlowWidgetExtension:
     type: app-extension
@@ -104,3 +105,19 @@ targets:
         DEVELOPMENT_TEAM: DV9V35452J
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: true
+
+  MinervaFlowUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: MinervaFlowUITests
+    dependencies:
+      - target: MinervaFlow
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.minervaflow.loyalty.uitests
+        SWIFT_VERSION: "5.0"
+        DEVELOPMENT_TEAM: DV9V35452J
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: MinervaFlow
