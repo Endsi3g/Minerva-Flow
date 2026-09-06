@@ -14,6 +14,8 @@ struct ProfileView: View {
     @State private var legalSheet: AuthView.LegalDocument?
     @State private var showDeleteAccountSheet = false
     @State private var showEditProfile = false
+    @State private var isExportingData = false
+    @State private var exportedDataFileURL: URL?
 
     var body: some View {
         Group {
@@ -383,6 +385,8 @@ struct ProfileView: View {
                     legalSheet = .privacy
                 }
                 Divider().padding(.leading, 44)
+                exportDataRow
+                Divider().padding(.leading, 44)
                 aboutRow(icon: "info.circle", title: "Version", value: "1.0.0")
             }
             .background(MinervaColor.creamSoft)
@@ -394,30 +398,63 @@ struct ProfileView: View {
         Button {
             action?()
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .foregroundStyle(MinervaColor.inkSoft)
-                    .frame(width: 20)
-                Text(title)
-                    .font(.system(size: 13))
-                    .foregroundStyle(MinervaColor.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 8)
-                if let value {
-                    Text(value)
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(MinervaColor.inkFaint)
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(MinervaColor.inkFaint)
-                }
-            }
-            .padding(14)
+            aboutRowLabel(icon: icon, title: title, value: value)
         }
         .buttonStyle(.plain)
         .disabled(action == nil)
+    }
+
+    private func aboutRowLabel(icon: String, title: String, value: String? = nil) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundStyle(MinervaColor.inkSoft)
+                .frame(width: 20)
+            Text(title)
+                .font(.system(size: 13))
+                .foregroundStyle(MinervaColor.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            if let value {
+                Text(value)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(MinervaColor.inkFaint)
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(MinervaColor.inkFaint)
+            }
+        }
+        .padding(14)
+    }
+
+    /// Loi 25 self-serve portability, matching the web portal's own export
+    /// button. Fetches the JSON export on tap (rather than eagerly on
+    /// screen load, since it's a network call the person may never use)
+    /// and hands it to a real ShareLink the instant it's ready — the same
+    /// save/share mechanism already used for referral links and reviews,
+    /// so saving to Files or AirDropping it works exactly the way someone
+    /// already expects from the rest of the app.
+    private var exportDataRow: some View {
+        Group {
+            if let exportedDataFileURL {
+                ShareLink(item: exportedDataFileURL) {
+                    aboutRowLabel(icon: "square.and.arrow.down", title: "Exporter mes données")
+                }
+            } else {
+                Button {
+                    Task {
+                        isExportingData = true
+                        exportedDataFileURL = await supabase.exportMyData()
+                        isExportingData = false
+                    }
+                } label: {
+                    aboutRowLabel(icon: "square.and.arrow.down", title: isExportingData ? "Préparation…" : "Exporter mes données")
+                }
+                .buttonStyle(.plain)
+                .disabled(isExportingData)
+            }
+        }
     }
 
     // MARK: - Sign out

@@ -140,6 +140,45 @@ export async function getPortalData(customer: Customer): Promise<PortalData> {
 }
 
 /**
+ * Self-serve data export (Loi 25 — right to portability/access). Until
+ * this existed, the privacy policy's promise of a portability right
+ * (app/[locale]/legal/privacy/page.tsx §5) had no actual self-serve path —
+ * a customer had to email privacy@ and wait on a human. Returns only this
+ * one customer relationship's own data (their profile fields plus their
+ * own transactions, redemptions, and referral links), never the
+ * restaurant's catalog data (rewards/offers are the restaurant's
+ * configuration, not the customer's personal data) and never other
+ * customers' data. `customer` is trusted by the caller having already
+ * verified (via RLS or a verified Bearer token) that it belongs to the
+ * authenticated user — same precondition getPortalData already relies on.
+ */
+export async function exportCustomerData(customer: Customer): Promise<Record<string, unknown>> {
+  const portalData = await getPortalData(customer);
+  return {
+    exportedAt: new Date().toISOString(),
+    profile: {
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      birthday: customer.birthday,
+      city: customer.city,
+      marketingConsent: customer.marketingConsent,
+      consentSource: customer.consentSource,
+      consentAt: customer.consentAt,
+      visitCount: customer.visitCount,
+      totalSpent: customer.totalSpent,
+      loyaltyPoints: customer.loyaltyPoints,
+      memberSince: customer.createdAt,
+    },
+    transactions: portalData.transactions,
+    redemptions: portalData.redemptions,
+    referralLinks: portalData.programs
+      .filter((p) => p.link)
+      .map((p) => ({ program: p.program.name, code: p.link!.code, convertedCount: p.link!.convertedCount })),
+  };
+}
+
+/**
  * Self-serve redemption: the currently authenticated portal user spends
  * their own points for a reward via the self_redeem_reward RPC (which
  * resolves auth.uid() to their own customers row internally — no
