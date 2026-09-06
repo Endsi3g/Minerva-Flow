@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendPushToUsers } from "@/lib/push/send";
+import { sendAPNsToUsers } from "@/lib/push/apns";
 
 export type Notification = {
   id: string;
@@ -318,7 +319,13 @@ export async function notifyCustomers(input: {
     .map((c) => c.user_id)
     .filter((id): id is string => Boolean(id));
 
-  await sendPushToUsers(userIds, { title: input.title, body: input.body, link: input.link }, input.restaurantId);
+  await Promise.all([
+    sendPushToUsers(userIds, { title: input.title, body: input.body, link: input.link }, input.restaurantId),
+    // Separate delivery channel: Web Push above only reaches browsers/
+    // installed PWAs, never the native Swift app — see lib/push/apns.ts's
+    // own comment. No-ops until APNS_* env vars are configured.
+    sendAPNsToUsers(userIds, { title: input.title, body: input.body, link: input.link }),
+  ]);
 }
 
 /**

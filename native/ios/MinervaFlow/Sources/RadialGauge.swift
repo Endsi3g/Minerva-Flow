@@ -24,9 +24,14 @@ struct RadialGauge: View {
                 Text(centerValue)
                     .font(.system(size: 15, weight: .bold, design: .rounded))
                     .foregroundStyle(MinervaColor.ink)
-                Text(centerLabel)
-                    .font(.system(size: 8.5, weight: .medium))
-                    .foregroundStyle(MinervaColor.inkFaint)
+                // An empty label string still reserves its own line height,
+                // which pushes the value above true center — only lay out
+                // a second line when there's real text to show.
+                if !centerLabel.isEmpty {
+                    Text(centerLabel)
+                        .font(.system(size: 8.5, weight: .medium))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                }
             }
         }
         .frame(width: 56, height: 56)

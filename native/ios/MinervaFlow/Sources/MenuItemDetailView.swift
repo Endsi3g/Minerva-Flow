@@ -10,6 +10,14 @@ struct MenuItemDetailView: View {
     let item: NativeMenuItem
     let restaurantId: String
     let allItemsInCategory: [NativeMenuItem]
+    /// Only set when reached from the Commander tab's own menu (see
+    /// CategoryItemListView) — ordering only works at the restaurant the
+    /// customer is actually a loyalty member of, so a menu item browsed
+    /// from RestaurantDetailView's cross-restaurant discovery has no cart
+    /// to add into yet (nil here), and the action button reflects that
+    /// honestly instead of pretending to add to an order that can't be
+    /// placed.
+    var cart: Binding<[String: Int]>? = nil
 
     @EnvironmentObject var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
@@ -142,21 +150,25 @@ struct MenuItemDetailView: View {
 
     private var actionButtons: some View {
         HStack(spacing: 10) {
-            Button {
-                dismiss()
-            } label: {
+            if let cart {
+                addToCartControl(cart)
+            } else {
+                // Reached from cross-restaurant discovery, not the
+                // Commander tab — ordering only works at the restaurant
+                // the customer is actually a member of, so this is
+                // honestly informational, not a broken "add to cart".
                 HStack(spacing: 6) {
-                    Image(systemName: "cart.fill")
-                    Text("Commander")
+                    Image(systemName: "info.circle")
+                    Text("Devenez client de ce restaurant pour commander")
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .font(.system(size: 13.5, weight: .semibold))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(MinervaColor.inkSoft)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
+                .background(MinervaColor.creamSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .foregroundStyle(.white)
-            .background(MinervaColor.emerald)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .buttonStyle(PressableButtonStyle())
 
             Button {
                 showReviewSheet = true
@@ -167,6 +179,51 @@ struct MenuItemDetailView: View {
             }
             .foregroundStyle(MinervaColor.emeraldDark)
             .background(MinervaColor.emerald.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .buttonStyle(PressableButtonStyle())
+        }
+    }
+
+    /// A real add-to-cart control — quantity in, quantity out of the same
+    /// cart Commander's checkout reads from, not a button that only
+    /// dismisses the page and hopes the user remembers to also tap + on
+    /// the list row underneath.
+    private func addToCartControl(_ cart: Binding<[String: Int]>) -> some View {
+        let quantity = cart.wrappedValue[item.id] ?? 0
+        return HStack(spacing: 12) {
+            if quantity > 0 {
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    cart.wrappedValue[item.id] = max(0, quantity - 1)
+                } label: {
+                    Image(systemName: "minus.circle.fill").font(.system(size: 24))
+                }
+                .foregroundStyle(MinervaColor.inkSoft)
+                .buttonStyle(PressableButtonStyle())
+
+                Text("\(quantity)")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(MinervaColor.ink)
+                    .frame(minWidth: 18)
+            }
+
+            Button {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                cart.wrappedValue[item.id] = quantity + 1
+                if quantity == 0 { dismiss() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "cart.fill")
+                    Text(quantity > 0 ? "Ajouté" : "Ajouter au panier")
+                }
+                .font(.system(size: 13.5, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+            }
+            .foregroundStyle(.white)
+            .background(MinervaColor.emerald)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .buttonStyle(PressableButtonStyle())
         }
@@ -251,7 +308,7 @@ struct MenuItemDetailView: View {
                 HStack(spacing: 12) {
                     ForEach(relatedItems) { related in
                         NavigationLink {
-                            MenuItemDetailView(item: related, restaurantId: restaurantId, allItemsInCategory: allItemsInCategory)
+                            MenuItemDetailView(item: related, restaurantId: restaurantId, allItemsInCategory: allItemsInCategory, cart: cart)
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
                                 ZStack {

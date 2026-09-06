@@ -66,13 +66,15 @@ struct MenuView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .navigationTitle("Commander")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .animation(.easeInOut(duration: 0.25), value: cartCount)
             .task {
                 guard !hasLoadedOnce else { return }
                 hasLoadedOnce = true
                 await supabase.fetchMenu()
+                if supabase.nearbyRestaurants.isEmpty {
+                    await supabase.fetchNearbyRestaurants()
+                }
             }
             .refreshable { await supabase.fetchMenu() }
             .sheet(isPresented: $checkoutOpen) {
@@ -103,33 +105,97 @@ struct MenuView: View {
     /// count so it's obvious how much is behind it before tapping in.
     private var categoryGrid: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                ForEach(groupedMenu, id: \.category) { group in
-                    NavigationLink {
-                        CategoryItemListView(category: group.category, items: group.items, cart: $cart)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Image(systemName: "fork.knife")
-                                .font(.system(size: 20))
-                                .foregroundStyle(MinervaColor.emerald)
-                            Text(group.category)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(MinervaColor.ink)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Text("\(group.items.count) article\(group.items.count > 1 ? "s" : "")")
-                                .font(.system(size: 11))
-                                .foregroundStyle(MinervaColor.inkFaint)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(16)
-                    }
-                    .background(MinervaColor.creamSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                    .buttonStyle(PressableButtonStyle())
+            VStack(alignment: .leading, spacing: 22) {
+                Text("Commander")
+                    .font(MinervaFont.display(24))
+                    .foregroundStyle(MinervaColor.ink)
+                    .padding(.top, 4)
+
+                if !otherRestaurants.isEmpty {
+                    otherRestaurantsSection
                 }
-                Color.clear.frame(height: cartCount > 0 ? 80 : 8).gridCellColumns(2)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Catégories")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(MinervaColor.ink)
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        ForEach(groupedMenu, id: \.category) { group in
+                            NavigationLink {
+                                CategoryItemListView(category: group.category, items: group.items, cart: $cart)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Image(systemName: "fork.knife")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(MinervaColor.emerald)
+                                    Text(group.category)
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(MinervaColor.ink)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Text("\(group.items.count) article\(group.items.count > 1 ? "s" : "")")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(MinervaColor.inkFaint)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(16)
+                            }
+                            .background(MinervaColor.creamSoft)
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .buttonStyle(PressableButtonStyle())
+                        }
+                    }
+                }
+
+                Color.clear.frame(height: cartCount > 0 ? 80 : 8)
             }
             .padding(18)
+        }
+    }
+
+    private var otherRestaurants: [DiscoverRestaurant] {
+        supabase.nearbyRestaurants.filter { $0.id != supabase.customer?.restaurantId }
+    }
+
+    /// Cross-restaurant discovery, right from Commander — browsing other
+    /// participating restaurants/cafés and their own menus shouldn't
+    /// require leaving to the map first.
+    private var otherRestaurantsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("D'autres restaurants et cafés")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(otherRestaurants) { restaurant in
+                        NavigationLink {
+                            RestaurantDetailView(restaurantId: restaurant.id, previewName: restaurant.name)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ZStack {
+                                    Rectangle().fill(MinervaColor.ink.opacity(0.06))
+                                    Image(systemName: "storefront.fill").foregroundStyle(MinervaColor.inkFaint)
+                                }
+                                .frame(width: 160, height: 90)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                                Text(restaurant.name)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(MinervaColor.ink)
+                                    .lineLimit(1)
+                                if let city = restaurant.city {
+                                    Text(city)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(MinervaColor.inkFaint)
+                                }
+                            }
+                            .frame(width: 160, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
         }
     }
 
@@ -212,7 +278,7 @@ struct CategoryItemListView: View {
 
         return HStack(spacing: 12) {
             NavigationLink {
-                MenuItemDetailView(item: item, restaurantId: item.restaurantId, allItemsInCategory: items)
+                MenuItemDetailView(item: item, restaurantId: item.restaurantId, allItemsInCategory: items, cart: $cart)
             } label: {
                 HStack(spacing: 12) {
                     ZStack {

@@ -752,6 +752,9 @@ export type Offer = {
   title: string;
   description: string | null;
   imageUrl: string | null;
+  price: number | null;
+  includedItems: string[];
+  excludedItems: string[];
   active: boolean;
   startsAt: string | null;
   endsAt: string | null;

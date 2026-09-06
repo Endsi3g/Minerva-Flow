@@ -9,6 +9,9 @@ type OfferRow = {
   title: string;
   description: string | null;
   image_url: string | null;
+  price: number | null;
+  included_items: string[] | null;
+  excluded_items: string[] | null;
   active: boolean;
   starts_at: string | null;
   ends_at: string | null;
@@ -51,6 +54,9 @@ function mapOffer(row: OfferRow): Offer {
     title: row.title,
     description: row.description,
     imageUrl: row.image_url,
+    price: row.price,
+    includedItems: row.included_items ?? [],
+    excludedItems: row.excluded_items ?? [],
     active: row.active,
     startsAt: row.starts_at,
     endsAt: row.ends_at,
@@ -62,6 +68,9 @@ export type OfferInput = {
   title: string;
   description?: string | null;
   imageUrl?: string | null;
+  price?: number | null;
+  includedItems?: string[];
+  excludedItems?: string[];
   active?: boolean;
   startsAt?: string | null;
   endsAt?: string | null;
@@ -139,6 +148,9 @@ export async function createOffer(restaurantId: string, input: OfferInput): Prom
       title: input.title,
       description: input.description ?? null,
       image_url: input.imageUrl ?? null,
+      price: input.price ?? null,
+      included_items: input.includedItems ?? [],
+      excluded_items: input.excludedItems ?? [],
       active: input.active ?? true,
       starts_at: input.startsAt ?? null,
       ends_at: input.endsAt ?? null,
@@ -186,6 +198,9 @@ export async function updateOffer(
   if (input.title !== undefined) patch.title = input.title;
   if (input.description !== undefined) patch.description = input.description;
   if (input.imageUrl !== undefined) patch.image_url = input.imageUrl;
+  if (input.price !== undefined) patch.price = input.price;
+  if (input.includedItems !== undefined) patch.included_items = input.includedItems;
+  if (input.excludedItems !== undefined) patch.excluded_items = input.excludedItems;
   if (input.active !== undefined) patch.active = input.active;
   if (input.startsAt !== undefined) patch.starts_at = input.startsAt;
   if (input.endsAt !== undefined) patch.ends_at = input.endsAt;
