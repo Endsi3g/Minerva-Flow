@@ -26,24 +26,24 @@
 }
 *{box-sizing:border-box}
 body{background:var(--cream); color:var(--ink); font-family:"Plus Jakarta Sans",system-ui,sans-serif; line-height:1.5;}
-.wrap{max-width:920px; margin:0 auto; padding:56px 28px 96px;}
+.wrap{max-width:960px; margin:0 auto; padding:56px 28px 96px;}
 h1,h2,h3{font-family:"Playfair Display",Georgia,serif; font-weight:600; color:var(--ink); text-wrap:balance;}
 .eyebrow{font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--emerald-dark);}
 h1{font-size:34px; margin:8px 0 6px; font-weight:500;}
-.sub{color:var(--ink-soft); font-size:14.5px; max-width:60ch;}
+.sub{color:var(--ink-soft); font-size:14.5px; max-width:64ch;}
 .meta-row{display:flex; gap:18px; flex-wrap:wrap; margin-top:22px; font-size:12px; color:var(--ink-faint);}
 .meta-row span{display:flex; align-items:center; gap:6px;}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--emerald);display:inline-block;}
 
 .progress-band{margin-top:28px; background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:20px 22px; box-shadow:var(--shadow);}
-.progress-band-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;}
-.progress-band-top .big{font-family:"Playfair Display",serif; font-size:26px; font-weight:600;}
+.progress-band-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:16px; flex-wrap:wrap;}
+.progress-band-top .big{font-family:"Playfair Display",serif; font-size:24px; font-weight:600;}
 .progress-track{height:8px; border-radius:99px; background:var(--border); overflow:hidden;}
 .progress-fill{height:100%; border-radius:99px; background:linear-gradient(90deg,var(--emerald),var(--emerald-dark));}
-.progress-legend{display:flex; justify-content:space-between; margin-top:8px; font-size:11.5px; color:var(--ink-faint);}
+.progress-legend{display:flex; justify-content:space-between; margin-top:8px; font-size:11.5px; color:var(--ink-faint); gap:12px;}
 
 section{margin-top:44px;}
-.section-head{display:flex; align-items:baseline; gap:10px; margin-bottom:16px;}
+.section-head{display:flex; align-items:baseline; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
 .section-head h2{font-size:20px; margin:0;}
 .section-count{font-size:12px; color:var(--ink-faint); font-variant-numeric:tabular-nums;}
 
@@ -58,6 +58,8 @@ section{margin-top:44px;}
 .card li{margin:3px 0;}
 .card li.gap{color:var(--red);}
 .card li.gap::marker{color:var(--red);}
+.card li.fix{color:var(--emerald-dark); font-weight:600;}
+.card li.fix::marker{color:var(--emerald-dark);}
 
 .list-card{background:var(--surface); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); overflow:hidden;}
 .list-row{display:flex; gap:14px; padding:14px 20px; border-bottom:1px solid var(--border); align-items:flex-start;}
@@ -72,6 +74,11 @@ section{margin-top:44px;}
 .action-card p{font-size:12.8px; color:var(--ink-soft); margin:0;}
 .action-card a{color:var(--emerald-dark); font-weight:600;}
 
+.bugfix-card{border:1px solid rgba(22,127,91,.3); background:rgba(22,127,91,.06); border-radius:16px; padding:16px 20px; margin-bottom:12px;}
+.bugfix-card h3{font-size:14px; margin:0 0 4px; color:var(--ink);}
+.bugfix-card p{font-size:12.5px; color:var(--ink-soft); margin:0;}
+.bugfix-card code{background:rgba(0,0,0,.06);}
+
 .foot{margin-top:56px; padding-top:20px; border-top:1px solid var(--border); font-size:11.5px; color:var(--ink-faint);}
 code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--border); padding:1px 5px; border-radius:5px;}
 @media (max-width:600px){ .wrap{padding:36px 18px 72px} h1{font-size:27px} }
@@ -80,139 +87,147 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
 <div class="wrap">
   <p class="eyebrow">Minerva Flow — App native iOS (fidélisation client)</p>
   <h1>État des lieux du build</h1>
-  <p class="sub">Ce qui existe réellement dans le code aujourd'hui, ce qui manque encore, et ce qui exige une action de votre part parce qu'aucun accès automatisé n'existe pour le faire à votre place.</p>
+  <p class="sub">Ce qui existe réellement dans le code aujourd'hui, ce qui manque encore, et ce qui exige une action de votre part parce qu'aucun accès automatisé n'existe pour le faire à votre place. Reconstruit à partir de l'état réel sur <code>main</code>, déployé en production.</p>
   <div class="meta-row">
-    <span><span class="dot"></span> Branche <code>feature/native-home-screen-v2</code></span>
-    <span>Build vérifié sur appareil physique via <code>xcodebuild</code> + <code>devicectl</code></span>
-    <span>Scope confirmé avec vous : app client fidélisation seulement (pas l'app staff/owner)</span>
+    <span><span class="dot"></span> Toutes les PR mergées et déployées sur <code>minervaflow.app</code></span>
+    <span>Build vérifié sur appareil physique via <code>xcodebuild</code> + <code>devicectl</code> à chaque étape</span>
+    <span>Compte démo : 6 restaurants réels avec menus/offres/récompenses, coordonnées GPS incluses</span>
   </div>
 
   <div class="progress-band">
     <div class="progress-band-top">
-      <div>
-        <div class="big">4 / 4 onglets construits en profondeur</div>
-      </div>
-      <div class="progress-legend" style="margin:0; text-align:right;">Widgets, notifications push, scan QR, localisateur : hors scope de cette phase</div>
+      <div><div class="big">4 onglets + découverte + fiches détaillées, en profondeur</div></div>
+      <div class="progress-legend" style="margin:0; text-align:right;">Widgets, envoi push réel, paiement in-app, autocomplétion d'adresse : hors scope actuel</div>
     </div>
-    <div class="progress-track"><div class="progress-fill" style="width:70%"></div></div>
+    <div class="progress-track"><div class="progress-fill" style="width:82%"></div></div>
     <div class="progress-legend">
-      <span>Cœur fonctionnel (auth, 4 onglets, backend) — solide</span>
+      <span>Cœur fonctionnel + découverte + notation — solide</span>
       <span>App complète App Store-ready</span>
     </div>
   </div>
 
   <section>
-    <div class="section-head"><h2>Les 4 onglets</h2><span class="section-count">construits à fond, par votre propre décision de séquençage</span></div>
+    <div class="section-head"><h2>Bogue critique trouvé et corrigé cette session</h2></div>
+    <div class="bugfix-card">
+      <h3>Récompenses et offres invisibles pour TOUS les clients depuis le lancement</h3>
+      <p><code>loyalty_rewards</code> et <code>offers</code> n'avaient aucune règle RLS permettant à un client de les lire (staff seulement) — la carte « prochaine récompense » et le fil d'offres de l'écran Accueil étaient donc vides pour absolument tout le monde, peu importe ce que le restaurant configurait. Corrigé et vérifié avec un vrai jeton client : 0 ligne avant, 3 récompenses + 2 offres après.</p>
+    </div>
+    <div class="bugfix-card">
+      <h3><code>restaurants</code> également illisible par un client</h3>
+      <p>Même famille de bogue : le nom du restaurant et les seuils de palier étaient <code>null</code> côté natif depuis le début. Corrigé via un pont dédié (<code>/api/portal/restaurant</code>) plutôt qu'une règle RLS directe, car cette table contient aussi les identifiants Stripe Connect et les données financières du restaurant.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Les 4 onglets</h2><span class="section-count">construits en profondeur, par votre propre séquençage initial</span></div>
     <div class="grid">
       <div class="card">
         <span class="tag done">Construit</span>
         <h3>Accueil</h3>
         <ul>
-          <li>Bandeau palier (Habitué/Privilégié/Ambassadeur) avec barre de progression vers le palier suivant</li>
-          <li>Solde de points, visites, dépenses totales</li>
-          <li>Prochaine récompense accessible (jauge radiale)</li>
-          <li>Fil des offres actives du restaurant</li>
-          <li>Historique récent des transactions de points</li>
-          <li>Pull-to-refresh, état de chargement, erreur réseau distincte</li>
+          <li>Bandeau palier avec barre de progression vers le palier suivant (seuils réels du restaurant, plus de valeurs par défaut)</li>
+          <li>Tap sur la carte → <strong>Ma carte</strong> : fiche complète (palier, progression, visites, dépenses, offres)</li>
+          <li>Cloche → demande la permission de notifications + confirmation locale immédiate</li>
+          <li>Épingle → carte de découverte des restaurants à proximité</li>
+          <li>Fil d'offres et récompense la plus proche, chacune cliquable</li>
         </ul>
       </div>
       <div class="card">
         <span class="tag done">Construit</span>
         <h3>Commander</h3>
         <ul>
-          <li>Menu groupé par catégorie, images/description/prix</li>
-          <li>Compteurs de quantité par article avec retour haptique</li>
-          <li>Barre de panier persistante (total, nombre d'articles)</li>
-          <li>Checkout complet : pourboire (0/10/15/20 %), taxes, note de paiement</li>
-          <li>Commande envoyée dans la vraie file /commandes du restaurant</li>
-          <li>États succès / échec / hors-ligne distincts</li>
+          <li>Navigation par catégories d'abord, puis liste d'articles (le problème « 40 cafés à scroller » est réglé)</li>
+          <li>Chaque article ouvre sa propre page dédiée (voir plus bas)</li>
+          <li>Panier, checkout complet (pourboire, taxes 14,975 % par défaut, note de paiement)</li>
+          <li>Commande envoyée dans la vraie file du restaurant</li>
         </ul>
       </div>
       <div class="card">
         <span class="tag done">Construit</span>
         <h3>Récompenses</h3>
         <ul>
-          <li>Catalogue avec affordabilité en temps réel, confirmation avant échange</li>
+          <li>Catalogue d'offres <em>et</em> de récompenses, chacune avec sa propre page</li>
+          <li>Parrainage sans friction : lien + QR pré-générés au chargement, QR large et pleine largeur, partage natif en un tap</li>
           <li>Codes de récompenses en attente à montrer en salle</li>
-          <li>Section parrainage : cartes de programme, barre de progression, génération de QR native, partage système</li>
         </ul>
       </div>
       <div class="card">
         <span class="tag done">Construit</span>
         <h3>Profil</h3>
         <ul>
-          <li>Carte identité avec palier, points, visites</li>
-          <li>Préférences de notification (Tout / L'essentiel)</li>
-          <li>Liens légaux fonctionnels (CGU, confidentialité) — visionneuse in-app</li>
-          <li>Déconnexion</li>
-          <li>Suppression de compte (irréversible, confirmation par saisie)</li>
+          <li>Photo, nom, courriel (avec confirmation par lien) et téléphone, tous modifiables</li>
+          <li>Historique complet des points (gagnés et dépensés) et des échanges de récompenses</li>
+          <li>Verrouillage Face ID / Touch ID, liens légaux fonctionnels, suppression de compte irréversible</li>
         </ul>
       </div>
     </div>
   </section>
 
   <section>
-    <div class="section-head"><h2>Authentification &amp; premier lancement</h2></div>
+    <div class="section-head"><h2>Découverte multi-restaurants (nouveau)</h2></div>
     <div class="grid">
       <div class="card">
         <span class="tag done">Construit</span>
-        <h3>Écran de connexion</h3>
+        <h3>Carte des restaurants</h3>
         <ul>
-          <li>Réplique exacte du <code>/portal/login</code> web (même carte, même fond crème, même copy)</li>
-          <li>Code à 6 chiffres par courriel (Resend, pas Supabase par défaut), auto-vérification</li>
-          <li>Validation d'adresse en direct, cooldown de renvoi 30 s</li>
-          <li>Consentements réels (CGU obligatoire, marketing optionnel) avec liens cliquables</li>
+          <li>MapKit + localisation — tri par distance une fois la permission accordée</li>
+          <li>Chaque restaurant affiche son nom, sa ville, sa distance</li>
         </ul>
       </div>
       <div class="card">
         <span class="tag done">Construit</span>
-        <h3>Splash &amp; onboarding</h3>
+        <h3>Fiche restaurant publique</h3>
         <ul>
-          <li>Écran de lancement natif (logo + fond de marque, pas l'écran par défaut Xcode)</li>
-          <li>Intro plein écran pour un nouveau visiteur</li>
-          <li>Carrousel d'accueil (paliers, progression) affiché une seule fois</li>
-          <li>Transitions animées entre tous les écrans (plus de coupures abruptes)</li>
-        </ul>
-      </div>
-      <div class="card">
-        <span class="tag partial">Partiel</span>
-        <h3>Fournisseurs de connexion</h3>
-        <ul>
-          <li>Courriel + code : fonctionnel de bout en bout</li>
-          <li>Google / Facebook : boutons, redirection, liaison au bon compte client codés des deux côtés (web + natif) — <span class="gap">bloqué uniquement sur vos identifiants OAuth dans le tableau de bord Supabase (voir plus bas)</span></li>
-          <li class="gap">OTP par SMS : reporté par votre choix, nécessite un fournisseur payant type Twilio</li>
+          <li>Info, itinéraire (ouvre Plans), appel direct</li>
+          <li>Offres en cours + menu navigable par catégorie, consultable avant même d'être client</li>
         </ul>
       </div>
       <div class="card">
         <span class="tag done">Construit</span>
-        <h3>Verrouillage Face ID / Touch ID</h3>
+        <h3>Page dédiée par article de menu</h3>
         <ul>
-          <li>Activable dans Profil → Sécurité, désactivé par défaut</li>
-          <li>Reverrouille à chaque retour au premier plan, pas seulement au lancement</li>
-          <li>Repli automatique sur le code de l'appareil si la biométrie échoue</li>
+          <li>Carrousel photo, prix, note moyenne et avis (public, façon Google Maps)</li>
+          <li>Écrire un avis (réservé aux clients réels de ce restaurant, imposé par RLS)</li>
+          <li>Partage natif (Messages, AirDrop, réseaux sociaux) via ShareLink</li>
+          <li>Carrousel « vous aimerez aussi » (même catégorie)</li>
         </ul>
       </div>
     </div>
   </section>
 
   <section>
-    <div class="section-head"><h2>Architecture backend</h2></div>
-    <div class="list-card">
-      <div class="list-row">
-        <span class="tag done">Fait</span>
-        <div class="body"><strong>Pont Bearer token ↔ RLS</strong><p>4 routes (<code>/api/portal/menu, orders, account, referrals</code>) exposent au natif exactement ce que la session cookie expose au web, avec le même client scopé au token — jamais le client admin pour une lecture qui doit rester filtrée par ligne.</p></div>
+    <div class="section-head"><h2>Authentification &amp; sécurité</h2></div>
+    <div class="grid">
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>Connexion</h3>
+        <ul>
+          <li>Réplique exacte du <code>/portal/login</code> web, code à 6 chiffres par courriel (Resend)</li>
+          <li>Google et Facebook : vrais logos multicolores (plus des icônes génériques), boutons au-dessus du courriel</li>
+        </ul>
       </div>
-      <div class="list-row">
-        <span class="tag done">Fait</span>
-        <div class="body"><strong>Emails transactionnels via Resend</strong><p>Le hook « Send Email » Supabase route tous les courriels (OTP client, autres actions) vers des gabarits de marque, plus par le générique Supabase.</p></div>
-      </div>
-      <div class="list-row">
-        <span class="tag done">Fait</span>
-        <div class="body"><strong>RLS corrigée</strong><p><code>customers_update_own</code> ajoutée — le profil client pouvait techniquement s'enregistrer sans jamais rien sauvegarder avant cette correction.</p></div>
-      </div>
-      <div class="list-row">
+      <div class="card">
         <span class="tag partial">Partiel</span>
-        <div class="body"><strong>Seuils de palier personnalisés par restaurant</strong><p>Le natif utilise les seuils par défaut (150 $ / 400 $) partout — un restaurant qui personnalise ses paliers verrait un décalage entre web et natif tant qu'un pont pour ce réglage n'existe pas.</p></div>
+        <h3>Google / Facebook</h3>
+        <ul>
+          <li>Code 100 % prêt (web + natif), lien vers le bon compte client géré même sans le flag OTP</li>
+          <li class="gap">Bloqué uniquement sur vos identifiants OAuth réels dans Supabase (voir action 02)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>Face ID / Touch ID</h3>
+        <ul>
+          <li>Reverrouille à chaque retour au premier plan, repli sur le code de l'appareil</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag partial">Partiel</span>
+        <h3>Notifications push</h3>
+        <ul>
+          <li>Permission, enregistrement à distance, capture et stockage du jeton : fait</li>
+          <li class="gap">Envoi réel bloqué sur une clé APNs (voir action 03)</li>
+        </ul>
       </div>
     </div>
   </section>
@@ -225,39 +240,42 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
         <h3>Réseau</h3>
         <ul>
           <li>Timeout 15 s sur chaque appel pont, jamais un spinner infini</li>
-          <li>Distinction « hors-ligne » vs « erreur serveur » avec message actionnable dans chaque cas</li>
-          <li>Un échec de rafraîchissement garde les dernières données valides à l'écran plutôt que de vider la page</li>
+          <li>« Hors-ligne » distingué de « erreur serveur », message actionnable dans chaque cas</li>
+          <li>Un échec de rafraîchissement garde les dernières données valides plutôt que de vider l'écran</li>
         </ul>
       </div>
       <div class="card">
         <span class="tag done">En place</span>
         <h3>Sécurité</h3>
         <ul>
-          <li>RLS = la vraie frontière de confiance, identique web et natif (jamais une vérification uniquement côté client)</li>
-          <li>Le bypass de connexion développeur est compilé hors des builds Release (<code>#if DEBUG</code>) — ne peut pas atterrir sur TestFlight ni l'App Store</li>
-          <li>Suppression de compte : purge des données identifiantes, conserve l'historique transactionnel du restaurant</li>
+          <li>RLS = la vraie frontière de confiance partout, jamais une vérification client seule</li>
+          <li>Colonnes financières (Stripe Connect, seuils de rentabilité) jamais exposées via un pont — allowlist explicite systématique</li>
+          <li>Bypass de connexion développeur compilé hors des builds Release</li>
         </ul>
       </div>
       <div class="card">
         <span class="tag missing">Manquant</span>
         <h3>Pas encore couvert</h3>
         <ul>
-          <li class="gap">Pas de tests automatisés (unitaires ou UI) sur le projet natif</li>
-          <li class="gap">Pas de rapport de crash (Sentry / Crashlytics ou équivalent) branché</li>
-          <li class="gap">Pas de vérification d'accessibilité (VoiceOver, contrastes, Dynamic Type) menée systématiquement</li>
+          <li class="gap">Aucun test automatisé (unitaire ou UI) sur le projet natif</li>
+          <li class="gap">Aucun rapport de crash (Sentry ou équivalent) branché</li>
+          <li class="gap">Aucune vérification d'accessibilité systématique (VoiceOver, Dynamic Type)</li>
         </ul>
       </div>
     </div>
   </section>
 
   <section>
-    <div class="section-head"><h2>Hors scope de cette phase</h2><span class="section-count">par votre propre décision : « finir les 4 onglets d'abord, à fond, puis élargir »</span></div>
+    <div class="section-head"><h2>Demandes reçues, pas encore construites</h2><span class="section-count">scope réel, pas oublié — chacune a une raison précise d'attendre</span></div>
     <div class="list-card">
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Widgets iOS (écran verrouillé / accueil)</strong><p>Aucun target de widget n'existe encore dans <code>project.yml</code>.</p></div></div>
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Notifications push</strong><p>Aucune capacité APNs, aucun token enregistré côté serveur.</p></div></div>
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Scan QR pour commander à table</strong><p>Le web a son propre flux de commande publique par QR (menu_shares) ; rien d'équivalent natif pour l'instant.</p></div></div>
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Localisateur de restaurant / carte</strong><p>Icône décorative présente sur Accueil, aucun écran derrière.</p></div></div>
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Centre de notifications in-app</strong><p>Icône décorative présente sur Accueil, aucun écran derrière.</p></div></div>
+      <div class="list-row"><span class="tag missing">Bloqué</span><div class="body"><strong>Paiement Apple Pay pour cueillette</strong><p>Demande un compte marchand (Stripe Connect déjà présent sur <code>restaurants</code>, mais l'intégration paiement elle-même reste à construire) et l'entitlement Apple Pay, qui exige le Developer Program payant.</p></div></div>
+      <div class="list-row"><span class="tag missing">Bloqué</span><div class="body"><strong>Autocomplétion d'adresse + carte au moment de la configuration owner</strong><p>Nécessite une clé API (Google Places ou Mapbox) — à créer et à me fournir.</p></div></div>
+      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Lien Google Maps par restaurant + demande d'avis post-commande</strong><p>Nécessite un champ configurable owner (URL Google Maps) qui n'existe pas encore sur <code>restaurants</code>.</p></div></div>
+      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Notifications comportementales (menu consulté sans commande, relance WhatsApp)</strong><p>Système à concevoir : quel déclencheur exact, quel délai, WhatsApp Business API à intégrer séparément.</p></div></div>
+      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Onboarding avec écrans dédiés localisation/notifications</strong><p>Actuellement ces permissions sont demandées au moment où l'action les requiert (tap sur la carte, tap sur la cloche), pas via un écran d'explication préalable dédié.</p></div></div>
+      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Préférence café/restaurant</strong><p>Filtrer la carte de découverte par type d'établissement — nécessite une colonne de catégorisation par restaurant qui n'existe pas encore.</p></div></div>
+      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Widgets iOS, scan QR pour commander à table</strong><p>Aucun target de widget dans <code>project.yml</code> ; le web a son propre flux QR (<code>menu_shares</code>), rien d'équivalent natif.</p></div></div>
+      <div class="list-row"><span class="tag missing">Non précisé</span><div class="body"><strong>« Système de discussion avec la carte »</strong><p>Mentionné une fois sans détail retrouvable dans nos échanges ni dans le code existant — en attente de votre précision avant de commencer quoi que ce soit ici.</p></div></div>
     </div>
   </section>
 
@@ -267,31 +285,36 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
     <div class="action-card">
       <div class="num">01</div>
       <h3>Compte Apple Developer Program (99 $ US/an)</h3>
-      <p>Le sideload actuel fonctionne avec votre Apple ID personnel gratuit. La distribution App Store ou TestFlight externe exige l'inscription payante au Developer Program, faite depuis votre propre compte sur <span style="text-decoration:underline">developer.apple.com</span>.</p>
+      <p>Nécessaire pour : distribution App Store/TestFlight, Apple Pay, et probablement les clés APNs de production (à vérifier — voir action 03). Le sideload actuel fonctionne sans, via votre Apple ID personnel gratuit.</p>
     </div>
     <div class="action-card">
       <div class="num">02</div>
       <h3>Identifiants Google &amp; Facebook Login</h3>
-      <p>Le code est prêt des deux côtés (web + natif) et attend uniquement ceci : créer les apps OAuth (Google Cloud Console + Meta for Developers), puis coller le Client ID/Secret dans Supabase → Authentication → Providers. Une documentation pas-à-pas peut être préparée séparément si vous voulez configurer « en one shot » comme demandé précédemment.</p>
+      <p>Code prêt des deux côtés. Créez les apps OAuth (Google Cloud Console + Meta for Developers), puis collez le Client ID/Secret dans Supabase → Authentication → Providers.</p>
     </div>
     <div class="action-card">
       <div class="num">03</div>
-      <h3>Fournisseur SMS (Twilio ou équivalent) pour OTP par texto</h3>
-      <p>Reporté par votre propre choix précédent (« email seulement pour l'instant »). Nécessite un compte payant et un numéro vérifié avant que je puisse le brancher à Supabase Auth.</p>
+      <h3>Clé APNs pour les notifications push réelles</h3>
+      <p>Allez dans <code>developer.apple.com/account</code> → Certificates, IDs &amp; Profiles → Keys → créez une clé « Apple Push Notifications service ». Donnez-moi le Key ID, le Team ID et le fichier <code>.p8</code> téléchargé (une seule fois). Je n'ai pas encore confirmé si cette section exige le Developer Program payant ou non — à vérifier ensemble.</p>
     </div>
     <div class="action-card">
       <div class="num">04</div>
-      <h3>Contenu de fiche App Store Connect</h3>
-      <p>Captures d'écran finales, description marketing, URL de politique de confidentialité publique, catégorie d'âge, coordonnées de support — ce sont des choix de contenu/marque qui vous reviennent, pas du code.</p>
+      <h3>Clé API pour l'autocomplétion d'adresse (Google Places ou Mapbox)</h3>
+      <p>Nécessaire pour que la configuration d'adresse owner propose des suggestions et affiche une carte en direct pendant la saisie.</p>
     </div>
     <div class="action-card">
       <div class="num">05</div>
-      <h3>Décision : élargir maintenant ou rester sur les 4 onglets</h3>
-      <p>Le hook de session redemande widgets/biométrie/push/QR/localisateur comme s'ils étaient dus maintenant, mais votre propre choix explicite était de finir les 4 onglets d'abord. Dites-moi si cette décision tient toujours ou si l'un de ces éléments passe en priorité.</p>
+      <h3>Fournisseur SMS (Twilio) pour l'OTP par texto</h3>
+      <p>Reporté par votre propre choix précédent — nécessite un compte payant et un numéro vérifié.</p>
+    </div>
+    <div class="action-card">
+      <div class="num">06</div>
+      <h3>Précisions sur 3 demandes ambiguës</h3>
+      <p>Le « système de discussion avec la carte » (aucune trace retrouvée), le lien Google Maps par restaurant (quel champ, où le configurer), et la portée exacte des notifications comportementales (WhatsApp vs push natif) — dites-moi ce que vous avez en tête et je les construis.</p>
     </div>
   </section>
 
   <div class="foot">
-    Généré à partir de l'état réel du code sur <code>feature/native-home-screen-v2</code>, pas d'une estimation. Rebuild vérifié : <code>xcodebuild … build</code> → <strong>BUILD SUCCEEDED</strong>, installé et lancé sur appareil physique via <code>devicectl</code>.
+    Généré à partir de l'état réel du code sur <code>main</code>, entièrement déployé en production (minervaflow.app). Chaque fonctionnalité listée « Construit » a été vérifiée par un build réussi, une installation et un lancement sur appareil physique — pas une estimation.
   </div>
 </div>
