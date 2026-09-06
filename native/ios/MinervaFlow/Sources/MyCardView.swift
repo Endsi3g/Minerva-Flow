@@ -21,6 +21,11 @@ struct MyCardView: View {
                         if !supabase.offers.isEmpty {
                             offersSection
                         }
+                        tierBenefitsSection(for: tier(for: customer))
+                        checkoutCodeSection(for: customer)
+                        if !supabase.combinedHistory.isEmpty {
+                            historySection
+                        }
                         memberSinceFooter
                     }
                     .padding(18)
@@ -37,8 +42,12 @@ struct MyCardView: View {
         }
     }
 
+    private func tier(for customer: Customer) -> LoyaltyTier {
+        LoyaltyTier.resolve(totalSpent: customer.totalSpent, tier2: supabase.loyaltyTier2Threshold, tier3: supabase.loyaltyTier3Threshold)
+    }
+
     private func cardFace(for customer: Customer) -> some View {
-        let tier = LoyaltyTier.resolve(totalSpent: customer.totalSpent, tier2: supabase.loyaltyTier2Threshold, tier3: supabase.loyaltyTier3Threshold)
+        let tier = tier(for: customer)
         let tier2 = supabase.loyaltyTier2Threshold
         let tier3 = supabase.loyaltyTier3Threshold
         let prevTarget = tier == .ambassadeur ? tier3 : tier == .privilegie ? tier2 : 0
@@ -163,15 +172,150 @@ struct MyCardView: View {
         }
     }
 
+    /// Names whichever restaurant this account has actually visited the
+    /// most, across every membership — not just the single restaurant
+    /// currently loaded, which stopped being the same thing the moment an
+    /// account joined a second restaurant.
     private var memberSinceFooter: some View {
-        HStack(spacing: 6) {
+        let mostVisitedName = supabase.mostVisitedMembership?.restaurantName ?? supabase.restaurantName ?? "ce restaurant"
+        return HStack(spacing: 6) {
             Image(systemName: "sparkles")
-            Text("Membre fidélité chez \(supabase.restaurantName ?? "ce restaurant")")
+            Text("Membre fidèle chez \(mostVisitedName)")
         }
         .font(.system(size: 11.5))
         .foregroundStyle(MinervaColor.inkFaint)
         .padding(.top, 4)
         .padding(.bottom, 12)
+    }
+
+    // MARK: - Tier benefits
+
+    private func tierBenefitsSection(for tier: LoyaltyTier) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Avantages \(tier.label.lowercased())")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            VStack(spacing: 0) {
+                ForEach(Array(benefits(for: tier).enumerated()), id: \.offset) { index, benefit in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(MinervaColor.emeraldDark)
+                            .padding(.top, 1)
+                        Text(benefit)
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(MinervaColor.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(12)
+                    if index < benefits(for: tier).count - 1 {
+                        Divider().padding(.leading, 34)
+                    }
+                }
+            }
+            .background(MinervaColor.creamSoft)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+    }
+
+    /// Generic per-tier descriptions of the app's own real mechanics
+    /// (earning/redeeming) — no restaurant-configurable benefits model
+    /// exists yet, so these describe what's actually true for every
+    /// restaurant rather than inventing per-restaurant perks nobody has
+    /// configured.
+    private func benefits(for tier: LoyaltyTier) -> [String] {
+        switch tier {
+        case .habitue:
+            return [
+                "Cumulez des points à chaque visite",
+                "Accès au catalogue de récompenses de votre restaurant",
+            ]
+        case .privilegie:
+            return [
+                "Tout ce qu'Habitué offre",
+                "Accès prioritaire aux offres à durée limitée",
+                "Reconnu comme client régulier par votre restaurant",
+            ]
+        case .ambassadeur:
+            return [
+                "Tout ce que Privilégié offre",
+                "Palier le plus élevé — un statut que votre restaurant peut reconnaître en personne",
+                "Votre fidélité compte parmi les plus engagées du programme",
+            ]
+        }
+    }
+
+    // MARK: - Checkout code
+
+    /// A scannable, stable identifier for this account — the display half
+    /// of "show this at checkout" (same QR generation already used for
+    /// referral links). Actually awarding points from a staff-side scan is
+    /// a separate, not-yet-built feature (today staff record visits
+    /// manually on the web dashboard) — this deliberately doesn't imply
+    /// that works yet.
+    private func checkoutCodeSection(for customer: Customer) -> some View {
+        VStack(spacing: 10) {
+            Text("Mon code fidélité")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let qrImage = QRCodeGenerator.image(for: URL(string: "https://minervaflow.app/c/\(customer.id)")!) {
+                Image(uiImage: qrImage)
+                    .interpolation(.none)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 160, height: 160)
+                    .padding(14)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.border, lineWidth: 1))
+            }
+
+            Text("Montrez ce code au personnel à la caisse.")
+                .font(.system(size: 11))
+                .foregroundStyle(MinervaColor.inkFaint)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Combined history
+
+    private var historySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Historique récent")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            VStack(spacing: 6) {
+                ForEach(supabase.combinedHistory.prefix(5)) { entry in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(entry.title)
+                                .font(.system(size: 12.5, weight: .medium))
+                                .foregroundStyle(MinervaColor.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                            HStack(spacing: 4) {
+                                Text(entry.date.formatted(date: .abbreviated, time: .omitted))
+                                if let restaurantName = entry.restaurantName {
+                                    Text("· \(restaurantName)")
+                                }
+                            }
+                            .font(.system(size: 10.5))
+                            .foregroundStyle(MinervaColor.inkFaint)
+                        }
+                        Spacer(minLength: 8)
+                        Text("\(entry.pointsDelta >= 0 ? "+" : "")\(entry.pointsDelta) pts")
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundStyle(entry.pointsDelta >= 0 ? MinervaColor.emeraldDark : .red)
+                    }
+                    .padding(12)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+        }
     }
 
     private func currencyString(_ value: Double) -> String {

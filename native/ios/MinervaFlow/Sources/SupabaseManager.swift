@@ -22,6 +22,16 @@ final class SupabaseManager: ObservableObject {
     @Published var taxRate: Double = 0.14975
     @Published var acceptsTips: Bool = true
     @Published var referralPrograms: [ReferralProgress] = []
+    /// Every restaurant loyalty relationship this account has, and the
+    /// points/rewards history across all of them combined — a customer can
+    /// legitimately belong to more than one participating restaurant, and
+    /// "membre fidèle" / the card's history should reflect that instead of
+    /// only ever showing the single restaurant `customer`/`transactions`
+    /// above are scoped to (which stays as-is: Home/Commander/Rewards are
+    /// inherently one-restaurant-at-a-time screens, this is additive).
+    @Published var allMemberships: [RestaurantMembership] = []
+    @Published var allTransactions: [LoyaltyTransaction] = []
+    @Published var allRedemptions: [RewardRedemption] = []
     @Published var isLoadingData = false
     @Published var isLoadingMenu = false
     @Published var isLoadingReferrals = false
@@ -165,6 +175,7 @@ final class SupabaseManager: ObservableObject {
             redemptions = redemptionsResult
             await fetchRestaurantInfo()
             saveWidgetSnapshot(for: mine)
+            await fetchAllMemberships()
         } catch {
             // Loading is best-effort here: a transient network blip shouldn't
             // wipe out whatever the last successful load already put on
@@ -463,6 +474,95 @@ final class SupabaseManager: ObservableObject {
             restaurantGoogleMapsUrl = decoded.googleMapsUrl
         } catch {
             print("fetchRestaurantInfo error: \(error)")
+        }
+    }
+
+    /// Every restaurant this account is a loyalty member of, plus combined
+    /// points/rewards history across all of them — additive to the
+    /// single-restaurant `customer`/`transactions`/`redemptions` above,
+    /// which stay scoped to `mine` for Home/Commander/Rewards. The
+    /// memberships list itself needs the bridge (restaurant names aren't
+    /// customer-readable directly), but transactions/redemptions are
+    /// fetched with no restaurant filter at all — RLS
+    /// (loyalty_transactions_select_own) already scopes to every customer
+    /// row this auth.uid() owns, across any restaurant, for free.
+    func fetchAllMemberships() async {
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurants"))
+            let decoded = try JSONDecoder().decode(RestaurantMembershipsResponse.self, from: data)
+            allMemberships = decoded.memberships
+        } catch {
+            print("fetchAllMemberships error: \(error)")
+        }
+
+        do {
+            async let txsFetch: [LoyaltyTransaction] = client
+                .from("loyalty_transactions")
+                .select()
+                .order("created_at", ascending: false)
+                .limit(50)
+                .execute()
+                .value
+
+            async let redemptionsFetch: [RewardRedemption] = client
+                .from("reward_redemptions")
+                .select()
+                .order("created_at", ascending: false)
+                .limit(50)
+                .execute()
+                .value
+
+            (allTransactions, allRedemptions) = try await (txsFetch, redemptionsFetch)
+        } catch {
+            print("fetchAllMemberships (history) error: \(error)")
+        }
+    }
+
+    /// The restaurant this account has visited the most — "membre fidèle"
+    /// on the card names this one specifically rather than whichever
+    /// restaurant happens to be currently loaded, since with more than one
+    /// membership those aren't necessarily the same restaurant.
+    var mostVisitedMembership: RestaurantMembership? {
+        allMemberships.max(by: { $0.visitCount < $1.visitCount })
+    }
+
+    private func restaurantName(forId restaurantId: String) -> String? {
+        allMemberships.first(where: { $0.restaurantId == restaurantId })?.restaurantName
+    }
+
+    /// Combined points/rewards history across every restaurant membership,
+    /// each line naming its restaurant only when there's more than one to
+    /// distinguish — a single-restaurant account's history reads exactly
+    /// as it did before this existed.
+    var combinedHistory: [LoyaltyHistoryEntry] {
+        let showRestaurant = allMemberships.count > 1
+        let fromTransactions = allTransactions.map { tx in
+            LoyaltyHistoryEntry(
+                id: "tx-\(tx.id)",
+                title: historyLabel(forTransactionType: tx.type),
+                date: tx.createdAt,
+                pointsDelta: tx.pointsDelta,
+                restaurantName: showRestaurant ? restaurantName(forId: tx.restaurantId) : nil
+            )
+        }
+        let fromRedemptions = allRedemptions.map { redemption in
+            LoyaltyHistoryEntry(
+                id: "redeem-\(redemption.id)",
+                title: "Récompense échangée : \(redemption.rewardName)",
+                date: redemption.createdAt,
+                pointsDelta: -redemption.pointsSpent,
+                restaurantName: showRestaurant ? restaurantName(forId: redemption.restaurantId) : nil
+            )
+        }
+        return (fromTransactions + fromRedemptions).sorted { $0.date > $1.date }
+    }
+
+    private func historyLabel(forTransactionType type: String) -> String {
+        switch type {
+        case "visite": return "Visite"
+        case "ajustement": return "Ajustement"
+        case "echange": return "Récompense échangée"
+        default: return type
         }
     }
 
