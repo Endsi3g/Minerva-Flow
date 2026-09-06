@@ -16,6 +16,7 @@
 		2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471F651B424DBE91D0FC0A0E /* MyCardView.swift */; };
 		2C9E95355FE610913FB5ED0B /* MenuItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */; };
 		2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9CD9B5E79E9FE474707739 /* RewardsView.swift */; };
+		3AD6882CB5ED4D4A5A3880A6 /* LoyaltyTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */; };
 		3AD982D4339D2835748F8A86 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */; };
 		442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C1D3C584B13E05EBD01750 /* MenuView.swift */; };
 		4E35352D66E4B11496D587ED /* OfferDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */; };
@@ -26,6 +27,7 @@
 		85AB6A5594778C5544D34E18 /* RestaurantMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E2365512980AA23003195C /* RestaurantMapView.swift */; };
 		8E9FA68C879A95D98AA5BF22 /* BrandMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */; };
 		976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */; };
+		9BC5FB157B434B491741712A /* OrderTotals.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA427B759305A43BF018AB62 /* OrderTotals.swift */; };
 		9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48489698C6B750A6E75FEFEE /* BiometricLock.swift */; };
 		A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */; };
 		A4FF9ABA69E8115D0845A981 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 33E9C17D0D39AFF0D025E0F2 /* Supabase */; };
@@ -37,12 +39,20 @@
 		E602B1260BDBC61608C8F1C7 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE934F2A5846A120417A19B /* Theme.swift */; };
 		EB483ABD7DA63D91561BE978 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F66981C3B41C8B5FD69ECE /* AuthView.swift */; };
 		EE8C7E7104DBD708782A326E /* MinervaFlowWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1AFCB4B80589F9BD7E3AECC9 /* MinervaFlowWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F10EC90F16CF2AC65B6B015A /* OrderTotalsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59493D8CAE71CA71582DA48D /* OrderTotalsTests.swift */; };
 		F5E4CC548458D40BF92F3F17 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA24BE15C53784788988271 /* HomeView.swift */; };
 		F867193E516C1BAD652866EE /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89B5498B7D0733D7AA1958D9 /* RootView.swift */; };
 		FD1B769E629BFCD402190EA9 /* MinervaFlowWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1BA36D6BD964EC57A0DE85 /* MinervaFlowWidget.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		723A51C041AF818C67918153 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F2A369A8685101AD54924DB8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3FD34A21BF50DC87042F1BA3;
+			remoteInfo = MinervaFlow;
+		};
 		A721AF08441685095ABD6B98 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F2A369A8685101AD54924DB8 /* Project object */;
@@ -82,11 +92,13 @@
 		53C1D3C584B13E05EBD01750 /* MenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuView.swift; sourceTree = "<group>"; };
 		574318127126383937A04DB7 /* WebPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebPageView.swift; sourceTree = "<group>"; };
 		5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandMarks.swift; sourceTree = "<group>"; };
+		59493D8CAE71CA71582DA48D /* OrderTotalsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTotalsTests.swift; sourceTree = "<group>"; };
 		5A9CD9B5E79E9FE474707739 /* RewardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardsView.swift; sourceTree = "<group>"; };
 		75D53BED95FFB389516CCEF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowApp.swift; sourceTree = "<group>"; };
 		89B5498B7D0733D7AA1958D9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		A0B3CE87BA193CEEDBA5D5D5 /* MinervaFlow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MinervaFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyTierTests.swift; sourceTree = "<group>"; };
 		B8ABC1E0681608032F18B9B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferDetailView.swift; sourceTree = "<group>"; };
 		C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemDetailView.swift; sourceTree = "<group>"; };
@@ -95,9 +107,11 @@
 		D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		D58EE17A9A62B1893F865891 /* RadialGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialGauge.swift; sourceTree = "<group>"; };
 		D6E6F6E76663DF4A6F2A5309 /* MinervaFlow.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlow.entitlements; sourceTree = "<group>"; };
+		DDBB4AF1C78A26877459630D /* MinervaFlowTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MinervaFlowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE1BA36D6BD964EC57A0DE85 /* MinervaFlowWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowWidget.swift; sourceTree = "<group>"; };
 		E001F62368824618EE0ACB49 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantDetailView.swift; sourceTree = "<group>"; };
+		EA427B759305A43BF018AB62 /* OrderTotals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTotals.swift; sourceTree = "<group>"; };
 		EBD59C80CE3B06A999142A6E /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		ECE934F2A5846A120417A19B /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointsSnapshot.swift; sourceTree = "<group>"; };
@@ -117,10 +131,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		16D833D53C074D9DD6C0C882 /* MinervaFlowTests */ = {
+			isa = PBXGroup;
+			children = (
+				B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */,
+				59493D8CAE71CA71582DA48D /* OrderTotalsTests.swift */,
+			);
+			path = MinervaFlowTests;
+			sourceTree = "<group>";
+		};
 		3C8F98401FDC498977A93B61 = {
 			isa = PBXGroup;
 			children = (
 				569A866D9C8D49199C087872 /* MinervaFlow */,
+				16D833D53C074D9DD6C0C882 /* MinervaFlowTests */,
 				C1B1C5808A93D71EF04B2D01 /* MinervaFlowWidget */,
 				41BBEAEE36449412B771DBC8 /* Shared */,
 				69638E77894125B881D237E7 /* Products */,
@@ -155,6 +179,7 @@
 				2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */,
 				C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */,
 				47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */,
+				EA427B759305A43BF018AB62 /* OrderTotals.swift */,
 				D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */,
 				CA484AE32471A39B3214052F /* QRScannerView.swift */,
 				D58EE17A9A62B1893F865891 /* RadialGauge.swift */,
@@ -182,6 +207,7 @@
 			isa = PBXGroup;
 			children = (
 				A0B3CE87BA193CEEDBA5D5D5 /* MinervaFlow.app */,
+				DDBB4AF1C78A26877459630D /* MinervaFlowTests.xctest */,
 				1AFCB4B80589F9BD7E3AECC9 /* MinervaFlowWidgetExtension.appex */,
 			);
 			name = Products;
@@ -249,6 +275,24 @@
 			productReference = 1AFCB4B80589F9BD7E3AECC9 /* MinervaFlowWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		E08EC143477965FDF90FE2DE /* MinervaFlowTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 72FF9D89125BA644A17EFD06 /* Build configuration list for PBXNativeTarget "MinervaFlowTests" */;
+			buildPhases = (
+				AB71D3581C788FE8C01BA973 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				563EBDFDA347B24123423111 /* PBXTargetDependency */,
+			);
+			name = MinervaFlowTests;
+			packageProductDependencies = (
+			);
+			productName = MinervaFlowTests;
+			productReference = DDBB4AF1C78A26877459630D /* MinervaFlowTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -263,6 +307,10 @@
 						ProvisioningStyle = Automatic;
 					};
 					4483569BD8B798D8E9CC531B = {
+						DevelopmentTeam = DV9V35452J;
+						ProvisioningStyle = Automatic;
+					};
+					E08EC143477965FDF90FE2DE = {
 						DevelopmentTeam = DV9V35452J;
 						ProvisioningStyle = Automatic;
 					};
@@ -287,6 +335,7 @@
 			targets = (
 				3FD34A21BF50DC87042F1BA3 /* MinervaFlow */,
 				4483569BD8B798D8E9CC531B /* MinervaFlowWidgetExtension */,
+				E08EC143477965FDF90FE2DE /* MinervaFlowTests */,
 			);
 		};
 /* End PBXProject section */
@@ -303,6 +352,15 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		AB71D3581C788FE8C01BA973 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3AD6882CB5ED4D4A5A3880A6 /* LoyaltyTierTests.swift in Sources */,
+				F10EC90F16CF2AC65B6B015A /* OrderTotalsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CD1ED932DB4B9484C2990D85 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -333,6 +391,7 @@
 				3AD982D4339D2835748F8A86 /* NotificationManager.swift in Sources */,
 				4E35352D66E4B11496D587ED /* OfferDetailView.swift in Sources */,
 				7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */,
+				9BC5FB157B434B491741712A /* OrderTotals.swift in Sources */,
 				068DD03953A5F45E4FDDA8F8 /* PointsSnapshot.swift in Sources */,
 				A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */,
 				111FB36D15A3D9DEEBA9060B /* QRScannerView.swift in Sources */,
@@ -354,6 +413,11 @@
 			isa = PBXTargetDependency;
 			target = 4483569BD8B798D8E9CC531B /* MinervaFlowWidgetExtension */;
 			targetProxy = A721AF08441685095ABD6B98 /* PBXContainerItemProxy */;
+		};
+		563EBDFDA347B24123423111 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3FD34A21BF50DC87042F1BA3 /* MinervaFlow */;
+			targetProxy = 723A51C041AF818C67918153 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -544,6 +608,26 @@
 			};
 			name = Debug;
 		};
+		E1CBE307B3B11E4D342A8FB1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DV9V35452J;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.minervaflow.loyalty.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MinervaFlow.app/MinervaFlow";
+			};
+			name = Debug;
+		};
 		E9540183F9576A289F526B6A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -567,6 +651,26 @@
 			};
 			name = Debug;
 		};
+		FC7182EB2F965BACBA350DE8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DV9V35452J;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.minervaflow.loyalty.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MinervaFlow.app/MinervaFlow";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -584,6 +688,15 @@
 			buildConfigurations = (
 				C5A19F700ACE08277522AFD9 /* Debug */,
 				45B333576FA5D6C4507EBE83 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		72FF9D89125BA644A17EFD06 /* Build configuration list for PBXNativeTarget "MinervaFlowTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1CBE307B3B11E4D342A8FB1 /* Debug */,
+				FC7182EB2F965BACBA350DE8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

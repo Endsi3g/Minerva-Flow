@@ -407,10 +407,11 @@ struct CheckoutSheet: View {
 
     enum Status { case idle, submitting, done, error }
 
-    private var subtotal: Double { lines.reduce(0) { $0 + $1.item.price * Double($1.quantity) } }
-    private var taxAmount: Double { (subtotal * taxRate * 100).rounded() / 100 }
-    private var tipAmount: Double { tipPct.map { (subtotal * $0 * 100).rounded() / 100 } ?? 0 }
-    private var total: Double { subtotal + taxAmount + tipAmount }
+    private var totals: OrderTotals { OrderTotals(lines: lines, taxRate: taxRate, tipPct: tipPct) }
+    private var subtotal: Double { totals.subtotal }
+    private var taxAmount: Double { totals.taxAmount }
+    private var tipAmount: Double { totals.tipAmount }
+    private var total: Double { totals.total }
 
     var body: some View {
         NavigationStack {
