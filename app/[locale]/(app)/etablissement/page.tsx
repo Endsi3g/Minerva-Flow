@@ -40,6 +40,7 @@ type RestaurantFormValues = {
   googlePlaceId?: string;
   serviceModel: "restaurant" | "cafe" | "hybrid";
   imageUrls: string[];
+  googleMapsUrl: string;
 };
 
 const emptyForm: RestaurantFormValues = {
@@ -56,6 +57,7 @@ const emptyForm: RestaurantFormValues = {
   openingHours: {},
   serviceModel: "restaurant",
   imageUrls: [],
+  googleMapsUrl: "",
 };
 
 function restaurantToForm(r: Restaurant): RestaurantFormValues {
@@ -73,6 +75,7 @@ function restaurantToForm(r: Restaurant): RestaurantFormValues {
     openingHours: r.openingHours ?? {},
     serviceModel: (r.serviceModel as "restaurant" | "cafe" | "hybrid" | undefined) ?? "restaurant",
     imageUrls: r.imageUrls ?? [],
+    googleMapsUrl: r.googleMapsUrl ?? "",
   };
 }
 
@@ -250,6 +253,13 @@ function RestaurantFormFields({
           value={values.website}
           onChange={(e) => onChange({ website: e.target.value })}
           placeholder="Ex : minerva-restaurant.com"
+        />
+      </Field>
+      <Field label="Lien Google Maps" hint="Optionnel — affiché dans l'application cliente pour permettre aux clients de laisser un vrai avis Google.">
+        <Input
+          value={values.googleMapsUrl}
+          onChange={(e) => onChange({ googleMapsUrl: e.target.value })}
+          placeholder="Ex : https://maps.app.goo.gl/..."
         />
       </Field>
       <Field label="Description" hint="Optionnel — modifiable même après la pré-remplissage automatique">
