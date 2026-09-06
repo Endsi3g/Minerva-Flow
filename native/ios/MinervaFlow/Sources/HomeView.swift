@@ -115,12 +115,14 @@ struct HomeView: View {
                     } label: {
                         Image(systemName: notifications.authorizationStatus == .authorized ? "bell.fill" : "bell")
                     }
+                    .accessibilityLabel("Notifications")
 
                     Button {
                         showRestaurantMap = true
                     } label: {
                         Image(systemName: "mappin.and.ellipse")
                     }
+                    .accessibilityLabel("Découvrir des restaurants à proximité")
                 }
                 .font(.system(size: 17))
                 .foregroundStyle(MinervaColor.inkSoft)

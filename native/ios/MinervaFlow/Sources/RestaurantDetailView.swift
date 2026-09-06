@@ -143,6 +143,7 @@ struct RestaurantDetailView: View {
                     .foregroundStyle(MinervaColor.emeraldDark)
                     .background(MinervaColor.emerald.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 11))
+                    .accessibilityLabel("Appeler le restaurant")
                 }
 
                 if let website = restaurant.website, let url = URL(string: website) {
@@ -154,6 +155,7 @@ struct RestaurantDetailView: View {
                     .foregroundStyle(MinervaColor.emeraldDark)
                     .background(MinervaColor.emerald.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 11))
+                    .accessibilityLabel("Visiter le site web")
                 }
 
                 if let mapsUrlString = restaurant.googleMapsUrl, let url = URL(string: mapsUrlString) {
@@ -162,6 +164,7 @@ struct RestaurantDetailView: View {
                             .font(.system(size: 13))
                             .frame(width: 42, height: 38)
                     }
+                    .accessibilityLabel("Laisser un avis Google")
                     .foregroundStyle(MinervaColor.emeraldDark)
                     .background(MinervaColor.emerald.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 11))

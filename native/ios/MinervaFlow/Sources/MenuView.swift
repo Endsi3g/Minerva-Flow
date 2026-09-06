@@ -77,6 +77,7 @@ struct MenuView: View {
                     } label: {
                         Image(systemName: "qrcode.viewfinder")
                     }
+                    .accessibilityLabel("Scanner un code")
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: cartCount)
@@ -364,6 +365,7 @@ struct CategoryItemListView: View {
                         .foregroundStyle(MinervaColor.inkSoft)
                 }
                 .buttonStyle(PressableButtonStyle())
+                .accessibilityLabel("Diminuer la quantité")
 
                 Text("\(quantity)")
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
@@ -381,6 +383,7 @@ struct CategoryItemListView: View {
                     .foregroundStyle(MinervaColor.emerald)
             }
             .buttonStyle(PressableButtonStyle())
+            .accessibilityLabel("Ajouter au panier")
         }
     }
 }
