@@ -35,6 +35,7 @@ targets:
               - minervaflow
         NSFaceIDUsageDescription: "Utilisez Face ID pour déverrouiller rapidement votre compte de fidélité Minerva Flow."
         NSLocationWhenInUseUsageDescription: "Minerva Flow utilise votre position pour trouver les restaurants et cafés participants les plus proches de vous."
+        NSCameraUsageDescription: "Minerva Flow utilise l'appareil photo pour scanner le code du restaurant et accéder directement à son menu."
     dependencies:
       - package: Supabase
         product: Supabase

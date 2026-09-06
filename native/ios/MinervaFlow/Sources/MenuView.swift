@@ -15,6 +15,7 @@ struct MenuView: View {
     @State private var cart: [String: Int] = [:]
     @State private var checkoutOpen = false
     @State private var hasLoadedOnce = false
+    @State private var showScanner = false
 
     private var cartCount: Int { cart.values.reduce(0, +) }
     private var cartLines: [(item: NativeMenuItem, quantity: Int)] {
@@ -69,6 +70,15 @@ struct MenuView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showScanner = true
+                    } label: {
+                        Image(systemName: "qrcode.viewfinder")
+                    }
+                }
+            }
             .animation(.easeInOut(duration: 0.25), value: cartCount)
             .task {
                 guard !hasLoadedOnce else { return }
@@ -79,6 +89,9 @@ struct MenuView: View {
                 }
             }
             .refreshable { await supabase.fetchMenu() }
+            .fullScreenCover(isPresented: $showScanner) {
+                ScanToOrderView()
+            }
             .sheet(isPresented: $checkoutOpen) {
                 CheckoutSheet(
                     lines: cartLines,

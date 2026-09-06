@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */; };
 		09DEDA487C152D20E5410836 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B8ABC1E0681608032F18B9B5 /* Assets.xcassets */; };
+		111FB36D15A3D9DEEBA9060B /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA484AE32471A39B3214052F /* QRScannerView.swift */; };
 		1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8113A301B23FEECDBE8EDE /* MainTabView.swift */; };
 		1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBD59C80CE3B06A999142A6E /* Config.swift */; };
 		2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471F651B424DBE91D0FC0A0E /* MyCardView.swift */; };
@@ -58,6 +59,7 @@
 		B8ABC1E0681608032F18B9B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferDetailView.swift; sourceTree = "<group>"; };
 		C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemDetailView.swift; sourceTree = "<group>"; };
+		CA484AE32471A39B3214052F /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		CD8113A301B23FEECDBE8EDE /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		D58EE17A9A62B1893F865891 /* RadialGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialGauge.swift; sourceTree = "<group>"; };
@@ -110,6 +112,7 @@
 				C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */,
 				47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */,
 				D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */,
+				CA484AE32471A39B3214052F /* QRScannerView.swift */,
 				D58EE17A9A62B1893F865891 /* RadialGauge.swift */,
 				E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */,
 				03E2365512980AA23003195C /* RestaurantMapView.swift */,
@@ -242,6 +245,7 @@
 				4E35352D66E4B11496D587ED /* OfferDetailView.swift in Sources */,
 				7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */,
 				A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */,
+				111FB36D15A3D9DEEBA9060B /* QRScannerView.swift in Sources */,
 				CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */,
 				B452FFE84A4A20AE63CF45BA /* RestaurantDetailView.swift in Sources */,
 				85AB6A5594778C5544D34E18 /* RestaurantMapView.swift in Sources */,
