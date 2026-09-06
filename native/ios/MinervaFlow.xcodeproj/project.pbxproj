@@ -37,6 +37,7 @@
 		CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D58EE17A9A62B1893F865891 /* RadialGauge.swift */; };
 		E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442686E96CEA070F53FB728F /* EditProfileSheet.swift */; };
 		E602B1260BDBC61608C8F1C7 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE934F2A5846A120417A19B /* Theme.swift */; };
+		E895E770CDE5B84ADABAE566 /* AuthFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */; };
 		EB483ABD7DA63D91561BE978 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F66981C3B41C8B5FD69ECE /* AuthView.swift */; };
 		EE8C7E7104DBD708782A326E /* MinervaFlowWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1AFCB4B80589F9BD7E3AECC9 /* MinervaFlowWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F10EC90F16CF2AC65B6B015A /* OrderTotalsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59493D8CAE71CA71582DA48D /* OrderTotalsTests.swift */; };
@@ -46,6 +47,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		67DB84FBFD9AB72267B28905 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F2A369A8685101AD54924DB8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3FD34A21BF50DC87042F1BA3;
+			remoteInfo = MinervaFlow;
+		};
 		723A51C041AF818C67918153 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F2A369A8685101AD54924DB8 /* Project object */;
@@ -85,6 +93,7 @@
 		2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		2D70223A1891BFC32372F3C5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		3FDF4D1B53C09BD25A26EEDF /* MinervaFlowWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlowWidget.entitlements; sourceTree = "<group>"; };
+		4010F1012ABA1F318CBAF125 /* MinervaFlowUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MinervaFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		442686E96CEA070F53FB728F /* EditProfileSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileSheet.swift; sourceTree = "<group>"; };
 		471F651B424DBE91D0FC0A0E /* MyCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyCardView.swift; sourceTree = "<group>"; };
 		47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
@@ -94,6 +103,7 @@
 		5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandMarks.swift; sourceTree = "<group>"; };
 		59493D8CAE71CA71582DA48D /* OrderTotalsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTotalsTests.swift; sourceTree = "<group>"; };
 		5A9CD9B5E79E9FE474707739 /* RewardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardsView.swift; sourceTree = "<group>"; };
+		6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFlowUITests.swift; sourceTree = "<group>"; };
 		75D53BED95FFB389516CCEF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowApp.swift; sourceTree = "<group>"; };
 		89B5498B7D0733D7AA1958D9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -131,6 +141,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		04C53FCCB082CC76B554E39E /* MinervaFlowUITests */ = {
+			isa = PBXGroup;
+			children = (
+				6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */,
+			);
+			path = MinervaFlowUITests;
+			sourceTree = "<group>";
+		};
 		16D833D53C074D9DD6C0C882 /* MinervaFlowTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -145,6 +163,7 @@
 			children = (
 				569A866D9C8D49199C087872 /* MinervaFlow */,
 				16D833D53C074D9DD6C0C882 /* MinervaFlowTests */,
+				04C53FCCB082CC76B554E39E /* MinervaFlowUITests */,
 				C1B1C5808A93D71EF04B2D01 /* MinervaFlowWidget */,
 				41BBEAEE36449412B771DBC8 /* Shared */,
 				69638E77894125B881D237E7 /* Products */,
@@ -208,6 +227,7 @@
 			children = (
 				A0B3CE87BA193CEEDBA5D5D5 /* MinervaFlow.app */,
 				DDBB4AF1C78A26877459630D /* MinervaFlowTests.xctest */,
+				4010F1012ABA1F318CBAF125 /* MinervaFlowUITests.xctest */,
 				1AFCB4B80589F9BD7E3AECC9 /* MinervaFlowWidgetExtension.appex */,
 			);
 			name = Products;
@@ -275,6 +295,24 @@
 			productReference = 1AFCB4B80589F9BD7E3AECC9 /* MinervaFlowWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		8D4FC1B6DCCEE69B8F936CAF /* MinervaFlowUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8EB9252E1748E6FE955F8EDE /* Build configuration list for PBXNativeTarget "MinervaFlowUITests" */;
+			buildPhases = (
+				64E16299CE77D99AAE6A8F4F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5AB197D62D8BBED84730A39B /* PBXTargetDependency */,
+			);
+			name = MinervaFlowUITests;
+			packageProductDependencies = (
+			);
+			productName = MinervaFlowUITests;
+			productReference = 4010F1012ABA1F318CBAF125 /* MinervaFlowUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		E08EC143477965FDF90FE2DE /* MinervaFlowTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 72FF9D89125BA644A17EFD06 /* Build configuration list for PBXNativeTarget "MinervaFlowTests" */;
@@ -310,6 +348,11 @@
 						DevelopmentTeam = DV9V35452J;
 						ProvisioningStyle = Automatic;
 					};
+					8D4FC1B6DCCEE69B8F936CAF = {
+						DevelopmentTeam = DV9V35452J;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 3FD34A21BF50DC87042F1BA3;
+					};
 					E08EC143477965FDF90FE2DE = {
 						DevelopmentTeam = DV9V35452J;
 						ProvisioningStyle = Automatic;
@@ -336,6 +379,7 @@
 				3FD34A21BF50DC87042F1BA3 /* MinervaFlow */,
 				4483569BD8B798D8E9CC531B /* MinervaFlowWidgetExtension */,
 				E08EC143477965FDF90FE2DE /* MinervaFlowTests */,
+				8D4FC1B6DCCEE69B8F936CAF /* MinervaFlowUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -352,6 +396,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		64E16299CE77D99AAE6A8F4F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E895E770CDE5B84ADABAE566 /* AuthFlowUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AB71D3581C788FE8C01BA973 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -418,6 +470,11 @@
 			isa = PBXTargetDependency;
 			target = 3FD34A21BF50DC87042F1BA3 /* MinervaFlow */;
 			targetProxy = 723A51C041AF818C67918153 /* PBXContainerItemProxy */;
+		};
+		5AB197D62D8BBED84730A39B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3FD34A21BF50DC87042F1BA3 /* MinervaFlow */;
+			targetProxy = 67DB84FBFD9AB72267B28905 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -608,6 +665,26 @@
 			};
 			name = Debug;
 		};
+		E0972D61369E58D1F63F2F65 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DV9V35452J;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.minervaflow.loyalty.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = MinervaFlow;
+			};
+			name = Debug;
+		};
 		E1CBE307B3B11E4D342A8FB1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -650,6 +727,26 @@
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
+		};
+		F6B25837D91B092DAECA8D8F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DV9V35452J;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.minervaflow.loyalty.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = MinervaFlow;
+			};
+			name = Release;
 		};
 		FC7182EB2F965BACBA350DE8 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -706,6 +803,15 @@
 			buildConfigurations = (
 				E9540183F9576A289F526B6A /* Debug */,
 				77496FD770430435643FC8A9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8EB9252E1748E6FE955F8EDE /* Build configuration list for PBXNativeTarget "MinervaFlowUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E0972D61369E58D1F63F2F65 /* Debug */,
+				F6B25837D91B092DAECA8D8F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

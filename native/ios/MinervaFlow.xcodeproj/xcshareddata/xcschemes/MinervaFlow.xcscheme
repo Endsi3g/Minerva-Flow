@@ -50,6 +50,17 @@
                ReferencedContainer = "container:MinervaFlow.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D4FC1B6DCCEE69B8F936CAF"
+               BuildableName = "MinervaFlowUITests.xctest"
+               BlueprintName = "MinervaFlowUITests"
+               ReferencedContainer = "container:MinervaFlow.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>
