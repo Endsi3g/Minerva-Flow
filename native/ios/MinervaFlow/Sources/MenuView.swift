@@ -44,154 +44,92 @@ struct MenuView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Group {
-                if supabase.isLoadingMenu && supabase.menuItems.isEmpty {
-                    VStack {
-                        Spacer()
-                        ProgressView()
-                        Spacer()
+        NavigationStack {
+            ZStack(alignment: .bottom) {
+                Group {
+                    if supabase.isLoadingMenu && supabase.menuItems.isEmpty {
+                        VStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                    } else if supabase.menuItems.isEmpty {
+                        emptyState
+                    } else {
+                        categoryGrid
                     }
-                } else if supabase.menuItems.isEmpty {
-                    emptyState
-                } else {
-                    menuList
                 }
-            }
-            .background(MinervaColor.cream.ignoresSafeArea())
+                .background(MinervaColor.cream.ignoresSafeArea())
 
-            if cartCount > 0 {
-                cartBar
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut(duration: 0.25), value: cartCount)
-        .task {
-            guard !hasLoadedOnce else { return }
-            hasLoadedOnce = true
-            await supabase.fetchMenu()
-        }
-        .refreshable { await supabase.fetchMenu() }
-        .sheet(isPresented: $checkoutOpen) {
-            CheckoutSheet(
-                lines: cartLines,
-                taxRate: supabase.taxRate,
-                acceptsTips: supabase.acceptsTips,
-                onOrdered: {
-                    cart = [:]
-                    checkoutOpen = false
+                if cartCount > 0 {
+                    cartBar
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-            )
-        }
-        .alert("Erreur", isPresented: Binding(
-            get: { supabase.lastError != nil },
-            set: { if !$0 { supabase.lastError = nil } }
-        )) {
-            Button("OK", role: .cancel) { supabase.lastError = nil }
-        } message: {
-            Text(supabase.lastError ?? "")
+            }
+            .navigationTitle("Commander")
+            .navigationBarTitleDisplayMode(.large)
+            .animation(.easeInOut(duration: 0.25), value: cartCount)
+            .task {
+                guard !hasLoadedOnce else { return }
+                hasLoadedOnce = true
+                await supabase.fetchMenu()
+            }
+            .refreshable { await supabase.fetchMenu() }
+            .sheet(isPresented: $checkoutOpen) {
+                CheckoutSheet(
+                    lines: cartLines,
+                    taxRate: supabase.taxRate,
+                    acceptsTips: supabase.acceptsTips,
+                    onOrdered: {
+                        cart = [:]
+                        checkoutOpen = false
+                    }
+                )
+            }
+            .alert("Erreur", isPresented: Binding(
+                get: { supabase.lastError != nil },
+                set: { if !$0 { supabase.lastError = nil } }
+            )) {
+                Button("OK", role: .cancel) { supabase.lastError = nil }
+            } message: {
+                Text(supabase.lastError ?? "")
+            }
         }
     }
 
-    private var menuList: some View {
+    /// Categories first, browsed one at a time — a restaurant with dozens
+    /// of items (the "40 cafés" case) would otherwise force one long
+    /// scroll to find anything. Each tile shows the category's own item
+    /// count so it's obvious how much is behind it before tapping in.
+    private var categoryGrid: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                Text("Commander")
-                    .font(MinervaFont.display(24))
-                    .foregroundStyle(MinervaColor.ink)
-                    .padding(.top, 4)
-
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 ForEach(groupedMenu, id: \.category) { group in
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(group.category.uppercased())
-                            .font(.system(size: 11, weight: .bold))
-                            .tracking(0.6)
-                            .foregroundStyle(MinervaColor.inkFaint)
-
-                        ForEach(group.items) { item in
-                            menuRow(item)
+                    NavigationLink {
+                        CategoryItemListView(category: group.category, items: group.items, cart: $cart)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Image(systemName: "fork.knife")
+                                .font(.system(size: 20))
+                                .foregroundStyle(MinervaColor.emerald)
+                            Text(group.category)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(MinervaColor.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("\(group.items.count) article\(group.items.count > 1 ? "s" : "")")
+                                .font(.system(size: 11))
+                                .foregroundStyle(MinervaColor.inkFaint)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
                     }
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .buttonStyle(PressableButtonStyle())
                 }
-
-                Color.clear.frame(height: cartCount > 0 ? 90 : 20)
+                Color.clear.frame(height: cartCount > 0 ? 80 : 8).gridCellColumns(2)
             }
             .padding(18)
-        }
-    }
-
-    private func menuRow(_ item: NativeMenuItem) -> some View {
-        let quantity = cart[item.id] ?? 0
-
-        return HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12).fill(MinervaColor.ink.opacity(0.05))
-                Image(systemName: "fork.knife")
-                    .font(.system(size: 18))
-                    .foregroundStyle(MinervaColor.inkFaint)
-            }
-            .frame(width: 56, height: 56)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.name)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(MinervaColor.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let description = item.description {
-                    Text(description)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(MinervaColor.inkFaint)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Text(String(format: "%.2f $", item.price))
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(MinervaColor.emeraldDark)
-            }
-
-            Spacer(minLength: 8)
-
-            stepper(quantity: quantity, itemId: item.id)
-        }
-        .padding(12)
-        .background(quantity > 0 ? MinervaColor.emerald.opacity(0.06) : MinervaColor.creamSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(quantity > 0 ? MinervaColor.emerald.opacity(0.3) : .clear, lineWidth: 1.5)
-        )
-    }
-
-    private func stepper(quantity: Int, itemId: String) -> some View {
-        HStack(spacing: 10) {
-            if quantity > 0 {
-                Button {
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    cart[itemId] = max(0, quantity - 1)
-                } label: {
-                    Image(systemName: "minus.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(MinervaColor.inkSoft)
-                }
-                .buttonStyle(PressableButtonStyle())
-
-                Text("\(quantity)")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(MinervaColor.ink)
-                    .frame(minWidth: 16)
-            }
-
-            Button {
-                let generator = UIImpactFeedbackGenerator(style: .light)
-                generator.impactOccurred()
-                cart[itemId] = quantity + 1
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(MinervaColor.emerald)
-            }
-            .buttonStyle(PressableButtonStyle())
         }
     }
 
@@ -241,6 +179,126 @@ struct MenuView: View {
                 .padding(.horizontal, 40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// One category's items — the second step of the category-first browse
+/// (category grid → this list → MenuItemDetailView). The quantity stepper
+/// lives here rather than on the detail page, so adding to cart never
+/// requires leaving the list; tapping the item's name/photo instead of the
+/// stepper is what opens the full detail page.
+struct CategoryItemListView: View {
+    let category: String
+    let items: [NativeMenuItem]
+    @Binding var cart: [String: Int]
+    @EnvironmentObject var supabase: SupabaseManager
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(items) { item in
+                    menuRow(item)
+                }
+            }
+            .padding(18)
+        }
+        .background(MinervaColor.cream.ignoresSafeArea())
+        .navigationTitle(category)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func menuRow(_ item: NativeMenuItem) -> some View {
+        let quantity = cart[item.id] ?? 0
+
+        return HStack(spacing: 12) {
+            NavigationLink {
+                MenuItemDetailView(item: item, restaurantId: item.restaurantId, allItemsInCategory: items)
+            } label: {
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12).fill(MinervaColor.ink.opacity(0.05))
+                        if let firstImage = item.galleryImageURLs.first, let url = URL(string: firstImage) {
+                            AsyncImage(url: url) { phase in
+                                if let image = phase.image {
+                                    image.resizable().scaledToFill()
+                                } else {
+                                    Image(systemName: "fork.knife").foregroundStyle(MinervaColor.inkFaint)
+                                }
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        } else {
+                            Image(systemName: "fork.knife")
+                                .font(.system(size: 18))
+                                .foregroundStyle(MinervaColor.inkFaint)
+                        }
+                    }
+                    .frame(width: 56, height: 56)
+                    .clipped()
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.name)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(MinervaColor.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if let description = item.description {
+                            Text(description)
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(MinervaColor.inkFaint)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Text(String(format: "%.2f $", item.price))
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundStyle(MinervaColor.emeraldDark)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 8)
+
+            stepper(quantity: quantity, itemId: item.id)
+        }
+        .padding(12)
+        .background(quantity > 0 ? MinervaColor.emerald.opacity(0.06) : MinervaColor.creamSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(quantity > 0 ? MinervaColor.emerald.opacity(0.3) : .clear, lineWidth: 1.5)
+        )
+    }
+
+    private func stepper(quantity: Int, itemId: String) -> some View {
+        HStack(spacing: 10) {
+            if quantity > 0 {
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    cart[itemId] = max(0, quantity - 1)
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                Text("\(quantity)")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(MinervaColor.ink)
+                    .frame(minWidth: 16)
+            }
+
+            Button {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                cart[itemId] = quantity + 1
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(MinervaColor.emerald)
+            }
+            .buttonStyle(PressableButtonStyle())
+        }
     }
 }
 

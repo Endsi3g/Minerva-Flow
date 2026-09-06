@@ -15,6 +15,7 @@ export type MenuItemRow = {
   active: boolean;
   description: string | null;
   image_url: string | null;
+  image_urls: string[] | null;
   created_at: string;
 };
 
@@ -30,6 +31,7 @@ export function mapMenuItem(row: MenuItemRow): MenuItem {
     active: row.active,
     description: row.description,
     imageUrl: row.image_url,
+    imageUrls: row.image_urls ?? [],
     createdAt: row.created_at,
   };
 }

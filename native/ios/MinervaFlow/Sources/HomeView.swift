@@ -11,7 +11,11 @@ import SwiftUI
 /// cannot exist without becoming a scrollable list eventually.
 struct HomeView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @EnvironmentObject var notifications: NotificationManager
     @State private var showMyCard = false
+    @State private var showRestaurantMap = false
+    @State private var notificationDeniedAlert = false
+    @State private var selectedOffer: Offer?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,6 +53,36 @@ struct HomeView: View {
         .sheet(isPresented: $showMyCard) {
             MyCardView()
         }
+        .sheet(isPresented: $showRestaurantMap) {
+            RestaurantMapView()
+        }
+        .sheet(item: $selectedOffer) { offer in
+            OfferDetailView(offer: offer)
+        }
+        .alert("Notifications désactivées", isPresented: $notificationDeniedAlert) {
+            Button("Ouvrir Réglages") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Activez les notifications dans Réglages pour être averti des nouvelles offres.")
+        }
+    }
+
+    private func handleBellTap() {
+        Task {
+            await notifications.refreshStatus()
+            switch notifications.authorizationStatus {
+            case .notDetermined:
+                _ = await notifications.requestPermission()
+            case .denied:
+                notificationDeniedAlert = true
+            default:
+                break
+            }
+        }
     }
 
     // MARK: - Pinned header + tier banner
@@ -74,13 +108,18 @@ struct HomeView: View {
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
-                // Notifications/location icons mirror the Starbucks header
-                // pattern visually — not wired to a destination yet (no
-                // notification center or store-locator screen exists),
-                // profile already has its own tab so isn't duplicated here.
                 HStack(spacing: 16) {
-                    Image(systemName: "bell")
-                    Image(systemName: "mappin.and.ellipse")
+                    Button {
+                        handleBellTap()
+                    } label: {
+                        Image(systemName: notifications.authorizationStatus == .authorized ? "bell.fill" : "bell")
+                    }
+
+                    Button {
+                        showRestaurantMap = true
+                    } label: {
+                        Image(systemName: "mappin.and.ellipse")
+                    }
                 }
                 .font(.system(size: 17))
                 .foregroundStyle(MinervaColor.inkSoft)
@@ -221,26 +260,34 @@ struct HomeView: View {
                 .foregroundStyle(MinervaColor.ink)
 
             ForEach(supabase.offers) { offer in
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(alignment: .top, spacing: 6) {
-                        Image(systemName: "tag.fill")
-                            .font(.system(size: 12))
-                            .padding(.top, 2)
-                        Text(offer.title)
-                            .font(.system(size: 14, weight: .semibold))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .foregroundStyle(MinervaColor.emeraldDark)
+                Button {
+                    selectedOffer = offer
+                } label: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .top, spacing: 6) {
+                            Image(systemName: "tag.fill")
+                                .font(.system(size: 12))
+                                .padding(.top, 2)
+                            Text(offer.title)
+                                .font(.system(size: 14, weight: .semibold))
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 6)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundStyle(MinervaColor.emeraldDark)
 
-                    if let description = offer.description {
-                        Text(description)
-                            .font(.system(size: 12))
-                            .foregroundStyle(MinervaColor.emerald)
-                            .fixedSize(horizontal: false, vertical: true)
+                        if let description = offer.description {
+                            Text(description)
+                                .font(.system(size: 12))
+                                .foregroundStyle(MinervaColor.emerald)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .buttonStyle(.plain)
                 .background(MinervaColor.emerald.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.emerald.opacity(0.2)))

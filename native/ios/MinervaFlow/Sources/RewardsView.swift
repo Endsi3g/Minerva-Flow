@@ -14,6 +14,7 @@ struct RewardsView: View {
     @State private var confirmingReward: LoyaltyReward?
     @State private var hasLoadedReferrals = false
     @State private var qrProgram: ReferralProgress?
+    @State private var selectedOffer: Offer?
 
     var body: some View {
         Group {
@@ -32,6 +33,10 @@ struct RewardsView: View {
                             pendingSection(pending)
                         }
 
+                        if !supabase.offers.isEmpty {
+                            offersCatalogSection
+                        }
+
                         catalogSection
 
                         if !supabase.referralPrograms.isEmpty {
@@ -39,6 +44,9 @@ struct RewardsView: View {
                         }
                     }
                     .padding(18)
+                }
+                .sheet(item: $selectedOffer) { offer in
+                    OfferDetailView(offer: offer)
                 }
                 .refreshable {
                     await supabase.loadPortalData()
@@ -122,6 +130,54 @@ struct RewardsView: View {
                 .padding(14)
                 .background(MinervaColor.emerald.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+        }
+    }
+
+    /// Offers get their own catalog here too, not just the Home feed —
+    /// tapping one opens its full detail page instead of only being a
+    /// promo card that jumps straight to ordering.
+    private var offersCatalogSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Offres")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            ForEach(supabase.offers) { offer in
+                Button {
+                    selectedOffer = offer
+                } label: {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle().fill(MinervaColor.emerald.opacity(0.12))
+                            Image(systemName: "tag.fill")
+                                .font(.system(size: 14))
+                                .foregroundStyle(MinervaColor.emeraldDark)
+                        }
+                        .frame(width: 38, height: 38)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(offer.title)
+                                .font(.system(size: 13.5, weight: .semibold))
+                                .foregroundStyle(MinervaColor.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let description = offer.description {
+                                Text(description)
+                                    .font(.system(size: 11.5))
+                                    .foregroundStyle(MinervaColor.inkFaint)
+                                    .lineLimit(1)
+                            }
+                        }
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(MinervaColor.inkFaint)
+                    }
+                    .padding(12)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -278,40 +334,51 @@ struct RewardsView: View {
                         .foregroundStyle(MinervaColor.emerald)
                     }
 
-                    HStack(spacing: 10) {
-                        ShareLink(item: referralShareURL(code: link.code), message: Text(referralShareText(program: program, code: link.code))) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Partager")
-                            }
-                            .font(.system(size: 12, weight: .semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
+                    // Pre-generated, always visible above the share
+                    // button — no "get my link" tap needed first (see
+                    // SupabaseManager.fetchReferrals's own comment: every
+                    // program already has a link by the time this renders).
+                    Button {
+                        qrProgram = progress
+                    } label: {
+                        if let qrImage = QRCodeGenerator.image(for: referralShareURL(code: link.code)) {
+                            Image(uiImage: qrImage)
+                                .interpolation(.none)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 96, height: 96)
+                                .padding(8)
+                                .background(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
-                        .foregroundStyle(.white)
-                        .background(MinervaColor.emerald)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .buttonStyle(PressableButtonStyle())
-
-                        Button {
-                            qrProgram = progress
-                        } label: {
-                            Image(systemName: "qrcode")
-                                .font(.system(size: 15))
-                                .frame(width: 40, height: 36)
-                        }
-                        .foregroundStyle(MinervaColor.emeraldDark)
-                        .background(MinervaColor.emerald.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .buttonStyle(PressableButtonStyle())
                     }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+
+                    ShareLink(item: referralShareURL(code: link.code), message: Text(referralShareText(program: program, code: link.code))) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Partager mon lien")
+                        }
+                        .font(.system(size: 12, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                    }
+                    .foregroundStyle(.white)
+                    .background(MinervaColor.emerald)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .buttonStyle(PressableButtonStyle())
                     .padding(.top, 2)
                 }
             } else {
+                // Link generation is now automatic (see fetchReferrals) —
+                // this only ever shows if that silently failed, so it
+                // reads as a retry, not a required first step.
                 Button {
                     Task { _ = await supabase.createReferralLink(for: program.id) }
                 } label: {
-                    Text("Obtenir mon lien")
+                    Text("Réessayer")
                         .font(.system(size: 12.5, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -353,17 +420,7 @@ struct ReferralQRSheet: View {
         Config.apiBaseURL.appending(path: "/p/\(progress.link?.code ?? "")")
     }
 
-    private var qrImage: UIImage? {
-        let context = CIContext()
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(shareURL.absoluteString.utf8)
-        filter.correctionLevel = "M"
-        guard let outputImage = filter.outputImage else { return nil }
-        let transform = CGAffineTransform(scaleX: 10, y: 10)
-        let scaled = outputImage.transformed(by: transform)
-        guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return nil }
-        return UIImage(cgImage: cgImage)
-    }
+    private var qrImage: UIImage? { QRCodeGenerator.image(for: shareURL) }
 
     var body: some View {
         NavigationStack {
@@ -405,5 +462,21 @@ struct ReferralQRSheet: View {
                 }
             }
         }
+    }
+}
+
+/// Shared by the inline referral-card QR and its full-screen sheet — one
+/// CoreImage code path, no third-party library.
+enum QRCodeGenerator {
+    static func image(for url: URL) -> UIImage? {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(url.absoluteString.utf8)
+        filter.correctionLevel = "M"
+        guard let outputImage = filter.outputImage else { return nil }
+        let transform = CGAffineTransform(scaleX: 10, y: 10)
+        let scaled = outputImage.transformed(by: transform)
+        guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return nil }
+        return UIImage(cgImage: cgImage)
     }
 }
