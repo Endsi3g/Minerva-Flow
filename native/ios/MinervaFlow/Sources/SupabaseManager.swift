@@ -196,6 +196,29 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    /// Same customers_update_own RLS policy — lets the restaurant's own
+    /// Clients page (staff-facing) reach a customer by phone, since a
+    /// customer's own portal/native profile is the only place that number
+    /// ever gets entered for a self-enrolled loyalty account.
+    func updatePhone(_ phone: String) async -> Bool {
+        guard let customerId = customer?.id else { return false }
+        let trimmed = phone.trimmingCharacters(in: .whitespaces)
+        do {
+            struct Patch: Encodable { let phone: String? }
+            try await client
+                .from("customers")
+                .update(Patch(phone: trimmed.isEmpty ? nil : trimmed))
+                .eq("id", value: customerId)
+                .execute()
+            customer?.phone = trimmed.isEmpty ? nil : trimmed
+            return true
+        } catch {
+            lastError = "La mise à jour de votre numéro a échoué. Réessayez."
+            print("updatePhone error: \(error)")
+            return false
+        }
+    }
+
     /// Uploads to the same "avatars" storage bucket the web portal uses
     /// (per-auth.uid() folder policy, see
     /// supabase/migrations/0068_customer_profile_editing.sql's own

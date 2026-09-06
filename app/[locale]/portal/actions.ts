@@ -61,6 +61,7 @@ export async function updateMyProfileAction(
     birthday: string | null;
     city?: string | null;
     name?: string;
+    phone?: string | null;
     avatarUrl?: string | null;
   }
 ): Promise<boolean> {
@@ -80,6 +81,7 @@ export async function updateMyProfileAction(
     birthday: input.birthday,
     city: input.city,
     ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.phone !== undefined ? { phone: input.phone } : {}),
     ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {}),
   });
 }

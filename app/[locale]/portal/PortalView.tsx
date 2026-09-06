@@ -268,6 +268,7 @@ function AvatarEditor({
 function ProfileSettingsCard({ customer }: { customer: Customer }) {
   const [name, setName] = useState(customer.name);
   const [avatarUrl, setAvatarUrl] = useState(customer.avatarUrl);
+  const [phone, setPhone] = useState(customer.phone ?? "");
   const [birthday, setBirthday] = useState(customer.birthday ?? "");
   const [city, setCity] = useState(customer.city ?? "");
   const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
@@ -287,6 +288,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         birthday: birthday || null,
         city: city.trim() || null,
         name: name.trim() || customer.name,
+        phone: phone.trim() || null,
         avatarUrl,
       });
       if (ok) {
@@ -387,6 +389,10 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
             </button>
           )}
         </div>
+
+        <Field label="Téléphone" hint="Optionnel — permet au restaurant de vous joindre">
+          <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="514 555-0123" />
+        </Field>
 
         <Field label="Date de naissance" hint="Optionnel">
           <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />

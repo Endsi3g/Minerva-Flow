@@ -10,6 +10,7 @@ struct EditProfileSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String
+    @State private var phone: String
     @State private var photoItem: PhotosPickerItem?
     @State private var previewImage: UIImage?
     @State private var isUploadingPhoto = false
@@ -21,11 +22,14 @@ struct EditProfileSheet: View {
 
     @State private var isSavingName = false
     @State private var nameSaved = false
+    @State private var isSavingPhone = false
+    @State private var phoneSaved = false
 
     private enum EmailStatus: Equatable { case idle, sending, sent, error }
 
     init(customer: Customer) {
         _name = State(initialValue: customer.name)
+        _phone = State(initialValue: customer.phone ?? "")
         _newEmail = State(initialValue: customer.email ?? "")
     }
 
@@ -35,39 +39,30 @@ struct EditProfileSheet: View {
                 VStack(spacing: 22) {
                     photoPicker
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Nom")
-                            .font(.system(size: 11.5, weight: .semibold))
-                            .foregroundStyle(MinervaColor.inkSoft)
-                        HStack(spacing: 10) {
-                            TextField("", text: $name, prompt: Text("Votre nom").foregroundStyle(MinervaColor.inkFaint))
-                                .foregroundStyle(MinervaColor.ink)
-                                .padding(12)
-                                .background(.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 11))
-                                .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
-
-                            Button {
-                                Task { await saveName() }
-                            } label: {
-                                if isSavingName {
-                                    ProgressView()
-                                } else if nameSaved {
-                                    Image(systemName: "checkmark").foregroundStyle(MinervaColor.emeraldDark)
-                                } else {
-                                    Text("OK").font(.system(size: 13, weight: .semibold))
-                                }
-                            }
-                            .frame(width: 44, height: 44)
-                            .background(MinervaColor.emerald.opacity(nameSaved ? 0.12 : 1))
-                            .foregroundStyle(nameSaved ? MinervaColor.emeraldDark : .white)
-                            .clipShape(RoundedRectangle(cornerRadius: 11))
-                            .buttonStyle(PressableButtonStyle())
-                            .disabled(isSavingName || name.trimmingCharacters(in: .whitespaces).isEmpty)
-                        }
+                    savableField(
+                        label: "Nom",
+                        placeholder: "Votre nom",
+                        text: $name,
+                        isSaving: isSavingName,
+                        isSaved: nameSaved,
+                        disabled: name.trimmingCharacters(in: .whitespaces).isEmpty
+                    ) {
+                        Task { await saveName() }
                     }
 
                     emailSection
+
+                    savableField(
+                        label: "Téléphone",
+                        placeholder: "514 555-0123",
+                        text: $phone,
+                        isSaving: isSavingPhone,
+                        isSaved: phoneSaved,
+                        keyboardType: .phonePad,
+                        disabled: false
+                    ) {
+                        Task { await savePhone() }
+                    }
                 }
                 .padding(20)
             }
@@ -154,6 +149,52 @@ struct EditProfileSheet: View {
 
     // MARK: - Name
 
+    /// Shared "field + inline save button" row used for both Name and
+    /// Phone — same interaction (type, tap OK, see a checkmark) rather
+    /// than two subtly different hand-rolled rows.
+    @ViewBuilder
+    private func savableField(
+        label: String,
+        placeholder: String,
+        text: Binding<String>,
+        isSaving: Bool,
+        isSaved: Bool,
+        keyboardType: UIKeyboardType = .default,
+        disabled: Bool,
+        onSave: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundStyle(MinervaColor.inkSoft)
+            HStack(spacing: 10) {
+                TextField("", text: text, prompt: Text(placeholder).foregroundStyle(MinervaColor.inkFaint))
+                    .keyboardType(keyboardType)
+                    .foregroundStyle(MinervaColor.ink)
+                    .padding(12)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 11))
+                    .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
+
+                Button(action: onSave) {
+                    if isSaving {
+                        ProgressView()
+                    } else if isSaved {
+                        Image(systemName: "checkmark").foregroundStyle(MinervaColor.emeraldDark)
+                    } else {
+                        Text("OK").font(.system(size: 13, weight: .semibold))
+                    }
+                }
+                .frame(width: 44, height: 44)
+                .background(MinervaColor.emerald.opacity(isSaved ? 0.12 : 1))
+                .foregroundStyle(isSaved ? MinervaColor.emeraldDark : .white)
+                .clipShape(RoundedRectangle(cornerRadius: 11))
+                .buttonStyle(PressableButtonStyle())
+                .disabled(isSaving || disabled)
+            }
+        }
+    }
+
     private func saveName() async {
         isSavingName = true
         let ok = await supabase.updateName(name)
@@ -162,6 +203,17 @@ struct EditProfileSheet: View {
             nameSaved = true
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             nameSaved = false
+        }
+    }
+
+    private func savePhone() async {
+        isSavingPhone = true
+        let ok = await supabase.updatePhone(phone)
+        isSavingPhone = false
+        if ok {
+            phoneSaved = true
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            phoneSaved = false
         }
     }
 

@@ -12,7 +12,11 @@ enum Config {
     /// customer's own Supabase session token is sent as a Bearer header
     /// to these, same trust boundary as the web portal's RLS-scoped
     /// requests, just presented differently (see lib/auth/native-bearer.ts).
-    static let apiBaseURL = URL(string: "https://minervaflow.app")!
+    /// Uses the canonical www host directly — the bare domain 308-redirects
+    /// here, which URLSession follows transparently for GET but adds a
+    /// pointless extra round trip (and one more thing that could misbehave)
+    /// on every single bridge call, including POST/DELETE.
+    static let apiBaseURL = URL(string: "https://www.minervaflow.app")!
 
     /// Matches the CFBundleURLSchemes entry in project.yml — where
     /// ASWebAuthenticationSession hands control back to this app once
