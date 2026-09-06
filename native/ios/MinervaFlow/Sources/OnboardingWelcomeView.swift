@@ -49,6 +49,8 @@ struct OnboardingWelcomeView: View {
                     .background(topBarButtonBackground)
                     .clipShape(Circle())
             }
+            .accessibilityLabel("Retour")
+            .accessibilityHidden(page == 0)
             .opacity(page > 0 ? 1 : 0)
 
             Spacer()
@@ -71,6 +73,7 @@ struct OnboardingWelcomeView: View {
                     .background(topBarButtonBackground)
                     .clipShape(Circle())
             }
+            .accessibilityLabel("Fermer l'introduction")
         }
         .foregroundStyle(topBarForeground)
         .padding(.horizontal, 20)

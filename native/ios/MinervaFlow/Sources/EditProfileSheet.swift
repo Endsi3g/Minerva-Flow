@@ -114,6 +114,7 @@ struct EditProfileSheet: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
+        .accessibilityLabel("Changer la photo de profil")
         .onChange(of: photoItem) { _, newItem in
             Task { await handlePhotoPicked(newItem) }
         }

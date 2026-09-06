@@ -69,6 +69,7 @@ struct OfferDetailView: View {
                             .foregroundStyle(MinervaColor.emeraldDark)
                             .background(MinervaColor.emerald.opacity(0.12))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .accessibilityLabel("Partager")
                         }
                     }
                     .padding(18)

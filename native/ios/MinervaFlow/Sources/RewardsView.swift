@@ -371,6 +371,8 @@ struct RewardsView: View {
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
+                    .accessibilityLabel("Code QR de parrainage")
+                    .accessibilityHint("Agrandir pour le faire scanner")
 
                     ShareLink(item: referralShareURL(code: link.code), message: Text(referralShareText(program: program, code: link.code))) {
                         HStack(spacing: 6) {

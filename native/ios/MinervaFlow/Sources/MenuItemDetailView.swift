@@ -71,6 +71,7 @@ struct MenuItemDetailView: View {
                 ShareLink(item: shareText) {
                     Image(systemName: "square.and.arrow.up")
                 }
+                .accessibilityLabel("Partager")
             }
         }
         .sheet(isPresented: $showReviewSheet) {
@@ -191,6 +192,7 @@ struct MenuItemDetailView: View {
             .background(MinervaColor.emerald.opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .buttonStyle(PressableButtonStyle())
+            .accessibilityLabel("Écrire un avis")
         }
     }
 
@@ -211,6 +213,7 @@ struct MenuItemDetailView: View {
                 }
                 .foregroundStyle(MinervaColor.inkSoft)
                 .buttonStyle(PressableButtonStyle())
+                .accessibilityLabel("Retirer un \(item.name)")
 
                 Text("\(quantity)")
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
