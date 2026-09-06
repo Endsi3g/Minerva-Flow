@@ -83,7 +83,14 @@ export async function proxy(request: NextRequest) {
     // redirected would turn every auth email — including staff signup and
     // password reset, not just the customer OTP this was built for — into
     // a silent no-op the moment the hook is enabled in the dashboard.
-    pathWithoutLocale === "/api/auth/send-email-hook";
+    pathWithoutLocale === "/api/auth/send-email-hook" ||
+    // Native app bridge routes — the customer loyalty app has no browser
+    // and no Supabase session cookie, only a Bearer access token (see
+    // lib/auth/native-bearer.ts, which is these routes' actual auth check,
+    // same trust boundary as the web portal's RLS just presented
+    // differently). Same silent-redirect-to-/login trap as the two routes
+    // above otherwise.
+    pathWithoutLocale.startsWith("/api/portal/");
 
   // Fast-path for completely public routes when no auth cookies exist:
   // Skip the remote Supabase Auth network call to achieve single-digit millisecond TTFB at the edge.

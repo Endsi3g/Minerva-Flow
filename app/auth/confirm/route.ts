@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
+  const code = searchParams.get("code");
   const nextParam = searchParams.get("next");
   // A leading "//" is still accepted by startsWith("/") but browsers resolve
   // it as a protocol-relative URL to an external host — reject it so a
@@ -17,6 +18,19 @@ export async function GET(request: NextRequest) {
   if (token_hash && type) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash });
+    if (!error) {
+      redirect(next);
+    }
+    redirect(`/auth/error?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // OAuth (Google/Facebook via signInWithOAuth) redirects back with a PKCE
+  // `code` instead of a `token_hash` — same landing route, different
+  // exchange call, so both the customer portal and staff/owner login share
+  // one callback regardless of which provider was used.
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       redirect(next);
     }

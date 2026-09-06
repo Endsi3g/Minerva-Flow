@@ -14,14 +14,18 @@ import {
   type LoyaltyTierThresholds,
 } from "@/lib/loyalty-tiers";
 import { LogoMark } from "@/components/shell/Logo";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "@/i18n/navigation";
 import { formatCurrency, formatDate, roundToCents, cn } from "@/lib/utils";
 import type { Customer, CustomerReferralLink, LoyaltyReward, MenuItem, Offer, ReferralProgram, RewardRedemption } from "@/lib/types";
 import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-portal";
 import {
   getOrCreateReferralLinkAction,
   updateMyProfileAction,
+  requestEmailChangeAction,
   selfRedeemRewardAction,
   submitPortalOrderAction,
+  deleteMyAccountAction,
 } from "./actions";
 import {
   Copy,
@@ -43,6 +47,11 @@ import {
   User,
   ArrowRight,
   Clock,
+  Trash2,
+  AlertTriangle,
+  Camera,
+  Pencil,
+  Mail,
 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import QRCode from "qrcode";
@@ -172,12 +181,103 @@ function LoyaltyWalletCard({
   );
 }
 
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return parts
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+}
+
+/**
+ * Avatar upload reuses the existing "avatars" storage bucket (already
+ * policied per-auth.uid() folder — see 0068_customer_profile_editing.sql's
+ * own comment) rather than a customer-specific bucket, since a loyalty
+ * customer has a real auth.uid() once linked, same as staff.
+ */
+function AvatarEditor({
+  name,
+  avatarUrl,
+  onUploaded,
+}: {
+  name: string;
+  avatarUrl: string | null;
+  onUploaded: (url: string) => void;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Choisissez une image (JPG, PNG…).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("L'image doit faire moins de 5 Mo.");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+      if (uploadError) {
+        toast.error("L'envoi de la photo a échoué. Réessayez.");
+        return;
+      }
+      const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      onUploaded(publicUrlData.publicUrl);
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  return (
+    <div className="relative shrink-0">
+      <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-mv-green-tint text-[18px] font-semibold text-mv-green-dark">
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+        ) : (
+          initials(name || "?")
+        )}
+      </div>
+      <label className="absolute -bottom-1 -right-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-mv-ink text-white shadow-mv-sm transition-transform hover:scale-105">
+        {isUploading ? (
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+        ) : (
+          <Camera size={13} />
+        )}
+        <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={isUploading} />
+      </label>
+    </div>
+  );
+}
+
 function ProfileSettingsCard({ customer }: { customer: Customer }) {
+  const [name, setName] = useState(customer.name);
+  const [avatarUrl, setAvatarUrl] = useState(customer.avatarUrl);
   const [birthday, setBirthday] = useState(customer.birthday ?? "");
   const [city, setCity] = useState(customer.city ?? "");
   const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
   const [isSaving, setIsSaving] = useState(false);
   const [savedTick, setSavedTick] = useState(false);
+
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState(customer.email ?? "");
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   async function handleSave() {
     setIsSaving(true);
@@ -186,6 +286,8 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         marketingConsent,
         birthday: birthday || null,
         city: city.trim() || null,
+        name: name.trim() || customer.name,
+        avatarUrl,
       });
       if (ok) {
         toast.success("Profil mis à jour.");
@@ -199,10 +301,93 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
     }
   }
 
+  async function handleAvatarUploaded(url: string) {
+    setAvatarUrl(url);
+    const ok = await updateMyProfileAction(customer.id, {
+      marketingConsent,
+      birthday: birthday || null,
+      city: city.trim() || null,
+      avatarUrl: url,
+    });
+    if (ok) toast.success("Photo de profil mise à jour.");
+    else toast.error("La photo a été envoyée, mais l'enregistrement a échoué. Réessayez.");
+  }
+
+  async function handleRequestEmailChange() {
+    if (!newEmail.trim() || newEmail.trim() === customer.email) {
+      setIsEditingEmail(false);
+      return;
+    }
+    setEmailStatus("sending");
+    setEmailError(null);
+    const result = await requestEmailChangeAction(newEmail.trim());
+    if (result.ok) {
+      setEmailStatus("sent");
+    } else {
+      setEmailStatus("error");
+      setEmailError(result.error ?? "La demande a échoué. Réessayez.");
+    }
+  }
+
   return (
     <Card>
       <CardHeader title="Mon profil" description="Reçois des offres personnalisées et un cadeau le jour de ton anniversaire." />
-      <div className="space-y-3">
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <AvatarEditor name={name} avatarUrl={avatarUrl} onUploaded={handleAvatarUploaded} />
+          <div className="min-w-0 flex-1">
+            <Field label="Nom">
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Votre nom" />
+            </Field>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Courriel</p>
+          {emailStatus === "sent" ? (
+            <div className="flex items-start gap-2 rounded-lg bg-mv-green-tint px-3 py-2.5 text-[12.5px] text-mv-green-darker">
+              <Mail size={14} className="mt-0.5 shrink-0" />
+              <span>Vérifiez {newEmail} pour confirmer le changement — votre courriel actuel reste actif jusque-là.</span>
+            </div>
+          ) : isEditingEmail ? (
+            <div className="space-y-2">
+              <Input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="nouveau@exemple.com"
+                autoFocus
+              />
+              {emailStatus === "error" && <p className="text-[12px] text-mv-red">{emailError}</p>}
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleRequestEmailChange} disabled={emailStatus === "sending"}>
+                  {emailStatus === "sending" ? "Envoi…" : "Confirmer le changement"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setIsEditingEmail(false);
+                    setNewEmail(customer.email ?? "");
+                    setEmailStatus("idle");
+                  }}
+                >
+                  Annuler
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditingEmail(true)}
+              className="flex w-full items-center justify-between gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-3 py-2.5 text-left text-[13px] text-mv-ink transition-colors hover:bg-mv-cream"
+            >
+              <span className="truncate">{customer.email ?? "Aucun courriel"}</span>
+              <Pencil size={13} className="shrink-0 text-mv-ink-faint" />
+            </button>
+          )}
+        </div>
+
         <Field label="Date de naissance" hint="Optionnel">
           <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
         </Field>
@@ -221,6 +406,102 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
           {isSaving ? "Enregistrement…" : savedTick ? "Enregistré ✓" : "Enregistrer"}
         </Button>
       </div>
+    </Card>
+  );
+}
+
+/**
+ * Requires typing SUPPRIMER rather than a single confirm button — this is
+ * the one action in the portal that cannot be undone (see
+ * deleteMyAccountAction/deleteMyAccount), so it gets the highest-friction
+ * confirmation pattern in the app instead of the usual one-click confirm.
+ */
+function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const [confirmText, setConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const canConfirm = confirmText.trim().toUpperCase() === "SUPPRIMER";
+
+  async function handleDelete() {
+    if (!canConfirm) return;
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const ok = await deleteMyAccountAction();
+      if (!ok) {
+        setError("La suppression a échoué. Réessayez ou contactez le restaurant.");
+        setIsDeleting(false);
+        return;
+      }
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/portal/login");
+      router.refresh();
+    } catch {
+      setError("La suppression a échoué. Réessayez ou contactez le restaurant.");
+      setIsDeleting(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={() => {
+        if (!isDeleting) {
+          setConfirmText("");
+          setError(null);
+          onClose();
+        }
+      }}
+      title="Supprimer mon compte"
+      description="Cette action est irréversible."
+    >
+      <div className="space-y-4">
+        <p className="text-[13px] text-mv-ink-soft">
+          Votre accès sera immédiatement révoqué et vos informations personnelles (nom, courriel, date de
+          naissance, ville) seront effacées de tous les restaurants où vous êtes membre. Vos points, visites et
+          récompenses restent dans les registres du ou des restaurants, mais ne pourront plus être réclamés.
+        </p>
+        <Field label='Tapez "SUPPRIMER" pour confirmer'>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="SUPPRIMER"
+            autoComplete="off"
+          />
+        </Field>
+        {error && <p className="text-[12.5px] text-mv-red">{error}</p>}
+        <Button onClick={handleDelete} disabled={!canConfirm || isDeleting} variant="destructive" className="w-full">
+          {isDeleting ? "Suppression…" : "Supprimer définitivement mon compte"}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+function DangerZoneCard() {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader title="Zone de danger" description="Supprimer définitivement votre compte." />
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="flex w-full items-center gap-3 rounded-xl border border-mv-red/25 bg-mv-red/5 px-4 py-3 text-left transition-colors hover:bg-mv-red/10"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-red/10 text-mv-red">
+          <Trash2 size={16} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-mv-red">Supprimer mon compte</p>
+          <p className="flex items-center gap-1 text-[11.5px] text-mv-ink-faint">
+            <AlertTriangle size={11} /> Action irréversible
+          </p>
+        </div>
+      </button>
+      <DeleteAccountModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </Card>
   );
 }
@@ -1073,6 +1354,7 @@ export function PortalView({
                 </div>
               )}
             </Card>
+            <DangerZoneCard />
           </div>
         )}
       </div>

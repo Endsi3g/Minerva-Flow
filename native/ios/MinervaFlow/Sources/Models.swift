@@ -1,24 +1,132 @@
 import Foundation
+import SwiftUI
 
 struct Customer: Codable, Identifiable {
     let id: String
     let restaurantId: String
-    let name: String
+    var name: String
+    var email: String?
+    var avatarUrl: String?
     let visitCount: Int
     let totalSpent: Double
-    let loyaltyPoints: Int
-    let notificationFrequency: String
+    var loyaltyPoints: Int
+    var notificationFrequency: String
     let favoriteOfferIds: [String]
 
     enum CodingKeys: String, CodingKey {
         case id
         case restaurantId = "restaurant_id"
         case name
+        case email
+        case avatarUrl = "avatar_url"
         case visitCount = "visit_count"
         case totalSpent = "total_spent"
         case loyaltyPoints = "loyalty_points"
         case notificationFrequency = "notification_frequency"
         case favoriteOfferIds = "favorite_offer_ids"
+    }
+}
+
+struct LoyaltyReward: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String?
+    let pointsCost: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case description
+        case pointsCost = "points_cost"
+    }
+}
+
+struct Offer: Codable, Identifiable {
+    let id: String
+    let title: String
+    let description: String?
+    let active: Bool
+    let startsAt: Date?
+    let endsAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case description
+        case active
+        case startsAt = "starts_at"
+        case endsAt = "ends_at"
+    }
+
+    var isLive: Bool {
+        guard active else { return false }
+        let now = Date()
+        if let startsAt, startsAt > now { return false }
+        if let endsAt, endsAt < now { return false }
+        return true
+    }
+}
+
+struct NativeMenuItem: Codable, Identifiable {
+    let id: String
+    let name: String
+    let category: String?
+    let price: Double
+    let description: String?
+    let active: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, category, price, description, active
+    }
+}
+
+struct MenuResponse: Codable {
+    let items: [NativeMenuItem]
+    let taxRate: Double
+    let acceptsTips: Bool
+}
+
+struct ReferralProgram: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String?
+    let goalCount: Int
+    let rewardDescription: String?
+}
+
+struct ReferralLink: Codable, Identifiable {
+    let id: String
+    let referralProgramId: String
+    let code: String
+    let convertedCount: Int
+    let rewardClaimedAt: String?
+}
+
+struct ReferralProgress: Codable, Identifiable {
+    let program: ReferralProgram
+    let link: ReferralLink?
+    var id: String { program.id }
+}
+
+struct ReferralsResponse: Codable {
+    let programs: [ReferralProgress]
+}
+
+struct RewardRedemption: Codable, Identifiable {
+    let id: String
+    let rewardName: String
+    let pointsSpent: Int
+    let code: String
+    let status: String // "pending" | "claimed"
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case rewardName = "reward_name"
+        case pointsSpent = "points_spent"
+        case code
+        case status
+        case createdAt = "created_at"
     }
 }
 
@@ -56,6 +164,25 @@ enum LoyaltyTier: String {
         case .habitue: return "leaf"
         case .privilegie: return "star.fill"
         case .ambassadeur: return "crown.fill"
+        }
+    }
+
+    /// Solid full-width banner colors, matching the web's walletTierBg and
+    /// the Starbucks reference's Green/Gold-status-banner pattern — the
+    /// whole banner recolors per tier rather than a neutral card with a
+    /// colored badge.
+    var bannerColor: Color {
+        switch self {
+        case .habitue: return MinervaColor.ink
+        case .privilegie: return MinervaColor.emeraldDark
+        case .ambassadeur: return MinervaColor.limeAccent
+        }
+    }
+
+    var bannerForeground: Color {
+        switch self {
+        case .ambassadeur: return MinervaColor.emeraldDark
+        default: return .white
         }
     }
 

@@ -153,6 +153,43 @@ export async function selfRedeemReward(rewardId: string): Promise<RewardRedempti
   return mapRedemption(data as RewardRedemptionRow);
 }
 
+/**
+ * Self-serve account deletion, callable from both the web portal (session
+ * cookie, see actions.ts) and the native app (Bearer token, see
+ * app/api/portal/account/route.ts) — userId is always the caller's own
+ * auth.uid(), verified by each entry point before this runs, never taken
+ * from client-supplied data.
+ *
+ * A hard `auth.admin.deleteUser` is the actual point of no return (profiles
+ * cascades via its own FK, see 0001_init.sql). The customers rows are
+ * anonymized rather than deleted outright first: a restaurant's own
+ * visit/spend/redemption history is that restaurant's business record, not
+ * something a customer erasing their *login* should be able to corrupt —
+ * but the personally-identifying fields (name, email, birthday, city,
+ * marketing consent, the user_id link itself) are wiped, so nothing here
+ * still identifies the person once their account is gone.
+ */
+export async function deleteMyAccount(userId: string): Promise<boolean> {
+  const admin = createAdminClient();
+
+  const { error: anonymizeError } = await admin
+    .from("customers")
+    .update({
+      user_id: null,
+      name: "Compte supprimé",
+      email: null,
+      birthday: null,
+      city: null,
+      marketing_consent: false,
+      favorite_offer_ids: [],
+    })
+    .eq("user_id", userId);
+  if (anonymizeError) return false;
+
+  const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+  return !deleteError;
+}
+
 export type PortalOrderCartLine = {
   menuItemId: string;
   quantity: number;
