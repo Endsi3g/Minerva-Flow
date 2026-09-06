@@ -2,7 +2,6 @@
 
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
-import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/minerva/FormField";
@@ -10,6 +9,9 @@ import { Modal } from "@/components/ui/Modal";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 import { FlowBars } from "@/components/charts/FlowBars";
+import { MiniSparkline } from "@/components/charts/MiniSparkline";
+import { RadialGauge } from "@/components/charts/RadialGauge";
+import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TablePagination } from "@/components/minerva/TablePagination";
 import {
@@ -44,6 +46,7 @@ import type {
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  ArrowRight,
   Landmark,
   CreditCard,
   Bike,
@@ -99,6 +102,21 @@ function computeFlowLines(
     .sort((a, b) => b.amount - a.amount);
 }
 
+/** Sums a direction's transactions per day, sorted ascending — feeds both the mini sparklines and the daily trend chart. */
+function computeDailyTrend(
+  transactions: FinancialTransaction[],
+  direction: TransactionDirection
+): { date: string; revenue: number }[] {
+  const byDate = new Map<string, number>();
+  for (const t of transactions) {
+    if (t.direction !== direction) continue;
+    byDate.set(t.date, (byDate.get(t.date) ?? 0) + t.amount);
+  }
+  return Array.from(byDate.entries())
+    .map(([date, revenue]) => ({ date, revenue }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
 function isCurrentMonth(dateIso: string): boolean {
   const now = new Date();
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -144,42 +162,121 @@ function OverviewTab({
   const inflows = useMemo(() => computeFlowLines(monthTransactions, "in"), [monthTransactions]);
   const outflows = useMemo(() => computeFlowLines(monthTransactions, "out"), [monthTransactions]);
 
+  const inflowTrend = useMemo(() => computeDailyTrend(monthTransactions, "in"), [monthTransactions]);
+  const outflowTrend = useMemo(() => computeDailyTrend(monthTransactions, "out"), [monthTransactions]);
+  const inflowSpark = useMemo(() => inflowTrend.map((d) => ({ value: d.revenue })), [inflowTrend]);
+  const outflowSpark = useMemo(() => outflowTrend.map((d) => ({ value: d.revenue })), [outflowTrend]);
+
+  const netMarginPct = totalIn > 0 ? Math.round((net / totalIn) * 100) : 0;
+  const netIsPositive = net >= 0;
+
   return (
     <div>
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          label={t("overview.inflows")}
-          value={formatCurrency(totalIn)}
-          icon={ArrowDownLeft}
-          sublabel={t("overview.thisMonth")}
-          accent="green"
-        />
-        <StatCard
-          label={t("overview.outflows")}
-          value={formatCurrency(totalOut)}
-          icon={ArrowUpRight}
-          sublabel={t("overview.thisMonth")}
-          accent="ink"
-        />
-        <StatCard
-          label={t("overview.netFlow")}
-          value={formatCurrency(net)}
-          icon={Landmark}
-          sublabel={
-            totalIn > 0
-              ? t("overview.netFlowPctOfInflows", { pct: Math.round((net / totalIn) * 100) })
-              : t("overview.thisMonth")
-          }
-          accent="lime"
-        />
-        <StatCard
-          label={t("overview.laborCostLabel")}
-          value={laborCost.pct !== null ? `${laborCost.pct}%` : "—"}
-          icon={Users}
-          sublabel={t("overview.laborCostTarget", { target: LABOR_COST_TARGET_PCT })}
-          accent="ink"
-        />
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <button
+          onClick={onGoToTransactions}
+          className="group rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+              <ArrowDownLeft size={13} /> {t("overview.inflows")}
+            </p>
+            <ArrowRight size={14} className="shrink-0 text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
+          </div>
+          <p className="mt-2.5 font-display text-[24px] sm:text-[26px] font-medium leading-none text-mv-ink">
+            {formatCurrency(totalIn)}
+          </p>
+          <p className="mt-1.5 text-[11.5px] text-mv-ink-faint">{t("overview.thisMonth")}</p>
+          {inflowSpark.length > 1 && (
+            <div className="mt-2.5">
+              <MiniSparkline id="finance-inflows" data={inflowSpark} color="var(--mv-green)" />
+            </div>
+          )}
+        </button>
+
+        <button
+          onClick={onGoToTransactions}
+          className="group rounded-2xl border border-mv-border bg-mv-surface p-4 text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md sm:p-5"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+              <ArrowUpRight size={13} /> {t("overview.outflows")}
+            </p>
+            <ArrowRight size={14} className="shrink-0 text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
+          </div>
+          <p className="mt-2.5 font-display text-[24px] sm:text-[26px] font-medium leading-none text-mv-ink">
+            {formatCurrency(totalOut)}
+          </p>
+          <p className="mt-1.5 text-[11.5px] text-mv-ink-faint">{t("overview.thisMonth")}</p>
+          {outflowSpark.length > 1 && (
+            <div className="mt-2.5">
+              <MiniSparkline id="finance-outflows" data={outflowSpark} color="var(--mv-ink-soft)" />
+            </div>
+          )}
+        </button>
+
+        <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm sm:p-5">
+          <p className="mb-3 flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <Landmark size={13} /> {t("overview.netFlow")}
+          </p>
+          <div className="flex items-center gap-3.5">
+            <RadialGauge
+              value={netMarginPct}
+              size={72}
+              strokeWidth={8}
+              color={netIsPositive ? "var(--mv-green)" : "var(--mv-red)"}
+              centerValue={`${netMarginPct}%`}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-[19px] font-medium leading-tight text-mv-ink">
+                {formatCurrency(net)}
+              </p>
+              <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">
+                {totalIn > 0 ? t("overview.netFlowPctOfInflows", { pct: netMarginPct }) : t("overview.thisMonth")}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm sm:p-5">
+          <p className="mb-3 flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <Users size={13} /> {t("overview.laborCostLabel")}
+          </p>
+          <div className="flex items-center gap-3.5">
+            <RadialGauge
+              value={laborCost.pct ?? 0}
+              size={72}
+              strokeWidth={8}
+              color={laborCost.withinTarget === false ? "var(--mv-amber)" : "var(--mv-green)"}
+              centerValue={laborCost.pct !== null ? `${laborCost.pct}%` : "—"}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="font-display text-[19px] font-medium leading-tight text-mv-ink">
+                {laborCost.pct !== null ? `${laborCost.pct}%` : "—"}
+              </p>
+              <p className="mt-0.5 text-[11.5px] leading-snug text-mv-ink-faint">
+                {t("overview.laborCostTarget", { target: LABOR_COST_TARGET_PCT })}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {(inflowTrend.length > 1 || outflowTrend.length > 1) && (
+        <Card className="mb-6">
+          <CardHeader
+            eyebrow={t("overview.cashFlowTrendEyebrow")}
+            title={t("overview.cashFlowTrendTitle")}
+            description={t("overview.cashFlowTrendDescription")}
+          />
+          <UnifiedTrendChart
+            series={[
+              { key: "in", slug: "entrees", label: t("overview.inflows"), color: "var(--mv-green)", data: inflowTrend },
+              { key: "out", slug: "sorties", label: t("overview.outflows"), color: "var(--mv-ink-soft)", data: outflowTrend },
+            ]}
+          />
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
