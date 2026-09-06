@@ -229,7 +229,10 @@
       "noOutflowsHint": "Connectez un compte bancaire ou une plateforme pour suivre vos dépenses automatiquement.",
       "connectAccountCta": "Connecter un compte",
       "laborCostLabel": "Masse salariale",
-      "laborCostTarget": "Cible ≤ {target}% du CA"
+      "laborCostTarget": "Cible ≤ {target}% du CA",
+      "cashFlowTrendEyebrow": "Tendance",
+      "cashFlowTrendTitle": "Entrées vs sorties",
+      "cashFlowTrendDescription": "Évolution quotidienne de la trésorerie ce mois-ci"
     },
     "breakEven": {
       "title": "Seuil de rentabilité",

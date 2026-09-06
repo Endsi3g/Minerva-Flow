@@ -229,7 +229,10 @@
       "noOutflowsHint": "Giderlerinizi otomatik olarak izlemek için bir banka hesabı veya platform bağlayın.",
       "connectAccountCta": "Hesap bağla",
       "laborCostLabel": "İşçilik Maliyeti",
-      "laborCostTarget": "Hedef: Cironun %{target}'inden az"
+      "laborCostTarget": "Hedef: Cironun %{target}'inden az",
+      "cashFlowTrendEyebrow": "Eğilim",
+      "cashFlowTrendTitle": "Girişler ve çıkışlar",
+      "cashFlowTrendDescription": "Bu ayki günlük nakit akışı"
     },
     "breakEven": {
       "title": "Başabaş noktası",
