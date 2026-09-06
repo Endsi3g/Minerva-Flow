@@ -317,10 +317,18 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
         </ul>
       </div>
       <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>Tests automatisés</h3>
+        <ul>
+          <li>Cible XCTest dédiée (<code>MinervaFlowTests</code>), intégrée au scheme — <code>xcodebuild test</code> fonctionne</li>
+          <li>13 tests : paliers de fidélité (bornes exactes, seuils propres à chaque restaurant) et calcul du panier (sous-total, taxe 14,975 %, pourboire calculé sur le sous-total et non le total)</li>
+        </ul>
+      </div>
+      <div class="card">
         <span class="tag missing">Manquant</span>
         <h3>Pas encore couvert</h3>
         <ul>
-          <li class="gap">Aucun test automatisé (unitaire ou UI) sur le projet natif</li>
+          <li class="gap">Aucun test d'interface (UI tests) — seulement de la logique pure pour l'instant</li>
           <li class="gap">Aucun rapport de crash (Sentry ou équivalent) branché</li>
           <li class="gap">Aucune vérification d'accessibilité systématique (VoiceOver, Dynamic Type)</li>
         </ul>
