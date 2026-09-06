@@ -13,6 +13,7 @@ final class AuthFlowUITests: XCTestCase {
     func testWelcomeScreenShowsBothEntryButtons() throws {
         let app = XCUIApplication()
         app.launch()
+        ensureSignedOut(app)
 
         XCTAssertTrue(app.buttons["Commencer"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Se connecter"].exists)
@@ -21,6 +22,7 @@ final class AuthFlowUITests: XCTestCase {
     func testTappingSeConnecterReachesLoginCard() throws {
         let app = XCUIApplication()
         app.launch()
+        ensureSignedOut(app)
 
         let seConnecter = app.buttons["Se connecter"]
         XCTAssertTrue(seConnecter.waitForExistence(timeout: 5))
@@ -36,6 +38,7 @@ final class AuthFlowUITests: XCTestCase {
         // stays true rather than one button silently regressing.
         let app = XCUIApplication()
         app.launch()
+        ensureSignedOut(app)
 
         let commencer = app.buttons["Commencer"]
         XCTAssertTrue(commencer.waitForExistence(timeout: 5))

@@ -11,6 +11,7 @@
 		08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */; };
 		09DEDA487C152D20E5410836 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B8ABC1E0681608032F18B9B5 /* Assets.xcassets */; };
 		111FB36D15A3D9DEEBA9060B /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA484AE32471A39B3214052F /* QRScannerView.swift */; };
+		18918555C1D1F51C5DB40AA8 /* XCUIApplication+TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */; };
 		1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8113A301B23FEECDBE8EDE /* MainTabView.swift */; };
 		1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBD59C80CE3B06A999142A6E /* Config.swift */; };
 		2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471F651B424DBE91D0FC0A0E /* MyCardView.swift */; };
@@ -21,6 +22,7 @@
 		442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C1D3C584B13E05EBD01750 /* MenuView.swift */; };
 		4E35352D66E4B11496D587ED /* OfferDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */; };
 		5C881A86FC3F7D67D6725336 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D70223A1891BFC32372F3C5 /* Models.swift */; };
+		739BE0134385DA87FC3DAD99 /* HomeDataUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF75FB3EE42DD210F4A6BB8D /* HomeDataUITests.swift */; };
 		7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */; };
 		7D3D0D3F93D2E688166D0236 /* PointsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */; };
 		81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001F62368824618EE0ACB49 /* SupabaseManager.swift */; };
@@ -115,11 +117,13 @@
 		C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemDetailView.swift; sourceTree = "<group>"; };
 		CA484AE32471A39B3214052F /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		CD8113A301B23FEECDBE8EDE /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+TestHelpers.swift"; sourceTree = "<group>"; };
 		D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		D58EE17A9A62B1893F865891 /* RadialGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialGauge.swift; sourceTree = "<group>"; };
 		D6E6F6E76663DF4A6F2A5309 /* MinervaFlow.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlow.entitlements; sourceTree = "<group>"; };
 		DDBB4AF1C78A26877459630D /* MinervaFlowTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MinervaFlowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE1BA36D6BD964EC57A0DE85 /* MinervaFlowWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowWidget.swift; sourceTree = "<group>"; };
+		DF75FB3EE42DD210F4A6BB8D /* HomeDataUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDataUITests.swift; sourceTree = "<group>"; };
 		E001F62368824618EE0ACB49 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantDetailView.swift; sourceTree = "<group>"; };
 		EA427B759305A43BF018AB62 /* OrderTotals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTotals.swift; sourceTree = "<group>"; };
@@ -147,6 +151,8 @@
 			isa = PBXGroup;
 			children = (
 				6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */,
+				DF75FB3EE42DD210F4A6BB8D /* HomeDataUITests.swift */,
+				D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */,
 			);
 			path = MinervaFlowUITests;
 			sourceTree = "<group>";
@@ -405,6 +411,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				E895E770CDE5B84ADABAE566 /* AuthFlowUITests.swift in Sources */,
+				739BE0134385DA87FC3DAD99 /* HomeDataUITests.swift in Sources */,
+				18918555C1D1F51C5DB40AA8 /* XCUIApplication+TestHelpers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
