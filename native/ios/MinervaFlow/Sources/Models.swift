@@ -134,6 +134,28 @@ struct MenuItemReview: Codable, Identifiable {
     }
 }
 
+/// A whole-restaurant review — distinct from MenuItemReview (which rates a
+/// single dish), matching the "avis Google Maps" expectation for the
+/// overall experience. Up to 6 photos, enforced by the DB constraint too.
+struct RestaurantReview: Codable, Identifiable {
+    let id: String
+    let restaurantId: String
+    let customerId: String
+    let rating: Int
+    let comment: String?
+    let imageUrls: [String]
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case restaurantId = "restaurant_id"
+        case customerId = "customer_id"
+        case rating, comment
+        case imageUrls = "image_urls"
+        case createdAt = "created_at"
+    }
+}
+
 struct DiscoverRestaurant: Codable, Identifiable {
     let id: String
     let name: String

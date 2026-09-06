@@ -16,6 +16,14 @@ struct RestaurantDetailView: View {
     @State private var isLoading = true
     @State private var selectedCategory: String?
     @State private var carouselIndex = 0
+    @State private var reviews: [RestaurantReview] = []
+    @State private var isLoadingReviews = true
+    @State private var showWriteReview = false
+
+    private var averageRating: Double {
+        guard !reviews.isEmpty else { return 0 }
+        return Double(reviews.map(\.rating).reduce(0, +)) / Double(reviews.count)
+    }
 
     private var categories: [String] {
         guard let items = detail?.menuItems else { return [] }
@@ -53,6 +61,8 @@ struct RestaurantDetailView: View {
                             } else {
                                 itemListForCategory
                             }
+
+                            reviewsSection
                         }
                         .padding(18)
                     }
@@ -87,8 +97,103 @@ struct RestaurantDetailView: View {
                 isLoading = true
                 detail = await supabase.fetchRestaurantDetail(id: restaurantId)
                 isLoading = false
+                isLoadingReviews = true
+                reviews = await supabase.fetchRestaurantReviews(restaurantId: restaurantId)
+                isLoadingReviews = false
+            }
+            .sheet(isPresented: $showWriteReview) {
+                WriteRestaurantReviewSheet(restaurantId: restaurantId, restaurantName: previewName) {
+                    Task { reviews = await supabase.fetchRestaurantReviews(restaurantId: restaurantId) }
+                }
             }
         }
+    }
+
+    // MARK: - Reviews
+
+    private var reviewsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Avis clients")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+                if !reviews.isEmpty {
+                    HStack(spacing: 3) {
+                        Image(systemName: "star.fill").font(.system(size: 11))
+                        Text(String(format: "%.1f", averageRating))
+                        Text("(\(reviews.count))")
+                            .foregroundStyle(MinervaColor.inkFaint)
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+                }
+                Spacer()
+                if supabase.customer?.restaurantId == restaurantId {
+                    Button("Écrire un avis") { showWriteReview = true }
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                }
+            }
+
+            if isLoadingReviews {
+                Skeletons.list(count: 2)
+            } else if reviews.isEmpty {
+                Text("Soyez le premier à donner votre avis sur ce restaurant.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(MinervaColor.inkSoft)
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(reviews) { review in
+                        reviewRow(review)
+                    }
+                }
+            }
+        }
+    }
+
+    private func reviewRow(_ review: RestaurantReview) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 2) {
+                ForEach(1...5, id: \.self) { star in
+                    Image(systemName: star <= review.rating ? "star.fill" : "star")
+                        .font(.system(size: 11))
+                }
+            }
+            .foregroundStyle(MinervaColor.limeAccent)
+
+            if let comment = review.comment, !comment.isEmpty {
+                Text(comment)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(MinervaColor.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if !review.imageUrls.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(review.imageUrls.prefix(6).enumerated()), id: \.offset) { _, urlString in
+                            AsyncImage(url: URL(string: urlString)) { phase in
+                                if let image = phase.image {
+                                    image.resizable().scaledToFill()
+                                } else {
+                                    Rectangle().fill(MinervaColor.ink.opacity(0.06))
+                                }
+                            }
+                            .frame(width: 72, height: 72)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+                }
+            }
+
+            Text(review.createdAt.formatted(date: .abbreviated, time: .omitted))
+                .font(.system(size: 10.5))
+                .foregroundStyle(MinervaColor.inkFaint)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MinervaColor.creamSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     private func header(for restaurant: DiscoverRestaurantDetail) -> some View {
