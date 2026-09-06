@@ -144,6 +144,8 @@ struct DiscoverRestaurant: Codable, Identifiable {
     let phone: String?
     let website: String?
     let color: String?
+    let serviceModel: String?
+    let imageUrls: [String]
 }
 
 struct DiscoverRestaurantDetail: Codable {
@@ -158,6 +160,8 @@ struct DiscoverRestaurantDetail: Codable {
     let phone: String?
     let website: String?
     let color: String?
+    let serviceModel: String?
+    let imageUrls: [String]
 }
 
 struct RestaurantDiscoverOffer: Codable, Identifiable {

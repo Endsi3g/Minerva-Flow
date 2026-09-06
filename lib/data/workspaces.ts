@@ -167,6 +167,7 @@ export async function getWorkspaceRestaurants(workspaceId: string): Promise<Rest
     loyaltyTier3Threshold: row.loyalty_tier_3_threshold ?? 400,
     visitRewardsEnabled: row.visit_rewards_enabled ?? false,
     visitRewardTiers: row.visit_reward_tiers ?? [],
+    imageUrls: row.image_urls ?? [],
   }));
 }
 

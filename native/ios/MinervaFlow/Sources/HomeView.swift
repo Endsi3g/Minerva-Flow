@@ -1,14 +1,9 @@
 import SwiftUI
 
-/// Ported from the Starbucks app reference: a pinned greeting + tier banner
-/// that never scrolls away (the one thing a customer glancing at the app
-/// needs instantly), with a scrollable feed of everything else below it —
-/// Starbucks' own home screen works exactly this way (the balance banner
-/// stays put while promo cards scroll underneath). Resolves the "must fit
-/// on one screen, scrolling would be destructive" brief as "the pinned part
-/// must fit without scrolling," not "the whole screen must have zero
-/// scroll" — a real content feed (today's offers, progress, activity)
-/// cannot exist without becoming a scrollable list eventually.
+/// The greeting + tier banner scrolls with the rest of the feed (by
+/// explicit request) rather than staying pinned — it's still the first
+/// thing visible and still opens MyCardView on tap, it just isn't fixed
+/// in place above the fold anymore.
 struct HomeView: View {
     @EnvironmentObject var supabase: SupabaseManager
     @EnvironmentObject var notifications: NotificationManager
@@ -20,10 +15,10 @@ struct HomeView: View {
     var body: some View {
         VStack(spacing: 0) {
             if let customer = supabase.customer {
-                pinnedHeader(for: customer)
-
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
+                        pinnedHeader(for: customer)
+
                         nextRewardCard(for: customer)
 
                         if !supabase.offers.isEmpty {
@@ -38,9 +33,15 @@ struct HomeView: View {
                 }
                 .refreshable { await supabase.loadPortalData() }
             } else if supabase.isLoadingData {
-                Spacer()
-                ProgressView()
-                Spacer()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        SkeletonBlock(cornerRadius: 6).frame(width: 180, height: 26)
+                        Skeletons.card(height: 150)
+                        Skeletons.card(height: 76)
+                        Skeletons.list(count: 3)
+                    }
+                    .padding(18)
+                }
             } else {
                 Spacer()
                 Text("Aucun profil de fidélité trouvé pour ce compte.")
@@ -181,8 +182,6 @@ struct HomeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             }
         }
-        .padding(EdgeInsets(top: 12, leading: 18, bottom: 14, trailing: 18))
-        .background(MinervaColor.cream)
     }
 
     /// Mirrors the web wallet card's own progress bar exactly (same

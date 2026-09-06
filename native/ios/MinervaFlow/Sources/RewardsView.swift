@@ -19,10 +19,12 @@ struct RewardsView: View {
     var body: some View {
         Group {
             if supabase.isLoadingData && supabase.customer == nil {
-                VStack {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        SkeletonBlock(cornerRadius: 6).frame(width: 160, height: 24)
+                        Skeletons.list(count: 4)
+                    }
+                    .padding(18)
                 }
             } else {
                 ScrollView {

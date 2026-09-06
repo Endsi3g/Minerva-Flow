@@ -40,3 +40,136 @@ enum MinervaFont {
         .system(size: size, weight: weight, design: .serif)
     }
 }
+
+/// Fades the leading/trailing edges of a horizontal ScrollView to the
+/// surrounding background color — the visual cue that there's more to
+/// scroll to, same language as the restaurant/menu-item carousels
+/// throughout the app.
+struct HorizontalEdgeFade: ViewModifier {
+    var color: Color = MinervaColor.cream
+    var width: CGFloat = 24
+
+    func body(content: Content) -> some View {
+        content.mask(
+            LinearGradient(
+                stops: [
+                    .init(color: .black.opacity(0), location: 0),
+                    .init(color: .black, location: 0.03),
+                    .init(color: .black, location: 0.97),
+                    .init(color: .black.opacity(0), location: 1),
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
+    }
+}
+
+extension View {
+    func horizontalEdgeFade(_ color: Color = MinervaColor.cream) -> some View {
+        modifier(HorizontalEdgeFade(color: color))
+    }
+}
+
+/// Shimmering placeholder block — same visual language as the web
+/// dashboard's `.mv-skeleton` (a moving highlight sweeping across a
+/// neutral shape) so loading states read as one consistent design system
+/// across web and native, not a bare spinner on one platform and a
+/// polished shimmer on the other.
+struct SkeletonBlock: View {
+    var cornerRadius: CGFloat = 8
+    @State private var phase: CGFloat = -1
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .fill(MinervaColor.ink.opacity(0.07))
+            .overlay(
+                GeometryReader { geo in
+                    LinearGradient(
+                        colors: [.clear, MinervaColor.ink.opacity(0.06), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: geo.size.width * 0.6)
+                    .offset(x: phase * geo.size.width * 1.6)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            )
+            .onAppear {
+                withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: false)) {
+                    phase = 1
+                }
+            }
+    }
+}
+
+/// Pre-shaped skeletons for the app's recurring card/row layouts, so each
+/// screen's loading state is shaped like its real content instead of a
+/// generic centered spinner.
+enum Skeletons {
+    static func card(height: CGFloat = 90) -> some View {
+        SkeletonBlock(cornerRadius: 16).frame(height: height)
+    }
+
+    static func row() -> some View {
+        HStack(spacing: 12) {
+            SkeletonBlock(cornerRadius: 12).frame(width: 56, height: 56)
+            VStack(alignment: .leading, spacing: 6) {
+                SkeletonBlock(cornerRadius: 4).frame(height: 13)
+                SkeletonBlock(cornerRadius: 4).frame(width: 120, height: 11)
+            }
+        }
+        .padding(12)
+        .background(MinervaColor.creamSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    static func list(count: Int = 4) -> some View {
+        VStack(spacing: 10) {
+            ForEach(0..<count, id: \.self) { _ in row() }
+        }
+    }
+
+    static func tile() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SkeletonBlock(cornerRadius: 6).frame(width: 20, height: 20)
+            SkeletonBlock(cornerRadius: 4).frame(height: 13)
+            SkeletonBlock(cornerRadius: 4).frame(width: 60, height: 10)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MinervaColor.creamSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    static func grid(count: Int = 4) -> some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            ForEach(0..<count, id: \.self) { _ in tile() }
+        }
+    }
+}
+
+/// A generic, reusable outcome banner for the "did this action succeed or
+/// fail" states every form/mutation needs — same visual language
+/// everywhere instead of each screen inventing its own error Text.
+struct OutcomeBanner: View {
+    enum Kind { case success, failure }
+    let kind: Kind
+    let message: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: kind == .success ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                .font(.system(size: 13))
+                .padding(.top, 1)
+            Text(message)
+                .font(.system(size: 12.5))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .foregroundStyle(kind == .success ? MinervaColor.emeraldDark : .red)
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background((kind == .success ? MinervaColor.emerald : Color.red).opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+}

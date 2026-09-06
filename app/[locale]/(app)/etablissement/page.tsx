@@ -16,6 +16,7 @@ import { getOrCreateDefaultMenuShareTokenAction } from "./actions";
 import { checkCanAddEstablishmentAction } from "@/app/[locale]/(app)/billing/actions";
 import { EstablishmentLimitModal } from "@/components/billing/EstablishmentLimitModal";
 import { DirectOrderingWidgetGenerator } from "@/components/etablissement/DirectOrderingWidgetGenerator";
+import { RestaurantGalleryUpload } from "@/components/etablissement/RestaurantGalleryUpload";
 import type { RestaurantInput } from "@/lib/data/restaurants";
 import type { Restaurant, OpeningHours, DayHours } from "@/lib/types";
 import { Plus, MapPin, Clock } from "lucide-react";
@@ -38,6 +39,7 @@ type RestaurantFormValues = {
   lng?: number;
   googlePlaceId?: string;
   serviceModel: "restaurant" | "cafe" | "hybrid";
+  imageUrls: string[];
 };
 
 const emptyForm: RestaurantFormValues = {
@@ -53,6 +55,7 @@ const emptyForm: RestaurantFormValues = {
   phone: "",
   openingHours: {},
   serviceModel: "restaurant",
+  imageUrls: [],
 };
 
 function restaurantToForm(r: Restaurant): RestaurantFormValues {
@@ -69,6 +72,7 @@ function restaurantToForm(r: Restaurant): RestaurantFormValues {
     phone: r.phone ?? "",
     openingHours: r.openingHours ?? {},
     serviceModel: (r.serviceModel as "restaurant" | "cafe" | "hybrid" | undefined) ?? "restaurant",
+    imageUrls: r.imageUrls ?? [],
   };
 }
 
@@ -147,9 +151,14 @@ function OpeningHoursFields({ value, onChange }: { value: OpeningHours; onChange
 function RestaurantFormFields({
   values,
   onChange,
+  restaurantId,
 }: {
   values: RestaurantFormValues;
   onChange: (patch: Partial<RestaurantFormValues>) => void;
+  /** Undefined while creating a brand-new establishment — the photo
+   * gallery needs a real restaurant row to scope uploads to, so it only
+   * appears once one exists (edit mode). */
+  restaurantId?: string;
 }) {
   function handlePlacesSelect(patch: Partial<RestaurantInput>) {
     onChange({
@@ -252,6 +261,22 @@ function RestaurantFormFields({
         />
       </Field>
       <OpeningHoursFields value={values.openingHours} onChange={(openingHours) => onChange({ openingHours })} />
+      <Field
+        label="Photos"
+        hint={
+          restaurantId
+            ? "Jusqu'à 8 photos — visibles dans la carte de découverte de l'application cliente."
+            : "Enregistrez d'abord l'établissement, puis revenez ici pour ajouter des photos."
+        }
+      >
+        {restaurantId ? (
+          <RestaurantGalleryUpload
+            restaurantId={restaurantId}
+            imageUrls={values.imageUrls}
+            onChange={(imageUrls) => onChange({ imageUrls })}
+          />
+        ) : null}
+      </Field>
     </div>
   );
 }
@@ -292,7 +317,11 @@ function EstablishmentIdentityCard() {
         description="Ces informations apparaissent dans le switcher, les rapports et la carte."
       />
       <div className="space-y-4">
-        <RestaurantFormFields values={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
+        <RestaurantFormFields
+          values={form}
+          onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+          restaurantId={restaurant.id}
+        />
         <Button onClick={handleSave} disabled={!form.name.trim() || saving}>
           {saving ? "Enregistrement…" : "Enregistrer"}
         </Button>
@@ -422,7 +451,11 @@ function OtherEstablishments() {
         description={editing?.name}
       >
         <div className="space-y-4">
-          <RestaurantFormFields values={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
+          <RestaurantFormFields
+            values={form}
+            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+            restaurantId={editing?.id}
+          />
           <Button className="w-full" onClick={handleUpdate} disabled={!form.name.trim() || saving}>
             {saving ? "Enregistrement…" : "Enregistrer"}
           </Button>

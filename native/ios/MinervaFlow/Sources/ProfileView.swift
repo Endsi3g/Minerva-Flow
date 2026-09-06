@@ -18,10 +18,13 @@ struct ProfileView: View {
     var body: some View {
         Group {
             if supabase.isLoadingData && supabase.customer == nil {
-                VStack {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        Skeletons.card(height: 220)
+                        Skeletons.card(height: 100)
+                        Skeletons.list(count: 3)
+                    }
+                    .padding(18)
                 }
             } else {
                 ScrollView {

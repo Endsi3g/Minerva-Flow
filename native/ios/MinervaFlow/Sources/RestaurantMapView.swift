@@ -18,9 +18,28 @@ struct RestaurantMapView: View {
     @State private var selectedRestaurant: DiscoverRestaurant?
     @State private var hasCenteredOnUser = false
 
+    private enum PlaceFilter: String, CaseIterable { case all, cafe, restaurant
+        var label: String {
+            switch self {
+            case .all: return "Tous"
+            case .cafe: return "Cafés"
+            case .restaurant: return "Restaurants"
+            }
+        }
+    }
+    @State private var placeFilter: PlaceFilter = .all
+
+    private var filteredRestaurants: [DiscoverRestaurant] {
+        switch placeFilter {
+        case .all: return supabase.nearbyRestaurants
+        case .cafe: return supabase.nearbyRestaurants.filter { ($0.serviceModel ?? "restaurant") == "cafe" || $0.serviceModel == "hybrid" }
+        case .restaurant: return supabase.nearbyRestaurants.filter { ($0.serviceModel ?? "restaurant") == "restaurant" || $0.serviceModel == "hybrid" }
+        }
+    }
+
     private var sortedRestaurants: [DiscoverRestaurant] {
-        guard let userLocation = location.currentLocation else { return supabase.nearbyRestaurants }
-        return supabase.nearbyRestaurants.sorted {
+        guard let userLocation = location.currentLocation else { return filteredRestaurants }
+        return filteredRestaurants.sorted {
             distance(from: userLocation, to: $0) < distance(from: userLocation, to: $1)
         }
     }
@@ -30,7 +49,7 @@ struct RestaurantMapView: View {
             ZStack(alignment: .bottom) {
                 Map(position: $cameraPosition, selection: $selectedRestaurant) {
                     UserAnnotation()
-                    ForEach(supabase.nearbyRestaurants) { restaurant in
+                    ForEach(filteredRestaurants) { restaurant in
                         Marker(restaurant.name, systemImage: "fork.knife.circle.fill", coordinate: CLLocationCoordinate2D(latitude: restaurant.lat, longitude: restaurant.lng))
                             .tint(MinervaColor.emerald)
                             .tag(restaurant)
@@ -42,7 +61,10 @@ struct RestaurantMapView: View {
                 }
                 .ignoresSafeArea(edges: .top)
 
-                restaurantList
+                VStack(spacing: 0) {
+                    placeFilterControl
+                    restaurantList
+                }
             }
             .navigationTitle("Près de vous")
             .navigationBarTitleDisplayMode(.inline)
@@ -76,6 +98,18 @@ struct RestaurantMapView: View {
         }
     }
 
+    private var placeFilterControl: some View {
+        Picker("Filtrer", selection: $placeFilter) {
+            ForEach(PlaceFilter.allCases, id: \.self) { filter in
+                Text(filter.label).tag(filter)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 14)
+        .padding(.top, 10)
+        .background(MinervaColor.cream)
+    }
+
     private var restaurantList: some View {
         VStack(spacing: 0) {
             if location.authorizationStatus == .denied || location.authorizationStatus == .restricted {
@@ -92,9 +126,18 @@ struct RestaurantMapView: View {
             }
 
             if supabase.isLoadingDiscover && supabase.nearbyRestaurants.isEmpty {
-                ProgressView().padding(24)
-            } else if supabase.nearbyRestaurants.isEmpty {
-                Text("Aucun restaurant participant n'a encore ajouté son adresse.")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            SkeletonBlock(cornerRadius: 14).frame(width: 190, height: 74)
+                        }
+                    }
+                    .padding(14)
+                }
+            } else if filteredRestaurants.isEmpty {
+                Text(supabase.nearbyRestaurants.isEmpty
+                    ? "Aucun restaurant participant n'a encore ajouté son adresse."
+                    : "Aucun résultat pour ce filtre.")
                     .font(.system(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .padding(20)
@@ -112,6 +155,7 @@ struct RestaurantMapView: View {
                     }
                     .padding(14)
                 }
+                .horizontalEdgeFade()
                 .background(MinervaColor.cream)
             }
         }

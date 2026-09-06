@@ -22,7 +22,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const [{ data: restaurant, error: restaurantError }, offers, menuItems] = await Promise.all([
     admin
       .from("restaurants")
-      .select("id, name, description, address, city, province, lat, lng, phone, website, color, opening_hours")
+      .select("id, name, description, address, city, province, lat, lng, phone, website, color, opening_hours, service_model, image_urls")
       .eq("id", id)
       .single(),
     getActiveOffersForRestaurant(id),
@@ -47,6 +47,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       website: restaurant.website as string | null,
       color: restaurant.color as string | null,
       openingHours: restaurant.opening_hours,
+      serviceModel: (restaurant.service_model as string | null) ?? "restaurant",
+      imageUrls: (restaurant.image_urls as string[] | null) ?? [],
     },
     offers: offers ?? [],
     menuItems,

@@ -44,6 +44,7 @@ export type Restaurant = {
   loyaltyTier3Threshold: number;
   visitRewardsEnabled: boolean;
   visitRewardTiers: VisitRewardTier[];
+  imageUrls: string[];
 };
 
 export type Employee = {

@@ -15,6 +15,7 @@ struct RestaurantDetailView: View {
     @State private var detail: DiscoverRestaurantResponse?
     @State private var isLoading = true
     @State private var selectedCategory: String?
+    @State private var carouselIndex = 0
 
     private var categories: [String] {
         guard let items = detail?.menuItems else { return [] }
@@ -35,22 +36,33 @@ struct RestaurantDetailView: View {
         NavigationStack {
             ScrollView {
                 if let detail {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if !detail.restaurant.imageUrls.isEmpty {
+                            photoCarousel(detail.restaurant.imageUrls)
+                        }
+
+                        VStack(alignment: .leading, spacing: 22) {
+                            header(for: detail.restaurant)
+
+                            if !detail.offers.isEmpty {
+                                offersSection(detail.offers)
+                            }
+
+                            if selectedCategory == nil {
+                                categoryGrid
+                            } else {
+                                itemListForCategory
+                            }
+                        }
+                        .padding(18)
+                    }
+                } else if isLoading {
                     VStack(alignment: .leading, spacing: 22) {
-                        header(for: detail.restaurant)
-
-                        if !detail.offers.isEmpty {
-                            offersSection(detail.offers)
-                        }
-
-                        if selectedCategory == nil {
-                            categoryGrid
-                        } else {
-                            itemListForCategory
-                        }
+                        SkeletonBlock(cornerRadius: 6).frame(height: 26)
+                        Skeletons.card(height: 70)
+                        Skeletons.grid(count: 4)
                     }
                     .padding(18)
-                } else if isLoading {
-                    VStack { Spacer(minLength: 200); ProgressView(); Spacer(minLength: 200) }
                 } else {
                     VStack(spacing: 8) {
                         Spacer(minLength: 200)
@@ -132,8 +144,37 @@ struct RestaurantDetailView: View {
                     .background(MinervaColor.emerald.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 11))
                 }
+
+                if let website = restaurant.website, let url = URL(string: website) {
+                    Link(destination: url) {
+                        Image(systemName: "globe")
+                            .font(.system(size: 13))
+                            .frame(width: 42, height: 38)
+                    }
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .background(MinervaColor.emerald.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 11))
+                }
             }
         }
+    }
+
+    private func photoCarousel(_ imageUrls: [String]) -> some View {
+        TabView(selection: $carouselIndex) {
+            ForEach(Array(imageUrls.enumerated()), id: \.offset) { index, urlString in
+                AsyncImage(url: URL(string: urlString)) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                    } else {
+                        Rectangle().fill(MinervaColor.ink.opacity(0.06))
+                    }
+                }
+                .tag(index)
+                .clipped()
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: imageUrls.count > 1 ? .always : .never))
+        .frame(height: 220)
     }
 
     private func offersSection(_ offers: [RestaurantDiscoverOffer]) -> some View {
