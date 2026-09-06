@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import WidgetKit
 
 @MainActor
 final class SupabaseManager: ObservableObject {
@@ -162,6 +163,7 @@ final class SupabaseManager: ObservableObject {
             offers = offersResult.filter { $0.isLive }
             redemptions = redemptionsResult
             await fetchRestaurantInfo()
+            saveWidgetSnapshot(for: mine)
         } catch {
             // Loading is best-effort here: a transient network blip shouldn't
             // wipe out whatever the last successful load already put on
@@ -171,6 +173,31 @@ final class SupabaseManager: ObservableObject {
             lastError = "La mise à jour a échoué. Vérifiez votre connexion et réessayez."
             print("loadPortalData error: \(error)")
         }
+    }
+
+    /// Writes the home-screen widget's entire data diet to the shared App
+    /// Group container, then asks WidgetKit to redraw immediately — a
+    /// widget has no way to notice this on its own, it only re-reads on
+    /// its own schedule (see MinervaFlowWidget's TimelineProvider)
+    /// otherwise.
+    private func saveWidgetSnapshot(for mine: Customer) {
+        let tier = LoyaltyTier.resolve(totalSpent: mine.totalSpent, tier2: loyaltyTier2Threshold, tier3: loyaltyTier3Threshold)
+        let tierHex: String
+        switch tier {
+        case .habitue: tierHex = "167F5B"
+        case .privilegie: tierHex = "0E5A40"
+        case .ambassadeur: tierHex = "DFFF5F"
+        }
+        PointsSnapshot(
+            customerName: mine.name,
+            restaurantName: restaurantName ?? "Minerva Flow",
+            points: mine.loyaltyPoints,
+            tierLabel: tier.label,
+            tierColorHex: tierHex,
+            tierIsLight: tier == .ambassadeur,
+            updatedAt: Date()
+        ).save()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// Same customers_update_own RLS policy — a customer changing their own
