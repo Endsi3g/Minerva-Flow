@@ -96,10 +96,10 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
 
   <div class="progress-band">
     <div class="progress-band-top">
-      <div><div class="big">4 onglets + découverte + fiches détaillées, en profondeur</div></div>
-      <div class="progress-legend" style="margin:0; text-align:right;">Widgets, envoi push réel, paiement in-app, autocomplétion d'adresse : hors scope actuel</div>
+      <div><div class="big">4 onglets + découverte + fiches détaillées + galerie photo, en profondeur</div></div>
+      <div class="progress-legend" style="margin:0; text-align:right;">Widgets, envoi push réel (clé manquante), paiement in-app : hors scope actuel</div>
     </div>
-    <div class="progress-track"><div class="progress-fill" style="width:82%"></div></div>
+    <div class="progress-track"><div class="progress-fill" style="width:88%"></div></div>
     <div class="progress-legend">
       <span>Cœur fonctionnel + découverte + notation — solide</span>
       <span>App complète App Store-ready</span>
@@ -137,9 +137,10 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
         <h3>Commander</h3>
         <ul>
           <li>Navigation par catégories d'abord, puis liste d'articles (le problème « 40 cafés à scroller » est réglé)</li>
-          <li>Chaque article ouvre sa propre page dédiée (voir plus bas)</li>
+          <li>Chaque article ouvre sa propre page dédiée avec un vrai bouton d'ajout au panier (plus un bouton qui ne faisait que fermer la page)</li>
           <li>Panier, checkout complet (pourboire, taxes 14,975 % par défaut, note de paiement)</li>
           <li>Commande envoyée dans la vraie file du restaurant</li>
+          <li>Carrousel « d'autres restaurants et cafés » directement dans l'onglet, en plus de la carte de découverte</li>
         </ul>
       </div>
       <div class="card">
@@ -178,8 +179,16 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
         <span class="tag done">Construit</span>
         <h3>Fiche restaurant publique</h3>
         <ul>
-          <li>Info, itinéraire (ouvre Plans), appel direct</li>
+          <li>Carrousel photo (jusqu'à 8, téléversées par le owner depuis le dashboard web)</li>
+          <li>Info, site web, itinéraire (ouvre Plans), appel direct</li>
           <li>Offres en cours + menu navigable par catégorie, consultable avant même d'être client</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>Filtre café / restaurant</h3>
+        <ul>
+          <li>Sur la carte de découverte, basé sur le champ <code>service_model</code> déjà configurable par le owner</li>
         </ul>
       </div>
       <div class="card">
@@ -190,6 +199,14 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
           <li>Écrire un avis (réservé aux clients réels de ce restaurant, imposé par RLS)</li>
           <li>Partage natif (Messages, AirDrop, réseaux sociaux) via ShareLink</li>
           <li>Carrousel « vous aimerez aussi » (même catégorie)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>Offres — page dédiée</h3>
+        <ul>
+          <li>Image, prix, ce qui est inclus / non inclus (configurable par le owner)</li>
+          <li>Partage natif, badge « en cours », plage de dates</li>
         </ul>
       </div>
     </div>
@@ -226,7 +243,22 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
         <h3>Notifications push</h3>
         <ul>
           <li>Permission, enregistrement à distance, capture et stockage du jeton : fait</li>
-          <li class="gap">Envoi réel bloqué sur une clé APNs (voir action 03)</li>
+          <li class="fix">Serveur d'envoi APNs écrit et branché (JWT ES256 fait main, aucune dépendance ajoutée) — chaque nouvelle offre notifie déjà les clients natifs, dès que la clé existe</li>
+          <li class="gap">Envoi réel bloqué sur la clé APNs elle-même (voir action 02)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Système de gestion des données (nouveau)</h2></div>
+    <div class="grid">
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>Chargement partout</h3>
+        <ul>
+          <li>Skeletons chatoyants (même langage visuel que le dashboard web) sur Accueil, Commander, Récompenses, Profil, la carte, et les fiches détaillées — plus de simples roues qui tournent</li>
+          <li>Fondu sur les bords des carrousels horizontaux (indique qu'il y a plus à faire défiler)</li>
         </ul>
       </div>
     </div>
@@ -269,11 +301,9 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
     <div class="section-head"><h2>Demandes reçues, pas encore construites</h2><span class="section-count">scope réel, pas oublié — chacune a une raison précise d'attendre</span></div>
     <div class="list-card">
       <div class="list-row"><span class="tag missing">Bloqué</span><div class="body"><strong>Paiement Apple Pay pour cueillette</strong><p>Demande un compte marchand (Stripe Connect déjà présent sur <code>restaurants</code>, mais l'intégration paiement elle-même reste à construire) et l'entitlement Apple Pay, qui exige le Developer Program payant.</p></div></div>
-      <div class="list-row"><span class="tag missing">Bloqué</span><div class="body"><strong>Autocomplétion d'adresse + carte au moment de la configuration owner</strong><p>Nécessite une clé API (Google Places ou Mapbox) — à créer et à me fournir.</p></div></div>
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Lien Google Maps par restaurant + demande d'avis post-commande</strong><p>Nécessite un champ configurable owner (URL Google Maps) qui n'existe pas encore sur <code>restaurants</code>.</p></div></div>
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Notifications comportementales (menu consulté sans commande, relance WhatsApp)</strong><p>Système à concevoir : quel déclencheur exact, quel délai, WhatsApp Business API à intégrer séparément.</p></div></div>
+      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Lien Google Maps par restaurant + demande d'avis post-commande</strong><p>Nécessite un nouveau champ configurable owner (URL Google Maps) sur <code>restaurants</code> — pas encore construit.</p></div></div>
+      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Notifications comportementales (menu consulté sans commande, relance WhatsApp)</strong><p>Système à concevoir : quel déclencheur exact, quel délai, WhatsApp Business API à intégrer séparément (l'envoi APNs natif, lui, est déjà prêt — voir plus haut).</p></div></div>
       <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Onboarding avec écrans dédiés localisation/notifications</strong><p>Actuellement ces permissions sont demandées au moment où l'action les requiert (tap sur la carte, tap sur la cloche), pas via un écran d'explication préalable dédié.</p></div></div>
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Préférence café/restaurant</strong><p>Filtrer la carte de découverte par type d'établissement — nécessite une colonne de catégorisation par restaurant qui n'existe pas encore.</p></div></div>
       <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Widgets iOS, scan QR pour commander à table</strong><p>Aucun target de widget dans <code>project.yml</code> ; le web a son propre flux QR (<code>menu_shares</code>), rien d'équivalent natif.</p></div></div>
       <div class="list-row"><span class="tag missing">Non précisé</span><div class="body"><strong>« Système de discussion avec la carte »</strong><p>Mentionné une fois sans détail retrouvable dans nos échanges ni dans le code existant — en attente de votre précision avant de commencer quoi que ce soit ici.</p></div></div>
     </div>
@@ -295,22 +325,17 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
     <div class="action-card">
       <div class="num">03</div>
       <h3>Clé APNs pour les notifications push réelles</h3>
-      <p>Allez dans <code>developer.apple.com/account</code> → Certificates, IDs &amp; Profiles → Keys → créez une clé « Apple Push Notifications service ». Donnez-moi le Key ID, le Team ID et le fichier <code>.p8</code> téléchargé (une seule fois). Je n'ai pas encore confirmé si cette section exige le Developer Program payant ou non — à vérifier ensemble.</p>
+      <p>Le serveur d'envoi est déjà écrit et branché — il ne manque que la clé. Allez dans <code>developer.apple.com/account</code> → Certificates, IDs &amp; Profiles → Keys → créez une clé « Apple Push Notifications service ». Donnez-moi le Key ID, le Team ID et le fichier <code>.p8</code> téléchargé (une seule fois). Je n'ai pas encore confirmé si cette section exige le Developer Program payant ou non — à vérifier ensemble.</p>
     </div>
     <div class="action-card">
       <div class="num">04</div>
-      <h3>Clé API pour l'autocomplétion d'adresse (Google Places ou Mapbox)</h3>
-      <p>Nécessaire pour que la configuration d'adresse owner propose des suggestions et affiche une carte en direct pendant la saisie.</p>
-    </div>
-    <div class="action-card">
-      <div class="num">05</div>
       <h3>Fournisseur SMS (Twilio) pour l'OTP par texto</h3>
       <p>Reporté par votre propre choix précédent — nécessite un compte payant et un numéro vérifié.</p>
     </div>
     <div class="action-card">
-      <div class="num">06</div>
-      <h3>Précisions sur 3 demandes ambiguës</h3>
-      <p>Le « système de discussion avec la carte » (aucune trace retrouvée), le lien Google Maps par restaurant (quel champ, où le configurer), et la portée exacte des notifications comportementales (WhatsApp vs push natif) — dites-moi ce que vous avez en tête et je les construis.</p>
+      <div class="num">05</div>
+      <h3>Précisions sur 2 demandes ambiguës</h3>
+      <p>Le « système de discussion avec la carte » (aucune trace retrouvée dans nos échanges ni dans le code), et la portée exacte des notifications comportementales (WhatsApp vs push natif) — dites-moi ce que vous avez en tête et je les construis.</p>
     </div>
   </section>
 
