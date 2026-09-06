@@ -28,6 +28,7 @@ struct ProfileView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         if let customer = supabase.customer {
                             identityCard(for: customer)
+                            pointsHistorySection
                             notificationSection
                             securitySection
                             aboutSection
@@ -137,6 +138,71 @@ struct ProfileView: View {
         .frame(maxWidth: .infinity)
         .background(MinervaColor.creamSoft)
         .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    // MARK: - Points & rewards history
+
+    /// Every points event (earned or spent) plus every reward redemption
+    /// in one place — Home only ever shows a trimmed preview of this same
+    /// data (5 most recent transactions); Profile is where the full record
+    /// lives, matching the web portal's own Profile tab.
+    private var pointsHistorySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Points et récompenses")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            if supabase.transactions.isEmpty && supabase.redemptions.isEmpty {
+                Text("Aucun mouvement de points pour l'instant.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .padding(.vertical, 4)
+            } else {
+                VStack(spacing: 6) {
+                    ForEach(historyEntries, id: \.id) { entry in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(entry.title)
+                                    .font(.system(size: 12.5, weight: .medium))
+                                    .foregroundStyle(MinervaColor.ink)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text(entry.date.formatted(date: .abbreviated, time: .omitted))
+                                    .font(.system(size: 10.5))
+                                    .foregroundStyle(MinervaColor.inkFaint)
+                            }
+                            Spacer(minLength: 8)
+                            Text("\(entry.pointsDelta >= 0 ? "+" : "")\(entry.pointsDelta) pts")
+                                .font(.system(size: 12.5, weight: .semibold))
+                                .foregroundStyle(entry.pointsDelta >= 0 ? MinervaColor.emeraldDark : .red)
+                        }
+                        .padding(12)
+                        .background(MinervaColor.creamSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+            }
+        }
+    }
+
+    private struct HistoryEntry { let id: String; let title: String; let date: Date; let pointsDelta: Int }
+
+    private var historyEntries: [HistoryEntry] {
+        let fromTransactions = supabase.transactions.map {
+            HistoryEntry(id: "tx-\($0.id)", title: label(forTransactionType: $0.type), date: $0.createdAt, pointsDelta: $0.pointsDelta)
+        }
+        let fromRedemptions = supabase.redemptions.map {
+            HistoryEntry(id: "redeem-\($0.id)", title: "Récompense échangée : \($0.rewardName)", date: $0.createdAt, pointsDelta: -$0.pointsSpent)
+        }
+        return (fromTransactions + fromRedemptions).sorted { $0.date > $1.date }
+    }
+
+    private func label(forTransactionType type: String) -> String {
+        switch type {
+        case "visite": return "Visite"
+        case "ajustement": return "Ajustement"
+        case "echange": return "Récompense échangée"
+        default: return type
+        }
     }
 
     private func avatarPlaceholder(tier: LoyaltyTier, customer: Customer) -> some View {

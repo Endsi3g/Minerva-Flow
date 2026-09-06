@@ -183,8 +183,12 @@ struct AuthView: View {
                 errorBanner(oauthError)
             }
 
-            oauthButton(provider: .google, title: "Continuer avec Google", systemImage: "g.circle.fill", tint: Color(red: 0.26, green: 0.52, blue: 0.96))
-            oauthButton(provider: .facebook, title: "Continuer avec Facebook", systemImage: "f.circle.fill", tint: Color(red: 0.09, green: 0.47, blue: 0.95))
+            oauthButton(provider: .google, title: "Continuer avec Google") {
+                GoogleMarkIcon().frame(width: 18, height: 18)
+            }
+            oauthButton(provider: .facebook, title: "Continuer avec Facebook") {
+                FacebookMarkIcon().frame(width: 18, height: 18)
+            }
         }
     }
 
@@ -199,7 +203,7 @@ struct AuthView: View {
         }
     }
 
-    private func oauthButton(provider: Provider, title: String, systemImage: String, tint: Color) -> some View {
+    private func oauthButton(provider: Provider, title: String, @ViewBuilder icon: () -> some View) -> some View {
         Button {
             Task { await startOAuth(provider) }
         } label: {
@@ -207,9 +211,7 @@ struct AuthView: View {
                 if oauthBusy == provider {
                     ProgressView()
                 } else {
-                    Image(systemName: systemImage)
-                        .font(.system(size: 16))
-                        .foregroundStyle(tint)
+                    icon()
                 }
                 Text(oauthBusy == provider ? "Redirection…" : title)
                     .font(.system(size: 13.5, weight: .semibold))
