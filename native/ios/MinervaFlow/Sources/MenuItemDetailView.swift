@@ -297,6 +297,7 @@ private struct WriteReviewSheet: View {
     @State private var rating = 5
     @State private var comment = ""
     @State private var isSubmitting = false
+    @State private var submitError: String?
 
     var body: some View {
         NavigationStack {
@@ -323,6 +324,13 @@ private struct WriteReviewSheet: View {
                     .background(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 11))
                     .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
+
+                if let submitError {
+                    Text(submitError)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 Button {
                     Task { await submit() }
@@ -357,11 +365,14 @@ private struct WriteReviewSheet: View {
 
     private func submit() async {
         isSubmitting = true
+        submitError = nil
         let ok = await supabase.submitReview(menuItemId: item.id, restaurantId: restaurantId, rating: rating, comment: comment.isEmpty ? nil : comment)
         isSubmitting = false
         if ok {
             onSubmitted(Double(rating))
             dismiss()
+        } else {
+            submitError = "L'envoi de votre avis a échoué. Réessayez."
         }
     }
 }
