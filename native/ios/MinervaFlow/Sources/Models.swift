@@ -215,8 +215,39 @@ struct ReferralsResponse: Codable {
     let programs: [ReferralProgress]
 }
 
+/// One restaurant loyalty relationship, with the restaurant's own name
+/// attached — see app/api/portal/restaurants/route.ts for why this needs
+/// a bridge (restaurants itself isn't customer-readable) rather than a
+/// direct RLS-scoped fetch the way the underlying customers rows are.
+struct RestaurantMembership: Codable, Identifiable {
+    let customerId: String
+    let restaurantId: String
+    let restaurantName: String
+    let visitCount: Int
+    let totalSpent: Double
+    let loyaltyPoints: Int
+    var id: String { customerId }
+}
+
+struct RestaurantMembershipsResponse: Codable {
+    let memberships: [RestaurantMembership]
+}
+
+/// One line of combined points/rewards history, annotated with which
+/// restaurant it happened at — the same shape ProfileView's history and
+/// MyCardView's embedded history both render, now that either can span
+/// more than one restaurant relationship.
+struct LoyaltyHistoryEntry: Identifiable {
+    let id: String
+    let title: String
+    let date: Date
+    let pointsDelta: Int
+    let restaurantName: String?
+}
+
 struct RewardRedemption: Codable, Identifiable {
     let id: String
+    let restaurantId: String
     let rewardName: String
     let pointsSpent: Int
     let code: String
@@ -225,6 +256,7 @@ struct RewardRedemption: Codable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case id
+        case restaurantId = "restaurant_id"
         case rewardName = "reward_name"
         case pointsSpent = "points_spent"
         case code
@@ -235,12 +267,14 @@ struct RewardRedemption: Codable, Identifiable {
 
 struct LoyaltyTransaction: Codable, Identifiable {
     let id: String
+    let restaurantId: String
     let type: String
     let pointsDelta: Int
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
         case id
+        case restaurantId = "restaurant_id"
         case type
         case pointsDelta = "points_delta"
         case createdAt = "created_at"

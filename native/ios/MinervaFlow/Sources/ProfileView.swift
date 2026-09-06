@@ -158,23 +158,28 @@ struct ProfileView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
-            if supabase.transactions.isEmpty && supabase.redemptions.isEmpty {
+            if supabase.combinedHistory.isEmpty {
                 Text("Aucun mouvement de points pour l'instant.")
                     .font(.system(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .padding(.vertical, 4)
             } else {
                 VStack(spacing: 6) {
-                    ForEach(historyEntries, id: \.id) { entry in
+                    ForEach(supabase.combinedHistory) { entry in
                         HStack {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(entry.title)
                                     .font(.system(size: 12.5, weight: .medium))
                                     .foregroundStyle(MinervaColor.ink)
                                     .fixedSize(horizontal: false, vertical: true)
-                                Text(entry.date.formatted(date: .abbreviated, time: .omitted))
-                                    .font(.system(size: 10.5))
-                                    .foregroundStyle(MinervaColor.inkFaint)
+                                HStack(spacing: 4) {
+                                    Text(entry.date.formatted(date: .abbreviated, time: .omitted))
+                                    if let restaurantName = entry.restaurantName {
+                                        Text("· \(restaurantName)")
+                                    }
+                                }
+                                .font(.system(size: 10.5))
+                                .foregroundStyle(MinervaColor.inkFaint)
                             }
                             Spacer(minLength: 8)
                             Text("\(entry.pointsDelta >= 0 ? "+" : "")\(entry.pointsDelta) pts")
@@ -187,27 +192,6 @@ struct ProfileView: View {
                     }
                 }
             }
-        }
-    }
-
-    private struct HistoryEntry { let id: String; let title: String; let date: Date; let pointsDelta: Int }
-
-    private var historyEntries: [HistoryEntry] {
-        let fromTransactions = supabase.transactions.map {
-            HistoryEntry(id: "tx-\($0.id)", title: label(forTransactionType: $0.type), date: $0.createdAt, pointsDelta: $0.pointsDelta)
-        }
-        let fromRedemptions = supabase.redemptions.map {
-            HistoryEntry(id: "redeem-\($0.id)", title: "Récompense échangée : \($0.rewardName)", date: $0.createdAt, pointsDelta: -$0.pointsSpent)
-        }
-        return (fromTransactions + fromRedemptions).sorted { $0.date > $1.date }
-    }
-
-    private func label(forTransactionType type: String) -> String {
-        switch type {
-        case "visite": return "Visite"
-        case "ajustement": return "Ajustement"
-        case "echange": return "Récompense échangée"
-        default: return type
         }
     }
 
