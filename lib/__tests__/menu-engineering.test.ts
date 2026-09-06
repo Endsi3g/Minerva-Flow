@@ -14,6 +14,7 @@ function item(overrides: Partial<MenuItem>): MenuItem {
     active: true,
     description: null,
     imageUrl: null,
+    imageUrls: [],
     createdAt: "2026-01-01T00:00:00Z",
     ...overrides,
   };

@@ -11,7 +11,10 @@ import SwiftUI
 /// cannot exist without becoming a scrollable list eventually.
 struct HomeView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @EnvironmentObject var notifications: NotificationManager
     @State private var showMyCard = false
+    @State private var showRestaurantMap = false
+    @State private var notificationDeniedAlert = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,6 +52,33 @@ struct HomeView: View {
         .sheet(isPresented: $showMyCard) {
             MyCardView()
         }
+        .sheet(isPresented: $showRestaurantMap) {
+            RestaurantMapView()
+        }
+        .alert("Notifications désactivées", isPresented: $notificationDeniedAlert) {
+            Button("Ouvrir Réglages") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Activez les notifications dans Réglages pour être averti des nouvelles offres.")
+        }
+    }
+
+    private func handleBellTap() {
+        Task {
+            await notifications.refreshStatus()
+            switch notifications.authorizationStatus {
+            case .notDetermined:
+                _ = await notifications.requestPermission()
+            case .denied:
+                notificationDeniedAlert = true
+            default:
+                break
+            }
+        }
     }
 
     // MARK: - Pinned header + tier banner
@@ -74,13 +104,18 @@ struct HomeView: View {
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
-                // Notifications/location icons mirror the Starbucks header
-                // pattern visually — not wired to a destination yet (no
-                // notification center or store-locator screen exists),
-                // profile already has its own tab so isn't duplicated here.
                 HStack(spacing: 16) {
-                    Image(systemName: "bell")
-                    Image(systemName: "mappin.and.ellipse")
+                    Button {
+                        handleBellTap()
+                    } label: {
+                        Image(systemName: notifications.authorizationStatus == .authorized ? "bell.fill" : "bell")
+                    }
+
+                    Button {
+                        showRestaurantMap = true
+                    } label: {
+                        Image(systemName: "mappin.and.ellipse")
+                    }
                 }
                 .font(.system(size: 17))
                 .foregroundStyle(MinervaColor.inkSoft)

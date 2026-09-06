@@ -672,6 +672,7 @@ export type MenuItem = {
   active: boolean;
   description: string | null;
   imageUrl: string | null;
+  imageUrls: string[];
   createdAt: string;
 };
 

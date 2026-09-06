@@ -478,4 +478,110 @@ final class SupabaseManager: ObservableObject {
             return OrderResult(ok: false, orderId: nil)
         }
     }
+
+    // MARK: - Restaurant discovery (map)
+
+    @Published var nearbyRestaurants: [DiscoverRestaurant] = []
+    @Published var isLoadingDiscover = false
+
+    /// Every restaurant with coordinates on file, via the bridge (see
+    /// app/api/portal/discover/route.ts's own comment on why this can't be
+    /// a direct RLS-scoped read: `restaurants` also holds
+    /// stripe_connect_account_id and financial-planning columns).
+    func fetchNearbyRestaurants() async {
+        isLoadingDiscover = true
+        defer { isLoadingDiscover = false }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/discover"))
+            nearbyRestaurants = try JSONDecoder().decode(DiscoverListResponse.self, from: data).restaurants
+        } catch {
+            lastError = "Impossible de charger les restaurants à proximité."
+            print("fetchNearbyRestaurants error: \(error)")
+        }
+    }
+
+    func fetchRestaurantDetail(id: String) async -> DiscoverRestaurantResponse? {
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/discover/\(id)"))
+            return try JSONDecoder().decode(DiscoverRestaurantResponse.self, from: data)
+        } catch {
+            lastError = "Impossible de charger ce restaurant."
+            print("fetchRestaurantDetail error: \(error)")
+            return nil
+        }
+    }
+
+    // MARK: - Menu item reviews (public read via RLS, no bridge needed)
+
+    /// menu_item_reviews_public_select has no auth requirement (see
+    /// 0069_menu_ratings_and_push_tokens.sql's own comment — same
+    /// Google-Maps-style reasoning: someone deciding whether to visit a
+    /// restaurant needs to see its ratings before they're a customer
+    /// there), so this reads directly through the client, no bridge.
+    func fetchReviews(forMenuItem menuItemId: String) async -> [MenuItemReview] {
+        do {
+            let reviews: [MenuItemReview] = try await client
+                .from("menu_item_reviews")
+                .select()
+                .eq("menu_item_id", value: menuItemId)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return reviews
+        } catch {
+            print("fetchReviews error: \(error)")
+            return []
+        }
+    }
+
+    /// menu_item_reviews_customer_insert requires the caller to actually
+    /// be a loyalty customer of that specific restaurant — reviewing a
+    /// place with no relationship to it isn't possible, by RLS, not just
+    /// UI convention.
+    func submitReview(menuItemId: String, restaurantId: String, rating: Int, comment: String?) async -> Bool {
+        guard let customerId = customer?.id else { return false }
+        do {
+            struct NewReview: Encodable {
+                let menu_item_id: String
+                let restaurant_id: String
+                let customer_id: String
+                let rating: Int
+                let comment: String?
+            }
+            try await client
+                .from("menu_item_reviews")
+                .upsert(NewReview(menu_item_id: menuItemId, restaurant_id: restaurantId, customer_id: customerId, rating: rating, comment: comment), onConflict: "menu_item_id,customer_id")
+                .execute()
+            return true
+        } catch {
+            lastError = "L'envoi de votre avis a échoué. Réessayez."
+            print("submitReview error: \(error)")
+            return false
+        }
+    }
+
+    // MARK: - Push notifications
+
+    /// device_push_tokens_owner_all (auth.uid() = user_id) makes this a
+    /// direct, RLS-scoped upsert — no bridge needed. Actually delivering a
+    /// push still requires a real APNs auth key configured server-side
+    /// (see native/ios/build-status.html); this half of the pipeline
+    /// (permission, registration, token storage) works regardless of that.
+    func registerPushToken(_ tokenData: Data) async {
+        let token = tokenData.map { String(format: "%02.2hhx", $0) }.joined()
+        guard let userId = try? await client.auth.session.user.id else { return }
+        do {
+            struct TokenRow: Encodable {
+                let user_id: UUID
+                let token: String
+                let platform: String
+            }
+            try await client
+                .from("device_push_tokens")
+                .upsert(TokenRow(user_id: userId, token: token, platform: "ios"), onConflict: "user_id,token")
+                .execute()
+        } catch {
+            print("registerPushToken error: \(error)")
+        }
+    }
 }

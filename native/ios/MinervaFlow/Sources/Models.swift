@@ -71,14 +71,33 @@ struct Offer: Codable, Identifiable {
 
 struct NativeMenuItem: Codable, Identifiable {
     let id: String
+    let restaurantId: String
     let name: String
     let category: String?
     let price: Double
     let description: String?
     let active: Bool
+    let imageUrl: String?
+    let imageUrls: [String]
+
+    /// Every photo available for the carousel — the single legacy
+    /// image_url first (if it isn't already duplicated in image_urls),
+    /// then the rest, so an item that only ever had the old single-image
+    /// field still shows something instead of an empty carousel.
+    var galleryImageURLs: [String] {
+        var urls = imageUrls
+        if let imageUrl, !urls.contains(imageUrl) {
+            urls.insert(imageUrl, at: 0)
+        }
+        return urls
+    }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, category, price, description, active
+        case id
+        case restaurantId
+        case name, category, price, description, active
+        case imageUrl
+        case imageUrls
     }
 }
 
@@ -86,6 +105,68 @@ struct MenuResponse: Codable {
     let items: [NativeMenuItem]
     let taxRate: Double
     let acceptsTips: Bool
+}
+
+struct MenuItemReview: Codable, Identifiable {
+    let id: String
+    let menuItemId: String
+    let customerId: String
+    let rating: Int
+    let comment: String?
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case menuItemId = "menu_item_id"
+        case customerId = "customer_id"
+        case rating, comment
+        case createdAt = "created_at"
+    }
+}
+
+struct DiscoverRestaurant: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String?
+    let address: String?
+    let city: String?
+    let province: String?
+    let lat: Double
+    let lng: Double
+    let phone: String?
+    let website: String?
+    let color: String?
+}
+
+struct DiscoverRestaurantDetail: Codable {
+    let id: String
+    let name: String
+    let description: String?
+    let address: String?
+    let city: String?
+    let province: String?
+    let lat: Double?
+    let lng: Double?
+    let phone: String?
+    let website: String?
+    let color: String?
+}
+
+struct RestaurantDiscoverOffer: Codable, Identifiable {
+    let id: String
+    let title: String
+    let description: String?
+    let active: Bool
+}
+
+struct DiscoverRestaurantResponse: Codable {
+    let restaurant: DiscoverRestaurantDetail
+    let offers: [RestaurantDiscoverOffer]
+    let menuItems: [NativeMenuItem]
+}
+
+struct DiscoverListResponse: Codable {
+    let restaurants: [DiscoverRestaurant]
 }
 
 struct ReferralProgram: Codable, Identifiable {

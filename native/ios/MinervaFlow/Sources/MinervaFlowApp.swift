@@ -2,8 +2,11 @@ import SwiftUI
 
 @main
 struct MinervaFlowApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var supabase = SupabaseManager.shared
     @StateObject private var biometricLock = BiometricLock.shared
+    @StateObject private var locationManager = LocationManager.shared
+    @StateObject private var notificationManager = NotificationManager.shared
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -11,6 +14,8 @@ struct MinervaFlowApp: App {
             RootView()
                 .environmentObject(supabase)
                 .environmentObject(biometricLock)
+                .environmentObject(locationManager)
+                .environmentObject(notificationManager)
                 // Minerva Flow's brand (AGENTS.md) only defines one light
                 // cream/emerald palette — no dark variant exists yet, same
                 // as the web app. Forcing light avoids every color in this
