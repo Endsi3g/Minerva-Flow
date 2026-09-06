@@ -79,6 +79,16 @@ struct MenuItemDetailView: View {
             }
         }
         .task { await loadReviews() }
+        .onAppear {
+            // Only for items reachable from the customer's own Commander
+            // cart (cart != nil) — browsing a restaurant one isn't a member
+            // of yet has no order to remind anyone to finish. Skip entirely
+            // if it's already in the cart — no reminder needed for
+            // something already acted on.
+            if let cart, (cart.wrappedValue[item.id] ?? 0) == 0 {
+                NotificationManager.shared.scheduleMenuViewReminder(itemName: item.name, restaurantName: supabase.restaurantName ?? "votre restaurant")
+            }
+        }
     }
 
     // MARK: - Carousel
@@ -212,7 +222,10 @@ struct MenuItemDetailView: View {
                 let generator = UIImpactFeedbackGenerator(style: .light)
                 generator.impactOccurred()
                 cart.wrappedValue[item.id] = quantity + 1
-                if quantity == 0 { dismiss() }
+                if quantity == 0 {
+                    NotificationManager.shared.cancelMenuViewReminder(itemName: item.name)
+                    dismiss()
+                }
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "cart.fill")

@@ -57,6 +57,39 @@ final class NotificationManager: NSObject, ObservableObject, UNUserNotificationC
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         [.banner, .sound, .list]
     }
+
+    // MARK: - "Viewed but didn't order" reminder
+
+    /// Schedules a purely local, on-device reminder for 2 hours out when
+    /// someone views a menu item's detail page but doesn't add it to a
+    /// cart during that view — the "menu consulté sans commande" case.
+    /// Deliberately local rather than server-driven: no WhatsApp Business
+    /// API or extra backend trigger design needed, works entirely off the
+    /// permission already granted for order confirmations, and is
+    /// trivially cancelled (see cancelMenuViewReminder) the moment the
+    /// person actually adds the item to a cart or leaves the app's normal
+    /// flow, so it never fires for someone who already acted.
+    func scheduleMenuViewReminder(itemName: String, restaurantName: String) {
+        guard authorizationStatus == .authorized else { return }
+        let content = UNMutableNotificationContent()
+        content.title = "Toujours envie de \(itemName) ?"
+        content.body = "\(restaurantName) vous attend — votre article est encore au menu."
+        content.sound = .default
+        let identifier = "menu-view-reminder-\(itemName)"
+        let request = UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 2 * 60 * 60, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    /// Cancels a pending reminder for this item — call the instant the
+    /// item is actually added to a cart, so someone who already acted on
+    /// the menu view never gets a "did you forget" nudge.
+    func cancelMenuViewReminder(itemName: String) {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["menu-view-reminder-\(itemName)"])
+    }
 }
 
 /// UIKit AppDelegate bridge — SwiftUI's App protocol has no direct hook for
