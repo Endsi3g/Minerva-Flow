@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct Customer: Codable, Identifiable {
     let id: String
@@ -62,6 +63,24 @@ struct Offer: Codable, Identifiable {
     }
 }
 
+struct RewardRedemption: Codable, Identifiable {
+    let id: String
+    let rewardName: String
+    let pointsSpent: Int
+    let code: String
+    let status: String // "pending" | "claimed"
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case rewardName = "reward_name"
+        case pointsSpent = "points_spent"
+        case code
+        case status
+        case createdAt = "created_at"
+    }
+}
+
 struct LoyaltyTransaction: Codable, Identifiable {
     let id: String
     let type: String
@@ -96,6 +115,25 @@ enum LoyaltyTier: String {
         case .habitue: return "leaf"
         case .privilegie: return "star.fill"
         case .ambassadeur: return "crown.fill"
+        }
+    }
+
+    /// Solid full-width banner colors, matching the web's walletTierBg and
+    /// the Starbucks reference's Green/Gold-status-banner pattern — the
+    /// whole banner recolors per tier rather than a neutral card with a
+    /// colored badge.
+    var bannerColor: Color {
+        switch self {
+        case .habitue: return MinervaColor.ink
+        case .privilegie: return MinervaColor.emeraldDark
+        case .ambassadeur: return MinervaColor.limeAccent
+        }
+    }
+
+    var bannerForeground: Color {
+        switch self {
+        case .ambassadeur: return MinervaColor.emeraldDark
+        default: return .white
         }
     }
 

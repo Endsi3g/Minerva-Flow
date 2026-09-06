@@ -13,7 +13,24 @@ enum MinervaColor {
     static let inkFaint = Color(red: 0x8A / 255, green: 0x91 / 255, blue: 0x88 / 255)
     static let emerald = Color(red: 0x16 / 255, green: 0x7F / 255, blue: 0x5B / 255)
     static let emeraldDark = Color(red: 0x0E / 255, green: 0x5A / 255, blue: 0x40 / 255)
+    /// Web's --mv-lime — the Ambassadeur tier's banner color, matching
+    /// Starbucks' Gold-status treatment.
+    static let limeAccent = Color(red: 0xDF / 255, green: 0xFF / 255, blue: 0x5F / 255)
     static let border = Color(red: 0x1B / 255, green: 0x26 / 255, blue: 0x20 / 255).opacity(0.1)
+}
+
+/// Every primary button in the app uses this — a bare Button with no
+/// custom style gives zero tactile feedback on iOS beyond the system's
+/// barely-there default, which reads as "the app has no animation at all"
+/// even though the layout itself is fine. A slight scale + opacity dip on
+/// press, animated, is what a native app actually feels like.
+struct PressableButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.9 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+    }
 }
 
 enum MinervaFont {

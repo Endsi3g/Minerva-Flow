@@ -7,12 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */; };
 		09DEDA487C152D20E5410836 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B8ABC1E0681608032F18B9B5 /* Assets.xcassets */; };
 		1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8113A301B23FEECDBE8EDE /* MainTabView.swift */; };
 		1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBD59C80CE3B06A999142A6E /* Config.swift */; };
+		2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9CD9B5E79E9FE474707739 /* RewardsView.swift */; };
 		5C881A86FC3F7D67D6725336 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D70223A1891BFC32372F3C5 /* Models.swift */; };
+		7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */; };
 		81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001F62368824618EE0ACB49 /* SupabaseManager.swift */; };
 		976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */; };
+		A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */; };
 		A4FF9ABA69E8115D0845A981 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 33E9C17D0D39AFF0D025E0F2 /* Supabase */; };
 		CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D58EE17A9A62B1893F865891 /* RadialGauge.swift */; };
 		E602B1260BDBC61608C8F1C7 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE934F2A5846A120417A19B /* Theme.swift */; };
@@ -23,13 +27,17 @@
 
 /* Begin PBXFileReference section */
 		02F66981C3B41C8B5FD69ECE /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntroView.swift; sourceTree = "<group>"; };
 		1BA24BE15C53784788988271 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		2D70223A1891BFC32372F3C5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
+		5A9CD9B5E79E9FE474707739 /* RewardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardsView.swift; sourceTree = "<group>"; };
 		810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowApp.swift; sourceTree = "<group>"; };
 		89B5498B7D0733D7AA1958D9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		A0B3CE87BA193CEEDBA5D5D5 /* MinervaFlow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MinervaFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B8ABC1E0681608032F18B9B5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CD8113A301B23FEECDBE8EDE /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		D58EE17A9A62B1893F865891 /* RadialGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialGauge.swift; sourceTree = "<group>"; };
 		E001F62368824618EE0ACB49 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		EBD59C80CE3B06A999142A6E /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
@@ -62,10 +70,14 @@
 				02F66981C3B41C8B5FD69ECE /* AuthView.swift */,
 				EBD59C80CE3B06A999142A6E /* Config.swift */,
 				1BA24BE15C53784788988271 /* HomeView.swift */,
+				09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */,
 				CD8113A301B23FEECDBE8EDE /* MainTabView.swift */,
 				810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */,
 				2D70223A1891BFC32372F3C5 /* Models.swift */,
+				47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */,
+				D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */,
 				D58EE17A9A62B1893F865891 /* RadialGauge.swift */,
+				5A9CD9B5E79E9FE474707739 /* RewardsView.swift */,
 				89B5498B7D0733D7AA1958D9 /* RootView.swift */,
 				E001F62368824618EE0ACB49 /* SupabaseManager.swift */,
 				ECE934F2A5846A120417A19B /* Theme.swift */,
@@ -177,10 +189,14 @@
 				EB483ABD7DA63D91561BE978 /* AuthView.swift in Sources */,
 				1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */,
 				F5E4CC548458D40BF92F3F17 /* HomeView.swift in Sources */,
+				08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */,
 				1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */,
 				976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */,
 				5C881A86FC3F7D67D6725336 /* Models.swift in Sources */,
+				7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */,
+				A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */,
 				CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */,
+				2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */,
 				F867193E516C1BAD652866EE /* RootView.swift in Sources */,
 				81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */,
 				E602B1260BDBC61608C8F1C7 /* Theme.swift in Sources */,
