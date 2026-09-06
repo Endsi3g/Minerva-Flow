@@ -29,6 +29,10 @@ targets:
         UILaunchScreen:
           UIColorName: LaunchBackground
           UIImageName: LogoMark
+        CFBundleURLTypes:
+          - CFBundleURLName: app.minervaflow.oauth
+            CFBundleURLSchemes:
+              - minervaflow
     dependencies:
       - package: Supabase
         product: Supabase

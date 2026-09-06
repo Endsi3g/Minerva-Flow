@@ -14,6 +14,12 @@ enum Config {
     /// requests, just presented differently (see lib/auth/native-bearer.ts).
     static let apiBaseURL = URL(string: "https://minervaflow.app")!
 
+    /// Matches the CFBundleURLSchemes entry in project.yml — where
+    /// ASWebAuthenticationSession hands control back to this app once
+    /// Google/Facebook redirect the OAuth flow to Supabase and Supabase
+    /// redirects it here.
+    static let oauthRedirectURL = URL(string: "minervaflow://login-callback")!
+
     #if DEBUG
     /// A real customers row + linked auth user created for local testing
     /// (see supabase/migrations' handle_new_user linking logic) — lets the

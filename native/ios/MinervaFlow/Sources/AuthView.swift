@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 
 /// Direct replica of the real web portal login (app/[locale]/portal/login/
 /// page.tsx) — centered logo + wordmark above a bordered card, "Espace
@@ -28,6 +29,8 @@ struct AuthView: View {
     @State private var resendCooldown = 0
     @State private var resendTimer: Timer?
     @State private var legalSheet: LegalDocument?
+    @State private var oauthBusy: Provider?
+    @State private var oauthError: String?
 
     @FocusState private var focusedField: Field?
 
@@ -150,6 +153,8 @@ struct AuthView: View {
 
             submitButton(title: "Recevoir le code", busyTitle: "Envoi…")
 
+            oauthSection
+
             #if DEBUG
             devBypassButton
             #endif
@@ -166,6 +171,66 @@ struct AuthView: View {
                 focusedField = .email
             }
         }
+    }
+
+    // MARK: - OAuth (Google / Facebook)
+
+    private var oauthSection: some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 10) {
+                Rectangle().fill(MinervaColor.border).frame(height: 1)
+                Text("OU")
+                    .font(.system(size: 10.5, weight: .bold))
+                    .tracking(0.6)
+                    .foregroundStyle(MinervaColor.inkFaint)
+                Rectangle().fill(MinervaColor.border).frame(height: 1)
+            }
+
+            if let oauthError {
+                errorBanner(oauthError)
+            }
+
+            oauthButton(provider: .google, title: "Continuer avec Google", systemImage: "g.circle.fill", tint: Color(red: 0.26, green: 0.52, blue: 0.96))
+            oauthButton(provider: .facebook, title: "Continuer avec Facebook", systemImage: "f.circle.fill", tint: Color(red: 0.09, green: 0.47, blue: 0.95))
+        }
+        .padding(.top, 2)
+    }
+
+    private func oauthButton(provider: Provider, title: String, systemImage: String, tint: Color) -> some View {
+        Button {
+            Task { await startOAuth(provider) }
+        } label: {
+            HStack(spacing: 10) {
+                if oauthBusy == provider {
+                    ProgressView()
+                } else {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 16))
+                        .foregroundStyle(tint)
+                }
+                Text(oauthBusy == provider ? "Redirection…" : title)
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+        }
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 11))
+        .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
+        .buttonStyle(PressableButtonStyle())
+        .disabled(oauthBusy != nil || isBusy)
+    }
+
+    private func startOAuth(_ provider: Provider) async {
+        oauthBusy = provider
+        oauthError = nil
+        do {
+            try await supabase.signInWithOAuth(provider: provider)
+        } catch {
+            oauthError = "La connexion a échoué. Réessayez."
+        }
+        oauthBusy = nil
     }
 
     #if DEBUG

@@ -73,6 +73,20 @@ final class SupabaseManager: ObservableObject {
         try? await client.auth.signOut()
     }
 
+    /// Google/Facebook via ASWebAuthenticationSession (the supabase-swift
+    /// SDK's own overload — no manual URL/session plumbing needed beyond
+    /// registering the callback scheme, see Config.oauthRedirectURL and
+    /// project.yml's CFBundleURLTypes). handle_new_user() links this to an
+    /// existing customer row by email even though OAuth can't carry the
+    /// is_customer metadata flag the OTP path uses (see
+    /// supabase/migrations/0067_oauth_customer_login.sql) — requires the
+    /// provider to actually be enabled in the Supabase dashboard with real
+    /// credentials, which is a one-time manual step, not something this
+    /// code can do for itself.
+    func signInWithOAuth(provider: Provider) async throws {
+        try await client.auth.signInWithOAuth(provider: provider, redirectTo: Config.oauthRedirectURL)
+    }
+
     #if DEBUG
     /// Password-grant sign-in against the seeded dev customer (see
     /// Config.devTestEmail) — a real Supabase session, so it still goes
