@@ -26,7 +26,7 @@ export async function GET(req: Request) {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("restaurants")
-    .select("name, loyalty_tier_2_threshold, loyalty_tier_3_threshold")
+    .select("name, loyalty_tier_2_threshold, loyalty_tier_3_threshold, google_maps_url")
     .eq("id", customer.restaurantId)
     .single();
 
@@ -38,5 +38,6 @@ export async function GET(req: Request) {
     name: data.name as string,
     loyaltyTier2Threshold: (data.loyalty_tier_2_threshold as number | null) ?? 150,
     loyaltyTier3Threshold: (data.loyalty_tier_3_threshold as number | null) ?? 400,
+    googleMapsUrl: data.google_maps_url as string | null,
   });
 }
