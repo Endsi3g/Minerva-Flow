@@ -29,6 +29,7 @@
 		976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */; };
 		9BC5FB157B434B491741712A /* OrderTotals.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA427B759305A43BF018AB62 /* OrderTotals.swift */; };
 		9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48489698C6B750A6E75FEFEE /* BiometricLock.swift */; };
+		A046D3E2BA39E0B6F5839CF3 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = D76530360EDCB9FEAD965814 /* Sentry */; };
 		A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */; };
 		A4FF9ABA69E8115D0845A981 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 33E9C17D0D39AFF0D025E0F2 /* Supabase */; };
 		B452FFE84A4A20AE63CF45BA /* RestaurantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */; };
@@ -135,6 +136,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A4FF9ABA69E8115D0845A981 /* Supabase in Frameworks */,
+				A046D3E2BA39E0B6F5839CF3 /* Sentry in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -273,6 +275,7 @@
 			name = MinervaFlow;
 			packageProductDependencies = (
 				33E9C17D0D39AFF0D025E0F2 /* Supabase */,
+				D76530360EDCB9FEAD965814 /* Sentry */,
 			);
 			productName = MinervaFlow;
 			productReference = A0B3CE87BA193CEEDBA5D5D5 /* MinervaFlow.app */;
@@ -369,6 +372,7 @@
 			mainGroup = 3C8F98401FDC498977A93B61;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				F2C258CB7AD7C9D388B75695 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 				5658BA8E3A052BCEBD3D82D3 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -827,6 +831,14 @@
 				minimumVersion = 2.29.0;
 			};
 		};
+		F2C258CB7AD7C9D388B75695 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.44.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -834,6 +846,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 5658BA8E3A052BCEBD3D82D3 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		D76530360EDCB9FEAD965814 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2C258CB7AD7C9D388B75695 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

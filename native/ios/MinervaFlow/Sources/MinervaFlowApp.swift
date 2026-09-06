@@ -1,4 +1,5 @@
 import SwiftUI
+import Sentry
 
 @main
 struct MinervaFlowApp: App {
@@ -8,6 +9,23 @@ struct MinervaFlowApp: App {
     @StateObject private var locationManager = LocationManager.shared
     @StateObject private var notificationManager = NotificationManager.shared
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        // Harmless no-op until Config.sentryDSN is filled in (see its own
+        // comment) — the web app already has a real Sentry organization,
+        // this just hasn't been pointed at an iOS project within it yet.
+        if !Config.sentryDSN.isEmpty {
+            SentrySDK.start { options in
+                options.dsn = Config.sentryDSN
+                options.debug = false
+                #if DEBUG
+                options.environment = "debug"
+                #else
+                options.environment = "production"
+                #endif
+            }
+        }
+    }
 
     var body: some Scene {
         WindowGroup {

@@ -9,6 +9,9 @@ packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
     from: 2.29.0
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa
+    from: 8.44.0
 
 targets:
   MinervaFlow:
@@ -45,6 +48,8 @@ targets:
     dependencies:
       - package: Supabase
         product: Supabase
+      - package: Sentry
+        product: Sentry
       - target: MinervaFlowWidgetExtension
         embed: true
     settings:

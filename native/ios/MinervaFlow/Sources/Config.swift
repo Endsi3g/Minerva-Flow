@@ -24,6 +24,16 @@ enum Config {
     /// redirects it here.
     static let oauthRedirectURL = URL(string: "minervaflow://login-callback")!
 
+    /// The web app already has a real, active Sentry organization
+    /// (sentry.server.config.ts) — this is deliberately empty, not
+    /// missing infrastructure: SentrySDK.start() is only called when this
+    /// is non-empty (see MinervaFlowApp.swift), so crash reporting stays a
+    /// harmless no-op until it's filled in. To finish this, create a new
+    /// "iOS" project inside that SAME existing Sentry organization
+    /// (Settings → Projects → Create Project — a few clicks, not a new
+    /// account) and paste its DSN here.
+    static let sentryDSN = ""
+
     #if DEBUG
     /// A real customers row + linked auth user created for local testing
     /// (see supabase/migrations' handle_new_user linking logic) — lets the
