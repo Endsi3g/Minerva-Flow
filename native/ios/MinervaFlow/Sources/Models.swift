@@ -63,6 +63,51 @@ struct Offer: Codable, Identifiable {
     }
 }
 
+struct NativeMenuItem: Codable, Identifiable {
+    let id: String
+    let name: String
+    let category: String?
+    let price: Double
+    let description: String?
+    let active: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, category, price, description, active
+    }
+}
+
+struct MenuResponse: Codable {
+    let items: [NativeMenuItem]
+    let taxRate: Double
+    let acceptsTips: Bool
+}
+
+struct ReferralProgram: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String?
+    let goalCount: Int
+    let rewardDescription: String?
+}
+
+struct ReferralLink: Codable, Identifiable {
+    let id: String
+    let referralProgramId: String
+    let code: String
+    let convertedCount: Int
+    let rewardClaimedAt: String?
+}
+
+struct ReferralProgress: Codable, Identifiable {
+    let program: ReferralProgram
+    let link: ReferralLink?
+    var id: String { program.id }
+}
+
+struct ReferralsResponse: Codable {
+    let programs: [ReferralProgress]
+}
+
 struct RewardRedemption: Codable, Identifiable {
     let id: String
     let rewardName: String

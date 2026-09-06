@@ -8,6 +8,7 @@ import {
   getCustomersForUser,
   selfRedeemReward,
   submitPortalOrder,
+  deleteMyAccount,
   type PortalOrderCartLine,
   type SubmitPortalOrderResult,
 } from "@/lib/data/customer-portal";
@@ -111,4 +112,21 @@ export async function submitPortalOrderAction(
   const result = await submitPortalOrder(customer, cart, tipAmount, paymentMethod);
   if (result.ok) revalidatePath("/portal");
   return result;
+}
+
+/**
+ * Irreversible: wipes this session's own login and every customers row's
+ * personal data tied to it (see deleteMyAccount's own doc comment). The
+ * client is expected to have already confirmed with the person before
+ * calling this — there is no further confirmation step here, this action
+ * IS the point of no return.
+ */
+export async function deleteMyAccountAction(): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  return deleteMyAccount(user.id);
 }

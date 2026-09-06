@@ -6,4 +6,23 @@ import Foundation
 enum Config {
     static let supabaseURL = URL(string: "https://vcfaianbdjowmiqaheee.supabase.co")!
     static let supabaseAnonKey = "sb_publishable_DqXl75SSLlJL8MUKsdC0Wg_KujBsY8D"
+
+    /// The web app itself, hosting the native bridge routes (Server
+    /// Actions aren't callable from native, see app/api/portal/*) — a
+    /// customer's own Supabase session token is sent as a Bearer header
+    /// to these, same trust boundary as the web portal's RLS-scoped
+    /// requests, just presented differently (see lib/auth/native-bearer.ts).
+    static let apiBaseURL = URL(string: "https://minervaflow.app")!
+
+    #if DEBUG
+    /// A real customers row + linked auth user created for local testing
+    /// (see supabase/migrations' handle_new_user linking logic) — lets the
+    /// simulator/device skip the email round-trip while OTP delivery is
+    /// being debugged, without faking RLS: this still authenticates a real
+    /// Supabase session via password grant, so every screen behind it
+    /// exercises the actual RLS policies. Never compiled into a Release
+    /// build.
+    static let devTestEmail = "dev-test@minervaflow.app"
+    static let devTestPassword = "MinervaDevTest2026!"
+    #endif
 }

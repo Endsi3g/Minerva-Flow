@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreImage.CIFilterBuiltins
 
 /// Full redemption flow, matching the web portal's RewardsRedeemCard: a
 /// list of the restaurant's active rewards, each redeemable in one tap once
@@ -11,22 +12,49 @@ struct RewardsView: View {
     @EnvironmentObject var supabase: SupabaseManager
     @State private var redeemingId: String?
     @State private var confirmingReward: LoyaltyReward?
+    @State private var hasLoadedReferrals = false
+    @State private var qrProgram: ReferralProgress?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                header
-
-                if let pending = pendingRedemptions, !pending.isEmpty {
-                    pendingSection(pending)
+        Group {
+            if supabase.isLoadingData && supabase.customer == nil {
+                VStack {
+                    Spacer()
+                    ProgressView()
+                    Spacer()
                 }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        header
 
-                catalogSection
+                        if let pending = pendingRedemptions, !pending.isEmpty {
+                            pendingSection(pending)
+                        }
+
+                        catalogSection
+
+                        if !supabase.referralPrograms.isEmpty {
+                            referralSection
+                        }
+                    }
+                    .padding(18)
+                }
+                .refreshable {
+                    await supabase.loadPortalData()
+                    await supabase.fetchReferrals()
+                }
             }
-            .padding(18)
         }
         .background(MinervaColor.cream.ignoresSafeArea())
-        .refreshable { await supabase.loadPortalData() }
+        .task {
+            guard !hasLoadedReferrals else { return }
+            hasLoadedReferrals = true
+            await supabase.fetchReferrals()
+        }
+        .sheet(item: $qrProgram) { progress in
+            ReferralQRSheet(progress: progress, restaurantName: supabase.restaurantName)
+        }
         .alert("Confirmer l'échange", isPresented: Binding(
             get: { confirmingReward != nil },
             set: { if !$0 { confirmingReward = nil } }
@@ -177,5 +205,205 @@ struct RewardsView: View {
         let generator = UINotificationFeedbackGenerator()
         let success = await supabase.redeem(reward: reward)
         generator.notificationOccurred(success ? .success : .error)
+    }
+
+    // MARK: - Referral / parrainage (mirrors web's ReferralProgramCard)
+
+    private var referralSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Programmes de parrainage")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            ForEach(supabase.referralPrograms) { progress in
+                referralCard(progress)
+            }
+        }
+    }
+
+    private func referralCard(_ progress: ReferralProgress) -> some View {
+        let program = progress.program
+        let convertedCount = progress.link?.convertedCount ?? 0
+        let goalProgress = min(1, Double(convertedCount) / Double(max(1, program.goalCount)))
+        let rewardUnlocked = progress.link?.rewardClaimedAt != nil
+
+        return VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(program.name)
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let description = program.description {
+                    Text(description)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if let link = progress.link {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("\(convertedCount) / \(program.goalCount) amis parrainés")
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(MinervaColor.inkSoft)
+                        Spacer()
+                        if rewardUnlocked {
+                            Text("Débloqué")
+                                .font(.system(size: 10.5, weight: .bold))
+                                .foregroundStyle(MinervaColor.emeraldDark)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(MinervaColor.emerald.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                    }
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(MinervaColor.ink.opacity(0.08))
+                            Capsule().fill(MinervaColor.emerald)
+                                .frame(width: max(6, geo.size.width * goalProgress))
+                        }
+                    }
+                    .frame(height: 6)
+
+                    if let rewardDescription = program.rewardDescription {
+                        HStack(spacing: 6) {
+                            Image(systemName: "gift.fill")
+                                .font(.system(size: 11))
+                            Text("Récompense : \(rewardDescription)")
+                                .font(.system(size: 11.5))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .foregroundStyle(MinervaColor.emerald)
+                    }
+
+                    HStack(spacing: 10) {
+                        ShareLink(item: referralShareURL(code: link.code), message: Text(referralShareText(program: program, code: link.code))) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Partager")
+                            }
+                            .font(.system(size: 12, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                        }
+                        .foregroundStyle(.white)
+                        .background(MinervaColor.emerald)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .buttonStyle(PressableButtonStyle())
+
+                        Button {
+                            qrProgram = progress
+                        } label: {
+                            Image(systemName: "qrcode")
+                                .font(.system(size: 15))
+                                .frame(width: 40, height: 36)
+                        }
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                        .background(MinervaColor.emerald.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .buttonStyle(PressableButtonStyle())
+                    }
+                    .padding(.top, 2)
+                }
+            } else {
+                Button {
+                    Task { _ = await supabase.createReferralLink(for: program.id) }
+                } label: {
+                    Text("Obtenir mon lien")
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                }
+                .foregroundStyle(.white)
+                .background(MinervaColor.emerald)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .buttonStyle(PressableButtonStyle())
+            }
+        }
+        .padding(14)
+        .background(MinervaColor.creamSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func referralShareURL(code: String) -> URL {
+        Config.apiBaseURL.appending(path: "/p/\(code)")
+    }
+
+    private func referralShareText(program: ProgramLike, code: String) -> String {
+        let name = supabase.restaurantName ?? "notre restaurant"
+        return "Je t'invite chez \(name) ! Utilise mon lien pour découvrir la carte et recevoir ton cadeau de bienvenue : \(referralShareURL(code: code).absoluteString)"
+    }
+}
+
+/// ReferralProgram already fits this shape — named separately only so
+/// referralShareText reads clearly about what it actually needs.
+private typealias ProgramLike = ReferralProgram
+
+/// Native QR generation (CoreImage, no third-party library) for scanning a
+/// referral link at the table — mirrors the web portal's PeerQrModal
+/// exactly (same share URL, same "scan with your camera" framing).
+struct ReferralQRSheet: View {
+    let progress: ReferralProgress
+    let restaurantName: String?
+    @Environment(\.dismiss) private var dismiss
+
+    private var shareURL: URL {
+        Config.apiBaseURL.appending(path: "/p/\(progress.link?.code ?? "")")
+    }
+
+    private var qrImage: UIImage? {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(shareURL.absoluteString.utf8)
+        filter.correctionLevel = "M"
+        guard let outputImage = filter.outputImage else { return nil }
+        let transform = CGAffineTransform(scaleX: 10, y: 10)
+        let scaled = outputImage.transformed(by: transform)
+        guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return nil }
+        return UIImage(cgImage: cgImage)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 18) {
+                Text(progress.program.name)
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+
+                if let qrImage {
+                    Image(uiImage: qrImage)
+                        .interpolation(.none)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 220, height: 220)
+                        .padding(16)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .overlay(RoundedRectangle(cornerRadius: 20).stroke(MinervaColor.emerald.opacity(0.3), lineWidth: 3))
+                } else {
+                    ProgressView().frame(width: 220, height: 220)
+                }
+
+                Text("Votre ami peut scanner ce code directement depuis l'appareil photo de son téléphone.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 30)
+
+                Spacer()
+            }
+            .padding(.top, 24)
+            .background(MinervaColor.cream.ignoresSafeArea())
+            .navigationTitle("Faire scanner à table")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Fermer") { dismiss() }
+                }
+            }
+        }
     }
 }

@@ -12,6 +12,7 @@
 		1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8113A301B23FEECDBE8EDE /* MainTabView.swift */; };
 		1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBD59C80CE3B06A999142A6E /* Config.swift */; };
 		2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9CD9B5E79E9FE474707739 /* RewardsView.swift */; };
+		442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C1D3C584B13E05EBD01750 /* MenuView.swift */; };
 		5C881A86FC3F7D67D6725336 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D70223A1891BFC32372F3C5 /* Models.swift */; };
 		7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */; };
 		81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001F62368824618EE0ACB49 /* SupabaseManager.swift */; };
@@ -32,6 +33,7 @@
 		1BA24BE15C53784788988271 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		2D70223A1891BFC32372F3C5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
+		53C1D3C584B13E05EBD01750 /* MenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuView.swift; sourceTree = "<group>"; };
 		574318127126383937A04DB7 /* WebPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebPageView.swift; sourceTree = "<group>"; };
 		5A9CD9B5E79E9FE474707739 /* RewardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardsView.swift; sourceTree = "<group>"; };
 		810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowApp.swift; sourceTree = "<group>"; };
@@ -75,6 +77,7 @@
 				1BA24BE15C53784788988271 /* HomeView.swift */,
 				09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */,
 				CD8113A301B23FEECDBE8EDE /* MainTabView.swift */,
+				53C1D3C584B13E05EBD01750 /* MenuView.swift */,
 				810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */,
 				2D70223A1891BFC32372F3C5 /* Models.swift */,
 				47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */,
@@ -196,6 +199,7 @@
 				F5E4CC548458D40BF92F3F17 /* HomeView.swift in Sources */,
 				08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */,
 				1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */,
+				442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */,
 				976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */,
 				5C881A86FC3F7D67D6725336 /* Models.swift in Sources */,
 				7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */,

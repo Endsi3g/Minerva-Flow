@@ -85,23 +85,51 @@ struct HomeView: View {
             Button {
                 // Tier detail / progress explainer — Phase 2.
             } label: {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Solde de points")
-                            .font(.system(size: 11, weight: .medium))
-                        Text("\(customer.loyaltyPoints) pts")
-                            .font(MinervaFont.display(26))
-                            .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Solde de points")
+                                .font(.system(size: 11, weight: .medium))
+                            Text("\(customer.loyaltyPoints) pts")
+                                .font(MinervaFont.display(26))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer()
+                        HStack(spacing: 4) {
+                            Text(tier.label.uppercased())
+                                .font(.system(size: 11.5, weight: .bold))
+                                .tracking(0.4)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .bold))
+                        }
                     }
-                    Spacer()
-                    HStack(spacing: 4) {
-                        Text(tier.label.uppercased())
-                            .font(.system(size: 11.5, weight: .bold))
-                            .tracking(0.4)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .bold))
+
+                    if let progress = tierProgress(for: customer) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    Capsule().fill(.white.opacity(0.2))
+                                    Capsule().fill(.white)
+                                        .frame(width: max(geo.size.width * 0.04, geo.size.width * progress.fraction))
+                                }
+                            }
+                            .frame(height: 6)
+
+                            Text("\(currencyString(progress.remaining)) avant le palier suivant")
+                                .font(.system(size: 11))
+                                .opacity(0.85)
+                        }
+                        .padding(.top, 18)
                     }
+
+                    HStack(spacing: 18) {
+                        Text("\(customer.visitCount) visites")
+                        Text(currencyString(customer.totalSpent))
+                    }
+                    .font(.system(size: 11.5))
+                    .opacity(0.9)
+                    .padding(.top, 14)
                 }
                 .foregroundStyle(tier.bannerForeground)
                 .padding(16)
@@ -112,6 +140,29 @@ struct HomeView: View {
         }
         .padding(EdgeInsets(top: 12, leading: 18, bottom: 14, trailing: 18))
         .background(MinervaColor.cream)
+    }
+
+    /// Mirrors the web wallet card's own progress bar exactly (same
+    /// prevTarget/nextTarget math, same "$X before the next tier" copy) —
+    /// uses the same default thresholds LoyaltyTier.resolve already falls
+    /// back to everywhere else in this app, since native has no bridge yet
+    /// for a restaurant's own custom thresholds.
+    private func tierProgress(for customer: Customer) -> (fraction: Double, remaining: Double)? {
+        let tier = LoyaltyTier.resolve(totalSpent: customer.totalSpent)
+        let tier2 = 150.0
+        let tier3 = 400.0
+        let prevTarget = tier == .ambassadeur ? tier3 : tier == .privilegie ? tier2 : 0
+        guard let nextTarget = tier == .habitue ? tier2 : tier == .privilegie ? tier3 : nil else { return nil }
+        let fraction = min(1, max(0, (customer.totalSpent - prevTarget) / (nextTarget - prevTarget)))
+        return (fraction, max(0, nextTarget - customer.totalSpent))
+    }
+
+    private func currencyString(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "CAD"
+        formatter.locale = Locale(identifier: "fr_CA")
+        return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.2f $", value)
     }
 
     // MARK: - Next reward (feed item)

@@ -14,7 +14,13 @@ final class SupabaseManager: ObservableObject {
     @Published var redemptions: [RewardRedemption] = []
     @Published var offers: [Offer] = []
     @Published var restaurantName: String?
+    @Published var menuItems: [NativeMenuItem] = []
+    @Published var taxRate: Double = 0.14975
+    @Published var acceptsTips: Bool = true
+    @Published var referralPrograms: [ReferralProgress] = []
     @Published var isLoadingData = false
+    @Published var isLoadingMenu = false
+    @Published var isLoadingReferrals = false
     /// Surfaced by any screen after a failed network/RPC call — cleared the
     /// next time that screen's action is retried. Centralized here rather
     /// than each view inventing its own error state, so every screen fails
@@ -66,6 +72,16 @@ final class SupabaseManager: ObservableObject {
     func signOut() async {
         try? await client.auth.signOut()
     }
+
+    #if DEBUG
+    /// Password-grant sign-in against the seeded dev customer (see
+    /// Config.devTestEmail) — a real Supabase session, so it still goes
+    /// through RLS like any other login, just skipping the email round-trip
+    /// while OTP delivery is being debugged separately.
+    func signInWithDevTestAccount() async throws {
+        try await client.auth.signIn(email: Config.devTestEmail, password: Config.devTestPassword)
+    }
+    #endif
 
     /// Loads the same data surface the web portal's Home tab shows for the
     /// current session's own customer row(s) — RLS (customers_select_own)
@@ -217,6 +233,146 @@ final class SupabaseManager: ObservableObject {
             lastError = "L'échange a échoué. Vos points n'ont pas été déduits, réessayez."
             print("redeem error: \(error)")
             return false
+        }
+    }
+
+    // MARK: - Commander (bridge API — Server Actions aren't reachable from
+    // native, see app/api/portal/* and lib/auth/native-bearer.ts)
+
+    private func bearerToken() async -> String? {
+        try? await client.auth.session.accessToken
+    }
+
+    /// Wraps a native bridge call with the defensive behavior a real
+    /// network request needs and a bare URLSession call does not get for
+    /// free: a bounded timeout (so a stalled connection fails in seconds,
+    /// not hangs the UI indefinitely), and a distinction between "no
+    /// internet at all" (clear, actionable message) and any other failure.
+    private func authorizedRequest(_ url: URL, method: String = "GET", body: Data? = nil) async throws -> Data {
+        guard let token = await bearerToken() else {
+            throw URLError(.userAuthenticationRequired)
+        }
+        var request = URLRequest(url: url, timeoutInterval: 15)
+        request.httpMethod = method
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let body {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+        return data
+    }
+
+    /// Irreversible: same deleteMyAccount the web portal's
+    /// deleteMyAccountAction calls (app/api/portal/account/route.ts), over
+    /// the Bearer-token bridge instead of a session cookie. Signs the local
+    /// session out afterward regardless of the network result's specifics —
+    /// once the server confirms deletion there is no account left to stay
+    /// signed into.
+    func deleteAccount() async -> Bool {
+        do {
+            _ = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/portal/account"),
+                method: "DELETE"
+            )
+            await signOut()
+            return true
+        } catch {
+            lastError = "La suppression du compte a échoué. Réessayez."
+            print("deleteAccount error: \(error)")
+            return false
+        }
+    }
+
+    func fetchMenu() async {
+        isLoadingMenu = true
+        defer { isLoadingMenu = false }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/menu"))
+            let decoded = try JSONDecoder().decode(MenuResponse.self, from: data)
+            menuItems = decoded.items.filter(\.active)
+            taxRate = decoded.taxRate
+            acceptsTips = decoded.acceptsTips
+        } catch let error as URLError where error.code == .notConnectedToInternet {
+            lastError = "Aucune connexion internet. Vérifiez votre réseau et réessayez."
+        } catch {
+            lastError = "Le menu n'a pas pu être chargé. Réessayez."
+            print("fetchMenu error: \(error)")
+        }
+    }
+
+    /// Referral programs are read via the bridge for the same reason the
+    /// menu is: referral_programs has no customer-facing RLS policy (see
+    /// app/api/portal/referrals/route.ts's own doc comment) — a loyalty
+    /// customer is never a restaurant_members row.
+    func fetchReferrals() async {
+        isLoadingReferrals = true
+        defer { isLoadingReferrals = false }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/referrals"))
+            referralPrograms = try JSONDecoder().decode(ReferralsResponse.self, from: data).programs
+        } catch {
+            lastError = "Les programmes de parrainage n'ont pas pu être chargés."
+            print("fetchReferrals error: \(error)")
+        }
+    }
+
+    /// Creates (or fetches the existing) referral link for one program,
+    /// then updates that program's entry in-place so the share sheet has
+    /// something to share immediately without a full reload.
+    func createReferralLink(for programId: String) async -> ReferralLink? {
+        struct Body: Encodable { let programId: String }
+        struct Response: Decodable { let link: ReferralLink? }
+        do {
+            let bodyData = try JSONEncoder().encode(Body(programId: programId))
+            let data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/portal/referrals"),
+                method: "POST",
+                body: bodyData
+            )
+            let link = try JSONDecoder().decode(Response.self, from: data).link
+            if let link, let index = referralPrograms.firstIndex(where: { $0.program.id == programId }) {
+                referralPrograms[index] = ReferralProgress(program: referralPrograms[index].program, link: link)
+            }
+            return link
+        } catch {
+            lastError = "Impossible de créer votre lien de parrainage. Réessayez."
+            print("createReferralLink error: \(error)")
+            return nil
+        }
+    }
+
+    struct OrderResult { let ok: Bool; let orderId: String? }
+
+    func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?) async -> OrderResult {
+        struct CartLine: Encodable { let menuItemId: String; let quantity: Int }
+        struct OrderBody: Encodable { let cart: [CartLine]; let tipAmount: Double; let paymentMethod: String? }
+        struct OrderResponse: Decodable { let ok: Bool; let orderId: String? }
+
+        let lines = cart.compactMap { key, qty -> CartLine? in
+            qty > 0 ? CartLine(menuItemId: key, quantity: qty) : nil
+        }
+        guard !lines.isEmpty else { return OrderResult(ok: false, orderId: nil) }
+
+        do {
+            let bodyData = try JSONEncoder().encode(OrderBody(cart: lines, tipAmount: tipAmount, paymentMethod: paymentMethod))
+            let data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/portal/orders"),
+                method: "POST",
+                body: bodyData
+            )
+            let decoded = try JSONDecoder().decode(OrderResponse.self, from: data)
+            return OrderResult(ok: decoded.ok, orderId: decoded.orderId)
+        } catch let error as URLError where error.code == .notConnectedToInternet {
+            lastError = "Aucune connexion internet. Votre commande n'a pas été envoyée."
+            return OrderResult(ok: false, orderId: nil)
+        } catch {
+            lastError = "La commande a échoué. Réessayez."
+            print("submitOrder error: \(error)")
+            return OrderResult(ok: false, orderId: nil)
         }
     }
 }

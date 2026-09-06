@@ -10,23 +10,36 @@ struct ProfileView: View {
     @State private var isSavingFrequency = false
     @State private var savedTick = false
     @State private var showSignOutConfirm = false
+    @State private var legalSheet: AuthView.LegalDocument?
+    @State private var showDeleteAccountSheet = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                if let customer = supabase.customer {
-                    identityCard(for: customer)
-                    notificationSection
-                    aboutSection
-                    signOutButton
-                } else {
-                    Text("Aucun profil trouvé.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(MinervaColor.inkSoft)
-                        .padding(.top, 40)
+        Group {
+            if supabase.isLoadingData && supabase.customer == nil {
+                VStack {
+                    Spacer()
+                    ProgressView()
+                    Spacer()
+                }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        if let customer = supabase.customer {
+                            identityCard(for: customer)
+                            notificationSection
+                            aboutSection
+                            signOutButton
+                            dangerZone
+                        } else {
+                            Text("Aucun profil trouvé.")
+                                .font(.system(size: 13))
+                                .foregroundStyle(MinervaColor.inkSoft)
+                                .padding(.top, 40)
+                        }
+                    }
+                    .padding(18)
                 }
             }
-            .padding(18)
         }
         .background(MinervaColor.cream.ignoresSafeArea())
         .onAppear {
@@ -41,6 +54,12 @@ struct ProfileView: View {
                 Task { await supabase.signOut() }
             }
             Button("Annuler", role: .cancel) {}
+        }
+        .sheet(item: $legalSheet) { doc in
+            LegalDocumentSheet(document: doc)
+        }
+        .sheet(isPresented: $showDeleteAccountSheet) {
+            DeleteAccountSheet()
         }
     }
 
@@ -166,9 +185,13 @@ struct ProfileView: View {
                 .foregroundStyle(MinervaColor.ink)
 
             VStack(spacing: 0) {
-                aboutRow(icon: "doc.text", title: "Conditions d'utilisation")
+                aboutRow(icon: "doc.text", title: "Conditions d'utilisation") {
+                    legalSheet = .terms
+                }
                 Divider().padding(.leading, 44)
-                aboutRow(icon: "lock", title: "Politique de confidentialité")
+                aboutRow(icon: "lock", title: "Politique de confidentialité") {
+                    legalSheet = .privacy
+                }
                 Divider().padding(.leading, 44)
                 aboutRow(icon: "info.circle", title: "Version", value: "1.0.0")
             }
@@ -177,28 +200,34 @@ struct ProfileView: View {
         }
     }
 
-    private func aboutRow(icon: String, title: String, value: String? = nil) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundStyle(MinervaColor.inkSoft)
-                .frame(width: 20)
-            Text(title)
-                .font(.system(size: 13))
-                .foregroundStyle(MinervaColor.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 8)
-            if let value {
-                Text(value)
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(MinervaColor.inkFaint)
-            } else {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(MinervaColor.inkFaint)
+    private func aboutRow(icon: String, title: String, value: String? = nil, action: (() -> Void)? = nil) -> some View {
+        Button {
+            action?()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .frame(width: 20)
+                Text(title)
+                    .font(.system(size: 13))
+                    .foregroundStyle(MinervaColor.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                if let value {
+                    Text(value)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                }
             }
+            .padding(14)
         }
-        .padding(14)
+        .buttonStyle(.plain)
+        .disabled(action == nil)
     }
 
     // MARK: - Sign out
@@ -214,5 +243,135 @@ struct ProfileView: View {
         }
         .foregroundStyle(.red)
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(.red.opacity(0.3)))
+    }
+
+    // MARK: - Danger zone
+
+    private var dangerZone: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Zone de danger")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            Button {
+                showDeleteAccountSheet = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.red)
+                        .frame(width: 20)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Supprimer mon compte")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 9))
+                            Text("Action irréversible")
+                        }
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                    }
+                    Spacer(minLength: 8)
+                }
+                .padding(14)
+            }
+            .buttonStyle(.plain)
+            .background(Color.red.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.red.opacity(0.2)))
+        }
+    }
+}
+
+/// Requires typing SUPPRIMER rather than a single confirm tap — mirrors the
+/// web portal's DeleteAccountModal exactly (same copy, same confirmation
+/// friction) since this is the one action in the app that cannot be undone.
+struct DeleteAccountSheet: View {
+    @EnvironmentObject var supabase: SupabaseManager
+    @Environment(\.dismiss) private var dismiss
+    @State private var confirmText = ""
+    @State private var isDeleting = false
+    @State private var errorMessage: String?
+    @FocusState private var isFocused: Bool
+
+    private var canConfirm: Bool {
+        confirmText.trimmingCharacters(in: .whitespaces).uppercased() == "SUPPRIMER"
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Votre accès sera immédiatement révoqué et vos informations personnelles (nom, courriel, date de naissance, ville) seront effacées de tous les restaurants où vous êtes membre. Vos points, visites et récompenses restent dans les registres du restaurant, mais ne pourront plus être réclamés.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Tapez « SUPPRIMER » pour confirmer")
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundStyle(MinervaColor.inkSoft)
+                        TextField("", text: $confirmText, prompt: Text("SUPPRIMER").foregroundStyle(MinervaColor.inkFaint))
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .focused($isFocused)
+                            .foregroundStyle(MinervaColor.ink)
+                            .padding(12)
+                            .background(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 11))
+                            .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
+                    }
+
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.system(size: 12.5))
+                            .foregroundStyle(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Button {
+                        isFocused = false
+                        Task {
+                            isDeleting = true
+                            errorMessage = nil
+                            let ok = await supabase.deleteAccount()
+                            isDeleting = false
+                            if ok {
+                                dismiss()
+                            } else {
+                                errorMessage = "La suppression a échoué. Réessayez ou contactez le restaurant."
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            if isDeleting { ProgressView().tint(.white) }
+                            Text(isDeleting ? "Suppression…" : "Supprimer définitivement mon compte")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                    }
+                    .background(.red)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .buttonStyle(PressableButtonStyle())
+                    .disabled(!canConfirm || isDeleting)
+                    .opacity(canConfirm ? 1 : 0.5)
+                }
+                .padding(18)
+            }
+            .background(MinervaColor.cream.ignoresSafeArea())
+            .navigationTitle("Supprimer mon compte")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Annuler") { dismiss() }
+                        .disabled(isDeleting)
+                }
+            }
+        }
     }
 }

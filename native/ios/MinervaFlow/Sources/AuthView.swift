@@ -149,9 +149,55 @@ struct AuthView: View {
             }
 
             submitButton(title: "Recevoir le code", busyTitle: "Envoi…")
+
+            #if DEBUG
+            devBypassButton
+            #endif
         }
-        .onAppear { focusedField = .email }
+        .onAppear {
+            // Firing the keyboard's own slide-up animation at the exact
+            // instant RootView's screen crossfade starts makes both
+            // animations fight each other — that fight is what reads as
+            // "the loading feels broken" after tapping Commencer/Se
+            // connecter, not an actual network delay (there isn't one on
+            // this screen). Waiting until the crossfade (0.35s) has
+            // resolved lets the keyboard animate on its own, cleanly.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                focusedField = .email
+            }
+        }
     }
+
+    #if DEBUG
+    /// Debug-only shortcut while OTP email delivery is unreliable — signs
+    /// into a real, seeded Supabase session (see Config.devTestEmail) with
+    /// a password grant, so every screen behind it still runs against real
+    /// RLS-scoped data rather than mocked state. Stripped from Release
+    /// builds by the surrounding #if DEBUG, never ships to TestFlight/App
+    /// Store.
+    private var devBypassButton: some View {
+        Button {
+            isBusy = true
+            errorMessage = nil
+            Task {
+                defer { isBusy = false }
+                do {
+                    try await supabase.signInWithDevTestAccount()
+                } catch {
+                    errorMessage = "Bypass dev échoué : \(error.localizedDescription)"
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "hammer.fill")
+                Text("Sauter la connexion (dev, OTP désactivé)")
+            }
+            .font(.system(size: 12, weight: .semibold))
+        }
+        .foregroundStyle(.orange)
+        .padding(.top, 4)
+    }
+    #endif
 
     // MARK: - Step 2: code
 

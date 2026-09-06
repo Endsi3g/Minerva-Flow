@@ -14,6 +14,8 @@ import {
   type LoyaltyTierThresholds,
 } from "@/lib/loyalty-tiers";
 import { LogoMark } from "@/components/shell/Logo";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "@/i18n/navigation";
 import { formatCurrency, formatDate, roundToCents, cn } from "@/lib/utils";
 import type { Customer, CustomerReferralLink, LoyaltyReward, MenuItem, Offer, ReferralProgram, RewardRedemption } from "@/lib/types";
 import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-portal";
@@ -22,6 +24,7 @@ import {
   updateMyProfileAction,
   selfRedeemRewardAction,
   submitPortalOrderAction,
+  deleteMyAccountAction,
 } from "./actions";
 import {
   Copy,
@@ -43,6 +46,8 @@ import {
   User,
   ArrowRight,
   Clock,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import QRCode from "qrcode";
@@ -221,6 +226,102 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
           {isSaving ? "Enregistrement…" : savedTick ? "Enregistré ✓" : "Enregistrer"}
         </Button>
       </div>
+    </Card>
+  );
+}
+
+/**
+ * Requires typing SUPPRIMER rather than a single confirm button — this is
+ * the one action in the portal that cannot be undone (see
+ * deleteMyAccountAction/deleteMyAccount), so it gets the highest-friction
+ * confirmation pattern in the app instead of the usual one-click confirm.
+ */
+function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const [confirmText, setConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const canConfirm = confirmText.trim().toUpperCase() === "SUPPRIMER";
+
+  async function handleDelete() {
+    if (!canConfirm) return;
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const ok = await deleteMyAccountAction();
+      if (!ok) {
+        setError("La suppression a échoué. Réessayez ou contactez le restaurant.");
+        setIsDeleting(false);
+        return;
+      }
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/portal/login");
+      router.refresh();
+    } catch {
+      setError("La suppression a échoué. Réessayez ou contactez le restaurant.");
+      setIsDeleting(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={() => {
+        if (!isDeleting) {
+          setConfirmText("");
+          setError(null);
+          onClose();
+        }
+      }}
+      title="Supprimer mon compte"
+      description="Cette action est irréversible."
+    >
+      <div className="space-y-4">
+        <p className="text-[13px] text-mv-ink-soft">
+          Votre accès sera immédiatement révoqué et vos informations personnelles (nom, courriel, date de
+          naissance, ville) seront effacées de tous les restaurants où vous êtes membre. Vos points, visites et
+          récompenses restent dans les registres du ou des restaurants, mais ne pourront plus être réclamés.
+        </p>
+        <Field label='Tapez "SUPPRIMER" pour confirmer'>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="SUPPRIMER"
+            autoComplete="off"
+          />
+        </Field>
+        {error && <p className="text-[12.5px] text-mv-red">{error}</p>}
+        <Button onClick={handleDelete} disabled={!canConfirm || isDeleting} variant="destructive" className="w-full">
+          {isDeleting ? "Suppression…" : "Supprimer définitivement mon compte"}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+function DangerZoneCard() {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader title="Zone de danger" description="Supprimer définitivement votre compte." />
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="flex w-full items-center gap-3 rounded-xl border border-mv-red/25 bg-mv-red/5 px-4 py-3 text-left transition-colors hover:bg-mv-red/10"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-red/10 text-mv-red">
+          <Trash2 size={16} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold text-mv-red">Supprimer mon compte</p>
+          <p className="flex items-center gap-1 text-[11.5px] text-mv-ink-faint">
+            <AlertTriangle size={11} /> Action irréversible
+          </p>
+        </div>
+      </button>
+      <DeleteAccountModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </Card>
   );
 }
@@ -1073,6 +1174,7 @@ export function PortalView({
                 </div>
               )}
             </Card>
+            <DangerZoneCard />
           </div>
         )}
       </div>
