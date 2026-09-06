@@ -234,7 +234,7 @@ struct RestaurantDetailView: View {
                             selectedCategory = category
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
-                                Image(systemName: "fork.knife")
+                                Image(systemName: MenuCategoryIcon.symbolName(for: category))
                                     .font(.system(size: 17))
                                     .foregroundStyle(MinervaColor.emerald)
                                 Text(category)

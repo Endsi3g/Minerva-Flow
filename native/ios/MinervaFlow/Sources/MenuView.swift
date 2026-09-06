@@ -143,7 +143,7 @@ struct MenuView: View {
                                 CategoryItemListView(category: group.category, items: group.items, cart: $cart)
                             } label: {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Image(systemName: "fork.knife")
+                                    Image(systemName: MenuCategoryIcon.symbolName(for: group.category))
                                         .font(.system(size: 20))
                                         .foregroundStyle(MinervaColor.emerald)
                                     Text(group.category)
@@ -192,10 +192,21 @@ struct MenuView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 ZStack {
                                     Rectangle().fill(MinervaColor.ink.opacity(0.06))
-                                    Image(systemName: "storefront.fill").foregroundStyle(MinervaColor.inkFaint)
+                                    if let firstImage = restaurant.imageUrls.first, let url = URL(string: firstImage) {
+                                        AsyncImage(url: url) { phase in
+                                            if let image = phase.image {
+                                                image.resizable().scaledToFill()
+                                            } else {
+                                                Image(systemName: "storefront.fill").foregroundStyle(MinervaColor.inkFaint)
+                                            }
+                                        }
+                                    } else {
+                                        Image(systemName: "storefront.fill").foregroundStyle(MinervaColor.inkFaint)
+                                    }
                                 }
                                 .frame(width: 160, height: 90)
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .clipped()
 
                                 Text(restaurant.name)
                                     .font(.system(size: 13, weight: .semibold))

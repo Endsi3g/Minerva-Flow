@@ -17,6 +17,7 @@ struct RestaurantMapView: View {
     )
     @State private var selectedRestaurant: DiscoverRestaurant?
     @State private var hasCenteredOnUser = false
+    @State private var hasFitToRestaurants = false
 
     private enum PlaceFilter: String, CaseIterable { case all, cafe, restaurant
         var label: String {
@@ -81,6 +82,21 @@ struct RestaurantMapView: View {
                 }
                 if supabase.nearbyRestaurants.isEmpty {
                     await supabase.fetchNearbyRestaurants()
+                }
+                // The hardcoded 3°/3° default span is province-scale — fine
+                // as a fallback with zero data, but once real restaurants
+                // load, fit the camera to where they actually are instead
+                // of leaving a demo cluster of nearby pins zoomed out to
+                // the point they visually overlap and become hard to tap
+                // individually. Only applies before the user's own location
+                // is known (see onChange below, which takes over once it
+                // arrives) and only once, so it doesn't fight a person who
+                // has already panned/zoomed manually.
+                if !hasFitToRestaurants && !hasCenteredOnUser, let region = boundingRegion(for: filteredRestaurants) {
+                    hasFitToRestaurants = true
+                    withAnimation {
+                        cameraPosition = .region(region)
+                    }
                 }
             }
             .onChange(of: location.currentLocation) { _, newLocation in
@@ -196,6 +212,27 @@ struct RestaurantMapView: View {
         let meters = distance(from: location, to: restaurant)
         if meters < 1000 { return "\(Int(meters)) m" }
         return String(format: "%.1f km", meters / 1000)
+    }
+
+    /// Fits a region around every restaurant's real coordinates, with
+    /// padding and a sensible minimum span so a single restaurant (or a
+    /// tight demo cluster) doesn't zoom in so far the map looks broken —
+    /// this is what replaces the old hardcoded province-wide default.
+    private func boundingRegion(for restaurants: [DiscoverRestaurant]) -> MKCoordinateRegion? {
+        guard !restaurants.isEmpty else { return nil }
+        let lats = restaurants.map(\.lat)
+        let lngs = restaurants.map(\.lng)
+        guard let minLat = lats.min(), let maxLat = lats.max(),
+              let minLng = lngs.min(), let maxLng = lngs.max() else { return nil }
+
+        let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2, longitude: (minLng + maxLng) / 2)
+        let padding = 1.6
+        let minSpan = 0.05
+        let span = MKCoordinateSpan(
+            latitudeDelta: max(minSpan, (maxLat - minLat) * padding),
+            longitudeDelta: max(minSpan, (maxLng - minLng) * padding)
+        )
+        return MKCoordinateRegion(center: center, span: span)
     }
 }
 

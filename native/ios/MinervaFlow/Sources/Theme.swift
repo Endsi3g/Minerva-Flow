@@ -173,3 +173,46 @@ struct OutcomeBanner: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }
+
+/// Keyword-matched SF Symbol per menu category name — every category
+/// previously showed the same fork-knife icon regardless of content
+/// (a "Boissons" tile looked identical to "Plats principaux"). Matches on
+/// substrings so an owner's exact category naming ("Boissons chaudes",
+/// "Nos boissons") doesn't need to hit an exact keyword list, falling back
+/// to the generic fork-knife for anything unrecognized rather than
+/// guessing wrong.
+enum MenuCategoryIcon {
+    static func symbolName(for category: String) -> String {
+        let normalized = category.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+
+        if normalized.contains("boisson") || normalized.contains("café") || normalized.contains("cafe")
+            || normalized.contains("thé") || normalized.contains("the ") || normalized.contains("jus")
+            || normalized.contains("smoothie") || normalized.contains("latte") {
+            return "cup.and.saucer.fill"
+        }
+        if normalized.contains("dessert") || normalized.contains("pâtisserie") || normalized.contains("patisserie")
+            || normalized.contains("sucré") || normalized.contains("sucre") || normalized.contains("gâteau")
+            || normalized.contains("gateau") {
+            return "birthday.cake.fill"
+        }
+        if normalized.contains("pain") || normalized.contains("boulangerie") || normalized.contains("viennoiserie")
+            || normalized.contains("sandwich") || normalized.contains("bagel") {
+            return "takeoutbag.and.cup.and.straw.fill"
+        }
+        if normalized.contains("salade") || normalized.contains("légume") || normalized.contains("legume")
+            || normalized.contains("végé") || normalized.contains("vege") {
+            return "leaf.fill"
+        }
+        if normalized.contains("pizza") {
+            return "flame.fill"
+        }
+        if normalized.contains("déjeuner") || normalized.contains("dejeuner") || normalized.contains("brunch")
+            || normalized.contains("petit-déjeuner") {
+            return "sun.max.fill"
+        }
+        if normalized.contains("soupe") || normalized.contains("potage") {
+            return "flame"
+        }
+        return "fork.knife"
+    }
+}
