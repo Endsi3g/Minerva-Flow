@@ -33,6 +33,7 @@ targets:
           - CFBundleURLName: app.minervaflow.oauth
             CFBundleURLSchemes:
               - minervaflow
+        NSFaceIDUsageDescription: "Utilisez Face ID pour déverrouiller rapidement votre compte de fidélité Minerva Flow."
     dependencies:
       - package: Supabase
         product: Supabase

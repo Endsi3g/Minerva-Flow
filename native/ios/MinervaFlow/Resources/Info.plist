@@ -31,6 +31,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Utilisez Face ID pour déverrouiller rapidement votre compte de fidélité Minerva Flow.</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

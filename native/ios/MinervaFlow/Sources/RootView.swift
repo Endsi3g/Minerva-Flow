@@ -17,6 +17,7 @@ private enum RootScreen { case intro, auth, onboarding, main }
 /// does not do this on its own.
 struct RootView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @EnvironmentObject var biometricLock: BiometricLock
 
     @State private var screen: RootScreen = .intro
 
@@ -44,8 +45,19 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
-        .onAppear { syncScreen() }
+        .onAppear {
+            syncScreen()
+            if screen == .main { biometricLock.lockIfEnabled() }
+        }
         .onChange(of: supabase.isAuthenticated) { syncScreen() }
+        // Only ever covers .main — the lock protects the loyalty account's
+        // data, not the login/onboarding screens that precede having one.
+        .fullScreenCover(isPresented: Binding(
+            get: { screen == .main && biometricLock.isLocked },
+            set: { _ in }
+        )) {
+            BiometricLockView()
+        }
     }
 
     private func syncScreen() {

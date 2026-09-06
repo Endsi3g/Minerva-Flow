@@ -6,6 +6,7 @@ import SwiftUI
 /// not a placeholder.
 struct ProfileView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @EnvironmentObject var biometricLock: BiometricLock
     @State private var frequency = "all"
     @State private var isSavingFrequency = false
     @State private var savedTick = false
@@ -27,6 +28,7 @@ struct ProfileView: View {
                         if let customer = supabase.customer {
                             identityCard(for: customer)
                             notificationSection
+                            securitySection
                             aboutSection
                             signOutButton
                             dangerZone
@@ -174,6 +176,40 @@ struct ProfileView: View {
             .padding(14)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Security
+
+    private var securitySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Sécurité")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            Toggle(isOn: Binding(
+                get: { biometricLock.isEnabled },
+                set: { newValue in
+                    withAnimation { biometricLock.isEnabled = newValue }
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                }
+            )) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Verrouiller avec \(biometricLock.biometryLabel)")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(MinervaColor.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Demande une vérification à chaque retour dans l'application.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(MinervaColor.emerald)
+            .padding(14)
+            .background(MinervaColor.creamSoft)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
     }
 
     // MARK: - About / legal
