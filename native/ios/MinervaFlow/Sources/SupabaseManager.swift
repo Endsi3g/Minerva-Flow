@@ -399,6 +399,25 @@ final class SupabaseManager: ObservableObject {
         return data
     }
 
+    /// Loi 25 self-serve data export, native equivalent of the web portal's
+    /// exportMyDataAction — writes the returned JSON to a temp file (rather
+    /// than returning raw Data) so the caller can hand it straight to a
+    /// ShareLink, the same save/share mechanism already used everywhere
+    /// else in the app instead of a bespoke file-picker flow.
+    func exportMyData() async -> URL? {
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/export"))
+            let filename = "minerva-flow-mes-donnees-\(Int(Date().timeIntervalSince1970)).json"
+            let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+            try data.write(to: fileURL)
+            return fileURL
+        } catch {
+            lastError = "L'export de vos données a échoué. Réessayez."
+            print("exportMyData error: \(error)")
+            return nil
+        }
+    }
+
     /// Irreversible: same deleteMyAccount the web portal's
     /// deleteMyAccountAction calls (app/api/portal/account/route.ts), over
     /// the Bearer-token bridge instead of a session cookie. Signs the local

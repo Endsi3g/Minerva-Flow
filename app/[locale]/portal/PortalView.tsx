@@ -26,6 +26,7 @@ import {
   selfRedeemRewardAction,
   submitPortalOrderAction,
   deleteMyAccountAction,
+  exportMyDataAction,
 } from "./actions";
 import {
   Copy,
@@ -411,8 +412,47 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         <Button size="sm" onClick={handleSave} disabled={isSaving}>
           {isSaving ? "Enregistrement…" : savedTick ? "Enregistré ✓" : "Enregistrer"}
         </Button>
+        <ExportDataButton customerId={customer.id} />
       </div>
     </Card>
+  );
+}
+
+/**
+ * Loi 25 self-serve portability — the only prior way to exercise this
+ * right was emailing privacy@ per the policy page. Downloads a JSON file
+ * client-side (Blob + object URL) rather than opening a new tab, so it
+ * works the same whether the browser previews or saves JSON by default.
+ */
+function ExportDataButton({ customerId }: { customerId: string }) {
+  const [isExporting, setIsExporting] = useState(false);
+
+  async function handleExport() {
+    setIsExporting(true);
+    try {
+      const data = await exportMyDataAction(customerId);
+      if (!data) return;
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `minerva-flow-mes-donnees-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleExport}
+      disabled={isExporting}
+      className="text-left text-[12px] font-medium text-mv-ink-soft underline decoration-mv-border underline-offset-2 hover:text-mv-ink"
+    >
+      {isExporting ? "Préparation…" : "Exporter mes données (JSON)"}
+    </button>
   );
 }
 

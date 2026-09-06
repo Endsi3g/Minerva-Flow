@@ -9,6 +9,7 @@ import {
   selfRedeemReward,
   submitPortalOrder,
   deleteMyAccount,
+  exportCustomerData,
   type PortalOrderCartLine,
   type SubmitPortalOrderResult,
 } from "@/lib/data/customer-portal";
@@ -84,6 +85,26 @@ export async function updateMyProfileAction(
     ...(input.phone !== undefined ? { phone: input.phone } : {}),
     ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {}),
   });
+}
+
+/**
+ * Loi 25 self-serve data export — customerId is verified against the
+ * session's own customer records before anything is returned, same
+ * ownership check as updateMyProfileAction, so a customer can never
+ * request another customer's export by guessing an id.
+ */
+export async function exportMyDataAction(customerId: string): Promise<Record<string, unknown> | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const customers = await getCustomersForUser(user.id);
+  const customer = customers.find((c) => c.id === customerId);
+  if (!customer) return null;
+
+  return exportCustomerData(customer);
 }
 
 /**
