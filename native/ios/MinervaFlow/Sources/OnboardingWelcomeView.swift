@@ -10,10 +10,12 @@ import SwiftUI
 /// lib/loyalty-tiers.ts actually works.
 struct OnboardingWelcomeView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @EnvironmentObject var location: LocationManager
+    @EnvironmentObject var notifications: NotificationManager
     let onFinish: () -> Void
 
     @State private var page = 0
-    private let pageCount = 3
+    private let pageCount = 5
 
     var body: some View {
         ZStack {
@@ -28,6 +30,8 @@ struct OnboardingWelcomeView: View {
                     welcomePage.tag(0)
                     currentTierPage.tag(1)
                     nextTierPage.tag(2)
+                    locationPermissionPage.tag(3)
+                    notificationPermissionPage.tag(4)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
             }
@@ -216,14 +220,101 @@ struct OnboardingWelcomeView: View {
 
             Spacer()
 
+            pageButton(title: "Continuer", style: .dark) { page = 3 }
+        }
+        .padding(28)
+    }
+
+    // MARK: Page 4 — location rationale
+
+    private var locationPermissionPage: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            ZStack {
+                Circle().fill(MinervaColor.emerald.opacity(0.12)).frame(width: 110, height: 110)
+                Image(systemName: "location.fill")
+                    .font(.system(size: 42))
+                    .foregroundStyle(MinervaColor.emerald)
+            }
+            Text("Trouvez les restaurants\nautour de vous")
+                .font(MinervaFont.display(24))
+                .foregroundStyle(MinervaColor.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Votre position sert uniquement à trouver et trier les restaurants et cafés participants les plus proches de vous sur la carte de découverte. Elle n'est jamais partagée ni utilisée à d'autres fins.")
+                .font(.system(size: 13.5))
+                .foregroundStyle(MinervaColor.inkSoft)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 16)
+            Spacer()
             VStack(spacing: 10) {
-                pageButton(title: "Continuer à explorer", style: .dark) { onFinish() }
-                Button("Accueil", action: onFinish)
+                pageButton(title: locationButtonTitle, style: .dark) {
+                    if location.authorizationStatus == .notDetermined {
+                        location.requestPermission()
+                    }
+                    page = 4
+                }
+                Button("Plus tard") { page = 4 }
                     .font(.system(size: 13.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkSoft)
             }
         }
         .padding(28)
+    }
+
+    private var locationButtonTitle: String {
+        switch location.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways: return "Localisation activée ✓"
+        case .denied, .restricted: return "Continuer"
+        default: return "Activer la localisation"
+        }
+    }
+
+    // MARK: Page 5 — notifications rationale
+
+    private var notificationPermissionPage: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            ZStack {
+                Circle().fill(MinervaColor.emerald.opacity(0.12)).frame(width: 110, height: 110)
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 42))
+                    .foregroundStyle(MinervaColor.emerald)
+            }
+            Text("Ne manquez\naucune offre")
+                .font(MinervaFont.display(24))
+                .foregroundStyle(MinervaColor.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Recevez une notification dès qu'une nouvelle offre est publiée par votre restaurant, et un rappel discret pour vos récompenses prêtes à échanger. Vous pouvez changer d'avis à tout moment dans Réglages.")
+                .font(.system(size: 13.5))
+                .foregroundStyle(MinervaColor.inkSoft)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 16)
+            Spacer()
+            VStack(spacing: 10) {
+                pageButton(title: notificationButtonTitle, style: .dark) {
+                    if notifications.authorizationStatus == .notDetermined {
+                        Task { _ = await notifications.requestPermission() }
+                    }
+                    onFinish()
+                }
+                Button("Plus tard", action: onFinish)
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(MinervaColor.inkSoft)
+            }
+        }
+        .padding(28)
+    }
+
+    private var notificationButtonTitle: String {
+        switch notifications.authorizationStatus {
+        case .authorized: return "Notifications activées ✓"
+        case .denied: return "Terminer"
+        default: return "Activer les notifications"
+        }
     }
 
     // MARK: Shared

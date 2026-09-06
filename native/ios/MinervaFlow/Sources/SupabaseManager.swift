@@ -522,6 +522,23 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    enum ScanResult { case success(restaurant: (id: String, name: String)); case failure(String) }
+
+    /// Resolves a scanned table QR (the same menu_shares token the web's
+    /// own /m/[token] ordering page uses) to a restaurant — see
+    /// app/api/portal/scan/[token]/route.ts's own comment.
+    func resolveScanToken(_ token: String) async -> ScanResult {
+        struct ScanResponse: Decodable { let restaurantId: String; let restaurantName: String }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/scan/\(token)"))
+            let decoded = try JSONDecoder().decode(ScanResponse.self, from: data)
+            return .success(restaurant: (id: decoded.restaurantId, name: decoded.restaurantName))
+        } catch {
+            print("resolveScanToken error: \(error)")
+            return .failure("Ce code ne correspond à aucun restaurant Minerva Flow.")
+        }
+    }
+
     // MARK: - Menu item reviews (public read via RLS, no bridge needed)
 
     /// menu_item_reviews_public_select has no auth requirement (see

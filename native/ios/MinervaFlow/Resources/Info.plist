@@ -31,6 +31,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Minerva Flow utilise l'appareil photo pour scanner le code du restaurant et accéder directement à son menu.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Utilisez Face ID pour déverrouiller rapidement votre compte de fidélité Minerva Flow.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
