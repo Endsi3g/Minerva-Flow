@@ -10,6 +10,9 @@ final class SupabaseManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published var customer: Customer?
     @Published var transactions: [LoyaltyTransaction] = []
+    @Published var rewards: [LoyaltyReward] = []
+    @Published var offers: [Offer] = []
+    @Published var restaurantName: String?
     @Published var isLoadingData = false
 
     private init() {
@@ -79,7 +82,7 @@ final class SupabaseManager: ObservableObject {
             }
             customer = mine
 
-            let txs: [LoyaltyTransaction] = try await client
+            async let txsFetch: [LoyaltyTransaction] = client
                 .from("loyalty_transactions")
                 .select()
                 .eq("customer_id", value: mine.id)
@@ -87,7 +90,40 @@ final class SupabaseManager: ObservableObject {
                 .limit(20)
                 .execute()
                 .value
+
+            async let rewardsFetch: [LoyaltyReward] = client
+                .from("loyalty_rewards")
+                .select()
+                .eq("restaurant_id", value: mine.restaurantId)
+                .eq("active", value: true)
+                .order("points_cost", ascending: true)
+                .execute()
+                .value
+
+            async let offersFetch: [Offer] = client
+                .from("offers")
+                .select()
+                .eq("restaurant_id", value: mine.restaurantId)
+                .eq("active", value: true)
+                .execute()
+                .value
+
+            struct RestaurantNameRow: Codable { let name: String }
+            async let restaurantFetch: RestaurantNameRow = client
+                .from("restaurants")
+                .select("name")
+                .eq("id", value: mine.restaurantId)
+                .single()
+                .execute()
+                .value
+
+            let (txs, rewardsResult, offersResult, restaurantRow) = try await (
+                txsFetch, rewardsFetch, offersFetch, restaurantFetch
+            )
             transactions = txs
+            rewards = rewardsResult
+            offers = offersResult.filter { $0.isLive }
+            restaurantName = restaurantRow.name
         } catch {
             print("loadPortalData error: \(error)")
         }

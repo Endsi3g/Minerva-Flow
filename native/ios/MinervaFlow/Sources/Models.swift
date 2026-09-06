@@ -22,6 +22,46 @@ struct Customer: Codable, Identifiable {
     }
 }
 
+struct LoyaltyReward: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String?
+    let pointsCost: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case description
+        case pointsCost = "points_cost"
+    }
+}
+
+struct Offer: Codable, Identifiable {
+    let id: String
+    let title: String
+    let description: String?
+    let active: Bool
+    let startsAt: Date?
+    let endsAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case description
+        case active
+        case startsAt = "starts_at"
+        case endsAt = "ends_at"
+    }
+
+    var isLive: Bool {
+        guard active else { return false }
+        let now = Date()
+        if let startsAt, startsAt > now { return false }
+        if let endsAt, endsAt < now { return false }
+        return true
+    }
+}
+
 struct LoyaltyTransaction: Codable, Identifiable {
     let id: String
     let type: String
