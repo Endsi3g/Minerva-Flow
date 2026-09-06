@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrCreateReferralLink } from "@/lib/data/customer-referrals";
 import {
   getCustomersForUser,
+  getPortalData,
   selfRedeemReward,
   submitPortalOrder,
   type PortalOrderCartLine,
@@ -55,7 +56,12 @@ export async function getOrCreateReferralLinkAction(programId: string): Promise<
  */
 export async function updateMyProfileAction(
   customerId: string,
-  input: { marketingConsent: boolean; birthday: string | null; city?: string | null }
+  input: {
+    marketingConsent: boolean;
+    birthday: string | null;
+    city?: string | null;
+    notificationFrequency?: "all" | "important_only";
+  }
 ): Promise<boolean> {
   const supabase = await createClient();
   const {
@@ -72,7 +78,76 @@ export async function updateMyProfileAction(
     consentSource: "portal",
     birthday: input.birthday,
     city: input.city,
+    notificationFrequency: input.notificationFrequency,
   });
+}
+
+/**
+ * Toggles one offer in/out of the customer's own favorites — reads the
+ * current array from their own (RLS-verified) record rather than trusting
+ * a "final list" from the client, so two tabs toggling different offers
+ * can't clobber each other's change.
+ */
+export async function toggleFavoriteOfferAction(customerId: string, offerId: string): Promise<string[] | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const customers = await getCustomersForUser(user.id);
+  const customer = customers.find((c) => c.id === customerId);
+  if (!customer) return null;
+
+  const isFavorite = customer.favoriteOfferIds.includes(offerId);
+  const nextFavorites = isFavorite
+    ? customer.favoriteOfferIds.filter((id) => id !== offerId)
+    : [...customer.favoriteOfferIds, offerId];
+
+  const ok = await updateCustomer(customer.restaurantId, customer.id, { favoriteOfferIds: nextFavorites });
+  return ok ? nextFavorites : null;
+}
+
+/**
+ * "Download my data" — everything the portal itself shows the customer,
+ * serialized for them to keep. Not a full legal-grade export of every
+ * system that touches their record, but it's the same data surface as the
+ * portal's own screens, generated from the authenticated session the same
+ * way getPortalData is for the dashboard itself.
+ */
+export async function exportMyDataAction(customerId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const customers = await getCustomersForUser(user.id);
+  const customer = customers.find((c) => c.id === customerId);
+  if (!customer) return null;
+
+  const data = await getPortalData(customer);
+
+  return {
+    exportedAt: new Date().toISOString(),
+    profile: {
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      birthday: customer.birthday,
+      city: customer.city,
+      marketingConsent: customer.marketingConsent,
+      memberSince: customer.createdAt,
+    },
+    loyalty: {
+      points: customer.loyaltyPoints,
+      visitCount: customer.visitCount,
+      totalSpent: customer.totalSpent,
+    },
+    transactions: data.transactions,
+    redemptions: data.redemptions,
+    referrals: data.programs.map((p) => ({ program: p.program.name, link: p.link })),
+  };
 }
 
 /**
