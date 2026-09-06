@@ -97,9 +97,9 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
   <div class="progress-band">
     <div class="progress-band-top">
       <div><div class="big">4 onglets + découverte + fiches détaillées + galerie photo, en profondeur</div></div>
-      <div class="progress-legend" style="margin:0; text-align:right;">Widgets, envoi push réel (clé manquante), paiement in-app : hors scope actuel</div>
+      <div class="progress-legend" style="margin:0; text-align:right;">Envoi push réel (clé manquante) et paiement in-app : hors scope actuel</div>
     </div>
-    <div class="progress-track"><div class="progress-fill" style="width:91%"></div></div>
+    <div class="progress-track"><div class="progress-fill" style="width:95%"></div></div>
     <div class="progress-legend">
       <span>Cœur fonctionnel + découverte + notation — solide</span>
       <span>App complète App Store-ready</span>
@@ -247,6 +247,14 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
       </div>
       <div class="card">
         <span class="tag done">Construit</span>
+        <h3>Widget écran d'accueil</h3>
+        <ul>
+          <li>Solde de points + palier, en petit et moyen format, couleurs de marque</li>
+          <li>Fonctionne avec le compte développeur personnel gratuit actuel — aucun abonnement payant requis pour cette fonctionnalité</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
         <h3>Scanner un code (Commander)</h3>
         <ul>
           <li>Scan QR natif (AVFoundation) réutilisant le même système de jeton que le flux de commande public du web (<code>menu_shares</code>)</li>
@@ -318,7 +326,6 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
       <div class="list-row"><span class="tag missing">Bloqué</span><div class="body"><strong>Paiement Apple Pay pour cueillette</strong><p>Demande un compte marchand (Stripe Connect déjà présent sur <code>restaurants</code>, mais l'intégration paiement elle-même reste à construire) et l'entitlement Apple Pay, qui exige le Developer Program payant.</p></div></div>
       <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Lien Google Maps par restaurant + demande d'avis post-commande</strong><p>Nécessite un nouveau champ configurable owner (URL Google Maps) sur <code>restaurants</code> — pas encore construit.</p></div></div>
       <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Notifications comportementales (menu consulté sans commande, relance WhatsApp)</strong><p>Système à concevoir : quel déclencheur exact, quel délai, WhatsApp Business API à intégrer séparément (l'envoi APNs natif, lui, est déjà prêt — voir plus haut).</p></div></div>
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Widgets iOS (écran verrouillé / accueil)</strong><p>Aucun target de widget dans <code>project.yml</code> — nécessite une nouvelle extension Xcode et un App Group, pas encore construit.</p></div></div>
       <div class="list-row"><span class="tag missing">Non précisé</span><div class="body"><strong>« Système de discussion avec la carte »</strong><p>Mentionné une fois sans détail retrouvable dans nos échanges ni dans le code existant — en attente de votre précision avant de commencer quoi que ce soit ici.</p></div></div>
     </div>
   </section>
