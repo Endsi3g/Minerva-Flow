@@ -88,6 +88,9 @@ struct MenuView: View {
                 if supabase.nearbyRestaurants.isEmpty {
                     await supabase.fetchNearbyRestaurants()
                 }
+                if supabase.popularNearby.isEmpty {
+                    await supabase.fetchPopularNearby()
+                }
             }
             .refreshable { await supabase.fetchMenu() }
             .fullScreenCover(isPresented: $showScanner) {
@@ -130,6 +133,10 @@ struct MenuView: View {
 
                 if !otherRestaurants.isEmpty {
                     otherRestaurantsSection
+                }
+
+                if !supabase.popularNearby.isEmpty {
+                    popularNearbySection
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -219,6 +226,78 @@ struct MenuView: View {
                                 }
                             }
                             .frame(width: 160, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .horizontalEdgeFade()
+        }
+    }
+
+    /// Ranked by real order_items quantity across every discoverable
+    /// restaurant (see app/api/portal/popular/route.ts) — not a curated
+    /// or made-up "trending" list. Tapping an item from a restaurant the
+    /// customer isn't a member of opens it in browse mode, same honest
+    /// distinction MenuItemDetailView already draws everywhere else.
+    private var popularNearbySection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Populaire près de vous")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(supabase.popularNearby) { popularItem in
+                        NavigationLink {
+                            let isOwnRestaurant = popularItem.restaurantId == supabase.customer?.restaurantId
+                            let syntheticItem = NativeMenuItem(
+                                id: popularItem.id,
+                                restaurantId: popularItem.restaurantId,
+                                name: popularItem.name,
+                                category: popularItem.category,
+                                price: popularItem.price,
+                                description: nil,
+                                active: true,
+                                imageUrl: popularItem.imageUrl,
+                                imageUrls: popularItem.imageUrl.map { [$0] } ?? []
+                            )
+                            MenuItemDetailView(
+                                item: syntheticItem,
+                                restaurantId: popularItem.restaurantId,
+                                allItemsInCategory: [syntheticItem],
+                                cart: isOwnRestaurant ? $cart : nil
+                            )
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ZStack {
+                                    Rectangle().fill(MinervaColor.ink.opacity(0.06))
+                                    if let imageUrl = popularItem.imageUrl, let url = URL(string: imageUrl) {
+                                        AsyncImage(url: url) { phase in
+                                            if let image = phase.image {
+                                                image.resizable().scaledToFill()
+                                            } else {
+                                                Image(systemName: "flame.fill").foregroundStyle(MinervaColor.inkFaint)
+                                            }
+                                        }
+                                    } else {
+                                        Image(systemName: "flame.fill").foregroundStyle(MinervaColor.inkFaint)
+                                    }
+                                }
+                                .frame(width: 140, height: 90)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .clipped()
+
+                                Text(popularItem.name)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(MinervaColor.ink)
+                                    .lineLimit(1)
+                                Text(popularItem.restaurantName)
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(MinervaColor.inkFaint)
+                                    .lineLimit(1)
+                            }
+                            .frame(width: 140, alignment: .leading)
                         }
                         .buttonStyle(.plain)
                     }

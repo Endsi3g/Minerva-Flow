@@ -211,6 +211,24 @@ struct DiscoverListResponse: Codable {
     let restaurants: [DiscoverRestaurant]
 }
 
+/// One line of "Populaire près de vous" — ranked by real order_items
+/// quantity across every discoverable restaurant (see
+/// app/api/portal/popular/route.ts), not a vanity metric.
+struct PopularMenuItem: Codable, Identifiable {
+    let id: String
+    let name: String
+    let price: Double
+    let imageUrl: String?
+    let category: String?
+    let restaurantId: String
+    let restaurantName: String
+    let orderCount: Int
+}
+
+struct PopularMenuItemsResponse: Codable {
+    let items: [PopularMenuItem]
+}
+
 struct ReferralProgram: Codable, Identifiable {
     let id: String
     let name: String
