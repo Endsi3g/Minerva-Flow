@@ -668,10 +668,22 @@ function OfferModal({
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const priceRaw = String(form.get("price") ?? "").trim();
+    const included = String(form.get("includedItems") ?? "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const excluded = String(form.get("excludedItems") ?? "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
     const input = {
       title: String(form.get("title") ?? ""),
       description: String(form.get("description") ?? "") || null,
       imageUrl,
+      price: priceRaw ? Number(priceRaw) : null,
+      includedItems: included,
+      excludedItems: excluded,
       startsAt: fromDatetimeLocal(String(form.get("startsAt") ?? "")),
       endsAt: fromDatetimeLocal(String(form.get("endsAt") ?? "")),
     };
@@ -710,6 +722,29 @@ function OfferModal({
         <Field label={tn("descriptionLabel")} hint={tn("optional")}>
           <Input name="description" defaultValue={offer?.description ?? undefined} placeholder={t("descriptionPlaceholder")} />
         </Field>
+        <Field label="Prix" hint="Optionnel — affiché sur la fiche de l'offre">
+          <Input name="price" type="number" step="0.01" min="0" defaultValue={offer?.price ?? undefined} placeholder="12.95" />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Ce qui est inclus" hint="Un élément par ligne, optionnel">
+            <textarea
+              name="includedItems"
+              defaultValue={offer?.includedItems?.join("\n")}
+              rows={3}
+              className="w-full rounded-lg border border-mv-border bg-mv-surface px-3 py-2 text-[13px] text-mv-ink placeholder:text-mv-ink-faint focus:border-mv-green focus:outline-none"
+              placeholder={"Entrée\nPlat principal\nCafé"}
+            />
+          </Field>
+          <Field label="Ce qui n'est pas inclus" hint="Un élément par ligne, optionnel">
+            <textarea
+              name="excludedItems"
+              defaultValue={offer?.excludedItems?.join("\n")}
+              rows={3}
+              className="w-full rounded-lg border border-mv-border bg-mv-surface px-3 py-2 text-[13px] text-mv-ink placeholder:text-mv-ink-faint focus:border-mv-green focus:outline-none"
+              placeholder={"Boissons alcoolisées\nDessert"}
+            />
+          </Field>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("startsLabel")} hint={tn("optional")}>
             <Input name="startsAt" type="datetime-local" defaultValue={toDatetimeLocal(offer?.startsAt)} />

@@ -219,6 +219,15 @@ struct RewardsView: View {
                         .foregroundStyle(MinervaColor.inkFaint)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                if let restaurantName = supabase.restaurantName {
+                    HStack(spacing: 4) {
+                        Image(systemName: "storefront.fill")
+                            .font(.system(size: 9))
+                        Text("Échangeable chez \(restaurantName)")
+                    }
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(MinervaColor.emerald)
+                }
             }
             Spacer(minLength: 8)
 

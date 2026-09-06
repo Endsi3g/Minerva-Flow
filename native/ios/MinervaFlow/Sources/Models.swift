@@ -47,6 +47,10 @@ struct Offer: Codable, Identifiable {
     let id: String
     let title: String
     let description: String?
+    let imageUrl: String?
+    let price: Double?
+    let includedItems: [String]
+    let excludedItems: [String]
     let active: Bool
     let startsAt: Date?
     let endsAt: Date?
@@ -55,6 +59,10 @@ struct Offer: Codable, Identifiable {
         case id
         case title
         case description
+        case imageUrl = "image_url"
+        case price
+        case includedItems = "included_items"
+        case excludedItems = "excluded_items"
         case active
         case startsAt = "starts_at"
         case endsAt = "ends_at"
@@ -156,6 +164,10 @@ struct RestaurantDiscoverOffer: Codable, Identifiable {
     let id: String
     let title: String
     let description: String?
+    let imageUrl: String?
+    let price: Double?
+    let includedItems: [String]
+    let excludedItems: [String]
     let active: Bool
 }
 
@@ -256,7 +268,7 @@ enum LoyaltyTier: String {
     /// colored badge.
     var bannerColor: Color {
         switch self {
-        case .habitue: return MinervaColor.ink
+        case .habitue: return MinervaColor.emerald
         case .privilegie: return MinervaColor.emeraldDark
         case .ambassadeur: return MinervaColor.limeAccent
         }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { resolveNativeUserId } from "@/lib/auth/native-bearer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveMenuItemsForCustomers } from "@/lib/data/menu";
+import { getActiveOffersForRestaurant } from "@/lib/data/offers";
 
 /**
  * A single restaurant's public-safe profile — reached from the discovery
@@ -18,13 +19,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
 
   const admin = createAdminClient();
-  const [{ data: restaurant, error: restaurantError }, { data: offers }, menuItems] = await Promise.all([
+  const [{ data: restaurant, error: restaurantError }, offers, menuItems] = await Promise.all([
     admin
       .from("restaurants")
       .select("id, name, description, address, city, province, lat, lng, phone, website, color, opening_hours")
       .eq("id", id)
       .single(),
-    admin.from("offers").select("id, title, description, active, starts_at, ends_at").eq("restaurant_id", id).eq("active", true),
+    getActiveOffersForRestaurant(id),
     getActiveMenuItemsForCustomers(id),
   ]);
 
