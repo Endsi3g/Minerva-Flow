@@ -11,6 +11,7 @@ import SwiftUI
 /// cannot exist without becoming a scrollable list eventually.
 struct HomeView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @State private var showMyCard = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,6 +46,9 @@ struct HomeView: View {
             }
         }
         .background(MinervaColor.cream.ignoresSafeArea())
+        .sheet(isPresented: $showMyCard) {
+            MyCardView()
+        }
     }
 
     // MARK: - Pinned header + tier banner
@@ -59,7 +63,7 @@ struct HomeView: View {
     }
 
     private func pinnedHeader(for customer: Customer) -> some View {
-        let tier = LoyaltyTier.resolve(totalSpent: customer.totalSpent)
+        let tier = LoyaltyTier.resolve(totalSpent: customer.totalSpent, tier2: supabase.loyaltyTier2Threshold, tier3: supabase.loyaltyTier3Threshold)
         let firstName = customer.name.split(separator: " ").first.map(String.init) ?? customer.name
 
         return VStack(alignment: .leading, spacing: 14) {
@@ -83,7 +87,7 @@ struct HomeView: View {
             }
 
             Button {
-                // Tier detail / progress explainer — Phase 2.
+                showMyCard = true
             } label: {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
@@ -143,14 +147,15 @@ struct HomeView: View {
     }
 
     /// Mirrors the web wallet card's own progress bar exactly (same
-    /// prevTarget/nextTarget math, same "$X before the next tier" copy) —
-    /// uses the same default thresholds LoyaltyTier.resolve already falls
-    /// back to everywhere else in this app, since native has no bridge yet
-    /// for a restaurant's own custom thresholds.
+    /// prevTarget/nextTarget math, same "$X before the next tier" copy),
+    /// now using this restaurant's own thresholds (see
+    /// app/api/portal/restaurant/route.ts) instead of the hardcoded
+    /// defaults — a restaurant that customizes its tiers no longer sees a
+    /// mismatch between web and native.
     private func tierProgress(for customer: Customer) -> (fraction: Double, remaining: Double)? {
-        let tier = LoyaltyTier.resolve(totalSpent: customer.totalSpent)
-        let tier2 = 150.0
-        let tier3 = 400.0
+        let tier2 = supabase.loyaltyTier2Threshold
+        let tier3 = supabase.loyaltyTier3Threshold
+        let tier = LoyaltyTier.resolve(totalSpent: customer.totalSpent, tier2: tier2, tier3: tier3)
         let prevTarget = tier == .ambassadeur ? tier3 : tier == .privilegie ? tier2 : 0
         guard let nextTarget = tier == .habitue ? tier2 : tier == .privilegie ? tier3 : nil else { return nil }
         let fraction = min(1, max(0, (customer.totalSpent - prevTarget) / (nextTarget - prevTarget)))

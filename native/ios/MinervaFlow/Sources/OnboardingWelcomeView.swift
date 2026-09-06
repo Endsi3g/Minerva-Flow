@@ -103,7 +103,7 @@ struct OnboardingWelcomeView: View {
     // MARK: Page 2
 
     private var currentTierPage: some View {
-        let tier = LoyaltyTier.resolve(totalSpent: supabase.customer?.totalSpent ?? 0)
+        let tier = LoyaltyTier.resolve(totalSpent: supabase.customer?.totalSpent ?? 0, tier2: supabase.loyaltyTier2Threshold, tier3: supabase.loyaltyTier3Threshold)
 
         return VStack(spacing: 20) {
             Spacer()
@@ -157,9 +157,9 @@ struct OnboardingWelcomeView: View {
     private var nextTierPage: some View {
         let customer = supabase.customer
         let totalSpent = customer?.totalSpent ?? 0
-        let tier = LoyaltyTier.resolve(totalSpent: totalSpent)
+        let tier = LoyaltyTier.resolve(totalSpent: totalSpent, tier2: supabase.loyaltyTier2Threshold, tier3: supabase.loyaltyTier3Threshold)
         let nextTier: LoyaltyTier? = tier == .habitue ? .privilegie : (tier == .privilegie ? .ambassadeur : nil)
-        let target: Double = tier == .habitue ? 150 : 400
+        let target: Double = tier == .habitue ? supabase.loyaltyTier2Threshold : supabase.loyaltyTier3Threshold
         let remaining = max(0, target - totalSpent)
         let progress = min(1, totalSpent / target)
 

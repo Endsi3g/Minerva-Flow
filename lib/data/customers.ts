@@ -28,6 +28,7 @@ export type CustomerRow = {
   consent_at: string | null;
   birthday: string | null;
   city: string | null;
+  avatar_url: string | null;
 };
 
 export type LoyaltyTransactionRow = {
@@ -76,6 +77,7 @@ export function mapCustomer(row: CustomerRow, transactions: LoyaltyTransaction[]
     consentAt: row.consent_at,
     birthday: row.birthday,
     city: row.city,
+    avatarUrl: row.avatar_url,
   };
 }
 
@@ -137,6 +139,7 @@ export type CustomerInput = {
   consentSource?: string | null;
   birthday?: string | null;
   city?: string | null;
+  avatarUrl?: string | null;
 };
 
 export async function createCustomer(restaurantId: string, input: CustomerInput): Promise<Customer | null> {
@@ -184,6 +187,7 @@ export async function updateCustomer(
   if (patch.notes !== undefined) dbPatch.notes = patch.notes;
   if (patch.birthday !== undefined) dbPatch.birthday = patch.birthday;
   if (patch.city !== undefined) dbPatch.city = patch.city;
+  if (patch.avatarUrl !== undefined) dbPatch.avatar_url = patch.avatarUrl;
   if (patch.marketingConsent !== undefined) {
     dbPatch.marketing_consent = patch.marketingConsent;
     if (patch.marketingConsent) {

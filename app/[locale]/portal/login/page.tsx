@@ -110,26 +110,6 @@ export default function PortalLoginPage() {
                   {t("subtitle")}
                 </p>
               </div>
-              <Field label={t("emailLabel")}>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t("emailPlaceholder")}
-                  required
-                  autoFocus
-                />
-              </Field>
-              {status === "error" && <p className="text-[12.5px] text-mv-red">{error}</p>}
-              <Button type="submit" disabled={status === "sending" || oauthBusy !== null} className="w-full">
-                {status === "sending" ? t("sending") : t("receiveLink")}
-              </Button>
-
-              <div className="flex items-center gap-3 py-1">
-                <div className="h-px flex-1 bg-mv-border-soft" />
-                <span className="text-[11px] font-medium uppercase tracking-wide text-mv-ink-faint">ou</span>
-                <div className="h-px flex-1 bg-mv-border-soft" />
-              </div>
 
               <div className="space-y-2">
                 <button
@@ -149,6 +129,26 @@ export default function PortalLoginPage() {
                   <FacebookMark /> {oauthBusy === "facebook" ? "Redirection…" : "Continuer avec Facebook"}
                 </button>
               </div>
+
+              <div className="flex items-center gap-3 py-1">
+                <div className="h-px flex-1 bg-mv-border-soft" />
+                <span className="text-[11px] font-medium uppercase tracking-wide text-mv-ink-faint">ou</span>
+                <div className="h-px flex-1 bg-mv-border-soft" />
+              </div>
+
+              <Field label={t("emailLabel")}>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t("emailPlaceholder")}
+                  required
+                />
+              </Field>
+              {status === "error" && <p className="text-[12.5px] text-mv-red">{error}</p>}
+              <Button type="submit" disabled={status === "sending" || oauthBusy !== null} className="w-full">
+                {status === "sending" ? t("sending") : t("receiveLink")}
+              </Button>
             </form>
           )}
         </Card>

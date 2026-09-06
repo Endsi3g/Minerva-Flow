@@ -11,6 +11,7 @@
 		09DEDA487C152D20E5410836 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B8ABC1E0681608032F18B9B5 /* Assets.xcassets */; };
 		1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8113A301B23FEECDBE8EDE /* MainTabView.swift */; };
 		1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBD59C80CE3B06A999142A6E /* Config.swift */; };
+		2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471F651B424DBE91D0FC0A0E /* MyCardView.swift */; };
 		2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9CD9B5E79E9FE474707739 /* RewardsView.swift */; };
 		442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C1D3C584B13E05EBD01750 /* MenuView.swift */; };
 		5C881A86FC3F7D67D6725336 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D70223A1891BFC32372F3C5 /* Models.swift */; };
@@ -22,6 +23,7 @@
 		A4FF9ABA69E8115D0845A981 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 33E9C17D0D39AFF0D025E0F2 /* Supabase */; };
 		CAFBB02D7DDD8E9207AF10E1 /* WebPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 574318127126383937A04DB7 /* WebPageView.swift */; };
 		CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D58EE17A9A62B1893F865891 /* RadialGauge.swift */; };
+		E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442686E96CEA070F53FB728F /* EditProfileSheet.swift */; };
 		E602B1260BDBC61608C8F1C7 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE934F2A5846A120417A19B /* Theme.swift */; };
 		EB483ABD7DA63D91561BE978 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F66981C3B41C8B5FD69ECE /* AuthView.swift */; };
 		F5E4CC548458D40BF92F3F17 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA24BE15C53784788988271 /* HomeView.swift */; };
@@ -33,6 +35,8 @@
 		09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntroView.swift; sourceTree = "<group>"; };
 		1BA24BE15C53784788988271 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		2D70223A1891BFC32372F3C5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		442686E96CEA070F53FB728F /* EditProfileSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileSheet.swift; sourceTree = "<group>"; };
+		471F651B424DBE91D0FC0A0E /* MyCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyCardView.swift; sourceTree = "<group>"; };
 		47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
 		48489698C6B750A6E75FEFEE /* BiometricLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricLock.swift; sourceTree = "<group>"; };
 		53C1D3C584B13E05EBD01750 /* MenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuView.swift; sourceTree = "<group>"; };
@@ -77,12 +81,14 @@
 				02F66981C3B41C8B5FD69ECE /* AuthView.swift */,
 				48489698C6B750A6E75FEFEE /* BiometricLock.swift */,
 				EBD59C80CE3B06A999142A6E /* Config.swift */,
+				442686E96CEA070F53FB728F /* EditProfileSheet.swift */,
 				1BA24BE15C53784788988271 /* HomeView.swift */,
 				09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */,
 				CD8113A301B23FEECDBE8EDE /* MainTabView.swift */,
 				53C1D3C584B13E05EBD01750 /* MenuView.swift */,
 				810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */,
 				2D70223A1891BFC32372F3C5 /* Models.swift */,
+				471F651B424DBE91D0FC0A0E /* MyCardView.swift */,
 				47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */,
 				D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */,
 				D58EE17A9A62B1893F865891 /* RadialGauge.swift */,
@@ -200,12 +206,14 @@
 				EB483ABD7DA63D91561BE978 /* AuthView.swift in Sources */,
 				9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */,
 				1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */,
+				E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */,
 				F5E4CC548458D40BF92F3F17 /* HomeView.swift in Sources */,
 				08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */,
 				1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */,
 				442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */,
 				976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */,
 				5C881A86FC3F7D67D6725336 /* Models.swift in Sources */,
+				2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */,
 				7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */,
 				A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */,
 				CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */,

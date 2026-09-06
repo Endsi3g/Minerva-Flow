@@ -22,6 +22,7 @@ import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-por
 import {
   getOrCreateReferralLinkAction,
   updateMyProfileAction,
+  requestEmailChangeAction,
   selfRedeemRewardAction,
   submitPortalOrderAction,
   deleteMyAccountAction,
@@ -48,6 +49,9 @@ import {
   Clock,
   Trash2,
   AlertTriangle,
+  Camera,
+  Pencil,
+  Mail,
 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import QRCode from "qrcode";
@@ -177,12 +181,103 @@ function LoyaltyWalletCard({
   );
 }
 
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return parts
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
+}
+
+/**
+ * Avatar upload reuses the existing "avatars" storage bucket (already
+ * policied per-auth.uid() folder — see 0068_customer_profile_editing.sql's
+ * own comment) rather than a customer-specific bucket, since a loyalty
+ * customer has a real auth.uid() once linked, same as staff.
+ */
+function AvatarEditor({
+  name,
+  avatarUrl,
+  onUploaded,
+}: {
+  name: string;
+  avatarUrl: string | null;
+  onUploaded: (url: string) => void;
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Choisissez une image (JPG, PNG…).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("L'image doit faire moins de 5 Mo.");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+      if (uploadError) {
+        toast.error("L'envoi de la photo a échoué. Réessayez.");
+        return;
+      }
+      const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      onUploaded(publicUrlData.publicUrl);
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  return (
+    <div className="relative shrink-0">
+      <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-mv-green-tint text-[18px] font-semibold text-mv-green-dark">
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+        ) : (
+          initials(name || "?")
+        )}
+      </div>
+      <label className="absolute -bottom-1 -right-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-mv-ink text-white shadow-mv-sm transition-transform hover:scale-105">
+        {isUploading ? (
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+        ) : (
+          <Camera size={13} />
+        )}
+        <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={isUploading} />
+      </label>
+    </div>
+  );
+}
+
 function ProfileSettingsCard({ customer }: { customer: Customer }) {
+  const [name, setName] = useState(customer.name);
+  const [avatarUrl, setAvatarUrl] = useState(customer.avatarUrl);
   const [birthday, setBirthday] = useState(customer.birthday ?? "");
   const [city, setCity] = useState(customer.city ?? "");
   const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
   const [isSaving, setIsSaving] = useState(false);
   const [savedTick, setSavedTick] = useState(false);
+
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState(customer.email ?? "");
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   async function handleSave() {
     setIsSaving(true);
@@ -191,6 +286,8 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         marketingConsent,
         birthday: birthday || null,
         city: city.trim() || null,
+        name: name.trim() || customer.name,
+        avatarUrl,
       });
       if (ok) {
         toast.success("Profil mis à jour.");
@@ -204,10 +301,93 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
     }
   }
 
+  async function handleAvatarUploaded(url: string) {
+    setAvatarUrl(url);
+    const ok = await updateMyProfileAction(customer.id, {
+      marketingConsent,
+      birthday: birthday || null,
+      city: city.trim() || null,
+      avatarUrl: url,
+    });
+    if (ok) toast.success("Photo de profil mise à jour.");
+    else toast.error("La photo a été envoyée, mais l'enregistrement a échoué. Réessayez.");
+  }
+
+  async function handleRequestEmailChange() {
+    if (!newEmail.trim() || newEmail.trim() === customer.email) {
+      setIsEditingEmail(false);
+      return;
+    }
+    setEmailStatus("sending");
+    setEmailError(null);
+    const result = await requestEmailChangeAction(newEmail.trim());
+    if (result.ok) {
+      setEmailStatus("sent");
+    } else {
+      setEmailStatus("error");
+      setEmailError(result.error ?? "La demande a échoué. Réessayez.");
+    }
+  }
+
   return (
     <Card>
       <CardHeader title="Mon profil" description="Reçois des offres personnalisées et un cadeau le jour de ton anniversaire." />
-      <div className="space-y-3">
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <AvatarEditor name={name} avatarUrl={avatarUrl} onUploaded={handleAvatarUploaded} />
+          <div className="min-w-0 flex-1">
+            <Field label="Nom">
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Votre nom" />
+            </Field>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Courriel</p>
+          {emailStatus === "sent" ? (
+            <div className="flex items-start gap-2 rounded-lg bg-mv-green-tint px-3 py-2.5 text-[12.5px] text-mv-green-darker">
+              <Mail size={14} className="mt-0.5 shrink-0" />
+              <span>Vérifiez {newEmail} pour confirmer le changement — votre courriel actuel reste actif jusque-là.</span>
+            </div>
+          ) : isEditingEmail ? (
+            <div className="space-y-2">
+              <Input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="nouveau@exemple.com"
+                autoFocus
+              />
+              {emailStatus === "error" && <p className="text-[12px] text-mv-red">{emailError}</p>}
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleRequestEmailChange} disabled={emailStatus === "sending"}>
+                  {emailStatus === "sending" ? "Envoi…" : "Confirmer le changement"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setIsEditingEmail(false);
+                    setNewEmail(customer.email ?? "");
+                    setEmailStatus("idle");
+                  }}
+                >
+                  Annuler
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditingEmail(true)}
+              className="flex w-full items-center justify-between gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-3 py-2.5 text-left text-[13px] text-mv-ink transition-colors hover:bg-mv-cream"
+            >
+              <span className="truncate">{customer.email ?? "Aucun courriel"}</span>
+              <Pencil size={13} className="shrink-0 text-mv-ink-faint" />
+            </button>
+          )}
+        </div>
+
         <Field label="Date de naissance" hint="Optionnel">
           <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
         </Field>

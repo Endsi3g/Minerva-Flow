@@ -56,7 +56,13 @@ export async function getOrCreateReferralLinkAction(programId: string): Promise<
  */
 export async function updateMyProfileAction(
   customerId: string,
-  input: { marketingConsent: boolean; birthday: string | null; city?: string | null }
+  input: {
+    marketingConsent: boolean;
+    birthday: string | null;
+    city?: string | null;
+    name?: string;
+    avatarUrl?: string | null;
+  }
 ): Promise<boolean> {
   const supabase = await createClient();
   const {
@@ -73,7 +79,24 @@ export async function updateMyProfileAction(
     consentSource: "portal",
     birthday: input.birthday,
     city: input.city,
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {}),
   });
+}
+
+/**
+ * Supabase sends a confirmation link to the NEW address before the change
+ * takes effect (auth.updateUser doesn't switch auth.users.email
+ * immediately) — customers.email then syncs automatically once that link
+ * is clicked (see supabase/migrations/0068_customer_profile_editing.sql's
+ * on_auth_user_email_change trigger), so this action only needs to kick
+ * off the request, never write customers.email itself.
+ */
+export async function requestEmailChangeAction(newEmail: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ email: newEmail });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 /**

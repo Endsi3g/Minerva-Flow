@@ -115,6 +115,10 @@ struct AuthView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            oauthSection
+
+            orDivider
+
             VStack(alignment: .leading, spacing: 6) {
                 Text("Courriel")
                     .font(.system(size: 11.5, weight: .semibold))
@@ -153,8 +157,6 @@ struct AuthView: View {
 
             submitButton(title: "Recevoir le code", busyTitle: "Envoi…")
 
-            oauthSection
-
             #if DEBUG
             devBypassButton
             #endif
@@ -176,16 +178,7 @@ struct AuthView: View {
     // MARK: - OAuth (Google / Facebook)
 
     private var oauthSection: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 10) {
-                Rectangle().fill(MinervaColor.border).frame(height: 1)
-                Text("OU")
-                    .font(.system(size: 10.5, weight: .bold))
-                    .tracking(0.6)
-                    .foregroundStyle(MinervaColor.inkFaint)
-                Rectangle().fill(MinervaColor.border).frame(height: 1)
-            }
-
+        VStack(spacing: 12) {
             if let oauthError {
                 errorBanner(oauthError)
             }
@@ -193,7 +186,17 @@ struct AuthView: View {
             oauthButton(provider: .google, title: "Continuer avec Google", systemImage: "g.circle.fill", tint: Color(red: 0.26, green: 0.52, blue: 0.96))
             oauthButton(provider: .facebook, title: "Continuer avec Facebook", systemImage: "f.circle.fill", tint: Color(red: 0.09, green: 0.47, blue: 0.95))
         }
-        .padding(.top, 2)
+    }
+
+    private var orDivider: some View {
+        HStack(spacing: 10) {
+            Rectangle().fill(MinervaColor.border).frame(height: 1)
+            Text("OU")
+                .font(.system(size: 10.5, weight: .bold))
+                .tracking(0.6)
+                .foregroundStyle(MinervaColor.inkFaint)
+            Rectangle().fill(MinervaColor.border).frame(height: 1)
+        }
     }
 
     private func oauthButton(provider: Provider, title: String, systemImage: String, tint: Color) -> some View {

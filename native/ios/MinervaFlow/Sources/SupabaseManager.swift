@@ -14,6 +14,8 @@ final class SupabaseManager: ObservableObject {
     @Published var redemptions: [RewardRedemption] = []
     @Published var offers: [Offer] = []
     @Published var restaurantName: String?
+    @Published var loyaltyTier2Threshold: Double = 150
+    @Published var loyaltyTier3Threshold: Double = 400
     @Published var menuItems: [NativeMenuItem] = []
     @Published var taxRate: Double = 0.14975
     @Published var acceptsTips: Bool = true
@@ -144,15 +146,6 @@ final class SupabaseManager: ObservableObject {
                 .execute()
                 .value
 
-            struct RestaurantNameRow: Codable { let name: String }
-            async let restaurantFetch: RestaurantNameRow = client
-                .from("restaurants")
-                .select("name")
-                .eq("id", value: mine.restaurantId)
-                .single()
-                .execute()
-                .value
-
             async let redemptionsFetch: [RewardRedemption] = client
                 .from("reward_redemptions")
                 .select()
@@ -161,14 +154,14 @@ final class SupabaseManager: ObservableObject {
                 .execute()
                 .value
 
-            let (txs, rewardsResult, offersResult, restaurantRow, redemptionsResult) = try await (
-                txsFetch, rewardsFetch, offersFetch, restaurantFetch, redemptionsFetch
+            let (txs, rewardsResult, offersResult, redemptionsResult) = try await (
+                txsFetch, rewardsFetch, offersFetch, redemptionsFetch
             )
             transactions = txs
             rewards = rewardsResult
             offers = offersResult.filter { $0.isLive }
-            restaurantName = restaurantRow.name
             redemptions = redemptionsResult
+            await fetchRestaurantInfo()
         } catch {
             // Loading is best-effort here: a transient network blip shouldn't
             // wipe out whatever the last successful load already put on
@@ -177,6 +170,77 @@ final class SupabaseManager: ObservableObject {
             // knows a refresh silently failed rather than assuming it's current.
             lastError = "La mise à jour a échoué. Vérifiez votre connexion et réessayez."
             print("loadPortalData error: \(error)")
+        }
+    }
+
+    /// Same customers_update_own RLS policy — a customer changing their own
+    /// display name is exactly what it's for, direct table update, no
+    /// bridge needed.
+    func updateName(_ name: String) async -> Bool {
+        guard let customerId = customer?.id else { return false }
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return false }
+        do {
+            struct Patch: Encodable { let name: String }
+            try await client
+                .from("customers")
+                .update(Patch(name: trimmed))
+                .eq("id", value: customerId)
+                .execute()
+            customer?.name = trimmed
+            return true
+        } catch {
+            lastError = "La mise à jour de votre nom a échoué. Réessayez."
+            print("updateName error: \(error)")
+            return false
+        }
+    }
+
+    /// Uploads to the same "avatars" storage bucket the web portal uses
+    /// (per-auth.uid() folder policy, see
+    /// supabase/migrations/0068_customer_profile_editing.sql's own
+    /// comment), then persists the resulting public URL onto the
+    /// customer's own row via customers_update_own.
+    func uploadAvatar(imageData: Data) async -> Bool {
+        guard let customerId = customer?.id, let userId = try? await client.auth.session.user.id else { return false }
+        do {
+            let path = "\(userId)/avatar-\(Int(Date().timeIntervalSince1970)).jpg"
+            try await client.storage.from("avatars").upload(
+                path,
+                data: imageData,
+                options: FileOptions(contentType: "image/jpeg", upsert: true)
+            )
+            let publicURL = try client.storage.from("avatars").getPublicURL(path: path)
+
+            struct Patch: Encodable { let avatar_url: String }
+            try await client
+                .from("customers")
+                .update(Patch(avatar_url: publicURL.absoluteString))
+                .eq("id", value: customerId)
+                .execute()
+            customer?.avatarUrl = publicURL.absoluteString
+            return true
+        } catch {
+            lastError = "L'envoi de la photo a échoué. Réessayez."
+            print("uploadAvatar error: \(error)")
+            return false
+        }
+    }
+
+    enum EmailChangeResult { case sent, failure(String) }
+
+    /// Supabase sends a confirmation link to the NEW address before the
+    /// change takes effect — customers.email syncs automatically once that
+    /// link is clicked (see
+    /// supabase/migrations/0068_customer_profile_editing.sql's
+    /// on_auth_user_email_change trigger), so nothing here writes
+    /// customers.email directly.
+    func requestEmailChange(_ newEmail: String) async -> EmailChangeResult {
+        do {
+            try await client.auth.update(user: UserAttributes(email: newEmail))
+            return .sent
+        } catch {
+            return .failure("La demande a échoué. Vérifiez l'adresse et réessayez.")
         }
     }
 
@@ -193,18 +257,7 @@ final class SupabaseManager: ObservableObject {
                 .update(Patch(notification_frequency: frequency))
                 .eq("id", value: customerId)
                 .execute()
-            if let mine = customer {
-                customer = Customer(
-                    id: mine.id,
-                    restaurantId: mine.restaurantId,
-                    name: mine.name,
-                    visitCount: mine.visitCount,
-                    totalSpent: mine.totalSpent,
-                    loyaltyPoints: mine.loyaltyPoints,
-                    notificationFrequency: frequency,
-                    favoriteOfferIds: mine.favoriteOfferIds
-                )
-            }
+            customer?.notificationFrequency = frequency
             return true
         } catch {
             lastError = "La mise à jour de vos préférences a échoué. Réessayez."
@@ -229,19 +282,7 @@ final class SupabaseManager: ObservableObject {
                 .execute()
                 .value
             redemptions.insert(redemption, at: 0)
-            if var mine = customer {
-                mine = Customer(
-                    id: mine.id,
-                    restaurantId: mine.restaurantId,
-                    name: mine.name,
-                    visitCount: mine.visitCount,
-                    totalSpent: mine.totalSpent,
-                    loyaltyPoints: mine.loyaltyPoints - redemption.pointsSpent,
-                    notificationFrequency: mine.notificationFrequency,
-                    favoriteOfferIds: mine.favoriteOfferIds
-                )
-                customer = mine
-            }
+            customer?.loyaltyPoints -= redemption.pointsSpent
             return true
         } catch {
             lastError = "L'échange a échoué. Vos points n'ont pas été déduits, réessayez."
@@ -298,6 +339,31 @@ final class SupabaseManager: ObservableObject {
             lastError = "La suppression du compte a échoué. Réessayez."
             print("deleteAccount error: \(error)")
             return false
+        }
+    }
+
+    /// Restaurant name + tier thresholds via the bridge (see
+    /// app/api/portal/restaurant/route.ts) — `restaurants` has no
+    /// customer-facing RLS policy, and it never should get a blanket one:
+    /// the table also holds stripe_connect_account_id and financial
+    /// planning columns that must never reach a customer's device. Best
+    /// effort: a failure here leaves the existing name/thresholds (or
+    /// their defaults) in place rather than surfacing an error banner for
+    /// what's a secondary, non-blocking piece of the Home/Profile screens.
+    func fetchRestaurantInfo() async {
+        struct RestaurantInfoResponse: Decodable {
+            let name: String
+            let loyaltyTier2Threshold: Double
+            let loyaltyTier3Threshold: Double
+        }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurant"))
+            let decoded = try JSONDecoder().decode(RestaurantInfoResponse.self, from: data)
+            restaurantName = decoded.name
+            loyaltyTier2Threshold = decoded.loyaltyTier2Threshold
+            loyaltyTier3Threshold = decoded.loyaltyTier3Threshold
+        } catch {
+            print("fetchRestaurantInfo error: \(error)")
         }
     }
 

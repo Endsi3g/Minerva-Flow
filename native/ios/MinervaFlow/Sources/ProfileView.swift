@@ -13,6 +13,7 @@ struct ProfileView: View {
     @State private var showSignOutConfirm = false
     @State private var legalSheet: AuthView.LegalDocument?
     @State private var showDeleteAccountSheet = false
+    @State private var showEditProfile = false
 
     var body: some View {
         Group {
@@ -63,20 +64,34 @@ struct ProfileView: View {
         .sheet(isPresented: $showDeleteAccountSheet) {
             DeleteAccountSheet()
         }
+        .sheet(isPresented: $showEditProfile) {
+            if let customer = supabase.customer {
+                EditProfileSheet(customer: customer)
+            }
+        }
     }
 
     // MARK: - Identity
 
     private func identityCard(for customer: Customer) -> some View {
-        let tier = LoyaltyTier.resolve(totalSpent: customer.totalSpent)
+        let tier = LoyaltyTier.resolve(totalSpent: customer.totalSpent, tier2: supabase.loyaltyTier2Threshold, tier3: supabase.loyaltyTier3Threshold)
 
         return VStack(spacing: 14) {
-            ZStack {
-                Circle().fill(tier.bannerColor).frame(width: 64, height: 64)
-                Text(initials(for: customer.name))
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(tier.bannerForeground)
+            Group {
+                if let urlString = customer.avatarUrl, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().scaledToFill()
+                        } else {
+                            avatarPlaceholder(tier: tier, customer: customer)
+                        }
+                    }
+                } else {
+                    avatarPlaceholder(tier: tier, customer: customer)
+                }
             }
+            .frame(width: 64, height: 64)
+            .clipShape(Circle())
 
             VStack(spacing: 2) {
                 Text(customer.name)
@@ -84,12 +99,33 @@ struct ProfileView: View {
                     .foregroundStyle(MinervaColor.ink)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                if let email = customer.email {
+                    Text(email)
+                        .font(.system(size: 12))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                }
                 if let restaurantName = supabase.restaurantName {
                     Text(restaurantName)
                         .font(.system(size: 12.5))
                         .foregroundStyle(MinervaColor.inkSoft)
                 }
             }
+
+            Button {
+                showEditProfile = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "pencil")
+                    Text("Modifier le profil")
+                }
+                .font(.system(size: 12, weight: .semibold))
+            }
+            .foregroundStyle(MinervaColor.emeraldDark)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(MinervaColor.emerald.opacity(0.12))
+            .clipShape(Capsule())
+            .buttonStyle(PressableButtonStyle())
 
             HStack(spacing: 22) {
                 statTile(value: "\(customer.loyaltyPoints)", label: "points")
@@ -101,6 +137,15 @@ struct ProfileView: View {
         .frame(maxWidth: .infinity)
         .background(MinervaColor.creamSoft)
         .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    private func avatarPlaceholder(tier: LoyaltyTier, customer: Customer) -> some View {
+        ZStack {
+            Circle().fill(tier.bannerColor)
+            Text(initials(for: customer.name))
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(tier.bannerForeground)
+        }
     }
 
     private func statTile(value: String, label: String) -> some View {

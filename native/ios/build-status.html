@@ -92,9 +92,9 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
       <div>
         <div class="big">4 / 4 onglets construits en profondeur</div>
       </div>
-      <div class="progress-legend" style="margin:0; text-align:right;">Widgets, biométrie, notifications push, scan QR : hors scope de cette phase</div>
+      <div class="progress-legend" style="margin:0; text-align:right;">Widgets, notifications push, scan QR, localisateur : hors scope de cette phase</div>
     </div>
-    <div class="progress-track"><div class="progress-fill" style="width:62%"></div></div>
+    <div class="progress-track"><div class="progress-fill" style="width:70%"></div></div>
     <div class="progress-legend">
       <span>Cœur fonctionnel (auth, 4 onglets, backend) — solide</span>
       <span>App complète App Store-ready</span>
@@ -179,8 +179,17 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
         <h3>Fournisseurs de connexion</h3>
         <ul>
           <li>Courriel + code : fonctionnel de bout en bout</li>
-          <li class="gap">Google / Facebook : non branchés — nécessite votre action (voir plus bas)</li>
+          <li>Google / Facebook : boutons, redirection, liaison au bon compte client codés des deux côtés (web + natif) — <span class="gap">bloqué uniquement sur vos identifiants OAuth dans le tableau de bord Supabase (voir plus bas)</span></li>
           <li class="gap">OTP par SMS : reporté par votre choix, nécessite un fournisseur payant type Twilio</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>Verrouillage Face ID / Touch ID</h3>
+        <ul>
+          <li>Activable dans Profil → Sécurité, désactivé par défaut</li>
+          <li>Reverrouille à chaque retour au premier plan, pas seulement au lancement</li>
+          <li>Repli automatique sur le code de l'appareil si la biométrie échoue</li>
         </ul>
       </div>
     </div>
@@ -245,7 +254,6 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
     <div class="section-head"><h2>Hors scope de cette phase</h2><span class="section-count">par votre propre décision : « finir les 4 onglets d'abord, à fond, puis élargir »</span></div>
     <div class="list-card">
       <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Widgets iOS (écran verrouillé / accueil)</strong><p>Aucun target de widget n'existe encore dans <code>project.yml</code>.</p></div></div>
-      <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Authentification biométrique (Face ID)</strong><p>Aucun appel à LocalAuthentication dans le code actuel.</p></div></div>
       <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Notifications push</strong><p>Aucune capacité APNs, aucun token enregistré côté serveur.</p></div></div>
       <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Scan QR pour commander à table</strong><p>Le web a son propre flux de commande publique par QR (menu_shares) ; rien d'équivalent natif pour l'instant.</p></div></div>
       <div class="list-row"><span class="tag missing">Non commencé</span><div class="body"><strong>Localisateur de restaurant / carte</strong><p>Icône décorative présente sur Accueil, aucun écran derrière.</p></div></div>
@@ -264,7 +272,7 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
     <div class="action-card">
       <div class="num">02</div>
       <h3>Identifiants Google &amp; Facebook Login</h3>
-      <p>Créer les apps OAuth (Google Cloud Console + Meta for Developers), obtenir client ID/secret, et me les fournir comme variables d'environnement — je branche le code ensuite. Une documentation pas-à-pas peut être préparée séparément si vous voulez configurer « en one shot » comme demandé précédemment.</p>
+      <p>Le code est prêt des deux côtés (web + natif) et attend uniquement ceci : créer les apps OAuth (Google Cloud Console + Meta for Developers), puis coller le Client ID/Secret dans Supabase → Authentication → Providers. Une documentation pas-à-pas peut être préparée séparément si vous voulez configurer « en one shot » comme demandé précédemment.</p>
     </div>
     <div class="action-card">
       <div class="num">03</div>

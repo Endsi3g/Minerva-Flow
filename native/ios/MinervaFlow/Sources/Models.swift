@@ -4,17 +4,21 @@ import SwiftUI
 struct Customer: Codable, Identifiable {
     let id: String
     let restaurantId: String
-    let name: String
+    var name: String
+    var email: String?
+    var avatarUrl: String?
     let visitCount: Int
     let totalSpent: Double
-    let loyaltyPoints: Int
-    let notificationFrequency: String
+    var loyaltyPoints: Int
+    var notificationFrequency: String
     let favoriteOfferIds: [String]
 
     enum CodingKeys: String, CodingKey {
         case id
         case restaurantId = "restaurant_id"
         case name
+        case email
+        case avatarUrl = "avatar_url"
         case visitCount = "visit_count"
         case totalSpent = "total_spent"
         case loyaltyPoints = "loyalty_points"
