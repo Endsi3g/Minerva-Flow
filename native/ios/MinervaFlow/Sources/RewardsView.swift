@@ -338,6 +338,9 @@ struct RewardsView: View {
                     // button — no "get my link" tap needed first (see
                     // SupabaseManager.fetchReferrals's own comment: every
                     // program already has a link by the time this renders).
+                    // Large and full-width: this is meant to be scanned
+                    // directly off the phone screen, a thumbnail-sized code
+                    // isn't usable for that.
                     Button {
                         qrProgram = progress
                     } label: {
@@ -346,15 +349,17 @@ struct RewardsView: View {
                                 .interpolation(.none)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 96, height: 96)
-                                .padding(8)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 220)
+                                .padding(16)
                                 .background(.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.emerald.opacity(0.25), lineWidth: 2))
                         }
                     }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 6)
 
                     ShareLink(item: referralShareURL(code: link.code), message: Text(referralShareText(program: program, code: link.code))) {
                         HStack(spacing: 6) {
