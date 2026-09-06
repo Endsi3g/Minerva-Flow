@@ -58,6 +58,9 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         DEVELOPMENT_TEAM: DV9V35452J
         CODE_SIGN_STYLE: Automatic
+    scheme:
+      testTargets:
+        - MinervaFlowTests
 
   MinervaFlowWidgetExtension:
     type: app-extension
@@ -86,3 +89,18 @@ targets:
         DEVELOPMENT_TEAM: DV9V35452J
         CODE_SIGN_STYLE: Automatic
         SKIP_INSTALL: true
+
+  MinervaFlowTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MinervaFlowTests
+    dependencies:
+      - target: MinervaFlow
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.minervaflow.loyalty.tests
+        SWIFT_VERSION: "5.0"
+        DEVELOPMENT_TEAM: DV9V35452J
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: true
