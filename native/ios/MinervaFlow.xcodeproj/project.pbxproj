@@ -10,6 +10,7 @@
 		068DD03953A5F45E4FDDA8F8 /* PointsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */; };
 		08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */; };
 		09DEDA487C152D20E5410836 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B8ABC1E0681608032F18B9B5 /* Assets.xcassets */; };
+		10C0C5419F672163010D89E7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8895010156F5D764817E886D /* PrivacyInfo.xcprivacy */; };
 		111FB36D15A3D9DEEBA9060B /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA484AE32471A39B3214052F /* QRScannerView.swift */; };
 		18918555C1D1F51C5DB40AA8 /* XCUIApplication+TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */; };
 		1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8113A301B23FEECDBE8EDE /* MainTabView.swift */; };
@@ -27,6 +28,7 @@
 		7D3D0D3F93D2E688166D0236 /* PointsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */; };
 		7FCA9536A9FD7FCFF9277DBC /* WriteRestaurantReviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EFC326CA426C0304BAF5FA /* WriteRestaurantReviewSheet.swift */; };
 		81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001F62368824618EE0ACB49 /* SupabaseManager.swift */; };
+		83A4C4962380D2949E0E7699 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2322CAFF570744A7B01CEE6B /* PrivacyInfo.xcprivacy */; };
 		85AB6A5594778C5544D34E18 /* RestaurantMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E2365512980AA23003195C /* RestaurantMapView.swift */; };
 		8E9FA68C879A95D98AA5BF22 /* BrandMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */; };
 		976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */; };
@@ -94,6 +96,7 @@
 		09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntroView.swift; sourceTree = "<group>"; };
 		1AFCB4B80589F9BD7E3AECC9 /* MinervaFlowWidgetExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MinervaFlowWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		1BA24BE15C53784788988271 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		2322CAFF570744A7B01CEE6B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		2D70223A1891BFC32372F3C5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		3FDF4D1B53C09BD25A26EEDF /* MinervaFlowWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlowWidget.entitlements; sourceTree = "<group>"; };
@@ -110,6 +113,7 @@
 		6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFlowUITests.swift; sourceTree = "<group>"; };
 		75D53BED95FFB389516CCEF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowApp.swift; sourceTree = "<group>"; };
+		8895010156F5D764817E886D /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		89B5498B7D0733D7AA1958D9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		96EFC326CA426C0304BAF5FA /* WriteRestaurantReviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WriteRestaurantReviewSheet.swift; sourceTree = "<group>"; };
 		A0B3CE87BA193CEEDBA5D5D5 /* MinervaFlow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MinervaFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -250,6 +254,7 @@
 				B8ABC1E0681608032F18B9B5 /* Assets.xcassets */,
 				F97A65D9827AB6E19EB970C1 /* Info.plist */,
 				D6E6F6E76663DF4A6F2A5309 /* MinervaFlow.entitlements */,
+				2322CAFF570744A7B01CEE6B /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -260,6 +265,7 @@
 				75D53BED95FFB389516CCEF8 /* Info.plist */,
 				3FDF4D1B53C09BD25A26EEDF /* MinervaFlowWidget.entitlements */,
 				DE1BA36D6BD964EC57A0DE85 /* MinervaFlowWidget.swift */,
+				8895010156F5D764817E886D /* PrivacyInfo.xcprivacy */,
 			);
 			path = MinervaFlowWidget;
 			sourceTree = "<group>";
@@ -295,6 +301,7 @@
 			buildConfigurationList = 4AD4F24DED7B3286A22F7544 /* Build configuration list for PBXNativeTarget "MinervaFlowWidgetExtension" */;
 			buildPhases = (
 				CD1ED932DB4B9484C2990D85 /* Sources */,
+				0FE7294D23ECD4F8E17CF202 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -398,11 +405,20 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		0FE7294D23ECD4F8E17CF202 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				10C0C5419F672163010D89E7 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F408578363D1E7F396B0A172 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				09DEDA487C152D20E5410836 /* Assets.xcassets in Resources */,
+				83A4C4962380D2949E0E7699 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
