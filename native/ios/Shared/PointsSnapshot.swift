@@ -16,6 +16,18 @@ struct PointsSnapshot: Codable {
     /// widget needs dark text there instead of the white it uses on every
     /// other (dark) tier background.
     let tierIsLight: Bool
+    /// 0...1 toward the next tier, nil at the top tier (Ambassadeur) —
+    /// same calc as MyCardView's own progress bar. Only the large widget
+    /// uses this; small/medium never needed it.
+    let nextTierProgress: Double?
+    /// Cheapest active reward, for the large widget's "prochaine
+    /// récompense" row — nil when the restaurant has no active rewards,
+    /// same empty-state the app itself already handles honestly.
+    let nextRewardName: String?
+    let nextRewardPointsCost: Int?
+    /// Up to 2 active offer titles — the large widget has room for a
+    /// couple, not the whole list.
+    let activeOfferTitles: [String]
     let updatedAt: Date
 
     static let appGroupID = "group.com.minervaflow.loyalty"

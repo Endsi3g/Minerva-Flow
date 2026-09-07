@@ -18,6 +18,7 @@ final class SupabaseManager: ObservableObject {
     @Published var restaurantGoogleMapsUrl: String?
     @Published var loyaltyTier2Threshold: Double = 150
     @Published var loyaltyTier3Threshold: Double = 400
+    @Published var announcements: [PlatformAnnouncement] = []
     @Published var menuItems: [NativeMenuItem] = []
     @Published var taxRate: Double = 0.14975
     @Published var acceptsTips: Bool = true
@@ -166,13 +167,22 @@ final class SupabaseManager: ObservableObject {
                 .execute()
                 .value
 
-            let (txs, rewardsResult, offersResult, redemptionsResult) = try await (
-                txsFetch, rewardsFetch, offersFetch, redemptionsFetch
+            async let announcementsFetch: [PlatformAnnouncement] = client
+                .from("platform_announcements")
+                .select()
+                .eq("is_active", value: true)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+
+            let (txs, rewardsResult, offersResult, redemptionsResult, announcementsResult) = try await (
+                txsFetch, rewardsFetch, offersFetch, redemptionsFetch, announcementsFetch
             )
             transactions = txs
             rewards = rewardsResult
             offers = offersResult.filter { $0.isLive }
             redemptions = redemptionsResult
+            announcements = announcementsResult
             await fetchRestaurantInfo()
             saveWidgetSnapshot(for: mine)
             await fetchAllMemberships()
@@ -200,6 +210,13 @@ final class SupabaseManager: ObservableObject {
         case .privilegie: tierHex = "0E5A40"
         case .ambassadeur: tierHex = "DFFF5F"
         }
+
+        let prevTarget = tier == .ambassadeur ? loyaltyTier3Threshold : tier == .privilegie ? loyaltyTier2Threshold : 0
+        let nextTarget: Double? = tier == .habitue ? loyaltyTier2Threshold : tier == .privilegie ? loyaltyTier3Threshold : nil
+        let progress = nextTarget.map { min(1, max(0, (mine.totalSpent - prevTarget) / ($0 - prevTarget))) }
+
+        let cheapestReward = rewards.min(by: { $0.pointsCost < $1.pointsCost })
+
         PointsSnapshot(
             customerName: mine.name,
             restaurantName: restaurantName ?? "Minerva Flow",
@@ -207,6 +224,10 @@ final class SupabaseManager: ObservableObject {
             tierLabel: tier.label,
             tierColorHex: tierHex,
             tierIsLight: tier == .ambassadeur,
+            nextTierProgress: progress,
+            nextRewardName: cheapestReward?.name,
+            nextRewardPointsCost: cheapestReward?.pointsCost,
+            activeOfferTitles: Array(offers.prefix(2).map(\.title)),
             updatedAt: Date()
         ).save()
         WidgetCenter.shared.reloadAllTimelines()
@@ -862,6 +883,33 @@ final class SupabaseManager: ObservableObject {
                 .execute()
         } catch {
             print("registerPushToken error: \(error)")
+        }
+    }
+
+    // MARK: - In-App Surveys & Announcements
+
+    func submitAnnouncementVote(announcementId: String, option: String, feedback: String? = nil) async {
+        struct SurveyInsert: Encodable {
+            let announcement_id: String
+            let customer_id: String?
+            let selected_option: String
+            let feedback_text: String?
+            let platform: String
+        }
+        let payload = SurveyInsert(
+            announcement_id: announcementId,
+            customer_id: customer?.id,
+            selected_option: option,
+            feedback_text: feedback,
+            platform: "ios"
+        )
+        do {
+            try await client
+                .from("platform_survey_responses")
+                .insert(payload)
+                .execute()
+        } catch {
+            print("submitAnnouncementVote error: \(error)")
         }
     }
 }

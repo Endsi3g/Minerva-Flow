@@ -19,6 +19,12 @@ struct HomeView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         pinnedHeader(for: customer)
 
+                        if !supabase.announcements.isEmpty {
+                            ForEach(supabase.announcements) { announcement in
+                                AnnouncementCardView(announcement: announcement)
+                            }
+                        }
+
                         nextRewardCard(for: customer)
 
                         if !supabase.offers.isEmpty {
