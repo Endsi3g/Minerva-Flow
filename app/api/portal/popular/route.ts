@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { resolveNativeUserId } from "@/lib/auth/native-bearer";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveDiscoveryScope } from "@/lib/data/discovery-scope";
 
 /**
  * "Populaire près de vous" — the most-ordered menu items across every
- * discoverable restaurant (any restaurant with lat/lng, same universe as
- * /api/portal/discover), ranked by real order_items.quantity, not a
- * vanity metric. Aggregation happens here in JS rather than a SQL
- * function: the dataset is small enough that a second round-trip isn't
- * worth a new RPC, and this stays consistent with every other bridge
- * route's plain-query style. Excludes cancelled orders — a cancelled
- * order was never actually fulfilled, so it shouldn't count as "popular".
+ * discoverable restaurant in scope (see resolveDiscoveryScope — the open
+ * marketplace for croissance/marque_blanche, same-franchise-only for
+ * essentiel), ranked by real order_items.quantity, not a vanity metric.
+ * Aggregation happens here in JS rather than a SQL function: the dataset
+ * is small enough that a second round-trip isn't worth a new RPC, and
+ * this stays consistent with every other bridge route's plain-query
+ * style. Excludes cancelled orders — a cancelled order was never actually
+ * fulfilled, so it shouldn't count as "popular".
  */
 export async function GET(req: Request) {
   const userId = await resolveNativeUserId(req);
@@ -18,13 +20,24 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
+  const scope = await resolveDiscoveryScope(userId);
+  if (scope.mode === "none") {
+    return NextResponse.json({ items: [] });
+  }
+
   const admin = createAdminClient();
 
-  const { data: restaurants } = await admin
+  let restaurantsQuery = admin
     .from("restaurants")
     .select("id, name")
     .not("lat", "is", null)
     .not("lng", "is", null);
+  if (scope.mode === "workspace") {
+    restaurantsQuery = restaurantsQuery.eq("workspace_id", scope.workspaceId);
+  } else if (scope.mode === "single") {
+    restaurantsQuery = restaurantsQuery.eq("id", scope.restaurantId);
+  }
+  const { data: restaurants } = await restaurantsQuery;
 
   const restaurantIds = (restaurants ?? []).map((r) => r.id as string);
   if (restaurantIds.length === 0) {

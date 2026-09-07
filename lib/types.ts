@@ -46,6 +46,7 @@ export type Restaurant = {
   visitRewardTiers: VisitRewardTier[];
   imageUrls: string[];
   googleMapsUrl: string | null;
+  planTier: "essentiel" | "croissance" | "marque_blanche";
 };
 
 export type Employee = {
@@ -856,3 +857,42 @@ export type IncidentReport = {
   resolvedAt?: string | null;
   createdAt: string;
 };
+
+export type PlatformAnnouncement = {
+  id: string;
+  title: string;
+  body: string;
+  badgeLabel: string;
+  category: string;
+  callToActionLabel?: string | null;
+  callToActionUrl?: string | null;
+  pollQuestion?: string | null;
+  pollOptions: string[];
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type PlatformSurveyResponse = {
+  id: string;
+  announcementId: string;
+  userId?: string | null;
+  customerId?: string | null;
+  selectedOption: string;
+  feedbackText?: string | null;
+  platform: "web" | "ios";
+  createdAt: string;
+};
+
+export type EcosystemProposalStatus = "submitted" | "under_review" | "planned" | "declined";
+
+export type EcosystemAppProposal = {
+  id: string;
+  userId: string;
+  restaurantId?: string | null;
+  appName: string;
+  category: string;
+  description: string;
+  status: EcosystemProposalStatus;
+  createdAt: string;
+};
+

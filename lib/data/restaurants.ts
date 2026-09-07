@@ -44,6 +44,7 @@ type RestaurantRow = {
   visit_reward_tiers: VisitRewardTier[] | null;
   image_urls: string[] | null;
   google_maps_url: string | null;
+  plan_tier: string;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -83,6 +84,7 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     visitRewardTiers: row.visit_reward_tiers ?? [],
     imageUrls: row.image_urls ?? [],
     googleMapsUrl: row.google_maps_url,
+    planTier: (row.plan_tier as Restaurant["planTier"]) ?? "essentiel",
   };
 }
 

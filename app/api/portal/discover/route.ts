@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { resolveNativeUserId } from "@/lib/auth/native-bearer";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolveDiscoveryScope } from "@/lib/data/discovery-scope";
 
 /**
- * Restaurant discovery for the native app's "nearby" map — deliberately
- * NOT scoped to the caller's own restaurant (see /api/portal/restaurant
- * for that), this lists every restaurant so a customer can find and join
- * new ones. Requires only a valid authenticated user (resolveNativeUserId,
- * not resolveNativeCustomer) since discovering a restaurant you are not
- * yet a loyalty customer of is the entire point.
+ * Restaurant discovery for the native app's "nearby" map — scoped per
+ * resolveDiscoveryScope (open marketplace for croissance/marque_blanche,
+ * same-franchise-only for essentiel, see that function's own comment).
+ * Requires only a valid authenticated user (resolveNativeUserId, not
+ * resolveNativeCustomer) since discovering a restaurant you are not yet a
+ * loyalty customer of is still the point at the open tier.
  *
  * Explicit column allowlist via the admin client, same reason as
  * /api/portal/restaurant: `restaurants` also holds
@@ -22,12 +23,25 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
+  const scope = await resolveDiscoveryScope(userId);
+  if (scope.mode === "none") {
+    return NextResponse.json({ restaurants: [] });
+  }
+
   const admin = createAdminClient();
-  const { data, error } = await admin
+  let query = admin
     .from("restaurants")
     .select("id, name, description, address, city, province, lat, lng, phone, website, color, opening_hours, service_model, image_urls, google_maps_url")
     .not("lat", "is", null)
     .not("lng", "is", null);
+
+  if (scope.mode === "workspace") {
+    query = query.eq("workspace_id", scope.workspaceId);
+  } else if (scope.mode === "single") {
+    query = query.eq("id", scope.restaurantId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: "Impossible de charger les restaurants" }, { status: 500 });
