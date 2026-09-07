@@ -5,6 +5,7 @@
   },
   "locale": {
     "french": "Français",
+    "english": "English",
     "turkish": "Türkçe",
     "switchLabel": "Dil"
   },
@@ -1098,5 +1099,63 @@
       "homeOrderCta": "Şimdi sipariş ver",
       "offersTitle": "Şu anki teklifler"
     }
+  },
+  "profile": {
+    "title": "Profilim",
+    "subtitle": "Hesap bilgileriniz ve tercihleriniz",
+    "changeAvatar": "Profil resmini değiştir",
+    "avatarUpdated": "Profil resmi güncellendi.",
+    "avatarError": "Fotoğraf yüklenirken hata oluştu.",
+    "name": "Tam Adı",
+    "email": "E-posta Adresi",
+    "role": "Rol ve Yetkiler",
+    "activityLog": "Etkinlik Günlüğü",
+    "calendarIntegration": "Google Takvim Entegrasyonu",
+    "deleteAccount": "Hesabımı Sil",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "edit": "Düzenle",
+    "saved": "Değişiklikler kaydedildi.",
+    "saveError": "Kaydedilirken hata oluştu.",
+    "roleDescription": {
+      "owner": "Finans, ekip, envanter ve yapılandırmaya tam erişim.",
+      "manager": "Günlük operasyon yönetimi, siparişler ve ekip.",
+      "staff": "Servis erişimi, vardiya takibi ve sipariş alma.",
+      "consultant": "Salt okunur erişim ve performans denetimi."
+    },
+    "proposeAppTitle": "Bir Minerva Uygulaması Önerin",
+    "proposeAppDescription": "Minerva Flow ekosistemini zenginleştirecek uygulama ve modül fikirlerinizi paylaşın.",
+    "appNameLabel": "Uygulama Adı",
+    "appNamePlaceholder": "Örn: Minerva Scheduler, Akıllı Envanter...",
+    "categoryLabel": "İş Kategorisi",
+    "categoryPlaceholder": "Bir kategori seçin",
+    "categories": {
+      "operations": "Operasyon ve Servis",
+      "hr": "İK ve Ekip Vardiya Planlaması",
+      "marketing": "Pazarlama ve Sadakat",
+      "supply": "Stok ve Tedarikçi Yönetimi",
+      "finance": "Muhasebe ve Finansal Analiz",
+      "other": "Diğer Yenilikler"
+    },
+    "descriptionLabel": "Açıklama ve Beklenen Etki",
+    "descriptionPlaceholder": "Çözülen sorunu ve bu uygulamanın işletmenize nasıl fayda sağlayacağını açıklayın...",
+    "submitProposal": "Fikri Gönder",
+    "submitting": "Gönderiliyor…",
+    "proposalSubmitted": "Fikriniz Minerva ürün ekibine başarıyla iletildi!",
+    "proposalError": "Öneriniz iletilemedi. Lütfen tekrar deneyin.",
+    "myProposalsTitle": "Uygulama Önerileriniz",
+    "noProposalsYet": "Henüz herhangi bir uygulama önerisinde bulunmadınız.",
+    "statusSubmitted": "Alındı",
+    "statusUnderReview": "İnceleniyor",
+    "statusPlanned": "Yol Haritasında",
+    "statusDeclined": "Reddedildi"
+  },
+  "announcements": {
+    "badgeDefault": "Yeni",
+    "voteSuccess": "Geri bildiriminiz için teşekkürler!",
+    "feedbackOptionalPlaceholder": "Eklemek istediğiniz bir ayrıntı veya öneri var mı? (isteğe bağlı)",
+    "sendFeedback": "Gönder",
+    "feedbackSent": "Yorumunuz alındı!",
+    "dismissAria": "Bu duyuruyu kapat"
   }
 }

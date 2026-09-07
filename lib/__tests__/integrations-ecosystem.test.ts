@@ -8,6 +8,8 @@ import {
   GoogleDrive,
   GoogleAnalytics,
   GoogleAds,
+  GoogleCloud,
+  GoogleGemini,
   QuickBooks,
   Xero,
   Sage,
@@ -17,7 +19,7 @@ import {
 } from "@/components/ui/BrandIcons";
 
 describe("Integrations Ecosystem Brand Icons", () => {
-  it("exports all Google Workspace brand icons", () => {
+  it("exports all Google Workspace & Cloud brand icons", () => {
     expect(Google).toBeDefined();
     expect(GoogleWorkspace).toBeDefined();
     expect(Gmail).toBeDefined();
@@ -26,6 +28,8 @@ describe("Integrations Ecosystem Brand Icons", () => {
     expect(GoogleDrive).toBeDefined();
     expect(GoogleAnalytics).toBeDefined();
     expect(GoogleAds).toBeDefined();
+    expect(GoogleCloud).toBeDefined();
+    expect(GoogleGemini).toBeDefined();
   });
 
   it("exports all Accounting & Invoicing brand icons", () => {

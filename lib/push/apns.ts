@@ -62,14 +62,10 @@ type ApnsPayload = { title: string; body?: string; link?: string };
  * never-throws contract as sendPushToUsers. A token APNs reports as
  * unregistered (410/BadDeviceToken) is deleted so it stops being retried.
  */
-export async function sendAPNsToUsers(userIds: string[], payload: ApnsPayload): Promise<void> {
-  if (!isAPNsConfigured() || userIds.length === 0) return;
+export async function sendAPNsToTokens(tokens: string[], payload: ApnsPayload): Promise<void> {
+  if (!isAPNsConfigured() || tokens.length === 0) return;
 
   const admin = createAdminClient();
-  const { data } = await admin.from("device_push_tokens").select("token").in("user_id", userIds);
-  const tokens = ((data as { token: string }[] | null) ?? []).map((row) => row.token);
-  if (tokens.length === 0) return;
-
   const host = process.env.APNS_ENVIRONMENT === "production" ? "api.push.apple.com" : "api.sandbox.push.apple.com";
   const authToken = buildAuthToken();
   const body = JSON.stringify({
@@ -118,4 +114,17 @@ export async function sendAPNsToUsers(userIds: string[], payload: ApnsPayload): 
         })
     )
   );
+}
+
+export { sendAPNsToTokens as sendApnsToTokens };
+
+export async function sendAPNsToUsers(userIds: string[], payload: ApnsPayload): Promise<void> {
+  if (!isAPNsConfigured() || userIds.length === 0) return;
+
+  const admin = createAdminClient();
+  const { data } = await admin.from("device_push_tokens").select("token").in("user_id", userIds);
+  const tokens = ((data as { token: string }[] | null) ?? []).map((row) => row.token);
+  if (tokens.length === 0) return;
+
+  await sendAPNsToTokens(tokens, payload);
 }

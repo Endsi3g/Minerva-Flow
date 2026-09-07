@@ -10,7 +10,7 @@
 export function isGoogleWalletConfigured() {
   return Boolean(
     process.env.GOOGLE_WALLET_ISSUER_ID &&
-      process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL &&
+      (process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL || process.env.GOOGLE_WALLET_CLIENT_EMAIL) &&
       process.env.GOOGLE_WALLET_PRIVATE_KEY
   );
 }

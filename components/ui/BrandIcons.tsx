@@ -21,6 +21,8 @@ import PayPalSvg from "@thesvg/react/paypal";
 import ApplePaySvg from "@thesvg/react/apple-pay";
 import GooglePaySvg from "@thesvg/react/google-pay";
 import GoogleMapsSvg from "@thesvg/react/google-maps";
+import GoogleCloudSvg from "@thesvg/react/googlecloud";
+import GoogleGeminiSvg from "@thesvg/react/google-gemini";
 
 interface BrandIconProps extends React.SVGProps<SVGSVGElement> {
   size?: number;
@@ -158,6 +160,18 @@ export function GoogleMaps({ size = 20, width, height, className, ...props }: Br
   const w = width || size;
   const h = height || size;
   return <GoogleMapsSvg width={w} height={h} className={className} {...props} />;
+}
+
+export function GoogleCloud({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return <GoogleCloudSvg width={w} height={h} className={className} {...props} />;
+}
+
+export function GoogleGemini({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return <GoogleGeminiSvg width={w} height={h} className={className} {...props} />;
 }
 
 export function Pennylane({ size = 20, width, height, className, ...props }: BrandIconProps) {

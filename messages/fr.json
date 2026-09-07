@@ -5,6 +5,7 @@
   },
   "locale": {
     "french": "Français",
+    "english": "English",
     "turkish": "Türkçe",
     "switchLabel": "Langue"
   },
@@ -1113,5 +1114,63 @@
       "homeOrderCta": "Commander maintenant",
       "offersTitle": "Offres en ce moment"
     }
+  },
+  "profile": {
+    "title": "Mon profil",
+    "subtitle": "Vos informations de compte et préférences",
+    "changeAvatar": "Changer la photo de profil",
+    "avatarUpdated": "Photo de profil mise à jour.",
+    "avatarError": "Erreur lors du téléversement.",
+    "name": "Nom complet",
+    "email": "Adresse courriel",
+    "role": "Rôle & Permissions",
+    "activityLog": "Journal d'activité",
+    "calendarIntegration": "Intégration Google Agenda",
+    "deleteAccount": "Supprimer mon compte",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "edit": "Modifier",
+    "saved": "Modifications enregistrées.",
+    "saveError": "Erreur lors de l'enregistrement.",
+    "roleDescription": {
+      "owner": "Accès complet aux finances, équipes, stocks et configuration.",
+      "manager": "Gestion opérationnelle quotidienne, commandes et équipes.",
+      "staff": "Accès au service, pointage et prise de commandes.",
+      "consultant": "Accès en lecture et audit de performance."
+    },
+    "proposeAppTitle": "Proposer une application Minerva",
+    "proposeAppDescription": "Partagez vos idées d'applications et de modules pour enrichir l'écosystème Minerva Flow.",
+    "appNameLabel": "Nom de l'application",
+    "appNamePlaceholder": "Ex : Minerva Scheduler, Smart Inventory...",
+    "categoryLabel": "Catégorie métier",
+    "categoryPlaceholder": "Sélectionnez une catégorie",
+    "categories": {
+      "operations": "Opérations & Service",
+      "hr": "RH & Planification des équipes",
+      "marketing": "Marketing & Fidélisation",
+      "supply": "Gestion des stocks & Fournisseurs",
+      "finance": "Comptabilité & Analyse financière",
+      "other": "Autre innovation"
+    },
+    "descriptionLabel": "Description & Impact attendu",
+    "descriptionPlaceholder": "Expliquez le problème résolu et comment cette application aiderait votre établissement...",
+    "submitProposal": "Soumettre l'idée",
+    "submitting": "Transmission…",
+    "proposalSubmitted": "Votre idée a été transmise à l'équipe produit Minerva avec succès !",
+    "proposalError": "Impossible de transmettre votre proposition. Veuillez réessayer.",
+    "myProposalsTitle": "Vos suggestions d'applications",
+    "noProposalsYet": "Vous n'avez pas encore soumis d'idées d'applications.",
+    "statusSubmitted": "Reçue",
+    "statusUnderReview": "À l'étude",
+    "statusPlanned": "En feuille de route",
+    "statusDeclined": "Classée"
+  },
+  "announcements": {
+    "badgeDefault": "Nouveauté",
+    "voteSuccess": "Merci pour votre avis !",
+    "feedbackOptionalPlaceholder": "Une précision ou suggestion ? (optionnel)",
+    "sendFeedback": "Envoyer",
+    "feedbackSent": "Commentaire bien reçu !",
+    "dismissAria": "Masquer cette annonce"
   }
 }

@@ -17,8 +17,9 @@ import { LogoMark } from "@/components/shell/Logo";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "@/i18n/navigation";
 import { formatCurrency, formatDate, roundToCents, cn } from "@/lib/utils";
-import type { Customer, CustomerReferralLink, LoyaltyReward, MenuItem, Offer, ReferralProgram, RewardRedemption } from "@/lib/types";
+import type { Customer, CustomerReferralLink, LoyaltyReward, MenuItem, Offer, PlatformAnnouncement, ReferralProgram, RewardRedemption } from "@/lib/types";
 import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-portal";
+import { AnnouncementCard } from "./AnnouncementCard";
 import {
   getOrCreateReferralLinkAction,
   updateMyProfileAction,
@@ -1186,6 +1187,7 @@ export function PortalView({
   restaurantName,
   appleWalletEnabled,
   googleWalletEnabled,
+  announcements,
 }: {
   customer: Customer;
   data: PortalData;
@@ -1197,6 +1199,7 @@ export function PortalView({
   restaurantName?: string | null;
   appleWalletEnabled: boolean;
   googleWalletEnabled: boolean;
+  announcements?: PlatformAnnouncement[];
 }) {
   const t = useTranslations("portal.view");
   const [activeTab, setActiveTab] = useState<PortalTab>("home");
@@ -1272,6 +1275,18 @@ export function PortalView({
               googleWalletEnabled={googleWalletEnabled}
               onOrderClick={() => setActiveTab("order")}
             />
+
+            {announcements && announcements.length > 0 && (
+              <div className="space-y-3">
+                {announcements.map((announcement) => (
+                  <AnnouncementCard
+                    key={announcement.id}
+                    announcement={announcement}
+                    customerId={customer.id}
+                  />
+                ))}
+              </div>
+            )}
 
             <OffersFeed offers={offers} onOrderClick={() => setActiveTab("order")} />
 

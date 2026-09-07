@@ -23,7 +23,7 @@ export function buildGoogleWalletSaveUrl(input: {
 }): string {
   const payload = buildGoogleLoyaltyPayload({
     issuerId: process.env.GOOGLE_WALLET_ISSUER_ID!,
-    serviceAccountEmail: process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL!,
+    serviceAccountEmail: (process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL || process.env.GOOGLE_WALLET_CLIENT_EMAIL)!,
     appUrl: process.env.NEXT_PUBLIC_APP_URL || "https://minervaflow.app",
     ...input,
   });

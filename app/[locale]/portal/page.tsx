@@ -4,6 +4,7 @@ import { getCustomersForUser, getPortalData } from "@/lib/data/customer-portal";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { getActiveMenuItemsForCustomers } from "@/lib/data/menu";
 import { getActiveOffersForCustomers } from "@/lib/data/offers";
+import { getActiveAnnouncements } from "@/lib/data/announcements";
 import { isAppleWalletConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config";
 import { LogoMark } from "@/components/shell/Logo";
 import { PortalView } from "./PortalView";
@@ -82,11 +83,12 @@ export default async function PortalPage({
     );
   }
 
-  const [data, restaurant, menuItems, offers] = await Promise.all([
+  const [data, restaurant, menuItems, offers, announcements] = await Promise.all([
     getPortalData(selected),
     getRestaurant(selected.restaurantId),
     getActiveMenuItemsForCustomers(selected.restaurantId),
     getActiveOffersForCustomers(selected.restaurantId),
+    getActiveAnnouncements(),
   ]);
   const loyaltyTierThresholds = {
     tier2: restaurant?.loyaltyTier2Threshold ?? 150,
@@ -104,6 +106,7 @@ export default async function PortalPage({
       restaurantName={restaurant?.name ?? null}
       appleWalletEnabled={isAppleWalletConfigured()}
       googleWalletEnabled={isGoogleWalletConfigured()}
+      announcements={announcements}
     />
   );
 }

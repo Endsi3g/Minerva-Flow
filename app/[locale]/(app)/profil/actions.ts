@@ -76,3 +76,90 @@ export async function getMyUpcomingCalendarEventsAction(): Promise<UpcomingCalen
 
   return fetchUpcomingEvents(accessToken);
 }
+
+export type SubmitProposalResult =
+  | { ok: true; proposal: import("@/lib/types").EcosystemAppProposal }
+  | { ok: false; error: string };
+
+export async function submitAppProposalAction(input: {
+  appName: string;
+  category: string;
+  description: string;
+}): Promise<SubmitProposalResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Non authentifié." };
+
+  const appName = input.appName.trim();
+  const category = input.category.trim();
+  const description = input.description.trim();
+
+  if (!appName || !category || !description) {
+    return { ok: false, error: "Veuillez remplir tous les champs obligatoires." };
+  }
+
+  const membership = await getCurrentMembership();
+  const restaurantId = membership?.restaurantId ?? null;
+
+  const { data, error } = await supabase
+    .from("ecosystem_app_proposals")
+    .insert({
+      user_id: user.id,
+      restaurant_id: restaurantId,
+      app_name: appName,
+      category,
+      description,
+      status: "submitted",
+    })
+    .select()
+    .single();
+
+  if (error || !data) {
+    return { ok: false, error: "Erreur lors de la soumission de votre proposition." };
+  }
+
+  revalidatePath("/profil");
+  return {
+    ok: true,
+    proposal: {
+      id: data.id,
+      userId: data.user_id,
+      restaurantId: data.restaurant_id,
+      appName: data.app_name,
+      category: data.category,
+      description: data.description,
+      status: data.status,
+      createdAt: data.created_at,
+    },
+  };
+}
+
+export async function getMyProposalsAction(): Promise<import("@/lib/types").EcosystemAppProposal[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("ecosystem_app_proposals")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  return data.map((row) => ({
+    id: row.id,
+    userId: row.user_id,
+    restaurantId: row.restaurant_id,
+    appName: row.app_name,
+    category: row.category,
+    description: row.description,
+    status: row.status,
+    createdAt: row.created_at,
+  }));
+}
+

@@ -20,6 +20,8 @@ import type { MyProfile } from "@/lib/data/profile";
 import type { ActivityLogEntry, Role } from "@/lib/types";
 import { Camera, Check, History, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import { EcosystemProposalCard } from "./EcosystemProposalCard";
 
 function toActivityLogEntry(row: ActivityLogRow, actorName: string): ActivityLogEntry {
   return {
@@ -165,6 +167,7 @@ export function ProfileView({
   role: Role | null;
   activity: ActivityLogEntry[];
 }) {
+  const t = useTranslations("profile");
   const [activity, setActivity] = useState<ActivityLogEntry[]>(initialActivity);
   const [showAllActivities, setShowAllActivities] = useState(false);
 
@@ -190,7 +193,7 @@ export function ProfileView({
   if (!profile) {
     return (
       <div>
-        <PageHeader eyebrow="Compte" title="Profil" />
+        <PageHeader eyebrow="Minerva Flow" title={t("title")} />
         <Card>
           <p className="text-[13px] text-mv-ink-soft">
             Vous devez être connecté pour voir votre profil.
@@ -205,9 +208,9 @@ export function ProfileView({
   return (
     <div>
       <PageHeader
-        eyebrow="Compte"
-        title="Profil"
-        description="Votre photo, votre nom et votre activité récente."
+        eyebrow="Minerva Flow"
+        title={t("title")}
+        description={t("subtitle")}
       />
 
       <div className="w-full space-y-6">
@@ -219,6 +222,8 @@ export function ProfileView({
             {role && <Badge tone={roleTone[role]}>{roleLabels[role]}</Badge>}
           </div>
         </Card>
+
+        <EcosystemProposalCard />
 
         <GoogleCalendarCard />
 

@@ -1,0 +1,502 @@
+{
+  "metadata": {
+    "title": "Minerva Flow",
+    "description": "The revenue management and guest loyalty platform for restaurants and cafés."
+  },
+  "locale": {
+    "french": "Français",
+    "english": "English",
+    "turkish": "Türkçe",
+    "switchLabel": "Language"
+  },
+  "nav": {
+    "overview": "Overview",
+    "assistant": "Flow AI",
+    "library": "Documents",
+    "integrations": "Integrations",
+    "finance": "Finance",
+    "days": "Daily Performance",
+    "reports": "Reports",
+    "menu": "Menu",
+    "employees": "Employees",
+    "fidelisation": "Loyalty",
+    "maps": "Locations Map",
+    "programs": "Recurring Revenue",
+    "impact": "Loyalty Impact",
+    "franchise": "Franchise View",
+    "favMaps": "City Reports",
+    "favCampaignsEmail": "Weekly Send",
+    "favDepenses": "Expenses",
+    "favData": "Data",
+    "favCollaborateurs": "Users",
+    "reservations": "Reservations",
+    "horaire": "Schedule",
+    "monEspace": "My Space",
+    "fournisseurs": "Suppliers",
+    "inventaire": "Inventory",
+    "commandes": "Orders",
+    "billing": "Billing",
+    "guide": "Guide",
+    "designSystem": "Design System",
+    "support": "Help & Support",
+    "changelog": "Changelog",
+    "sectionOperations": "Operations",
+    "sectionOperationalTools": "Daily Operations",
+    "sectionTeams": "Teams",
+    "sectionFavorites": "Favorites",
+    "sectionSettingsMore": "Settings & More",
+    "manageWorkspace": "Manage Workspace",
+    "allTeams": "All Teams",
+    "settings": "Settings",
+    "admin": "Operator Panel",
+    "searchAria": "Search",
+    "searchTitle": "Search application (⌘K)",
+    "mobileHome": "Home",
+    "mobileChat": "AI Chat",
+    "more": "More",
+    "profil": "Profile",
+    "collaborateurs": "Collaborators"
+  },
+  "topbar": {
+    "role": "Role",
+    "accountManagement": "Account Management",
+    "referral": "Referrals",
+    "settings": "Settings",
+    "logout": "Sign Out",
+    "notifications": "Notifications",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "No notifications.",
+    "alerts": "Alerts",
+    "priorityHigh": "High Priority",
+    "toWatch": "Needs Attention",
+    "info": "Info"
+  },
+  "breadcrumb": {
+    "overview": "Overview",
+    "programs": "Recurring Revenue",
+    "days": "Daily Performance",
+    "finance": "Finance",
+    "campaigns": "Campaigns",
+    "maps": "Locations Map",
+    "settings": "Settings",
+    "reports": "Metrics",
+    "assistant": "Assistant",
+    "fidelisation": "Loyalty",
+    "menu": "Menu",
+    "inventaire": "Inventory",
+    "commandes": "Orders",
+    "collaborateurs": "Collaborators",
+    "incidents": "Incidents",
+    "billing": "Billing",
+    "changelog": "Changelog",
+    "data": "Data",
+    "depenses": "Expenses",
+    "employees": "Employees",
+    "etablissement": "Establishments",
+    "fournisseurs": "Suppliers",
+    "guide": "Guide",
+    "horaire": "Schedule",
+    "integrations": "Integrations",
+    "library": "Documents",
+    "monEspace": "My Space",
+    "profil": "Profile",
+    "reservations": "Reservations",
+    "support": "Help & Support",
+    "workspace": "Workspace",
+    "impact": "Loyalty Impact",
+    "franchise": "Franchise View"
+  },
+  "shell": {
+    "toggleNav": "Toggle navigation",
+    "openMenu": "Open menu",
+    "collapseMenu": "Collapse menu",
+    "workspaceBannerText": "Complete your restaurant setup — name, address, and timezone are not yet configured.",
+    "configure": "Configure",
+    "close": "Close",
+    "viewChangelog": "View what's new",
+    "searchDialogTitle": "Global Search",
+    "searchDialogDescription": "Search pages, campaigns, employees, or support tickets in the application...",
+    "searchPlaceholder": "Type your search...",
+    "searchNoResults": "No results found for \"{query}\".",
+    "quickNav": "Quick Navigation",
+    "commandEmpty": "No results found.",
+    "openChatAria": "Open AI Chat"
+  },
+  "auth": {
+    "signInTitle": "Sign In",
+    "signInSubtitle": "Access your Minerva Flow workspace",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@restaurant.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "signInButton": "Sign In",
+    "signingIn": "Signing in...",
+    "signUpLink": "Create an account",
+    "forgotPasswordLink": "Forgot password?",
+    "magicLinkTitle": "Sign in with Magic Link",
+    "magicLinkSubtitle": "We will email you a secure login link",
+    "sendMagicLink": "Send Magic Link",
+    "sendingLink": "Sending link...",
+    "checkEmail": "Check your email",
+    "checkEmailDesc": "A secure sign-in link has been sent to your address.",
+    "backToSignIn": "Back to sign in"
+  },
+  "common": {
+    "noRestaurantSelected": "No restaurant selected."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist or has been moved.",
+    "backHome": "Back to Overview"
+  },
+  "finance": {
+    "revenue": "Net Revenue",
+    "expenses": "Expenses",
+    "primeCost": "Prime Cost",
+    "foodCost": "Food Cost",
+    "laborCost": "Labor Cost",
+    "breakEven": "Break-even Point",
+    "netMargin": "Net Margin"
+  },
+  "employees": {
+    "title": "Employees & Team",
+    "subtitle": "Manage staff, shifts, and hourly wages",
+    "addEmployee": "Add Employee",
+    "filterActive": "Active",
+    "filterInactive": "Inactive",
+    "hourlyWage": "Hourly Wage",
+    "totalHours": "Total Hours"
+  },
+  "employeeDetail": {
+    "profileTab": "Profile",
+    "shiftsTab": "Shifts",
+    "reviewsTab": "Reviews & Feedback",
+    "tasksTab": "Tasks",
+    "paySummary": "Payroll Summary"
+  },
+  "reviewPrintPage": {
+    "title": "Performance Review",
+    "print": "Print Review",
+    "overallRating": "Overall Rating"
+  },
+  "reports": {
+    "title": "Reports & Analytics",
+    "salesReport": "Sales Report",
+    "laborReport": "Labor Report",
+    "inventoryReport": "Inventory Report",
+    "exportPdf": "Export PDF",
+    "exportCsv": "Export CSV"
+  },
+  "reportDetail": {
+    "summary": "Summary",
+    "details": "Details",
+    "comparison": "Comparison with previous period"
+  },
+  "dynamicReport": {
+    "generatedAt": "Generated on {date}",
+    "refresh": "Refresh"
+  },
+  "aiReview": {
+    "title": "Flow AI Audit",
+    "subtitle": "Intelligent analysis of your operating margins and guest frequency",
+    "startAudit": "Run New Audit"
+  },
+  "aiReviewDetail": {
+    "recommendations": "Strategic Recommendations",
+    "insights": "Key Insights"
+  },
+  "menu": {
+    "title": "Menu Management",
+    "subtitle": "Items, categories, pricing, and food cost margins",
+    "addItem": "Add Menu Item",
+    "categories": "Categories",
+    "foodCostTarget": "Food Cost Target",
+    "active": "Active",
+    "draft": "Draft"
+  },
+  "admin": {
+    "changelog": {
+      "pageTitle": "Changelog Management",
+      "publish": "Publish Entry",
+      "publishSuccess": "Published — all users have been notified.",
+      "publishFailed": "Failed to publish.",
+      "screenshotLabel": "Screenshot",
+      "screenshotHint": "Optional — feature screenshot displayed at the top."
+    },
+    "incidents": {
+      "pageTitle": "Incidents Register",
+      "pageDescription": "Law 25 compliance — log any data confidentiality incident, however minor.",
+      "cancel": "Cancel",
+      "logIncident": "Log Incident",
+      "titleLabel": "Title",
+      "titlePlaceholder": "e.g., Unauthorized access to a Supabase table",
+      "descriptionLabel": "Description",
+      "severityLabel": "Severity",
+      "severityLow": "Low",
+      "severityMedium": "Medium",
+      "severityHigh": "Critical",
+      "affectedUsersLabel": "Affected Users (estimate)",
+      "saving": "Saving…",
+      "save": "Save Incident",
+      "saveSuccess": "Incident recorded.",
+      "saveFailed": "Failed to save.",
+      "emptyState": "No incidents recorded — that's the goal.",
+      "affectedUsersCount": "{count} affected user(s)",
+      "resolvedSuffix": " · Resolved: {resolution}",
+      "unresolvedSuffix": " · Unresolved"
+    },
+    "pilots": {
+      "pageTitle": "Pilot Requests",
+      "newRequestsCount": "{count} new request(s) to review.",
+      "status": {
+        "nouveau": "New",
+        "contacte": "Contacted",
+        "actif": "Active",
+        "decline": "Declined"
+      },
+      "emptyState": "No pilot requests at this time.",
+      "fieldKit": {
+        "navLabel": "Field QR Kit",
+        "pageTitle": "QR Materials — Field Deployment",
+        "pageDescription": "Generate the 3 print assets (table stand, counter display, register sticker) for a pilot test — paste the loyalty link, download, and print."
+      }
+    },
+    "prospects": {
+      "pageTitle": "Prospects — Demo Generator",
+      "countDescription": "{count, plural, one {# prospect generated.} other {# prospects generated.}}",
+      "newProspect": "New Prospect",
+      "emptyTitle": "No prospects yet",
+      "emptyDescription": "Generate your first demo in 60 seconds from any restaurant menu.",
+      "colRestaurant": "Restaurant",
+      "colStatus": "Status",
+      "colEstimatedLoss": "Estimated Margin Leak",
+      "colViews": "Demo Views",
+      "colCreatedAt": "Created",
+      "untitled": "Untitled",
+      "newPageTitle": "New Prospect",
+      "newPageDescription": "Paste the delivery platform URL (or restaurant website) and menu: Minerva Flow instantly creates a custom-branded demo with margin audit.",
+      "status": {
+        "draft": "Draft",
+        "nouveau": "New Reach Lead",
+        "ready": "Ready",
+        "contacte": "Contacted",
+        "audit_envoye": "Audit Sent",
+        "relance_1": "Follow-up 1 (Profitability)",
+        "relance_2": "Follow-up 2 (Demo)",
+        "rdv_fixe": "Meeting Booked",
+        "converti": "Converted",
+        "decline": "Declined"
+      },
+      "pipeline": {
+        "stepRead": "Reading content",
+        "stepStructure": "Structuring menu",
+        "stepMargin": "Calculating margin",
+        "stepInstance": "Instance generated"
+      },
+      "ingestion": {
+        "urlLabel": "Target URL",
+        "urlPlaceholder": "https://www.ubereats.com/store/the-restaurant/...",
+        "generate": "Generate Instance ⚡",
+        "generating": "Generating…",
+        "restaurantNameLabel": "Restaurant Name",
+        "restaurantNamePlaceholder": "e.g., Le Saint-Laurent Bistro",
+        "platformLabel": "Source Platform",
+        "platform": {
+          "uber_eats": "Uber Eats",
+          "doordash": "DoorDash",
+          "skipthedishes": "SkipTheDishes",
+          "direct_website": "Restaurant Website",
+          "raw_text": "Pasted Text",
+          "other": "Other"
+        },
+        "currencyLabel": "Currency",
+        "commissionLabel": "Estimated Commission (%)",
+        "assumedOrdersLabel": "Orders / month (estimate)",
+        "addressLabel": "Address / City",
+        "addressHint": "Optional — useful for the pitch.",
+        "addressPlaceholder": "e.g., Montreal, QC",
+        "contactNameLabel": "Contact Name",
+        "contactNameHint": "Optional — recipient name.",
+        "contactNamePlaceholder": "e.g., Marie Tremblay",
+        "pastedTextLabel": "Menu (paste menu text here)"
+      }
+    }
+  },
+  "demo": {
+    "solution": {
+      "title": "How to Plug This Margin Leak",
+      "body": "Every order through third-party apps pays 20% to 30% commission. A direct ordering portal recoups that revenue — without altering your menu, recipes, or pricing.",
+      "steps": [
+        "We activate your branded Minerva Flow direct portal — ready in one day.",
+        "We connect your Google profile and social pages to this link instead of third-party apps.",
+        "0% commission on direct orders — and the rest of the ecosystem (finance, team, inventory) syncs seamlessly."
+      ],
+      "cta": "Book a Consultation"
+    },
+    "ecosystem": {
+      "title": "What Minerva Flow Does For You",
+      "intro": "Direct ordering is only the start. Here is what we recommend for an establishment like yours:",
+      "items": {
+        "overview": {
+          "title": "Overview",
+          "body": "A single, refined dashboard to run your restaurant at a glance."
+        },
+        "assistant": {
+          "title": "Flow AI",
+          "body": "An AI copilot that answers questions about your numbers in plain English."
+        },
+        "finance": {
+          "title": "Finance & Break-Even",
+          "body": "Your real-time break-even point calculated automatically day after day."
+        },
+        "commandes": {
+          "title": "Orders & Sales",
+          "body": "All your orders — including direct delivery — centralized in one place."
+        },
+        "collaborateurs": {
+          "title": "Team & Scheduling",
+          "body": "Shifts, clock-in, and payroll without messy spreadsheets."
+        },
+        "inventaire": {
+          "title": "Inventory & Stock",
+          "body": "Automated replenishment alerts before stockouts happen."
+        }
+      }
+    }
+  },
+  "portal": {
+    "page": {
+      "noCustomerTitle": "No customer record found",
+      "noCustomerDescription": "This email is not associated with any restaurant yet. Ask the staff to add you as a guest.",
+      "signInDifferentEmail": "Sign in with a different email",
+      "switchingAccount": "Signing out…",
+      "chooseEstablishment": "Choose an establishment",
+      "establishmentFallback": "Establishment"
+    },
+    "login": {
+      "checkEmailTitle": "Check your email",
+      "linkSentTo": "A sign-in link was sent to {email}.",
+      "title": "Customer Portal",
+      "subtitle": "Enter your email to receive a secure sign-in link.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "sending": "Sending…",
+      "receiveLink": "Receive Link",
+      "errorGeneric": "An error occurred. Please try again."
+    },
+    "view": {
+      "txLabel": {
+        "visite": "Visit",
+        "ajustement": "Adjustment",
+        "echange": "Redemption"
+      },
+      "linkCreateFailed": "Unable to create your link at this time.",
+      "copyLinkAria": "Copy link",
+      "rewardUnlocked": "Reward Unlocked",
+      "creating": "Creating…",
+      "getMyLink": "Get My Link",
+      "spaceLabel": "Guest Space",
+      "greeting": "Hello {name}",
+      "points": "Points",
+      "visits": "Visits",
+      "totalSpent": "Total Spent",
+      "referralProgramsTitle": "Referral Programs",
+      "historyTitle": "Activity History",
+      "transactionsCount": "{count, plural, one {# transaction} other {# transactions}}",
+      "noTransactions": "No activity yet.",
+      "pts": "pts",
+      "rewardsTitle": "Rewards",
+      "rewardsEmpty": "No rewards currently available.",
+      "redeemButton": "Redeem",
+      "redeemMissingPoints": "{count} pts needed",
+      "redeemFailed": "Redemption failed — check your point balance.",
+      "redeemSuccessTitle": "Present this code at the register",
+      "pendingRedemptionsTitle": "My Pending Redemptions",
+      "claimedLabel": "Redeemed",
+      "pendingLabel": "Pending",
+      "menuTitle": "Our Menu",
+      "menuDescription": "Current selections — add items to your order.",
+      "menuUncategorized": "Other Items",
+      "cartViewOrder": "View Order",
+      "cartItemCount": "{count, plural, one {# item} other {# items}}",
+      "checkoutTitle": "Your Order",
+      "checkoutSubtotal": "Subtotal",
+      "checkoutTaxes": "Taxes",
+      "checkoutTip": "Tip",
+      "checkoutTipNone": "None",
+      "checkoutTotal": "Total",
+      "paymentMethodLabel": "On-site payment method",
+      "paymentMethodHint": "Optional",
+      "paymentMethodPlaceholder": "e.g., Card, Cash",
+      "orderSubmitting": "Submitting…",
+      "orderSubmit": "Place Order — {total}",
+      "orderError": "Order submission failed. Please try again.",
+      "orderSuccessTitle": "Order Received",
+      "orderSuccessDescription": "You will pay on-site. The restaurant will confirm shortly.",
+      "orderClose": "Close",
+      "tabHome": "Home",
+      "tabOrder": "Order",
+      "tabProfile": "Profile",
+      "homeOrderCta": "Order Now",
+      "offersTitle": "Current Offers"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "Your account information and preferences",
+    "changeAvatar": "Change profile picture",
+    "avatarUpdated": "Profile picture updated.",
+    "avatarError": "Error uploading photo.",
+    "name": "Full Name",
+    "email": "Email Address",
+    "role": "Role & Permissions",
+    "activityLog": "Activity Log",
+    "calendarIntegration": "Google Calendar Integration",
+    "deleteAccount": "Delete Account",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "saved": "Changes saved.",
+    "saveError": "Error saving changes.",
+    "roleDescription": {
+      "owner": "Full access to finances, team, inventory, and configuration.",
+      "manager": "Daily operational management, orders, and team.",
+      "staff": "Service access, time tracking, and order taking.",
+      "consultant": "Read-only access and performance audit."
+    },
+    "proposeAppTitle": "Propose a Minerva App",
+    "proposeAppDescription": "Share your ideas for applications and modules to expand the Minerva Flow ecosystem.",
+    "appNameLabel": "Application Name",
+    "appNamePlaceholder": "e.g., Minerva Scheduler, Smart Inventory...",
+    "categoryLabel": "Business Category",
+    "categoryPlaceholder": "Select a category",
+    "categories": {
+      "operations": "Operations & Service",
+      "hr": "HR & Staff Scheduling",
+      "marketing": "Marketing & Loyalty",
+      "supply": "Inventory & Supplier Management",
+      "finance": "Accounting & Financial Analysis",
+      "other": "Other Innovation"
+    },
+    "descriptionLabel": "Description & Expected Impact",
+    "descriptionPlaceholder": "Explain the problem solved and how this app would benefit your business...",
+    "submitProposal": "Submit Idea",
+    "submitting": "Submitting…",
+    "proposalSubmitted": "Your idea was successfully submitted to the Minerva product team!",
+    "proposalError": "Unable to submit your proposal. Please try again.",
+    "myProposalsTitle": "Your App Suggestions",
+    "noProposalsYet": "You have not submitted any app suggestions yet.",
+    "statusSubmitted": "Submitted",
+    "statusUnderReview": "Under Review",
+    "statusPlanned": "Planned",
+    "statusDeclined": "Declined"
+  },
+  "announcements": {
+    "badgeDefault": "New",
+    "voteSuccess": "Thank you for your feedback!",
+    "feedbackOptionalPlaceholder": "Any specific thoughts or suggestions? (optional)",
+    "sendFeedback": "Send",
+    "feedbackSent": "Comment received!",
+    "dismissAria": "Dismiss this announcement"
+  }
+}
