@@ -124,6 +124,10 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
       <h3>« Accueil/récompenses vides » : compilation obsolète sur le téléphone, pas un bogue de code</h3>
       <p>Vérifié directement : votre compte testeur a bel et bien 2 offres, 3 récompenses et 5 mouvements de points en base de données, et l'application les affiche correctement une fois connectée avec le code actuel (testé via connexion réelle en simulateur). La dernière version a été réinstallée sur votre téléphone pendant cette session — si l'écran semble encore vide après une réouverture, ce sera un problème différent, pas celui-ci.</p>
     </div>
+    <div class="bugfix-card">
+      <h3>QR codes imprimés/affichés pointaient vers une page qui n'a jamais existé</h3>
+      <p>Le Studio QR (web) construisait des liens de type <code>/rejoindre/&lt;jeton&gt;</code> — une route absente de tout le code. Un client qui scannait le QR affiché en salle atterrissait sur une erreur 404 au lieu de la page d'inscription au programme de fidélité. La vraie page (<code>/f/&lt;jeton&gt;</code>, formulaire complet nom/courriel/consentement) existait déjà mais n'était jamais pointée correctement. Corrigé : les liens utilisent maintenant la bonne page, et un restaurant sans QR de fidélité existant s'en fait créer un automatiquement au lieu de retomber sur un lien générique inutile. Le scanner natif reconnaît aussi désormais ce type de jeton, pas seulement les jetons de menu.</p>
+    </div>
   </section>
 
   <section>
@@ -408,6 +412,43 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
         <h3>Pas encore couvert</h3>
         <ul>
           <li class="gap">Aucun rapport de crash (Sentry ou équivalent) branché</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Pivot tarifaire — trois forfaits (nouveau)</h2><span class="section-count">phases 1–3 construites, phase 4 en attente de votre relecture</span></div>
+    <div class="grid">
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>1 — Mécanisme de palier</h3>
+        <ul>
+          <li>Un seul champ <code>plan_tier</code> sur chaque restaurant (<code>essentiel</code> / <code>croissance</code> / <code>marque_blanche</code>) — un indicateur dans la même base de code, pas une branche Git séparée. Faire passer un restaurant de palier est un changement d'une ligne, pas un redéploiement.</li>
+          <li>Tout restaurant existant ou futur démarre à <code>essentiel</code> (99 $/mois) par défaut — rien ne change tant qu'une fonctionnalité ne vérifie pas explicitement ce champ.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>2 — Découverte limitée à la franchise</h3>
+        <ul>
+          <li>Au forfait <code>essentiel</code>, la carte de découverte et « Populaire près de vous » ne montrent plus aucun concurrent — seulement les restaurants du même <em>workspace</em> (même compagnie/franchise), conformément à votre demande.</li>
+          <li>Le scan de QR en salle continue de fonctionner pour n'importe quel restaurant peu importe son forfait — volontairement non filtré, un client doit toujours pouvoir rejoindre un restaurant par QR.</li>
+          <li>La carte ouverte façon Google Maps (multi-restaurants, concurrents inclus) reste dans le code, prête à être réactivée pour les paliers <code>croissance</code>/<code>marque_blanche</code> plus tard — rien n'a été supprimé, seulement mis de côté comme demandé.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>3 — QR par restaurant, corrigé</h3>
+        <ul>
+          <li>Le vrai bogue derrière votre demande de « QR pour rejoindre un restaurant » : l'infrastructure existait déjà en entier (page d'inscription, formulaire, courriel de confirmation) mais le lien généré par le Studio QR était cassé (voir bogue ci-dessus). N'importe quel client avec l'app Minerva peut désormais scanner le QR affiché/imprimé d'un restaurant et être lié directement à son menu et ses offres.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag partial">En attente</span>
+        <h3>4 — Répartition des fonctionnalités par forfait</h3>
+        <ul>
+          <li class="gap">Proposition de catégorisation (quoi reste à 99 $, quoi passe à 250 $) à vous soumettre pour ajustement — pas encore décidée unilatéralement dans le code, comme convenu.</li>
         </ul>
       </div>
     </div>
