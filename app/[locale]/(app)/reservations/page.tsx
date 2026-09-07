@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
+import { getCurrentRestaurantId, getCurrentRestaurant } from "@/lib/data/current-restaurant";
 import { getTables, getReservationsForDay } from "@/lib/data/reservations";
 import { getReservationPlatformConnections } from "@/lib/data/reservation-platforms";
+import { planTierAtLeast } from "@/lib/plan-tier";
+import { PlanTierLockedState } from "@/components/ui/PlanTierLockedState";
 import { ReservationsView } from "./ReservationsView";
 
 function todayRange() {
@@ -19,6 +21,20 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ReservationsPage() {
+  const restaurant = await getCurrentRestaurant();
+
+  if (restaurant && !planTierAtLeast(restaurant.planTier, "croissance")) {
+    return (
+      <div className="mx-auto max-w-2xl py-12">
+        <PlanTierLockedState
+          minimumTier="croissance"
+          featureName="La gestion des réservations"
+          description="Suivi des réservations, gestion des tables et intégrations OpenTable/Resy/SevenRooms — disponible avec le forfait Croissance."
+        />
+      </div>
+    );
+  }
+
   const restaurantId = await getCurrentRestaurantId();
   const { start, end } = todayRange();
 
