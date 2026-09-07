@@ -40,6 +40,7 @@ export { SectionHeader } from "./SectionHeader";
 
 // Empty States & Feedback Banners
 export { EmptyState } from "./EmptyState";
+export { PlanTierLockedState } from "./PlanTierLockedState";
 export {
   AlertBanner,
   type AlertBannerTone,
