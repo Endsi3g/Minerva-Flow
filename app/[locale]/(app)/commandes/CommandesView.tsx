@@ -10,6 +10,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Textarea } from "@/components/minerva/FormField";
 import { formatCurrency, formatTime, cn } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
+import { planTierAtLeast, type PlanTier } from "@/lib/plan-tier";
+import { PlanTierLockedState } from "@/components/ui/PlanTierLockedState";
 import type { Order, OrderStatus, OrderPaymentStatus, MenuItem } from "@/lib/types";
 import {
   ClipboardList,
@@ -315,12 +317,14 @@ export function CommandesView({
   dayStart,
   dayEnd,
   menuItems,
+  planTier,
 }: {
   restaurantId: string | null;
   initialOrders: Order[];
   dayStart: string;
   dayEnd: string;
   menuItems: MenuItem[];
+  planTier: PlanTier;
 }) {
   const { role } = useApp();
   const [orders, setOrders] = useState(initialOrders);
@@ -329,6 +333,7 @@ export function CommandesView({
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [activeFilter, setActiveFilter] = useState<"all" | "direct">("all");
   const [newOrderOpen, setNewOrderOpen] = useState(false);
+  const hasChannelInsights = planTierAtLeast(planTier, "croissance");
 
   const soundEnabledRef = useRef(soundEnabled);
   useEffect(() => {
@@ -452,32 +457,34 @@ export function CommandesView({
               </button>
             </div>
 
-            {/* Channel filter — built but never wired to a control until now */}
-            <div className="flex items-center gap-1 rounded-xl border border-mv-border bg-mv-surface p-1 shadow-mv-xs">
-              <button
-                onClick={() => setActiveFilter("all")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium rounded-lg transition-all",
-                  activeFilter === "all"
-                    ? "bg-mv-ink text-white shadow-sm"
-                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
-                )}
-              >
-                Toutes
-              </button>
-              <button
-                onClick={() => setActiveFilter("direct")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium rounded-lg transition-all",
-                  activeFilter === "direct"
-                    ? "bg-mv-ink text-white shadow-sm"
-                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
-                )}
-                title="Commandes reçues via votre lien de menu ou QR code, sans intermédiaire"
-              >
-                <Globe size={13} /> Directes
-              </button>
-            </div>
+            {/* Channel filter — Croissance+ only, per /grill-me tier split */}
+            {hasChannelInsights && (
+              <div className="flex items-center gap-1 rounded-xl border border-mv-border bg-mv-surface p-1 shadow-mv-xs">
+                <button
+                  onClick={() => setActiveFilter("all")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium rounded-lg transition-all",
+                    activeFilter === "all"
+                      ? "bg-mv-ink text-white shadow-sm"
+                      : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                  )}
+                >
+                  Toutes
+                </button>
+                <button
+                  onClick={() => setActiveFilter("direct")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium rounded-lg transition-all",
+                    activeFilter === "direct"
+                      ? "bg-mv-ink text-white shadow-sm"
+                      : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                  )}
+                  title="Commandes reçues via votre lien de menu ou QR code, sans intermédiaire"
+                >
+                  <Globe size={13} /> Directes
+                </button>
+              </div>
+            )}
 
             {/* Audio chime toggle */}
             <Button
@@ -504,24 +511,33 @@ export function CommandesView({
         }
       />
 
-      {/* Direct Ordering 0% Commission Impact Header Card */}
+      {/* Direct Ordering 0% Commission Impact Header Card — Croissance+ only */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 bg-gradient-to-br from-mv-green/10 via-mv-cream/40 to-white border-mv-green/20 relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-green-dark">
-              Économies de Commission 0%
-            </span>
-            <div className="h-8 w-8 rounded-full bg-mv-green/20 flex items-center justify-center text-mv-green-dark">
-              <DollarSign size={16} />
+        {hasChannelInsights ? (
+          <Card className="p-4 bg-mv-surface border-mv-green/20">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-green-dark">
+                Économies de Commission 0%
+              </span>
+              <div className="h-8 w-8 rounded-full bg-mv-green/15 flex items-center justify-center text-mv-green-dark">
+                <DollarSign size={16} />
+              </div>
             </div>
-          </div>
-          <p className="font-display text-[26px] font-bold text-mv-ink">
-            {formatCurrency(estimatedPlatformCommission)}
-          </p>
-          <p className="text-[12px] text-mv-ink-soft mt-1">
-            Préservés par rapport aux commissions 25% Uber Eats / DoorDash
-          </p>
-        </Card>
+            <p className="font-display text-[26px] font-bold text-mv-ink">
+              {formatCurrency(estimatedPlatformCommission)}
+            </p>
+            <p className="text-[12px] text-mv-ink-soft mt-1">
+              Préservés par rapport aux commissions 25% Uber Eats / DoorDash
+            </p>
+          </Card>
+        ) : (
+          <PlanTierLockedState
+            minimumTier="croissance"
+            featureName="Suivi des économies de commission"
+            description="Filtrez vos commandes par canal et suivez vos économies vs. Uber Eats/DoorDash."
+            size="sm"
+          />
+        )}
 
         <Card className="p-4 bg-mv-surface border-mv-border">
           <div className="flex items-center justify-between mb-2">
@@ -649,7 +665,7 @@ export function CommandesView({
           <div className="flex flex-col gap-3 rounded-2xl border border-mv-border bg-mv-surface/70 p-3.5 shadow-mv-sm">
             <div className="flex items-center justify-between pb-2 border-b border-mv-border">
               <div className="flex items-center gap-2">
-                <span className="flex h-2.5 w-2.5 rounded-full bg-mv-amber-dark animate-pulse" />
+                <span className="flex h-2.5 w-2.5 rounded-full bg-mv-amber-dark" />
                 <h3 className="font-display text-[15px] font-bold text-mv-ink">En Cuisine</h3>
               </div>
               <Badge tone="amber">{preparingOrders.length}</Badge>
@@ -664,7 +680,7 @@ export function CommandesView({
                 preparingOrders.map((o) => (
                   <div
                     key={o.id}
-                    className="group relative rounded-xl border border-mv-amber bg-gradient-to-b from-mv-amber-tint/40 to-mv-surface p-3.5 shadow-mv-sm transition-all hover:shadow-mv"
+                    className="group relative rounded-xl border border-mv-amber bg-mv-surface p-3.5 shadow-mv-sm transition-all hover:shadow-mv"
                   >
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
@@ -723,7 +739,7 @@ export function CommandesView({
                 readyOrders.map((o) => (
                   <div
                     key={o.id}
-                    className="group relative rounded-xl border border-mv-green bg-gradient-to-b from-mv-green-tint/50 to-mv-surface p-3.5 shadow-mv-sm transition-all hover:shadow-mv"
+                    className="group relative rounded-xl border border-mv-green bg-mv-surface p-3.5 shadow-mv-sm transition-all hover:shadow-mv"
                   >
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
