@@ -55,6 +55,19 @@ export async function createLoyaltyShare(restaurantId: string, title: string): P
   return mapLoyaltyShare(data as LoyaltyShareRow);
 }
 
+/**
+ * The QR Table Stand Studio (studio-qr/page.tsx) needs a real, stable
+ * loyalty_shares token to print — same reasoning as
+ * getOrCreateDefaultMenuShare: falling back to a generic, restaurant-less
+ * URL when none exists yet would print a QR code that doesn't actually
+ * join anyone to this specific restaurant.
+ */
+export async function getOrCreateDefaultLoyaltyShare(restaurantId: string): Promise<LoyaltyShare | null> {
+  const existing = await getLoyaltySharesForRestaurant(restaurantId);
+  if (existing.length > 0) return existing[0];
+  return createLoyaltyShare(restaurantId, "Carte de fidélité");
+}
+
 export async function deleteLoyaltyShare(restaurantId: string, id: string): Promise<boolean> {
   const supabase = await createClient();
   const { error } = await supabase.from("loyalty_shares").delete().eq("restaurant_id", restaurantId).eq("id", id);
