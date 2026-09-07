@@ -90,17 +90,17 @@ export default function BillingPage() {
   }, [status?.subscription?.stripeCustomerId]);
 
   async function handleSelectPlan(planId: string, interval: BillingInterval) {
-    if (planId === "enterprise") {
+    if (planId === "marque_blanche") {
       window.location.href =
-        "mailto:ventes@minervaflow.app?subject=" + encodeURIComponent("Minerva Flow — forfait Entreprise");
+        "mailto:ventes@minervaflow.app?subject=" + encodeURIComponent("Minerva Flow — forfait Marque blanche");
       return;
     }
     if (!isSelfServeTier(planId)) return;
 
     setLoading(true);
     try {
-      // Already subscribed (Starter <-> Pro) — switch in place with proration
-      // instead of starting a second Checkout session.
+      // Already subscribed (Essentiel <-> Croissance) — switch in place with
+      // proration instead of starting a second Checkout session.
       if (status?.subscription) {
         setSwitchTarget({ tier: planId, interval });
         return;
@@ -170,8 +170,8 @@ export default function BillingPage() {
   }
 
   const aiUsage = status?.aiUsage;
-  const planTier = (aiUsage?.planTier ?? "starter") as PlanTier;
-  const quota = aiUsage?.monthlyQuota ?? PLAN_AI_QUOTAS.starter;
+  const planTier = (aiUsage?.planTier ?? "essentiel") as PlanTier;
+  const quota = aiUsage?.monthlyQuota ?? PLAN_AI_QUOTAS.essentiel;
   const used = aiUsage?.tokensUsed ?? 0;
   const percentUsed = Math.min(100, Math.round((used / Math.max(1, quota)) * 100));
   const currentPlanDef = PLANS[planTier];
@@ -356,7 +356,7 @@ export default function BillingPage() {
                 Quotas IA inclus par plan
               </p>
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                {(["starter", "pro", "enterprise"] as const).map((tier) => (
+                {(["essentiel", "croissance", "marque_blanche"] as const).map((tier) => (
                   <div
                     key={tier}
                     className={`p-2 rounded-xl border ${planTier === tier ? "border-mv-green bg-mv-green-tint/30 font-bold" : "border-mv-border bg-mv-surface"}`}

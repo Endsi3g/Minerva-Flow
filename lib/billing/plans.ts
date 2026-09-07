@@ -11,13 +11,13 @@ export type BillingInterval = "monthly" | "yearly";
  * pending final sign-off between the cofounders per the pricing governance rule —
  * do not treat these as final before that consensus and a switch to live keys.
  */
-export type SelfServePlanTier = Extract<PlanTier, "starter" | "pro">;
+export type SelfServePlanTier = Extract<PlanTier, "essentiel" | "croissance">;
 
 export type PlanDefinition = {
   tier: PlanTier;
   name: string;
   description: string;
-  monthlyPriceCad: number | null; // null => contact sales (enterprise)
+  monthlyPriceCad: number | null; // null => contact sales, price not yet set
   yearlyPriceCad: number | null;
   establishmentLimit: number | null; // null => unlimited
   monthlyTokenQuota: number;
@@ -35,65 +35,74 @@ function yearlyFromMonthly(monthlyPriceCad: number): number {
   return Math.round(monthlyPriceCad * 12 * (1 - ANNUAL_DISCOUNT_RATE));
 }
 
-const STARTER_MONTHLY = 149;
-const PRO_MONTHLY = 299;
+const ESSENTIEL_MONTHLY = 99;
+const CROISSANCE_MONTHLY = 250;
+// Marque blanche is a contact-sales tier (see isSelfServeTier below) — this
+// price is shown on the pricing table for reference but checkout always
+// routes to a sales conversation, per the /grill-me decision: white-label
+// setup (branding, domain, custom onboarding) isn't a self-serve flow.
+const MARQUE_BLANCHE_MONTHLY = 500;
 
 export const PLAN_ESTABLISHMENT_LIMITS: Record<PlanTier, number | null> = {
-  starter: 1,
-  pro: null,
-  enterprise: null,
+  essentiel: 1,
+  croissance: null,
+  marque_blanche: null,
 };
 
 export const PLANS: Record<PlanTier, PlanDefinition> = {
-  starter: {
-    tier: "starter",
-    name: PLAN_NAMES.starter,
-    description: "Pour un premier établissement qui digitalise son opération.",
-    monthlyPriceCad: STARTER_MONTHLY,
-    yearlyPriceCad: yearlyFromMonthly(STARTER_MONTHLY),
-    establishmentLimit: PLAN_ESTABLISHMENT_LIMITS.starter,
-    monthlyTokenQuota: PLAN_AI_QUOTAS.starter,
+  essentiel: {
+    tier: "essentiel",
+    name: PLAN_NAMES.essentiel,
+    description: "Pour un premier établissement qui digitalise sa fidélisation.",
+    monthlyPriceCad: ESSENTIEL_MONTHLY,
+    yearlyPriceCad: yearlyFromMonthly(ESSENTIEL_MONTHLY),
+    establishmentLimit: PLAN_ESTABLISHMENT_LIMITS.essentiel,
+    monthlyTokenQuota: PLAN_AI_QUOTAS.essentiel,
     support: "Support par email",
     features: [
       "1 établissement",
-      "Finance, inventaire et ingénierie de menu",
-      "Commande directe 0% commission",
-      "Flow AI — 100k tokens/mois",
+      "Programme de fidélité complet (paliers, récompenses, offres, parrainage)",
+      "QR par restaurant, commande directe 0% commission",
+      "Widgets iOS (accueil et écran verrouillé)",
+      "Flow AI — 50 crédits/mois",
       "Support par email",
     ],
   },
-  pro: {
-    tier: "pro",
-    name: PLAN_NAMES.pro,
+  croissance: {
+    tier: "croissance",
+    name: PLAN_NAMES.croissance,
     description: "Pour les groupes multi-établissements qui veulent tout centraliser.",
-    monthlyPriceCad: PRO_MONTHLY,
-    yearlyPriceCad: yearlyFromMonthly(PRO_MONTHLY),
-    establishmentLimit: PLAN_ESTABLISHMENT_LIMITS.pro,
-    monthlyTokenQuota: PLAN_AI_QUOTAS.pro,
+    monthlyPriceCad: CROISSANCE_MONTHLY,
+    yearlyPriceCad: yearlyFromMonthly(CROISSANCE_MONTHLY),
+    establishmentLimit: PLAN_ESTABLISHMENT_LIMITS.croissance,
+    monthlyTokenQuota: PLAN_AI_QUOTAS.croissance,
     support: "Support prioritaire",
     highlight: true,
     badge: "Le plus populaire",
     features: [
       "Établissements illimités",
-      "Tout Starter, plus :",
-      "Fidélisation avancée",
+      "Tout Essentiel, plus :",
+      "Réservations, inventaire, horaire et finance",
       "Rapports & analytics avancés",
+      "Découverte multi-établissements (même franchise)",
       "Flow AI — 500k tokens/mois",
       "Support prioritaire",
     ],
   },
-  enterprise: {
-    tier: "enterprise",
-    name: PLAN_NAMES.enterprise,
-    description: "Chaînes et groupes avec des besoins sur mesure — porté par notre offre Agence.",
-    monthlyPriceCad: null,
-    yearlyPriceCad: null,
-    establishmentLimit: PLAN_ESTABLISHMENT_LIMITS.enterprise,
-    monthlyTokenQuota: PLAN_AI_QUOTAS.enterprise,
+  marque_blanche: {
+    tier: "marque_blanche",
+    name: PLAN_NAMES.marque_blanche,
+    description: "Application en marque blanche pour chaînes et groupes — vente accompagnée.",
+    monthlyPriceCad: MARQUE_BLANCHE_MONTHLY,
+    yearlyPriceCad: yearlyFromMonthly(MARQUE_BLANCHE_MONTHLY),
+    establishmentLimit: PLAN_ESTABLISHMENT_LIMITS.marque_blanche,
+    monthlyTokenQuota: PLAN_AI_QUOTAS.marque_blanche,
     support: "Account manager dédié",
     features: [
       "Établissements illimités",
-      "Tout Pro, plus :",
+      "Tout Croissance, plus :",
+      "Image de marque personnalisée (app, couleurs, nom)",
+      "Carte ouverte multi-enseignes (découverte façon Google Maps)",
       "Intégrations personnalisées",
       "Flow AI — quota sur mesure",
       "SLA garanti & facturation consolidée",
@@ -102,10 +111,10 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
   },
 };
 
-export const SELF_SERVE_TIERS: SelfServePlanTier[] = ["starter", "pro"];
+export const SELF_SERVE_TIERS: SelfServePlanTier[] = ["essentiel", "croissance"];
 
 export function isSelfServeTier(tier: string): tier is SelfServePlanTier {
-  return tier === "starter" || tier === "pro";
+  return tier === "essentiel" || tier === "croissance";
 }
 
 export function establishmentLimitFor(tier: PlanTier): number | null {

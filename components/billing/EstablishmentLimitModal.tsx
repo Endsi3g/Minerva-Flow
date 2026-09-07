@@ -7,20 +7,20 @@ import { Sparkles, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 /**
- * Upsell prompt shown instead of the "add establishment" form when a
- * Starter workspace is already at its 1-establishment limit — see
+ * Upsell prompt shown instead of the "add establishment" form when an
+ * Essentiel workspace is already at its 1-establishment limit — see
  * checkCanAddEstablishmentAction() and PLAN_ESTABLISHMENT_LIMITS.
  */
 export function EstablishmentLimitModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const pro = PLANS.pro;
+  const croissance = PLANS.croissance;
   const router = useRouter();
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Passez à Flow Pro pour ajouter un établissement"
-      description="Le forfait Starter est limité à 1 établissement."
+      title="Passez à Flow Croissance pour ajouter un établissement"
+      description="Le forfait Essentiel est limité à 1 établissement."
     >
       <div className="space-y-4">
         <div className="flex items-start gap-3 rounded-xl bg-mv-green-tint/40 border border-mv-green/20 p-4">
@@ -28,14 +28,16 @@ export function EstablishmentLimitModal({ open, onClose }: { open: boolean; onCl
             <Sparkles size={16} />
           </div>
           <div>
-            <p className="text-[13.5px] font-semibold text-mv-ink">Flow {pro.name} — établissements illimités</p>
+            <p className="text-[13.5px] font-semibold text-mv-ink">
+              Flow {croissance.name} — établissements illimités
+            </p>
             <p className="mt-0.5 text-[12.5px] text-mv-ink-soft">
-              {pro.monthlyPriceCad}$ CAD/mois — gérez tous vos établissements depuis un seul workspace.
+              {croissance.monthlyPriceCad}$ CAD/mois — gérez tous vos établissements depuis un seul workspace.
             </p>
           </div>
         </div>
         <div className="space-y-2">
-          {pro.features.map((feature) => (
+          {croissance.features.map((feature) => (
             <div key={feature} className="flex items-center gap-2">
               <CheckCircle2 size={15} className="shrink-0 text-mv-green-dark" />
               <span className="text-[12.5px] text-mv-ink-soft">{feature}</span>

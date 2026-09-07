@@ -42,26 +42,26 @@ test.describe("Billing", () => {
     if (user?.id) await cleanupTestUser(user.id);
   });
 
-  test("pricing table shows Starter, Pro and an Entreprise contact card", async ({ page }) => {
+  test("pricing table shows Essentiel, Croissance and a Marque blanche contact card", async ({ page }) => {
     await loginAs(page, user);
     await page.goto("/billing");
 
     await expect(page.getByText("Choisissez votre forfait")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("Starter", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Pro", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Entreprise", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("149")).toBeVisible();
-    await expect(page.getByText("299")).toBeVisible();
+    await expect(page.getByText("Essentiel", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Croissance", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Marque blanche", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("99")).toBeVisible();
+    await expect(page.getByText("250")).toBeVisible();
     await expect(page.getByRole("button", { name: /contacter les ventes/i })).toBeVisible();
   });
 
-  test("selecting Starter redirects to a real Stripe test-mode Checkout session", async ({ page }) => {
+  test("selecting Essentiel redirects to a real Stripe test-mode Checkout session", async ({ page }) => {
     await loginAs(page, user);
     await page.goto("/billing");
 
     const [, response] = await Promise.all([
       page.waitForURL(/checkout\.stripe\.com/, { timeout: 15000 }),
-      page.getByRole("button", { name: /choisir starter/i }).first().click(),
+      page.getByRole("button", { name: /choisir essentiel/i }).first().click(),
     ]);
     void response;
 
@@ -73,9 +73,9 @@ test.describe("Billing", () => {
     baseURL,
   }) => {
     const { customerId, subscription } = await createTestSubscription({
-      priceId: process.env.STRIPE_PRICE_PRO_MONTHLY!,
+      priceId: process.env.STRIPE_PRICE_CROISSANCE_MONTHLY!,
       workspaceId,
-      tier: "pro",
+      tier: "croissance",
       interval: "monthly",
       email: user.email,
     });
@@ -91,7 +91,7 @@ test.describe("Billing", () => {
       .select("status, plan_tier, stripe_customer_id")
       .eq("workspace_id", workspaceId)
       .single();
-    expect(subRow?.plan_tier).toBe("pro");
+    expect(subRow?.plan_tier).toBe("croissance");
     expect(subRow?.stripe_customer_id).toBe(customerId);
 
     const { data: usageRow } = await supabaseAdmin
@@ -99,12 +99,12 @@ test.describe("Billing", () => {
       .select("plan_tier, monthly_token_quota")
       .eq("workspace_id", workspaceId)
       .single();
-    expect(usageRow?.plan_tier).toBe("pro");
+    expect(usageRow?.plan_tier).toBe("croissance");
     expect(usageRow?.monthly_token_quota).toBe(500_000);
 
     await loginAs(page, user);
     await page.goto("/billing");
-    await expect(page.getByText("Plan Pro")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Plan Croissance")).toBeVisible({ timeout: 10000 });
     await expect(page.getByText("Actif")).toBeVisible();
 
     await testStripeClient().subscriptions.cancel(subscription.id);
@@ -112,9 +112,9 @@ test.describe("Billing", () => {
 
   test("a past_due transition shows the payment banner and starts the dunning clock", async ({ page, baseURL }) => {
     const { customerId, subscription } = await createTestSubscription({
-      priceId: process.env.STRIPE_PRICE_STARTER_MONTHLY!,
+      priceId: process.env.STRIPE_PRICE_ESSENTIEL_MONTHLY!,
       workspaceId,
-      tier: "starter",
+      tier: "essentiel",
       interval: "monthly",
       email: user.email,
     });
@@ -147,9 +147,9 @@ test.describe("Billing", () => {
 
   test("cancelling schedules cancel_at_period_end and records the exit reason", async ({ page, baseURL }) => {
     const { customerId, subscription } = await createTestSubscription({
-      priceId: process.env.STRIPE_PRICE_STARTER_MONTHLY!,
+      priceId: process.env.STRIPE_PRICE_ESSENTIEL_MONTHLY!,
       workspaceId,
-      tier: "starter",
+      tier: "essentiel",
       interval: "monthly",
       email: user.email,
     });
@@ -160,7 +160,7 @@ test.describe("Billing", () => {
 
     await loginAs(page, user);
     await page.goto("/billing");
-    await expect(page.getByText("Plan Starter")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Plan Essentiel")).toBeVisible({ timeout: 10000 });
 
     await page.getByRole("button", { name: "Annuler mon abonnement" }).click();
     await page.getByLabel(/manque des fonctionnalités/i).check();
@@ -186,16 +186,18 @@ test.describe("Billing", () => {
     await testStripeClient().subscriptions.cancel(subscription.id);
   });
 
-  test("a Starter workspace hitting the 1-establishment limit sees the upgrade modal, not the form", async ({
+  test("an Essentiel workspace hitting the 1-establishment limit sees the upgrade modal, not the form", async ({
     page,
   }) => {
     // No active subscription yet — getWorkspaceAiUsage() defaults to
-    // Starter, matching a real not-yet-subscribed workspace.
+    // Essentiel, matching a real not-yet-subscribed workspace.
     await loginAs(page, user);
     await page.goto("/etablissement");
 
     await page.getByRole("button", { name: /ajouter un établissement/i }).click();
-    await expect(page.getByText(/passez à flow pro pour ajouter un établissement/i)).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByText(/passez à flow croissance pour ajouter un établissement/i)
+    ).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("textbox", { name: /nom/i })).not.toBeVisible();
   });
 
@@ -203,7 +205,7 @@ test.describe("Billing", () => {
     await supabaseAdmin.from("workspace_ai_usage").upsert(
       {
         workspace_id: workspaceId,
-        plan_tier: "starter",
+        plan_tier: "essentiel",
         monthly_token_quota: 100_000,
         tokens_used_current_period: 85_000,
       },

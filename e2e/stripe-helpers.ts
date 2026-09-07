@@ -17,7 +17,7 @@ import Stripe from "stripe";
 
 export function stripeConfiguredForTests(): boolean {
   return Boolean(
-    process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && process.env.STRIPE_PRICE_STARTER_MONTHLY
+    process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && process.env.STRIPE_PRICE_ESSENTIEL_MONTHLY
   );
 }
 

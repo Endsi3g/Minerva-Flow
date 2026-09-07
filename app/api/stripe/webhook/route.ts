@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripeClient, resolveTierFromPriceId } from "@/lib/stripe/config";
+import type { PlanTier } from "@/lib/ai/quotas";
 import { upsertSubscription, getSubscriptionByStripeCustomerId } from "@/lib/data/subscriptions";
 import { setWorkspacePlanTier } from "@/lib/data/ai-usage";
 import { notifyWorkspaceOwners, notifyRestaurant } from "@/lib/data/notifications";
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
           currentPeriodEnd: new Date(subscription.items.data[0]?.current_period_end * 1000).toISOString(),
           stripePriceId: priceId,
           billingInterval: (interval as "monthly" | "yearly" | null) ?? null,
-          planTier: (tier as "starter" | "pro" | "enterprise" | null) ?? null,
+          planTier: (tier as PlanTier | null) ?? null,
         });
         await applyUnappliedReferralReward(workspaceId, customerId, subscription);
         await notifyWorkspaceOwners({
@@ -110,7 +111,7 @@ export async function POST(req: Request) {
             : null,
           stripePriceId: priceId,
           billingInterval: (interval as "monthly" | "yearly" | null) ?? existing.billingInterval,
-          planTier: (tier as "starter" | "pro" | "enterprise" | null) ?? existing.planTier,
+          planTier: (tier as PlanTier | null) ?? existing.planTier,
           pastDueSince: becamePastDue ? new Date().toISOString() : leftPastDue ? null : undefined,
         });
 

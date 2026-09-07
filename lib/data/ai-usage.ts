@@ -24,7 +24,7 @@ export async function getWorkspaceAiUsage(workspaceId: string): Promise<Workspac
     .eq("workspace_id", workspaceId)
     .maybeSingle();
 
-  const defaultTier: PlanTier = "starter";
+  const defaultTier: PlanTier = "essentiel";
   const defaultQuota = PLAN_AI_QUOTAS[defaultTier];
 
   if (error || !data) {
@@ -65,13 +65,13 @@ export async function getWorkspaceAiUsage(workspaceId: string): Promise<Workspac
 export async function trackAiTokenUsage(
   workspaceId: string,
   tokensUsed: number,
-  planTier: PlanTier = "starter"
+  planTier: PlanTier = "essentiel"
 ): Promise<{ tokensUsed: number; monthlyQuota: number; isQuotaExceeded: boolean } | null> {
   if (tokensUsed <= 0) return null;
 
   try {
     const admin = createAdminClient();
-    const quota = PLAN_AI_QUOTAS[planTier] || PLAN_AI_QUOTAS.starter;
+    const quota = PLAN_AI_QUOTAS[planTier] || PLAN_AI_QUOTAS.essentiel;
 
     const { data, error } = await admin.rpc("record_workspace_ai_tokens", {
       p_workspace_id: workspaceId,

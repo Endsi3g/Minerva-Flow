@@ -1,6 +1,7 @@
 /**
- * One-off setup script: creates the Starter/Pro products + monthly/yearly
- * prices in Stripe from lib/billing/plans.ts, and prints the env vars to
+ * One-off setup script: creates the Essentiel/Croissance products +
+ * monthly/yearly prices in Stripe from lib/billing/plans.ts, and prints the
+ * env vars to
  * paste into .env.local (or the Vercel project settings for prod). Safe to
  * re-run — it looks up existing products/prices by a `minerva_flow_tier`
  * metadata key before creating new ones, so it won't duplicate the catalog.

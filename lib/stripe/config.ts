@@ -9,7 +9,7 @@ import { isSelfServeTier, type BillingInterval, type SelfServePlanTier } from "@
  * (created once via scripts/create-stripe-billing-catalog.ts).
  */
 export function isStripeConfigured(): boolean {
-  return Boolean(process.env.STRIPE_SECRET_KEY && tierPriceMap().starter.monthly);
+  return Boolean(process.env.STRIPE_SECRET_KEY && tierPriceMap().essentiel.monthly);
 }
 
 let stripeClient: Stripe | null = null;
@@ -28,13 +28,13 @@ type TierPriceMap = Record<SelfServePlanTier, { monthly?: string; yearly?: strin
 
 function tierPriceMap(): TierPriceMap {
   return {
-    starter: {
-      monthly: process.env.STRIPE_PRICE_STARTER_MONTHLY,
-      yearly: process.env.STRIPE_PRICE_STARTER_YEARLY,
+    essentiel: {
+      monthly: process.env.STRIPE_PRICE_ESSENTIEL_MONTHLY,
+      yearly: process.env.STRIPE_PRICE_ESSENTIEL_YEARLY,
     },
-    pro: {
-      monthly: process.env.STRIPE_PRICE_PRO_MONTHLY,
-      yearly: process.env.STRIPE_PRICE_PRO_YEARLY,
+    croissance: {
+      monthly: process.env.STRIPE_PRICE_CROISSANCE_MONTHLY,
+      yearly: process.env.STRIPE_PRICE_CROISSANCE_YEARLY,
     },
   };
 }

@@ -25,8 +25,8 @@ async function originUrl(): Promise<string> {
 }
 
 /**
- * Starts a new subscription checkout for a self-serve tier (Starter/Pro).
- * Enterprise has no Stripe price — that CTA routes to a contact form instead
+ * Starts a new subscription checkout for a self-serve tier (Essentiel/Croissance).
+ * Marque blanche is not self-serve — that CTA routes to a contact form instead
  * (see PricingSection), never through here.
  */
 export async function createCheckoutSessionAction(
@@ -265,7 +265,7 @@ export async function getBillingStatusAction(): Promise<{
 /**
  * Pre-flight check the "Ajouter un établissement" trigger calls before
  * opening the creation form — lets the UI show an upgrade modal instead of
- * a generic error when a Starter workspace is at its 1-establishment limit.
+ * a generic error when an Essentiel workspace is at its 1-establishment limit.
  * createRestaurant() in lib/data/restaurants.ts also re-checks this
  * server-side as defense in depth.
  */
