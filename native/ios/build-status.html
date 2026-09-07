@@ -120,6 +120,10 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
       <h3>Consentement marketing coché à l'inscription, jamais enregistré</h3>
       <p>La case à cocher de la page de connexion native envoyait bien le choix du client, mais la fonction serveur qui crée le compte ne l'a jamais lu — <code>marketing_consent</code> restait bloqué à « non » pour tout le monde, peu importe ce qui avait été coché. Un client qui avait explicitement consenti n'a donc jamais pu recevoir les communications du programme de fidélité. Corrigé en production et vérifié directement dans la base de données ; un interrupteur a aussi été ajouté à la page Profil pour changer d'avis après coup.</p>
     </div>
+    <div class="bugfix-card">
+      <h3>« Accueil/récompenses vides » : compilation obsolète sur le téléphone, pas un bogue de code</h3>
+      <p>Vérifié directement : votre compte testeur a bel et bien 2 offres, 3 récompenses et 5 mouvements de points en base de données, et l'application les affiche correctement une fois connectée avec le code actuel (testé via connexion réelle en simulateur). La dernière version a été réinstallée sur votre téléphone pendant cette session — si l'écran semble encore vide après une réouverture, ce sera un problème différent, pas celui-ci.</p>
+    </div>
   </section>
 
   <section>
@@ -165,6 +169,57 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
           <li>Consentement aux communications marketing modifiable à tout moment (case cochée à l'inscription, interrupteur ici ensuite)</li>
           <li>Export de mes données en un tap (droit à la portabilité, Loi 25) — jusqu'ici seule une demande par courriel à privacy@ le permettait</li>
           <li>Verrouillage Face ID / Touch ID, liens légaux fonctionnels, suppression de compte irréversible</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>Révision détaillée — 6 phases construites</h2><span class="section-count">à partir de votre relecture écran par écran</span></div>
+    <div class="grid">
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>1 — Corrections rapides</h3>
+        <ul>
+          <li>Icône dédiée par catégorie de menu (tasse pour Boissons, gâteau pour Desserts, etc.) au lieu de la même fourchette partout</li>
+          <li>Le carrousel « d'autres restaurants » affiche la vraie photo du restaurant, plus un pictogramme générique</li>
+          <li>La carte de découverte se centre automatiquement sur vos restaurants réels au lieu d'un zoom fixe à l'échelle de la province — corrige les épingles trop collées</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>2 — Données de démo complètes</h3>
+        <ul>
+          <li>Menu, offres, récompenses et photos ajoutés aux 4 restaurants démo qui étaient vides</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>3 — Support multi-restaurant</h3>
+        <ul>
+          <li>L'app suit désormais tous les restaurants où le compte est membre, pas seulement le premier</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>4 — Ma carte, complétée</h3>
+        <ul>
+          <li>« Membre fidèle chez {restaurant le plus visité} » — plus figé sur un seul restaurant</li>
+          <li>Historique récent intégré directement sur la carte, avantages par palier, code personnel à montrer en caisse</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>5 — Avis sur le restaurant (nouveau système)</h3>
+        <ul>
+          <li>Note globale + avis complets sur l'établissement, jusqu'à 6 photos par avis</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag done">Construit</span>
+        <h3>6 — Populaire près de vous</h3>
+        <ul>
+          <li>Classement basé sur les vraies commandes passées, tous restaurants à proximité confondus</li>
         </ul>
       </div>
     </div>
@@ -328,7 +383,7 @@ code{font-family:"JetBrains Mono",monospace; font-size:.92em; background:var(--b
         <ul>
           <li>Cible XCTest dédiée (<code>MinervaFlowTests</code>), intégrée au scheme — <code>xcodebuild test</code> fonctionne</li>
           <li>13 tests unitaires : paliers de fidélité (bornes exactes, seuils propres à chaque restaurant) et calcul du panier (sous-total, taxe 14,975 %, pourboire calculé sur le sous-total et non le total)</li>
-          <li>3 tests d'interface (<code>MinervaFlowUITests</code>, XCUITest natif, aucune dépendance externe) : écran d'accueil, puis chacun des deux boutons mène bien à la vraie carte de connexion</li>
+          <li>4 tests d'interface (<code>MinervaFlowUITests</code>, XCUITest natif, aucune dépendance externe) : écran d'accueil, connexion, et un test qui se connecte réellement avec le compte testeur pour vérifier que les récompenses s'affichent — celui qui a servi à confirmer que le bogue « accueil vide » n'existe plus dans le code</li>
         </ul>
       </div>
       <div class="card">
