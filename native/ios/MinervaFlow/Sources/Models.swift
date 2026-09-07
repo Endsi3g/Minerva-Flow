@@ -369,3 +369,32 @@ enum LoyaltyTier: String {
         return .habitue
     }
 }
+
+struct PlatformAnnouncement: Codable, Identifiable {
+    let id: String
+    let title: String
+    let body: String
+    let badgeLabel: String?
+    let category: String?
+    let callToActionLabel: String?
+    let callToActionUrl: String?
+    let pollQuestion: String?
+    let pollOptions: [String]?
+    let isActive: Bool?
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case body
+        case badgeLabel = "badge_label"
+        case category
+        case callToActionLabel = "call_to_action_label"
+        case callToActionUrl = "call_to_action_url"
+        case pollQuestion = "poll_question"
+        case pollOptions = "poll_options"
+        case isActive = "is_active"
+        case createdAt = "created_at"
+    }
+}
+

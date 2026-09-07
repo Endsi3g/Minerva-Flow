@@ -18,6 +18,7 @@
 		2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471F651B424DBE91D0FC0A0E /* MyCardView.swift */; };
 		2C9E95355FE610913FB5ED0B /* MenuItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */; };
 		2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9CD9B5E79E9FE474707739 /* RewardsView.swift */; };
+		334B756E8CFD91AFED64561A /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */; };
 		3AD6882CB5ED4D4A5A3880A6 /* LoyaltyTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */; };
 		3AD982D4339D2835748F8A86 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */; };
 		442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C1D3C584B13E05EBD01750 /* MenuView.swift */; };
@@ -49,6 +50,7 @@
 		F10EC90F16CF2AC65B6B015A /* OrderTotalsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59493D8CAE71CA71582DA48D /* OrderTotalsTests.swift */; };
 		F5E4CC548458D40BF92F3F17 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BA24BE15C53784788988271 /* HomeView.swift */; };
 		F867193E516C1BAD652866EE /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89B5498B7D0733D7AA1958D9 /* RootView.swift */; };
+		F995BC16AB779BDC25E406DD /* AnnouncementCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55E48B3C5F8034FE0368F020 /* AnnouncementCardView.swift */; };
 		FD1B769E629BFCD402190EA9 /* MinervaFlowWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1BA36D6BD964EC57A0DE85 /* MinervaFlowWidget.swift */; };
 /* End PBXBuildFile section */
 
@@ -106,6 +108,7 @@
 		47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
 		48489698C6B750A6E75FEFEE /* BiometricLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricLock.swift; sourceTree = "<group>"; };
 		53C1D3C584B13E05EBD01750 /* MenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuView.swift; sourceTree = "<group>"; };
+		55E48B3C5F8034FE0368F020 /* AnnouncementCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnouncementCardView.swift; sourceTree = "<group>"; };
 		574318127126383937A04DB7 /* WebPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebPageView.swift; sourceTree = "<group>"; };
 		5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandMarks.swift; sourceTree = "<group>"; };
 		59493D8CAE71CA71582DA48D /* OrderTotalsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTotalsTests.swift; sourceTree = "<group>"; };
@@ -124,6 +127,7 @@
 		CA484AE32471A39B3214052F /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		CD8113A301B23FEECDBE8EDE /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+TestHelpers.swift"; sourceTree = "<group>"; };
+		D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		D58EE17A9A62B1893F865891 /* RadialGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialGauge.swift; sourceTree = "<group>"; };
 		D6E6F6E76663DF4A6F2A5309 /* MinervaFlow.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlow.entitlements; sourceTree = "<group>"; };
@@ -195,10 +199,12 @@
 		451A367725D0928CD0DCBCE4 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				55E48B3C5F8034FE0368F020 /* AnnouncementCardView.swift */,
 				02F66981C3B41C8B5FD69ECE /* AuthView.swift */,
 				48489698C6B750A6E75FEFEE /* BiometricLock.swift */,
 				5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */,
 				EBD59C80CE3B06A999142A6E /* Config.swift */,
+				D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */,
 				442686E96CEA070F53FB728F /* EditProfileSheet.swift */,
 				1BA24BE15C53784788988271 /* HomeView.swift */,
 				09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */,
@@ -457,10 +463,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F995BC16AB779BDC25E406DD /* AnnouncementCardView.swift in Sources */,
 				EB483ABD7DA63D91561BE978 /* AuthView.swift in Sources */,
 				9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */,
 				8E9FA68C879A95D98AA5BF22 /* BrandMarks.swift in Sources */,
 				1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */,
+				334B756E8CFD91AFED64561A /* DeepLinkRouter.swift in Sources */,
 				E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */,
 				F5E4CC548458D40BF92F3F17 /* HomeView.swift in Sources */,
 				08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */,

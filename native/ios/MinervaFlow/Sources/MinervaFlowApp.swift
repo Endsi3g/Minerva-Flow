@@ -8,6 +8,7 @@ struct MinervaFlowApp: App {
     @StateObject private var biometricLock = BiometricLock.shared
     @StateObject private var locationManager = LocationManager.shared
     @StateObject private var notificationManager = NotificationManager.shared
+    @StateObject private var deepLinkRouter = DeepLinkRouter.shared
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -34,12 +35,16 @@ struct MinervaFlowApp: App {
                 .environmentObject(biometricLock)
                 .environmentObject(locationManager)
                 .environmentObject(notificationManager)
+                .environmentObject(deepLinkRouter)
                 // Minerva Flow's brand (AGENTS.md) only defines one light
                 // cream/emerald palette — no dark variant exists yet, same
                 // as the web app. Forcing light avoids every color in this
                 // app silently inheriting Dark Mode defaults (the invisible
                 // white-on-cream input text bug came from exactly this).
                 .preferredColorScheme(.light)
+                .onOpenURL { url in
+                    deepLinkRouter.handle(url)
+                }
         }
         .onChange(of: scenePhase) { _, newPhase in
             // Re-lock on every return to foreground, not just cold launch —
