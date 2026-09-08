@@ -9,80 +9,115 @@ struct OfferDetailView: View {
     let offer: Offer
     @EnvironmentObject var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
+    @State private var relatedOffer: Offer?
+
+    /// Every other active offer at this restaurant — "plusieurs autres
+    /// offres" below the fold, browsable the same way this very page was
+    /// reached, instead of the customer having to back out to find them.
+    private var otherOffers: [Offer] {
+        supabase.offers.filter { $0.id != offer.id }
+    }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    headerImage
+            ZStack(alignment: .topTrailing) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        headerImage
 
-                    VStack(alignment: .leading, spacing: 20) {
-                        titleBlock
+                        VStack(alignment: .leading, spacing: 20) {
+                            titleBlock
 
-                        if !offer.includedItems.isEmpty || !offer.excludedItems.isEmpty {
-                            inclusionsSection
-                        }
-
-                        if let description = offer.description {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Détails de l'offre")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(MinervaColor.ink)
-                                Text(description)
-                                    .font(.system(size: 13.5))
-                                    .foregroundStyle(MinervaColor.inkSoft)
-                                    .fixedSize(horizontal: false, vertical: true)
+                            if !offer.includedItems.isEmpty || !offer.excludedItems.isEmpty {
+                                inclusionsSection
                             }
-                        }
 
-                        if let restaurantName = supabase.restaurantName {
-                            HStack(spacing: 8) {
-                                Image(systemName: "storefront.fill")
-                                Text("Valide chez \(restaurantName)")
-                            }
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(MinervaColor.inkSoft)
-                        }
-
-                        HStack(spacing: 10) {
-                            Button {
-                                dismiss()
-                            } label: {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "cart.fill")
-                                    Text("Aller commander")
+                            if let description = offer.description {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Détails de l'offre")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(MinervaColor.ink)
+                                    Text(description)
+                                        .font(.system(size: 13.5))
+                                        .foregroundStyle(MinervaColor.inkSoft)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
-                                .font(.system(size: 14, weight: .semibold))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 13)
                             }
-                            .foregroundStyle(.white)
-                            .background(MinervaColor.emerald)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .buttonStyle(PressableButtonStyle())
 
-                            ShareLink(item: shareText) {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 15))
-                                    .frame(width: 48, height: 48)
+                            if let restaurantName = supabase.restaurantName {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "storefront.fill")
+                                    Text("Valide chez \(restaurantName)")
+                                }
+                                .font(.system(size: 12.5))
+                                .foregroundStyle(MinervaColor.inkSoft)
                             }
-                            .foregroundStyle(MinervaColor.emeraldDark)
-                            .background(MinervaColor.emerald.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .accessibilityLabel("Partager")
+
+                            HStack(spacing: 10) {
+                                Button {
+                                    dismiss()
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "cart.fill")
+                                        Text("Aller commander")
+                                    }
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 13)
+                                }
+                                .foregroundStyle(.white)
+                                .background(MinervaColor.emerald)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .buttonStyle(PressableButtonStyle())
+
+                                ShareLink(item: shareText) {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .font(.system(size: 15))
+                                        .frame(width: 48, height: 48)
+                                }
+                                .foregroundStyle(MinervaColor.emeraldDark)
+                                .background(MinervaColor.emerald.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .accessibilityLabel("Partager")
+                            }
+
+                            if !otherOffers.isEmpty {
+                                otherOffersSection
+                            }
                         }
+                        .padding(18)
                     }
-                    .padding(18)
                 }
+                .background(MinervaColor.cream.ignoresSafeArea())
+                .ignoresSafeArea(edges: .top)
+
+                closeButton
+                    .padding(.top, 10)
+                    .padding(.trailing, 16)
             }
-            .background(MinervaColor.cream.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { dismiss() }
-                }
+            .toolbar(.hidden, for: .navigationBar)
+            .sheet(item: $relatedOffer) { other in
+                OfferDetailView(offer: other)
             }
         }
+    }
+
+    /// Floats directly on the image instead of sitting in a separate
+    /// toolbar strip above it, so the image itself can run edge-to-edge —
+    /// the translucent dark circle keeps it legible over any photo.
+    private var closeButton: some View {
+        Button {
+            dismiss()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(.black.opacity(0.35))
+                .clipShape(Circle())
+        }
+        .accessibilityLabel("Fermer")
     }
 
     private var headerImage: some View {
@@ -99,8 +134,78 @@ struct OfferDetailView: View {
                 offerImageFallback
             }
         }
-        .frame(height: 200)
+        .frame(height: 340)
         .clipped()
+    }
+
+    /// Horizontal, tap-to-browse — the "comme dans le menu" precedent this
+    /// was explicitly asked to mirror, not a plain list.
+    private var otherOffersSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Plusieurs autres offres")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(otherOffers) { other in
+                        Button {
+                            relatedOffer = other
+                        } label: {
+                            otherOfferCard(other)
+                        }
+                        .buttonStyle(PressableButtonStyle())
+                    }
+                }
+            }
+            .horizontalEdgeFade()
+        }
+    }
+
+    private func otherOfferCard(_ other: Offer) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Group {
+                if let urlString = other.imageUrl, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().scaledToFill()
+                        } else {
+                            otherOfferImageFallback
+                        }
+                    }
+                } else {
+                    otherOfferImageFallback
+                }
+            }
+            .frame(width: 170, height: 96)
+            .clipped()
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(other.title)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+                    .lineLimit(1)
+                if let price = other.price {
+                    Text(String(format: "%.2f $", price))
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                }
+            }
+            .padding(10)
+        }
+        .frame(width: 170, alignment: .leading)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: MinervaColor.ink.opacity(0.08), radius: 8, x: 0, y: 3)
+    }
+
+    private var otherOfferImageFallback: some View {
+        ZStack {
+            MinervaColor.emerald
+            Image(systemName: "tag.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(.white.opacity(0.5))
+        }
     }
 
     private var offerImageFallback: some View {
