@@ -2,19 +2,21 @@ import SwiftUI
 import CoreImage.CIFilterBuiltins
 
 /// Full redemption flow, matching the web portal's RewardsRedeemCard: a
-/// list of the restaurant's active rewards, each redeemable in one tap once
-/// affordable, generating a short code shown to staff in person. Points are
-/// deducted at redemption request time, not at claim time (see
-/// self_redeem_reward's own doc comment in the migration) to avoid a
-/// double-spend race across concurrent pending requests, so the balance
-/// shown here already reflects that the instant a redemption is confirmed.
+/// list of the restaurant's active rewards. Tapping one opens
+/// RewardDetailView (shared with Home's "next reward" card) rather than
+/// redeeming immediately, so the customer sees what they're spending points
+/// on before committing — actual redemption there generates a short code
+/// shown to staff in person. Points are deducted at redemption request
+/// time, not at claim time (see self_redeem_reward's own doc comment in the
+/// migration) to avoid a double-spend race across concurrent pending
+/// requests, so the balance shown here already reflects that the instant a
+/// redemption is confirmed.
 struct RewardsView: View {
     @EnvironmentObject var supabase: SupabaseManager
-    @State private var redeemingId: String?
-    @State private var confirmingReward: LoyaltyReward?
     @State private var hasLoadedReferrals = false
     @State private var qrProgram: ReferralProgress?
     @State private var selectedOffer: Offer?
+    @State private var selectedReward: LoyaltyReward?
 
     var body: some View {
         Group {
@@ -50,6 +52,9 @@ struct RewardsView: View {
                 .sheet(item: $selectedOffer) { offer in
                     OfferDetailView(offer: offer)
                 }
+                .sheet(item: $selectedReward) { reward in
+                    RewardDetailView(reward: reward)
+                }
                 .refreshable {
                     await supabase.loadPortalData()
                     await supabase.fetchReferrals()
@@ -64,21 +69,6 @@ struct RewardsView: View {
         }
         .sheet(item: $qrProgram) { progress in
             ReferralQRSheet(progress: progress, restaurantName: supabase.restaurantName)
-        }
-        .alert("Confirmer l'échange", isPresented: Binding(
-            get: { confirmingReward != nil },
-            set: { if !$0 { confirmingReward = nil } }
-        )) {
-            Button("Annuler", role: .cancel) { confirmingReward = nil }
-            Button("Échanger") {
-                if let reward = confirmingReward {
-                    Task { await performRedeem(reward) }
-                }
-            }
-        } message: {
-            if let reward = confirmingReward {
-                Text("Échanger \(reward.pointsCost) points contre \"\(reward.name)\" ? Un code vous sera montré à présenter en salle.")
-            }
         }
         .alert("Erreur", isPresented: Binding(
             get: { supabase.lastError != nil },
@@ -207,71 +197,52 @@ struct RewardsView: View {
     private func rewardRow(_ reward: LoyaltyReward) -> some View {
         let points = supabase.customer?.loyaltyPoints ?? 0
         let affordable = points >= reward.pointsCost
-        let isBusy = redeemingId == reward.id
 
-        return HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(reward.name)
-                    .font(.system(size: 13.5, weight: .semibold))
-                    .foregroundStyle(MinervaColor.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let description = reward.description {
-                    Text(description)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(MinervaColor.inkFaint)
+        return Button {
+            selectedReward = reward
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(reward.name)
+                        .font(.system(size: 13.5, weight: .semibold))
+                        .foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
-                }
-                if let restaurantName = supabase.restaurantName {
+                    if let description = reward.description {
+                        Text(description)
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(MinervaColor.inkFaint)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     HStack(spacing: 4) {
                         Image(systemName: "storefront.fill")
                             .font(.system(size: 9))
-                        Text("Échangeable chez \(restaurantName)")
+                        Text("Échangeable chez \(supabase.restaurantIdentityLabel)")
                     }
                     .font(.system(size: 10.5, weight: .medium))
                     .foregroundStyle(MinervaColor.emerald)
                 }
-            }
-            Spacer(minLength: 8)
+                Spacer(minLength: 8)
 
-            VStack(spacing: 6) {
-                Text("\(reward.pointsCost) pts")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(affordable ? MinervaColor.emeraldDark : MinervaColor.inkFaint)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(affordable ? MinervaColor.emerald.opacity(0.12) : MinervaColor.ink.opacity(0.06))
-                    .clipShape(Capsule())
+                VStack(spacing: 6) {
+                    Text("\(reward.pointsCost) pts")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(affordable ? MinervaColor.emeraldDark : MinervaColor.inkFaint)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(affordable ? MinervaColor.emerald.opacity(0.12) : MinervaColor.ink.opacity(0.06))
+                        .clipShape(Capsule())
 
-                Button {
-                    confirmingReward = reward
-                } label: {
-                    if isBusy {
-                        ProgressView().frame(width: 60)
-                    } else {
-                        Text("Échanger")
-                            .font(.system(size: 11.5, weight: .semibold))
-                            .frame(width: 68)
-                    }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(MinervaColor.inkFaint)
                 }
-                .padding(.vertical, 7)
-                .background(affordable ? MinervaColor.emerald : MinervaColor.ink.opacity(0.08))
-                .foregroundStyle(affordable ? .white : MinervaColor.inkFaint)
-                .clipShape(Capsule())
-                .buttonStyle(PressableButtonStyle())
-                .disabled(!affordable || isBusy)
             }
+            .padding(14)
+            .background(MinervaColor.creamSoft)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .contentShape(Rectangle())
         }
-        .padding(14)
-        .background(MinervaColor.creamSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func performRedeem(_ reward: LoyaltyReward) async {
-        redeemingId = reward.id
-        defer { redeemingId = nil }
-        let generator = UINotificationFeedbackGenerator()
-        let success = await supabase.redeem(reward: reward)
-        generator.notificationOccurred(success ? .success : .error)
+        .buttonStyle(.plain)
     }
 
     // MARK: - Referral / parrainage (mirrors web's ReferralProgramCard)

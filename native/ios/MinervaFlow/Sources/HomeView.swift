@@ -11,6 +11,7 @@ struct HomeView: View {
     @State private var showRestaurantMap = false
     @State private var notificationDeniedAlert = false
     @State private var selectedOffer: Offer?
+    @State private var selectedReward: LoyaltyReward?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -63,6 +64,9 @@ struct HomeView: View {
         }
         .sheet(item: $selectedOffer) { offer in
             OfferDetailView(offer: offer)
+        }
+        .sheet(item: $selectedReward) { reward in
+            RewardDetailView(reward: reward)
         }
         .alert("Notifications désactivées", isPresented: $notificationDeniedAlert) {
             Button("Ouvrir Réglages") {
@@ -216,10 +220,27 @@ struct HomeView: View {
 
     // MARK: - Next reward (feed item)
 
+    @ViewBuilder
     private func nextRewardCard(for customer: Customer) -> some View {
         let cheapestReward = supabase.rewards.min(by: { $0.pointsCost < $1.pointsCost })
 
-        return HStack(spacing: 12) {
+        // No reward yet: an informational card, not a dead tap target —
+        // matches the "gift" empty state having nothing to navigate to.
+        if let cheapestReward {
+            Button {
+                selectedReward = cheapestReward
+            } label: {
+                nextRewardCardContent(for: customer, cheapestReward: cheapestReward)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            nextRewardCardContent(for: customer, cheapestReward: nil)
+        }
+    }
+
+    private func nextRewardCardContent(for customer: Customer, cheapestReward: LoyaltyReward?) -> some View {
+        HStack(spacing: 12) {
             if let cheapestReward {
                 let progress = min(100, Double(customer.loyaltyPoints) / Double(cheapestReward.pointsCost) * 100)
                 RadialGauge(value: progress, centerValue: "\(Int(progress))%", centerLabel: "")
@@ -232,6 +253,13 @@ struct HomeView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 4) {
+                        Image(systemName: "storefront.fill")
+                            .font(.system(size: 8.5))
+                        Text(supabase.restaurantIdentityLabel)
+                    }
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(MinervaColor.emerald)
                 }
             } else {
                 Image(systemName: "gift")
@@ -250,6 +278,15 @@ struct HomeView: View {
                 }
             }
             Spacer(minLength: 0)
+            if cheapestReward != nil {
+                ZStack {
+                    Circle().fill(MinervaColor.emerald)
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 30, height: 30)
+            }
         }
         .padding(14)
         .background(MinervaColor.creamSoft)
