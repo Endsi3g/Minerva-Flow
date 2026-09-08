@@ -20,6 +20,7 @@ struct WriteRestaurantReviewSheet: View {
     @State private var photoPreviews: [UIImage] = []
     @State private var isSubmitting = false
     @State private var submitError: String?
+    @State private var showGoogleMapsPrompt = false
 
     private let maxPhotos = 6
 
@@ -38,7 +39,7 @@ struct WriteRestaurantReviewSheet: View {
                             } label: {
                                 Image(systemName: star <= rating ? "star.fill" : "star")
                                     .font(.system(size: 28))
-                                    .foregroundStyle(MinervaColor.limeAccent)
+                                    .foregroundStyle(MinervaColor.emerald)
                             }
                         }
                     }
@@ -86,7 +87,22 @@ struct WriteRestaurantReviewSheet: View {
                     Button("Annuler") { dismiss() }
                 }
             }
+            .alert("Merci pour votre avis !", isPresented: $showGoogleMapsPrompt) {
+                Button("Plus tard", role: .cancel) { dismiss() }
+                Button("Publier sur Google Maps") {
+                    openGoogleMapsReview()
+                    dismiss()
+                }
+            } message: {
+                Text("Partagez aussi votre expérience sur Google Maps — ça aide vraiment ce restaurant.")
+            }
         }
+    }
+
+    private func openGoogleMapsReview() {
+        guard let placeId = supabase.restaurantGooglePlaceId,
+              let url = URL(string: "https://search.google.com/local/writereview?placeid=\(placeId)") else { return }
+        UIApplication.shared.open(url)
     }
 
     private var photoPickerSection: some View {
@@ -165,7 +181,15 @@ struct WriteRestaurantReviewSheet: View {
         isSubmitting = false
         if ok {
             onSubmitted()
-            dismiss()
+            // 4-5★ only: below that, the review is kept private in-app and
+            // routed to the owner's Reputation page instead — pushing an
+            // unhappy customer toward a public review is exactly what
+            // this gating is meant to avoid (see 0098's visibility trigger).
+            if rating >= 4, supabase.restaurantGooglePlaceId != nil {
+                showGoogleMapsPrompt = true
+            } else {
+                dismiss()
+            }
         } else {
             submitError = "L'envoi de votre avis a échoué. Réessayez."
         }
