@@ -84,6 +84,7 @@ export const ltvCoreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
   { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
+  { key: "reputation", href: "/reputation", icon: Star, roles: allRoles },
   { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
 ];
 
@@ -150,6 +151,7 @@ const navTranslationKeys: Record<string, string> = {
   menu: "menu",
   employees: "employees",
   fidelisation: "fidelisation",
+  reputation: "reputation",
   maps: "maps",
   programs: "programs",
   impact: "impact",
