@@ -16,6 +16,14 @@ final class SupabaseManager: ObservableObject {
     @Published var offers: [Offer] = []
     @Published var restaurantName: String?
     @Published var restaurantGoogleMapsUrl: String?
+    /// The rotating card-pairing code (MyCardView) and its lifecycle state.
+    /// Minted fresh per screen-appearance/regeneration, never persisted
+    /// beyond this session — see mint_pairing_code in
+    /// supabase/migrations/0086_pairing_codes.sql.
+    @Published var pairingCode: String?
+    @Published var pairingCodeExpiresAt: Date?
+    @Published var isMintingPairingCode = false
+    @Published var pairingCodeError: String?
     @Published var loyaltyTier2Threshold: Double = 150
     @Published var loyaltyTier3Threshold: Double = 400
     @Published var announcements: [PlatformAnnouncement] = []
@@ -435,6 +443,37 @@ final class SupabaseManager: ObservableObject {
             lastError = "L'échange a échoué. Vos points n'ont pas été déduits, réessayez."
             print("redeem error: \(error)")
             return false
+        }
+    }
+
+    /// Mints a fresh rotating code the customer shows staff to be looked up
+    /// (and have a visit logged) without a QR-scan requirement — see
+    /// mint_pairing_code in supabase/migrations/0086_pairing_codes.sql. A
+    /// direct RPC, not the bridge API: this must keep working even if the
+    /// www.minervaflow.app bridge is ever unreachable, since it's shown on
+    /// every MyCardView appearance.
+    func mintPairingCode() async {
+        isMintingPairingCode = true
+        pairingCodeError = nil
+        defer { isMintingPairingCode = false }
+        do {
+            struct MintResult: Decodable {
+                let code: String
+                let expiresAt: Date
+                enum CodingKeys: String, CodingKey { case code; case expiresAt = "expires_at" }
+            }
+            let result: MintResult = try await client
+                .rpc("mint_pairing_code")
+                .single()
+                .execute()
+                .value
+            pairingCode = result.code
+            pairingCodeExpiresAt = result.expiresAt
+        } catch {
+            pairingCode = nil
+            pairingCodeExpiresAt = nil
+            pairingCodeError = "Impossible de générer votre code. Réessayez."
+            print("mintPairingCode error: \(error)")
         }
     }
 

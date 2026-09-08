@@ -9,6 +9,7 @@ import {
   createLoyaltyReward,
   deleteLoyaltyReward,
   claimRewardRedemption,
+  resolvePairingCode,
   mapCustomer,
   type CustomerInput,
 } from "@/lib/data/customers";
@@ -99,6 +100,14 @@ export async function claimRewardRedemptionAction(
   const result = await claimRewardRedemption(restaurantId, code);
   if (result) revalidatePath("/fidelisation");
   return result;
+}
+
+export async function resolvePairingCodeAction(
+  restaurantId: string,
+  code: string
+): Promise<{ error: string } | { customer: { id: string; name: string; loyaltyPoints: number; visitCount: number; totalSpent: number; avatarUrl: string | null } }> {
+  if (!code.trim()) return { error: "Code invalide." };
+  return resolvePairingCode(restaurantId, code);
 }
 
 export async function updateLoyaltyRateAction(restaurantId: string, rate: number): Promise<boolean> {

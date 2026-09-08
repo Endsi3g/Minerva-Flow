@@ -482,3 +482,50 @@ export async function claimRewardRedemption(
     claimedAt: row.claimed_at,
   };
 }
+
+type PairingCodeRpcRow = {
+  customer_id: string;
+  customer_name: string;
+  loyalty_points: number;
+  visit_count: number;
+  total_spent: number;
+  avatar_url: string | null;
+};
+
+/**
+ * Staff types the 6-digit rotating code a customer is showing on their
+ * digital card (MyCardView, native app) to identify them without needing a
+ * scan — see resolve_pairing_code in supabase/migrations/0086_pairing_codes.sql.
+ * The RPC itself enforces staff membership, code validity/expiry, and that
+ * the customer actually belongs to this restaurant, and marks the code used
+ * atomically — this is a thin pass-through, same trust-boundary shape as
+ * claimRewardRedemption above. Deliberately returns the RPC's own error
+ * message rather than collapsing every failure to "code invalide": expired,
+ * already-used, and not-a-member-here are different situations staff should
+ * be told apart.
+ */
+export async function resolvePairingCode(
+  restaurantId: string,
+  code: string
+): Promise<{ error: string } | { customer: { id: string; name: string; loyaltyPoints: number; visitCount: number; totalSpent: number; avatarUrl: string | null } }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("resolve_pairing_code", {
+    p_restaurant_id: restaurantId,
+    p_code: code.trim(),
+  });
+
+  if (error) return { error: error.message || "Code invalide." };
+  const rows = data as PairingCodeRpcRow[] | null;
+  if (!rows || rows.length === 0) return { error: "Code invalide." };
+  const row = rows[0];
+  return {
+    customer: {
+      id: row.customer_id,
+      name: row.customer_name,
+      loyaltyPoints: row.loyalty_points,
+      visitCount: row.visit_count,
+      totalSpent: row.total_spent,
+      avatarUrl: row.avatar_url,
+    },
+  };
+}

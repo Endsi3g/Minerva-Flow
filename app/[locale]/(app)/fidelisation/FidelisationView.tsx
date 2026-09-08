@@ -22,7 +22,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import QRCode from "qrcode";
-import { createCustomerAction, claimRewardRedemptionAction, grantBirthdayBonusAction } from "./actions";
+import {
+  createCustomerAction,
+  claimRewardRedemptionAction,
+  grantBirthdayBonusAction,
+  resolvePairingCodeAction,
+  logVisitAction,
+} from "./actions";
 import { notifyError } from "@/lib/notify-error";
 import { toast } from "sonner";
 
@@ -170,6 +176,118 @@ function RewardValidationCard({ restaurantId }: { restaurantId: string }) {
             <strong className="font-semibold">{result.rewardName}</strong> validée pour {result.customerName}
             {" "}(-{result.pointsSpent} pts).
           </p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * Staff types the 6-digit rotating code shown on a customer's digital card
+ * (MyCardView, native app) to identify them without a scan, then logs a
+ * visit right in the same card — one panel instead of navigating to the
+ * customer's own detail page first. Resolving and logging are two separate
+ * calls (resolvePairingCodeAction, then the same logVisitAction the
+ * customer detail page uses) rather than one combined action, so points
+ * math stays in exactly one place.
+ */
+function PairingCodeCard({
+  restaurantId,
+  onVisitLogged,
+}: {
+  restaurantId: string;
+  onVisitLogged: (updated: Customer) => void;
+}) {
+  const [code, setCode] = useState("");
+  const [isResolving, setIsResolving] = useState(false);
+  const [found, setFound] = useState<{ id: string; name: string; loyaltyPoints: number } | null>(null);
+  const [amount, setAmount] = useState("");
+  const [isLogging, setIsLogging] = useState(false);
+
+  async function handleResolve(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (code.trim().length !== 6) return;
+    setIsResolving(true);
+    setFound(null);
+    try {
+      const result = await resolvePairingCodeAction(restaurantId, code);
+      if ("error" in result) {
+        notifyError(result.error);
+      } else {
+        setFound(result.customer);
+        setCode("");
+      }
+    } finally {
+      setIsResolving(false);
+    }
+  }
+
+  async function handleLogVisit() {
+    if (!found) return;
+    const parsed = Number(amount);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      notifyError("Entrez un montant valide.");
+      return;
+    }
+    setIsLogging(true);
+    try {
+      const updated = await logVisitAction(restaurantId, found.id, parsed);
+      if (updated) {
+        onVisitLogged(updated);
+        toast.success(`Visite enregistrée pour ${found.name}.`);
+        setFound(null);
+        setAmount("");
+      } else {
+        notifyError("L'enregistrement de la visite a échoué.");
+      }
+    } finally {
+      setIsLogging(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Au comptoir"
+        title="Identifier un membre"
+        description="Le client vous montre le code de jumelage affiché sur sa carte — entrez-le pour retrouver son compte et enregistrer sa visite."
+      />
+      {!found ? (
+        <form onSubmit={handleResolve} className="flex flex-wrap items-end gap-2">
+          <Field label="Code du client">
+            <Input
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="Ex : 123456"
+              className="w-32 font-mono tracking-widest"
+              inputMode="numeric"
+              maxLength={6}
+            />
+          </Field>
+          <Button type="submit" size="sm" disabled={isResolving || code.trim().length !== 6}>
+            <CreditCard size={14} /> Rechercher
+          </Button>
+        </form>
+      ) : (
+        <div className="mv-check-pop flex flex-wrap items-end gap-2 rounded-lg border border-mv-green/20 bg-mv-green-tint px-3 py-2.5">
+          <p className="mr-auto text-[12.5px] text-mv-green-darker">
+            <strong className="font-semibold">{found.name}</strong> — {found.loyaltyPoints} pts
+          </p>
+          <Field label="Montant dépensé">
+            <Input
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              className="w-24"
+              inputMode="decimal"
+            />
+          </Field>
+          <Button type="button" size="sm" onClick={handleLogVisit} disabled={isLogging || !amount.trim()}>
+            Enregistrer la visite
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setFound(null)}>
+            Annuler
+          </Button>
         </div>
       )}
     </Card>
@@ -548,6 +666,13 @@ export function FidelisationView({
           )
         }
       />
+
+      <div className="mb-3">
+        <PairingCodeCard
+          restaurantId={restaurantId!}
+          onVisitLogged={(updated) => setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))}
+        />
+      </div>
 
       <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
         <RewardValidationCard restaurantId={restaurantId!} />
