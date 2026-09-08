@@ -45,7 +45,20 @@ export async function resolveNativeCustomer(req: Request): Promise<Customer | nu
   // — using the same token-scoped `client` here (not a fresh cookie-based
   // one, which would carry no auth.uid() at all for a native caller) is
   // what makes that policy actually match this row.
-  const { data, error: queryError } = await client.from("customers").select("*").eq("user_id", userId);
+  //
+  // A customer can belong to more than one restaurant (the "Devenir
+  // client" browse-mode join — RestaurantDetailView.swift) so this can
+  // legitimately return several rows. Ordering by created_at and taking
+  // the first makes every bridge route (menu, restaurant info, orders,
+  // etc.) agree on the same "home" restaurant — SupabaseManager.swift's
+  // loadPortalData() uses the identical ordering for the same reason, so
+  // native's direct-Supabase reads and these bridge reads never disagree
+  // about which restaurant is "mine."
+  const { data, error: queryError } = await client
+    .from("customers")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
   if (queryError || !data || data.length === 0) return null;
   return mapCustomer(data[0] as CustomerRow, []);
 }
