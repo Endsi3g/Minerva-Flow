@@ -116,3 +116,14 @@ struct FacebookMarkIcon: View {
         }
     }
 }
+
+/// Apple's own glyph, not a transcribed path — Apple's Human Interface
+/// Guidelines require using their provided mark exactly, and SF Symbols
+/// ships it natively (apple.logo) rather than needing one hand-drawn.
+struct AppleMarkIcon: View {
+    var body: some View {
+        Image(systemName: "apple.logo")
+            .font(.system(size: 17, weight: .medium))
+            .foregroundStyle(MinervaColor.ink)
+    }
+}

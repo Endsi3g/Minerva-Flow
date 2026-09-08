@@ -102,6 +102,43 @@ final class SupabaseManager: ObservableObject {
         try await client.auth.signInWithOAuth(provider: provider, redirectTo: Config.oauthRedirectURL)
     }
 
+    /// Returning customer, password already set (via signUpWithPassword or
+    /// the web forgot-password flow) — same signIn(email:password:) call as
+    /// the #if DEBUG dev bypass below, just with the customer's own
+    /// credentials instead of the seeded test account.
+    func signInWithPassword(email: String, password: String) async throws {
+        try await client.auth.signIn(email: email, password: password)
+    }
+
+    /// Alternative to sendCode() for a customer who'd rather set a password
+    /// than receive a code each time — same is_customer/marketing_opt_in
+    /// metadata as the OTP path (see sendCode above) so handle_new_user()
+    /// links/creates the customers row identically regardless of which
+    /// method they signed up with. Unlike OAuth, signUp can carry arbitrary
+    /// metadata, so this doesn't have OAuth's "must already have an
+    /// unclaimed customers row" limitation — works for a brand-new customer.
+    func signUpWithPassword(email: String, password: String, marketingOptIn: Bool) async throws {
+        try await client.auth.signUp(
+            email: email,
+            password: password,
+            data: ["is_customer": .bool(true), "marketing_opt_in": .bool(marketingOptIn)]
+        )
+    }
+
+    /// Sends a reset link to a web page (there's no native "set new
+    /// password" screen — the customer completes this in a browser, same
+    /// as the legal documents sheet reuses the real web pages rather than
+    /// duplicating them) and returns to the app to sign in with the new
+    /// password. `next=/portal` tells that web page where a customer
+    /// session should land instead of its default of /overview (a
+    /// restaurant-staff-only route).
+    func requestPasswordReset(email: String) async throws {
+        try await client.auth.resetPasswordForEmail(
+            email,
+            redirectTo: URL(string: "https://minervaflow.app/update-password?next=%2Fportal")
+        )
+    }
+
     #if DEBUG
     /// Password-grant sign-in against the seeded dev customer (see
     /// Config.devTestEmail) — a real Supabase session, so it still goes

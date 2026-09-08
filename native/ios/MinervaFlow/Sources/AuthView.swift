@@ -32,10 +32,22 @@ struct AuthView: View {
     @State private var oauthBusy: Provider?
     @State private var oauthError: String?
 
+    /// Alternative to the OTP code below for a customer who'd rather set a
+    /// password than retype a code every visit — see
+    /// SupabaseManager.signInWithPassword/signUpWithPassword. Defaults to
+    /// .code: the passwordless flow stays the primary, most-visible path.
+    @State private var authMode: AuthMode = .code
+    @State private var passwordSubMode: PasswordSubMode = .login
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var passwordResetSent = false
+
     @FocusState private var focusedField: Field?
 
     enum Step { case email, code }
-    enum Field { case email, code }
+    enum Field { case email, code, password, confirmPassword }
+    enum AuthMode { case code, password }
+    enum PasswordSubMode { case login, signup }
     enum LegalDocument: Identifiable {
         case terms, privacy
         var id: Self { self }
@@ -47,7 +59,7 @@ struct AuthView: View {
 
     var body: some View {
         ZStack {
-            MinervaColor.cream.ignoresSafeArea()
+            AuroraBackground()
 
             ScrollView {
                 VStack(spacing: 32) {
@@ -63,10 +75,13 @@ struct AuthView: View {
                     }
 
                     card
+                        // 80% of the screen width, per the design brief — capped
+                        // so it doesn't stretch absurdly wide on iPad.
+                        .frame(width: min(UIScreen.main.bounds.width * 0.8, 440))
 
                     Spacer(minLength: 60)
                 }
-                .padding(.horizontal, 28)
+                .frame(maxWidth: .infinity)
                 .frame(minHeight: UIScreen.main.bounds.height - 100)
             }
             .scrollDismissesKeyboard(.interactively)
@@ -86,13 +101,16 @@ struct AuthView: View {
 
     private var card: some View {
         VStack(spacing: 16) {
-            if step == .code {
+            if passwordResetSent {
+                passwordResetSentView.transition(.opacity)
+            } else if step == .code {
                 codeStep.transition(.opacity.combined(with: .move(edge: .trailing)))
             } else {
                 emailStep.transition(.opacity.combined(with: .move(edge: .leading)))
             }
         }
         .animation(.easeInOut(duration: 0.3), value: step)
+        .animation(.easeInOut(duration: 0.3), value: passwordResetSent)
         .padding(24)
         .background(MinervaColor.creamSoft)
         .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -105,10 +123,10 @@ struct AuthView: View {
     private var emailStep: some View {
         VStack(spacing: 16) {
             VStack(spacing: 4) {
-                Text("Espace client")
-                    .font(MinervaFont.display(19))
+                Text("Bonjour, bienvenue")
+                    .font(MinervaFont.display(21))
                     .foregroundStyle(MinervaColor.ink)
-                Text("Entrez votre courriel pour recevoir votre code de connexion.")
+                Text("Retrouvez vos points, vos récompenses et les offres de vos restaurants préférés.")
                     .font(.system(size: 13))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
@@ -119,6 +137,8 @@ struct AuthView: View {
 
             orDivider
 
+            authModeToggle
+
             VStack(alignment: .leading, spacing: 6) {
                 Text("Courriel")
                     .font(.system(size: 11.5, weight: .semibold))
@@ -128,9 +148,15 @@ struct AuthView: View {
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                    .submitLabel(.go)
+                    .submitLabel(authMode == .code ? .go : .next)
                     .focused($focusedField, equals: .email)
-                    .onSubmit { if canSubmit { Task { await primaryAction() } } }
+                    .onSubmit {
+                        if authMode == .code {
+                            if canSubmit { Task { await primaryAction() } }
+                        } else {
+                            focusedField = .password
+                        }
+                    }
                     .foregroundStyle(MinervaColor.ink)
                     .tint(MinervaColor.emerald)
                     .padding(12)
@@ -149,18 +175,32 @@ struct AuthView: View {
                 }
             }
 
+            if authMode == .password {
+                passwordFields.transition(.opacity)
+            }
+
             consentSection
 
             if let errorMessage {
                 errorBanner(errorMessage)
             }
 
-            submitButton(title: "Recevoir le code", busyTitle: "Envoi…")
+            submitButton(title: submitTitle, busyTitle: submitBusyTitle)
+
+            if authMode == .password && passwordSubMode == .login {
+                Button("Mot de passe oublié ?") {
+                    Task { await handleForgotPassword() }
+                }
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundStyle(MinervaColor.emeraldDark)
+                .disabled(isBusy)
+            }
 
             #if DEBUG
             devBypassButton
             #endif
         }
+        .animation(.easeInOut(duration: 0.2), value: authMode)
         .onAppear {
             // Firing the keyboard's own slide-up animation at the exact
             // instant RootView's screen crossfade starts makes both
@@ -175,7 +215,7 @@ struct AuthView: View {
         }
     }
 
-    // MARK: - OAuth (Google / Facebook)
+    // MARK: - OAuth (Apple / Google / Facebook)
 
     private var oauthSection: some View {
         VStack(spacing: 12) {
@@ -183,12 +223,162 @@ struct AuthView: View {
                 errorBanner(oauthError)
             }
 
+            // Apple first and equally prominent, not an afterthought — App
+            // Store Review Guideline 4.8 requires offering Sign in with
+            // Apple whenever another third-party social login (Google/
+            // Facebook, both below) is offered, with equivalent placement.
+            oauthButton(provider: .apple, title: "Continuer avec Apple") {
+                AppleMarkIcon()
+            }
             oauthButton(provider: .google, title: "Continuer avec Google") {
                 GoogleMarkIcon().frame(width: 18, height: 18)
             }
             oauthButton(provider: .facebook, title: "Continuer avec Facebook") {
                 FacebookMarkIcon().frame(width: 18, height: 18)
             }
+        }
+    }
+
+    // MARK: - Code / Password toggle
+
+    private var authModeToggle: some View {
+        HStack(spacing: 2) {
+            modeToggleButton(title: "Code par courriel", isActive: authMode == .code) {
+                authMode = .code
+                errorMessage = nil
+            }
+            modeToggleButton(title: "Mot de passe", isActive: authMode == .password) {
+                authMode = .password
+                errorMessage = nil
+            }
+        }
+        .padding(3)
+        .background(MinervaColor.cream)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func modeToggleButton(title: String, isActive: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundStyle(isActive ? MinervaColor.ink : MinervaColor.inkFaint)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(isActive ? .white : Color.clear)
+                .clipShape(RoundedRectangle(cornerRadius: 9))
+                // Without this, the inactive tab's Color.clear background
+                // isn't hit-testable under .plain button style — its tap
+                // silently no-ops (confirmed live: 0 action calls on a
+                // real device tap). The active tab worked by accident
+                // because .white happens to be opaque.
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Password fields (email step, authMode == .password)
+
+    private var passwordFields: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(passwordSubMode == .signup ? "Créer un mot de passe" : "Mot de passe")
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                SecureField("", text: $password, prompt: Text("••••••••").foregroundStyle(MinervaColor.inkFaint))
+                    .textContentType(passwordSubMode == .signup ? .newPassword : .password)
+                    .submitLabel(passwordSubMode == .signup ? .next : .go)
+                    .focused($focusedField, equals: .password)
+                    .onSubmit {
+                        if passwordSubMode == .signup {
+                            focusedField = .confirmPassword
+                        } else if canSubmit {
+                            Task { await primaryAction() }
+                        }
+                    }
+                    .foregroundStyle(MinervaColor.ink)
+                    .tint(MinervaColor.emerald)
+                    .padding(12)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 11))
+                    .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
+
+                if passwordSubMode == .signup {
+                    Text("8 caractères minimum")
+                        .font(.system(size: 11))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                }
+            }
+
+            if passwordSubMode == .signup {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Confirmer le mot de passe")
+                        .font(.system(size: 11.5, weight: .semibold))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                    SecureField("", text: $confirmPassword, prompt: Text("••••••••").foregroundStyle(MinervaColor.inkFaint))
+                        .textContentType(.newPassword)
+                        .submitLabel(.go)
+                        .focused($focusedField, equals: .confirmPassword)
+                        .onSubmit { if canSubmit { Task { await primaryAction() } } }
+                        .foregroundStyle(MinervaColor.ink)
+                        .tint(MinervaColor.emerald)
+                        .padding(12)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 11))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 11)
+                                .stroke(passwordsMismatch ? Color.red.opacity(0.5) : MinervaColor.border)
+                        )
+                    if passwordsMismatch {
+                        Text("Les mots de passe ne correspondent pas.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.red)
+                    }
+                }
+            }
+
+            HStack {
+                Spacer()
+                Button(passwordSubMode == .signup ? "Déjà client ? Se connecter" : "Nouveau ? Créer un compte") {
+                    passwordSubMode = passwordSubMode == .signup ? .login : .signup
+                    errorMessage = nil
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(MinervaColor.emeraldDark)
+            }
+        }
+    }
+
+    private var passwordsMismatch: Bool {
+        !confirmPassword.isEmpty && confirmPassword != password
+    }
+
+    // MARK: - Password reset confirmation
+
+    private var passwordResetSentView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "envelope.fill")
+                .font(.system(size: 20))
+                .foregroundStyle(MinervaColor.emeraldDark)
+                .frame(width: 40, height: 40)
+                .background(MinervaColor.emerald.opacity(0.12))
+                .clipShape(Circle())
+
+            VStack(spacing: 4) {
+                Text("Vérifiez vos courriels")
+                    .font(MinervaFont.display(19))
+                    .foregroundStyle(MinervaColor.ink)
+                Text("Un lien de réinitialisation a été envoyé à \(trimmedEmail). Ouvrez-le pour choisir un nouveau mot de passe, puis revenez ici vous connecter.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button("Retour à la connexion") {
+                passwordResetSent = false
+            }
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(MinervaColor.emeraldDark)
         }
     }
 
@@ -401,10 +591,31 @@ struct AuthView: View {
     }
 
     private var canSubmit: Bool {
-        if step == .email {
-            return isValidEmail(email) && acceptedTerms
+        if step == .code { return code.count == 6 }
+        guard isValidEmail(email) && acceptedTerms else { return false }
+        switch authMode {
+        case .code:
+            return true
+        case .password:
+            guard password.count >= 8 else { return false }
+            return passwordSubMode == .login || password == confirmPassword
         }
-        return code.count == 6
+    }
+
+    private var trimmedEmail: String { email.trimmingCharacters(in: .whitespaces) }
+
+    private var submitTitle: String {
+        switch authMode {
+        case .code: return "Recevoir le code"
+        case .password: return passwordSubMode == .signup ? "Créer mon compte" : "Se connecter"
+        }
+    }
+
+    private var submitBusyTitle: String {
+        switch authMode {
+        case .code: return "Envoi…"
+        case .password: return passwordSubMode == .signup ? "Création…" : "Connexion…"
+        }
     }
 
     /// Real consent capture (required Terms of Use, optional marketing
@@ -460,21 +671,59 @@ struct AuthView: View {
         isBusy = true
         defer { isBusy = false }
         do {
-            if step == .email {
-                try await supabase.sendCode(email: email.trimmingCharacters(in: .whitespaces), marketingOptIn: marketingOptIn)
+            if step == .code {
+                try await supabase.verifyCode(email: trimmedEmail, code: code)
+                return
+            }
+            switch authMode {
+            case .code:
+                try await supabase.sendCode(email: trimmedEmail, marketingOptIn: marketingOptIn)
                 withAnimation { step = .code }
-            } else {
-                try await supabase.verifyCode(email: email.trimmingCharacters(in: .whitespaces), code: code)
+            case .password:
+                if passwordSubMode == .login {
+                    try await supabase.signInWithPassword(email: trimmedEmail, password: password)
+                } else {
+                    try await supabase.signUpWithPassword(email: trimmedEmail, password: password, marketingOptIn: marketingOptIn)
+                }
             }
         } catch {
-            errorMessage = step == .email
-                ? "Impossible d'envoyer le code. Vérifiez l'adresse et réessayez."
-                : "Code invalide ou expiré. Réessayez."
+            errorMessage = friendlyErrorMessage()
             if step == .code {
                 // A rejected code should be retyped, not silently
                 // re-verified against the same wrong digits.
                 code = ""
             }
+        }
+    }
+
+    private func friendlyErrorMessage() -> String {
+        if step == .code { return "Code invalide ou expiré. Réessayez." }
+        switch authMode {
+        case .code:
+            return "Impossible d'envoyer le code. Vérifiez l'adresse et réessayez."
+        case .password:
+            return passwordSubMode == .login
+                ? "Courriel ou mot de passe incorrect."
+                : "Impossible de créer le compte. Cette adresse est peut-être déjà utilisée."
+        }
+    }
+
+    /// Sends the reset link, then shows passwordResetSentView — see
+    /// SupabaseManager.requestPasswordReset for why this hands off to a web
+    /// page rather than a native "set new password" screen.
+    private func handleForgotPassword() async {
+        guard isValidEmail(email) else {
+            errorMessage = "Entrez d'abord votre courriel ci-dessus."
+            return
+        }
+        errorMessage = nil
+        isBusy = true
+        defer { isBusy = false }
+        do {
+            try await supabase.requestPasswordReset(email: trimmedEmail)
+            withAnimation { passwordResetSent = true }
+        } catch {
+            errorMessage = "Impossible d'envoyer le lien. Réessayez."
         }
     }
 
