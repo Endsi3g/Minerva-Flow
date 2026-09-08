@@ -1,6 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { createTestUser, cleanupTestUser, cleanupOrphanRestaurants, loginAs, supabaseAdmin, type TestUser } from "./fixtures";
 
+// This spec asserts French copy throughout. The public /f/[token] join page
+// is hardcoded French JSX so it renders that way regardless of locale, but
+// /portal uses real next-intl translation and negotiates off Accept-Language
+// when no NEXT_LOCALE cookie exists yet (i18n/routing.ts: defaultLocale
+// "fr", localeDetection default on) — Playwright's default context locale
+// is en-US, which flips the portal's first render to English. Pin it so
+// this test keeps validating the French flow it was written for.
+test.use({ locale: "fr-CA" });
+
 test.describe("Loyalty self-enrollment", () => {
   let owner: TestUser;
   let restaurantId: string;
@@ -25,7 +34,10 @@ test.describe("Loyalty self-enrollment", () => {
 
   test("a stranger can join the loyalty program from a public link and see their points in the portal", async ({ page, context }) => {
     await loginAs(page, owner);
-    await page.goto("/fidelisation");
+    // The "nouveau lien" button lived on the main /fidelisation page before
+    // it was split into subroutes (see FidelisationSubNav) — it's on
+    // /fidelisation/partage now.
+    await page.goto("/fidelisation/partage");
     await page.getByRole("button", { name: /nouveau lien/i }).click();
     await page.getByRole("button", { name: /générer le lien/i }).click();
     await expect(page.locator("text=/\\/f\\//")).toBeVisible({ timeout: 10000 });
