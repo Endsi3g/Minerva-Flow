@@ -54,57 +54,57 @@ struct RestaurantDetailView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                if let detail {
-                    VStack(alignment: .leading, spacing: 0) {
-                        if !detail.restaurant.imageUrls.isEmpty {
-                            photoCarousel(detail.restaurant.imageUrls)
+            ZStack(alignment: .topTrailing) {
+                ScrollView {
+                    if let detail {
+                        VStack(alignment: .leading, spacing: 0) {
+                            if !detail.restaurant.imageUrls.isEmpty {
+                                photoCarousel(detail.restaurant.imageUrls)
+                            }
+
+                            VStack(alignment: .leading, spacing: 22) {
+                                header(for: detail.restaurant)
+
+                                if !detail.offers.isEmpty {
+                                    offersSection(detail.offers)
+                                }
+
+                                if selectedCategory == nil {
+                                    categoryGrid
+                                } else {
+                                    itemListForCategory
+                                }
+
+                                reviewsSection
+                            }
+                            .padding(18)
                         }
-
+                    } else if isLoading {
                         VStack(alignment: .leading, spacing: 22) {
-                            header(for: detail.restaurant)
-
-                            if !detail.offers.isEmpty {
-                                offersSection(detail.offers)
-                            }
-
-                            if selectedCategory == nil {
-                                categoryGrid
-                            } else {
-                                itemListForCategory
-                            }
-
-                            reviewsSection
+                            SkeletonBlock(cornerRadius: 6).frame(height: 26)
+                            Skeletons.card(height: 70)
+                            Skeletons.grid(count: 4)
                         }
                         .padding(18)
-                    }
-                } else if isLoading {
-                    VStack(alignment: .leading, spacing: 22) {
-                        SkeletonBlock(cornerRadius: 6).frame(height: 26)
-                        Skeletons.card(height: 70)
-                        Skeletons.grid(count: 4)
-                    }
-                    .padding(18)
-                } else {
-                    VStack(spacing: 8) {
-                        Spacer(minLength: 200)
-                        Text("Impossible de charger ce restaurant.")
-                            .font(.system(size: 13))
-                            .foregroundStyle(MinervaColor.inkSoft)
-                        Spacer(minLength: 200)
+                    } else {
+                        VStack(spacing: 8) {
+                            Spacer(minLength: 200)
+                            Text("Impossible de charger ce restaurant.")
+                                .font(.system(size: 13))
+                                .foregroundStyle(MinervaColor.inkSoft)
+                            Spacer(minLength: 200)
+                        }
                     }
                 }
+                .background(MinervaColor.cream.ignoresSafeArea())
+                .ignoresSafeArea(edges: (detail?.restaurant.imageUrls.isEmpty ?? true) ? [] : .top)
+
+                closeButton
+                    .padding(.top, 10)
+                    .padding(.trailing, 16)
             }
-            .background(MinervaColor.cream.ignoresSafeArea())
-            .navigationTitle(previewName)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(selectedCategory == nil ? "Fermer" : "Catégories") {
-                        if selectedCategory == nil { dismiss() } else { selectedCategory = nil }
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .task {
                 isLoading = true
                 detail = await supabase.fetchRestaurantDetail(id: restaurantId)
@@ -335,7 +335,26 @@ struct RestaurantDetailView: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: imageUrls.count > 1 ? .always : .never))
-        .frame(height: 220)
+        .frame(height: 300)
+    }
+
+    /// Floats over the photo (or sits at the normal top-left when there's
+    /// no photo to bleed under) instead of a separate toolbar strip, so
+    /// the image itself can run edge-to-edge under the status bar —
+    /// same treatment as OfferDetailView's floating close button. Keeps
+    /// the existing Fermer/Catégories toggle behavior.
+    private var closeButton: some View {
+        Button {
+            if selectedCategory == nil { dismiss() } else { selectedCategory = nil }
+        } label: {
+            Image(systemName: selectedCategory == nil ? "xmark" : "chevron.left")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(.black.opacity(0.35))
+                .clipShape(Circle())
+        }
+        .accessibilityLabel(selectedCategory == nil ? "Fermer" : "Catégories")
     }
 
     private func offersSection(_ offers: [RestaurantDiscoverOffer]) -> some View {
