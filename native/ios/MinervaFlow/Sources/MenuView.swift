@@ -197,23 +197,10 @@ struct MenuView: View {
                             RestaurantDetailView(restaurantId: restaurant.id, previewName: restaurant.name)
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
-                                ZStack {
-                                    Rectangle().fill(MinervaColor.ink.opacity(0.06))
-                                    if let firstImage = restaurant.imageUrls.first, let url = URL(string: firstImage) {
-                                        AsyncImage(url: url) { phase in
-                                            if let image = phase.image {
-                                                image.resizable().scaledToFill()
-                                            } else {
-                                                Image(systemName: "storefront.fill").foregroundStyle(MinervaColor.inkFaint)
-                                            }
-                                        }
-                                    } else {
-                                        Image(systemName: "storefront.fill").foregroundStyle(MinervaColor.inkFaint)
-                                    }
-                                }
-                                .frame(width: 160, height: 90)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                                .clipped()
+                                franchiseCardImage(restaurant)
+                                    .frame(width: 160, height: 90)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                                    .clipped()
 
                                 Text(restaurant.name)
                                     .font(.system(size: 13, weight: .semibold))
@@ -233,6 +220,55 @@ struct MenuView: View {
             }
             .horizontalEdgeFade()
         }
+    }
+
+    /// A blurred fill behind a sharp, inset copy of the same image — the
+    /// restaurant's own photo first, falling back to the owner-configured
+    /// workspace/brand logo (Franchise → Logo de votre franchise on the
+    /// dashboard), and only falling back further to an icon-on-gradient
+    /// placeholder when neither exists.
+    private func franchiseCardImage(_ restaurant: DiscoverRestaurant) -> some View {
+        let imageURL = (restaurant.imageUrls.first ?? restaurant.workspaceLogoUrl).flatMap(URL.init)
+
+        return ZStack {
+            if let imageURL {
+                AsyncImage(url: imageURL) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill().blur(radius: 16).saturation(1.1)
+                    } else {
+                        franchiseCardPlaceholderBlur
+                    }
+                }
+            } else {
+                franchiseCardPlaceholderBlur
+            }
+
+            Color.black.opacity(0.12)
+
+            if let imageURL {
+                AsyncImage(url: imageURL) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFill()
+                            .frame(width: 62, height: 62)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .shadow(color: .black.opacity(0.25), radius: 6, y: 2)
+                    } else {
+                        Image(systemName: "storefront.fill").font(.system(size: 22)).foregroundStyle(.white)
+                    }
+                }
+            } else {
+                Image(systemName: "storefront.fill").font(.system(size: 22)).foregroundStyle(.white)
+            }
+        }
+    }
+
+    private var franchiseCardPlaceholderBlur: some View {
+        LinearGradient(
+            colors: [MinervaColor.emerald.opacity(0.65), MinervaColor.emeraldDark.opacity(0.85)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .blur(radius: 20)
     }
 
     /// Ranked by real order_items quantity across every discoverable
