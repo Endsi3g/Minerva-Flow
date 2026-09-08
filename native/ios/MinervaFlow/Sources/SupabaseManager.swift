@@ -168,9 +168,18 @@ final class SupabaseManager: ObservableObject {
         isLoadingData = true
         defer { isLoadingData = false }
         do {
+            // A customer can now belong to more than one restaurant (the
+            // "Devenir client" browse-mode join, see RestaurantDetailView),
+            // so this can legitimately return several rows for the same
+            // account. Ordering by created_at picks the restaurant they
+            // originally joined as "home" (Home/MyCardView/Commander all
+            // key off this single `customer`) — deterministic and stable,
+            // rather than whatever arbitrary order Postgres happens to
+            // return. Every restaurant is still reachable via allMemberships.
             let customers: [Customer] = try await client
                 .from("customers")
                 .select()
+                .order("created_at", ascending: true)
                 .execute()
                 .value
             guard let mine = customers.first else {
