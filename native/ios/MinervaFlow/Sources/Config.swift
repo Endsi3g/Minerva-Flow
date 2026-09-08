@@ -12,11 +12,17 @@ enum Config {
     /// customer's own Supabase session token is sent as a Bearer header
     /// to these, same trust boundary as the web portal's RLS-scoped
     /// requests, just presented differently (see lib/auth/native-bearer.ts).
-    /// Uses the canonical www host directly — the bare domain 308-redirects
-    /// here, which URLSession follows transparently for GET but adds a
-    /// pointless extra round trip (and one more thing that could misbehave)
-    /// on every single bridge call, including POST/DELETE.
-    static let apiBaseURL = URL(string: "https://www.minervaflow.app")!
+    ///
+    /// TEMPORARY: pointed at the Vercel-issued domain, not the custom
+    /// minervaflow.app/www.minervaflow.app domain — both of those currently
+    /// fail TLS certificate verification ("unable to verify the first
+    /// certificate"), confirmed from outside this machine's own network,
+    /// which is what was actually causing Commander/menu, the restaurant
+    /// map, and restaurant-name lookups to come back empty in the native
+    /// app for every user, not a local network quirk. Check Vercel →
+    /// Settings → Domains for minervaflow.app once this is fixed there,
+    /// then switch this back to the custom domain.
+    static let apiBaseURL = URL(string: "https://minerva-flow.vercel.app")!
 
     /// Matches the CFBundleURLSchemes entry in project.yml — where
     /// ASWebAuthenticationSession hands control back to this app once
