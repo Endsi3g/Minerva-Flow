@@ -3,8 +3,15 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { notFound } from "next/navigation";
 import { LoyaltyJoinFlow } from "./LoyaltyJoinFlow";
 
-export default async function PublicLoyaltyPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function PublicLoyaltyPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<{ tp?: string }>;
+}) {
   const { token } = await params;
+  const { tp } = await searchParams;
 
   const ip = await getClientIp();
   const { allowed } = await checkRateLimit(`loyalty-share:${ip}`, { max: 60, windowSeconds: 300 });
@@ -19,5 +26,5 @@ export default async function PublicLoyaltyPage({ params }: { params: Promise<{ 
   const landing = await getLoyaltyShareByToken(token);
   if (!landing) notFound();
 
-  return <LoyaltyJoinFlow token={token} landing={landing} />;
+  return <LoyaltyJoinFlow token={token} landing={landing} touchpointCode={tp ?? null} />;
 }

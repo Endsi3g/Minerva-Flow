@@ -749,6 +749,48 @@ export type LoyaltyShare = {
   createdAt: string;
 };
 
+export type PhysicalTouchpointType =
+  | "caisse"
+  | "comptoir"
+  | "table"
+  | "vitrine"
+  | "sortie"
+  | "sac_recu"
+  | "carte_client"
+  | "autre";
+
+export type PhysicalTouchpointDestinationKind = "loyalty_join" | "menu" | "review" | "custom_url";
+
+export type PhysicalTouchpoint = {
+  id: string;
+  restaurantId: string;
+  type: PhysicalTouchpointType;
+  label: string;
+  code: string;
+  destinationKind: PhysicalTouchpointDestinationKind;
+  destinationValue: string;
+  campaignId: string | null;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type PhysicalTouchpointEventType =
+  | "touchpoint_opened"
+  | "app_opened"
+  | "app_installed_or_download_clicked"
+  | "signup_started"
+  | "signup_completed"
+  | "venue_joined"
+  | "loyalty_activated"
+  | "offer_redeemed"
+  | "review_flow_started"
+  | "review_submitted";
+
+export type PhysicalTouchpointFunnel = {
+  touchpoint: PhysicalTouchpoint;
+  counts: Partial<Record<PhysicalTouchpointEventType, number>>;
+};
+
 export type Offer = {
   id: string;
   restaurantId: string;

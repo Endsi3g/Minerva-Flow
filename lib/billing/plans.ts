@@ -7,9 +7,10 @@ export type BillingInterval = "monthly" | "yearly";
  * establishment limits and feature copy shown across the pricing table,
  * the billing dashboard, and the establishment-limit upsell paths.
  *
- * Prices are TEST-MODE placeholders (see scripts/create-stripe-billing-catalog.ts)
- * pending final sign-off between the cofounders per the pricing governance rule —
- * do not treat these as final before that consensus and a switch to live keys.
+ * Prices (99/250/500 CAD monthly) are confirmed final. They still run
+ * through Stripe TEST-MODE price IDs (see scripts/create-stripe-billing-catalog.ts)
+ * until the switch to live keys — that's a separate operational step, not
+ * a pricing question.
  */
 export type SelfServePlanTier = Extract<PlanTier, "essentiel" | "croissance">;
 

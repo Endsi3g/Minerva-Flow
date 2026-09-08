@@ -58,6 +58,10 @@ export async function proxy(request: NextRequest) {
     pathWithoutLocale.startsWith("/p/") ||
     pathWithoutLocale.startsWith("/m/") ||
     pathWithoutLocale.startsWith("/f/") ||
+    // Physical touchpoint short links (NFC tags, QR stickers, table
+    // chevalets) — tapped by a visitor with no session, same as every
+    // other public single-letter share route.
+    pathWithoutLocale.startsWith("/t/") ||
     // Prospect demo storefronts (admin "1-Click Ingestor") — viewed by the
     // prospect being pitched, who never has a Minerva session.
     pathWithoutLocale.startsWith("/demo/");
