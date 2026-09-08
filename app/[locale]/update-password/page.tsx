@@ -2,14 +2,21 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 
-export default function UpdatePasswordPage() {
+function UpdatePasswordForm() {
   const t = useTranslations("auth");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Defaults to the restaurant-staff dashboard (the only case that existed
+  // before this param) — the native customer app's reset link passes
+  // next=/portal so a customer following it doesn't land on a page they
+  // have no restaurant membership to see.
+  const nextPath = searchParams?.get("next") || "/overview";
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +29,7 @@ export default function UpdatePasswordPage() {
       const supabase = createClient();
       const { error: updateErr } = await supabase.auth.updateUser({ password });
       if (updateErr) throw updateErr;
-      router.push("/overview");
+      router.push(nextPath);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errorGeneric"));
@@ -73,5 +80,19 @@ export default function UpdatePasswordPage() {
         </button>
       </form>
     </AuthShell>
+  );
+}
+
+export default function UpdatePasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen w-full items-center justify-center bg-mv-cream p-4">
+          <div className="h-[420px] w-full max-w-[440px] animate-pulse rounded-3xl border border-mv-border bg-mv-surface" />
+        </div>
+      }
+    >
+      <UpdatePasswordForm />
+    </Suspense>
   );
 }

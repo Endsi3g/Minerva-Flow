@@ -46,6 +46,8 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.minervaflow.loyalty
+        com.apple.developer.applesignin:
+          - Default
     dependencies:
       - package: Supabase
         product: Supabase
