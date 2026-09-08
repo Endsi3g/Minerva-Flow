@@ -16,6 +16,19 @@ struct ProfileView: View {
     @State private var showEditProfile = false
     @State private var isExportingData = false
     @State private var exportedDataFileURL: URL?
+    @State private var historyFilter: HistoryFilter = .all
+    @State private var showAllHistory = false
+
+    private enum HistoryFilter: String, CaseIterable {
+        case all, earned, redeemed
+        var label: String {
+            switch self {
+            case .all: return "Tous"
+            case .earned: return "Gagnés"
+            case .redeemed: return "Échangés"
+            }
+        }
+    }
 
     var body: some View {
         Group {
@@ -150,20 +163,51 @@ struct ProfileView: View {
     /// in one place — Home only ever shows a trimmed preview of this same
     /// data (5 most recent transactions); Profile is where the full record
     /// lives, matching the web portal's own Profile tab.
+    private var filteredHistory: [LoyaltyHistoryEntry] {
+        switch historyFilter {
+        case .all: return supabase.combinedHistory
+        case .earned: return supabase.combinedHistory.filter { $0.pointsDelta >= 0 }
+        case .redeemed: return supabase.combinedHistory.filter { $0.pointsDelta < 0 }
+        }
+    }
+
+    private static let historyPageSize = 6
+
+    private var visibleHistory: [LoyaltyHistoryEntry] {
+        showAllHistory ? filteredHistory : Array(filteredHistory.prefix(Self.historyPageSize))
+    }
+
     private var pointsHistorySection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Points et récompenses")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
+            // Its own row, not squeezed beside the title — a segmented
+            // control still reads as compact even at full label width,
+            // and cramming it into the title's trailing space is what
+            // truncated "Échangés" into "Échang…".
+            Picker("Filtrer", selection: $historyFilter) {
+                ForEach(HistoryFilter.allCases, id: \.self) { filter in
+                    Text(filter.label).tag(filter)
+                }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: historyFilter) { _, _ in showAllHistory = false }
+
             if supabase.combinedHistory.isEmpty {
                 Text("Aucun mouvement de points pour l'instant.")
                     .font(.system(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .padding(.vertical, 4)
+            } else if filteredHistory.isEmpty {
+                Text("Aucun résultat pour ce filtre.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .padding(.vertical, 4)
             } else {
                 VStack(spacing: 6) {
-                    ForEach(supabase.combinedHistory) { entry in
+                    ForEach(visibleHistory) { entry in
                         HStack {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(entry.title)
@@ -188,6 +232,18 @@ struct ProfileView: View {
                         .background(MinervaColor.creamSoft)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
+                }
+
+                if filteredHistory.count > Self.historyPageSize {
+                    Button {
+                        showAllHistory.toggle()
+                    } label: {
+                        Text(showAllHistory ? "Voir moins" : "Voir plus (\(filteredHistory.count - Self.historyPageSize))")
+                            .font(.system(size: 12, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .padding(.vertical, 8)
+                    .foregroundStyle(MinervaColor.emeraldDark)
                 }
             }
         }
