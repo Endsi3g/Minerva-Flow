@@ -14,6 +14,10 @@ struct MainTabView: View {
                 .tabItem { Label("Commander", systemImage: "fork.knife") }
                 .tag(AppTab.order)
 
+            ScanToOrderView(showsCloseButton: false)
+                .tabItem { Label("Scanner", systemImage: "qrcode.viewfinder") }
+                .tag(AppTab.scan)
+
             RewardsView()
                 .tabItem { Label("Récompenses", systemImage: "gift.fill") }
                 .tag(AppTab.rewards)

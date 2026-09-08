@@ -62,10 +62,18 @@ struct RestaurantMapView: View {
                 }
                 .ignoresSafeArea(edges: .top)
 
+                // Every branch of restaurantList must sit on an opaque
+                // ground — the empty-state and loading-skeleton branches
+                // previously had none, so the native Map (grey with no
+                // tiles loaded, e.g. in Simulator) showed through right
+                // behind that cream-styled text, reading as a broken
+                // half-cream-half-native seam. One background at this
+                // level guarantees that regardless of which branch renders.
                 VStack(spacing: 0) {
                     placeFilterControl
                     restaurantList
                 }
+                .background(MinervaColor.cream)
             }
             .navigationTitle("Près de vous")
             .navigationBarTitleDisplayMode(.inline)

@@ -1,7 +1,7 @@
 import Foundation
 
 enum AppTab: Int {
-    case home, order, rewards, profile
+    case home, order, scan, rewards, profile
 }
 
 /// Routes minervaflow:// URLs (currently only the home-screen widget's tap
@@ -26,6 +26,7 @@ final class DeepLinkRouter: ObservableObject {
         switch url.host {
         case "rewards": pendingTab = .rewards
         case "order", "commander": pendingTab = .order
+        case "scan", "scanner": pendingTab = .scan
         case "profile", "profil": pendingTab = .profile
         default: pendingTab = .home
         }
