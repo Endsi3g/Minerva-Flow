@@ -92,6 +92,12 @@ struct ScanToOrderView: View {
     @EnvironmentObject var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
 
+    /// True when presented as a sheet/fullScreenCover (MenuView's toolbar
+    /// shortcut) — false when this is the Scanner tab's own root, where
+    /// there's nothing to dismiss to and a "Fermer" button would do nothing
+    /// useful sitting above four other tabs.
+    var showsCloseButton: Bool = true
+
     @State private var cameraAuthorized = false
     @State private var permissionDenied = false
     @State private var isResolving = false
@@ -126,9 +132,11 @@ struct ScanToOrderView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Fermer") { dismiss() }
-                        .tint(.white)
+                if showsCloseButton {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Fermer") { dismiss() }
+                            .tint(.white)
+                    }
                 }
             }
             .alert("Code invalide", isPresented: Binding(
