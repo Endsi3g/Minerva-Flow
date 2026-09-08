@@ -6,10 +6,11 @@ type WorkspaceRow = {
   id: string;
   name: string;
   created_at: string;
+  logo_url: string | null;
 };
 
 function mapWorkspace(row: WorkspaceRow): Workspace {
-  return { id: row.id, name: row.name, createdAt: row.created_at };
+  return { id: row.id, name: row.name, createdAt: row.created_at, logoUrl: row.logo_url ?? null };
 }
 
 export async function getWorkspace(workspaceId: string): Promise<Workspace | null> {
@@ -89,6 +90,18 @@ export async function updateWorkspaceName(workspaceId: string, name: string): Pr
   if (!name.trim()) return false;
   const supabase = await createClient();
   const { error } = await supabase.from("workspaces").update({ name: name.trim() }).eq("id", workspaceId);
+  return !error;
+}
+
+/**
+ * Brand image shown on the native app's "other locations" carousel
+ * (MenuView.swift's franchiseCardImage) — configurable once per workspace
+ * rather than per restaurant, since it represents the shared brand, not
+ * any one location. Pass null to clear it.
+ */
+export async function updateWorkspaceLogo(workspaceId: string, logoUrl: string | null): Promise<boolean> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("workspaces").update({ logo_url: logoUrl }).eq("id", workspaceId);
   return !error;
 }
 

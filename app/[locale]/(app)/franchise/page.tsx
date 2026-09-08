@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getRestaurant } from "@/lib/data/restaurants";
-import { getWorkspaceRestaurants } from "@/lib/data/workspaces";
+import { getWorkspaceRestaurants, getWorkspace } from "@/lib/data/workspaces";
 import { getLtvImpactForRestaurants } from "@/lib/data/impact";
 import { aggregateLtvImpacts } from "@/lib/engine/impact";
 import { getServiceDays } from "@/lib/data/service-days";
@@ -27,16 +27,17 @@ export default async function FranchisePage() {
   if (!restaurant?.workspaceId) {
     return (
       <Suspense>
-        <FranchiseView restaurants={[]} rollup={null} monthRevenue={0} />
+        <FranchiseView restaurants={[]} rollup={null} monthRevenue={0} workspace={null} />
       </Suspense>
     );
   }
 
+  const workspace = await getWorkspace(restaurant.workspaceId);
   const restaurants = await getWorkspaceRestaurants(restaurant.workspaceId);
   if (restaurants.length < 2) {
     return (
       <Suspense>
-        <FranchiseView restaurants={restaurants} rollup={null} monthRevenue={0} />
+        <FranchiseView restaurants={restaurants} rollup={null} monthRevenue={0} workspace={workspace} />
       </Suspense>
     );
   }
@@ -51,7 +52,7 @@ export default async function FranchisePage() {
 
   return (
     <Suspense>
-      <FranchiseView restaurants={restaurants} rollup={rollup} monthRevenue={monthRevenue} />
+      <FranchiseView restaurants={restaurants} rollup={rollup} monthRevenue={monthRevenue} workspace={workspace} />
     </Suspense>
   );
 }
