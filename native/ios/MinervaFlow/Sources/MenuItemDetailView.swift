@@ -139,7 +139,7 @@ struct MenuItemDetailView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "star.fill")
                             .font(.system(size: 12))
-                            .foregroundStyle(MinervaColor.limeAccent)
+                            .foregroundStyle(MinervaColor.emerald)
                         Text(String(format: "%.1f", averageRating))
                             .font(.system(size: 13, weight: .bold))
                         Text("(\(reviews.count) avis)")
@@ -284,7 +284,7 @@ struct MenuItemDetailView: View {
                             ForEach(0..<5, id: \.self) { i in
                                 Image(systemName: i < review.rating ? "star.fill" : "star")
                                     .font(.system(size: 10))
-                                    .foregroundStyle(MinervaColor.limeAccent)
+                                    .foregroundStyle(MinervaColor.emerald)
                             }
                             Spacer()
                             Text(review.createdAt.formatted(date: .abbreviated, time: .omitted))
@@ -386,7 +386,7 @@ private struct WriteReviewSheet: View {
                         } label: {
                             Image(systemName: star <= rating ? "star.fill" : "star")
                                 .font(.system(size: 28))
-                                .foregroundStyle(MinervaColor.limeAccent)
+                                .foregroundStyle(MinervaColor.emerald)
                         }
                     }
                 }

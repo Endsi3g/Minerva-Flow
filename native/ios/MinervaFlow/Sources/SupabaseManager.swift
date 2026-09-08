@@ -17,6 +17,7 @@ final class SupabaseManager: ObservableObject {
     @Published var restaurantName: String?
     @Published var restaurantCity: String?
     @Published var restaurantGoogleMapsUrl: String?
+    @Published var restaurantGooglePlaceId: String?
     /// The rotating card-pairing code (MyCardView) and its lifecycle state.
     /// Minted fresh per screen-appearance/regeneration, never persisted
     /// beyond this session — see mint_pairing_code in
@@ -597,6 +598,7 @@ final class SupabaseManager: ObservableObject {
             let loyaltyTier2Threshold: Double
             let loyaltyTier3Threshold: Double
             let googleMapsUrl: String?
+            let googlePlaceId: String?
         }
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurant"))
@@ -606,6 +608,7 @@ final class SupabaseManager: ObservableObject {
             loyaltyTier2Threshold = decoded.loyaltyTier2Threshold
             loyaltyTier3Threshold = decoded.loyaltyTier3Threshold
             restaurantGoogleMapsUrl = decoded.googleMapsUrl
+            restaurantGooglePlaceId = decoded.googlePlaceId
         } catch {
             print("fetchRestaurantInfo error: \(error)")
         }
@@ -981,6 +984,49 @@ final class SupabaseManager: ObservableObject {
         } catch {
             lastError = "L'envoi de votre avis a échoué. Réessayez."
             print("submitRestaurantReview error: \(error)")
+            return false
+        }
+    }
+
+    // MARK: - Offer reviews (structural copy of the menu-item review pair above)
+
+    func fetchOfferReviews(offerId: String) async -> [OfferReview] {
+        do {
+            let reviews: [OfferReview] = try await client
+                .from("offer_reviews")
+                .select()
+                .eq("offer_id", value: offerId)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return reviews
+        } catch {
+            print("fetchOfferReviews error: \(error)")
+            return []
+        }
+    }
+
+    /// offer_reviews_customer_insert requires the caller to actually be a
+    /// loyalty customer of that specific restaurant, same trust boundary
+    /// as submitReview(forMenuItem:).
+    func submitOfferReview(offerId: String, restaurantId: String, rating: Int, comment: String?) async -> Bool {
+        guard let customerId = customer?.id else { return false }
+        do {
+            struct NewReview: Encodable {
+                let offer_id: String
+                let restaurant_id: String
+                let customer_id: String
+                let rating: Int
+                let comment: String?
+            }
+            try await client
+                .from("offer_reviews")
+                .upsert(NewReview(offer_id: offerId, restaurant_id: restaurantId, customer_id: customerId, rating: rating, comment: comment), onConflict: "offer_id,customer_id")
+                .execute()
+            return true
+        } catch {
+            lastError = "L'envoi de votre avis a échoué. Réessayez."
+            print("submitOfferReview error: \(error)")
             return false
         }
     }

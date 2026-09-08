@@ -145,6 +145,12 @@ struct RestaurantReview: Codable, Identifiable {
     let comment: String?
     let imageUrls: [String]
     let createdAt: Date
+    /// "private" (rating < 4) reviews are only ever returned by RLS to
+    /// their own author or restaurant staff — see 0098's visibility
+    /// policy — so this is always "public" in lists other customers see.
+    let visibility: String
+    let ownerResponse: String?
+    let ownerRespondedAt: Date?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -152,6 +158,28 @@ struct RestaurantReview: Codable, Identifiable {
         case customerId = "customer_id"
         case rating, comment
         case imageUrls = "image_urls"
+        case createdAt = "created_at"
+        case visibility
+        case ownerResponse = "owner_response"
+        case ownerRespondedAt = "owner_responded_at"
+    }
+}
+
+struct OfferReview: Codable, Identifiable {
+    let id: String
+    let offerId: String
+    let restaurantId: String
+    let customerId: String
+    let rating: Int
+    let comment: String?
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case offerId = "offer_id"
+        case restaurantId = "restaurant_id"
+        case customerId = "customer_id"
+        case rating, comment
         case createdAt = "created_at"
     }
 }

@@ -201,6 +201,23 @@ struct RestaurantDetailView: View {
             Text(review.createdAt.formatted(date: .abbreviated, time: .omitted))
                 .font(.system(size: 10.5))
                 .foregroundStyle(MinervaColor.inkFaint)
+
+            if let ownerResponse = review.ownerResponse, !ownerResponse.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Réponse du restaurant")
+                        .font(.system(size: 10.5, weight: .bold))
+                        .tracking(0.3)
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                    Text(ownerResponse)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(MinervaColor.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(MinervaColor.emerald.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
