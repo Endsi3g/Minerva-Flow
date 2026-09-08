@@ -478,6 +478,31 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    /// Self-serve join, for a restaurant the customer is only browsing
+    /// (RestaurantDetailView) — previously a dead end, see
+    /// join_restaurant_as_customer in
+    /// supabase/migrations/0093_join_restaurant_as_customer.sql. Idempotent
+    /// server-side, so calling this again for an existing membership is
+    /// harmless. Only updates allMemberships, not the active
+    /// customer/restaurant context — joining a second restaurant to browse
+    /// shouldn't silently switch Home/Rewards away from the first one.
+    func joinRestaurant(_ restaurantId: String) async -> Bool {
+        do {
+            struct JoinParams: Encodable { let p_restaurant_id: String }
+            let _: Customer = try await client
+                .rpc("join_restaurant_as_customer", params: JoinParams(p_restaurant_id: restaurantId))
+                .single()
+                .execute()
+                .value
+            await fetchAllMemberships()
+            return true
+        } catch {
+            lastError = "Impossible de devenir client pour l'instant. Réessayez."
+            print("joinRestaurant error: \(error)")
+            return false
+        }
+    }
+
     // MARK: - Commander (bridge API — Server Actions aren't reachable from
     // native, see app/api/portal/* and lib/auth/native-bearer.ts)
 
