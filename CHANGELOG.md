@@ -2,6 +2,20 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.32.0] - 2026-09-08
+
+### 🏢 Carrousel de franchise (application mobile)
+- La page Commander affiche maintenant un carrousel des autres emplacements de votre marque (essentiel — même workspace), avec photo en arrière-plan flouté, menu, offres et itinéraire en un tap.
+
+### 🖼️ Logo de franchise configurable
+- Nouvelle carte « Logo de votre franchise » sur la page Franchise du tableau de bord — l'image s'affiche automatiquement sur les cartes du carrousel de vos emplacements qui n'ont pas encore leur propre photo.
+
+### 🤝 Devenir client facilement (application mobile)
+- En consultant un restaurant que vous n'avez pas encore rejoint, un bouton « Devenir client » permet maintenant de le faire en un tap, sans quitter l'application.
+
+### 🎨 Ajustements visuels
+- Les étoiles d'avis clients sont maintenant vertes plutôt que jaunes, pour rester cohérentes avec l'identité de la marque.
+
 ## [v2.31.0] - 2026-09-08
 
 ### 🪪 Code de jumelage (application mobile)
