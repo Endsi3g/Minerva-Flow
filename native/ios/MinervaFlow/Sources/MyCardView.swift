@@ -23,6 +23,7 @@ struct MyCardView: View {
                         }
                         tierBenefitsSection(for: tier(for: customer))
                         checkoutCodeSection(for: customer)
+                        pairingCodeSection
                         if !supabase.combinedHistory.isEmpty {
                             historySection
                         }
@@ -38,6 +39,9 @@ struct MyCardView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Fermer") { dismiss() }
                 }
+            }
+            .task {
+                if supabase.pairingCode == nil { await supabase.mintPairingCode() }
             }
         }
     }
@@ -278,6 +282,90 @@ struct MyCardView: View {
                 .foregroundStyle(MinervaColor.inkFaint)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Pairing code
+
+    /// A short-lived code (+ matching QR) staff can look you up by without
+    /// needing to scan the checkout QR above — reads it aloud or hands over
+    /// the phone, staff types 6 digits into the dashboard's "Identifier un
+    /// membre" panel to find the account and log a visit in one step. Unlike
+    /// the checkout QR (stable, tied to this restaurant's customer row),
+    /// this rotates and is tied to the account itself, so it works at any
+    /// participating restaurant. See mint_pairing_code /
+    /// supabase/migrations/0086_pairing_codes.sql.
+    private var pairingCodeSection: some View {
+        VStack(spacing: 10) {
+            Text("Code de jumelage")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let code = supabase.pairingCode {
+                if let qrImage = QRCodeGenerator.image(for: URL(string: "https://minervaflow.app/pair/\(code)")!) {
+                    Image(uiImage: qrImage)
+                        .interpolation(.none)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 110, height: 110)
+                        .padding(10)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MinervaColor.border, lineWidth: 1))
+                }
+
+                Text(formattedCode(code))
+                    .font(.system(size: 28, weight: .bold, design: .monospaced))
+                    .tracking(4)
+                    .foregroundStyle(MinervaColor.ink)
+
+                if let expiresAt = supabase.pairingCodeExpiresAt {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        let remaining = Int(expiresAt.timeIntervalSince(context.date).rounded(.up))
+                        if remaining > 0 {
+                            Text("Valide encore \(remaining)s")
+                                .font(.system(size: 11))
+                                .foregroundStyle(MinervaColor.inkFaint)
+                        } else {
+                            Text("Code expiré — régénérez-en un.")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
+            } else if supabase.isMintingPairingCode {
+                ProgressView().padding(.vertical, 20)
+            } else {
+                Text(supabase.pairingCodeError ?? "Code indisponible pour le moment.")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(MinervaColor.inkFaint)
+                    .multilineTextAlignment(.center)
+            }
+
+            Button {
+                Task { await supabase.mintPairingCode() }
+            } label: {
+                Text("Régénérer")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(MinervaColor.emeraldDark)
+            .disabled(supabase.isMintingPairingCode)
+
+            Text("Ce code identifie directement votre compte, sans avoir à scanner quoi que ce soit.")
+                .font(.system(size: 11))
+                .foregroundStyle(MinervaColor.inkFaint)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// "123456" -> "123 456" for readability — purely cosmetic, the raw
+    /// digits (not this spaced form) are what's actually transmitted/typed.
+    private func formattedCode(_ code: String) -> String {
+        guard code.count == 6 else { return code }
+        let mid = code.index(code.startIndex, offsetBy: 3)
+        return "\(code[..<mid]) \(code[mid...])"
     }
 
     // MARK: - Combined history
