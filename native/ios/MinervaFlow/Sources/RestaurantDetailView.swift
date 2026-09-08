@@ -19,6 +19,18 @@ struct RestaurantDetailView: View {
     @State private var reviews: [RestaurantReview] = []
     @State private var isLoadingReviews = true
     @State private var showWriteReview = false
+    @State private var isJoining = false
+    @State private var didJoin = false
+
+    /// True the instant a membership exists anywhere for this restaurant —
+    /// the account's own active restaurant, any other membership already
+    /// loaded, or one just created this session — so the join button
+    /// disappears immediately rather than only after a full data refresh.
+    private var isAlreadyMember: Bool {
+        didJoin
+            || restaurantId == supabase.customer?.restaurantId
+            || supabase.allMemberships.contains { $0.restaurantId == restaurantId }
+    }
 
     private var averageRating: Double {
         guard !reviews.isEmpty else { return 0 }
@@ -159,7 +171,7 @@ struct RestaurantDetailView: View {
                         .font(.system(size: 11))
                 }
             }
-            .foregroundStyle(MinervaColor.limeAccent)
+            .foregroundStyle(MinervaColor.emerald)
 
             if let comment = review.comment, !comment.isEmpty {
                 Text(comment)
@@ -218,6 +230,36 @@ struct RestaurantDetailView: View {
                 }
                 .font(.system(size: 12))
                 .foregroundStyle(MinervaColor.inkSoft)
+            }
+
+            if !isAlreadyMember {
+                Button {
+                    Task { await performJoin() }
+                } label: {
+                    HStack(spacing: 6) {
+                        if isJoining {
+                            ProgressView().tint(.white)
+                        } else {
+                            Image(systemName: "person.badge.plus")
+                            Text("Devenir client")
+                        }
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 11)
+                }
+                .foregroundStyle(.white)
+                .background(MinervaColor.emeraldDark)
+                .clipShape(RoundedRectangle(cornerRadius: 11))
+                .buttonStyle(PressableButtonStyle())
+                .disabled(isJoining)
+            } else if didJoin {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text("Vous êtes client de ce restaurant")
+                }
+                .font(.system(size: 12.5, weight: .semibold))
+                .foregroundStyle(MinervaColor.emeraldDark)
             }
 
             HStack(spacing: 10) {
@@ -398,5 +440,15 @@ struct RestaurantDetailView: View {
         let mapItem = MKMapItem(placemark: placemark)
         mapItem.name = name
         mapItem.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving])
+    }
+
+    private func performJoin() async {
+        guard !isJoining else { return }
+        isJoining = true
+        defer { isJoining = false }
+        let generator = UINotificationFeedbackGenerator()
+        let success = await supabase.joinRestaurant(restaurantId)
+        generator.notificationOccurred(success ? .success : .error)
+        if success { didJoin = true }
     }
 }

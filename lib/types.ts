@@ -221,6 +221,7 @@ export type Workspace = {
   id: string;
   name: string;
   createdAt: string;
+  logoUrl: string | null;
 };
 
 export type WorkspaceMember = {

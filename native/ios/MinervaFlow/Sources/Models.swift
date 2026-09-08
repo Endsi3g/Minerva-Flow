@@ -171,6 +171,7 @@ struct DiscoverRestaurant: Codable, Identifiable {
     let serviceModel: String?
     let imageUrls: [String]
     let googleMapsUrl: String?
+    let workspaceLogoUrl: String?
 }
 
 struct DiscoverRestaurantDetail: Codable {
