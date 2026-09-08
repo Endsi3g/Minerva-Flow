@@ -46,6 +46,10 @@ export async function createCheckoutSessionAction(
     line_items: [{ price: priceId, quantity: 1 }],
     client_reference_id: membership.workspaceId,
     metadata: { workspaceId: membership.workspaceId, tier, interval },
+    // Lets a promo code (e.g. a coupon Kael hands out in person for an
+    // extended free period) be entered on the Checkout page itself —
+    // no in-app UI needed for that path.
+    allow_promotion_codes: true,
     subscription_data: {
       trial_period_days: TRIAL_PERIOD_DAYS,
       metadata: { workspaceId: membership.workspaceId, tier, interval },

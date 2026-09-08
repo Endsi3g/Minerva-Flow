@@ -27,7 +27,15 @@ import {
   getLoyaltySharesForRestaurant,
   createLoyaltyShare,
   deleteLoyaltyShare,
+  getOrCreateDefaultLoyaltyShare,
 } from "@/lib/data/loyalty-shares";
+import { getOrCreateDefaultMenuShare } from "@/lib/data/menu-shares";
+import { createTouchpoint, deleteTouchpoint } from "@/lib/data/physical-touchpoints";
+import type {
+  PhysicalTouchpoint,
+  PhysicalTouchpointDestinationKind,
+  PhysicalTouchpointType,
+} from "@/lib/types";
 import type { Customer, LoyaltyReward, LoyaltyShare, ReferralProgram, VisitRewardTier } from "@/lib/types";
 
 export async function createCustomerAction(
@@ -179,6 +187,53 @@ export async function createLoyaltyShareAction(restaurantId: string, title: stri
 export async function deleteLoyaltyShareAction(restaurantId: string, id: string): Promise<boolean> {
   const ok = await deleteLoyaltyShare(restaurantId, id);
   if (ok) revalidatePath("/fidelisation");
+  return ok;
+}
+
+/**
+ * destinationValue is only ever typed by the owner for review/custom_url
+ * (a Google review link, or any other URL). For loyalty_join/menu it's
+ * resolved here against the same default share the QR Studio already
+ * prints — a touchpoint is an attributed entry point into that existing
+ * link, never a second parallel one.
+ */
+export async function createTouchpointAction(
+  restaurantId: string,
+  input: {
+    type: PhysicalTouchpointType;
+    label: string;
+    destinationKind: PhysicalTouchpointDestinationKind;
+    destinationValue?: string;
+  }
+): Promise<PhysicalTouchpoint | null> {
+  if (!input.label.trim()) return null;
+
+  let destinationValue = input.destinationValue?.trim() ?? "";
+  if (input.destinationKind === "loyalty_join") {
+    const share = await getOrCreateDefaultLoyaltyShare(restaurantId);
+    if (!share) return null;
+    destinationValue = share.token;
+  } else if (input.destinationKind === "menu") {
+    const share = await getOrCreateDefaultMenuShare(restaurantId);
+    if (!share) return null;
+    destinationValue = share.token;
+  } else if (!destinationValue) {
+    return null;
+  }
+
+  const touchpoint = await createTouchpoint(restaurantId, {
+    type: input.type,
+    label: input.label.trim(),
+    destinationKind: input.destinationKind,
+    destinationValue,
+  });
+  if (touchpoint) revalidatePath("/fidelisation/points-de-contact");
+  return touchpoint;
+}
+
+export async function deleteTouchpointAction(restaurantId: string, id: string): Promise<boolean> {
+  const ok = await deleteTouchpoint(restaurantId, id);
+  if (ok) revalidatePath("/fidelisation/points-de-contact");
   return ok;
 }
 

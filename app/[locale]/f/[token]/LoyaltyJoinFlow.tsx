@@ -10,7 +10,15 @@ import { Gift, Mail, Heart } from "lucide-react";
 import { joinLoyaltyProgramAction } from "./actions";
 import type { PublicLoyaltyLanding } from "@/lib/data/loyalty-shares";
 
-export function LoyaltyJoinFlow({ token, landing }: { token: string; landing: PublicLoyaltyLanding }) {
+export function LoyaltyJoinFlow({
+  token,
+  landing,
+  touchpointCode,
+}: {
+  token: string;
+  landing: PublicLoyaltyLanding;
+  touchpointCode: string | null;
+}) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [birthday, setBirthday] = useState("");
@@ -21,12 +29,16 @@ export function LoyaltyJoinFlow({ token, landing }: { token: string; landing: Pu
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("sending");
-    const result = await joinLoyaltyProgramAction(token, {
-      name,
-      email,
-      marketingConsent,
-      birthday: birthday || null,
-    });
+    const result = await joinLoyaltyProgramAction(
+      token,
+      {
+        name,
+        email,
+        marketingConsent,
+        birthday: birthday || null,
+      },
+      touchpointCode
+    );
     if (result.ok) {
       setStatus("sent");
     } else {

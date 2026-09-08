@@ -1,6 +1,7 @@
 "use server";
 
 import { getLoyaltyShareByToken, joinLoyaltyProgram } from "@/lib/data/loyalty-shares";
+import { recordTouchpointEventByCode } from "@/lib/data/physical-touchpoints";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -15,7 +16,8 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
  */
 export async function joinLoyaltyProgramAction(
   token: string,
-  input: { name: string; email: string; marketingConsent: boolean; birthday?: string | null }
+  input: { name: string; email: string; marketingConsent: boolean; birthday?: string | null },
+  touchpointCode?: string | null
 ): Promise<{ ok: boolean; error?: string }> {
   const ip = await getClientIp();
   const { allowed } = await checkRateLimit(`loyalty-join:${ip}`, { max: 10, windowSeconds: 300 });
@@ -28,6 +30,14 @@ export async function joinLoyaltyProgramAction(
 
   const { ok } = await joinLoyaltyProgram(landing.restaurantId, input);
   if (!ok) return { ok: false, error: "Une erreur est survenue." };
+
+  // Attribution: this join arrived via a physical touchpoint tap (the /t/
+  // redirect appended ?tp=<code>, threaded down from page.tsx) — credit the
+  // exact NFC tag/sticker/chevalet that drove it, not just "someone joined."
+  if (touchpointCode) {
+    await recordTouchpointEventByCode(touchpointCode, "venue_joined");
+    await recordTouchpointEventByCode(touchpointCode, "loyalty_activated");
+  }
 
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
   const admin = createAdminClient();
