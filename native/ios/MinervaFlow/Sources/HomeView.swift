@@ -50,9 +50,7 @@ struct HomeView: View {
                 }
             } else {
                 Spacer()
-                Text("Aucun profil de fidélité trouvé pour ce compte.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(MinervaColor.inkSoft)
+                NoProfileFoundView()
                 Spacer()
             }
         }
