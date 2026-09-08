@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		006EB054257CBD3CCD3F7F25 /* RewardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639E5AD94A1648D1C2D5F907 /* RewardDetailView.swift */; };
 		068DD03953A5F45E4FDDA8F8 /* PointsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */; };
 		08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */; };
 		09DEDA487C152D20E5410836 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B8ABC1E0681608032F18B9B5 /* Assets.xcassets */; };
@@ -113,6 +114,7 @@
 		5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandMarks.swift; sourceTree = "<group>"; };
 		59493D8CAE71CA71582DA48D /* OrderTotalsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTotalsTests.swift; sourceTree = "<group>"; };
 		5A9CD9B5E79E9FE474707739 /* RewardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardsView.swift; sourceTree = "<group>"; };
+		639E5AD94A1648D1C2D5F907 /* RewardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardDetailView.swift; sourceTree = "<group>"; };
 		6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFlowUITests.swift; sourceTree = "<group>"; };
 		75D53BED95FFB389516CCEF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowApp.swift; sourceTree = "<group>"; };
@@ -224,6 +226,7 @@
 				D58EE17A9A62B1893F865891 /* RadialGauge.swift */,
 				E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */,
 				03E2365512980AA23003195C /* RestaurantMapView.swift */,
+				639E5AD94A1648D1C2D5F907 /* RewardDetailView.swift */,
 				5A9CD9B5E79E9FE474707739 /* RewardsView.swift */,
 				89B5498B7D0733D7AA1958D9 /* RootView.swift */,
 				E001F62368824618EE0ACB49 /* SupabaseManager.swift */,
@@ -489,6 +492,7 @@
 				CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */,
 				B452FFE84A4A20AE63CF45BA /* RestaurantDetailView.swift in Sources */,
 				85AB6A5594778C5544D34E18 /* RestaurantMapView.swift in Sources */,
+				006EB054257CBD3CCD3F7F25 /* RewardDetailView.swift in Sources */,
 				2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */,
 				F867193E516C1BAD652866EE /* RootView.swift in Sources */,
 				81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */,

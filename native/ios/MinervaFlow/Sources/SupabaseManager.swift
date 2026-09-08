@@ -15,6 +15,7 @@ final class SupabaseManager: ObservableObject {
     @Published var redemptions: [RewardRedemption] = []
     @Published var offers: [Offer] = []
     @Published var restaurantName: String?
+    @Published var restaurantCity: String?
     @Published var restaurantGoogleMapsUrl: String?
     /// The rotating card-pairing code (MyCardView) and its lifecycle state.
     /// Minted fresh per screen-appearance/regeneration, never persisted
@@ -558,6 +559,7 @@ final class SupabaseManager: ObservableObject {
     func fetchRestaurantInfo() async {
         struct RestaurantInfoResponse: Decodable {
             let name: String
+            let city: String?
             let loyaltyTier2Threshold: Double
             let loyaltyTier3Threshold: Double
             let googleMapsUrl: String?
@@ -566,12 +568,24 @@ final class SupabaseManager: ObservableObject {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurant"))
             let decoded = try JSONDecoder().decode(RestaurantInfoResponse.self, from: data)
             restaurantName = decoded.name
+            restaurantCity = decoded.city
             loyaltyTier2Threshold = decoded.loyaltyTier2Threshold
             loyaltyTier3Threshold = decoded.loyaltyTier3Threshold
             restaurantGoogleMapsUrl = decoded.googleMapsUrl
         } catch {
             print("fetchRestaurantInfo error: \(error)")
         }
+    }
+
+    /// "Mon restaurant · Repentigny" when both are known, just the name (or
+    /// a safe fallback) otherwise — the one restaurant-identity string Home
+    /// and Rewards both show next to a reward, so a customer belonging to
+    /// more than one participating restaurant can tell which one a given
+    /// reward is actually for.
+    var restaurantIdentityLabel: String {
+        let name = restaurantName ?? "ce restaurant"
+        guard let city = restaurantCity, !city.trimmingCharacters(in: .whitespaces).isEmpty else { return name }
+        return "\(name) · \(city)"
     }
 
     /// Every restaurant this account is a loyalty member of, plus combined
