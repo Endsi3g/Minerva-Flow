@@ -59,7 +59,7 @@ struct AuthView: View {
 
     var body: some View {
         ZStack {
-            AuroraBackground()
+            MinervaColor.cream.ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 32) {
@@ -71,7 +71,7 @@ struct AuthView: View {
                             .frame(width: 28, height: 28)
                         (Text("Minerva ").foregroundStyle(MinervaColor.ink)
                             + Text("Flow").foregroundStyle(MinervaColor.emeraldDark))
-                            .font(.system(size: 16, weight: .medium))
+                            .font(.system(size: 16, weight: .bold))
                     }
 
                     card
@@ -123,10 +123,16 @@ struct AuthView: View {
     private var emailStep: some View {
         VStack(spacing: 16) {
             VStack(spacing: 4) {
-                Text("Bonjour, bienvenue")
-                    .font(MinervaFont.display(21))
+                Text(greetingTitle)
+                    // Requested as "Inter Bold" specifically for this
+                    // title — Inter isn't bundled in the app (no other
+                    // screen uses it, see Theme.swift), so this uses the
+                    // system font at .bold instead of pulling in a new
+                    // typeface for one Text. Ask if the exact Inter
+                    // typeface matters and I'll bundle the real font file.
+                    .font(.system(size: 21, weight: .bold))
                     .foregroundStyle(MinervaColor.ink)
-                Text("Retrouvez vos points, vos récompenses et les offres de vos restaurants préférés.")
+                Text(greetingSubtitle)
                     .font(.system(size: 13))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
@@ -179,7 +185,14 @@ struct AuthView: View {
                 passwordFields.transition(.opacity)
             }
 
-            consentSection
+            // Consent/terms are a signup concept — a returning customer
+            // logging in with a password already agreed to these when
+            // their account was created (whichever method they used), so
+            // asking again here was both nonsensical copy and needless
+            // extra length on what should be the shortest path in the app.
+            if needsConsent {
+                consentSection.transition(.opacity)
+            }
 
             if let errorMessage {
                 errorBanner(errorMessage)
@@ -201,6 +214,7 @@ struct AuthView: View {
             #endif
         }
         .animation(.easeInOut(duration: 0.2), value: authMode)
+        .animation(.easeInOut(duration: 0.2), value: passwordSubMode)
         .onAppear {
             // Firing the keyboard's own slide-up animation at the exact
             // instant RootView's screen crossfade starts makes both
@@ -215,7 +229,7 @@ struct AuthView: View {
         }
     }
 
-    // MARK: - OAuth (Apple / Google / Facebook)
+    // MARK: - OAuth (Apple / Google)
 
     private var oauthSection: some View {
         VStack(spacing: 12) {
@@ -225,16 +239,13 @@ struct AuthView: View {
 
             // Apple first and equally prominent, not an afterthought — App
             // Store Review Guideline 4.8 requires offering Sign in with
-            // Apple whenever another third-party social login (Google/
-            // Facebook, both below) is offered, with equivalent placement.
+            // Apple whenever another third-party social login (Google,
+            // below) is offered, with equivalent placement.
             oauthButton(provider: .apple, title: "Continuer avec Apple") {
                 AppleMarkIcon()
             }
             oauthButton(provider: .google, title: "Continuer avec Google") {
                 GoogleMarkIcon().frame(width: 18, height: 18)
-            }
-            oauthButton(provider: .facebook, title: "Continuer avec Facebook") {
-                FacebookMarkIcon().frame(width: 18, height: 18)
             }
         }
     }
@@ -590,19 +601,45 @@ struct AuthView: View {
         return value.range(of: pattern, options: .regularExpression) != nil
     }
 
+    /// Terms/consent only apply to actually creating an account — the OTP
+    /// path doubles as signup-or-login (see consentSection's own doc
+    /// comment) so it always asks, but password mode knows exactly which
+    /// one it is: skip it entirely for a returning login.
+    private var needsConsent: Bool {
+        !(authMode == .password && passwordSubMode == .login)
+    }
+
     private var canSubmit: Bool {
         if step == .code { return code.count == 6 }
-        guard isValidEmail(email) && acceptedTerms else { return false }
+        guard isValidEmail(email) else { return false }
+        if needsConsent && !acceptedTerms { return false }
         switch authMode {
         case .code:
             return true
         case .password:
-            guard password.count >= 8 else { return false }
-            return passwordSubMode == .login || password == confirmPassword
+            if passwordSubMode == .login { return !password.isEmpty }
+            return password.count >= 8 && password == confirmPassword
         }
     }
 
     private var trimmedEmail: String { email.trimmingCharacters(in: .whitespaces) }
+
+    private var greetingTitle: String {
+        switch authMode {
+        case .code: return "Bienvenue"
+        case .password: return passwordSubMode == .login ? "Content de vous revoir" : "Créer votre compte"
+        }
+    }
+
+    private var greetingSubtitle: String {
+        switch authMode {
+        case .code: return "Retrouvez vos points, vos récompenses et les offres de vos restaurants préférés."
+        case .password:
+            return passwordSubMode == .login
+                ? "Connectez-vous pour accéder à vos points et récompenses."
+                : "Aucune carte requise — rejoignez votre restaurant préféré en quelques secondes."
+        }
+    }
 
     private var submitTitle: String {
         switch authMode {

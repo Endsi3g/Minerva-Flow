@@ -41,9 +41,7 @@ struct ProfileView: View {
                             signOutButton
                             dangerZone
                         } else {
-                            Text("Aucun profil trouvé.")
-                                .font(.system(size: 13))
-                                .foregroundStyle(MinervaColor.inkSoft)
+                            NoProfileFoundView()
                                 .padding(.top, 40)
                         }
                     }

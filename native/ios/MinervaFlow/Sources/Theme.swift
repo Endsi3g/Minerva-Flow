@@ -16,9 +16,6 @@ enum MinervaColor {
     /// Web's --mv-lime — the Ambassadeur tier's banner color, matching
     /// Starbucks' Gold-status treatment.
     static let limeAccent = Color(red: 0xDF / 255, green: 0xFF / 255, blue: 0x5F / 255)
-    /// The GrainGradient panel's mint stop (components/auth/AuthShell.tsx) — used
-    /// natively only by AuroraBackground below, the auth screen's animated equivalent.
-    static let mint = Color(red: 0xDC / 255, green: 0xEC / 255, blue: 0xE3 / 255)
     static let border = Color(red: 0x1B / 255, green: 0x26 / 255, blue: 0x20 / 255).opacity(0.1)
 }
 
@@ -177,51 +174,63 @@ struct OutcomeBanner: View {
     }
 }
 
-/// The auth screen's animated backdrop — the native equivalent of the web
-/// auth pages' GrainGradient shader panel (components/auth/AuthShell.tsx).
-/// SwiftUI has no direct shader equivalent worth reaching for here, so this
-/// is three soft-blurred, slowly drifting circles in the same four brand
-/// colors instead — same visual language (cream ground, mint/lime/emerald
-/// blooms), built from plain SwiftUI. Respects Reduce Motion by freezing
-/// the blobs in place rather than disabling the background outright.
-struct AuroraBackground: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    private struct Blob { let color: Color; let size: CGFloat; let x: CGFloat; let y: CGFloat; let speed: Double }
-    private let blobs: [Blob] = [
-        Blob(color: MinervaColor.mint, size: 420, x: 0.18, y: 0.18, speed: 0.05),
-        Blob(color: MinervaColor.limeAccent.opacity(0.4), size: 340, x: 0.86, y: 0.14, speed: 0.07),
-        Blob(color: MinervaColor.emerald.opacity(0.28), size: 460, x: 0.78, y: 0.88, speed: 0.04),
-    ]
+/// Shown wherever a tab needs `supabase.customer` but the load finished
+/// with none (Home, Profile) — previously each screen just printed inert
+/// text with no way out, stranding anyone who ends up here (a data issue,
+/// a stale session) signed in with no visible way to retry or sign out.
+/// Surfaces the real failure reason when loadPortalData() caught one
+/// (supabase.lastError) instead of staying silent about it.
+struct NoProfileFoundView: View {
+    @EnvironmentObject var supabase: SupabaseManager
+    @State private var isRetrying = false
 
     var body: some View {
-        // Capped at 20fps (imperceptible for a slow drift) and composited
-        // into one Metal-backed layer via drawingGroup() — three
-        // continuously-reblurred layers at full display refresh rate
-        // measurably slowed this screen's first render in UI tests
-        // (borderline-flaky waitForExistence timeouts on the content
-        // behind it), and a login screen has no business being the
-        // heaviest view in the app.
-        TimelineView(.animation(minimumInterval: reduceMotion ? nil : 1 / 20, paused: reduceMotion)) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            ZStack {
-                MinervaColor.cream
-                ForEach(Array(blobs.enumerated()), id: \.offset) { _, blob in
-                    GeometryReader { geo in
-                        Circle()
-                            .fill(blob.color)
-                            .frame(width: blob.size, height: blob.size)
-                            .position(
-                                x: geo.size.width * blob.x + CGFloat(sin(t * blob.speed) * 26),
-                                y: geo.size.height * blob.y + CGFloat(cos(t * blob.speed * 1.3) * 26)
-                            )
-                    }
-                }
+        VStack(spacing: 14) {
+            Image(systemName: "person.crop.circle.badge.questionmark")
+                .font(.system(size: 32))
+                .foregroundStyle(MinervaColor.inkFaint)
+
+            Text("Aucun profil de fidélité trouvé pour ce compte.")
+                .font(.system(size: 13.5, weight: .medium))
+                .foregroundStyle(MinervaColor.inkSoft)
+                .multilineTextAlignment(.center)
+
+            if let lastError = supabase.lastError {
+                Text(lastError)
+                    .font(.system(size: 12))
+                    .foregroundStyle(MinervaColor.inkFaint)
+                    .multilineTextAlignment(.center)
             }
-            .blur(radius: 60)
-            .drawingGroup()
+
+            Button {
+                isRetrying = true
+                Task {
+                    await supabase.loadPortalData()
+                    isRetrying = false
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    if isRetrying { ProgressView().tint(.white) }
+                    Text(isRetrying ? "Nouvelle tentative…" : "Réessayer")
+                        .font(.system(size: 13.5, weight: .semibold))
+                }
+                .frame(maxWidth: 200)
+                .padding(.vertical, 11)
+            }
+            .background(MinervaColor.emerald)
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .buttonStyle(PressableButtonStyle())
+            .disabled(isRetrying)
+
+            Button("Se déconnecter") {
+                Task { await supabase.signOut() }
+            }
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundStyle(MinervaColor.inkSoft)
         }
-        .ignoresSafeArea()
+        .padding(28)
+        .frame(maxWidth: .infinity)
     }
 }
 

@@ -28,7 +28,7 @@ final class AuthFlowUITests: XCTestCase {
         XCTAssertTrue(seConnecter.waitForExistence(timeout: 5))
         seConnecter.tap()
 
-        XCTAssertTrue(app.staticTexts["Bonjour, bienvenue"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Bienvenue"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 5))
     }
 
@@ -44,14 +44,14 @@ final class AuthFlowUITests: XCTestCase {
         XCTAssertTrue(commencer.waitForExistence(timeout: 5))
         commencer.tap()
 
-        XCTAssertTrue(app.staticTexts["Bonjour, bienvenue"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Bienvenue"].waitForExistence(timeout: 5))
     }
 
     /// App Store Review Guideline 4.8: an app offering third-party social
-    /// login (Google/Facebook, both present) must also offer Sign in with
-    /// Apple, with equivalent prominence — this locks that in as a real
-    /// regression check, not just a one-time manual verification.
-    func testLoginCardOffersAppleAlongsideGoogleAndFacebook() throws {
+    /// login (Google, present) must also offer Sign in with Apple, with
+    /// equivalent prominence — this locks that in as a real regression
+    /// check, not just a one-time manual verification.
+    func testLoginCardOffersAppleAlongsideGoogle() throws {
         let app = XCUIApplication()
         app.launch()
         ensureSignedOut(app)
@@ -60,7 +60,6 @@ final class AuthFlowUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["Continuer avec Apple"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Continuer avec Google"].exists)
-        XCTAssertTrue(app.buttons["Continuer avec Facebook"].exists)
     }
 
     /// The password path is opt-in, alongside the default OTP-code flow —
