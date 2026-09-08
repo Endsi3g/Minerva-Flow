@@ -7,6 +7,7 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject var supabase: SupabaseManager
     @EnvironmentObject var notifications: NotificationManager
+    @EnvironmentObject var router: DeepLinkRouter
     @State private var showMyCard = false
     @State private var showRestaurantMap = false
     @State private var notificationDeniedAlert = false
@@ -295,13 +296,33 @@ struct HomeView: View {
 
     // MARK: - Offers feed (Starbucks-style full-width promo cards)
 
+    /// The 3 most worth surfacing right now: currently-live offers first,
+    /// and among those, the ones ending soonest — an offer about to expire
+    /// is more actionable than one that'll still be there next week. The
+    /// full catalog stays one tap away via "Voir plus" instead of piling
+    /// every offer into this feed.
+    private var topOffers: [Offer] {
+        Array(
+            supabase.offers.sorted { a, b in
+                if a.isLive != b.isLive { return a.isLive }
+                switch (a.endsAt, b.endsAt) {
+                case let (aEnd?, bEnd?): return aEnd < bEnd
+                case (.some, nil): return true
+                case (nil, .some): return false
+                case (nil, nil): return false
+                }
+            }
+            .prefix(3)
+        )
+    }
+
     private var offersFeed: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("En ce moment")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
-            ForEach(supabase.offers) { offer in
+            ForEach(topOffers) { offer in
                 Button {
                     selectedOffer = offer
                 } label: {
@@ -333,6 +354,18 @@ struct HomeView: View {
                 .background(MinervaColor.emerald.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.emerald.opacity(0.2)))
+            }
+
+            if supabase.offers.count > topOffers.count {
+                Button {
+                    router.pendingTab = .rewards
+                } label: {
+                    Text("Voir plus")
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(.vertical, 8)
+                .foregroundStyle(MinervaColor.emeraldDark)
             }
         }
     }

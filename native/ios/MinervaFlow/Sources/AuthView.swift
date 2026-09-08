@@ -52,8 +52,15 @@ struct AuthView: View {
         case terms, privacy
         var id: Self { self }
         var title: String { self == .terms ? "Conditions d'utilisation" : "Politique de confidentialité" }
+        /// Built from Config.apiBaseURL rather than a second hardcoded host
+        /// — a prior version pointed at the bare apex domain while every
+        /// other in-app network call (Config.apiBaseURL) uses the `www`
+        /// host, and if those two hosts are ever not perfectly aliased,
+        /// this sheet would silently fail to load, which is
+        /// indistinguishable from "the page doesn't exist" to whoever's
+        /// looking at it.
         var url: URL {
-            URL(string: self == .terms ? "https://minervaflow.app/legal/terms" : "https://minervaflow.app/legal/privacy")!
+            Config.apiBaseURL.appending(path: self == .terms ? "/legal/terms" : "/legal/privacy")
         }
     }
 
