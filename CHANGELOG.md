@@ -2,6 +2,26 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.30.0] - 2026-09-08
+
+### 📍 Points de contact physiques (NFC/QR)
+- Chaque autocollant NFC, chevalet ou sous-verre peut maintenant pointer vers un lien court unique (`/t/[code]`) qui redirige directement vers votre programme de fidélité ou votre menu — sans page d'attente. Gérez-les depuis Fidélisation → Points de contact, avec code QR généré automatiquement et statistiques par support (scans, inscriptions).
+
+### 💳 Cartes NFC personnalisées
+- Nouvelle option d'achat en un clic : une carte NFC brandée prête à poser, 75 $ CAD/carte, livrée directement.
+
+### 📧 Suivi des courriels
+- Les courriels d'accueil, de rétention et de facturation sont maintenant suivis (livré/ouvert/cliqué), pour voir concrètement ce qui fonctionne.
+
+### 🍎 Connexion avec Apple (application mobile)
+- L'application cliente offre maintenant Se connecter avec Apple, aux côtés de Google et Facebook.
+
+### 🔑 Mot de passe pour les clients (application mobile)
+- Les clients peuvent maintenant se connecter avec un mot de passe (en plus du code reçu par courriel), avec récupération de mot de passe oublié.
+
+### 🎨 Nouvel écran de connexion (application mobile)
+- Arrière-plan animé et nouvel accueil pour l'écran de connexion de l'application cliente.
+
 ## [v2.27.0] - 2026-09-03
 
 ### 🚀 Déploiement débloqué
