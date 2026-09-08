@@ -7,6 +7,7 @@ import { notifyWorkspaceOwners, notifyRestaurant } from "@/lib/data/notification
 import { getRestaurantIdByStripeConnectAccountId, syncConnectAccountStatus } from "@/lib/data/restaurant-payments";
 import { sendBillingLifecycleEmail, getWorkspaceOwnerContact } from "@/lib/email/billing-lifecycle";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recordPaidNfcCardOrder } from "@/lib/data/nfc-card-orders";
 import { formatCurrency } from "@/lib/utils";
 import type Stripe from "stripe";
 
@@ -56,6 +57,37 @@ export async function POST(req: Request) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
+
+      // $75 CAD one-time "carte NFC personnalisée" — a physical order, not
+      // a subscription (mode: "payment", no workspaceId/subscriptionId).
+      // Handled first and independently of the subscription branch below.
+      if (session.metadata?.kind === "nfc_card_order" && session.metadata.restaurantId) {
+        const restaurantId = session.metadata.restaurantId;
+        const quantity = Number(session.metadata.quantity) || 1;
+        const shipping = session.collected_information?.shipping_details;
+        const paymentIntentId =
+          typeof session.payment_intent === "string" ? session.payment_intent : (session.payment_intent?.id ?? null);
+
+        await recordPaidNfcCardOrder({
+          restaurantId,
+          quantity,
+          unitPriceCad: quantity > 0 ? (session.amount_total ?? 0) / 100 / quantity : 0,
+          totalAmountCad: (session.amount_total ?? 0) / 100,
+          shippingName: shipping?.name ?? null,
+          shippingAddress: shipping?.address ? { ...shipping.address } : null,
+          stripeCheckoutSessionId: session.id,
+          stripePaymentIntentId: paymentIntentId,
+        });
+        await notifyRestaurant({
+          restaurantId,
+          type: "nfc_card_order.paid",
+          title: "Commande de cartes NFC confirmée",
+          body: `${quantity} carte${quantity > 1 ? "s" : ""} NFC personnalisée${quantity > 1 ? "s" : ""} commandée${quantity > 1 ? "s" : ""} — livraison à venir.`,
+          link: "/fidelisation/points-de-contact",
+        });
+        break;
+      }
+
       const workspaceId = session.metadata?.workspaceId;
       const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
       const subscriptionId =

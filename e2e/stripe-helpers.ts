@@ -98,6 +98,36 @@ export function buildCheckoutCompletedEvent(input: {
   };
 }
 
+/** Separate from the subscription price envs — the $75 CAD NFC card add-on has its own price id and gate (isNfcCardPurchaseConfigured). */
+export function nfcCardPurchaseConfiguredForTests(): boolean {
+  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && process.env.STRIPE_PRICE_NFC_CARD);
+}
+
+export function buildNfcCardOrderCheckoutCompletedEvent(input: {
+  restaurantId: string;
+  quantity: number;
+  amountTotalCents: number;
+  shippingName?: string;
+}) {
+  return {
+    id: `evt_test_${Date.now()}`,
+    object: "event",
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: `cs_test_${Date.now()}`,
+        object: "checkout.session",
+        metadata: { kind: "nfc_card_order", restaurantId: input.restaurantId, quantity: String(input.quantity) },
+        amount_total: input.amountTotalCents,
+        payment_intent: `pi_test_${Date.now()}`,
+        collected_information: input.shippingName
+          ? { shipping_details: { name: input.shippingName, address: { country: "CA" } } }
+          : null,
+      },
+    },
+  };
+}
+
 export function buildSubscriptionUpdatedEvent(subscription: Stripe.Subscription, previousStatus?: string) {
   return {
     id: `evt_test_${Date.now()}`,
