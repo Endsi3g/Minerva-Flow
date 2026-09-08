@@ -18,7 +18,7 @@ export default function PrivacyPage() {
           Politique de confidentialité
         </h1>
         <p className="mb-8 text-[13px] font-medium text-mv-ink-faint">
-          Dernière mise à jour : 23 juillet 2026
+          Dernière mise à jour : 8 septembre 2026
         </p>
 
         <div className="space-y-8 text-[14px] leading-relaxed text-mv-ink-soft">
@@ -39,10 +39,27 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
+          <section>
+            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">2. Données des membres du programme de fidélité (application mobile)</h2>
+            <p className="mb-3">
+              Si vous êtes client d&apos;un établissement participant et utilisez l&apos;application mobile Minerva Flow (le « Portail client ») pour cumuler des points ou échanger des récompenses, nous recueillons également, de façon distincte des renseignements de compte du personnel décrits à la section 1 :
+            </p>
+            <ul className="list-disc space-y-2 pl-6 text-mv-ink">
+              <li><strong>Historique de points :</strong> Chaque visite, ajustement et échange de points qui vous concerne, avec la date et le montant associés.</li>
+              <li><strong>Échanges de récompenses :</strong> Les récompenses que vous avez réclamées et les codes à usage unique générés pour les valider en établissement.</li>
+              <li><strong>Historique de visites :</strong> Nombre de visites, montant total dépensé et date de votre dernière visite auprès de chaque établissement participant dont vous êtes membre.</li>
+              <li><strong>Préférences du compte :</strong> Photo de profil, offres favorites et fréquence des notifications que vous choisissez de recevoir.</li>
+              <li><strong>Jeton de notifications :</strong> Un identifiant technique (jeton APNs) permettant l&apos;envoi de notifications push, si vous les avez autorisées.</li>
+            </ul>
+            <p className="mt-3">
+              Ces renseignements sont utilisés exclusivement pour faire fonctionner votre compte de fidélité (calcul des points, affichage de votre historique, notifications que vous avez autorisées) et ne sont jamais utilisés à des fins publicitaires externes. Les droits d&apos;accès, de rectification et de suppression décrits à la section 6 s&apos;appliquent également à ces données.
+            </p>
+          </section>
+
           {/* Mandatory Google Limited Use Disclosure Section for OAuth Verification */}
           <section className="rounded-2xl border border-mv-green/30 bg-mv-green-tint/40 p-6">
             <h2 className="mb-3 font-display text-[18px] font-bold text-mv-green-dark flex items-center gap-2">
-              <span>2. Utilisation des données via les API Google (Google API Disclosure)</span>
+              <span>3. Utilisation des données via les API Google (Google API Disclosure)</span>
             </h2>
             <p className="mb-3 text-[13.5px] leading-relaxed text-mv-ink">
               L&apos;utilisation et le transfert par Minerva Flow vers tout autre outil des informations reçues des API Google respectent scrupuleusement la politique d&apos;utilisation des données utilisateur des services API Google (<strong>Google API Services User Data Policy</strong>), y compris les exigences d&apos;utilisation limitée (<strong>Limited Use requirements</strong>).
@@ -55,7 +72,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">3. Utilisation des données</h2>
+            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">4. Utilisation des données</h2>
             <p className="mb-2">Nous traitons vos données exclusivement pour :</p>
             <ul className="list-disc space-y-1.5 pl-6">
               <li>Gérer votre compte et fournir l&apos;accès sécurisé aux tableaux de bord de votre restaurant.</li>
@@ -65,14 +82,14 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">4. Partage et sous-traitants</h2>
+            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">5. Partage et sous-traitants</h2>
             <p>
               Vos données ne sont jamais commercialisées. Elles ne sont partagées qu&apos;avec des prestataires techniques de confiance nécessaires au fonctionnement du service (tels que Supabase pour le stockage sécurisé des données et Vercel pour l&apos;hébergement), tous soumis à des exigences contractuelles strictes en matière de sécurité et de confidentialité.
             </p>
           </section>
 
           <section>
-            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">5. Droits et Responsable de la vie privée (Loi 25)</h2>
+            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">6. Droits et Responsable de la vie privée (Loi 25)</h2>
             <p className="mb-3">
               Conformément à la Loi 25 (Loi modernisant des dispositions législatives en matière de protection des renseignements personnels au Québec), vous disposez du droit d&apos;accès, de rectification, de portabilité et de suppression de vos données personnelles.
             </p>

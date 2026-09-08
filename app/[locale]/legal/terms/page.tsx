@@ -18,7 +18,7 @@ export default function TermsPage() {
           Conditions d&apos;utilisation
         </h1>
         <p className="mb-8 text-[13px] font-medium text-mv-ink-faint">
-          Dernière mise à jour : 23 juillet 2026
+          Dernière mise à jour : 8 septembre 2026
         </p>
 
         <div className="space-y-8 text-[14px] leading-relaxed text-mv-ink-soft">
@@ -51,14 +51,27 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">5. Intégrations et Services Tiers</h2>
+            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">5. Compte client et programme de fidélité</h2>
+            <p className="mb-2">
+              Si vous créez un compte via l&apos;application mobile Minerva Flow en tant que client d&apos;un établissement participant plutôt qu&apos;en tant qu&apos;exploitant, les conditions suivantes s&apos;appliquent à votre relation avec le Service, en complément des sections ci-dessus :
+            </p>
+            <ul className="list-disc space-y-1.5 pl-6">
+              <li>Les points de fidélité cumulés n&apos;ont aucune valeur monétaire, ne sont ni transférables ni remboursables, et ne peuvent être échangés que contre les récompenses offertes par l&apos;établissement où ils ont été accumulés.</li>
+              <li>Chaque établissement participant détermine librement son propre barème de points, ses récompenses et ses offres ; Minerva Flow ne garantit ni leur disponibilité ni leur maintien dans le temps.</li>
+              <li>Un établissement peut, à sa discrétion, ajuster ou retirer des points en cas d&apos;erreur, de fraude ou d&apos;abus constaté.</li>
+              <li>Vous pouvez fermer votre compte client à tout moment depuis l&apos;application ; vos points et récompenses non échangés sont alors définitivement perdus.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">6. Intégrations et Services Tiers</h2>
             <p>
               Le Service permet de vous connecter à des services tiers (notamment Google APIs, Square, Stripe). L&apos;utilisation de ces intégrations reste soumise aux conditions et règles de confidentialité de chacun de ces fournisseurs tiers.
             </p>
           </section>
 
           <section>
-            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">6. Modifications et Contact</h2>
+            <h2 className="mb-3 font-display text-[18px] font-bold text-mv-ink">7. Modifications et Contact</h2>
             <p>
               Nous nous réservons le droit de modifier les présentes conditions. Toute révision majeure sera notifiée dans l&apos;application. Pour toute question, veuillez nous contacter sur la page{" "}
               <Link href="/support" className="text-mv-green-dark underline font-semibold">
