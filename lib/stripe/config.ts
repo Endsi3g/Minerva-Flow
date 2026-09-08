@@ -48,6 +48,25 @@ export function stripePriceIdFor(tier: SelfServePlanTier, interval: BillingInter
 }
 
 /**
+ * The $75 CAD one-time "carte NFC personnalisée" add-on (see
+ * scripts/create-stripe-nfc-card-price.ts) — a separate one-time price,
+ * not part of the subscription catalog above. Same "gracefully absent"
+ * pattern: the purchase panel on /fidelisation/points-de-contact stays
+ * hidden until both env vars are set.
+ */
+export function isNfcCardPurchaseConfigured(): boolean {
+  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_NFC_CARD);
+}
+
+export function stripeNfcCardPriceId(): string {
+  const priceId = process.env.STRIPE_PRICE_NFC_CARD;
+  if (!priceId) {
+    throw new Error("STRIPE_PRICE_NFC_CARD n'est pas configuré (voir .env.local).");
+  }
+  return priceId;
+}
+
+/**
  * Resolves a Stripe price id back to a plan tier + interval, driven off the
  * `minerva_flow_tier` / `minerva_flow_interval` metadata the catalog script
  * stamps on every price — avoids hardcoding a second env-var-keyed map here

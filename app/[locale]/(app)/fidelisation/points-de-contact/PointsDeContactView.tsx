@@ -8,9 +8,15 @@ import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select } from "@/components/minerva/FormField";
 import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
 import { createTouchpointAction, deleteTouchpointAction } from "../actions";
+import { createNfcCardOrderCheckoutAction } from "./actions";
 import { notifyError } from "@/lib/notify-error";
-import type { PhysicalTouchpointDestinationKind, PhysicalTouchpointFunnel, PhysicalTouchpointType } from "@/lib/types";
-import { MapPin, Plus, Download, ExternalLink, Copy, Check, Trash2, Wand2 } from "lucide-react";
+import type {
+  NfcCardOrder,
+  PhysicalTouchpointDestinationKind,
+  PhysicalTouchpointFunnel,
+  PhysicalTouchpointType,
+} from "@/lib/types";
+import { MapPin, Plus, Download, ExternalLink, Copy, Check, Trash2, Wand2, CreditCard, Truck } from "lucide-react";
 import QRCode from "qrcode";
 
 const TYPE_LABELS: Record<PhysicalTouchpointType, string> = {
@@ -216,12 +222,90 @@ function NewTouchpointModal({
   );
 }
 
+const NFC_CARD_ORDER_STATUS_LABELS: Record<NfcCardOrder["status"], string> = {
+  paid: "Payée",
+  shipped: "Expédiée",
+  fulfilled: "Livrée",
+  cancelled: "Annulée",
+};
+
+function NfcCardOrderPanel({ restaurantId }: { restaurantId: string }) {
+  const [quantity, setQuantity] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleOrder() {
+    setIsSubmitting(true);
+    try {
+      const url = await createNfcCardOrderCheckoutAction(restaurantId, quantity);
+      if (url) window.location.href = url;
+      else notifyError("La commande a échoué. Réessayez dans un instant.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Matériel"
+        title="Cartes NFC personnalisées"
+        description="Une carte NFC brandée, prête à poser au comptoir ou à donner à un client VIP — 75 $ CAD/carte, livrée chez vous."
+      />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="w-24">
+          <Field label="Quantité">
+            <Input
+              type="number"
+              min={1}
+              max={500}
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
+            />
+          </Field>
+        </div>
+        <Button onClick={handleOrder} disabled={isSubmitting}>
+          <CreditCard size={14} /> {isSubmitting ? "Redirection…" : `Commander (${quantity * 75} $ CAD)`}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function NfcCardOrderHistory({ orders }: { orders: NfcCardOrder[] }) {
+  if (orders.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader eyebrow="Matériel" title="Vos commandes de cartes NFC" />
+      <div className="space-y-2">
+        {orders.map((order) => (
+          <div key={order.id} className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
+            <div className="flex items-center gap-2.5">
+              <Truck size={14} className="text-mv-ink-faint" />
+              <div>
+                <p className="text-[12.5px] font-medium text-mv-ink">
+                  {order.quantity} carte{order.quantity > 1 ? "s" : ""} · {order.totalAmountCad} $ CAD
+                </p>
+                <p className="text-[11.5px] text-mv-ink-faint">{new Date(order.createdAt).toLocaleDateString("fr-CA")}</p>
+              </div>
+            </div>
+            <span className="text-[11.5px] font-medium text-mv-ink-faint">{NFC_CARD_ORDER_STATUS_LABELS[order.status]}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export function PointsDeContactView({
   restaurantId,
   initialFunnels,
+  nfcCardOrders,
+  nfcCardPurchaseEnabled,
 }: {
   restaurantId: string | null;
   initialFunnels: PhysicalTouchpointFunnel[];
+  nfcCardOrders: NfcCardOrder[];
+  nfcCardPurchaseEnabled: boolean;
 }) {
   const [funnels, setFunnels] = useState(initialFunnels);
   const [createOpen, setCreateOpen] = useState(false);
@@ -241,6 +325,12 @@ export function PointsDeContactView({
         title="Points de contact"
         description="Chaque autocollant NFC, chevalet ou sous-verre pointe vers un lien unique — vous voyez exactement quel support amène des inscriptions."
       />
+      {nfcCardPurchaseEnabled && restaurantId && (
+        <div className="mb-6 space-y-4">
+          <NfcCardOrderPanel restaurantId={restaurantId} />
+          <NfcCardOrderHistory orders={nfcCardOrders} />
+        </div>
+      )}
       <Card>
         <CardHeader
           eyebrow="Supports physiques"

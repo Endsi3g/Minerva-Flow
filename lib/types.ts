@@ -791,6 +791,19 @@ export type PhysicalTouchpointFunnel = {
   counts: Partial<Record<PhysicalTouchpointEventType, number>>;
 };
 
+export type NfcCardOrderStatus = "paid" | "shipped" | "fulfilled" | "cancelled";
+
+export type NfcCardOrder = {
+  id: string;
+  restaurantId: string;
+  quantity: number;
+  unitPriceCad: number;
+  totalAmountCad: number;
+  status: NfcCardOrderStatus;
+  shippingName: string | null;
+  createdAt: string;
+};
+
 export type Offer = {
   id: string;
   restaurantId: string;
