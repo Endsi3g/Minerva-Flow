@@ -2,6 +2,27 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.31.0] - 2026-09-08
+
+### 🪪 Code de jumelage (application mobile)
+- La carte de fidélité affiche maintenant, sous le code QR habituel, un code à 6 chiffres qui se régénère à la demande. Votre personnel peut l'entrer directement dans Fidélisation → Identifier un membre pour retrouver le client et enregistrer sa visite, sans avoir à scanner quoi que ce soit.
+
+### 🎁 Réclamer une récompense — page dédiée (application mobile)
+- Cliquer sur une récompense (depuis l'Accueil ou le Catalogue) ouvre maintenant une page dédiée avec les détails avant l'échange, plutôt que d'échanger les points immédiatement. La carte « Prochaine récompense » de l'Accueil indique aussi maintenant à quel restaurant elle appartient.
+
+### 🏷️ Page d'offre repensée (application mobile)
+- La photo d'une offre occupe maintenant tout l'espace en haut de la page, avec un bouton de fermeture flottant directement sur l'image. Une section « Plusieurs autres offres » a été ajoutée en bas pour parcourir les autres offres du restaurant.
+
+### 👤 Historique des points simplifié (application mobile)
+- Le profil affiche maintenant 6 mouvements de points à la fois avec un bouton « Voir plus », accompagné d'un filtre Tous/Gagnés/Échangés.
+
+### 📜 Politique de confidentialité et conditions mises à jour
+- Les deux documents couvrent maintenant explicitement la relation avec les clients du programme de fidélité (application mobile), en plus du contenu existant pour les exploitants.
+
+### 🔧 Corrections
+- Un problème de configuration de domaine empêchait l'application mobile de charger le menu, la carte des restaurants et le nom du restaurant pour tous les utilisateurs — corrigé.
+- Un bug empêchait la génération du code de jumelage ci-dessus — corrigé.
+
 ## [v2.30.0] - 2026-09-08
 
 ### 📍 Points de contact physiques (NFC/QR)
