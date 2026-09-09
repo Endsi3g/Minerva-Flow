@@ -14,7 +14,7 @@ struct MainTabView: View {
                 .tabItem { Label("Commander", systemImage: "fork.knife") }
                 .tag(AppTab.order)
 
-            ScanToOrderView(showsCloseButton: false)
+            ScannerTabView()
                 .tabItem { Label("Scanner", systemImage: "qrcode.viewfinder") }
                 .tag(AppTab.scan)
 

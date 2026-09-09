@@ -34,6 +34,7 @@
 		85AB6A5594778C5544D34E18 /* RestaurantMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E2365512980AA23003195C /* RestaurantMapView.swift */; };
 		8E9FA68C879A95D98AA5BF22 /* BrandMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */; };
 		976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */; };
+		9AA9F37AF29A965A6909B321 /* ScannerTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376F3EEA99798EAF0012A1A4 /* ScannerTabView.swift */; };
 		9BC5FB157B434B491741712A /* OrderTotals.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA427B759305A43BF018AB62 /* OrderTotals.swift */; };
 		9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48489698C6B750A6E75FEFEE /* BiometricLock.swift */; };
 		A046D3E2BA39E0B6F5839CF3 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = D76530360EDCB9FEAD965814 /* Sentry */; };
@@ -102,6 +103,7 @@
 		2322CAFF570744A7B01CEE6B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		2D70223A1891BFC32372F3C5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		376F3EEA99798EAF0012A1A4 /* ScannerTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerTabView.swift; sourceTree = "<group>"; };
 		3FDF4D1B53C09BD25A26EEDF /* MinervaFlowWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlowWidget.entitlements; sourceTree = "<group>"; };
 		4010F1012ABA1F318CBAF125 /* MinervaFlowUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MinervaFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		442686E96CEA070F53FB728F /* EditProfileSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileSheet.swift; sourceTree = "<group>"; };
@@ -229,6 +231,7 @@
 				639E5AD94A1648D1C2D5F907 /* RewardDetailView.swift */,
 				5A9CD9B5E79E9FE474707739 /* RewardsView.swift */,
 				89B5498B7D0733D7AA1958D9 /* RootView.swift */,
+				376F3EEA99798EAF0012A1A4 /* ScannerTabView.swift */,
 				E001F62368824618EE0ACB49 /* SupabaseManager.swift */,
 				ECE934F2A5846A120417A19B /* Theme.swift */,
 				574318127126383937A04DB7 /* WebPageView.swift */,
@@ -495,6 +498,7 @@
 				006EB054257CBD3CCD3F7F25 /* RewardDetailView.swift in Sources */,
 				2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */,
 				F867193E516C1BAD652866EE /* RootView.swift in Sources */,
+				9AA9F37AF29A965A6909B321 /* ScannerTabView.swift in Sources */,
 				81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */,
 				E602B1260BDBC61608C8F1C7 /* Theme.swift in Sources */,
 				CAFBB02D7DDD8E9207AF10E1 /* WebPageView.swift in Sources */,
