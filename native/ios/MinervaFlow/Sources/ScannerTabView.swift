@@ -12,39 +12,35 @@ struct ScannerTabView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                backgroundGradient
+            ScrollView {
+                VStack(spacing: 24) {
+                    Spacer(minLength: 20)
 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        Spacer(minLength: 20)
-
-                        VStack(spacing: 4) {
-                            Text(supabase.restaurantIdentityLabel)
-                                .font(.system(size: 12.5, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.85))
-                            Text("Jumelage de compte")
-                                .font(MinervaFont.display(22))
-                                .foregroundStyle(.white)
-                        }
-
-                        pairingCodeCard
-
-                        Text("Ce code identifie directement votre compte, sans avoir à scanner quoi que ce soit — le personnel l'entre dans son tableau de bord pour vous retrouver et enregistrer votre visite.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.75))
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.horizontal, 32)
-
-                        Spacer(minLength: 20)
+                    VStack(spacing: 4) {
+                        Text(supabase.restaurantIdentityLabel)
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundStyle(MinervaColor.inkSoft)
+                        Text("Jumelage de compte")
+                            .font(MinervaFont.display(22))
+                            .foregroundStyle(MinervaColor.ink)
                     }
-                    .padding(.horizontal, 24)
+
+                    pairingCodeCard
+
+                    Text("Ce code identifie directement votre compte, sans avoir à scanner quoi que ce soit — le personnel l'entre dans son tableau de bord pour vous retrouver et enregistrer votre visite.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 32)
+
+                    Spacer(minLength: 20)
                 }
+                .padding(.horizontal, 24)
             }
+            .background(MinervaColor.cream.ignoresSafeArea())
             .navigationTitle("Scanner")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -52,7 +48,6 @@ struct ScannerTabView: View {
                     } label: {
                         Image(systemName: "camera.viewfinder")
                     }
-                    .tint(.white)
                     .accessibilityLabel("Scanner un code de restaurant")
                 }
             }
@@ -63,15 +58,6 @@ struct ScannerTabView: View {
                 ScanToOrderView(showsCloseButton: true)
             }
         }
-    }
-
-    private var backgroundGradient: some View {
-        LinearGradient(
-            colors: [MinervaColor.emerald, MinervaColor.emeraldDark],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        .ignoresSafeArea()
     }
 
     private var pairingCodeCard: some View {
@@ -136,9 +122,14 @@ struct ScannerTabView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity)
-        .background(.white.opacity(0.12))
+        .background(
+            LinearGradient(
+                colors: [MinervaColor.emerald, MinervaColor.emeraldDark],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .clipShape(RoundedRectangle(cornerRadius: 28))
-        .overlay(RoundedRectangle(cornerRadius: 28).stroke(.white.opacity(0.2), lineWidth: 1))
     }
 
     /// "123456" -> "123 456" for readability — purely cosmetic, the raw

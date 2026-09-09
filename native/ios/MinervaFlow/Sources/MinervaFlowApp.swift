@@ -12,6 +12,16 @@ struct MinervaFlowApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        // AsyncImage (menu items, offers, restaurant photos) uses
+        // URLSession.shared under the hood, whose default URLCache is tiny
+        // (iOS default: 512KB memory / 10MB disk) — every menu item photo
+        // across a 50+ item demo menu blows past that immediately, so
+        // re-opening a category you've already visited re-downloads every
+        // image instead of hitting cache. Bumping the shared cache once at
+        // launch is a one-line fix for a real, reported "slow to reopen a
+        // category" complaint, with no new dependency.
+        URLCache.shared = URLCache(memoryCapacity: 50 * 1024 * 1024, diskCapacity: 200 * 1024 * 1024)
+
         // Harmless no-op until Config.sentryDSN is filled in (see its own
         // comment) — the web app already has a real Sentry organization,
         // this just hasn't been pointed at an iOS project within it yet.
