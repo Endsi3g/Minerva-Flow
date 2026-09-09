@@ -471,3 +471,43 @@ export async function sendFeatureFeedbackEmail({
   });
   return { ok: !error };
 }
+
+/**
+ * Native customer-app survey (SurveyView.swift) — same fire-and-forget,
+ * no-op-on-missing-key contract as sendFeatureFeedbackEmail, reusing the
+ * same recipient since both are "someone left feedback" mail with no
+ * dashboard to read it from otherwise. All fields come from a customer's
+ * device over the /api/portal/survey bridge, so every interpolated value
+ * is escaped.
+ */
+export async function sendSurveyResponseEmail({
+  customerName,
+  customerEmail,
+  restaurantName,
+  rating,
+  comment,
+}: {
+  customerName: string;
+  customerEmail: string | null;
+  restaurantName: string;
+  rating: number;
+  comment: string | null;
+}): Promise<{ ok: boolean }> {
+  if (!resend) return { ok: false };
+
+  const p = (text: string) => `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6; margin: 0 0 10px;">${text}</p>`;
+  const stars = "★".repeat(rating) + "☆".repeat(Math.max(0, 5 - rating));
+  const bodyHtml =
+    p(`<strong>${escapeHtml(customerName)}</strong>${customerEmail ? ` (${escapeHtml(customerEmail)})` : ""} — ${escapeHtml(restaurantName)}`) +
+    p(`<strong>Note :</strong> ${stars} (${rating}/5)`) +
+    (comment ? p(`<strong>Commentaire :</strong> ${escapeHtml(comment)}`) : "");
+
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: FEEDBACK_RECIPIENT,
+    replyTo: customerEmail ?? REPLY_TO,
+    subject: `Sondage app — ${restaurantName} (${rating}/5)`,
+    html: `<div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">${bodyHtml}</div>`,
+  });
+  return { ok: !error };
+}

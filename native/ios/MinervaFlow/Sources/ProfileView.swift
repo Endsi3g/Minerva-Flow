@@ -18,6 +18,7 @@ struct ProfileView: View {
     @State private var exportedDataFileURL: URL?
     @State private var historyFilter: HistoryFilter = .all
     @State private var showAllHistory = false
+    @State private var showSurvey = false
 
     private enum HistoryFilter: String, CaseIterable {
         case all, earned, redeemed
@@ -86,6 +87,9 @@ struct ProfileView: View {
             if let customer = supabase.customer {
                 EditProfileSheet(customer: customer)
             }
+        }
+        .sheet(isPresented: $showSurvey) {
+            SurveyView()
         }
     }
 
@@ -421,6 +425,10 @@ struct ProfileView: View {
                 Divider().padding(.leading, 44)
                 aboutRow(icon: "lock", title: "Politique de confidentialité") {
                     legalSheet = .privacy
+                }
+                Divider().padding(.leading, 44)
+                aboutRow(icon: "text.bubble", title: "Donner votre avis") {
+                    showSurvey = true
                 }
                 Divider().padding(.leading, 44)
                 exportDataRow
