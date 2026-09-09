@@ -1,11 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { respondToReview } from "@/lib/data/reputation";
+import { respondToReview, respondToGoogleReview } from "@/lib/data/reputation";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
 
 export async function respondToReviewAction(reviewId: string, response: string): Promise<boolean> {
   const ok = await respondToReview(reviewId, response);
+  if (ok) revalidatePath("/reputation");
+  return ok;
+}
+
+export async function respondToGoogleReviewAction(reviewId: string, response: string): Promise<boolean> {
+  const ok = await respondToGoogleReview(reviewId, response);
   if (ok) revalidatePath("/reputation");
   return ok;
 }

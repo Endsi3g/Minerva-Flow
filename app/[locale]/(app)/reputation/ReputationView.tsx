@@ -11,8 +11,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { GooglePlacesSearch } from "@/components/places/GooglePlacesSearch";
 import { notifyError } from "@/lib/notify-error";
 import { useApp } from "@/lib/app-context";
-import { respondToReviewAction, connectGooglePlaceAction } from "./actions";
-import type { PrivateReviewWithCustomer, ItemOrOfferReview } from "@/lib/data/reputation";
+import { respondToReviewAction, respondToGoogleReviewAction, connectGooglePlaceAction } from "./actions";
+import type { PrivateReviewWithCustomer, ItemOrOfferReview, GoogleReviewRow } from "@/lib/data/reputation";
 import type { Restaurant } from "@/lib/types";
 import { Star, MessageSquareWarning, MapPin, CheckCircle2 } from "lucide-react";
 
@@ -80,6 +80,63 @@ function GoogleConnectCard({ restaurantId, currentPlaceId }: { restaurantId: str
   );
 }
 
+function GoogleRespondCard({ review, onResponded }: { review: GoogleReviewRow; onResponded: (id: string, response: string) => void }) {
+  const [response, setResponse] = useState(review.ownerResponse ?? "");
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function handleSave() {
+    if (!response.trim()) {
+      notifyError("La réponse ne peut pas être vide.");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const ok = await respondToGoogleReviewAction(review.id, response);
+      if (ok) {
+        onResponded(review.id, response);
+        toast.success("Réponse enregistrée.");
+      } else {
+        notifyError("L'envoi de la réponse a échoué.");
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-mv-border bg-mv-surface p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <StarRow rating={review.rating} />
+          <span className="text-[12.5px] font-medium text-mv-ink">{review.authorName}</span>
+        </div>
+        {review.publishedAt && (
+          <span className="text-[11.5px] text-mv-ink-faint">
+            {new Date(review.publishedAt).toLocaleDateString("fr-CA", { year: "numeric", month: "short", day: "numeric" })}
+          </span>
+        )}
+      </div>
+      {review.reviewText && <p className="mb-3 text-[13px] leading-relaxed text-mv-ink-soft">{review.reviewText}</p>}
+      <Textarea
+        value={response}
+        onChange={(e) => setResponse(e.target.value)}
+        placeholder="Notez votre réponse ou l'action prise (ceci ne publie pas automatiquement sur Google Maps)…"
+        className="mb-2 min-h-20"
+      />
+      <div className="flex items-center justify-end gap-2">
+        {review.ownerRespondedAt && (
+          <span className="mr-auto text-[11.5px] text-mv-ink-faint">
+            Répondu le {new Date(review.ownerRespondedAt).toLocaleDateString("fr-CA")}
+          </span>
+        )}
+        <Button size="sm" onClick={handleSave} disabled={isSaving}>
+          {review.ownerResponse ? "Mettre à jour la réponse" : "Répondre"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function RespondCard({ review, onResponded }: { review: PrivateReviewWithCustomer; onResponded: (id: string, response: string) => void }) {
   const [response, setResponse] = useState(review.ownerResponse ?? "");
   const [isSaving, setIsSaving] = useState(false);
@@ -140,18 +197,25 @@ export function ReputationView({
   restaurant,
   privateReviews,
   itemReviews,
+  googleReviews,
 }: {
   restaurantId: string | null;
   restaurant: Restaurant | null;
   privateReviews: PrivateReviewWithCustomer[];
   itemReviews: ItemOrOfferReview[];
+  googleReviews: GoogleReviewRow[];
 }) {
   const { role } = useApp();
   const [reviews, setReviews] = useState(privateReviews);
+  const [gReviews, setGReviews] = useState(googleReviews);
   const canRespond = role === "owner" || role === "manager" || role === "staff";
 
   function handleResponded(id: string, response: string) {
     setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, ownerResponse: response, ownerRespondedAt: new Date().toISOString() } : r)));
+  }
+
+  function handleGoogleResponded(id: string, response: string) {
+    setGReviews((prev) => prev.map((r) => (r.id === id ? { ...r, ownerResponse: response, ownerRespondedAt: new Date().toISOString() } : r)));
   }
 
   if (!restaurantId || !restaurant) {
@@ -165,6 +229,8 @@ export function ReputationView({
 
   const unanswered = reviews.filter((r) => !r.ownerResponse);
   const answered = reviews.filter((r) => r.ownerResponse);
+  const googleUnanswered = gReviews.filter((r) => !r.ownerResponse);
+  const googleAnswered = gReviews.filter((r) => r.ownerResponse);
 
   return (
     <div>
@@ -175,6 +241,41 @@ export function ReputationView({
       />
 
       <GoogleConnectCard restaurantId={restaurantId} currentPlaceId={restaurant.googlePlaceId} />
+
+      {restaurant.googlePlaceId && (
+        <div className="mb-4">
+          <Card>
+            <CardHeader
+              eyebrow="Google Maps"
+              title="Avis Google Maps"
+              description={
+                gReviews.length > 0
+                  ? `${gReviews.length} avis synchronisé${gReviews.length > 1 ? "s" : ""} (les 5 plus récents, limite de l'API Google).`
+                  : "Aucun avis synchronisé pour l'instant — la synchronisation se fait une fois par jour."
+              }
+            />
+            {gReviews.length === 0 ? (
+              <EmptyState icon={MapPin} title="Rien à afficher pour l'instant" description="Revenez après la prochaine synchronisation quotidienne." />
+            ) : (
+              <div className="space-y-3">
+                {[...googleUnanswered, ...googleAnswered].map((review) =>
+                  canRespond ? (
+                    <GoogleRespondCard key={review.id} review={review} onResponded={handleGoogleResponded} />
+                  ) : (
+                    <div key={review.id} className="rounded-xl border border-mv-border bg-mv-surface p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <StarRow rating={review.rating} />
+                        <span className="text-[12.5px] font-medium text-mv-ink">{review.authorName}</span>
+                      </div>
+                      {review.reviewText && <p className="text-[13px] text-mv-ink-soft">{review.reviewText}</p>}
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
 
       <div className="mb-4">
         <Card>

@@ -161,6 +161,51 @@ export async function sendEmployeeInviteEmail({
 }
 
 /**
+ * Best-effort reminder to the owner when the daily poll-google-reviews
+ * cron detects a new Google Maps review at or below the reputation
+ * threshold (see app/api/cron/poll-google-reviews) — same fire-and-forget
+ * contract as every other sender here. Author name and review text come
+ * from Google (external, untrusted), so they're escaped here rather than
+ * left to the caller.
+ */
+export async function sendReputationAlertEmail({
+  to,
+  restaurantName,
+  authorName,
+  rating,
+  reviewText,
+}: {
+  to: string;
+  restaurantName: string;
+  authorName: string;
+  rating: number;
+  reviewText: string | null;
+}): Promise<{ ok: boolean }> {
+  if (!resend) return { ok: false };
+
+  const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
+  const safeRestaurantName = escapeHtml(restaurantName);
+  const bodyHtml = `
+    <p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">
+      ${safeRestaurantName} a reçu un nouvel avis Google Maps de <strong>${escapeHtml(authorName)}</strong> :
+    </p>
+    <p style="font-size: 20px; color: #167f5b; margin: 4px 0;">${stars}</p>
+    ${reviewText ? `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6; font-style: italic;">« ${escapeHtml(reviewText)} »</p>` : ""}
+    <p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">
+      Répondez-y directement depuis votre page Réputation.
+    </p>
+  `;
+
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: `${restaurantName} — nouvel avis Google Maps (${rating}★)`,
+    html: emailShell(bodyHtml, "Voir et répondre", `${APP_ORIGIN}/reputation`),
+  });
+  return { ok: !error };
+}
+
+/**
  * Automated retention win-back/birthday email (app/api/cron/retention-engine)
  * — same best-effort contract as sendInviteEmail. bodyHtml is caller-composed
  * (rule-based templates, not AI-generated per send — see the cron route),
