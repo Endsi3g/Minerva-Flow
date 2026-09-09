@@ -103,6 +103,55 @@ export async function getMenuAndOfferReviews(restaurantId: string): Promise<Item
   return [...menu, ...offers].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
+export type GoogleReviewRow = {
+  id: string;
+  authorName: string;
+  rating: number;
+  reviewText: string | null;
+  publishedAt: string | null;
+  ownerResponse: string | null;
+  ownerRespondedAt: string | null;
+};
+
+type RawGoogleReviewRow = {
+  id: string;
+  author_name: string;
+  rating: number;
+  review_text: string | null;
+  published_at: string | null;
+  owner_response: string | null;
+  owner_responded_at: string | null;
+};
+
+/** Synced by app/api/cron/poll-google-reviews (Phase 3) — a restaurant with
+ * no google_place_id connected simply has none yet, not an error state. */
+export async function getGoogleReviews(restaurantId: string): Promise<GoogleReviewRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("google_reviews")
+    .select("id, author_name, rating, review_text, published_at, owner_response, owner_responded_at")
+    .eq("restaurant_id", restaurantId)
+    .order("published_at", { ascending: false });
+
+  if (error || !data) return [];
+  return (data as RawGoogleReviewRow[]).map((row) => ({
+    id: row.id,
+    authorName: row.author_name,
+    rating: row.rating,
+    reviewText: row.review_text,
+    publishedAt: row.published_at,
+    ownerResponse: row.owner_response,
+    ownerRespondedAt: row.owner_responded_at,
+  }));
+}
+
+export async function respondToGoogleReview(reviewId: string, response: string): Promise<boolean> {
+  if (!response.trim()) return false;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("respond_to_google_review", { p_review_id: reviewId, p_response: response.trim() });
+  return !error;
+}
+
 /**
  * respond_to_review (0098) re-checks is_restaurant_member itself using
  * the caller's own auth context — this must go through the session-scoped

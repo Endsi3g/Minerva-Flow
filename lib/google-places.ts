@@ -169,3 +169,58 @@ export function mapPlaceDetailsToRestaurantInput(details: PlaceDetails): Partial
     googlePlaceId: details.placeId,
   };
 }
+
+export type PlaceReview = {
+  /** Stable per-place review id extracted from the v1 API's resource name
+   * ("places/{placeId}/reviews/{reviewId}") — used as google_reviews'
+   * dedup key (unique(restaurant_id, google_review_id)). */
+  reviewId: string;
+  authorName: string;
+  rating: number;
+  text: string | null;
+  publishTime: string;
+};
+
+/**
+ * The Places API v1 only ever returns up to 5 "most relevant" reviews per
+ * place, with no pagination or full history — a real Google limitation,
+ * not something this integration can work around. That's an acceptable
+ * fit for reputation *monitoring* (catching new bad reviews going
+ * forward) even though it can't backfill a place's entire review history.
+ * Same best-effort contract as the rest of this file: [] on any failure.
+ */
+export async function getPlaceReviews(placeId: string): Promise<PlaceReview[]> {
+  const key = apiKey();
+  if (!key || !placeId) return [];
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const res = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
+      headers: { "X-Goog-Api-Key": key, "X-Goog-FieldMask": "reviews" },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return [];
+
+    const data = (await res.json()) as {
+      reviews?: {
+        name?: string;
+        rating?: number;
+        text?: { text?: string };
+        authorAttribution?: { displayName?: string };
+        publishTime?: string;
+      }[];
+    };
+
+    return (data.reviews ?? []).map((r) => ({
+      reviewId: r.name?.split("/").pop() || `${placeId}-${r.publishTime ?? Math.random()}`,
+      authorName: r.authorAttribution?.displayName || "Client Google",
+      rating: r.rating ?? 5,
+      text: r.text?.text ?? null,
+      publishTime: r.publishTime ?? new Date().toISOString(),
+    }));
+  } catch {
+    return [];
+  }
+}
