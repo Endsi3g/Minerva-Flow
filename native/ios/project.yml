@@ -48,6 +48,8 @@ targets:
           - group.com.minervaflow.loyalty
         com.apple.developer.applesignin:
           - Default
+        com.apple.developer.associated-domains:
+          - applinks:minervaflow.app
     dependencies:
       - package: Supabase
         product: Supabase

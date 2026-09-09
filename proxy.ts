@@ -16,10 +16,15 @@ export async function proxy(request: NextRequest) {
   // exist. Confirmed live: /auth/confirm 404'd for every magic-link login
   // (customer portal, referral, loyalty self-enrollment) before this fix.
   const isAuthCallbackRoute = pathname === "/auth" || pathname.startsWith("/auth/");
+  // Same reasoning as auth callbacks: next-intl's routing has no matching
+  // page under app/[locale]/.well-known/... and would just prepend a
+  // locale prefix and 404 — this path is meant to hit next.config.ts's
+  // rewrite to /api/apple-app-site-association untouched.
+  const isWellKnownRoute = pathname === "/.well-known/apple-app-site-association";
 
   // Locale detection/redirect/rewrite only applies to localized page routes.
   const response =
-    isApiRoute || isAuthCallbackRoute ? NextResponse.next({ request }) : handleI18nRouting(request);
+    isApiRoute || isAuthCallbackRoute || isWellKnownRoute ? NextResponse.next({ request }) : handleI18nRouting(request);
 
   // Strip a leading /tr (or any other non-default locale) so route checks
   // below match against the same paths regardless of locale prefix.
@@ -94,7 +99,14 @@ export async function proxy(request: NextRequest) {
     // same trust boundary as the web portal's RLS just presented
     // differently). Same silent-redirect-to-/login trap as the two routes
     // above otherwise.
-    pathWithoutLocale.startsWith("/api/portal/");
+    pathWithoutLocale.startsWith("/api/portal/") ||
+    // Apple fetches Universal Links config with no cookies at all, from
+    // its own infrastructure, not a browser — confirmed live: without
+    // this, both the /.well-known/... URL and its next.config.ts rewrite
+    // destination redirected to /login exactly like any other unmatched
+    // path, which would have made Universal Links silently never verify.
+    pathWithoutLocale === "/.well-known/apple-app-site-association" ||
+    pathWithoutLocale === "/api/apple-app-site-association";
 
   // Fast-path for completely public routes when no auth cookies exist:
   // Skip the remote Supabase Auth network call to achieve single-digit millisecond TTFB at the edge.

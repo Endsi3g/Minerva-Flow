@@ -24,6 +24,16 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        // Next.js's own routing silently ignores dot-prefixed path
+        // segments (app/.well-known/... and public/.well-known/... both
+        // fall through to the generic unmatched-route handling) — this
+        // rewrite is the standard workaround, keeping the public-facing
+        // URL Apple's Universal Links verification actually requires
+        // while serving it from a normal route path.
+        source: "/.well-known/apple-app-site-association",
+        destination: "/api/apple-app-site-association",
+      },
+      {
         source: "/ingest/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
       },
