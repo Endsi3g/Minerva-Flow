@@ -106,11 +106,24 @@ export async function getValidCloverAccessToken(
   };
 }
 
+import type { PosTicket, PosTicketLineItem } from "./ticket-ingestion";
+
+interface CloverLineItem {
+  id?: string;
+  name?: string;
+  price?: number;
+  unitQty?: number;
+}
+
 interface CloverOrderItem {
   id?: string;
   total?: number;
   state?: string;
   paymentState?: string;
+  createdTime?: number;
+  lineItems?: {
+    elements?: CloverLineItem[];
+  };
 }
 
 interface CloverOrdersResponse {
@@ -119,32 +132,30 @@ interface CloverOrdersResponse {
 }
 
 /**
- * Sums completed Clover orders for one calendar day, in the restaurant's local timezone.
- * Orders are fetched from Clover REST API v3 /v3/merchants/{merchantId}/orders
- * filtered by createdTime range in UTC epoch milliseconds.
+ * Fetches completed Clover orders for one calendar day with all line items.
  */
-export async function fetchCloverDailySales(
+export async function fetchCloverDailyTickets(
   accessToken: string,
   merchantId: string,
   dateStr: string,
   timeZone: string
-): Promise<CloverDailySales> {
-  if (!merchantId) return { revenue: 0, orderCount: 0 };
+): Promise<PosTicket[]> {
+  if (!merchantId) return [];
 
   const { startAt, endAt } = localDayRangeUtc(dateStr, timeZone);
   const startMillis = new Date(startAt).getTime();
   const endMillis = new Date(endAt).getTime();
 
-  let revenueCents = 0;
-  let orderCount = 0;
+  const tickets: PosTicket[] = [];
   let offset = 0;
-  const limit = 500;
+  const limit = 200;
   let hasMore = true;
 
   while (hasMore) {
     const url = new URL(`${cloverApiBaseUrl()}/v3/merchants/${merchantId}/orders`);
     url.searchParams.append("filter", `createdTime>=${startMillis}`);
     url.searchParams.append("filter", `createdTime<=${endMillis}`);
+    url.searchParams.append("expand", "lineItems");
     url.searchParams.set("limit", String(limit));
     url.searchParams.set("offset", String(offset));
 
@@ -164,13 +175,28 @@ export async function fetchCloverDailySales(
     const elements = data.elements ?? [];
 
     for (const order of elements) {
-      // Exclude voided, deleted, or unpaid empty orders
       if (order.state === "deleted" || order.paymentState === "OPEN_VOID") continue;
       const orderTotal = typeof order.total === "number" ? order.total : 0;
-      if (orderTotal > 0) {
-        revenueCents += orderTotal;
-        orderCount += 1;
-      }
+      if (orderTotal <= 0) continue;
+
+      const lineItems: PosTicketLineItem[] = (order.lineItems?.elements ?? []).map((li, idx) => {
+        const qty = li.unitQty ? Math.max(1, Math.round(li.unitQty / 1000)) : 1;
+        const price = typeof li.price === "number" ? li.price / 100 : 0;
+        return {
+          externalItemId: li.id || `clover-item-${order.id}-${idx}`,
+          name: li.name || "Article",
+          quantity: qty,
+          unitPrice: Math.round(price * 100) / 100,
+        };
+      });
+
+      tickets.push({
+        externalOrderId: order.id || `clover-order-${Math.random()}`,
+        closedAt: order.createdTime ? new Date(order.createdTime).toISOString() : new Date().toISOString(),
+        subtotal: Math.round((orderTotal / 100) * 100) / 100,
+        total: Math.round((orderTotal / 100) * 100) / 100,
+        lineItems,
+      });
     }
 
     if (elements.length < limit) {
@@ -180,8 +206,23 @@ export async function fetchCloverDailySales(
     }
   }
 
+  return tickets;
+}
+
+/**
+ * Sums completed Clover orders for one calendar day, in the restaurant's local timezone.
+ */
+export async function fetchCloverDailySales(
+  accessToken: string,
+  merchantId: string,
+  dateStr: string,
+  timeZone: string
+): Promise<CloverDailySales> {
+  const tickets = await fetchCloverDailyTickets(accessToken, merchantId, dateStr, timeZone);
+  const revenue = tickets.reduce((sum, t) => sum + t.subtotal, 0);
   return {
-    revenue: revenueCents / 100,
-    orderCount,
+    revenue: Math.round(revenue * 100) / 100,
+    orderCount: tickets.length,
   };
 }
+

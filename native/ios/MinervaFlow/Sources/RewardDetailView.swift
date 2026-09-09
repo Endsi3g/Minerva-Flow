@@ -17,11 +17,21 @@ struct RewardDetailView: View {
 
     private var points: Int { supabase.customer?.loyaltyPoints ?? 0 }
     private var affordable: Bool { points >= reward.pointsCost }
+    /// Resolved locally against the already-fetched menu rather than a
+    /// server-side join — see LoyaltyReward.menuItemId's doc comment for
+    /// why (menu_items has no customer-facing RLS SELECT policy).
+    private var linkedMenuItem: NativeMenuItem? {
+        guard let menuItemId = reward.menuItemId else { return nil }
+        return supabase.menuItems.first { $0.id == menuItemId }
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    if let menuItem = linkedMenuItem, !menuItem.galleryImageURLs.isEmpty {
+                        linkedItemPhoto(menuItem)
+                    }
                     header
                     if let description = reward.description, !description.trimmingCharacters(in: .whitespaces).isEmpty {
                         Text(description)
@@ -29,8 +39,12 @@ struct RewardDetailView: View {
                             .foregroundStyle(MinervaColor.inkSoft)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    if let menuItem = linkedMenuItem {
+                        linkedItemCard(menuItem)
+                    }
                     identityRow
                     pointsRow
+                    redemptionInstructions
                     actionButton
                 }
                 .padding(20)
@@ -51,6 +65,88 @@ struct RewardDetailView: View {
             } message: {
                 Text(supabase.lastError ?? "")
             }
+            .task {
+                // Lazy: the menu is normally only fetched when Commander is
+                // opened, but a reward can be reached from Home/Rewards
+                // first — fetch it here too so the linked-item preview
+                // above isn't just empty for someone who hasn't visited
+                // Commander yet this session.
+                if reward.menuItemId != nil, supabase.menuItems.isEmpty {
+                    await supabase.fetchMenu()
+                }
+            }
+        }
+    }
+
+    /// Full-width preview of the linked dish, so the reward reads as "this
+    /// exact item, free" rather than a bare points transaction — the same
+    /// visual weight OfferDetailView gives its own header image.
+    private func linkedItemPhoto(_ menuItem: NativeMenuItem) -> some View {
+        AsyncImage(url: URL(string: menuItem.galleryImageURLs.first ?? "")) { phase in
+            if let image = phase.image {
+                image.resizable().scaledToFill()
+            } else {
+                Rectangle().fill(MinervaColor.ink.opacity(0.06))
+            }
+        }
+        .frame(height: 180)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipped()
+    }
+
+    private func linkedItemCard(_ menuItem: NativeMenuItem) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 11))
+                Text("Cette récompense vous donne")
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .textCase(.uppercase)
+            }
+            .foregroundStyle(MinervaColor.inkFaint)
+
+            Text(menuItem.name)
+                .font(.system(size: 14.5, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let itemDescription = menuItem.description, !itemDescription.trimmingCharacters(in: .whitespaces).isEmpty {
+                Text(itemDescription)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MinervaColor.emerald.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var redemptionInstructions: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Comment l'utiliser")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+
+            instructionRow(number: 1, text: "Échangez vos points ci-dessous pour générer un code.")
+            instructionRow(number: 2, text: "Montrez ce code au personnel lors de votre prochaine visite, dans l'onglet Récompenses.")
+            instructionRow(number: 3, text: "Le personnel valide le code et votre récompense est appliquée sur place.")
+        }
+    }
+
+    private func instructionRow(number: Int, text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("\(number)")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 18, height: 18)
+                .background(MinervaColor.emerald)
+                .clipShape(Circle())
+            Text(text)
+                .font(.system(size: 12.5))
+                .foregroundStyle(MinervaColor.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

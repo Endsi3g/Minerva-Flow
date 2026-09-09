@@ -56,6 +56,7 @@ import {
 import { notifyError } from "@/lib/notify-error";
 import { MenuImageUpload } from "@/components/menu/MenuImageUpload";
 import { ImportMenuPdfModal } from "@/components/menu/ImportMenuPdfModal";
+import { PosItemMappingCard } from "@/components/minerva/PosItemMappingCard";
 import { toast } from "sonner";
 import { createCampaignAction } from "@/app/[locale]/(app)/campaigns/actions";
 
@@ -1274,6 +1275,15 @@ export function MenuView({
       {canManage && restaurantId && (
         <MenuAiInsightsPanel restaurantId={restaurantId} isPlatformAdminUser={isPlatformAdminUser} />
       )}
+
+      {canManage && restaurantId && (
+        <PosItemMappingCard
+          restaurantId={restaurantId}
+          menuItems={items}
+          onItemCreated={(newItem) => setItems((prev) => [...prev, newItem])}
+        />
+      )}
+
 
       {items.length === 0 ? (
         <EmptyState

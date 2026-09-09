@@ -290,7 +290,7 @@ async function applyServedOrderEffects(restaurantId: string, orderId: string): P
  * quantity_on_hand update and activity log entry a manual inventory
  * movement would get.
  */
-async function decrementInventoryForOrderItems(
+export async function decrementInventoryForOrderItems(
   restaurantId: string,
   orderId: string,
   orderItems: { menu_item_id: string | null; item_name: string; quantity: number }[]

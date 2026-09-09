@@ -2,6 +2,25 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.34.0] - 2026-09-09
+
+### 🧾 Synchronisation Détaillée des Caisses POS (Square, Clover, Toast POS)
+- Ingestion ticket par ticket des ventes de caisse directement dans les commandes (`orders` et `order_items`), avec garantie d'idempotence stricte évitant tout doublon lors des synchronisations répétées.
+- Les plats vendus en caisse incrémentent automatiquement la popularité des plats (`units_sold`), actualisant en temps réel la matrice BCG du Menu Engineering (Étoiles, Poids morts, Énigmes, Chevaux de bataille).
+- Déstockage automatique des matières premières : la validation des tickets décrémente les ingrédients d'inventaire selon les fiches recettes configurées.
+
+### 🔗 Correspondance Intelligente des Articles (Mapping POS ↔ Menu)
+- Moteur d'appariement flou normalisé supprimant la casse, les accents et la ponctuation pour lier automatiquement les libellés de caisse aux fiches plats existantes.
+- Nouvelle carte « Correspondance des articles POS » sur la page Menu permettant de visualiser les articles non associés, de les rattacher manuellement ou de créer une fiche plat en 1 clic.
+
+### 🍞 Intégration Toast POS
+- Prise en charge officielle de Toast POS via l'API Partner Connect et l'authentification Machine-to-Machine JWT Bearer (24h).
+- Récupération des commandes v2 Toast (chèques, sélections et suppléments) et rattrapage historique automatisé sur 90 jours.
+- Possibilité d'associer un restaurant instantanément via son Restaurant GUID ou le flux OAuth standard.
+
+### 🎁 Détail des Récompenses Enrichi
+- La page de détail d'une récompense présente désormais les étapes claires d'échange, le plat associé et les conditions d'utilisation avant validation des points.
+
 ## [v2.33.0] - 2026-09-09
 
 ### ⭐ Page Réputation
