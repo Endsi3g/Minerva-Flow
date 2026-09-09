@@ -814,6 +814,27 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    /// Survey responses are delivered by email only (no dedicated table) —
+    /// see app/api/portal/survey/route.ts. Returns whether the send
+    /// succeeded so SurveyView can show a real error instead of a false
+    /// "merci" on failure.
+    func submitSurvey(rating: Int, comment: String?) async -> Bool {
+        struct Body: Encodable { let rating: Int; let comment: String? }
+        struct Response: Decodable { let ok: Bool }
+        do {
+            let bodyData = try JSONEncoder().encode(Body(rating: rating, comment: comment?.isEmpty == false ? comment : nil))
+            let data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/portal/survey"),
+                method: "POST",
+                body: bodyData
+            )
+            return try JSONDecoder().decode(Response.self, from: data).ok
+        } catch {
+            print("submitSurvey error: \(error)")
+            return false
+        }
+    }
+
     // MARK: - Restaurant discovery (map)
 
     @Published var nearbyRestaurants: [DiscoverRestaurant] = []

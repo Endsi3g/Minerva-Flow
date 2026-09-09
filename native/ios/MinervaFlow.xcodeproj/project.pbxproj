@@ -44,6 +44,7 @@
 		C276CD959221FB7F19087810 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4B0852605EFE3B8B30F88D /* LocationManager.swift */; };
 		CAFBB02D7DDD8E9207AF10E1 /* WebPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 574318127126383937A04DB7 /* WebPageView.swift */; };
 		CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D58EE17A9A62B1893F865891 /* RadialGauge.swift */; };
+		DDBC2F899C12158BE7C35344 /* SurveyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6362E11D22E6E7743BBE74 /* SurveyView.swift */; };
 		E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442686E96CEA070F53FB728F /* EditProfileSheet.swift */; };
 		E602B1260BDBC61608C8F1C7 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE934F2A5846A120417A19B /* Theme.swift */; };
 		E895E770CDE5B84ADABAE566 /* AuthFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */; };
@@ -122,6 +123,7 @@
 		810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowApp.swift; sourceTree = "<group>"; };
 		8895010156F5D764817E886D /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		89B5498B7D0733D7AA1958D9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		8D6362E11D22E6E7743BBE74 /* SurveyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurveyView.swift; sourceTree = "<group>"; };
 		96EFC326CA426C0304BAF5FA /* WriteRestaurantReviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WriteRestaurantReviewSheet.swift; sourceTree = "<group>"; };
 		A0B3CE87BA193CEEDBA5D5D5 /* MinervaFlow.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MinervaFlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyTierTests.swift; sourceTree = "<group>"; };
@@ -233,6 +235,7 @@
 				89B5498B7D0733D7AA1958D9 /* RootView.swift */,
 				376F3EEA99798EAF0012A1A4 /* ScannerTabView.swift */,
 				E001F62368824618EE0ACB49 /* SupabaseManager.swift */,
+				8D6362E11D22E6E7743BBE74 /* SurveyView.swift */,
 				ECE934F2A5846A120417A19B /* Theme.swift */,
 				574318127126383937A04DB7 /* WebPageView.swift */,
 				96EFC326CA426C0304BAF5FA /* WriteRestaurantReviewSheet.swift */,
@@ -500,6 +503,7 @@
 				F867193E516C1BAD652866EE /* RootView.swift in Sources */,
 				9AA9F37AF29A965A6909B321 /* ScannerTabView.swift in Sources */,
 				81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */,
+				DDBC2F899C12158BE7C35344 /* SurveyView.swift in Sources */,
 				E602B1260BDBC61608C8F1C7 /* Theme.swift in Sources */,
 				CAFBB02D7DDD8E9207AF10E1 /* WebPageView.swift in Sources */,
 				7FCA9536A9FD7FCFF9277DBC /* WriteRestaurantReviewSheet.swift in Sources */,
