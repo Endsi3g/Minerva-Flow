@@ -36,12 +36,22 @@ struct LoyaltyReward: Codable, Identifiable {
     let name: String
     let description: String?
     let pointsCost: Int
+    /// Set when the owner linked this reward to a specific dish
+    /// (reward_menu_item_link). Just the id — menu_items has no
+    /// customer-facing RLS SELECT policy at all (menu reads only ever go
+    /// through the admin-bridged /api/portal/menu route, see
+    /// SupabaseManager.fetchMenu()), so a direct embedded join from the
+    /// customer's own token silently returns null for this relation.
+    /// RewardDetailView resolves this id against the already-fetched
+    /// supabase.menuItems instead.
+    let menuItemId: String?
 
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case description
         case pointsCost = "points_cost"
+        case menuItemId = "menu_item_id"
     }
 }
 
