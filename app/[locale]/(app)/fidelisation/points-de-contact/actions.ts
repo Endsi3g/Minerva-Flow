@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { getStripeClient, isNfcCardPurchaseConfigured, stripeNfcCardPriceId } from "@/lib/stripe/config";
+import { createClient } from "@/lib/supabase/server";
 
 async function originUrl(): Promise<string> {
   const h = await headers();
@@ -20,7 +21,8 @@ async function originUrl(): Promise<string> {
  */
 export async function createNfcCardOrderCheckoutAction(
   restaurantId: string,
-  quantity: number
+  quantity: number,
+  touchpointId: string | null = null
 ): Promise<string | null> {
   if (!isNfcCardPurchaseConfigured()) return null;
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 500) return null;
@@ -29,6 +31,23 @@ export async function createNfcCardOrderCheckoutAction(
   if (!membership || membership.restaurantId !== restaurantId) return null;
   if (membership.role !== "owner" && membership.role !== "manager") return null;
 
+  // Confirm the chosen touchpoint actually belongs to this restaurant
+  // (session-scoped client, so physical_touchpoints' own RLS is the real
+  // check) — touchpointId otherwise arrives as a plain client-supplied
+  // string with nothing else stopping it from pointing at someone else's
+  // touchpoint before it reaches the webhook's admin-client insert.
+  let verifiedTouchpointId: string | null = null;
+  if (touchpointId) {
+    const supabase = await createClient();
+    const { data: touchpoint } = await supabase
+      .from("physical_touchpoints")
+      .select("id")
+      .eq("id", touchpointId)
+      .eq("restaurant_id", restaurantId)
+      .maybeSingle();
+    verifiedTouchpointId = touchpoint?.id ?? null;
+  }
+
   const stripe = getStripeClient();
   const origin = await originUrl();
 
@@ -36,7 +55,12 @@ export async function createNfcCardOrderCheckoutAction(
     mode: "payment",
     line_items: [{ price: stripeNfcCardPriceId(), quantity }],
     shipping_address_collection: { allowed_countries: ["CA", "US"] },
-    metadata: { kind: "nfc_card_order", restaurantId, quantity: String(quantity) },
+    metadata: {
+      kind: "nfc_card_order",
+      restaurantId,
+      quantity: String(quantity),
+      touchpointId: verifiedTouchpointId ?? "",
+    },
     success_url: `${origin}/fidelisation/points-de-contact?nfc_order=success`,
     cancel_url: `${origin}/fidelisation/points-de-contact?nfc_order=cancelled`,
   });

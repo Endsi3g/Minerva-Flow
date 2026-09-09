@@ -77,6 +77,7 @@ export async function POST(req: Request) {
           shippingAddress: shipping?.address ? { ...shipping.address } : null,
           stripeCheckoutSessionId: session.id,
           stripePaymentIntentId: paymentIntentId,
+          touchpointId: session.metadata.touchpointId || null,
         });
         await notifyRestaurant({
           restaurantId,
