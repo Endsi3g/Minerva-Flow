@@ -9,8 +9,10 @@ import SwiftUI
 /// reference screenshot instead of being a dead tap.
 struct MyCardView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @EnvironmentObject var router: DeepLinkRouter
     @Environment(\.dismiss) private var dismiss
     @State private var selectedReward: LoyaltyReward?
+    @State private var selectedOffer: Offer?
 
     var body: some View {
         NavigationStack {
@@ -43,6 +45,9 @@ struct MyCardView: View {
             }
             .sheet(item: $selectedReward) { reward in
                 RewardDetailView(reward: reward)
+            }
+            .sheet(item: $selectedOffer) { offer in
+                OfferDetailView(offer: offer)
             }
         }
     }
@@ -228,26 +233,35 @@ struct MyCardView: View {
                 .foregroundStyle(MinervaColor.ink)
 
             ForEach(supabase.offers) { offer in
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "tag.fill")
-                        .font(.system(size: 12))
-                        .padding(.top, 2)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(offer.title)
-                            .font(.system(size: 13, weight: .semibold))
-                            .fixedSize(horizontal: false, vertical: true)
-                        if let description = offer.description {
-                            Text(description)
-                                .font(.system(size: 11.5))
+                Button {
+                    selectedOffer = offer
+                } label: {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "tag.fill")
+                            .font(.system(size: 12))
+                            .padding(.top, 2)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(offer.title)
+                                .font(.system(size: 13, weight: .semibold))
                                 .fixedSize(horizontal: false, vertical: true)
+                            if let description = offer.description {
+                                Text(description)
+                                    .font(.system(size: 11.5))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .opacity(0.6)
                     }
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(MinervaColor.emerald.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
-                .foregroundStyle(MinervaColor.emeraldDark)
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(MinervaColor.emerald.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .buttonStyle(PressableButtonStyle())
             }
         }
     }
@@ -364,9 +378,20 @@ struct MyCardView: View {
 
     private var historySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Historique récent")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
+            HStack {
+                Text("Historique récent")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+                Spacer()
+                if supabase.combinedHistory.count > 5 {
+                    Button("Voir tout") {
+                        router.pendingTab = .profile
+                        dismiss()
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                }
+            }
 
             VStack(spacing: 6) {
                 ForEach(supabase.combinedHistory.prefix(5)) { entry in

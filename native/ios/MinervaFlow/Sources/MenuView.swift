@@ -405,7 +405,11 @@ struct CategoryItemListView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
+            // Lazy so tapping into a large category (50+ demo items) only
+            // renders — and only fires each row's AsyncImage for — what's
+            // actually on screen, instead of every row at once (the
+            // reported "takes forever to open a category" symptom).
+            LazyVStack(alignment: .leading, spacing: 10) {
                 ForEach(items) { item in
                     menuRow(item)
                 }

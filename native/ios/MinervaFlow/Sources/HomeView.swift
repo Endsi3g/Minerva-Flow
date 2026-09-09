@@ -374,9 +374,17 @@ struct HomeView: View {
 
     private var recentActivity: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Historique récent")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
+            HStack {
+                Text("Historique récent")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+                Spacer()
+                if supabase.transactions.count > 5 {
+                    Button("Voir tout") { router.pendingTab = .profile }
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                }
+            }
 
             VStack(spacing: 6) {
                 ForEach(supabase.transactions.prefix(5)) { tx in
