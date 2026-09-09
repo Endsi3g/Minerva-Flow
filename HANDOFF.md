@@ -12,7 +12,8 @@ Ce qui reste : le paiement **en ligne** au moment de la commande. L'infra existe
 **État réel de l'infra POS existante** (pour un vrai lien vers la caisse du restaurant, distinct du paiement en ligne ci-dessus) :
 - Square : OAuth + sync réels, mais **revenu total du jour seulement** — aucun détail ligne par ligne, aucun mapping catalogue Square ↔ menu Flow. Clés `SQUARE_APPLICATION_ID/SECRET` non configurées.
 - Lightspeed : code OAuth + sync écrit (`lib/pos/lightspeed.ts`, `app/api/oauth/lightspeed/`) mais **jamais testé contre un vrai compte** — clés `LIGHTSPEED_*` non configurées, donc rien n'a pu être vérifié de bout en bout.
-- Clover : aucun code, uniquement une ligne désactivée dans l'UI (`PosConnectionsCard.tsx`).
+- Clover : OAuth + synchronisation des ventes quotidiennes avec rattrapage 90 jours implémentés (`lib/pos/clover.ts`, `app/api/oauth/clover/`), activé dans l'UI (`PosConnectionsCard.tsx`) dès que `CLOVER_APP_ID/SECRET` sont renseignés.
+- Toast : Toast Partner Connect OAuth + authentification machine + sync des ventes quotidiennes avec rattrapage 90 jours et liaison directe de Toast Restaurant GUID (`lib/pos/toast.ts`, `app/api/oauth/toast/`), activé dans l'UI dès que `TOAST_CLIENT_ID/SECRET` sont renseignés.
 - Stripe (paiement en ligne général) : intentionnellement pas configuré — voir mémoire `project-stripe-deferred`, décision de l'utilisateur de reporter la facturation.
 
 ### 2. Carte de fidélité Apple Wallet

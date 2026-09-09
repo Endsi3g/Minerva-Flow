@@ -1,5 +1,7 @@
 import { getValidSquareAccessToken, fetchSquareDailySales } from "@/lib/pos/square";
 import { getValidLightspeedAccessToken, fetchLightspeedDailySales } from "@/lib/pos/lightspeed";
+import { getValidCloverAccessToken, fetchCloverDailySales } from "@/lib/pos/clover";
+import { getValidToastAccessToken, fetchToastDailySales } from "@/lib/pos/toast";
 import { upsertSyncedServiceDayRevenue } from "@/lib/data/service-days";
 import { touchPosConnectionSync, getRestaurantTimezoneAdmin, type PosProvider } from "@/lib/data/pos-connections";
 import { isoDaysAgo } from "@/lib/utils";
@@ -38,6 +40,44 @@ export async function syncLightspeedSalesForDate(restaurantId: string, date: str
   return { status: "synced", revenue, orderCount };
 }
 
+/** Pulls one day of Clover sales and writes it to service_days, for one restaurant. */
+export async function syncCloverSalesForDate(restaurantId: string, date: string): Promise<SyncResult> {
+  const tokenInfo = await getValidCloverAccessToken(restaurantId);
+  if (!tokenInfo || !tokenInfo.accessToken || !tokenInfo.merchantId) return { status: "no_token" };
+
+  const timeZone = await getRestaurantTimezoneAdmin(restaurantId);
+  const { revenue, orderCount } = await fetchCloverDailySales(
+    tokenInfo.accessToken,
+    tokenInfo.merchantId,
+    date,
+    timeZone
+  );
+
+  const result = await upsertSyncedServiceDayRevenue(restaurantId, date, revenue, "clover");
+  await touchPosConnectionSync(restaurantId, "clover");
+
+  if (result === "skipped_manual") return { status: "skipped_manual" };
+  return { status: "synced", revenue, orderCount };
+}
+
+/** Pulls one day of Toast sales and writes it to service_days, for one restaurant. */
+export async function syncToastSalesForDate(restaurantId: string, date: string): Promise<SyncResult> {
+  const tokenInfo = await getValidToastAccessToken(restaurantId);
+  if (!tokenInfo || !tokenInfo.accessToken || !tokenInfo.restaurantGuid) return { status: "no_token" };
+
+  const { revenue, orderCount } = await fetchToastDailySales(
+    tokenInfo.accessToken,
+    tokenInfo.restaurantGuid,
+    date
+  );
+
+  const result = await upsertSyncedServiceDayRevenue(restaurantId, date, revenue, "toast");
+  await touchPosConnectionSync(restaurantId, "toast");
+
+  if (result === "skipped_manual") return { status: "skipped_manual" };
+  return { status: "synced", revenue, orderCount };
+}
+
 /**
  * Provider-agnostic entry point — the cron/webhook/manual-sync callers
  * dispatch through this instead of importing a specific provider's sync
@@ -51,8 +91,12 @@ export async function syncPosSalesForDate(
 ): Promise<SyncResult> {
   if (provider === "square") return syncSquareSalesForDate(restaurantId, date);
   if (provider === "lightspeed") return syncLightspeedSalesForDate(restaurantId, date);
+  if (provider === "clover") return syncCloverSalesForDate(restaurantId, date);
+  if (provider === "toast") return syncToastSalesForDate(restaurantId, date);
   return { status: "no_token" };
 }
+
+
 
 /**
  * One-time historical pull right after a POS connection is created —

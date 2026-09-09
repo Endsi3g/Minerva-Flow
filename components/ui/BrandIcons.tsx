@@ -298,3 +298,23 @@ export function Dext({ size = 20, width, height, className, ...props }: BrandIco
     </svg>
   );
 }
+
+export function Toast({ size = 20, width, height, className, ...props }: BrandIconProps) {
+  const w = width || size;
+  const h = height || size;
+  return (
+    <svg width={w} height={h} viewBox="0 0 24 24" fill="none" className={className} {...props}>
+      <rect width="24" height="24" rx="5" fill="#FF5A00" />
+      <path
+        d="M7 6.5C7 5.67 7.67 5 8.5 5H15.5C16.33 5 17 5.67 17 6.5C17.83 6.5 18.5 7.17 18.5 8V16C18.5 17.66 17.16 19 15.5 19H8.5C6.84 19 5.5 17.66 5.5 16V8C5.5 7.17 6.17 6.5 7 6.5Z"
+        fill="white"
+        fillOpacity="0.15"
+      />
+      <path
+        d="M8 8H16V10H13V16.5H11V10H8V8Z"
+        fill="white"
+      />
+    </svg>
+  );
+}
+

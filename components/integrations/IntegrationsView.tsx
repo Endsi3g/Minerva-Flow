@@ -47,6 +47,7 @@ import {
   PayPal,
   ApplePay,
   Instagram,
+  Toast,
 } from "@/components/ui/BrandIcons";
 
 import { SiteSyncCard } from "@/components/minerva/SiteSyncCard";
@@ -125,6 +126,8 @@ export function IntegrationsView({
         return <Pennylane size={22} />;
       case "clover":
         return <Clover size={22} />;
+      case "toast":
+        return <Toast size={22} />;
       case "moneris":
         return <Moneris size={22} />;
       case "delivery":

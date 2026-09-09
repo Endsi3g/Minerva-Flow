@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type PosProvider = "square" | "lightspeed" | "clover" | "quickbooks";
+export type PosProvider = "square" | "lightspeed" | "clover" | "quickbooks" | "toast";
 export type PosConnectionStatus = "connecte" | "erreur" | "attente";
 
 export type PosConnection = {
@@ -95,11 +95,11 @@ export async function savePosConnectionTokens(
 export async function getPosTokens(
   restaurantId: string,
   provider: PosProvider
-): Promise<{ accessToken: string; refreshToken: string | null; expiresAt: string | null } | null> {
+): Promise<{ accessToken: string; refreshToken: string | null; expiresAt: string | null; externalAccountId: string | null } | null> {
   const admin = createAdminClient();
   const { data: connection } = await admin
     .from("pos_connections")
-    .select("access_token_id, refresh_token_id, expires_at")
+    .select("access_token_id, refresh_token_id, expires_at, external_account_id")
     .eq("restaurant_id", restaurantId)
     .eq("provider", provider)
     .maybeSingle();
@@ -117,8 +117,9 @@ export async function getPosTokens(
     refreshToken = data ?? null;
   }
 
-  return { accessToken, refreshToken, expiresAt: connection.expires_at };
+  return { accessToken, refreshToken, expiresAt: connection.expires_at, externalAccountId: connection.external_account_id ?? null };
 }
+
 
 /** Restaurant id for a Square merchant id — used to route incoming webhooks. */
 export async function getRestaurantIdBySquareMerchant(merchantId: string): Promise<string | null> {

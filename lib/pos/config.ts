@@ -85,3 +85,63 @@ export function quickBooksApiBaseUrl(): string {
     ? "https://quickbooks.api.intuit.com"
     : "https://sandbox-quickbooks.api.intuit.com";
 }
+
+/**
+ * Clover POS config — same "gracefully absent until configured" pattern
+ * as Square and Lightspeed. Requires creating an app in the Clover
+ * Developer Dashboard (sandbox.dev.clover.com or clover.com) and adding
+ * the redirect URL {origin}/api/oauth/clover/callback.
+ */
+export function isCloverConfigured() {
+  return Boolean(process.env.CLOVER_APP_ID && process.env.CLOVER_APP_SECRET);
+}
+
+export function cloverEnvironment(): "sandbox" | "production" {
+  return process.env.CLOVER_ENVIRONMENT === "production" ? "production" : "sandbox";
+}
+
+export function cloverAuthBaseUrl(): string {
+  return cloverEnvironment() === "production"
+    ? "https://clover.com"
+    : "https://sandbox.dev.clover.com";
+}
+
+export function cloverApiBaseUrl(): string {
+  return cloverEnvironment() === "production"
+    ? "https://api.clover.com"
+    : "https://apisandbox.dev.clover.com";
+}
+
+/**
+ * Toast POS config — same "gracefully absent until configured" pattern.
+ * Requires creating a Toast Partner application on the Toast Developer
+ * Portal (developer.toasttab.com).
+ * Auth/API URLs differ between sandbox and production clusters.
+ */
+export function isToastConfigured() {
+  return Boolean(process.env.TOAST_CLIENT_ID && process.env.TOAST_CLIENT_SECRET);
+}
+
+export function toastEnvironment(): "sandbox" | "production" {
+  return process.env.TOAST_ENVIRONMENT === "production" ? "production" : "sandbox";
+}
+
+export function toastAuthBaseUrl(): string {
+  return toastEnvironment() === "production"
+    ? "https://api.toasttab.com"
+    : "https://toast-api-server-sandbox.eng.toasttab.com";
+}
+
+export function toastConnectAuthorizeUrl(): string {
+  return toastEnvironment() === "production"
+    ? "https://toasttab.com/oauth/authorize"
+    : "https://sandbox.toasttab.com/oauth/authorize";
+}
+
+export function toastApiBaseUrl(): string {
+  return toastEnvironment() === "production"
+    ? "https://api.toasttab.com"
+    : "https://toast-api-server-sandbox.eng.toasttab.com";
+}
+
+
