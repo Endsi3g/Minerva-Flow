@@ -401,6 +401,24 @@ export default function BillingPage() {
         </div>
       )}
 
+      {status?.configured && !status.subscription && (
+        <div className="mx-auto max-w-4xl w-full">
+          <Card>
+            <CardHeader eyebrow="Offre" title="Vous avez reçu un code promo ?" />
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+                <Sparkles size={16} />
+              </div>
+              <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
+                Un code promo (par exemple pour une période d&apos;essai prolongée) s&apos;entre directement sur la
+                page de paiement Stripe, dans le champ <strong className="font-semibold text-mv-ink">« Code promo »</strong>{" "}
+                — choisissez d&apos;abord un forfait ci-dessus, le champ apparaît à l&apos;étape suivante.
+              </p>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {status?.subscription && invoices && invoices.length > 0 && (
         <div className="mx-auto max-w-4xl w-full">
           <InvoiceHistory invoices={invoices} />
