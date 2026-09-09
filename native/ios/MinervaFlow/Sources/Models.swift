@@ -123,6 +123,7 @@ struct MenuItemReview: Codable, Identifiable {
     let customerId: String
     let rating: Int
     let comment: String?
+    let imageUrls: [String]
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -130,6 +131,7 @@ struct MenuItemReview: Codable, Identifiable {
         case menuItemId = "menu_item_id"
         case customerId = "customer_id"
         case rating, comment
+        case imageUrls = "image_urls"
         case createdAt = "created_at"
     }
 }
@@ -172,6 +174,7 @@ struct OfferReview: Codable, Identifiable {
     let customerId: String
     let rating: Int
     let comment: String?
+    let imageUrls: [String]
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -180,6 +183,7 @@ struct OfferReview: Codable, Identifiable {
         case restaurantId = "restaurant_id"
         case customerId = "customer_id"
         case rating, comment
+        case imageUrls = "image_urls"
         case createdAt = "created_at"
     }
 }

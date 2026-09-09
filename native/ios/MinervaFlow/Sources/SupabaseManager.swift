@@ -921,7 +921,7 @@ final class SupabaseManager: ObservableObject {
     /// be a loyalty customer of that specific restaurant — reviewing a
     /// place with no relationship to it isn't possible, by RLS, not just
     /// UI convention.
-    func submitReview(menuItemId: String, restaurantId: String, rating: Int, comment: String?) async -> Bool {
+    func submitReview(menuItemId: String, restaurantId: String, rating: Int, comment: String?, imageUrls: [String] = []) async -> Bool {
         guard let customerId = customer?.id else { return false }
         do {
             struct NewReview: Encodable {
@@ -930,10 +930,14 @@ final class SupabaseManager: ObservableObject {
                 let customer_id: String
                 let rating: Int
                 let comment: String?
+                let image_urls: [String]
             }
             try await client
                 .from("menu_item_reviews")
-                .upsert(NewReview(menu_item_id: menuItemId, restaurant_id: restaurantId, customer_id: customerId, rating: rating, comment: comment), onConflict: "menu_item_id,customer_id")
+                .upsert(
+                    NewReview(menu_item_id: menuItemId, restaurant_id: restaurantId, customer_id: customerId, rating: rating, comment: comment, image_urls: Array(imageUrls.prefix(6))),
+                    onConflict: "menu_item_id,customer_id"
+                )
                 .execute()
             return true
         } catch {
@@ -1030,7 +1034,7 @@ final class SupabaseManager: ObservableObject {
     /// offer_reviews_customer_insert requires the caller to actually be a
     /// loyalty customer of that specific restaurant, same trust boundary
     /// as submitReview(forMenuItem:).
-    func submitOfferReview(offerId: String, restaurantId: String, rating: Int, comment: String?) async -> Bool {
+    func submitOfferReview(offerId: String, restaurantId: String, rating: Int, comment: String?, imageUrls: [String] = []) async -> Bool {
         guard let customerId = customer?.id else { return false }
         do {
             struct NewReview: Encodable {
@@ -1039,10 +1043,14 @@ final class SupabaseManager: ObservableObject {
                 let customer_id: String
                 let rating: Int
                 let comment: String?
+                let image_urls: [String]
             }
             try await client
                 .from("offer_reviews")
-                .upsert(NewReview(offer_id: offerId, restaurant_id: restaurantId, customer_id: customerId, rating: rating, comment: comment), onConflict: "offer_id,customer_id")
+                .upsert(
+                    NewReview(offer_id: offerId, restaurant_id: restaurantId, customer_id: customerId, rating: rating, comment: comment, image_urls: Array(imageUrls.prefix(6))),
+                    onConflict: "offer_id,customer_id"
+                )
                 .execute()
             return true
         } catch {
