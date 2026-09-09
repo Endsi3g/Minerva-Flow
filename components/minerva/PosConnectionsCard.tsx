@@ -3,27 +3,51 @@
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { useApp } from "@/lib/app-context";
-import { getPosStatusAction, syncPosNowAction, type PosProviderConfigured } from "@/app/[locale]/(app)/settings/pos-actions";
+import {
+  getPosStatusAction,
+  syncPosNowAction,
+  connectToastWithGuidAction,
+  type PosProviderConfigured,
+} from "@/app/[locale]/(app)/settings/pos-actions";
 import type { PosConnection, PosProvider } from "@/lib/data/pos-connections";
 import { formatDate } from "@/lib/utils";
-import { RefreshCw, Store, Landmark } from "lucide-react";
+import { RefreshCw, Store, Landmark, KeyRound } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
-import { Square, QuickBooks } from "@/components/ui/BrandIcons";
+import { Square, QuickBooks, Clover, Toast } from "@/components/ui/BrandIcons";
+import { toast as sonnerToast } from "sonner";
 
 const providerLabel: Record<PosProvider, string> = {
   square: "Square",
   lightspeed: "Lightspeed",
   clover: "Clover",
+  toast: "Toast POS",
   quickbooks: "QuickBooks",
 };
 
-// Square and QuickBooks have official brand icons in @thesvg/react;
-// Lightspeed/Clover fall back to a generic store icon.
+// Square, QuickBooks, Clover, and Toast have official brand icons in BrandIcons.tsx.
+// Lightspeed only ships a full horizontal partner-badge lockup (icon +
+// wordmark + "Partenaire"), not an icon-only mark, so it's rendered as its
+// own badge in ConnectRow instead of squeezed into this 22x22 icon slot.
 function ProviderIcon({ provider }: { provider: PosProvider }) {
   if (provider === "square") return <Square width={22} height={22} className="shrink-0" />;
   if (provider === "quickbooks") return <QuickBooks width={22} height={22} className="shrink-0" />;
+  if (provider === "clover") return <Clover width={22} height={22} className="shrink-0" />;
+  if (provider === "toast") return <Toast width={22} height={22} className="shrink-0" />;
   return <Store size={20} className="shrink-0 text-mv-ink-faint" />;
 }
+
+/* eslint-disable @next/next/no-img-element -- official partner lockup, not a next/image-optimized photo */
+function LightspeedBadge() {
+  return (
+    <img
+      src="/pos/lightspeed-partner-fr-red-black.png"
+      alt="Lightspeed — Partenaire"
+      className="h-6 w-auto shrink-0"
+    />
+  );
+}
+/* eslint-enable @next/next/no-img-element */
+
 
 function ConnectRow({
   provider,
@@ -37,6 +61,8 @@ function ConnectRow({
   onSynced: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [showManualGuid, setShowManualGuid] = useState(false);
+  const [guidInput, setGuidInput] = useState("");
   const hasError = connection?.status === "erreur";
 
   function statusLine() {
@@ -47,57 +73,113 @@ function ConnectRow({
     return "Connecté — première synchronisation en cours.";
   }
 
+  async function handleManualGuidSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!guidInput.trim()) return;
+    startTransition(async () => {
+      const res = await connectToastWithGuidAction(guidInput.trim());
+      if (res.success) {
+        sonnerToast.success("Toast POS connecté avec succès !");
+        setShowManualGuid(false);
+        setGuidInput("");
+        onSynced();
+      } else {
+        sonnerToast.error("Échec de connexion Toast", { description: res.error });
+      }
+    });
+  }
+
   return (
-    <div className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3.5 py-3">
-      <div className="flex items-center gap-3">
-        <ProviderIcon provider={provider} />
-        <div>
-          <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
-          <p className="text-[12px] text-mv-ink-faint">{statusLine()}</p>
+    <div className="rounded-lg border border-mv-border-soft px-3.5 py-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {provider === "lightspeed" ? (
+            <LightspeedBadge />
+          ) : (
+            <ProviderIcon provider={provider} />
+          )}
+          <div>
+            {provider !== "lightspeed" && (
+              <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
+            )}
+            <p className="text-[12px] text-mv-ink-faint">{statusLine()}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {connection && !hasError && (
+            <>
+              <Badge tone="green" dot>
+                Connecté
+              </Badge>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => startTransition(async () => {
+                  await syncPosNowAction(provider);
+                  onSynced();
+                })}
+                className="flex items-center gap-1.5 rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink disabled:opacity-50"
+              >
+                <RefreshCw size={12} className={isPending ? "animate-spin" : ""} />
+                {isPending ? "Synchronisation…" : "Synchroniser"}
+              </button>
+            </>
+          )}
+          {connection && hasError && (
+            <a
+              href={`/api/oauth/${provider}`}
+              className="rounded-lg bg-mv-red px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-red/90"
+            >
+              Reconnecter
+            </a>
+          )}
+          {!connection && (
+            <div className="flex items-center gap-1.5">
+              {provider === "toast" && configured && (
+                <button
+                  type="button"
+                  onClick={() => setShowManualGuid(!showManualGuid)}
+                  className="rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5"
+                  title="Saisir un Toast Restaurant GUID"
+                >
+                  <KeyRound size={13} className="inline mr-1" />
+                  GUID
+                </button>
+              )}
+              <a
+                href={configured ? `/api/oauth/${provider}` : undefined}
+                aria-disabled={!configured}
+                className={
+                  configured
+                    ? "rounded-lg bg-mv-ink px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-ink/90"
+                    : "cursor-not-allowed rounded-lg bg-mv-ink/[0.06] px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink-faint"
+                }
+              >
+                Connecter
+              </a>
+            </div>
+          )}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        {connection && !hasError && (
-          <>
-            <Badge tone="green" dot>
-              Connecté
-            </Badge>
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() => startTransition(async () => {
-                await syncPosNowAction(provider);
-                onSynced();
-              })}
-              className="flex items-center gap-1.5 rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink disabled:opacity-50"
-            >
-              <RefreshCw size={12} className={isPending ? "animate-spin" : ""} />
-              {isPending ? "Synchronisation…" : "Synchroniser"}
-            </button>
-          </>
-        )}
-        {connection && hasError && (
-          <a
-            href={`/api/oauth/${provider}`}
-            className="rounded-lg bg-mv-red px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-red/90"
+
+      {showManualGuid && !connection && (
+        <form onSubmit={handleManualGuidSubmit} className="mt-2.5 flex items-center gap-2 border-t border-mv-border-soft pt-2.5">
+          <input
+            type="text"
+            placeholder="Ex: a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+            value={guidInput}
+            onChange={(e) => setGuidInput(e.target.value)}
+            className="flex-1 rounded-md border border-mv-border bg-white px-2.5 py-1 text-[12px] text-mv-ink font-mono focus:border-mv-green focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={isPending || !guidInput.trim()}
+            className="rounded-md bg-mv-green px-3 py-1 text-[12px] font-medium text-white transition-opacity disabled:opacity-50"
           >
-            Reconnecter
-          </a>
-        )}
-        {!connection && (
-          <a
-            href={configured ? `/api/oauth/${provider}` : undefined}
-            aria-disabled={!configured}
-            className={
-              configured
-                ? "rounded-lg bg-mv-ink px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-ink/90"
-                : "cursor-not-allowed rounded-lg bg-mv-ink/[0.06] px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink-faint"
-            }
-          >
-            Connecter
-          </a>
-        )}
-      </div>
+            {isPending ? "Liaison…" : "Lier le GUID"}
+          </button>
+        </form>
+      )}
     </div>
   );
 }
@@ -139,11 +221,23 @@ export function PosConnectionsCard() {
           connection={connectionFor("lightspeed")}
           onSynced={refresh}
         />
-        <ConnectRow provider="clover" configured={false} onSynced={refresh} />
+        <ConnectRow
+          provider="clover"
+          configured={status.configured.clover}
+          connection={connectionFor("clover")}
+          onSynced={refresh}
+        />
+        <ConnectRow
+          provider="toast"
+          configured={status.configured.toast}
+          connection={connectionFor("toast")}
+          onSynced={refresh}
+        />
       </div>
     </Card>
   );
 }
+
 
 import { AccountingConnectionsCard } from "./AccountingConnectionsCard";
 

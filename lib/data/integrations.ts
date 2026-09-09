@@ -2,8 +2,15 @@ import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
 import { getPosConnections, type PosProvider } from "@/lib/data/pos-connections";
-import { isSquareConfigured, isLightspeedConfigured, isQuickBooksConfigured } from "@/lib/pos/config";
+import {
+  isSquareConfigured,
+  isLightspeedConfigured,
+  isCloverConfigured,
+  isToastConfigured,
+  isQuickBooksConfigured,
+} from "@/lib/pos/config";
 import { formatDate } from "@/lib/utils";
+
 
 export type IntegrationItem = {
   id: string;
@@ -30,12 +37,14 @@ export type IntegrationItem = {
     | "dext"
     | "pennylane"
     | "clover"
+    | "toast"
     | "moneris"
     | "paypal"
     | "apple-pay"
     | "instagram";
   details?: Record<string, any>;
 };
+
 
 const posProviderMeta: Record<PosProvider, { name: string; description: string; iconName: IntegrationItem["iconName"] }> = {
   square: {
@@ -53,12 +62,18 @@ const posProviderMeta: Record<PosProvider, { name: string; description: string; 
     description: "Synchronisation des terminaux de caisse et tickets de vente.",
     iconName: "clover",
   },
+  toast: {
+    name: "Toast POS",
+    description: "Synchronisation automatique des ventes et commandes via Toast Cloud.",
+    iconName: "toast",
+  },
   quickbooks: {
     name: "QuickBooks Online",
     description: "Synchronisation de vos dépenses et écritures comptables.",
     iconName: "quickbooks",
   },
 };
+
 
 export async function getRestaurantIntegrations(restaurantId: string): Promise<IntegrationItem[]> {
   const supabase = await createClient();
@@ -78,7 +93,8 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
   const posConfigured: Record<PosProvider, boolean> = {
     square: isSquareConfigured(),
     lightspeed: isLightspeedConfigured(),
-    clover: false,
+    clover: isCloverConfigured(),
+    toast: isToastConfigured(),
     quickbooks: isQuickBooksConfigured(),
   };
 
@@ -114,7 +130,7 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
   // or already has a connection row — so a provider nobody's set up yet
   // simply doesn't clutter the list, but an existing connection always
   // shows even if the env got unconfigured later.
-  const posItems: IntegrationItem[] = (["square", "lightspeed"] as PosProvider[])
+  const posItems: IntegrationItem[] = (["square", "lightspeed", "clover", "toast"] as PosProvider[])
     .filter((provider) => posConfigured[provider] || posConnections.some((c) => c.provider === provider))
     .map((provider) => {
       const connection = posConnections.find((c) => c.provider === provider);
@@ -142,20 +158,44 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
       };
     });
 
+  const cloverInPosItems = posItems.some((item) => item.id === "clover-pos");
+  const toastInPosItems = posItems.some((item) => item.id === "toast-pos");
+
   return [
     ...posItems,
-    {
-      id: "clover-pos",
-      name: "Clover POS",
-      category: "caisse",
-      description: "Synchronisation des terminaux de caisse Clover et tickets de vente en salle.",
-      status: "coming_soon",
-      iconName: "clover",
-      details: {
-        disponibilite: "Prochaine mise à jour",
-        mode: "API Directe Cloud",
-      },
-    },
+    ...(!cloverInPosItems
+      ? [
+          {
+            id: "clover-pos",
+            name: "Clover POS",
+            category: "caisse" as const,
+            description: "Synchronisation des terminaux de caisse Clover et tickets de vente en salle.",
+            status: "coming_soon" as const,
+            iconName: "clover" as const,
+            details: {
+              disponibilite: "Prochaine mise à jour",
+              mode: "API Directe Cloud",
+            },
+          },
+        ]
+      : []),
+    ...(!toastInPosItems
+      ? [
+          {
+            id: "toast-pos",
+            name: "Toast POS",
+            category: "caisse" as const,
+            description: "Synchronisation directe des commandes et encaissements de salle via Toast Cloud.",
+            status: "coming_soon" as const,
+            iconName: "toast" as const,
+            details: {
+              disponibilite: "Toast Partner Connect",
+              mode: "API Cloud v2",
+            },
+          },
+        ]
+      : []),
+
     {
       id: "stripe-connect",
       name: "Stripe Connect Paiements",
