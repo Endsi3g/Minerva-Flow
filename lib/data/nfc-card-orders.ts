@@ -11,6 +11,7 @@ type NfcCardOrderRow = {
   total_amount_cad: number;
   status: NfcCardOrderStatus;
   shipping_name: string | null;
+  touchpoint_id: string | null;
   created_at: string;
 };
 
@@ -23,6 +24,7 @@ function mapNfcCardOrder(row: NfcCardOrderRow): NfcCardOrder {
     totalAmountCad: row.total_amount_cad,
     status: row.status,
     shippingName: row.shipping_name,
+    touchpointId: row.touchpoint_id,
     createdAt: row.created_at,
   };
 }
@@ -54,6 +56,7 @@ export async function recordPaidNfcCardOrder(input: {
   shippingAddress: Record<string, unknown> | null;
   stripeCheckoutSessionId: string;
   stripePaymentIntentId: string | null;
+  touchpointId: string | null;
 }): Promise<void> {
   const admin = createAdminClient();
   await admin.from("nfc_card_orders").insert({
@@ -66,5 +69,6 @@ export async function recordPaidNfcCardOrder(input: {
     shipping_address: input.shippingAddress,
     stripe_checkout_session_id: input.stripeCheckoutSessionId,
     stripe_payment_intent_id: input.stripePaymentIntentId,
+    touchpoint_id: input.touchpointId,
   });
 }

@@ -802,6 +802,7 @@ export type NfcCardOrder = {
   totalAmountCad: number;
   status: NfcCardOrderStatus;
   shippingName: string | null;
+  touchpointId: string | null;
   createdAt: string;
 };
 

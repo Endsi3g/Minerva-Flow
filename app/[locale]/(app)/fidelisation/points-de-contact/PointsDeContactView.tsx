@@ -229,14 +229,21 @@ const NFC_CARD_ORDER_STATUS_LABELS: Record<NfcCardOrder["status"], string> = {
   cancelled: "Annulée",
 };
 
-function NfcCardOrderPanel({ restaurantId }: { restaurantId: string }) {
+function NfcCardOrderPanel({
+  restaurantId,
+  funnels,
+}: {
+  restaurantId: string;
+  funnels: PhysicalTouchpointFunnel[];
+}) {
   const [quantity, setQuantity] = useState(1);
+  const [touchpointId, setTouchpointId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleOrder() {
     setIsSubmitting(true);
     try {
-      const url = await createNfcCardOrderCheckoutAction(restaurantId, quantity);
+      const url = await createNfcCardOrderCheckoutAction(restaurantId, quantity, touchpointId || null);
       if (url) window.location.href = url;
       else notifyError("La commande a échoué. Réessayez dans un instant.");
     } finally {
@@ -263,34 +270,59 @@ function NfcCardOrderPanel({ restaurantId }: { restaurantId: string }) {
             />
           </Field>
         </div>
+        <div className="w-64">
+          <Field label="Lien à encoder sur la carte">
+            <Select value={touchpointId} onChange={(e) => setTouchpointId(e.target.value)}>
+              <option value="">Je m&apos;en occupe moi-même plus tard</option>
+              {funnels.map((f) => (
+                <option key={f.touchpoint.id} value={f.touchpoint.id}>
+                  {f.touchpoint.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
         <Button onClick={handleOrder} disabled={isSubmitting}>
           <CreditCard size={14} /> {isSubmitting ? "Redirection…" : `Commander (${quantity * 75} $ CAD)`}
         </Button>
       </div>
+      {funnels.length === 0 && (
+        <p className="mt-2.5 text-[11.5px] text-mv-ink-faint">
+          Vous n&apos;avez pas encore de point de contact — créez-en un ci-dessous si vous voulez que votre commande
+          soit liée à un lien précis.
+        </p>
+      )}
     </Card>
   );
 }
 
-function NfcCardOrderHistory({ orders }: { orders: NfcCardOrder[] }) {
+function NfcCardOrderHistory({ orders, funnels }: { orders: NfcCardOrder[]; funnels: PhysicalTouchpointFunnel[] }) {
   if (orders.length === 0) return null;
+  const labelFor = (touchpointId: string | null) =>
+    touchpointId ? funnels.find((f) => f.touchpoint.id === touchpointId)?.touchpoint.label : null;
+
   return (
     <Card>
       <CardHeader eyebrow="Matériel" title="Vos commandes de cartes NFC" />
       <div className="space-y-2">
-        {orders.map((order) => (
-          <div key={order.id} className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
-            <div className="flex items-center gap-2.5">
-              <Truck size={14} className="text-mv-ink-faint" />
-              <div>
-                <p className="text-[12.5px] font-medium text-mv-ink">
-                  {order.quantity} carte{order.quantity > 1 ? "s" : ""} · {order.totalAmountCad} $ CAD
-                </p>
-                <p className="text-[11.5px] text-mv-ink-faint">{new Date(order.createdAt).toLocaleDateString("fr-CA")}</p>
+        {orders.map((order) => {
+          const linkedLabel = labelFor(order.touchpointId);
+          return (
+            <div key={order.id} className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2">
+              <div className="flex items-center gap-2.5">
+                <Truck size={14} className="text-mv-ink-faint" />
+                <div>
+                  <p className="text-[12.5px] font-medium text-mv-ink">
+                    {order.quantity} carte{order.quantity > 1 ? "s" : ""} · {order.totalAmountCad} $ CAD
+                    {linkedLabel && <span className="text-mv-ink-faint"> · {linkedLabel}</span>}
+                  </p>
+                  <p className="text-[11.5px] text-mv-ink-faint">{new Date(order.createdAt).toLocaleDateString("fr-CA")}</p>
+                </div>
               </div>
+              <span className="text-[11.5px] font-medium text-mv-ink-faint">{NFC_CARD_ORDER_STATUS_LABELS[order.status]}</span>
             </div>
-            <span className="text-[11.5px] font-medium text-mv-ink-faint">{NFC_CARD_ORDER_STATUS_LABELS[order.status]}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
   );
@@ -327,8 +359,8 @@ export function PointsDeContactView({
       />
       {nfcCardPurchaseEnabled && restaurantId && (
         <div className="mb-6 space-y-4">
-          <NfcCardOrderPanel restaurantId={restaurantId} />
-          <NfcCardOrderHistory orders={nfcCardOrders} />
+          <NfcCardOrderPanel restaurantId={restaurantId} funnels={funnels} />
+          <NfcCardOrderHistory orders={nfcCardOrders} funnels={funnels} />
         </div>
       )}
       <Card>
