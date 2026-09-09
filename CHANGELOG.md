@@ -2,24 +2,31 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
-## [v2.34.0] - 2026-09-09
+## [v2.35.0] - 2026-09-09
 
-### 🧾 Synchronisation Détaillée des Caisses POS (Square, Clover, Toast POS)
-- Ingestion ticket par ticket des ventes de caisse directement dans les commandes (`orders` et `order_items`), avec garantie d'idempotence stricte évitant tout doublon lors des synchronisations répétées.
-- Les plats vendus en caisse incrémentent automatiquement la popularité des plats (`units_sold`), actualisant en temps réel la matrice BCG du Menu Engineering (Étoiles, Poids morts, Énigmes, Chevaux de bataille).
-- Déstockage automatique des matières premières : la validation des tickets décrémente les ingrédients d'inventaire selon les fiches recettes configurées.
+### 🔌 Caisse (POS) — Clover, Toast, et Synchronisation Détaillée
+- **Clover** : nouvelle intégration complète — connexion OAuth, synchronisation quotidienne des ventes et rattrapage automatique de 90 jours d'historique dès la première connexion.
+- **Toast POS** : prise en charge officielle via l'API Partner Connect et l'authentification Machine-to-Machine, avec association instantanée par Restaurant GUID ou par le flux OAuth standard.
+- **Synchronisation ticket par ticket** (Square, Clover, Toast) : les ventes de caisse alimentent désormais directement les commandes (`orders`), avec garantie stricte contre les doublons.
+- Les plats vendus en caisse incrémentent automatiquement leur popularité, actualisant en temps réel la matrice de rentabilité du Menu (Étoiles, Poids morts, Énigmes, Chevaux de bataille), et décrémentent l'inventaire des matières premières selon les fiches recettes.
+- Nouvelle carte « Correspondance des articles POS » sur la page Menu : rattachez en un clic les libellés de caisse non reconnus à vos fiches plats existantes (appariement automatique intelligent, insensible aux accents et à la casse).
+- **Lightspeed** : logo partenaire officiel ajouté à la carte des connexions.
+- Achat d'une carte NFC personnalisée : vous pouvez maintenant choisir directement quel lien (point de contact) y sera encodé, au moment de la commande.
 
-### 🔗 Correspondance Intelligente des Articles (Mapping POS ↔ Menu)
-- Moteur d'appariement flou normalisé supprimant la casse, les accents et la ponctuation pour lier automatiquement les libellés de caisse aux fiches plats existantes.
-- Nouvelle carte « Correspondance des articles POS » sur la page Menu permettant de visualiser les articles non associés, de les rattacher manuellement ou de créer une fiche plat en 1 clic.
-
-### 🍞 Intégration Toast POS
-- Prise en charge officielle de Toast POS via l'API Partner Connect et l'authentification Machine-to-Machine JWT Bearer (24h).
-- Récupération des commandes v2 Toast (chèques, sélections et suppléments) et rattrapage historique automatisé sur 90 jours.
-- Possibilité d'associer un restaurant instantanément via son Restaurant GUID ou le flux OAuth standard.
+### 🔗 Liens Intelligents — Ouverture Directe dans l'Application
+- Les liens de parrainage et les points de contact physiques (autocollant NFC, QR de table, etc.) s'ouvrent désormais directement dans l'application native au lieu d'un navigateur, grâce aux *Universal Links* iOS.
 
 ### 🎁 Détail des Récompenses Enrichi
-- La page de détail d'une récompense présente désormais les étapes claires d'échange, le plat associé et les conditions d'utilisation avant validation des points.
+- La page de détail d'une récompense présente désormais le plat associé (photo et description) ainsi que les étapes claires d'échange avant de valider vos points.
+
+### 💬 Avis Clients — Photos sur les Plats et les Offres
+- Les avis sur les plats de menu et sur les offres acceptent maintenant des photos, au même titre que les avis sur l'établissement.
+
+### 📱 Application Native — Ajustements
+- L'onglet Scanner (code de jumelage) reprend le fond crème standard de l'application plutôt qu'un dégradé.
+- Les offres affichées sur « Ma carte » sont maintenant cliquables et mènent à leur fiche détaillée (elles ne l'étaient pas).
+- L'historique récent (Accueil et Ma carte) offre un lien « Voir tout » vers l'historique complet du profil.
+- Correction d'un temps de chargement excessif à l'ouverture d'une catégorie du menu Commander.
 
 ## [v2.33.0] - 2026-09-09
 

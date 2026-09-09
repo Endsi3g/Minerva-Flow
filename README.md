@@ -28,6 +28,40 @@
 
 Dans un secteur où les marges sont souvent serrées et les opérations fragmentées entre de multiples outils incomplets, Minerva Flow offre une interface centralisée, intuitive et moderne. Elle permet aux propriétaires et gérants d'éliminer la gestion manuelle sur papier ou tableur, d'optimiser leurs coûts de revient et d'assurer une rentabilité durable.
 
+Deux applications, une seule plateforme : un **tableau de bord web** pour le propriétaire et son équipe, et une **application native iOS** que leurs clients installent pour cumuler des points, commander et suivre leurs récompenses.
+
+---
+
+## Aperçu Visuel
+
+<div align="center">
+
+### Tableau de bord (propriétaire)
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/web-overview.png" alt="Vue globale" /><br /><sub><b>Vue globale</b> — marge, ventes de fidélité, santé du menu, en un coup d'œil</sub></td>
+<td width="50%"><img src="docs/screenshots/web-reputation.png" alt="Réputation" /><br /><sub><b>Réputation</b> — avis privés (&lt;4★) à traiter avant qu'ils n'atteignent Google Maps</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/web-fidelisation.png" alt="Fidélisation" /><br /><sub><b>Fidélisation</b> — identification au comptoir par code de jumelage, récompenses, anniversaires</sub></td>
+<td width="50%"><img src="docs/screenshots/web-menu-engineering.png" alt="Ingénierie de menu" /><br /><sub><b>Ingénierie de menu</b> — offres, QR code du menu, catégories</sub></td>
+</tr>
+</table>
+
+### Application native iOS (client)
+
+<table>
+<tr>
+<td width="25%"><img src="docs/screenshots/native-home.png" alt="Accueil" /><br /><sub><b>Accueil</b></sub></td>
+<td width="25%"><img src="docs/screenshots/native-scanner.png" alt="Scanner / Jumelage" /><br /><sub><b>Jumelage</b></sub></td>
+<td width="25%"><img src="docs/screenshots/native-rewards.png" alt="Récompenses" /><br /><sub><b>Récompenses</b></sub></td>
+<td width="25%"><img src="docs/screenshots/native-commander.png" alt="Commander" /><br /><sub><b>Commander</b></sub></td>
+</tr>
+</table>
+
+</div>
+
 ---
 
 ## Ce qu'apporte l'application aux restaurateurs
@@ -54,11 +88,11 @@ Numérisation de la relation fournisseur. Les bons de commande sont générés e
 ### 6. Ingénierie de Menu & Optimisation des Marges Brutes
 Chaque plat de la carte est automatiquement classé selon sa popularité et sa rentabilité (*Étoiles, Poids morts, Énigmes, Chevaux de bataille*). Cette analyse permet au chef et au restaurateur de retravailler les recettes peu rentables et d'optimiser l'affichage du menu.
 
-### 7. Fidélisation Client, Parrainage & Portail Libre-Service
-L'application intègre un programme de fidélité complet. Les clients peuvent rejoindre le programme via un QR code, accumuler des points et accéder à un portail client dédié — repensé en 4 onglets (Accueil, Commander, Récompenses, Profil) inspirés des meilleures applications de fidélité — pour consulter leur solde, commander directement et partager leur lien de parrainage, sans mot de passe (*Lien Magique*).
+### 7. Fidélisation Client, Parrainage & Application Native iOS
+L'application intègre un programme de fidélité complet. Les clients rejoignent le programme via un QR code ou un code de jumelage à 6 chiffres, accumulent des points et accèdent à une **application native iOS dédiée** (SwiftUI) — 5 onglets (Accueil, Commander, Scanner, Récompenses, Profil) — pour consulter leur solde, commander directement, jumeler leur compte au comptoir sans mot de passe, et partager leur lien de parrainage. Les liens de parrainage et les points de contact physiques (NFC, QR) s'ouvrent directement dans l'application via *Universal Links*, sans passer par un navigateur.
 
-### 8. Présence Numérique, Avis Google Business & Commandes Directes
-Les avis laissés par les clients sur Google Business Profile sont centralisés pour permettre une réponse rapide. L'établissement bénéficie également d'un module de commande en ligne directe sans commission, avec paiement sécurisé Stripe Connect crédité directement au restaurant.
+### 8. Réputation, Avis Clients & Commandes Directes
+La page **Réputation** centralise les avis Google Maps (détection automatique quotidienne) et les avis internes en-dessous de 4★ — gardés privés et acheminés directement au propriétaire pour une réponse avant qu'ils n'atteignent une plateforme publique. Les avis 4-5★ sont au contraire encouragés à être partagés sur Google Maps. L'établissement bénéficie également d'un module de commande en ligne directe sans commission, avec paiement sécurisé Stripe Connect crédité directement au restaurant.
 
 ### 9. Bibliothèque d'Assets & Documents Utiles
 Tous les documents essentiels de l'établissement (factures d'achats, fiches techniques de recettes, permis, manuels d'exploitation) sont archivés et classés dans une bibliothèque d'assets dotée d'un tiroir de prévisualisation rapide.
@@ -81,12 +115,14 @@ Minerva Flow est conçu pour supporter des montées en charge massives avec des 
 ## 🛠️ Spécifications Techniques
 
 - **Framework Web** : Next.js 16 (App Router, Turbopack, React 19)
-- **Langage** : TypeScript
+- **Application Native** : iOS (SwiftUI), gérée via XcodeGen, Supabase Swift SDK
+- **Langage** : TypeScript (web), Swift (natif)
 - **Base de données & Auth** : Supabase (PostgreSQL RLS, Supabase Auth, Vault)
 - **Réseau AI Gateway & Cache Edge** : Cloudflare Workers AI Gateway
 - **Composants UI** : Suite officielle Shadcn UI avec Vanilla CSS sur-mesure
-- **Intégrations POS & Monétique** : Square POS API, Stripe Connect, Stripe Checkout
-- **Services Webhooks & Cron** : Square Webhooks, Cron Jobs automatiques
+- **Intégrations POS & Monétique** : Square, Clover, Toast POS, Lightspeed Restaurant, Stripe Connect, Stripe Checkout
+- **Liens intelligents** : Universal Links iOS (apple-app-site-association) pour les liens de parrainage et points de contact
+- **Services Webhooks & Cron** : Webhooks Square/Clover/Toast/Stripe, Cron Jobs automatiques (Vercel)
 - **Hébergement Cloud** : Vercel Production Infrastructure
 
 ---
