@@ -2,6 +2,29 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.33.0] - 2026-09-09
+
+### ⭐ Page Réputation
+- Nouvelle page « Réputation », disponible dès le forfait Essentiel — connectez votre fiche Google Maps et retrouvez au même endroit les avis internes à traiter, les avis Google récents et les avis sur vos plats et offres.
+- Détection automatique des nouveaux avis Google (analyse quotidienne) avec un rappel dès qu'un avis à 3 étoiles ou moins arrive, pour ne plus en manquer un.
+
+### 💬 Avis clients repensés
+- Les avis 4-5 étoiles proposent maintenant de les publier aussi sur Google Maps ; les avis 1-3 étoiles restent privés et sont acheminés directement vers votre page Réputation, avec une réponse du propriétaire visible par le client dans l'app.
+- Les offres peuvent maintenant aussi recevoir des avis clients, en plus des plats et de l'établissement.
+
+### 📱 Onglet Scanner repensé
+- L'onglet Scanner affiche maintenant en premier votre code de jumelage de compte (QR + code à 6 chiffres, régénérable) sur un arrière-plan aux couleurs de la marque — le scan par caméra reste accessible en un tap.
+- Ajout d'un lien vers la prochaine récompense directement sur la carte de fidélité.
+
+### 📊 Rapports (nouveau)
+- Nouvelle section Rapports sous Fidélisation : utilisation du jumelage de compte (codes résolus, visites, points) et une estimation de l'argent distribué en récompenses face à ce que la fidélité fait réellement conserver.
+
+### 📝 Sondage dans l'application
+- Une nouvelle page « Donner votre avis » dans le profil permet d'envoyer un commentaire noté directement à l'équipe Minerva Flow — proposée aussi automatiquement après une mise à jour.
+
+### 💳 Code promo
+- La page Facturation indique maintenant clairement où entrer un code promo lors du paiement.
+
 ## [v2.32.0] - 2026-09-08
 
 ### 🏢 Carrousel de franchise (application mobile)
