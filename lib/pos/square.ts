@@ -83,20 +83,23 @@ async function listSquareLocationIds(accessToken: string): Promise<string[]> {
   return (data.locations ?? []).map((l) => l.id);
 }
 
+import type { PosTicket, PosTicketLineItem } from "./ticket-ingestion";
+
 export type SquareDailySales = { revenue: number; orderCount: number };
 
-/** Sums completed Square orders for one calendar day, in the restaurant's local timezone. */
-export async function fetchSquareDailySales(
+/**
+ * Fetches completed Square orders for one calendar day with all their line items.
+ */
+export async function fetchSquareDailyTickets(
   accessToken: string,
   dateStr: string,
   timeZone: string
-): Promise<SquareDailySales> {
+): Promise<PosTicket[]> {
   const locationIds = await listSquareLocationIds(accessToken);
-  if (locationIds.length === 0) return { revenue: 0, orderCount: 0 };
+  if (locationIds.length === 0) return [];
 
   const { startAt, endAt } = localDayRangeUtc(dateStr, timeZone);
-  let revenueCents = 0;
-  let orderCount = 0;
+  const tickets: PosTicket[] = [];
   let cursor: string | undefined;
 
   do {
@@ -121,15 +124,68 @@ export async function fetchSquareDailySales(
     if (!res.ok) break;
 
     const data = (await res.json()) as {
-      orders?: { total_money?: { amount?: number } }[];
+      orders?: Array<{
+        id: string;
+        closed_at?: string;
+        total_money?: { amount?: number };
+        total_tax_money?: { amount?: number };
+        total_tip_money?: { amount?: number };
+        line_items?: Array<{
+          catalog_object_id?: string;
+          name?: string;
+          variation_name?: string;
+          quantity?: string;
+          total_money?: { amount?: number };
+          base_price_money?: { amount?: number };
+        }>;
+      }>;
       cursor?: string;
     };
+
     for (const order of data.orders ?? []) {
-      revenueCents += order.total_money?.amount ?? 0;
-      orderCount += 1;
+      const totalCents = order.total_money?.amount ?? 0;
+      const taxCents = order.total_tax_money?.amount ?? 0;
+      const tipCents = order.total_tip_money?.amount ?? 0;
+      const subtotalCents = Math.max(0, totalCents - taxCents - tipCents);
+
+      const lineItems: PosTicketLineItem[] = (order.line_items ?? []).map((li, idx) => {
+        const name = li.variation_name ? `${li.name ?? "Article"} (${li.variation_name})` : (li.name ?? "Article");
+        const qty = Number(li.quantity ?? 1);
+        const itemTotalCents = li.total_money?.amount ?? (li.base_price_money?.amount ?? 0) * qty;
+        const unitPrice = qty > 0 ? (itemTotalCents / 100) / qty : (itemTotalCents / 100);
+
+        return {
+          externalItemId: li.catalog_object_id || `sq-item-${order.id}-${idx}`,
+          name,
+          quantity: Math.max(1, qty),
+          unitPrice: Math.round(unitPrice * 100) / 100,
+        };
+      });
+
+      tickets.push({
+        externalOrderId: order.id,
+        closedAt: order.closed_at || new Date().toISOString(),
+        subtotal: Math.round((subtotalCents / 100) * 100) / 100,
+        taxAmount: Math.round((taxCents / 100) * 100) / 100,
+        tipAmount: Math.round((tipCents / 100) * 100) / 100,
+        total: Math.round((totalCents / 100) * 100) / 100,
+        lineItems,
+      });
     }
     cursor = data.cursor;
   } while (cursor);
 
-  return { revenue: revenueCents / 100, orderCount };
+  return tickets;
 }
+
+/** Sums completed Square orders for one calendar day, in the restaurant's local timezone. */
+export async function fetchSquareDailySales(
+  accessToken: string,
+  dateStr: string,
+  timeZone: string
+): Promise<SquareDailySales> {
+  const tickets = await fetchSquareDailyTickets(accessToken, dateStr, timeZone);
+  const revenue = tickets.reduce((sum, t) => sum + t.subtotal, 0);
+  return { revenue: Math.round(revenue * 100) / 100, orderCount: tickets.length };
+}
+

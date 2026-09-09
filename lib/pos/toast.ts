@@ -4,6 +4,7 @@ import {
   savePosConnectionTokens,
   updatePosConnectionStatus,
 } from "@/lib/data/pos-connections";
+import type { PosTicket, PosTicketLineItem } from "./ticket-ingestion";
 
 export type ToastTokens = {
   accessToken: string;
@@ -169,30 +170,56 @@ export async function getValidToastAccessToken(
   };
 }
 
+interface ToastSelection {
+  guid?: string;
+  displayName?: string;
+  item?: { guid?: string };
+  itemGroup?: { guid?: string };
+  quantity?: number;
+  price?: number;
+  receiptLinePrice?: number;
+  tax?: number;
+  voided?: boolean;
+}
+
+interface ToastCheck {
+  guid?: string;
+  totalAmount?: number;
+  amount?: number;
+  taxAmount?: number;
+  tipAmount?: number;
+  selections?: ToastSelection[];
+  items?: ToastSelection[];
+}
+
 interface ToastOrder {
   guid?: string;
   totalAmount?: number;
   amount?: number;
+  taxAmount?: number;
+  tipAmount?: number;
   voided?: boolean;
   deleted?: boolean;
   paidDate?: string;
   closedDate?: string;
+  openedDate?: string;
+  server?: { name?: string };
+  checks?: ToastCheck[];
 }
 
 /**
- * Sums completed Toast orders for one calendar day.
+ * Fetches completed tickets from Toast for a calendar day, extracting full line-item details.
  * Toast Orders API accepts `businessDate` in format YYYYMMDD (e.g. 20260909 for 2026-09-09).
  */
-export async function fetchToastDailySales(
+export async function fetchToastDailyTickets(
   accessToken: string,
   restaurantGuid: string,
   dateStr: string
-): Promise<ToastDailySales> {
-  if (!restaurantGuid) return { revenue: 0, orderCount: 0 };
+): Promise<PosTicket[]> {
+  if (!restaurantGuid) return [];
 
   const businessDate = dateStr.replace(/-/g, "");
-  let revenue = 0;
-  let orderCount = 0;
+  const tickets: PosTicket[] = [];
   let page = 1;
   const pageSize = 100;
   let hasMore = true;
@@ -230,21 +257,69 @@ export async function fetchToastDailySales(
           ? order.amount
           : 0;
 
-      if (orderTotal > 0) {
-        revenue += orderTotal;
-        orderCount += 1;
+      if (orderTotal <= 0) continue;
+
+      const taxAmount = typeof order.taxAmount === "number" ? order.taxAmount : 0;
+      const tipAmount = typeof order.tipAmount === "number" ? order.tipAmount : 0;
+      const subtotal = Math.max(0, orderTotal - taxAmount - tipAmount);
+
+      const lineItems: PosTicketLineItem[] = [];
+
+      for (const check of order.checks ?? []) {
+        const selections = check.selections ?? check.items ?? [];
+        for (const [idx, sel] of selections.entries()) {
+          if (sel.voided) continue;
+          const qty = typeof sel.quantity === "number" ? Math.max(1, sel.quantity) : 1;
+          const price = typeof sel.receiptLinePrice === "number"
+            ? sel.receiptLinePrice
+            : typeof sel.price === "number"
+              ? sel.price
+              : 0;
+
+          lineItems.push({
+            externalItemId: sel.item?.guid || sel.guid || `toast-item-${order.guid}-${idx}`,
+            name: sel.displayName || "Article",
+            quantity: qty,
+            unitPrice: Math.round(price * 100) / 100,
+          });
+        }
       }
+
+      tickets.push({
+        externalOrderId: order.guid || `toast-order-${Math.random()}`,
+        closedAt: order.closedDate || order.paidDate || new Date().toISOString(),
+        subtotal: Math.round(subtotal * 100) / 100,
+        taxAmount: Math.round(taxAmount * 100) / 100,
+        tipAmount: Math.round(tipAmount * 100) / 100,
+        total: Math.round(orderTotal * 100) / 100,
+        lineItems,
+      });
     }
 
     if (orders.length < pageSize) {
       hasMore = false;
+      break;
     } else {
       page += 1;
     }
   }
 
+  return tickets;
+}
+
+/**
+ * Sums completed Toast orders for one calendar day.
+ */
+export async function fetchToastDailySales(
+  accessToken: string,
+  restaurantGuid: string,
+  dateStr: string
+): Promise<ToastDailySales> {
+  const tickets = await fetchToastDailyTickets(accessToken, restaurantGuid, dateStr);
+  const revenue = tickets.reduce((sum, t) => sum + t.subtotal, 0);
   return {
     revenue: Math.round(revenue * 100) / 100,
-    orderCount,
+    orderCount: tickets.length,
   };
 }
+

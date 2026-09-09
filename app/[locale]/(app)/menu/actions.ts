@@ -14,6 +14,8 @@ import { createOffer, updateOffer, deleteOffer, type OfferInput } from "@/lib/da
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
 import { getRecipeItems, setRecipeItems } from "@/lib/data/recipes";
 import type { MenuItem, MenuShare, Offer, RecipeItem } from "@/lib/types";
+import { getPosItemMappings, upsertPosItemMapping, type PosItemMapping } from "@/lib/pos/item-mapping";
+import type { PosProvider } from "@/lib/data/pos-connections";
 
 export async function createMenuItemAction(
   restaurantId: string,
@@ -137,3 +139,61 @@ export async function updateMenuSettingsAction(
   if (restaurant) revalidatePath("/menu");
   return Boolean(restaurant);
 }
+
+export async function getPosItemMappingsAction(
+  restaurantId: string,
+  provider?: PosProvider
+): Promise<PosItemMapping[]> {
+  return getPosItemMappings(restaurantId, provider);
+}
+
+export async function upsertPosItemMappingAction(
+  restaurantId: string,
+  provider: PosProvider,
+  externalItemId: string,
+  externalItemName: string,
+  menuItemId: string | null
+): Promise<boolean> {
+  const ok = await upsertPosItemMapping(
+    restaurantId,
+    provider,
+    externalItemId,
+    externalItemName,
+    menuItemId,
+    false
+  );
+  if (ok) revalidatePath("/menu");
+  return ok;
+}
+
+export async function createMenuItemFromPosAction(
+  restaurantId: string,
+  provider: PosProvider,
+  externalItemId: string,
+  externalItemName: string,
+  price: number,
+  category?: string
+): Promise<MenuItem | null> {
+  const item = await createMenuItem(restaurantId, {
+    name: externalItemName.trim(),
+    price: Number.isFinite(price) && price >= 0 ? price : 0,
+    foodCost: 0,
+    category: category?.trim() || "Plats",
+    description: `Article importé depuis ${provider.toUpperCase()}`,
+  });
+
+  if (item) {
+    await upsertPosItemMapping(
+      restaurantId,
+      provider,
+      externalItemId,
+      externalItemName,
+      item.id,
+      false
+    );
+    revalidatePath("/menu");
+  }
+
+  return item;
+}
+
