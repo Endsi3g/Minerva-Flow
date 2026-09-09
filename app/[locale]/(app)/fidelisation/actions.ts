@@ -59,9 +59,10 @@ export async function logVisitAction(
   restaurantId: string,
   customerId: string,
   amountSpent: number,
-  note?: string | null
+  note?: string | null,
+  viaPairingCode = false
 ): Promise<Customer | null> {
-  const customer = await logVisit(restaurantId, customerId, amountSpent, note);
+  const customer = await logVisit(restaurantId, customerId, amountSpent, note, viaPairingCode);
   if (customer) revalidatePath("/fidelisation");
   return customer;
 }

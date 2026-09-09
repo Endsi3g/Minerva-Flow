@@ -3,7 +3,7 @@
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
-import { Users, Share2, Gift, QrCode, Settings, MapPin } from "lucide-react";
+import { Users, Share2, Gift, QrCode, Settings, MapPin, BarChart3 } from "lucide-react";
 
 const SECTIONS = [
   { href: "/fidelisation", label: "Clients", icon: Users, managerOnly: false },
@@ -11,6 +11,7 @@ const SECTIONS = [
   { href: "/fidelisation/recompenses", label: "Récompenses", icon: Gift, managerOnly: true },
   { href: "/fidelisation/partage", label: "Partage", icon: QrCode, managerOnly: true },
   { href: "/fidelisation/points-de-contact", label: "Points de contact", icon: MapPin, managerOnly: true },
+  { href: "/fidelisation/rapports", label: "Rapports", icon: BarChart3, managerOnly: true },
   { href: "/fidelisation/parametres", label: "Paramètres", icon: Settings, managerOnly: true },
 ] as const;
 
