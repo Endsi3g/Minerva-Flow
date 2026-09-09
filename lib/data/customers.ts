@@ -221,7 +221,8 @@ export async function logVisit(
   restaurantId: string,
   customerId: string,
   amountSpent: number,
-  note?: string | null
+  note?: string | null,
+  viaPairingCode = false
 ): Promise<Customer | null> {
   const supabase = await createClient();
 
@@ -254,6 +255,7 @@ export async function logVisit(
     p_amount_spent: amountSpent,
     p_points_delta: pointsEarned,
     p_note: note ?? null,
+    p_via_pairing_code: viaPairingCode,
   });
 
   if (rpcError || !rpcRows || (rpcRows as CustomerRow[]).length === 0) return null;

@@ -231,7 +231,7 @@ function PairingCodeCard({
     }
     setIsLogging(true);
     try {
-      const updated = await logVisitAction(restaurantId, found.id, parsed);
+      const updated = await logVisitAction(restaurantId, found.id, parsed, null, true);
       if (updated) {
         onVisitLogged(updated);
         toast.success(`Visite enregistrée pour ${found.name}.`);
