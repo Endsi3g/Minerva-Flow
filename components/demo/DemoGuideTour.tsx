@@ -125,11 +125,18 @@ const STEPS: Step[] = [
           <li>Classement automatique des plats les plus et les moins rentables, avec alerte quand un plat coûte trop cher</li>
           <li>
             Relances automatiques par courriel, texto ou notification — clients inactifs, anniversaires, clients
-            qui dépensent de moins en moins
+            qui dépensent de moins en moins — plus une séquence de bienvenue pour les nouveaux clients (jours 1, 3
+            et 7 après leur première commande)
           </li>
           <li>Paliers de fidélité premium — Habitué, Privilégié, Ambassadeur</li>
           <li>Parrainage à double sens (récompense le parrain et le filleul)</li>
-          <li>Intégration caisse (Square) avec synchronisation automatique des ventes</li>
+          <li>Intégration caisse — Square, Clover et Toast — avec synchronisation automatique des ventes</li>
+          <li>
+            3 modes de commande au choix du client (payer maintenant, payer sur place, ou payer en ligne avec
+            préparation seulement après confirmation du paiement) — activables un par un dans Établissement
+          </li>
+          <li>Favoris sur les plats et les offres, avec alerte automatique quand un favori redevient disponible</li>
+          <li>Annonces manuelles aux clients consentants (courriel, notification et texto) depuis Fidélisation</li>
           <li>Assistant IA (Flow AI) qui répond à partir de vos vraies données</li>
           <li>Appareils connectés et sécurité du compte, dans Paramètres → Sécurité</li>
         </ul>
