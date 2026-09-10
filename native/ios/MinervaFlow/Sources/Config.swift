@@ -13,16 +13,19 @@ enum Config {
     /// to these, same trust boundary as the web portal's RLS-scoped
     /// requests, just presented differently (see lib/auth/native-bearer.ts).
     ///
-    /// TEMPORARY: pointed at the Vercel-issued domain, not the custom
-    /// minervaflow.app/www.minervaflow.app domain — both of those currently
-    /// fail TLS certificate verification ("unable to verify the first
-    /// certificate"), confirmed from outside this machine's own network,
-    /// which is what was actually causing Commander/menu, the restaurant
-    /// map, and restaurant-name lookups to come back empty in the native
-    /// app for every user, not a local network quirk. Check Vercel →
-    /// Settings → Domains for minervaflow.app once this is fixed there,
-    /// then switch this back to the custom domain.
-    static let apiBaseURL = URL(string: "https://minerva-flow.vercel.app")!
+    /// Custom domain — DNS now correctly points at Vercel (A record →
+    /// 216.198.79.1, www CNAME → cname.vercel-dns.com) and Vercel shows
+    /// valid, auto-renewing certificates issued for both minervaflow.app
+    /// and www.minervaflow.app. An earlier version of this comment claimed
+    /// the domain failed TLS verification "confirmed from outside this
+    /// machine's own network" — that "external" check was itself run from
+    /// this same sandboxed tool environment, which sits behind a Fortinet
+    /// SSL-inspection proxy that re-signs every HTTPS response with its own
+    /// CA; every curl/WebFetch check from here is unreliable for judging a
+    /// domain's real-world TLS status. Don't repeat that mistake — an
+    /// agent's own tool-execution environment is not "outside the network"
+    /// just because the request looks like it left the machine.
+    static let apiBaseURL = URL(string: "https://minervaflow.app")!
 
     /// Matches the CFBundleURLSchemes entry in project.yml — where
     /// ASWebAuthenticationSession hands control back to this app once
