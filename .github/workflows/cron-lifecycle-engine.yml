@@ -1,0 +1,17 @@
+name: Lifecycle engine
+
+# See check-late-shifts.yml — moved off vercel.json's `crons` because the
+# project is on Vercel's Hobby plan (max 2 cron jobs total).
+on:
+  schedule:
+    - cron: "0 13 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call lifecycle-engine
+        run: |
+          curl -sf -X GET "https://minerva-flow.vercel.app/api/cron/lifecycle-engine" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
