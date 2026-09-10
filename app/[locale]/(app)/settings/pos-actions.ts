@@ -20,6 +20,7 @@ import { syncPosSalesForDate, backfillPosHistory } from "@/lib/pos/sync";
 import { todayInTimezone } from "@/lib/pos/shared";
 import { isoDaysAgo } from "@/lib/utils";
 import { loginToastMachineClient } from "@/lib/pos/toast";
+import { validateAndFetchCloverMerchant } from "@/lib/pos/clover";
 
 export type PosProviderConfigured = Record<PosProvider, boolean>;
 
@@ -79,6 +80,45 @@ export async function connectToastWithGuidAction(restaurantGuid: string): Promis
   revalidatePath("/settings");
   return { success: true };
 }
+
+/**
+ * Connects a restaurant to Clover POS directly using a Clover Merchant ID and API Token.
+ * Useful when OAuth redirect flow is hindered or in sandbox testing environments.
+ */
+export async function connectCloverWithTokenAction(
+  merchantId: string,
+  apiToken: string
+): Promise<{ success: boolean; error?: string; merchantName?: string }> {
+  const membership = await getCurrentMembership();
+  if (!membership || !["owner", "manager"].includes(membership.role)) {
+    return { success: false, error: "Non autorisé" };
+  }
+
+  const cleanMid = merchantId.trim();
+  const cleanToken = apiToken.trim();
+  if (!cleanMid || !cleanToken) {
+    return { success: false, error: "Merchant ID et Clé API Clover requis" };
+  }
+
+  const validation = await validateAndFetchCloverMerchant(cleanMid, cleanToken);
+  if (!validation.valid) {
+    return { success: false, error: validation.error ?? "Validation Clover échouée" };
+  }
+
+  await savePosConnectionTokens(membership.restaurantId, "clover", {
+    accessToken: cleanToken,
+    externalAccountId: cleanMid,
+  });
+
+  // Background backfill
+  backfillPosHistory("clover", membership.restaurantId).catch((err) => {
+    console.error("Clover history backfill failed:", err);
+  });
+
+  revalidatePath("/settings");
+  return { success: true, merchantName: validation.merchantName };
+}
+
 
 /**
  * Manually re-pulls today + yesterday's sales for one provider — useful

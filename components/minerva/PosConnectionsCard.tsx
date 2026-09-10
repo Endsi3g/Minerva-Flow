@@ -7,6 +7,7 @@ import {
   getPosStatusAction,
   syncPosNowAction,
   connectToastWithGuidAction,
+  connectCloverWithTokenAction,
   type PosProviderConfigured,
 } from "@/app/[locale]/(app)/settings/pos-actions";
 import type { PosConnection, PosProvider } from "@/lib/data/pos-connections";
@@ -63,10 +64,13 @@ function ConnectRow({
   const [isPending, startTransition] = useTransition();
   const [showManualGuid, setShowManualGuid] = useState(false);
   const [guidInput, setGuidInput] = useState("");
+  const [showManualClover, setShowManualClover] = useState(false);
+  const [cloverMid, setCloverMid] = useState("");
+  const [cloverToken, setCloverToken] = useState("");
   const hasError = connection?.status === "erreur";
 
   function statusLine() {
-    if (!configured) return "Pas encore disponible";
+    if (!configured && provider !== "clover") return "Pas encore disponible";
     if (!connection) return "Non connecté";
     if (hasError) return "La connexion a été interrompue — reconnectez pour reprendre la synchronisation.";
     if (connection.lastSyncedAt) return `Dernière synchronisation — ${formatDate(connection.lastSyncedAt)}`;
@@ -85,6 +89,23 @@ function ConnectRow({
         onSynced();
       } else {
         sonnerToast.error("Échec de connexion Toast", { description: res.error });
+      }
+    });
+  }
+
+  async function handleManualCloverSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!cloverMid.trim() || !cloverToken.trim()) return;
+    startTransition(async () => {
+      const res = await connectCloverWithTokenAction(cloverMid.trim(), cloverToken.trim());
+      if (res.success) {
+        sonnerToast.success(res.merchantName ? `Clover connecté (${res.merchantName}) !` : "Clover connecté avec succès !");
+        setShowManualClover(false);
+        setCloverMid("");
+        setCloverToken("");
+        onSynced();
+      } else {
+        sonnerToast.error("Échec de connexion Clover", { description: res.error });
       }
     });
   }
@@ -135,6 +156,17 @@ function ConnectRow({
           )}
           {!connection && (
             <div className="flex items-center gap-1.5">
+              {provider === "clover" && (
+                <button
+                  type="button"
+                  onClick={() => setShowManualClover(!showManualClover)}
+                  className="rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5"
+                  title="Saisir Merchant ID + Clé API Clover directement"
+                >
+                  <KeyRound size={13} className="inline mr-1" />
+                  Token / ID
+                </button>
+              )}
               {provider === "toast" && configured && (
                 <button
                   type="button"
@@ -161,6 +193,37 @@ function ConnectRow({
           )}
         </div>
       </div>
+
+      {showManualClover && !connection && (
+        <form onSubmit={handleManualCloverSubmit} className="mt-2.5 space-y-2 border-t border-mv-border-soft pt-2.5">
+          <p className="text-[11.5px] text-mv-ink-faint">
+            Entrez votre identifiant marchand (Merchant ID) et votre clé API générée depuis votre tableau de bord Clover (Configuration &gt; Clés API).
+          </p>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <input
+              type="text"
+              placeholder="Merchant ID (ex: BTAKVDTYMGZ46)"
+              value={cloverMid}
+              onChange={(e) => setCloverMid(e.target.value)}
+              className="flex-1 rounded-md border border-mv-border bg-white px-2.5 py-1.5 text-[12px] text-mv-ink font-mono focus:border-mv-green focus:outline-none"
+            />
+            <input
+              type="password"
+              placeholder="Clé API / Access Token Clover"
+              value={cloverToken}
+              onChange={(e) => setCloverToken(e.target.value)}
+              className="flex-1 rounded-md border border-mv-border bg-white px-2.5 py-1.5 text-[12px] text-mv-ink font-mono focus:border-mv-green focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={isPending || !cloverMid.trim() || !cloverToken.trim()}
+              className="rounded-md bg-mv-green px-3.5 py-1.5 text-[12px] font-semibold text-white transition-opacity disabled:opacity-50 shrink-0"
+            >
+              {isPending ? "Validation…" : "Lier Clover"}
+            </button>
+          </div>
+        </form>
+      )}
 
       {showManualGuid && !connection && (
         <form onSubmit={handleManualGuidSubmit} className="mt-2.5 flex items-center gap-2 border-t border-mv-border-soft pt-2.5">
