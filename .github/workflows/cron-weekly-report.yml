@@ -1,0 +1,19 @@
+name: Weekly report
+
+# Triggers /api/cron/weekly-report weekly. Lives here instead of
+# vercel.json's `crons` because the project is on Vercel's Hobby plan,
+# which caps the whole project at 2 cron jobs total — see
+# check-late-shifts.yml for the original instance of this pattern.
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call weekly-report
+        run: |
+          curl -sf -X GET "https://minerva-flow.vercel.app/api/cron/weekly-report" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

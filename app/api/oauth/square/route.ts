@@ -3,9 +3,9 @@ import { isSquareConfigured, squareBaseUrl, posOauthRedirectUri } from "@/lib/po
 import { signOAuthState } from "@/lib/ad-platforms/state";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 
-// Read-only scopes sufficient for pulling sales/orders into reports —
-// widen only if a write use case shows up.
-const SQUARE_SCOPE = "MERCHANT_PROFILE_READ ORDERS_READ PAYMENTS_READ";
+// Read scopes for sales/orders reporting, plus ITEMS_*/INVENTORY_* for the
+// bidirectional menu + inventory catalog sync (lib/pos/catalog-sync.ts).
+const SQUARE_SCOPE = "MERCHANT_PROFILE_READ ORDERS_READ PAYMENTS_READ ITEMS_READ ITEMS_WRITE INVENTORY_READ INVENTORY_WRITE";
 
 export async function GET(req: Request) {
   if (!isSquareConfigured()) {
