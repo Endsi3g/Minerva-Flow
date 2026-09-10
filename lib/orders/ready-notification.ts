@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendTransactionalEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
+import { sendApnsToTokens, isAPNsConfigured } from "@/lib/push/apns";
 import { sendSms, isSmsConfigured } from "@/lib/sms/send";
 
 /** Prefers the owner-set Maps link (Restaurant.googleMapsUrl) — falls back to a search query built from address/city. */
@@ -16,9 +17,13 @@ function mapsUrl(restaurant: { googleMapsUrl: string | null; address: string; ci
  * notifyOrderReadyAction). Unlike lib/retention/send.ts this is
  * transactional (a direct consequence of an order the customer placed),
  * not marketing, so it does NOT check marketing_consent. Same
- * email → push → SMS fallback contract otherwise.
+ * email → push (web + native) → SMS fallback contract otherwise, and the
+ * same web+APNs pairing as lib/announcements/send.ts's broadcastAnnouncement
+ * — a customer with the native app installed must get this exactly like a
+ * web-push subscriber does, not silently skipped.
  */
 export async function sendOrderReadyNotification(
+  admin: SupabaseClient,
   restaurant: { id: string; name: string; googleMapsUrl: string | null; address: string; city: string },
   customer: { email: string | null; userId: string | null; phone: string | null; name: string }
 ): Promise<"email" | "push" | "sms" | null> {
@@ -44,6 +49,21 @@ export async function sendOrderReadyNotification(
       { title: "Votre commande est prête !", body: `${restaurant.name} vous attend pour la cueillette.`, link },
       restaurant.id
     );
+    if (isAPNsConfigured()) {
+      const { data: tokenRows } = await admin
+        .from("device_push_tokens")
+        .select("token")
+        .eq("platform", "ios")
+        .eq("user_id", customer.userId);
+      const tokens = ((tokenRows ?? []) as { token: string }[]).map((r) => r.token);
+      if (tokens.length > 0) {
+        await sendApnsToTokens(tokens, {
+          title: "Votre commande est prête !",
+          body: `${restaurant.name} vous attend pour la cueillette.`,
+          link,
+        });
+      }
+    }
     return "push";
   }
   if (isSmsConfigured() && customer.phone) {
