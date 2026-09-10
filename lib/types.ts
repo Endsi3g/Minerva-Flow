@@ -677,6 +677,7 @@ export type MenuItem = {
   description: string | null;
   imageUrl: string | null;
   imageUrls: string[];
+  videoUrl?: string | null;
   createdAt: string;
 };
 
@@ -812,6 +813,7 @@ export type Offer = {
   title: string;
   description: string | null;
   imageUrl: string | null;
+  videoUrl?: string | null;
   price: number | null;
   includedItems: string[];
   excludedItems: string[];
