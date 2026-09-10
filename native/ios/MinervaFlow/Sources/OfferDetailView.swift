@@ -22,6 +22,10 @@ struct OfferDetailView: View {
         supabase.offers.filter { $0.id != offer.id }
     }
 
+    private var isFavorite: Bool {
+        supabase.customer?.favoriteOfferIds.contains(offer.id) ?? false
+    }
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .topTrailing) {
@@ -73,6 +77,21 @@ struct OfferDetailView: View {
                                 .background(MinervaColor.emerald)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                                 .buttonStyle(PressableButtonStyle())
+
+                                Button {
+                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                    generator.impactOccurred()
+                                    Task { await supabase.toggleFavoriteOffer(offer.id, favorite: !isFavorite) }
+                                } label: {
+                                    Image(systemName: isFavorite ? "heart.fill" : "heart")
+                                        .font(.system(size: 15))
+                                        .frame(width: 48, height: 48)
+                                }
+                                .foregroundStyle(isFavorite ? .red : MinervaColor.emeraldDark)
+                                .background(MinervaColor.emerald.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .buttonStyle(PressableButtonStyle())
+                                .accessibilityLabel(isFavorite ? "Retirer des favoris" : "Ajouter aux favoris")
 
                                 ShareLink(item: shareText) {
                                     Image(systemName: "square.and.arrow.up")

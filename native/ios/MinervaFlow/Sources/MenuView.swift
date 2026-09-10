@@ -423,13 +423,14 @@ struct CategoryItemListView: View {
 
     private func menuRow(_ item: NativeMenuItem) -> some View {
         let quantity = cart[item.id] ?? 0
+        let isFavorite = supabase.customer?.favoriteMenuItemIds.contains(item.id) ?? false
 
         return HStack(spacing: 12) {
             NavigationLink {
                 MenuItemDetailView(item: item, restaurantId: item.restaurantId, allItemsInCategory: items, cart: $cart)
             } label: {
                 HStack(spacing: 12) {
-                    ZStack {
+                    ZStack(alignment: .topTrailing) {
                         RoundedRectangle(cornerRadius: 12).fill(MinervaColor.ink.opacity(0.05))
                         if let firstImage = item.galleryImageURLs.first, let url = URL(string: firstImage) {
                             AsyncImage(url: url) { phase in
@@ -445,6 +446,22 @@ struct CategoryItemListView: View {
                                 .font(.system(size: 18))
                                 .foregroundStyle(MinervaColor.inkFaint)
                         }
+
+                        Button {
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+                            Task { await supabase.toggleFavoriteMenuItem(item.id, favorite: !isFavorite) }
+                        } label: {
+                            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                                .font(.system(size: 10))
+                                .foregroundStyle(isFavorite ? .red : .white)
+                                .padding(4)
+                                .background(.black.opacity(0.35))
+                                .clipShape(Circle())
+                        }
+                        .padding(3)
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(isFavorite ? "Retirer des favoris" : "Ajouter aux favoris")
                     }
                     .frame(width: 56, height: 56)
                     .clipped()

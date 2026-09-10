@@ -160,6 +160,27 @@ struct MenuItemDetailView: View {
         }
     }
 
+    private var isFavorite: Bool {
+        supabase.customer?.favoriteMenuItemIds.contains(item.id) ?? false
+    }
+
+    private var favoriteButton: some View {
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            Task { await supabase.toggleFavoriteMenuItem(item.id, favorite: !isFavorite) }
+        } label: {
+            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                .font(.system(size: 15))
+                .frame(width: 46, height: 44)
+        }
+        .foregroundStyle(isFavorite ? .red : MinervaColor.emeraldDark)
+        .background(MinervaColor.emerald.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .buttonStyle(PressableButtonStyle())
+        .accessibilityLabel(isFavorite ? "Retirer des favoris" : "Ajouter aux favoris")
+    }
+
     private var actionButtons: some View {
         HStack(spacing: 10) {
             if let cart {
@@ -181,6 +202,8 @@ struct MenuItemDetailView: View {
                 .background(MinervaColor.creamSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
+
+            favoriteButton
 
             Button {
                 showReviewSheet = true

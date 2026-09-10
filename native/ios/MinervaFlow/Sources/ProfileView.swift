@@ -19,6 +19,7 @@ struct ProfileView: View {
     @State private var historyFilter: HistoryFilter = .all
     @State private var showAllHistory = false
     @State private var showSurvey = false
+    @State private var showFavorites = false
 
     private enum HistoryFilter: String, CaseIterable {
         case all, earned, redeemed
@@ -47,6 +48,7 @@ struct ProfileView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         if let customer = supabase.customer {
                             identityCard(for: customer)
+                            favoritesRow
                             pointsHistorySection
                             notificationSection
                             consentSection(for: customer)
@@ -91,6 +93,45 @@ struct ProfileView: View {
         .sheet(isPresented: $showSurvey) {
             SurveyView()
         }
+        .sheet(isPresented: $showFavorites) {
+            FavoritesView()
+        }
+    }
+
+    // MARK: - Favorites
+
+    /// Entry point to FavoritesView — same aboutRow-style tappable row as
+    /// the "À propos" section, but pulled up next to the identity card
+    /// since favorites are a browsing shortcut a customer would reach for
+    /// often, not a one-off settings toggle.
+    private var favoritesRow: some View {
+        Button {
+            showFavorites = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.red)
+                    .frame(width: 20)
+                Text("Mes favoris")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(MinervaColor.ink)
+                Spacer(minLength: 8)
+                let count = (supabase.customer?.favoriteMenuItemIds.count ?? 0) + (supabase.customer?.favoriteOfferIds.count ?? 0)
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.system(size: 12))
+                        .foregroundStyle(MinervaColor.inkFaint)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(MinervaColor.inkFaint)
+            }
+            .padding(14)
+        }
+        .buttonStyle(.plain)
+        .background(MinervaColor.creamSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     // MARK: - Identity
