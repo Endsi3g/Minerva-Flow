@@ -28,6 +28,45 @@ export function getUpcomingBirthdays(customers: Customer[], leadDays: number, to
   });
 }
 
+export type OnboardingStage = "onboarding_j1" | "onboarding_j3" | "onboarding_final";
+
+/** Days since signup (Customer.createdAt) each stage fires on — see getOnboardingDripTargets. */
+const ONBOARDING_STAGE_DAYS: Record<OnboardingStage, number> = {
+  onboarding_j1: 1,
+  onboarding_j3: 3,
+  onboarding_final: 7,
+};
+
+/**
+ * New-customer re-engagement drip (app/api/cron/onboarding-engine) — up to
+ * 3 touches in a customer's first week: day 1, day 3, and a day-7 farewell
+ * + last-offer if they still haven't come back. Stops the moment
+ * visitCount >= 2 (a second visit is the whole goal — once it happens they
+ * fold into the normal retention engine's inactivity/drift/birthday logic).
+ *
+ * Deliberately its own cadence, not gated by the general engine's
+ * retention_frequency_cap_days — the cron enforces per-stage idempotency
+ * instead (never re-sends a stage this customer already received) plus a
+ * same-day collision check against any other retention send, so this can
+ * run tighter than the general 30-day-default cap without ever double-
+ * touching a customer the same day.
+ */
+export function getOnboardingDripTargets(
+  customers: Customer[],
+  now = Date.now()
+): { customer: Customer; stage: OnboardingStage }[] {
+  const result: { customer: Customer; stage: OnboardingStage }[] = [];
+  for (const c of customers) {
+    if (c.visitCount > 1) continue;
+    const daysSince = Math.floor((now - new Date(c.createdAt).getTime()) / 86_400_000);
+    const stage = (Object.entries(ONBOARDING_STAGE_DAYS) as [OnboardingStage, number][]).find(
+      ([, day]) => day === daysSince
+    )?.[0];
+    if (stage) result.push({ customer: c, stage });
+  }
+  return result;
+}
+
 /** Minimum number of logged visits before a customer's average gap is meaningful. */
 const MIN_VISITS_FOR_DRIFT_SIGNAL = 3;
 /** How many times over their own historical average gap counts as "drifting". */

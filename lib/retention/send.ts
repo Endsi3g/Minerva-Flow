@@ -4,14 +4,23 @@ import { sendPushToUsers } from "@/lib/push/send";
 import { sendSms, isSmsConfigured } from "@/lib/sms/send";
 import type { Customer } from "@/lib/types";
 
-export type RetentionTrigger = "inactivity" | "birthday" | "value_drift" | "reward_available";
+export type RetentionTrigger =
+  | "inactivity"
+  | "birthday"
+  | "value_drift"
+  | "reward_available"
+  | "onboarding_j1"
+  | "onboarding_j3"
+  | "onboarding_final";
 export type RetentionChannel = "email" | "push" | "sms";
 
 /**
- * Shared between the daily cron (app/api/cron/retention-engine) and the
- * manual "Relancer maintenant" action on /impact — same message, whether
- * the automated engine picked the customer or the owner did. `extra` only
- * applies to "reward_available" — the other triggers ignore it.
+ * Shared between the daily cron (app/api/cron/retention-engine), the
+ * onboarding drip (app/api/cron/onboarding-engine), and the manual
+ * "Relancer maintenant" action on /impact — same message, whichever
+ * picked the customer. `extra` applies to "reward_available" (the
+ * customer's real points balance) and "onboarding_final" (the cheapest
+ * reward's cost, as a teaser — not a claim they already have enough).
  */
 export function buildRetentionMessage(
   trigger: RetentionTrigger,
@@ -64,6 +73,41 @@ export function buildRetentionMessage(
         smsBody: `${restaurantName} : ${firstName}, vous avez ${points} pts — assez pour « ${rewardName} ». Venez les échanger !`,
         pushTitle: `${points} points à échanger !`,
         pushBody: `Vous avez assez pour « ${rewardName} » chez ${restaurantName}.`,
+      };
+    }
+    case "onboarding_j1":
+      return {
+        subject: `Merci pour votre première commande chez ${restaurantName} !`,
+        bodyHtml:
+          p(`Bonjour ${firstName},`) +
+          p(`Merci d'avoir commandé chez ${restaurantName} — on espère que ça vous a plu ! À bientôt pour une prochaine visite.`),
+        smsBody: `${restaurantName} : Merci pour votre première commande, ${firstName} ! À bientôt.`,
+        pushTitle: `Merci, ${firstName} !`,
+        pushBody: `${restaurantName} espère vous revoir bientôt.`,
+      };
+    case "onboarding_j3":
+      return {
+        subject: `${firstName}, on espère vous revoir bientôt chez ${restaurantName}`,
+        bodyHtml:
+          p(`Bonjour ${firstName},`) +
+          p(`Ça fait quelques jours depuis votre première commande chez ${restaurantName} — on serait ravis de vous revoir !`),
+        smsBody: `${restaurantName} : ${firstName}, on espère vous revoir bientôt !`,
+        pushTitle: `${restaurantName} pense à vous`,
+        pushBody: `Une deuxième visite vous tente, ${firstName} ?`,
+      };
+    case "onboarding_final": {
+      const points = extra?.points ?? 0;
+      const rewardName = extra?.rewardName ?? "une récompense";
+      return {
+        subject: `${firstName}, une dernière offre de ${restaurantName} avant qu'on se dise au revoir`,
+        bodyHtml:
+          p(`Bonjour ${firstName},`) +
+          p(
+            `On ne vous a pas revu depuis votre première commande chez ${restaurantName} — pas de souci ! Sachez qu'à partir de ${points} points de fidélité, vous pourriez obtenir « ${rewardName} ». On espère vous revoir un jour.`
+          ),
+        smsBody: `${restaurantName} : ${firstName}, dès ${points} pts vous pourriez avoir « ${rewardName} ». On espère vous revoir !`,
+        pushTitle: `Une dernière offre de ${restaurantName}`,
+        pushBody: `Dès ${points} pts, obtenez « ${rewardName} ».`,
       };
     }
   }
