@@ -202,19 +202,33 @@ export async function getOrdersForDay(restaurantId: string, dayStart: string, da
   return orderRows.map((row) => mapOrder(row, itemRows));
 }
 
+const PREP_GATED_STATUSES: OrderStatus[] = ["en_preparation", "prete", "servie"];
+
 export async function updateOrderStatus(restaurantId: string, id: string, status: OrderStatus): Promise<boolean> {
   const supabase = await createClient();
 
   // Read the current status first so marking an order "servie" twice (e.g. a
   // double click, or toggling status back and forth) can't double-count its
-  // revenue/popularity effects below.
+  // revenue/popularity effects below. fulfillment_mode/payment_status ride
+  // along so the payment-before-prep gate below is the authoritative check
+  // (the UI already hides/disables this, but a direct action call must not
+  // be able to bypass it).
   const { data: current } = await supabase
     .from("orders")
-    .select("status")
+    .select("status, fulfillment_mode, payment_status")
     .eq("restaurant_id", restaurantId)
     .eq("id", id)
     .maybeSingle();
-  const wasAlreadyServed = (current as { status: OrderStatus } | null)?.status === "servie";
+  const currentRow = current as
+    | { status: OrderStatus; fulfillment_mode: OrderFulfillmentMode | null; payment_status: OrderPaymentStatus }
+    | null;
+  const wasAlreadyServed = currentRow?.status === "servie";
+
+  const isAwaitingPayment =
+    Boolean(currentRow?.fulfillment_mode) &&
+    currentRow?.fulfillment_mode !== "sur_place" &&
+    currentRow?.payment_status !== "paye";
+  if (PREP_GATED_STATUSES.includes(status) && isAwaitingPayment) return false;
 
   const { error } = await supabase.from("orders").update({ status }).eq("restaurant_id", restaurantId).eq("id", id);
 
