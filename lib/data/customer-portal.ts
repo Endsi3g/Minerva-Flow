@@ -221,6 +221,7 @@ export async function deleteMyAccount(userId: string): Promise<boolean> {
       city: null,
       marketing_consent: false,
       favorite_offer_ids: [],
+      favorite_menu_item_ids: [],
     })
     .eq("user_id", userId);
   if (anonymizeError) return false;

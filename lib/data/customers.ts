@@ -29,6 +29,8 @@ export type CustomerRow = {
   birthday: string | null;
   city: string | null;
   avatar_url: string | null;
+  favorite_offer_ids: string[] | null;
+  favorite_menu_item_ids: string[] | null;
 };
 
 export type LoyaltyTransactionRow = {
@@ -78,6 +80,8 @@ export function mapCustomer(row: CustomerRow, transactions: LoyaltyTransaction[]
     birthday: row.birthday,
     city: row.city,
     avatarUrl: row.avatar_url,
+    favoriteOfferIds: row.favorite_offer_ids ?? [],
+    favoriteMenuItemIds: row.favorite_menu_item_ids ?? [],
   };
 }
 
@@ -201,6 +205,42 @@ export async function updateCustomer(
     .update(dbPatch)
     .eq("restaurant_id", restaurantId)
     .eq("id", id);
+
+  return !error;
+}
+
+/**
+ * The heart toggle on a menu item or offer (public menu / portal) — reads
+ * the current array and writes the new one rather than an atomic RPC; a
+ * lost update from two rapid clicks on the same favorite is low-stakes
+ * enough not to warrant one.
+ */
+export async function toggleFavorite(
+  restaurantId: string,
+  customerId: string,
+  kind: "menu_item" | "offer",
+  itemId: string,
+  favorite: boolean
+): Promise<boolean> {
+  const supabase = await createClient();
+  const column = kind === "menu_item" ? "favorite_menu_item_ids" : "favorite_offer_ids";
+
+  const { data: current } = await supabase
+    .from("customers")
+    .select(column)
+    .eq("restaurant_id", restaurantId)
+    .eq("id", customerId)
+    .maybeSingle();
+  if (!current) return false;
+
+  const existing = ((current as Record<string, string[] | null>)[column] ?? []) as string[];
+  const next = favorite ? Array.from(new Set([...existing, itemId])) : existing.filter((id) => id !== itemId);
+
+  const { error } = await supabase
+    .from("customers")
+    .update({ [column]: next })
+    .eq("restaurant_id", restaurantId)
+    .eq("id", customerId);
 
   return !error;
 }

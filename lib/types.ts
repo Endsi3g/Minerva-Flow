@@ -638,6 +638,8 @@ export type Customer = {
   birthday: string | null;
   city: string | null;
   avatarUrl: string | null;
+  favoriteOfferIds: string[];
+  favoriteMenuItemIds: string[];
 };
 
 export type LoyaltyReward = {

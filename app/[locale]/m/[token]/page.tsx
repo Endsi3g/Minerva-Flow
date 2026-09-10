@@ -1,6 +1,7 @@
 import { getMenuShareByToken, getSiblingLocationsForPublicMenu } from "@/lib/data/menu-shares";
 import { getActiveOffersForRestaurant } from "@/lib/data/offers";
 import { getActiveReferralProgramForRestaurant } from "@/lib/data/referral-programs";
+import { getCustomersForUser } from "@/lib/data/customer-portal";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
@@ -30,11 +31,16 @@ export default async function PublicMenuPage({
   const [landing, authResult] = await Promise.all([getMenuShareByToken(token), supabase.auth.getUser()]);
   if (!landing) notFound();
   const user = authResult.data.user;
-  const [offers, shareProgram, siblingLocations] = await Promise.all([
+  const [offers, shareProgram, siblingLocations, customers] = await Promise.all([
     getActiveOffersForRestaurant(landing.restaurantId),
     getActiveReferralProgramForRestaurant(landing.restaurantId),
     getSiblingLocationsForPublicMenu(landing.restaurantId),
+    user ? getCustomersForUser(user.id) : Promise.resolve([]),
   ]);
+  // Read-only lookup — does NOT create a customer row (that only happens
+  // on order submission, see findOrCreateCustomerForUser) just because
+  // someone with a magic-link session browsed the menu.
+  const customer = customers.find((c) => c.restaurantId === landing.restaurantId) ?? null;
 
   return (
     <MenuOrderFlow
@@ -45,6 +51,9 @@ export default async function PublicMenuPage({
       authenticated={Boolean(user)}
       shareProgramId={shareProgram?.id ?? null}
       siblingLocations={siblingLocations}
+      customerId={customer?.id ?? null}
+      favoriteMenuItemIds={customer?.favoriteMenuItemIds ?? []}
+      favoriteOfferIds={customer?.favoriteOfferIds ?? []}
     />
   );
 }
