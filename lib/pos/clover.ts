@@ -226,3 +226,34 @@ export async function fetchCloverDailySales(
   };
 }
 
+/**
+ * Direct API Token validation for Clover — verifies that the token has access
+ * to the given merchant ID via the Clover REST API v3.
+ */
+export async function validateAndFetchCloverMerchant(
+  merchantId: string,
+  apiToken: string
+): Promise<{ valid: boolean; merchantName?: string; error?: string }> {
+  try {
+    const res = await fetch(`${cloverApiBaseUrl()}/v3/merchants/${encodeURIComponent(merchantId)}`, {
+      headers: {
+        Authorization: `Bearer ${apiToken.trim()}`,
+        Accept: "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      if (res.status === 401) return { valid: false, error: "Clé API Clover invalide ou non autorisée." };
+      if (res.status === 404) return { valid: false, error: "Identifiant Marchand (Merchant ID) introuvable chez Clover." };
+      return { valid: false, error: `Erreur Clover (${res.status}).` };
+    }
+
+    const data = (await res.json()) as { name?: string };
+    return { valid: true, merchantName: data.name };
+  } catch (err) {
+    console.error("Clover merchant validation failed:", err);
+    return { valid: false, error: "Impossible de joindre le serveur Clover." };
+  }
+}
+
+
