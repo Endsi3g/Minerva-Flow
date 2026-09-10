@@ -14,7 +14,9 @@ import { useApp } from "@/lib/app-context";
 import { respondToReviewAction, respondToGoogleReviewAction, connectGooglePlaceAction } from "./actions";
 import type { PrivateReviewWithCustomer, ItemOrOfferReview, GoogleReviewRow } from "@/lib/data/reputation";
 import type { Restaurant } from "@/lib/types";
-import { Star, MessageSquareWarning, MapPin, CheckCircle2 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { ImageLightboxModal } from "@/components/media/ImageLightboxModal";
+import { Star, MessageSquareWarning, MapPin, CheckCircle2, ArrowRight } from "lucide-react";
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -137,7 +139,15 @@ function GoogleRespondCard({ review, onResponded }: { review: GoogleReviewRow; o
   );
 }
 
-function RespondCard({ review, onResponded }: { review: PrivateReviewWithCustomer; onResponded: (id: string, response: string) => void }) {
+function RespondCard({
+  review,
+  onResponded,
+  onOpenImage,
+}: {
+  review: PrivateReviewWithCustomer;
+  onResponded: (id: string, response: string) => void;
+  onOpenImage: (url: string, title?: string) => void;
+}) {
   const [response, setResponse] = useState(review.ownerResponse ?? "");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -162,16 +172,39 @@ function RespondCard({ review, onResponded }: { review: PrivateReviewWithCustome
 
   return (
     <div className="rounded-xl border border-mv-border bg-mv-surface p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <StarRow rating={review.rating} />
-          <span className="text-[12.5px] font-medium text-mv-ink">{review.customerName}</span>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <StarRow rating={review.rating} />
+            <span className="text-[12.5px] font-semibold text-mv-ink">{review.customerName}</span>
+          </div>
+          {review.customerEmail && (
+            <span className="text-[11px] text-mv-ink-faint font-mono">{review.customerEmail}</span>
+          )}
         </div>
-        <span className="text-[11.5px] text-mv-ink-faint">
+        <span className="text-[11.5px] text-mv-ink-faint shrink-0">
           {new Date(review.createdAt).toLocaleDateString("fr-CA", { year: "numeric", month: "short", day: "numeric" })}
         </span>
       </div>
       {review.comment && <p className="mb-3 text-[13px] leading-relaxed text-mv-ink-soft">{review.comment}</p>}
+
+      {review.imageUrls && review.imageUrls.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {review.imageUrls.map((url, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onOpenImage(url, `Photo de ${review.customerName}`)}
+              className="group relative h-14 w-14 overflow-hidden rounded-lg border border-mv-border bg-mv-cream-soft shadow-xs transition-all hover:ring-2 hover:ring-mv-green"
+              title="Agrandir la photo"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt={`Avis ${idx + 1}`} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+            </button>
+          ))}
+        </div>
+      )}
+
       <Textarea
         value={response}
         onChange={(e) => setResponse(e.target.value)}
@@ -208,6 +241,8 @@ export function ReputationView({
   const { role } = useApp();
   const [reviews, setReviews] = useState(privateReviews);
   const [gReviews, setGReviews] = useState(googleReviews);
+  const [visibleCount, setVisibleCount] = useState(6);
+  const [lightbox, setLightbox] = useState<{ url: string; title?: string } | null>(null);
   const canRespond = role === "owner" || role === "manager" || role === "staff";
 
   function handleResponded(id: string, response: string) {
@@ -232,12 +267,24 @@ export function ReputationView({
   const googleUnanswered = gReviews.filter((r) => !r.ownerResponse);
   const googleAnswered = gReviews.filter((r) => r.ownerResponse);
 
+  const allPrivateList = [...unanswered, ...answered];
+  const paginatedPrivateList = allPrivateList.slice(0, visibleCount);
+
   return (
     <div>
       <PageHeader
         eyebrow="Réputation"
         title="Réputation"
         description="Avis en dessous de 4★ restent privés ici — jamais publics — pour que vous puissiez répondre directement au client avant qu'il n'ait à passer par Google Maps."
+        action={
+          <Link
+            href="/reputation/reviews"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink hover:bg-mv-cream-soft transition-colors shadow-xs shrink-0"
+          >
+            <span>Toutes les revues (Vue dense)</span>
+            <ArrowRight size={13} />
+          </Link>
+        }
       />
 
       <GoogleConnectCard restaurantId={restaurantId} currentPlaceId={restaurant.googlePlaceId} />
@@ -288,18 +335,64 @@ export function ReputationView({
             <EmptyState icon={CheckCircle2} title="Aucun avis privé" description="Les avis en dessous de 4★ apparaîtront ici automatiquement." />
           ) : (
             <div className="space-y-3">
-              {[...unanswered, ...answered].map((review) =>
+              {paginatedPrivateList.map((review) =>
                 canRespond ? (
-                  <RespondCard key={review.id} review={review} onResponded={handleResponded} />
+                  <RespondCard
+                    key={review.id}
+                    review={review}
+                    onResponded={handleResponded}
+                    onOpenImage={(url, title) => setLightbox({ url, title })}
+                  />
                 ) : (
                   <div key={review.id} className="rounded-xl border border-mv-border bg-mv-surface p-4">
-                    <div className="mb-2 flex items-center gap-2">
-                      <StarRow rating={review.rating} />
-                      <span className="text-[12.5px] font-medium text-mv-ink">{review.customerName}</span>
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <StarRow rating={review.rating} />
+                          <span className="text-[12.5px] font-semibold text-mv-ink">{review.customerName}</span>
+                        </div>
+                        {review.customerEmail && (
+                          <span className="text-[11px] text-mv-ink-faint font-mono">{review.customerEmail}</span>
+                        )}
+                      </div>
+                      <span className="text-[11.5px] text-mv-ink-faint shrink-0">
+                        {new Date(review.createdAt).toLocaleDateString("fr-CA", { year: "numeric", month: "short", day: "numeric" })}
+                      </span>
                     </div>
-                    {review.comment && <p className="text-[13px] text-mv-ink-soft">{review.comment}</p>}
+                    {review.comment && <p className="text-[13px] text-mv-ink-soft mb-2">{review.comment}</p>}
+                    {review.imageUrls && review.imageUrls.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {review.imageUrls.map((url, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setLightbox({ url, title: `Photo de ${review.customerName}` })}
+                            className="h-12 w-12 overflow-hidden rounded-lg border border-mv-border bg-mv-cream-soft"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={url} alt={`Avis ${idx + 1}`} className="h-full w-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
+              )}
+
+              {visibleCount < allPrivateList.length && (
+                <div className="pt-3 flex justify-center border-t border-mv-border-soft">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setVisibleCount((c) => c + 6)}
+                    className="gap-1.5"
+                  >
+                    <span>Voir les 6 suivants</span>
+                    <span className="text-mv-ink-faint text-[11px]">
+                      ({allPrivateList.length - visibleCount} restant{allPrivateList.length - visibleCount > 1 ? "s" : ""})
+                    </span>
+                  </Button>
+                </div>
               )}
             </div>
           )}
@@ -320,16 +413,39 @@ export function ReputationView({
               <div key={`${review.kind}-${review.id}`} className="flex items-start gap-3 rounded-lg border border-mv-border-soft bg-mv-cream-soft px-3 py-2.5">
                 <StarRow rating={review.rating} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12.5px] font-medium text-mv-ink">
-                    {review.name} <Badge tone="neutral">{review.kind === "menu_item" ? "Plat" : "Offre"}</Badge>
-                  </p>
-                  {review.comment && <p className="text-[12px] text-mv-ink-soft">{review.comment}</p>}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[12.5px] font-semibold text-mv-ink truncate">{review.name}</span>
+                    <Badge tone="neutral" className="shrink-0">{review.kind === "menu_item" ? "Plat" : "Offre"}</Badge>
+                  </div>
+                  {review.comment && <p className="text-[12px] text-mv-ink-soft mt-0.5">{review.comment}</p>}
+                  {review.imageUrls && review.imageUrls.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {review.imageUrls.map((url, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setLightbox({ url, title: `Photo pour ${review.name}` })}
+                          className="h-10 w-10 overflow-hidden rounded-md border border-mv-border bg-white shadow-2xs hover:opacity-90 transition-opacity"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt={`Photo ${idx + 1}`} className="h-full w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
       </Card>
+
+      <ImageLightboxModal
+        imageUrl={lightbox?.url}
+        title={lightbox?.title}
+        isOpen={Boolean(lightbox)}
+        onClose={() => setLightbox(null)}
+      />
     </div>
   );
 }
