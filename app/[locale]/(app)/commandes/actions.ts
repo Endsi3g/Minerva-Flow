@@ -103,6 +103,7 @@ export async function notifyOrderReadyAction(
     city: string;
   };
   const channel = await sendOrderReadyNotification(
+    admin,
     { id: restaurant.id, name: restaurant.name, googleMapsUrl: restaurant.google_maps_url, address: restaurant.address, city: restaurant.city },
     customer
   );
