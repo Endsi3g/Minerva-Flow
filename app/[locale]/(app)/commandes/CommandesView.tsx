@@ -42,6 +42,7 @@ import {
   createOrderAction,
   notifyOrderReadyAction,
   setBusyModeManualAction,
+  updateOrderEtaAction,
 } from "./actions";
 import { notifyError } from "@/lib/notify-error";
 import { toast } from "sonner";
@@ -93,6 +94,84 @@ const nextStatus: Partial<Record<OrderStatus, { status: OrderStatus; label: stri
  */
 function isAwaitingPayment(o: Order): boolean {
   return Boolean(o.fulfillmentMode) && o.fulfillmentMode !== "sur_place" && o.paymentStatus !== "paye";
+}
+
+/**
+ * Inline "prêt vers HH:MM" — staff override for one order's estimate (see
+ * updateOrderEstimatedReadyAt). Shows nothing for a non-manager when no
+ * estimate is set (there's nothing to show or edit), but always shows the
+ * time once one exists, editable or not.
+ */
+function OrderEtaEditor({
+  order,
+  restaurantId,
+  canManage,
+  onSaved,
+}: {
+  order: Order;
+  restaurantId: string;
+  canManage: boolean;
+  onSaved: (estimatedReadyAt: string | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [minutes, setMinutes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    const parsed = minutes.trim() === "" ? null : Number(minutes);
+    if (parsed !== null && (!Number.isFinite(parsed) || parsed <= 0)) return;
+    setSaving(true);
+    const ok = await updateOrderEtaAction(restaurantId, order.id, parsed);
+    setSaving(false);
+    if (ok) {
+      onSaved(parsed !== null ? new Date(Date.now() + parsed * 60_000).toISOString() : null);
+      setEditing(false);
+      setMinutes("");
+    } else {
+      notifyError("La mise à jour du délai a échoué.");
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="mt-1.5 flex items-center gap-1.5">
+        <input
+          type="number"
+          min={1}
+          autoFocus
+          value={minutes}
+          onChange={(e) => setMinutes(e.target.value)}
+          placeholder="min"
+          className="w-14 rounded-md border border-mv-border px-1.5 py-0.5 text-[11px]"
+        />
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="text-[11px] font-semibold text-mv-green-dark"
+        >
+          {saving ? "…" : "OK"}
+        </button>
+        <button type="button" onClick={() => setEditing(false)} className="text-[11px] text-mv-ink-faint">
+          Annuler
+        </button>
+      </div>
+    );
+  }
+
+  if (!order.estimatedReadyAt && !canManage) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => canManage && setEditing(true)}
+      disabled={!canManage}
+      className="mt-1 flex items-center gap-1 text-[11px] font-medium text-mv-ink-faint transition-colors hover:text-mv-ink-soft disabled:cursor-default"
+    >
+      <Clock size={11} />
+      {order.estimatedReadyAt ? `Prêt vers ${formatTime(order.estimatedReadyAt)}` : "Ajouter un délai"}
+    </button>
+  );
 }
 
 /** Web Audio synthesis for KDS notification chime — 100% offline, zero network latency */
@@ -440,6 +519,10 @@ export function CommandesView({
     }
   }
 
+  function handleEtaSaved(id: string, estimatedReadyAt: string | null) {
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, estimatedReadyAt } : o)));
+  }
+
   async function handleToggleBusy() {
     if (!restaurantId) return;
     const next = !busyModeLocal;
@@ -747,6 +830,14 @@ export function CommandesView({
                       <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
                       <ElapsedTimer createdAt={o.createdAt} />
                     </div>
+                    {canManage && (
+                      <OrderEtaEditor
+                        order={o}
+                        restaurantId={restaurantId!}
+                        canManage={canManage}
+                        onSaved={(eta) => handleEtaSaved(o.id, eta)}
+                      />
+                    )}
                     <ul className="space-y-1.5 border-t border-mv-border/60 pt-2 text-[13px] text-mv-ink">
                       {o.items.map((i) => (
                         <li key={i.id} className="flex justify-between items-center">
@@ -806,6 +897,14 @@ export function CommandesView({
                       <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
                       <ElapsedTimer createdAt={o.createdAt} />
                     </div>
+                    {canManage && (
+                      <OrderEtaEditor
+                        order={o}
+                        restaurantId={restaurantId!}
+                        canManage={canManage}
+                        onSaved={(eta) => handleEtaSaved(o.id, eta)}
+                      />
+                    )}
                     <ul className="space-y-1.5 border-t border-mv-border/60 pt-2 text-[13px] text-mv-ink">
                       {o.items.map((i) => (
                         <li key={i.id} className="flex justify-between items-center">

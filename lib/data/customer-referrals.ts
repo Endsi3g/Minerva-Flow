@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
 import { createOrderPaymentIntent } from "@/lib/stripe/connect";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { computeEstimatedReadyAt } from "@/lib/orders/eta";
 import type { CustomerReferralLink, ReferralProgram, OrderFulfillmentMode } from "@/lib/types";
 
 export type ReferralLinkTracking = {
@@ -339,8 +340,8 @@ export type PublicOrderGuestInfo = {
 
 export type SubmitPublicOrderResult =
   | { ok: false }
-  | { ok: true; orderId: string; clientSecret: null }
-  | { ok: true; orderId: string; clientSecret: string };
+  | { ok: true; orderId: string; clientSecret: null; estimatedReadyAt: string | null }
+  | { ok: true; orderId: string; clientSecret: string; estimatedReadyAt: string | null };
 
 /**
  * Same shape as submitPublicReservationRequest: identify the visitor via
@@ -445,6 +446,8 @@ export async function submitPublicOrder(
   let wantsOnlinePayment = fulfillmentMode !== "sur_place" && orderSettings.onlinePaymentEnabled;
   if (!wantsOnlinePayment) fulfillmentMode = "sur_place";
 
+  const estimatedReadyAt = computeEstimatedReadyAt(orderSettings.defaultPrepMinutes, orderSettings.isBusy);
+
   const baseOrderFields = {
     restaurant_id: restaurantId,
     status: "soumise",
@@ -458,6 +461,7 @@ export async function submitPublicOrder(
     customer_id: customerId,
     referral_link_id: referralLinkId,
     notes: guestInfo.mentionedOfferTitle ? `Offre mentionnée : ${guestInfo.mentionedOfferTitle}` : null,
+    estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
   };
 
   let { data: order, error: orderError } = await admin
@@ -471,16 +475,17 @@ export async function submitPublicOrder(
     .select("id")
     .single();
 
-  // payment_status/stripe_payment_intent_id/fulfillment_mode (migrations
-  // 0026, 0108) may not exist yet in every environment — retry without
-  // them rather than breaking order submission entirely for a column
-  // PostgREST can't find.
+  // payment_status/stripe_payment_intent_id/fulfillment_mode/estimated_ready_at
+  // (migrations 0026, 0108, 0112) may not exist yet in every environment —
+  // retry without any of them rather than breaking order submission
+  // entirely for a column PostgREST can't find.
   if (orderError?.code === "PGRST204") {
     wantsOnlinePayment = false;
     fulfillmentMode = "sur_place";
+    const { estimated_ready_at: _omit, ...minimalFields } = baseOrderFields;
     ({ data: order, error: orderError } = await admin
       .from("orders")
-      .insert({ ...baseOrderFields, payment_method: guestInfo.paymentMethod })
+      .insert({ ...minimalFields, payment_method: guestInfo.paymentMethod })
       .select("id")
       .single());
   }
@@ -515,8 +520,10 @@ export async function submitPublicOrder(
     link: "/commandes",
   });
 
+  const estimatedReadyAtIso = estimatedReadyAt?.toISOString() ?? null;
+
   if (!wantsOnlinePayment || !orderSettings.stripeConnectAccountId) {
-    return { ok: true, orderId, clientSecret: null };
+    return { ok: true, orderId, clientSecret: null, estimatedReadyAt: estimatedReadyAtIso };
   }
 
   try {
@@ -527,12 +534,12 @@ export async function submitPublicOrder(
       amountCents: Math.round(total * 100),
     });
     await admin.from("orders").update({ stripe_payment_intent_id: intent.id }).eq("id", orderId);
-    return { ok: true, orderId, clientSecret: intent.clientSecret };
+    return { ok: true, orderId, clientSecret: intent.clientSecret, estimatedReadyAt: estimatedReadyAtIso };
   } catch {
     // Stripe call failed (e.g. account got disabled mid-flow) — the order
     // itself is already safely committed as a normal order; just fall back
     // to pay-on-site rather than losing it.
     await admin.from("orders").update({ payment_status: "non_requis", fulfillment_mode: "sur_place" }).eq("id", orderId);
-    return { ok: true, orderId, clientSecret: null };
+    return { ok: true, orderId, clientSecret: null, estimatedReadyAt: estimatedReadyAtIso };
   }
 }

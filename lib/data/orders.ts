@@ -5,6 +5,7 @@ import { getRecipeItemsForMenuItems } from "@/lib/data/recipes";
 import { logMovement } from "@/lib/data/inventory";
 import { logVisit } from "@/lib/data/customers";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
+import { computeIsBusy, computeEstimatedReadyAt } from "@/lib/orders/eta";
 import type { Order, OrderItem, OrderStatus, OrderPaymentStatus, OrderFulfillmentMode } from "@/lib/types";
 
 type OrderRow = {
@@ -23,6 +24,7 @@ type OrderRow = {
   stripe_payment_intent_id: string | null;
   paid_at: string | null;
   ready_notified_at: string | null;
+  estimated_ready_at: string | null;
   notes: string | null;
   customer_id: string | null;
   referral_link_id: string | null;
@@ -69,6 +71,7 @@ function mapOrder(row: OrderRow, items: OrderItemRow[]): Order {
     stripePaymentIntentId: row.stripe_payment_intent_id,
     paidAt: row.paid_at,
     readyNotifiedAt: row.ready_notified_at,
+    estimatedReadyAt: row.estimated_ready_at,
     notes: row.notes,
     customerId: row.customer_id,
     referralLinkId: row.referral_link_id,
@@ -104,8 +107,8 @@ export async function createOrder(restaurantId: string, input: CreateOrderInput)
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: restaurant }, { data: menuItemsData }] = await Promise.all([
-    supabase.from("restaurants").select("tax_rate").eq("id", restaurantId).maybeSingle(),
+  const [{ data: restaurant }, { data: menuItemsData }, isBusy] = await Promise.all([
+    supabase.from("restaurants").select("tax_rate, default_prep_minutes").eq("id", restaurantId).maybeSingle(),
     supabase
       .from("menu_items")
       .select("id, name, price")
@@ -115,8 +118,10 @@ export async function createOrder(restaurantId: string, input: CreateOrderInput)
         "id",
         input.items.map((i) => i.menuItemId)
       ),
+    computeIsBusy(supabase, restaurantId),
   ]);
   if (!restaurant) return null;
+  const restaurantRow = restaurant as { tax_rate: number; default_prep_minutes: number | null };
 
   const menuItemById = new Map(
     ((menuItemsData as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
@@ -124,11 +129,13 @@ export async function createOrder(restaurantId: string, input: CreateOrderInput)
   const pricing = computeOrderPricing({
     cart: input.items,
     menuItemById,
-    taxRate: (restaurant as { tax_rate: number }).tax_rate,
+    taxRate: restaurantRow.tax_rate,
     acceptsTips: false,
     requestedTipAmount: 0,
   });
   if (!pricing) return null;
+
+  const estimatedReadyAt = computeEstimatedReadyAt(restaurantRow.default_prep_minutes, isBusy);
 
   const { data: order, error } = await supabase
     .from("orders")
@@ -147,6 +154,7 @@ export async function createOrder(restaurantId: string, input: CreateOrderInput)
       customer_id: input.customerId ?? null,
       notes: input.notes ?? null,
       created_by: user?.id ?? null,
+      estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
     })
     .select("*")
     .single();
@@ -353,6 +361,31 @@ async function incrementServiceDayRevenue(restaurantId: string, date: string, am
     p_date: date,
     p_amount: amount,
   });
+}
+
+/**
+ * Staff override for one order's "prêt vers" estimate (/commandes) —
+ * minutesFromNow null clears it (no estimate, no auto-notify for this
+ * order); a number replaces whatever computeEstimatedReadyAt set at
+ * creation, or sets one for the first time if the owner had no default
+ * configured. Also clears ready_notified_at so a pushed-back estimate on
+ * an already-notified order can trigger the auto-notify cron again if it
+ * elapses a second time — a correction, not a re-send of the same promise.
+ */
+export async function updateOrderEstimatedReadyAt(
+  restaurantId: string,
+  id: string,
+  minutesFromNow: number | null
+): Promise<boolean> {
+  const supabase = await createClient();
+  const estimatedReadyAt =
+    minutesFromNow !== null && minutesFromNow > 0 ? new Date(Date.now() + minutesFromNow * 60_000) : null;
+  const { error } = await supabase
+    .from("orders")
+    .update({ estimated_ready_at: estimatedReadyAt?.toISOString() ?? null, ready_notified_at: null })
+    .eq("restaurant_id", restaurantId)
+    .eq("id", id);
+  return !error;
 }
 
 export async function deleteOrder(restaurantId: string, id: string): Promise<boolean> {

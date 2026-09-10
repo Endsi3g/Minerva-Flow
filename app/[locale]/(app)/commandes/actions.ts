@@ -1,7 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getOrdersForDay, updateOrderStatus, deleteOrder, createOrder, type CreateOrderInput } from "@/lib/data/orders";
+import {
+  getOrdersForDay,
+  updateOrderStatus,
+  deleteOrder,
+  createOrder,
+  updateOrderEstimatedReadyAt,
+  type CreateOrderInput,
+} from "@/lib/data/orders";
 import { creditReferralConversionForOrder } from "@/lib/data/customer-referrals";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -119,6 +126,17 @@ export async function setBusyModeManualAction(restaurantId: string, busy: boolea
   const membership = await getCurrentMembership();
   if (!membership || membership.restaurantId !== restaurantId) return false;
   const ok = await setBusyModeManual(restaurantId, busy);
+  if (ok) revalidatePath("/commandes");
+  return ok;
+}
+
+/** Staff override for one order's "prêt vers" estimate — see updateOrderEstimatedReadyAt. */
+export async function updateOrderEtaAction(
+  restaurantId: string,
+  orderId: string,
+  minutesFromNow: number | null
+): Promise<boolean> {
+  const ok = await updateOrderEstimatedReadyAt(restaurantId, orderId, minutesFromNow);
   if (ok) revalidatePath("/commandes");
   return ok;
 }

@@ -1001,6 +1001,7 @@ function CheckoutModal({
   const [tipPct, setTipPct] = useState<number | null>(acceptsTips ? 0.15 : null);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
+  const [estimatedReadyAt, setEstimatedReadyAt] = useState<string | null>(null);
 
   const subtotal = cartLines.reduce((sum, l) => sum + l.item.price * l.quantity, 0);
   const taxAmount = roundToCents(subtotal * taxRate);
@@ -1019,6 +1020,7 @@ function CheckoutModal({
       setStatus("error");
       return;
     }
+    setEstimatedReadyAt(result.estimatedReadyAt);
     onOrdered();
     setStatus("done");
   }
@@ -1037,6 +1039,11 @@ function CheckoutModal({
           </div>
           <p className="font-display text-[19px] font-medium text-mv-ink">{t("orderSuccessTitle")}</p>
           <p className="mx-auto mt-1.5 max-w-xs text-[13px] text-mv-ink-soft">{t("orderSuccessDescription")}</p>
+          {estimatedReadyAt && (
+            <p className="mt-2 text-[12.5px] font-medium text-mv-green-dark">
+              Prêt vers {new Date(estimatedReadyAt).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
           <div className="mx-auto mt-4 flex items-center justify-center gap-1.5 text-[12px] text-mv-ink-faint">
             <Clock size={13} /> Vous recevrez une notification dès la confirmation.
           </div>

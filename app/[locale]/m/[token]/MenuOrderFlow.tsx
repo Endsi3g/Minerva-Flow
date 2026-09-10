@@ -38,6 +38,10 @@ function categorySlug(category: string, index: number): string {
 
 const TIP_PRESETS = [0, 0.1, 0.15, 0.2];
 
+function formatEtaTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" });
+}
+
 const FULFILLMENT_MODE_LABEL: Record<OrderFulfillmentMode, string> = {
   sur_place: "Sur place",
   immediat: "En ligne maintenant",
@@ -98,6 +102,7 @@ function CheckoutModal({
   // is never overwritten by a later order that didn't re-tick this box.
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [estimatedReadyAt, setEstimatedReadyAt] = useState<string | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
 
@@ -164,6 +169,7 @@ function CheckoutModal({
       setSubmitStatus("error");
       return;
     }
+    setEstimatedReadyAt(result.estimatedReadyAt);
     if (result.clientSecret) {
       setClientSecret(result.clientSecret);
       setSubmitStatus("paying");
@@ -198,6 +204,11 @@ function CheckoutModal({
           <p className="mt-1.5 text-[13px] text-mv-ink-soft">
             Nous confirmons avec votre banque. Votre commande est déjà transmise au restaurant.
           </p>
+          {estimatedReadyAt && (
+            <p className="mt-2 text-[12.5px] font-medium text-mv-green-dark">
+              Prêt vers {formatEtaTime(estimatedReadyAt)}
+            </p>
+          )}
           {shareProgramId && (
             <div className="mt-4 border-t border-mv-border-soft pt-4">
               {shareLink ? (
@@ -219,6 +230,11 @@ function CheckoutModal({
           <p className="mt-1.5 text-[13px] text-mv-ink-soft">
             Vous paierez sur place. Le restaurant confirmera sous peu.
           </p>
+          {estimatedReadyAt && (
+            <p className="mt-2 text-[12.5px] font-medium text-mv-green-dark">
+              Prêt vers {formatEtaTime(estimatedReadyAt)}
+            </p>
+          )}
           {shareProgramId && (
             <div className="mt-4 border-t border-mv-border-soft pt-4">
               {shareLink ? (
