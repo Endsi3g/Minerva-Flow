@@ -689,6 +689,7 @@ export type MenuItem = {
   imageUrls: string[];
   videoUrl?: string | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 /**
@@ -868,6 +869,7 @@ export type InventoryItem = {
   unitCost: number;
   supplierId: string | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 export type ReferralReward = {

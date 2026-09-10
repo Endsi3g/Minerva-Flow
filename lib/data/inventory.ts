@@ -15,6 +15,7 @@ type InventoryItemRow = {
   unit_cost: number;
   supplier_id: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 type InventoryMovementRow = {
@@ -39,6 +40,7 @@ function mapItem(row: InventoryItemRow): InventoryItem {
     unitCost: row.unit_cost,
     supplierId: row.supplier_id,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 

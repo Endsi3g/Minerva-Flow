@@ -16,6 +16,8 @@ import { useMemo, useState, type FormEvent } from "react";
 import { createInventoryItemAction, deleteInventoryItemAction, logMovementAction } from "./actions";
 import { notifyError } from "@/lib/notify-error";
 import Link from "next/link";
+import { PosInventoryMappingCard } from "@/components/minerva/PosInventoryMappingCard";
+import type { CatalogPosProvider } from "@/lib/pos/catalog-sync";
 
 const movementLabel: Record<InventoryMovementType, string> = {
   reception: "Réception",
@@ -251,11 +253,13 @@ export function InventaireView({
   initialItems,
   suppliers,
   wasteSummary,
+  connectedProviders,
 }: {
   restaurantId: string | null;
   initialItems: InventoryItem[];
   suppliers: Supplier[];
   wasteSummary: { itemId: string; itemName: string; cost: number }[];
+  connectedProviders: CatalogPosProvider[];
 }) {
   const { role } = useApp();
   const [items, setItems] = useState(initialItems);
@@ -307,6 +311,10 @@ export function InventaireView({
           )
         }
       />
+
+      {restaurantId && connectedProviders.length > 0 && (
+        <PosInventoryMappingCard restaurantId={restaurantId} inventoryItems={items} connectedProviders={connectedProviders} />
+      )}
 
       {items.length > 0 && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 items-start">

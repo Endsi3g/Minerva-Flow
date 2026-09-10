@@ -189,3 +189,192 @@ export async function fetchSquareDailySales(
   return { revenue: Math.round(revenue * 100) / 100, orderCount: tickets.length };
 }
 
+/** The location inventory pushes/pulls are scoped to — Square inventory counts are per-location. */
+export async function getSquareDefaultLocationId(accessToken: string): Promise<string | null> {
+  const ids = await listSquareLocationIds(accessToken);
+  return ids[0] ?? null;
+}
+
+export type SquareCatalogItem = {
+  externalId: string;
+  variationId: string;
+  name: string;
+  price: number;
+  updatedAt: string | null;
+};
+
+/** Lists a merchant's full Square item catalog, paginated. */
+export async function fetchSquareCatalogItems(accessToken: string): Promise<SquareCatalogItem[]> {
+  const items: SquareCatalogItem[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const url = new URL(`${squareBaseUrl()}/v2/catalog/list`);
+    url.searchParams.set("types", "ITEM");
+    if (cursor) url.searchParams.set("cursor", cursor);
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}`, "Square-Version": SQUARE_VERSION },
+    });
+    if (!res.ok) break;
+
+    const data = (await res.json()) as {
+      objects?: Array<{
+        id: string;
+        updated_at?: string;
+        item_data?: {
+          name?: string;
+          variations?: Array<{ id: string; item_variation_data?: { price_money?: { amount?: number } } }>;
+        };
+      }>;
+      cursor?: string;
+    };
+
+    for (const obj of data.objects ?? []) {
+      const variation = obj.item_data?.variations?.[0];
+      if (!variation) continue;
+      items.push({
+        externalId: obj.id,
+        variationId: variation.id,
+        name: obj.item_data?.name ?? "Article",
+        price: (variation.item_variation_data?.price_money?.amount ?? 0) / 100,
+        updatedAt: obj.updated_at ?? null,
+      });
+    }
+    cursor = data.cursor;
+  } while (cursor);
+
+  return items;
+}
+
+/**
+ * Creates (externalId omitted) or updates (externalId + variationId set) a
+ * Square catalog item (ITEM + one ITEM_VARIATION). Square's upsert is a
+ * blind write when no `version` is sent, which is fine here since our own
+ * pos_item_mappings.external_updated_at check decides whether to push at
+ * all. Returns the item's { itemId, variationId } on success.
+ */
+export async function upsertSquareCatalogItem(
+  accessToken: string,
+  item: { externalId?: string | null; variationId?: string | null; name: string; price: number; active: boolean }
+): Promise<{ itemId: string; variationId: string } | null> {
+  const itemId = item.externalId ?? "#new-item";
+  const variationId = item.variationId ?? "#new-variation";
+
+  const res = await fetch(`${squareBaseUrl()}/v2/catalog/object`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "Square-Version": SQUARE_VERSION,
+    },
+    body: JSON.stringify({
+      idempotency_key: `${itemId}-${Date.now()}`,
+      object: {
+        type: "ITEM",
+        id: itemId,
+        present_at_all_locations: true,
+        item_data: {
+          name: item.name,
+          is_archived: !item.active,
+          variations: [
+            {
+              type: "ITEM_VARIATION",
+              id: variationId,
+              present_at_all_locations: true,
+              item_variation_data: {
+                item_id: itemId,
+                name: "Régulier",
+                pricing_type: "FIXED_PRICING",
+                price_money: { amount: Math.round(item.price * 100), currency: "CAD" },
+              },
+            },
+          ],
+        },
+      },
+    }),
+  });
+  if (!res.ok) {
+    console.error(`Square catalog upsert failed (${res.status}):`, await res.text().catch(() => ""));
+    return null;
+  }
+
+  const data = (await res.json()) as {
+    catalog_object?: { id?: string; item_data?: { variations?: Array<{ id: string }> } };
+  };
+  const resolvedItemId = data.catalog_object?.id ?? item.externalId ?? null;
+  const resolvedVariationId = data.catalog_object?.item_data?.variations?.[0]?.id ?? item.variationId ?? null;
+  if (!resolvedItemId || !resolvedVariationId) return null;
+  return { itemId: resolvedItemId, variationId: resolvedVariationId };
+}
+
+export async function deleteSquareCatalogObject(accessToken: string, externalId: string): Promise<boolean> {
+  const res = await fetch(`${squareBaseUrl()}/v2/catalog/object/${externalId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}`, "Square-Version": SQUARE_VERSION },
+  });
+  return res.ok;
+}
+
+/** Pushes a physical inventory count for one catalog item variation at the given location. */
+export async function updateSquareInventoryCount(
+  accessToken: string,
+  variationId: string,
+  locationId: string,
+  quantity: number
+): Promise<boolean> {
+  const res = await fetch(`${squareBaseUrl()}/v2/inventory/changes/batch-create`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "Square-Version": SQUARE_VERSION,
+    },
+    body: JSON.stringify({
+      idempotency_key: `${variationId}-${Date.now()}`,
+      changes: [
+        {
+          type: "PHYSICAL_COUNT",
+          physical_count: {
+            catalog_object_id: variationId,
+            location_id: locationId,
+            quantity: String(Math.max(0, Math.round(quantity))),
+            state: "IN_STOCK",
+            occurred_at: new Date().toISOString(),
+          },
+        },
+      ],
+    }),
+  });
+  return res.ok;
+}
+
+/** Pulls current on-hand counts for a batch of catalog item variations at one location. */
+export async function fetchSquareInventoryCounts(
+  accessToken: string,
+  variationIds: string[],
+  locationId: string
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (variationIds.length === 0) return counts;
+
+  const res = await fetch(`${squareBaseUrl()}/v2/inventory/counts/batch-retrieve`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "Square-Version": SQUARE_VERSION,
+    },
+    body: JSON.stringify({ catalog_object_ids: variationIds, location_ids: [locationId] }),
+  });
+  if (!res.ok) return counts;
+
+  const data = (await res.json()) as {
+    counts?: Array<{ catalog_object_id?: string; quantity?: string }>;
+  };
+  for (const c of data.counts ?? []) {
+    if (c.catalog_object_id) counts.set(c.catalog_object_id, Number(c.quantity ?? 0));
+  }
+  return counts;
+}
+

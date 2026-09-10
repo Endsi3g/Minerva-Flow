@@ -16,6 +16,13 @@ import { getRecipeItems, setRecipeItems } from "@/lib/data/recipes";
 import type { MenuItem, MenuShare, Offer, RecipeItem } from "@/lib/types";
 import { getPosItemMappings, upsertPosItemMapping, type PosItemMapping } from "@/lib/pos/item-mapping";
 import type { PosProvider } from "@/lib/data/pos-connections";
+import {
+  pushMenuItemToConnectedProviders,
+  deleteMenuItemFromConnectedProviders,
+  getConnectedCatalogProviders,
+  reconcileMenuItemsForProvider,
+} from "@/lib/pos/catalog-sync";
+import { getMenuItems } from "@/lib/data/menu";
 
 export async function createMenuItemAction(
   restaurantId: string,
@@ -23,7 +30,10 @@ export async function createMenuItemAction(
 ): Promise<MenuItem | null> {
   if (!input.name.trim()) return null;
   const item = await createMenuItem(restaurantId, input);
-  if (item) revalidatePath("/menu");
+  if (item) {
+    revalidatePath("/menu");
+    await pushMenuItemToConnectedProviders(restaurantId, item).catch(() => {});
+  }
   return item;
 }
 
@@ -31,7 +41,10 @@ export async function createMenuItemsAction(restaurantId: string, inputs: MenuIt
   const valid = inputs.filter((i) => i.name.trim().length > 0 && Number.isFinite(i.price) && i.price >= 0);
   if (valid.length === 0) return [];
   const items = await createMenuItems(restaurantId, valid);
-  if (items.length > 0) revalidatePath("/menu");
+  if (items.length > 0) {
+    revalidatePath("/menu");
+    await Promise.all(items.map((item) => pushMenuItemToConnectedProviders(restaurantId, item).catch(() => {})));
+  }
   return items;
 }
 
@@ -41,14 +54,40 @@ export async function updateMenuItemAction(
   patch: Partial<MenuItemInput>
 ): Promise<MenuItem | null> {
   const item = await updateMenuItem(restaurantId, id, patch);
-  if (item) revalidatePath("/menu");
+  if (item) {
+    revalidatePath("/menu");
+    await pushMenuItemToConnectedProviders(restaurantId, item).catch(() => {});
+  }
   return item;
 }
 
 export async function deleteMenuItemAction(restaurantId: string, id: string): Promise<boolean> {
   const ok = await deleteMenuItem(restaurantId, id);
-  if (ok) revalidatePath("/menu");
+  if (ok) {
+    revalidatePath("/menu");
+    await deleteMenuItemFromConnectedProviders(restaurantId, id).catch(() => {});
+  }
   return ok;
+}
+
+/** "Resynchroniser tout" — pushes every menu item to every connected Clover/Square account, then pulls back any remote-side changes. */
+export async function resyncMenuToPosAction(restaurantId: string): Promise<{ providers: number; pushed: number; pulled: number }> {
+  const providers = await getConnectedCatalogProviders(restaurantId);
+  if (providers.length === 0) return { providers: 0, pushed: 0, pulled: 0 };
+
+  const items = await getMenuItems(restaurantId);
+  for (const item of items) {
+    await pushMenuItemToConnectedProviders(restaurantId, item).catch(() => {});
+  }
+
+  let pushed = items.length * providers.length;
+  let pulled = 0;
+  for (const provider of providers) {
+    const result = await reconcileMenuItemsForProvider(restaurantId, provider);
+    pulled += result.pulled;
+  }
+  revalidatePath("/menu");
+  return { providers: providers.length, pushed, pulled };
 }
 
 export async function recordSaleAction(

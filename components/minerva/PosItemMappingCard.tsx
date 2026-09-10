@@ -21,6 +21,7 @@ import {
   getPosItemMappingsAction,
   upsertPosItemMappingAction,
   createMenuItemFromPosAction,
+  resyncMenuToPosAction,
 } from "@/app/[locale]/(app)/menu/actions";
 import type { PosItemMapping } from "@/lib/pos/item-mapping";
 import type { PosProvider } from "@/lib/data/pos-connections";
@@ -79,6 +80,19 @@ export function PosItemMappingCard({
   const [filterStatus, setFilterStatus] = useState<"all" | "unmapped" | "mapped">("all");
   const [isPending, startTransition] = useTransition();
   const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
+  const [resyncing, setResyncing] = useState(false);
+
+  async function handleResync() {
+    setResyncing(true);
+    const result = await resyncMenuToPosAction(restaurantId);
+    setResyncing(false);
+    if (result.providers === 0) {
+      toast.info("Aucun compte Clover/Square connecté.");
+    } else {
+      toast.success(`Synchronisé : ${result.pushed} envoyé(s), ${result.pulled} reçu(s) depuis le POS.`);
+      loadMappings();
+    }
+  }
 
   async function loadMappings() {
     setLoading(true);
@@ -253,6 +267,10 @@ export function PosItemMappingCard({
                 {mappedCount} associé{mappedCount > 1 ? "s" : ""}
               </Badge>
             )}
+            <Button size="sm" variant="secondary" onClick={handleResync} disabled={resyncing} className="text-[11.5px]">
+              <RefreshCw size={13} className={cn(resyncing && "animate-spin")} />
+              Resynchroniser tout
+            </Button>
             <Button
               size="sm"
               variant="ghost"
