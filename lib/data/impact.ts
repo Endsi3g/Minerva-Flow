@@ -8,6 +8,13 @@ import { computeLtvImpact, type LtvImpact } from "@/lib/engine/impact";
 import type { Customer } from "@/lib/types";
 import type { RetentionTrigger } from "@/lib/retention/send";
 
+/**
+ * Narrower than the full RetentionTrigger union (which now also carries
+ * the onboarding_* stages) — getActionableAtRiskCustomers only ever
+ * targets existing, drifting customers, never brand-new ones mid-onboarding.
+ */
+export type AtRiskTrigger = Extract<RetentionTrigger, "inactivity" | "birthday" | "value_drift" | "reward_available">;
+
 /** Fetches everything computeLtvImpact needs for one restaurant and runs it. */
 export async function getLtvImpact(restaurantId: string): Promise<LtvImpact> {
   const [customers, menuItems, sends] = await Promise.all([
@@ -24,7 +31,7 @@ export async function getLtvImpactForRestaurants(restaurantIds: string[]): Promi
   return Promise.all(restaurantIds.map(getLtvImpact));
 }
 
-export type AtRiskCustomer = { customer: Customer; trigger: RetentionTrigger };
+export type AtRiskCustomer = { customer: Customer; trigger: AtRiskTrigger };
 
 /**
  * The action behind "Ventes grâce à la fidélisation" on /impact: customers
