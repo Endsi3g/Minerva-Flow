@@ -19,7 +19,7 @@ import { Map as MapView, MapControls, MapMarker, MarkerContent, MarkerLabel, Mar
 import Link from "next/link";
 import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart, Share2, Sparkles, UtensilsCrossed, X, MapPin, ArrowRight, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { getOrCreateReferralLinkAction } from "@/app/[locale]/portal/actions";
+import { getOrCreateReferralLinkAction, toggleFavoriteAction } from "@/app/[locale]/portal/actions";
 
 type CartLine = { item: MenuItem; quantity: number };
 type OrderTotals = { subtotal: number; taxAmount: number; tipAmount: number; total: number };
@@ -380,11 +380,15 @@ function MenuItemGridCard({
   quantity,
   onOpen,
   onQuickAdd,
+  isFavorite,
+  onToggleFavorite,
 }: {
   item: MenuItem;
   quantity: number;
   onOpen: () => void;
   onQuickAdd: () => void;
+  isFavorite: boolean;
+  onToggleFavorite?: () => void;
 }) {
   return (
     <button
@@ -427,6 +431,27 @@ function MenuItemGridCard({
         {quantity > 0 && (
           <span className="absolute left-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-mv-ink px-1.5 text-[11px] font-bold text-white shadow-mv-md">
             {quantity}
+          </span>
+        )}
+        {onToggleFavorite && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite();
+              }
+            }}
+            className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-mv-surface/90 text-mv-ink-faint shadow-mv-sm transition-colors hover:text-mv-red"
+          >
+            <Heart size={14} className={isFavorite ? "fill-mv-red text-mv-red" : undefined} />
           </span>
         )}
       </div>
@@ -610,6 +635,9 @@ export function MenuOrderFlow({
   authenticated,
   shareProgramId,
   siblingLocations,
+  customerId,
+  favoriteMenuItemIds,
+  favoriteOfferIds,
 }: {
   token: string;
   referralCode: string | null;
@@ -618,8 +646,30 @@ export function MenuOrderFlow({
   authenticated: boolean;
   shareProgramId: string | null;
   siblingLocations: SiblingLocation[];
+  customerId: string | null;
+  favoriteMenuItemIds: string[];
+  favoriteOfferIds: string[];
 }) {
   const { restaurantName, items, taxRate, acceptsTips, onlinePaymentEnabled, orderModesEnabled } = landing;
+  const [favMenuItems, setFavMenuItems] = useState(new Set(favoriteMenuItemIds));
+  const [favOffers, setFavOffers] = useState(new Set(favoriteOfferIds));
+
+  async function handleToggleFavorite(kind: "menu_item" | "offer", itemId: string) {
+    if (!customerId) return;
+    const set = kind === "menu_item" ? favMenuItems : favOffers;
+    const setter = kind === "menu_item" ? setFavMenuItems : setFavOffers;
+    const next = new Set(set);
+    const wasFavorite = next.has(itemId);
+    wasFavorite ? next.delete(itemId) : next.add(itemId);
+    setter(next);
+    const ok = await toggleFavoriteAction(customerId, kind, itemId, !wasFavorite);
+    if (!ok) {
+      // Revert on failure
+      const reverted = new Set(next);
+      wasFavorite ? reverted.add(itemId) : reverted.delete(itemId);
+      setter(reverted);
+    }
+  }
 
   // Cart survives the magic-link round trip (a full page reload) via
   // localStorage — otherwise a customer who clicks the emailed link would
@@ -788,6 +838,16 @@ export function MenuOrderFlow({
                       <p className="text-[12px] leading-relaxed text-mv-ink-soft">{offer.description}</p>
                     )}
                   </div>
+                  {customerId && (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFavorite("offer", offer.id)}
+                      aria-label={favOffers.has(offer.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                      className="shrink-0 text-mv-ink-faint transition-colors hover:text-mv-red"
+                    >
+                      <Heart size={16} className={favOffers.has(offer.id) ? "fill-mv-red text-mv-red" : undefined} />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleClaimOffer(offer.title)}
@@ -834,6 +894,8 @@ export function MenuOrderFlow({
                       quantity={cart[item.id] ?? 0}
                       onOpen={() => openDetail(item)}
                       onQuickAdd={() => updateQty(item.id, 1)}
+                      isFavorite={favMenuItems.has(item.id)}
+                      onToggleFavorite={customerId ? () => handleToggleFavorite("menu_item", item.id) : undefined}
                     />
                   ))}
                 </div>

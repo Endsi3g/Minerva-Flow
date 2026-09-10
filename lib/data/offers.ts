@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyCustomers } from "@/lib/data/notifications";
+import { notifyFavoritedItemAvailable } from "@/lib/favorites/notify";
 import type { Offer } from "@/lib/types";
 
 type OfferRow = {
@@ -228,6 +229,9 @@ export async function updateOffer(
       title: "Nouvelle offre",
       body: offer.title,
       link: (await getPrimaryMenuShareLink(restaurantId)) ?? undefined,
+    });
+    await notifyFavoritedItemAvailable(supabase, restaurantId, "offer", offer.id, offer.title).catch(() => {
+      // Best-effort — a failed alert must not roll back the offer update staff just made.
     });
   }
 

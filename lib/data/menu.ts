@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
+import { notifyFavoritedItemAvailable } from "@/lib/favorites/notify";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MenuItem } from "@/lib/types";
 
@@ -161,6 +162,20 @@ export async function updateMenuItem(
   patch: Partial<MenuItemInput>
 ): Promise<MenuItem | null> {
   const supabase = await createClient();
+
+  // Only worth a pre-read when this update might actually flip the item
+  // back on — that's the one transition favorited-item alerts fire for.
+  let wasInactive = false;
+  if (patch.active === true) {
+    const { data: current } = await supabase
+      .from("menu_items")
+      .select("active")
+      .eq("restaurant_id", restaurantId)
+      .eq("id", id)
+      .maybeSingle();
+    wasInactive = (current as { active: boolean } | null)?.active === false;
+  }
+
   const dbPatch: Record<string, unknown> = {};
   if (patch.name !== undefined) dbPatch.name = patch.name;
   if (patch.category !== undefined) dbPatch.category = patch.category;
@@ -180,7 +195,15 @@ export async function updateMenuItem(
     .single();
 
   if (error || !data) return null;
-  return mapMenuItem(data as MenuItemRow);
+  const item = mapMenuItem(data as MenuItemRow);
+
+  if (wasInactive) {
+    await notifyFavoritedItemAvailable(supabase, restaurantId, "menu_item", item.id, item.name).catch(() => {
+      // Best-effort — a failed alert must not roll back the availability change staff just made.
+    });
+  }
+
+  return item;
 }
 
 export async function deleteMenuItem(restaurantId: string, id: string): Promise<boolean> {

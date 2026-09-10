@@ -13,6 +13,7 @@ import {
   type PortalOrderCartLine,
   type SubmitPortalOrderResult,
 } from "@/lib/data/customer-portal";
+import { toggleFavorite } from "@/lib/data/customers";
 import { updateCustomer } from "@/lib/data/customers";
 import type { CustomerReferralLink, RewardRedemption } from "@/lib/types";
 
@@ -85,6 +86,31 @@ export async function updateMyProfileAction(
     ...(input.phone !== undefined ? { phone: input.phone } : {}),
     ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {}),
   });
+}
+
+/**
+ * The heart toggle on a menu item/offer (public menu + portal) — ownership
+ * verified against the session's own customer records first, same pattern
+ * as updateMyProfileAction, so a customer can never toggle another
+ * customer's favorites by guessing a customerId.
+ */
+export async function toggleFavoriteAction(
+  customerId: string,
+  kind: "menu_item" | "offer",
+  itemId: string,
+  favorite: boolean
+): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const customers = await getCustomersForUser(user.id);
+  const customer = customers.find((c) => c.id === customerId);
+  if (!customer) return false;
+
+  return toggleFavorite(customer.restaurantId, customer.id, kind, itemId, favorite);
 }
 
 /**
