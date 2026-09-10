@@ -5,7 +5,7 @@ import { getRecipeItemsForMenuItems } from "@/lib/data/recipes";
 import { logMovement } from "@/lib/data/inventory";
 import { logVisit } from "@/lib/data/customers";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
-import type { Order, OrderItem, OrderStatus, OrderPaymentStatus } from "@/lib/types";
+import type { Order, OrderItem, OrderStatus, OrderPaymentStatus, OrderFulfillmentMode } from "@/lib/types";
 
 type OrderRow = {
   id: string;
@@ -19,6 +19,7 @@ type OrderRow = {
   total: number;
   payment_method: string | null;
   payment_status: OrderPaymentStatus;
+  fulfillment_mode: OrderFulfillmentMode | null;
   stripe_payment_intent_id: string | null;
   paid_at: string | null;
   notes: string | null;
@@ -63,6 +64,7 @@ function mapOrder(row: OrderRow, items: OrderItemRow[]): Order {
     total: row.total,
     paymentMethod: row.payment_method,
     paymentStatus: row.payment_status,
+    fulfillmentMode: row.fulfillment_mode,
     stripePaymentIntentId: row.stripe_payment_intent_id,
     paidAt: row.paid_at,
     notes: row.notes,
@@ -138,6 +140,7 @@ export async function createOrder(restaurantId: string, input: CreateOrderInput)
       tip_amount: 0,
       total: pricing.total,
       payment_status: "non_requis",
+      fulfillment_mode: "sur_place",
       is_public_request: false,
       customer_id: input.customerId ?? null,
       notes: input.notes ?? null,

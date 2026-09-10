@@ -31,6 +31,8 @@ export type Restaurant = {
   loyaltyPointsPerDollar: number;
   taxRate: number;
   acceptsTips: boolean;
+  /** Which of the 3 order modes this restaurant offers at checkout — see OrderFulfillmentMode. */
+  orderModesEnabled: OrderFulfillmentMode[];
   // Finance "seuil de rentabilité" simulator assumptions — null until the
   // owner has adjusted the simulator at least once (see BreakEvenSimulator).
   breakEvenFixedCosts: number | null;
@@ -702,6 +704,15 @@ export type OrderStatus = "soumise" | "confirmee" | "en_preparation" | "prete" |
 /** 'non_requis' = pay-on-site (today's default). The other three only apply when the guest chose "Payer en ligne" at checkout — see app/api/stripe/webhook/route.ts for the en_attente -> paye/echoue transition. */
 export type OrderPaymentStatus = "non_requis" | "en_attente" | "paye" | "echoue";
 
+/**
+ * The order mode a guest picked at checkout (or a staff-entered order was
+ * implicitly given — always "sur_place" for those, see createOrder).
+ * "immediat" and "prep_apres_paiement" both pay online (payment_status
+ * starts "en_attente"); they only differ in whether staff can start
+ * "en_preparation" before the webhook confirms payment.
+ */
+export type OrderFulfillmentMode = "immediat" | "sur_place" | "prep_apres_paiement";
+
 export type OrderItem = {
   id: string;
   orderId: string;
@@ -724,6 +735,7 @@ export type Order = {
   total: number;
   paymentMethod: string | null;
   paymentStatus: OrderPaymentStatus;
+  fulfillmentMode: OrderFulfillmentMode | null;
   stripePaymentIntentId: string | null;
   paidAt: string | null;
   notes: string | null;

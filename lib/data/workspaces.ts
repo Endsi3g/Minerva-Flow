@@ -183,6 +183,7 @@ export async function getWorkspaceRestaurants(workspaceId: string): Promise<Rest
     imageUrls: row.image_urls ?? [],
     googleMapsUrl: row.google_maps_url ?? null,
     planTier: row.plan_tier ?? "essentiel",
+    orderModesEnabled: row.order_modes_enabled ?? ["immediat", "sur_place"],
   }));
 }
 

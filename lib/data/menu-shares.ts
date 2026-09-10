@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateToken } from "@/lib/tokens";
 import { mapMenuItem, type MenuItemRow } from "@/lib/data/menu";
-import type { MenuItem, MenuShare } from "@/lib/types";
+import type { MenuItem, MenuShare, OrderFulfillmentMode } from "@/lib/types";
 
 type MenuShareRow = {
   id: string;
@@ -92,6 +92,7 @@ export type PublicMenuLanding = {
   taxRate: number;
   acceptsTips: boolean;
   onlinePaymentEnabled: boolean;
+  orderModesEnabled: OrderFulfillmentMode[];
   items: MenuItem[];
 };
 
@@ -137,15 +138,25 @@ export async function getRestaurantOrderSettings(
   taxRate: number;
   acceptsTips: boolean;
   onlinePaymentEnabled: boolean;
+  orderModesEnabled: OrderFulfillmentMode[];
   stripeConnectAccountId: string | null;
 } | null> {
   const [{ data }, connect] = await Promise.all([
-    admin.from("restaurants").select("tax_rate, accepts_tips").eq("id", restaurantId).maybeSingle(),
+    admin
+      .from("restaurants")
+      .select("tax_rate, accepts_tips, order_modes_enabled")
+      .eq("id", restaurantId)
+      .maybeSingle(),
     getConnectPaymentAvailability(admin, restaurantId),
   ]);
   if (!data) return null;
-  const row = data as { tax_rate: number; accepts_tips: boolean };
-  return { taxRate: row.tax_rate, acceptsTips: row.accepts_tips, ...connect };
+  const row = data as { tax_rate: number; accepts_tips: boolean; order_modes_enabled: string[] | null };
+  return {
+    taxRate: row.tax_rate,
+    acceptsTips: row.accepts_tips,
+    orderModesEnabled: (row.order_modes_enabled as OrderFulfillmentMode[] | null) ?? ["immediat", "sur_place"],
+    ...connect,
+  };
 }
 
 /**
@@ -178,7 +189,11 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
   }
 
   const [restaurantResult, itemsResult, connect] = await Promise.all([
-    admin.from("restaurants").select("name, tax_rate, accepts_tips").eq("id", share.restaurantId).maybeSingle(),
+    admin
+      .from("restaurants")
+      .select("name, tax_rate, accepts_tips, order_modes_enabled")
+      .eq("id", share.restaurantId)
+      .maybeSingle(),
     itemsQuery.order("category").order("name"),
     getConnectPaymentAvailability(admin, share.restaurantId),
   ]);
@@ -187,7 +202,12 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     console.error("getMenuShareByToken: restaurant lookup failed:", restaurantResult.error.message);
   }
   if (!restaurantResult.data) return null;
-  const restaurant = restaurantResult.data as { name: string; tax_rate: number; accepts_tips: boolean };
+  const restaurant = restaurantResult.data as {
+    name: string;
+    tax_rate: number;
+    accepts_tips: boolean;
+    order_modes_enabled: string[] | null;
+  };
   const items = ((itemsResult.data as MenuItemRow[]) ?? []).map(mapMenuItem);
 
   return {
@@ -197,6 +217,7 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     taxRate: restaurant.tax_rate,
     acceptsTips: restaurant.accepts_tips,
     onlinePaymentEnabled: connect.onlinePaymentEnabled,
+    orderModesEnabled: (restaurant.order_modes_enabled as OrderFulfillmentMode[] | null) ?? ["immediat", "sur_place"],
     items,
   };
 }
