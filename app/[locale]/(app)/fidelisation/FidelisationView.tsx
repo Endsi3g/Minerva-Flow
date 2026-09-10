@@ -5,7 +5,7 @@ import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Field, Input } from "@/components/minerva/FormField";
+import { Field, Input, Textarea } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -17,7 +17,7 @@ import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav
 import { TablePagination } from "@/components/minerva/TablePagination";
 import { CustomerOriginMap } from "@/components/fidelisation/CustomerOriginMap";
 import { getCustomerOriginByCity } from "@/lib/customer-origin";
-import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download } from "lucide-react";
+import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download, Megaphone } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -28,6 +28,7 @@ import {
   grantBirthdayBonusAction,
   resolvePairingCodeAction,
   logVisitAction,
+  sendAnnouncementAction,
 } from "./actions";
 import { notifyError } from "@/lib/notify-error";
 import { toast } from "sonner";
@@ -604,6 +605,79 @@ function BirthdayPerksCard({
   );
 }
 
+/**
+ * "Annoncer" — a one-off broadcast to every consented customer (e.g.
+ * "nouveaux pâtés du jour"). Reaches each via email -> push -> SMS,
+ * whichever applies first — see broadcastAnnouncement.
+ */
+function AnnouncementModal({
+  restaurantId,
+  open,
+  onClose,
+}: {
+  restaurantId: string | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+
+  function handleClose() {
+    if (sending) return;
+    setTitle("");
+    setBody("");
+    onClose();
+  }
+
+  async function handleSend(e: FormEvent) {
+    e.preventDefault();
+    if (!restaurantId || !title.trim() || !body.trim()) return;
+    setSending(true);
+    const result = await sendAnnouncementAction(restaurantId, title, body);
+    setSending(false);
+    if (result.ok) {
+      toast.success(
+        result.total === 0
+          ? "Aucun client n'a consenti à recevoir des communications pour l'instant."
+          : `Annonce envoyée à ${result.sent} client${result.sent > 1 ? "s" : ""} sur ${result.total}.`
+      );
+      setTitle("");
+      setBody("");
+      onClose();
+    } else {
+      notifyError("L'envoi de l'annonce a échoué.");
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Annoncer quelque chose à vos clients"
+      description="Envoyé uniquement aux clients ayant consenti à recevoir des communications — par courriel, notification ou SMS."
+    >
+      <form onSubmit={handleSend} className="space-y-3">
+        <Field label="Titre">
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex : Nouveaux pâtés du jour !" required autoFocus />
+        </Field>
+        <Field label="Message">
+          <Textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={4}
+            placeholder="Ex : Venez découvrir nos nouveaux pâtés maison, en boutique dès aujourd'hui."
+            required
+          />
+        </Field>
+        <Button type="submit" className="w-full" disabled={sending || !title.trim() || !body.trim()}>
+          {sending ? "Envoi…" : "Envoyer l'annonce"}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
 export function FidelisationView({
   restaurantId,
   restaurantName = "Restaurant",
@@ -623,6 +697,7 @@ export function FidelisationView({
   const [customers, setCustomers] = useState(initialCustomers);
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [announceOpen, setAnnounceOpen] = useState(false);
   const [passCustomer, setPassCustomer] = useState<Customer | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -660,12 +735,19 @@ export function FidelisationView({
         description="Fiches clients, visites, passes numériques et points de fidélité."
         action={
           canCreate && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus size={15} /> Nouveau client
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="secondary" onClick={() => setAnnounceOpen(true)}>
+                <Megaphone size={15} /> Annoncer
+              </Button>
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus size={15} /> Nouveau client
+              </Button>
+            </div>
           )
         }
       />
+
+      <AnnouncementModal restaurantId={restaurantId} open={announceOpen} onClose={() => setAnnounceOpen(false)} />
 
       <div className="mb-3">
         <PairingCodeCard
