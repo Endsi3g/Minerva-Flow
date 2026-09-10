@@ -48,6 +48,7 @@ type RestaurantRow = {
   order_modes_enabled: string[] | null;
   busy_mode_manual: boolean | null;
   busy_threshold: number | null;
+  default_prep_minutes: number | null;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -91,6 +92,7 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     orderModesEnabled: (row.order_modes_enabled as OrderFulfillmentMode[] | null) ?? ["immediat", "sur_place"],
     busyModeManual: row.busy_mode_manual ?? false,
     busyThreshold: row.busy_threshold,
+    defaultPrepMinutes: row.default_prep_minutes,
   };
 }
 
@@ -302,6 +304,7 @@ export type RestaurantInput = {
   googleMapsUrl?: string;
   orderModesEnabled?: OrderFulfillmentMode[];
   busyThreshold?: number | null;
+  defaultPrepMinutes?: number | null;
 };
 
 // The 21-day retention inactivity threshold is calibrated for a sit-down
@@ -470,6 +473,10 @@ export async function updateRestaurant(
   }
   if (patch.busyThreshold !== undefined) {
     dbPatch.busy_threshold = patch.busyThreshold !== null && patch.busyThreshold > 0 ? patch.busyThreshold : null;
+  }
+  if (patch.defaultPrepMinutes !== undefined) {
+    dbPatch.default_prep_minutes =
+      patch.defaultPrepMinutes !== null && patch.defaultPrepMinutes > 0 ? patch.defaultPrepMinutes : null;
   }
 
   // Explicit coordinates (e.g. a Google Places import, authoritative) take

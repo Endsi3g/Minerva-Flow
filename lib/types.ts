@@ -37,6 +37,8 @@ export type Restaurant = {
   busyModeManual: boolean;
   /** Auto-busy once today's "en_preparation" order count reaches this — null disables the automatic side. */
   busyThreshold: number | null;
+  /** "Prêt dans X minutes" base estimate applied to every new order (bumped when busy) — null disables the ETA feature entirely, no order gets an estimate. */
+  defaultPrepMinutes: number | null;
   // Finance "seuil de rentabilité" simulator assumptions — null until the
   // owner has adjusted the simulator at least once (see BreakEvenSimulator).
   breakEvenFixedCosts: number | null;
@@ -745,6 +747,7 @@ export type Order = {
   stripePaymentIntentId: string | null;
   paidAt: string | null;
   readyNotifiedAt: string | null;
+  estimatedReadyAt: string | null;
   notes: string | null;
   customerId: string | null;
   referralLinkId: string | null;

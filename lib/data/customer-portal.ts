@@ -9,6 +9,7 @@ import { computeOrderPricing } from "@/lib/data/order-pricing";
 import { notifyRestaurant } from "@/lib/data/notifications";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { formatCurrency } from "@/lib/utils";
+import { computeEstimatedReadyAt } from "@/lib/orders/eta";
 import type {
   Customer,
   CustomerReferralLink,
@@ -235,7 +236,9 @@ export type PortalOrderCartLine = {
   quantity: number;
 };
 
-export type SubmitPortalOrderResult = { ok: false } | { ok: true; orderId: string };
+export type SubmitPortalOrderResult =
+  | { ok: false }
+  | { ok: true; orderId: string; estimatedReadyAt: string | null };
 
 /**
  * Pay-on-site ordering from an already-authenticated portal customer — the
@@ -290,6 +293,8 @@ export async function submitPortalOrder(
   if (!pricing) return { ok: false };
   const { lineItems, subtotal, taxAmount, tipAmount: appliedTip, total } = pricing;
 
+  const estimatedReadyAt = computeEstimatedReadyAt(orderSettings.defaultPrepMinutes, orderSettings.isBusy);
+
   const { data: order, error: orderError } = await admin
     .from("orders")
     .insert({
@@ -303,8 +308,10 @@ export async function submitPortalOrder(
       total,
       payment_method: paymentMethod,
       payment_status: "non_requis",
+      fulfillment_mode: "sur_place",
       is_public_request: true,
       customer_id: customer.id,
+      estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
     })
     .select("id")
     .single();
@@ -330,5 +337,5 @@ export async function submitPortalOrder(
     link: "/commandes",
   });
 
-  return { ok: true, orderId };
+  return { ok: true, orderId, estimatedReadyAt: estimatedReadyAt?.toISOString() ?? null };
 }

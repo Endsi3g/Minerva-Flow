@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveNativeCustomer } from "@/lib/auth/native-bearer";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { computeIsBusy } from "@/lib/orders/eta";
 
 /**
  * Bridge for the handful of restaurant-level fields the native app's Home
@@ -24,11 +25,14 @@ export async function GET(req: Request) {
   }
 
   const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("restaurants")
-    .select("name, city, loyalty_tier_2_threshold, loyalty_tier_3_threshold, google_maps_url, google_place_id")
-    .eq("id", customer.restaurantId)
-    .single();
+  const [{ data, error }, isBusy] = await Promise.all([
+    admin
+      .from("restaurants")
+      .select("name, city, loyalty_tier_2_threshold, loyalty_tier_3_threshold, google_maps_url, google_place_id")
+      .eq("id", customer.restaurantId)
+      .single(),
+    computeIsBusy(admin, customer.restaurantId),
+  ]);
 
   if (error || !data) {
     return NextResponse.json({ error: "Restaurant introuvable" }, { status: 404 });
@@ -41,5 +45,6 @@ export async function GET(req: Request) {
     loyaltyTier3Threshold: (data.loyalty_tier_3_threshold as number | null) ?? 400,
     googleMapsUrl: data.google_maps_url as string | null,
     googlePlaceId: data.google_place_id as string | null,
+    isBusy,
   });
 }

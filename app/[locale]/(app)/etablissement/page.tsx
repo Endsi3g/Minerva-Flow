@@ -479,6 +479,65 @@ function BusyThresholdCard() {
   );
 }
 
+/**
+ * "Prêt dans X minutes" — the base estimate applied to every new order
+ * (bumped 1.5x when busy, see lib/orders/eta.ts), shown to the customer at
+ * checkout and used by the auto-notify cron (app/api/cron/order-ready-eta)
+ * to send "commande prête" on its own once it elapses. Staff can still
+ * override the estimate per order on /commandes; leaving this blank keeps
+ * the whole feature off — no order gets an estimate until it's set.
+ */
+function PrepTimeCard() {
+  const restaurant = useCurrentRestaurant();
+  const [minutes, setMinutes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (restaurant) setMinutes(restaurant.defaultPrepMinutes ? String(restaurant.defaultPrepMinutes) : "");
+  }, [restaurant?.id]);
+
+  async function handleSave() {
+    if (!restaurant) return;
+    const parsed = minutes.trim() === "" ? null : Number(minutes);
+    if (parsed !== null && (!Number.isFinite(parsed) || parsed <= 0)) {
+      toast.error("Entrez un nombre de minutes valide, ou laissez vide pour désactiver.");
+      return;
+    }
+    setSaving(true);
+    const updated = await updateRestaurantAction(restaurant.id, { defaultPrepMinutes: parsed });
+    setSaving(false);
+    if (updated) toast.success("Délai mis à jour.");
+    else toast.error("La mise à jour a échoué.");
+  }
+
+  if (!restaurant) return null;
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Commande en ligne"
+        title="Délai de préparation par défaut"
+        description="Affiché au client au moment de commander (« prêt vers HH:MM »), automatiquement allongé quand le restaurant est occupé. Le staff peut toujours ajuster le délai d'une commande précise sur la page Commandes. Une notification « commande prête » part automatiquement au client une fois ce délai écoulé."
+      />
+      <div className="flex items-end gap-3">
+        <Field label="Minutes" hint="Laissez vide pour désactiver le délai estimé">
+          <Input
+            type="number"
+            min={1}
+            value={minutes}
+            onChange={(e) => setMinutes(e.target.value)}
+            placeholder="Ex : 15"
+            className="w-32"
+          />
+        </Field>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? "Enregistrement…" : "Enregistrer"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 function OtherEstablishments() {
   const { restaurants, restaurantId, setRestaurantId } = useApp();
   const [createOpen, setCreateOpen] = useState(false);
@@ -653,6 +712,7 @@ export default function EtablissementPage() {
         <EstablishmentIdentityCard />
         <OrderModesCard />
         <BusyThresholdCard />
+        <PrepTimeCard />
         {restaurant && <DirectOrderingWidgetSection restaurant={restaurant} />}
         <OtherEstablishments />
       </div>

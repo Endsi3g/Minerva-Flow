@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateToken } from "@/lib/tokens";
 import { mapMenuItem, type MenuItemRow } from "@/lib/data/menu";
+import { computeIsBusy } from "@/lib/orders/eta";
 import type { MenuItem, MenuShare, OrderFulfillmentMode } from "@/lib/types";
 
 type MenuShareRow = {
@@ -142,21 +143,31 @@ export async function getRestaurantOrderSettings(
   onlinePaymentEnabled: boolean;
   orderModesEnabled: OrderFulfillmentMode[];
   stripeConnectAccountId: string | null;
+  defaultPrepMinutes: number | null;
+  isBusy: boolean;
 } | null> {
-  const [{ data }, connect] = await Promise.all([
+  const [{ data }, connect, isBusy] = await Promise.all([
     admin
       .from("restaurants")
-      .select("tax_rate, accepts_tips, order_modes_enabled")
+      .select("tax_rate, accepts_tips, order_modes_enabled, default_prep_minutes")
       .eq("id", restaurantId)
       .maybeSingle(),
     getConnectPaymentAvailability(admin, restaurantId),
+    computeIsBusy(admin, restaurantId),
   ]);
   if (!data) return null;
-  const row = data as { tax_rate: number; accepts_tips: boolean; order_modes_enabled: string[] | null };
+  const row = data as {
+    tax_rate: number;
+    accepts_tips: boolean;
+    order_modes_enabled: string[] | null;
+    default_prep_minutes: number | null;
+  };
   return {
     taxRate: row.tax_rate,
     acceptsTips: row.accepts_tips,
     orderModesEnabled: (row.order_modes_enabled as OrderFulfillmentMode[] | null) ?? ["immediat", "sur_place"],
+    defaultPrepMinutes: row.default_prep_minutes,
+    isBusy,
     ...connect,
   };
 }

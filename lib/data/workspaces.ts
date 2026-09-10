@@ -186,6 +186,7 @@ export async function getWorkspaceRestaurants(workspaceId: string): Promise<Rest
     orderModesEnabled: row.order_modes_enabled ?? ["immediat", "sur_place"],
     busyModeManual: row.busy_mode_manual ?? false,
     busyThreshold: row.busy_threshold ?? null,
+    defaultPrepMinutes: row.default_prep_minutes ?? null,
   }));
 }
 
