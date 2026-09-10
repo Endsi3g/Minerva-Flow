@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
 import { Field, Input } from "@/components/minerva/FormField";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { requestCustomerMagicLink } from "@/lib/auth/customer-magic-link";
@@ -92,6 +93,10 @@ function CheckoutModal({
     availableModes.includes("sur_place") ? "sur_place" : (availableModes[0] ?? "sur_place")
   );
   const payOnline = fulfillmentMode !== "sur_place";
+  // Unchecked by default (CASL/LCAP) — only applied if this order creates a
+  // brand-new customer row; a returning customer's existing consent choice
+  // is never overwritten by a later order that didn't re-tick this box.
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
@@ -151,6 +156,7 @@ function CheckoutModal({
         paymentMethod: payOnline ? null : String(form.get("paymentMethod") ?? "") || null,
         tipAmount,
         fulfillmentMode,
+        marketingConsent,
         mentionedOfferTitle,
       }
     );
@@ -327,6 +333,14 @@ function CheckoutModal({
                   <Input name="paymentMethod" placeholder="Ex : Carte, comptant" />
                 </Field>
               )}
+              <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
+                <Checkbox
+                  checked={marketingConsent}
+                  onCheckedChange={(checked) => setMarketingConsent(Boolean(checked))}
+                  className="mt-0.5"
+                />
+                <span>J&apos;accepte de recevoir des offres et rappels par courriel ou SMS de {restaurantName}.</span>
+              </label>
               {submitStatus === "error" && (
                 <p className="text-[12.5px] text-mv-red">La commande a échoué. Réessayez.</p>
               )}

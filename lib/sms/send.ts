@@ -22,6 +22,16 @@ function getClient() {
 }
 
 /**
+ * LCAP/CASL requires every marketing SMS to itself state how to opt out —
+ * Twilio's own STOP-keyword handling only covers the *technical* side of
+ * unsubscribing, not this disclosure requirement. Centralized here rather
+ * than in each message template so no future caller can forget it.
+ */
+function withOptOutNotice(body: string): string {
+  return /\bstop\b/i.test(body) ? body : `${body} Répondez STOP pour vous désinscrire.`;
+}
+
+/**
  * Sends a single SMS. Never throws — a failed send must not break the
  * retention/campaign flow that triggered it; callers just don't get a
  * successful delivery logged.
@@ -31,7 +41,7 @@ export async function sendSms(to: string, body: string): Promise<boolean> {
   if (!c) return false;
 
   try {
-    await c.messages.create({ to, from: process.env.TWILIO_FROM_NUMBER!, body });
+    await c.messages.create({ to, from: process.env.TWILIO_FROM_NUMBER!, body: withOptOutNotice(body) });
     return true;
   } catch (err) {
     console.error("SMS send failed:", err);
