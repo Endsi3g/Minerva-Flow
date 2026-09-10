@@ -163,7 +163,7 @@ async function findOrCreateCustomerForUser(
   admin: ReturnType<typeof createAdminClient>,
   restaurantId: string,
   user: { id: string; email: string },
-  input: { name: string; phone: string | null }
+  input: { name: string; phone: string | null; marketingConsent?: boolean }
 ): Promise<string | null> {
   const { data: existingCustomer } = await admin
     .from("customers")
@@ -175,6 +175,11 @@ async function findOrCreateCustomerForUser(
   const existingId = (existingCustomer as { id: string } | null)?.id;
   if (existingId) return existingId;
 
+  // Consent is only ever set here, at first creation — a returning
+  // customer's existing choice (made here or via /portal) is never
+  // silently overwritten by a later order that didn't re-tick the box.
+  const marketingConsent = input.marketingConsent ?? false;
+
   const { data: newCustomer, error } = await admin
     .from("customers")
     .insert({
@@ -183,6 +188,9 @@ async function findOrCreateCustomerForUser(
       email: user.email,
       phone: input.phone,
       user_id: user.id,
+      marketing_consent: marketingConsent,
+      consent_source: marketingConsent ? "commande_publique" : null,
+      consent_at: marketingConsent ? new Date().toISOString() : null,
     })
     .select("id")
     .single();
@@ -320,6 +328,13 @@ export type PublicOrderGuestInfo = {
    * it manually, the same way they'd handle a promo mentioned in person.
    */
   mentionedOfferTitle?: string | null;
+  /**
+   * Explicit CASL/LCAP opt-in for email/SMS marketing, unchecked by default
+   * at checkout — only applied if this is genuinely a new customer row (see
+   * findOrCreateCustomerForUser). Distinct from the Twilio STOP keyword,
+   * which only handles unsubscribing, not the initial consent.
+   */
+  marketingConsent: boolean;
 };
 
 export type SubmitPublicOrderResult =
@@ -398,7 +413,7 @@ export async function submitPublicOrder(
       admin,
       restaurantId,
       { id: user.id, email: user.email },
-      { name: guestInfo.guestName, phone: guestInfo.guestPhone }
+      { name: guestInfo.guestName, phone: guestInfo.guestPhone, marketingConsent: guestInfo.marketingConsent }
     ),
   ]);
 
