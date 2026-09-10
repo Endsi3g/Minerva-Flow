@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Field, Input } from "@/components/minerva/FormField";
 import { searchPlacesAction, getPlaceDetailsAction, isGooglePlacesEnabledAction } from "@/app/[locale]/(app)/settings/actions";
 import type { RestaurantInput } from "@/lib/data/restaurants";
@@ -17,15 +18,36 @@ export function GooglePlacesSearch({ onSelect }: { onSelect: (patch: Partial<Res
   const [searching, setSearching] = useState(false);
   const [importing, setImporting] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Setting query to the selected suggestion's label after a selection
-  // would otherwise re-trigger the search effect below (it depends on
-  // query) and immediately reopen a fresh dropdown — this flag skips that
-  // one round-trip.
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
   const skipNextSearchRef = useRef(false);
 
   useEffect(() => {
     isGooglePlacesEnabledAction().then(setEnabled);
   }, []);
+
+  const updateCoords = () => {
+    if (inputContainerRef.current) {
+      const rect = inputContainerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      updateCoords();
+      window.addEventListener("scroll", updateCoords, true);
+      window.addEventListener("resize", updateCoords);
+      return () => {
+        window.removeEventListener("scroll", updateCoords, true);
+        window.removeEventListener("resize", updateCoords);
+      };
+    }
+  }, [open]);
 
   useEffect(() => {
     if (skipNextSearchRef.current) {
@@ -67,13 +89,18 @@ export function GooglePlacesSearch({ onSelect }: { onSelect: (patch: Partial<Res
   return (
     <Field label="Rechercher sur Google" hint="Importe adresse, coordonnées, téléphone et horaires automatiquement">
       <div className="relative">
-        <div className="relative">
+        <div ref={inputContainerRef} className="relative">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-mv-ink-faint" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => suggestions.length > 0 && setOpen(true)}
-            onBlur={() => setTimeout(() => setOpen(false), 150)}
+            onFocus={() => {
+              if (suggestions.length > 0) {
+                updateCoords();
+                setOpen(true);
+              }
+            }}
+            onBlur={() => setTimeout(() => setOpen(false), 200)}
             placeholder="Nom de l'établissement ou adresse"
             className="pl-8"
           />
@@ -82,8 +109,17 @@ export function GooglePlacesSearch({ onSelect }: { onSelect: (patch: Partial<Res
           )}
         </div>
 
-        {open && (
-          <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-mv-border bg-mv-surface shadow-mv-lg">
+        {open && coords && typeof document !== "undefined" && createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
+              width: coords.width,
+              zIndex: 99999,
+            }}
+            className="overflow-hidden rounded-lg border border-mv-border bg-mv-surface shadow-mv-lg max-h-64 overflow-y-auto"
+          >
             {suggestions.map((s) => (
               <button
                 key={s.placeId}
@@ -106,7 +142,8 @@ export function GooglePlacesSearch({ onSelect }: { onSelect: (patch: Partial<Res
                 </span>
               </button>
             ))}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </Field>
