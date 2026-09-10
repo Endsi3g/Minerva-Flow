@@ -18,6 +18,8 @@ final class SupabaseManager: ObservableObject {
     @Published var restaurantCity: String?
     @Published var restaurantGoogleMapsUrl: String?
     @Published var restaurantGooglePlaceId: String?
+    /// Manual "on est débordés" toggle OR live en_preparation count over the owner's threshold — same signal as the web menu's delay banner (see computeIsBusy).
+    @Published var restaurantIsBusy: Bool = false
     /// The rotating card-pairing code (MyCardView) and its lifecycle state.
     /// Minted fresh per screen-appearance/regeneration, never persisted
     /// beyond this session — see mint_pairing_code in
@@ -599,6 +601,7 @@ final class SupabaseManager: ObservableObject {
             let loyaltyTier3Threshold: Double
             let googleMapsUrl: String?
             let googlePlaceId: String?
+            let isBusy: Bool?
         }
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurant"))
@@ -609,6 +612,7 @@ final class SupabaseManager: ObservableObject {
             loyaltyTier3Threshold = decoded.loyaltyTier3Threshold
             restaurantGoogleMapsUrl = decoded.googleMapsUrl
             restaurantGooglePlaceId = decoded.googlePlaceId
+            restaurantIsBusy = decoded.isBusy ?? false
         } catch {
             print("fetchRestaurantInfo error: \(error)")
         }
@@ -783,17 +787,22 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
-    struct OrderResult { let ok: Bool; let orderId: String? }
+    struct OrderResult { let ok: Bool; let orderId: String?; let estimatedReadyAt: Date? }
 
+    /// estimatedReadyAt arrives as a raw ISO8601 string (the bridge routes
+    /// never configure JSONDecoder's dateDecodingStrategy — only the direct
+    /// Supabase client calls elsewhere get automatic Date decoding, via the
+    /// SDK's own internal decoder), so this is parsed by hand rather than
+    /// declared as `Date?` on OrderResponse directly.
     func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?) async -> OrderResult {
         struct CartLine: Encodable { let menuItemId: String; let quantity: Int }
         struct OrderBody: Encodable { let cart: [CartLine]; let tipAmount: Double; let paymentMethod: String? }
-        struct OrderResponse: Decodable { let ok: Bool; let orderId: String? }
+        struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String? }
 
         let lines = cart.compactMap { key, qty -> CartLine? in
             qty > 0 ? CartLine(menuItemId: key, quantity: qty) : nil
         }
-        guard !lines.isEmpty else { return OrderResult(ok: false, orderId: nil) }
+        guard !lines.isEmpty else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil) }
 
         do {
             let bodyData = try JSONEncoder().encode(OrderBody(cart: lines, tipAmount: tipAmount, paymentMethod: paymentMethod))
@@ -803,14 +812,15 @@ final class SupabaseManager: ObservableObject {
                 body: bodyData
             )
             let decoded = try JSONDecoder().decode(OrderResponse.self, from: data)
-            return OrderResult(ok: decoded.ok, orderId: decoded.orderId)
+            let eta = decoded.estimatedReadyAt.flatMap { ISO8601DateFormatter().date(from: $0) }
+            return OrderResult(ok: decoded.ok, orderId: decoded.orderId, estimatedReadyAt: eta)
         } catch let error as URLError where error.code == .notConnectedToInternet {
             lastError = "Aucune connexion internet. Votre commande n'a pas été envoyée."
-            return OrderResult(ok: false, orderId: nil)
+            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil)
         } catch {
             lastError = "La commande a échoué. Réessayez."
             print("submitOrder error: \(error)")
-            return OrderResult(ok: false, orderId: nil)
+            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil)
         }
     }
 
