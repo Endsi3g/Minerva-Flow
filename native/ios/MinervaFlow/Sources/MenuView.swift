@@ -131,6 +131,10 @@ struct MenuView: View {
                     .foregroundStyle(MinervaColor.ink)
                     .padding(.top, 4)
 
+                if supabase.restaurantIsBusy {
+                    busyBanner
+                }
+
                 if !otherRestaurants.isEmpty {
                     otherRestaurantsSection
                 }
@@ -373,6 +377,24 @@ struct MenuView: View {
         .padding(.bottom, 8)
     }
 
+    /// Same signal as the web menu's delay banner (restaurants.busy_mode_manual
+    /// OR the live en_preparation count over busy_threshold, see computeIsBusy) —
+    /// a customer ordering from the app shouldn't be surprised by a
+    /// slower-than-usual wait any more than one ordering from the web link.
+    private var busyBanner: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "clock")
+                .font(.system(size: 13))
+            Text("\(supabase.restaurantName ?? "Le restaurant") est présentement très occupé — les délais de préparation peuvent être plus longs que d'habitude.")
+                .font(.system(size: 12.5))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .foregroundStyle(.orange)
+        .padding(14)
+        .background(Color.orange.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "fork.knife.circle")
@@ -554,6 +576,7 @@ struct CheckoutSheet: View {
     @State private var tipPct: Double?
     @State private var paymentMethod = ""
     @State private var status: Status = .idle
+    @State private var estimatedReadyAt: Date?
 
     enum Status { case idle, submitting, done, error }
 
@@ -714,6 +737,12 @@ struct CheckoutSheet: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 30)
 
+            if let estimatedReadyAt {
+                Text("Prêt vers \(estimatedReadyAt.formatted(date: .omitted, time: .shortened))")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MinervaColor.emeraldDark)
+            }
+
             if let mapsUrlString = googleMapsUrl, let url = URL(string: mapsUrlString) {
                 Link(destination: url) {
                     HStack(spacing: 8) {
@@ -752,6 +781,7 @@ struct CheckoutSheet: View {
         let result = await supabase.submitOrder(cart: cartDict, tipAmount: tipAmount, paymentMethod: paymentMethod.isEmpty ? nil : paymentMethod)
         let generator = UINotificationFeedbackGenerator()
         if result.ok {
+            estimatedReadyAt = result.estimatedReadyAt
             generator.notificationOccurred(.success)
             status = .done
         } else {
