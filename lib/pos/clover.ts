@@ -256,4 +256,135 @@ export async function validateAndFetchCloverMerchant(
   }
 }
 
+export type CloverCatalogItem = {
+  externalId: string;
+  name: string;
+  price: number;
+  quantity: number | null;
+  modifiedTime: string | null;
+};
+
+/**
+ * Lists a merchant's full Clover catalog (items + stock levels), paginated —
+ * used both to browse-and-link in the inventory mapping UI and by the
+ * reconcile cron to pull remote-side changes.
+ */
+export async function fetchCloverCatalogItems(
+  accessToken: string,
+  merchantId: string
+): Promise<CloverCatalogItem[]> {
+  const items: CloverCatalogItem[] = [];
+  let offset = 0;
+  const limit = 200;
+  let hasMore = true;
+
+  while (hasMore) {
+    const url = new URL(`${cloverApiBaseUrl()}/v3/merchants/${merchantId}/items`);
+    url.searchParams.set("expand", "itemStock");
+    url.searchParams.set("limit", String(limit));
+    url.searchParams.set("offset", String(offset));
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+    });
+    if (!res.ok) break;
+
+    const data = (await res.json()) as {
+      elements?: Array<{
+        id: string;
+        name?: string;
+        price?: number;
+        modifiedTime?: number;
+        itemStock?: { quantity?: number };
+      }>;
+    };
+    const elements = data.elements ?? [];
+
+    for (const el of elements) {
+      items.push({
+        externalId: el.id,
+        name: el.name ?? "Article",
+        price: typeof el.price === "number" ? el.price / 100 : 0,
+        quantity: el.itemStock?.quantity ?? null,
+        modifiedTime: el.modifiedTime ? new Date(el.modifiedTime).toISOString() : null,
+      });
+    }
+
+    if (elements.length < limit) hasMore = false;
+    else offset += limit;
+  }
+
+  return items;
+}
+
+/**
+ * Creates (externalId omitted) or updates (externalId set) a Clover catalog
+ * item. Price is Minerva Flow's dollar amount, converted to cents (Clover's
+ * native unit). Returns the Clover item id on success.
+ */
+export async function upsertCloverCatalogItem(
+  accessToken: string,
+  merchantId: string,
+  item: { externalId?: string | null; name: string; price: number; active: boolean }
+): Promise<string | null> {
+  const body = {
+    name: item.name,
+    price: Math.round(item.price * 100),
+    priceType: "FIXED",
+    hidden: !item.active,
+  };
+
+  const url = item.externalId
+    ? `${cloverApiBaseUrl()}/v3/merchants/${merchantId}/items/${item.externalId}`
+    : `${cloverApiBaseUrl()}/v3/merchants/${merchantId}/items`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    console.error(`Clover item upsert failed (${res.status}):`, await res.text().catch(() => ""));
+    return null;
+  }
+
+  const data = (await res.json()) as { id?: string };
+  return data.id ?? item.externalId ?? null;
+}
+
+export async function deleteCloverCatalogItem(
+  accessToken: string,
+  merchantId: string,
+  externalId: string
+): Promise<boolean> {
+  const res = await fetch(`${cloverApiBaseUrl()}/v3/merchants/${merchantId}/items/${externalId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+  });
+  return res.ok;
+}
+
+/** Pushes a stock quantity to Clover's item_stocks endpoint for one item. */
+export async function updateCloverItemStock(
+  accessToken: string,
+  merchantId: string,
+  externalId: string,
+  quantity: number
+): Promise<boolean> {
+  const res = await fetch(`${cloverApiBaseUrl()}/v3/merchants/${merchantId}/item_stocks/${externalId}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ quantity: Math.round(quantity) }),
+  });
+  return res.ok;
+}
+
 

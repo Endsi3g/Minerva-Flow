@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getInventoryItems, getWasteSummary } from "@/lib/data/inventory";
 import { getSuppliers } from "@/lib/data/suppliers";
+import { getConnectedCatalogProviders } from "@/lib/pos/catalog-sync";
 import { InventaireView } from "./InventaireView";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -16,13 +17,14 @@ export default async function InventairePage() {
   monthStart.setDate(1);
   const from = monthStart.toISOString().slice(0, 10);
 
-  const [items, suppliers, wasteSummary] = restaurantId
+  const [items, suppliers, wasteSummary, connectedProviders] = restaurantId
     ? await Promise.all([
         getInventoryItems(restaurantId),
         getSuppliers(restaurantId),
         getWasteSummary(restaurantId, { from }),
+        getConnectedCatalogProviders(restaurantId),
       ])
-    : [[], [], []];
+    : [[], [], [], []];
 
   return (
     <InventaireView
@@ -30,6 +32,7 @@ export default async function InventairePage() {
       initialItems={items}
       suppliers={suppliers}
       wasteSummary={wasteSummary}
+      connectedProviders={connectedProviders}
     />
   );
 }

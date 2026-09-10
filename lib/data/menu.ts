@@ -19,6 +19,7 @@ export type MenuItemRow = {
   image_urls: string[] | null;
   video_url: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export function mapMenuItem(row: MenuItemRow): MenuItem {
@@ -36,6 +37,7 @@ export function mapMenuItem(row: MenuItemRow): MenuItem {
     imageUrls: row.image_urls ?? [],
     videoUrl: row.video_url ?? null,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
