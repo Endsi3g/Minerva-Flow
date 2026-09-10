@@ -16,6 +16,7 @@ export type MenuItemRow = {
   description: string | null;
   image_url: string | null;
   image_urls: string[] | null;
+  video_url: string | null;
   created_at: string;
 };
 
@@ -32,6 +33,7 @@ export function mapMenuItem(row: MenuItemRow): MenuItem {
     description: row.description,
     imageUrl: row.image_url,
     imageUrls: row.image_urls ?? [],
+    videoUrl: row.video_url ?? null,
     createdAt: row.created_at,
   };
 }
@@ -79,6 +81,7 @@ export type MenuItemInput = {
   description?: string | null;
   active?: boolean;
   imageUrl?: string | null;
+  videoUrl?: string | null;
 };
 
 export async function createMenuItem(restaurantId: string, input: MenuItemInput): Promise<MenuItem | null> {
@@ -94,6 +97,7 @@ export async function createMenuItem(restaurantId: string, input: MenuItemInput)
       description: input.description ?? null,
       active: input.active ?? true,
       image_url: input.imageUrl ?? null,
+      video_url: input.videoUrl ?? null,
     })
     .select("*")
     .single();
@@ -131,6 +135,7 @@ export async function createMenuItems(restaurantId: string, inputs: MenuItemInpu
     description: input.description ?? null,
     active: input.active ?? true,
     image_url: input.imageUrl ?? null,
+    video_url: input.videoUrl ?? null,
   }));
 
   const { data, error } = await supabase.from("menu_items").insert(rows).select("*");
@@ -164,6 +169,7 @@ export async function updateMenuItem(
   if (patch.description !== undefined) dbPatch.description = patch.description;
   if (patch.active !== undefined) dbPatch.active = patch.active;
   if (patch.imageUrl !== undefined) dbPatch.image_url = patch.imageUrl;
+  if (patch.videoUrl !== undefined) dbPatch.video_url = patch.videoUrl;
 
   const { data, error } = await supabase
     .from("menu_items")

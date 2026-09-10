@@ -7,13 +7,15 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { MenuImageUpload } from "@/components/menu/MenuImageUpload";
+import { VideoUploadWithUrl } from "@/components/media/VideoUploadWithUrl";
+import { VideoPlayerModal } from "@/components/media/VideoPlayerModal";
 import { formatCurrency } from "@/lib/utils";
 import { notifyError } from "@/lib/notify-error";
 import { useApp } from "@/lib/app-context";
 import { usePresenceDetail } from "@/lib/presence/context";
 import { updateMenuItemAction, deleteMenuItemAction } from "@/app/[locale]/(app)/menu/actions";
 import type { MenuItem, InventoryItem, RecipeItem } from "@/lib/types";
-import { ArrowLeft, ArrowRight, ChefHat, EyeOff, Eye, Trash2, DollarSign, TrendingUp, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChefHat, EyeOff, Eye, Trash2, DollarSign, TrendingUp, ShoppingBag, Play } from "lucide-react";
 
 export function MenuItemDetailView({
   restaurantId,
@@ -37,6 +39,7 @@ export function MenuItemDetailView({
   const [item, setItem] = useState(initialItem);
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   usePresenceDetail(`Plat : ${item.name}`);
 
@@ -50,6 +53,16 @@ export function MenuItemDetailView({
       toast.success("Image mise à jour.");
     } else {
       notifyError("La mise à jour de l'image a échoué.");
+    }
+  }
+
+  async function handleVideoChanged(url: string | null) {
+    const updated = await updateMenuItemAction(restaurantId, item.id, { videoUrl: url });
+    if (updated) {
+      setItem(updated);
+      toast.success(url ? "Vidéo associée au plat !" : "Vidéo retirée.");
+    } else {
+      notifyError("La mise à jour de la vidéo a échoué.");
     }
   }
 
@@ -120,16 +133,41 @@ export function MenuItemDetailView({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <div className="space-y-4 xl:col-span-7">
-          <Card>
-            {canManage ? (
-              <MenuImageUpload restaurantId={restaurantId} scopeId={item.id} currentUrl={item.imageUrl} onUploaded={handleImageUploaded} />
-            ) : item.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.imageUrl} alt={item.name} className="h-64 w-full rounded-lg object-cover" />
-            ) : (
-              <div className="flex h-40 items-center justify-center rounded-lg bg-mv-cream-soft text-mv-ink-faint">
-                <ChefHat size={28} />
-              </div>
+          <Card className="space-y-4">
+            <div className="relative">
+              {canManage ? (
+                <MenuImageUpload restaurantId={restaurantId} scopeId={item.id} currentUrl={item.imageUrl} onUploaded={handleImageUploaded} />
+              ) : item.imageUrl ? (
+                <div className="relative group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.imageUrl} alt={item.name} className="h-64 w-full rounded-lg object-cover" />
+                  {item.videoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setIsVideoModalOpen(true)}
+                      className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-2xs opacity-90 group-hover:opacity-100 transition-opacity rounded-lg"
+                    >
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-mv-green text-white shadow-lg">
+                        <Play size={20} className="fill-current ml-0.5" />
+                      </span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex h-40 items-center justify-center rounded-lg bg-mv-cream-soft text-mv-ink-faint">
+                  <ChefHat size={28} />
+                </div>
+              )}
+            </div>
+
+            {canManage && (
+              <VideoUploadWithUrl
+                restaurantId={restaurantId}
+                scopeId={item.id}
+                currentUrl={item.videoUrl}
+                onVideoChanged={handleVideoChanged}
+                title={`Vidéo · ${item.name}`}
+              />
             )}
 
             <div className="mt-4 grid grid-cols-3 gap-3 rounded-xl bg-mv-cream-soft p-3">
@@ -211,6 +249,13 @@ export function MenuItemDetailView({
           </button>
         </div>
       )}
+
+      <VideoPlayerModal
+        videoUrl={item.videoUrl}
+        title={`Vidéo · ${item.name}`}
+        isOpen={isVideoModalOpen}
+        onClose={() => setIsVideoModalOpen(false)}
+      />
     </div>
   );
 }

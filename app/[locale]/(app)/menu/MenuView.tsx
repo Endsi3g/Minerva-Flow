@@ -35,6 +35,7 @@ import {
   ChefHat,
   Sparkles,
   Lightbulb,
+  Play,
 } from "lucide-react";
 import { AlertBanner } from "@/components/ui/AlertBanner";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -57,6 +58,8 @@ import { notifyError } from "@/lib/notify-error";
 import { MenuImageUpload } from "@/components/menu/MenuImageUpload";
 import { ImportMenuPdfModal } from "@/components/menu/ImportMenuPdfModal";
 import { PosItemMappingCard } from "@/components/minerva/PosItemMappingCard";
+import { VideoUploadWithUrl } from "@/components/media/VideoUploadWithUrl";
+import { VideoPlayerModal } from "@/components/media/VideoPlayerModal";
 import { toast } from "sonner";
 import { createCampaignAction } from "@/app/[locale]/(app)/campaigns/actions";
 
@@ -84,6 +87,7 @@ function NewMenuItemModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scopeId, setScopeId] = useState(() => crypto.randomUUID());
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -97,12 +101,14 @@ function NewMenuItemModal({
         foodCost: Number(form.get("foodCost") ?? 0),
         description: String(form.get("description") ?? "") || null,
         imageUrl,
+        videoUrl,
       });
       if (item) {
         onCreated(item);
         onClose();
         (e.target as HTMLFormElement).reset();
         setImageUrl(null);
+        setVideoUrl(null);
         setScopeId(crypto.randomUUID());
       } else {
         notifyError(t("createFailed"));
@@ -134,6 +140,15 @@ function NewMenuItemModal({
         </Field>
         <Field label={t("imageLabel")} hint={t("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} onUploaded={setImageUrl} />
+        </Field>
+        <Field label="Vidéo (MP4, WebM ou YouTube/Vimeo)" hint="Optionnel">
+          <VideoUploadWithUrl
+            restaurantId={restaurantId}
+            scopeId={scopeId}
+            value={videoUrl}
+            onChange={setVideoUrl}
+            bucket="menu-item-images"
+          />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
@@ -311,6 +326,7 @@ function EditMenuItemModal({
   const tn = useTranslations("menu.newItem");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null | undefined>(undefined);
+  const [videoUrl, setVideoUrl] = useState<string | null | undefined>(item.videoUrl);
   const [recipeRows, setRecipeRows] = useState<RecipeRow[]>(() =>
     initialRecipe.map((r) => ({ inventoryItemId: r.inventoryItemId, quantityPerUnit: String(r.quantityPerUnit) }))
   );
@@ -327,6 +343,7 @@ function EditMenuItemModal({
         foodCost: Number(form.get("foodCost") ?? 0),
         description: String(form.get("description") ?? "") || null,
         imageUrl,
+        videoUrl,
       });
       if (updated) {
         await updateMenuItemRecipeAction(
@@ -369,6 +386,15 @@ function EditMenuItemModal({
         <Field label={tn("imageLabel")} hint={tn("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={item.id} currentUrl={item.imageUrl} onUploaded={setImageUrl} />
         </Field>
+        <Field label="Vidéo (MP4, WebM ou YouTube/Vimeo)" hint="Optionnel">
+          <VideoUploadWithUrl
+            restaurantId={restaurantId}
+            scopeId={item.id}
+            value={videoUrl}
+            onChange={setVideoUrl}
+            bucket="menu-item-images"
+          />
+        </Field>
         <RecipeEditor inventoryItems={inventoryItems} rows={recipeRows} onChange={setRecipeRows} />
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
@@ -391,6 +417,7 @@ function MenuItemRow({
   onUpdated,
   onDeleted,
   onEdit,
+  onPlayVideo,
 }: {
   item: MenuItemWithQuadrant;
   restaurantId: string;
@@ -399,6 +426,7 @@ function MenuItemRow({
   onUpdated: (item: MenuItem) => void;
   onDeleted: (id: string, name: string) => void;
   onEdit: (item: MenuItem) => void;
+  onPlayVideo?: (video: { url: string; title: string }) => void;
 }) {
   const t = useTranslations("menu.itemRow");
   const [isToggling, setIsToggling] = useState(false);
@@ -422,6 +450,17 @@ function MenuItemRow({
             <Link href={`/menu/${item.id}`} className="truncate hover:underline">
               {item.name}
             </Link>
+            {item.videoUrl && onPlayVideo && (
+              <button
+                type="button"
+                onClick={() => onPlayVideo({ url: item.videoUrl!, title: item.name })}
+                className="inline-flex items-center gap-1 rounded-full bg-mv-green/10 px-2 py-0.5 text-[10.5px] font-medium text-mv-green-dark hover:bg-mv-green/20 transition-colors shrink-0"
+                title="Voir la vidéo de présentation"
+              >
+                <Play size={10} className="fill-current" />
+                Vidéo
+              </button>
+            )}
             {!item.active && <Badge tone="neutral">Retiré du menu</Badge>}
           </p>
           {item.category && <p className="text-[11.5px] text-mv-ink-faint">{item.category}</p>}
@@ -665,6 +704,7 @@ function OfferModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scopeId, setScopeId] = useState(() => offer?.id ?? crypto.randomUUID());
   const [imageUrl, setImageUrl] = useState<string | null>(offer?.imageUrl ?? null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(offer?.videoUrl ?? null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -682,6 +722,7 @@ function OfferModal({
       title: String(form.get("title") ?? ""),
       description: String(form.get("description") ?? "") || null,
       imageUrl,
+      videoUrl,
       price: priceRaw ? Number(priceRaw) : null,
       includedItems: included,
       excludedItems: excluded,
@@ -698,6 +739,7 @@ function OfferModal({
         onClose();
         (e.target as HTMLFormElement).reset();
         setImageUrl(null);
+        setVideoUrl(null);
         setScopeId(crypto.randomUUID());
       } else {
         notifyError(isEditing ? t("updateFailed") : t("createFailed"));
@@ -757,6 +799,15 @@ function OfferModal({
         <Field label={tn("imageLabel")} hint={tn("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} currentUrl={imageUrl} bucket="offer-images" onUploaded={setImageUrl} />
         </Field>
+        <Field label="Vidéo de l'offre (MP4, WebM ou YouTube/Vimeo)" hint="Optionnel">
+          <VideoUploadWithUrl
+            restaurantId={restaurantId}
+            scopeId={scopeId}
+            value={videoUrl}
+            onChange={setVideoUrl}
+            bucket="offer-images"
+          />
+        </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             {tn("cancel")}
@@ -790,12 +841,14 @@ function OfferRow({
   onUpdated,
   onDeleted,
   onEdit,
+  onPlayVideo,
 }: {
   restaurantId: string;
   offer: Offer;
   onUpdated: (offer: Offer) => void;
   onDeleted: (id: string) => void;
   onEdit: (offer: Offer) => void;
+  onPlayVideo?: (video: { url: string; title: string }) => void;
 }) {
   const t = useTranslations("menu.offerRow");
   const tStatus = useTranslations("menu.offerStatus");
@@ -845,7 +898,20 @@ function OfferRow({
           <img src={offer.imageUrl} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
         )}
         <div className="min-w-0">
-          <p className="truncate text-[12.5px] font-medium text-mv-ink">{offer.title}</p>
+          <p className="truncate text-[12.5px] font-medium text-mv-ink flex items-center gap-1.5">
+            <span>{offer.title}</span>
+            {offer.videoUrl && onPlayVideo && (
+              <button
+                type="button"
+                onClick={() => onPlayVideo({ url: offer.videoUrl!, title: offer.title })}
+                className="inline-flex items-center gap-1 rounded-full bg-mv-green/10 px-2 py-0.5 text-[10.5px] font-medium text-mv-green-dark hover:bg-mv-green/20 transition-colors shrink-0"
+                title="Voir la vidéo de l'offre"
+              >
+                <Play size={10} className="fill-current" />
+                Vidéo
+              </button>
+            )}
+          </p>
           {offer.description && <p className="truncate text-[11.5px] text-mv-ink-faint">{offer.description}</p>}
         </div>
       </div>
@@ -1114,6 +1180,7 @@ export function MenuView({
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [tax, setTax] = useState(taxRate);
   const [tips, setTips] = useState(acceptsTips);
+  const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
 
   const canManage = role === "owner" || role === "manager";
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
@@ -1256,6 +1323,7 @@ export function MenuView({
                   onUpdated={handleOfferUpdated}
                   onDeleted={handleOfferDeleted}
                   onEdit={setEditingOffer}
+                  onPlayVideo={setPlayingVideo}
                 />
               ))}
             </div>
@@ -1350,6 +1418,7 @@ export function MenuView({
                         onUpdated={handleUpdated}
                         onDeleted={handleDeleted}
                         onEdit={setEditingItem}
+                        onPlayVideo={setPlayingVideo}
                       />
                     ))}
                   </div>
@@ -1416,6 +1485,13 @@ export function MenuView({
           }}
         />
       )}
+
+      <VideoPlayerModal
+        open={Boolean(playingVideo)}
+        onClose={() => setPlayingVideo(null)}
+        videoUrl={playingVideo?.url ?? null}
+        title={playingVideo?.title ?? ""}
+      />
     </div>
   );
 }
