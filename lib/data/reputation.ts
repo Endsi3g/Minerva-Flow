@@ -12,8 +12,10 @@ export type PrivateReviewWithCustomer = {
   id: string;
   rating: number;
   comment: string | null;
+  imageUrls: string[];
   createdAt: string;
   customerName: string;
+  customerEmail: string | null;
   ownerResponse: string | null;
   ownerRespondedAt: string | null;
 };
@@ -22,17 +24,18 @@ type PrivateReviewRow = {
   id: string;
   rating: number;
   comment: string | null;
+  image_urls: string[] | null;
   created_at: string;
   owner_response: string | null;
   owner_responded_at: string | null;
-  customers: { name: string } | null;
+  customers: { name: string; email: string | null } | null;
 };
 
 export async function getPrivateReviews(restaurantId: string): Promise<PrivateReviewWithCustomer[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("restaurant_reviews")
-    .select("id, rating, comment, created_at, owner_response, owner_responded_at, customers(name)")
+    .select("id, rating, comment, image_urls, created_at, owner_response, owner_responded_at, customers(name, email)")
     .eq("restaurant_id", restaurantId)
     .eq("visibility", "private")
     .order("created_at", { ascending: false });
@@ -42,8 +45,10 @@ export async function getPrivateReviews(restaurantId: string): Promise<PrivateRe
     id: row.id,
     rating: row.rating,
     comment: row.comment,
+    imageUrls: Array.isArray(row.image_urls) ? row.image_urls : [],
     createdAt: row.created_at,
     customerName: row.customers?.name ?? "Client",
+    customerEmail: row.customers?.email ?? null,
     ownerResponse: row.owner_response,
     ownerRespondedAt: row.owner_responded_at,
   }));
@@ -53,6 +58,7 @@ export type ItemOrOfferReview = {
   id: string;
   rating: number;
   comment: string | null;
+  imageUrls: string[];
   createdAt: string;
   name: string;
   kind: "menu_item" | "offer";
@@ -68,25 +74,26 @@ export async function getMenuAndOfferReviews(restaurantId: string): Promise<Item
   const [menuResult, offerResult] = await Promise.all([
     supabase
       .from("menu_item_reviews")
-      .select("id, rating, comment, created_at, menu_items(name)")
+      .select("id, rating, comment, image_urls, created_at, menu_items(name)")
       .eq("restaurant_id", restaurantId)
       .order("created_at", { ascending: false })
       .limit(50),
     supabase
       .from("offer_reviews")
-      .select("id, rating, comment, created_at, offers(title)")
+      .select("id, rating, comment, image_urls, created_at, offers(title)")
       .eq("restaurant_id", restaurantId)
       .order("created_at", { ascending: false })
       .limit(50),
   ]);
 
-  type MenuReviewRow = { id: string; rating: number; comment: string | null; created_at: string; menu_items: { name: string } | null };
-  type OfferReviewRow = { id: string; rating: number; comment: string | null; created_at: string; offers: { title: string } | null };
+  type MenuReviewRow = { id: string; rating: number; comment: string | null; image_urls: string[] | null; created_at: string; menu_items: { name: string } | null };
+  type OfferReviewRow = { id: string; rating: number; comment: string | null; image_urls: string[] | null; created_at: string; offers: { title: string } | null };
 
   const menu = ((menuResult.data ?? []) as unknown as MenuReviewRow[]).map((row) => ({
     id: row.id,
     rating: row.rating,
     comment: row.comment,
+    imageUrls: Array.isArray(row.image_urls) ? row.image_urls : [],
     createdAt: row.created_at,
     name: row.menu_items?.name ?? "Plat",
     kind: "menu_item" as const,
@@ -95,6 +102,7 @@ export async function getMenuAndOfferReviews(restaurantId: string): Promise<Item
     id: row.id,
     rating: row.rating,
     comment: row.comment,
+    imageUrls: Array.isArray(row.image_urls) ? row.image_urls : [],
     createdAt: row.created_at,
     name: row.offers?.title ?? "Offre",
     kind: "offer" as const,
