@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
 import { createOrderPaymentIntent } from "@/lib/stripe/connect";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import type { CustomerReferralLink, ReferralProgram } from "@/lib/types";
+import type { CustomerReferralLink, ReferralProgram, OrderFulfillmentMode } from "@/lib/types";
 
 export type ReferralLinkTracking = {
   link: CustomerReferralLink;
@@ -304,8 +304,14 @@ export type PublicOrderGuestInfo = {
   paymentMethod: string | null;
   /** Customer-chosen tip in dollars — everything else is recomputed server-side from real menu prices. */
   tipAmount: number;
-  /** True if the guest picked "Payer en ligne" — only honored if the restaurant's Connect account is actually active (getRestaurantOrderSettings.onlinePaymentEnabled), otherwise silently falls back to pay-on-site. */
-  payOnline: boolean;
+  /**
+   * The mode the guest picked at checkout, among the restaurant's
+   * orderModesEnabled. "immediat" and "prep_apres_paiement" both request
+   * online payment — only honored if the restaurant's Connect account is
+   * actually active (getRestaurantOrderSettings.onlinePaymentEnabled),
+   * otherwise silently falls back to "sur_place".
+   */
+  fulfillmentMode: OrderFulfillmentMode;
   /**
    * Set when the guest tapped "J'en profite" on a live offer before
    * ordering. Offers carry no discount schema (title/description only, see
@@ -413,7 +419,16 @@ export async function submitPublicOrder(
   const { lineItems, subtotal, taxAmount, tipAmount, total } = pricing;
 
   const referralLinkId = (referralLinkResult.data as { id: string } | null)?.id ?? null;
-  let wantsOnlinePayment = guestInfo.payOnline && orderSettings.onlinePaymentEnabled;
+
+  // A tampered request could ask for a mode the restaurant never enabled
+  // (order_modes_enabled), or online payment when Connect isn't actually
+  // active — fall back to "sur_place" rather than trusting the client, the
+  // one mode that never requires anything from Stripe.
+  let fulfillmentMode: OrderFulfillmentMode = orderSettings.orderModesEnabled.includes(guestInfo.fulfillmentMode)
+    ? guestInfo.fulfillmentMode
+    : "sur_place";
+  let wantsOnlinePayment = fulfillmentMode !== "sur_place" && orderSettings.onlinePaymentEnabled;
+  if (!wantsOnlinePayment) fulfillmentMode = "sur_place";
 
   const baseOrderFields = {
     restaurant_id: restaurantId,
@@ -436,15 +451,18 @@ export async function submitPublicOrder(
       ...baseOrderFields,
       payment_method: wantsOnlinePayment ? "Carte (en ligne)" : guestInfo.paymentMethod,
       payment_status: wantsOnlinePayment ? "en_attente" : "non_requis",
+      fulfillment_mode: fulfillmentMode,
     })
     .select("id")
     .single();
 
-  // payment_status/stripe_payment_intent_id (migration 0026) may not exist
-  // yet in every environment — retry without them rather than breaking
-  // order submission entirely for a column PostgREST can't find.
+  // payment_status/stripe_payment_intent_id/fulfillment_mode (migrations
+  // 0026, 0108) may not exist yet in every environment — retry without
+  // them rather than breaking order submission entirely for a column
+  // PostgREST can't find.
   if (orderError?.code === "PGRST204") {
     wantsOnlinePayment = false;
+    fulfillmentMode = "sur_place";
     ({ data: order, error: orderError } = await admin
       .from("orders")
       .insert({ ...baseOrderFields, payment_method: guestInfo.paymentMethod })
@@ -499,7 +517,7 @@ export async function submitPublicOrder(
     // Stripe call failed (e.g. account got disabled mid-flow) — the order
     // itself is already safely committed as a normal order; just fall back
     // to pay-on-site rather than losing it.
-    await admin.from("orders").update({ payment_status: "non_requis" }).eq("id", orderId);
+    await admin.from("orders").update({ payment_status: "non_requis", fulfillment_mode: "sur_place" }).eq("id", orderId);
     return { ok: true, orderId, clientSecret: null };
   }
 }

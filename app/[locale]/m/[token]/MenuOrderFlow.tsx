@@ -12,7 +12,7 @@ import { OnlinePaymentForm } from "./OnlinePaymentForm";
 import { formatCurrency, roundToCents, cn } from "@/lib/utils";
 import { InstallAppPrompt } from "@/components/pwa/InstallAppPrompt";
 import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
-import type { MenuItem, Offer } from "@/lib/types";
+import type { MenuItem, Offer, OrderFulfillmentMode } from "@/lib/types";
 import type { PublicMenuLanding, SiblingLocation } from "@/lib/data/menu-shares";
 import { Map as MapView, MapControls, MapMarker, MarkerContent, MarkerLabel, MarkerPopup } from "@/components/ui/map";
 import Link from "next/link";
@@ -37,6 +37,12 @@ function categorySlug(category: string, index: number): string {
 
 const TIP_PRESETS = [0, 0.1, 0.15, 0.2];
 
+const FULFILLMENT_MODE_LABEL: Record<OrderFulfillmentMode, string> = {
+  sur_place: "Sur place",
+  immediat: "En ligne maintenant",
+  prep_apres_paiement: "En ligne (prêt après paiement)",
+};
+
 function CheckoutModal({
   open,
   onClose,
@@ -49,6 +55,7 @@ function CheckoutModal({
   token,
   referralCode,
   onlinePaymentEnabled,
+  orderModesEnabled,
   onOrdered,
   shareProgramId,
   restaurantName,
@@ -64,6 +71,7 @@ function CheckoutModal({
   authenticated: boolean;
   token: string;
   referralCode: string | null;
+  orderModesEnabled: OrderFulfillmentMode[];
   onlinePaymentEnabled: boolean;
   onOrdered: () => void;
   shareProgramId: string | null;
@@ -77,7 +85,13 @@ function CheckoutModal({
   const [submitStatus, setSubmitStatus] = useState<"idle" | "submitting" | "done" | "paying" | "paid" | "error">(
     "idle"
   );
-  const [payOnline, setPayOnline] = useState(false);
+  // "sur_place" never requires Stripe, so it's always offered even if the
+  // owner listed an online mode without Connect actually being active yet.
+  const availableModes = orderModesEnabled.filter((m) => m === "sur_place" || onlinePaymentEnabled);
+  const [fulfillmentMode, setFulfillmentMode] = useState<OrderFulfillmentMode>(
+    availableModes.includes("sur_place") ? "sur_place" : (availableModes[0] ?? "sur_place")
+  );
+  const payOnline = fulfillmentMode !== "sur_place";
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
@@ -136,7 +150,7 @@ function CheckoutModal({
         guestPhone: String(form.get("guestPhone") ?? "") || null,
         paymentMethod: payOnline ? null : String(form.get("paymentMethod") ?? "") || null,
         tipAmount,
-        payOnline,
+        fulfillmentMode,
         mentionedOfferTitle,
       }
     );
@@ -281,35 +295,31 @@ function CheckoutModal({
               <Field label="Téléphone" hint="Optionnel">
                 <Input name="guestPhone" type="tel" />
               </Field>
-              {onlinePaymentEnabled && (
+              {availableModes.length > 1 && (
                 <div>
                   <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Paiement</p>
                   <div className="flex gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setPayOnline(false)}
-                      className={cn(
-                        "flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium",
-                        !payOnline
-                          ? "border-mv-green bg-mv-green-tint text-mv-green-dark"
-                          : "border-mv-border text-mv-ink-soft"
-                      )}
-                    >
-                      Sur place
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPayOnline(true)}
-                      className={cn(
-                        "flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium",
-                        payOnline
-                          ? "border-mv-green bg-mv-green-tint text-mv-green-dark"
-                          : "border-mv-border text-mv-ink-soft"
-                      )}
-                    >
-                      En ligne maintenant
-                    </button>
+                    {availableModes.map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setFulfillmentMode(mode)}
+                        className={cn(
+                          "flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium",
+                          fulfillmentMode === mode
+                            ? "border-mv-green bg-mv-green-tint text-mv-green-dark"
+                            : "border-mv-border text-mv-ink-soft"
+                        )}
+                      >
+                        {FULFILLMENT_MODE_LABEL[mode]}
+                      </button>
+                    ))}
                   </div>
+                  {fulfillmentMode === "prep_apres_paiement" && (
+                    <p className="mt-1.5 text-[11.5px] text-mv-ink-faint">
+                      Le restaurant commence la préparation dès que votre paiement est confirmé.
+                    </p>
+                  )}
                 </div>
               )}
               {!payOnline && (
@@ -595,7 +605,7 @@ export function MenuOrderFlow({
   shareProgramId: string | null;
   siblingLocations: SiblingLocation[];
 }) {
-  const { restaurantName, items, taxRate, acceptsTips, onlinePaymentEnabled } = landing;
+  const { restaurantName, items, taxRate, acceptsTips, onlinePaymentEnabled, orderModesEnabled } = landing;
 
   // Cart survives the magic-link round trip (a full page reload) via
   // localStorage — otherwise a customer who clicks the emailed link would
@@ -834,6 +844,7 @@ export function MenuOrderFlow({
         token={token}
         referralCode={referralCode}
         onlinePaymentEnabled={onlinePaymentEnabled}
+        orderModesEnabled={orderModesEnabled}
         onOrdered={handleOrdered}
         shareProgramId={shareProgramId}
         restaurantName={restaurantName}

@@ -18,7 +18,7 @@ import { EstablishmentLimitModal } from "@/components/billing/EstablishmentLimit
 import { DirectOrderingWidgetGenerator } from "@/components/etablissement/DirectOrderingWidgetGenerator";
 import { RestaurantGalleryUpload } from "@/components/etablissement/RestaurantGalleryUpload";
 import type { RestaurantInput } from "@/lib/data/restaurants";
-import type { Restaurant, OpeningHours, DayHours } from "@/lib/types";
+import type { Restaurant, OpeningHours, DayHours, OrderFulfillmentMode } from "@/lib/types";
 import { Plus, MapPin, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -340,6 +340,88 @@ function EstablishmentIdentityCard() {
   );
 }
 
+const ORDER_MODE_OPTIONS: { value: OrderFulfillmentMode; label: string; hint: string }[] = [
+  { value: "sur_place", label: "Payer sur place", hint: "Le client paie à la cueillette — le mode par défaut." },
+  {
+    value: "immediat",
+    label: "Payer en ligne maintenant",
+    hint: "Le client paie par carte au moment de la commande. Nécessite Stripe Connect (onglet Intégrations).",
+  },
+  {
+    value: "prep_apres_paiement",
+    label: "Payer en ligne, préparé après confirmation",
+    hint: "Comme ci-dessus, mais la cuisine ne commence qu'une fois le paiement confirmé — utile pour les grosses commandes prépayées.",
+  },
+];
+
+/**
+ * Governs which order modes appear on the public checkout (MenuOrderFlow's
+ * CheckoutModal) — see getRestaurantOrderSettings / getMenuShareByToken.
+ * At least one mode must stay enabled; updateRestaurant already falls back
+ * to ["sur_place"] server-side if this ever sends an empty array.
+ */
+function OrderModesCard() {
+  const restaurant = useCurrentRestaurant();
+  const [modes, setModes] = useState<OrderFulfillmentMode[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (restaurant) setModes(restaurant.orderModesEnabled);
+  }, [restaurant?.id]);
+
+  async function toggle(mode: OrderFulfillmentMode, checked: boolean) {
+    if (!restaurant) return;
+    const next = checked ? [...modes, mode] : modes.filter((m) => m !== mode);
+    if (next.length === 0) {
+      toast.error("Gardez au moins un mode de commande actif.");
+      return;
+    }
+    const previous = modes;
+    setModes(next);
+    setSaving(true);
+    const updated = await updateRestaurantAction(restaurant.id, { orderModesEnabled: next });
+    setSaving(false);
+    if (updated) {
+      toast.success("Modes de commande mis à jour.");
+    } else {
+      toast.error("La mise à jour a échoué.");
+      setModes(previous);
+    }
+  }
+
+  if (!restaurant) return null;
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Commande en ligne"
+        title="Modes de commande"
+        description="Choisissez comment vos clients peuvent payer quand ils commandent via votre lien de commande directe."
+      />
+      <div className="space-y-2.5">
+        {ORDER_MODE_OPTIONS.map((opt) => (
+          <label
+            key={opt.value}
+            className="flex items-start gap-3 rounded-lg border border-mv-border p-3 hover:bg-mv-cream-soft/50"
+          >
+            <input
+              type="checkbox"
+              checked={modes.includes(opt.value)}
+              disabled={saving}
+              onChange={(e) => toggle(opt.value, e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-mv-border"
+            />
+            <div>
+              <p className="text-[13px] font-medium text-mv-ink">{opt.label}</p>
+              <p className="text-[12px] text-mv-ink-soft">{opt.hint}</p>
+            </div>
+          </label>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 function OtherEstablishments() {
   const { restaurants, restaurantId, setRestaurantId } = useApp();
   const [createOpen, setCreateOpen] = useState(false);
@@ -512,6 +594,7 @@ export default function EtablissementPage() {
       />
       <div className="space-y-8">
         <EstablishmentIdentityCard />
+        <OrderModesCard />
         {restaurant && <DirectOrderingWidgetSection restaurant={restaurant} />}
         <OtherEstablishments />
       </div>

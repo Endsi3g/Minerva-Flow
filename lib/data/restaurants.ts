@@ -6,7 +6,7 @@ import { logActivity } from "@/lib/data/activity";
 import { geocodeAddress } from "@/lib/geocode";
 import { fetchWebsiteDescription, fetchWebsiteBusinessInfo } from "@/lib/website-description";
 import { CAFE_BREAK_EVEN_DEFAULTS } from "@/lib/engine/break-even";
-import type { Restaurant, OpeningHours, VisitRewardTier } from "@/lib/types";
+import type { Restaurant, OpeningHours, VisitRewardTier, OrderFulfillmentMode } from "@/lib/types";
 
 type RestaurantRow = {
   id: string;
@@ -45,6 +45,7 @@ type RestaurantRow = {
   image_urls: string[] | null;
   google_maps_url: string | null;
   plan_tier: string;
+  order_modes_enabled: string[] | null;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -85,6 +86,7 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     imageUrls: row.image_urls ?? [],
     googleMapsUrl: row.google_maps_url,
     planTier: (row.plan_tier as Restaurant["planTier"]) ?? "essentiel",
+    orderModesEnabled: (row.order_modes_enabled as OrderFulfillmentMode[] | null) ?? ["immediat", "sur_place"],
   };
 }
 
@@ -282,6 +284,7 @@ export type RestaurantInput = {
   serviceModel?: "restaurant" | "cafe" | "hybrid";
   imageUrls?: string[];
   googleMapsUrl?: string;
+  orderModesEnabled?: OrderFulfillmentMode[];
 };
 
 // The 21-day retention inactivity threshold is calibrated for a sit-down
@@ -443,6 +446,11 @@ export async function updateRestaurant(
   if (patch.serviceModel !== undefined) dbPatch.service_model = patch.serviceModel;
   if (patch.imageUrls !== undefined) dbPatch.image_urls = patch.imageUrls;
   if (patch.googleMapsUrl !== undefined) dbPatch.google_maps_url = patch.googleMapsUrl || null;
+  if (patch.orderModesEnabled !== undefined) {
+    // Never let the owner disable every mode — the public checkout must
+    // always have at least one way for a guest to actually place an order.
+    dbPatch.order_modes_enabled = patch.orderModesEnabled.length > 0 ? patch.orderModesEnabled : ["sur_place"];
+  }
 
   // Explicit coordinates (e.g. a Google Places import, authoritative) take
   // priority and skip re-geocoding entirely.
