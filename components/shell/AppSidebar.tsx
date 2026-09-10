@@ -172,9 +172,42 @@ export const sidebarNavCatalog = Object.entries(navTranslationKeys).map(([key, t
   translationKey,
 }));
 
+export const navDescriptions: Record<string, string> = {
+  "/overview": "Vue d'ensemble et métriques clés de l'établissement",
+  "/assistant": "Flow AI — copilote d'optimisation et d'analyses",
+  "/fidelisation": "Programmes de fidélité, parrainages et rétention",
+  "/reputation": "Gestion des avis clients et e-réputation",
+  "/menu": "Gestion de la carte, marges et rentabilité des plats",
+  "/finance": "Gestion financière, trésorerie et rentabilité",
+  "/commandes": "Suivi des commandes et encaissements en direct",
+  "/collaborateurs": "Planning de l'équipe et fiches collaborateurs",
+  "/inventaire": "Gestion des stocks, ingrédients et fiches techniques",
+  "/horaire": "Planning des quarts de travail et disponibilités",
+  "/fournisseurs": "Gestion des fournisseurs, bons de commande et contacts",
+  "/reservations": "Cahier de réservations et plan de salle",
+  "/mon-espace": "Espace personnel et préférences de profil",
+  "/employees": "Répertoire des employés et rôles",
+  "/franchise": "Pilotage multi-établissements et groupe",
+  "/impact": "Mesure d'impact et ROI des campagnes",
+  "/days": "Performance quotidienne et clôtures de service",
+  "/reports": "Rapports financiers, exports et comptabilité",
+  "/maps": "Cartographie géographique de la clientèle",
+  "/programs": "Historique et analyse des programmes clients",
+  "/library": "Documents partagés, guides et procédures internes",
+  "/integrations": "Connexions de caisse (Square, Lightspeed, Clover) et services",
+  "/billing": "Facturation, abonnement et moyens de paiement",
+  "/guide": "Centre d'aide et documentation opérationnelle",
+  "/support": "Assistance technique et conciergerie Minerva",
+  "/changelog": "Historique des nouveautés et mises à jour",
+  "/etablissement": "Gestion des établissements et succursales",
+  "/admin/restaurants": "Administration de la plateforme",
+  "/settings": "Paramètres de l'établissement et préférences",
+};
+
 function NavLink({
   href,
   label,
+  description: customDescription,
   icon: Icon,
   active,
   onNavigate,
@@ -185,6 +218,7 @@ function NavLink({
 }: {
   href: string;
   label: string;
+  description?: string;
   icon: LucideIcon;
   active: boolean;
   onNavigate?: () => void;
@@ -193,6 +227,8 @@ function NavLink({
   locked?: boolean;
   lockedTooltip?: string;
 }) {
+  const description = customDescription ?? navDescriptions[href];
+
   const link = (
     <Link
       href={href}
@@ -218,14 +254,14 @@ function NavLink({
 
   return (
     <div className="group relative flex items-center">
-      {locked && lockedTooltip ? (
-        <Tooltip>
-          <TooltipTrigger render={link} />
-          <TooltipContent side="right">{lockedTooltip}</TooltipContent>
-        </Tooltip>
-      ) : (
-        link
-      )}
+      <Tooltip>
+        <TooltipTrigger render={link} />
+        <TooltipContent side="right" className="max-w-xs text-xs font-normal">
+          <span className="font-semibold">{label}</span>
+          {description && <span className="opacity-90"> — {description}</span>}
+          {locked && lockedTooltip && <span className="text-mv-amber"> ({lockedTooltip})</span>}
+        </TooltipContent>
+      </Tooltip>
       {onToggleFavorite && (
         <button
           type="button"
