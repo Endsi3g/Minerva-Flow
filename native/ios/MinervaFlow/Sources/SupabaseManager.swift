@@ -432,6 +432,64 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    // MARK: - Favorites
+
+    /// Same customers_update_own RLS policy, direct table update — the heart
+    /// toggle on a menu item (MenuView row, MenuItemDetailView) or offer
+    /// (OfferDetailView), plus the removal action on FavoritesView. Reads
+    /// the current array and writes the new one, matching the web portal's
+    /// toggleFavorite (lib/data/customers.ts) exactly — a lost update from
+    /// two rapid taps on the same favorite is low-stakes enough not to
+    /// warrant an atomic RPC.
+    func toggleFavoriteMenuItem(_ itemId: String, favorite: Bool) async -> Bool {
+        guard let customerId = customer?.id else { return false }
+        var ids = customer?.favoriteMenuItemIds ?? []
+        if favorite {
+            if !ids.contains(itemId) { ids.append(itemId) }
+        } else {
+            ids.removeAll { $0 == itemId }
+        }
+        do {
+            struct Patch: Encodable { let favorite_menu_item_ids: [String] }
+            try await client
+                .from("customers")
+                .update(Patch(favorite_menu_item_ids: ids))
+                .eq("id", value: customerId)
+                .execute()
+            customer?.favoriteMenuItemIds = ids
+            return true
+        } catch {
+            lastError = "La mise à jour de vos favoris a échoué. Réessayez."
+            print("toggleFavoriteMenuItem error: \(error)")
+            return false
+        }
+    }
+
+    /// Structural copy of toggleFavoriteMenuItem, targeting offers instead.
+    func toggleFavoriteOffer(_ offerId: String, favorite: Bool) async -> Bool {
+        guard let customerId = customer?.id else { return false }
+        var ids = customer?.favoriteOfferIds ?? []
+        if favorite {
+            if !ids.contains(offerId) { ids.append(offerId) }
+        } else {
+            ids.removeAll { $0 == offerId }
+        }
+        do {
+            struct Patch: Encodable { let favorite_offer_ids: [String] }
+            try await client
+                .from("customers")
+                .update(Patch(favorite_offer_ids: ids))
+                .eq("id", value: customerId)
+                .execute()
+            customer?.favoriteOfferIds = ids
+            return true
+        } catch {
+            lastError = "La mise à jour de vos favoris a échoué. Réessayez."
+            print("toggleFavoriteOffer error: \(error)")
+            return false
+        }
+    }
+
     /// Self-serve redemption: self_redeem_reward re-derives the caller's own
     /// customer row from auth.uid() and re-checks the points balance
     /// server-side (see supabase/migrations/0040_reward_redemptions.sql) —

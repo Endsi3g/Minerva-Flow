@@ -19,6 +19,7 @@
 		2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471F651B424DBE91D0FC0A0E /* MyCardView.swift */; };
 		2C9E95355FE610913FB5ED0B /* MenuItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */; };
 		2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9CD9B5E79E9FE474707739 /* RewardsView.swift */; };
+		31C2B1DC693A37CD2CCA402A /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC74D7EFE8F6B593AB50D654 /* FavoritesView.swift */; };
 		334B756E8CFD91AFED64561A /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */; };
 		3AD6882CB5ED4D4A5A3880A6 /* LoyaltyTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */; };
 		3AD982D4339D2835748F8A86 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */; };
@@ -137,6 +138,7 @@
 		D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		D58EE17A9A62B1893F865891 /* RadialGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialGauge.swift; sourceTree = "<group>"; };
 		D6E6F6E76663DF4A6F2A5309 /* MinervaFlow.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlow.entitlements; sourceTree = "<group>"; };
+		DC74D7EFE8F6B593AB50D654 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 		DDBB4AF1C78A26877459630D /* MinervaFlowTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MinervaFlowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE1BA36D6BD964EC57A0DE85 /* MinervaFlowWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowWidget.swift; sourceTree = "<group>"; };
 		DF75FB3EE42DD210F4A6BB8D /* HomeDataUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDataUITests.swift; sourceTree = "<group>"; };
@@ -212,6 +214,7 @@
 				EBD59C80CE3B06A999142A6E /* Config.swift */,
 				D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */,
 				442686E96CEA070F53FB728F /* EditProfileSheet.swift */,
+				DC74D7EFE8F6B593AB50D654 /* FavoritesView.swift */,
 				1BA24BE15C53784788988271 /* HomeView.swift */,
 				09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */,
 				FA4B0852605EFE3B8B30F88D /* LocationManager.swift */,
@@ -479,6 +482,7 @@
 				1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */,
 				334B756E8CFD91AFED64561A /* DeepLinkRouter.swift in Sources */,
 				E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */,
+				31C2B1DC693A37CD2CCA402A /* FavoritesView.swift in Sources */,
 				F5E4CC548458D40BF92F3F17 /* HomeView.swift in Sources */,
 				08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */,
 				C276CD959221FB7F19087810 /* LocationManager.swift in Sources */,
