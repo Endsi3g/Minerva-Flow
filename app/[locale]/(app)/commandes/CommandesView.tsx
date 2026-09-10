@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Textarea } from "@/components/minerva/FormField";
 import { formatCurrency, formatTime, cn } from "@/lib/utils";
-import { useApp } from "@/lib/app-context";
+import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import { planTierAtLeast, type PlanTier } from "@/lib/plan-tier";
 import { PlanTierLockedState } from "@/components/ui/PlanTierLockedState";
 import type { Order, OrderStatus, OrderPaymentStatus, MenuItem } from "@/lib/types";
@@ -31,9 +31,18 @@ import {
   Flame,
   ChefHat,
   PhoneCall,
+  Bell,
+  BellRing,
 } from "lucide-react";
 import { useEffect, useState, useRef, type FormEvent } from "react";
-import { getOrdersForDayAction, updateOrderStatusAction, deleteOrderAction, createOrderAction } from "./actions";
+import {
+  getOrdersForDayAction,
+  updateOrderStatusAction,
+  deleteOrderAction,
+  createOrderAction,
+  notifyOrderReadyAction,
+  setBusyModeManualAction,
+} from "./actions";
 import { notifyError } from "@/lib/notify-error";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -337,8 +346,19 @@ export function CommandesView({
   planTier: PlanTier;
 }) {
   const { role } = useApp();
+  const restaurant = useCurrentRestaurant();
+  // Local + optimistic: the AppContext's `restaurants` array is seeded once
+  // at page load and has no live refresh path, so it wouldn't reflect a
+  // toggle flipped here without this.
+  const [busyModeLocal, setBusyModeLocal] = useState(restaurant?.busyModeManual ?? false);
+  const [busyPending, setBusyPending] = useState(false);
+  const [notifyingId, setNotifyingId] = useState<string | null>(null);
   const [orders, setOrders] = useState(initialOrders);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (restaurant) setBusyModeLocal(restaurant.busyModeManual);
+  }, [restaurant?.id, restaurant?.busyModeManual]);
   const [viewMode, setViewMode] = useState<"kds" | "table">("kds");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [activeFilter, setActiveFilter] = useState<"all" | "direct">("all");
@@ -407,6 +427,32 @@ export function CommandesView({
     }
   }
 
+  async function handleNotifyReady(id: string) {
+    if (!restaurantId) return;
+    setNotifyingId(id);
+    const { ok } = await notifyOrderReadyAction(restaurantId, id);
+    setNotifyingId(null);
+    if (ok) {
+      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, readyNotifiedAt: new Date().toISOString() } : o)));
+      toast.success("Client notifié.");
+    } else {
+      notifyError("Impossible de joindre ce client (aucun courriel, notification ou téléphone valide).");
+    }
+  }
+
+  async function handleToggleBusy() {
+    if (!restaurantId) return;
+    const next = !busyModeLocal;
+    setBusyModeLocal(next);
+    setBusyPending(true);
+    const ok = await setBusyModeManualAction(restaurantId, next);
+    setBusyPending(false);
+    if (!ok) {
+      setBusyModeLocal(!next);
+      notifyError("La mise à jour du mode occupé a échoué.");
+    }
+  }
+
   function handleDelete(id: string, guestName: string) {
     if (!restaurantId) return;
     if (!window.confirm(`Supprimer la commande de "${guestName}" ?`)) return;
@@ -442,6 +488,23 @@ export function CommandesView({
               <Button size="sm" onClick={() => setNewOrderOpen(true)}>
                 <PhoneCall size={14} /> Nouvelle commande
               </Button>
+            )}
+
+            {canManage && (
+              <button
+                type="button"
+                onClick={handleToggleBusy}
+                disabled={busyPending}
+                title="Affiche un message d'attente aux clients sur le menu en ligne"
+                className={cn(
+                  "flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[12.5px] font-medium transition-all disabled:opacity-60",
+                  busyModeLocal
+                    ? "border-mv-amber bg-mv-amber-tint text-mv-amber-dark"
+                    : "border-mv-border bg-mv-surface text-mv-ink-soft hover:bg-mv-cream-soft"
+                )}
+              >
+                <Clock size={14} /> {busyModeLocal ? "On est débordés (actif)" : "On est débordés"}
+              </button>
             )}
 
             {/* View Mode Switcher */}
@@ -812,17 +875,30 @@ export function CommandesView({
                         </li>
                       ))}
                     </ul>
-                    <div className="mt-3 flex items-center justify-between pt-2 border-t border-mv-border/60">
+                    <div className="mt-3 flex items-center justify-between gap-1.5 pt-2 border-t border-mv-border/60">
                       <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total)}</span>
                       {canManage && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => handleStatusChange(o.id, "servie")}
-                          className="text-[11.5px] h-7 px-2.5 border-mv-green text-mv-green-dark hover:bg-mv-green hover:text-white"
-                        >
-                          <CheckCircle2 size={12} /> Servir
-                        </Button>
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleNotifyReady(o.id)}
+                            disabled={notifyingId === o.id}
+                            className="text-[11.5px] h-7 px-2 text-mv-ink-soft hover:text-mv-ink"
+                            title={o.readyNotifiedAt ? `Notifié à ${formatTime(o.readyNotifiedAt)}` : "Notifier le client par courriel/push/SMS"}
+                          >
+                            {o.readyNotifiedAt ? <BellRing size={12} /> : <Bell size={12} />}
+                            {o.readyNotifiedAt ? "Renvoyer" : "Notifier"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleStatusChange(o.id, "servie")}
+                            className="text-[11.5px] h-7 px-2.5 border-mv-green text-mv-green-dark hover:bg-mv-green hover:text-white"
+                          >
+                            <CheckCircle2 size={12} /> Servir
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>

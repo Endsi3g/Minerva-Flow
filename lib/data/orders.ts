@@ -22,6 +22,7 @@ type OrderRow = {
   fulfillment_mode: OrderFulfillmentMode | null;
   stripe_payment_intent_id: string | null;
   paid_at: string | null;
+  ready_notified_at: string | null;
   notes: string | null;
   customer_id: string | null;
   referral_link_id: string | null;
@@ -67,6 +68,7 @@ function mapOrder(row: OrderRow, items: OrderItemRow[]): Order {
     fulfillmentMode: row.fulfillment_mode,
     stripePaymentIntentId: row.stripe_payment_intent_id,
     paidAt: row.paid_at,
+    readyNotifiedAt: row.ready_notified_at,
     notes: row.notes,
     customerId: row.customer_id,
     referralLinkId: row.referral_link_id,

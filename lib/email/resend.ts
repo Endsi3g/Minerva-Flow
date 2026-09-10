@@ -231,6 +231,35 @@ export async function sendRetentionEmail({
   return { ok: !error };
 }
 
+/**
+ * Same shell/branding as sendRetentionEmail but with a caller-chosen CTA —
+ * for one-off transactional sends (e.g. "commande prête") that don't fit
+ * the retention module's fixed "Voir mes points" → /portal link.
+ */
+export async function sendTransactionalEmail({
+  to,
+  subject,
+  bodyHtml,
+  ctaLabel,
+  ctaUrl,
+}: {
+  to: string;
+  subject: string;
+  bodyHtml: string;
+  ctaLabel: string;
+  ctaUrl: string;
+}): Promise<{ ok: boolean }> {
+  if (!resend) return { ok: false };
+
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject,
+    html: emailShell(bodyHtml, ctaLabel, ctaUrl),
+  });
+  return { ok: !error };
+}
+
 type CampaignCategory = "fonctionnalite" | "amelioration" | "correctif";
 
 const CAMPAIGN_CATEGORY_LABEL: Record<CampaignCategory, string> = {

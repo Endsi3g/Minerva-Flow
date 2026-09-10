@@ -422,6 +422,63 @@ function OrderModesCard() {
   );
 }
 
+/**
+ * Auto-busy threshold — the manual "On est débordés" toggle itself lives on
+ * /commandes (staff flip it mid-shift), but the automatic side (based on
+ * live "en_preparation" count, see getMenuShareByToken) is configured here
+ * alongside the rest of the order-related settings.
+ */
+function BusyThresholdCard() {
+  const restaurant = useCurrentRestaurant();
+  const [threshold, setThreshold] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (restaurant) setThreshold(restaurant.busyThreshold ? String(restaurant.busyThreshold) : "");
+  }, [restaurant?.id]);
+
+  async function handleSave() {
+    if (!restaurant) return;
+    const parsed = threshold.trim() === "" ? null : Number(threshold);
+    if (parsed !== null && (!Number.isFinite(parsed) || parsed <= 0)) {
+      toast.error("Entrez un nombre de commandes valide, ou laissez vide pour désactiver.");
+      return;
+    }
+    setSaving(true);
+    const updated = await updateRestaurantAction(restaurant.id, { busyThreshold: parsed });
+    setSaving(false);
+    if (updated) toast.success("Seuil mis à jour.");
+    else toast.error("La mise à jour a échoué.");
+  }
+
+  if (!restaurant) return null;
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Commande en ligne"
+        title="Message d'attente automatique"
+        description="Quand le nombre de commandes « en préparation » atteint ce seuil, le menu en ligne affiche automatiquement un avertissement de délai — en plus du toggle manuel « On est débordés » sur la page Commandes."
+      />
+      <div className="flex items-end gap-3">
+        <Field label="Seuil (commandes en préparation)" hint="Laissez vide pour désactiver l'automatique">
+          <Input
+            type="number"
+            min={1}
+            value={threshold}
+            onChange={(e) => setThreshold(e.target.value)}
+            placeholder="Ex : 8"
+            className="w-32"
+          />
+        </Field>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? "Enregistrement…" : "Enregistrer"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 function OtherEstablishments() {
   const { restaurants, restaurantId, setRestaurantId } = useApp();
   const [createOpen, setCreateOpen] = useState(false);
@@ -595,6 +652,7 @@ export default function EtablissementPage() {
       <div className="space-y-8">
         <EstablishmentIdentityCard />
         <OrderModesCard />
+        <BusyThresholdCard />
         {restaurant && <DirectOrderingWidgetSection restaurant={restaurant} />}
         <OtherEstablishments />
       </div>

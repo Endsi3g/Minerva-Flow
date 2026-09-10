@@ -17,7 +17,7 @@ import type { MenuItem, Offer, OrderFulfillmentMode } from "@/lib/types";
 import type { PublicMenuLanding, SiblingLocation } from "@/lib/data/menu-shares";
 import { Map as MapView, MapControls, MapMarker, MarkerContent, MarkerLabel, MarkerPopup } from "@/components/ui/map";
 import Link from "next/link";
-import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart, Share2, Sparkles, UtensilsCrossed, X, MapPin, ArrowRight } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart, Share2, Sparkles, UtensilsCrossed, X, MapPin, ArrowRight, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { getOrCreateReferralLinkAction } from "@/app/[locale]/portal/actions";
 
@@ -761,6 +761,16 @@ export function MenuOrderFlow({
 
         <InstallAppPrompt />
         {authenticated && <CustomerPushToggle restaurantId={landing.restaurantId} />}
+
+        {landing.isBusy && (
+          <div className="mb-6 flex items-start gap-2 rounded-xl border border-mv-amber/40 bg-mv-amber-tint px-3.5 py-3 text-[12.5px] text-mv-amber-dark">
+            <Clock size={15} className="mt-0.5 shrink-0" />
+            <span>
+              {restaurantName} est présentement très occupé — les délais de préparation peuvent être plus longs que
+              d&apos;habitude.
+            </span>
+          </div>
+        )}
 
         {offers.length > 0 && (
           <div className="mb-8">
