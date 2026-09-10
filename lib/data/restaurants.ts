@@ -46,6 +46,8 @@ type RestaurantRow = {
   google_maps_url: string | null;
   plan_tier: string;
   order_modes_enabled: string[] | null;
+  busy_mode_manual: boolean | null;
+  busy_threshold: number | null;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -87,6 +89,8 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     googleMapsUrl: row.google_maps_url,
     planTier: (row.plan_tier as Restaurant["planTier"]) ?? "essentiel",
     orderModesEnabled: (row.order_modes_enabled as OrderFulfillmentMode[] | null) ?? ["immediat", "sur_place"],
+    busyModeManual: row.busy_mode_manual ?? false,
+    busyThreshold: row.busy_threshold,
   };
 }
 
@@ -102,6 +106,18 @@ export async function updateLoyaltyTierThresholds(
   if (Object.keys(dbPatch).length === 0) return true;
 
   const { error } = await supabase.from("restaurants").update(dbPatch).eq("id", restaurantId);
+  return !error;
+}
+
+/**
+ * The "On est débordés" quick toggle on /commandes — deliberately its own
+ * function rather than routed through updateRestaurant/RestaurantInput
+ * (the /etablissement profile form), since staff flip this mid-shift, not
+ * while editing the restaurant's profile.
+ */
+export async function setBusyModeManual(restaurantId: string, busy: boolean): Promise<boolean> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("restaurants").update({ busy_mode_manual: busy }).eq("id", restaurantId);
   return !error;
 }
 
@@ -285,6 +301,7 @@ export type RestaurantInput = {
   imageUrls?: string[];
   googleMapsUrl?: string;
   orderModesEnabled?: OrderFulfillmentMode[];
+  busyThreshold?: number | null;
 };
 
 // The 21-day retention inactivity threshold is calibrated for a sit-down
@@ -450,6 +467,9 @@ export async function updateRestaurant(
     // Never let the owner disable every mode — the public checkout must
     // always have at least one way for a guest to actually place an order.
     dbPatch.order_modes_enabled = patch.orderModesEnabled.length > 0 ? patch.orderModesEnabled : ["sur_place"];
+  }
+  if (patch.busyThreshold !== undefined) {
+    dbPatch.busy_threshold = patch.busyThreshold !== null && patch.busyThreshold > 0 ? patch.busyThreshold : null;
   }
 
   // Explicit coordinates (e.g. a Google Places import, authoritative) take

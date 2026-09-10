@@ -184,6 +184,8 @@ export async function getWorkspaceRestaurants(workspaceId: string): Promise<Rest
     googleMapsUrl: row.google_maps_url ?? null,
     planTier: row.plan_tier ?? "essentiel",
     orderModesEnabled: row.order_modes_enabled ?? ["immediat", "sur_place"],
+    busyModeManual: row.busy_mode_manual ?? false,
+    busyThreshold: row.busy_threshold ?? null,
   }));
 }
 

@@ -33,6 +33,10 @@ export type Restaurant = {
   acceptsTips: boolean;
   /** Which of the 3 order modes this restaurant offers at checkout — see OrderFulfillmentMode. */
   orderModesEnabled: OrderFulfillmentMode[];
+  /** Staff-flipped "on est débordés" toggle — shown to public checkout regardless of order volume. */
+  busyModeManual: boolean;
+  /** Auto-busy once today's "en_preparation" order count reaches this — null disables the automatic side. */
+  busyThreshold: number | null;
   // Finance "seuil de rentabilité" simulator assumptions — null until the
   // owner has adjusted the simulator at least once (see BreakEvenSimulator).
   breakEvenFixedCosts: number | null;
@@ -738,6 +742,7 @@ export type Order = {
   fulfillmentMode: OrderFulfillmentMode | null;
   stripePaymentIntentId: string | null;
   paidAt: string | null;
+  readyNotifiedAt: string | null;
   notes: string | null;
   customerId: string | null;
   referralLinkId: string | null;

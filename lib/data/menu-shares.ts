@@ -93,6 +93,8 @@ export type PublicMenuLanding = {
   acceptsTips: boolean;
   onlinePaymentEnabled: boolean;
   orderModesEnabled: OrderFulfillmentMode[];
+  /** Manual "on est débordés" toggle OR live en_preparation count over the owner's threshold — see restaurants.busy_mode_manual/busy_threshold. */
+  isBusy: boolean;
   items: MenuItem[];
 };
 
@@ -188,14 +190,19 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     itemsQuery = itemsQuery.in("id", share.itemIds);
   }
 
-  const [restaurantResult, itemsResult, connect] = await Promise.all([
+  const [restaurantResult, itemsResult, connect, preparingCount] = await Promise.all([
     admin
       .from("restaurants")
-      .select("name, tax_rate, accepts_tips, order_modes_enabled")
+      .select("name, tax_rate, accepts_tips, order_modes_enabled, busy_mode_manual, busy_threshold")
       .eq("id", share.restaurantId)
       .maybeSingle(),
     itemsQuery.order("category").order("name"),
     getConnectPaymentAvailability(admin, share.restaurantId),
+    admin
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("restaurant_id", share.restaurantId)
+      .eq("status", "en_preparation"),
   ]);
 
   if (restaurantResult.error) {
@@ -207,8 +214,13 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     tax_rate: number;
     accepts_tips: boolean;
     order_modes_enabled: string[] | null;
+    busy_mode_manual: boolean | null;
+    busy_threshold: number | null;
   };
   const items = ((itemsResult.data as MenuItemRow[]) ?? []).map(mapMenuItem);
+  const isBusy =
+    Boolean(restaurant.busy_mode_manual) ||
+    (restaurant.busy_threshold !== null && (preparingCount.count ?? 0) >= restaurant.busy_threshold);
 
   return {
     share,
@@ -218,6 +230,7 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     acceptsTips: restaurant.accepts_tips,
     onlinePaymentEnabled: connect.onlinePaymentEnabled,
     orderModesEnabled: (restaurant.order_modes_enabled as OrderFulfillmentMode[] | null) ?? ["immediat", "sur_place"],
+    isBusy,
     items,
   };
 }
