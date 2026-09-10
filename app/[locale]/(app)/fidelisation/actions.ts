@@ -23,6 +23,8 @@ import {
 } from "@/lib/data/referral-programs";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCurrentMembership } from "@/lib/data/current-restaurant";
+import { broadcastAnnouncement } from "@/lib/announcements/send";
 import { getCachedCityCoordinates, geocodeCityIfMissing, type CityCoordinates } from "@/lib/data/city-geocodes";
 import {
   getLoyaltySharesForRestaurant,
@@ -316,6 +318,30 @@ export async function grantBirthdayBonusAction(
 
   revalidatePath("/fidelisation");
   return mapCustomer(data, []);
+}
+
+/** "Annoncer" — a manual, owner-authored broadcast to every consented customer. See broadcastAnnouncement. */
+export async function sendAnnouncementAction(
+  restaurantId: string,
+  title: string,
+  body: string
+): Promise<{ ok: boolean; sent: number; total: number }> {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId) return { ok: false, sent: 0, total: 0 };
+  if (!title.trim() || !body.trim()) return { ok: false, sent: 0, total: 0 };
+
+  const { data: restaurantRow } = await createAdminClient()
+    .from("restaurants")
+    .select("name")
+    .eq("id", restaurantId)
+    .maybeSingle();
+  if (!restaurantRow) return { ok: false, sent: 0, total: 0 };
+
+  const { sent, total } = await broadcastAnnouncement(restaurantId, restaurantRow.name, {
+    title: title.trim(),
+    body: body.trim(),
+  });
+  return { ok: true, sent, total };
 }
 
 export async function getCachedCityCoordinatesAction(cities: string[]): Promise<Record<string, CityCoordinates>> {
