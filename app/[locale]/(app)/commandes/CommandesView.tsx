@@ -76,6 +76,16 @@ const nextStatus: Partial<Record<OrderStatus, { status: OrderStatus; label: stri
   prete: { status: "servie", label: "Servie" },
 };
 
+/**
+ * True for an order placed under an online-payment mode ("immediat" or
+ * "prep_apres_paiement") whose payment hasn't been confirmed yet — the
+ * server rejects moving these to "en_preparation" (see updateOrderStatus),
+ * so the UI holds them in their own column instead of the normal queue.
+ */
+function isAwaitingPayment(o: Order): boolean {
+  return Boolean(o.fulfillmentMode) && o.fulfillmentMode !== "sur_place" && o.paymentStatus !== "paye";
+}
+
 /** Web Audio synthesis for KDS notification chime — 100% offline, zero network latency */
 function playKdsChime() {
   try {
@@ -365,7 +375,12 @@ export function CommandesView({
   const orderCount = filteredOrders.filter((o) => o.status !== "annulee").length;
 
   // KDS Columns
-  const pendingOrders = filteredOrders.filter((o) => o.status === "soumise" || o.status === "confirmee");
+  const awaitingPaymentOrders = filteredOrders.filter(
+    (o) => o.status !== "annulee" && o.status !== "servie" && isAwaitingPayment(o)
+  );
+  const pendingOrders = filteredOrders.filter(
+    (o) => (o.status === "soumise" || o.status === "confirmee") && !isAwaitingPayment(o)
+  );
   const preparingOrders = filteredOrders.filter((o) => o.status === "en_preparation");
   const readyOrders = filteredOrders.filter((o) => o.status === "prete");
   const servedOrders = filteredOrders.filter((o) => o.status === "servie");
@@ -601,7 +616,49 @@ export function CommandesView({
         />
       ) : viewMode === "kds" ? (
         /* ── KDS KANBAN BOARD ── */
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-start">
+          {/* 0. En attente de paiement */}
+          {awaitingPaymentOrders.length > 0 && (
+            <div className="flex flex-col gap-3 rounded-2xl border border-mv-border bg-mv-surface/70 p-3.5 shadow-mv-sm">
+              <div className="flex items-center justify-between pb-2 border-b border-mv-border">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2.5 w-2.5 rounded-full bg-mv-red" />
+                  <h3 className="font-display text-[15px] font-bold text-mv-ink">Attente paiement</h3>
+                </div>
+                <Badge tone="red">{awaitingPaymentOrders.length}</Badge>
+              </div>
+              <div className="space-y-3 min-h-[300px]">
+                {awaitingPaymentOrders.map((o) => (
+                  <div
+                    key={o.id}
+                    className="group relative rounded-xl border border-mv-red/30 bg-mv-surface p-3.5 shadow-mv-sm"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
+                      <ElapsedTimer createdAt={o.createdAt} />
+                    </div>
+                    <ul className="space-y-1.5 border-t border-mv-border/60 pt-2 text-[13px] text-mv-ink">
+                      {o.items.map((i) => (
+                        <li key={i.id} className="flex justify-between items-center">
+                          <span className="font-semibold text-mv-ink">
+                            <span className="text-mv-green-dark font-mono font-bold mr-1.5">{i.quantity}×</span>
+                            {i.itemName}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-3 flex items-center justify-between pt-2 border-t border-mv-border/60">
+                      <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total)}</span>
+                      <Badge tone={paymentStatusTone[o.paymentStatus] ?? "red"}>
+                        {paymentStatusLabel[o.paymentStatus] ?? "Paiement en attente"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* 1. À Préparer */}
           <div className="flex flex-col gap-3 rounded-2xl border border-mv-border bg-mv-surface/70 p-3.5 shadow-mv-sm">
             <div className="flex items-center justify-between pb-2 border-b border-mv-border">
@@ -812,6 +869,7 @@ export function CommandesView({
           <tbody>
             {filteredOrders.map((o) => {
               const next = nextStatus[o.status];
+              const nextBlockedByPayment = next?.status === "en_preparation" && isAwaitingPayment(o);
               return (
                 <Tr key={o.id}>
                   <Td className="text-mv-ink-soft">{formatTime(o.createdAt)}</Td>
@@ -836,13 +894,19 @@ export function CommandesView({
                   <Td className="text-right">
                     {canManage && (
                       <div className="flex justify-end gap-1.5">
-                        {next && (
-                          <button
-                            onClick={() => handleStatusChange(o.id, next.status)}
-                            className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
-                          >
-                            {next.label}
-                          </button>
+                        {next && nextBlockedByPayment ? (
+                          <span className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-red" title="En attente de confirmation du paiement">
+                            Attente paiement
+                          </span>
+                        ) : (
+                          next && (
+                            <button
+                              onClick={() => handleStatusChange(o.id, next.status)}
+                              className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
+                            >
+                              {next.label}
+                            </button>
+                          )
                         )}
                         {o.status !== "servie" && o.status !== "annulee" && (
                           <button
