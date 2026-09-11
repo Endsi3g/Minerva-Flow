@@ -127,9 +127,18 @@ export async function fetchSquareDailyTickets(
       orders?: Array<{
         id: string;
         closed_at?: string;
+        customer_id?: string;
+        ticket_name?: string;
         total_money?: { amount?: number };
         total_tax_money?: { amount?: number };
         total_tip_money?: { amount?: number };
+        fulfillments?: Array<{
+          recipient?: {
+            display_name?: string;
+            phone_number?: string;
+            email_address?: string;
+          };
+        }>;
         line_items?: Array<{
           catalog_object_id?: string;
           name?: string;
@@ -162,6 +171,8 @@ export async function fetchSquareDailyTickets(
         };
       });
 
+      const recipient = order.fulfillments?.[0]?.recipient;
+
       tickets.push({
         externalOrderId: order.id,
         closedAt: order.closed_at || new Date().toISOString(),
@@ -169,6 +180,10 @@ export async function fetchSquareDailyTickets(
         taxAmount: Math.round((taxCents / 100) * 100) / 100,
         tipAmount: Math.round((tipCents / 100) * 100) / 100,
         total: Math.round((totalCents / 100) * 100) / 100,
+        guestName: recipient?.display_name || order.ticket_name,
+        customerPhone: recipient?.phone_number,
+        customerEmail: recipient?.email_address,
+        externalCustomerId: order.customer_id,
         lineItems,
       });
     }

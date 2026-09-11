@@ -43,6 +43,7 @@ import {
   Sparkles,
   AlertTriangle,
   Pencil,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -231,8 +232,12 @@ function EmployeeScheduleModal({
     setLinking(true);
     try {
       const token = await createScheduleShareLinkAction(restaurantId, employee.id);
-      if (token) setLink(`${window.location.origin}/h/${token}`);
-      else toast.error("La création du lien a échoué.");
+      if (token) {
+        setLink(`${window.location.origin}/h/${token}`);
+        toast.success("Lien de partage généré avec succès.");
+      } else {
+        toast.error("La création du lien a échoué.");
+      }
     } finally {
       setLinking(false);
     }
@@ -242,6 +247,7 @@ function EmployeeScheduleModal({
     if (!link) return;
     await navigator.clipboard.writeText(link);
     setCopied(true);
+    toast.success("Lien copié dans le presse-papier !");
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -283,9 +289,20 @@ function EmployeeScheduleModal({
           ) : (
             <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-3 py-2">
               <p className="flex-1 truncate text-[12px] text-mv-ink-soft">{link}</p>
+              <a
+                href={link}
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                title="Ouvrir le lien"
+                aria-label="Ouvrir le lien"
+              >
+                <ExternalLink size={14} />
+              </a>
               <button
                 onClick={handleCopy}
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                title="Copier le lien"
                 aria-label="Copier le lien"
               >
                 {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}

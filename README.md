@@ -97,7 +97,46 @@ La page **Réputation** centralise les avis Google Maps (détection automatique 
 ### 9. Bibliothèque d'Assets & Documents Utiles
 Tous les documents essentiels de l'établissement (factures d'achats, fiches techniques de recettes, permis, manuels d'exploitation) sont archivés et classés dans une bibliothèque d'assets dotée d'un tiroir de prévisualisation rapide.
 
-### 10. Journal des Nouveautés In-App (Changelog)
+### 10. Entonnoir de Rétention & Cycle de Vie Client (15 Événements & 10 KPI)
+La page dédiée **Entonnoir de rétention** (`/reports/retention-funnel`) transforme l'approche de la fidélisation en restaurant :
+* **15 événements de cycle de vie tracés de bout en bout** : De l'affichage du QR code sur chevalet de table jusqu'à la 2e visite, la conversion de parrainage et la réactivation post-campagne.
+* **10 KPI essentiels orientés valeur client** :
+  1. *Taux de scan vers inscription* (Cible ≥ 30 %)
+  2. *Taux d’activation* (≥ 70 %)
+  3. *Taux de deuxième visite* (**Le KPI d'or** : 75 % à 100 %)
+  4. *Taux de retour à 30 jours* (≥ 70 %)
+  5. *Fréquence moyenne des visites* (×3,6 : 2,5 à 9,1 visites)
+  6. *Taux d’échange des récompenses* (35 % à 60 %)
+  7. *Panier moyen des membres* (+15 % vs non-membres)
+  8. *Revenus attribués aux campagnes* (Visites en caisse dans les 7 jours post-relance)
+  9. *Coût par client réactivé* (< 3,00 $ vs 25-40 $ en publicité traditionnelle)
+  10. *Taux de désinscription* (< 2,0 %, alerte LCAP)
+* **Matrice des 6 profils audités** : Comparatif direct avec les audits réels (Câlin Café, Poutine & Cie, Café Lucide, Burger Nomade, Bureau & Brew, Le Trèfle Doré).
+* **Journal en direct** : Visualisation chronologique des événements réels avec filtrage par étape (`acquisition`, `visite`, `recompense`, `campagne`, `parrainage`).
+
+### 11. Conformité LCAP / CASL & Studio de Campagnes SMS / Courriel
+Minerva Flow applique strictement la législation canadienne anti-pourriel (LCAP / CASL) :
+* **Double case à cocher dégroupée** : Consentement de service requis vs consentement marketing optionnel (non pré-coché).
+* **Table d'audit légal immuable (`customer_consents`)** : Enregistrement de l'horodatage, du texte exact, des canaux autorisés, de la source, de l'IP et du User-Agent.
+* **Désinscription automatisée multicanale** : Webhook SMS entrant captant les mots-clés (`STOP`, `ARRÊT`, `ARRET`, `QUIT`) et lien de désabonnement en 1 clic dans tous les courriels.
+* **8 modèles de campagnes prêts à l'emploi** :
+  1. *Bienvenue* (Automation immédiate à l'inscription)
+  2. *Deuxième visite* (Automation 3 à 5 jours après le 1er passage)
+  3. *Réactivation (21 jours)* (Automation au seuil critique d'inactivité)
+  4. *Période creuse* (Diffusion ciblée pour remplir les services calmes, ex : mardi midi)
+  5. *Récompense disponible* (Notification dès qu'un cadeau est prêt à être dégusté)
+  6. *Statut Privilégié* (Célébration du passage de palier VIP)
+  7. *Partage & Parrainage* (Invitation des habitués à parrainer des proches)
+  8. *Dernière chance (60 jours)* (Ultime relance avant archivage)
+  *(Campagne Anniversaire délibérément reportée post-MVP pour protéger les données personnelles).*
+
+### 12. Résolution de l'Identification en Caisse
+Pour éliminer les frictions au moment de payer au comptoir :
+* **Numéro de téléphone local** : Recherche tolérante (7 à 10 chiffres) sans obliger le client à sortir son téléphone.
+* **Code de jumelage à 6 chiffres** : Code éphémère rotatif généré sur la carte numérique du client, résolu instantanément par RPC Supabase.
+* **QR code personnel & Apple Wallet** : Scan direct du pass de fidélité.
+
+### 13. Journal des Nouveautés In-App (Changelog)
 Un espace dédié au suivi des mises à jour permet à l'équipe de consulter l'historique des nouvelles fonctionnalités et améliorations déployées sur la plateforme.
 
 ---
@@ -108,7 +147,8 @@ Minerva Flow est conçu pour supporter des montées en charge massives avec des 
 
 1. **Rendu Préréduit Edge (SSG / ISR Next.js 16)** : Pages publiques et tableaux de bord pré-rendus sur le réseau Edge Vercel pour minimiser l'empreinte serveur (TTFB < 50ms).
 2. **Accelerated AI Gateway (Cloudflare Edge)** : L'ensemble des appels LLM passe par le réseau Cloudflare AI Gateway avec mise en cache intelligente des requêtes récurrentes.
-3. **Design System New York & Shadcn UI** : Intégration complète de la suite de composants Shadcn UI (`Card`, `Slider`, `Alert`, `StatCard`, `Message`, `Bubble`, `Attachment`) combinée au système typographique **New York** (Apple System Serif) & **Plus Jakarta Sans**.
+3. **Design System Éditorial Luxueux & Shadcn UI** : Typographie d'exception **New York** (Apple System Serif) pour les titres héroïques et **Plus Jakarta Sans** pour l'interface, combinée aux surfaces crème chaleureuses (`#F5F1E6`, `#FFFEFA`), vert émeraude (`#167F5B`, `#0E5A40`) et accents lime ciblés.
+4. **Miroir Événements & PostHog Serveur** : Journalisation unifiée PostgreSQL RLS avec capture asynchrone des événements de cycle de vie côté serveur.
 
 ---
 
@@ -117,18 +157,21 @@ Minerva Flow est conçu pour supporter des montées en charge massives avec des 
 - **Framework Web** : Next.js 16 (App Router, Turbopack, React 19)
 - **Application Native** : iOS (SwiftUI), gérée via XcodeGen, Supabase Swift SDK
 - **Langage** : TypeScript (web), Swift (natif)
-- **Base de données & Auth** : Supabase (PostgreSQL RLS, Supabase Auth, Vault)
+- **Base de données & Auth** : Supabase (PostgreSQL RLS, Supabase Auth, Vault, Fonctions RPC atomic)
+- **Conformité & Communications** : Resend API (Courriels transactionnels & campagnes avec pied de page LCAP), Twilio Programmable SMS (Webhooks TwiML bidirectionnels)
 - **Réseau AI Gateway & Cache Edge** : Cloudflare Workers AI Gateway
-- **Composants UI** : Suite officielle Shadcn UI avec Vanilla CSS sur-mesure
+- **Composants UI** : Suite officielle Shadcn UI avec Vanilla CSS & TailwindCSS v4
 - **Intégrations POS & Monétique** : Square, Clover, Toast POS, Lightspeed Restaurant, Stripe Connect, Stripe Checkout
-- **Liens intelligents** : Universal Links iOS (apple-app-site-association) pour les liens de parrainage et points de contact
-- **Services Webhooks & Cron** : Webhooks Square/Clover/Toast/Stripe, Cron Jobs automatiques (Vercel)
+- **Liens intelligents** : Universal Links iOS (`apple-app-site-association`) pour les liens de parrainage et points de contact NFC/QR
+- **Services Webhooks & Cron** : Webhooks Square/Clover/Toast/Stripe/Twilio, Cron Jobs automatiques (Vercel)
+- **Tests & Assurance Qualité** : Vitest (28 suites de tests, 157+ tests unitaires réussis), TypeScript strict (`tsc --noEmit` à 0 erreur)
 - **Hébergement Cloud** : Vercel Production Infrastructure
 
 ---
 
 <div align="center">
 
-*Minerva Flow — Système de Gestion et d'Analyse pour Restaurants au Québec & en France*
+*Minerva Flow — Système de Gestion et d'Analyse pour Restaurants au Québec & en France*  
+*Minerva Technologies Inc. · Montréal (Québec), Canada*
 
 </div>

@@ -395,7 +395,7 @@ export default function BillingPage() {
             plans={billingSdkPlans}
             theme="classic"
             title={status.subscription ? "Changer de forfait" : "Choisissez votre forfait"}
-            description="Passez d'un forfait à l'autre à tout moment — le changement est proratisé automatiquement."
+            description="Deux propositions de valeur claires : Profit Core pour comprendre et protéger vos marges, et le plan vedette Growth & Loyalty pour démultiplier vos visites répétées."
             onPlanSelect={handleSelectPlan}
           />
         </div>

@@ -17,16 +17,19 @@ import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav
 import { TablePagination } from "@/components/minerva/TablePagination";
 import { CustomerOriginMap } from "@/components/fidelisation/CustomerOriginMap";
 import { getCustomerOriginByCity } from "@/lib/customer-origin";
-import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download, Megaphone } from "lucide-react";
+import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download, Megaphone, Phone } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import QRCode from "qrcode";
+import { formatPhoneDisplay } from "@/lib/phone";
 import {
   createCustomerAction,
   claimRewardRedemptionAction,
   grantBirthdayBonusAction,
   resolvePairingCodeAction,
+  searchCustomerAtCounterAction,
+  type CounterCustomerResult,
   logVisitAction,
   sendAnnouncementAction,
 } from "./actions";
@@ -192,31 +195,38 @@ function RewardValidationCard({ restaurantId }: { restaurantId: string }) {
  * customer detail page uses) rather than one combined action, so points
  * math stays in exactly one place.
  */
-function PairingCodeCard({
+/**
+ * Unified Cashier & Counter Identification Component
+ * Allows looking up a customer via:
+ * 1. Mobile phone number (or scanning QR code via USB barcode reader)
+ * 2. 6-digit short pairing code
+ * 3. Customer name
+ */
+function IdentificationAuComptoirCard({
   restaurantId,
   onVisitLogged,
 }: {
   restaurantId: string;
   onVisitLogged: (updated: Customer) => void;
 }) {
-  const [code, setCode] = useState("");
+  const [query, setQuery] = useState("");
   const [isResolving, setIsResolving] = useState(false);
-  const [found, setFound] = useState<{ id: string; name: string; loyaltyPoints: number } | null>(null);
+  const [found, setFound] = useState<CounterCustomerResult | null>(null);
   const [amount, setAmount] = useState("");
   const [isLogging, setIsLogging] = useState(false);
 
-  async function handleResolve(e: FormEvent<HTMLFormElement>) {
+  async function handleSearch(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (code.trim().length !== 6) return;
+    if (!query.trim()) return;
     setIsResolving(true);
     setFound(null);
     try {
-      const result = await resolvePairingCodeAction(restaurantId, code);
-      if ("error" in result) {
+      const result = await searchCustomerAtCounterAction(restaurantId, query);
+      if (result.error) {
         notifyError(result.error);
-      } else {
+      } else if (result.customer) {
         setFound(result.customer);
-        setCode("");
+        setQuery("");
       }
     } finally {
       setIsResolving(false);
@@ -232,7 +242,13 @@ function PairingCodeCard({
     }
     setIsLogging(true);
     try {
-      const updated = await logVisitAction(restaurantId, found.id, parsed, null, true);
+      const updated = await logVisitAction(
+        restaurantId,
+        found.id,
+        parsed,
+        "Visite comptoir",
+        found.matchedBy === "code"
+      );
       if (updated) {
         onVisitLogged(updated);
         toast.success(`Visite enregistrée pour ${found.name}.`);
@@ -246,49 +262,113 @@ function PairingCodeCard({
     }
   }
 
+  const queryTypeHint = useMemo(() => {
+    const clean = query.trim().replace(/\D/g, "");
+    if (query.trim().length === 6 && clean.length === 6) return "Code de jumelage (6 chiffres)";
+    if (clean.length >= 7) return "Numéro de téléphone";
+    if (query.trim().length > 0) return "Recherche par nom";
+    return null;
+  }, [query]);
+
   return (
     <Card>
       <CardHeader
-        eyebrow="Au comptoir"
-        title="Identifier un membre"
-        description="Le client vous montre le code de jumelage affiché sur sa carte — entrez-le pour retrouver son compte et enregistrer sa visite."
+        eyebrow="Au comptoir & caisse"
+        title="Identification rapide du client"
+        description="Flashez le QR code ou entrez le numéro de téléphone / code à 6 chiffres pour créditer instantanément la visite."
       />
       {!found ? (
-        <form onSubmit={handleResolve} className="flex flex-wrap items-end gap-2">
-          <Field label="Code du client">
+        <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-2.5">
+          <Field
+            label="Téléphone, code 6 chiffres ou nom"
+            hint={queryTypeHint ?? undefined}
+          >
             <Input
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="Ex : 123456"
-              className="w-32 font-mono tracking-widest"
-              inputMode="numeric"
-              maxLength={6}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Ex : (514) 555-1234 ou 123456"
+              className="w-72 font-mono"
+              autoComplete="off"
             />
           </Field>
-          <Button type="submit" size="sm" disabled={isResolving || code.trim().length !== 6}>
-            <CreditCard size={14} /> Rechercher
+          <Button type="submit" size="sm" disabled={isResolving || !query.trim()}>
+            {isResolving ? (
+              <span className="animate-spin text-xs">●</span>
+            ) : (
+              <Search size={14} />
+            )}
+            Rechercher
           </Button>
         </form>
       ) : (
-        <div className="mv-check-pop flex flex-wrap items-end gap-2 rounded-lg border border-mv-green/20 bg-mv-green-tint px-3 py-2.5">
-          <p className="mr-auto text-[12.5px] text-mv-green-darker">
-            <strong className="font-semibold">{found.name}</strong> — {found.loyaltyPoints} pts
-          </p>
-          <Field label="Montant dépensé">
-            <Input
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              className="w-24"
-              inputMode="decimal"
-            />
-          </Field>
-          <Button type="button" size="sm" onClick={handleLogVisit} disabled={isLogging || !amount.trim()}>
-            Enregistrer la visite
-          </Button>
-          <Button type="button" size="sm" variant="ghost" onClick={() => setFound(null)}>
-            Annuler
-          </Button>
+        <div className="mv-check-pop flex flex-col gap-3 rounded-lg border border-mv-green/20 bg-mv-green-tint/60 p-3.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-mv-green/15 pb-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-mv-green text-xs font-semibold text-white">
+                {found.name.slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-mv-ink">{found.name}</p>
+                <div className="flex items-center gap-2 text-xs text-mv-ink-soft">
+                  {found.phone && <span>{formatPhoneDisplay(found.phone)}</span>}
+                  <Badge variant="subtle" tone="green" size="sm">
+                    {found.matchedBy === "phone"
+                      ? "Téléphone"
+                      : found.matchedBy === "code"
+                        ? "Code 6 chiffres"
+                        : "Nom"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 text-right text-xs text-mv-ink-soft">
+              <div>
+                <span className="block font-serif text-sm font-bold text-mv-green">
+                  {found.loyaltyPoints} pts
+                </span>
+                <span>{found.visitCount} visites</span>
+              </div>
+              <div className="border-l border-mv-green/20 pl-3">
+                <span className="block font-mono text-sm font-semibold text-mv-ink">
+                  {formatCurrency(found.totalSpent)}
+                </span>
+                <span>dépensés</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-end gap-2 pt-1">
+            <Field label="Montant de l'addition">
+              <Input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="w-28 font-mono"
+                inputMode="decimal"
+                autoFocus
+              />
+            </Field>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleLogVisit}
+              disabled={isLogging || !amount.trim()}
+            >
+              <CreditCard size={14} /> Enregistrer la visite & créditer les points
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setFound(null);
+                setAmount("");
+              }}
+            >
+              Changer de client
+            </Button>
+          </div>
         </div>
       )}
     </Card>
@@ -750,7 +830,7 @@ export function FidelisationView({
       <AnnouncementModal restaurantId={restaurantId} open={announceOpen} onClose={() => setAnnounceOpen(false)} />
 
       <div className="mb-3">
-        <PairingCodeCard
+        <IdentificationAuComptoirCard
           restaurantId={restaurantId!}
           onVisitLogged={(updated) => setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))}
         />

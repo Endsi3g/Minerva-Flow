@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import {
   getLoyaltyTier,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/loyalty-tiers";
 import { sendRetentionEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
+import { normalizePhoneNumber, getLocalPhoneDigits } from "@/lib/phone";
 import type { Customer, LoyaltyReward, LoyaltyTransaction, LoyaltyTransactionType, VisitRewardTier } from "@/lib/types";
 
 export type CustomerRow = {
@@ -31,6 +33,7 @@ export type CustomerRow = {
   avatar_url: string | null;
   favorite_offer_ids: string[] | null;
   favorite_menu_item_ids: string[] | null;
+  pos_customer_id?: string | null;
 };
 
 export type LoyaltyTransactionRow = {
@@ -43,6 +46,9 @@ export type LoyaltyTransactionRow = {
   note: string | null;
   created_by: string | null;
   created_at: string;
+  via_pairing_code?: boolean | null;
+  via_pos_sync?: boolean | null;
+  via_phone_lookup?: boolean | null;
 };
 
 export function mapTransaction(row: LoyaltyTransactionRow): LoyaltyTransaction {
@@ -56,6 +62,9 @@ export function mapTransaction(row: LoyaltyTransactionRow): LoyaltyTransaction {
     note: row.note,
     createdBy: row.created_by,
     createdAt: row.created_at,
+    viaPairingCode: !!row.via_pairing_code,
+    viaPosSync: !!row.via_pos_sync,
+    viaPhoneLookup: !!row.via_phone_lookup,
   };
 }
 
@@ -82,6 +91,7 @@ export function mapCustomer(row: CustomerRow, transactions: LoyaltyTransaction[]
     avatarUrl: row.avatar_url,
     favoriteOfferIds: row.favorite_offer_ids ?? [],
     favoriteMenuItemIds: row.favorite_menu_item_ids ?? [],
+    posCustomerId: row.pos_customer_id ?? null,
   };
 }
 
@@ -175,6 +185,21 @@ export async function createCustomer(restaurantId: string, input: CustomerInput)
     description: `A ajouté la fiche client "${input.name}"`,
   });
 
+  try {
+    const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+    await recordLifecycleEvent(
+      {
+        restaurantId,
+        customerId: data.id,
+        eventType: "registration_completed",
+        metadata: { name: input.name, source: input.consentSource ?? "staff" },
+      },
+      supabase
+    );
+  } catch {
+    // Non-blocking
+  }
+
   return mapCustomer(data as CustomerRow, []);
 }
 
@@ -257,16 +282,21 @@ export async function deleteCustomer(restaurantId: string, id: string): Promise<
  * and bumps the customer's denormalized counters (visit_count, total_spent,
  * loyalty_points, last_visit_at) in the same call.
  */
-export async function logVisit(
+export type LogVisitOptions = {
+  viaPairingCode?: boolean;
+  viaPosSync?: boolean;
+  viaPhoneLookup?: boolean;
+};
+
+async function executeLogVisit(
+  client: any,
   restaurantId: string,
   customerId: string,
   amountSpent: number,
   note?: string | null,
-  viaPairingCode = false
+  options: LogVisitOptions = {}
 ): Promise<Customer | null> {
-  const supabase = await createClient();
-
-  const { data: restaurant } = await supabase
+  const { data: restaurant } = await client
     .from("restaurants")
     .select(
       "name, loyalty_points_per_dollar, loyalty_tier_2_threshold, loyalty_tier_3_threshold, visit_rewards_enabled, visit_reward_tiers"
@@ -285,34 +315,87 @@ export async function logVisit(
   const rate = restaurantRow?.loyalty_points_per_dollar ?? 1;
   const pointsEarned = Math.round(amountSpent * rate * getVisitBonusMultiplier(amountSpent));
 
-  // Atomic: the RPC inserts the ledger row and updates the customer's
-  // running totals in one transaction — see migration comment for why a
-  // separate insert-then-update from here was a correctness bug, not just
-  // a race (a mid-flight failure could leave one without the other).
-  const { data: rpcRows, error: rpcError } = await supabase.rpc("increment_customer_visit", {
+  const { data: rpcRows, error: rpcError } = await client.rpc("increment_customer_visit", {
     p_customer_id: customerId,
     p_restaurant_id: restaurantId,
     p_amount_spent: amountSpent,
     p_points_delta: pointsEarned,
     p_note: note ?? null,
-    p_via_pairing_code: viaPairingCode,
+    p_via_pairing_code: !!options.viaPairingCode,
+    p_via_pos_sync: !!options.viaPosSync,
+    p_via_phone_lookup: !!options.viaPhoneLookup,
   });
 
   if (rpcError || !rpcRows || (rpcRows as CustomerRow[]).length === 0) return null;
   const customer = (rpcRows as CustomerRow[])[0];
 
-  await logActivity({
-    restaurantId,
-    actionType: "customer.visit",
-    entityType: "customer",
-    entityId: customerId,
-    description: `A enregistré une visite pour "${customer.name}" (${amountSpent}$, +${pointsEarned} pts)`,
-  });
+  try {
+    await logActivity({
+      restaurantId,
+      actionType: "customer.visit",
+      entityType: "customer",
+      entityId: customerId,
+      description: `A enregistré une visite pour "${customer.name}" (${amountSpent}$, +${pointsEarned} pts)`,
+    });
+  } catch {
+    // Activity logging shouldn't abort a successful visit record
+  }
 
-  // Told to the customer, not the staff — the staff-side toast for this
-  // same crossing lives in FidelisationView (their own screen, right after
-  // this call resolves). Total spent before this visit is derived rather
-  // than re-queried, since the RPC already added amountSpent atomically.
+  // Lifecycle Events: 1st visit, 2nd visit, and 7-day post-campaign attribution
+  try {
+    const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+    if (customer.visit_count === 1) {
+      await recordLifecycleEvent(
+        {
+          restaurantId,
+          customerId,
+          eventType: "first_visit_recognized",
+          metadata: { amountSpent, pointsEarned, viaPosSync: Boolean(options.viaPosSync) },
+        },
+        client
+      );
+    } else if (customer.visit_count === 2) {
+      await recordLifecycleEvent(
+        {
+          restaurantId,
+          customerId,
+          eventType: "second_visit_recognized",
+          metadata: { amountSpent, pointsEarned, viaPosSync: Boolean(options.viaPosSync) },
+        },
+        client
+      );
+    }
+
+    // 7-day post-campaign attribution check
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+    const { data: recentCampaigns } = await client
+      .from("customer_retention_sends")
+      .select("trigger_type, sent_at")
+      .eq("customer_id", customerId)
+      .gte("sent_at", sevenDaysAgo)
+      .order("sent_at", { ascending: false })
+      .limit(1);
+
+    if (recentCampaigns && recentCampaigns.length > 0) {
+      await recordLifecycleEvent(
+        {
+          restaurantId,
+          customerId,
+          eventType: "campaign_visit_generated",
+          metadata: {
+            amountSpent,
+            pointsEarned,
+            campaignTrigger: recentCampaigns[0].trigger_type,
+            campaignSentAt: recentCampaigns[0].sent_at,
+          },
+        },
+        client
+      );
+    }
+  } catch {
+    // Non-blocking
+  }
+
   const tierThresholds = {
     tier2: restaurantRow?.loyalty_tier_2_threshold ?? DEFAULT_LOYALTY_TIER_THRESHOLDS.tier2,
     tier3: restaurantRow?.loyalty_tier_3_threshold ?? DEFAULT_LOYALTY_TIER_THRESHOLDS.tier3,
@@ -323,25 +406,25 @@ export async function logVisit(
     const tierName = loyaltyTierLabel[tierAfter];
     const firstName = customer.name.trim().split(/\s+/)[0] || customer.name;
     if (customer.email) {
-      await sendRetentionEmail({
-        to: customer.email,
-        subject: `${firstName}, vous passez au palier ${tierName} chez ${restaurantRow.name} !`,
-        bodyHtml: `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">Félicitations ${firstName} ! Vous venez de passer au palier <strong>${tierName}</strong> chez ${restaurantRow.name}. Consultez vos points et vos récompenses disponibles.</p>`,
-      });
+      try {
+        await sendRetentionEmail({
+          to: customer.email,
+          subject: `${firstName}, vous passez au palier ${tierName} chez ${restaurantRow.name} !`,
+          bodyHtml: `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">Félicitations ${firstName} ! Vous venez de passer au palier <strong>${tierName}</strong> chez ${restaurantRow.name}. Consultez vos points et vos récompenses disponibles.</p>`,
+        });
+      } catch { }
     }
     if (customer.user_id) {
-      await sendPushToUsers(
-        [customer.user_id],
-        { title: `Vous passez au palier ${tierName} !`, body: `${restaurantRow.name} vous récompense pour votre fidélité.`, link: "/portal" },
-        restaurantId
-      );
+      try {
+        await sendPushToUsers(
+          [customer.user_id],
+          { title: `Vous passez au palier ${tierName} !`, body: `${restaurantRow.name} vous récompense pour votre fidélité.`, link: "/portal" },
+          restaurantId
+        );
+      } catch { }
     }
   }
 
-  // Visit-count reward ladder (V1→V2→V3) — separate from the spend-tier
-  // system above. Edge-detected on this single visit (visitBefore <
-  // threshold <= visitAfter) so a customer already past a threshold before
-  // the ladder was configured is never retroactively notified.
   if (restaurantRow?.visit_rewards_enabled) {
     const visitBefore = customer.visit_count - 1;
     const visitAfter = customer.visit_count;
@@ -351,29 +434,263 @@ export async function logVisit(
     for (const tier of crossedTiers) {
       const firstName = customer.name.trim().split(/\s+/)[0] || customer.name;
       if (customer.email) {
-        await sendRetentionEmail({
-          to: customer.email,
-          subject: `${firstName}, vous avez débloqué « ${tier.reward} » chez ${restaurantRow.name} !`,
-          bodyHtml: `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">Bravo ${firstName} ! Avec cette ${visitAfter}e visite chez ${restaurantRow.name}, vous débloquez <strong>${tier.reward}</strong>. Passez nous voir pour en profiter !</p>`,
-        });
+        try {
+          await sendRetentionEmail({
+            to: customer.email,
+            subject: `${firstName}, vous avez débloqué « ${tier.reward} » chez ${restaurantRow.name} !`,
+            bodyHtml: `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">Bravo ${firstName} ! Avec cette ${visitAfter}e visite chez ${restaurantRow.name}, vous débloquez <strong>${tier.reward}</strong>. Passez nous voir pour en profiter !</p>`,
+          });
+        } catch { }
       }
-      await logActivity({
-        restaurantId,
-        actionType: "customer.visit_reward",
-        entityType: "customer",
-        entityId: customerId,
-        description: `Récompense automatique débloquée pour "${customer.name}" — ${tier.reward} (${tier.label})`,
-      });
+      try {
+        await logActivity({
+          restaurantId,
+          actionType: "customer.visit_reward",
+          entityType: "customer",
+          entityId: customerId,
+          description: `Récompense automatique débloquée pour "${customer.name}" — ${tier.reward} (${tier.label})`,
+        });
+      } catch { }
+
+      try {
+        const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+        await recordLifecycleEvent(
+          {
+            restaurantId,
+            customerId,
+            eventType: "reward_unlocked",
+            metadata: {
+              rewardName: tier.reward,
+              tierLabel: tier.label,
+              visitsRequired: tier.visits,
+              visitCount: visitAfter,
+            },
+          },
+          client
+        );
+      } catch { }
     }
   }
 
-  const { data: txData } = await supabase
+  const { data: txData } = await client
     .from("loyalty_transactions")
     .select("*")
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false });
 
   return mapCustomer(customer, ((txData as LoyaltyTransactionRow[]) ?? []).map(mapTransaction));
+}
+
+/**
+ * Logs a visit for a customer using the current user's authenticated session.
+ */
+export async function logVisit(
+  restaurantId: string,
+  customerId: string,
+  amountSpent: number,
+  note?: string | null,
+  optionsOrViaPairingCode: boolean | LogVisitOptions = false
+): Promise<Customer | null> {
+  const supabase = await createClient();
+  const options: LogVisitOptions = typeof optionsOrViaPairingCode === "boolean"
+    ? { viaPairingCode: optionsOrViaPairingCode }
+    : optionsOrViaPairingCode;
+  return executeLogVisit(supabase, restaurantId, customerId, amountSpent, note, options);
+}
+
+/**
+ * Logs a visit using the admin client (used for background POS ticket ingestion / webhooks).
+ */
+export async function logVisitAdmin(
+  restaurantId: string,
+  customerId: string,
+  amountSpent: number,
+  note?: string | null,
+  options: LogVisitOptions = {}
+): Promise<Customer | null> {
+  const admin = createAdminClient();
+  return executeLogVisit(admin, restaurantId, customerId, amountSpent, note, options);
+}
+
+/**
+ * Resolves a customer by phone number within a restaurant (checks normalized E.164 and local digits).
+ */
+export async function findCustomerByPhone(
+  restaurantId: string,
+  rawPhone: string
+): Promise<Customer | null> {
+  const supabase = await createClient();
+  return internalFindCustomerByPhone(supabase, restaurantId, rawPhone);
+}
+
+/**
+ * Resolves a customer by phone number using the admin client (for background POS tasks).
+ */
+export async function findCustomerByPhoneAdmin(
+  restaurantId: string,
+  rawPhone: string
+): Promise<Customer | null> {
+  const admin = createAdminClient();
+  return internalFindCustomerByPhone(admin, restaurantId, rawPhone);
+}
+
+async function internalFindCustomerByPhone(
+  client: any,
+  restaurantId: string,
+  rawPhone: string
+): Promise<Customer | null> {
+  const normalized = normalizePhoneNumber(rawPhone);
+  const localDigits = getLocalPhoneDigits(rawPhone);
+  if (!normalized && !localDigits) return null;
+
+  // 1. Direct match on normalized E.164 phone
+  if (normalized) {
+    const { data } = await client
+      .from("customers")
+      .select("*")
+      .eq("restaurant_id", restaurantId)
+      .eq("phone", normalized)
+      .maybeSingle();
+
+    if (data) return mapCustomer(data as CustomerRow, []);
+  }
+
+  // 2. Direct match on raw input
+  const { data: rawMatch } = await client
+    .from("customers")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .eq("phone", rawPhone.trim())
+    .maybeSingle();
+
+  if (rawMatch) return mapCustomer(rawMatch as CustomerRow, []);
+
+  // 3. Fallback scan on phone numbers ending with the local digits
+  const { data: candidates } = await client
+    .from("customers")
+    .select("*")
+    .eq("restaurant_id", restaurantId)
+    .not("phone", "is", null)
+    .limit(100);
+
+  if (candidates && candidates.length > 0) {
+    const targetDigits = localDigits || (normalized ? normalized.replace(/\D/g, "") : "");
+    const matchedRow = (candidates as CustomerRow[]).find((c) => {
+      if (!c.phone) return false;
+      const cDigits = c.phone.replace(/\D/g, "");
+      return cDigits.endsWith(targetDigits) || targetDigits.endsWith(cDigits);
+    });
+    if (matchedRow) return mapCustomer(matchedRow, []);
+  }
+
+  return null;
+}
+
+/**
+ * Looks up an existing customer from POS ticket data or automatically creates a new customer profile.
+ */
+export async function findOrCreateCustomerFromPos(
+  restaurantId: string,
+  params: {
+    phone?: string | null;
+    email?: string | null;
+    name?: string | null;
+    externalCustomerId?: string | null;
+  }
+): Promise<{ customer: Customer; isNew: boolean } | null> {
+  const admin = createAdminClient();
+
+  // 1. Match by external POS customer ID if provided
+  if (params.externalCustomerId) {
+    const { data } = await admin
+      .from("customers")
+      .select("*")
+      .eq("restaurant_id", restaurantId)
+      .eq("pos_customer_id", params.externalCustomerId)
+      .maybeSingle();
+    if (data) {
+      return { customer: mapCustomer(data as CustomerRow, []), isNew: false };
+    }
+  }
+
+  // 2. Match by phone if present
+  if (params.phone) {
+    const existing = await internalFindCustomerByPhone(admin, restaurantId, params.phone);
+    if (existing) {
+      if (params.externalCustomerId && !existing.posCustomerId) {
+        await admin
+          .from("customers")
+          .update({ pos_customer_id: params.externalCustomerId })
+          .eq("id", existing.id);
+      }
+      return { customer: existing, isNew: false };
+    }
+  }
+
+  // 3. Match by email if present
+  if (params.email?.trim()) {
+    const { data: emailMatch } = await admin
+      .from("customers")
+      .select("*")
+      .eq("restaurant_id", restaurantId)
+      .ilike("email", params.email.trim())
+      .maybeSingle();
+    if (emailMatch) {
+      return { customer: mapCustomer(emailMatch as CustomerRow, []), isNew: false };
+    }
+  }
+
+  // 4. If neither phone nor email is provided, cannot create an identified member
+  if (!params.phone && !params.email) {
+    return null;
+  }
+
+  // 5. Auto-create new customer profile from POS checkout data
+  const normalizedPhone = normalizePhoneNumber(params.phone) ?? params.phone;
+  const guestName = params.name?.trim() || "Client Caisse";
+
+  const { data: newRow, error } = await admin
+    .from("customers")
+    .insert({
+      restaurant_id: restaurantId,
+      name: guestName,
+      phone: normalizedPhone ?? null,
+      email: params.email?.trim() ?? null,
+      pos_customer_id: params.externalCustomerId ?? null,
+      consent_source: "pos_cashier",
+      marketing_consent: true,
+      consent_at: new Date().toISOString(),
+      notes: "Créé automatiquement lors du passage en caisse",
+    })
+    .select("*")
+    .single();
+
+  if (error || !newRow) {
+    console.error("Failed to auto-create customer from POS ticket:", error);
+    return null;
+  }
+
+  try {
+    const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+    await recordLifecycleEvent(
+      {
+        restaurantId,
+        customerId: newRow.id,
+        eventType: "registration_completed",
+        metadata: {
+          name: guestName,
+          source: "pos_cashier_auto_create",
+          hasPhone: Boolean(params.phone),
+          hasEmail: Boolean(params.email),
+        },
+      },
+      admin
+    );
+  } catch {
+    // Non-blocking
+  }
+
+  return { customer: mapCustomer(newRow as CustomerRow, []), isNew: true };
 }
 
 /**
@@ -414,6 +731,26 @@ export async function redeemReward(
     entityId: customerId,
     description: `A échangé "${reward?.name ?? "une récompense"}" pour "${customer.name}"${reward ? ` (-${reward.points_cost} pts)` : ""}`,
   });
+
+  try {
+    const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+    await recordLifecycleEvent(
+      {
+        restaurantId,
+        customerId,
+        eventType: "reward_redeemed",
+        metadata: {
+          rewardId,
+          rewardName: reward?.name,
+          pointsSpent: reward?.points_cost,
+          source: "pos_or_dashboard_redeem",
+        },
+      },
+      supabase
+    );
+  } catch {
+    // Non-blocking
+  }
 
   const { data: txData } = await supabase
     .from("loyalty_transactions")
@@ -517,6 +854,38 @@ export async function claimRewardRedemption(
 
   if (error || !data || (data as RewardRedemptionRpcRow[]).length === 0) return null;
   const row = (data as RewardRedemptionRpcRow[])[0];
+
+  try {
+    const { data: redemptionRow } = await supabase
+      .from("reward_redemptions")
+      .select("customer_id, reward_id")
+      .eq("id", row.id)
+      .maybeSingle();
+
+    if (redemptionRow?.customer_id) {
+      const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+      await recordLifecycleEvent(
+        {
+          restaurantId,
+          customerId: redemptionRow.customer_id,
+          eventType: "reward_redeemed",
+          metadata: {
+            rewardName: row.reward_name,
+            pointsSpent: row.points_spent,
+            redemptionId: row.id,
+            rewardId: redemptionRow.reward_id,
+            claimedAt: row.claimed_at,
+            code: code.trim().toUpperCase(),
+            source: "staff_counter_code",
+          },
+        },
+        supabase
+      );
+    }
+  } catch {
+    // Non-blocking
+  }
+
   return {
     rewardName: row.reward_name,
     pointsSpent: row.points_spent,

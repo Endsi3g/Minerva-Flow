@@ -188,6 +188,7 @@ interface ToastCheck {
   amount?: number;
   taxAmount?: number;
   tipAmount?: number;
+  customer?: { firstName?: string; lastName?: string; phone?: string; email?: string };
   selections?: ToastSelection[];
   items?: ToastSelection[];
 }
@@ -204,6 +205,7 @@ interface ToastOrder {
   closedDate?: string;
   openedDate?: string;
   server?: { name?: string };
+  customer?: { firstName?: string; lastName?: string; phone?: string; email?: string };
   checks?: ToastCheck[];
 }
 
@@ -285,6 +287,11 @@ export async function fetchToastDailyTickets(
         }
       }
 
+      const cust = order.customer || order.checks?.[0]?.customer;
+      const guestName = cust
+        ? `${cust.firstName || ""} ${cust.lastName || ""}`.trim() || undefined
+        : undefined;
+
       tickets.push({
         externalOrderId: order.guid || `toast-order-${Math.random()}`,
         closedAt: order.closedDate || order.paidDate || new Date().toISOString(),
@@ -292,6 +299,9 @@ export async function fetchToastDailyTickets(
         taxAmount: Math.round(taxAmount * 100) / 100,
         tipAmount: Math.round(tipAmount * 100) / 100,
         total: Math.round(orderTotal * 100) / 100,
+        guestName,
+        customerPhone: cust?.phone,
+        customerEmail: cust?.email,
         lineItems,
       });
     }

@@ -19,7 +19,7 @@ import {
 import { revenueTrend, margeTrend } from "@/lib/reports";
 import { useApp } from "@/lib/app-context";
 import { useRouter } from "next/navigation";
-import { formatCurrency, formatDateFull, formatDateWeekday } from "@/lib/utils";
+import { formatCurrency, formatDateFull, formatDateWeekday, cn } from "@/lib/utils";
 import type { Anomaly, ServiceDay, ServiceSource } from "@/lib/types";
 import { Plus, Upload, ShoppingBag, Truck, CalendarCheck, CalendarCheck2, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -117,6 +117,39 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
     else toast.error("La suppression a échoué.");
   }
 
+  const [timeRange, setTimeRange] = useState<"7d" | "14d" | "30d" | "all">("14d");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  // Filter days based on timeRange
+  const rangeFilteredDays = useMemo(() => {
+    if (selectedDate) return days.filter((d) => d.date === selectedDate);
+    if (timeRange === "all") return days;
+    const count = timeRange === "7d" ? 7 : timeRange === "14d" ? 14 : 30;
+    return days.slice(0, count);
+  }, [days, selectedDate, timeRange]);
+
+  // Overall KPIs for the active filter
+  const kpis = useMemo(() => {
+    const list = rangeFilteredDays;
+    if (list.length === 0) {
+      return { avgRevenue: 0, rushRate: 0, bestDay: null, totalReservations: 0 };
+    }
+    const totalRev = list.reduce((sum, d) => sum + d.revenue, 0);
+    const avgRevenue = Math.round(totalRev / list.length);
+    const rushCount = list.filter((d) => d.rushLevel === "rush" || d.rushLevel === "debordement" || d.anomaly === "rush").length;
+    const rushRate = Math.round((rushCount / list.length) * 100);
+    const bestDay = [...list].sort((a, b) => b.revenue - a.revenue)[0];
+    const totalReservations = list.reduce((sum, d) => sum + (d.reservationCount ?? 0), 0);
+    return { avgRevenue, rushRate, bestDay, totalReservations };
+  }, [rangeFilteredDays]);
+
+  const totalPages = Math.max(1, Math.ceil(rangeFilteredDays.length / pageSize));
+  const paginatedDays = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return rangeFilteredDays.slice(start, start + pageSize);
+  }, [rangeFilteredDays, currentPage, pageSize]);
+
   return (
     <div>
       <PageHeader
@@ -137,6 +170,34 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
         }
       />
 
+      {/* KPI Cards */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Moyenne / jour</p>
+          <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">{formatCurrency(kpis.avgRevenue)}</p>
+          <p className="mt-0.5 text-[11px] text-mv-ink-faint">{rangeFilteredDays.length} journées analysées</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Taux de rush</p>
+          <p className="mt-1 font-display text-[22px] font-medium text-mv-green-dark">{kpis.rushRate}%</p>
+          <p className="mt-0.5 text-[11px] text-mv-ink-faint">Haute affluence</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Meilleur service</p>
+          <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">
+            {kpis.bestDay ? formatCurrency(kpis.bestDay.revenue) : "—"}
+          </p>
+          <p className="mt-0.5 truncate text-[11px] text-mv-ink-faint">
+            {kpis.bestDay ? formatDateWeekday(kpis.bestDay.date) : "—"}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Réservations</p>
+          <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">{kpis.totalReservations}</p>
+          <p className="mt-0.5 text-[11px] text-mv-ink-faint">Couverts réservés</p>
+        </Card>
+      </div>
+
       <Card className="mb-6">
         <CardHeader
           eyebrow={monthLabel}
@@ -146,7 +207,10 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
         <MonthCalendar
           data={heat}
           selectedDate={selectedDate}
-          onSelectDate={(d) => setSelectedDate(d === selectedDate ? undefined : d)}
+          onSelectDate={(d) => {
+            setSelectedDate(d === selectedDate ? undefined : d);
+            setCurrentPage(1);
+          }}
           eventsByDate={eventsByDate}
         />
       </Card>
@@ -182,100 +246,167 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
         />
       ) : (
         <>
-          {selectedDate && (
-            <div className="mb-3 flex items-center gap-2 text-[12.5px]">
-              <span className="text-mv-ink-soft">
-                Filtré sur <strong className="text-mv-ink">{formatDateWeekday(selectedDate)}</strong>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            {selectedDate ? (
+              <div className="flex items-center gap-2 text-[12.5px]">
+                <span className="text-mv-ink-soft">
+                  Filtré sur <strong className="text-mv-ink">{formatDateWeekday(selectedDate)}</strong>
+                </span>
+                <button
+                  onClick={() => {
+                    setSelectedDate(undefined);
+                    setCurrentPage(1);
+                  }}
+                  className="font-medium text-mv-green-dark hover:underline"
+                >
+                  Voir toute la période
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface p-1">
+                {[
+                  { key: "7d", label: "7 jours" },
+                  { key: "14d", label: "14 jours" },
+                  { key: "30d", label: "30 jours" },
+                  { key: "all", label: "Tout" },
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => {
+                      setTimeRange(item.key as any);
+                      setCurrentPage(1);
+                    }}
+                    className={cn(
+                      "rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors",
+                      timeRange === item.key
+                        ? "bg-mv-green text-white shadow-xs"
+                        : "text-mv-ink-soft hover:bg-mv-cream-soft hover:text-mv-ink"
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="text-[12px] text-mv-ink-faint">
+              {rangeFilteredDays.length} journée{rangeFilteredDays.length > 1 ? "s" : ""}
+            </div>
+          </div>
+
+          <Table>
+            <THead>
+              <Th>Date</Th>
+              <Th className="text-right">Revenu</Th>
+              <Th>Source principale</Th>
+              <Th>Événements</Th>
+              <Th>Notes</Th>
+              <Th>Statut</Th>
+              {canEdit && <Th className="text-right"></Th>}
+            </THead>
+            <tbody>
+              {paginatedDays.map((d) => {
+                const SourceIcon = sourceIcon[d.mainSource];
+                return (
+                  <Tr
+                    key={d.id}
+                    active={d.date === selectedDate}
+                    onClick={() => router.push(`/days/${d.id}`)}
+                    className="cursor-pointer"
+                  >
+                    <Td className="font-semibold">{formatDateWeekday(d.date)}</Td>
+                    <Td className="text-right font-semibold">{formatCurrency(d.revenue)}</Td>
+                    <Td>
+                      <span className="inline-flex items-center gap-1.5 text-mv-ink-soft">
+                        <SourceIcon size={14} /> {sourceLabel[d.mainSource]}
+                      </span>
+                    </Td>
+                    <Td>
+                      {d.events.length ? (
+                        <div className="flex flex-wrap gap-1">
+                          {d.events.map((e) => (
+                            <Badge key={e} tone="lime">
+                              {e}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-mv-ink-faint">—</span>
+                      )}
+                    </Td>
+                    <Td className="max-w-[240px]">
+                      <span className="line-clamp-2 text-mv-ink-soft">{d.notes || "—"}</span>
+                    </Td>
+                    <Td>
+                      {d.anomaly ? (
+                        <Badge tone={anomalyBadge[d.anomaly].tone}>{anomalyBadge[d.anomaly].label}</Badge>
+                      ) : (
+                        <Badge tone="neutral">Normal</Badge>
+                      )}
+                    </Td>
+                    {canEdit && (
+                      <Td className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingDay(d);
+                            }}
+                            aria-label="Modifier"
+                            className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(d);
+                            }}
+                            aria-label="Supprimer"
+                            className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-red/10 hover:text-mv-red"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </Td>
+                    )}
+                  </Tr>
+                );
+              })}
+            </tbody>
+          </Table>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between border-t border-mv-border-soft pt-3">
+              <span className="text-[12px] text-mv-ink-faint">
+                Page <strong className="text-mv-ink">{currentPage}</strong> sur{" "}
+                <strong className="text-mv-ink">{totalPages}</strong> (
+                {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, rangeFilteredDays.length)} sur{" "}
+                {rangeFilteredDays.length})
               </span>
-              <button
-                onClick={() => setSelectedDate(undefined)}
-                className="font-medium text-mv-green-dark hover:underline"
-              >
-                Voir tout le mois
-              </button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  className="h-8 text-[12px]"
+                >
+                  Précédent
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="h-8 text-[12px]"
+                >
+                  Suivant
+                </Button>
+              </div>
             </div>
           )}
-          <Table>
-          <THead>
-            <Th>Date</Th>
-            <Th className="text-right">Revenu</Th>
-            <Th>Source principale</Th>
-            <Th>Événements</Th>
-            <Th>Notes</Th>
-            <Th>Statut</Th>
-            {canEdit && <Th className="text-right"></Th>}
-          </THead>
-          <tbody>
-            {(selectedDate ? days.filter((d) => d.date === selectedDate) : days).map((d) => {
-              const SourceIcon = sourceIcon[d.mainSource];
-              return (
-                <Tr
-                  key={d.id}
-                  active={d.date === selectedDate}
-                  onClick={() => router.push(`/days/${d.id}`)}
-                  className="cursor-pointer"
-                >
-                  <Td className="font-semibold">{formatDateWeekday(d.date)}</Td>
-                  <Td className="text-right font-semibold">{formatCurrency(d.revenue)}</Td>
-                  <Td>
-                    <span className="inline-flex items-center gap-1.5 text-mv-ink-soft">
-                      <SourceIcon size={14} /> {sourceLabel[d.mainSource]}
-                    </span>
-                  </Td>
-                  <Td>
-                    {d.events.length ? (
-                      <div className="flex flex-wrap gap-1">
-                        {d.events.map((e) => (
-                          <Badge key={e} tone="lime">
-                            {e}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-mv-ink-faint">—</span>
-                    )}
-                  </Td>
-                  <Td className="max-w-[240px]">
-                    <span className="line-clamp-2 text-mv-ink-soft">{d.notes || "—"}</span>
-                  </Td>
-                  <Td>
-                    {d.anomaly ? (
-                      <Badge tone={anomalyBadge[d.anomaly].tone}>{anomalyBadge[d.anomaly].label}</Badge>
-                    ) : (
-                      <Badge tone="neutral">Normal</Badge>
-                    )}
-                  </Td>
-                  {canEdit && (
-                    <Td className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingDay(d);
-                          }}
-                          aria-label="Modifier"
-                          className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
-                        >
-                          <Pencil size={13} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(d);
-                          }}
-                          aria-label="Supprimer"
-                          className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-red/10 hover:text-mv-red"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </Td>
-                  )}
-                </Tr>
-              );
-            })}
-          </tbody>
-        </Table>
         </>
       )}
 

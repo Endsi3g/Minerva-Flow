@@ -161,19 +161,42 @@ export async function joinLoyaltyProgram(
 
   if (existing) return { ok: true, alreadyMember: true };
 
-  const { error } = await admin.from("customers").insert({
-    restaurant_id: restaurantId,
-    name: input.name.trim() || email.split("@")[0],
-    email,
-    marketing_consent: input.marketingConsent,
-    consent_source: input.marketingConsent ? "qr_join" : null,
-    consent_at: input.marketingConsent ? new Date().toISOString() : null,
-    birthday: input.birthday ?? null,
-  });
+  const { data: inserted, error } = await admin
+    .from("customers")
+    .insert({
+      restaurant_id: restaurantId,
+      name: input.name.trim() || email.split("@")[0],
+      email,
+      marketing_consent: input.marketingConsent,
+      consent_source: input.marketingConsent ? "qr_join" : null,
+      consent_at: input.marketingConsent ? new Date().toISOString() : null,
+      birthday: input.birthday ?? null,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    console.error("joinLoyaltyProgram failed:", error.message);
+  if (error || !inserted) {
+    console.error("joinLoyaltyProgram failed:", error?.message);
     return { ok: false, alreadyMember: false };
   }
+
+  try {
+    const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+    await recordLifecycleEvent(
+      {
+        restaurantId,
+        customerId: (inserted as { id: string }).id,
+        eventType: "registration_completed",
+        metadata: {
+          source: "qr_landing",
+          marketingConsent: input.marketingConsent,
+        },
+      },
+      admin
+    );
+  } catch {
+    // Non-blocking
+  }
+
   return { ok: true, alreadyMember: false };
 }

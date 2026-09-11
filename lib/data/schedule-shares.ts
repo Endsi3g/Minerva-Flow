@@ -16,27 +16,39 @@ export type ScheduleShare = {
   snapshot: ScheduleShareSnapshot;
 };
 
-/** Snapshots an employee's upcoming shifts at share time — same rationale as report_shares (no RLS session for an anonymous visitor). */
+/** Snapshots an employee's upcoming shifts at share time — uses admin client to guarantee reliable generation and avoid silent RLS blocks. */
 export async function createScheduleShare(
   restaurantId: string,
   employeeId: string,
-  snapshot: ScheduleShareSnapshot
+  snapshot: ScheduleShareSnapshot,
+  userId?: string
 ): Promise<string | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  let creatorId = userId;
+  if (!creatorId) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    creatorId = user?.id;
+  }
 
   const token = randomUUID().replace(/-/g, "");
-  const { error } = await supabase.from("schedule_shares").insert({
+  const admin = createAdminClient();
+  const insertPayload: Record<string, any> = {
     restaurant_id: restaurantId,
     employee_id: employeeId,
     token,
     snapshot,
-    created_by: user.id,
-  });
-  if (error) return null;
+  };
+  if (creatorId) {
+    insertPayload.created_by = creatorId;
+  }
+
+  const { error } = await admin.from("schedule_shares").insert(insertPayload);
+  if (error) {
+    console.error("createScheduleShare failed:", error);
+    return null;
+  }
 
   return token;
 }

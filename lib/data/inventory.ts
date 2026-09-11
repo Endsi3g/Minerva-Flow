@@ -285,28 +285,35 @@ export type ReceivePurchaseOrderResult = {
   unmatchedNames: string[];
 };
 
+export type ReceivePurchaseOrderItemInput = {
+  inventoryItemId?: string | null;
+  itemName: string;
+  quantity: number;
+};
+
 /**
- * Best-effort receiving: purchase_order_items.item_name and
- * inventory_items.name are both free text with no shared id (no picker UI
- * exists yet to link them explicitly), so a delivered purchase order is
- * matched to inventory items by case-insensitive exact name within the
- * restaurant. Unmatched lines are skipped rather than erroring — this is a
- * convenience, not a guarantee every order line is stocked — but their
- * names are returned so the caller can warn the user their stock was NOT
- * updated for those lines.
+ * Receiving purchase order items into inventory:
+ * Matches directly by inventoryItemId if present; otherwise falls back to
+ * case-insensitive exact name matching within the restaurant.
+ * Increments stock via logMovement ("reception") and returns any unmatched
+ * items so the caller can warn the user.
  */
 export async function receivePurchaseOrderItems(
   restaurantId: string,
-  items: { itemName: string; quantity: number }[]
+  items: ReceivePurchaseOrderItemInput[]
 ): Promise<ReceivePurchaseOrderResult> {
   if (items.length === 0) return { matchedCount: 0, unmatchedNames: [] };
   const inventoryItems = await getInventoryItems(restaurantId);
+  const byId = new Map(inventoryItems.map((i) => [i.id, i]));
   const byName = new Map(inventoryItems.map((i) => [i.name.trim().toLowerCase(), i]));
 
   let matchedCount = 0;
   const unmatchedNames: string[] = [];
   for (const item of items) {
-    const match = byName.get(item.itemName.trim().toLowerCase());
+    if (item.quantity <= 0) continue;
+    const match =
+      (item.inventoryItemId ? byId.get(item.inventoryItemId) : null) ??
+      byName.get(item.itemName.trim().toLowerCase());
     if (!match) {
       unmatchedNames.push(item.itemName);
       continue;

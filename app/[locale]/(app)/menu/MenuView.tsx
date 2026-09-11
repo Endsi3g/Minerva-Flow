@@ -18,6 +18,7 @@ import {
   MARGIN_DRIFT_FOOD_COST_PCT,
   type MenuItemWithQuadrant,
 } from "@/lib/menu-engineering";
+import { calculateMenuItemStockStatus, type MenuItemStockStatus } from "@/lib/data/menu";
 import type { InventoryItem, MenuItem, MenuQuadrant, MenuShare, Offer, RecipeItem } from "@/lib/types";
 import {
   UtensilsCrossed,
@@ -36,6 +37,7 @@ import {
   Sparkles,
   Lightbulb,
   Play,
+  AlertTriangle,
 } from "lucide-react";
 import { AlertBanner } from "@/components/ui/AlertBanner";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -414,6 +416,7 @@ function MenuItemRow({
   restaurantId,
   canCreate,
   canManage,
+  stockStatus,
   onUpdated,
   onDeleted,
   onEdit,
@@ -423,6 +426,7 @@ function MenuItemRow({
   restaurantId: string;
   canCreate: boolean;
   canManage: boolean;
+  stockStatus?: MenuItemStockStatus;
   onUpdated: (item: MenuItem) => void;
   onDeleted: (id: string, name: string) => void;
   onEdit: (item: MenuItem) => void;
@@ -446,7 +450,7 @@ function MenuItemRow({
     <div className="rounded-lg border border-mv-border-soft p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-[13.5px] font-semibold text-mv-ink">
+          <p className="flex flex-wrap items-center gap-1.5 text-[13.5px] font-semibold text-mv-ink">
             <Link href={`/menu/${item.id}`} className="truncate hover:underline">
               {item.name}
             </Link>
@@ -462,6 +466,28 @@ function MenuItemRow({
               </button>
             )}
             {!item.active && <Badge tone="neutral">Retiré du menu</Badge>}
+            {stockStatus?.status === "rupture" && (
+              <span
+                title={
+                  stockStatus.limitingIngredientName
+                    ? `Rupture : ${stockStatus.limitingIngredientName} épuisé`
+                    : "Rupture de stock"
+                }
+              >
+                <Badge tone="red">Rupture</Badge>
+              </span>
+            )}
+            {stockStatus?.status === "critique" && (
+              <span
+                title={
+                  stockStatus.limitingIngredientName
+                    ? `Stock critique limité par ${stockStatus.limitingIngredientName}`
+                    : undefined
+                }
+              >
+                <Badge tone="amber">Critique ({stockStatus.portionsAvailable})</Badge>
+              </span>
+            )}
           </p>
           {item.category && <p className="text-[11.5px] text-mv-ink-faint">{item.category}</p>}
         </div>
@@ -493,7 +519,7 @@ function MenuItemRow({
           </div>
         )}
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-3">
+      <div className="mt-2 grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-4">
         <div>
           <p className="text-mv-ink-faint">{t("price")}</p>
           <p className="font-medium text-mv-ink">{formatCurrency(item.price)}</p>
@@ -508,6 +534,23 @@ function MenuItemRow({
           <p className="text-mv-ink-faint">{t("sales")}</p>
           <p className="font-medium text-mv-ink">{item.unitsSold}</p>
         </div>
+        {stockStatus?.portionsAvailable != null && (
+          <div>
+            <p className="text-mv-ink-faint">Portions dispo</p>
+            <p
+              className={cn(
+                "font-medium",
+                stockStatus.portionsAvailable === 0
+                  ? "font-semibold text-mv-red"
+                  : stockStatus.portionsAvailable <= 5
+                  ? "font-semibold text-mv-amber"
+                  : "text-mv-ink"
+              )}
+            >
+              {stockStatus.portionsAvailable}
+            </p>
+          </div>
+        )}
       </div>
       {canCreate && <SaleQuickAdd restaurantId={restaurantId} item={item} onUpdated={onUpdated} />}
     </div>
@@ -705,11 +748,22 @@ function OfferModal({
   const [scopeId, setScopeId] = useState(() => offer?.id ?? crypto.randomUUID());
   const [imageUrl, setImageUrl] = useState<string | null>(offer?.imageUrl ?? null);
   const [videoUrl, setVideoUrl] = useState<string | null>(offer?.videoUrl ?? null);
+  const [priceInput, setPriceInput] = useState<string>(() => (offer?.price != null ? String(offer.price) : ""));
+  const [costInput, setCostInput] = useState<string>(() => (offer?.cost != null ? String(offer.cost) : ""));
+
+  const parsedPrice = parseFloat(priceInput);
+  const parsedCost = parseFloat(costInput);
+  const hasPrice = !isNaN(parsedPrice) && parsedPrice > 0;
+  const hasCost = !isNaN(parsedCost) && parsedCost >= 0;
+  const marginDollars = hasPrice && hasCost ? parsedPrice - parsedCost : null;
+  const marginPct = hasPrice && hasCost ? Math.round(((parsedPrice - parsedCost) / parsedPrice) * 100) : null;
+  const foodCostPct = hasPrice && hasCost ? Math.round((parsedCost / parsedPrice) * 100) : null;
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const priceRaw = String(form.get("price") ?? "").trim();
+    const costRaw = String(form.get("cost") ?? "").trim();
     const included = String(form.get("includedItems") ?? "")
       .split("\n")
       .map((line) => line.trim())
@@ -724,6 +778,7 @@ function OfferModal({
       imageUrl,
       videoUrl,
       price: priceRaw ? Number(priceRaw) : null,
+      cost: costRaw ? Number(costRaw) : null,
       includedItems: included,
       excludedItems: excluded,
       startsAt: fromDatetimeLocal(String(form.get("startsAt") ?? "")),
@@ -740,6 +795,8 @@ function OfferModal({
         (e.target as HTMLFormElement).reset();
         setImageUrl(null);
         setVideoUrl(null);
+        setPriceInput("");
+        setCostInput("");
         setScopeId(crypto.randomUUID());
       } else {
         notifyError(isEditing ? t("updateFailed") : t("createFailed"));
@@ -765,9 +822,54 @@ function OfferModal({
         <Field label={tn("descriptionLabel")} hint={tn("optional")}>
           <Input name="description" defaultValue={offer?.description ?? undefined} placeholder={t("descriptionPlaceholder")} />
         </Field>
-        <Field label="Prix" hint="Optionnel — affiché sur la fiche de l'offre">
-          <Input name="price" type="number" step="0.01" min="0" defaultValue={offer?.price ?? undefined} placeholder="12.95" />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Prix de vente ($)" hint="Affiché aux clients">
+            <Input
+              name="price"
+              type="number"
+              step="0.01"
+              min="0"
+              value={priceInput}
+              onChange={(e) => setPriceInput(e.target.value)}
+              placeholder="12.95"
+            />
+          </Field>
+          <Field label="Coût de revient ($)" hint="Usage interne propriétaire">
+            <Input
+              name="cost"
+              type="number"
+              step="0.01"
+              min="0"
+              value={costInput}
+              onChange={(e) => setCostInput(e.target.value)}
+              placeholder="4.50"
+            />
+          </Field>
+        </div>
+
+        {marginDollars !== null && (
+          <div
+            className={cn(
+              "flex items-center justify-between rounded-lg border px-3 py-2 text-[12px] font-medium transition-all",
+              marginDollars >= 0
+                ? marginPct! >= 65
+                  ? "border-mv-green/30 bg-mv-green-tint/50 text-mv-green-dark"
+                  : "border-mv-amber/30 bg-mv-amber-bg text-mv-amber"
+                : "border-mv-red/30 bg-mv-red-bg text-mv-red"
+            )}
+          >
+            <div className="flex items-center gap-1.5">
+              <span>Marge brute estimée :</span>
+              <span className="font-mono font-bold">
+                {marginDollars >= 0 ? "+" : ""}
+                {formatCurrency(marginDollars)}
+              </span>
+              <span>·</span>
+              <span className="font-bold">{marginPct}% marge</span>
+            </div>
+            <span className="text-[11px] opacity-80">Food cost : {foodCostPct}%</span>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Ce qui est inclus" hint="Un élément par ligne, optionnel">
             <textarea
@@ -898,8 +1000,8 @@ function OfferRow({
           <img src={offer.imageUrl} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
         )}
         <div className="min-w-0">
-          <p className="truncate text-[12.5px] font-medium text-mv-ink flex items-center gap-1.5">
-            <span>{offer.title}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-[13px] font-semibold text-mv-ink">{offer.title}</span>
             {offer.videoUrl && onPlayVideo && (
               <button
                 type="button"
@@ -911,8 +1013,25 @@ function OfferRow({
                 Vidéo
               </button>
             )}
-          </p>
-          {offer.description && <p className="truncate text-[11.5px] text-mv-ink-faint">{offer.description}</p>}
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11.5px]">
+            {offer.price != null && (
+              <span className="font-semibold text-mv-ink font-mono">{formatCurrency(offer.price)}</span>
+            )}
+            {offer.price != null && offer.cost != null && offer.price > 0 ? (
+              (() => {
+                const margin = offer.price - offer.cost;
+                const marginPct = Math.round((margin / offer.price) * 100);
+                const tone = marginPct >= 65 ? "green" : margin >= 0 ? "amber" : "red";
+                return (
+                  <Badge tone={tone} size="xs">
+                    {margin >= 0 ? "+" : ""}{formatCurrency(margin)} · {marginPct}% marge
+                  </Badge>
+                );
+              })()
+            ) : null}
+            {offer.description && <span className="truncate text-mv-ink-faint">{offer.description}</span>}
+          </div>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -1170,6 +1289,7 @@ export function MenuView({
   const [items, setItems] = useState(initialItems);
   const [recipesByMenuItem] = useState(initialRecipes);
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState<"all" | "at_risk">("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -1185,14 +1305,45 @@ export function MenuView({
   const canManage = role === "owner" || role === "manager";
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
 
+  const inventoryById = useMemo(
+    () => new Map((inventoryItems ?? []).map((i) => [i.id, i])),
+    [inventoryItems]
+  );
+
+  const stockStatusByItemId = useMemo(() => {
+    const map = new Map<string, MenuItemStockStatus>();
+    for (const item of items) {
+      map.set(item.id, calculateMenuItemStockStatus(recipesByMenuItem[item.id], inventoryById));
+    }
+    return map;
+  }, [items, recipesByMenuItem, inventoryById]);
+
+  const stockoutCount = useMemo(
+    () => Array.from(stockStatusByItemId.values()).filter((s) => s.status === "rupture").length,
+    [stockStatusByItemId]
+  );
+  const criticalCount = useMemo(
+    () => Array.from(stockStatusByItemId.values()).filter((s) => s.status === "critique").length,
+    [stockStatusByItemId]
+  );
+
   const categories = useMemo(
     () => Array.from(new Set(items.map((i) => i.category).filter((c): c is string => Boolean(c)))),
     [items]
   );
-  const filtered = useMemo(
-    () => (categoryFilter === "all" ? items : items.filter((i) => i.category === categoryFilter)),
-    [items, categoryFilter]
-  );
+  const filtered = useMemo(() => {
+    let list = items;
+    if (categoryFilter !== "all") {
+      list = list.filter((i) => i.category === categoryFilter);
+    }
+    if (stockFilter === "at_risk") {
+      list = list.filter((i) => {
+        const s = stockStatusByItemId.get(i.id);
+        return s?.status === "rupture" || s?.status === "critique";
+      });
+    }
+    return list;
+  }, [items, categoryFilter, stockFilter, stockStatusByItemId]);
   const classified = useMemo(() => classifyMenuItems(filtered), [filtered]);
   const marginDriftItems = useMemo(() => getMarginDriftItems(classified), [classified]);
   const byQuadrant = useMemo(() => {
@@ -1397,6 +1548,47 @@ export function MenuView({
               ))}
             </div>
           )}
+
+          {canManage && (stockoutCount > 0 || criticalCount > 0) && (
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3 shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-amber-bg text-mv-amber">
+                  <AlertTriangle size={16} />
+                </span>
+                <div>
+                  <p className="text-[13px] font-semibold text-mv-ink">
+                    Vigilance stocks cuisine & préparation
+                  </p>
+                  <p className="text-[11.5px] text-mv-ink-soft">
+                    {stockoutCount > 0 && (
+                      <span className="font-semibold text-mv-red">
+                        {stockoutCount} plat{stockoutCount > 1 ? "s" : ""} en rupture totale
+                      </span>
+                    )}
+                    {stockoutCount > 0 && criticalCount > 0 && " · "}
+                    {criticalCount > 0 && (
+                      <span className="font-semibold text-mv-amber">
+                        {criticalCount} plat{criticalCount > 1 ? "s" : ""} en stock critique (≤ 5 portions)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStockFilter((prev) => (prev === "at_risk" ? "all" : "at_risk"))}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-[12px] font-medium transition",
+                  stockFilter === "at_risk"
+                    ? "bg-mv-green text-mv-cream-soft shadow-sm"
+                    : "border border-mv-border bg-mv-surface text-mv-ink hover:bg-mv-ink/5"
+                )}
+              >
+                {stockFilter === "at_risk" ? "Afficher tous les plats" : "Filtrer les plats à risque"}
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
             {quadrantOrder.map((q) => (
               <Card key={q}>
@@ -1415,6 +1607,7 @@ export function MenuView({
                         restaurantId={restaurantId!}
                         canCreate={canCreate}
                         canManage={canManage}
+                        stockStatus={stockStatusByItemId.get(item.id)}
                         onUpdated={handleUpdated}
                         onDeleted={handleDeleted}
                         onEdit={setEditingItem}

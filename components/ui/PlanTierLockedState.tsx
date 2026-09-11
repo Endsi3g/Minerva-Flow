@@ -5,9 +5,9 @@ import { EmptyState } from "./EmptyState";
 import type { PlanTier } from "@/lib/plan-tier";
 
 const TIER_LABEL: Record<PlanTier, string> = {
-  essentiel: "Essentiel",
-  croissance: "Croissance",
-  marque_blanche: "Marque blanche",
+  essentiel: "Profit Core",
+  croissance: "Growth & Loyalty",
+  marque_blanche: "Enterprise / Multi-sites",
 };
 
 /**

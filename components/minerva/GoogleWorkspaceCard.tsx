@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Google,
+  GoogleMonochrome,
   GoogleWorkspace,
   Gmail,
   GoogleSheets,
@@ -33,14 +34,15 @@ const FEATURES: GoogleFeature[] = ["gmail", "sheets", "drive", "calendar", "anal
 const ALL_GOOGLE_SERVICES: {
   id: GoogleFeature | "ads";
   label: string;
+  description: string;
   Icon: React.ComponentType<{ size?: number; width?: number; height?: number; className?: string }>;
 }[] = [
-  { id: "gmail", label: "Gmail", Icon: Gmail },
-  { id: "calendar", label: "Calendar", Icon: GoogleCalendar },
-  { id: "sheets", label: "Sheets", Icon: GoogleSheets },
-  { id: "drive", label: "Drive", Icon: GoogleDrive },
-  { id: "analytics", label: "Analytics GA4", Icon: GoogleAnalytics },
-  { id: "ads", label: "Google Ads", Icon: GoogleAds },
+  { id: "gmail", label: "Gmail", description: "Rapports d'activité & alertes", Icon: Gmail },
+  { id: "calendar", label: "Calendar", description: "Synchronisation des plannings & réservations", Icon: GoogleCalendar },
+  { id: "sheets", label: "Sheets", description: "Exports comptables et analyses de vente", Icon: GoogleSheets },
+  { id: "drive", label: "Drive", description: "Sauvegardes et pièces justificatives", Icon: GoogleDrive },
+  { id: "analytics", label: "Analytics GA4", description: "Trafic web & comportement clients", Icon: GoogleAnalytics },
+  { id: "ads", label: "Google Ads", description: "Campagnes sponsorisées & conversion", Icon: GoogleAds },
 ];
 
 export function GoogleWorkspaceCard() {
@@ -91,11 +93,11 @@ export function GoogleWorkspaceCard() {
   return (
     <Card className="flex flex-col justify-between">
       <div>
-        {/* Header with official Google Workspace SVG icon */}
+        {/* Header with black Google SVG icon */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-mv-border-soft bg-mv-surface shadow-mv-sm">
-              <GoogleWorkspace size={24} />
+              <GoogleMonochrome size={22} className="text-mv-ink" />
             </div>
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
@@ -120,27 +122,38 @@ export function GoogleWorkspaceCard() {
           Gmail, Sheets, Drive, Calendar, Analytics et Ads — une seule connexion pour automatiser vos réservations, rapports et campagnes.
         </p>
 
-        {/* Feature Pills with Official Colorful Brand SVGs */}
-        <div className="mb-4 flex flex-wrap gap-1.5">
+        {/* Feature Rows structured like AdPlatformsCard */}
+        <div className="mb-4 space-y-2">
           {ALL_GOOGLE_SERVICES.map((s) => {
             const Icon = s.Icon;
             const isGranted = isConnected && s.id !== "ads" && grantedFeatures.includes(s.id as GoogleFeature);
             return (
-              <span
+              <div
                 key={s.id}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11.5px] font-medium transition-colors",
-                  isGranted
-                    ? "border-mv-green/40 bg-mv-green-tint text-mv-green-dark font-semibold shadow-xs"
-                    : isConnected
-                    ? "border-mv-border-soft bg-mv-cream/40 text-mv-ink-faint opacity-70"
-                    : "border-mv-border bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-surface"
-                )}
+                className="flex items-center justify-between rounded-lg border border-mv-border-soft bg-mv-surface px-3 py-2 transition-colors hover:border-mv-border"
               >
-                <Icon size={14} className="shrink-0" />
-                <span>{s.label}</span>
-                {isGranted && <Check size={11} className="text-mv-green-dark stroke-[2.5]" />}
-              </span>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-mv-border-soft bg-mv-cream-soft">
+                    <Icon width={17} height={17} className="shrink-0" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-mv-ink truncate">{s.label}</p>
+                    <p className="text-[11.5px] text-mv-ink-faint truncate leading-tight">{s.description}</p>
+                  </div>
+                </div>
+
+                <div className="shrink-0 pl-2">
+                  {isGranted ? (
+                    <Badge tone="green" dot size="xs">
+                      Connecté
+                    </Badge>
+                  ) : isConnected ? (
+                    <span className="text-[11px] font-medium text-mv-ink-faint">Non accordé</span>
+                  ) : (
+                    <span className="text-[11px] font-medium text-mv-ink-faint">Prêt</span>
+                  )}
+                </div>
+              </div>
             );
           })}
         </div>
@@ -158,7 +171,7 @@ export function GoogleWorkspaceCard() {
           <p className="text-[13px] text-mv-ink-faint">Clés API non configurées.</p>
         ) : !isConnected ? (
           <Button size="sm" onClick={() => setModalOpen(true)} className="w-full flex items-center justify-center gap-2">
-            <Google size={15} /> Connecter Google
+            <GoogleMonochrome size={16} className="text-white fill-current shrink-0" /> Connecter Google
           </Button>
         ) : (
           <div className="space-y-3">

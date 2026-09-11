@@ -10,7 +10,6 @@ import { FlowBars } from "@/components/charts/FlowBars";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { ReportWatermark } from "@/components/minerva/ReportWatermark";
 import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import type { ReportDef } from "@/lib/reports";
 import type { Campaign, FlowLine } from "@/lib/types";
@@ -69,7 +68,6 @@ export function ReportView({
   const [sharing, setSharing] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [shareWatermark, setShareWatermark] = useState(true);
   const [shareExpiresInDays, setShareExpiresInDays] = useState<number | null>(30);
   const [exportingPng, setExportingPng] = useState(false);
   const reportCardRef = useRef<HTMLDivElement>(null);
@@ -130,7 +128,7 @@ export function ReportView({
     setSharing(true);
     try {
       const token = await shareReportAction(report.slug, range ?? undefined, {
-        watermark: shareWatermark,
+        watermark: false,
         expiresInDays: shareExpiresInDays,
       });
       setShareLink(token ? `${window.location.origin}/r/${token}` : null);
@@ -252,26 +250,7 @@ export function ReportView({
             <PopoverContent align="end" className="w-80">
               <p className="mb-3 text-[12.5px] font-semibold text-mv-ink">{t("publicReadOnlyLink")}</p>
 
-              <div
-                className={cn(
-                  "mb-3 flex items-start justify-between gap-3 rounded-lg border border-mv-border-soft bg-mv-cream-soft/60 p-2.5",
-                  shareLink && "opacity-60"
-                )}
-              >
-                <div>
-                  <p className="text-[12.5px] font-semibold text-mv-ink">Filigrane Minerva Flow</p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-mv-ink-faint">
-                    Recommandé pour tout rapport partagé hors de votre équipe.
-                  </p>
-                </div>
-                <Switch
-                  checked={shareWatermark}
-                  onCheckedChange={setShareWatermark}
-                  disabled={Boolean(shareLink)}
-                  className="mt-0.5 shrink-0 data-checked:bg-mv-green"
-                  aria-label={shareWatermark ? "Désactiver le filigrane" : "Activer le filigrane"}
-                />
-              </div>
+
 
               <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Expiration du lien</p>
               <div className={cn("mb-3 flex gap-1.5", shareLink && "opacity-60")}>
@@ -373,7 +352,6 @@ export function ReportView({
             ref={reportCardRef}
             className="relative overflow-hidden rounded-2xl border-2 border-mv-green bg-mv-surface p-5 shadow-mv-md"
           >
-            {shareWatermark && <ReportWatermark />}
             <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {tr(`labels.${view.report.slug}`)}
             </p>

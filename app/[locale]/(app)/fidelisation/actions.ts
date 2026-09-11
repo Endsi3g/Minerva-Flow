@@ -10,6 +10,7 @@ import {
   deleteLoyaltyReward,
   claimRewardRedemption,
   resolvePairingCode,
+  findCustomerByPhone,
   mapCustomer,
   type CustomerInput,
 } from "@/lib/data/customers";
@@ -111,6 +112,96 @@ export async function resolvePairingCodeAction(
 ): Promise<{ error: string } | { customer: { id: string; name: string; loyaltyPoints: number; visitCount: number; totalSpent: number; avatarUrl: string | null } }> {
   if (!code.trim()) return { error: "Code invalide." };
   return resolvePairingCode(restaurantId, code);
+}
+
+export type CounterCustomerResult = {
+  id: string;
+  name: string;
+  phone: string | null;
+  loyaltyPoints: number;
+  visitCount: number;
+  totalSpent: number;
+  avatarUrl: string | null;
+  matchedBy: "code" | "phone" | "name";
+};
+
+export async function searchCustomerAtCounterAction(
+  restaurantId: string,
+  query: string
+): Promise<{ error?: string; customer?: CounterCustomerResult }> {
+  const clean = query.trim();
+  if (!clean) return { error: "Veuillez entrer un code, un numéro de téléphone ou un nom." };
+
+  const digits = clean.replace(/\D/g, "");
+
+  // 1. If exactly 6 digits: first try the pairing code RPC
+  if (digits.length === 6 && clean.length === 6) {
+    try {
+      const res = await resolvePairingCode(restaurantId, digits);
+      if ("customer" in res) {
+        return {
+          customer: {
+            id: res.customer.id,
+            name: res.customer.name,
+            phone: null,
+            loyaltyPoints: res.customer.loyaltyPoints,
+            visitCount: res.customer.visitCount,
+            totalSpent: res.customer.totalSpent,
+            avatarUrl: res.customer.avatarUrl,
+            matchedBy: "code",
+          },
+        };
+      }
+    } catch {
+      // Code not matched or expired, fall through
+    }
+  }
+
+  // 2. If phone number (digits length >= 7)
+  if (digits.length >= 7) {
+    const cust = await findCustomerByPhone(restaurantId, clean);
+    if (cust) {
+      return {
+        customer: {
+          id: cust.id,
+          name: cust.name,
+          phone: cust.phone,
+          loyaltyPoints: cust.loyaltyPoints,
+          visitCount: cust.visitCount,
+          totalSpent: cust.totalSpent,
+          avatarUrl: cust.avatarUrl,
+          matchedBy: "phone",
+        },
+      };
+    }
+  }
+
+  // 3. Fallback: match by name
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("customers")
+    .select("id, name, phone, loyalty_points, visit_count, total_spent, avatar_url")
+    .eq("restaurant_id", restaurantId)
+    .ilike("name", `%${clean}%`)
+    .limit(1)
+    .maybeSingle();
+
+  if (data) {
+    return {
+      customer: {
+        id: data.id,
+        name: data.name,
+        phone: data.phone,
+        loyaltyPoints: data.loyalty_points,
+        visitCount: data.visit_count,
+        totalSpent: data.total_spent,
+        avatarUrl: data.avatar_url,
+        matchedBy: "name",
+      },
+    };
+  }
+
+  return { error: "Aucun client trouvé avec ces coordonnées." };
 }
 
 export async function updateLoyaltyRateAction(restaurantId: string, rate: number): Promise<boolean> {
@@ -352,3 +443,22 @@ export async function getCachedCityCoordinatesAction(cities: string[]): Promise<
 export async function geocodeCityIfMissingAction(city: string): Promise<CityCoordinates | null> {
   return geocodeCityIfMissing(city);
 }
+
+export async function recordQrCodeDisplayedAction(
+  restaurantId: string,
+  touchpointId?: string | null,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  try {
+    const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+    await recordLifecycleEvent({
+      restaurantId,
+      eventType: "qr_code_displayed",
+      touchpointId: touchpointId ?? null,
+      metadata: metadata ?? { source: "table_stand_or_touchpoint" },
+    });
+  } catch {
+    // Non-blocking
+  }
+}
+

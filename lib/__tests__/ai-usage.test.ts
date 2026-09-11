@@ -9,9 +9,9 @@ describe("AI Quotas & Tier Billing", () => {
   });
 
   it("should properly map plan names", () => {
-    expect(PLAN_NAMES.essentiel).toBe("Essentiel");
-    expect(PLAN_NAMES.croissance).toBe("Croissance");
-    expect(PLAN_NAMES.marque_blanche).toBe("Marque blanche");
+    expect(PLAN_NAMES.essentiel).toBe("Profit Core");
+    expect(PLAN_NAMES.croissance).toBe("Growth & Loyalty");
+    expect(PLAN_NAMES.marque_blanche).toBe("Enterprise / Multi-sites");
   });
 
   it("should correctly compute quota percentages and exceeded status", () => {

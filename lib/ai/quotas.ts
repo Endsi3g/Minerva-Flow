@@ -11,9 +11,9 @@ export const PLAN_AI_QUOTAS: Record<PlanTier, number> = {
 };
 
 export const PLAN_NAMES: Record<PlanTier, string> = {
-  essentiel: "Essentiel",
-  croissance: "Croissance",
-  marque_blanche: "Marque blanche",
+  essentiel: "Profit Core",
+  croissance: "Growth & Loyalty",
+  marque_blanche: "Enterprise / Multi-sites",
 };
 
 export function calculateQuotaUsage(tokensUsed: number, quota: number) {

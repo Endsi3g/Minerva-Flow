@@ -4,6 +4,7 @@ import { resolvePosItemMapping } from "./item-mapping";
 import { recordSale } from "@/lib/data/menu";
 import { decrementInventoryForOrderItems } from "@/lib/data/orders";
 import { upsertSyncedServiceDayRevenue } from "@/lib/data/service-days";
+import { findOrCreateCustomerFromPos, logVisitAdmin } from "@/lib/data/customers";
 
 export type PosTicketLineItem = {
   externalItemId: string;
@@ -21,6 +22,9 @@ export type PosTicket = {
   tipAmount?: number;
   total: number;
   guestName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  externalCustomerId?: string;
   lineItems: PosTicketLineItem[];
 };
 
@@ -29,10 +33,13 @@ export type IngestionResult = {
   skippedDuplicateCount: number;
   totalRevenue: number;
   itemsProcessed: number;
+  identifiedCustomersCount: number;
+  newCustomersCount: number;
 };
 
 /**
  * Idempotently ingests tickets from a POS provider, mapping line items to menu items,
+ * reconciling/auto-creating customer loyalty accounts from cash register data,
  * registering completed orders, bumping dish popularity, and drawing down ingredient inventory.
  */
 export async function ingestPosTickets(
@@ -45,9 +52,18 @@ export async function ingestPosTickets(
   let skippedDuplicateCount = 0;
   let totalRevenue = 0;
   let itemsProcessed = 0;
+  let identifiedCustomersCount = 0;
+  let newCustomersCount = 0;
 
   if (tickets.length === 0) {
-    return { ingestedCount: 0, skippedDuplicateCount: 0, totalRevenue: 0, itemsProcessed: 0 };
+    return {
+      ingestedCount: 0,
+      skippedDuplicateCount: 0,
+      totalRevenue: 0,
+      itemsProcessed: 0,
+      identifiedCustomersCount: 0,
+      newCustomersCount: 0,
+    };
   }
 
   // Pre-load all menu items for the restaurant to speed up fuzzy matching
@@ -77,13 +93,47 @@ export async function ingestPosTickets(
     const date = ticket.closedAt.slice(0, 10);
     dailyRevenueMap.set(date, (dailyRevenueMap.get(date) ?? 0) + ticket.subtotal);
 
-    // 2. Insert into orders table as an archived served order
+    // 2. Identify or auto-create customer from register data (phone, email, pos customer id)
+    let matchedCustomerId: string | null = null;
+    if (ticket.customerPhone || ticket.customerEmail || ticket.externalCustomerId) {
+      try {
+        const resolved = await findOrCreateCustomerFromPos(restaurantId, {
+          phone: ticket.customerPhone,
+          email: ticket.customerEmail,
+          name: ticket.guestName,
+          externalCustomerId: ticket.externalCustomerId,
+        });
+        if (resolved) {
+          matchedCustomerId = resolved.customer.id;
+          if (resolved.isNew) {
+            newCustomersCount++;
+          }
+          identifiedCustomersCount++;
+
+          // Credit loyalty points and record visit automatically
+          await logVisitAdmin(
+            restaurantId,
+            resolved.customer.id,
+            ticket.total,
+            `Ticket caisse ${provider.toUpperCase()} (#${ticket.externalOrderId})`,
+            { viaPosSync: true, viaPhoneLookup: !!ticket.customerPhone }
+          );
+        }
+      } catch (custErr) {
+        console.warn(`Could not reconcile customer for POS order ${ticket.externalOrderId}:`, custErr);
+      }
+    }
+
+    // 3. Insert into orders table as an archived served order with customer linked
     const { data: newOrder, error: orderError } = await admin
       .from("orders")
       .insert({
         restaurant_id: restaurantId,
         status: "servie",
         guest_name: ticket.guestName || `Client ${provider.toUpperCase()}`,
+        guest_phone: ticket.customerPhone ?? null,
+        customer_id: matchedCustomerId,
+        via_pos_sync: true,
         subtotal: ticket.subtotal,
         tax_amount: ticket.taxAmount ?? 0,
         tip_amount: ticket.tipAmount ?? 0,
@@ -163,5 +213,7 @@ export async function ingestPosTickets(
     skippedDuplicateCount,
     totalRevenue: Math.round(totalRevenue * 100) / 100,
     itemsProcessed,
+    identifiedCustomersCount,
+    newCustomersCount,
   };
 }

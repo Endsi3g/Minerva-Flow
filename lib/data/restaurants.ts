@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getVerifiedUser } from "@/lib/supabase/auth-user";
 import { logActivity } from "@/lib/data/activity";
-import { geocodeAddress } from "@/lib/geocode";
+import { geocodeAddress, geocodeCity } from "@/lib/geocode";
 import { fetchWebsiteDescription, fetchWebsiteBusinessInfo } from "@/lib/website-description";
 import { CAFE_BREAK_EVEN_DEFAULTS } from "@/lib/engine/break-even";
 import type { Restaurant, OpeningHours, VisitRewardTier, OrderFulfillmentMode } from "@/lib/types";
@@ -548,9 +548,12 @@ export async function geocodeRestaurantIfMissing(restaurantId: string): Promise<
     .eq("id", restaurantId)
     .maybeSingle();
 
-  if (!data || data.lng !== null || data.lat !== null || !data.address || !data.city) return null;
+  if (!data || data.lng !== null || data.lat !== null || !data.city) return null;
 
-  const coords = await geocodeAddress(data.address, data.city, data.province);
+  let coords = data.address ? await geocodeAddress(data.address, data.city, data.province ?? undefined) : null;
+  if (!coords && data.city) {
+    coords = await geocodeCity(data.city);
+  }
   if (!coords) return null;
 
   await supabase.from("restaurants").update({ lng: coords.lng, lat: coords.lat }).eq("id", restaurantId);

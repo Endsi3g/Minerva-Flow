@@ -150,24 +150,40 @@ export async function deleteOfferAction(restaurantId: string, offerId: string): 
   return ok;
 }
 
+import { getInventoryItems } from "@/lib/data/inventory";
+
 export async function getRecipeItemsAction(restaurantId: string, menuItemId: string): Promise<RecipeItem[]> {
   return getRecipeItems(restaurantId, menuItemId);
 }
 
 /**
  * Saves the "recette" (which inventory items this dish consumes, and how
- * much of each per unit sold) from the menu item editor's Recette section.
- * This is what lets applyServedOrderEffects (lib/data/orders.ts) decrement
- * inventory automatically when an order for this dish is served.
+ * much of each per unit sold). Recalculates the theoretical Food Cost
+ * from the inventory items' unit costs, updates menu_items.food_cost,
+ * and revalidates paths.
  */
 export async function updateMenuItemRecipeAction(
   restaurantId: string,
   menuItemId: string,
   items: { inventoryItemId: string; quantityPerUnit: number }[]
-): Promise<boolean> {
+): Promise<{ ok: boolean; foodCost: number; recipeItems: RecipeItem[]; updatedItem: MenuItem | null }> {
   const ok = await setRecipeItems(restaurantId, menuItemId, items);
-  if (ok) revalidatePath("/menu");
-  return ok;
+  if (!ok) return { ok: false, foodCost: 0, recipeItems: [], updatedItem: null };
+
+  const inventoryItems = await getInventoryItems(restaurantId);
+  const costById = new Map(inventoryItems.map((i) => [i.id, i.unitCost]));
+  const calculatedFoodCost = items.reduce((sum, item) => {
+    const unitCost = costById.get(item.inventoryItemId) ?? 0;
+    return sum + item.quantityPerUnit * unitCost;
+  }, 0);
+
+  const roundedFoodCost = Math.round(calculatedFoodCost * 100) / 100;
+  const updatedItem = await updateMenuItem(restaurantId, menuItemId, { foodCost: roundedFoodCost });
+  const updatedRecipes = await getRecipeItems(restaurantId, menuItemId);
+
+  revalidatePath("/menu");
+  revalidatePath(`/menu/${menuItemId}`);
+  return { ok: true, foodCost: roundedFoodCost, recipeItems: updatedRecipes, updatedItem };
 }
 
 export async function updateMenuSettingsAction(

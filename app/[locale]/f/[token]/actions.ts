@@ -53,3 +53,16 @@ export async function joinLoyaltyProgramAction(
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
+
+export async function recordFormStartedAction(restaurantId: string): Promise<void> {
+  try {
+    const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+    await recordLifecycleEvent({
+      restaurantId,
+      eventType: "form_started",
+    });
+  } catch {
+    // Non-blocking
+  }
+}
+

@@ -8,11 +8,17 @@ import {
   createPurchaseOrder,
   updatePurchaseOrderStatus,
   deletePurchaseOrder,
+  recordPurchaseOrderItemReceipts,
   type PurchaseOrderInput,
 } from "@/lib/data/purchase-orders";
 import { receivePurchaseOrderItems } from "@/lib/data/inventory";
 import { createFinancialTransaction } from "@/lib/data/finance";
 import { notifyRestaurant } from "@/lib/data/notifications";
+import {
+  calculateReorders,
+  generatePurchaseOrdersFromSuggestions,
+  type SuggestedReorderGroup,
+} from "@/lib/engine/reorder";
 import type { PurchaseOrder, PurchaseOrderStatus, Supplier } from "@/lib/types";
 
 export async function getSuppliersAction(restaurantId: string): Promise<Supplier[]> {
@@ -63,7 +69,8 @@ export type UpdatePurchaseOrderStatusResult = {
 export async function updatePurchaseOrderStatusAction(
   restaurantId: string,
   id: string,
-  status: PurchaseOrderStatus
+  status: PurchaseOrderStatus,
+  itemReceipts?: { itemId: string; receivedQuantity: number }[]
 ): Promise<UpdatePurchaseOrderStatusResult> {
   const result = await updatePurchaseOrderStatus(restaurantId, id, status);
   if (!result.ok) return { ok: false };
@@ -77,18 +84,40 @@ export async function updatePurchaseOrderStatusAction(
       link: "/fournisseurs",
     });
   }
+
   // Only the request that actually flipped envoyee -> recue processes
   // receipt — a duplicate/concurrent request racing on the same PO returns
   // ok:true without re-incrementing stock a second time.
   if (status === "recue" && result.transitioned) {
+    if (itemReceipts && itemReceipts.length > 0) {
+      await recordPurchaseOrderItemReceipts(id, itemReceipts);
+    }
+
     const order = await getPurchaseOrder(restaurantId, id);
     if (order && order.items.length > 0) {
+      const receiptMap = new Map(itemReceipts?.map((r) => [r.itemId, r.receivedQuantity]) ?? []);
+
+      const itemsToReceive = order.items.map((i) => {
+        const receivedQty = receiptMap.has(i.id) ? receiptMap.get(i.id)! : i.quantity;
+        return {
+          inventoryItemId: i.inventoryItemId,
+          itemName: i.itemName,
+          quantity: receivedQty,
+        };
+      });
+
       const { matchedCount, unmatchedNames } = await receivePurchaseOrderItems(
         restaurantId,
-        order.items.map((i) => ({ itemName: i.itemName, quantity: i.quantity }))
+        itemsToReceive
       );
+
       if (matchedCount > 0) revalidatePath("/inventaire");
-      const receivedTotalCost = order.items.reduce((sum, i) => sum + i.quantity * i.unitCost, 0);
+
+      const receivedTotalCost = order.items.reduce((sum, i) => {
+        const receivedQty = receiptMap.has(i.id) ? receiptMap.get(i.id)! : i.quantity;
+        return sum + receivedQty * i.unitCost;
+      }, 0);
+
       if (unmatchedNames.length > 0) {
         return { ok: true, unmatchedItemNames: unmatchedNames, receivedTotalCost };
       }
@@ -107,7 +136,10 @@ export async function logPurchaseOrderExpenseAction(restaurantId: string, purcha
   const order = await getPurchaseOrder(restaurantId, purchaseOrderId);
   if (!order || order.items.length === 0) return false;
 
-  const totalCost = order.items.reduce((sum, i) => sum + i.quantity * i.unitCost, 0);
+  const totalCost = order.items.reduce((sum, i) => {
+    const qty = i.receivedQuantity != null ? i.receivedQuantity : i.quantity;
+    return sum + qty * i.unitCost;
+  }, 0);
   if (totalCost <= 0) return false;
 
   const suppliers = await getSuppliers(restaurantId);
@@ -130,4 +162,25 @@ export async function deletePurchaseOrderAction(restaurantId: string, id: string
   const ok = await deletePurchaseOrder(restaurantId, id);
   if (ok) revalidatePath("/fournisseurs");
   return ok;
+}
+
+export async function getSuggestedReordersAction(restaurantId: string): Promise<SuggestedReorderGroup[]> {
+  if (!restaurantId) return [];
+  return calculateReorders(restaurantId);
+}
+
+export async function generateSuggestedPurchaseOrdersAction(
+  restaurantId: string,
+  suggestions: SuggestedReorderGroup[]
+): Promise<{ count: number; skippedNoSupplierCount: number }> {
+  if (!restaurantId || suggestions.length === 0) return { count: 0, skippedNoSupplierCount: 0 };
+  const { createdOrders, skippedNoSupplierCount } = await generatePurchaseOrdersFromSuggestions(
+    restaurantId,
+    suggestions
+  );
+  if (createdOrders.length > 0) {
+    revalidatePath("/fournisseurs");
+    revalidatePath("/inventaire");
+  }
+  return { count: createdOrders.length, skippedNoSupplierCount };
 }

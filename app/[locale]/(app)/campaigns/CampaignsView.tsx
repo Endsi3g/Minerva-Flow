@@ -8,11 +8,12 @@ import { Select } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { updateCampaignStatusAction, getCampaignAssetsAction } from "@/app/[locale]/(app)/campaigns/actions";
-import { useApp } from "@/lib/app-context";
+import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Campaign, CampaignAsset, CampaignChannel, CampaignStatus, CampaignType } from "@/lib/types";
 import { MarketingStudioView } from "./MarketingStudioView";
-import { Sparkles, Megaphone, Plus, Camera, Mail, Store, Users, FileText } from "lucide-react";
+import { PrioritizedCampaignsStudio } from "@/components/campaigns/PrioritizedCampaignsStudio";
+import { Sparkles, Megaphone, Plus, Camera, Mail, Store, Users, FileText, ShieldCheck } from "lucide-react";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -56,8 +57,9 @@ export function CampaignsView({
   initialChannel?: string;
 }) {
   const { role } = useApp();
+  const restaurant = useCurrentRestaurant();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"studio" | "campaigns">("studio");
+  const [activeTab, setActiveTab] = useState<"prioritized" | "studio" | "campaigns">("prioritized");
   const [statusFilter, setStatusFilter] = useState<"all" | CampaignStatus>("all");
   const [channelFilter, setChannelFilter] = useState<"all" | CampaignChannel>(
     initialChannel && ["Instagram", "Email", "En salle", "Facebook"].includes(initialChannel)
@@ -121,6 +123,16 @@ export function CampaignsView({
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 rounded-xl border border-mv-border bg-mv-surface p-1 shadow-mv-xs">
               <button
+                onClick={() => setActiveTab("prioritized")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-semibold rounded-lg transition-all ${
+                  activeTab === "prioritized"
+                    ? "bg-mv-green text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                }`}
+              >
+                <ShieldCheck size={14} /> Modèles Prêts à l’Emploi (LCAP)
+              </button>
+              <button
                 onClick={() => setActiveTab("studio")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-semibold rounded-lg transition-all ${
                   activeTab === "studio"
@@ -128,7 +140,7 @@ export function CampaignsView({
                     : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
                 }`}
               >
-                <Sparkles size={14} /> Studio Visual Kits & Relances
+                <Sparkles size={14} /> Visual Kits & Studio
               </button>
               <button
                 onClick={() => setActiveTab("campaigns")}
@@ -138,7 +150,7 @@ export function CampaignsView({
                     : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
                 }`}
               >
-                <Megaphone size={14} /> Toutes les Campagnes ({campaigns.length})
+                <Megaphone size={14} /> Historique ({campaigns.length})
               </button>
             </div>
 
@@ -150,6 +162,13 @@ export function CampaignsView({
           </div>
         }
       />
+
+      {activeTab === "prioritized" && (
+        <PrioritizedCampaignsStudio
+          restaurantId={restaurantId!}
+          restaurantName={restaurant?.name}
+        />
+      )}
 
       {activeTab === "studio" && <MarketingStudioView />}
 

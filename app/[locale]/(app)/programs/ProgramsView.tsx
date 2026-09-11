@@ -13,7 +13,8 @@ import { CreateProgramModal } from "@/components/forms/CreateProgramModal";
 import { useApp } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Campaign, Program, ProgramStatus, ProgramType } from "@/lib/types";
-import { LineChart, Plus, MessageSquare, Trash2, Sparkles, TrendingUp, Percent } from "lucide-react";
+import { LineChart, Plus, MessageSquare, Trash2, Sparkles, TrendingUp, Percent, ArrowUpRight } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { updateProgramStatusAction, deleteProgramAction, createProgramNoteAction } from "./actions";
@@ -213,6 +214,7 @@ export function ProgramsView({
                 <Th className="text-right">Coût</Th>
                 <Th className="text-right">Marge</Th>
                 <Th>Statut</Th>
+                <Th className="text-right"></Th>
               </THead>
               <tbody>
                 {filtered.map((p) => {
@@ -242,6 +244,15 @@ export function ProgramsView({
                       </Td>
                       <Td>
                         <Badge tone={statusTone[p.status]}>{statusLabel[p.status]}</Badge>
+                      </Td>
+                      <Td className="text-right">
+                        <Link
+                          href={`/programs/${p.id}`}
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11.5px] font-semibold text-mv-green-dark hover:bg-mv-green-tint transition-colors"
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        >
+                          Détails <ArrowUpRight size={12} />
+                        </Link>
                       </Td>
                     </Tr>
                   );
@@ -320,6 +331,12 @@ export function ProgramsView({
                       Ce programme n&apos;a pas encore démarré.
                     </p>
                   )}
+                </div>
+
+                <div className="mt-4 border-t border-mv-border-soft pt-3">
+                  <Button href={`/programs/${selected.id}`} className="w-full justify-center gap-1.5 text-[12.5px]">
+                    Ouvrir la page dédiée du programme <ArrowUpRight size={13} />
+                  </Button>
                 </div>
               </Card>
 

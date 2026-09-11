@@ -148,11 +148,8 @@ function scheduleEmailHtml(employeeName: string, restaurantName: string, shifts:
   `;
 }
 
-/**
- * Sends the employee's upcoming shifts by email via the restaurant's
- * connected Gmail (gmail.send scope) — requires both an hourlyWage-style
- * contact email on the employee record and Gmail configured in Paramètres.
- */
+import { sendEmployeeScheduleEmail } from "@/lib/email/resend";
+
 export async function sendScheduleEmailAction(
   restaurantId: string,
   employeeId: string
@@ -162,31 +159,70 @@ export async function sendScheduleEmailAction(
     return { ok: false, error: "Non autorisé." };
   }
 
-  const [employee, restaurant, connection, shifts] = await Promise.all([
+  const [employee, restaurant, shifts] = await Promise.all([
     getEmployeeById(employeeId),
     getRestaurant(restaurantId),
-    getGoogleConnection(restaurantId),
     getUpcomingShiftsForEmployee(employeeId),
   ]);
 
   if (!employee?.contactEmail) return { ok: false, error: "Aucun courriel enregistré pour cet employé." };
-  if (!connection?.grantedScopes.includes(GOOGLE_SCOPES.gmail)) {
-    return { ok: false, error: "Gmail n'est pas connecté (Paramètres → Intégrations)." };
-  }
 
-  const sent = await sendReportEmail(restaurantId, {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Generate a share link so the employee can view and bookmark their live schedule
+  const token = await createScheduleShare(
+    restaurantId,
+    employeeId,
+    {
+      employeeName: employee.fullName,
+      restaurantName: restaurant?.name ?? "Minerva Flow",
+      shifts,
+    },
+    user?.id
+  );
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://minervaflow.app";
+  const scheduleUrl = token ? `${baseUrl}/h/${token}` : `${baseUrl}/horaire`;
+
+  // 1. Primary send via Minerva Flow official Resend delivery
+  const resendResult = await sendEmployeeScheduleEmail({
     to: employee.contactEmail,
-    subject: `Votre horaire — ${restaurant?.name ?? "Minerva Flow"}`,
-    html: scheduleEmailHtml(employee.fullName, restaurant?.name ?? "", shifts),
+    employeeName: employee.fullName,
+    restaurantName: restaurant?.name ?? "Minerva Flow",
+    shifts,
+    scheduleUrl,
   });
 
-  return sent ? { ok: true } : { ok: false, error: "L'envoi a échoué. Réessayez." };
+  if (resendResult.ok) {
+    return { ok: true };
+  }
+
+  // 2. Graceful fallback to Google Workspace Gmail if connected
+  const connection = await getGoogleConnection(restaurantId);
+  if (connection?.grantedScopes.includes(GOOGLE_SCOPES.gmail)) {
+    const sent = await sendReportEmail(restaurantId, {
+      to: employee.contactEmail,
+      subject: `Votre horaire — ${restaurant?.name ?? "Minerva Flow"}`,
+      html: scheduleEmailHtml(employee.fullName, restaurant?.name ?? "", shifts),
+    });
+    if (sent) return { ok: true };
+  }
+
+  return { ok: false, error: resendResult.error ?? "L'envoi a échoué. Réessayez." };
 }
 
 export async function createScheduleShareLinkAction(
   restaurantId: string,
   employeeId: string
 ): Promise<string | null> {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return null;
+  }
+
   const [employee, restaurant, shifts] = await Promise.all([
     getEmployeeById(employeeId),
     getRestaurant(restaurantId),
@@ -194,9 +230,19 @@ export async function createScheduleShareLinkAction(
   ]);
   if (!employee) return null;
 
-  return createScheduleShare(restaurantId, employeeId, {
-    employeeName: employee.fullName,
-    restaurantName: restaurant?.name ?? "",
-    shifts,
-  });
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return createScheduleShare(
+    restaurantId,
+    employeeId,
+    {
+      employeeName: employee.fullName,
+      restaurantName: restaurant?.name ?? "",
+      shifts,
+    },
+    user?.id
+  );
 }

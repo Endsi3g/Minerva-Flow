@@ -2,475 +2,259 @@
 
 import { useState, useId } from "react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Check, Phone } from "lucide-react";
+import { Check, Sparkles, Building2, TrendingUp, ShieldCheck } from "lucide-react";
 import { type Plan } from "@/lib/billingsdk-config";
 import { cn } from "@/lib/utils";
-import { cva, type VariantProps } from "class-variance-authority";
 import { AnimatePresence, motion } from "motion/react";
 
-const sectionVariants = cva("py-32 relative overflow-hidden", {
-  variants: {
-    size: {
-      small: "py-12",
-      medium: "py-20",
-      large: "py-32",
-    },
-    theme: {
-      minimal: "bg-background",
-      classic: "bg-gradient-to-b from-background to-muted/20",
-    },
-  },
-  defaultVariants: {
-    size: "medium",
-    theme: "minimal",
-  },
-});
-
-const titleVariants = cva("font-bold mb-4 text-foreground", {
-  variants: {
-    size: {
-      small: "text-3xl lg:text-4xl",
-      medium: "text-4xl lg:text-5xl",
-      large: "text-4xl lg:text-6xl",
-    },
-    theme: {
-      minimal: "",
-      classic:
-        "bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent",
-    },
-  },
-  defaultVariants: {
-    size: "medium",
-    theme: "minimal",
-  },
-});
-
-const descriptionVariants = cva(
-  "text-muted-foreground max-w-3xl mx-auto mb-8",
-  {
-    variants: {
-      size: {
-        small: "text-base lg:text-lg",
-        medium: "text-lg lg:text-xl",
-        large: "lg:text-xl",
-      },
-    },
-    defaultVariants: {
-      size: "medium",
-    },
-  },
-);
-
-const toggleVariants = cva(
-  "flex h-11 w-fit shrink-0 items-center rounded-md p-1 text-lg",
-  {
-    variants: {
-      theme: {
-        minimal: "bg-muted",
-        classic:
-          "bg-muted/50 backdrop-blur-sm border border-border/50 shadow-lg",
-      },
-    },
-    defaultVariants: {
-      theme: "minimal",
-    },
-  },
-);
-
-const planCardVariants = cva(
-  "relative border transition-all duration-300 rounded-lg",
-  {
-    variants: {
-      size: {
-        small: "p-4",
-        medium: "p-5",
-        large: "p-6",
-      },
-      theme: {
-        minimal: "bg-card border-border hover:bg-muted/30 shadow-sm",
-        classic:
-          "bg-card border-border/50 hover:shadow-xl hover:border-border backdrop-blur-sm shadow-md",
-      },
-      highlight: {
-        true: "",
-        false: "",
-      },
-    },
-    compoundVariants: [
-      {
-        theme: "classic",
-        highlight: true,
-        className:
-          "ring-1 ring-primary/20 border-primary/30 bg-gradient-to-b from-primary/5 to-card shadow-lg",
-      },
-      {
-        theme: "minimal",
-        highlight: true,
-        className: "bg-muted/50 border-primary/20 shadow-md",
-      },
-    ],
-    defaultVariants: {
-      size: "large",
-      theme: "minimal",
-      highlight: false,
-    },
-  },
-);
-
-const contactCardVariants = cva(
-  "border transition-all duration-300 h-full rounded-lg",
-  {
-    variants: {
-      size: {
-        small: "p-6",
-        medium: "p-7",
-        large: "p-8",
-      },
-      theme: {
-        minimal: "bg-muted/50 border-border hover:bg-muted/70 shadow-sm",
-        classic:
-          "bg-card border-border/50 hover:shadow-xl hover:border-primary/20 backdrop-blur-sm shadow-md",
-      },
-    },
-    defaultVariants: {
-      size: "large",
-      theme: "minimal",
-    },
-  },
-);
-
-const priceTextVariants = cva("font-bold", {
-  variants: {
-    size: {
-      small: "text-3xl",
-      medium: "text-4xl",
-      large: "text-4xl",
-    },
-    theme: {
-      minimal: "text-foreground",
-      classic:
-        "font-extrabold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent",
-    },
-  },
-  defaultVariants: {
-    size: "large",
-    theme: "minimal",
-  },
-});
-
-const featureIconVariants = cva("flex-none", {
-  variants: {
-    size: {
-      small: "w-3 h-3",
-      medium: "w-4 h-4",
-      large: "w-4 h-4",
-    },
-    theme: {
-      minimal: "text-primary",
-      classic: "text-emerald-500",
-    },
-  },
-  defaultVariants: {
-    size: "large",
-    theme: "minimal",
-  },
-});
-
-export interface PricingTableFiveProps extends VariantProps<
-  typeof sectionVariants
-> {
+export interface PricingTableFiveProps {
   plans: Plan[];
   title?: string;
   description?: string;
-  // Second argument added on top of the upstream Billing SDK component:
-  // the toggle's interval is internal state here, and the checkout action
-  // needs to know monthly vs. yearly to pick the right Stripe price.
   onPlanSelect?: (planId: string, interval: "monthly" | "yearly") => void;
   className?: string;
+  size?: "small" | "medium" | "large";
+  theme?: "minimal" | "classic";
 }
 
 export function PricingTableFive({
   plans,
-  title = "Pricing Plans",
-  description = "Choose the plan that's right for you",
+  title = "Choisissez votre forfait",
+  description = "Deux produits clairs selon votre priorité : rentabiliser votre carte ou fidéliser votre clientèle.",
   onPlanSelect,
   className,
-  size = "medium",
-  theme = "minimal",
 }: PricingTableFiveProps) {
   const [isAnnually, setIsAnnually] = useState(false);
   const uniqueId = useId();
 
-  function calculateDiscount(
-    monthlyPrice: string,
-    yearlyPrice: string,
-  ): number {
-    const monthly = parseFloat(monthlyPrice);
-    const yearly = parseFloat(yearlyPrice);
-
-    if (
-      monthlyPrice.toLowerCase() === "custom" ||
-      yearlyPrice.toLowerCase() === "custom" ||
-      isNaN(monthly) ||
-      isNaN(yearly) ||
-      monthly === 0
-    ) {
-      return 0;
-    }
-
-    const discount = ((monthly * 12 - yearly) / (monthly * 12)) * 100;
-    return Math.round(discount);
-  }
-
-  const yearlyPriceDiscount = plans.length
-    ? Math.max(
-        ...plans.map((plan) =>
-          calculateDiscount(plan.monthlyPrice, plan.yearlyPrice),
-        ),
-      )
-    : 0;
-
-  const regularPlans = plans.slice(0, -1);
-  const contactUsPlan = plans[plans.length - 1];
-
   return (
-    <section className={cn(sectionVariants({ size, theme }), className)}>
-      {/* Classic theme background elements */}
-      {theme === "classic" && (
-        <>
-          <div className="bg-grid-pattern absolute inset-0 opacity-5" />
-          <div className="bg-primary/5 absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
-          <div className="bg-secondary/5 absolute top-1/4 right-1/4 h-64 w-64 rounded-full blur-2xl" />
-        </>
-      )}
-
-      <div className="relative container mx-auto max-w-7xl">
+    <section className={cn("py-8 relative overflow-hidden", className)}>
+      <div className="relative container mx-auto max-w-7xl px-4 sm:px-6">
         {/* Header */}
-        <div className="mb-12 pb-1 text-center">
-          <h2 className={cn(titleVariants({ size, theme }), "leading-[1.12]")}>
+        <div className="mb-10 text-center">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-mv-ink">
             {title}
           </h2>
-          <p className={cn(descriptionVariants({ size }))}>{description}</p>
+          <p className="mt-2.5 text-mv-ink-soft text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            {description}
+          </p>
 
-          {/* Billing Toggle */}
-          <div
-            className={cn(
-              "mx-auto mt-8 flex justify-center",
-              toggleVariants({ theme }),
-            )}
-          >
-            <RadioGroup
-              defaultValue="monthly"
-              className="h-full grid-cols-2"
-              onValueChange={(value) => {
-                setIsAnnually(value === "annually");
-              }}
-            >
-              <div className='has-[button[data-state="checked"]]:bg-background h-full rounded-md transition-all'>
-                <RadioGroupItem
-                  value="monthly"
-                  id={`${uniqueId}-monthly`}
-                  className="peer sr-only"
-                />
-                <Label
-                  htmlFor={`${uniqueId}-monthly`}
-                  className="text-muted-foreground peer-data-[state=checked]:text-primary hover:text-foreground flex h-full cursor-pointer items-center justify-center px-2 font-semibold transition-all md:px-7"
-                >
-                  Mensuel
-                </Label>
-              </div>
-              <div className='has-[button[data-state="checked"]]:bg-background h-full rounded-md transition-all'>
-                <RadioGroupItem
-                  value="annually"
-                  id={`${uniqueId}-annually`}
-                  className="peer sr-only"
-                />
-                <Label
-                  htmlFor={`${uniqueId}-annually`}
-                  className="text-muted-foreground peer-data-[state=checked]:text-primary hover:text-foreground flex h-full cursor-pointer items-center justify-center gap-1 px-2 font-semibold transition-all md:px-7"
-                >
-                  Annuel
-                  {yearlyPriceDiscount > 0 && (
-                    <span className="bg-primary/10 text-primary border-primary/20 ml-1 rounded border px-2 py-0.5 text-xs font-medium">
-                      -{yearlyPriceDiscount}%
+          {/* Billing Interval Toggle */}
+          <div className="mt-6 flex justify-center">
+            <div className="inline-flex h-11 items-center rounded-xl border border-mv-border bg-mv-cream-soft p-1 shadow-mv-xs">
+              <RadioGroup
+                defaultValue="monthly"
+                className="flex items-center gap-1"
+                onValueChange={(value) => {
+                  setIsAnnually(value === "annually");
+                }}
+              >
+                <div className='has-[button[data-state="checked"]]:bg-mv-surface has-[button[data-state="checked"]]:shadow-mv-xs has-[button[data-state="checked"]]:text-mv-ink rounded-lg transition-all'>
+                  <RadioGroupItem
+                    value="monthly"
+                    id={`${uniqueId}-monthly`}
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor={`${uniqueId}-monthly`}
+                    className="cursor-pointer px-4 py-1.5 text-xs font-semibold text-mv-ink-soft hover:text-mv-ink transition-colors"
+                  >
+                    Mensuel
+                  </Label>
+                </div>
+
+                <div className='has-[button[data-state="checked"]]:bg-mv-surface has-[button[data-state="checked"]]:shadow-mv-xs has-[button[data-state="checked"]]:text-mv-ink rounded-lg transition-all'>
+                  <RadioGroupItem
+                    value="annually"
+                    id={`${uniqueId}-annually`}
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor={`${uniqueId}-annually`}
+                    className="cursor-pointer px-4 py-1.5 text-xs font-semibold text-mv-ink-soft hover:text-mv-ink transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span>Annuel</span>
+                    <span className="rounded bg-mv-green-tint px-1.5 py-0.5 text-[10.5px] font-bold text-mv-green-dark">
+                      -25 % (3 mois offerts)
                     </span>
-                  )}
-                </Label>
-              </div>
-            </RadioGroup>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
           </div>
         </div>
 
-        {/* Plans Layout */}
-        <div className="flex flex-col gap-6 lg:flex-row">
-          {/* Regular Plans */}
-          <div className="flex flex-col gap-4 lg:w-2/3">
-            {regularPlans.map((plan, index) => (
+        {/* 3-Column Plan Grid */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-stretch">
+          {plans.map((plan, index) => {
+            const isStarPlan = Boolean(plan.highlight);
+            const isEnterprise = plan.id === "marque_blanche";
+
+            // Price calculation
+            const rawMonthly = parseFloat(plan.monthlyPrice);
+            const rawYearly = parseFloat(plan.yearlyPrice);
+            const monthlyEquivalent = isAnnually && !isNaN(rawYearly) ? Math.round(rawYearly / 12) : rawMonthly;
+
+            return (
               <motion.div
                 key={plan.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
+                className="flex"
               >
-                <Card
+                <div
                   className={cn(
-                    planCardVariants({
-                      size,
-                      theme,
-                      highlight: plan.highlight,
-                    }),
+                    "relative flex flex-col justify-between w-full rounded-2xl p-6 sm:p-7 transition-all duration-300",
+                    isStarPlan
+                      ? "border-2 border-mv-green bg-mv-surface shadow-mv-lg ring-1 ring-mv-green/30 lg:-translate-y-2"
+                      : "border border-mv-border bg-mv-surface shadow-mv-sm hover:shadow-mv-md"
                   )}
                 >
+                  {/* Top Badge */}
                   {plan.badge && (
-                    <Badge
-                      className={cn(
-                        "absolute -top-3 left-1/2 z-10 -translate-x-1/2 transform",
-                        theme === "classic"
-                          ? "from-primary to-primary/80 text-primary-foreground border-primary/20 bg-gradient-to-r shadow-lg"
-                          : "bg-primary text-primary-foreground",
-                      )}
-                    >
-                      {plan.badge}
-                    </Badge>
-                  )}
-
-                  {theme === "classic" && plan.highlight && (
-                    <div className="via-primary absolute -top-px left-1/2 h-px w-32 -translate-x-1/2 bg-gradient-to-r from-transparent to-transparent" />
-                  )}
-
-                  <CardContent className="flex flex-col gap-6 p-0 md:flex-row md:items-center md:justify-between">
-                    {/* Plan Info and Price */}
-                    <div className="flex min-w-[200px] flex-col gap-3">
-                      <Badge
-                        variant="outline"
-                        className="w-fit text-xs font-medium uppercase"
-                      >
-                        {plan.title}
-                      </Badge>
-
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={isAnnually ? "year" : "month"}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.2 }}
-                          className="flex items-baseline gap-1"
-                        >
-                          <span
-                            className={cn(priceTextVariants({ size, theme }))}
-                          >
-                            {parseFloat(
-                              isAnnually ? plan.yearlyPrice : plan.monthlyPrice,
-                            ) >= 0 && <>{plan.currency}</>}
-                            {isAnnually ? plan.yearlyPrice : plan.monthlyPrice}
-                          </span>
-                          <span className="text-muted-foreground text-sm">
-                            /{isAnnually ? "an" : "mois"}
-                          </span>
-                        </motion.div>
-                      </AnimatePresence>
-
-                      <Button
-                        onClick={() => onPlanSelect?.(plan.id, isAnnually ? "yearly" : "monthly")}
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                      <span
                         className={cn(
-                          "w-full md:w-auto",
-                          plan.highlight &&
-                            theme === "minimal" &&
-                            "hover:bg-primary/90 group bg-primary text-primary-foreground ring-primary before:from-primary-foreground/20 after:from-primary-foreground/10 relative isolate inline-flex h-9 items-center justify-center overflow-hidden rounded-md px-6 py-2 text-left text-sm font-medium shadow ring-1 before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:rounded-md before:bg-gradient-to-b before:opacity-80 before:transition-opacity before:duration-300 before:ease-[cubic-bezier(0.4,0.36,0,1)] after:pointer-events-none after:absolute after:inset-0 after:-z-10 after:rounded-md after:bg-gradient-to-b after:to-transparent after:mix-blend-overlay hover:cursor-pointer",
+                          "inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider shadow-mv-xs",
+                          isStarPlan
+                            ? "bg-mv-green text-white ring-2 ring-mv-surface"
+                            : "bg-mv-cream-soft text-mv-ink border border-mv-border"
                         )}
-                        variant={plan.highlight ? "default" : "secondary"}
                       >
-                        {plan.buttonText}
-                      </Button>
+                        {isStarPlan && <Sparkles size={11} className="text-mv-lime" />}
+                        {plan.badge}
+                      </span>
                     </div>
+                  )}
 
-                    {/* Features */}
-                    <div className="grid flex-1 gap-3 md:grid-cols-2">
-                      {plan.features.map((feature, featureIndex) => (
-                        <motion.div
-                          key={featureIndex}
-                          className="flex items-start gap-2"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{
-                            duration: 0.3,
-                            delay: featureIndex * 0.05,
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              featureIconVariants({ size, theme }),
-                              "mt-0.5",
-                            )}
-                          />
-                          <span
-                            className={cn(
-                              "text-sm",
-                              theme === "classic"
-                                ? "text-foreground/90"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            {feature.name}
+                  <div>
+                    {/* Header: Title & Subtitle */}
+                    <div className="border-b border-mv-border-soft pb-5">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-display text-xl font-bold text-mv-ink">
+                          {plan.title}
+                        </h3>
+                        {isStarPlan ? (
+                          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-green-tint text-mv-green-dark">
+                            <TrendingUp size={15} />
                           </span>
-                        </motion.div>
-                      ))}
+                        ) : isEnterprise ? (
+                          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-ink/[0.06] text-mv-ink">
+                            <Building2 size={15} />
+                          </span>
+                        ) : (
+                          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-lime/30 text-mv-lime-dark">
+                            <ShieldCheck size={15} />
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-1 text-[13px] leading-snug text-mv-ink-soft">
+                        {plan.description}
+                      </p>
+
+                      {/* Price Display */}
+                      <div className="mt-5 flex items-baseline gap-1.5">
+                        {isEnterprise && (
+                          <span className="text-xs font-semibold text-mv-ink-faint">
+                            À partir de
+                          </span>
+                        )}
+                        <AnimatePresence mode="wait">
+                          <motion.span
+                            key={isAnnually ? "year" : "month"}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.2 }}
+                            className="font-display text-3xl sm:text-4xl font-bold text-mv-ink"
+                          >
+                            {monthlyEquivalent} $
+                          </motion.span>
+                        </AnimatePresence>
+                        <span className="text-sm text-mv-ink-faint">
+                          / mois
+                        </span>
+                      </div>
+
+                      {isAnnually && !isNaN(rawYearly) && (
+                        <p className="mt-1 text-[11.5px] text-mv-green-dark font-medium">
+                          {`Facturé ${rawYearly} $ par an (économie de ${Math.round(rawMonthly * 12 - rawYearly)} $)`}
+                        </p>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
+
+                    {/* Features List */}
+                    <div className="py-5 space-y-3">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+                        {isStarPlan
+                          ? "Fonctionnalités vedettes incluses :"
+                          : isEnterprise
+                          ? "Infrastructures multi-sites incluses :"
+                          : "Outils de protection de marge inclus :"}
+                      </p>
+
+                      <ul className="space-y-2.5">
+                        {plan.features.map((feature, fIdx) => {
+                          const isHighlightedFeature = feature.name.startsWith("Tout ce qui est inclus");
+                          return (
+                            <li key={fIdx} className="flex items-start gap-2.5 text-[13px]">
+                              <span
+                                className={cn(
+                                  "flex h-4 w-4 shrink-0 items-center justify-center rounded-full mt-0.5",
+                                  isStarPlan
+                                    ? "bg-mv-green text-white"
+                                    : "bg-mv-green-tint text-mv-green-dark"
+                                )}
+                              >
+                                <Check size={10} strokeWidth={3} />
+                              </span>
+                              <span
+                                className={cn(
+                                  isHighlightedFeature
+                                    ? "font-semibold text-mv-ink"
+                                    : "text-mv-ink-soft"
+                                )}
+                              >
+                                {feature.name}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* CTA Button */}
+                  <div className="pt-4 border-t border-mv-border-soft">
+                    <Button
+                      onClick={() => onPlanSelect?.(plan.id, isAnnually ? "yearly" : "monthly")}
+                      className={cn(
+                        "w-full text-center py-2.5 text-[13px] font-semibold transition-all",
+                        isStarPlan
+                          ? "bg-mv-green text-white hover:bg-mv-green-dark shadow-mv-sm hover:shadow-mv-md"
+                          : isEnterprise
+                          ? "border border-mv-border bg-mv-cream-soft text-mv-ink hover:bg-mv-cream"
+                          : "border border-mv-border bg-mv-surface text-mv-ink hover:bg-mv-cream-soft"
+                      )}
+                      variant={isStarPlan ? "default" : "secondary"}
+                    >
+                      {plan.buttonText}
+                    </Button>
+                    <p className="mt-2 text-center text-[11px] text-mv-ink-faint">
+                      {isEnterprise
+                        ? "Déploiement et facturation centralisée"
+                        : "Sans engagement — annulation en 1 clic"}
+                    </p>
+                  </div>
+                </div>
               </motion.div>
-            ))}
-          </div>
-
-          {/* Contact Card */}
-          <motion.div
-            className="lg:w-1/3"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: regularPlans.length * 0.1 }}
-          >
-            <Card
-              className={cn(contactCardVariants({ size, theme }), "rounded-lg")}
-            >
-              <CardContent className="flex flex-col items-center space-y-6 p-0 text-center">
-                <div className="bg-primary/10 flex h-16 w-16 items-center justify-center rounded-full">
-                  <Phone className="text-primary h-8 w-8" />
-                </div>
-
-                <div>
-                  <h3
-                    className={cn(
-                      "mb-2 text-2xl font-bold",
-                      theme === "classic" &&
-                        "from-foreground to-muted-foreground bg-gradient-to-r bg-clip-text text-transparent",
-                    )}
-                  >
-                    {contactUsPlan.title}
-                  </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {contactUsPlan.description}
-                  </p>
-                </div>
-
-                <Button
-                  onClick={() => onPlanSelect?.(contactUsPlan.id, isAnnually ? "yearly" : "monthly")}
-                  variant="outline"
-                  className="hover:bg-primary w-full transition-colors"
-                >
-                  {contactUsPlan.buttonText}
-                </Button>
-
-                <p className="text-muted-foreground text-xs">
-                  Tarification et intégrations sur mesure
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

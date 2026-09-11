@@ -109,6 +109,33 @@ export async function getOrCreateReferralLink(
     .single();
 
   if (error || !data) return null;
+
+  try {
+    const { data: prog } = await admin
+      .from("referral_programs")
+      .select("restaurant_id")
+      .eq("id", programId)
+      .maybeSingle();
+
+    if (prog?.restaurant_id) {
+      const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+      await recordLifecycleEvent(
+        {
+          restaurantId: prog.restaurant_id,
+          customerId,
+          eventType: "referral_sent",
+          metadata: {
+            code,
+            referralProgramId: programId,
+          },
+        },
+        admin
+      );
+    }
+  } catch {
+    // Non-blocking
+  }
+
   return mapLink(data as CustomerReferralLinkRow);
 }
 
@@ -294,12 +321,79 @@ export async function submitPublicReservationRequest(
 export async function creditReferralConversion(reservationId: string): Promise<void> {
   const supabase = await createClient();
   await supabase.rpc("credit_referral_conversion", { p_reservation_id: reservationId });
+
+  try {
+    const admin = createAdminClient();
+    const { data: res } = await admin
+      .from("reservations")
+      .select("restaurant_id, customer_id, referral_link_id")
+      .eq("id", reservationId)
+      .maybeSingle();
+    if (res?.restaurant_id && res?.referral_link_id) {
+      const { data: link } = await admin
+        .from("customer_referral_links")
+        .select("customer_id")
+        .eq("id", res.referral_link_id)
+        .maybeSingle();
+      const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+      await recordLifecycleEvent(
+        {
+          restaurantId: res.restaurant_id,
+          customerId: (link as { customer_id: string } | null)?.customer_id ?? res.customer_id,
+          eventType: "referral_converted",
+          metadata: {
+            reservationId,
+            referrerCustomerId: (link as { customer_id: string } | null)?.customer_id,
+            referredCustomerId: res.customer_id,
+            conversionType: "reservation",
+          },
+        },
+        admin
+      );
+    }
+  } catch {
+    // Non-blocking
+  }
 }
 
 /** Sibling of creditReferralConversion for orders — see migration for the RPC. */
 export async function creditReferralConversionForOrder(orderId: string): Promise<void> {
   const supabase = await createClient();
   await supabase.rpc("credit_referral_conversion_for_order", { p_order_id: orderId });
+
+  try {
+    const admin = createAdminClient();
+    const { data: ord } = await admin
+      .from("orders")
+      .select("restaurant_id, customer_id, referral_link_id, total")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (ord?.restaurant_id && ord?.referral_link_id) {
+      const { data: link } = await admin
+        .from("customer_referral_links")
+        .select("customer_id")
+        .eq("id", ord.referral_link_id)
+        .maybeSingle();
+      const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+      await recordLifecycleEvent(
+        {
+          restaurantId: ord.restaurant_id,
+          customerId: (link as { customer_id: string } | null)?.customer_id ?? ord.customer_id,
+          eventType: "referral_converted",
+          metadata: {
+            orderId,
+            total: ord.total,
+            referrerCustomerId: (link as { customer_id: string } | null)?.customer_id,
+            referredCustomerId: ord.customer_id,
+            conversionType: "order",
+          },
+        },
+        admin
+      );
+    }
+  } catch {
+    // Non-blocking
+  }
 }
 
 export type PublicOrderCartLine = {

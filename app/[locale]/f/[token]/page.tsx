@@ -26,5 +26,16 @@ export default async function PublicLoyaltyPage({
   const landing = await getLoyaltyShareByToken(token);
   if (!landing) notFound();
 
+  try {
+    const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+    await recordLifecycleEvent({
+      restaurantId: landing.restaurantId,
+      eventType: "qr_code_scanned",
+      metadata: { token, touchpointCode: tp ?? null },
+    });
+  } catch {
+    // Non-blocking
+  }
+
   return <LoyaltyJoinFlow token={token} landing={landing} touchpointCode={tp ?? null} />;
 }

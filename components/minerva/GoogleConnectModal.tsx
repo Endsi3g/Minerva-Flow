@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldContent, FieldLabel, FieldDescription } from "@/components/ui/field";
 import { GOOGLE_FEATURE_LABELS, type GoogleFeature } from "@/lib/google/config";
 import { useState } from "react";
-import { Gmail, GoogleSheets, GoogleDrive, GoogleCalendar, GoogleAnalytics } from "@/components/ui/BrandIcons";
+import { Gmail, GoogleSheets, GoogleDrive, GoogleCalendar, GoogleAnalytics, GoogleMonochrome } from "@/components/ui/BrandIcons";
 
 const FEATURES: GoogleFeature[] = ["gmail", "sheets", "drive", "calendar", "analytics"];
 
@@ -75,7 +75,8 @@ export function GoogleConnectModal({
           <Button variant="ghost" onClick={onClose}>
             Annuler
           </Button>
-          <Button onClick={handleConnect} disabled={selected.size === 0}>
+          <Button onClick={handleConnect} disabled={selected.size === 0} className="inline-flex items-center gap-1.5">
+            <GoogleMonochrome size={14} className="text-white fill-current shrink-0" />
             Connecter Google
           </Button>
         </div>

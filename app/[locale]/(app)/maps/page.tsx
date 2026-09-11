@@ -45,25 +45,29 @@ function RestaurantMarker({
     );
   }
 
+  const monogram = (restaurant.name || restaurant.city || "EF").slice(0, 2).toUpperCase();
+
   return (
     <MapMarker longitude={restaurant.lng} latitude={restaurant.lat}>
       <MarkerContent>
         <button
           onClick={onSelect}
-          className="flex size-6 cursor-pointer items-center justify-center rounded-full border-2 border-white text-[11px] font-bold text-white shadow-lg transition-transform hover:scale-110"
+          className="flex size-7 cursor-pointer items-center justify-center rounded-full border-2 border-white text-[10px] font-bold text-white shadow-lg transition-transform hover:scale-110"
           style={{
-            background: restaurant.color,
+            background: restaurant.color || "var(--mv-green)",
             outline: active ? "3px solid var(--mv-lime)" : "none",
           }}
         >
-          {restaurant.city[0]}
+          {monogram}
         </button>
-        <MarkerLabel position="bottom">{restaurant.city}</MarkerLabel>
+        <MarkerLabel position="bottom" className="font-semibold text-mv-ink drop-shadow-xs">
+          {restaurant.name}
+        </MarkerLabel>
       </MarkerContent>
       <MarkerPopup className="w-64 p-4">
         <p className="font-display text-[15px] font-medium text-mv-ink">{restaurant.name}</p>
         <p className="mt-0.5 text-[12px] text-mv-ink-faint">
-          {restaurant.address}, {restaurant.city}
+          {restaurant.address ? `${restaurant.address}, ` : ""}{restaurant.city}
         </p>
         <div className="mt-3 flex items-center justify-between rounded-lg bg-mv-cream-soft p-2.5">
           <div>
@@ -157,6 +161,44 @@ function GlobalStatsCard({
   );
 }
 
+/** Fits all establishment locations in view automatically on load */
+function FitAllBounds({ restaurants }: { restaurants: { lng: number; lat: number }[] }) {
+  const { map } = useMap();
+  const fittedRef = useRef(false);
+
+  useEffect(() => {
+    if (!map || restaurants.length === 0 || fittedRef.current) return;
+    if (restaurants.length === 1) {
+      map.flyTo({ center: [restaurants[0].lng, restaurants[0].lat], zoom: 13 });
+      fittedRef.current = true;
+      return;
+    }
+
+    let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+    for (const r of restaurants) {
+      if (r.lng < minLng) minLng = r.lng;
+      if (r.lng > maxLng) maxLng = r.lng;
+      if (r.lat < minLat) minLat = r.lat;
+      if (r.lat > maxLat) maxLat = r.lat;
+    }
+
+    try {
+      map.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat],
+        ],
+        { padding: { top: 70, bottom: 70, left: 320, right: 70 }, maxZoom: 13, duration: 1200 }
+      );
+      fittedRef.current = true;
+    } catch {
+      // MapLibreGL may not be fully initialized yet
+    }
+  }, [map, restaurants]);
+
+  return null;
+}
+
 /** Flies to a restaurant's pin whenever the selection changes (list click, marker click, or a coordinate backfill resolving for the first time). */
 function FlyToRestaurant({ id, lng, lat }: { id: string; lng: number; lat: number }) {
   const { map } = useMap();
@@ -165,7 +207,7 @@ function FlyToRestaurant({ id, lng, lat }: { id: string; lng: number; lat: numbe
   useEffect(() => {
     if (!map || lastFlownId.current === id) return;
     lastFlownId.current = id;
-    map.flyTo({ center: [lng, lat], zoom: 14, duration: 1500 });
+    map.flyTo({ center: [lng, lat], zoom: 14, duration: 1200 });
   }, [map, id, lng, lat]);
 
   return null;
@@ -194,16 +236,14 @@ function EstablishmentsMode() {
     getRevenueByRestaurantAction(ids).then(setRevenueByRestaurant);
   }, [restaurants]);
 
-  // Lazily geocode any restaurant that has an address but never got a pin
-  // (created/edited before geocoding existed) — no need to re-save Workspace.
+  // Lazily geocode any restaurant that has an address or city but never got a pin
   useEffect(() => {
     for (const r of restaurants) {
-      if (r.lng !== null || r.lat !== null || !r.address || !r.city) continue;
+      if (r.lng !== null || r.lat !== null || (!r.address && !r.city)) continue;
       geocodeRestaurantIfMissingAction(r.id).then((coords) => {
         if (coords) setBackfilled((prev) => ({ ...prev, [r.id]: coords }));
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurants]);
 
   const allStats = Object.values(revenueByRestaurant);
@@ -219,6 +259,7 @@ function EstablishmentsMode() {
         theme="light"
       >
         <MapControls position="bottom-right" showZoom showFullscreen />
+        <FitAllBounds restaurants={geoRestaurants} />
         {current && <FlyToRestaurant id={current.id} lng={current.lng} lat={current.lat} />}
         {geoRestaurants.map((r) => {
           const stats = revenueByRestaurant[r.id] ?? { revenue: 0, delta: 0 };
@@ -235,9 +276,9 @@ function EstablishmentsMode() {
         })}
       </Map>
 
-      <div className="md:absolute static mb-4 md:mb-0 md:left-4 md:top-4 z-10 w-full md:w-64 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
+      <div className="md:absolute static mb-4 md:mb-0 md:left-4 md:top-4 z-10 w-full md:w-80 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-          Établissements
+          Établissements & Localisations
         </p>
         <div className="space-y-2">
           {restaurants.map((r) => {
@@ -249,15 +290,24 @@ function EstablishmentsMode() {
                 onClick={() => setRestaurantId(r.id)}
                 className={
                   active
-                    ? "flex w-full items-center justify-between rounded-lg bg-mv-green-tint px-2.5 py-2 text-left transition-colors"
-                    : "flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-mv-cream-soft"
+                    ? "flex w-full items-center justify-between rounded-xl bg-mv-green-tint p-2.5 text-left transition-colors border border-mv-green/30"
+                    : "flex w-full items-center justify-between rounded-xl p-2.5 text-left transition-colors hover:bg-mv-cream-soft border border-transparent"
                 }
               >
-                <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: r.color }} />
-                  <span className="text-[12.5px] font-semibold text-mv-ink">{r.city}</span>
-                </span>
-                <span className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-mv-border"
+                    style={{ background: r.color || "var(--mv-green)" }}
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold text-mv-ink">{r.name}</p>
+                    <p className="truncate text-[11px] text-mv-ink-faint">
+                      {r.city ? `${r.city}` : "Emplacement"}
+                      {r.address ? ` · ${r.address}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
                   <span className="text-[12px] font-semibold text-mv-ink-soft">
                     {formatCurrency(stats.revenue)}
                   </span>
@@ -265,7 +315,7 @@ function EstablishmentsMode() {
                     {stats.delta >= 0 ? "↑" : "↓"}
                     {Math.abs(stats.delta).toFixed(1)}%
                   </Badge>
-                </span>
+                </div>
               </button>
             );
           })}
@@ -285,7 +335,7 @@ function EstablishmentsMode() {
         position="right-4 top-20"
         rows={(() => {
           const withRevenue = restaurants.map((r) => ({
-            label: r.city || r.name,
+            label: `${r.name}${r.city ? ` (${r.city})` : ""}`,
             revenue: revenueByRestaurant[r.id]?.revenue ?? 0,
           }));
           const max = Math.max(1, ...withRevenue.map((r) => r.revenue));

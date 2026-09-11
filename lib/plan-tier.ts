@@ -1,9 +1,10 @@
 /**
  * A restaurant's subscription tier — the single source of truth for what's
  * gated, per the /grill-me decision to use a runtime flag on one codebase
- * rather than a diverging git branch per plan. 'essentiel' ($99/mo) is the
- * default every restaurant gets; 'croissance' ($250/mo) and
- * 'marque_blanche' ($500/mo, white-label) unlock more as they're wired up.
+ * rather than a diverging git branch per plan:
+ * - 'essentiel' (Profit Core — $150/mo): food cost calculation, POS sync, menu engineering.
+ * - 'croissance' (Growth & Loyalty — $290/mo, star plan): loyalty program, retention engine, Flow AI.
+ * - 'marque_blanche' (Enterprise / Multi-sites — $590+/mo): multi-location & franchise management.
  */
 export type PlanTier = "essentiel" | "croissance" | "marque_blanche";
 

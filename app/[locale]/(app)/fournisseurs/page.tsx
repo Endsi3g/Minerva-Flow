@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getSuppliers } from "@/lib/data/suppliers";
 import { getPurchaseOrders } from "@/lib/data/purchase-orders";
+import { getInventoryItems } from "@/lib/data/inventory";
 import { FournisseursView } from "./FournisseursView";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,9 +14,20 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function FournisseursPage() {
   const restaurantId = await getCurrentRestaurantId();
 
-  const [suppliers, orders] = restaurantId
-    ? await Promise.all([getSuppliers(restaurantId), getPurchaseOrders(restaurantId)])
-    : [[], []];
+  const [suppliers, orders, inventoryItems] = restaurantId
+    ? await Promise.all([
+        getSuppliers(restaurantId),
+        getPurchaseOrders(restaurantId),
+        getInventoryItems(restaurantId),
+      ])
+    : [[], [], []];
 
-  return <FournisseursView restaurantId={restaurantId} initialSuppliers={suppliers} initialOrders={orders} />;
+  return (
+    <FournisseursView
+      restaurantId={restaurantId}
+      initialSuppliers={suppliers}
+      initialOrders={orders}
+      inventoryItems={inventoryItems}
+    />
+  );
 }

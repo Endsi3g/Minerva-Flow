@@ -167,3 +167,131 @@ export async function getReferralStoryContextAction(restaurantId: string): Promi
     topAmbassadorName: bestLink.customerName !== "—" ? bestLink.customerName : undefined,
   };
 }
+
+export type PrioritizedCampaignSettings = {
+  campaignWelcomeEnabled: boolean;
+  campaignSecondVisitEnabled: boolean;
+  campaignReactivation21dEnabled: boolean;
+  campaignRewardAvailableEnabled: boolean;
+  campaignVipUpgradeEnabled: boolean;
+  campaignReferralShareEnabled: boolean;
+  campaignWinback60dEnabled: boolean;
+  consentStats: {
+    totalCustomers: number;
+    marketingOptInCount: number;
+    serviceOnlyCount: number;
+  };
+};
+
+export async function getPrioritizedCampaignSettingsAction(
+  restaurantId: string
+): Promise<PrioritizedCampaignSettings> {
+  const supabase = await createClient();
+  const { data: rest } = await supabase
+    .from("restaurants")
+    .select(
+      "campaign_welcome_enabled, campaign_second_visit_enabled, campaign_reactivation_21d_enabled, campaign_reward_available_enabled, campaign_vip_upgrade_enabled, campaign_referral_share_enabled, campaign_winback_60d_enabled"
+    )
+    .eq("id", restaurantId)
+    .maybeSingle();
+
+  const { getRestaurantConsentStats } = await import("@/lib/data/consent");
+  const consentStats = await getRestaurantConsentStats(restaurantId);
+
+  const r = (rest ?? {}) as Record<string, unknown>;
+
+  return {
+    campaignWelcomeEnabled: (r.campaign_welcome_enabled as boolean | undefined) ?? true,
+    campaignSecondVisitEnabled: (r.campaign_second_visit_enabled as boolean | undefined) ?? true,
+    campaignReactivation21dEnabled: (r.campaign_reactivation_21d_enabled as boolean | undefined) ?? true,
+    campaignRewardAvailableEnabled: (r.campaign_reward_available_enabled as boolean | undefined) ?? true,
+    campaignVipUpgradeEnabled: (r.campaign_vip_upgrade_enabled as boolean | undefined) ?? true,
+    campaignReferralShareEnabled: (r.campaign_referral_share_enabled as boolean | undefined) ?? true,
+    campaignWinback60dEnabled: (r.campaign_winback_60d_enabled as boolean | undefined) ?? true,
+    consentStats,
+  };
+}
+
+export type CampaignTriggerKey =
+  | "welcome"
+  | "second_visit"
+  | "reactivation_21d"
+  | "reward_available"
+  | "vip_upgrade"
+  | "referral_share"
+  | "winback_60d";
+
+export async function updateCampaignTriggerSettingAction(
+  restaurantId: string,
+  key: CampaignTriggerKey,
+  enabled: boolean
+): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  const colMap: Record<CampaignTriggerKey, string> = {
+    welcome: "campaign_welcome_enabled",
+    second_visit: "campaign_second_visit_enabled",
+    reactivation_21d: "campaign_reactivation_21d_enabled",
+    reward_available: "campaign_reward_available_enabled",
+    vip_upgrade: "campaign_vip_upgrade_enabled",
+    referral_share: "campaign_referral_share_enabled",
+    winback_60d: "campaign_winback_60d_enabled",
+  };
+  const { error } = await supabase
+    .from("restaurants")
+    .update({ [colMap[key]]: enabled })
+    .eq("id", restaurantId);
+
+  if (!error) revalidatePath("/campaigns");
+  return { ok: !error };
+}
+
+export async function dispatchOffPeakBroadcastAction(
+  restaurantId: string,
+  timeSlot: string,
+  customOffer: string
+): Promise<{ ok: boolean; sentCount: number; totalConsented: number; message?: string }> {
+  return dispatchBroadcastCampaignAction(restaurantId, "off_peak", { timeSlot, offerText: customOffer });
+}
+
+export async function dispatchBroadcastCampaignAction(
+  restaurantId: string,
+  templateId: "off_peak" | "referral_share" | "winback_60d",
+  customOptions?: { timeSlot?: string; offerText?: string }
+): Promise<{ ok: boolean; sentCount: number; totalConsented: number; message?: string }> {
+  const admin = createAdminClient();
+  // CASL Strict Check: only customers with marketing_consent = true can be targeted
+  const { data: customers } = await admin
+    .from("customers")
+    .select("id, name")
+    .eq("restaurant_id", restaurantId)
+    .eq("marketing_consent", true);
+
+  const list = (customers ?? []) as { id: string; name: string }[];
+  if (list.length === 0) {
+    return {
+      ok: true,
+      sentCount: 0,
+      totalConsented: 0,
+      message: "Aucun client n'a donné son consentement marketing (LCAP/CASL).",
+    };
+  }
+
+  const { dispatchCampaignToCustomer } = await import("@/lib/campaigns/templates");
+
+  let sent = 0;
+  for (const c of list) {
+    const res = await dispatchCampaignToCustomer({
+      restaurantId,
+      customerId: c.id,
+      templateId,
+      timeSlot: customOptions?.timeSlot,
+      offerText: customOptions?.offerText,
+    });
+    if (res.success) sent++;
+  }
+
+  revalidatePath("/campaigns");
+  return { ok: true, sentCount: sent, totalConsented: list.length };
+}
+
+

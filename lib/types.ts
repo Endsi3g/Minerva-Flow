@@ -207,10 +207,12 @@ export type PurchaseOrderStatus = "brouillon" | "envoyee" | "recue" | "annulee";
 export type PurchaseOrderItem = {
   id: string;
   purchaseOrderId: string;
+  inventoryItemId?: string | null;
   itemName: string;
   quantity: number;
   unit: string;
   unitCost: number;
+  receivedQuantity?: number | null;
 };
 
 export type PurchaseOrder = {
@@ -442,6 +444,13 @@ export type Recommendation = {
   relatedCampaignId?: string | null;
   status: RecommendationStatus;
   source: "regles" | "ia";
+  confidenceScore?: number;
+  confidenceLevel?: "elevee" | "moyenne" | "indicative";
+  dataSources?: string[];
+  actionUrl?: string;
+  actionLabel?: string;
+  impactEstimate?: string;
+  explanation?: string;
 };
 
 export type AlertRule = {
@@ -618,6 +627,9 @@ export type LoyaltyTransaction = {
   note: string | null;
   createdBy: string | null;
   createdAt: string;
+  viaPairingCode?: boolean;
+  viaPosSync?: boolean;
+  viaPhoneLookup?: boolean;
 };
 
 export type Customer = {
@@ -642,6 +654,7 @@ export type Customer = {
   avatarUrl: string | null;
   favoriteOfferIds: string[];
   favoriteMenuItemIds: string[];
+  posCustomerId?: string | null;
 };
 
 export type LoyaltyReward = {
@@ -838,6 +851,7 @@ export type Offer = {
   imageUrl: string | null;
   videoUrl?: string | null;
   price: number | null;
+  cost?: number | null;
   includedItems: string[];
   excludedItems: string[];
   active: boolean;

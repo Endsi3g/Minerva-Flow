@@ -6,8 +6,8 @@ import { Card } from "@/components/minerva/PageCard";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Gift, Mail, Heart } from "lucide-react";
-import { joinLoyaltyProgramAction } from "./actions";
+import { Gift, Mail, Heart, ShieldCheck } from "lucide-react";
+import { joinLoyaltyProgramAction, recordFormStartedAction } from "./actions";
 import type { PublicLoyaltyLanding } from "@/lib/data/loyalty-shares";
 
 export function LoyaltyJoinFlow({
@@ -22,9 +22,18 @@ export function LoyaltyJoinFlow({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [birthday, setBirthday] = useState("");
+  const [serviceConsent, setServiceConsent] = useState(true);
   const [marketingConsent, setMarketingConsent] = useState(false);
+  const [formStartedTracked, setFormStartedTracked] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  function handleFirstStroke() {
+    if (!formStartedTracked) {
+      setFormStartedTracked(true);
+      recordFormStartedAction(landing.restaurantId);
+    }
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -95,10 +104,28 @@ export function LoyaltyJoinFlow({
 
               <form onSubmit={handleSubmit} className="mt-5 space-y-3 border-t border-mv-border-soft pt-4">
                 <Field label="Votre nom">
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Alex Tremblay" required autoFocus />
+                  <Input
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      handleFirstStroke();
+                    }}
+                    placeholder="Alex Tremblay"
+                    required
+                    autoFocus
+                  />
                 </Field>
                 <Field label="Courriel">
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.com" required />
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      handleFirstStroke();
+                    }}
+                    placeholder="vous@exemple.com"
+                    required
+                  />
                 </Field>
                 <Field label="Date de naissance" hint="Optionnel">
                   <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />

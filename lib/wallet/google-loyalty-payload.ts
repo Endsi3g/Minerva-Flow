@@ -9,6 +9,8 @@ export function buildGoogleLoyaltyPayload(input: {
   appUrl: string;
   customerId: string;
   customerName: string;
+  customerPhone?: string | null;
+  pairingCode?: string | null;
   restaurantId: string;
   restaurantName: string;
   points: number;
@@ -30,6 +32,14 @@ export function buildGoogleLoyaltyPayload(input: {
     reviewStatus: "UNDER_REVIEW",
   };
 
+  const barcodeValue = input.customerPhone
+    ? input.customerPhone.replace(/\D/g, "")
+    : (input.pairingCode || input.portalUrl);
+
+  const barcodeAltText = input.customerPhone
+    ? input.customerPhone
+    : (input.pairingCode ? `Code : ${input.pairingCode}` : input.restaurantName);
+
   const loyaltyObject = {
     id: objectId,
     classId,
@@ -38,7 +48,7 @@ export function buildGoogleLoyaltyPayload(input: {
     accountName: input.customerName,
     loyaltyPoints: { label: "Points", balance: { string: String(input.points) } },
     secondaryLoyaltyPoints: { label: "Palier", balance: { string: input.tierLabel } },
-    barcode: { type: "QR_CODE", value: input.portalUrl, alternateText: input.restaurantName },
+    barcode: { type: "QR_CODE", value: barcodeValue, alternateText: barcodeAltText },
     hexBackgroundColor: input.brandColorHex,
   };
 

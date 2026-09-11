@@ -62,30 +62,33 @@ export function VideoPlayerModal({
   const { type, embedUrl } = getEmbedUrl(videoUrl);
 
   return createPortal(
-    <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-mv-ink/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div
         className="fixed inset-0"
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="relative z-10 w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-mv-ink shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 bg-black/30">
-          <div className="flex items-center gap-2 text-mv-cream">
-            <Play size={15} className="text-mv-green fill-current" />
-            <span className="text-[13.5px] font-medium truncate">{title ?? "Aperçu vidéo"}</span>
+      <div className="relative z-10 w-full max-w-3xl overflow-hidden rounded-2xl border border-mv-border bg-mv-surface shadow-mv-xl">
+        {/* Header in luxury editorial light mode */}
+        <div className="flex items-center justify-between border-b border-mv-border-soft px-4 py-3 bg-mv-cream-soft/80">
+          <div className="flex items-center gap-2 text-mv-ink">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
+              <Play size={11} className="fill-current ml-0.5" />
+            </span>
+            <span className="font-display text-[14.5px] font-medium truncate">{title ?? "Aperçu vidéo"}</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-mv-cream/70 hover:bg-white/10 hover:text-white transition-colors"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-mv-ink-faint hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
+            aria-label="Fermer"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Video Surface */}
-        <div className="relative aspect-video w-full bg-black flex items-center justify-center">
+        <div className="relative aspect-video w-full bg-[#0d100c] flex items-center justify-center">
           {type === "youtube" || type === "vimeo" ? (
             <iframe
               src={embedUrl}

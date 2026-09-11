@@ -2,7 +2,6 @@ import { LogoMark } from "@/components/shell/Logo";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { PoweredByBadge } from "@/components/minerva/PoweredByBadge";
-import { ReportWatermark } from "@/components/minerva/ReportWatermark";
 import { RevenueChart } from "@/components/charts/RevenueChart";
 import { FlowBars } from "@/components/charts/FlowBars";
 import { getReportShareByToken } from "@/lib/data/report-shares";
@@ -69,7 +68,6 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
         </p>
 
         <div className="relative overflow-hidden rounded-2xl border-2 border-mv-green bg-mv-surface p-5 shadow-mv-md">
-          {share.watermark && <ReportWatermark />}
           <div className="relative">
             <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {report.label}

@@ -540,3 +540,69 @@ export async function sendSurveyResponseEmail({
   });
   return { ok: !error };
 }
+
+/**
+ * Sends an employee's upcoming schedule via Resend with luxury editorial branding.
+ * Includes a clean, responsive table of shifts and a CTA button to view the live online schedule.
+ */
+export async function sendEmployeeScheduleEmail({
+  to,
+  employeeName,
+  restaurantName,
+  shifts,
+  scheduleUrl,
+}: {
+  to: string;
+  employeeName: string;
+  restaurantName: string;
+  shifts: { shiftDate: string; startTime: string; endTime: string; positionLabel?: string | null }[];
+  scheduleUrl: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!resend) return { ok: false, error: "Service de messagerie non configuré." };
+
+  const safeEmployeeName = escapeHtml(employeeName);
+  const safeRestaurantName = escapeHtml(restaurantName);
+
+  const rows = shifts
+    .map(
+      (s) => `
+      <tr>
+        <td style="padding:10px 14px; border-bottom:1px solid #eee9db; font-size:13px; font-weight:600; color:#1a1e16;">${escapeHtml(s.shiftDate)}</td>
+        <td style="padding:10px 14px; border-bottom:1px solid #eee9db; font-size:13px; color:#565f52;">${escapeHtml(s.startTime.slice(0, 5))} – ${escapeHtml(s.endTime.slice(0, 5))}</td>
+        <td style="padding:10px 14px; border-bottom:1px solid #eee9db; font-size:13px; color:#8d9488;">${escapeHtml(s.positionLabel ?? "Quart standard")}</td>
+      </tr>`
+    )
+    .join("");
+
+  const bodyHtml = `
+    <h2 style="margin:0 0 8px; font-family:'New York', Georgia, serif; font-size:22px; font-weight:600; color:#1a1e16;">Votre horaire — ${safeRestaurantName}</h2>
+    <p style="margin:0 0 18px; font-size:14px; color:#565f52; line-height:1.5;">
+      Bonjour <strong>${safeEmployeeName}</strong>, voici vos prochains quarts de travail planifiés chez <strong>${safeRestaurantName}</strong> :
+    </p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px; border:1px solid #e6e0d0; border-radius:12px; background:#fbf9f3; overflow:hidden;">
+      <thead>
+        <tr style="background:#f5f1e6;">
+          <th align="left" style="padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#8d9488; border-bottom:1px solid #e6e0d0;">Date</th>
+          <th align="left" style="padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#8d9488; border-bottom:1px solid #e6e0d0;">Heures</th>
+          <th align="left" style="padding:10px 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#8d9488; border-bottom:1px solid #e6e0d0;">Poste</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows || '<tr><td colspan="3" style="padding:16px; text-align:center; font-size:13px; color:#8d9488;">Aucun quart planifié pour l\'instant.</td></tr>'}
+      </tbody>
+    </table>
+    <p style="margin:0 0 8px; font-size:13px; color:#565f52;">
+      Vous pouvez également consulter votre horaire à tout moment en ligne :
+    </p>
+  `;
+
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: `Votre horaire de travail — ${restaurantName}`,
+    html: emailShell(bodyHtml, "Consulter mon horaire en ligne", scheduleUrl),
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}

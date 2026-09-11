@@ -36,13 +36,10 @@ function yearlyFromMonthly(monthlyPriceCad: number): number {
   return Math.round(monthlyPriceCad * 12 * (1 - ANNUAL_DISCOUNT_RATE));
 }
 
-const ESSENTIEL_MONTHLY = 99;
-const CROISSANCE_MONTHLY = 250;
-// Marque blanche is a contact-sales tier (see isSelfServeTier below) — this
-// price is shown on the pricing table for reference but checkout always
-// routes to a sales conversation, per the /grill-me decision: white-label
-// setup (branding, domain, custom onboarding) isn't a self-serve flow.
-const MARQUE_BLANCHE_MONTHLY = 500;
+const ESSENTIEL_MONTHLY = 150;
+const CROISSANCE_MONTHLY = 290;
+// Enterprise / Multi-sites is a sales-assisted tier with pricing starting from 590 CAD / month
+const MARQUE_BLANCHE_MONTHLY = 590;
 
 export const PLAN_ESTABLISHMENT_LIMITS: Record<PlanTier, number | null> = {
   essentiel: 1,
@@ -54,60 +51,62 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
   essentiel: {
     tier: "essentiel",
     name: PLAN_NAMES.essentiel,
-    description: "Pour un premier établissement qui digitalise sa fidélisation.",
+    description: "Pour comprendre et protéger vos marges",
     monthlyPriceCad: ESSENTIEL_MONTHLY,
     yearlyPriceCad: yearlyFromMonthly(ESSENTIEL_MONTHLY),
     establishmentLimit: PLAN_ESTABLISHMENT_LIMITS.essentiel,
     monthlyTokenQuota: PLAN_AI_QUOTAS.essentiel,
-    support: "Support par email",
+    support: "Support par email & onboarding guidé",
     features: [
-      "1 établissement",
-      "Programme de fidélité complet (paliers, récompenses, offres, parrainage)",
-      "QR par restaurant, commande directe 0% commission",
-      "Widgets iOS (accueil et écran verrouillé)",
-      "Flow AI — 50 crédits/mois",
-      "Support par email",
+      "Calcul du coût portion",
+      "Synchronisation d’une caisse",
+      "Diagnostic du menu",
+      "QR code de capture de contacts",
+      "Rapport hebdomadaire",
+      "Onboarding guidé",
     ],
   },
   croissance: {
     tier: "croissance",
     name: PLAN_NAMES.croissance,
-    description: "Pour les groupes multi-établissements qui veulent tout centraliser.",
+    description: "Pour augmenter les visites répétées",
     monthlyPriceCad: CROISSANCE_MONTHLY,
     yearlyPriceCad: yearlyFromMonthly(CROISSANCE_MONTHLY),
     establishmentLimit: PLAN_ESTABLISHMENT_LIMITS.croissance,
     monthlyTokenQuota: PLAN_AI_QUOTAS.croissance,
-    support: "Support prioritaire",
+    support: "Support prioritaire 7j/7",
     highlight: true,
-    badge: "Le plus populaire",
+    badge: "Plan vedette — Le plus populaire",
     features: [
-      "Établissements illimités",
-      "Tout Essentiel, plus :",
-      "Réservations, inventaire, horaire et finance",
-      "Rapports & analytics avancés",
-      "Découverte multi-établissements (même franchise)",
-      "Flow AI — 500k tokens/mois",
-      "Support prioritaire",
+      "Tout ce qui est inclus dans Profit Core",
+      "Programme de fidélité",
+      "Récompenses automatiques",
+      "Segments clients",
+      "Campagnes SMS et courriel",
+      "Réactivation des clients inactifs",
+      "Parrainage",
+      "Rapports de revenus fidélisés",
+      "Recommandations de Flow AI",
     ],
   },
   marque_blanche: {
     tier: "marque_blanche",
     name: PLAN_NAMES.marque_blanche,
-    description: "Application en marque blanche pour chaînes et groupes — vente accompagnée.",
+    description: "Pour gérer plusieurs établissements",
     monthlyPriceCad: MARQUE_BLANCHE_MONTHLY,
     yearlyPriceCad: yearlyFromMonthly(MARQUE_BLANCHE_MONTHLY),
     establishmentLimit: PLAN_ESTABLISHMENT_LIMITS.marque_blanche,
     monthlyTokenQuota: PLAN_AI_QUOTAS.marque_blanche,
-    support: "Account manager dédié",
+    support: "Accompagnement stratégique dédié",
+    badge: "Multi-établissements",
     features: [
-      "Établissements illimités",
-      "Tout Croissance, plus :",
-      "Image de marque personnalisée (app, couleurs, nom)",
-      "Carte ouverte multi-enseignes (découverte façon Google Maps)",
-      "Intégrations personnalisées",
-      "Flow AI — quota sur mesure",
-      "SLA garanti & facturation consolidée",
-      "Account manager dédié",
+      "Fidélité interétablissements",
+      "Base client centralisée",
+      "Comparaison des performances",
+      "Multi-caisses",
+      "Rôles et permissions avancés",
+      "Exports comptables",
+      "Accompagnement stratégique",
     ],
   },
 };

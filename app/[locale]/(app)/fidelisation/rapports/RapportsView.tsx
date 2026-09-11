@@ -23,6 +23,30 @@ export function RapportsView({ metrics }: { metrics: ErpMoneyMetrics | null }) {
         description="Utilisation du jumelage de compte, et une estimation de l'argent distribué en points face à ce que la fidélité vous fait réellement conserver."
       />
 
+      <div className="mb-4 rounded-xl border border-mv-green/20 bg-gradient-to-r from-mv-green/10 via-mv-cream-soft to-transparent p-4 transition-all hover:border-mv-green/40">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-mv-green px-2 py-0.5 text-[11px] font-semibold text-white">
+                Nouveau
+              </span>
+              <h3 className="font-serif text-base font-semibold text-mv-ink">
+                Entonnoir de rétention & 10 KPI clés
+              </h3>
+            </div>
+            <p className="text-xs text-mv-ink-soft">
+              Analysez les 15 événements de cycle de vie : taux de scan, 2e visite (75 % – 100 %), valeur client et revenus attribués aux campagnes.
+            </p>
+          </div>
+          <a
+            href="/reports/retention-funnel"
+            className="inline-flex items-center justify-center rounded-lg bg-mv-green px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-mv-green-dark"
+          >
+            Consulter l&apos;entonnoir →
+          </a>
+        </div>
+      </div>
+
       {!metrics ? (
         <EmptyState
           icon={DollarSign}

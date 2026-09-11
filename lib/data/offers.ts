@@ -12,6 +12,7 @@ type OfferRow = {
   image_url: string | null;
   video_url: string | null;
   price: number | null;
+  cost: number | null;
   included_items: string[] | null;
   excluded_items: string[] | null;
   active: boolean;
@@ -58,6 +59,7 @@ function mapOffer(row: OfferRow): Offer {
     imageUrl: row.image_url,
     videoUrl: row.video_url ?? null,
     price: row.price,
+    cost: row.cost ?? null,
     includedItems: row.included_items ?? [],
     excludedItems: row.excluded_items ?? [],
     active: row.active,
@@ -73,6 +75,7 @@ export type OfferInput = {
   imageUrl?: string | null;
   videoUrl?: string | null;
   price?: number | null;
+  cost?: number | null;
   includedItems?: string[];
   excludedItems?: string[];
   active?: boolean;
@@ -154,6 +157,7 @@ export async function createOffer(restaurantId: string, input: OfferInput): Prom
       image_url: input.imageUrl ?? null,
       video_url: input.videoUrl ?? null,
       price: input.price ?? null,
+      cost: input.cost ?? null,
       included_items: input.includedItems ?? [],
       excluded_items: input.excludedItems ?? [],
       active: input.active ?? true,
@@ -205,6 +209,7 @@ export async function updateOffer(
   if (input.imageUrl !== undefined) patch.image_url = input.imageUrl;
   if (input.videoUrl !== undefined) patch.video_url = input.videoUrl;
   if (input.price !== undefined) patch.price = input.price;
+  if (input.cost !== undefined) patch.cost = input.cost;
   if (input.includedItems !== undefined) patch.included_items = input.includedItems;
   if (input.excludedItems !== undefined) patch.excluded_items = input.excludedItems;
   if (input.active !== undefined) patch.active = input.active;

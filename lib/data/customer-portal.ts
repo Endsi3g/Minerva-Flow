@@ -190,7 +190,31 @@ export async function selfRedeemReward(rewardId: string): Promise<RewardRedempti
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("self_redeem_reward", { p_reward_id: rewardId });
   if (error || !data) return null;
-  return mapRedemption(data as RewardRedemptionRow);
+  const redemption = mapRedemption(data as RewardRedemptionRow);
+
+  try {
+    const { recordLifecycleEvent } = await import("@/lib/data/lifecycle-events");
+    await recordLifecycleEvent(
+      {
+        restaurantId: redemption.restaurantId,
+        customerId: redemption.customerId,
+        eventType: "reward_redeemed",
+        metadata: {
+          redemptionId: redemption.id,
+          rewardId: redemption.rewardId,
+          rewardName: redemption.rewardName,
+          pointsSpent: redemption.pointsSpent,
+          code: redemption.code,
+          source: "customer_portal_self_redeem",
+        },
+      },
+      supabase
+    );
+  } catch {
+    // Non-blocking
+  }
+
+  return redemption;
 }
 
 /**

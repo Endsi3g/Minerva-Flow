@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import { notifyFavoritedItemAvailable } from "@/lib/favorites/notify";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { MenuItem } from "@/lib/types";
+import type { MenuItem, RecipeItem, InventoryItem } from "@/lib/types";
 
 export type MenuItemRow = {
   id: string;
@@ -231,3 +231,6 @@ export async function recordSale(restaurantId: string, id: string, quantity: num
   if (row.restaurant_id !== restaurantId) return null;
   return mapMenuItem(row);
 }
+
+export { calculateMenuItemStockStatus, type MenuItemStockStatus } from "@/lib/stock-availability";
+

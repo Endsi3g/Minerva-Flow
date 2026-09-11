@@ -12,3 +12,21 @@ export function getPostHogClient(): PostHog {
   }
   return posthogClient;
 }
+
+export function capturePostHogServerEvent(
+  distinctId: string,
+  event: string,
+  properties?: Record<string, unknown>
+): void {
+  try {
+    const client = getPostHogClient();
+    client.capture({
+      distinctId,
+      event,
+      properties,
+    });
+  } catch {
+    // Non-blocking
+  }
+}
+

@@ -17,20 +17,24 @@ type PurchaseOrderRow = {
 type PurchaseOrderItemRow = {
   id: string;
   purchase_order_id: string;
+  inventory_item_id?: string | null;
   item_name: string;
   quantity: number;
   unit: string;
   unit_cost: number;
+  received_quantity?: number | null;
 };
 
 function mapItem(row: PurchaseOrderItemRow): PurchaseOrderItem {
   return {
     id: row.id,
     purchaseOrderId: row.purchase_order_id,
+    inventoryItemId: row.inventory_item_id ?? null,
     itemName: row.item_name,
     quantity: row.quantity,
     unit: row.unit,
     unitCost: row.unit_cost,
+    receivedQuantity: row.received_quantity ?? null,
   };
 }
 
@@ -90,10 +94,12 @@ export async function getPurchaseOrder(restaurantId: string, id: string): Promis
 }
 
 export type PurchaseOrderItemInput = {
+  inventoryItemId?: string | null;
   itemName: string;
   quantity: number;
   unit: string;
   unitCost: number;
+  receivedQuantity?: number | null;
 };
 
 export type PurchaseOrderInput = {
@@ -135,10 +141,12 @@ export async function createPurchaseOrder(
       .insert(
         input.items.map((item) => ({
           purchase_order_id: orderRow.id,
+          inventory_item_id: item.inventoryItemId || null,
           item_name: item.itemName,
           quantity: item.quantity,
           unit: item.unit,
           unit_cost: item.unitCost,
+          received_quantity: item.receivedQuantity ?? null,
         }))
       )
       .select("*");
@@ -197,4 +205,21 @@ export async function deletePurchaseOrder(restaurantId: string, id: string): Pro
     .eq("restaurant_id", restaurantId)
     .eq("id", id);
   return !error;
+}
+
+export async function recordPurchaseOrderItemReceipts(
+  orderId: string,
+  receipts: { itemId: string; receivedQuantity: number }[]
+): Promise<boolean> {
+  if (receipts.length === 0) return true;
+  const supabase = await createClient();
+
+  for (const r of receipts) {
+    await supabase
+      .from("purchase_order_items")
+      .update({ received_quantity: r.receivedQuantity })
+      .eq("purchase_order_id", orderId)
+      .eq("id", r.itemId);
+  }
+  return true;
 }
