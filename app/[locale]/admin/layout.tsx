@@ -40,6 +40,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin/analytics" className="hover:text-mv-ink">
               {t("navAnalytics")}
             </Link>
+            <Link href="/admin/resultats" className="hover:text-mv-ink">
+              {t("navResultats")}
+            </Link>
             <Link href="/admin/changelog" className="hover:text-mv-ink">
               {t("navChangelog")}
             </Link>

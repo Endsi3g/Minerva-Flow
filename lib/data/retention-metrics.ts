@@ -75,9 +75,104 @@ export type RetentionFunnelDashboardData = {
     referralsSent: number;
     referralsConverted: number;
     totalMembers: number;
+    newMembersInRange: number;
   };
   recentEvents: LifecycleEventItem[];
 };
+
+/**
+ * Metrics eligible as the shareable "hero result" or supporting stats on a
+ * results card (see share-results feature). Deliberately excludes KPIs that
+ * aren't a flattering headline (cost_per_reactivated, unsubscribe_rate,
+ * scan_to_signup) even though they're tracked internally.
+ */
+export type ShareableMetricId =
+  | "new_members_in_range"
+  | "total_members"
+  | "activation_rate"
+  | "second_visit_rate"
+  | "thirty_day_return_rate"
+  | "avg_visit_frequency"
+  | "reward_redemption_rate"
+  | "avg_member_basket"
+  | "campaign_attributed_revenue";
+
+export type ShareableMetric = {
+  id: ShareableMetricId;
+  label: string;
+  value: number;
+  formattedValue: string;
+  unit: "%" | "$" | "visites" | "";
+};
+
+export function getShareableMetrics(data: RetentionFunnelDashboardData): ShareableMetric[] {
+  const { kpis, rawCounts } = data;
+  return [
+    {
+      id: "new_members_in_range",
+      label: "Nouveaux membres",
+      value: rawCounts.newMembersInRange,
+      formattedValue: `${rawCounts.newMembersInRange}`,
+      unit: "",
+    },
+    {
+      id: "total_members",
+      label: "Membres fidélité au total",
+      value: rawCounts.totalMembers,
+      formattedValue: `${rawCounts.totalMembers}`,
+      unit: "",
+    },
+    {
+      id: "activation_rate",
+      label: kpis.activationRate.label,
+      value: kpis.activationRate.value,
+      formattedValue: kpis.activationRate.formattedValue,
+      unit: kpis.activationRate.unit,
+    },
+    {
+      id: "second_visit_rate",
+      label: kpis.secondVisitRate.label,
+      value: kpis.secondVisitRate.value,
+      formattedValue: kpis.secondVisitRate.formattedValue,
+      unit: kpis.secondVisitRate.unit,
+    },
+    {
+      id: "thirty_day_return_rate",
+      label: kpis.thirtyDayReturnRate.label,
+      value: kpis.thirtyDayReturnRate.value,
+      formattedValue: kpis.thirtyDayReturnRate.formattedValue,
+      unit: kpis.thirtyDayReturnRate.unit,
+    },
+    {
+      id: "avg_visit_frequency",
+      label: kpis.averageVisitFrequency.label,
+      value: kpis.averageVisitFrequency.value,
+      formattedValue: kpis.averageVisitFrequency.formattedValue,
+      unit: kpis.averageVisitFrequency.unit,
+    },
+    {
+      id: "reward_redemption_rate",
+      label: kpis.rewardRedemptionRate.label,
+      value: kpis.rewardRedemptionRate.value,
+      formattedValue: kpis.rewardRedemptionRate.formattedValue,
+      unit: kpis.rewardRedemptionRate.unit,
+    },
+    {
+      id: "avg_member_basket",
+      label: kpis.averageMemberBasket.label,
+      value: kpis.averageMemberBasket.value,
+      formattedValue: kpis.averageMemberBasket.formattedValue,
+      unit: kpis.averageMemberBasket.unit,
+    },
+    {
+      id: "campaign_attributed_revenue",
+      label: kpis.campaignAttributedRevenue.label,
+      value: kpis.campaignAttributedRevenue.value,
+      formattedValue: kpis.campaignAttributedRevenue.formattedValue,
+      unit: kpis.campaignAttributedRevenue.unit,
+    },
+  ];
+}
 
 function getRangeStartDate(range: RetentionTimeRange): string | null {
   if (range === "all") return null;
@@ -163,6 +258,9 @@ export async function getRetentionFunnelMetrics(
 
   const customers = customersData ?? [];
   const totalMembers = customers.length;
+  const newMembersInRange = startDateIso
+    ? customers.filter((c) => c.created_at && c.created_at >= startDateIso).length
+    : totalMembers;
   const customersWithOnePlusVisits = customers.filter((c) => c.visit_count >= 1);
   const customersWithTwoPlusVisits = customers.filter((c) => c.visit_count >= 2);
 
@@ -478,6 +576,7 @@ export async function getRetentionFunnelMetrics(
       referralsSent: eventCounts.referral_sent,
       referralsConverted: eventCounts.referral_converted,
       totalMembers,
+      newMembersInRange,
     },
     recentEvents,
   };

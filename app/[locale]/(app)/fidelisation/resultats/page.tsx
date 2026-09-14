@@ -1,0 +1,56 @@
+import type { Metadata } from "next";
+import { getCurrentRestaurant } from "@/lib/data/current-restaurant";
+import { getRetentionFunnelMetrics, getShareableMetrics } from "@/lib/data/retention-metrics";
+import { getWorkspace } from "@/lib/data/workspaces";
+import { ResultatsView } from "./ResultatsView";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Store } from "lucide-react";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: "Résultats à partager — Fidélisation" };
+}
+
+export default async function ResultatsPage() {
+  const restaurant = await getCurrentRestaurant();
+
+  if (!restaurant) {
+    return (
+      <div>
+        <PageHeader
+          eyebrow="Fidélisation"
+          title="Résultats à partager"
+          description="Générez une carte de résultats prête pour vos réseaux sociaux."
+        />
+        <EmptyState
+          icon={Store}
+          title="Aucun établissement configuré"
+          description="Veuillez sélectionner ou configurer un établissement pour générer une carte de résultats."
+          action={
+            <Button href="/onboarding" size="sm">
+              Configurer un établissement
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
+
+  const [data, workspace] = await Promise.all([
+    getRetentionFunnelMetrics(restaurant.id, "30d"),
+    restaurant.workspaceId ? getWorkspace(restaurant.workspaceId) : Promise.resolve(null),
+  ]);
+
+  const metrics = getShareableMetrics(data);
+  const restaurantUrl = restaurant.website || process.env.NEXT_PUBLIC_APP_URL || "https://minervaflow.app";
+
+  return (
+    <ResultatsView
+      metrics={metrics}
+      restaurantName={restaurant.name}
+      logoUrl={workspace?.logoUrl ?? null}
+      restaurantUrl={restaurantUrl}
+    />
+  );
+}

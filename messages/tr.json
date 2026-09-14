@@ -723,8 +723,16 @@
       "navSupport": "Destek",
       "navIncidents": "Olaylar",
       "navAnalytics": "Analitik",
+      "navResultats": "Sonuçlar",
       "navChangelog": "Değişiklik Günlüğü",
       "backToApp": "← Uygulamaya dön"
+    },
+    "resultats": {
+      "pageTitle": "Paylaşılacak sonuçlar",
+      "pageDescription": "Minerva Flow için bir sonuç kartı oluşturun — platform görünümü (tüm restoranlar) veya işletme bazında.",
+      "scopePlatform": "Platform",
+      "scopeRestaurant": "Restorana göre",
+      "noData": "Bu seçim için veri yok."
     },
     "analytics": {
       "title": "Ürün Analitiği",

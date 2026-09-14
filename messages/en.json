@@ -218,6 +218,13 @@
     "draft": "Draft"
   },
   "admin": {
+    "resultats": {
+      "pageTitle": "Results to share",
+      "pageDescription": "Generate a Minerva Flow results card — platform-wide view (all restaurants) or per restaurant.",
+      "scopePlatform": "Platform",
+      "scopeRestaurant": "Per restaurant",
+      "noData": "No data available for this selection."
+    },
     "changelog": {
       "pageTitle": "Changelog Management",
       "publish": "Publish Entry",

@@ -723,8 +723,16 @@
       "navSupport": "Support",
       "navIncidents": "Incidents",
       "navAnalytics": "Analytics",
+      "navResultats": "Résultats",
       "navChangelog": "Changelog",
       "backToApp": "← Retour à l'application"
+    },
+    "resultats": {
+      "pageTitle": "Résultats à partager",
+      "pageDescription": "Génère une carte de résultats pour Minerva Flow — vue plateforme (tous les restaurants) ou par établissement.",
+      "scopePlatform": "Plateforme",
+      "scopeRestaurant": "Par restaurant",
+      "noData": "Aucune donnée disponible pour cette sélection."
     },
     "analytics": {
       "title": "Analytics produit",

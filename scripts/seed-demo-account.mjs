@@ -60,6 +60,7 @@ const counts = {
   loyalty_shares: 0,
   consent_backfilled: 0,
   birthday_backfilled: 0,
+  lifecycle_events: 0,
 };
 
 // ── helpers ───────────────────────────────────────────────────────────
@@ -234,7 +235,10 @@ async function seedCustomersAndTransactions(restaurantId) {
     .eq("restaurant_id", restaurantId);
   if (countError) throw countError;
   if (count && count > 0) {
-    const { data } = await supabase.from("customers").select("id, name, total_spent").eq("restaurant_id", restaurantId);
+    const { data } = await supabase
+      .from("customers")
+      .select("id, name, total_spent, visit_count, created_at")
+      .eq("restaurant_id", restaurantId);
     return data ?? [];
   }
 
@@ -254,6 +258,13 @@ async function seedCustomersAndTransactions(restaurantId) {
     const lastVisitAt = addDays(TODAY, -daysSinceLastVisit).toISOString();
     const name = randomCustomerName(i);
     const email = `${name.toLowerCase().replace(/[^a-z0-9]+/g, ".")}@example.com`;
+    // Étalé dans le temps (et pas tous "aujourd'hui") pour que "nouveaux
+    // membres sur la période" (carte de résultats à partager) montre une
+    // vraie tendance de croissance plutôt que 0 ou 50 d'un coup.
+    const nTxForJoinDate = Math.min(visitCount, 6);
+    const daysSinceJoined =
+      daysSinceLastVisit + (nTxForJoinDate > 1 ? (nTxForJoinDate - 1) * randInt(12, 30) : 0) + randInt(5, 45);
+    const createdAt = addDays(TODAY, -daysSinceJoined).toISOString();
 
     const { data: customer, error } = await supabase
       .from("customers")
@@ -266,12 +277,13 @@ async function seedCustomersAndTransactions(restaurantId) {
         total_spent: totalSpent,
         loyalty_points: loyaltyPoints,
         last_visit_at: lastVisitAt,
+        created_at: createdAt,
       })
-      .select("id, name, total_spent")
+      .select("id, name, total_spent, created_at")
       .single();
     if (error) throw error;
     counts.customers += 1;
-    created.push(customer);
+    created.push({ ...customer, visit_count: visitCount });
 
     // Historique de visites cohérent avec total_spent/visit_count, pour que
     // la segmentation comportementale (Phase 3) ait de vraies données
@@ -299,6 +311,117 @@ async function seedCustomersAndTransactions(restaurantId) {
   }
 
   return created;
+}
+
+// Étale created_at pour les clients déjà seedés avant l'introduction du
+// staggering ci-dessus (sinon ils ont tous la même date de création, et
+// "nouveaux membres sur la période" affiche 0 ou le total d'un coup).
+async function backfillCustomerJoinDates(restaurantId) {
+  const { data: customers, error } = await supabase
+    .from("customers")
+    .select("id, visit_count, last_visit_at, created_at")
+    .eq("restaurant_id", restaurantId);
+  if (error) throw error;
+  if (!customers || customers.length === 0) return;
+
+  const distinctDays = new Set(customers.map((c) => (c.created_at ?? "").slice(0, 10)));
+  if (distinctDays.size > 3) return customers; // déjà étalé
+
+  const updated = [];
+  for (const c of customers) {
+    const lastVisit = c.last_visit_at ? new Date(c.last_visit_at) : TODAY;
+    const daysSinceLastVisit = Math.max(0, Math.round((TODAY.getTime() - lastVisit.getTime()) / 86_400_000));
+    const nTx = Math.min(c.visit_count ?? 0, 6);
+    const daysSinceJoined =
+      daysSinceLastVisit + (nTx > 1 ? (nTx - 1) * randInt(12, 30) : 0) + randInt(5, 45);
+    const createdAt = addDays(TODAY, -daysSinceJoined).toISOString();
+    const { error: updateError } = await supabase.from("customers").update({ created_at: createdAt }).eq("id", c.id);
+    if (updateError) throw updateError;
+    updated.push({ ...c, created_at: createdAt });
+  }
+  return updated;
+}
+
+// Peuple lifecycle_events pour que le tunnel de rétention et la carte de
+// résultats à partager (Fidélisation → Partager mes résultats) aient de
+// vraies récompenses échangées et un revenu de campagne attribué, plutôt
+// que des zéros — sinon ces deux KPI restent plats sans lifecycle_events.
+async function seedLifecycleEvents(restaurantId, customers) {
+  const { count, error: countError } = await supabase
+    .from("lifecycle_events")
+    .select("id", { count: "exact", head: true })
+    .eq("restaurant_id", restaurantId);
+  if (countError) throw countError;
+  if (count && count > 0) return;
+
+  const rows = [];
+  const pushEvent = (customerId, eventType, daysAgo, metadata = {}) => {
+    rows.push({
+      restaurant_id: restaurantId,
+      customer_id: customerId,
+      event_type: eventType,
+      metadata,
+      created_at: addDays(TODAY, -daysAgo).toISOString(),
+    });
+  };
+
+  for (const c of customers) {
+    const joinedDaysAgo = c.created_at
+      ? Math.round((TODAY.getTime() - new Date(c.created_at).getTime()) / 86_400_000)
+      : randInt(30, 200);
+    const visitCount = c.visit_count ?? 0;
+
+    // Acquisition : scan → formulaire → inscription, quelques heures avant
+    // la création du compte.
+    pushEvent(c.id, "qr_code_scanned", joinedDaysAgo);
+    pushEvent(c.id, "form_started", joinedDaysAgo);
+    pushEvent(c.id, "registration_completed", joinedDaysAgo);
+
+    if (visitCount >= 1) {
+      pushEvent(c.id, "first_visit_recognized", Math.max(0, joinedDaysAgo - randInt(1, 4)));
+    }
+    if (visitCount >= 2) {
+      pushEvent(c.id, "second_visit_recognized", Math.max(0, joinedDaysAgo - randInt(5, 20)));
+    }
+
+    // Récompenses : ~55 % débloquent, et parmi eux ~55 % échangent —
+    // vise un taux d'échange sain (35-60 %, cible produit) plutôt que 0.
+    if (visitCount >= 2 && Math.random() < 0.55) {
+      const unlockedDaysAgo = randInt(5, Math.max(6, joinedDaysAgo));
+      pushEvent(c.id, "reward_unlocked", unlockedDaysAgo);
+      if (Math.random() < 0.55) {
+        pushEvent(c.id, "reward_redeemed", Math.max(0, unlockedDaysAgo - randInt(1, 10)));
+      }
+    }
+
+    // Campagnes : ~30 % des clients reçoivent une relance récente, et ~45 %
+    // d'entre eux reviennent dans les 7 jours (revenu attribué).
+    if (Math.random() < 0.3) {
+      const sentDaysAgo = randInt(2, 45);
+      pushEvent(c.id, "campaign_sent", sentDaysAgo);
+      pushEvent(c.id, "message_delivered", sentDaysAgo);
+      if (Math.random() < 0.45) {
+        const avgBasket = visitCount > 0 ? Number(c.total_spent ?? 0) / visitCount : rand(18, 45);
+        pushEvent(c.id, "campaign_visit_generated", Math.max(0, sentDaysAgo - randInt(1, 6)), {
+          amountSpent: Math.round(Math.max(12, avgBasket) * rand(0.85, 1.2) * 100) / 100,
+        });
+      }
+    }
+  }
+
+  // Une poignée de désinscriptions, pour la conformité CASL — taux qui
+  // reste sous le seuil d'alerte (< 2 %) comme attendu d'un compte témoin.
+  const unsubscribeSample = customers.slice(0, Math.max(1, Math.round(customers.length * 0.015)));
+  for (const c of unsubscribeSample) {
+    pushEvent(c.id, "unsubscribed", randInt(1, 30));
+  }
+
+  for (let i = 0; i < rows.length; i += 500) {
+    const batch = rows.slice(i, i + 500);
+    const { error } = await supabase.from("lifecycle_events").insert(batch);
+    if (error) throw error;
+    counts.lifecycle_events += batch.length;
+  }
 }
 
 // ── 4. programmes de parrainage + quelques liens clients ──────────────
@@ -823,6 +946,8 @@ async function main() {
 
   await seedMenuItems(restaurantId);
   const customers = await seedCustomersAndTransactions(restaurantId);
+  const customersWithJoinDates = await backfillCustomerJoinDates(restaurantId);
+  await seedLifecycleEvents(restaurantId, customersWithJoinDates);
   await seedReferralPrograms(restaurantId, customers);
   await seedOffers(restaurantId);
   await seedLoyaltyRewards(restaurantId);
