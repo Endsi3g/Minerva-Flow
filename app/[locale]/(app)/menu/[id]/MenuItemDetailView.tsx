@@ -19,7 +19,7 @@ import {
   deleteMenuItemAction,
   updateMenuItemRecipeAction,
 } from "@/app/[locale]/(app)/menu/actions";
-import { calculateMenuItemStockStatus } from "@/lib/data/menu";
+import { calculateMenuItemStockStatus } from "@/lib/stock-availability";
 import type { MenuItem, InventoryItem, RecipeItem } from "@/lib/types";
 import {
   ArrowLeft,

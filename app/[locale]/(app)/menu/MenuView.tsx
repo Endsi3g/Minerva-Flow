@@ -18,7 +18,7 @@ import {
   MARGIN_DRIFT_FOOD_COST_PCT,
   type MenuItemWithQuadrant,
 } from "@/lib/menu-engineering";
-import { calculateMenuItemStockStatus, type MenuItemStockStatus } from "@/lib/data/menu";
+import { calculateMenuItemStockStatus, type MenuItemStockStatus } from "@/lib/stock-availability";
 import type { InventoryItem, MenuItem, MenuQuadrant, MenuShare, Offer, RecipeItem } from "@/lib/types";
 import {
   UtensilsCrossed,
