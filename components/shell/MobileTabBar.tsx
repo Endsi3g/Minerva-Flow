@@ -25,6 +25,12 @@ import {
   TrendingDown,
   UserCircle,
   Lock,
+  ClipboardList,
+  UtensilsCrossed,
+  Heart,
+  Zap,
+  Building2,
+  PackageSearch,
 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useApp } from "@/lib/app-context";
@@ -51,6 +57,10 @@ type MoreItem = TabItem & { roles: Role[] };
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 
 const MORE_ITEMS: MoreItem[] = [
+  { href: "/commandes", translationKey: "commandes", icon: ClipboardList, roles: allRoles },
+  { href: "/menu", translationKey: "menu", icon: UtensilsCrossed, roles: allRoles },
+  { href: "/fidelisation", translationKey: "fidelisation", icon: Heart, roles: allRoles },
+  { href: "/inventaire", translationKey: "inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
   { href: "/programs", translationKey: "programs", icon: GitCommit, roles: allRoles },
   { href: "/days", translationKey: "days", icon: BarChart3, roles: allRoles },
   { href: "/employees", translationKey: "employees", icon: Boxes, roles: ["owner", "manager"] },
@@ -68,6 +78,8 @@ const MORE_ITEMS: MoreItem[] = [
   { href: "/guide", translationKey: "guide", icon: BookOpen, roles: allRoles },
   { href: "/support", translationKey: "support", icon: LifeBuoy, roles: allRoles },
   { href: "/changelog", translationKey: "changelog", icon: History, roles: allRoles },
+  { href: "/integrations", translationKey: "integrations", icon: Zap, roles: allRoles },
+  { href: "/workspace", translationKey: "manageWorkspace", icon: Building2, roles: ["owner", "manager"] },
 ];
 
 /**
@@ -82,12 +94,23 @@ export function MobileTabBar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const flowAiLocked = !isPlatformAdmin;
 
-  const tabs: TabItem[] = [
-    { href: "/overview", translationKey: "mobileHome", icon: LayoutGrid },
-    { href: "/assistant", translationKey: "mobileChat", icon: Sparkles },
-    { href: "/data", translationKey: "favData", icon: Database },
-    { href: "/reports", translationKey: "reports", icon: FileBarChart2 },
-  ];
+  // Owners run their business from their phone. Their persistent tabs lead to
+  // the four daily decisions (cockpit, orders, menu margin, loyalty) rather
+  // than a locked assistant and reporting pages that belong in "Plus".
+  const tabs: TabItem[] =
+    role === "owner" || role === "manager"
+      ? [
+          { href: "/overview", translationKey: "mobileHome", icon: LayoutGrid },
+          { href: "/commandes", translationKey: "commandes", icon: ClipboardList },
+          { href: "/menu", translationKey: "menu", icon: UtensilsCrossed },
+          { href: "/fidelisation", translationKey: "fidelisation", icon: Heart },
+        ]
+      : [
+          { href: "/overview", translationKey: "mobileHome", icon: LayoutGrid },
+          { href: "/assistant", translationKey: "mobileChat", icon: Sparkles },
+          { href: "/data", translationKey: "favData", icon: Database },
+          { href: "/reports", translationKey: "reports", icon: FileBarChart2 },
+        ];
 
   const visibleMoreItems = MORE_ITEMS.filter((item) => item.roles.includes(role));
   const isMoreActive = visibleMoreItems.some((item) => pathname.startsWith(item.href));

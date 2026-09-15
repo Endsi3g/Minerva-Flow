@@ -2,6 +2,12 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.39.0] - 2026-09-15
+
+### 📱 Cockpit propriétaire mobile
+- La barre mobile des propriétaires et gérants privilégie maintenant le cockpit, les commandes, le menu et la fidélisation — les décisions quotidiennes — au lieu d’un assistant encore verrouillé.
+- Le tiroir « Plus » rend accessibles sur mobile les écrans de commandes, menu, fidélisation, inventaire, intégrations et configuration du workspace, dont l’identité white-label.
+
 ## [v2.38.0] - 2026-09-15
 
 ### 🌐 Domaine white-label
