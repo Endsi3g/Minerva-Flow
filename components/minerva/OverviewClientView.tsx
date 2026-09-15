@@ -31,7 +31,6 @@ import {
   Cake,
   Activity,
   ShieldCheck,
-  Building2,
   AlertTriangle,
   HelpCircle,
   Clock,
@@ -131,7 +130,6 @@ export function OverviewClientView({
   const router = useRouter();
 
   const isGroupMode = currentScope === "group";
-  const hasMultipleEstablishments = restaurants.length > 1;
 
   const now = useMemo(() => new Date(), []);
   const monthLabel = useMemo(() => {
@@ -164,46 +162,6 @@ export function OverviewClientView({
   return (
     <div className="space-y-6">
       <LiveKpiSync restaurantId={restaurantId} />
-
-      {/* Top Bar: Multi-Establishment Scope Selector (if 2+ restaurants) */}
-      {hasMultipleEstablishments && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-mv-border bg-mv-surface p-2.5 shadow-mv-sm sm:px-4">
-          <div className="flex items-center gap-2 text-[12.5px] font-semibold text-mv-ink">
-            <Building2 size={16} className="text-mv-green-dark" />
-            <span>Portée :</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              onClick={() => router.push("/overview?scope=group")}
-              className={`rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                isGroupMode
-                  ? "bg-mv-green text-white shadow-mv-xs"
-                  : "bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-cream hover:text-mv-ink"
-              }`}
-            >
-              Vue Groupe ({restaurants.length} établissements)
-            </button>
-
-            {restaurants.map((r) => {
-              const isSelected = !isGroupMode && (currentScope === r.id || restaurantId === r.id);
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => router.push(`/overview?scope=${r.id}`)}
-                  className={`rounded-xl px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                    isSelected
-                      ? "bg-mv-green text-white shadow-mv-xs"
-                      : "bg-mv-cream-soft text-mv-ink-soft hover:bg-mv-cream hover:text-mv-ink"
-                  }`}
-                >
-                  {r.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Page Header */}
       <PageHeader
