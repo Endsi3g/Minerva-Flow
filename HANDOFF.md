@@ -21,6 +21,8 @@
 4. [Schémas de Base de Données & Migrations Supabase](#4-schémas-de-base-de-données--migrations-supabase)
 5. [Guide de Vérification Pas-à-Pas (Validation Complète)](#5-guide-de-vérification-pas-à-pas-validation-complète)
 6. [État des Intégrations & Roadmap Résiduelle](#6-état-des-intégrations--roadmap-résiduelle)
+7. [App Native Owner (iPad/iPhone) — Planifiée, Non Démarrée](#7-app-native-owner-ipadiphone--planifiée-non-démarrée)
+8. [Session du 2026-09-10 — Synchro POS Bidirectionnelle & Corrections d'Infrastructure](#8-session-du-2026-09-10--synchro-pos-bidirectionnelle--corrections-dinfrastructure)
 
 ---
 
@@ -302,9 +304,9 @@ node ./node_modules/vitest/vitest.mjs run lib/__tests__/campaigns-and-casl-conse
 | **8 Modèles de Campagnes** | **Opérationnel (100 %)** | Rendus SMS/Courriel, tests unitaires et UI complétés |
 | **Conformité LCAP / CASL** | **Opérationnel (100 %)** | Double opt-in, table d'audit immuable, webhook STOP |
 | **Identification en Caisse** | **Opérationnel (100 %)** | Téléphone tolérant, code 6 chiffres RPC, modal caissier |
-| **Clover POS** | Code prêt (OAuth + Sync 90j) | Fonctionnel dès saisie des clés `CLOVER_APP_ID/SECRET` |
+| **Clover POS** | Code prêt, clés sandbox saisies, connexion **en cours de débogage** (2026-09-10) | Voir [Section 8](#8-session-du-2026-09-10--synchro-pos-bidirectionnelle--corrections-dinfrastructure) — le bouton « Connecter » ne réagit pas encore, cause non confirmée |
 | **Toast POS** | Code prêt (Partner Connect) | Fonctionnel dès saisie des clés `TOAST_CLIENT_ID/SECRET` |
-| **Square POS** | Code OAuth & Sync prêt | Revenu journalier synchronisé |
+| **Square POS** | Code OAuth + synchro catalogue bidirectionnelle prêt, clés sandbox saisies, connexion **en cours de débogage** (2026-09-10) | Voir [Section 8](#8-session-du-2026-09-10--synchro-pos-bidirectionnelle--corrections-dinfrastructure) — même symptôme que Clover |
 | **Lightspeed Restaurant** | Code OAuth prêt | En attente d'un compte sandbox partenaire Lightspeed |
 | **Pass Apple Wallet** | Scannable par QR / code | Génération de fichier `.pkpass` natif planifiée post-MVP |
 | **Paiement Stripe Connect** | Opérationnel sur `/m/[token]` | Connexion au portail client `/portal` en attente de Stripe |

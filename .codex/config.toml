@@ -1,0 +1,9 @@
+[mcp_servers.google-pay-wallet-dev]
+url = "https://paydeveloper.googleapis.com/mcp"
+
+[mcp_servers.thesvg]
+command = "npx"
+args = [
+    "-y",
+    "@thesvg/mcp-server",
+]
