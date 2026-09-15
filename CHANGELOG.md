@@ -2,6 +2,11 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.39.1] - 2026-09-15
+
+### 🛠️ Correctif création de workspace
+- Les nouveaux workspaces reçoivent maintenant automatiquement leur token de vérification DNS. Ce correctif empêche l’échec de création d’un nouveau propriétaire après l’activation de la marque blanche.
+
 ## [v2.39.0] - 2026-09-15
 
 ### 📱 Cockpit propriétaire mobile
