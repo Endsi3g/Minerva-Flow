@@ -2,6 +2,7 @@
 
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ShareCardConfigurator } from "@/components/fidelisation/ShareCardConfigurator";
+import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
 import type { ShareableMetric } from "@/lib/data/retention-metrics";
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
 export function ResultatsView({ metrics, restaurantName, logoUrl, restaurantUrl }: Props) {
   return (
     <div className="space-y-6">
+      <FidelisationSubNav />
       <PageHeader
         eyebrow="Fidélisation"
         title="Résultats à partager"

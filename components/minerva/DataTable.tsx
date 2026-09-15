@@ -8,17 +8,23 @@ import {
 import { cn } from "@/lib/utils";
 import type { ReactNode, ThHTMLAttributes, TdHTMLAttributes } from "react";
 
-export function Table({ children }: { children: ReactNode }) {
+export function Table({
+  children,
+  containerClassName,
+}: {
+  children: ReactNode;
+  containerClassName?: string;
+}) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-mv-border bg-mv-surface shadow-mv-sm">
+    <div className={cn("overflow-x-auto rounded-2xl border border-mv-border bg-mv-surface shadow-mv-sm", containerClassName)}>
       <ShadcnTable className="min-w-[720px]">{children}</ShadcnTable>
     </div>
   );
 }
 
-export function THead({ children }: { children: ReactNode }) {
+export function THead({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <TableHeader>
+    <TableHeader className={className}>
       <TableRow className="border-b border-mv-border bg-mv-cream-soft hover:bg-mv-cream-soft">
         {children}
       </TableRow>

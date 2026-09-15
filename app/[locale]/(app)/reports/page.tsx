@@ -2,19 +2,21 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Card } from "@/components/minerva/PageCard";
+import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getServiceDays } from "@/lib/data/service-days";
 import { getPrograms } from "@/lib/data/programs";
 import { getCampaigns } from "@/lib/data/campaigns";
 import { getFinancialTransactions } from "@/lib/data/finance";
-import { buildReports, reportGroups, type ReportData } from "@/lib/reports";
+import { buildReports, reportGroups, revenueTrend, margeTrend, type ReportData } from "@/lib/reports";
 import { cn, formatCurrency, isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { Sparkles, Store } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
+import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
+import { MiniSparkline } from "@/components/charts/MiniSparkline";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("breadcrumb");
@@ -53,6 +55,23 @@ export default async function ReportsIndexPage() {
 
   const data: ReportData = { serviceDays, programs, campaigns, financialTransactions };
   const reports = buildReports(data);
+
+  // Visual trend datasets
+  const revTrend = revenueTrend(data);
+  const margTrend = margeTrend(data);
+  const depensesTrend = serviceDays.map((d) => ({
+    date: d.date,
+    revenue: d.expenses !== undefined ? d.expenses : Math.round(d.revenue * 0.476),
+  }));
+
+  const sparkDataMap: Record<string, { date: string; value: number }[]> = {
+    revenu: revTrend.map((d) => ({ date: d.date, value: d.revenue })),
+    marge: margTrend.map((d) => ({ date: d.date, value: d.revenue })),
+    journees: revTrend.map((d) => ({ date: d.date, value: d.revenue > 0 ? 1 : 0 })),
+    entrees: revTrend.map((d) => ({ date: d.date, value: d.revenue })),
+    sorties: depensesTrend.map((d) => ({ date: d.date, value: d.revenue })),
+    campagnes: revTrend.map((d) => ({ date: d.date, value: campaigns.length })),
+  };
 
   // Fetch dynamic AI-generated reports
   const supabase = await createClient();
@@ -93,6 +112,25 @@ export default async function ReportsIndexPage() {
           </div>
         }
       />
+
+      {/* Consolidated Financial Trend Chart */}
+      {revTrend.length > 0 && (
+        <Card className="p-4 sm:p-5 mb-8">
+          <CardHeader
+            eyebrow="Tendance financière consolidée"
+            title="Évolution comparative : Ventes, Marges & Charges"
+            description="Visualisez l'évolution journalière de vos recettes face à votre marge brute et vos charges estimées."
+          />
+          <UnifiedTrendChart
+            series={[
+              { key: "revenu", slug: "revenu", label: "Chiffre d'affaires", color: "var(--mv-green)", data: revTrend },
+              { key: "marge", slug: "marge", label: "Marge brute estimée", color: "var(--mv-lime-dark)", data: margTrend },
+              { key: "sorties", slug: "sorties", label: "Charges estimées", color: "var(--mv-amber)", data: depensesTrend },
+            ]}
+          />
+        </Card>
+      )}
+
       <div className="space-y-8">
         {/* Dynamic AI-Generated Reports */}
         {dynamicReports.length > 0 && (
@@ -139,21 +177,33 @@ export default async function ReportsIndexPage() {
               <div className={cn("grid gap-4", gridCols)}>
                 {groupReports.map((r) => (
                   <Link key={r.slug} href={`/reports/${r.slug}`}>
-                    <Card className="transition-all duration-300 ease-out hover:shadow-mv-md hover:-translate-y-0.5">
-                      <p className="font-display text-[15px] font-medium text-mv-ink">{t(`labels.${r.slug}`)}</p>
-                      <div className="mt-2 flex items-end justify-between">
-                        <p className="font-display text-[22px] font-medium text-mv-ink">
+                    <Card className="transition-all duration-300 ease-out hover:shadow-mv-md hover:-translate-y-0.5 flex flex-col justify-between h-full">
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-display text-[15px] font-medium text-mv-ink">{t(`labels.${r.slug}`)}</p>
+                          {r.delta !== undefined && (
+                            <Badge tone={r.delta >= 0 ? "green" : "red"} className="text-[10.5px]">
+                              {r.delta >= 0 ? "↑" : "↓"} {Math.abs(r.delta).toFixed(1)}%
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="mt-2 font-display text-[22px] font-medium text-mv-ink">
                           {r.unit === "currency" ? formatCurrency(r.value) : r.value}
                         </p>
-                        {r.delta !== undefined && (
-                          <Badge tone={r.delta >= 0 ? "green" : "red"}>
-                            {r.delta >= 0 ? "↑" : "↓"} {Math.abs(r.delta).toFixed(1)}%
-                          </Badge>
-                        )}
+                        <p className="mt-1 line-clamp-2 text-[12px] text-mv-ink-soft">
+                          {t(`summaries.${r.slug}`, { count: r.value })}
+                        </p>
                       </div>
-                      <p className="mt-1.5 line-clamp-2 text-[12.5px] text-mv-ink-soft">
-                        {t(`summaries.${r.slug}`, { count: r.value })}
-                      </p>
+
+                      {sparkDataMap[r.slug] && sparkDataMap[r.slug].length > 1 && (
+                        <div className="mt-3 pt-2 border-t border-mv-border-soft">
+                          <MiniSparkline
+                            id={`rep-${r.slug}`}
+                            data={sparkDataMap[r.slug]}
+                            color={r.color || "var(--mv-green)"}
+                          />
+                        </div>
+                      )}
                     </Card>
                   </Link>
                 ))}

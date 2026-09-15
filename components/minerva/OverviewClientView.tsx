@@ -14,7 +14,7 @@ import { RecommendationsPanel } from "@/components/minerva/RecommendationsPanel"
 import { WidgetManagerModal, useWidgetVisibility } from "@/components/minerva/WidgetManagerModal";
 import { LiveKpiSync } from "@/components/realtime/LiveKpiSync";
 import { HelperTooltip } from "@/components/ui/HelperTooltip";
-import { formatCurrency, formatDateFull } from "@/lib/utils";
+import { cn, formatCurrency, formatDateFull } from "@/lib/utils";
 import {
   CalendarCheck2,
   Megaphone,
@@ -37,6 +37,7 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
+  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import type { Alert, Recommendation, ServiceDay, Restaurant } from "@/lib/types";
@@ -124,6 +125,7 @@ export function OverviewClientView({
   loyaltyHealth?: LoyaltyHealth | null;
 }) {
   const [managerOpen, setManagerOpen] = useState(false);
+  const [reliabilityOpen, setReliabilityOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const { visibleWidgets, toggleWidget, resetWidgets, isVisible } = useWidgetVisibility();
   const router = useRouter();
@@ -203,41 +205,6 @@ export function OverviewClientView({
         </div>
       )}
 
-      {/* Sync Telemetry & Real-Time Data Reliability Bar */}
-      {syncTelemetry && (
-        <div className="flex flex-col gap-2 rounded-2xl border border-mv-border-soft bg-mv-cream-soft/70 px-4 py-2.5 text-[12px] text-mv-ink-soft sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="flex items-center gap-1.5 font-medium text-mv-ink">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mv-green opacity-75"></span>
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-mv-green"></span>
-              </span>
-              {syncTelemetry.providerName}
-            </span>
-            <span className="hidden text-mv-border sm:inline">|</span>
-            <span className="flex items-center gap-1">
-              <Clock size={12} className="text-mv-ink-faint" />
-              {syncTelemetry.lastSyncedFormatted}
-            </span>
-            <span className="hidden text-mv-border sm:inline">|</span>
-            <span>Fréquence : {syncTelemetry.syncFrequency}</span>
-            <span className="hidden text-mv-border sm:inline">|</span>
-            <span className="flex items-center gap-1 font-semibold text-mv-green-dark">
-              <ShieldCheck size={13} />
-              Fiabilité certifiée : {syncTelemetry.reliabilityRate}%
-            </span>
-          </div>
-
-          <Link
-            href="/integrations"
-            className="flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
-          >
-            Gérer les intégrations
-            <ArrowRight size={11} />
-          </Link>
-        </div>
-      )}
-
       {/* Page Header */}
       <PageHeader
         eyebrow={isGroupMode ? "Vue consolidée du groupe" : "Cockpit d'action opérationnel"}
@@ -252,14 +219,28 @@ export function OverviewClientView({
           isGroupMode ? (
             "Résultats consolidés en temps réel sur l'ensemble de vos établissements avec benchmark de rentabilité."
           ) : (
-            <span className="inline-flex flex-wrap items-center gap-1">
-              {`Marge cumulée du mois : ${formatCurrency(monthMarge)} au ${todayLabel}${
-                monthMargeIsEstimated ? " (estimée)" : ""
-              }.`}
-              {monthMargeIsEstimated && (
-                <HelperTooltip content="Vous n'avez pas encore entré de dépenses pour certaines journées — la marge de ces jours-là est estimée à 52,4 % du revenu plutôt que calculée sur vos vrais coûts. Complétez vos fiches recettes et factures pour un calcul certifié." />
+            <div className="space-y-1">
+              <span className="inline-flex flex-wrap items-center gap-1">
+                {`Marge cumulée du mois : ${formatCurrency(monthMarge)} au ${todayLabel}${
+                  monthMargeIsEstimated ? " (estimée)" : ""
+                }.`}
+                {monthMargeIsEstimated && (
+                  <HelperTooltip content="Vous n'avez pas encore entré de dépenses pour certaines journées — la marge de ces jours-là est estimée à 52,4 % du revenu plutôt que calculée sur vos vrais coûts. Complétez vos fiches recettes et factures pour un calcul certifié." />
+                )}
+              </span>
+              {(!syncTelemetry || syncTelemetry.sourceType === "pending") && (
+                <div className="flex items-center gap-1.5 text-[11.5px] text-mv-ink-faint">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-mv-amber" />
+                  <span>Aucune caisse connectée —</span>
+                  <Link
+                    href="/integrations"
+                    className="font-medium text-mv-green-dark hover:underline"
+                  >
+                    Connecter une caisse enregistreuse
+                  </Link>
+                </div>
               )}
-            </span>
+            </div>
           )
         }
         action={
@@ -279,297 +260,212 @@ export function OverviewClientView({
         }
       />
 
-      {/* Useful Empty State / Data Reliability & Onboarding Checklist */}
+      {/* Guide de configuration / Fiabilité des données (accordéon replié par défaut) */}
       {onboardingReadiness && !onboardingReadiness.isFullyConfigured && onboardingReadiness.scorePct < 100 && (
-        <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm sm:p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-amber-bg text-mv-amber">
-                  <AlertTriangle size={16} />
-                </span>
-                <h3 className="font-display text-[16px] font-semibold text-mv-ink">
-                  Certifier la fiabilité de vos chiffres ({onboardingReadiness.scorePct}% configuré)
-                </h3>
+        <div className="rounded-2xl border border-mv-border bg-mv-surface p-3 sm:p-4 shadow-mv-xs transition-all">
+          <button
+            type="button"
+            onClick={() => setReliabilityOpen((prev) => !prev)}
+            className="flex w-full items-center justify-between gap-3 text-left"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-green-tint text-mv-green-dark">
+                <ShieldCheck size={15} />
               </div>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed text-mv-ink-soft">
-                <strong>Un outil mal configuré ne crée aucune valeur.</strong> Minerva Flow valide vos ratios
-                et génère des recommandations précises dès que vos sources de données de caisse et vos fiches recettes sont complétées.
+              <div>
+                <span className="text-[13px] font-semibold text-mv-ink">
+                  Guide de configuration ({onboardingReadiness.scorePct}% complété)
+                </span>
+                <span className="ml-2 hidden text-[11.5px] text-mv-ink-faint sm:inline">
+                  — Finalisez vos fiches recettes et liaisons pour certifier vos ratios
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-mv-border-soft sm:block">
+                <div
+                  className="h-full bg-mv-green transition-all duration-500"
+                  style={{ width: `${onboardingReadiness.scorePct}%` }}
+                />
+              </div>
+              <ChevronDown
+                size={16}
+                className={cn("text-mv-ink-faint transition-transform duration-200", reliabilityOpen && "rotate-180")}
+              />
+            </div>
+          </button>
+
+          {reliabilityOpen && (
+            <div className="mt-3.5 border-t border-mv-border-soft pt-3">
+              <p className="text-[12px] leading-relaxed text-mv-ink-soft">
+                Minerva Flow affine la précision de vos marges et génère des recommandations proactives dès que vos sources de données de caisse et vos fiches recettes sont complétées.
               </p>
 
-              {/* Progress bar */}
-              <div className="mt-3 flex items-center gap-3">
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-mv-border-soft">
+              <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {onboardingReadiness.missingActions.slice(0, 3).map((act) => (
                   <div
-                    className="h-full bg-mv-green transition-all duration-500"
-                    style={{ width: `${onboardingReadiness.scorePct}%` }}
-                  />
-                </div>
-                <span className="text-[12px] font-bold text-mv-ink">{onboardingReadiness.scorePct}%</span>
-              </div>
-            </div>
-
-            <div className="shrink-0 pt-1 sm:text-right">
-              <Link
-                href="/support"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-mv-border bg-mv-cream-soft px-3 py-1.5 text-[12px] font-semibold text-mv-ink hover:bg-mv-cream"
-              >
-                <HelpCircle size={14} /> Besoin d&apos;aide ? Contacter le support
-              </Link>
-            </div>
-          </div>
-
-          {/* Action pills */}
-          <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {onboardingReadiness.missingActions.slice(0, 3).map((act) => (
-              <div
-                key={act.id}
-                className="flex flex-col justify-between rounded-xl border border-mv-border-soft bg-mv-cream-soft/50 p-3"
-              >
-                <div>
-                  <p className="text-[12.5px] font-semibold text-mv-ink">{act.title}</p>
-                  <p className="mt-0.5 text-[11.5px] leading-snug text-mv-ink-soft">{act.description}</p>
-                </div>
-                <div className="mt-2.5 pt-2 border-t border-mv-border-soft/60">
-                  <Link
-                    href={act.ctaUrl}
-                    className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
+                    key={act.id}
+                    className="flex flex-col justify-between rounded-xl border border-mv-border-soft bg-mv-cream-soft/50 p-3"
                   >
-                    {act.ctaLabel}
-                    <ArrowRight size={12} />
-                  </Link>
-                </div>
+                    <div>
+                      <p className="text-[12.5px] font-semibold text-mv-ink">{act.title}</p>
+                      <p className="mt-0.5 text-[11.5px] leading-snug text-mv-ink-soft">{act.description}</p>
+                    </div>
+                    <div className="mt-2.5 pt-2 border-t border-mv-border-soft/60">
+                      <Link
+                        href={act.ctaUrl}
+                        className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
+                      >
+                        {act.ctaLabel}
+                        <ArrowRight size={12} />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* 5 HERO ACTION KPI CARDS (Strictly 5 visible first-level metrics) */}
+      {/* BANDE COMPACTE STATSTRIP (5 KPIs d'action sur une seule ligne condensée) */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {/* KPI 1 : Ventes nettes (Chiffre d'affaires) */}
-        <div className="flex flex-col justify-between rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:shadow-mv-md">
-          <div>
+      <div className="rounded-2xl border border-mv-border bg-mv-surface p-3 shadow-mv-sm sm:p-4">
+        <div className="grid grid-cols-1 gap-3 divide-y sm:grid-cols-2 sm:divide-y-0 sm:divide-x divide-mv-border-soft lg:grid-cols-5">
+          {/* KPI 1 : Ventes nettes */}
+          <div className="flex flex-col justify-between px-2 pt-2 first:pt-0 sm:pt-0 first:pl-0">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                Ventes nettes (CA)
-              </p>
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-green-tint text-mv-green-dark">
-                <DollarSign size={15} />
-              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Ventes nettes</span>
+              <DollarSign size={13} className="text-mv-green-dark" />
             </div>
-
-            <p className="mt-2 font-display text-[22px] font-semibold text-mv-ink">
-              {isGroupMode && multiEstablishmentRollup
-                ? formatCurrency(multiEstablishmentRollup.totalMonthRevenue)
-                : formatCurrency(todayRevenue || monthRevenue || 0)}
-            </p>
-
-            {/* Systematic Comparison */}
-            <div className="mt-1 space-y-0.5 text-[11.5px]">
+            <div className="my-1.5">
+              <p className="font-display text-[20px] font-semibold text-mv-ink leading-tight">
+                {isGroupMode && multiEstablishmentRollup
+                  ? formatCurrency(multiEstablishmentRollup.totalMonthRevenue)
+                  : formatCurrency(todayRevenue || monthRevenue || 0)}
+              </p>
               {kpiComparisons?.revenue.today.changePct != null && (
-                <p className="flex items-center gap-1 text-mv-ink-soft">
+                <p className="flex items-center gap-1 text-[11px] text-mv-ink-soft mt-0.5">
                   {kpiComparisons.revenue.today.direction === "up" ? (
                     <span className="flex items-center text-mv-green-dark font-semibold">
-                      <ArrowUpRight size={13} />+{kpiComparisons.revenue.today.changePct}%
+                      <ArrowUpRight size={12} />+{kpiComparisons.revenue.today.changePct}%
                     </span>
                   ) : (
                     <span className="flex items-center text-mv-amber font-semibold">
-                      <ArrowDownRight size={13} />
+                      <ArrowDownRight size={12} />
                       {kpiComparisons.revenue.today.changePct}%
                     </span>
                   )}
                   <span>vs hier</span>
                 </p>
               )}
-              {kpiComparisons?.revenue.vsSameDayLastWeek.changePct != null && (
-                <p className="flex items-center gap-1 text-mv-ink-faint text-[11px]">
-                  <span>{kpiComparisons.revenue.vsSameDayLastWeek.changePct > 0 ? "+" : ""}{kpiComparisons.revenue.vsSameDayLastWeek.changePct}% vs même jour S-1</span>
-                </p>
-              )}
             </div>
-          </div>
-
-          <div className="mt-3 border-t border-mv-border-soft pt-2.5">
             <Link
               href="/days"
               className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
             >
-              Consulter les ventes
-              <ArrowRight size={12} />
+              Ventes <ArrowRight size={11} />
             </Link>
           </div>
-        </div>
 
-        {/* KPI 2 : Coût matière (Food Cost) & Marge brute */}
-        <div className="flex flex-col justify-between rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:shadow-mv-md">
-          <div>
+          {/* KPI 2 : Coût matière */}
+          <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                Coût matière (Food Cost)
-              </p>
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-lime/30 text-mv-lime-dark">
-                <UtensilsCrossed size={14} />
-              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Coût matière</span>
+              <UtensilsCrossed size={13} className="text-mv-ink-soft" />
             </div>
-
-            <p className="mt-2 font-display text-[22px] font-semibold text-mv-ink">
-              {isGroupMode && multiEstablishmentRollup
-                ? `${multiEstablishmentRollup.weightedFoodCostPct}%`
-                : `${foodCostPct}%`}
-            </p>
-
-            {/* Systematic Comparison */}
-            <div className="mt-1 space-y-0.5 text-[11.5px]">
-              <p className="text-mv-ink-soft">
+            <div className="my-1.5">
+              <p className="font-display text-[20px] font-semibold text-mv-ink leading-tight">
+                {isGroupMode && multiEstablishmentRollup
+                  ? `${multiEstablishmentRollup.weightedFoodCostPct}%`
+                  : `${foodCostPct}%`}
+              </p>
+              <p className="text-[11px] text-mv-ink-soft mt-0.5">
                 Marge brute : <strong>{grossMarginPct}%</strong>
               </p>
-              <p className="text-[11px] text-mv-ink-faint">
-                Cible standard : <strong>28 % à 32 %</strong>
-              </p>
             </div>
-          </div>
-
-          <div className="mt-3 border-t border-mv-border-soft pt-2.5">
             <Link
               href="/menu"
               className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
             >
-              Optimiser les recettes
-              <ArrowRight size={12} />
+              Recettes <ArrowRight size={11} />
             </Link>
           </div>
-        </div>
 
-        {/* KPI 3 : Masse salariale (Labor Cost) */}
-        <div className="flex flex-col justify-between rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:shadow-mv-md">
-          <div>
+          {/* KPI 3 : Masse salariale */}
+          <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                Masse salariale (Labor)
-              </p>
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-ink/[0.06] text-mv-ink-soft">
-                <Users size={14} />
-              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Masse salariale</span>
+              <Users size={13} className="text-mv-ink-soft" />
             </div>
-
-            <p className="mt-2 font-display text-[22px] font-semibold text-mv-ink">
-              {isGroupMode && multiEstablishmentRollup
-                ? multiEstablishmentRollup.weightedLaborCostPct !== null
-                  ? `${multiEstablishmentRollup.weightedLaborCostPct}%`
-                  : "29.2%"
-                : laborPct !== null
-                ? `${laborPct}%`
-                : "—"}
-            </p>
-
-            {/* Systematic Comparison */}
-            <div className="mt-1 space-y-0.5 text-[11.5px]">
-              <p className="text-mv-ink-soft">
-                Seuil cible : <strong>≤ 30 % du CA</strong>
+            <div className="my-1.5">
+              <p className="font-display text-[20px] font-semibold text-mv-ink leading-tight">
+                {isGroupMode && multiEstablishmentRollup
+                  ? multiEstablishmentRollup.weightedLaborCostPct !== null
+                    ? `${multiEstablishmentRollup.weightedLaborCostPct}%`
+                    : "29.2%"
+                  : laborPct !== null
+                  ? `${laborPct}%`
+                  : "—"}
               </p>
-              <p className="text-[11px] text-mv-ink-faint">
-                Prime Cost estimé : <strong>58,4 %</strong> (cible &lt; 60 %)
+              <p className="text-[11px] text-mv-ink-soft mt-0.5">
+                Cible : <strong>≤ 30 % du CA</strong>
               </p>
             </div>
-          </div>
-
-          <div className="mt-3 border-t border-mv-border-soft pt-2.5">
             <Link
               href="/horaire"
               className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
             >
-              Ajuster les horaires
-              <ArrowRight size={12} />
+              Horaires <ArrowRight size={11} />
             </Link>
           </div>
-        </div>
 
-        {/* KPI 4 : Couverts du jour & Objectif Seuil de Rentabilité */}
-        <div className="flex flex-col justify-between rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:shadow-mv-md">
-          <div>
+          {/* KPI 4 : Couverts & Seuil */}
+          <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                Couverts & Seuil du jour
-              </p>
-              <div
-                className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-                  dailyTarget?.reached ? "bg-mv-green-tint text-mv-green-dark" : "bg-mv-amber-bg text-mv-amber"
-                }`}
-              >
-                {dailyTarget?.reached ? <CheckCircle2 size={15} /> : <Target size={15} />}
-              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Couverts / Seuil</span>
+              <Target size={13} className={dailyTarget?.reached ? "text-mv-green-dark" : "text-mv-amber"} />
             </div>
-
-            <p className="mt-2 font-display text-[22px] font-semibold text-mv-ink">
-              {isGroupMode && multiEstablishmentRollup
-                ? `${multiEstablishmentRollup.totalCoversToday} / ${multiEstablishmentRollup.totalDailyTargetNeeded}`
-                : `${dailyTarget?.clientsSoFar ?? 0} / ${dailyTarget?.clientsNeeded ?? 0}`}
-            </p>
-
-            {/* Systematic Comparison */}
-            <div className="mt-1 space-y-0.5 text-[11.5px]">
-              <p className="text-mv-ink-soft">
-                {dailyTarget?.reached ? "Objectif point mort atteint !" : "Clients requis pour rentabilité"}
+            <div className="my-1.5">
+              <p className="font-display text-[20px] font-semibold text-mv-ink leading-tight">
+                {isGroupMode && multiEstablishmentRollup
+                  ? `${multiEstablishmentRollup.totalCoversToday} / ${multiEstablishmentRollup.totalDailyTargetNeeded}`
+                  : `${dailyTarget?.clientsSoFar ?? 0} / ${dailyTarget?.clientsNeeded ?? 0}`}
               </p>
-              {kpiComparisons?.covers.changePct != null && (
-                <p className="text-[11px] text-mv-ink-faint">
-                  {kpiComparisons.covers.changePct > 0 ? "+" : ""}
-                  {kpiComparisons.covers.changePct}% vs hier même heure
-                </p>
-              )}
+              <p className="text-[11px] text-mv-ink-soft mt-0.5">
+                {dailyTarget?.reached ? "Point mort atteint !" : "Requis pour rentabilité"}
+              </p>
             </div>
-          </div>
-
-          <div className="mt-3 border-t border-mv-border-soft pt-2.5">
             <Link
               href="/commandes"
               className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
             >
-              Prendre commande
-              <ArrowRight size={12} />
+              Commandes <ArrowRight size={11} />
             </Link>
           </div>
-        </div>
 
-        {/* KPI 5 : Ventes générées par la fidélisation (Revenu incrémental LTV) */}
-        <div className="flex flex-col justify-between rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm transition-all hover:shadow-mv-md">
-          <div>
+          {/* KPI 5 : Fidélisation (LTV) */}
+          <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                Ventes fidélisation (LTV)
-              </p>
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-green-tint text-mv-green-dark">
-                <Heart size={14} />
-              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Ventes fidélité</span>
+              <Heart size={13} className="text-mv-green-dark" />
             </div>
-
-            <p className="mt-2 font-display text-[22px] font-semibold text-mv-ink">
-              {isGroupMode && multiEstablishmentRollup
-                ? formatCurrency(multiEstablishmentRollup.totalRetentionRevenue)
-                : formatCurrency(retentionSales)}
-            </p>
-
-            {/* Systematic Comparison */}
-            <div className="mt-1 space-y-0.5 text-[11.5px]">
-              <p className="text-mv-ink-soft">
-                Visites déclenchées par relances (14j)
+            <div className="my-1.5">
+              <p className="font-display text-[20px] font-semibold text-mv-ink leading-tight">
+                {isGroupMode && multiEstablishmentRollup
+                  ? formatCurrency(multiEstablishmentRollup.totalRetentionRevenue)
+                  : formatCurrency(retentionSales)}
               </p>
-              <p className="text-[11px] text-mv-ink-faint">
-                Impact direct sur le chiffre d&apos;affaires
+              <p className="text-[11px] text-mv-ink-soft mt-0.5">
+                Impact relances 14j
               </p>
             </div>
-          </div>
-
-          <div className="mt-3 border-t border-mv-border-soft pt-2.5">
             <Link
               href="/fidelisation"
               className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
             >
-              Gérer la fidélisation
-              <ArrowRight size={12} />
+              Fidélisation <ArrowRight size={11} />
             </Link>
           </div>
         </div>
@@ -652,24 +548,7 @@ export function OverviewClientView({
       )}
 
       {/* ========================================================================= */}
-      {/* FLOW AI EXPLAINABLE RECOMMENDATIONS & LIVE ALERTS */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {isVisible("widget-recommendations") && (
-          <div className="mv-animate-in">
-            <RecommendationsPanel initial={recommendations} />
-          </div>
-        )}
-
-        {isVisible("widget-alerts") && (
-          <div className="mv-animate-in">
-            <LiveAlertsPanel restaurantId={restaurantId} initial={alerts} />
-          </div>
-        )}
-      </div>
-
-      {/* ========================================================================= */}
-      {/* TREND CHART & MONTH CALENDAR */}
+      {/* TREND CHART & CALENDRIER (Placés en priorité) */}
       {/* ========================================================================= */}
       {isVisible("widget-kpi-summary") && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -743,7 +622,7 @@ export function OverviewClientView({
 
       {/* Month Calendar */}
       {isVisible("widget-heatmap") && (
-        <div className="mb-6 mv-animate-in">
+        <div className="mv-animate-in">
           <Card className="p-4 sm:p-5">
             <CardHeader
               eyebrow={monthLabel}
@@ -759,6 +638,23 @@ export function OverviewClientView({
           </Card>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* FLOW AI EXPLAINABLE RECOMMENDATIONS & LIVE ALERTS (Repositionnés tout en bas) */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
+        {isVisible("widget-recommendations") && (
+          <div className="mv-animate-in">
+            <RecommendationsPanel initial={recommendations} />
+          </div>
+        )}
+
+        {isVisible("widget-alerts") && (
+          <div className="mv-animate-in">
+            <LiveAlertsPanel restaurantId={restaurantId} initial={alerts} />
+          </div>
+        )}
+      </div>
 
       <WidgetManagerModal
         open={managerOpen}

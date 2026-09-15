@@ -881,8 +881,8 @@ export function FidelisationView({
         />
       ) : (
         <>
-          <Table>
-            <THead>
+          <Table containerClassName="max-h-[355px] overflow-y-auto">
+            <THead className="sticky top-0 z-10 shadow-mv-xs bg-mv-cream-soft">
               <Th>Client</Th>
               <Th>Dernière visite</Th>
               <Th className="text-right">Visites</Th>
