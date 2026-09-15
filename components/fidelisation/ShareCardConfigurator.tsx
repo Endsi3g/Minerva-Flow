@@ -7,16 +7,35 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select, Textarea } from "@/components/minerva/FormField";
 import { ResultsShareCard, type CardBackground, type FooterBadge } from "@/components/fidelisation/ResultsShareCard";
 import type { ShareableMetric } from "@/lib/data/retention-metrics";
-import { Download, Loader2, Star, Quote as QuoteIcon, Link2, X, Trophy } from "lucide-react";
+import {
+  Download,
+  Loader2,
+  Star,
+  Quote as QuoteIcon,
+  Link2,
+  X,
+  Trophy,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 type CardFormat = "post" | "story" | "carousel";
 
-const FORMAT_OPTIONS: { id: CardFormat; label: string; hint: string; aspect: string; width: number }[] = [
-  { id: "post", label: "Publication", hint: "Instagram & Facebook (carré)", aspect: "aspect-square", width: 320 },
-  { id: "story", label: "Story / Reel", hint: "Instagram & TikTok (9:16)", aspect: "aspect-[9/16]", width: 240 },
-  { id: "carousel", label: "Carrousel", hint: "Une slide par statistique", aspect: "aspect-[4/5]", width: 280 },
+const FORMAT_OPTIONS: {
+  id: CardFormat;
+  label: string;
+  hint: string;
+  aspectClass: string;
+  width: number;
+  height: number;
+}[] = [
+  // 4:5 (not a strict square) — more room for 3 stats + footer badges without
+  // clipping, and is itself a standard, widely-used Instagram/Facebook feed ratio.
+  { id: "post", label: "Publication", hint: "Instagram & Facebook (4:5)", aspectClass: "aspect-[4/5]", width: 320, height: 400 },
+  { id: "story", label: "Story / Reel", hint: "Instagram & TikTok (9:16)", aspectClass: "aspect-[9/16]", width: 240, height: 427 },
+  { id: "carousel", label: "Carrousel", hint: "Une slide par statistique", aspectClass: "aspect-[4/5]", width: 280, height: 350 },
 ];
 
 const BACKGROUND_OPTIONS: { id: CardBackground; label: string }[] = [
@@ -26,6 +45,8 @@ const BACKGROUND_OPTIONS: { id: CardBackground; label: string }[] = [
   { id: "transparent", label: "Transparent" },
 ];
 
+const THUMBNAIL_WIDTH = 92;
+
 export type ShareCardConfiguratorProps = {
   metrics: ShareableMetric[];
   restaurantName: string;
@@ -33,7 +54,61 @@ export type ShareCardConfiguratorProps = {
   restaurantUrl: string;
   /** Prefix used in downloaded filenames, e.g. "minerva-flow" or a restaurant slug. */
   filePrefix?: string;
+  /**
+   * Admin-only: lets the displayed hero/stat values be manually overridden
+   * (e.g. a number that hasn't caught up to reality yet). Never exposed to
+   * restaurant owners — their card always reflects their real data.
+   */
+  allowValueOverride?: boolean;
 };
+
+// Defined at module scope (not inside the component) so the linter's
+// component-purity check doesn't flag this impure call — it only ever runs
+// from the click handler below, never during render.
+function timestampSuffix(): number {
+  return Date.now();
+}
+
+function moveItem<T>(arr: T[], index: number, direction: -1 | 1): T[] {
+  const target = index + direction;
+  if (target < 0 || target >= arr.length) return arr;
+  const next = [...arr];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
+
+function ReorderButtons({
+  index,
+  count,
+  onMove,
+}: {
+  index: number;
+  count: number;
+  onMove: (direction: -1 | 1) => void;
+}) {
+  return (
+    <div className="flex shrink-0 flex-col">
+      <button
+        type="button"
+        aria-label="Monter"
+        disabled={index === 0}
+        onClick={() => onMove(-1)}
+        className="rounded p-0.5 text-mv-ink-faint hover:bg-mv-ink/5 hover:text-mv-ink disabled:pointer-events-none disabled:opacity-30"
+      >
+        <ChevronUp size={13} />
+      </button>
+      <button
+        type="button"
+        aria-label="Descendre"
+        disabled={index === count - 1}
+        onClick={() => onMove(1)}
+        className="rounded p-0.5 text-mv-ink-faint hover:bg-mv-ink/5 hover:text-mv-ink disabled:pointer-events-none disabled:opacity-30"
+      >
+        <ChevronDown size={13} />
+      </button>
+    </div>
+  );
+}
 
 /**
  * The content-picker + format/background switcher + live preview + export
@@ -47,6 +122,7 @@ export function ShareCardConfigurator({
   logoUrl,
   restaurantUrl,
   filePrefix = "minerva-flow",
+  allowValueOverride = false,
 }: ShareCardConfiguratorProps) {
   const [heroId, setHeroId] = useState<string>(metrics[0]?.id ?? "");
   const [statIds, setStatIds] = useState<string[]>(metrics.slice(1, 4).map((m) => m.id));
@@ -54,6 +130,8 @@ export function ShareCardConfigurator({
   const [format, setFormat] = useState<CardFormat>("post");
   const [badges, setBadges] = useState<FooterBadge[]>([{ type: "link", url: restaurantUrl }]);
   const [isExporting, setIsExporting] = useState(false);
+  const [heroOverride, setHeroOverride] = useState("");
+  const [statOverrides, setStatOverrides] = useState<string[]>(["", "", ""]);
 
   const mainCardRef = useRef<HTMLDivElement>(null);
   const spotlightRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -64,12 +142,29 @@ export function ShareCardConfigurator({
   const statOptions = metrics.filter((m) => m.id !== heroId);
   const formatDef = FORMAT_OPTIONS.find((f) => f.id === format)!;
 
+  // Override applies only to what's rendered/exported — never to the
+  // selection dropdowns, which must keep showing the real values.
+  const heroDisplay =
+    allowValueOverride && heroOverride.trim() && hero ? { ...hero, formattedValue: heroOverride.trim() } : hero;
+  const statsDisplay = stats.map((s, i) =>
+    allowValueOverride && statOverrides[i]?.trim() ? { ...s, formattedValue: statOverrides[i].trim() } : s
+  );
+
   function updateStat(index: number, id: string) {
     setStatIds((prev) => {
       const next = [...prev];
       next[index] = id;
       return next;
     });
+  }
+
+  function moveStat(index: number, direction: -1 | 1) {
+    setStatIds((prev) => moveItem(prev, index, direction));
+    setStatOverrides((prev) => moveItem(prev, index, direction));
+  }
+
+  function moveBadge(index: number, direction: -1 | 1) {
+    setBadges((prev) => moveItem(prev, index, direction));
   }
 
   function addBadge(type: FooterBadge["type"]) {
@@ -87,11 +182,20 @@ export function ShareCardConfigurator({
     setBadges((prev) => prev.map((b, i) => (i === index ? ({ ...b, ...patch } as FooterBadge) : b)));
   }
 
-  async function downloadNode(node: HTMLDivElement, filename: string) {
-    // No backgroundColor override: each background mode already paints its
-    // own div (cream/white/black), and "transparent" relies on toPng's
-    // default of leaving unpainted pixels alpha-transparent.
-    const dataUrl = await toPng(node, { pixelRatio: 4, cacheBust: true });
+  /**
+   * `fullSize` forces the capture back to the node's real, unscaled
+   * dimensions — needed for the carousel spotlight thumbnails, which are
+   * displayed shrunk via CSS `transform: scale()` (see the thumbnail row
+   * below) so the full-resolution export doesn't come out tiny.
+   */
+  async function downloadNode(node: HTMLDivElement, filename: string, fullSize?: { width: number; height: number }) {
+    const dataUrl = await toPng(node, {
+      pixelRatio: 4,
+      cacheBust: true,
+      ...(fullSize
+        ? { width: fullSize.width, height: fullSize.height, style: { transform: "none" } as Partial<CSSStyleDeclaration> }
+        : {}),
+    });
     const link = document.createElement("a");
     link.download = filename;
     link.href = dataUrl;
@@ -103,7 +207,7 @@ export function ShareCardConfigurator({
     try {
       if (format !== "carousel") {
         if (!mainCardRef.current) return;
-        await downloadNode(mainCardRef.current, `${filePrefix}-resultats-${format}-${Date.now()}.png`);
+        await downloadNode(mainCardRef.current, `${filePrefix}-resultats-${format}-${timestampSuffix()}.png`);
         toast.success("Carte téléchargée.");
         return;
       }
@@ -113,21 +217,26 @@ export function ShareCardConfigurator({
       if (mainCardRef.current) {
         await downloadNode(mainCardRef.current, `${filePrefix}-carrousel-1-resultat.png`);
       }
-      for (let i = 0; i < stats.length; i++) {
+      for (let i = 0; i < statsDisplay.length; i++) {
         const node = spotlightRefs.current[i];
         if (!node) continue;
-        await downloadNode(node, `${filePrefix}-carrousel-${i + 2}-${stats[i].id}.png`);
+        await downloadNode(node, `${filePrefix}-carrousel-${i + 2}-${statsDisplay[i].id}.png`, {
+          width: formatDef.width,
+          height: formatDef.height,
+        });
         // Léger délai entre chaque téléchargement — évite que le navigateur
         // bloque des téléchargements multiples déclenchés d'un coup.
         await new Promise((r) => setTimeout(r, 350));
       }
-      toast.success(`Carrousel téléchargé (${1 + stats.length} images).`);
+      toast.success(`Carrousel téléchargé (${1 + statsDisplay.length} images).`);
     } catch {
       toast.error("Le téléchargement a échoué. Réessayez.");
     } finally {
       setIsExporting(false);
     }
   }
+
+  const thumbnailScale = THUMBNAIL_WIDTH / formatDef.width;
 
   return (
     <div className="grid gap-6 lg:grid-cols-12">
@@ -142,27 +251,49 @@ export function ShareCardConfigurator({
               </option>
             ))}
           </Select>
+          {allowValueOverride && (
+            <Input
+              value={heroOverride}
+              onChange={(e) => setHeroOverride(e.target.value)}
+              placeholder={`Valeur affichée (par défaut : ${hero?.formattedValue ?? ""})`}
+              className="mt-2 h-8 text-[12.5px]"
+            />
+          )}
         </Card>
 
         <Card>
-          <CardHeader eyebrow="Contenu" title="3 statistiques" description="Affichées sous la bande verte." />
+          <CardHeader eyebrow="Contenu" title="3 statistiques" description="Affichées sous la bande verte, dans cet ordre." />
           <div className="space-y-2.5">
             {[0, 1, 2].map((i) => (
-              <Select
-                key={i}
-                aria-label={`Statistique ${i + 1}`}
-                value={statIds[i] ?? ""}
-                onChange={(e) => updateStat(i, e.target.value)}
-              >
-                <option value="" disabled>
-                  Choisir une statistique…
-                </option>
-                {statOptions.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label} — {m.formattedValue}
-                  </option>
-                ))}
-              </Select>
+              <div key={i} className="flex items-center gap-1.5">
+                <ReorderButtons index={i} count={3} onMove={(dir) => moveStat(i, dir)} />
+                <div className="flex-1 space-y-1.5">
+                  <Select aria-label={`Statistique ${i + 1}`} value={statIds[i] ?? ""} onChange={(e) => updateStat(i, e.target.value)}>
+                    <option value="" disabled>
+                      Choisir une statistique…
+                    </option>
+                    {statOptions.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label} — {m.formattedValue}
+                      </option>
+                    ))}
+                  </Select>
+                  {allowValueOverride && (
+                    <Input
+                      value={statOverrides[i] ?? ""}
+                      onChange={(e) =>
+                        setStatOverrides((prev) => {
+                          const next = [...prev];
+                          next[i] = e.target.value;
+                          return next;
+                        })
+                      }
+                      placeholder="Valeur affichée (optionnel)"
+                      className="h-8 text-[12.5px]"
+                    />
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         </Card>
@@ -171,7 +302,7 @@ export function ShareCardConfigurator({
           <CardHeader
             eyebrow="Pied de page"
             title="Badges (cote)"
-            description="Combine librement une note, une citation et/ou un lien."
+            description="Combine librement une note, une citation et/ou un lien — dans l'ordre de ton choix."
           />
           <div className="mb-3 flex gap-2">
             <Button
@@ -201,7 +332,8 @@ export function ShareCardConfigurator({
           </div>
           <div className="space-y-2">
             {badges.map((badge, i) => (
-              <div key={i} className="flex items-center gap-2 rounded-lg border border-mv-border-soft p-2">
+              <div key={i} className="flex items-center gap-1.5 rounded-lg border border-mv-border-soft p-2">
+                <ReorderButtons index={i} count={badges.length} onMove={(dir) => moveBadge(i, dir)} />
                 {badge.type === "rating" && (
                   <>
                     <Star size={14} className="shrink-0 text-mv-ink-faint" />
@@ -299,9 +431,9 @@ export function ShareCardConfigurator({
             </span>
           </div>
 
-          {hero ? (
+          {heroDisplay ? (
             <div
-              className={cn("overflow-hidden rounded-2xl shadow-mv-md", formatDef.aspect)}
+              className={cn("overflow-hidden rounded-2xl shadow-mv-md", formatDef.aspectClass)}
               style={{
                 width: formatDef.width,
                 // Damier visible seulement dans l'aperçu — n'est jamais capturé
@@ -317,11 +449,11 @@ export function ShareCardConfigurator({
                 <ResultsShareCard
                   restaurantName={restaurantName}
                   logoUrl={logoUrl}
-                  hero={hero}
-                  stats={stats}
+                  hero={heroDisplay}
+                  stats={statsDisplay}
                   badges={badges}
                   background={background}
-                  slideLabel={format === "carousel" && stats.length > 0 ? `1 / ${1 + stats.length}` : undefined}
+                  slideLabel={format === "carousel" && statsDisplay.length > 0 ? `1 / ${1 + statsDisplay.length}` : undefined}
                 />
               </div>
             </div>
@@ -329,37 +461,49 @@ export function ShareCardConfigurator({
             <p className="text-[13px] text-mv-ink-faint">Aucune métrique disponible.</p>
           )}
 
-          {format === "carousel" && stats.length > 0 && (
+          {format === "carousel" && statsDisplay.length > 0 && (
             <div className="flex w-full gap-2 overflow-x-auto pb-1">
-              {stats.map((s, i) => (
+              {statsDisplay.map((s, i) => (
                 <div
                   key={s.id}
-                  ref={(el) => {
-                    spotlightRefs.current[i] = el;
-                  }}
-                  className={cn("shrink-0 overflow-hidden rounded-xl shadow-mv-sm", formatDef.aspect)}
-                  style={{ width: 96 }}
+                  className="shrink-0 overflow-hidden rounded-xl shadow-mv-sm"
+                  style={{ width: THUMBNAIL_WIDTH, height: formatDef.height * thumbnailScale }}
                 >
-                  <ResultsShareCard
-                    restaurantName={restaurantName}
-                    logoUrl={logoUrl}
-                    hero={s}
-                    stats={[]}
-                    badges={badges}
-                    background={background}
-                    slideLabel={`${i + 2} / ${1 + stats.length}`}
-                  />
+                  {/* Rendered at full export resolution, then shrunk purely
+                      visually via CSS transform — downloadNode overrides this
+                      transform back to none to capture at full size. */}
+                  <div
+                    ref={(el) => {
+                      spotlightRefs.current[i] = el;
+                    }}
+                    style={{
+                      width: formatDef.width,
+                      height: formatDef.height,
+                      transform: `scale(${thumbnailScale})`,
+                      transformOrigin: "top left",
+                    }}
+                  >
+                    <ResultsShareCard
+                      restaurantName={restaurantName}
+                      logoUrl={logoUrl}
+                      hero={s}
+                      stats={[]}
+                      badges={badges}
+                      background={background}
+                      slideLabel={`${i + 2} / ${1 + statsDisplay.length}`}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
-          <Button onClick={handleDownload} disabled={isExporting || !hero} className="w-full">
+          <Button onClick={handleDownload} disabled={isExporting || !heroDisplay} className="w-full">
             {isExporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
             {isExporting
               ? "Génération…"
               : format === "carousel"
-                ? `Télécharger le carrousel (${1 + stats.length})`
+                ? `Télécharger le carrousel (${1 + statsDisplay.length})`
                 : "Télécharger"}
           </Button>
         </Card>

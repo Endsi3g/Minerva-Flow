@@ -103,6 +103,7 @@ export function AdminResultatsView({ restaurants, initialMetrics }: Props) {
           logoUrl={data.logoUrl}
           restaurantUrl={data.restaurantUrl}
           filePrefix={scope === "platform" ? "minerva-flow-plateforme" : "minerva-flow-restaurant"}
+          allowValueOverride
         />
       )}
     </div>
