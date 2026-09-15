@@ -78,6 +78,10 @@ export async function proxy(request: NextRequest) {
   // themselves; the rest of /api/* still relies on the session check below.
   const isServerCallbackRoute =
     pathWithoutLocale.startsWith("/api/openapi") ||
+    // Public, domain-scoped identity bootstrap. It intentionally returns only
+    // a verified brand's visual fields and is needed before a customer has a
+    // session on their own custom domain.
+    pathWithoutLocale === "/api/branding" ||
     pathWithoutLocale.startsWith("/api/v1/") ||
     pathWithoutLocale.startsWith("/api/mcp") ||
     pathWithoutLocale.startsWith("/api/leads/") ||

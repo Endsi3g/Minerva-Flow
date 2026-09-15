@@ -5,6 +5,8 @@ import { isPlatformAdmin } from "@/lib/data/admin";
 import { getVerifiedUser } from "@/lib/supabase/auth-user";
 import { getWorkspaceBranding } from "@/lib/data/workspace-branding";
 import type { WorkspaceBranding } from "@/lib/branding/workspace-branding";
+import { brandingForRequestHost } from "@/lib/branding/request-branding";
+import { headers } from "next/headers";
 import type { AuthUser } from "@/lib/app-context";
 import type { Restaurant, Role } from "@/lib/types";
 
@@ -53,7 +55,12 @@ export async function getAppSessionData(): Promise<AppSessionData> {
 
   const initialRestaurantId = membership?.restaurantId ?? restaurants[0]?.id ?? "";
   const currentRestaurant = restaurants.find((restaurant) => restaurant.id === initialRestaurantId);
-  const branding = await getWorkspaceBranding(currentRestaurant?.workspaceId);
+  const workspaceBranding = await getWorkspaceBranding(currentRestaurant?.workspaceId);
+  const requestHeaders = await headers();
+  const branding = brandingForRequestHost(
+    workspaceBranding,
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host")
+  );
 
   return {
     authUser,

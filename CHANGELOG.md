@@ -2,6 +2,12 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.38.0] - 2026-09-15
+
+### 🌐 Domaine white-label
+- Une identité de marque vérifiée est désormais appliquée uniquement lorsqu’une requête arrive sur son domaine personnalisé ; les domaines Minerva Flow, previews Vercel et environnements locaux restent pris en charge.
+- Le nouvel endpoint public `/api/branding` fournit seulement l’identité visuelle d’un domaine vérifié pour les futurs démarrages de l’app native et pages de connexion, sans exposer les données, utilisateurs, intégrations ou réglages internes du workspace.
+
 ## [v2.37.0] - 2026-09-15
 
 ### 🎨 Fondation marque blanche

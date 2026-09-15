@@ -13,7 +13,13 @@ import {
   deleteWorkspace,
   type WorkspaceMemberWithRestaurants,
 } from "@/lib/data/workspaces";
-import { getWorkspaceBranding, updateWorkspaceBranding } from "@/lib/data/workspace-branding";
+import {
+  getWorkspaceBranding,
+  getWorkspaceDomainVerification,
+  updateWorkspaceBranding,
+  verifyWorkspaceCustomDomain,
+  type WorkspaceDomainVerification,
+} from "@/lib/data/workspace-branding";
 import type { WorkspaceBrandingInput } from "@/lib/branding/workspace-branding";
 import {
   createInviteLink,
@@ -38,6 +44,7 @@ export type WorkspaceHubData = {
   canManage: boolean;
   branding: WorkspaceBranding | null;
   canManageBrand: boolean;
+  domainVerification: WorkspaceDomainVerification | null;
 };
 
 /** Bootstraps the /workspace hub — null means the current restaurant has no workspace yet. */
@@ -45,11 +52,12 @@ export async function getWorkspaceHubDataAction(): Promise<WorkspaceHubData | nu
   const membership = await getCurrentWorkspaceMembership();
   if (!membership) return null;
 
-  const [workspace, members, restaurants, branding] = await Promise.all([
+  const [workspace, members, restaurants, branding, domainVerification] = await Promise.all([
     getWorkspace(membership.workspaceId),
     getWorkspaceMembers(membership.workspaceId),
     getWorkspaceRestaurants(membership.workspaceId),
     getWorkspaceBranding(membership.workspaceId),
+    membership.role === "owner" ? getWorkspaceDomainVerification(membership.workspaceId) : Promise.resolve(null),
   ]);
   if (!workspace) return null;
 
@@ -60,7 +68,16 @@ export async function getWorkspaceHubDataAction(): Promise<WorkspaceHubData | nu
     branding,
     canManage: ["owner", "manager"].includes(membership.role),
     canManageBrand: membership.role === "owner",
+    domainVerification,
   };
+}
+
+export async function verifyWorkspaceBrandDomainAction(workspaceId: string): Promise<boolean> {
+  const membership = await getCurrentWorkspaceMembership();
+  if (!membership || membership.workspaceId !== workspaceId || membership.role !== "owner") return false;
+  const verified = await verifyWorkspaceCustomDomain(workspaceId);
+  revalidatePath("/workspace");
+  return verified;
 }
 
 export async function updateWorkspaceBrandingAction(

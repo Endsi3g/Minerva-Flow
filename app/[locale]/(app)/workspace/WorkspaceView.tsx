@@ -18,6 +18,7 @@ import {
   assignRestaurantToWorkspaceAction,
   listWorkspaceInvitesAction,
   updateWorkspaceBrandingAction,
+  verifyWorkspaceBrandDomainAction,
   type WorkspaceHubData,
 } from "./actions";
 import type { WorkspaceInviteListEntry } from "@/lib/data/workspace-invites";
@@ -29,6 +30,7 @@ import {
   type WorkspaceBranding,
   type WorkspaceBrandingInput,
 } from "@/lib/branding/workspace-branding";
+import type { WorkspaceDomainVerification } from "@/lib/data/workspace-branding";
 import { Plus, Mail, CreditCard, Building2, Palette, Globe2, Bot } from "lucide-react";
 
 function brandingInput(branding: WorkspaceBranding): WorkspaceBrandingInput {
@@ -60,10 +62,17 @@ const fontLabels = {
 const localeLabels = { "fr-CA": "Français (Canada)", "fr-FR": "Français (France)", "en-CA": "English (Canada)", "en-US": "English (US)" } as const;
 const toneLabels = { professionnel: "Professionnel", chaleureux: "Chaleureux", direct: "Direct", luxe: "Luxe éditorial" } as const;
 
-function BrandSettingsCard({ branding }: { branding: WorkspaceBranding }) {
+function BrandSettingsCard({
+  branding,
+  domainVerification,
+}: {
+  branding: WorkspaceBranding;
+  domainVerification: WorkspaceDomainVerification | null;
+}) {
   const router = useRouter();
   const [draft, setDraft] = useState<WorkspaceBrandingInput>(() => brandingInput(branding));
   const [saving, setSaving] = useState(false);
+  const [verifyingDomain, setVerifyingDomain] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   function update<K extends keyof WorkspaceBrandingInput>(key: K, value: WorkspaceBrandingInput[K]) {
@@ -77,6 +86,14 @@ function BrandSettingsCard({ branding }: { branding: WorkspaceBranding }) {
     setSaving(false);
     setNotice(ok ? "Identité enregistrée. La prévisualisation a été actualisée." : "Impossible d’enregistrer. Vérifiez les champs, notamment le domaine et l’adresse courriel.");
     if (ok) router.refresh();
+  }
+
+  async function verifyDomain() {
+    setVerifyingDomain(true);
+    const verified = await verifyWorkspaceBrandDomainAction(branding.workspaceId);
+    setVerifyingDomain(false);
+    setNotice(verified ? "Domaine vérifié. Il peut maintenant recevoir l’identité de votre marque." : "Le TXT n’a pas encore été trouvé. Vérifiez la valeur puis réessayez après la propagation DNS.");
+    router.refresh();
   }
 
   const domainStatus = {
@@ -127,6 +144,15 @@ function BrandSettingsCard({ branding }: { branding: WorkspaceBranding }) {
         <Field label="Langue principale"><Select value={draft.preferredLocale} onChange={(event) => update("preferredLocale", event.target.value as WorkspaceBrandingInput["preferredLocale"])}>{BRAND_LOCALES.map((locale) => <option key={locale} value={locale}>{localeLabels[locale]}</option>)}</Select></Field>
         <Field label="Ton de l’assistant IA"><div className="relative"><Bot size={15} className="pointer-events-none absolute left-3 top-3 text-mv-ink-faint" /><Select className="pl-9" value={draft.aiTone} onChange={(event) => update("aiTone", event.target.value as WorkspaceBrandingInput["aiTone"])}>{BRAND_AI_TONES.map((tone) => <option key={tone} value={tone}>{toneLabels[tone]}</option>)}</Select></div></Field>
       </div>
+
+      {domainVerification?.domain && domainVerification.status !== "verifie" && (
+        <div className="mt-5 rounded-xl border border-mv-border bg-mv-cream-soft p-4">
+          <p className="text-[13px] font-semibold text-mv-ink">Vérifier {domainVerification.domain}</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">Ajoutez cet enregistrement TXT à ce sous-domaine chez votre fournisseur DNS, puis lancez la vérification. L’activation de l’hébergement du domaine reste contrôlée côté plateforme.</p>
+          <code className="mt-3 block overflow-x-auto rounded-lg bg-mv-ink px-3 py-2 text-[11px] text-mv-cream-soft">minerva-flow-verification={domainVerification.token}</code>
+          <Button className="mt-3" size="sm" variant="secondary" onClick={verifyDomain} disabled={verifyingDomain} loading={verifyingDomain}>Vérifier le TXT</Button>
+        </div>
+      )}
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-mv-border-soft pt-4">
         <p className="text-[12px] text-mv-ink-faint">Les modules, intégrations vérifiées et l’envoi depuis votre domaine seront activés dans les prochaines phases.</p>
@@ -201,7 +227,7 @@ export function WorkspaceView({ data }: { data: WorkspaceHubData | null }) {
 
   if (!data) return <NoWorkspaceYet />;
 
-  const { workspace, members, restaurants, canManage, branding, canManageBrand } = data;
+  const { workspace, members, restaurants, canManage, branding, canManageBrand, domainVerification } = data;
   const unassigned = myRestaurants.filter((r) => !r.workspaceId);
 
   async function handleSaveName() {
@@ -254,7 +280,7 @@ export function WorkspaceView({ data }: { data: WorkspaceHubData | null }) {
           </Card>
         )}
 
-        {canManageBrand && branding && <BrandSettingsCard key={branding.updatedAt} branding={branding} />}
+        {canManageBrand && branding && <BrandSettingsCard key={branding.updatedAt} branding={branding} domainVerification={domainVerification} />}
 
         <Card>
           <CardHeader
