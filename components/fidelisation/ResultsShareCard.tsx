@@ -20,6 +20,17 @@ export type ResultsShareCardProps = {
   slideLabel?: string;
 };
 
+/**
+ * Long workspace names ("Minerva Flow — Démo (Sherbrooke)") don't fit even
+ * across 2 lines at a fixed font size on the narrower formats — shrink
+ * instead of letting `line-clamp-2` silently truncate them further.
+ */
+function nameSizeClass(name: string) {
+  if (name.length >= 28) return "text-[9.5px]";
+  if (name.length >= 18) return "text-[11px]";
+  return "text-[12.5px]";
+}
+
 const BACKGROUND_STYLES: Record<CardBackground, { card: string; ink: string; inkSoft: string }> = {
   brand: { card: "bg-mv-cream-soft", ink: "text-mv-ink", inkSoft: "text-mv-ink-soft" },
   white: { card: "bg-white", ink: "text-mv-ink", inkSoft: "text-mv-ink-soft" },
@@ -68,15 +79,26 @@ export function ResultsShareCard({
             <img src="/icon-512.png" alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" crossOrigin="anonymous" />
           )}
           <div className="min-w-0">
-            <p className={cn("truncate font-display text-[13px] font-semibold leading-tight", theme.ink)}>
+            {/* Wraps up to 2 lines instead of a 1-line ellipsis truncation —
+                these names ("Minerva Flow — Démo (Sherbrooke)") are long
+                enough that a single-line clip left almost nothing legible. */}
+            <p
+              className={cn(
+                "line-clamp-2 break-words font-display font-semibold leading-[1.2]",
+                nameSizeClass(restaurantName),
+                theme.ink
+              )}
+            >
               {restaurantName}
             </p>
             {slideLabel && (
-              <p className={cn("text-[9.5px] font-semibold uppercase tracking-wider", theme.inkSoft)}>{slideLabel}</p>
+              <p className={cn("mt-0.5 text-[9.5px] font-semibold uppercase tracking-wider", theme.inkSoft)}>
+                {slideLabel}
+              </p>
             )}
           </div>
         </div>
-        <p className={cn("shrink-0 font-display text-[14px] font-semibold tracking-tight", theme.ink)}>Minerva Flow</p>
+        <p className={cn("shrink-0 font-display text-[13px] font-semibold tracking-tight", theme.ink)}>Minerva Flow</p>
       </div>
 
       {/* Hero result: the big win, in the green band */}

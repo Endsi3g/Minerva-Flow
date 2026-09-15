@@ -34,7 +34,7 @@ const FORMAT_OPTIONS: {
   // 4:5 (not a strict square) — more room for 3 stats + footer badges without
   // clipping, and is itself a standard, widely-used Instagram/Facebook feed ratio.
   { id: "post", label: "Publication", hint: "Instagram & Facebook (4:5)", aspectClass: "aspect-[4/5]", width: 320, height: 400 },
-  { id: "story", label: "Story / Reel", hint: "Instagram & TikTok (9:16)", aspectClass: "aspect-[9/16]", width: 240, height: 427 },
+  { id: "story", label: "Story / Reel", hint: "Instagram & TikTok (9:16)", aspectClass: "aspect-[9/16]", width: 280, height: 498 },
   { id: "carousel", label: "Carrousel", hint: "Une slide par statistique", aspectClass: "aspect-[4/5]", width: 280, height: 350 },
 ];
 
