@@ -3,12 +3,15 @@ import { getUserRestaurants } from "@/lib/data/restaurants";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { isPlatformAdmin } from "@/lib/data/admin";
 import { getVerifiedUser } from "@/lib/supabase/auth-user";
+import { getWorkspaceBranding } from "@/lib/data/workspace-branding";
+import type { WorkspaceBranding } from "@/lib/branding/workspace-branding";
 import type { AuthUser } from "@/lib/app-context";
 import type { Restaurant, Role } from "@/lib/types";
 
 export type AppSessionData = {
   authUser: AuthUser | null;
   restaurants: Restaurant[];
+  branding: WorkspaceBranding | null;
   role: Role;
   sidebarPermissions: string[] | null;
   initialRestaurantId: string;
@@ -48,12 +51,17 @@ export async function getAppSessionData(): Promise<AppSessionData> {
     user ? isPlatformAdmin() : Promise.resolve(false),
   ]);
 
+  const initialRestaurantId = membership?.restaurantId ?? restaurants[0]?.id ?? "";
+  const currentRestaurant = restaurants.find((restaurant) => restaurant.id === initialRestaurantId);
+  const branding = await getWorkspaceBranding(currentRestaurant?.workspaceId);
+
   return {
     authUser,
     restaurants,
+    branding,
     role: membership?.role ?? "staff",
     sidebarPermissions: membership?.sidebarPermissions ?? null,
-    initialRestaurantId: membership?.restaurantId ?? restaurants[0]?.id ?? "",
+    initialRestaurantId,
     onboardingCompleted,
     isPlatformAdmin: platformAdmin,
   };

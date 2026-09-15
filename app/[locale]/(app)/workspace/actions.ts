@@ -13,6 +13,8 @@ import {
   deleteWorkspace,
   type WorkspaceMemberWithRestaurants,
 } from "@/lib/data/workspaces";
+import { getWorkspaceBranding, updateWorkspaceBranding } from "@/lib/data/workspace-branding";
+import type { WorkspaceBrandingInput } from "@/lib/branding/workspace-branding";
 import {
   createInviteLink,
   listInvites,
@@ -20,6 +22,7 @@ import {
   type WorkspaceInviteListEntry,
 } from "@/lib/data/workspace-invites";
 import type { Restaurant, Role, Workspace } from "@/lib/types";
+import type { WorkspaceBranding } from "@/lib/branding/workspace-branding";
 
 async function requireWorkspaceManager(workspaceId: string) {
   const membership = await getCurrentWorkspaceMembership();
@@ -33,6 +36,8 @@ export type WorkspaceHubData = {
   members: WorkspaceMemberWithRestaurants[];
   restaurants: Restaurant[];
   canManage: boolean;
+  branding: WorkspaceBranding | null;
+  canManageBrand: boolean;
 };
 
 /** Bootstraps the /workspace hub — null means the current restaurant has no workspace yet. */
@@ -40,14 +45,39 @@ export async function getWorkspaceHubDataAction(): Promise<WorkspaceHubData | nu
   const membership = await getCurrentWorkspaceMembership();
   if (!membership) return null;
 
-  const [workspace, members, restaurants] = await Promise.all([
+  const [workspace, members, restaurants, branding] = await Promise.all([
     getWorkspace(membership.workspaceId),
     getWorkspaceMembers(membership.workspaceId),
     getWorkspaceRestaurants(membership.workspaceId),
+    getWorkspaceBranding(membership.workspaceId),
   ]);
   if (!workspace) return null;
 
-  return { workspace, members, restaurants, canManage: ["owner", "manager"].includes(membership.role) };
+  return {
+    workspace,
+    members,
+    restaurants,
+    branding,
+    canManage: ["owner", "manager"].includes(membership.role),
+    canManageBrand: membership.role === "owner",
+  };
+}
+
+export async function updateWorkspaceBrandingAction(
+  workspaceId: string,
+  input: WorkspaceBrandingInput
+): Promise<boolean> {
+  const membership = await getCurrentWorkspaceMembership();
+  if (!membership || membership.workspaceId !== workspaceId || membership.role !== "owner") return false;
+
+  try {
+    const branding = await updateWorkspaceBranding(workspaceId, input);
+    if (!branding) return false;
+    revalidatePath("/workspace");
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** For the current restaurant, when it has no workspace yet — creates one and links it. */

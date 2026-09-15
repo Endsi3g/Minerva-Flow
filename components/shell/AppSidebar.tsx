@@ -22,7 +22,6 @@ import {
   FileText,
   Repeat,
   Map as MapIcon,
-  Send as SendIcon,
   Search as SearchIcon,
   Settings,
   CreditCard,
@@ -35,8 +34,6 @@ import {
   CalendarDays,
   Truck,
   Wallet,
-  TrendingDown,
-  Database,
   Heart,
   UtensilsCrossed,
   PackageSearch,
@@ -45,7 +42,6 @@ import {
   FolderOpen,
   Zap,
   Star,
-  StarOff,
   Shield,
   TrendingUp,
   Building2,
@@ -329,19 +325,21 @@ function CollapsibleSection({
 }
 
 import { getRestaurantFaviconUrl } from "@/lib/utils/favicon";
+import { MINERVA_FLOW_ATTRIBUTION } from "@/lib/branding/workspace-branding";
 
 function TeamSwitcher() {
   const t = useTranslations("nav");
-  const { restaurantId, setRestaurantId, restaurants } = useApp();
+  const { restaurantId, setRestaurantId, restaurants, branding } = useApp();
   const router = useRouter();
   const current = restaurants.find((r) => r.id === restaurantId) ?? restaurants[0];
   if (!current) return null;
 
-  const currentFavicon = getRestaurantFaviconUrl((current as any).websiteUrl);
+  const currentFavicon = branding?.logoUrl ?? getRestaurantFaviconUrl(current.website);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-mv-ink/5">
+        {/* eslint-disable-next-line @next/next/no-img-element -- tenant-controlled external logo hosts are not known at build time. */}
         <img
           src={currentFavicon}
           alt={current.name}
@@ -359,13 +357,14 @@ function TeamSwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64 max-h-80 overflow-y-auto">
         {restaurants.map((r) => {
-          const favicon = getRestaurantFaviconUrl((r as any).websiteUrl);
+          const favicon = branding?.logoUrl ?? getRestaurantFaviconUrl(r.website);
           return (
             <DropdownMenuItem
               key={r.id}
               onClick={() => setRestaurantId(r.id)}
               className="flex items-center gap-2.5"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- tenant-controlled external logo hosts are not known at build time. */}
               <img
                 src={favicon}
                 alt={r.name}
@@ -770,6 +769,9 @@ export function AppSidebar() {
             )}
 
             <LocaleSwitcher />
+            <p className="px-2.5 pt-1 text-center text-[10px] font-medium tracking-wide text-mv-ink-faint">
+              {MINERVA_FLOW_ATTRIBUTION}
+            </p>
           </div>
         </motion.div>
       </motion.aside>

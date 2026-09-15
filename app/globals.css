@@ -112,9 +112,9 @@
   --color-mv-amber-bg: var(--mv-amber-bg);
 
   --font-sans: var(--font-sans);
-  --font-display: "New York", -apple-system-serif, ui-serif, Georgia, var(--font-heading-fallback), serif;
-  --font-heading: "New York", -apple-system-serif, ui-serif, Georgia, var(--font-heading-fallback), serif;
-  --font-serif: "New York", -apple-system-serif, ui-serif, Georgia, var(--font-heading-fallback), serif;
+  --font-display: var(--mv-heading-font, "New York", -apple-system-serif, ui-serif, Georgia, var(--font-heading-fallback), serif);
+  --font-heading: var(--mv-heading-font, "New York", -apple-system-serif, ui-serif, Georgia, var(--font-heading-fallback), serif);
+  --font-serif: var(--mv-heading-font, "New York", -apple-system-serif, ui-serif, Georgia, var(--font-heading-fallback), serif);
   --font-mono: var(--font-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -161,9 +161,13 @@
 body {
   background: var(--mv-cream);
   color: var(--mv-ink);
-  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--mv-body-font, var(--font-jakarta), ui-sans-serif, system-ui, sans-serif);
   font-feature-settings: "ss01" 1, "cv05" 1;
   -webkit-font-smoothing: antialiased;
+}
+
+.mv-brand-scope {
+  font-family: var(--mv-body-font, var(--font-jakarta), ui-sans-serif, system-ui, sans-serif);
 }
 
 ::selection {

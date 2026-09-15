@@ -1,8 +1,9 @@
 "use client";
 
 import type { Restaurant, Role } from "@/lib/types";
+import type { WorkspaceBranding } from "@/lib/branding/workspace-branding";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
 export type Period = "jour" | "semaine" | "mois" | "custom";
 
@@ -20,6 +21,7 @@ type AppState = {
   restaurantId: string;
   setRestaurantId: (id: string) => void;
   restaurants: Restaurant[];
+  branding: WorkspaceBranding | null;
   period: Period;
   setPeriod: (p: Period) => void;
   sidebarCollapsed: boolean;
@@ -37,6 +39,7 @@ export function AppProvider({
   sidebarPermissions = null,
   isPlatformAdmin = false,
   restaurants,
+  branding = null,
   initialRestaurantId,
 }: {
   children: ReactNode;
@@ -45,6 +48,7 @@ export function AppProvider({
   sidebarPermissions?: string[] | null;
   isPlatformAdmin?: boolean;
   restaurants: Restaurant[];
+  branding?: WorkspaceBranding | null;
   initialRestaurantId: string;
 }) {
   const router = useRouter();
@@ -53,11 +57,11 @@ export function AppProvider({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [localAuthUser, setLocalAuthUser] = useState<AuthUser | null>(authUser);
 
-  function setRestaurantId(id: string) {
+  const setRestaurantId = useCallback((id: string) => {
     setRestaurantIdState(id);
     document.cookie = `mv_restaurant_id=${id}; path=/; max-age=31536000; samesite=lax`;
     router.refresh();
-  }
+  }, [router]);
 
   function updateAuthUser(patch: Partial<AuthUser>) {
     setLocalAuthUser((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -71,6 +75,7 @@ export function AppProvider({
       restaurantId,
       setRestaurantId,
       restaurants,
+      branding,
       period,
       setPeriod,
       sidebarCollapsed,
@@ -78,7 +83,7 @@ export function AppProvider({
       authUser: localAuthUser,
       updateAuthUser,
     }),
-    [role, sidebarPermissions, isPlatformAdmin, restaurantId, restaurants, period, sidebarCollapsed, localAuthUser]
+    [role, sidebarPermissions, isPlatformAdmin, restaurantId, restaurants, branding, period, sidebarCollapsed, localAuthUser, setRestaurantId]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

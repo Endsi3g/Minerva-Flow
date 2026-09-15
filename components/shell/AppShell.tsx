@@ -14,20 +14,21 @@ import { cn } from "@/lib/utils";
 import { PanelLeft } from "lucide-react";
 import { usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
+import { brandingCssVariables } from "@/lib/branding/workspace-branding";
 
 // Full-bleed routes render edge-to-edge, without the shared page padding/max-width.
 const FULL_BLEED_ROUTES = ["/maps"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations("shell");
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { sidebarCollapsed, setSidebarCollapsed, branding } = useApp();
   const pathname = usePathname();
   const isFullBleed = FULL_BLEED_ROUTES.some((r) => pathname.startsWith(r));
 
   return (
     <RealtimeProvider>
       <PresenceProvider>
-        <div className="flex h-screen w-full overflow-hidden bg-mv-cream">
+        <div className="mv-brand-scope flex h-screen w-full overflow-hidden bg-mv-cream" style={brandingCssVariables(branding)}>
         <div className="no-print hidden md:flex">
           <AppSidebar />
         </div>

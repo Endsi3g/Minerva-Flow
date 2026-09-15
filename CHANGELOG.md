@@ -2,6 +2,14 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.37.0] - 2026-09-15
+
+### 🎨 Fondation marque blanche
+- Chaque workspace possède maintenant une identité de marque isolée : nom, logo, palette, typographies, langue et ton de l’assistant IA.
+- La configuration est sécurisée au niveau base de données : seul le propriétaire du workspace peut modifier l’identité partagée par ses établissements.
+- Les demandes de domaine personnalisé et les coordonnées d’expédition sont stockées séparément, prêtes pour la vérification DNS et l’envoi brandé des prochaines phases.
+- L’interface propriétaire applique la palette et les polices choisies, conserve une attribution discrète « Propulsé par Minerva Flow », et valide les entrées côté serveur.
+
 ## [v2.35.0] - 2026-09-09
 
 ### 🔌 Caisse (POS) — Clover, Toast, et Synchronisation Détaillée

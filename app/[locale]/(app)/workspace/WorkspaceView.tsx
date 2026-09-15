@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Field, Input } from "@/components/minerva/FormField";
+import { Field, Input, Select } from "@/components/minerva/FormField";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { InviteWorkspaceMemberModal } from "@/components/forms/InviteWorkspaceMemberModal";
 import { useApp, roleLabels } from "@/lib/app-context";
@@ -17,10 +17,125 @@ import {
   renameWorkspaceAction,
   assignRestaurantToWorkspaceAction,
   listWorkspaceInvitesAction,
+  updateWorkspaceBrandingAction,
   type WorkspaceHubData,
 } from "./actions";
 import type { WorkspaceInviteListEntry } from "@/lib/data/workspace-invites";
-import { Plus, Mail, CreditCard, Building2 } from "lucide-react";
+import {
+  BRAND_AI_TONES,
+  BRAND_BODY_FONTS,
+  BRAND_HEADING_FONTS,
+  BRAND_LOCALES,
+  type WorkspaceBranding,
+  type WorkspaceBrandingInput,
+} from "@/lib/branding/workspace-branding";
+import { Plus, Mail, CreditCard, Building2, Palette, Globe2, Bot } from "lucide-react";
+
+function brandingInput(branding: WorkspaceBranding): WorkspaceBrandingInput {
+  return {
+    brandName: branding.brandName,
+    logoUrl: branding.logoUrl ?? "",
+    primaryColor: branding.primaryColor,
+    secondaryColor: branding.secondaryColor,
+    accentColor: branding.accentColor,
+    headingFont: branding.headingFont,
+    bodyFont: branding.bodyFont,
+    preferredLocale: branding.preferredLocale,
+    aiTone: branding.aiTone,
+    requestedCustomDomain: branding.requestedCustomDomain ?? "",
+    emailSenderName: branding.emailSenderName ?? "",
+    emailReplyTo: branding.emailReplyTo ?? "",
+  };
+}
+
+const fontLabels = {
+  new_york: "New York",
+  playfair_display: "Playfair Display",
+  system_serif: "Sérif système",
+  plus_jakarta_sans: "Plus Jakarta Sans",
+  inter: "Inter",
+  system_sans: "Sans sérif système",
+} as const;
+
+const localeLabels = { "fr-CA": "Français (Canada)", "fr-FR": "Français (France)", "en-CA": "English (Canada)", "en-US": "English (US)" } as const;
+const toneLabels = { professionnel: "Professionnel", chaleureux: "Chaleureux", direct: "Direct", luxe: "Luxe éditorial" } as const;
+
+function BrandSettingsCard({ branding }: { branding: WorkspaceBranding }) {
+  const router = useRouter();
+  const [draft, setDraft] = useState<WorkspaceBrandingInput>(() => brandingInput(branding));
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  function update<K extends keyof WorkspaceBrandingInput>(key: K, value: WorkspaceBrandingInput[K]) {
+    setDraft((previous) => ({ ...previous, [key]: value }));
+    setNotice(null);
+  }
+
+  async function save() {
+    setSaving(true);
+    const ok = await updateWorkspaceBrandingAction(branding.workspaceId, draft);
+    setSaving(false);
+    setNotice(ok ? "Identité enregistrée. La prévisualisation a été actualisée." : "Impossible d’enregistrer. Vérifiez les champs, notamment le domaine et l’adresse courriel.");
+    if (ok) router.refresh();
+  }
+
+  const domainStatus = {
+    non_configure: "Aucun domaine demandé",
+    en_attente: "Vérification DNS à venir",
+    verifie: "Domaine vérifié",
+    erreur: "Vérification à corriger",
+  }[branding.customDomainStatus];
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow="Marque blanche"
+        title="Identité de votre marque"
+        description="Cette identité s’applique à tous les établissements du workspace. Une mention « Propulsé par Minerva Flow » demeure présente de façon discrète."
+      />
+      <div className="grid gap-4 md:grid-cols-2">
+        <Field label="Nom affiché" required>
+          <Input value={draft.brandName} onChange={(event) => update("brandName", event.target.value)} maxLength={100} />
+        </Field>
+        <Field label="URL du logo" hint="Une URL HTTPS publique. Le téléversement dédié arrive à la phase suivante.">
+          <Input value={draft.logoUrl} onChange={(event) => update("logoUrl", event.target.value)} type="url" placeholder="https://…/logo.svg" />
+        </Field>
+        <Field label="Couleur principale">
+          <div className="flex items-center gap-2"><Input className="h-10 w-12 p-1" type="color" value={draft.primaryColor} onChange={(event) => update("primaryColor", event.target.value)} /><Input value={draft.primaryColor} onChange={(event) => update("primaryColor", event.target.value)} pattern="^#[0-9A-Fa-f]{6}$" /></div>
+        </Field>
+        <Field label="Couleur secondaire">
+          <div className="flex items-center gap-2"><Input className="h-10 w-12 p-1" type="color" value={draft.secondaryColor} onChange={(event) => update("secondaryColor", event.target.value)} /><Input value={draft.secondaryColor} onChange={(event) => update("secondaryColor", event.target.value)} pattern="^#[0-9A-Fa-f]{6}$" /></div>
+        </Field>
+        <Field label="Couleur d’accent">
+          <div className="flex items-center gap-2"><Input className="h-10 w-12 p-1" type="color" value={draft.accentColor} onChange={(event) => update("accentColor", event.target.value)} /><Input value={draft.accentColor} onChange={(event) => update("accentColor", event.target.value)} pattern="^#[0-9A-Fa-f]{6}$" /></div>
+        </Field>
+        <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3">
+          <div className="flex items-center gap-2 text-[12px] font-semibold text-mv-ink-soft"><Palette size={14} /> Aperçu</div>
+          <p className="mt-2 font-display text-lg" style={{ color: draft.secondaryColor }}>{draft.brandName || "Votre marque"}</p>
+          <span className="mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ backgroundColor: draft.primaryColor, color: "#fff" }}>Action principale</span>
+        </div>
+        <Field label="Police des titres"><Select value={draft.headingFont} onChange={(event) => update("headingFont", event.target.value as WorkspaceBrandingInput["headingFont"])}>{BRAND_HEADING_FONTS.map((font) => <option key={font} value={font}>{fontLabels[font]}</option>)}</Select></Field>
+        <Field label="Police de l’interface"><Select value={draft.bodyFont} onChange={(event) => update("bodyFont", event.target.value as WorkspaceBrandingInput["bodyFont"])}>{BRAND_BODY_FONTS.map((font) => <option key={font} value={font}>{fontLabels[font]}</option>)}</Select></Field>
+      </div>
+
+      <div className="mt-5 grid gap-4 border-t border-mv-border-soft pt-5 md:grid-cols-2">
+        <Field label="Domaine personnalisé" hint={domainStatus}>
+          <div className="relative"><Globe2 size={15} className="pointer-events-none absolute left-3 top-3 text-mv-ink-faint" /><Input className="pl-9" value={draft.requestedCustomDomain} onChange={(event) => update("requestedCustomDomain", event.target.value)} placeholder="app.votremarque.com" /></div>
+        </Field>
+        <Field label="Nom de l’expéditeur"><Input value={draft.emailSenderName} onChange={(event) => update("emailSenderName", event.target.value)} placeholder={draft.brandName || "Votre marque"} /></Field>
+        <Field label="Courriel de réponse"><Input type="email" value={draft.emailReplyTo} onChange={(event) => update("emailReplyTo", event.target.value)} placeholder="bonjour@votremarque.com" /></Field>
+        <Field label="Langue principale"><Select value={draft.preferredLocale} onChange={(event) => update("preferredLocale", event.target.value as WorkspaceBrandingInput["preferredLocale"])}>{BRAND_LOCALES.map((locale) => <option key={locale} value={locale}>{localeLabels[locale]}</option>)}</Select></Field>
+        <Field label="Ton de l’assistant IA"><div className="relative"><Bot size={15} className="pointer-events-none absolute left-3 top-3 text-mv-ink-faint" /><Select className="pl-9" value={draft.aiTone} onChange={(event) => update("aiTone", event.target.value as WorkspaceBrandingInput["aiTone"])}>{BRAND_AI_TONES.map((tone) => <option key={tone} value={tone}>{toneLabels[tone]}</option>)}</Select></div></Field>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-mv-border-soft pt-4">
+        <p className="text-[12px] text-mv-ink-faint">Les modules, intégrations vérifiées et l’envoi depuis votre domaine seront activés dans les prochaines phases.</p>
+        <Button onClick={save} disabled={saving} loading={saving}>Enregistrer l’identité</Button>
+      </div>
+      {notice && <p className="mt-3 text-[12.5px] text-mv-ink-soft" role="status">{notice}</p>}
+    </Card>
+  );
+}
 
 function NoWorkspaceYet() {
   const router = useRouter();
@@ -79,8 +194,6 @@ export function WorkspaceView({ data }: { data: WorkspaceHubData | null }) {
   const [invites, setInvites] = useState<WorkspaceInviteListEntry[]>([]);
   const [assigningId, setAssigningId] = useState<string | null>(null);
 
-  useEffect(() => setNameDraft(data?.workspace.name ?? ""), [data?.workspace.name]);
-
   useEffect(() => {
     if (!data?.canManage) return;
     listWorkspaceInvitesAction(data.workspace.id).then(setInvites);
@@ -88,7 +201,7 @@ export function WorkspaceView({ data }: { data: WorkspaceHubData | null }) {
 
   if (!data) return <NoWorkspaceYet />;
 
-  const { workspace, members, restaurants, canManage } = data;
+  const { workspace, members, restaurants, canManage, branding, canManageBrand } = data;
   const unassigned = myRestaurants.filter((r) => !r.workspaceId);
 
   async function handleSaveName() {
@@ -140,6 +253,8 @@ export function WorkspaceView({ data }: { data: WorkspaceHubData | null }) {
             </div>
           </Card>
         )}
+
+        {canManageBrand && branding && <BrandSettingsCard key={branding.updatedAt} branding={branding} />}
 
         <Card>
           <CardHeader
