@@ -2,7 +2,7 @@ import SwiftUI
 
 private let hasSeenOnboardingKey = "hasSeenTierOnboarding"
 
-private enum RootScreen { case intro, auth, onboarding, main }
+private enum RootScreen { case intro, auth, onboarding, main, ownerMain }
 
 /// Full flow: Intro (brand-new visitor hero) -> AuthView (real login,
 /// matches the web portal exactly) -> OnboardingWelcomeView (tier-status
@@ -51,6 +51,10 @@ struct RootView: View {
                 MainTabView()
                     .id(RootScreen.main)
                     .transition(.opacity)
+            case .ownerMain:
+                OwnerMainTabView()
+                    .id(RootScreen.ownerMain)
+                    .transition(.opacity)
             }
         }
         .onAppear {
@@ -58,10 +62,11 @@ struct RootView: View {
             if screen == .main { biometricLock.lockIfEnabled() }
         }
         .onChange(of: supabase.isAuthenticated) { syncScreen() }
+        .onChange(of: supabase.isOwnerExperience) { syncScreen() }
         // Only ever covers .main — the lock protects the loyalty account's
         // data, not the login/onboarding screens that precede having one.
         .fullScreenCover(isPresented: Binding(
-            get: { screen == .main && biometricLock.isLocked },
+            get: { (screen == .main || screen == .ownerMain) && biometricLock.isLocked },
             set: { _ in }
         )) {
             BiometricLockView()
@@ -132,7 +137,7 @@ struct RootView: View {
     private func syncScreen() {
         let hasSeenOnboarding = UserDefaults.standard.bool(forKey: hasSeenOnboardingKey)
         let target: RootScreen = supabase.isAuthenticated
-            ? (hasSeenOnboarding ? .main : .onboarding)
+            ? (supabase.isOwnerExperience ? .ownerMain : (hasSeenOnboarding ? .main : .onboarding))
             : (screen == .auth ? .auth : .intro)
         transition(to: target)
     }

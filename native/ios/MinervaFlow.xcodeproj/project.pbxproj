@@ -46,6 +46,7 @@
 		CAFBB02D7DDD8E9207AF10E1 /* WebPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 574318127126383937A04DB7 /* WebPageView.swift */; };
 		CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D58EE17A9A62B1893F865891 /* RadialGauge.swift */; };
 		DDBC2F899C12158BE7C35344 /* SurveyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6362E11D22E6E7743BBE74 /* SurveyView.swift */; };
+		DEDC40321085D36EBF1F9A8E /* OwnerMainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D714D4A2A584A4ED14C478B8 /* OwnerMainTabView.swift */; };
 		E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442686E96CEA070F53FB728F /* EditProfileSheet.swift */; };
 		E602B1260BDBC61608C8F1C7 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECE934F2A5846A120417A19B /* Theme.swift */; };
 		E895E770CDE5B84ADABAE566 /* AuthFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */; };
@@ -138,6 +139,7 @@
 		D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		D58EE17A9A62B1893F865891 /* RadialGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialGauge.swift; sourceTree = "<group>"; };
 		D6E6F6E76663DF4A6F2A5309 /* MinervaFlow.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlow.entitlements; sourceTree = "<group>"; };
+		D714D4A2A584A4ED14C478B8 /* OwnerMainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerMainTabView.swift; sourceTree = "<group>"; };
 		DC74D7EFE8F6B593AB50D654 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 		DDBB4AF1C78A26877459630D /* MinervaFlowTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MinervaFlowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE1BA36D6BD964EC57A0DE85 /* MinervaFlowWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowWidget.swift; sourceTree = "<group>"; };
@@ -228,6 +230,7 @@
 				C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */,
 				47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */,
 				EA427B759305A43BF018AB62 /* OrderTotals.swift */,
+				D714D4A2A584A4ED14C478B8 /* OwnerMainTabView.swift */,
 				D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */,
 				CA484AE32471A39B3214052F /* QRScannerView.swift */,
 				D58EE17A9A62B1893F865891 /* RadialGauge.swift */,
@@ -496,6 +499,7 @@
 				4E35352D66E4B11496D587ED /* OfferDetailView.swift in Sources */,
 				7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */,
 				9BC5FB157B434B491741712A /* OrderTotals.swift in Sources */,
+				DEDC40321085D36EBF1F9A8E /* OwnerMainTabView.swift in Sources */,
 				068DD03953A5F45E4FDDA8F8 /* PointsSnapshot.swift in Sources */,
 				A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */,
 				111FB36D15A3D9DEEBA9060B /* QRScannerView.swift in Sources */,

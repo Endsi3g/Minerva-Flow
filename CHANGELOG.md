@@ -2,6 +2,13 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.41.0] - 2026-09-15
+
+###  Première tranche propriétaire native
+- L’app SwiftUI détecte désormais le rôle propriétaire/gérant depuis les memberships Supabase protégés par RLS.
+- Une navigation native dédiée présente l’identité white-label, les établissements gérés et les accès propriétaires principaux.
+- Le parcours client existant reste inchangé ; les écrans opérationnels natifs seront livrés par modules successifs.
+
 ## [v2.40.0] - 2026-09-15
 
 ### 📊 Vue multi-établissements mobile

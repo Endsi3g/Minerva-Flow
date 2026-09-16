@@ -53,6 +53,11 @@ final class SupabaseManager: ObservableObject {
     /// than each view inventing its own error state, so every screen fails
     /// the same way instead of some showing nothing at all.
     @Published var lastError: String?
+    /// Native owner/manager mode is resolved from the authenticated user's
+    /// restaurant membership, never from a client-side flag.
+    @Published var isOwnerExperience = false
+    @Published var ownerRestaurants: [NativeOwnerRestaurant] = []
+    @Published var ownerBranding: NativeOwnerBranding?
 
     private init() {
         client = SupabaseClient(supabaseURL: Config.supabaseURL, supabaseKey: Config.supabaseAnonKey)
@@ -171,6 +176,10 @@ final class SupabaseManager: ObservableObject {
         isLoadingData = true
         defer { isLoadingData = false }
         do {
+            await loadOwnerContext()
+            if isOwnerExperience {
+                return
+            }
             // A customer can now belong to more than one restaurant (the
             // "Devenir client" browse-mode join, see RestaurantDetailView),
             // so this can legitimately return several rows for the same
@@ -252,6 +261,61 @@ final class SupabaseManager: ObservableObject {
             // knows a refresh silently failed rather than assuming it's current.
             lastError = "La mise à jour a échoué. Vérifiez votre connexion et réessayez."
             print("loadPortalData error: \(error)")
+        }
+    }
+
+    /// Loads only the owner surface needed by the native shell. RLS policies
+    /// on `restaurant_members` and `workspace_brand_settings` remain the
+    /// authority; this query does not trust role data supplied by the app.
+    private func loadOwnerContext() async {
+        struct Membership: Decodable {
+            let role: String
+            let restaurantId: String
+            let restaurant: NativeOwnerRestaurant?
+            enum CodingKeys: String, CodingKey { case role, restaurantId = "restaurant_id", restaurant = "restaurants" }
+        }
+        do {
+            let memberships: [Membership] = try await client
+                .from("restaurant_members")
+                .select("role, restaurant_id, restaurants(id, name, city, workspace_id)")
+                .eq("status", value: "active")
+                .execute()
+                .value
+            let privileged = memberships.filter { $0.role == "owner" || $0.role == "manager" }
+            guard let first = privileged.first else {
+                isOwnerExperience = false
+                ownerRestaurants = []
+                ownerBranding = nil
+                return
+            }
+            isOwnerExperience = true
+            ownerRestaurants = privileged.compactMap(\.restaurant)
+            if let workspaceId = first.restaurant?.workspaceId {
+                struct Branding: Decodable {
+                    let brandName: String
+                    let logoUrl: String?
+                    let primaryColor: String
+                    let secondaryColor: String
+                    let accentColor: String
+                    enum CodingKeys: String, CodingKey {
+                        case brandName = "brand_name", logoUrl = "logo_url", primaryColor = "primary_color", secondaryColor = "secondary_color", accentColor = "accent_color"
+                    }
+                }
+                ownerBranding = try await client
+                    .from("workspace_brand_settings")
+                    .select("brand_name, logo_url, primary_color, secondary_color, accent_color")
+                    .eq("workspace_id", value: workspaceId)
+                    .single()
+                    .execute()
+                    .value
+            }
+        } catch {
+            // A customer session can legitimately receive no membership rows;
+            // only surface errors for a session that looked privileged.
+            isOwnerExperience = false
+            ownerRestaurants = []
+            ownerBranding = nil
+            print("loadOwnerContext error: \(error)")
         }
     }
 

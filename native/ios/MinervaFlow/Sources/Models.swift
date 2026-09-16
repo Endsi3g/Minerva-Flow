@@ -1,4 +1,23 @@
 import Foundation
+
+struct NativeOwnerRestaurant: Codable, Identifiable {
+    let id: String
+    let name: String
+    let city: String?
+    let workspaceId: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, city, workspaceId = "workspace_id"
+    }
+}
+
+struct NativeOwnerBranding: Codable {
+    let brandName: String
+    let logoUrl: String?
+    let primaryColor: String
+    let secondaryColor: String
+    let accentColor: String
+}
 import SwiftUI
 
 struct Customer: Codable, Identifiable {
@@ -442,4 +461,3 @@ struct PlatformAnnouncement: Codable, Identifiable {
         case createdAt = "created_at"
     }
 }
-
