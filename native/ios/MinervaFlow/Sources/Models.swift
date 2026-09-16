@@ -24,6 +24,16 @@ struct NativeOwnerMetrics {
     var monthOrders: Int = 0
     var retentionRevenue: Double = 0
 }
+
+struct NativeOwnerOrder: Codable, Identifiable {
+    let id: String
+    let restaurantId: String
+    let status: String
+    let guestName: String
+    let total: Double
+    let createdAt: String
+    enum CodingKeys: String, CodingKey { case id, restaurantId = "restaurant_id", status, guestName = "guest_name", total, createdAt = "created_at" }
+}
 import SwiftUI
 
 struct Customer: Codable, Identifiable {

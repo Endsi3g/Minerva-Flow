@@ -9,7 +9,7 @@ struct OwnerMainTabView: View {
             OwnerOverviewView()
                 .tabItem { Label("Vue d'ensemble", systemImage: "rectangle.grid.2x2.fill") }
                 .tag(0)
-            OwnerModulePlaceholder(title: "Commandes", icon: "list.clipboard.fill", detail: "Suivez les commandes de vos établissements.")
+            OwnerOrdersView()
                 .tabItem { Label("Commandes", systemImage: "list.clipboard.fill") }
                 .tag(1)
             OwnerModulePlaceholder(title: "Menu", icon: "fork.knife.circle.fill", detail: "Pilotez la carte et ses marges.")
@@ -23,6 +23,47 @@ struct OwnerMainTabView: View {
                 .tag(4)
         }
         .tint(MinervaColor.emeraldDark)
+    }
+}
+
+private struct OwnerOrdersView: View {
+    @EnvironmentObject private var supabase: SupabaseManager
+    @State private var filter = "Toutes"
+    private let filters = ["Toutes", "soumise", "en_preparation", "prete", "servie"]
+    private var visibleOrders: [NativeOwnerOrder] { filter == "Toutes" ? supabase.ownerOrders : supabase.ownerOrders.filter { $0.status == filter } }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Commandes").font(MinervaFont.display(30, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(filters, id: \.self) { value in
+                            Button(value == "Toutes" ? value : statusLabel(value)) { filter = value }
+                                .buttonStyle(.bordered).tint(filter == value ? MinervaColor.emeraldDark : MinervaColor.inkFaint)
+                        }
+                    }
+                }
+                if visibleOrders.isEmpty {
+                    ContentUnavailableView("Aucune commande", systemImage: "tray", description: Text("Les nouvelles commandes de vos établissements apparaîtront ici."))
+                } else {
+                    List(visibleOrders) { order in
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(order.guestName).font(.headline)
+                                Text(statusLabel(order.status)).font(.caption).foregroundStyle(MinervaColor.inkFaint)
+                            }
+                            Spacer()
+                            Text(order.total.cad).font(.subheadline.weight(.semibold)).foregroundStyle(MinervaColor.emeraldDark)
+                        }.listRowBackground(Color.white)
+                    }.listStyle(.plain)
+                }
+            }.padding(20).background(MinervaColor.cream.ignoresSafeArea())
+        }
+    }
+
+    private func statusLabel(_ value: String) -> String {
+        ["soumise": "À traiter", "en_preparation": "En préparation", "prete": "Prête", "servie": "Servie"][value] ?? value.capitalized
     }
 }
 

@@ -59,6 +59,7 @@ final class SupabaseManager: ObservableObject {
     @Published var ownerRestaurants: [NativeOwnerRestaurant] = []
     @Published var ownerBranding: NativeOwnerBranding?
     @Published var ownerMetrics = NativeOwnerMetrics()
+    @Published var ownerOrders: [NativeOwnerOrder] = []
 
     private init() {
         client = SupabaseClient(supabaseURL: Config.supabaseURL, supabaseKey: Config.supabaseAnonKey)
@@ -293,6 +294,7 @@ final class SupabaseManager: ObservableObject {
             isOwnerExperience = true
             ownerRestaurants = privileged.compactMap(\.restaurant)
             await loadOwnerMetrics()
+            await loadOwnerOrders()
             if let workspaceId = first.restaurant?.workspaceId {
                 struct Branding: Decodable {
                     let brandName: String
@@ -340,6 +342,17 @@ final class SupabaseManager: ObservableObject {
             }
         }
         ownerMetrics = metrics
+    }
+
+    private func loadOwnerOrders() async {
+        var result: [NativeOwnerOrder] = []
+        for restaurant in ownerRestaurants {
+            do {
+                let rows: [NativeOwnerOrder] = try await client.from("orders").select("id, restaurant_id, status, guest_name, total, created_at").eq("restaurant_id", value: restaurant.id).order("created_at", ascending: false).limit(20).execute().value
+                result.append(contentsOf: rows)
+            } catch { print("loadOwnerOrders error: \(error)") }
+        }
+        ownerOrders = result.sorted { $0.createdAt > $1.createdAt }
     }
 
     /// Writes the home-screen widget's entire data diet to the shared App
