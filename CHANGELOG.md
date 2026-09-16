@@ -2,6 +2,12 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.42.0] - 2026-09-15
+
+### 📈 Indicateurs propriétaires natifs
+- La vue propriétaire native agrège désormais les ventes et commandes du mois depuis les données Supabase de chaque établissement.
+- Les indicateurs restent isolés par workspace et respectent les memberships RLS.
+
 ## [v2.41.0] - 2026-09-15
 
 ###  Première tranche propriétaire native
