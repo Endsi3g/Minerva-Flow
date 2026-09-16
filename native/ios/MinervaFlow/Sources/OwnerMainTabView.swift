@@ -26,6 +26,16 @@ struct OwnerMainTabView: View {
     }
 }
 
+private extension Double {
+    var cad: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "CAD"
+        formatter.locale = Locale(identifier: "fr_CA")
+        return formatter.string(from: NSNumber(value: self)) ?? "—"
+    }
+}
+
 private struct OwnerOverviewView: View {
     @EnvironmentObject private var supabase: SupabaseManager
 
@@ -64,6 +74,13 @@ private struct OwnerOverviewView: View {
                             Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(MinervaColor.inkFaint)
                         }
                         .padding(15).background(.white).clipShape(RoundedRectangle(cornerRadius: 16)).shadow(color: .black.opacity(0.04), radius: 8, y: 3)
+                    }
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Ce mois-ci").font(MinervaFont.display(21, weight: .semibold))
+                        HStack(spacing: 10) {
+                            OwnerMetric(title: "Ventes", value: supabase.ownerMetrics.monthRevenue.cad, icon: "chart.line.uptrend.xyaxis")
+                            OwnerMetric(title: "Commandes", value: "\(supabase.ownerMetrics.monthOrders)", icon: "list.clipboard")
+                        }
                     }
                     HStack(spacing: 10) {
                         OwnerMetric(title: "Adresses", value: "\(supabase.ownerRestaurants.count)", icon: "building.2")

@@ -58,6 +58,7 @@ final class SupabaseManager: ObservableObject {
     @Published var isOwnerExperience = false
     @Published var ownerRestaurants: [NativeOwnerRestaurant] = []
     @Published var ownerBranding: NativeOwnerBranding?
+    @Published var ownerMetrics = NativeOwnerMetrics()
 
     private init() {
         client = SupabaseClient(supabaseURL: Config.supabaseURL, supabaseKey: Config.supabaseAnonKey)
@@ -286,10 +287,12 @@ final class SupabaseManager: ObservableObject {
                 isOwnerExperience = false
                 ownerRestaurants = []
                 ownerBranding = nil
+                ownerMetrics = NativeOwnerMetrics()
                 return
             }
             isOwnerExperience = true
             ownerRestaurants = privileged.compactMap(\.restaurant)
+            await loadOwnerMetrics()
             if let workspaceId = first.restaurant?.workspaceId {
                 struct Branding: Decodable {
                     let brandName: String
@@ -315,8 +318,28 @@ final class SupabaseManager: ObservableObject {
             isOwnerExperience = false
             ownerRestaurants = []
             ownerBranding = nil
+            ownerMetrics = NativeOwnerMetrics()
             print("loadOwnerContext error: \(error)")
         }
+    }
+
+    private func loadOwnerMetrics() async {
+        let startOfMonth = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date()
+        let iso = ISO8601DateFormatter().string(from: startOfMonth)
+        var metrics = NativeOwnerMetrics()
+        for restaurant in ownerRestaurants {
+            do {
+                struct ServiceDay: Decodable { let revenue: Double }
+                let days: [ServiceDay] = try await client.from("service_days").select("revenue").eq("restaurant_id", value: restaurant.id).gte("date", value: String(iso.prefix(10))).execute().value
+                metrics.monthRevenue += days.reduce(0) { $0 + $1.revenue }
+                struct OrderRow: Decodable { let id: String }
+                let orders: [OrderRow] = try await client.from("orders").select("id").eq("restaurant_id", value: restaurant.id).gte("created_at", value: iso).neq("status", value: "annulee").execute().value
+                metrics.monthOrders += orders.count
+            } catch {
+                print("loadOwnerMetrics error: \(error)")
+            }
+        }
+        ownerMetrics = metrics
     }
 
     /// Writes the home-screen widget's entire data diet to the shared App

@@ -18,6 +18,12 @@ struct NativeOwnerBranding: Codable {
     let secondaryColor: String
     let accentColor: String
 }
+
+struct NativeOwnerMetrics {
+    var monthRevenue: Double = 0
+    var monthOrders: Int = 0
+    var retentionRevenue: Double = 0
+}
 import SwiftUI
 
 struct Customer: Codable, Identifiable {
