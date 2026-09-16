@@ -90,17 +90,17 @@ const MORE_ITEMS: MoreItem[] = [
 export function MobileTabBar() {
   const t = useTranslations("nav");
   const pathname = usePathname();
-  const { role, isPlatformAdmin } = useApp();
+  const { role, isPlatformAdmin, restaurants } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
   const flowAiLocked = !isPlatformAdmin;
 
-  // Owners run their business from their phone. Their persistent tabs lead to
-  // the four daily decisions (cockpit, orders, menu margin, loyalty) rather
-  // than a locked assistant and reporting pages that belong in "Plus".
+  // Owners run their business from their phone. When they have more than one
+  // establishment, the home tab opens the consolidated group view first.
+  const ownerHomeHref = restaurants.length > 1 ? "/overview?scope=group" : "/overview";
   const tabs: TabItem[] =
     role === "owner" || role === "manager"
       ? [
-          { href: "/overview", translationKey: "mobileHome", icon: LayoutGrid },
+          { href: ownerHomeHref, translationKey: "mobileHome", icon: LayoutGrid },
           { href: "/commandes", translationKey: "commandes", icon: ClipboardList },
           { href: "/menu", translationKey: "menu", icon: UtensilsCrossed },
           { href: "/fidelisation", translationKey: "fidelisation", icon: Heart },

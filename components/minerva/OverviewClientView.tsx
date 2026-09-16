@@ -165,7 +165,7 @@ export function OverviewClientView({
 
       {/* Page Header */}
       <PageHeader
-        eyebrow={isGroupMode ? "Vue consolidée du groupe" : "Cockpit d'action opérationnel"}
+        eyebrow={isGroupMode ? "Vue consolidée du groupe" : "Vue d'action opérationnelle"}
         title={
           isGroupMode
             ? `Vue consolidée — Groupe (${restaurants.length} adresses)`
@@ -440,7 +440,29 @@ export function OverviewClientView({
             description="Analysez les écarts de marge, de coût matière et de ventes entre vos adresses pour reproduire les meilleures pratiques."
           />
 
-          <div className="overflow-x-auto">
+          <div className="space-y-2 md:hidden">
+            {multiEstablishmentRollup.benchmarks.map((bench) => (
+              <div key={bench.restaurantId} className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/40 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-mv-ink">{bench.name}</p>
+                    <p className="text-[11px] text-mv-ink-faint">{bench.city} · {bench.posProvider}</p>
+                  </div>
+                  <Button size="sm" variant="secondary" href={`/overview?scope=${bench.restaurantId}`} className="shrink-0 text-[11px]">
+                    Ouvrir
+                  </Button>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
+                  <div><span className="text-mv-ink-faint">Ventes mois</span><p className="font-semibold text-mv-ink">{formatCurrency(bench.monthRevenue)}</p></div>
+                  <div><span className="text-mv-ink-faint">Ventes jour</span><p className="font-semibold text-mv-ink">{formatCurrency(bench.todayRevenue)}</p></div>
+                  <div><span className="text-mv-ink-faint">Food cost</span><p className={bench.foodCostPct <= 32 ? "font-semibold text-mv-green-dark" : "font-semibold text-mv-amber"}>{bench.foodCostPct}%</p></div>
+                  <div><span className="text-mv-ink-faint">Couverts / seuil</span><p className="font-semibold text-mv-ink">{bench.coversToday} / {bench.dailyTargetNeeded}</p></div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left text-[12.5px]">
               <thead>
                 <tr className="border-b border-mv-border text-[11px] uppercase tracking-wider text-mv-ink-faint">

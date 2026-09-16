@@ -2,6 +2,13 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.40.0] - 2026-09-15
+
+### 📊 Vue multi-établissements mobile
+- Les propriétaires ayant plusieurs établissements arrivent directement sur la vue consolidée depuis l’onglet d’accueil mobile.
+- Le benchmark des adresses se transforme en cartes empilées sur petit écran pour garder les ventes, marges et couverts lisibles sans tableau horizontal.
+- Le libellé de la vue opérationnelle est harmonisé pour l’expérience propriétaire.
+
 ## [v2.39.1] - 2026-09-15
 
 ### 🛠️ Correctif création de workspace
@@ -9,8 +16,8 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 
 ## [v2.39.0] - 2026-09-15
 
-### 📱 Cockpit propriétaire mobile
-- La barre mobile des propriétaires et gérants privilégie maintenant le cockpit, les commandes, le menu et la fidélisation — les décisions quotidiennes — au lieu d’un assistant encore verrouillé.
+### 📱 Vue propriétaire mobile
+- La barre mobile des propriétaires et gérants privilégie maintenant la vue d’ensemble, les commandes, le menu et la fidélisation — les décisions quotidiennes — au lieu d’un assistant encore verrouillé.
 - Le tiroir « Plus » rend accessibles sur mobile les écrans de commandes, menu, fidélisation, inventaire, intégrations et configuration du workspace, dont l’identité white-label.
 
 ## [v2.38.0] - 2026-09-15
