@@ -24,12 +24,15 @@
 		3AD6882CB5ED4D4A5A3880A6 /* LoyaltyTierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */; };
 		3AD982D4339D2835748F8A86 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */; };
 		442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53C1D3C584B13E05EBD01750 /* MenuView.swift */; };
+		49701736DF90C66E14EE7060 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 638176E19AEE6DC72F74F490 /* Localizable.strings */; };
 		4E35352D66E4B11496D587ED /* OfferDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */; };
 		5C881A86FC3F7D67D6725336 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D70223A1891BFC32372F3C5 /* Models.swift */; };
+		5F9EF1186433358348AA47D6 /* OwnerOperationsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B92BADD5DDB759E9F1CDAC0 /* OwnerOperationsViews.swift */; };
 		739BE0134385DA87FC3DAD99 /* HomeDataUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF75FB3EE42DD210F4A6BB8D /* HomeDataUITests.swift */; };
 		7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */; };
 		7D3D0D3F93D2E688166D0236 /* PointsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */; };
 		7FCA9536A9FD7FCFF9277DBC /* WriteRestaurantReviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EFC326CA426C0304BAF5FA /* WriteRestaurantReviewSheet.swift */; };
+		80C7894F3CE1EC22FE9EFE5F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 638176E19AEE6DC72F74F490 /* Localizable.strings */; };
 		81BF311906B0599781F1BA73 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001F62368824618EE0ACB49 /* SupabaseManager.swift */; };
 		83A4C4962380D2949E0E7699 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2322CAFF570744A7B01CEE6B /* PrivacyInfo.xcprivacy */; };
 		85AB6A5594778C5544D34E18 /* RestaurantMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E2365512980AA23003195C /* RestaurantMapView.swift */; };
@@ -57,6 +60,7 @@
 		F867193E516C1BAD652866EE /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89B5498B7D0733D7AA1958D9 /* RootView.swift */; };
 		F995BC16AB779BDC25E406DD /* AnnouncementCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55E48B3C5F8034FE0368F020 /* AnnouncementCardView.swift */; };
 		FD1B769E629BFCD402190EA9 /* MinervaFlowWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1BA36D6BD964EC57A0DE85 /* MinervaFlowWidget.swift */; };
+		FF3391041F1589D1059B7FE7 /* AppleSignInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F39A7BD582C92D40EAA2DF7 /* AppleSignInCoordinator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -106,6 +110,7 @@
 		2322CAFF570744A7B01CEE6B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		2D70223A1891BFC32372F3C5 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		2F39A7BD582C92D40EAA2DF7 /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
 		376F3EEA99798EAF0012A1A4 /* ScannerTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerTabView.swift; sourceTree = "<group>"; };
 		3FDF4D1B53C09BD25A26EEDF /* MinervaFlowWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlowWidget.entitlements; sourceTree = "<group>"; };
 		4010F1012ABA1F318CBAF125 /* MinervaFlowUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MinervaFlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -119,6 +124,7 @@
 		5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandMarks.swift; sourceTree = "<group>"; };
 		59493D8CAE71CA71582DA48D /* OrderTotalsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTotalsTests.swift; sourceTree = "<group>"; };
 		5A9CD9B5E79E9FE474707739 /* RewardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardsView.swift; sourceTree = "<group>"; };
+		5B92BADD5DDB759E9F1CDAC0 /* OwnerOperationsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerOperationsViews.swift; sourceTree = "<group>"; };
 		639E5AD94A1648D1C2D5F907 /* RewardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardDetailView.swift; sourceTree = "<group>"; };
 		6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFlowUITests.swift; sourceTree = "<group>"; };
 		75D53BED95FFB389516CCEF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -133,6 +139,7 @@
 		C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferDetailView.swift; sourceTree = "<group>"; };
 		C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemDetailView.swift; sourceTree = "<group>"; };
 		CA484AE32471A39B3214052F /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
+		CD6D80784E1186920D4AFD5F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		CD8113A301B23FEECDBE8EDE /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+TestHelpers.swift"; sourceTree = "<group>"; };
 		D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
@@ -186,6 +193,14 @@
 			path = MinervaFlowTests;
 			sourceTree = "<group>";
 		};
+		179A16C87293E7A5D44297BC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				638176E19AEE6DC72F74F490 /* Localizable.strings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		3C8F98401FDC498977A93B61 = {
 			isa = PBXGroup;
 			children = (
@@ -202,6 +217,7 @@
 			isa = PBXGroup;
 			children = (
 				F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */,
+				179A16C87293E7A5D44297BC /* Resources */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -210,6 +226,7 @@
 			isa = PBXGroup;
 			children = (
 				55E48B3C5F8034FE0368F020 /* AnnouncementCardView.swift */,
+				2F39A7BD582C92D40EAA2DF7 /* AppleSignInCoordinator.swift */,
 				02F66981C3B41C8B5FD69ECE /* AuthView.swift */,
 				48489698C6B750A6E75FEFEE /* BiometricLock.swift */,
 				5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */,
@@ -231,6 +248,7 @@
 				47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */,
 				EA427B759305A43BF018AB62 /* OrderTotals.swift */,
 				D714D4A2A584A4ED14C478B8 /* OwnerMainTabView.swift */,
+				5B92BADD5DDB759E9F1CDAC0 /* OwnerOperationsViews.swift */,
 				D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */,
 				CA484AE32471A39B3214052F /* QRScannerView.swift */,
 				D58EE17A9A62B1893F865891 /* RadialGauge.swift */,
@@ -381,20 +399,20 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					3FD34A21BF50DC87042F1BA3 = {
-						DevelopmentTeam = DV9V35452J;
+						DevelopmentTeam = NHMPLN46TN;
 						ProvisioningStyle = Automatic;
 					};
 					4483569BD8B798D8E9CC531B = {
-						DevelopmentTeam = DV9V35452J;
+						DevelopmentTeam = NHMPLN46TN;
 						ProvisioningStyle = Automatic;
 					};
 					8D4FC1B6DCCEE69B8F936CAF = {
-						DevelopmentTeam = DV9V35452J;
+						DevelopmentTeam = NHMPLN46TN;
 						ProvisioningStyle = Automatic;
 						TestTargetID = 3FD34A21BF50DC87042F1BA3;
 					};
 					E08EC143477965FDF90FE2DE = {
-						DevelopmentTeam = DV9V35452J;
+						DevelopmentTeam = NHMPLN46TN;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -430,6 +448,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				80C7894F3CE1EC22FE9EFE5F /* Localizable.strings in Resources */,
 				10C0C5419F672163010D89E7 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -439,6 +458,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				09DEDA487C152D20E5410836 /* Assets.xcassets in Resources */,
+				49701736DF90C66E14EE7060 /* Localizable.strings in Resources */,
 				83A4C4962380D2949E0E7699 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -479,6 +499,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F995BC16AB779BDC25E406DD /* AnnouncementCardView.swift in Sources */,
+				FF3391041F1589D1059B7FE7 /* AppleSignInCoordinator.swift in Sources */,
 				EB483ABD7DA63D91561BE978 /* AuthView.swift in Sources */,
 				9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */,
 				8E9FA68C879A95D98AA5BF22 /* BrandMarks.swift in Sources */,
@@ -500,6 +521,7 @@
 				7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */,
 				9BC5FB157B434B491741712A /* OrderTotals.swift in Sources */,
 				DEDC40321085D36EBF1F9A8E /* OwnerMainTabView.swift in Sources */,
+				5F9EF1186433358348AA47D6 /* OwnerOperationsViews.swift in Sources */,
 				068DD03953A5F45E4FDDA8F8 /* PointsSnapshot.swift in Sources */,
 				A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */,
 				111FB36D15A3D9DEEBA9060B /* QRScannerView.swift in Sources */,
@@ -537,6 +559,17 @@
 			targetProxy = 67DB84FBFD9AB72267B28905 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		638176E19AEE6DC72F74F490 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				CD6D80784E1186920D4AFD5F /* en */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		3961399EF2168F85F65730F5 /* Debug */ = {
@@ -608,7 +641,7 @@
 				CODE_SIGN_ENTITLEMENTS = MinervaFlowWidget/MinervaFlowWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = DV9V35452J;
+				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlowWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -627,13 +660,14 @@
 		77496FD770430435643FC8A9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APNS_ENVIRONMENT = production;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = MinervaFlow/Resources/MinervaFlow.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = DV9V35452J;
+				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlow/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -709,7 +743,7 @@
 				CODE_SIGN_ENTITLEMENTS = MinervaFlowWidget/MinervaFlowWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = DV9V35452J;
+				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlowWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -730,7 +764,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = DV9V35452J;
+				DEVELOPMENT_TEAM = NHMPLN46TN;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -750,7 +784,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = DV9V35452J;
+				DEVELOPMENT_TEAM = NHMPLN46TN;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -768,13 +802,14 @@
 		E9540183F9576A289F526B6A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APNS_ENVIRONMENT = development;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = MinervaFlow/Resources/MinervaFlow.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = DV9V35452J;
+				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlow/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -793,7 +828,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = DV9V35452J;
+				DEVELOPMENT_TEAM = NHMPLN46TN;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -813,7 +848,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = DV9V35452J;
+				DEVELOPMENT_TEAM = NHMPLN46TN;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

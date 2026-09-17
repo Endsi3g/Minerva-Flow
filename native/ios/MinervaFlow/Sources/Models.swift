@@ -34,6 +34,84 @@ struct NativeOwnerOrder: Codable, Identifiable {
     let createdAt: String
     enum CodingKeys: String, CodingKey { case id, restaurantId = "restaurant_id", status, guestName = "guest_name", total, createdAt = "created_at" }
 }
+
+struct NativeOwnerCustomer: Codable, Identifiable {
+    let id: String
+    let name: String
+    let email: String?
+    let phone: String?
+    let loyaltyPoints: Int
+    let visitCount: Int
+    let totalSpent: Double
+    enum CodingKeys: String, CodingKey {
+        case id, name, email, phone
+        case loyaltyPoints = "loyalty_points"
+        case visitCount = "visit_count"
+        case totalSpent = "total_spent"
+    }
+}
+
+struct NativeOwnerReward: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String?
+    let pointsCost: Int
+    let active: Bool
+    enum CodingKeys: String, CodingKey { case id, name, description, active; case pointsCost = "points_cost" }
+}
+
+struct NativeOwnerEmployee: Codable, Identifiable {
+    let id: String
+    var fullName: String
+    var roleTitle: String
+    var hourlyWage: Double?
+    var active: Bool
+    enum CodingKeys: String, CodingKey {
+        case id, active
+        case fullName = "full_name"
+        case roleTitle = "role_title"
+        case hourlyWage = "hourly_wage"
+    }
+}
+
+struct NativeOwnerInventoryItem: Codable, Identifiable {
+    let id: String
+    var name: String
+    var quantityOnHand: Double
+    var unit: String
+    var parLevel: Double
+    var unitCost: Double
+    var supplierId: String?
+    enum CodingKeys: String, CodingKey {
+        case id, name, unit
+        case quantityOnHand = "quantity_on_hand"
+        case parLevel = "par_level"
+        case unitCost = "unit_cost"
+        case supplierId = "supplier_id"
+    }
+}
+
+struct NativeOwnerFinancialTransaction: Codable, Identifiable {
+    let id: String
+    let date: String
+    let description: String
+    let amount: Double
+    let direction: String
+    let category: String
+}
+
+struct NativeOwnerRestaurantReview: Codable, Identifiable {
+    let id: String
+    let rating: Int
+    let comment: String?
+    var ownerResponse: String?
+    let createdAt: Date
+    enum CodingKeys: String, CodingKey {
+        case id, rating, comment
+        case ownerResponse = "owner_response"
+        case createdAt = "created_at"
+    }
+}
 import SwiftUI
 
 struct Customer: Codable, Identifiable {
@@ -151,10 +229,10 @@ struct NativeMenuItem: Codable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case id
-        case restaurantId
+        case restaurantId = "restaurant_id"
         case name, category, price, description, active
-        case imageUrl
-        case imageUrls
+        case imageUrl = "image_url"
+        case imageUrls = "image_urls"
     }
 }
 

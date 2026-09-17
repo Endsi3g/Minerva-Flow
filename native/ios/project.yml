@@ -44,8 +44,9 @@ targets:
     entitlements:
       path: MinervaFlow/Resources/MinervaFlow.entitlements
       properties:
+        aps-environment: $(APNS_ENVIRONMENT)
         com.apple.security.application-groups:
-          - group.com.minervaflow.loyalty
+          - group.com.minervatechnologies.shared
         com.apple.developer.applesignin:
           - Default
         com.apple.developer.associated-domains:
@@ -66,8 +67,13 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-        DEVELOPMENT_TEAM: DV9V35452J
+        DEVELOPMENT_TEAM: NHMPLN46TN
         CODE_SIGN_STYLE: Automatic
+      configs:
+        Debug:
+          APNS_ENVIRONMENT: development
+        Release:
+          APNS_ENVIRONMENT: production
     scheme:
       testTargets:
         - MinervaFlowTests
@@ -89,7 +95,7 @@ targets:
       path: MinervaFlowWidget/MinervaFlowWidget.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.minervaflow.loyalty
+          - group.com.minervatechnologies.shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.minervaflow.loyalty.widget
@@ -97,7 +103,7 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1"
-        DEVELOPMENT_TEAM: DV9V35452J
+        DEVELOPMENT_TEAM: NHMPLN46TN
         CODE_SIGN_STYLE: Automatic
         SKIP_INSTALL: true
 
@@ -112,7 +118,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.minervaflow.loyalty.tests
         SWIFT_VERSION: "5.0"
-        DEVELOPMENT_TEAM: DV9V35452J
+        DEVELOPMENT_TEAM: NHMPLN46TN
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: true
 
@@ -127,7 +133,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.minervaflow.loyalty.uitests
         SWIFT_VERSION: "5.0"
-        DEVELOPMENT_TEAM: DV9V35452J
+        DEVELOPMENT_TEAM: NHMPLN46TN
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: true
         TEST_TARGET_NAME: MinervaFlow

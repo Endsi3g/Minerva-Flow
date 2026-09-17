@@ -42,7 +42,7 @@ struct RootView: View {
                     .transition(.opacity)
             case .onboarding:
                 OnboardingWelcomeView {
-                    UserDefaults.standard.set(true, forKey: hasSeenOnboardingKey)
+                    UserDefaults.standard.set(true, forKey: onboardingKey)
                     transition(to: .main)
                 }
                 .id(RootScreen.onboarding)
@@ -135,11 +135,19 @@ struct RootView: View {
     }
 
     private func syncScreen() {
-        let hasSeenOnboarding = UserDefaults.standard.bool(forKey: hasSeenOnboardingKey)
+        let hasSeenOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
         let target: RootScreen = supabase.isAuthenticated
             ? (supabase.isOwnerExperience ? .ownerMain : (hasSeenOnboarding ? .main : .onboarding))
             : (screen == .auth ? .auth : .intro)
         transition(to: target)
+    }
+
+    /// Scope the one-time tour to the authenticated account. A shared
+    /// device used for owner/client TestFlight testing must not let one
+    /// account suppress onboarding for the next account.
+    private var onboardingKey: String {
+        guard let id = supabase.authUserID?.uuidString else { return hasSeenOnboardingKey }
+        return "\(hasSeenOnboardingKey).\(id)"
     }
 
     private func transition(to target: RootScreen) {

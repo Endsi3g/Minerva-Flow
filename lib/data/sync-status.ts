@@ -19,7 +19,7 @@ export type SyncTelemetry = {
 const PROVIDER_NAMES: Record<string, string> = {
   square: "Square Point de Vente",
   lightspeed: "Lightspeed Restaurant",
-  clover: "Clover POS",
+  clover: "Clover Restaurant",
   toast: "Toast Restaurant",
   quickbooks: "QuickBooks Online",
 };

@@ -107,7 +107,7 @@ function CredentialsModal({
             placeholder="Ex : Restaurant ID"
           />
         </Field>
-        <Field label="Clé API">
+        <Field label="Clé de connexion sécurisée">
           <Input
             type="password"
             value={apiKey}

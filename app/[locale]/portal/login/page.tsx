@@ -9,6 +9,7 @@ import { requestCustomerMagicLink } from "@/lib/auth/customer-magic-link";
 import { createClient } from "@/lib/supabase/client";
 import { Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Apple } from "@/components/ui/BrandIcons";
 
 /** Inline brand marks — matches Google/Meta's own multi-color guidelines
  * rather than a flat icon font glyph, since a monochrome "G" reads as an
@@ -36,7 +37,7 @@ export default function PortalLoginPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [oauthBusy, setOauthBusy] = useState<"google" | "facebook" | null>(null);
+  const [oauthBusy, setOauthBusy] = useState<"apple" | "google" | "facebook" | null>(null);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -63,7 +64,7 @@ export default function PortalLoginPage() {
    * credentials; until then this button surfaces Supabase's own
    * "provider not enabled" error.
    */
-  async function handleOAuth(provider: "google" | "facebook") {
+  async function handleOAuth(provider: "apple" | "google" | "facebook") {
     setOauthBusy(provider);
     setError(null);
     const supabase = createClient();
@@ -112,6 +113,14 @@ export default function PortalLoginPage() {
               </div>
 
               <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleOAuth("apple")}
+                  disabled={oauthBusy !== null || status === "sending"}
+                  className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-mv-border bg-white px-4 py-2.5 text-[13px] font-semibold text-mv-ink transition-colors hover:bg-mv-cream-soft disabled:opacity-60"
+                >
+                  <Apple size={16} /> {oauthBusy === "apple" ? "Redirection…" : "Continuer avec Apple"}
+                </button>
                 <button
                   type="button"
                   onClick={() => handleOAuth("google")}

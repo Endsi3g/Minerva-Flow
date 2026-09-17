@@ -1,6 +1,8 @@
 import Foundation
 import Supabase
 import WidgetKit
+import AuthenticationServices
+import CryptoKit
 
 @MainActor
 final class SupabaseManager: ObservableObject {
@@ -9,6 +11,7 @@ final class SupabaseManager: ObservableObject {
     let client: SupabaseClient
 
     @Published var isAuthenticated = false
+    @Published private(set) var authUserID: UUID?
     @Published var customer: Customer?
     @Published var transactions: [LoyaltyTransaction] = []
     @Published var rewards: [LoyaltyReward] = []
@@ -60,6 +63,15 @@ final class SupabaseManager: ObservableObject {
     @Published var ownerBranding: NativeOwnerBranding?
     @Published var ownerMetrics = NativeOwnerMetrics()
     @Published var ownerOrders: [NativeOwnerOrder] = []
+    @Published var ownerMenuItems: [NativeMenuItem] = []
+    @Published var ownerOffers: [Offer] = []
+    @Published var ownerRewards: [NativeOwnerReward] = []
+    @Published var ownerCustomers: [NativeOwnerCustomer] = []
+    @Published var ownerEmployees: [NativeOwnerEmployee] = []
+    @Published var ownerInventoryItems: [NativeOwnerInventoryItem] = []
+    @Published var ownerTransactions: [NativeOwnerFinancialTransaction] = []
+    @Published var ownerReviews: [NativeOwnerRestaurantReview] = []
+    @Published var selectedOwnerRestaurantId: String?
 
     private init() {
         client = SupabaseClient(supabaseURL: Config.supabaseURL, supabaseKey: Config.supabaseAnonKey)
@@ -70,9 +82,11 @@ final class SupabaseManager: ObservableObject {
         for await state in client.auth.authStateChanges {
             if state.event == .signedIn || state.event == .initialSession {
                 isAuthenticated = state.session != nil
+                authUserID = state.session?.user.id
                 if state.session != nil { await loadPortalData() }
             } else if state.event == .signedOut {
                 isAuthenticated = false
+                authUserID = nil
                 customer = nil
                 transactions = []
             }
@@ -119,6 +133,26 @@ final class SupabaseManager: ObservableObject {
     /// code can do for itself.
     func signInWithOAuth(provider: Provider) async throws {
         try await client.auth.signInWithOAuth(provider: provider, redirectTo: Config.oauthRedirectURL)
+    }
+
+    /// Native Sign in with Apple keeps the user inside the app. The web OAuth
+    /// helper is still used for Google, but Apple must use AuthenticationServices
+    /// to satisfy Apple's native sign-in UX and callback requirements.
+    func signInWithApple() async throws {
+        let rawNonce = AppleSignInCoordinator.randomNonce()
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = AppleSignInCoordinator.sha256(rawNonce)
+        let credential = try await AppleSignInCoordinator.perform(request: request)
+        guard let tokenData = credential.identityToken,
+              let idToken = String(data: tokenData, encoding: .utf8) else {
+            throw NSError(domain: "MinervaFlow.Auth", code: 1, userInfo: [NSLocalizedDescriptionKey: "Jeton Apple manquant."])
+        }
+        try await client.auth.signInWithIdToken(credentials: OpenIDConnectCredentials(
+            provider: .apple,
+            idToken: idToken,
+            nonce: rawNonce
+        ))
     }
 
     /// Returning customer, password already set (via signUpWithPassword or
@@ -293,8 +327,12 @@ final class SupabaseManager: ObservableObject {
             }
             isOwnerExperience = true
             ownerRestaurants = privileged.compactMap(\.restaurant)
+            if selectedOwnerRestaurantId == nil || !ownerRestaurants.contains(where: { $0.id == selectedOwnerRestaurantId }) {
+                selectedOwnerRestaurantId = first.restaurantId
+            }
             await loadOwnerMetrics()
             await loadOwnerOrders()
+            await loadOwnerOperations(for: selectedOwnerRestaurantId ?? first.restaurantId)
             if let workspaceId = first.restaurant?.workspaceId {
                 struct Branding: Decodable {
                     let brandName: String
@@ -346,13 +384,138 @@ final class SupabaseManager: ObservableObject {
 
     private func loadOwnerOrders() async {
         var result: [NativeOwnerOrder] = []
-        for restaurant in ownerRestaurants {
+        let restaurants = ownerRestaurants.filter { selectedOwnerRestaurantId == nil || $0.id == selectedOwnerRestaurantId }
+        for restaurant in restaurants {
             do {
                 let rows: [NativeOwnerOrder] = try await client.from("orders").select("id, restaurant_id, status, guest_name, total, created_at").eq("restaurant_id", value: restaurant.id).order("created_at", ascending: false).limit(20).execute().value
                 result.append(contentsOf: rows)
             } catch { print("loadOwnerOrders error: \(error)") }
         }
         ownerOrders = result.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// All owner pages read directly through the caller's Supabase session.
+    /// The member RLS policies remain the authorization boundary, including
+    /// for the mutation methods below; no service-role credential is ever
+    /// embedded in the iOS application.
+    private func loadOwnerOperations(for restaurantId: String) async {
+        do {
+            async let menus: [NativeMenuItem] = client.from("menu_items").select().eq("restaurant_id", value: restaurantId).order("name", ascending: true).execute().value
+            async let offers: [Offer] = client.from("offers").select().eq("restaurant_id", value: restaurantId).order("created_at", ascending: false).execute().value
+            async let rewards: [NativeOwnerReward] = client.from("loyalty_rewards").select("id, name, description, points_cost, active").eq("restaurant_id", value: restaurantId).order("points_cost", ascending: true).execute().value
+            async let customers: [NativeOwnerCustomer] = client.from("customers").select("id, name, email, phone, loyalty_points, visit_count, total_spent").eq("restaurant_id", value: restaurantId).order("created_at", ascending: false).limit(100).execute().value
+            async let employees: [NativeOwnerEmployee] = client.from("employees").select("id, full_name, role_title, hourly_wage, active").eq("restaurant_id", value: restaurantId).order("full_name", ascending: true).execute().value
+            async let inventory: [NativeOwnerInventoryItem] = client.from("inventory_items").select("id, name, quantity_on_hand, unit, par_level, unit_cost, supplier_id").eq("restaurant_id", value: restaurantId).order("name", ascending: true).execute().value
+            async let transactions: [NativeOwnerFinancialTransaction] = client.from("financial_transactions").select("id, date, description, amount, direction, category").eq("restaurant_id", value: restaurantId).order("date", ascending: false).limit(50).execute().value
+            async let reviews: [NativeOwnerRestaurantReview] = client.from("restaurant_reviews").select("id, rating, comment, owner_response, created_at").eq("restaurant_id", value: restaurantId).order("created_at", ascending: false).limit(50).execute().value
+            let result = try await (menus, offers, rewards, customers, employees, inventory, transactions, reviews)
+            ownerMenuItems = result.0
+            ownerOffers = result.1
+            ownerRewards = result.2
+            ownerCustomers = result.3
+            ownerEmployees = result.4
+            ownerInventoryItems = result.5
+            ownerTransactions = result.6
+            ownerReviews = result.7
+        } catch {
+            print("loadOwnerOperations error: \(error)")
+        }
+    }
+
+    var selectedOwnerRestaurant: NativeOwnerRestaurant? {
+        ownerRestaurants.first(where: { $0.id == selectedOwnerRestaurantId })
+    }
+
+    func selectOwnerRestaurant(_ restaurantId: String) async {
+        guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return }
+        selectedOwnerRestaurantId = restaurantId
+        await loadOwnerOrders()
+        await loadOwnerOperations(for: restaurantId)
+    }
+
+    func refreshOwnerOperations() async {
+        guard let restaurantId = selectedOwnerRestaurantId else { return }
+        await loadOwnerMetrics()
+        await loadOwnerOrders()
+        await loadOwnerOperations(for: restaurantId)
+    }
+
+    func updateOwnerMenuItem(_ item: NativeMenuItem, name: String, price: Double, description: String?, active: Bool) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId, name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false, price >= 0 else { return false }
+        struct Patch: Encodable { let name: String; let price: Double; let description: String?; let active: Bool }
+        do {
+            try await client.from("menu_items").update(Patch(name: name.trimmingCharacters(in: .whitespacesAndNewlines), price: price, description: description?.trimmingCharacters(in: .whitespacesAndNewlines), active: active)).eq("restaurant_id", value: restaurantId).eq("id", value: item.id).execute()
+            await refreshOwnerOperations()
+            return true
+        } catch { print("updateOwnerMenuItem error: \(error)"); return false }
+    }
+
+    func updateOwnerOrderStatus(_ orderId: String, restaurantId: String, status: String) async -> Bool {
+        guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return false }
+        do {
+            struct Patch: Encodable { let status: String }
+            try await client.from("orders").update(Patch(status: status)).eq("restaurant_id", value: restaurantId).eq("id", value: orderId).execute()
+            await refreshOwnerOperations()
+            return true
+        } catch { print("updateOwnerOrderStatus error: \(error)"); return false }
+    }
+
+    /// The native owner shell uses the same server-side delivery path as the
+    /// web dashboard. The bearer token is verified again by the route before
+    /// it can touch an order or invoke the service-role notification sender.
+    func notifyOwnerOrder(_ orderId: String, restaurantId: String) async -> Bool {
+        guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return false }
+        struct Body: Encodable { let restaurantId: String }
+        struct Response: Decodable { let ok: Bool }
+        do {
+            let body = try JSONEncoder().encode(Body(restaurantId: restaurantId))
+            let data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/native/owner/orders/\(orderId)/notify"),
+                method: "POST",
+                body: body
+            )
+            return try JSONDecoder().decode(Response.self, from: data).ok
+        } catch {
+            lastError = "La notification n'a pas pu être envoyée. Réessayez."
+            print("notifyOwnerOrder error: \(error)")
+            return false
+        }
+    }
+
+    func updateOwnerReviewResponse(_ reviewId: String, response: String) async -> Bool {
+        guard selectedOwnerRestaurantId != nil else { return false }
+        let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        struct Params: Encodable { let p_review_id: String; let p_response: String }
+        do {
+            let _: NativeOwnerRestaurantReview = try await client.rpc("respond_to_review", params: Params(p_review_id: reviewId, p_response: trimmed)).single().execute().value
+            await refreshOwnerOperations()
+            return true
+        } catch { print("updateOwnerReviewResponse error: \(error)"); return false }
+    }
+
+    func updateOwnerEmployee(_ employee: NativeOwnerEmployee, fullName: String, roleTitle: String, hourlyWage: Double?, active: Bool) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId, !fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        struct Patch: Encodable { let fullName: String; let roleTitle: String; let hourlyWage: Double?; let active: Bool
+            enum CodingKeys: String, CodingKey { case fullName = "full_name", roleTitle = "role_title", hourlyWage = "hourly_wage", active }
+        }
+        do {
+            try await client.from("employees").update(Patch(fullName: fullName.trimmingCharacters(in: .whitespacesAndNewlines), roleTitle: roleTitle.trimmingCharacters(in: .whitespacesAndNewlines), hourlyWage: hourlyWage, active: active)).eq("restaurant_id", value: restaurantId).eq("id", value: employee.id).execute()
+            await refreshOwnerOperations()
+            return true
+        } catch { print("updateOwnerEmployee error: \(error)"); return false }
+    }
+
+    func updateOwnerInventoryItem(_ item: NativeOwnerInventoryItem, quantity: Double, parLevel: Double, unitCost: Double) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId, quantity >= 0, parLevel >= 0, unitCost >= 0 else { return false }
+        struct Patch: Encodable { let quantityOnHand: Double; let parLevel: Double; let unitCost: Double
+            enum CodingKeys: String, CodingKey { case quantityOnHand = "quantity_on_hand", parLevel = "par_level", unitCost = "unit_cost" }
+        }
+        do {
+            try await client.from("inventory_items").update(Patch(quantityOnHand: quantity, parLevel: parLevel, unitCost: unitCost)).eq("restaurant_id", value: restaurantId).eq("id", value: item.id).execute()
+            await refreshOwnerOperations()
+            return true
+        } catch { print("updateOwnerInventoryItem error: \(error)"); return false }
     }
 
     /// Writes the home-screen widget's entire data diet to the shared App

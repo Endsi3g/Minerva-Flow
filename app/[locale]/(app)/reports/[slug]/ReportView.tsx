@@ -171,7 +171,7 @@ export function ReportView({
   }
 
   return (
-    <div className="mx-auto max-w-4xl w-full mv-animate-in">
+    <div className="mx-auto w-full max-w-7xl mv-animate-in">
       <div className="no-print mb-4 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[13px] text-mv-ink-faint">
           <Link href="/overview" className="flex items-center gap-1 hover:text-mv-ink">
@@ -346,11 +346,11 @@ export function ReportView({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-7">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <div className="xl:col-span-8">
           <div
             ref={reportCardRef}
-            className="relative overflow-hidden rounded-2xl border-2 border-mv-green bg-mv-surface p-5 shadow-mv-md"
+            className="relative min-h-[340px] overflow-hidden rounded-2xl border-2 border-mv-green bg-mv-surface p-6 shadow-mv-md"
           >
             <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {tr(`labels.${view.report.slug}`)}
@@ -368,7 +368,7 @@ export function ReportView({
             )}
             {view.trend.length > 0 && (
               <div className="mt-4">
-                <RevenueChart data={view.trend} height={140} />
+                <RevenueChart data={view.trend} height={230} />
               </div>
             )}
             <div className="absolute -bottom-3 -left-3">
@@ -377,14 +377,14 @@ export function ReportView({
           </div>
         </div>
 
-        <div className="lg:col-span-5">
+        <div className="xl:col-span-4">
           {view.breakdown.length > 0 ? (
-            <Card className="h-full">
+            <Card className="h-full min-h-[340px]">
               <CardHeader title={t("breakdownTitle")} description={t("breakdownDescription")} />
               <FlowBars lines={view.breakdown} tone={view.report.slug === "sorties" ? "ink" : "green"} />
             </Card>
           ) : campaigns.length > 0 ? (
-            <Card className="h-full">
+            <Card className="h-full min-h-[340px]">
               <CardHeader title={t("campaignsTitle")} description={t("campaignsTotal", { count: campaigns.length })} />
               <div className="space-y-2">
                 {campaigns.slice(0, 5).map((c) => (
@@ -402,7 +402,7 @@ export function ReportView({
               </div>
             </Card>
           ) : (
-            <Card className="h-full">
+            <Card className="h-full min-h-[340px]">
               <CardHeader title={t("detailTitle")} description={t("notableDaysDescription")} />
               <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
                 {t.rich("demoInsight", {
@@ -434,7 +434,6 @@ export function ReportView({
               <tbody>
                 {[...view.trend]
                   .sort((a, b) => b.date.localeCompare(a.date))
-                  .slice(0, 8)
                   .map((d) => (
                     <Tr key={d.date}>
                       <Td>{formatDate(d.date)}</Td>

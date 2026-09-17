@@ -95,9 +95,11 @@ struct GoogleMarkIcon: View {
                 svgPath("M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.5 5.5C41.5 36 44 30.5 44 24c0-1.4-.1-2.7-.4-3.5z")
                     .fill(Color(red: 0.098, green: 0.463, blue: 0.824))
             }
+            // Scale the complete viewBox as one unit. A fixed child frame
+            // positioned inside the compact button could crop the mark.
             .frame(width: 48, height: 48)
-            .scaleEffect(scale)
-            .position(x: geo.size.width / 2, y: geo.size.height / 2)
+            .scaleEffect(scale, anchor: .center)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 }

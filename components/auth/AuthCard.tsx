@@ -8,7 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Suspense, useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
-import { Google } from "@/components/ui/BrandIcons";
+import { Google, Apple } from "@/components/ui/BrandIcons";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { cn } from "@/lib/utils";
 
@@ -110,7 +110,7 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
     }
   }
 
-  async function handleOAuth(provider: "google") {
+  async function handleOAuth(provider: "google" | "apple") {
     setError(null);
     posthog.capture(mode === "login" ? "user_logged_in" : "user_signed_up", {
       method: provider,
@@ -197,15 +197,25 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
               : "Aucune carte requise — configurez votre établissement en deux minutes."}
           </p>
 
-          {/* Google OAuth */}
-          <button
-            type="button"
-            onClick={() => handleOAuth("google")}
-            className="mt-5 flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-mv-border bg-mv-surface text-[13px] font-semibold text-mv-ink shadow-mv-sm transition-colors hover:bg-mv-cream-soft focus:outline-none focus:ring-2 focus:ring-mv-green/20"
-          >
-            <Google size={16} />
-            <span>Continuer avec Google</span>
-          </button>
+          {/* Social OAuth (Apple & Google) */}
+          <div className="mt-5 space-y-2.5">
+            <button
+              type="button"
+              onClick={() => handleOAuth("apple")}
+              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-mv-border bg-mv-surface text-[13px] font-semibold text-mv-ink shadow-mv-sm transition-colors hover:bg-mv-cream-soft focus:outline-none focus:ring-2 focus:ring-mv-green/20"
+            >
+              <Apple size={16} />
+              <span>Continuer avec Apple</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOAuth("google")}
+              className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-mv-border bg-mv-surface text-[13px] font-semibold text-mv-ink shadow-mv-sm transition-colors hover:bg-mv-cream-soft focus:outline-none focus:ring-2 focus:ring-mv-green/20"
+            >
+              <Google size={16} />
+              <span>Continuer avec Google</span>
+            </button>
+          </div>
 
           <div className="my-5 flex items-center gap-3">
             <div className="h-px flex-1 bg-mv-border" />

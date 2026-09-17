@@ -271,7 +271,7 @@ export function ArtifactCanvas({
                       Simulateur de Rentabilité en Direct
                     </h4>
                     <p className="text-[10.5px] text-[#8A887F]">
-                      Synchronisé avec vos données de caisse POS
+                      Synchronisé avec vos données de caisse enregistreuse
                     </p>
                   </div>
                 </div>

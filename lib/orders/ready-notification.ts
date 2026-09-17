@@ -3,7 +3,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendTransactionalEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
 import { sendApnsToTokens, isAPNsConfigured } from "@/lib/push/apns";
-import { sendSms, isSmsConfigured } from "@/lib/sms/send";
 
 /** Prefers the owner-set Maps link (Restaurant.googleMapsUrl) — falls back to a search query built from address/city. */
 function mapsUrl(restaurant: { googleMapsUrl: string | null; address: string; city: string }): string {
@@ -17,22 +16,23 @@ function mapsUrl(restaurant: { googleMapsUrl: string | null; address: string; ci
  * notifyOrderReadyAction). Unlike lib/retention/send.ts this is
  * transactional (a direct consequence of an order the customer placed),
  * not marketing, so it does NOT check marketing_consent. Same
- * email → push (web + native) → SMS fallback contract otherwise, and the
- * same web+APNs pairing as lib/announcements/send.ts's broadcastAnnouncement
- * — a customer with the native app installed must get this exactly like a
- * web-push subscriber does, not silently skipped.
+ * Email, web push and native APNs are independent channels, deliberately
+ * sent together rather than as a first-successful fallback. SMS is not part
+ * of Minerva Flow's customer-notification channel.
  */
 export async function sendOrderReadyNotification(
   admin: SupabaseClient,
   restaurant: { id: string; name: string; googleMapsUrl: string | null; address: string; city: string },
   customer: { email: string | null; userId: string | null; phone: string | null; name: string }
-): Promise<"email" | "push" | "sms" | null> {
+): Promise<Array<"email" | "push">> {
   const link = mapsUrl(restaurant);
   const firstName = customer.name.trim().split(/\s+/)[0] || customer.name;
   const p = (text: string) => `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">${text}</p>`;
 
-  if (customer.email) {
-    const result = await sendTransactionalEmail({
+  const deliveries: Array<"email" | "push"> = [];
+
+  const emailDelivery = customer.email
+    ? sendTransactionalEmail({
       to: customer.email,
       subject: `Votre commande est prête chez ${restaurant.name}`,
       bodyHtml:
@@ -40,15 +40,12 @@ export async function sendOrderReadyNotification(
         p(`Votre commande chez ${restaurant.name} est prête — passez la récupérer quand vous voulez.`),
       ctaLabel: "Itinéraire",
       ctaUrl: link,
-    });
-    if (result.ok) return "email";
-  }
+    })
+    : null;
+
   if (customer.userId) {
-    await sendPushToUsers(
-      [customer.userId],
-      { title: "Votre commande est prête !", body: `${restaurant.name} vous attend pour la cueillette.`, link },
-      restaurant.id
-    );
+    const payload = { title: "Votre commande est prête !", body: `${restaurant.name} vous attend pour la cueillette.`, link };
+    await sendPushToUsers([customer.userId], payload, restaurant.id);
     if (isAPNsConfigured()) {
       const { data: tokenRows } = await admin
         .from("device_push_tokens")
@@ -57,20 +54,17 @@ export async function sendOrderReadyNotification(
         .eq("user_id", customer.userId);
       const tokens = ((tokenRows ?? []) as { token: string }[]).map((r) => r.token);
       if (tokens.length > 0) {
-        await sendApnsToTokens(tokens, {
-          title: "Votre commande est prête !",
-          body: `${restaurant.name} vous attend pour la cueillette.`,
-          link,
-        });
+        await sendApnsToTokens(tokens, payload);
       }
     }
-    return "push";
+    deliveries.push("push");
   }
-  if (isSmsConfigured() && customer.phone) {
-    const ok = await sendSms(customer.phone, `${restaurant.name} : ${firstName}, votre commande est prête ! ${link}`);
-    if (ok) return "sms";
+
+  if (emailDelivery) {
+    const result = await emailDelivery;
+    if (result.ok) deliveries.push("email");
   }
-  return null;
+  return deliveries;
 }
 
 /** Marks an order as notified so /commandes can show "Renvoyer" instead of "Notifier" after the first send. */

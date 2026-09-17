@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
+import { Field, Input, Textarea } from "@/components/minerva/FormField";
 import { MenuImageUpload } from "@/components/menu/MenuImageUpload";
 import { VideoUploadWithUrl } from "@/components/media/VideoUploadWithUrl";
 import { VideoPlayerModal } from "@/components/media/VideoPlayerModal";
@@ -34,6 +36,7 @@ import {
   Play,
   Plus,
   Edit3,
+  Pencil,
 } from "lucide-react";
 
 export function MenuItemDetailView({
@@ -67,6 +70,46 @@ export function MenuItemDetailView({
     recipeItems.map((r) => ({ inventoryItemId: r.inventoryItemId, quantityPerUnit: r.quantityPerUnit }))
   );
   const [isSavingRecipe, setIsSavingRecipe] = useState(false);
+
+  // Item details editing state
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [isSavingInfo, setIsSavingInfo] = useState(false);
+
+  async function handleSaveInfo(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    setIsSavingInfo(true);
+    try {
+      const name = String(form.get("name") ?? "").trim();
+      const category = String(form.get("category") ?? "").trim() || null;
+      const price = Number(form.get("price") ?? 0);
+      const foodCost = Number(form.get("foodCost") ?? 0);
+      const description = String(form.get("description") ?? "").trim() || null;
+
+      if (!name) {
+        notifyError("Le nom du plat est requis.");
+        return;
+      }
+
+      const updated = await updateMenuItemAction(restaurantId, item.id, {
+        name,
+        category,
+        price,
+        foodCost,
+        description,
+      });
+
+      if (updated) {
+        setItem(updated);
+        setIsEditingInfo(false);
+        toast.success("Informations du plat mises à jour !");
+      } else {
+        notifyError("La mise à jour a échoué.");
+      }
+    } finally {
+      setIsSavingInfo(false);
+    }
+  }
 
   usePresenceDetail(`Plat : ${item.name}`);
 
@@ -201,7 +244,15 @@ export function MenuItemDetailView({
         description={item.active ? undefined : "Ce plat est actuellement retiré du menu."}
         action={
           canManage && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsEditingInfo(true)}
+                className="text-[12.5px] font-semibold"
+              >
+                <Pencil size={13} /> Modifier les informations
+              </Button>
               <button
                 onClick={handleToggleActive}
                 disabled={toggling}
@@ -281,30 +332,66 @@ export function MenuItemDetailView({
               />
             )}
 
-            <div className="mt-4 grid grid-cols-3 gap-3 rounded-xl bg-mv-cream-soft p-3">
-              <div>
-                <p className="flex items-center gap-1 text-[11px] font-semibold uppercase text-mv-ink-faint">
-                  <DollarSign size={11} /> Prix
-                </p>
-                <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(item.price)}</p>
+            <div className="mt-4 rounded-xl bg-mv-cream-soft p-3">
+              <div className="mb-2 flex items-center justify-between border-b border-mv-border-soft pb-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                  Tarification & Performance
+                </span>
+                {canManage && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingInfo(true)}
+                    className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green transition-colors hover:text-mv-green-dark"
+                  >
+                    <Pencil size={11} /> Modifier le tarif
+                  </button>
+                )}
               </div>
-              <div>
-                <p className="flex items-center gap-1 text-[11px] font-semibold uppercase text-mv-ink-faint">
-                  <TrendingUp size={11} /> Marge
-                </p>
-                <p className="font-display text-[16px] font-medium text-mv-ink">{Math.round(marginPct * 100)}%</p>
-              </div>
-              <div>
-                <p className="flex items-center gap-1 text-[11px] font-semibold uppercase text-mv-ink-faint">
-                  <ShoppingBag size={11} /> Vendus
-                </p>
-                <p className="font-display text-[16px] font-medium text-mv-ink">{item.unitsSold}</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <p className="flex items-center gap-1 text-[11px] font-semibold uppercase text-mv-ink-faint">
+                    <DollarSign size={11} /> Prix
+                  </p>
+                  <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(item.price)}</p>
+                </div>
+                <div>
+                  <p className="flex items-center gap-1 text-[11px] font-semibold uppercase text-mv-ink-faint">
+                    <TrendingUp size={11} /> Marge
+                  </p>
+                  <p className="font-display text-[16px] font-medium text-mv-ink">{Math.round(marginPct * 100)}%</p>
+                </div>
+                <div>
+                  <p className="flex items-center gap-1 text-[11px] font-semibold uppercase text-mv-ink-faint">
+                    <ShoppingBag size={11} /> Vendus
+                  </p>
+                  <p className="font-display text-[16px] font-medium text-mv-ink">{item.unitsSold}</p>
+                </div>
               </div>
             </div>
 
-            {item.description && (
-              <p className="mt-4 text-[13.5px] leading-relaxed text-mv-ink-soft">{item.description}</p>
-            )}
+            <div className="mt-4 rounded-xl border border-mv-border-soft bg-mv-surface p-3.5">
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                  Description du plat
+                </span>
+                {canManage && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingInfo(true)}
+                    className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green transition-colors hover:text-mv-green-dark"
+                  >
+                    <Pencil size={11} /> {item.description ? "Modifier" : "Ajouter une description"}
+                  </button>
+                )}
+              </div>
+              {item.description ? (
+                <p className="text-[13.5px] leading-relaxed text-mv-ink-soft">{item.description}</p>
+              ) : (
+                <p className="text-[12.5px] italic text-mv-ink-faint">
+                  Aucune description renseignée pour ce plat. Cliquez sur « Ajouter une description » pour enrichir la carte.
+                </p>
+              )}
+            </div>
           </Card>
         </div>
 
@@ -548,6 +635,83 @@ export function MenuItemDetailView({
         isOpen={isVideoModalOpen}
         onClose={() => setIsVideoModalOpen(false)}
       />
+
+      {canManage && (
+        <Modal
+          open={isEditingInfo}
+          onClose={() => !isSavingInfo && setIsEditingInfo(false)}
+          title="Modifier le plat"
+          description="Ajustez le nom, la catégorie, le prix de vente, le coût matière et la description de ce plat."
+        >
+          <form onSubmit={handleSaveInfo} className="space-y-4 pt-2">
+            <Field label="Nom du plat" required>
+              <Input
+                name="name"
+                defaultValue={item.name}
+                required
+                placeholder="Ex. Burger Signature, Cappuccino..."
+              />
+            </Field>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label="Catégorie">
+                <Input
+                  name="category"
+                  defaultValue={item.category ?? ""}
+                  placeholder="Ex. Plats, Boissons, Desserts..."
+                />
+              </Field>
+
+              <Field label="Prix de vente ($)" required>
+                <Input
+                  name="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  defaultValue={item.price}
+                  required
+                />
+              </Field>
+            </div>
+
+            <Field
+              label="Coût matière estimé / Food Cost ($)"
+              hint="Coût théorique des matières pour une portion (hors fiche recette détaillée)"
+            >
+              <Input
+                name="foodCost"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={item.foodCost}
+              />
+            </Field>
+
+            <Field label="Description">
+              <Textarea
+                name="description"
+                defaultValue={item.description ?? ""}
+                rows={3}
+                placeholder="Description du plat, ingrédients phares, notes de dégustation ou allergènes..."
+              />
+            </Field>
+
+            <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsEditingInfo(false)}
+                disabled={isSavingInfo}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isSavingInfo}>
+                {isSavingInfo ? "Enregistrement…" : "Enregistrer les modifications"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

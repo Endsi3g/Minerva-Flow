@@ -111,7 +111,7 @@ export function DynamicReportView({
   const wide = type === "comparison";
 
   return (
-    <div className="max-w-5xl mx-auto pb-10">
+    <div className="mx-auto w-full max-w-7xl pb-10">
       {/* Header breadcrumbs & actions */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-mv-border/40 pb-4">
         <div className="flex items-center gap-1.5 text-[13px] text-mv-ink-faint">

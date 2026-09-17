@@ -473,7 +473,7 @@ export function OverviewClientView({
                   <th className="pb-3 font-semibold">Masse salariale</th>
                   <th className="pb-3 font-semibold">Couverts / Seuil</th>
                   <th className="pb-3 font-semibold">Ventes fidélité</th>
-                  <th className="pb-3 font-semibold">Caisse POS</th>
+                  <th className="pb-3 font-semibold">Caisse</th>
                   <th className="pb-3 text-right font-semibold">Action</th>
                 </tr>
               </thead>

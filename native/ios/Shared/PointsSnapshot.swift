@@ -30,7 +30,7 @@ struct PointsSnapshot: Codable {
     let activeOfferTitles: [String]
     let updatedAt: Date
 
-    static let appGroupID = "group.com.minervaflow.loyalty"
+    static let appGroupID = "group.com.minervatechnologies.shared"
     private static let storageKey = "pointsSnapshot"
 
     static func load() -> PointsSnapshot? {

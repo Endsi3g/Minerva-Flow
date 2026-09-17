@@ -113,7 +113,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
                         </span>
                       ))
                     ) : (
-                      <span className="text-mv-ink-soft">Transactions POS & Fiches techniques</span>
+                      <span className="text-mv-ink-soft">Ventes de caisse & Fiches techniques</span>
                     )}
                   </div>
 

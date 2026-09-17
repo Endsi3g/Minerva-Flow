@@ -5,6 +5,9 @@ private let cream = Color(red: 0xF5 / 255, green: 0xF1 / 255, blue: 0xE6 / 255)
 private let ink = Color(red: 0x1B / 255, green: 0x26 / 255, blue: 0x20 / 255)
 private let inkFaint = Color(red: 0x8A / 255, green: 0x91 / 255, blue: 0x88 / 255)
 private let emerald = Color(red: 0x16 / 255, green: 0x7F / 255, blue: 0x5B / 255)
+private enum MinervaColorFallback {
+    static let emeraldDark = Color(red: 0x0E / 255, green: 0x5A / 255, blue: 0x40 / 255)
+}
 
 /// Deep-link targets handled by RootView's .onOpenURL — "home" is the
 /// default tap target everywhere in this widget (points/tier live on
@@ -89,7 +92,10 @@ struct MinervaFlowWidgetEntryView: View {
         let tierColor = Color(hex: snapshot.tierColorHex) ?? emerald
         let foreground: Color = snapshot.tierIsLight ? ink : .white
         return VStack(alignment: .leading, spacing: 6) {
-            HStack {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(foreground.opacity(0.9))
                 Text(snapshot.restaurantName)
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(foreground.opacity(0.75))
@@ -110,7 +116,13 @@ struct MinervaFlowWidgetEntryView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(tierColor)
+        .background(
+            LinearGradient(
+                colors: [tierColor, MinervaColorFallback.emeraldDark],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
     }
 
     // MARK: - Large
@@ -134,6 +146,7 @@ struct MinervaFlowWidgetEntryView: View {
             Text("\(snapshot.points)")
                 .font(.system(size: 44, weight: .bold, design: .rounded))
                 .foregroundStyle(foreground)
+                .widgetAccentable()
             Text("points")
                 .font(.system(size: 11.5, weight: .medium))
                 .foregroundStyle(foreground.opacity(0.75))
@@ -181,7 +194,9 @@ struct MinervaFlowWidgetEntryView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(tierColor)
+        .background(
+            LinearGradient(colors: [tierColor, MinervaColorFallback.emeraldDark], startPoint: .topLeading, endPoint: .bottomTrailing)
+        )
     }
 
     // MARK: - Lock Screen (accessory families)
@@ -254,6 +269,58 @@ struct MinervaFlowWidget: Widget {
         .description("Votre solde de points de fidélité Minerva Flow, à même l'écran d'accueil ou verrouillé.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
+}
+
+#Preview("Accueil — petit", as: .systemSmall) {
+    MinervaFlowWidget()
+} timeline: {
+    PointsEntry.preview
+}
+
+#Preview("Accueil — moyen", as: .systemMedium) {
+    MinervaFlowWidget()
+} timeline: {
+    PointsEntry.preview
+}
+
+#Preview("Accueil — grand", as: .systemLarge) {
+    MinervaFlowWidget()
+} timeline: {
+    PointsEntry.preview
+}
+
+#Preview("Écran verrouillé — circulaire", as: .accessoryCircular) {
+    MinervaFlowWidget()
+} timeline: {
+    PointsEntry.preview
+}
+
+#Preview("Écran verrouillé — rectangulaire", as: .accessoryRectangular) {
+    MinervaFlowWidget()
+} timeline: {
+    PointsEntry.preview
+}
+
+#Preview("Écran verrouillé — ligne", as: .accessoryInline) {
+    MinervaFlowWidget()
+} timeline: {
+    PointsEntry.preview
+}
+
+private extension PointsEntry {
+    static let preview = PointsEntry(date: .now, snapshot: PointsSnapshot(
+        customerName: "Alex",
+        restaurantName: "Café Minerva",
+        points: 280,
+        tierLabel: "Privilégié",
+        tierColorHex: "167F5B",
+        tierIsLight: false,
+        nextTierProgress: 0.72,
+        nextRewardName: "Café offert",
+        nextRewardPointsCost: 50,
+        activeOfferTitles: ["10 % sur votre prochaine visite", "Doublez vos points ce week-end"],
+        updatedAt: .now
+    ))
 }
 
 @main

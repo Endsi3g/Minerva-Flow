@@ -5,7 +5,7 @@ import { toPng } from "html-to-image";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Input, Select, Textarea } from "@/components/minerva/FormField";
-import { ResultsShareCard, type CardBackground, type FooterBadge } from "@/components/fidelisation/ResultsShareCard";
+import { ResultsShareCard, type CardBackground, type CardFormat, type FooterBadge } from "@/components/fidelisation/ResultsShareCard";
 import type { ShareableMetric } from "@/lib/data/retention-metrics";
 import {
   Download,
@@ -21,8 +21,6 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type CardFormat = "post" | "story" | "carousel";
-
 const FORMAT_OPTIONS: {
   id: CardFormat;
   label: string;
@@ -31,17 +29,21 @@ const FORMAT_OPTIONS: {
   width: number;
   height: number;
 }[] = [
-  // 4:5 (not a strict square) — more room for 3 stats + footer badges without
-  // clipping, and is itself a standard, widely-used Instagram/Facebook feed ratio.
-  { id: "post", label: "Publication", hint: "Instagram & Facebook (4:5)", aspectClass: "aspect-[4/5]", width: 320, height: 400 },
-  { id: "story", label: "Story / Reel", hint: "Instagram & TikTok (9:16)", aspectClass: "aspect-[9/16]", width: 280, height: 498 },
-  { id: "carousel", label: "Carrousel", hint: "Une slide par statistique", aspectClass: "aspect-[4/5]", width: 280, height: 350 },
+  { id: "post", label: "Publication", hint: "Feed standard (4:5)", aspectClass: "aspect-[4/5]", width: 320, height: 400 },
+  { id: "story", label: "Story / Reel", hint: "Plein écran (9:16)", aspectClass: "aspect-[9/16]", width: 280, height: 498 },
+  { id: "landscape", label: "Paysage 16:9", hint: "YouTube & Écrans", aspectClass: "aspect-[16/9]", width: 440, height: 248 },
+  { id: "lower-third", label: "Bandeau bas", hint: "Incrustation vidéo", aspectClass: "aspect-[540/110]", width: 480, height: 98 },
+  { id: "sticker", label: "Sticker", hint: "Cadrage serré vidéo", aspectClass: "aspect-[4/5]", width: 300, height: 375 },
+  { id: "square", label: "Carré 1:1", hint: "Feed & Vignette", aspectClass: "aspect-square", width: 320, height: 320 },
+  { id: "carousel", label: "Carrousel", hint: "Multi-slides (4:5)", aspectClass: "aspect-[4/5]", width: 280, height: 350 },
 ];
 
 const BACKGROUND_OPTIONS: { id: CardBackground; label: string }[] = [
   { id: "brand", label: "Marque" },
   { id: "white", label: "Blanc" },
   { id: "black", label: "Noir" },
+  { id: "glass-dark", label: "Verre sombre" },
+  { id: "glass-light", label: "Verre clair" },
   { id: "transparent", label: "Transparent" },
 ];
 
@@ -387,19 +389,19 @@ export function ShareCardConfigurator({
       <div className="lg:col-span-5 space-y-5">
         <Card>
           <CardHeader eyebrow="Export" title="Format" />
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {FORMAT_OPTIONS.map((f) => (
               <button
                 key={f.id}
                 type="button"
                 onClick={() => setFormat(f.id)}
                 className={cn(
-                  "rounded-lg border p-2.5 text-left transition-colors",
+                  "rounded-lg border p-2 text-left transition-colors",
                   format === f.id ? "border-mv-green bg-mv-green-tint" : "border-mv-border-soft hover:bg-mv-cream-soft"
                 )}
               >
                 <p className="text-[12px] font-bold text-mv-ink">{f.label}</p>
-                <p className="text-[10.5px] text-mv-ink-faint">{f.hint}</p>
+                <p className="text-[10px] text-mv-ink-faint leading-tight mt-0.5">{f.hint}</p>
               </button>
             ))}
           </div>
@@ -407,14 +409,14 @@ export function ShareCardConfigurator({
 
         <Card>
           <CardHeader eyebrow="Export" title="Arrière-plan" />
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {BACKGROUND_OPTIONS.map((b) => (
               <button
                 key={b.id}
                 type="button"
                 onClick={() => setBackground(b.id)}
                 className={cn(
-                  "rounded-lg border py-2 text-[11.5px] font-semibold transition-colors",
+                  "rounded-lg border py-2 text-[11px] font-semibold transition-colors text-center",
                   background === b.id ? "border-mv-green bg-mv-green-tint text-mv-ink" : "border-mv-border-soft text-mv-ink-soft hover:bg-mv-cream-soft"
                 )}
               >
@@ -433,14 +435,12 @@ export function ShareCardConfigurator({
 
           {heroDisplay ? (
             <div
-              className={cn("overflow-hidden rounded-2xl shadow-mv-md", formatDef.aspectClass)}
+              className={cn("overflow-hidden rounded-2xl shadow-mv-md max-w-full", formatDef.aspectClass)}
               style={{
                 width: formatDef.width,
-                // Damier visible seulement dans l'aperçu — n'est jamais capturé
-                // par html-to-image puisqu'il est sur ce wrapper, pas sur le
-                // nœud référencé (mainCardRef) ci-dessous.
+                // Damier visible seulement dans l'aperçu pour les modes transparents et verre
                 background:
-                  background === "transparent"
+                  background === "transparent" || background === "glass-dark" || background === "glass-light"
                     ? "repeating-conic-gradient(#e6e0d0 0% 25%, transparent 0% 50%) 50% / 16px 16px"
                     : undefined,
               }}
@@ -453,6 +453,7 @@ export function ShareCardConfigurator({
                   stats={statsDisplay}
                   badges={badges}
                   background={background}
+                  format={format}
                   slideLabel={format === "carousel" && statsDisplay.length > 0 ? `1 / ${1 + statsDisplay.length}` : undefined}
                 />
               </div>
@@ -490,6 +491,7 @@ export function ShareCardConfigurator({
                       stats={[]}
                       badges={badges}
                       background={background}
+                      format={format}
                       slideLabel={`${i + 2} / ${1 + statsDisplay.length}`}
                     />
                   </div>

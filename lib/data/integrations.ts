@@ -58,12 +58,12 @@ const posProviderMeta: Record<PosProvider, { name: string; description: string; 
     iconName: "lightspeed",
   },
   clover: {
-    name: "Clover POS",
+    name: "Clover Restaurant",
     description: "Synchronisation des terminaux de caisse et tickets de vente.",
     iconName: "clover",
   },
   toast: {
-    name: "Toast POS",
+    name: "Toast Restaurant",
     description: "Synchronisation automatique des ventes et commandes via Toast Cloud.",
     iconName: "toast",
   },
@@ -167,14 +167,14 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
       ? [
           {
             id: "clover-pos",
-            name: "Clover POS",
+            name: "Clover Restaurant",
             category: "caisse" as const,
             description: "Synchronisation des terminaux de caisse Clover et tickets de vente en salle.",
             status: "coming_soon" as const,
             iconName: "clover" as const,
             details: {
               disponibilite: "Prochaine mise à jour",
-              mode: "API Directe Cloud",
+              mode: "Connexion Cloud directe",
             },
           },
         ]
@@ -183,14 +183,14 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
       ? [
           {
             id: "toast-pos",
-            name: "Toast POS",
+            name: "Toast Restaurant",
             category: "caisse" as const,
             description: "Synchronisation directe des commandes et encaissements de salle via Toast Cloud.",
             status: "coming_soon" as const,
             iconName: "toast" as const,
             details: {
               disponibilite: "Toast Partner Connect",
-              mode: "API Cloud v2",
+              mode: "Connexion Cloud sécurisée",
             },
           },
         ]

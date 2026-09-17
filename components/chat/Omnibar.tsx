@@ -51,10 +51,10 @@ const SLASH_COMMANDS: SlashCommandDef[] = [
 const CONTEXT_MENTIONS: ContextMentionDef[] = [
   {
     mention: "@ventes",
-    label: "Données de Caisse (POS)",
+    label: "Données de Caisse enregistreuse",
     description: "Ventes, couverts, ticket moyen et répartition horaire",
     category: "pos",
-    snippet: "[Données POS Ventes] ",
+    snippet: "[Données Caisse Ventes] ",
   },
   {
     mention: "@stocks",

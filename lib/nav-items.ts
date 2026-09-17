@@ -46,7 +46,7 @@ export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "maps", href: "/maps", title: "Carte des établissements", subtitle: "Vos établissements sur une carte, revenu et classement par ville", roles: allRoles },
   { key: "programs", href: "/programs", title: "Revenus récurrents", subtitle: "Brunchs, soirées et périodes spéciales, avec leur performance", roles: allRoles },
   { key: "library", href: "/library", title: "Documents", subtitle: "Documents et ressources partagées", roles: allRoles },
-  { key: "integrations", href: "/integrations", title: "Intégrations", subtitle: "POS et outils connectés", roles: allRoles },
+  { key: "integrations", href: "/integrations", title: "Intégrations", subtitle: "Caisses et outils connectés", roles: allRoles },
   { key: "billing", href: "/billing", title: "Facturation", subtitle: "Gestion de l'abonnement", roles: ["owner"] },
   { key: "guide", href: "/guide", title: "Guide", subtitle: "Centre d'aide et documentation", roles: allRoles },
   { key: "support", href: "/support", title: "Support", subtitle: "Tickets de support client", roles: allRoles },

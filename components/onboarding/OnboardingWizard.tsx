@@ -390,7 +390,7 @@ export function OnboardingWizard({
             className="flex items-center justify-between rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3.5 transition-colors hover:bg-mv-surface"
           >
             <div>
-              <p className="text-[13.5px] font-semibold text-mv-ink">Caisse (POS) et autres outils</p>
+              <p className="text-[13.5px] font-semibold text-mv-ink">Caisse enregistreuse et outils connectés</p>
               <p className="text-[12px] text-mv-ink-faint">Square, Stripe, Google Calendar…</p>
             </div>
             <ArrowRight size={16} className="text-mv-ink-faint" />

@@ -161,10 +161,10 @@ function ConnectRow({
                   type="button"
                   onClick={() => setShowManualClover(!showManualClover)}
                   className="rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5"
-                  title="Saisir Merchant ID + Clé API Clover directement"
+                  title="Saisir l'identifiant commerçant et la clé de connexion Clover"
                 >
                   <KeyRound size={13} className="inline mr-1" />
-                  Token / ID
+                  Saisie manuelle
                 </button>
               )}
               {provider === "toast" && configured && (
@@ -172,10 +172,10 @@ function ConnectRow({
                   type="button"
                   onClick={() => setShowManualGuid(!showManualGuid)}
                   className="rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5"
-                  title="Saisir un Toast Restaurant GUID"
+                  title="Saisir l'identifiant restaurant Toast"
                 >
                   <KeyRound size={13} className="inline mr-1" />
-                  GUID
+                  Identifiant
                 </button>
               )}
               <a
@@ -197,19 +197,19 @@ function ConnectRow({
       {showManualClover && !connection && (
         <form onSubmit={handleManualCloverSubmit} className="mt-2.5 space-y-2 border-t border-mv-border-soft pt-2.5">
           <p className="text-[11.5px] text-mv-ink-faint">
-            Entrez votre identifiant marchand (Merchant ID) et votre clé API générée depuis votre tableau de bord Clover (Configuration &gt; Clés API).
+            Entrez votre identifiant commerçant et votre clé de connexion générée depuis votre espace Clover (Paramètres &gt; Clés de connexion).
           </p>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <input
               type="text"
-              placeholder="Merchant ID (ex: BTAKVDTYMGZ46)"
+              placeholder="Identifiant marchand (ex: BTAKVDTYMGZ46)"
               value={cloverMid}
               onChange={(e) => setCloverMid(e.target.value)}
               className="flex-1 rounded-md border border-mv-border bg-white px-2.5 py-1.5 text-[12px] text-mv-ink font-mono focus:border-mv-green focus:outline-none"
             />
             <input
               type="password"
-              placeholder="Clé API / Access Token Clover"
+              placeholder="Clé de connexion Clover"
               value={cloverToken}
               onChange={(e) => setCloverToken(e.target.value)}
               className="flex-1 rounded-md border border-mv-border bg-white px-2.5 py-1.5 text-[12px] text-mv-ink font-mono focus:border-mv-green focus:outline-none"
@@ -229,7 +229,7 @@ function ConnectRow({
         <form onSubmit={handleManualGuidSubmit} className="mt-2.5 flex items-center gap-2 border-t border-mv-border-soft pt-2.5">
           <input
             type="text"
-            placeholder="Ex: a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+            placeholder="Identifiant Toast (ex: a1b2c3d4-e5f6-7890-abcd-ef1234567890)"
             value={guidInput}
             onChange={(e) => setGuidInput(e.target.value)}
             className="flex-1 rounded-md border border-mv-border bg-white px-2.5 py-1 text-[12px] text-mv-ink font-mono focus:border-mv-green focus:outline-none"
@@ -239,7 +239,7 @@ function ConnectRow({
             disabled={isPending || !guidInput.trim()}
             className="rounded-md bg-mv-green px-3 py-1 text-[12px] font-medium text-white transition-opacity disabled:opacity-50"
           >
-            {isPending ? "Liaison…" : "Lier le GUID"}
+            {isPending ? "Connexion…" : "Lier Toast"}
           </button>
         </form>
       )}
@@ -268,7 +268,7 @@ export function PosConnectionsCard() {
     <Card>
       <CardHeader
         eyebrow="Point de vente"
-        title="Système de caisse (POS)"
+        title="Systèmes de caisse"
         description="Synchronisez vos ventes automatiquement plutôt que de les saisir à la main."
       />
       <div className="space-y-2">

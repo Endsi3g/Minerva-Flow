@@ -36,6 +36,28 @@ async function verifyNativeToken(req: Request) {
   return { client, userId: user.id };
 }
 
+/**
+ * Resolves an owner or manager for one restaurant from a native Bearer
+ * token. The query remains token-scoped: `members_select` and the
+ * restaurant-membership policy are still the authorization boundary, not
+ * the route that calls this helper.
+ */
+export async function resolveNativeRestaurantManager(req: Request, restaurantId: string) {
+  const verified = await verifyNativeToken(req);
+  if (!verified || !restaurantId) return null;
+
+  const { data, error } = await verified.client
+    .from("restaurant_members")
+    .select("restaurant_id, role")
+    .eq("restaurant_id", restaurantId)
+    .eq("status", "active")
+    .in("role", ["owner", "manager"])
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return { client: verified.client, userId: verified.userId, restaurantId, role: data.role as "owner" | "manager" };
+}
+
 export async function resolveNativeCustomer(req: Request): Promise<Customer | null> {
   const verified = await verifyNativeToken(req);
   if (!verified) return null;

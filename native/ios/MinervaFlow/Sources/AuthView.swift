@@ -439,7 +439,11 @@ struct AuthView: View {
         oauthBusy = provider
         oauthError = nil
         do {
-            try await supabase.signInWithOAuth(provider: provider)
+            if provider == .apple {
+                try await supabase.signInWithApple()
+            } else {
+                try await supabase.signInWithOAuth(provider: provider)
+            }
         } catch {
             oauthError = "La connexion a échoué. Réessayez."
         }

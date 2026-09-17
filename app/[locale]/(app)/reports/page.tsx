@@ -97,7 +97,7 @@ export default async function ReportsIndexPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl w-full">
+    <div className="mx-auto w-full max-w-7xl">
       <PageHeader
         eyebrow={t("page.overviewEyebrow")}
         title={t("page.title")}
@@ -115,19 +115,21 @@ export default async function ReportsIndexPage() {
 
       {/* Consolidated Financial Trend Chart */}
       {revTrend.length > 0 && (
-        <Card className="p-4 sm:p-5 mb-8">
+        <Card className="mb-8 p-5 sm:p-6">
           <CardHeader
             eyebrow="Tendance financière consolidée"
             title="Évolution comparative : Ventes, Marges & Charges"
             description="Visualisez l'évolution journalière de vos recettes face à votre marge brute et vos charges estimées."
           />
-          <UnifiedTrendChart
-            series={[
-              { key: "revenu", slug: "revenu", label: "Chiffre d'affaires", color: "var(--mv-green)", data: revTrend },
-              { key: "marge", slug: "marge", label: "Marge brute estimée", color: "var(--mv-lime-dark)", data: margTrend },
-              { key: "sorties", slug: "sorties", label: "Charges estimées", color: "var(--mv-amber)", data: depensesTrend },
-            ]}
-          />
+          <div className="min-h-[300px]">
+            <UnifiedTrendChart
+              series={[
+                { key: "revenu", slug: "revenu", label: "Chiffre d'affaires", color: "var(--mv-green)", data: revTrend },
+                { key: "marge", slug: "marge", label: "Marge brute estimée", color: "var(--mv-lime-dark)", data: margTrend },
+                { key: "sorties", slug: "sorties", label: "Charges estimées", color: "var(--mv-amber)", data: depensesTrend },
+              ]}
+            />
+          </div>
         </Card>
       )}
 
@@ -164,9 +166,9 @@ export default async function ReportsIndexPage() {
           if (groupReports.length === 0) return null;
           const gridCols =
             groupReports.length === 1
-              ? "grid-cols-1 max-w-md"
-              : groupReports.length === 2
-                ? "grid-cols-1 md:grid-cols-2 max-w-3xl"
+                ? "grid-cols-1"
+                : groupReports.length === 2
+                ? "grid-cols-1 md:grid-cols-2"
                 : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
 
           return (

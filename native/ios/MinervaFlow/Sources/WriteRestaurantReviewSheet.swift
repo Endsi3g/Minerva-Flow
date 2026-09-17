@@ -181,11 +181,13 @@ struct WriteRestaurantReviewSheet: View {
         isSubmitting = false
         if ok {
             onSubmitted()
-            // 4-5★ only: below that, the review is kept private in-app and
-            // routed to the owner's Reputation page instead — pushing an
-            // unhappy customer toward a public review is exactly what
-            // this gating is meant to avoid (see 0098's visibility trigger).
-            if rating >= 4, supabase.restaurantGooglePlaceId != nil {
+            // Give every customer the same optional, neutral path to Google
+            // Maps. Filtering this invitation by rating would systematically
+            // steer only positive feedback to Google, which is review gating
+            // and risks violating Google's genuine-and-unbiased-review rules.
+            // The Minerva Flow review remains independent; nothing is copied
+            // to Google and there is no reward or incentive to post there.
+            if supabase.restaurantGooglePlaceId != nil {
                 showGoogleMapsPrompt = true
             } else {
                 dismiss()

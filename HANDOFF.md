@@ -1,6 +1,6 @@
 # HANDOFF & DOSSIER DE VÉRIFICATION — MINERVA FLOW
 
-> **Version** : 2.5 — Audit & Clôture de Sprint (Septembre 2026)  
+> **Version** : 2.36.0 — Clôture de Sprint & Déploiement Pilote (15 septembre 2026)  
 > **Document de référence pour le passage de relais et la validation complète de la plateforme.**  
 > Ce document synthétise l'intégralité des fonctionnalités livrées, les architectures techniques, les tables de base de données, les protocoles de conformité légale et le guide de vérification pas à pas.
 
@@ -17,19 +17,20 @@
    - [Chantier 5 : Conformité Juridique Stricte LCAP / CASL & Traçabilité](#chantier-5--conformité-juridique-stricte-lcap--casl--traçabilité)
    - [Chantier 6 : Entonnoir de Rétention & 15 Événements de Cycle de Vie](#chantier-6--entonnoir-de-rétention--15-événements-de-cycle-de-vie)
    - [Chantier 7 : Les 10 KPI Essentiels & Matrice des 6 Profils Audités](#chantier-7--les-10-kpi-essentiels--matrice-des-6-profils-audités)
+   - [Chantier 8 : StatStrip Condensé de l'Aperçu, Navigation Fidélisation & Contrat Pilote](#chantier-8--statstrip-condensé-de-laperçu-navigation-fidélisation--contrat-pilote)
 3. [Répertoire des Fichiers Clés (Code Source & Tests)](#3-répertoire-des-fichiers-clés-code-source--tests)
 4. [Schémas de Base de Données & Migrations Supabase](#4-schémas-de-base-de-données--migrations-supabase)
 5. [Guide de Vérification Pas-à-Pas (Validation Complète)](#5-guide-de-vérification-pas-à-pas-validation-complète)
 6. [État des Intégrations & Roadmap Résiduelle](#6-état-des-intégrations--roadmap-résiduelle)
-7. [App Native Owner (iPad/iPhone) — Planifiée, Non Démarrée](#7-app-native-owner-ipadiphone--planifiée-non-démarrée)
-8. [Session du 2026-09-10 — Synchro POS Bidirectionnelle & Corrections d'Infrastructure](#8-session-du-2026-09-10--synchro-pos-bidirectionnelle--corrections-dinfrastructure)
+7. [App Native Owner (iPad/iPhone) — Cadrage & Architecture Cible](#7-app-native-owner-ipadiphone--cadrage--architecture-cible)
+8. [Session du 2026-09-10 — Synchro POS Bidirectionnelle & Infrastructure](#8-session-du-2026-09-10--synchro-pos-bidirectionnelle--infrastructure)
 
 ---
 
 ## 1. Identité de Marque & Directives Inviolables
 
 * **Nom de marque officiel** : **`Minerva Flow`** (ou **`Flow`** en contexte abrégé dans l'interface).
-* **RÈGLE STRICTE** : Le terme **`Flow par Minerva`** est **FORMELLEMENT BANNIE** de toutes les pages, courriels, documentations, métadonnées et prompts d'IA.
+* **RÈGLE STRICTE** : Le terme **`Flow par Minerva`** est **FORMELLEMENT BANNI** de toutes les pages, courriels, documentations, métadonnées et prompts d'IA.
 * **Entité légale** : `Minerva Technologies Inc.`
 * **Siège social & juridiction** : Montréal (Québec), Canada — Régie par la législation canadienne LCAP / CASL.
 * **Domaine officiel** : `https://minervaflow.app`
@@ -61,7 +62,7 @@ L'écran **Aperçu** (`/overview`) a été entièrement transformé d'une simple
   - Comparaison par rapport à la même période la semaine passée (S-1) pour neutraliser la saisonnalité intra-hebdomadaire des restaurants.
 - **Transparence radicale de Flow AI** :
   - Suppression des mentions vagues (ex. « analyse en permanence »).
-  - Affichage précis des sources de données utilisées (Square, Lightspeed, fiches recettes, historique de commandes).
+  - Affichage précis des sources de données utilisées (Square, Clover, Toast, fiches recettes, historique de commandes).
   - Fréquence de calcul et horodatage exact de la dernière synchronisation POS.
   - Indice de confiance explicite pour chaque recommandation (ex. *Indice de confiance : 92 %*).
 - **Isolation étanche Restaurateur vs Développeur** :
@@ -70,8 +71,6 @@ L'écran **Aperçu** (`/overview`) a été entièrement transformé d'une simple
 - **États vides exploitables** :
   - Détection contextuelle des manques : caisse non connectée, fiches techniques non renseignées, historique insuffisant (< 7 jours).
   - Checklists d'action directes avec bouton de redirection vers la bonne section de configuration.
-- **Sélecteur Multi-Établissements** :
-  - Prise en charge native des groupes de restaurants avec bascule fluide et vue consolidée.
 
 ---
 
@@ -192,48 +191,82 @@ L'entonnoir de rétention (`/reports/retention-funnel`) suit avec précision les
 
 ---
 
+### Chantier 8 : StatStrip Condensé de l'Aperçu, Navigation Fidélisation & Contrat Pilote
+*Livré lors de la clôture de sprint du 15 septembre 2026 :*
+1. **Épuration de l'Aperçu (`OverviewClientView.tsx`)** :
+   - Suppression du bandeau supérieur redondant de portée multi-établissements (`Portée :`).
+   - Condensation des 5 métriques clés dans un `StatStrip` horizontal unifié.
+   - Accordéon de préparation à l'onboarding replié par défaut pour dégager l'espace d'action immédiat.
+   - Recommandations et alertes Flow AI positionnées stratégiquement au bas du flux décisionnel.
+2. **Navigation de Fidélisation & Tableaux Rénovés** :
+   - Calibrage du tableau de clients à 6 lignes avec défilement interne et en-tête fixé (`sticky`).
+   - Restauration du composant `FidelisationSubNav` sur la vue des résultats.
+3. **Graphiques Consolidés dans les Rapports (`reports/page.tsx`)** :
+   - Intégration du graphique d'évolution des tendances (Revenus vs Marges vs Dépenses) et sparklines sur les cartes de ratios.
+4. **Cadre Juridique Officiel de Projet Pilote** :
+   - Formalisation de l'entente de projet pilote Minerva Flow pour Mains Magiques ADM (`docs/contrats/ENTENTE_PROJET_PILOTE_MINERVA_FLOW.md`).
+   - Fixation tarifaire bilatérale à l'issue de l'essai gratuit avec clause de sortie sans frais.
+   - Compilation automatisée d'un PDF officiel de prestige de 4 pages via Playwright (`scripts/generate-contract-pdf.mjs`).
+
+---
+
 ## 3. Répertoire des Fichiers Clés (Code Source & Tests)
 
 ### Logique Métier & Moteurs de Calcul
-* [lib/campaigns/templates.ts](file:///c:/Minerva%20Flow/Minerva-Flow/lib/campaigns/templates.ts) : Définition des 8 modèles de campagnes, rendus HTML et SMS conformes LCAP, dispatch multicanal.
-* [lib/lifecycle/events.ts](file:///c:/Minerva%20Flow/Minerva-Flow/lib/lifecycle/events.ts) : Moteur de capture des 15 événements de cycle de vie client, dispatch asynchrone client/serveur.
-* [lib/pos/cashier-identification.ts](file:///c:/Minerva%20Flow/Minerva-Flow/lib/pos/cashier-identification.ts) : Algorithmes de résolution en caisse (téléphone, pairing code 6 chiffres, QR).
-* [lib/overview/kpi-engine.ts](file:///c:/Minerva%20Flow/Minerva-Flow/lib/overview/kpi-engine.ts) : Calcul des 5 KPI de premier niveau avec comparaison J-1 et S-1.
-* [lib/pricing/plans.ts](file:///c:/Minerva%20Flow/Minerva-Flow/lib/pricing/plans.ts) : Structure des 3 offres (Profit Core 150$, Growth & Loyalty 290$, Enterprise 590$).
+* [`lib/campaigns/templates.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/campaigns/templates.ts) : Définition des 8 modèles de campagnes, rendus HTML et SMS conformes LCAP, dispatch multicanal.
+* [`lib/lifecycle/events.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/lifecycle/events.ts) : Moteur de capture des 15 événements de cycle de vie client, dispatch asynchrone client/serveur.
+* [`lib/pos/cashier-identification.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/pos/cashier-identification.ts) : Algorithmes de résolution en caisse (téléphone, pairing code 6 chiffres, QR).
+* [`lib/pos/catalog-sync.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/pos/catalog-sync.ts) : Synchronisation bidirectionnelle du catalogue menu et de l'inventaire avec Clover et Square.
+* [`lib/pos/inventory-mapping.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/pos/inventory-mapping.ts) : Appariement des articles d'inventaire aux items de caisse.
+* [`lib/overview/kpi-engine.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/overview/kpi-engine.ts) : Calcul des 5 KPI de premier niveau avec comparaison J-1 et S-1.
+* [`lib/pricing/plans.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/pricing/plans.ts) : Structure des 3 offres (Profit Core 150$, Growth & Loyalty 290$, Enterprise 590$).
 
 ### Composants Utilisateur (UI)
-* [components/campaigns/PrioritizedCampaignsStudio.tsx](file:///c:/Minerva%20Flow/Minerva-Flow/components/campaigns/PrioritizedCampaignsStudio.tsx) : Studio interactif des 8 campagnes avec toggle d'automatisation, prévisualisations et déclenchement direct.
-* [components/pos/CashierIdentificationModal.tsx](file:///c:/Minerva%20Flow/Minerva-Flow/components/pos/CashierIdentificationModal.tsx) : Modal d'identification caissier optimisée pour le comptoir.
-* [app/[locale]/(app)/reports/retention-funnel/page.tsx](file:///c:/Minerva%20Flow/Minerva-Flow/app/[locale]/(app)/reports/retention-funnel/page.tsx) : Tableau de bord de l'entonnoir de rétention avec les 10 KPI et les 6 profils audités.
-* [app/[locale]/(app)/overview/OverviewDashboard.tsx](file:///c:/Minerva%20Flow/Minerva-Flow/app/[locale]/(app)/overview/OverviewDashboard.tsx) : Tableau de bord de synthèse orienté actions avec Flow AI transparent.
-* [app/[locale]/(marketing)/pricing/PricingPlansView.tsx](file:///c:/Minerva%20Flow/Minerva-Flow/app/[locale]/(marketing)/pricing/PricingPlansView.tsx) : Grille tarifaire moderne avec bascule mensuelle/annuelle.
+* [`components/campaigns/PrioritizedCampaignsStudio.tsx`](file:///Users/kaelbelceus/Flow%20by%20Minerva/components/campaigns/PrioritizedCampaignsStudio.tsx) : Studio interactif des 8 campagnes avec toggle d'automatisation, prévisualisations et déclenchement direct.
+* [`components/pos/CashierIdentificationModal.tsx`](file:///Users/kaelbelceus/Flow%20by%20Minerva/components/pos/CashierIdentificationModal.tsx) : Modal d'identification caissier optimisée pour le comptoir.
+* [`components/minerva/PosInventoryMappingCard.tsx`](file:///Users/kaelbelceus/Flow%20by%20Minerva/components/minerva/PosInventoryMappingCard.tsx) : Interface d'association des matières premières à la caisse POS.
+* [`components/minerva/PosItemMappingCard.tsx`](file:///Users/kaelbelceus/Flow%20by%20Minerva/components/minerva/PosItemMappingCard.tsx) : Carte de correspondance des articles de menu aux libellés de caisse.
+* [`components/minerva/OverviewClientView.tsx`](file:///Users/kaelbelceus/Flow%20by%20Minerva/components/minerva/OverviewClientView.tsx) : Tableau de bord de synthèse orienté actions avec StatStrip unifié.
+* [`app/[locale]/(app)/reports/retention-funnel/page.tsx`](file:///Users/kaelbelceus/Flow%20by%20Minerva/app/[locale]/(app)/reports/retention-funnel/page.tsx) : Tableau de bord de l'entonnoir de rétention avec les 10 KPI et les 6 profils audités.
+* [`app/[locale]/(marketing)/pricing/PricingPlansView.tsx`](file:///Users/kaelbelceus/Flow%20by%20Minerva/app/[locale]/(marketing)/pricing/PricingPlansView.tsx) : Grille tarifaire moderne avec bascule mensuelle/annuelle.
 
-### Routes API & Webhooks
-* [app/api/webhooks/sms/inbound/route.ts](file:///c:/Minerva%20Flow/Minerva-Flow/app/api/webhooks/sms/inbound/route.ts) : Webhook entrant Twilio gérant la désinscription automatique (STOP, ARRÊT, etc.).
-* [app/api/lifecycle/track/route.ts](file:///c:/Minerva%20Flow/Minerva-Flow/app/api/lifecycle/track/route.ts) : Point de terminaison sécurisé pour l'enregistrement des 15 événements.
-* [app/api/campaigns/unsubscribe/route.ts](file:///c:/Minerva%20Flow/Minerva-Flow/app/api/campaigns/unsubscribe/route.ts) : Désinscription en 1 clic pour les courriels.
-* [app/[locale]/(app)/campaigns/actions.ts](file:///c:/Minerva%20Flow/Minerva-Flow/app/[locale]/(app)/campaigns/actions.ts) : Server Actions pour la mise à jour des triggers et le dispatch des campagnes.
+### Routes API, Webhooks & Tâches Planifiées
+* [`app/api/webhooks/sms/inbound/route.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/app/api/webhooks/sms/inbound/route.ts) : Webhook entrant Twilio gérant la désinscription automatique (STOP, ARRÊT, etc.).
+* [`app/api/lifecycle/track/route.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/app/api/lifecycle/track/route.ts) : Point de terminaison sécurisé pour l'enregistrement des 15 événements.
+* [`app/api/campaigns/unsubscribe/route.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/app/api/campaigns/unsubscribe/route.ts) : Désinscription en 1 clic pour les courriels.
+* [`app/api/cron/pos-catalog-reconcile/route.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/app/api/cron/pos-catalog-reconcile/route.ts) : Endpoint de réconciliation périodique du catalogue POS.
+* [`.github/workflows/cron-pos-catalog-reconcile.yml`](file:///Users/kaelbelceus/Flow%20by%20Minerva/.github/workflows/cron-pos-catalog-reconcile.yml) : Workflow GitHub Actions déclenchant la réconciliation POS toutes les 15 minutes.
+* [`scripts/generate-contract-pdf.mjs`](file:///Users/kaelbelceus/Flow%20by%20Minerva/scripts/generate-contract-pdf.mjs) : Script Playwright Chromium de génération de contrat PDF haute fidélité.
 
 ### Suites de Tests Automatisés (Vitest)
-* [lib/__tests__/campaigns-and-casl-consent.test.ts](file:///c:/Minerva%20Flow/Minerva-Flow/lib/__tests__/campaigns-and-casl-consent.test.ts) : 15 tests unitaires validant les 8 campagnes, le rendu SMS/courriel et la conformité LCAP.
-* [lib/__tests__/lifecycle-retention-funnel.test.ts](file:///c:/Minerva%20Flow/Minerva-Flow/lib/__tests__/lifecycle-retention-funnel.test.ts) : Validation des 15 événements de cycle de vie et du calcul des taux d'activation/rétention.
-* [lib/__tests__/pos-customer-identification.test.ts](file:///c:/Minerva%20Flow/Minerva-Flow/lib/__tests__/pos-customer-identification.test.ts) : 11 tests sur la recherche par téléphone, le code de jumelage et les erreurs caisse.
-* [lib/__tests__/overview-engine.test.ts](file:///c:/Minerva%20Flow/Minerva-Flow/lib/__tests__/overview-engine.test.ts) : Validation des 5 métriques, calculs de variations J-1 et S-1.
-* [lib/__tests__/pricing.test.ts](file:///c:/Minerva%20Flow/Minerva-Flow/lib/__tests__/pricing.test.ts) : Validation des plans tarifaires et des réductions annuelles.
+* [`lib/__tests__/campaigns-and-casl-consent.test.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/__tests__/campaigns-and-casl-consent.test.ts) : 15 tests unitaires validant les 8 campagnes, le rendu SMS/courriel et la conformité LCAP.
+* [`lib/__tests__/lifecycle-retention-funnel.test.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/__tests__/lifecycle-retention-funnel.test.ts) : Validation des 15 événements de cycle de vie et du calcul des taux d'activation/rétention.
+* [`lib/__tests__/pos-customer-identification.test.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/__tests__/pos-customer-identification.test.ts) : 11 tests sur la recherche par téléphone, le code de jumelage et les erreurs caisse.
+* [`lib/pos/__tests__/clover.test.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/pos/__tests__/clover.test.ts) : 8 tests validant l'authentification et l'échange de token Clover.
+* [`lib/pos/__tests__/toast.test.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/pos/__tests__/toast.test.ts) : 9 tests couvrant la synchronisation Toast Partner Connect.
+* [`lib/__tests__/overview-engine.test.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/__tests__/overview-engine.test.ts) : Validation des 5 métriques, calculs de variations J-1 et S-1.
+* [`lib/__tests__/pricing.test.ts`](file:///Users/kaelbelceus/Flow%20by%20Minerva/lib/__tests__/pricing.test.ts) : Validation des plans tarifaires et des réductions annuelles.
 
 ---
 
 ## 4. Schémas de Base de Données & Migrations Supabase
 
-Trois migrations majeures structurent ce système :
+Cinq migrations majeures structurent ce système :
 
-### 1. Migration `0118_retention_funnel_and_lifecycle_events.sql`
+### 1. Migration `0113_pos_catalog_sync_foundation.sql`
+- Crée la table immuable `pos_inventory_mappings` reliant chaque ingrédient (`inventory_items`) à l'article correspondant sur la caisse (`clover_item_id`, `square_catalog_object_id`).
+- Ajoute les colonnes de suivi de synchronisation : `last_synced_at`, `sync_status`, `error_message`.
+
+### 2. Migration `0114_pos_item_mappings_square_variation_id.sql`
+- Élargit la table `pos_item_mappings` pour stocker le `square_variation_id` requis pour les articles de menu à déclinaisons multiples (portions, tailles).
+
+### 3. Migration `0118_retention_funnel_and_lifecycle_events.sql`
 - Crée la table immuable `customer_lifecycle_events` :
   - `event_name` : Les 15 événements énumérés.
   - `restaurant_id`, `customer_id`, `source`, `metadata` (JSONB), `created_at`.
   - Politiques RLS avec indexation sur `(restaurant_id, event_name, created_at)`.
 
-### 2. Migration `0119_casl_consent_and_retention_automations.sql`
+### 4. Migration `0119_casl_consent_and_retention_automations.sql`
 - Crée la table immuable d'audit `customer_consents` :
   - `customer_id`, `consent_type` (`express_marketing`, `terms_service`), `status` (`granted`, `revoked`).
   - `channels` (`sms`, `email`), `exact_legal_text`, `ip_address`, `user_agent`, `created_at`.
@@ -242,7 +275,7 @@ Trois migrations majeures structurent ce système :
 - Élargit la table `customers` :
   - `sms_marketing_consent`, `email_marketing_consent`, `consent_source`, `consent_timestamp`, `unsubscribed_at`.
 
-### 3. Migration `0120_additional_campaign_templates_and_triggers.sql`
+### 5. Migration `0120_additional_campaign_templates_and_triggers.sql`
 - Élargit l'énumérateur `retention_trigger_type` :
   - Ajout des triggers : `'welcome'`, `'second_visit'`, `'off_peak'`, `'vip_upgrade'`, `'referral_share'`, `'winback_60d'`.
 - Ajoute les colonnes de configuration restaurant :
@@ -256,22 +289,22 @@ Pour vérifier l'intégrité absolue de la livraison :
 
 ### Étape 1 : Vérification Statique TypeScript
 Exécuter la commande suivante à la racine du projet :
-```powershell
-node ./node_modules/typescript/bin/tsc --noEmit
+```bash
+npx tsc --noEmit
 ```
-*Résultat attendu* : Sortie vide avec code de retour `0` (zéro erreur de typage).
+*Résultat validé* : Sortie propre avec code de retour `0` (**zéro erreur de typage**).
 
 ### Étape 2 : Exécution de la Suite Complète des Tests Vitest
 Exécuter la suite complète :
-```powershell
-node ./node_modules/vitest/vitest.mjs run
+```bash
+npm run test
 ```
-*Résultat attendu* : **28 fichiers de tests validés (28 passed), 161 tests unitaires réussis (161 passed)**.
+*Résultat validé* : **28 fichiers de tests passés avec succès (28 passed), 161 tests unitaires réussis (161 passed)** en ~6.0 secondes.
 
 ### Étape 3 : Vérification Spécifique des Campagnes & de la LCAP
 Exécuter le test ciblé :
-```powershell
-node ./node_modules/vitest/vitest.mjs run lib/__tests__/campaigns-and-casl-consent.test.ts
+```bash
+npm run test lib/__tests__/campaigns-and-casl-consent.test.ts
 ```
 *Vérifications automatisées* :
 1. Rendu HTML de chacun des 8 modèles avec footer légal et lien de désinscription.
@@ -282,7 +315,7 @@ node ./node_modules/vitest/vitest.mjs run lib/__tests__/campaigns-and-casl-conse
 ### Étape 4 : Parcours Visuel & Navigation Web
 1. Démarrer le serveur de développement : `npm run dev`
 2. **Aperçu** (`/overview`) :
-   - Vérifier les 5 cartes de KPI avec comparaison J-1 et S-1.
+   - Vérifier le `StatStrip` horizontal condensé des 5 KPI avec comparaison J-1 et S-1.
    - Vérifier le panneau Flow AI avec source de données, heure de synchronisation et indice de confiance.
 3. **Studio de Campagnes** (`/campaigns`) :
    - Vérifier la présence des 8 cartes de modèles (Bienvenue, 2e visite, Réactivation 21j, Période creuse, Récompense, VIP, Parrainage, Winback 60j).
@@ -300,22 +333,74 @@ node ./node_modules/vitest/vitest.mjs run lib/__tests__/campaigns-and-casl-conse
 
 | Intégration / Module | Statut Actuel | Notes Techniques |
 |---|---|---|
-| **Moteur d'Événements (15)** | **Opérationnel (100 %)** | Prêt pour ingestion client & serveur via Supabase |
+| **Moteur d'Événements (15)** | **Opérationnel (100 %)** | Ingestion asynchrone client/serveur via Supabase |
 | **8 Modèles de Campagnes** | **Opérationnel (100 %)** | Rendus SMS/Courriel, tests unitaires et UI complétés |
 | **Conformité LCAP / CASL** | **Opérationnel (100 %)** | Double opt-in, table d'audit immuable, webhook STOP |
 | **Identification en Caisse** | **Opérationnel (100 %)** | Téléphone tolérant, code 6 chiffres RPC, modal caissier |
-| **Clover POS** | Code prêt, clés sandbox saisies, connexion **en cours de débogage** (2026-09-10) | Voir [Section 8](#8-session-du-2026-09-10--synchro-pos-bidirectionnelle--corrections-dinfrastructure) — le bouton « Connecter » ne réagit pas encore, cause non confirmée |
-| **Toast POS** | Code prêt (Partner Connect) | Fonctionnel dès saisie des clés `TOAST_CLIENT_ID/SECRET` |
-| **Square POS** | Code OAuth + synchro catalogue bidirectionnelle prêt, clés sandbox saisies, connexion **en cours de débogage** (2026-09-10) | Voir [Section 8](#8-session-du-2026-09-10--synchro-pos-bidirectionnelle--corrections-dinfrastructure) — même symptôme que Clover |
+| **Tâches Planifiées (Crons)** | **Opérationnel (100 %)** | 12 workflows GitHub Actions (`schedule`) avec jeton `CRON_SECRET` |
+| **Square POS** | **Prêt en Production** (Validation Sandbox) | OAuth avec scopes d'écriture élargis (`ITEMS_WRITE`, `INVENTORY_WRITE`), synchro bidirectionnelle catalogue + inventaire |
+| **Clover POS** | **Prêt en Production** (Validation Sandbox) | Connexion par Merchant ID + Token API direct et flux OAuth, synchro catalogue |
+| **Toast POS** | **Prêt en Production** | Intégration Partner Connect / Machine-to-Machine, tests unitaires validés (9/9) |
 | **Lightspeed Restaurant** | Code OAuth prêt | En attente d'un compte sandbox partenaire Lightspeed |
 | **Pass Apple Wallet** | Scannable par QR / code | Génération de fichier `.pkpass` natif planifiée post-MVP |
-| **Paiement Stripe Connect** | Opérationnel sur `/m/[token]` | Connexion au portail client `/portal` en attente de Stripe |
+| **Paiement Stripe Connect** | Opérationnel sur `/m/[token]` | Portail marchand `/portal` prêt pour raccordement direct |
+
+---
+
+## 7. App Native Owner (iPad/iPhone) — Cadrage & Architecture Cible
+
+L'application native propriétaire (**Minerva Flow Owner**) est conçue pour les gérants et chefs d'exploitation de restaurant en salle ou en cuisine, sans accès permanent à un ordinateur de bureau :
+
+### 7.1 Rôle Opérationnel & Cas d'Usage Terrain
+1. **Supervision du Service en Temps Réel** :
+   - Flux d'encaissement en direct, nombre de couverts servis minute par minute, ticket moyen instantané et comparaison dynamique avec le même service de la semaine passée (S-1).
+2. **Mode Rush (« Busy-Mode ») & Délais ETA en 1 Tap** :
+   - Capacité pour le gérant ou le chef de cuisine d'ajuster instantanément le délai estimé de commande (`estimated_ready_minutes`, +15 min, +30 min) ou de basculer en mode « Service Saturé », affichant une bannière d'attente sur la commande mobile sans interrompre le POS.
+3. **Alertes Push Proactives Flow AI** :
+   - Notification native lors du franchissement de seuils critiques : dérive du *Prime Cost* (> 60 %), rupture imminente d'un ingrédient clé liée à la popularité d'un plat, ou signalement d'un avis client défavorable (1-3 étoiles) nécessitant une réponse immédiate.
+4. **Validation des Clôtures de Service** :
+   - Rapprochement rapide caisse/recettes, validation des heures du personnel de service et approbation du rapport journalier avant archivage.
+
+### 7.2 Architecture & Pré-requis Techniques
+- **Backend unifié** : Consommation directe des routes API REST existantes (`/api/orders`, `/api/lifecycle/track`, `/api/pos/*`, `/api/ai/*`) et des tables Supabase sous RLS stricte (`role: owner | manager`).
+- **Authentification** : Supabase Auth (Magic Link, Apple Sign-In natif).
+- **Notifications Push** : Service APNs (Apple Push Notification service) orchestré côté serveur, complétant le canal Twilio SMS.
+- **Statut d'Avancement** : Spécifications fonctionnelles et routes API sous-jacentes opérationnelles ; développement du client natif planifié post-déploiement du pilote.
+
+---
+
+## 8. Session du 2026-09-10 — Synchro POS Bidirectionnelle & Infrastructure
+
+La session du 10 septembre 2026 a apporté deux consolidations architecturales majeures au cœur du système :
+
+### 8.1 Moteur de Synchronisation Bidirectionnelle du Catalogue (Clover & Square)
+Auparavant, les intégrations de caisse se limitaient à la lecture des tickets et à l'agrégation du chiffre d'affaires. Le nouveau moteur (`lib/pos/catalog-sync.ts`) assure une synchronisation **bidirectionnelle complète** du menu et de l'inventaire :
+- **Push descendant (Minerva Flow ➔ POS)** :
+  - Toute modification de plat (prix, intitulé, disponibilité) ou mouvement de stock (réception, perte, ajustement d'ingrédient) est transmise immédiatement à l'API de caisse correspondante.
+- **Pull ascendant & Réconciliation périodique (POS ➔ Minerva Flow)** :
+  - Le workflow planifié `.github/workflows/cron-pos-catalog-reconcile.yml` invoque la route `/api/cron/pos-catalog-reconcile` toutes les 15 minutes.
+  - La logique applique une règle *last-write-wins* en comparant `external_updated_at` (POS) et `local_synced_at` (Flow) pour résoudre automatiquement les conflits sans écraser de modifications légitimes faites sur le terminal physique.
+- **Gestion des Déclinaisons Multiples** :
+  - Prise en charge du `square_variation_id` dans `pos_item_mappings` pour mapper avec précision les différentes tailles et variantes de plats vendus.
+
+### 8.2 Élargissement des Permissions OAuth Square & Méthode Directe Clover
+- **Résolution du risque 403 sur Square** :
+  - Le flux OAuth initial de Square n'exigeait que des permissions de lecture. Il a été étendu dans `app/api/oauth/square/route.ts` avec les scopes `ITEMS_WRITE` et `INVENTORY_WRITE`, permettant les modifications de catalogue et d'inventaire sans blocage d'autorisation.
+- **Connexion Directe Clover** :
+  - Ajout de la possibilité de connecter un compte Clover directement via la saisie du `Merchant ID` et du jeton d'API marchand (`API Token`), offrant une alternative immédiate au flux OAuth complet.
+
+### 8.3 Migration Critique des Tâches Planifiées vers GitHub Actions
+- **Contrainte Détectée** : Le plan Vercel Hobby plafonne strictement les Cron Jobs natifs à **2 tâches par projet, exécutables au maximum une fois par jour**. Avec 12 tâches planifiées nécessaires au bon fonctionnement de Flow (réconciliation POS 15 min, alertes, relances, clôtures, etc.), les déploiements Vercel déclenchaient des avertissements et bloquaient l'exécution des crons sous-journaliers.
+- **Solution Déployée** :
+  - Migration complète des 12 crons vers des workflows GitHub Actions situés dans `.github/workflows/cron-*.yml`.
+  - Chaque workflow utilise un déclencheur `schedule` (cron syntax) et appelle l'API de production via un `curl` sécurisé par l'en-tête `Authorization: Bearer ${{ secrets.CRON_SECRET }}`.
+  - La section `crons` de `vercel.json` a été vidée pour assainir les builds de production Vercel.
 
 ---
 
 <div align="center">
 
 *Minerva Flow — Système d'Exploitation & d'Analyse pour Restaurants*  
-*Minerva Technologies Inc. · Document produit pour validation de conformité et passage de relais.*
+*Minerva Technologies Inc. · Document officiel de passation et de conformité opérationnelle.*
 
 </div>

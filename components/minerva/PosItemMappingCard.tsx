@@ -89,7 +89,7 @@ export function PosItemMappingCard({
     if (result.providers === 0) {
       toast.info("Aucun compte Clover/Square connecté.");
     } else {
-      toast.success(`Synchronisé : ${result.pushed} envoyé(s), ${result.pulled} reçu(s) depuis le POS.`);
+      toast.success(`Synchronisé : ${result.pushed} envoyé(s), ${result.pulled} reçu(s) depuis votre caisse enregistreuse.`);
       loadMappings();
     }
   }
@@ -251,8 +251,8 @@ export function PosItemMappingCard({
   return (
     <Card className="mb-6 overflow-hidden">
       <CardHeader
-        eyebrow="Synchronisation POS & Caisse"
-        title="Correspondance des articles POS"
+        eyebrow="Synchronisation des ventes"
+        title="Correspondance des articles de caisse"
         description="Associez les articles encaissés (Square, Clover, Toast) à vos fiches plats pour le suivi du Menu Engineering et des stocks de recettes."
         action={
           <div className="flex items-center gap-2">
@@ -338,10 +338,10 @@ export function PosItemMappingCard({
             onChange={(e) => setSelectedProvider(e.target.value)}
             className="h-8 rounded-lg border border-mv-border bg-mv-surface px-2 text-[12px] text-mv-ink focus:border-mv-green focus:outline-none"
           >
-            <option value="all">Tous les POS</option>
+            <option value="all">Toutes les caisses</option>
             <option value="square">Square</option>
             <option value="clover">Clover</option>
-            <option value="toast">Toast POS</option>
+            <option value="toast">Toast</option>
           </select>
         </div>
       </div>

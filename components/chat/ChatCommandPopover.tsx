@@ -93,7 +93,7 @@ export const AVAILABLE_COMMANDS: CommandItem[] = [
     id: "ctx-ventes",
     trigger: "@",
     label: "@ventes",
-    category: "Données POS",
+    category: "Données de caisse",
     desc: "Injecter le chiffre d'affaires et les volumes de vente récents",
     promptSnippet: "[Données Ventes Actives] Analyse en détail la performance des ventes récentes : ",
     icon: Database,

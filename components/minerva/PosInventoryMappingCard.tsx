@@ -191,7 +191,7 @@ export function PosInventoryMappingCard({
     if (result.providers === 0) {
       toast.info("Aucun compte Clover/Square connecté.");
     } else {
-      toast.success(`Synchronisé : ${result.pushed} envoyé(s), ${result.pulled} reçu(s) depuis le POS.`);
+      toast.success(`Synchronisé : ${result.pushed} envoyé(s), ${result.pulled} reçu(s) depuis votre caisse enregistreuse.`);
       load();
     }
   }
@@ -202,8 +202,8 @@ export function PosInventoryMappingCard({
   return (
     <Card className="mb-6 overflow-hidden">
       <CardHeader
-        eyebrow="Synchronisation POS & Caisse"
-        title="Correspondance des stocks POS"
+        eyebrow="Gestion des stocks"
+        title="Correspondance des articles de caisse & stocks"
         description="Associez chaque article du catalogue Clover/Square à un article d'inventaire pour synchroniser les quantités en stock dans les deux sens."
         action={
           <div className="flex items-center gap-2">

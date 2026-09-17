@@ -18,7 +18,7 @@ import { NextResponse } from "next/server";
  * which is the standard workaround for this exact, well-documented
  * Next.js limitation.
  *
- * "DV9V35452J" is the Apple Developer Team ID (native/ios/project.yml's
+ * "NHMPLN46TN" is the Apple Developer Team ID (native/ios/project.yml's
  * DEVELOPMENT_TEAM) — required as the appID prefix per Apple's spec, not
  * a secret. Locale-prefixed path variants are included since
  * i18n/routing.ts uses localePrefix "as-needed" (fr unprefixed, en/tr
@@ -31,7 +31,7 @@ import { NextResponse } from "next/server";
  * Links degrade to a plain web link on verification failure, never an
  * error).
  */
-const APP_ID = "DV9V35452J.com.minervaflow.loyalty";
+const APP_ID = "NHMPLN46TN.com.minervaflow.loyalty";
 
 export async function GET() {
   return NextResponse.json({

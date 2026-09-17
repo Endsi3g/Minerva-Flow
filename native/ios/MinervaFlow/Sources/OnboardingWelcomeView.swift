@@ -88,9 +88,28 @@ struct OnboardingWelcomeView: View {
     private var welcomePage: some View {
         VStack(spacing: 28) {
             Spacer()
-            Image("LogoMark")
-                .resizable()
-                .frame(width: 64, height: 64)
+            ZStack {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(.white.opacity(0.18))
+                    .frame(width: 150, height: 190)
+                    .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.28), lineWidth: 2))
+                VStack(spacing: 8) {
+                    Image(systemName: "cup.and.saucer.fill")
+                        .font(.system(size: 58, weight: .medium))
+                        .foregroundStyle(.white)
+                    Image("LogoMark")
+                        .resizable()
+                        .frame(width: 32, height: 32)
+                }
+                Image(systemName: "sparkle")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(MinervaColor.limeAccent)
+                    .offset(x: -92, y: -58)
+                Image(systemName: "sparkle")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(MinervaColor.limeAccent)
+                    .offset(x: 92, y: 60)
+            }
             Text("MINERVA FLOW\nRÉCOMPENSES")
                 .font(.system(size: 14, weight: .bold))
                 .tracking(2)
