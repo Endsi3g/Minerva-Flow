@@ -75,6 +75,8 @@ type PlaceDetailsRaw = {
   regularOpeningHours?: {
     periods?: PlaceOpeningPeriod[];
   };
+  rating?: number;
+  userRatingCount?: number;
 };
 
 export type PlaceDetails = PlaceDetailsRaw & { placeId: string };
@@ -97,6 +99,8 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
       "internationalPhoneNumber",
       "websiteUri",
       "regularOpeningHours",
+      "rating",
+      "userRatingCount",
     ].join(",");
     const res = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
       headers: { "X-Goog-Api-Key": key, "X-Goog-FieldMask": fieldMask },
@@ -167,6 +171,7 @@ export function mapPlaceDetailsToRestaurantInput(details: PlaceDetails): Partial
     website: details.websiteUri,
     openingHours: mapOpeningHours(details.regularOpeningHours?.periods),
     googlePlaceId: details.placeId,
+    googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=Google&query_place_id=${encodeURIComponent(details.placeId)}`,
   };
 }
 

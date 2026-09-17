@@ -122,10 +122,17 @@ export function Stripe({ size = 20, width, height, className, ...props }: BrandI
   return <StripeSvg width={w} height={h} className={className} {...props} />;
 }
 
-export function Apple({ size = 20, width, height, className, ...props }: BrandIconProps) {
+export function Apple({
+  size = 20,
+  width,
+  height,
+  className,
+  variant = "light",
+  ...props
+}: BrandIconProps & { variant?: "default" | "mono" | "light" | "dark" }) {
   const w = width || size;
   const h = height || size;
-  return <AppleSvg width={w} height={h} className={className} {...props} />;
+  return <AppleSvg width={w} height={h} variant={variant} className={className} {...props} />;
 }
 
 export function Microsoft({ size = 20, width, height, className, ...props }: BrandIconProps) {

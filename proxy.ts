@@ -116,7 +116,13 @@ export async function proxy(request: NextRequest) {
   // Skip the remote Supabase Auth network call to achieve single-digit millisecond TTFB at the edge.
   const hasAuthCookies = request.cookies.getAll().some((c) => c.name.startsWith("sb-") || c.name.includes("auth-token"));
 
-  if (!hasAuthCookies && (isAuthRoute || isServerCallbackRoute || pathWithoutLocale === "/")) {
+  if (!hasAuthCookies && pathWithoutLocale === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = locale === routing.defaultLocale ? "/login" : `/${locale}/login`;
+    return NextResponse.redirect(url);
+  }
+
+  if (!hasAuthCookies && (isAuthRoute || isServerCallbackRoute)) {
     if (pathWithoutLocale.startsWith("/legal/")) {
       response.headers.set("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=604800");
     } else if (

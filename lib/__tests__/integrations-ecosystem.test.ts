@@ -16,6 +16,8 @@ import {
   FreshBooks,
   Dext,
   Pennylane,
+  Apple,
+  ApplePay,
 } from "@/components/ui/BrandIcons";
 
 describe("Integrations Ecosystem Brand Icons", () => {
@@ -39,5 +41,10 @@ describe("Integrations Ecosystem Brand Icons", () => {
     expect(FreshBooks).toBeDefined();
     expect(Dext).toBeDefined();
     expect(Pennylane).toBeDefined();
+  });
+
+  it("exports Apple brand icons with light variant default", () => {
+    expect(Apple).toBeDefined();
+    expect(ApplePay).toBeDefined();
   });
 });

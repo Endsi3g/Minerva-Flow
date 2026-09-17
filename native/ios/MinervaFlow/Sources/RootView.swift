@@ -2,7 +2,7 @@ import SwiftUI
 
 private let hasSeenOnboardingKey = "hasSeenTierOnboarding"
 
-private enum RootScreen { case intro, auth, onboarding, main, ownerMain }
+private enum RootScreen { case intro, auth, onboarding, ownerOnboarding, main, ownerMain }
 
 /// Full flow: Intro (brand-new visitor hero) -> AuthView (real login,
 /// matches the web portal exactly) -> OnboardingWelcomeView (tier-status
@@ -55,6 +55,13 @@ struct RootView: View {
                 OwnerMainTabView()
                     .id(RootScreen.ownerMain)
                     .transition(.opacity)
+            case .ownerOnboarding:
+                NativeOwnerOnboardingView {
+                    UserDefaults.standard.set(true, forKey: ownerSetupKey)
+                    transition(to: .ownerMain)
+                }
+                .id(RootScreen.ownerOnboarding)
+                .transition(.opacity)
             }
         }
         .onAppear {
@@ -136,8 +143,16 @@ struct RootView: View {
 
     private func syncScreen() {
         let hasSeenOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
+        let hasCompletedOwnerSetup = UserDefaults.standard.bool(forKey: ownerSetupKey)
+        let ownerHasRealName = supabase.selectedOwnerRestaurant.map { name in
+            let normalized = name.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            return !normalized.isEmpty && normalized != "mon restaurant" && normalized != "minerva flow"
+        } ?? false
+        if supabase.isOwnerExperience && ownerHasRealName && !hasCompletedOwnerSetup {
+            UserDefaults.standard.set(true, forKey: ownerSetupKey)
+        }
         let target: RootScreen = supabase.isAuthenticated
-            ? (supabase.isOwnerExperience ? .ownerMain : (hasSeenOnboarding ? .main : .onboarding))
+            ? (supabase.isOwnerExperience ? ((hasCompletedOwnerSetup || ownerHasRealName) ? .ownerMain : .ownerOnboarding) : (hasSeenOnboarding ? .main : .onboarding))
             : (screen == .auth ? .auth : .intro)
         transition(to: target)
     }
@@ -148,6 +163,11 @@ struct RootView: View {
     private var onboardingKey: String {
         guard let id = supabase.authUserID?.uuidString else { return hasSeenOnboardingKey }
         return "\(hasSeenOnboardingKey).\(id)"
+    }
+
+    private var ownerSetupKey: String {
+        guard let id = supabase.authUserID?.uuidString else { return "hasCompletedOwnerSetup" }
+        return "hasCompletedOwnerSetup.\(id)"
     }
 
     private func transition(to target: RootScreen) {

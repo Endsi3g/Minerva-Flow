@@ -5,7 +5,7 @@ import posthog from "posthog-js";
 import { Link, getPathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Suspense, useState, type FormEvent } from "react";
+import { Suspense, useState, useEffect, type FormEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { Google, Apple } from "@/components/ui/BrandIcons";
@@ -18,11 +18,35 @@ const PANEL_POINTS = [
   { title: "Rapports automatisés", description: "Un résumé de la performance de votre établissement, chaque semaine, sans y penser." },
 ];
 
-function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
+type AuthParams = {
+  referralCode: string | null;
+  inviteToken: string | null;
+  workspaceInviteToken: string | null;
+};
+
+function SearchParamsReader({ onParams }: { onParams: (params: AuthParams) => void }) {
+  const searchParams = useSearchParams();
+  const referralCode = searchParams?.get("ref") ?? null;
+  const inviteToken = searchParams?.get("inviteToken") ?? null;
+  const workspaceInviteToken = searchParams?.get("wInviteToken") ?? null;
+
+  useEffect(() => {
+    onParams({ referralCode, inviteToken, workspaceInviteToken });
+  }, [referralCode, inviteToken, workspaceInviteToken, onParams]);
+
+  return null;
+}
+
+function AuthCardInner({
+  initialMode,
+  authParams,
+}: {
+  initialMode: "login" | "signup";
+  authParams: AuthParams;
+}) {
   const t = useTranslations("auth");
   const locale = useLocale();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [email, setEmail] = useState("");
@@ -31,9 +55,7 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const referralCode = searchParams?.get("ref") ?? null;
-  const inviteToken = searchParams?.get("inviteToken") ?? null;
-  const workspaceInviteToken = searchParams?.get("wInviteToken") ?? null;
+  const { referralCode, inviteToken, workspaceInviteToken } = authParams;
 
   const postAuthPath = workspaceInviteToken
     ? `/invite/w/${workspaceInviteToken}`
@@ -303,15 +325,18 @@ function AuthCardInner({ initialMode }: { initialMode: "login" | "signup" }) {
 }
 
 export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
+  const [params, setParams] = useState<AuthParams>({
+    referralCode: null,
+    inviteToken: null,
+    workspaceInviteToken: null,
+  });
+
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen w-full items-center justify-center bg-mv-cream p-4">
-          <div className="h-[560px] w-full max-w-[440px] animate-pulse rounded-3xl border border-mv-border bg-mv-surface" />
-        </div>
-      }
-    >
-      <AuthCardInner initialMode={initialMode} />
-    </Suspense>
+    <>
+      <Suspense fallback={null}>
+        <SearchParamsReader onParams={setParams} />
+      </Suspense>
+      <AuthCardInner initialMode={initialMode} authParams={params} />
+    </>
   );
 }

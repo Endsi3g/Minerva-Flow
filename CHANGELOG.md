@@ -2,6 +2,13 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.45.0] - 2026-09-17
+
+###  Visibilité de l'icône Apple & Performance de connexion
+- L'icône Apple SVG hérite désormais de `fill="currentColor"` (`variant="light"` par défaut) assurant une lisibilité optimale en encre sombre (`#1A1E16`) sur fond blanc et crème.
+- Optimisation de la redirection racine à l'edge (fast-path 0 ms vers `/login` en l'absence de session), éliminant l'appel réseau bloquant vers Supabase Auth.
+- Pré-rendu statique (SSG) de la page `/login` et chargement asynchrone du shader WebGL (`GrainGradient`) pour un affichage instantané du formulaire.
+
 ## [v2.42.0] - 2026-09-15
 
 ### 📈 Indicateurs propriétaires natifs

@@ -1,8 +1,13 @@
 "use client";
 
-import { GrainGradient } from "@paper-design/shaders-react";
+import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
+
+const GrainGradient = dynamic(
+  () => import("@paper-design/shaders-react").then((mod) => mod.GrainGradient),
+  { ssr: false }
+);
 import { Link } from "@/i18n/navigation";
 import { Logo } from "@/components/shell/Logo";
 import { StepIndicator } from "@/components/ui/onboarding";

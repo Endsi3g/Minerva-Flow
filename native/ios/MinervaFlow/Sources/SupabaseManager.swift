@@ -433,6 +433,25 @@ final class SupabaseManager: ObservableObject {
         await loadOwnerOperations(for: restaurantId)
     }
 
+    /// Persists the required establishment name during the native owner setup
+    /// flow. The authenticated Supabase session and RLS policy remain the
+    /// authority; no demo/local data is written.
+    func updateOwnerRestaurantName(_ name: String) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId else { return false }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        struct Patch: Encodable { let name: String }
+        do {
+            try await client.from("restaurants").update(Patch(name: trimmed)).eq("id", value: restaurantId).execute()
+            await loadOwnerContext()
+            return true
+        } catch {
+            lastError = "Impossible d’enregistrer le nom de l’établissement."
+            print("updateOwnerRestaurantName error: \(error)")
+            return false
+        }
+    }
+
     func refreshOwnerOperations() async {
         guard let restaurantId = selectedOwnerRestaurantId else { return }
         await loadOwnerMetrics()

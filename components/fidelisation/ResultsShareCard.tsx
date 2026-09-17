@@ -6,6 +6,8 @@ export type CardBackground = "brand" | "white" | "black" | "glass-dark" | "glass
 
 export type CardFormat = "post" | "story" | "carousel" | "landscape" | "square" | "sticker" | "lower-third";
 
+export type TextColor = "auto" | "dark" | "white";
+
 export type FooterBadge =
   | { type: "rating"; value: number; reviewCount?: number }
   | { type: "quote"; text: string; author?: string }
@@ -19,6 +21,7 @@ export type ResultsShareCardProps = {
   badges: FooterBadge[];
   background: CardBackground;
   format?: CardFormat;
+  textColor?: TextColor;
   /** Slide index label ("1 / 4") shown next to the logo for carousel exports — omit for single-image formats. */
   slideLabel?: string;
 };
@@ -117,9 +120,27 @@ export function ResultsShareCard({
   badges,
   background,
   format = "post",
+  textColor = "auto",
   slideLabel,
 }: ResultsShareCardProps) {
-  const theme = BACKGROUND_STYLES[background];
+  const baseTheme = BACKGROUND_STYLES[background];
+  const isWhiteText =
+    textColor === "white" ||
+    (textColor === "auto" && (background === "black" || background === "glass-dark"));
+
+  const theme = {
+    ...baseTheme,
+    ink: isWhiteText ? "text-white drop-shadow-sm" : "text-mv-ink",
+    inkSoft: isWhiteText ? "text-white/75" : "text-mv-ink-soft",
+    borderDivider: isWhiteText ? "border-white/15" : "border-black/10",
+    chipBg: isWhiteText ? "bg-white/15 border border-white/10" : "bg-black/[0.06] border border-black/5",
+    heroBox: isWhiteText
+      ? "bg-mv-green border border-white/20 shadow-md"
+      : background === "transparent"
+        ? "bg-mv-green-light/90 backdrop-blur-sm border border-mv-green/30 shadow-sm"
+        : baseTheme.heroBox,
+    heroText: isWhiteText ? "text-white" : baseTheme.heroText,
+  };
 
   // ==========================================
   // Format 1: Lower-Third (Bandeau horizontal pour incrustation vidéo)

@@ -150,7 +150,8 @@
   "notFound": {
     "title": "Page not found",
     "description": "The page you are looking for does not exist or has been moved.",
-    "backHome": "Back to Overview"
+    "backHome": "Back to Overview",
+    "cta": "Back to Overview"
   },
   "finance": {
     "revenue": "Net Revenue",
@@ -227,6 +228,7 @@
     },
     "changelog": {
       "pageTitle": "Changelog Management",
+      "pageDescription": "Publish product updates and keep your team informed.",
       "publish": "Publish Entry",
       "publishSuccess": "Published — all users have been notified.",
       "publishFailed": "Failed to publish.",

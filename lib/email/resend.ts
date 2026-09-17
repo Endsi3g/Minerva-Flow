@@ -62,6 +62,46 @@ const AUTH_ACTION_COPY: Record<string, { subject: string; body: string; cta: str
     body: "Vous avez été invité·e à rejoindre un établissement sur Minerva Flow.",
     cta: "Accepter l'invitation",
   },
+  reauthentication: {
+    subject: "Confirmez votre identité — Minerva Flow",
+    body: "Une confirmation supplémentaire est nécessaire pour continuer.",
+    cta: "Confirmer",
+  },
+  password_changed: {
+    subject: "Votre mot de passe a été modifié — Minerva Flow",
+    body: "Le mot de passe de votre compte vient d’être modifié. Si vous n’êtes pas à l’origine de cette action, contactez immédiatement notre équipe de soutien.",
+    cta: "Ouvrir Minerva Flow",
+  },
+  email_changed: {
+    subject: "Votre adresse courriel a été modifiée — Minerva Flow",
+    body: "L’adresse courriel de votre compte vient d’être modifiée. Si vous n’êtes pas à l’origine de cette action, contactez immédiatement notre équipe de soutien.",
+    cta: "Ouvrir Minerva Flow",
+  },
+  phone_changed: {
+    subject: "Votre numéro a été modifié — Minerva Flow",
+    body: "Le numéro de téléphone de votre compte vient d’être modifié. Si vous n’êtes pas à l’origine de cette action, contactez immédiatement notre équipe de soutien.",
+    cta: "Ouvrir Minerva Flow",
+  },
+  identity_linked: {
+    subject: "Une méthode de connexion a été ajoutée — Minerva Flow",
+    body: "Une nouvelle méthode de connexion vient d’être liée à votre compte.",
+    cta: "Ouvrir Minerva Flow",
+  },
+  identity_unlinked: {
+    subject: "Une méthode de connexion a été retirée — Minerva Flow",
+    body: "Une méthode de connexion vient d’être retirée de votre compte.",
+    cta: "Ouvrir Minerva Flow",
+  },
+  factor_added: {
+    subject: "Une protection supplémentaire a été ajoutée — Minerva Flow",
+    body: "Une méthode d’authentification multifacteur vient d’être ajoutée à votre compte.",
+    cta: "Ouvrir Minerva Flow",
+  },
+  factor_removed: {
+    subject: "Une protection supplémentaire a été retirée — Minerva Flow",
+    body: "Une méthode d’authentification multifacteur vient d’être retirée de votre compte.",
+    cta: "Ouvrir Minerva Flow",
+  },
 };
 
 /**
@@ -83,13 +123,22 @@ export async function sendAuthActionEmail({
   verifyUrl: string;
 }): Promise<{ ok: boolean }> {
   if (!resend) return { ok: false };
-  const copy = AUTH_ACTION_COPY[actionType] ?? AUTH_ACTION_COPY.signup;
+  const copy = AUTH_ACTION_COPY[actionType] ?? {
+    subject: "Notification de sécurité — Minerva Flow",
+    body: "Une action liée à votre compte vient d’être effectuée. Ouvrez Minerva Flow pour la consulter.",
+    cta: "Ouvrir Minerva Flow",
+  };
+
+  const body = `<p>${copy.body}</p>`;
+  const html = verifyUrl
+    ? emailShell(body, copy.cta, verifyUrl)
+    : emailShell(body, copy.cta, APP_ORIGIN);
 
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to,
     subject: copy.subject,
-    html: emailShell(`<p>${copy.body}</p>`, copy.cta, verifyUrl),
+    html,
   });
   return { ok: !error };
 }

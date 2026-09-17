@@ -2,12 +2,14 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Loader2, Wrench, Users, ArrowRight, Check, FileText, Landmark, Gift, Share2, Copy } from "lucide-react";
+import { Camera, Loader2, Wrench, Users, ArrowRight, Check, FileText, Landmark, Gift, Copy, MapPin, TrendingUp } from "lucide-react";
 import { Onboarding, ChoiceGroup, useOnboarding, StepIndicator } from "@/components/ui/onboarding";
 import { Instagram as InstagramIcon } from "@/components/ui/BrandIcons";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Button } from "@/components/ui/Button";
+import { GooglePlacesSearch } from "@/components/places/GooglePlacesSearch";
+import type { RestaurantInput } from "@/lib/data/restaurants";
 import { toast } from "sonner";
 import { ImportMenuPdfModal } from "@/components/menu/ImportMenuPdfModal";
 import { roleLabels } from "@/lib/app-context";
@@ -81,6 +83,7 @@ export function OnboardingWizard({
   const [inviteSent, setInviteSent] = useState(false);
   const [menuImportOpen, setMenuImportOpen] = useState(false);
   const [menuImportedCount, setMenuImportedCount] = useState<number | null>(null);
+  const [googlePlaceLinked, setGooglePlaceLinked] = useState(false);
 
   // Tracks the restaurant once created, separately from the `restaurantId`
   // prop: an account that reaches this step with no restaurant (e.g. an
@@ -123,6 +126,13 @@ export function OnboardingWizard({
     // matches) covers both the newly-created and pre-existing cases.
     await setMyRoleAction(targetRestaurantId, role);
     return null;
+  }
+
+  function handleGooglePlaceSelect(patch: Partial<RestaurantInput>) {
+    if (!currentRestaurantId) return;
+    setGooglePlaceLinked(Boolean(patch.googlePlaceId));
+    void updateRestaurantAction(currentRestaurantId, patch);
+    toast.success("Fiche Google Maps associée", { description: "Adresse et informations publiques enregistrées." });
   }
 
   /**
@@ -332,6 +342,38 @@ export function OnboardingWizard({
             </div>
             <ArrowRight size={16} className="text-mv-ink-faint" />
           </a>
+
+          <div className="rounded-xl border border-mv-border bg-mv-surface p-4">
+            <div className="flex items-start gap-3">
+              <MapPin size={20} className="mt-0.5 text-mv-green-dark" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-semibold text-mv-ink">Fiche Google Maps et visibilité locale</p>
+                <p className="mt-0.5 text-[12px] text-mv-ink-faint">Importez l’adresse publique pour suivre vos avis et votre présence locale.</p>
+                {googlePlaceLinked && <p className="mt-2 text-[12px] font-semibold text-mv-green-dark">✓ Fiche associée</p>}
+                <div className="mt-3"><GooglePlacesSearch onSelect={handleGooglePlaceSelect} /></div>
+                <div className="mt-3 flex items-start gap-2 rounded-lg bg-mv-cream-soft p-3 text-[11.5px] leading-relaxed text-mv-ink-soft">
+                  <TrendingUp size={15} className="mt-0.5 shrink-0 text-mv-green-dark" />
+                  <span><strong>Estimation indicative :</strong> Flow s’appuie uniquement sur les signaux publics de Google (avis, note et présence locale). Nous ne pouvons pas connaître vos dépenses ni vos efforts marketing actuels; aucun chiffre n’est présenté comme une prévision garantie.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-mv-green/25 bg-mv-green/[0.05] p-4">
+            <p className="text-[13.5px] font-semibold text-mv-ink">Besoin d’aller plus loin ?</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">Notre offre Agence peut gérer votre marketing et certaines applications pour vous.</p>
+            <a href="/billing?plan=agency" className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-mv-green-dark hover:underline">Découvrir l’offre Agence <ArrowRight size={14} /></a>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <a href="/api/oauth/instagram?mode=direct" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3 hover:bg-mv-surface">
+              <InstagramIcon size={20} className="text-[#E1306C]" /><span className="text-[12.5px] font-semibold text-mv-ink">Instagram Business</span><ArrowRight size={14} className="ml-auto text-mv-ink-faint" />
+            </a>
+            <a href="/api/oauth/meta" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3 hover:bg-mv-surface">
+              <span className="text-lg font-bold text-[#1877F2]">f</span><span className="text-[12.5px] font-semibold text-mv-ink">Facebook Page</span><ArrowRight size={14} className="ml-auto text-mv-ink-faint" />
+            </a>
+          </div>
+          <p className="text-center text-[11.5px] text-mv-ink-faint">Instagram, Facebook et Google Business Profile sont nos premières intégrations. D’autres canaux pourront être ajoutés ensuite.</p>
 
           {/* Referral Activation Card */}
           {currentRestaurantId && (

@@ -209,6 +209,8 @@ export function IntegrationsView({
         return <Gmail size={22} />;
       case "instagram":
         return <Instagram size={22} />;
+      case "facebook":
+        return <span aria-label="Facebook" className="text-lg font-bold text-[#1877F2]">f</span>;
       default:
         return <Store size={22} className="text-mv-green-dark" />;
     }

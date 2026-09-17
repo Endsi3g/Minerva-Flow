@@ -41,7 +41,8 @@ export type IntegrationItem = {
     | "moneris"
     | "paypal"
     | "apple-pay"
-    | "instagram";
+    | "instagram"
+    | "facebook";
   details?: Record<string, any>;
 };
 
@@ -124,6 +125,9 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
   const googleConnected = Boolean(googleConn?.id);
   const deliveryConnected = Boolean(deliveryConn?.id);
   const instagramConnected = Boolean(instagramConn?.id && instagramConn?.status === "connecte");
+  const facebookConnected = Boolean(
+    instagramConn?.id && instagramConn?.status === "connecte" && instagramConn?.external_account_id
+  );
   const resendConnected = Boolean(process.env.RESEND_API_KEY);
 
   // One card per POS provider that's either configured (env vars present)
@@ -381,6 +385,19 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
       details: {
         compteId: instagramConn?.external_account_id || "Non connecté",
         authentification: "Business Login for Instagram (Direct)",
+      },
+    },
+    {
+      id: "facebook-page",
+      name: "Facebook Page (Meta)",
+      category: "marketing",
+      description: "Publiez vos contenus sur votre Page Facebook et centralisez les interactions via Meta.",
+      status: facebookConnected ? "connected" : "disconnected",
+      connectedAt: facebookConnected && instagramConn?.created_at ? new Date(instagramConn.created_at).toLocaleDateString("fr-CA") : undefined,
+      iconName: "facebook",
+      details: {
+        authentification: "Meta Business Login",
+        compteId: instagramConn?.external_account_id || "Non connecté",
       },
     },
     {

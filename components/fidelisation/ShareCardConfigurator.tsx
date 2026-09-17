@@ -5,7 +5,7 @@ import { toPng } from "html-to-image";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Input, Select, Textarea } from "@/components/minerva/FormField";
-import { ResultsShareCard, type CardBackground, type CardFormat, type FooterBadge } from "@/components/fidelisation/ResultsShareCard";
+import { ResultsShareCard, type CardBackground, type CardFormat, type TextColor, type FooterBadge } from "@/components/fidelisation/ResultsShareCard";
 import type { ShareableMetric } from "@/lib/data/retention-metrics";
 import {
   Download,
@@ -45,6 +45,12 @@ const BACKGROUND_OPTIONS: { id: CardBackground; label: string }[] = [
   { id: "glass-dark", label: "Verre sombre" },
   { id: "glass-light", label: "Verre clair" },
   { id: "transparent", label: "Transparent" },
+];
+
+const TEXT_COLOR_OPTIONS: { id: TextColor; label: string; hint: string }[] = [
+  { id: "auto", label: "Auto", hint: "Selon l'arrière-plan" },
+  { id: "white", label: "Blanc", hint: "Lumière (contraste vidéo)" },
+  { id: "dark", label: "Sombre", hint: "Encre signature" },
 ];
 
 const THUMBNAIL_WIDTH = 92;
@@ -130,6 +136,7 @@ export function ShareCardConfigurator({
   const [statIds, setStatIds] = useState<string[]>(metrics.slice(1, 4).map((m) => m.id));
   const [background, setBackground] = useState<CardBackground>("brand");
   const [format, setFormat] = useState<CardFormat>("post");
+  const [textColor, setTextColor] = useState<TextColor>("auto");
   const [badges, setBadges] = useState<FooterBadge[]>([{ type: "link", url: restaurantUrl }]);
   const [isExporting, setIsExporting] = useState(false);
   const [heroOverride, setHeroOverride] = useState("");
@@ -426,6 +433,38 @@ export function ShareCardConfigurator({
           </div>
         </Card>
 
+        <Card>
+          <CardHeader eyebrow="Export" title="Couleur du texte" description="Basculez en blanc pur pour un contraste maximal sur fond sombre ou vidéo." />
+          <div className="grid grid-cols-3 gap-2">
+            {TEXT_COLOR_OPTIONS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setTextColor(c.id)}
+                className={cn(
+                  "rounded-lg border p-2 text-left transition-colors",
+                  textColor === c.id ? "border-mv-green bg-mv-green-tint" : "border-mv-border-soft hover:bg-mv-cream-soft"
+                )}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "h-2 w-2 rounded-full border shrink-0",
+                      c.id === "white"
+                        ? "bg-white border-mv-ink-faint shadow-xs"
+                        : c.id === "dark"
+                          ? "bg-mv-ink border-mv-ink"
+                          : "bg-gradient-to-r from-mv-ink to-white border-mv-border"
+                    )}
+                  />
+                  <p className="text-[12px] font-bold text-mv-ink">{c.label}</p>
+                </div>
+                <p className="text-[9.5px] text-mv-ink-faint leading-tight mt-1">{c.hint}</p>
+              </button>
+            ))}
+          </div>
+        </Card>
+
         <Card className="flex flex-col items-center space-y-4">
           <div className="flex w-full items-center justify-between border-b border-mv-border-soft pb-2">
             <span className="text-[12px] font-bold uppercase tracking-wider text-mv-green-dark flex items-center gap-1.5">
@@ -454,6 +493,7 @@ export function ShareCardConfigurator({
                   badges={badges}
                   background={background}
                   format={format}
+                  textColor={textColor}
                   slideLabel={format === "carousel" && statsDisplay.length > 0 ? `1 / ${1 + statsDisplay.length}` : undefined}
                 />
               </div>
@@ -492,6 +532,7 @@ export function ShareCardConfigurator({
                       badges={badges}
                       background={background}
                       format={format}
+                      textColor={textColor}
                       slideLabel={`${i + 2} / ${1 + statsDisplay.length}`}
                     />
                   </div>
