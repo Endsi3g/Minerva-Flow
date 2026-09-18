@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>destination</key>
+	<string>export</string>
+	<key>method</key>
+	<string>app-store</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>teamID</key>
+	<string>NHMPLN46TN</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.minervaflow.loyalty</key>
+		<string>Minerva Flow Wallet App Store Distribution</string>
+		<key>com.minervaflow.loyalty.widget</key>
+		<string>Minerva Flow Widget App Store Distribution</string>
+	</dict>
+</dict>
+</plist>
