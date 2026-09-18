@@ -76,8 +76,10 @@ struct MinervaFlowWidgetEntryView: View {
                     rectangularAccessory(for: snapshot)
                 case .accessoryInline:
                     inlineAccessory(for: snapshot)
+                case .systemMedium:
+                    mediumContent(for: snapshot)
                 default:
-                    compactContent(for: snapshot)
+                    smallContent(for: snapshot)
                 }
             } else {
                 emptyState
@@ -86,33 +88,26 @@ struct MinervaFlowWidgetEntryView: View {
         .widgetURL(WidgetDeepLink.home)
     }
 
-    // MARK: - Small / Medium (unchanged design, just renamed)
+    // MARK: - Home screen sizes
 
-    private func compactContent(for snapshot: PointsSnapshot) -> some View {
+    private func smallContent(for snapshot: PointsSnapshot) -> some View {
         let tierColor = Color(hex: snapshot.tierColorHex) ?? emerald
         let foreground: Color = snapshot.tierIsLight ? ink : .white
         return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(foreground.opacity(0.9))
-                Text(snapshot.restaurantName)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(foreground.opacity(0.75))
-                    .lineLimit(1)
-                Spacer()
-                Text(snapshot.tierLabel.uppercased())
-                    .font(.system(size: 8.5, weight: .bold))
-                    .tracking(0.3)
-                    .foregroundStyle(foreground.opacity(0.9))
-            }
-            Spacer(minLength: 2)
+            brandHeader(for: snapshot, foreground: foreground, compact: true)
+            Spacer(minLength: 8)
             Text("\(snapshot.points)")
-                .font(.system(size: family == .systemSmall ? 34 : 40, weight: .bold, design: .rounded))
+                .font(.system(size: 38, weight: .bold, design: .rounded))
                 .foregroundStyle(foreground)
+                .minimumScaleFactor(0.75)
+                .privacySensitive()
             Text("points")
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(foreground.opacity(0.75))
+            Spacer(minLength: 0)
+            Text("Voir mes récompenses")
+                .font(.system(size: 9.5, weight: .semibold))
+                .foregroundStyle(foreground.opacity(0.85))
         }
         .padding(14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -125,28 +120,111 @@ struct MinervaFlowWidgetEntryView: View {
         )
     }
 
+    private func mediumContent(for snapshot: PointsSnapshot) -> some View {
+        let tierColor = Color(hex: snapshot.tierColorHex) ?? emerald
+        let foreground: Color = snapshot.tierIsLight ? ink : .white
+        return HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                brandHeader(for: snapshot, foreground: foreground, compact: false)
+                Spacer(minLength: 5)
+                Text("\(snapshot.points)")
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .foregroundStyle(foreground)
+                    .minimumScaleFactor(0.7)
+                    .privacySensitive()
+                Text("points disponibles")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(foreground.opacity(0.75))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Rectangle()
+                .fill(foreground.opacity(0.2))
+                .frame(width: 1)
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text("PROCHAINE RÉCOMPENSE")
+                    .font(.system(size: 8, weight: .bold))
+                    .tracking(0.35)
+                    .foregroundStyle(foreground.opacity(0.68))
+                if let rewardName = snapshot.nextRewardName, let cost = snapshot.nextRewardPointsCost {
+                    HStack(spacing: 5) {
+                        Image(systemName: "gift.fill").font(.system(size: 10))
+                        Text(rewardName)
+                            .font(.system(size: 11, weight: .semibold))
+                            .lineLimit(2)
+                    }
+                    .foregroundStyle(foreground)
+                    Text("\(cost) pts pour l'obtenir")
+                        .font(.system(size: 9.5, weight: .medium))
+                        .foregroundStyle(foreground.opacity(0.72))
+                } else {
+                    Text("Continuez à visiter votre restaurant")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(foreground.opacity(0.8))
+                        .lineLimit(2)
+                }
+                if let progress = snapshot.nextTierProgress {
+                    ProgressView(value: progress)
+                        .tint(foreground)
+                    Text("\(snapshot.activeOfferTitles.count) offre\(snapshot.activeOfferTitles.count == 1 ? "" : "s") active\(snapshot.activeOfferTitles.count == 1 ? "" : "s")")
+                        .font(.system(size: 9.5, weight: .semibold))
+                        .foregroundStyle(foreground.opacity(0.75))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(colors: [tierColor, MinervaColorFallback.emeraldDark], startPoint: .topLeading, endPoint: .bottomTrailing)
+        )
+    }
+
+    private func brandHeader(for snapshot: PointsSnapshot, foreground: Color, compact: Bool) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "sparkles")
+                .font(.system(size: compact ? 10 : 11, weight: .bold))
+                .foregroundStyle(foreground.opacity(0.9))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("MINERVA FLOW")
+                    .font(.system(size: compact ? 7.5 : 8, weight: .bold))
+                    .tracking(0.55)
+                    .foregroundStyle(foreground.opacity(0.68))
+                Text(snapshot.restaurantName)
+                    .font(.system(size: compact ? 10 : 10.5, weight: .semibold))
+                    .foregroundStyle(foreground.opacity(0.9))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            Text(snapshot.tierLabel.uppercased())
+                .font(.system(size: compact ? 8 : 8.5, weight: .bold))
+                .tracking(0.3)
+                .foregroundStyle(foreground)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .background(foreground.opacity(0.14))
+                .clipShape(Capsule())
+        }
+    }
+
     // MARK: - Large
 
     private func largeContent(for snapshot: PointsSnapshot) -> some View {
         let tierColor = Color(hex: snapshot.tierColorHex) ?? emerald
         let foreground: Color = snapshot.tierIsLight ? ink : .white
         return VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(snapshot.restaurantName)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(foreground.opacity(0.75))
-                    .lineLimit(1)
-                Spacer()
-                Text(snapshot.tierLabel.uppercased())
-                    .font(.system(size: 9.5, weight: .bold))
-                    .tracking(0.3)
-                    .foregroundStyle(foreground.opacity(0.9))
-            }
+            brandHeader(for: snapshot, foreground: foreground, compact: false)
+            Text("VOTRE CARTE FIDÉLITÉ")
+                .font(.system(size: 9, weight: .bold))
+                .tracking(0.7)
+                .foregroundStyle(foreground.opacity(0.65))
 
             Text("\(snapshot.points)")
                 .font(.system(size: 44, weight: .bold, design: .rounded))
                 .foregroundStyle(foreground)
                 .widgetAccentable()
+                .privacySensitive()
             Text("points")
                 .font(.system(size: 11.5, weight: .medium))
                 .foregroundStyle(foreground.opacity(0.75))
@@ -177,19 +255,25 @@ struct MinervaFlowWidgetEntryView: View {
                     .foregroundStyle(foreground)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
-                    .background(foreground.opacity(0.14))
+                    .background(foreground.opacity(0.16))
                     .clipShape(RoundedRectangle(cornerRadius: 9))
                 }
             }
 
-            ForEach(snapshot.activeOfferTitles.prefix(2), id: \.self) { title in
-                HStack(spacing: 6) {
-                    Image(systemName: "tag.fill").font(.system(size: 9))
-                    Text(title)
-                        .font(.system(size: 10.5))
-                        .lineLimit(1)
+            if !snapshot.activeOfferTitles.isEmpty {
+                Text("OFFRES ACTIVES")
+                    .font(.system(size: 8.5, weight: .bold))
+                    .tracking(0.55)
+                    .foregroundStyle(foreground.opacity(0.6))
+                ForEach(snapshot.activeOfferTitles.prefix(2), id: \.self) { title in
+                    HStack(spacing: 6) {
+                        Image(systemName: "tag.fill").font(.system(size: 9))
+                        Text(title)
+                            .font(.system(size: 10.5, weight: .medium))
+                            .lineLimit(1)
+                    }
+                    .foregroundStyle(foreground.opacity(0.85))
                 }
-                .foregroundStyle(foreground.opacity(0.85))
             }
         }
         .padding(16)
@@ -241,14 +325,19 @@ struct MinervaFlowWidgetEntryView: View {
             case .accessoryInline:
                 Text("Minerva Flow")
             default:
-                VStack(spacing: 6) {
+                VStack(spacing: 8) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 20))
-                        .foregroundStyle(inkFaint)
-                    Text("Ouvrez Minerva Flow\npour voir vos points")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(emerald)
+                    Text("Vos points apparaîtront ici")
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(ink)
                         .multilineTextAlignment(.center)
+                    Text("Ouvrez Minerva Flow pour synchroniser votre carte")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(inkFaint)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(cream)
@@ -266,7 +355,7 @@ struct MinervaFlowWidget: Widget {
                 .containerBackground(for: .widget) { Color.clear }
         }
         .configurationDisplayName("Solde de points")
-        .description("Votre solde de points de fidélité Minerva Flow, à même l'écran d'accueil ou verrouillé.")
+        .description("Votre solde, votre niveau et votre prochaine récompense, toujours à portée de main.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
