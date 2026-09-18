@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The tier-status explainer carousel from the Starbucks reference
 /// ("Welcome to the new Starbucks Rewards" -> "Welcome to Green status" ->
@@ -234,10 +235,20 @@ struct OnboardingWelcomeView: View {
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 50))
-                    .foregroundStyle(MinervaColor.limeAccent)
-                    .padding(.vertical, 20)
+                Button {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    page = 1
+                } label: {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 50))
+                        .foregroundStyle(MinervaColor.limeAccent)
+                        .padding(.vertical, 20)
+                        .frame(width: 110, height: 100)
+                        .background(MinervaColor.limeAccent.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 24))
+                }
+                .buttonStyle(PressableButtonStyle())
+                .accessibilityLabel("Voir les avantages Ambassadeur")
             }
 
             Spacer()

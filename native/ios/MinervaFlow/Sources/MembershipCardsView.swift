@@ -5,6 +5,7 @@ import SwiftUI
 /// never merged across establishments.
 struct MembershipCardsView: View {
     @EnvironmentObject private var supabase: SupabaseManager
+    @State private var selectedRestaurantID: String?
 
     var body: some View {
         NavigationStack {
@@ -14,8 +15,27 @@ struct MembershipCardsView: View {
                     if supabase.allMemberships.isEmpty {
                         emptyState
                     } else {
-                        ForEach(supabase.allMemberships) { membership in
-                            membershipCard(membership)
+                        if supabase.allMemberships.count > 1 {
+                            Picker("Carte active", selection: $selectedRestaurantID) {
+                                ForEach(supabase.allMemberships) { membership in
+                                    Text(membership.restaurantName).tag(Optional(membership.restaurantId))
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .tint(MinervaColor.emeraldDark)
+                        }
+
+                        if let selected = selectedMembership {
+                            membershipCard(selected, emphasized: true)
+                        }
+
+                        if supabase.allMemberships.count > 1 {
+                            Text("Toutes vos cartes")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(MinervaColor.ink)
+                            ForEach(supabase.allMemberships.filter { $0.restaurantId != selectedMembership?.restaurantId }) { membership in
+                                membershipCard(membership, emphasized: false)
+                            }
                         }
                     }
                 }
@@ -26,6 +46,18 @@ struct MembershipCardsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .refreshable { await supabase.loadPortalData() }
         }
+        .onAppear { selectDefaultMembershipIfNeeded() }
+        .onChange(of: supabase.allMemberships.count) { _, _ in selectDefaultMembershipIfNeeded() }
+    }
+
+    private var selectedMembership: RestaurantMembership? {
+        guard let selectedRestaurantID else { return supabase.allMemberships.first }
+        return supabase.allMemberships.first { $0.restaurantId == selectedRestaurantID } ?? supabase.allMemberships.first
+    }
+
+    private func selectDefaultMembershipIfNeeded() {
+        guard selectedRestaurantID == nil || !supabase.allMemberships.contains(where: { $0.restaurantId == selectedRestaurantID }) else { return }
+        selectedRestaurantID = supabase.allMemberships.first?.restaurantId
     }
 
     private var header: some View {
@@ -39,7 +71,7 @@ struct MembershipCardsView: View {
         }
     }
 
-    private func membershipCard(_ membership: RestaurantMembership) -> some View {
+    private func membershipCard(_ membership: RestaurantMembership, emphasized: Bool) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 Image(systemName: "storefront.fill")
@@ -67,10 +99,11 @@ struct MembershipCardsView: View {
                 metric(value: currencyString(membership.totalSpent), label: "dépensés")
             }
         }
-        .padding(16)
+        .padding(emphasized ? 18 : 16)
         .background(MinervaColor.creamSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(MinervaColor.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: emphasized ? 20 : 18))
+        .overlay(RoundedRectangle(cornerRadius: emphasized ? 20 : 18).stroke(emphasized ? MinervaColor.emerald.opacity(0.45) : MinervaColor.border, lineWidth: emphasized ? 1.5 : 1))
+        .shadow(color: emphasized ? MinervaColor.emerald.opacity(0.10) : .clear, radius: 12, y: 5)
     }
 
     private func metric(value: String, label: String) -> some View {

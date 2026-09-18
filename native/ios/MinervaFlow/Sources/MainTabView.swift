@@ -30,7 +30,7 @@ struct MainTabView: View {
                 .tag(AppTab.cards)
 
             ProfileView()
-                .tabItem { Label("Profil", systemImage: "person.fill") }
+                .tabItem { Label("Plus", systemImage: "ellipsis.circle.fill") }
                 .tag(AppTab.profile)
         }
         .tint(MinervaColor.emeraldDark)
