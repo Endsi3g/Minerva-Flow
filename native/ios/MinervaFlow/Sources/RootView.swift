@@ -2,7 +2,7 @@ import SwiftUI
 
 private let hasSeenOnboardingKey = "hasSeenTierOnboarding"
 
-private enum RootScreen { case intro, auth, onboarding, ownerOnboarding, main, ownerMain }
+private enum RootScreen { case intro, auth, resolvingSession, onboarding, ownerOnboarding, main, ownerMain }
 
 /// Full flow: Intro (brand-new visitor hero) -> AuthView (real login,
 /// matches the web portal exactly) -> OnboardingWelcomeView (tier-status
@@ -39,6 +39,11 @@ struct RootView: View {
             case .auth:
                 AuthView()
                     .id(RootScreen.auth)
+                    .transition(.opacity)
+            case .resolvingSession:
+                ProgressView("Préparation de votre espace…")
+                    .tint(MinervaColor.emerald)
+                    .id(RootScreen.resolvingSession)
                     .transition(.opacity)
             case .onboarding:
                 OnboardingWelcomeView {
@@ -152,7 +157,7 @@ struct RootView: View {
             UserDefaults.standard.set(true, forKey: ownerSetupKey)
         }
         let target: RootScreen = supabase.isAuthenticated
-            ? (supabase.isOwnerExperience ? ((hasCompletedOwnerSetup || ownerHasRealName) ? .ownerMain : .ownerOnboarding) : (hasSeenOnboarding ? .main : .onboarding))
+            ? (supabase.isResolvingExperience ? .resolvingSession : (supabase.isOwnerExperience ? ((hasCompletedOwnerSetup || ownerHasRealName) ? .ownerMain : .ownerOnboarding) : (hasSeenOnboarding ? .main : .onboarding)))
             : (screen == .auth ? .auth : .intro)
         transition(to: target)
     }

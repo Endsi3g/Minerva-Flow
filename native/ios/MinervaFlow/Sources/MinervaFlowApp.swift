@@ -53,6 +53,11 @@ struct MinervaFlowApp: App {
                 // white-on-cream input text bug came from exactly this).
                 .preferredColorScheme(.light)
                 .onOpenURL { url in
+                    // Supabase's PKCE exchange must consume the callback
+                    // before any app-level deep-link routing. Without this,
+                    // Google returns to Safari/PWA and the native session
+                    // remains unauthenticated.
+                    supabase.client.auth.handle(url)
                     deepLinkRouter.handle(url)
                 }
         }

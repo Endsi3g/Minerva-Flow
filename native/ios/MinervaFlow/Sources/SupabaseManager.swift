@@ -59,6 +59,9 @@ final class SupabaseManager: ObservableObject {
     /// Native owner/manager mode is resolved from the authenticated user's
     /// restaurant membership, never from a client-side flag.
     @Published var isOwnerExperience = false
+    /// Prevents a freshly authenticated owner from briefly seeing the
+    /// customer onboarding while memberships are still being resolved.
+    @Published var isResolvingExperience = false
     @Published var ownerRestaurants: [NativeOwnerRestaurant] = []
     @Published var ownerBranding: NativeOwnerBranding?
     @Published var ownerMetrics = NativeOwnerMetrics()
@@ -83,10 +86,15 @@ final class SupabaseManager: ObservableObject {
             if state.event == .signedIn || state.event == .initialSession {
                 isAuthenticated = state.session != nil
                 authUserID = state.session?.user.id
-                if state.session != nil { await loadPortalData() }
+                if state.session != nil {
+                    isResolvingExperience = true
+                    await loadPortalData()
+                    isResolvingExperience = false
+                }
             } else if state.event == .signedOut {
                 isAuthenticated = false
                 authUserID = nil
+                isResolvingExperience = false
                 customer = nil
                 transactions = []
             }

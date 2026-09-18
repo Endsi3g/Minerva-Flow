@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Mirrors Minerva Flow's web brand (AGENTS.md): cream surfaces, emerald
 /// accent, New York/Playfair serif for headings. Kept as static values
@@ -30,6 +31,10 @@ struct PressableButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .opacity(configuration.isPressed ? 0.9 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                guard pressed else { return }
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
     }
 }
 
