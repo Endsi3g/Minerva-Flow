@@ -46,6 +46,12 @@ struct ProfileView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
+                        moreHeader
+                        if let error = supabase.lastError {
+                            feedbackBanner(icon: "exclamationmark.triangle.fill", title: "Action impossible", message: error, color: .red)
+                        } else if savedTick {
+                            feedbackBanner(icon: "checkmark.circle.fill", title: "Préférences enregistrées", message: "Vos notifications sont à jour.", color: MinervaColor.emerald)
+                        }
                         if let customer = supabase.customer {
                             identityCard(for: customer)
                             favoritesRow
@@ -97,6 +103,38 @@ struct ProfileView: View {
         .sheet(isPresented: $showFavorites) {
             FavoritesView()
         }
+    }
+
+    private var moreHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Plus")
+                    .font(MinervaFont.display(28, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+                Text("Votre compte, vos cartes et vos préférences")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(MinervaColor.inkSoft)
+            }
+            Spacer()
+            Image(systemName: "ellipsis.circle.fill")
+                .font(.system(size: 26))
+                .foregroundStyle(MinervaColor.emerald)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private func feedbackBanner(icon: String, title: String, message: String, color: Color) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon).foregroundStyle(color)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                Text(message).font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(13)
+        .background(color.opacity(0.09))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     // MARK: - Favorites
