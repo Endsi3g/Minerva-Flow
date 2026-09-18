@@ -82,9 +82,6 @@ struct AuthView: View {
                         (Text("Minerva ").foregroundStyle(MinervaColor.ink)
                             + Text("Flow").foregroundStyle(MinervaColor.emeraldDark))
                             .font(.system(size: 16, weight: .bold))
-                    }
-
-                    HStack {
                         Spacer()
                         LanguageMenu(language: Binding(get: { language }, set: { storedLanguage = $0.rawValue }))
                             .environment(\.colorScheme, .light)

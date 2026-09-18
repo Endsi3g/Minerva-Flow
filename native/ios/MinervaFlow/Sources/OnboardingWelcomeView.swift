@@ -41,18 +41,23 @@ struct OnboardingWelcomeView: View {
 
     private var topBar: some View {
         HStack {
-            Button {
-                if page > 0 { page -= 1 }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 15, weight: .semibold))
-                    .frame(width: 36, height: 36)
-                    .background(topBarButtonBackground)
-                    .clipShape(Circle())
+            if page > 0 {
+                Button {
+                    page -= 1
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 36, height: 36)
+                        .background(topBarButtonBackground)
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel("Retour")
+            } else {
+                Image("LogoMark")
+                    .resizable()
+                    .frame(width: 34, height: 34)
+                    .accessibilityLabel("Minerva Flow")
             }
-            .accessibilityLabel("Retour")
-            .accessibilityHidden(page == 0)
-            .opacity(page > 0 ? 1 : 0)
 
             Spacer()
 

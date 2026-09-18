@@ -20,6 +20,7 @@ struct ProfileView: View {
     @State private var showAllHistory = false
     @State private var showSurvey = false
     @State private var showFavorites = false
+    @State private var showCards = false
 
     private enum HistoryFilter: String, CaseIterable {
         case all, earned, redeemed
@@ -55,6 +56,7 @@ struct ProfileView: View {
                         if let customer = supabase.customer {
                             identityCard(for: customer)
                             favoritesRow
+                            cardsRow
                             membershipsSection
                             pointsHistorySection
                             notificationSection
@@ -103,23 +105,36 @@ struct ProfileView: View {
         .sheet(isPresented: $showFavorites) {
             FavoritesView()
         }
+        .sheet(isPresented: $showCards) {
+            MembershipCardsView()
+        }
     }
 
     private var moreHeader: some View {
         HStack(alignment: .center, spacing: 12) {
+            Image("LogoMark")
+                .resizable()
+                .frame(width: 34, height: 34)
             VStack(alignment: .leading, spacing: 3) {
-                Text("Plus")
+                Text("Compte")
                     .font(MinervaFont.display(28, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
-                Text("Votre compte, vos cartes et vos préférences")
+                Text("Votre compte, vos cartes et vos préférences au même endroit")
                     .font(.system(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
             }
             Spacer()
-            Image(systemName: "ellipsis.circle.fill")
-                .font(.system(size: 26))
-                .foregroundStyle(MinervaColor.emerald)
-                .accessibilityHidden(true)
+            Menu {
+                Button("Modifier le profil") { showEditProfile = true }
+                Button("Donner un avis") { showSurvey = true }
+                Divider()
+                Button("Se déconnecter", role: .destructive) { showSignOutConfirm = true }
+            } label: {
+                Image(systemName: "ellipsis.circle.fill")
+                    .font(.system(size: 26))
+                    .foregroundStyle(MinervaColor.emerald)
+            }
+            .accessibilityLabel("Actions du compte")
         }
     }
 
@@ -162,6 +177,32 @@ struct ProfileView: View {
                         .font(.system(size: 12))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(MinervaColor.inkFaint)
+            }
+            .padding(14)
+        }
+        .buttonStyle(.plain)
+        .background(MinervaColor.creamSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var cardsRow: some View {
+        Button { showCards = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "wallet.pass.fill")
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .frame(width: 20)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Mes cartes fidélité")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(MinervaColor.ink)
+                    Text("Consulter vos soldes et ajouter une carte à Apple Wallet")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                }
+                Spacer(minLength: 8)
                 Image(systemName: "chevron.right")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkFaint)

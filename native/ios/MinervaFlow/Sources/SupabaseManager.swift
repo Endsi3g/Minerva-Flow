@@ -1108,6 +1108,23 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    /// Downloads the signed pass for the selected loyalty relationship. The
+    /// request carries the current Supabase bearer token, so the server can
+    /// scope the pass to the authenticated customer instead of trusting a
+    /// client-provided identity.
+    func downloadAppleWalletPass(customerId: String) async -> Data? {
+        do {
+            return try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/wallet/apple")
+                    .appending(queryItems: [URLQueryItem(name: "customerId", value: customerId)])
+            )
+        } catch {
+            lastError = "La carte Apple Wallet n’a pas pu être téléchargée. Réessayez."
+            print("downloadAppleWalletPass error: \(error)")
+            return nil
+        }
+    }
+
     /// Referral programs are read via the bridge for the same reason the
     /// menu is: referral_programs has no customer-facing RLS policy (see
     /// app/api/portal/referrals/route.ts's own doc comment) — a loyalty

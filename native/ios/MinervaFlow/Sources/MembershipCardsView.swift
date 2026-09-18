@@ -1,4 +1,5 @@
 import SwiftUI
+import PassKit
 
 /// The account-level view for customers who belong to more than one
 /// restaurant. Each card is deliberately independent: points and visits are
@@ -6,6 +7,9 @@ import SwiftUI
 struct MembershipCardsView: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @State private var selectedRestaurantID: String?
+    @State private var walletPass: PKPass?
+    @State private var isAddingWalletPass = false
+    @State private var walletError: String?
 
     var body: some View {
         NavigationStack {
@@ -27,6 +31,7 @@ struct MembershipCardsView: View {
 
                         if let selected = selectedMembership {
                             membershipCard(selected, emphasized: true)
+                            walletButton(for: selected)
                         }
 
                         if supabase.allMemberships.count > 1 {
@@ -48,6 +53,12 @@ struct MembershipCardsView: View {
         }
         .onAppear { selectDefaultMembershipIfNeeded() }
         .onChange(of: supabase.allMemberships.count) { _, _ in selectDefaultMembershipIfNeeded() }
+        .sheet(isPresented: Binding(get: { walletPass != nil }, set: { if !$0 { walletPass = nil } })) {
+            if let walletPass {
+                WalletPassSheet(pass: walletPass)
+                    .presentationDetents([.medium, .large])
+            }
+        }
     }
 
     private var selectedMembership: RestaurantMembership? {
@@ -106,6 +117,42 @@ struct MembershipCardsView: View {
         .shadow(color: emphasized ? MinervaColor.emerald.opacity(0.10) : .clear, radius: 12, y: 5)
     }
 
+    private func walletButton(for membership: RestaurantMembership) -> some View {
+        Button {
+            guard !isAddingWalletPass else { return }
+            isAddingWalletPass = true
+            walletError = nil
+            Task {
+                defer { isAddingWalletPass = false }
+                guard let data = await supabase.downloadAppleWalletPass(customerId: membership.customerId),
+                      let pass = try? PKPass(data: data) else {
+                    walletError = "Impossible d’ajouter cette carte pour le moment."
+                    return
+                }
+                walletPass = pass
+            }
+        } label: {
+            HStack(spacing: 8) {
+                if isAddingWalletPass { ProgressView().tint(.white) }
+                Image(systemName: "wallet.pass.fill")
+                Text(isAddingWalletPass ? "Préparation…" : "Ajouter à Apple Wallet")
+            }
+            .font(.system(size: 13, weight: .semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 13)
+        }
+        .foregroundStyle(.white)
+        .background(MinervaColor.ink)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .buttonStyle(PressableButtonStyle())
+        .disabled(isAddingWalletPass)
+        .alert("Apple Wallet", isPresented: Binding(get: { walletError != nil }, set: { if !$0 { walletError = nil } })) {
+            Button("OK", role: .cancel) { walletError = nil }
+        } message: {
+            Text(walletError ?? "")
+        }
+    }
+
     private func metric(value: String, label: String) -> some View {
         VStack(spacing: 3) {
             Text(value).font(.system(size: 14, weight: .semibold)).foregroundStyle(MinervaColor.ink)
@@ -140,4 +187,14 @@ struct MembershipCardsView: View {
         .background(MinervaColor.creamSoft)
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
+}
+
+private struct WalletPassSheet: UIViewControllerRepresentable {
+    let pass: PKPass
+
+    func makeUIViewController(context: Context) -> PKAddPassesViewController {
+        PKAddPassesViewController(pass: pass)!
+    }
+
+    func updateUIViewController(_ controller: PKAddPassesViewController, context: Context) {}
 }
