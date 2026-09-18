@@ -1,7 +1,7 @@
 import Foundation
 
 enum AppTab: Int {
-    case home, order, scan, rewards, profile
+    case home, order, scan, rewards, cards, profile
 }
 
 /// A resolved-later reference to a /t/{code} touchpoint or /p/{code}
@@ -55,6 +55,7 @@ final class DeepLinkRouter: ObservableObject {
 
         switch url.host {
         case "rewards": pendingTab = .rewards
+        case "cards", "mes-cartes": pendingTab = .cards
         case "order", "commander": pendingTab = .order
         case "scan", "scanner": pendingTab = .scan
         case "profile", "profil": pendingTab = .profile

@@ -49,6 +49,7 @@ struct ProfileView: View {
                         if let customer = supabase.customer {
                             identityCard(for: customer)
                             favoritesRow
+                            membershipsSection
                             pointsHistorySection
                             notificationSection
                             consentSection(for: customer)
@@ -203,6 +204,45 @@ struct ProfileView: View {
     }
 
     // MARK: - Points & rewards history
+
+    private var membershipsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Mes cartes et mes points")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+            if supabase.allMemberships.isEmpty {
+                Text("Votre solde apparaîtra ici dès votre première adhésion.")
+                    .font(.system(size: 12.5)).foregroundStyle(MinervaColor.inkSoft)
+            } else {
+                ForEach(supabase.allMemberships) { membership in
+                    HStack(spacing: 12) {
+                        Image(systemName: "storefront.fill")
+                            .foregroundStyle(MinervaColor.emeraldDark)
+                            .frame(width: 22)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(membership.restaurantName).font(.system(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                            Text("\(membership.visitCount) visite\(membership.visitCount == 1 ? "" : "s") · \(currencyString(membership.totalSpent)) dépensés")
+                                .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
+                        }
+                        Spacer()
+                        Text("\(membership.loyaltyPoints) pts")
+                            .font(.system(size: 13, weight: .bold)).foregroundStyle(MinervaColor.emeraldDark)
+                    }
+                    .padding(12)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+        }
+    }
+
+    private func currencyString(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "CAD"
+        formatter.locale = Locale(identifier: "fr_CA")
+        return formatter.string(from: NSNumber(value: value)) ?? "0,00 $"
+    }
 
     /// Every points event (earned or spent) plus every reward redemption
     /// in one place — Home only ever shows a trimmed preview of this same

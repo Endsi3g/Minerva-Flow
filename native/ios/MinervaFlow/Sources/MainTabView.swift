@@ -25,6 +25,10 @@ struct MainTabView: View {
                 .tabItem { Label("Récompenses", systemImage: "gift.fill") }
                 .tag(AppTab.rewards)
 
+            MembershipCardsView()
+                .tabItem { Label("Mes cartes", systemImage: "creditcard.fill") }
+                .tag(AppTab.cards)
+
             ProfileView()
                 .tabItem { Label("Profil", systemImage: "person.fill") }
                 .tag(AppTab.profile)

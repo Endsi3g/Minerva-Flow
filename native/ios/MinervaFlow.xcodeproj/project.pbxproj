@@ -29,6 +29,7 @@
 		5C881A86FC3F7D67D6725336 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D70223A1891BFC32372F3C5 /* Models.swift */; };
 		5F9EF1186433358348AA47D6 /* OwnerOperationsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B92BADD5DDB759E9F1CDAC0 /* OwnerOperationsViews.swift */; };
 		739BE0134385DA87FC3DAD99 /* HomeDataUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF75FB3EE42DD210F4A6BB8D /* HomeDataUITests.swift */; };
+		783C46E5E8524E4302BCDFC8 /* MembershipCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0AD0408180A325B61D0A65 /* MembershipCardsView.swift */; };
 		7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */; };
 		7D3D0D3F93D2E688166D0236 /* PointsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */; };
 		7FCA9536A9FD7FCFF9277DBC /* WriteRestaurantReviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EFC326CA426C0304BAF5FA /* WriteRestaurantReviewSheet.swift */; };
@@ -141,6 +142,7 @@
 		C00B01281C6AA9A4E63B0BF4 /* OfferDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferDetailView.swift; sourceTree = "<group>"; };
 		C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuItemDetailView.swift; sourceTree = "<group>"; };
 		CA484AE32471A39B3214052F /* QRScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
+		CD0AD0408180A325B61D0A65 /* MembershipCardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembershipCardsView.swift; sourceTree = "<group>"; };
 		CD6D80784E1186920D4AFD5F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		CD8113A301B23FEECDBE8EDE /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+TestHelpers.swift"; sourceTree = "<group>"; };
@@ -240,6 +242,7 @@
 				09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */,
 				FA4B0852605EFE3B8B30F88D /* LocationManager.swift */,
 				CD8113A301B23FEECDBE8EDE /* MainTabView.swift */,
+				CD0AD0408180A325B61D0A65 /* MembershipCardsView.swift */,
 				C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */,
 				53C1D3C584B13E05EBD01750 /* MenuView.swift */,
 				810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */,
@@ -514,6 +517,7 @@
 				08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */,
 				C276CD959221FB7F19087810 /* LocationManager.swift in Sources */,
 				1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */,
+				783C46E5E8524E4302BCDFC8 /* MembershipCardsView.swift in Sources */,
 				2C9E95355FE610913FB5ED0B /* MenuItemDetailView.swift in Sources */,
 				442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */,
 				976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */,
