@@ -65,6 +65,7 @@ struct ProfileView: View {
                             aboutSection
                             signOutButton
                             dangerZone
+                            brandFooter
                         } else {
                             NoProfileFoundView()
                                 .padding(.top, 40)
@@ -186,6 +187,20 @@ struct ProfileView: View {
         .buttonStyle(.plain)
         .background(MinervaColor.creamSoft)
         .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var brandFooter: some View {
+        HStack(spacing: 8) {
+            Image("LogoMark")
+                .resizable()
+                .frame(width: 24, height: 24)
+            Text("Minerva Flow")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(MinervaColor.inkFaint)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 8)
+        .padding(.bottom, 16)
     }
 
     private var cardsRow: some View {
