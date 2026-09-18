@@ -2,7 +2,7 @@ import SwiftUI
 
 private let hasSeenOnboardingKey = "hasSeenTierOnboarding"
 
-private enum RootScreen { case intro, auth, resolvingSession, onboarding, ownerOnboarding, main, ownerMain }
+private enum RootScreen { case intro, auth, resolvingSession, resolutionError, onboarding, ownerOnboarding, main, ownerMain }
 
 /// Full flow: Intro (brand-new visitor hero) -> AuthView (real login,
 /// matches the web portal exactly) -> OnboardingWelcomeView (tier-status
@@ -41,9 +41,12 @@ struct RootView: View {
                     .id(RootScreen.auth)
                     .transition(.opacity)
             case .resolvingSession:
-                ProgressView("Préparation de votre espace…")
-                    .tint(MinervaColor.emerald)
+                resolutionView(isError: false)
                     .id(RootScreen.resolvingSession)
+                    .transition(.opacity)
+            case .resolutionError:
+                resolutionView(isError: true)
+                    .id(RootScreen.resolutionError)
                     .transition(.opacity)
             case .onboarding:
                 OnboardingWelcomeView {
@@ -75,6 +78,8 @@ struct RootView: View {
         }
         .onChange(of: supabase.isAuthenticated) { syncScreen() }
         .onChange(of: supabase.isOwnerExperience) { syncScreen() }
+        .onChange(of: supabase.isResolvingExperience) { syncScreen() }
+        .onChange(of: supabase.experienceResolutionError) { syncScreen() }
         // Only ever covers .main — the lock protects the loyalty account's
         // data, not the login/onboarding screens that precede having one.
         .fullScreenCover(isPresented: Binding(
@@ -157,7 +162,7 @@ struct RootView: View {
             UserDefaults.standard.set(true, forKey: ownerSetupKey)
         }
         let target: RootScreen = supabase.isAuthenticated
-            ? (supabase.isResolvingExperience ? .resolvingSession : (supabase.isOwnerExperience ? ((hasCompletedOwnerSetup || ownerHasRealName) ? .ownerMain : .ownerOnboarding) : (hasSeenOnboarding ? .main : .onboarding)))
+            ? (supabase.isResolvingExperience ? .resolvingSession : (supabase.experienceResolutionError != nil ? .resolutionError : (supabase.isOwnerExperience ? ((hasCompletedOwnerSetup || ownerHasRealName) ? .ownerMain : .ownerOnboarding) : (hasSeenOnboarding ? .main : .onboarding))))
             : (screen == .auth ? .auth : .intro)
         transition(to: target)
     }
@@ -179,5 +184,36 @@ struct RootView: View {
         withAnimation(.easeInOut(duration: 0.35)) {
             screen = target
         }
+    }
+
+    @ViewBuilder
+    private func resolutionView(isError: Bool) -> some View {
+        VStack(spacing: 16) {
+            if isError {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.orange)
+                Text("Impossible de préparer votre espace")
+                    .font(MinervaFont.display(24))
+                    .foregroundStyle(MinervaColor.ink)
+                    .multilineTextAlignment(.center)
+                Text(supabase.experienceResolutionError ?? "Réessayez dans un instant.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .multilineTextAlignment(.center)
+                Button("Réessayer") {
+                    Task { await supabase.retryExperienceResolution() }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(MinervaColor.emeraldDark)
+            } else {
+                ProgressView()
+                    .tint(MinervaColor.emerald)
+                Text("Préparation de votre espace…")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(MinervaColor.inkSoft)
+            }
+        }
+        .padding(28)
     }
 }

@@ -62,6 +62,7 @@ final class SupabaseManager: ObservableObject {
     /// Prevents a freshly authenticated owner from briefly seeing the
     /// customer onboarding while memberships are still being resolved.
     @Published var isResolvingExperience = false
+    @Published var experienceResolutionError: String?
     @Published var ownerRestaurants: [NativeOwnerRestaurant] = []
     @Published var ownerBranding: NativeOwnerBranding?
     @Published var ownerMetrics = NativeOwnerMetrics()
@@ -88,13 +89,22 @@ final class SupabaseManager: ObservableObject {
                 authUserID = state.session?.user.id
                 if state.session != nil {
                     isResolvingExperience = true
+                    experienceResolutionError = nil
+                    let watchdog = Task { @MainActor [weak self] in
+                        try? await Task.sleep(nanoseconds: 15_000_000_000)
+                        guard !Task.isCancelled, let self else { return }
+                        self.isResolvingExperience = false
+                        self.experienceResolutionError = "La préparation de votre espace prend trop de temps. Vérifiez votre connexion, puis réessayez."
+                    }
                     await loadPortalData()
+                    watchdog.cancel()
                     isResolvingExperience = false
                 }
             } else if state.event == .signedOut {
                 isAuthenticated = false
                 authUserID = nil
                 isResolvingExperience = false
+                experienceResolutionError = nil
                 customer = nil
                 transactions = []
             }
@@ -306,6 +316,21 @@ final class SupabaseManager: ObservableObject {
             lastError = "La mise à jour a échoué. Vérifiez votre connexion et réessayez."
             print("loadPortalData error: \(error)")
         }
+    }
+
+    func retryExperienceResolution() async {
+        guard isAuthenticated else { return }
+        isResolvingExperience = true
+        experienceResolutionError = nil
+        let watchdog = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            guard !Task.isCancelled, let self else { return }
+            self.isResolvingExperience = false
+            self.experienceResolutionError = "La préparation de votre espace prend trop de temps. Vérifiez votre connexion, puis réessayez."
+        }
+        await loadPortalData()
+        watchdog.cancel()
+        isResolvingExperience = false
     }
 
     /// Loads only the owner surface needed by the native shell. RLS policies

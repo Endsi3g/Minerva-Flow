@@ -10,6 +10,12 @@ import SwiftUI
 /// you in.
 struct IntroView: View {
     let onContinue: () -> Void
+    @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
+
+    private var language: AppLanguage {
+        get { AppLanguage(rawValue: storedLanguage) ?? .fr }
+        set { storedLanguage = newValue.rawValue }
+    }
 
     var body: some View {
         ZStack {
@@ -18,6 +24,10 @@ struct IntroView: View {
             VStack(spacing: 0) {
                 HStack {
                     Spacer()
+                    LanguageMenu(language: Binding(
+                        get: { AppLanguage(rawValue: storedLanguage) ?? .fr },
+                        set: { storedLanguage = $0.rawValue }
+                    ))
                     Image("LogoMark")
                         .resizable()
                         .frame(width: 64, height: 64)
@@ -38,14 +48,14 @@ struct IntroView: View {
                     .foregroundStyle(.white)
                     .padding(.bottom, 28)
 
-                Text("Votre fidélité,\nrécompensée")
+                Text(language == .fr ? "Votre fidélité,\nrécompensée" : "Your loyalty,\nrewarded")
                     .font(MinervaFont.display(34))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.bottom, 12)
 
-                Text("Cumulez des points à chaque visite et échangez-les contre de vraies récompenses.")
+                Text(language == .fr ? "Cumulez des points à chaque visite et échangez-les contre de vraies récompenses." : "Earn points with every visit and exchange them for real rewards.")
                     .font(.system(size: 14.5))
                     .foregroundStyle(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
@@ -56,7 +66,7 @@ struct IntroView: View {
 
                 VStack(spacing: 12) {
                     Button(action: onContinue) {
-                        Text("Commencer")
+                        Text(language == .fr ? "Commencer" : "Get started")
                             .font(.system(size: 15.5, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 15)
@@ -67,7 +77,7 @@ struct IntroView: View {
                     .buttonStyle(PressableButtonStyle())
 
                     Button(action: onContinue) {
-                        Text("Se connecter")
+                        Text(language == .fr ? "Se connecter" : "Sign in")
                             .font(.system(size: 15.5, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 15)

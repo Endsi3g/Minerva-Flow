@@ -18,6 +18,9 @@ import Supabase
 /// instead of static unlinked text next to a checkbox.
 struct AuthView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
+
+    private var language: AppLanguage { AppLanguage(rawValue: storedLanguage) ?? .fr }
 
     @State private var email = ""
     @State private var code = ""
@@ -79,6 +82,13 @@ struct AuthView: View {
                         (Text("Minerva ").foregroundStyle(MinervaColor.ink)
                             + Text("Flow").foregroundStyle(MinervaColor.emeraldDark))
                             .font(.system(size: 16, weight: .bold))
+                    }
+
+                    HStack {
+                        Spacer()
+                        LanguageMenu(language: Binding(get: { language }, set: { storedLanguage = $0.rawValue }))
+                            .environment(\.colorScheme, .light)
+                            .foregroundStyle(MinervaColor.emeraldDark)
                     }
 
                     card
@@ -637,25 +647,25 @@ struct AuthView: View {
 
     private var greetingTitle: String {
         switch authMode {
-        case .code: return "Bienvenue"
-        case .password: return passwordSubMode == .login ? "Content de vous revoir" : "Créer votre compte"
+        case .code: return language == .fr ? "Bienvenue" : "Welcome"
+        case .password: return passwordSubMode == .login ? (language == .fr ? "Content de vous revoir" : "Welcome back") : (language == .fr ? "Créer votre compte" : "Create your account")
         }
     }
 
     private var greetingSubtitle: String {
         switch authMode {
-        case .code: return "Retrouvez vos points, vos récompenses et les offres de vos restaurants préférés."
+        case .code: return language == .fr ? "Retrouvez vos points, vos récompenses et les offres de vos restaurants préférés." : "See your points, rewards, and offers from your favourite restaurants."
         case .password:
             return passwordSubMode == .login
-                ? "Connectez-vous pour accéder à vos points et récompenses."
-                : "Aucune carte requise — rejoignez votre restaurant préféré en quelques secondes."
+                ? (language == .fr ? "Connectez-vous pour accéder à vos points et récompenses." : "Sign in to access your points and rewards.")
+                : (language == .fr ? "Aucune carte requise — rejoignez votre restaurant préféré en quelques secondes." : "No card required — join your favourite restaurant in seconds.")
         }
     }
 
     private var submitTitle: String {
         switch authMode {
-        case .code: return "Recevoir le code"
-        case .password: return passwordSubMode == .signup ? "Créer mon compte" : "Se connecter"
+        case .code: return language == .fr ? "Recevoir le code" : "Send code"
+        case .password: return passwordSubMode == .signup ? (language == .fr ? "Créer mon compte" : "Create account") : (language == .fr ? "Se connecter" : "Sign in")
         }
     }
 

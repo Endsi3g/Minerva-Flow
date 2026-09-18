@@ -8,6 +8,10 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<key>com.apple.developer.pass-type-identifiers</key>
+	<array>
+		<string>$(TeamIdentifierPrefix)pass.com.minervaflow.loyalty</string>
+	</array>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:minervaflow.app</string>

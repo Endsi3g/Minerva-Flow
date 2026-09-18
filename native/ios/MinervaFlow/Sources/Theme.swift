@@ -1,6 +1,41 @@
 import SwiftUI
 import UIKit
 
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case fr, en
+    var id: String { rawValue }
+    var label: String { self == .fr ? "FR" : "EN" }
+    var localeIdentifier: String { self == .fr ? "fr_CA" : "en_CA" }
+}
+
+struct LanguageMenu: View {
+    @Binding var language: AppLanguage
+
+    var body: some View {
+        Menu {
+            ForEach(AppLanguage.allCases) { option in
+                Button {
+                    language = option
+                } label: {
+                    Label(option == .fr ? "Français" : "English", systemImage: language == option ? "checkmark" : "")
+                }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "globe")
+                Text(language.label)
+            }
+            .font(.system(size: 12, weight: .bold))
+            .padding(.horizontal, 11)
+            .padding(.vertical, 8)
+            .background(.white.opacity(0.16))
+            .clipShape(Capsule())
+        }
+        .foregroundStyle(.white)
+        .accessibilityLabel(language == .fr ? "Langue: français" : "Language: English")
+    }
+}
+
 /// Mirrors Minerva Flow's web brand (AGENTS.md): cream surfaces, emerald
 /// accent, New York/Playfair serif for headings. Kept as static values
 /// rather than an asset-catalog color set for the ones that never change
