@@ -7,6 +7,7 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var supabase: SupabaseManager
     @EnvironmentObject var biometricLock: BiometricLock
+    @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
     @State private var frequency = "all"
     @State private var isSavingFrequency = false
     @State private var savedTick = false
@@ -21,6 +22,7 @@ struct ProfileView: View {
     @State private var showSurvey = false
     @State private var showFavorites = false
     @State private var showCards = false
+    @State private var showDiscovery = false
 
     private enum HistoryFilter: String, CaseIterable {
         case all, earned, redeemed
@@ -109,10 +111,13 @@ struct ProfileView: View {
         .sheet(isPresented: $showCards) {
             MembershipCardsView()
         }
+        .sheet(isPresented: $showDiscovery) {
+            RestaurantMapView()
+        }
     }
 
     private var moreHeader: some View {
-        HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
             Image("LogoMark")
                 .resizable()
                 .frame(width: 34, height: 34)
@@ -125,6 +130,11 @@ struct ProfileView: View {
                     .foregroundStyle(MinervaColor.inkSoft)
             }
             Spacer()
+            LanguageMenu(language: Binding(
+                get: { AppLanguage(rawValue: storedLanguage) ?? .fr },
+                set: { storedLanguage = $0.rawValue }
+            ))
+            .foregroundStyle(MinervaColor.emeraldDark)
             Menu {
                 Button("Modifier le profil") { showEditProfile = true }
                 Button("Donner un avis") { showSurvey = true }
@@ -305,8 +315,16 @@ struct ProfileView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             if supabase.allMemberships.isEmpty {
-                Text("Votre solde apparaîtra ici dès votre première adhésion.")
-                    .font(.system(size: 12.5)).foregroundStyle(MinervaColor.inkSoft)
+            Text("Votre solde apparaîtra ici dès votre première adhésion.")
+                .font(.system(size: 12.5)).foregroundStyle(MinervaColor.inkSoft)
+            Button {
+                showDiscovery = true
+            } label: {
+                Label("Découvrir les restaurants près de vous", systemImage: "map.fill")
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(MinervaColor.emeraldDark)
+            }
+            .buttonStyle(.plain)
             } else {
                 ForEach(supabase.allMemberships) { membership in
                     HStack(spacing: 12) {

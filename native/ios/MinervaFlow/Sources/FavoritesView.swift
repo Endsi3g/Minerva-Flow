@@ -61,7 +61,13 @@ struct FavoritesView: View {
             .task {
                 guard !hasLoadedMenu else { return }
                 hasLoadedMenu = true
-                if supabase.menuItems.isEmpty { await supabase.fetchMenu() }
+                // Load both the menu and offers before resolving IDs. The
+                // account badge counts both kinds of favorites; loading only
+                // menu_items made an offer favorite appear to disappear.
+                if supabase.menuItems.isEmpty || supabase.offers.isEmpty {
+                    await supabase.loadPortalData()
+                    if supabase.menuItems.isEmpty { await supabase.fetchMenu() }
+                }
             }
             .sheet(item: $openOffer) { offer in
                 OfferDetailView(offer: offer)

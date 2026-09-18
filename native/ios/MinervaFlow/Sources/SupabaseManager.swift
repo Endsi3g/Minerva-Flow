@@ -304,6 +304,7 @@ final class SupabaseManager: ObservableObject {
             offers = offersResult.filter { $0.isLive }
             redemptions = redemptionsResult
             announcements = announcementsResult
+            lastError = nil
             await fetchRestaurantInfo()
             saveWidgetSnapshot(for: mine)
             await fetchAllMemberships()
@@ -1100,6 +1101,7 @@ final class SupabaseManager: ObservableObject {
             menuItems = decoded.items.filter(\.active)
             taxRate = decoded.taxRate
             acceptsTips = decoded.acceptsTips
+            lastError = nil
         } catch let error as URLError where error.code == .notConnectedToInternet {
             lastError = "Aucune connexion internet. Vérifiez votre réseau et réessayez."
         } catch {
@@ -1251,6 +1253,7 @@ final class SupabaseManager: ObservableObject {
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/discover"))
             nearbyRestaurants = try JSONDecoder().decode(DiscoverListResponse.self, from: data).restaurants
+            lastError = nil
         } catch {
             lastError = "Impossible de charger les restaurants à proximité."
             print("fetchNearbyRestaurants error: \(error)")
