@@ -88,7 +88,6 @@ export const ltvCoreNavItems: NavItem[] = [
 // 1b. Day-to-day operational tools — still top-level for staff/consultant,
 // collapsed under "Gestion quotidienne" for owner/manager (see AppSidebar()).
 export const operationalToolsItems: NavItem[] = [
-  { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
   { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
   { key: "collaborateurs", href: "/collaborateurs", icon: Users, roles: allRoles },
   { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },

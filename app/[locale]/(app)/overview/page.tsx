@@ -99,7 +99,18 @@ export default async function OverviewPage({
       : defaultRestaurantId ?? userRestaurants[0].id;
 
   const { from, to, year, month } = currentMonthRange();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = (() => {
+    try {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Montreal",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date());
+    } catch {
+      return new Date().toISOString().slice(0, 10);
+    }
+  })();
   const weekAheadIso = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
 
   // Single or active restaurant data loading
@@ -181,7 +192,8 @@ export default async function OverviewPage({
     avgBasket: restaurant?.breakEvenAvgBasket ?? BREAK_EVEN_DEFAULTS.avgBasket,
   };
   const { dailyCoversNeeded } = computeBreakEven(breakEvenAssumptions);
-  const todayRevenue = serviceDays.find((d) => d.date === todayIso)?.revenue ?? 0;
+  const matchedToday = serviceDays.find((d) => d.date === todayIso);
+  const todayRevenue = matchedToday ? matchedToday.revenue : (serviceDays[0]?.revenue ?? 0);
   const clientsSoFar = Math.round(todayRevenue / breakEvenAssumptions.avgBasket);
   const dailyTarget = {
     clientsNeeded: dailyCoversNeeded,

@@ -84,6 +84,7 @@ export function LiveAlertsPanel({
   className?: string;
 }) {
   const [alerts, setAlerts] = useState(initial);
+  const [showAll, setShowAll] = useState(false);
 
   useRealtimeAlertSubscription(
     useCallback((row) => {
@@ -91,13 +92,33 @@ export function LiveAlertsPanel({
     }, [])
   );
 
+  const severityRank: Record<AlertSeverity, number> = {
+    critique: 0,
+    important: 1,
+    info: 2,
+  };
+
+  const sortedAlerts = [...alerts].sort((a, b) => {
+    const rankA = severityRank[a.severity] ?? 3;
+    const rankB = severityRank[b.severity] ?? 3;
+    if (rankA !== rankB) return rankA - rankB;
+    return b.date.localeCompare(a.date);
+  });
+
+  const visibleAlerts = showAll ? sortedAlerts : sortedAlerts.slice(0, 3);
+  const hiddenCount = Math.max(0, sortedAlerts.length - 3);
+
   return (
     <Card className={cn("flex flex-col h-full xl:sticky xl:top-6", className)}>
       <CardHeader
         title="Alertes"
-        description={`${alerts.length} à examiner`}
+        description={
+          alerts.length === 0
+            ? "Aucune alerte"
+            : `${alerts.length} à examiner${hiddenCount > 0 && !showAll ? ` · 3 affichées` : ""}`
+        }
         action={
-          <Link href="/settings?tab=alertes" className="text-mv-green-dark hover:text-mv-green transition-colors">
+          <Link href="/settings?tab=alertes" className="text-mv-green-dark hover:text-mv-green transition-colors" title="Paramètres des alertes">
             <ArrowRight size={16} />
           </Link>
         }
@@ -106,40 +127,52 @@ export function LiveAlertsPanel({
         {alerts.length === 0 ? (
           <p className="text-[12.5px] text-mv-ink-faint">Rien à signaler pour l&apos;instant.</p>
         ) : (
-        <div className="space-y-3">
-          {alerts.map((a, i) => {
-            const content = (
-              <>
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <Badge tone={severityTone[a.severity]} dot>
-                    {severityLabel[a.severity]}
-                  </Badge>
-                  <span className="text-[11px] text-mv-ink-faint">{formatDate(a.date)}</span>
+          <div className="space-y-3">
+            {visibleAlerts.map((a, i) => {
+              const content = (
+                <>
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <Badge tone={severityTone[a.severity]} dot>
+                      {severityLabel[a.severity]}
+                    </Badge>
+                    <span className="text-[11px] text-mv-ink-faint">{formatDate(a.date)}</span>
+                  </div>
+                  <p className="text-[13px] font-semibold leading-snug text-mv-ink">{a.title}</p>
+                  <div className="mt-0.5 flex items-end justify-between gap-2">
+                    <p className="text-[12.5px] leading-snug text-mv-ink-soft">{a.detail}</p>
+                    {a.href && (
+                      <ArrowRight size={14} className="mb-0.5 shrink-0 text-mv-green-dark" />
+                    )}
+                  </div>
+                </>
+              );
+              const cardClassName =
+                "mv-animate-in block rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5 transition-colors" +
+                (a.href ? " hover:bg-mv-cream-soft/70 hover:border-mv-border" : "");
+              return a.href ? (
+                <Link key={a.id} href={a.href} style={{ animationDelay: `${220 + i * 50}ms` }} className={cardClassName}>
+                  {content}
+                </Link>
+              ) : (
+                <div key={a.id} style={{ animationDelay: `${220 + i * 50}ms` }} className={cardClassName}>
+                  {content}
                 </div>
-                <p className="text-[13px] font-semibold leading-snug text-mv-ink">{a.title}</p>
-                <div className="mt-0.5 flex items-end justify-between gap-2">
-                  <p className="text-[12.5px] leading-snug text-mv-ink-soft">{a.detail}</p>
-                  {a.href && (
-                    <ArrowRight size={14} className="mb-0.5 shrink-0 text-mv-green-dark" />
-                  )}
-                </div>
-              </>
-            );
-            const cardClassName =
-              "mv-animate-in block rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5 transition-colors" +
-              (a.href ? " hover:bg-mv-cream-soft/70 hover:border-mv-border" : "");
-            return a.href ? (
-              <Link key={a.id} href={a.href} style={{ animationDelay: `${220 + i * 50}ms` }} className={cardClassName}>
-                {content}
-              </Link>
-            ) : (
-              <div key={a.id} style={{ animationDelay: `${220 + i * 50}ms` }} className={cardClassName}>
-                {content}
+              );
+            })}
+
+            {hiddenCount > 0 && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowAll((prev) => !prev)}
+                  className="w-full text-center text-[12px] font-medium text-mv-green-dark hover:underline py-1.5 transition-colors"
+                >
+                  {showAll ? "Réduire aux 3 alertes prioritaires" : `Voir les ${hiddenCount} autre${hiddenCount > 1 ? "s" : ""} alerte${hiddenCount > 1 ? "s" : ""}`}
+                </button>
               </div>
-            );
-          })}
-        </div>
-      )}
+            )}
+          </div>
+        )}
       </div>
     </Card>
   );

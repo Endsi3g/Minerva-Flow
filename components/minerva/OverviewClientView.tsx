@@ -153,7 +153,20 @@ export function OverviewClientView({
   }
 
   // Values for 5 action KPIs
-  const todayRevenue = serviceDays.find((d) => d.date === now.toISOString().slice(0, 10))?.revenue ?? 0;
+  const todayDateStr = (() => {
+    try {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Montreal",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(now);
+    } catch {
+      return now.toISOString().slice(0, 10);
+    }
+  })();
+  const matchedToday = serviceDays.find((d) => d.date === todayDateStr);
+  const todayRevenue = matchedToday ? matchedToday.revenue : (serviceDays[0]?.revenue ?? 0);
   const foodCostPct = kpiComparisons?.foodCost.currentPct ?? 29.5;
   const grossMarginPct = Math.round((100 - foodCostPct) * 10) / 10;
   const laborPct = laborCost?.pct ?? kpiComparisons?.laborCost.currentPct ?? null;
@@ -178,13 +191,14 @@ export function OverviewClientView({
             "Résultats consolidés en temps réel sur l'ensemble de vos établissements avec benchmark de rentabilité."
           ) : (
             <div className="space-y-1">
-              <span className="inline-flex flex-wrap items-center gap-1">
-                {`Marge cumulée du mois : ${formatCurrency(monthMarge)} au ${todayLabel}${
-                  monthMargeIsEstimated ? " (estimée)" : ""
-                }.`}
-                {monthMargeIsEstimated && (
-                  <HelperTooltip content="Vous n'avez pas encore entré de dépenses pour certaines journées — la marge de ces jours-là est estimée à 52,4 % du revenu plutôt que calculée sur vos vrais coûts. Complétez vos fiches recettes et factures pour un calcul certifié." />
-                )}
+              <span className="inline-flex flex-wrap items-center gap-1.5">
+                {`Chiffre d'affaires du mois : ${formatCurrency(monthRevenue ?? 0)} au ${todayLabel}.`}
+                <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2 py-0.5 text-[11px] font-semibold text-mv-green-dark">
+                  <Heart size={11} />
+                  {incrementalRetentionRevenue && incrementalRetentionRevenue > 0
+                    ? `+${formatCurrency(incrementalRetentionRevenue)} via fidélisation`
+                    : "Fidélisation active"}
+                </span>
               </span>
               {(!syncTelemetry || syncTelemetry.sourceType === "pending") && (
                 <div className="flex items-center gap-1.5 text-[11.5px] text-mv-ink-faint">
@@ -256,7 +270,7 @@ export function OverviewClientView({
           {reliabilityOpen && (
             <div className="mt-3.5 border-t border-mv-border-soft pt-3">
               <p className="text-[12px] leading-relaxed text-mv-ink-soft">
-                Minerva Flow affine la précision de vos marges et génère des recommandations proactives dès que vos sources de données de caisse et vos fiches recettes sont complétées.
+                Minerva Flow synchronise automatiquement vos passages en caisse et active vos relances de fidélisation dès que votre établissement est configuré.
               </p>
 
               <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -301,9 +315,11 @@ export function OverviewClientView({
               <p className="font-display text-[20px] font-semibold text-mv-ink leading-tight">
                 {isGroupMode && multiEstablishmentRollup
                   ? formatCurrency(multiEstablishmentRollup.totalMonthRevenue)
-                  : formatCurrency(todayRevenue || monthRevenue || 0)}
+                  : formatCurrency(todayRevenue > 0 ? todayRevenue : (monthRevenue || 0))}
               </p>
-              {kpiComparisons?.revenue.today.changePct != null && (
+              {isGroupMode ? (
+                <p className="text-[11px] text-mv-ink-soft mt-0.5">Consolidé groupe (mois)</p>
+              ) : kpiComparisons?.revenue.today.changePct != null ? (
                 <p className="flex items-center gap-1 text-[11px] text-mv-ink-soft mt-0.5">
                   {kpiComparisons.revenue.today.direction === "up" ? (
                     <span className="flex items-center text-mv-green-dark font-semibold">
@@ -315,7 +331,11 @@ export function OverviewClientView({
                       {kpiComparisons.revenue.today.changePct}%
                     </span>
                   )}
-                  <span>vs hier</span>
+                  <span>vs hier · Mois : {formatCurrency(monthRevenue || 0)}</span>
+                </p>
+              ) : (
+                <p className="text-[11px] text-mv-ink-soft mt-0.5">
+                  Mois : {formatCurrency(monthRevenue || 0)}
                 </p>
               )}
             </div>
@@ -327,27 +347,27 @@ export function OverviewClientView({
             </Link>
           </div>
 
-          {/* KPI 2 : Coût matière */}
+          {/* KPI 2 : Taux de retour (Fidélisation) */}
           <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Coût matière</span>
-              <UtensilsCrossed size={13} className="text-mv-ink-soft" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Taux de retour</span>
+              <Repeat size={13} className="text-mv-green-dark" />
             </div>
             <div className="my-1.5">
               <p className="font-display text-[20px] font-semibold text-mv-ink leading-tight">
-                {isGroupMode && multiEstablishmentRollup
-                  ? `${multiEstablishmentRollup.weightedFoodCostPct}%`
-                  : `${foodCostPct}%`}
+                {loyaltyHealth
+                  ? `${Math.round(((loyaltyHealth.habitue + loyaltyHealth.privilegie + loyaltyHealth.ambassadeur) / Math.max(1, loyaltyHealth.habitue + loyaltyHealth.privilegie + loyaltyHealth.ambassadeur + loyaltyHealth.inactiveCount)) * 100)} %`
+                  : "75 %"}
               </p>
               <p className="text-[11px] text-mv-ink-soft mt-0.5">
-                Marge brute : <strong>{grossMarginPct}%</strong>
+                Habitués actifs : <strong>{loyaltyHealth ? loyaltyHealth.habitue + loyaltyHealth.privilegie + loyaltyHealth.ambassadeur : 15}</strong>
               </p>
             </div>
             <Link
-              href="/menu"
+              href="/fidelisation"
               className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
             >
-              Recettes <ArrowRight size={11} />
+              Fidélisation <ArrowRight size={11} />
             </Link>
           </div>
 
@@ -535,14 +555,13 @@ export function OverviewClientView({
           <div className="mv-animate-in lg:col-span-2">
             <Card className="h-full p-4 sm:p-5">
               <CardHeader
-                eyebrow="Revenus & Marges"
-                title="Évolution du chiffre d'affaires vs marge brute"
-                description="Comparaison des recettes journalières et de la marge brute dégagée — survolez la courbe pour isoler un service."
+                eyebrow="Revenus & Rétention"
+                title="Évolution du chiffre d'affaires quotidien"
+                description="Suivez les recettes journalières et l'activité de vos clients au fil des services."
               />
               <UnifiedTrendChart
                 series={[
-                  { key: "revenu", slug: "revenu", label: "Revenu total", color: "var(--mv-green)", data: revTrend },
-                  { key: "marge", slug: "marge", label: "Marge estimée", color: "var(--mv-lime-dark)", data: margTrend },
+                  { key: "revenu", slug: "revenu", label: "Chiffre d'affaires", color: "var(--mv-green)", data: revTrend },
                 ]}
               />
             </Card>

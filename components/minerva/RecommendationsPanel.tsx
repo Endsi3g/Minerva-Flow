@@ -11,6 +11,7 @@ import { useState } from "react";
 export function RecommendationsPanel({ initial }: { initial: Recommendation[] }) {
   const [recommendations, setRecommendations] = useState(initial);
   const [loading, setLoading] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   async function enhanceWithAi() {
     setLoading(true);
@@ -25,12 +26,29 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
     }
   }
 
+  const sortedRecs = [...recommendations].sort((a, b) => {
+    // Prioritize recommendations with impact estimates
+    const aHasImpact = Boolean(a.impactEstimate);
+    const bHasImpact = Boolean(b.impactEstimate);
+    if (aHasImpact !== bHasImpact) return aHasImpact ? -1 : 1;
+    const aConf = a.confidenceScore ?? 0.8;
+    const bConf = b.confidenceScore ?? 0.8;
+    return bConf - aConf;
+  });
+
+  const visibleRecs = showAll ? sortedRecs : sortedRecs.slice(0, 3);
+  const hiddenCount = Math.max(0, sortedRecs.length - 3);
+
   return (
     <Card>
       <CardHeader
         eyebrow="Assistant Flow AI"
         title="Recommandations & Actions"
-        description={`${recommendations.length} recommandation${recommendations.length > 1 ? "s" : ""} argumentée${recommendations.length > 1 ? "s" : ""} pour améliorer votre rentabilité`}
+        description={
+          recommendations.length === 0
+            ? "Indicateurs sous contrôle"
+            : `${recommendations.length} recommandation${recommendations.length > 1 ? "s" : ""} argumentée${recommendations.length > 1 ? "s" : ""}${hiddenCount > 0 && !showAll ? ` · 3 affichées` : ""}`
+        }
         action={
           <Button size="sm" variant="secondary" onClick={enhanceWithAi} disabled={loading} className="text-[12px]">
             <Sparkles size={13} /> {loading ? "Analyse…" : "Actualiser avec l'IA"}
@@ -48,7 +66,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
         </div>
       ) : (
         <div className="space-y-3.5">
-          {recommendations.map((r) => {
+          {visibleRecs.map((r) => {
             const confidencePct = r.confidenceScore ? Math.round(r.confidenceScore * 100) : 92;
             const targetUrl = r.actionUrl ?? (r.relatedProgramId ? `/programs?id=${r.relatedProgramId}` : r.relatedCampaignId ? "/campaigns" : "/overview");
             const targetLabel = r.actionLabel ?? "Voir le détail";
@@ -131,6 +149,20 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
               </div>
             );
           })}
+
+          {hiddenCount > 0 && (
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={() => setShowAll((prev) => !prev)}
+                className="text-[12.5px] font-medium text-mv-green-dark hover:underline py-1.5 transition-colors"
+              >
+                {showAll
+                  ? "Réduire aux 3 recommandations majeures"
+                  : `Voir les ${hiddenCount} autre${hiddenCount > 1 ? "s" : ""} recommandation${hiddenCount > 1 ? "s" : ""}`}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </Card>
