@@ -159,6 +159,7 @@
     "termsAgreement": "Devam ederek <terms>Kullanım Koşullarını</terms> ve <privacy>Gizlilik Politikasını</privacy> kabul etmiş olursunuz.",
     "errorPasswordMismatch": "Şifreler eşleşmiyor.",
     "errorInvalidCredentials": "Şifre yanlış, tekrar deneyin.",
+    "errorGoogleAccount": "Bu hesap Google ile oluşturuldu. Lütfen yukarıdaki 'Google ile devam et' butonunu kullanın.",
     "errorAlreadyRegistered": "Hesabınız zaten uygulamada oluşturulmuş, lütfen giriş yapın.",
     "errorGeneric": "Bir hata oluştu.",
     "forgotPasswordPage": {

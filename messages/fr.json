@@ -159,6 +159,7 @@
     "termsAgreement": "En continuant, vous acceptez nos <terms>Conditions d'utilisation</terms> et notre <privacy>Politique de confidentialité</privacy>.",
     "errorPasswordMismatch": "Les mots de passe ne correspondent pas.",
     "errorInvalidCredentials": "Le mot de passe n'est pas bon, réessayez.",
+    "errorGoogleAccount": "Ce compte a été créé avec Google. Veuillez continuer avec « Continuer avec Google » ci-dessus.",
     "errorAlreadyRegistered": "Votre compte est déjà créé dans l'application, veuillez vous connecter.",
     "errorGeneric": "Une erreur est survenue.",
     "forgotPasswordPage": {

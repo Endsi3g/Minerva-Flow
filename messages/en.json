@@ -123,6 +123,7 @@
     "searchNoResults": "No results found for \"{query}\".",
     "quickNav": "Quick Navigation",
     "commandEmpty": "No results found.",
+    "searchSuggestedHeading": "Suggested Pages",
     "openChatAria": "Open AI Chat"
   },
   "auth": {
@@ -142,7 +143,42 @@
     "sendingLink": "Sending link...",
     "checkEmail": "Check your email",
     "checkEmailDesc": "A secure sign-in link has been sent to your address.",
-    "backToSignIn": "Back to sign in"
+    "backToSignIn": "Back to sign in",
+    "confirmPasswordLabel": "Confirm password",
+    "submitLogin": "Sign in",
+    "submitLoginLoading": "Signing in…",
+    "submitSignup": "Sign up",
+    "submitSignupLoading": "Signing up…",
+    "orContinueWith": "or continue with",
+    "noAccount": "Don't have an account? ",
+    "hasAccount": "Already have an account? ",
+    "createAccount": "Create an account",
+    "termsAgreement": "By continuing, you agree to our Terms of Service and Privacy Policy.",
+    "errorPasswordMismatch": "Passwords do not match.",
+    "errorInvalidCredentials": "The password or email is incorrect. Please try again.",
+    "errorGoogleAccount": "This account was created with Google. Please click 'Continue with Google' above.",
+    "errorAlreadyRegistered": "An account already exists with this email address. Please sign in.",
+    "errorGeneric": "An unexpected error occurred. Please try again.",
+    "forgotPasswordPage": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email and we'll send you a reset link.",
+      "sendLink": "Send reset link",
+      "sending": "Sending…",
+      "checkEmailTitle": "Check your email",
+      "checkEmailBody": "If an account exists for {email}, you will receive a reset link.",
+      "backToLogin": "Back to login"
+    },
+    "updatePasswordPage": {
+      "title": "New password",
+      "subtitle": "Choose your new password.",
+      "newPasswordLabel": "New password",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "signUpSuccessPage": {
+      "title": "Check your email",
+      "body": "A confirmation link has been sent to your email address."
+    }
   },
   "common": {
     "noRestaurantSelected": "No restaurant selected."

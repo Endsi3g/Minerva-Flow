@@ -11,11 +11,21 @@ import { ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { Google, Apple } from "@/components/ui/BrandIcons";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { cn } from "@/lib/utils";
+import { signUpAction, checkEmailAuthMethodAction } from "@/app/[locale]/sign-up/actions";
 
 const PANEL_POINTS = [
-  { title: "Vue d'ensemble en temps réel", description: "Revenu, marge et anomalies mis à jour à mesure que la journée avance." },
-  { title: "Un copilote IA qui connaît vos chiffres", description: "Posez une question en langage courant, obtenez le graphique et la réponse." },
-  { title: "Rapports automatisés", description: "Un résumé de la performance de votre établissement, chaque semaine, sans y penser." },
+  {
+    title: "75 % à 100 % de revisite client",
+    description: "Faites revenir vos clients sans budget pub grâce aux mécaniques de fidélisation éprouvées.",
+  },
+  {
+    title: "Cartes Apple Wallet & Google Wallet",
+    description: "Aucune application à télécharger pour vos clients : une carte fidélité dans leur téléphone en un tap.",
+  },
+  {
+    title: "Copilote IA & relances automatisées",
+    description: "Détecte les clients qui s'éloignent et envoie la bonne offre au bon moment.",
+  },
 ];
 
 type AuthParams = {
@@ -87,43 +97,59 @@ function AuthCardInner({
       const supabase = createClient();
       if (mode === "login") {
         const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password });
-        if (authErr) throw authErr;
+        if (authErr) {
+          const lowerMsg = authErr.message.toLowerCase();
+          if (lowerMsg.includes("invalid login credentials")) {
+            const methodCheck = await checkEmailAuthMethodAction(email);
+            if (methodCheck.isOAuth && methodCheck.provider === "google") {
+              setError(t("errorGoogleAccount"));
+              setIsLoading(false);
+              return;
+            }
+          }
+          throw authErr;
+        }
         if (data.user) {
           posthog.identify(data.user.id, { email: data.user.email });
           posthog.capture("user_logged_in", { method: "email" });
         }
-        router.push(postAuthPath);
-        router.refresh();
+        window.location.href = localizedPostAuthPath;
       } else {
         if (password !== repeatPassword) throw new Error(t("errorPasswordMismatch"));
-        const signUpMetadata: Record<string, string> = {};
-        if (referralCode) signUpMetadata.referral_code = referralCode;
-        if (inviteToken) signUpMetadata.invite_token = inviteToken;
-        if (workspaceInviteToken) signUpMetadata.workspace_invite_token = workspaceInviteToken;
 
-        const { data, error: authErr } = await supabase.auth.signUp({
+        const signUpRes = await signUpAction({
           email,
           password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/confirm?next=${localizedPostAuthPath}`,
-            data: Object.keys(signUpMetadata).length > 0 ? signUpMetadata : undefined,
-          },
+          referralCode,
+          inviteToken,
+          workspaceInviteToken,
         });
-        if (authErr) throw authErr;
-        if (data.user) {
-          posthog.identify(data.user.id, { email: data.user.email });
+
+        if (!signUpRes.success) {
+          if (signUpRes.error === "ALREADY_REGISTERED") {
+            throw new Error(t("errorAlreadyRegistered"));
+          }
+          throw new Error(signUpRes.message || t("errorGeneric"));
+        }
+
+        // Instant login with confirmed session
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInErr) throw signInErr;
+
+        if (signInData.user) {
+          posthog.identify(signInData.user.id, { email: signInData.user.email });
           posthog.capture("user_signed_up", {
             method: "email",
             has_referral: Boolean(referralCode),
             has_invite: Boolean(inviteToken || workspaceInviteToken),
           });
         }
-        if (data.session) {
-          router.push(postAuthPath);
-          router.refresh();
-        } else {
-          router.push("/sign-up-success");
-        }
+
+        window.location.href = localizedPostAuthPath;
       }
     } catch (err) {
       posthog.captureException(err);
@@ -161,7 +187,11 @@ function AuthCardInner({
     <AuthShell
       step={mode === "signup" ? { current: 1, total: 2, label: "Compte" } : undefined}
       panelKey={mode}
-      panelHeadline={mode === "login" ? "Pilotez votre restaurant, sereinement." : "Vos revenus, votre équipe, votre IA — en un seul endroit."}
+      panelHeadline={
+        mode === "login"
+          ? "Faites revenir vos clients. Pilotez votre fidélisation."
+          : "La fidélisation client nouvelle génération pour cafés et restaurants."
+      }
       panelPoints={PANEL_POINTS}
       footer={
         <p className="text-center text-[11.5px] leading-relaxed text-mv-ink-faint">
@@ -216,7 +246,7 @@ function AuthCardInner({
           <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
             {mode === "login"
               ? "Accédez à votre espace de pilotage."
-              : "Aucune carte requise — configurez votre établissement en deux minutes."}
+              : "Aucune carte requise — démarrez votre programme de fidélité en deux minutes."}
           </p>
 
           {/* Social OAuth (Apple & Google) */}

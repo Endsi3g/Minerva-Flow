@@ -7,7 +7,7 @@ export default async function SignUpSuccessPage() {
   const t = await getTranslations("auth.signUpSuccessPage");
 
   return (
-    <AuthShell panelHeadline="Vos revenus, votre équipe, votre IA — en un seul endroit.">
+    <AuthShell panelHeadline="La fidélisation client nouvelle génération pour cafés et restaurants.">
       <div className="space-y-4 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-mv-green/10 text-mv-green-dark">
           <MailCheck size={24} />
