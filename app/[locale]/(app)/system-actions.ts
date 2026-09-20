@@ -12,13 +12,19 @@ import { notifyRestaurantManagement } from "@/lib/data/notifications";
  * one broken action into two.
  */
 export async function logAppErrorAction(message: string): Promise<void> {
-  const membership = await getCurrentMembership();
-  if (!membership) return;
+  try {
+    const membership = await getCurrentMembership();
+    if (!membership) return;
 
-  await notifyRestaurantManagement({
-    restaurantId: membership.restaurantId,
-    type: "system.error",
-    title: "Erreur dans l'application",
-    body: message,
-  }).catch(() => {});
+    await notifyRestaurantManagement({
+      restaurantId: membership.restaurantId,
+      type: "system.error",
+      title: "Erreur dans l'application",
+      body: message,
+    }).catch(() => {});
+  } catch (err) {
+    // Best-effort: never throws
+    console.warn("[SystemActions] Impossible de journaliser l'erreur utilisateur:", err);
+  }
 }
+

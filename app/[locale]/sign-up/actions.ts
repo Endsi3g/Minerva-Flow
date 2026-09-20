@@ -2,6 +2,9 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
+import * as Sentry from "@sentry/nextjs";
+import { notifyCriticalError } from "@/lib/alerts/error-notifier";
+
 export type SignUpActionResult =
   | { success: true; userId: string }
   | { success: false; error: "ALREADY_REGISTERED" | "GENERIC"; message?: string };
@@ -13,45 +16,74 @@ export async function signUpAction(params: {
   inviteToken?: string | null;
   workspaceInviteToken?: string | null;
 }): Promise<SignUpActionResult> {
-  const email = params.email.trim().toLowerCase();
-  const password = params.password;
+  try {
+    const email = params.email?.trim().toLowerCase();
+    const password = params.password;
 
-  if (!email || !password) {
-    return { success: false, error: "GENERIC", message: "Courriel et mot de passe requis." };
-  }
-
-  const signUpMetadata: Record<string, string> = {};
-  if (params.referralCode) signUpMetadata.referral_code = params.referralCode;
-  if (params.inviteToken) signUpMetadata.invite_token = params.inviteToken;
-  if (params.workspaceInviteToken) signUpMetadata.workspace_invite_token = params.workspaceInviteToken;
-
-  const admin = createAdminClient();
-
-  const { data, error } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: Object.keys(signUpMetadata).length > 0 ? signUpMetadata : undefined,
-  });
-
-  if (error) {
-    const msg = error.message.toLowerCase();
-    if (
-      msg.includes("already registered") ||
-      msg.includes("already exists") ||
-      msg.includes("user with this email") ||
-      error.status === 422
-    ) {
-      return { success: false, error: "ALREADY_REGISTERED" };
+    if (!email || !password) {
+      return { success: false, error: "GENERIC", message: "Courriel et mot de passe requis." };
     }
-    return { success: false, error: "GENERIC", message: error.message };
-  }
 
-  if (!data.user) {
-    return { success: false, error: "GENERIC" };
-  }
+    const signUpMetadata: Record<string, string> = {};
+    if (params.referralCode) signUpMetadata.referral_code = params.referralCode;
+    if (params.inviteToken) signUpMetadata.invite_token = params.inviteToken;
+    if (params.workspaceInviteToken) signUpMetadata.workspace_invite_token = params.workspaceInviteToken;
 
-  return { success: true, userId: data.user.id };
+    const admin = createAdminClient();
+
+    const { data, error } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: Object.keys(signUpMetadata).length > 0 ? signUpMetadata : undefined,
+    });
+
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (
+        msg.includes("already registered") ||
+        msg.includes("already exists") ||
+        msg.includes("user with this email") ||
+        error.status === 422
+      ) {
+        return { success: false, error: "ALREADY_REGISTERED" };
+      }
+
+      // Si c'est une erreur 500 ou problème d'infrastructure Supabase, alerter immédiatement
+      if (error.status && error.status >= 500) {
+        Sentry.captureException(error);
+        void notifyCriticalError({
+          error,
+          source: "server_action",
+          context: "Supabase Auth createUser failure (status >= 500)",
+          userEmail: email,
+        });
+      }
+
+      return { success: false, error: "GENERIC", message: error.message };
+    }
+
+    if (!data.user) {
+      return { success: false, error: "GENERIC", message: "Impossible d'initialiser le compte utilisateur." };
+    }
+
+    return { success: true, userId: data.user.id };
+  } catch (err: unknown) {
+    // Interception défensive absolue contre tout crash serveur inattendu
+    Sentry.captureException(err);
+    void notifyCriticalError({
+      error: err,
+      source: "server_action",
+      context: "signUpAction unhandled exception",
+      userEmail: params.email?.trim().toLowerCase(),
+    });
+
+    return {
+      success: false,
+      error: "GENERIC",
+      message: "Un problème technique temporaire est survenu lors de la création de compte. Veuillez réessayer.",
+    };
+  }
 }
 
 export type CheckAuthMethodResult = {
@@ -60,7 +92,7 @@ export type CheckAuthMethodResult = {
 };
 
 export async function checkEmailAuthMethodAction(email: string): Promise<CheckAuthMethodResult> {
-  const normalized = email.trim().toLowerCase();
+  const normalized = email?.trim().toLowerCase();
   if (!normalized) return { isOAuth: false };
 
   try {
@@ -81,7 +113,8 @@ export async function checkEmailAuthMethodAction(email: string): Promise<CheckAu
       }
     }
   } catch (err) {
-    console.error("Error checking auth method:", err);
+    // Log sans casser la navigation utilisateur
+    console.warn("Avis: Échec de la vérification de méthode OAuth:", err);
   }
 
   return { isOAuth: false };

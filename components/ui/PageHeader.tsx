@@ -34,9 +34,9 @@ export function PageHeader({
           {badge}
         </div>
         {description && (
-          <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-mv-ink-soft">
+          <div className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-mv-ink-soft">
             {description}
-          </p>
+          </div>
         )}
       </div>
       {action && <div className="flex shrink-0 items-center gap-2">{action}</div>}
