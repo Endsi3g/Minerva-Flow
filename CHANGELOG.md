@@ -2,6 +2,26 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.46.0] - 2026-09-20
+
+### 🛡️ Système d'Alerte Critique en Temps Réel & Architecture Défensive
+- **Notification d'erreur critique instantanée** via Resend (`error-notifier.ts`) : toute exception non interceptée (500, panne Supabase, crash Server Action) expédie immédiatement un email éditorial officiel Minerva Flow à l'équipe technique avec diagnostic complet (fingerprint SHA-256, URL, utilisateur, stack trace).
+- **Bouclier anti-spam & déduplication** : fenêtre glissante de 15 minutes par empreinte d'erreur et plafond de 5 emails par 10 minutes pour protéger le quota et éviter l'engorgement.
+- **Interception globale Next.js** dans `instrumentation.ts` via `onRequestError` couplée au tracking Sentry.
+- **Wrapper universel `createSafeAction`** : sécurisation défensive de toutes les Server Actions, garantissant des réponses typées sans crash d'interface côté client.
+- **Écrans d'erreur éditoriaux** : refonte luxueuse de `global-error.tsx` et `error.tsx` avec remédiation guidée en 1 clic et signalement automatique en arrière-plan.
+- **Résilience i18n & deep merge** : fusion profonde avec la locale de secours (`messages/fr.json`) garantissant l'affichage systématique de libellés valides en FR, EN et TR sans clé brute apparente.
+
+### 🔑 Inscription Instantanée & Résolution des Conflits d'Accès
+- **Suppression du mur d'attente d'email à l'inscription** : utilisation de l'Admin API Supabase avec `email_confirm: true` pour connecter instantanément les nouveaux utilisateurs dès la création de leur compte.
+- **Détection proactive des comptes Google OAuth** : guidage contextuel clair invitant l'utilisateur à poursuivre avec Google plutôt que d'afficher une erreur de mot de passe invalide.
+- **Traductions complètes des parcours d'authentification** : intégration des clés d'erreurs et de notifications en français, anglais et turc.
+
+### 🎯 Recentrage Stratégique sur la Fidélisation (LTV)
+- **Restructuration de la navigation propriétaire/gérant** : retrait du module Finance de la barre principale au profit de la Fidélisation et du programme d'habitués.
+- **Redirection permanente `/finance` → `/fidelisation`** : conservation de la conformité et fluidité de parcours pour tous les signets existants.
+- **KPIs de rétention dans l'Overview** : mise en avant du taux de retour client et des paliers de fidélisation (Découverte, Habitué, Privilégié, Ambassadeur).
+
 ## [v2.45.0] - 2026-09-17
 
 ###  Visibilité de l'icône Apple & Performance de connexion
