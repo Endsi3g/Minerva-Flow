@@ -25,6 +25,7 @@ const resend = new Resend(RESEND_API_KEY);
 const SENDER = "Minerva Flow <flow@minervaflow.app>";
 const REPLY_TO = "support@minervaflow.app";
 const APP_LOGIN_URL = "https://minervaflow.app/login";
+const BRAND_LOGO_URL = "https://www.minervaflow.app/icon-192.png";
 
 function generateEditorialEmailHtml({ userName = "" } = {}) {
   const greeting = userName ? `Bonjour ${userName},` : "Bonjour,";
@@ -42,23 +43,30 @@ function generateEditorialEmailHtml({ userName = "" } = {}) {
       <td align="center">
         <!-- Main Card Container -->
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:540px; background-color:#FFFEFA; border:1px solid #E6E0D0; border-radius:24px; box-shadow:0 12px 36px rgba(26, 30, 22, 0.06); overflow:hidden;">
-          <!-- Header Brand Bar -->
+          
+          <!-- Header Brand Bar with Verified Sender Badge -->
           <tr>
-            <td style="padding:36px 36px 20px 36px; text-align:center;">
+            <td style="padding:32px 36px 18px 36px; text-align:center;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
                 <tr>
-                  <td style="vertical-align:middle; padding-right:12px;">
-                    <div style="width:44px; height:44px; background:linear-gradient(135deg, #167F5B 0%, #0E5A40 100%); border-radius:14px; box-shadow:0 4px 14px rgba(22,127,91,0.25); text-align:center; line-height:44px;">
-                      <span style="font-family:'New York', -apple-system-serif, 'Playfair Display', Georgia, serif; font-size:22px; font-weight:700; color:#FFFEFA;">M</span>
-                    </div>
+                  <td style="vertical-align:middle; padding-right:14px;">
+                    <img src="${BRAND_LOGO_URL}" width="48" height="48" alt="Minerva Flow" style="display:block; border-radius:14px; box-shadow:0 6px 18px rgba(22,127,91,0.22); border:1px solid #DCECE3;" />
                   </td>
-                  <td style="vertical-align:middle;">
-                    <span style="font-family:'New York', -apple-system-serif, 'Playfair Display', Georgia, serif; font-size:22px; font-weight:600; letter-spacing:-0.02em; color:#1A1E16;">Minerva Flow</span>
+                  <td style="vertical-align:middle; text-align:left;">
+                    <div style="font-family:'New York', -apple-system-serif, 'Playfair Display', Georgia, serif; font-size:22px; font-weight:600; letter-spacing:-0.02em; color:#1A1E16; line-height:1.2;">
+                      Minerva Flow
+                    </div>
+                    <div style="margin-top:3px;">
+                      <span style="font-size:12px; font-weight:600; color:#167F5B; display:inline-flex; align-items:center;">
+                        <span style="display:inline-block; width:7px; height:7px; background-color:#167F5B; border-radius:50%; margin-right:5px;"></span>
+                        Expéditeur officiel vérifié · flow@minervaflow.app
+                      </span>
+                    </div>
                   </td>
                 </tr>
               </table>
               <div style="margin-top:16px;">
-                <span style="display:inline-block; padding:4px 12px; background-color:#EEF5F0; border:1px solid #DCECE3; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:#167F5B;">
+                <span style="display:inline-block; padding:4px 14px; background-color:#EEF5F0; border:1px solid #DCECE3; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:#167F5B;">
                   Mise à jour v2.46.0 · Correctif déployé
                 </span>
               </div>
@@ -114,10 +122,22 @@ function generateEditorialEmailHtml({ userName = "" } = {}) {
                 Si vous souhaitez un accompagnement personnalisé dans la configuration de votre établissement ou si vous observez le moindre comportement inattendu, répondez simplement à ce courriel : notre équipe est à votre écoute directe.
               </p>
 
-              <p style="margin:16px 0 0 0; font-size:14px; color:#1A1E16;">
-                Bien chaleureusement,<br />
-                <strong>L'équipe Minerva Flow</strong>
-              </p>
+              <!-- Sender Signature Block with Logo -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;">
+                <tr>
+                  <td style="vertical-align:middle; padding-right:12px;">
+                    <img src="${BRAND_LOGO_URL}" width="38" height="38" alt="Minerva Flow" style="display:block; border-radius:10px; border:1px solid #E6E0D0;" />
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <div style="font-size:14px; font-weight:700; color:#1A1E16; line-height:1.2;">
+                      L'équipe Minerva Flow
+                    </div>
+                    <div style="font-size:12px; color:#7D8579; margin-top:2px;">
+                      Direction des opérations · <a href="mailto:${REPLY_TO}" style="color:#167F5B; text-decoration:none;">${REPLY_TO}</a>
+                    </div>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
@@ -128,7 +148,7 @@ function generateEditorialEmailHtml({ userName = "" } = {}) {
                 <strong>Minerva Technologies Inc.</strong> · Montréal (Québec), Canada
               </p>
               <p style="margin:0 0 6px 0;">
-                Ce message de service fait suite à votre inscription sur <a href="https://minervaflow.app" style="color:#167F5B; text-decoration:none;">minervaflow.app</a>.
+                Ce message opérationnel fait suite à votre démarche sur <a href="https://minervaflow.app" style="color:#167F5B; text-decoration:none;">minervaflow.app</a>.
               </p>
               <p style="margin:0;">
                 Support & assistance directe : <a href="mailto:${REPLY_TO}" style="color:#167F5B; text-decoration:none;">${REPLY_TO}</a>
@@ -175,14 +195,14 @@ async function main() {
     const testRecipient = "kbelceus776@gmail.com";
     console.log("🧪 === TEST D'EXPÉDITION PRÉALABLE MINERVA FLOW ===");
     await sendEmail({ to: testRecipient, userName: "Kael" });
-    console.log(`\n🎉 Courriel test expédié avec succès à ${testRecipient}.`);
+    console.log(`\n🎉 Courriel test avec logo officiel expédié avec succès à ${testRecipient}.`);
     return;
   }
 
   if (specificTarget) {
     console.log("🚀 === EXPÉDITION CIBLÉE MINERVA FLOW ===");
     await sendEmail({ to: specificTarget });
-    console.log(`\n🎉 Courriel officiel expédié avec succès à ${specificTarget}.`);
+    console.log(`\n🎉 Courriel officiel avec logo expédié avec succès à ${specificTarget}.`);
     return;
   }
 
