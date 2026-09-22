@@ -5,6 +5,7 @@ import { getCustomersForUser } from "@/lib/data/customer-portal";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { recordMenuView } from "@/lib/data/menu-views";
 import { MenuOrderFlow } from "./MenuOrderFlow";
 
 export default async function PublicMenuPage({
@@ -30,6 +31,9 @@ export default async function PublicMenuPage({
   const supabase = await createClient();
   const [landing, authResult] = await Promise.all([getMenuShareByToken(token), supabase.auth.getUser()]);
   if (!landing) notFound();
+
+  // Record daily menu view asynchronously (fire & forget, never blocks rendering)
+  recordMenuView(landing.restaurantId).catch(() => {});
   const user = authResult.data.user;
   const [offers, shareProgram, siblingLocations, customers] = await Promise.all([
     getActiveOffersForRestaurant(landing.restaurantId),

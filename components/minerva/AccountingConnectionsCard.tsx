@@ -116,13 +116,13 @@ export function AccountingConnectionsCard() {
               return (
                 <div
                   key={service.id}
-                  className="flex items-center justify-between rounded-xl border border-mv-border-soft bg-mv-surface p-3 transition-colors"
+                  className="flex flex-col gap-3 rounded-xl border border-mv-border-soft bg-mv-surface p-3 transition-colors sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-mv-border-soft bg-mv-cream-soft">
                       <Icon width={22} height={22} className="shrink-0" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-[13.5px] font-semibold text-mv-ink">{service.name}</p>
                         {isConnected ? (
@@ -139,7 +139,7 @@ export function AccountingConnectionsCard() {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="self-end sm:self-auto">
                     {isConnected ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2.5 py-1 text-[11px] font-bold text-mv-green-dark">
                         <Check size={12} /> Actif
@@ -172,13 +172,13 @@ export function AccountingConnectionsCard() {
             return (
               <div
                 key={service.id}
-                className="flex items-center justify-between rounded-xl border border-mv-border-soft bg-mv-cream-soft/40 p-3 transition-colors hover:bg-mv-surface"
+                className="flex flex-col gap-3 rounded-xl border border-mv-border-soft bg-mv-cream-soft/40 p-3 transition-colors hover:bg-mv-surface sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-mv-border-soft bg-mv-surface">
                     <Icon width={22} height={22} className="shrink-0" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-[13px] font-semibold text-mv-ink">{service.name}</p>
                       <span className="rounded-md bg-mv-cream px-1.5 py-0.5 text-[10px] font-medium text-mv-ink-faint border border-mv-border-soft">

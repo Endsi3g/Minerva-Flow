@@ -39,6 +39,13 @@ export type Restaurant = {
   busyThreshold: number | null;
   /** "Prêt dans X minutes" base estimate applied to every new order (bumped when busy) — null disables the ETA feature entirely, no order gets an estimate. */
   defaultPrepMinutes: number | null;
+  /** Delivery settings are optional for legacy fixtures/workspaces created before delivery pricing. */
+  deliveryEnabled?: boolean;
+  deliveryBaseFee?: number;
+  deliveryPerKmFee?: number;
+  deliveryFreeKm?: number;
+  deliveryMaxKm?: number;
+  deliveryAverageSpeedKmh?: number;
   // Finance "seuil de rentabilité" simulator assumptions — null until the
   // owner has adjusted the simulator at least once (see BreakEvenSimulator).
   breakEvenFixedCosts: number | null;
@@ -733,7 +740,9 @@ export type OrderPaymentStatus = "non_requis" | "en_attente" | "paye" | "echoue"
  * starts "en_attente"); they only differ in whether staff can start
  * "en_preparation" before the webhook confirms payment.
  */
-export type OrderFulfillmentMode = "immediat" | "sur_place" | "prep_apres_paiement";
+export type OrderFulfillmentMode = "immediat" | "sur_place" | "prep_apres_paiement" | "livraison";
+
+export type OrderSource = "web" | "mobile" | "pos" | "telephone";
 
 export type OrderItem = {
   id: string;
@@ -762,10 +771,15 @@ export type Order = {
   paidAt: string | null;
   readyNotifiedAt: string | null;
   estimatedReadyAt: string | null;
+  deliveryAddress: string | null;
+  deliveryDistanceKm: number | null;
+  deliveryFee: number;
+  deliveryEtaMinutes: number | null;
   notes: string | null;
   customerId: string | null;
   referralLinkId: string | null;
   isPublicRequest: boolean;
+  source?: OrderSource;
   createdAt: string;
   items: OrderItem[];
 };
@@ -992,4 +1006,3 @@ export type EcosystemAppProposal = {
   status: EcosystemProposalStatus;
   createdAt: string;
 };
-

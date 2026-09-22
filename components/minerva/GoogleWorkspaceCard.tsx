@@ -137,7 +137,7 @@ export function GoogleWorkspaceCard() {
                     <Icon width={17} height={17} className="shrink-0" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-mv-ink truncate">{s.label}</p>
+                    <span className="block text-[13px] font-semibold text-mv-ink truncate">{s.label}</span>
                     <p className="text-[11.5px] text-mv-ink-faint truncate leading-tight">{s.description}</p>
                   </div>
                 </div>

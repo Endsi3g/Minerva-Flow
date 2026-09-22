@@ -19,11 +19,11 @@ const PANEL_POINTS = [
     description: "Faites revenir vos clients sans budget pub grâce aux mécaniques de fidélisation éprouvées.",
   },
   {
-    title: "Cartes Apple Wallet & Google Wallet",
-    description: "Aucune application à télécharger pour vos clients : une carte fidélité dans leur téléphone en un tap.",
+    title: "Une appplication mobile pour votre carte de fidelite et votre menu.",
+    description: "Une application simple pour vos clients : une carte fidélité dans leur téléphone en un tap et un menu interactif et des recompenses .",
   },
   {
-    title: "Copilote IA & relances automatisées",
+    title: "Un copilote IA qui analyse vos chiffres et vos clients .",
     description: "Détecte les clients qui s'éloignent et envoie la bonne offre au bon moment.",
   },
 ];
@@ -113,7 +113,8 @@ function AuthCardInner({
           posthog.identify(data.user.id, { email: data.user.email });
           posthog.capture("user_logged_in", { method: "email" });
         }
-        window.location.href = localizedPostAuthPath;
+        router.push(postAuthPath);
+        router.refresh();
       } else {
         if (password !== repeatPassword) throw new Error(t("errorPasswordMismatch"));
 
@@ -149,7 +150,8 @@ function AuthCardInner({
           });
         }
 
-        window.location.href = localizedPostAuthPath;
+        router.push(postAuthPath);
+        router.refresh();
       }
     } catch (err) {
       posthog.captureException(err);
@@ -187,11 +189,7 @@ function AuthCardInner({
     <AuthShell
       step={mode === "signup" ? { current: 1, total: 2, label: "Compte" } : undefined}
       panelKey={mode}
-      panelHeadline={
-        mode === "login"
-          ? "Faites revenir vos clients. Pilotez votre fidélisation."
-          : "La fidélisation client nouvelle génération pour cafés et restaurants."
-      }
+      panelHeadline={mode === "login" ? "Pilotez votre restaurant, sereinement." : "Vos revenus, votre équipe, votre IA — en un seul endroit."}
       panelPoints={PANEL_POINTS}
       footer={
         <p className="text-center text-[11.5px] leading-relaxed text-mv-ink-faint">
@@ -246,7 +244,7 @@ function AuthCardInner({
           <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
             {mode === "login"
               ? "Accédez à votre espace de pilotage."
-              : "Aucune carte requise — démarrez votre programme de fidélité en deux minutes."}
+              : "Aucune carte requise — configurez votre établissement en deux minutes."}
           </p>
 
           {/* Social OAuth (Apple & Google) */}

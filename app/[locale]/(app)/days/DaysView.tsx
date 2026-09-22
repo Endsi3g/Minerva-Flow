@@ -21,7 +21,7 @@ import { useApp } from "@/lib/app-context";
 import { useRouter } from "next/navigation";
 import { formatCurrency, formatDateFull, formatDateWeekday, cn } from "@/lib/utils";
 import type { Anomaly, ServiceDay, ServiceSource } from "@/lib/types";
-import { Plus, Upload, ShoppingBag, Truck, CalendarCheck, CalendarCheck2, Pencil, Trash2 } from "lucide-react";
+import { Plus, Upload, ShoppingBag, Truck, CalendarCheck, CalendarCheck2, Pencil, Trash2, ArrowUpRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -187,9 +187,16 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
           <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">
             {kpis.bestDay ? formatCurrency(kpis.bestDay.revenue) : "—"}
           </p>
-          <p className="mt-0.5 truncate text-[11px] text-mv-ink-faint">
-            {kpis.bestDay ? formatDateWeekday(kpis.bestDay.date) : "—"}
-          </p>
+          {kpis.bestDay ? (
+            <a
+              href={`/days/${kpis.bestDay.id}`}
+              className="mt-0.5 truncate text-left text-[11px] text-mv-ink-faint hover:text-mv-green-dark hover:underline"
+            >
+              {formatDateWeekday(kpis.bestDay.date)}
+            </a>
+          ) : (
+            <p className="mt-0.5 truncate text-[11px] text-mv-ink-faint">—</p>
+          )}
         </Card>
         <Card className="p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Réservations</p>
@@ -202,14 +209,19 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
         <CardHeader
           eyebrow={monthLabel}
           title="Calendrier des revenus"
-          description="Cliquez sur un jour pour filtrer le tableau ci-dessous sur cette journée."
+          description="Cliquez sur une journée pour accéder immédiatement à sa fiche de service dédiée."
         />
         <MonthCalendar
           data={heat}
           selectedDate={selectedDate}
           onSelectDate={(d) => {
-            setSelectedDate(d === selectedDate ? undefined : d);
-            setCurrentPage(1);
+            const matched = days.find((day) => day.date === d);
+            if (matched) {
+              router.push(`/days/${matched.id}`);
+            } else {
+              setSelectedDate(d === selectedDate ? undefined : d);
+              setCurrentPage(1);
+            }
           }}
           eventsByDate={eventsByDate}
         />
@@ -273,7 +285,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
                   <button
                     key={item.key}
                     onClick={() => {
-                      setTimeRange(item.key as any);
+                      setTimeRange(item.key as "7d" | "14d" | "30d" | "all");
                       setCurrentPage(1);
                     }}
                     className={cn(
@@ -347,6 +359,17 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
                     {canEdit && (
                       <Td className="text-right">
                         <div className="flex justify-end gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/days/${d.id}`);
+                            }}
+                            title="Ouvrir la fiche dédiée"
+                            aria-label="Ouvrir la fiche dédiée"
+                            className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-green/10 hover:text-mv-green-dark"
+                          >
+                            <ArrowUpRight size={14} />
+                          </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

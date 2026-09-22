@@ -8,6 +8,7 @@ import { notifyRestaurant } from "@/lib/data/notifications";
 import { formatCurrency } from "@/lib/utils";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
 import { createOrderPaymentIntent } from "@/lib/stripe/connect";
+import { quoteDelivery } from "@/lib/orders/delivery-pricing";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { computeEstimatedReadyAt } from "@/lib/orders/eta";
 import type { CustomerReferralLink, ReferralProgram, OrderFulfillmentMode } from "@/lib/types";
@@ -415,6 +416,9 @@ export type PublicOrderGuestInfo = {
    * otherwise silently falls back to "sur_place".
    */
   fulfillmentMode: OrderFulfillmentMode;
+  deliveryAddress?: string | null;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
   /**
    * Set when the guest tapped "J'en profite" on a live offer before
    * ordering. Offers carry no discount schema (title/description only, see
@@ -528,6 +532,18 @@ export async function submitPublicOrder(
   if (!pricing) return { ok: false };
   const { lineItems, subtotal, taxAmount, tipAmount, total } = pricing;
 
+  const deliveryRequested = guestInfo.fulfillmentMode === "livraison";
+  const deliveryQuote = deliveryRequested
+    ? quoteDelivery(
+        orderSettings.delivery.config,
+        { lat: orderSettings.delivery.restaurantLat, lng: orderSettings.delivery.restaurantLng },
+        { lat: guestInfo.deliveryLatitude ?? null, lng: guestInfo.deliveryLongitude ?? null }
+      )
+    : { available: true, fee: 0, distanceKm: null, etaMinutes: null };
+  if (deliveryRequested && (!guestInfo.deliveryAddress?.trim() || !deliveryQuote.available)) return { ok: false };
+  const deliveryFee = deliveryRequested ? deliveryQuote.fee : 0;
+  const orderTotal = total + deliveryFee;
+
   const referralLinkId = (referralLinkResult.data as { id: string } | null)?.id ?? null;
 
   // A tampered request could ask for a mode the restaurant never enabled
@@ -550,18 +566,25 @@ export async function submitPublicOrder(
     subtotal,
     tax_amount: taxAmount,
     tip_amount: tipAmount,
-    total,
+    total: orderTotal,
     is_public_request: true,
     customer_id: customerId,
     referral_link_id: referralLinkId,
     notes: guestInfo.mentionedOfferTitle ? `Offre mentionnée : ${guestInfo.mentionedOfferTitle}` : null,
     estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
+    delivery_address: deliveryRequested ? guestInfo.deliveryAddress?.trim() : null,
+    delivery_lat: deliveryRequested ? guestInfo.deliveryLatitude ?? null : null,
+    delivery_lng: deliveryRequested ? guestInfo.deliveryLongitude ?? null : null,
+    delivery_distance_km: deliveryRequested ? deliveryQuote.distanceKm : null,
+    delivery_fee: deliveryFee,
+    delivery_eta_minutes: deliveryRequested ? deliveryQuote.etaMinutes : null,
   };
 
   let { data: order, error: orderError } = await admin
     .from("orders")
     .insert({
       ...baseOrderFields,
+      source: "web",
       payment_method: wantsOnlinePayment ? "Carte (en ligne)" : guestInfo.paymentMethod,
       payment_status: wantsOnlinePayment ? "en_attente" : "non_requis",
       fulfillment_mode: fulfillmentMode,
@@ -610,7 +633,7 @@ export async function submitPublicOrder(
     restaurantId,
     type: "order.created",
     title: "Nouvelle commande en ligne",
-    body: `${guestInfo.guestName} — ${formatCurrency(total)}`,
+    body: `${guestInfo.guestName} — ${formatCurrency(orderTotal)}${deliveryRequested ? " · Livraison" : ""}`,
     link: "/commandes",
   });
 
@@ -625,7 +648,7 @@ export async function submitPublicOrder(
       orderId,
       restaurantId,
       connectedAccountId: orderSettings.stripeConnectAccountId,
-      amountCents: Math.round(total * 100),
+      amountCents: Math.round(orderTotal * 100),
     });
     await admin.from("orders").update({ stripe_payment_intent_id: intent.id }).eq("id", orderId);
     return { ok: true, orderId, clientSecret: intent.clientSecret, estimatedReadyAt: estimatedReadyAtIso };

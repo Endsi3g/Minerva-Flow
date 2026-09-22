@@ -352,6 +352,11 @@ const ORDER_MODE_OPTIONS: { value: OrderFulfillmentMode; label: string; hint: st
     label: "Payer en ligne, préparé après confirmation",
     hint: "Comme ci-dessus, mais la cuisine ne commence qu'une fois le paiement confirmé — utile pour les grosses commandes prépayées.",
   },
+  {
+    value: "livraison",
+    label: "Livrer au client",
+    hint: "Ajoute une adresse de livraison et calcule les frais selon la distance. Nécessite le paiement en ligne.",
+  },
 ];
 
 /**
@@ -417,6 +422,51 @@ function OrderModesCard() {
             </div>
           </label>
         ))}
+      </div>
+    </Card>
+  );
+}
+
+function DeliveryPricingCard() {
+  const restaurant = useCurrentRestaurant();
+  const [values, setValues] = useState({ enabled: false, base: "3.99", perKm: "1.25", freeKm: "2", maxKm: "10", speed: "25" });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!restaurant) return;
+    setValues({ enabled: restaurant.deliveryEnabled ?? false, base: String(restaurant.deliveryBaseFee ?? 3.99), perKm: String(restaurant.deliveryPerKmFee ?? 1.25), freeKm: String(restaurant.deliveryFreeKm ?? 2), maxKm: String(restaurant.deliveryMaxKm ?? 10), speed: String(restaurant.deliveryAverageSpeedKmh ?? 25) });
+  }, [restaurant?.id]);
+
+  async function save() {
+    if (!restaurant) return;
+    setSaving(true);
+    const updated = await updateRestaurantAction(restaurant.id, {
+      deliveryEnabled: values.enabled,
+      deliveryBaseFee: Number(values.base),
+      deliveryPerKmFee: Number(values.perKm),
+      deliveryFreeKm: Number(values.freeKm),
+      deliveryMaxKm: Number(values.maxKm),
+      deliveryAverageSpeedKmh: Number(values.speed),
+    });
+    setSaving(false);
+    if (updated) toast.success("Tarification de livraison mise à jour.");
+    else toast.error("La mise à jour a échoué.");
+  }
+
+  if (!restaurant) return null;
+  return (
+    <Card>
+      <CardHeader eyebrow="Commande en ligne" title="Livraison directe" description="Configurez le rayon, le prix de base et le tarif au kilomètre. Le montant est recalculé côté serveur avant Stripe." />
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-[13px] font-medium text-mv-ink"><input type="checkbox" checked={values.enabled} onChange={(e) => setValues((v) => ({ ...v, enabled: e.target.checked }))} /> Activer la livraison</label>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {[["base", "Frais de base"], ["perKm", "$/km supplémentaire"], ["freeKm", "Km inclus"], ["maxKm", "Rayon max (km)"], ["speed", "Vitesse moyenne (km/h)"]].map(([key, label]) => (
+            <Field key={key} label={label}>
+              <Input type="number" min={0} step="0.01" value={values[key as keyof typeof values] as string} onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))} />
+            </Field>
+          ))}
+        </div>
+        <Button onClick={save} disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer la livraison"}</Button>
       </div>
     </Card>
   );
@@ -711,6 +761,7 @@ export default function EtablissementPage() {
       <div className="space-y-8">
         <EstablishmentIdentityCard />
         <OrderModesCard />
+        <DeliveryPricingCard />
         <BusyThresholdCard />
         <PrepTimeCard />
         {restaurant && <DirectOrderingWidgetSection restaurant={restaurant} />}

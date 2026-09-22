@@ -49,6 +49,12 @@ type RestaurantRow = {
   busy_mode_manual: boolean | null;
   busy_threshold: number | null;
   default_prep_minutes: number | null;
+  delivery_enabled: boolean | null;
+  delivery_base_fee: number | null;
+  delivery_per_km_fee: number | null;
+  delivery_free_km: number | null;
+  delivery_max_km: number | null;
+  delivery_average_speed_kmh: number | null;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -93,6 +99,12 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     busyModeManual: row.busy_mode_manual ?? false,
     busyThreshold: row.busy_threshold,
     defaultPrepMinutes: row.default_prep_minutes,
+    deliveryEnabled: row.delivery_enabled ?? false,
+    deliveryBaseFee: row.delivery_base_fee ?? 3.99,
+    deliveryPerKmFee: row.delivery_per_km_fee ?? 1.25,
+    deliveryFreeKm: row.delivery_free_km ?? 2,
+    deliveryMaxKm: row.delivery_max_km ?? 10,
+    deliveryAverageSpeedKmh: row.delivery_average_speed_kmh ?? 25,
   };
 }
 
@@ -305,6 +317,12 @@ export type RestaurantInput = {
   orderModesEnabled?: OrderFulfillmentMode[];
   busyThreshold?: number | null;
   defaultPrepMinutes?: number | null;
+  deliveryEnabled?: boolean;
+  deliveryBaseFee?: number;
+  deliveryPerKmFee?: number;
+  deliveryFreeKm?: number;
+  deliveryMaxKm?: number;
+  deliveryAverageSpeedKmh?: number;
 };
 
 // The 21-day retention inactivity threshold is calibrated for a sit-down
@@ -478,6 +496,12 @@ export async function updateRestaurant(
     dbPatch.default_prep_minutes =
       patch.defaultPrepMinutes !== null && patch.defaultPrepMinutes > 0 ? patch.defaultPrepMinutes : null;
   }
+  if (patch.deliveryEnabled !== undefined) dbPatch.delivery_enabled = patch.deliveryEnabled;
+  if (patch.deliveryBaseFee !== undefined) dbPatch.delivery_base_fee = Math.max(0, patch.deliveryBaseFee);
+  if (patch.deliveryPerKmFee !== undefined) dbPatch.delivery_per_km_fee = Math.max(0, patch.deliveryPerKmFee);
+  if (patch.deliveryFreeKm !== undefined) dbPatch.delivery_free_km = Math.max(0, patch.deliveryFreeKm);
+  if (patch.deliveryMaxKm !== undefined) dbPatch.delivery_max_km = Math.max(0.1, patch.deliveryMaxKm);
+  if (patch.deliveryAverageSpeedKmh !== undefined) dbPatch.delivery_average_speed_kmh = Math.max(1, patch.deliveryAverageSpeedKmh);
 
   // Explicit coordinates (e.g. a Google Places import, authoritative) take
   // priority and skip re-geocoding entirely.

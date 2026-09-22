@@ -49,9 +49,10 @@ export function MonthCalendar({
             <button
               key={i}
               onClick={() => onSelectDate?.(d.date)}
+              title={`Accéder à la journée du ${d.date}`}
               style={{ background: bg }}
               className={cn(
-                "group relative flex h-10 sm:h-12 flex-col items-start justify-between rounded-lg p-1 sm:p-2 text-left transition-transform hover:z-10 hover:scale-[1.06] hover:shadow-mv-md",
+                "group relative flex h-10 sm:h-12 flex-col items-start justify-between rounded-lg p-1 sm:p-2 text-left transition-transform hover:z-10 hover:scale-[1.06] hover:shadow-mv-md cursor-pointer",
                 isSelected && "ring-2 ring-mv-green ring-offset-2 ring-offset-mv-surface"
               )}
             >
@@ -71,8 +72,9 @@ export function MonthCalendar({
                   )}
                 />
               )}
-              <span className="pointer-events-none absolute -top-9 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-mv-ink px-2 py-1 text-[11px] font-medium text-mv-cream-soft opacity-0 shadow-mv-md transition-opacity group-hover:opacity-100">
-                {formatCurrency(d.revenue)}
+              <span className="pointer-events-none absolute -top-9 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-mv-ink px-2 py-1 text-[11px] font-medium text-mv-cream-soft opacity-0 shadow-mv-md transition-opacity group-hover:opacity-100 flex items-center gap-1.5">
+                <span>{formatCurrency(d.revenue)}</span>
+                <span className="text-[10px] text-mv-lime">· Ouvrir ↗</span>
               </span>
             </button>
           );

@@ -3,7 +3,7 @@
 import { useApp } from "@/lib/app-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  LayoutGrid,
   ChevronDown,
   Check,
   Home,
@@ -33,7 +32,6 @@ import {
   CalendarClock,
   CalendarDays,
   Truck,
-  Wallet,
   Heart,
   UtensilsCrossed,
   PackageSearch,
@@ -81,14 +79,13 @@ export const ltvCoreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
   { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
-  { key: "reputation", href: "/reputation", icon: Star, roles: allRoles },
+  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
   { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
 ];
 
 // 1b. Day-to-day operational tools — still top-level for staff/consultant,
 // collapsed under "Gestion quotidienne" for owner/manager (see AppSidebar()).
 export const operationalToolsItems: NavItem[] = [
-  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
   { key: "collaborateurs", href: "/collaborateurs", icon: Users, roles: allRoles },
   { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
 ];
@@ -120,10 +117,6 @@ export const operationalAnalyticsItems: NavItem[] = [
   { key: "programs", href: "/programs", icon: GitCommit, roles: allRoles },
   { key: "library", href: "/library", icon: FolderOpen, roles: allRoles },
 ];
-
-const analyticsItems: NavItem[] = [...ltvAnalyticsItems, ...operationalAnalyticsItems];
-
-const FAVORITES_STORAGE_KEY = "mv-sidebar-favorites";
 
 // 4. Sub settings & help items (with Intégrations inclus)
 export const settingsGroupItems: NavItem[] = [
@@ -278,51 +271,6 @@ function NavLink({
   );
 }
 
-function CollapsibleSection({
-  label,
-  children,
-  defaultOpen = false,
-}: {
-  label: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
-  return (
-    <div className="space-y-1">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between px-2.5 py-1 text-left text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint transition-colors hover:text-mv-ink focus:outline-none"
-      >
-        <span>{label}</span>
-        <motion.span
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="shrink-0"
-        >
-          <ChevronDown size={12} className="opacity-60" />
-        </motion.span>
-      </button>
-
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 350, damping: 40 }}
-            className="overflow-hidden space-y-0.5 pl-2 border-l border-mv-border/40 ml-2.5"
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 import { getRestaurantFaviconUrl } from "@/lib/utils/favicon";
 import { MINERVA_FLOW_ATTRIBUTION } from "@/lib/branding/workspace-branding";
 
@@ -403,40 +351,10 @@ export function AppSidebar() {
     sidebarCollapsed,
     setSidebarCollapsed,
     restaurantId,
-    setRestaurantId,
     restaurants,
   } = useApp();
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
-
-  // Favorites, persisted per-browser — previously in-memory only, so a
-  // removed favorite silently came back on every refresh. Starts empty:
-  // the app's own focus is the LTV core list, not the operational tools
-  // this section used to pre-favorite by default. Read lazily (not in an
-  // effect) so there's no extra render pass just to pick up saved state.
-  const [favoriteKeys, setFavoriteKeys] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const saved = localStorage.getItem(FAVORITES_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const toggleFavorite = (key: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const updated = favoriteKeys.includes(key)
-      ? favoriteKeys.filter((k) => k !== key)
-      : [...favoriteKeys, key];
-    setFavoriteKeys(updated);
-    try {
-      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(updated));
-    } catch {
-      // Ignore — the in-memory state still updates for this session.
-    }
-  };
 
   const allowedByRole = (n: NavItem) =>
     n.roles.includes(role) && (!sidebarPermissions || sidebarPermissions.includes(n.key));
@@ -445,17 +363,12 @@ export function AppSidebar() {
   // who keep real access to build/test it.
   const isFlowAiLocked = (n: NavItem) => n.key === "assistant" && !isPlatformAdmin;
 
-  const allNavItemsList = [...coreNavItems, ...operationsItems, ...analyticsItems, ...settingsGroupItems];
-  const favoriteItems = allNavItemsList.filter((item) => favoriteKeys.includes(item.key) && allowedByRole(item));
-
   // Owner/manager get a condensed, LTV-first core list (Overview, Flow AI,
   // Menu, Fidélisation) with the operational tools one click away in
   // "Gestion quotidienne" — staff/consultant, who need those tools daily,
   // keep the flat combined list unchanged.
   const isLtvFocusedRole = role === "owner" || role === "manager";
   const visibleCoreItems = (isLtvFocusedRole ? ltvCoreNavItems : coreNavItems).filter(allowedByRole);
-  const visibleOperationalToolsItems = isLtvFocusedRole ? operationalToolsItems.filter(allowedByRole) : [];
-  const visibleOperationsItems = operationsItems.filter(allowedByRole);
   // Owner/manager see Impact LTV / Vue franchise as their own small block
   // (not buried inside the generic analytics dropdown alongside non-LTV
   // reporting) — the rest of "Performance & Analyse" stays collapsed by
@@ -475,8 +388,6 @@ export function AppSidebar() {
   const visibleLtvAnalyticsItems = isLtvFocusedRole
     ? ltvAnalyticsItems.filter(allowedByRole).filter((item) => item.key !== "franchise" || hasMultipleRestaurants)
     : [];
-  const visibleAnalyticsItems = (isLtvFocusedRole ? operationalAnalyticsItems : analyticsItems).filter(allowedByRole);
-  const visibleSettingsItems = settingsGroupItems.filter(allowedByRole);
   const hasSettingsAccess = ["owner", "manager"].includes(role);
 
   function closeMobile() {
@@ -547,8 +458,6 @@ export function AppSidebar() {
                     icon={item.icon}
                     active={pathname.startsWith(item.href)}
                     onNavigate={closeMobile}
-                    isFavorite={favoriteKeys.includes(item.key)}
-                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
                     locked={isFlowAiLocked(item)}
                     lockedTooltip="Bientôt disponible"
                   />
@@ -561,8 +470,6 @@ export function AppSidebar() {
                     icon={item.icon}
                     active={pathname.startsWith(item.href)}
                     onNavigate={closeMobile}
-                    isFavorite={favoriteKeys.includes(item.key)}
-                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
                   />
                 ))}
                 {visibleCoreItems.slice(2).map((item) => (
@@ -573,8 +480,6 @@ export function AppSidebar() {
                     icon={item.icon}
                     active={pathname.startsWith(item.href)}
                     onNavigate={closeMobile}
-                    isFavorite={favoriteKeys.includes(item.key)}
-                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
                   />
                 ))}
               </>
@@ -587,165 +492,23 @@ export function AppSidebar() {
                   icon={item.icon}
                   active={pathname.startsWith(item.href)}
                   onNavigate={closeMobile}
-                  isFavorite={favoriteKeys.includes(item.key)}
-                  onToggleFavorite={(e) => toggleFavorite(item.key, e)}
                   locked={isFlowAiLocked(item)}
                   lockedTooltip="Bientôt disponible"
                 />
               ))
             )}
             </div>
-
-            {/* Gestion quotidienne — collapsed operational tools for owner/manager */}
-            {visibleOperationalToolsItems.length > 0 && (
-              <CollapsibleSection
-                label={t("sectionOperationalTools")}
-                defaultOpen={visibleOperationalToolsItems.some((item) => pathname.startsWith(item.href))}
-              >
-                {visibleOperationalToolsItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    href={item.href}
-                    label={t(navTranslationKeys[item.key] || item.key)}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                    isFavorite={favoriteKeys.includes(item.key)}
-                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
-                  />
-                ))}
-              </CollapsibleSection>
-            )}
-
-            {/* Dynamic Favorites Section */}
-            {favoriteItems.length > 0 && (
-              <CollapsibleSection
-                label={t("sectionFavorites")}
-                defaultOpen={true}
-              >
-                {favoriteItems.map((item) => (
-                  <NavLink
-                    key={`fav-${item.key}`}
-                    href={item.href}
-                    label={t(navTranslationKeys[item.key] || item.key)}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                    isFavorite={true}
-                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
-                  />
-                ))}
-              </CollapsibleSection>
-            )}
-
-            {/* Performance & Analytics Section — forced open for staff/consultant
-                (unchanged prior behavior); collapsed by default for owner/manager
-                now that it's non-LTV-only content, same treatment as every other
-                secondary group. */}
-            {visibleAnalyticsItems.length > 0 && (
-              <CollapsibleSection
-                label="Performance & Analyse"
-                defaultOpen={!isLtvFocusedRole || visibleAnalyticsItems.some((item) => pathname.startsWith(item.href))}
-              >
-                {visibleAnalyticsItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    href={item.href}
-                    label={t(navTranslationKeys[item.key] || item.key)}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                    isFavorite={favoriteKeys.includes(item.key)}
-                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
-                  />
-                ))}
-              </CollapsibleSection>
-            )}
-
-            {/* Opérations Section */}
-            {visibleOperationsItems.length > 0 && (
-              <CollapsibleSection
-                label={t("sectionOperations")}
-                defaultOpen={visibleOperationsItems.some((item) => pathname.startsWith(item.href))}
-              >
-                {visibleOperationsItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    href={item.href}
-                    label={t(navTranslationKeys[item.key] || item.key)}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                    isFavorite={favoriteKeys.includes(item.key)}
-                    onToggleFavorite={(e) => toggleFavorite(item.key, e)}
-                  />
-                ))}
-              </CollapsibleSection>
-            )}
-
-            {/* Teams / Restaurants Section */}
-            <div className="space-y-1 pt-1">
-              <p className="px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                {t("sectionTeams")}
-              </p>
-              <div className="space-y-0.5">
-                {restaurants.map((r) => {
-                  const isCurrent = r.id === restaurantId;
-                  const letter = r.name.replace("Minerva — ", "").charAt(0).toUpperCase();
-                  return (
-                    <button
-                      key={r.id}
-                      onClick={() => {
-                        setRestaurantId(r.id);
-                        closeMobile();
-                      }}
-                      className={cn(
-                        "flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium transition-all duration-150",
-                        isCurrent
-                          ? "bg-mv-green/10 text-mv-green-dark font-semibold"
-                          : "text-mv-ink-soft hover:bg-mv-ink/[0.06] hover:text-mv-ink"
-                      )}
-                    >
-                      <span
-                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white transition-all"
-                        style={{ backgroundColor: r.color || "#6341F0" }}
-                      >
-                        {letter}
-                      </span>
-                      <span className="truncate">{r.name.replace("Minerva — ", "")}</span>
-                    </button>
-                  );
-                })}
-                <NavLink
-                  href="/etablissement"
-                  label={t("allTeams")}
-                  icon={LayoutGrid}
-                  active={pathname.startsWith("/etablissement")}
-                  onNavigate={closeMobile}
-                />
-              </div>
-            </div>
           </div>
 
           {/* Settings Section at the bottom */}
-          <div className="border-t border-mv-border p-2.5 space-y-1.5">
-            {visibleSettingsItems.length > 0 && (
-              <CollapsibleSection
-                label={t("sectionSettingsMore")}
-                defaultOpen={visibleSettingsItems.some((item) => pathname.startsWith(item.href))}
-              >
-                {visibleSettingsItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    href={item.href}
-                    label={t(navTranslationKeys[item.key] || item.key)}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                  />
-                ))}
-              </CollapsibleSection>
-            )}
+          <div className="border-t border-mv-border p-2.5 space-y-1">
+            <NavLink
+              href="/integrations"
+              label={t("integrations")}
+              icon={Zap}
+              active={pathname.startsWith("/integrations")}
+              onNavigate={closeMobile}
+            />
 
             {isPlatformAdmin && (
               <NavLink
@@ -767,7 +530,9 @@ export function AppSidebar() {
               />
             )}
 
-            <LocaleSwitcher />
+            <div className="pt-1">
+              <LocaleSwitcher />
+            </div>
             <p className="px-2.5 pt-1 text-center text-[10px] font-medium tracking-wide text-mv-ink-faint">
               {MINERVA_FLOW_ATTRIBUTION}
             </p>

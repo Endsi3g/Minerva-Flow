@@ -14,6 +14,7 @@ import { formatCurrency, roundToCents, cn } from "@/lib/utils";
 import { InstallAppPrompt } from "@/components/pwa/InstallAppPrompt";
 import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
 import type { MenuItem, Offer, OrderFulfillmentMode } from "@/lib/types";
+import { quoteDelivery, type DeliveryPricingConfig } from "@/lib/orders/delivery-pricing";
 import type { PublicMenuLanding, SiblingLocation } from "@/lib/data/menu-shares";
 import { Map as MapView, MapControls, MapMarker, MarkerContent, MarkerLabel, MarkerPopup } from "@/components/ui/map";
 import Link from "next/link";
@@ -46,6 +47,7 @@ const FULFILLMENT_MODE_LABEL: Record<OrderFulfillmentMode, string> = {
   sur_place: "Sur place",
   immediat: "En ligne maintenant",
   prep_apres_paiement: "En ligne (prêt après paiement)",
+  livraison: "Livraison",
 };
 
 function CheckoutModal({
@@ -65,6 +67,7 @@ function CheckoutModal({
   shareProgramId,
   restaurantName,
   mentionedOfferTitle,
+  delivery,
 }: {
   open: boolean;
   onClose: () => void;
@@ -82,6 +85,7 @@ function CheckoutModal({
   shareProgramId: string | null;
   restaurantName: string;
   mentionedOfferTitle: string | null;
+  delivery: { config: DeliveryPricingConfig; restaurantLat: number | null; restaurantLng: number | null };
 }) {
   const { subtotal, taxAmount, tipAmount, total } = totals;
   const [email, setEmail] = useState("");
@@ -92,11 +96,20 @@ function CheckoutModal({
   );
   // "sur_place" never requires Stripe, so it's always offered even if the
   // owner listed an online mode without Connect actually being active yet.
-  const availableModes = orderModesEnabled.filter((m) => m === "sur_place" || onlinePaymentEnabled);
+  const availableModes = orderModesEnabled.filter(
+    (m) => m === "sur_place" || (onlinePaymentEnabled && (m !== "livraison" || delivery.config.enabled))
+  );
   const [fulfillmentMode, setFulfillmentMode] = useState<OrderFulfillmentMode>(
     availableModes.includes("sur_place") ? "sur_place" : (availableModes[0] ?? "sur_place")
   );
   const payOnline = fulfillmentMode !== "sur_place";
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryLatitude, setDeliveryLatitude] = useState<number | null>(null);
+  const [deliveryLongitude, setDeliveryLongitude] = useState<number | null>(null);
+  const deliveryQuote = fulfillmentMode === "livraison"
+    ? quoteDelivery(delivery.config, { lat: delivery.restaurantLat, lng: delivery.restaurantLng }, { lat: deliveryLatitude, lng: deliveryLongitude })
+    : { fee: 0, distanceKm: null, etaMinutes: null, available: true };
+  const displayTotal = total + deliveryQuote.fee;
   // Unchecked by default (CASL/LCAP) — only applied if this order creates a
   // brand-new customer row; a returning customer's existing consent choice
   // is never overwritten by a later order that didn't re-tick this box.
@@ -161,6 +174,9 @@ function CheckoutModal({
         paymentMethod: payOnline ? null : String(form.get("paymentMethod") ?? "") || null,
         tipAmount,
         fulfillmentMode,
+        deliveryAddress: fulfillmentMode === "livraison" ? deliveryAddress : null,
+        deliveryLatitude: fulfillmentMode === "livraison" ? deliveryLatitude : null,
+        deliveryLongitude: fulfillmentMode === "livraison" ? deliveryLongitude : null,
         marketingConsent,
         mentionedOfferTitle,
       }
@@ -303,9 +319,15 @@ function CheckoutModal({
                 <span>{formatCurrency(tipAmount)}</span>
               </div>
             )}
+            {fulfillmentMode === "livraison" && (
+              <div className="flex justify-between text-mv-ink-soft">
+                <span>Livraison{deliveryQuote.distanceKm != null ? ` · ${deliveryQuote.distanceKm} km` : ""}</span>
+                <span>{formatCurrency(deliveryQuote.fee)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-[14px] font-semibold text-mv-ink">
               <span>Total</span>
-              <span>{formatCurrency(total)}</span>
+              <span>{formatCurrency(displayTotal)}</span>
             </div>
           </div>
 
@@ -344,6 +366,33 @@ function CheckoutModal({
                   )}
                 </div>
               )}
+              {fulfillmentMode === "livraison" && (
+                <div className="space-y-2 rounded-xl border border-mv-green/20 bg-mv-green-tint/40 p-3">
+                  <Field label="Adresse de livraison" hint="Rue, ville et code postal">
+                    <Input value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} required />
+                  </Field>
+                  <button
+                    type="button"
+                    onClick={() => navigator.geolocation?.getCurrentPosition(
+                      (position) => {
+                        setDeliveryLatitude(position.coords.latitude);
+                        setDeliveryLongitude(position.coords.longitude);
+                        toast.success("Position utilisée pour calculer la distance.");
+                      },
+                      () => toast.error("Position indisponible — les frais de base seront appliqués.")
+                    )}
+                    className="text-left text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                  >
+                    Utiliser ma position pour un tarif précis
+                  </button>
+                  {!deliveryQuote.available && (
+                    <p className="text-[12px] text-mv-red">Cette adresse est hors du rayon de livraison configuré.</p>
+                  )}
+                  {deliveryQuote.etaMinutes != null && (
+                    <p className="text-[11.5px] text-mv-ink-faint">Temps estimé : {deliveryQuote.etaMinutes} min</p>
+                  )}
+                </div>
+              )}
               {!payOnline && (
                 <Field label="Mode de paiement sur place" hint="Optionnel">
                   <Input name="paymentMethod" placeholder="Ex : Carte, comptant" />
@@ -360,8 +409,8 @@ function CheckoutModal({
               {submitStatus === "error" && (
                 <p className="text-[12.5px] text-mv-red">La commande a échoué. Réessayez.</p>
               )}
-              <Button type="submit" disabled={submitStatus === "submitting"} className="w-full">
-                {submitStatus === "submitting" ? "Envoi…" : `Envoyer la commande — ${formatCurrency(total)}`}
+              <Button type="submit" disabled={submitStatus === "submitting" || (fulfillmentMode === "livraison" && !deliveryQuote.available)} className="w-full">
+                {submitStatus === "submitting" ? "Envoi…" : `Envoyer la commande — ${formatCurrency(displayTotal)}`}
               </Button>
             </form>
           ) : emailStatus === "sent" ? (
@@ -666,7 +715,7 @@ export function MenuOrderFlow({
   favoriteMenuItemIds: string[];
   favoriteOfferIds: string[];
 }) {
-  const { restaurantName, items, taxRate, acceptsTips, onlinePaymentEnabled, orderModesEnabled } = landing;
+  const { restaurantName, items, taxRate, acceptsTips, onlinePaymentEnabled, orderModesEnabled, delivery } = landing;
   const [favMenuItems, setFavMenuItems] = useState(new Set(favoriteMenuItemIds));
   const [favOffers, setFavOffers] = useState(new Set(favoriteOfferIds));
 
@@ -951,6 +1000,7 @@ export function MenuOrderFlow({
         shareProgramId={shareProgramId}
         restaurantName={restaurantName}
         mentionedOfferTitle={activeOffer}
+        delivery={delivery}
       />
 
       <MenuItemDetailModal

@@ -16,6 +16,7 @@
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/.verify-artifacts/
 
 # next.js
 /.next/
@@ -68,4 +69,3 @@ next-env.d.ts
 /.design-sync/node_modules
 /.design-sync/fonts/
 /The-Trequartista-from-Minerva/
-

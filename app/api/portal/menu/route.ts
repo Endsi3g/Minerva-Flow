@@ -3,6 +3,7 @@ import { resolveNativeCustomer } from "@/lib/auth/native-bearer";
 import { getActiveMenuItemsForCustomers } from "@/lib/data/menu";
 import { getRestaurantOrderSettings } from "@/lib/data/menu-shares";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recordMenuView } from "@/lib/data/menu-views";
 
 /**
  * Bridge for the native app's Order tab — menu_items has no customer-facing
@@ -17,6 +18,9 @@ export async function GET(req: Request) {
   if (!customer) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
+
+  // Record daily menu view asynchronously for native app browsing
+  recordMenuView(customer.restaurantId).catch(() => {});
 
   const [items, settings] = await Promise.all([
     getActiveMenuItemsForCustomers(customer.restaurantId),

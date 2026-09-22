@@ -6,7 +6,7 @@ import { logMovement } from "@/lib/data/inventory";
 import { logVisit } from "@/lib/data/customers";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
 import { computeIsBusy, computeEstimatedReadyAt } from "@/lib/orders/eta";
-import type { Order, OrderItem, OrderStatus, OrderPaymentStatus, OrderFulfillmentMode } from "@/lib/types";
+import type { Order, OrderItem, OrderStatus, OrderPaymentStatus, OrderFulfillmentMode, OrderSource } from "@/lib/types";
 
 type OrderRow = {
   id: string;
@@ -25,10 +25,15 @@ type OrderRow = {
   paid_at: string | null;
   ready_notified_at: string | null;
   estimated_ready_at: string | null;
+  delivery_address: string | null;
+  delivery_distance_km: number | null;
+  delivery_fee: number;
+  delivery_eta_minutes: number | null;
   notes: string | null;
   customer_id: string | null;
   referral_link_id: string | null;
   is_public_request: boolean;
+  source?: string | null;
   created_at: string;
 };
 
@@ -54,6 +59,17 @@ function mapOrderItem(row: OrderItemRow): OrderItem {
   };
 }
 
+function resolveOrderSource(row: OrderRow): OrderSource {
+  if (row.source === "mobile" || row.source === "web" || row.source === "pos" || row.source === "telephone") {
+    return row.source;
+  }
+  if (row.notes?.includes("[mobile]")) return "mobile";
+  if (row.notes?.includes("[web]")) return "web";
+  if (row.notes?.includes("[pos]")) return "pos";
+  if (row.notes?.includes("[telephone]")) return "telephone";
+  return row.is_public_request ? "web" : "telephone";
+}
+
 function mapOrder(row: OrderRow, items: OrderItemRow[]): Order {
   return {
     id: row.id,
@@ -72,10 +88,15 @@ function mapOrder(row: OrderRow, items: OrderItemRow[]): Order {
     paidAt: row.paid_at,
     readyNotifiedAt: row.ready_notified_at,
     estimatedReadyAt: row.estimated_ready_at,
+    deliveryAddress: row.delivery_address,
+    deliveryDistanceKm: row.delivery_distance_km,
+    deliveryFee: row.delivery_fee ?? 0,
+    deliveryEtaMinutes: row.delivery_eta_minutes,
     notes: row.notes,
     customerId: row.customer_id,
     referralLinkId: row.referral_link_id,
     isPublicRequest: row.is_public_request,
+    source: resolveOrderSource(row),
     createdAt: row.created_at,
     items: items.filter((i) => i.order_id === row.id).map(mapOrderItem),
   };
@@ -87,6 +108,7 @@ export type CreateOrderInput = {
   items: { menuItemId: string; quantity: number }[];
   notes?: string | null;
   customerId?: string | null;
+  source?: OrderSource;
 };
 
 /**
@@ -137,27 +159,40 @@ export async function createOrder(restaurantId: string, input: CreateOrderInput)
 
   const estimatedReadyAt = computeEstimatedReadyAt(restaurantRow.default_prep_minutes, isBusy);
 
-  const { data: order, error } = await supabase
+  const orderSource: OrderSource = input.source ?? "telephone";
+  const baseOrderData: Record<string, unknown> = {
+    restaurant_id: restaurantId,
+    status: "soumise",
+    guest_name: input.guestName,
+    guest_phone: input.guestPhone ?? null,
+    subtotal: pricing.subtotal,
+    tax_amount: pricing.taxAmount,
+    tip_amount: 0,
+    total: pricing.total,
+    payment_status: "non_requis",
+    fulfillment_mode: "sur_place",
+    is_public_request: false,
+    customer_id: input.customerId ?? null,
+    notes: input.notes ? `${input.notes} [${orderSource}]` : `[${orderSource}]`,
+    created_by: user?.id ?? null,
+    estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
+  };
+
+  let { data: order, error } = await supabase
     .from("orders")
-    .insert({
-      restaurant_id: restaurantId,
-      status: "soumise",
-      guest_name: input.guestName,
-      guest_phone: input.guestPhone ?? null,
-      subtotal: pricing.subtotal,
-      tax_amount: pricing.taxAmount,
-      tip_amount: 0,
-      total: pricing.total,
-      payment_status: "non_requis",
-      fulfillment_mode: "sur_place",
-      is_public_request: false,
-      customer_id: input.customerId ?? null,
-      notes: input.notes ?? null,
-      created_by: user?.id ?? null,
-      estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
-    })
+    .insert({ ...baseOrderData, source: orderSource })
     .select("*")
     .single();
+
+  if (error && (error.code === "PGRST204" || error.message?.includes("source"))) {
+    const fallback = await supabase
+      .from("orders")
+      .insert(baseOrderData)
+      .select("*")
+      .single();
+    order = fallback.data;
+    error = fallback.error;
+  }
   if (error || !order) return null;
 
   const orderRow = order as OrderRow;

@@ -10,6 +10,7 @@ import { CancelSubscriptionCard } from "@/components/billingsdk/cancel-subscript
 import { InvoiceHistory } from "@/components/billingsdk/invoice-history";
 import { ProrationPreview } from "@/components/billingsdk/proration-preview";
 import { Modal } from "@/components/ui/Modal";
+import { EditorialLoadingState } from "@/components/ui/EditorialLoadingState";
 import {
   createCheckoutSessionAction,
   createBillingPortalSessionAction,
@@ -240,7 +241,11 @@ export default function BillingPage() {
           <CardHeader eyebrow="Abonnement" title="Forfait Workspace" />
 
           {!status ? (
-            <p className="text-[13px] text-mv-ink-faint">Chargement…</p>
+            <EditorialLoadingState
+              title="Vérification de l'abonnement…"
+              subtitle="Interrogation sécurisée de la passerelle Stripe…"
+              rows={2}
+            />
           ) : !status.configured ? (
             <div className="space-y-4">
               <div className="flex items-start gap-3 rounded-xl bg-mv-green-tint/40 border border-mv-green/20 p-4">

@@ -7,6 +7,7 @@ import { getActiveOffersForCustomers } from "@/lib/data/offers";
 import { getActiveAnnouncements } from "@/lib/data/announcements";
 import { isAppleWalletConfigured, isGoogleWalletConfigured } from "@/lib/wallet/config";
 import { LogoMark } from "@/components/shell/Logo";
+import { recordMenuView } from "@/lib/data/menu-views";
 import { PortalView } from "./PortalView";
 import { NoCustomerFoundActions } from "./NoCustomerFound";
 import { Link } from "@/i18n/navigation";
@@ -82,6 +83,9 @@ export default async function PortalPage({
       </div>
     );
   }
+
+  // Record daily menu view asynchronously for customer portal
+  recordMenuView(selected.restaurantId).catch(() => {});
 
   const [data, restaurant, menuItems, offers, announcements] = await Promise.all([
     getPortalData(selected),

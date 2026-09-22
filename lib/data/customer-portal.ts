@@ -6,6 +6,7 @@ import { mapReferralProgram, type ReferralProgramRow } from "@/lib/data/referral
 import { mapLink, type CustomerReferralLinkRow } from "@/lib/data/customer-referrals";
 import { getRestaurantOrderSettings } from "@/lib/data/menu-shares";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
+import { quoteDelivery } from "@/lib/orders/delivery-pricing";
 import { notifyRestaurant } from "@/lib/data/notifications";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { formatCurrency } from "@/lib/utils";
@@ -15,6 +16,7 @@ import type {
   CustomerReferralLink,
   LoyaltyReward,
   LoyaltyTransaction,
+  OrderSource,
   ReferralProgram,
   RewardRedemption,
 } from "@/lib/types";
@@ -278,7 +280,9 @@ export async function submitPortalOrder(
   customer: Customer,
   cart: PortalOrderCartLine[],
   tipAmount: number,
-  paymentMethod: string | null
+  paymentMethod: string | null,
+  source: OrderSource = "web",
+  delivery?: { address: string; latitude?: number | null; longitude?: number | null }
 ): Promise<SubmitPortalOrderResult> {
   if (cart.length === 0) return { ok: false };
 
@@ -317,28 +321,53 @@ export async function submitPortalOrder(
   if (!pricing) return { ok: false };
   const { lineItems, subtotal, taxAmount, tipAmount: appliedTip, total } = pricing;
 
+  const deliveryQuote = delivery
+    ? quoteDelivery(
+        orderSettings.delivery.config,
+        { lat: orderSettings.delivery.restaurantLat, lng: orderSettings.delivery.restaurantLng },
+        { lat: delivery.latitude ?? null, lng: delivery.longitude ?? null }
+      )
+    : { available: true, fee: 0, distanceKm: null, etaMinutes: null };
+  if (delivery && (!delivery.address.trim() || !deliveryQuote.available)) return { ok: false };
+  const deliveryFee = delivery ? deliveryQuote.fee : 0;
+
   const estimatedReadyAt = computeEstimatedReadyAt(orderSettings.defaultPrepMinutes, orderSettings.isBusy);
 
-  const { data: order, error: orderError } = await admin
+  const baseOrderFields: Record<string, unknown> = {
+    restaurant_id: customer.restaurantId,
+    status: "soumise",
+    guest_name: customer.name,
+    guest_phone: customer.phone,
+    subtotal,
+    tax_amount: taxAmount,
+    tip_amount: appliedTip,
+    total: total + deliveryFee,
+    payment_method: paymentMethod,
+    payment_status: "non_requis",
+    fulfillment_mode: "sur_place",
+    is_public_request: true,
+    customer_id: customer.id,
+    notes: `[${source}]`,
+    estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
+    delivery_address: delivery?.address.trim() ?? null,
+    delivery_lat: delivery?.latitude ?? null,
+    delivery_lng: delivery?.longitude ?? null,
+    delivery_distance_km: deliveryQuote.distanceKm,
+    delivery_fee: deliveryFee,
+    delivery_eta_minutes: deliveryQuote.etaMinutes,
+  };
+
+  let { data: order, error: orderError } = await admin
     .from("orders")
-    .insert({
-      restaurant_id: customer.restaurantId,
-      status: "soumise",
-      guest_name: customer.name,
-      guest_phone: customer.phone,
-      subtotal,
-      tax_amount: taxAmount,
-      tip_amount: appliedTip,
-      total,
-      payment_method: paymentMethod,
-      payment_status: "non_requis",
-      fulfillment_mode: "sur_place",
-      is_public_request: true,
-      customer_id: customer.id,
-      estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
-    })
+    .insert({ ...baseOrderFields, source })
     .select("id")
     .single();
+
+  if (orderError && (orderError.code === "PGRST204" || orderError.message?.includes("source"))) {
+    const retry = await admin.from("orders").insert(baseOrderFields).select("id").single();
+    order = retry.data;
+    orderError = retry.error;
+  }
   if (orderError || !order) return { ok: false };
   const orderId = (order as { id: string }).id;
 

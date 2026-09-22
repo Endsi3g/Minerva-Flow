@@ -12,7 +12,7 @@ import { formatCurrency, formatTime, cn } from "@/lib/utils";
 import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import { planTierAtLeast, type PlanTier } from "@/lib/plan-tier";
 import { PlanTierLockedState } from "@/components/ui/PlanTierLockedState";
-import type { Order, OrderStatus, OrderPaymentStatus, MenuItem } from "@/lib/types";
+import type { Order, OrderStatus, OrderPaymentStatus, MenuItem, OrderSource } from "@/lib/types";
 import {
   ClipboardList,
   RefreshCw,
@@ -23,6 +23,9 @@ import {
   DollarSign,
   QrCode,
   Globe,
+  Smartphone,
+  Eye,
+  Timer,
   CheckCircle2,
   Clock,
   Volume2,
@@ -94,6 +97,52 @@ const nextStatus: Partial<Record<OrderStatus, { status: OrderStatus; label: stri
  */
 function isAwaitingPayment(o: Order): boolean {
   return Boolean(o.fulfillmentMode) && o.fulfillmentMode !== "sur_place" && o.paymentStatus !== "paye";
+}
+
+function cleanNotes(notes?: string | null): string | null {
+  if (!notes) return null;
+  const cleaned = notes.replace(/\[(web|mobile|telephone|pos)\]/g, "").trim();
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function SourceBadge({ source }: { source?: OrderSource }) {
+  if (source === "mobile") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-purple-700 border border-purple-200">
+        <Smartphone size={10.5} /> App Mobile
+      </span>
+    );
+  }
+  if (source === "web") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-emerald-700 border border-emerald-200">
+        <Globe size={10.5} /> Web
+      </span>
+    );
+  }
+  if (source === "pos") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-slate-700 border border-slate-200">
+        Caisse
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-amber-800 border border-amber-200">
+      <PhoneCall size={10.5} /> Manuel
+    </span>
+  );
+}
+
+function DeliveryMeta({ order }: { order: Order }) {
+  if (order.fulfillmentMode !== "livraison") return null;
+  return (
+    <div className="mt-1.5 rounded-lg border border-blue-200 bg-blue-50/70 px-2 py-1.5 text-[11px] text-blue-900">
+      <div className="font-semibold">Livraison{order.deliveryEtaMinutes ? ` · ~${order.deliveryEtaMinutes} min` : ""}</div>
+      {order.deliveryAddress && <div className="truncate" title={order.deliveryAddress}>{order.deliveryAddress}</div>}
+      {order.deliveryFee > 0 && <div className="font-mono text-[10px]">Frais : {formatCurrency(order.deliveryFee)}</div>}
+    </div>
+  );
 }
 
 /**
@@ -409,6 +458,8 @@ function NewManualOrderModal({
   );
 }
 
+type ChannelFilter = "all" | "direct" | "web" | "mobile" | "manual";
+
 export function CommandesView({
   restaurantId,
   initialOrders,
@@ -416,6 +467,7 @@ export function CommandesView({
   dayEnd,
   menuItems,
   planTier,
+  todayMenuViews = 0,
 }: {
   restaurantId: string | null;
   initialOrders: Order[];
@@ -423,6 +475,7 @@ export function CommandesView({
   dayEnd: string;
   menuItems: MenuItem[];
   planTier: PlanTier;
+  todayMenuViews?: number;
 }) {
   const { role } = useApp();
   const restaurant = useCurrentRestaurant();
@@ -440,7 +493,7 @@ export function CommandesView({
   }, [restaurant?.id, restaurant?.busyModeManual]);
   const [viewMode, setViewMode] = useState<"kds" | "table">("kds");
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<"all" | "direct">("all");
+  const [activeFilter, setActiveFilter] = useState<ChannelFilter>("all");
   const [newOrderOpen, setNewOrderOpen] = useState(false);
   const hasChannelInsights = planTierAtLeast(planTier, "croissance");
 
@@ -467,8 +520,54 @@ export function CommandesView({
     });
   }, [subscribeOrders, restaurantId, dayStart, dayEnd]);
 
-  // Calculate metrics
-  const filteredOrders = orders.filter((o) => (activeFilter === "direct" ? o.isPublicRequest : true));
+  // Calculate channel-specific counts across all non-cancelled orders today
+  const webOrderCount = orders.filter((o) => o.status !== "annulee" && o.source === "web").length;
+  const mobileOrderCount = orders.filter((o) => o.status !== "annulee" && o.source === "mobile").length;
+  const manualOrderCount = orders.filter(
+    (o) => o.status !== "annulee" && (o.source === "telephone" || o.source === "pos" || (!o.isPublicRequest && !o.source))
+  ).length;
+  const directOrderCount = webOrderCount + mobileOrderCount;
+
+  // Inter-order interval calculation (cadence between consecutive orders today)
+  const chronologicalActiveOrders = [...orders]
+    .filter((o) => o.status !== "annulee")
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  const orderIntervals = new Map<string, number>();
+  let totalIntervalMinutes = 0;
+  let intervalPairs = 0;
+
+  for (let i = 1; i < chronologicalActiveOrders.length; i++) {
+    const prevTime = new Date(chronologicalActiveOrders[i - 1].createdAt).getTime();
+    const currTime = new Date(chronologicalActiveOrders[i].createdAt).getTime();
+    const diffMin = Math.max(0, Math.round((currTime - prevTime) / 60_000));
+    orderIntervals.set(chronologicalActiveOrders[i].id, diffMin);
+    totalIntervalMinutes += diffMin;
+    intervalPairs++;
+  }
+
+  const averageDelayMinutes = intervalPairs > 0 ? Math.round(totalIntervalMinutes / intervalPairs) : null;
+  const latestOrder = chronologicalActiveOrders[chronologicalActiveOrders.length - 1];
+  const minutesSinceLatestOrder = latestOrder
+    ? Math.max(0, Math.round((Date.now() - new Date(latestOrder.createdAt).getTime()) / 60_000))
+    : null;
+
+  // Menu visits & Conversion rate
+  const menuViews = todayMenuViews ?? 0;
+  const conversionRate =
+    menuViews > 0 ? Math.min(100, Math.round((directOrderCount / menuViews) * 1000) / 10) : null;
+
+  // Filter orders according to active channel filter
+  const filteredOrders = orders.filter((o) => {
+    if (activeFilter === "direct") return o.isPublicRequest || o.source === "web" || o.source === "mobile";
+    if (activeFilter === "web") return o.source === "web";
+    if (activeFilter === "mobile") return o.source === "mobile";
+    if (activeFilter === "manual") {
+      return o.source === "telephone" || o.source === "pos" || (!o.isPublicRequest && !o.source);
+    }
+    return true;
+  });
+
   const totalVolume = filteredOrders.reduce((acc, o) => (o.status !== "annulee" ? acc + o.total : acc), 0);
   const estimatedPlatformCommission = totalVolume * 0.25;
   const orderCount = filteredOrders.filter((o) => o.status !== "annulee").length;
@@ -618,34 +717,68 @@ export function CommandesView({
               </button>
             </div>
 
-            {/* Channel filter — Croissance+ only, per /grill-me tier split */}
-            {hasChannelInsights && (
-              <div className="flex items-center gap-1 rounded-xl border border-mv-border bg-mv-surface p-1 shadow-mv-xs">
-                <button
-                  onClick={() => setActiveFilter("all")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium rounded-lg transition-all",
-                    activeFilter === "all"
-                      ? "bg-mv-ink text-white shadow-sm"
-                      : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
-                  )}
-                >
-                  Toutes
-                </button>
-                <button
-                  onClick={() => setActiveFilter("direct")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium rounded-lg transition-all",
-                    activeFilter === "direct"
-                      ? "bg-mv-ink text-white shadow-sm"
-                      : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
-                  )}
-                  title="Commandes reçues via votre lien de menu ou QR code, sans intermédiaire"
-                >
-                  <Globe size={13} /> Directes
-                </button>
-              </div>
-            )}
+            {/* Channel filter (All, Direct, Web, Mobile, Manuel) */}
+            <div className="flex flex-wrap items-center gap-1 rounded-xl border border-mv-border bg-mv-surface p-1 shadow-mv-xs">
+              <button
+                onClick={() => setActiveFilter("all")}
+                className={cn(
+                  "flex items-center gap-1 px-2.5 py-1 text-[12px] font-medium rounded-lg transition-all",
+                  activeFilter === "all"
+                    ? "bg-mv-ink text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                )}
+              >
+                Toutes ({orders.length})
+              </button>
+              <button
+                onClick={() => setActiveFilter("direct")}
+                className={cn(
+                  "flex items-center gap-1 px-2.5 py-1 text-[12px] font-medium rounded-lg transition-all",
+                  activeFilter === "direct"
+                    ? "bg-mv-ink text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                )}
+                title="Toutes commandes directes sans intermédiaire (Web & Mobile)"
+              >
+                <Globe size={12} /> Directes ({directOrderCount})
+              </button>
+              <button
+                onClick={() => setActiveFilter("web")}
+                className={cn(
+                  "flex items-center gap-1 px-2.5 py-1 text-[12px] font-medium rounded-lg transition-all",
+                  activeFilter === "web"
+                    ? "bg-mv-green-dark text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                )}
+                title="Commandes via le menu web / QR code"
+              >
+                <Globe size={12} /> Web ({webOrderCount})
+              </button>
+              <button
+                onClick={() => setActiveFilter("mobile")}
+                className={cn(
+                  "flex items-center gap-1 px-2.5 py-1 text-[12px] font-medium rounded-lg transition-all",
+                  activeFilter === "mobile"
+                    ? "bg-purple-700 text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                )}
+                title="Commandes issues de l'application mobile iOS"
+              >
+                <Smartphone size={12} /> Mobile ({mobileOrderCount})
+              </button>
+              <button
+                onClick={() => setActiveFilter("manual")}
+                className={cn(
+                  "flex items-center gap-1 px-2.5 py-1 text-[12px] font-medium rounded-lg transition-all",
+                  activeFilter === "manual"
+                    ? "bg-amber-800 text-white shadow-sm"
+                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
+                )}
+                title="Commandes manuelles au comptoir ou par téléphone"
+              >
+                <PhoneCall size={12} /> Manuel ({manualOrderCount})
+              </button>
+            </div>
 
             {/* Audio chime toggle */}
             <Button
@@ -672,24 +805,112 @@ export function CommandesView({
         }
       />
 
-      {/* Direct Ordering 0% Commission Impact Header Card — Croissance+ only */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {hasChannelInsights ? (
-          <Card className="p-4 bg-mv-surface border-mv-green/20">
+      {/* Metrics Header Grid — 4 Columns */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {/* 1. Volume & Commandes */}
+        <Card className="p-4 bg-mv-surface border-mv-border flex flex-col justify-between">
+          <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-green-dark">
-                Économies de Commission 0%
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                Volume & Commandes
               </span>
-              <div className="h-8 w-8 rounded-full bg-mv-green/15 flex items-center justify-center text-mv-green-dark">
-                <DollarSign size={16} />
+              <div className="h-8 w-8 rounded-full bg-mv-cream flex items-center justify-center text-mv-ink-soft">
+                <TrendingUp size={16} />
+              </div>
+            </div>
+            <p className="font-display text-[26px] font-bold text-mv-ink">{formatCurrency(totalVolume)}</p>
+          </div>
+          <div className="mt-2 pt-2 border-t border-mv-border-soft flex flex-wrap items-center gap-1.5 text-[11.5px] text-mv-ink-soft">
+            <span className="font-semibold text-mv-ink">{orderCount}</span> commande{orderCount > 1 ? "s" : ""} :
+            <span className="inline-flex items-center gap-0.5 text-purple-700 font-medium bg-purple-50 px-1.5 py-0.5 rounded">
+              📱 {mobileOrderCount}
+            </span>
+            <span className="inline-flex items-center gap-0.5 text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded">
+              🌐 {webOrderCount}
+            </span>
+            <span className="inline-flex items-center gap-0.5 text-amber-800 font-medium bg-amber-50 px-1.5 py-0.5 rounded">
+              📞 {manualOrderCount}
+            </span>
+          </div>
+        </Card>
+
+        {/* 2. Rythme & Délai entre Commandes */}
+        <Card className="p-4 bg-mv-surface border-mv-border flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                Rythme & Délai
+              </span>
+              <div className="h-8 w-8 rounded-full bg-mv-cream flex items-center justify-center text-mv-ink-soft">
+                <Timer size={16} />
               </div>
             </div>
             <p className="font-display text-[26px] font-bold text-mv-ink">
-              {formatCurrency(estimatedPlatformCommission)}
+              {averageDelayMinutes !== null ? `~${averageDelayMinutes} min` : "—"}
             </p>
-            <p className="text-[12px] text-mv-ink-soft mt-1">
-              Préservés par rapport aux commissions 25% Uber Eats / DoorDash
-            </p>
+          </div>
+          <div className="mt-2 pt-2 border-t border-mv-border-soft text-[11.5px] text-mv-ink-soft">
+            {minutesSinceLatestOrder !== null ? (
+              <p>
+                Dernière commande : <span className="font-semibold text-mv-ink font-mono">{minutesSinceLatestOrder === 0 ? "À l'instant" : `Il y a ${minutesSinceLatestOrder} min`}</span>
+              </p>
+            ) : (
+              <p className="text-mv-ink-faint italic">Aucune commande pour l'instant aujourd'hui</p>
+            )}
+          </div>
+        </Card>
+
+        {/* 3. Visites du Menu & Conversion */}
+        <Card className="p-4 bg-mv-surface border-mv-border flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                Visites Menu & Conversion
+              </span>
+              <div className="h-8 w-8 rounded-full bg-mv-cream flex items-center justify-center text-mv-ink-soft">
+                <Eye size={16} />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <p className="font-display text-[26px] font-bold text-mv-ink">{menuViews}</p>
+              <span className="text-[12px] text-mv-ink-faint">visites</span>
+              {conversionRate !== null && (
+                <Badge tone="green" className="ml-auto font-mono text-[11px]">
+                  {conversionRate}% conv.
+                </Badge>
+              )}
+            </div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-mv-border-soft text-[11.5px] text-mv-ink-soft">
+            {menuViews > 0 ? (
+              <p>
+                <span className="font-semibold text-mv-ink">{directOrderCount}</span> commande{directOrderCount > 1 ? "s" : ""} directe{directOrderCount > 1 ? "s" : ""} issue{directOrderCount > 1 ? "s" : ""} du menu
+              </p>
+            ) : (
+              <p className="text-mv-ink-faint">Suivi en direct actif</p>
+            )}
+          </div>
+        </Card>
+
+        {/* 4. Économies de Commission 0% */}
+        {hasChannelInsights ? (
+          <Card className="p-4 bg-mv-surface border-mv-green/20 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-green-dark">
+                  Économies Commission 0%
+                </span>
+                <div className="h-8 w-8 rounded-full bg-mv-green/15 flex items-center justify-center text-mv-green-dark">
+                  <DollarSign size={16} />
+                </div>
+              </div>
+              <p className="font-display text-[26px] font-bold text-mv-ink">
+                {formatCurrency(estimatedPlatformCommission)}
+              </p>
+            </div>
+            <div className="mt-2 pt-2 border-t border-mv-border-soft text-[11.5px] text-mv-ink-soft">
+              Préservés vs. frais 25% Uber Eats / DoorDash
+            </div>
           </Card>
         ) : (
           <PlanTierLockedState
@@ -699,44 +920,6 @@ export function CommandesView({
             size="sm"
           />
         )}
-
-        <Card className="p-4 bg-mv-surface border-mv-border">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-              Volume & Commandes (Aujourd&apos;hui)
-            </span>
-            <div className="h-8 w-8 rounded-full bg-mv-cream flex items-center justify-center text-mv-ink-soft">
-              <TrendingUp size={16} />
-            </div>
-          </div>
-          <p className="font-display text-[26px] font-bold text-mv-ink">{formatCurrency(totalVolume)}</p>
-          <p className="text-[12px] text-mv-ink-soft mt-1">
-            {orderCount} commande{orderCount > 1 ? "s" : ""} traitée{orderCount > 1 ? "s" : ""}
-          </p>
-        </Card>
-
-        <Card className="p-4 bg-mv-surface border-mv-border flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-              Canaux de Commande Directe
-            </span>
-            <div className="h-8 w-8 rounded-full bg-mv-cream flex items-center justify-center text-mv-ink-soft">
-              <Globe size={16} />
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 mt-1">
-            <Link href="/etablissement">
-              <Button size="sm" variant="secondary" className="text-[12px]">
-                <QrCode size={13} /> Générer QR Code / Widget
-              </Button>
-            </Link>
-            <Link href="/menu">
-              <Button size="sm" variant="ghost" className="text-[12px]">
-                Lien de la carte →
-              </Button>
-            </Link>
-          </div>
-        </Card>
       </div>
 
       {/* Orders Content */}
@@ -779,8 +962,22 @@ export function CommandesView({
                     key={o.id}
                     className="group relative rounded-xl border border-mv-red/30 bg-mv-surface p-3.5 shadow-mv-sm"
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <SourceBadge source={o.source} />
+                          <DeliveryMeta order={o} />
+                          {orderIntervals.has(o.id) && (
+                            <span
+                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[10px] font-mono text-mv-ink-soft border border-mv-border/80"
+                              title="Délai après la commande précédente"
+                            >
+                              +{orderIntervals.get(o.id)}m
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       <ElapsedTimer createdAt={o.createdAt} />
                     </div>
                     <ul className="space-y-1.5 border-t border-mv-border/60 pt-2 text-[13px] text-mv-ink">
@@ -793,6 +990,11 @@ export function CommandesView({
                         </li>
                       ))}
                     </ul>
+                    {cleanNotes(o.notes) && (
+                      <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[11.5px] italic text-mv-ink-soft">
+                        « {cleanNotes(o.notes)} »
+                      </p>
+                    )}
                     <div className="mt-3 flex items-center justify-between pt-2 border-t border-mv-border/60">
                       <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total)}</span>
                       <Badge tone={paymentStatusTone[o.paymentStatus] ?? "red"}>
@@ -826,8 +1028,22 @@ export function CommandesView({
                     key={o.id}
                     className="group relative rounded-xl border border-mv-amber/40 bg-mv-surface p-3.5 shadow-mv-sm transition-all hover:shadow-mv hover:border-mv-amber"
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <SourceBadge source={o.source} />
+                          <DeliveryMeta order={o} />
+                          {orderIntervals.has(o.id) && (
+                            <span
+                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[10px] font-mono text-mv-ink-soft border border-mv-border/80"
+                              title="Délai après la commande précédente"
+                            >
+                              +{orderIntervals.get(o.id)}m
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       <ElapsedTimer createdAt={o.createdAt} />
                     </div>
                     {canManage && (
@@ -848,9 +1064,9 @@ export function CommandesView({
                         </li>
                       ))}
                     </ul>
-                    {o.notes && (
+                    {cleanNotes(o.notes) && (
                       <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[11.5px] italic text-mv-ink-soft">
-                        « {o.notes} »
+                        « {cleanNotes(o.notes)} »
                       </p>
                     )}
                     <div className="mt-3 flex items-center justify-between pt-2 border-t border-mv-border/60">
@@ -893,8 +1109,22 @@ export function CommandesView({
                     key={o.id}
                     className="group relative rounded-xl border border-mv-amber bg-mv-surface p-3.5 shadow-mv-sm transition-all hover:shadow-mv"
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <SourceBadge source={o.source} />
+                          <DeliveryMeta order={o} />
+                          {orderIntervals.has(o.id) && (
+                            <span
+                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[10px] font-mono text-mv-ink-soft border border-mv-border/80"
+                              title="Délai après la commande précédente"
+                            >
+                              +{orderIntervals.get(o.id)}m
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       <ElapsedTimer createdAt={o.createdAt} />
                     </div>
                     {canManage && (
@@ -915,9 +1145,9 @@ export function CommandesView({
                         </li>
                       ))}
                     </ul>
-                    {o.notes && (
+                    {cleanNotes(o.notes) && (
                       <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[11.5px] italic text-mv-ink-soft">
-                        « {o.notes} »
+                        « {cleanNotes(o.notes)} »
                       </p>
                     )}
                     <div className="mt-3 flex items-center justify-between pt-2 border-t border-mv-border/60">
@@ -960,8 +1190,22 @@ export function CommandesView({
                     key={o.id}
                     className="group relative rounded-xl border border-mv-green bg-mv-surface p-3.5 shadow-mv-sm transition-all hover:shadow-mv"
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <SourceBadge source={o.source} />
+                          <DeliveryMeta order={o} />
+                          {orderIntervals.has(o.id) && (
+                            <span
+                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[10px] font-mono text-mv-ink-soft border border-mv-border/80"
+                              title="Délai après la commande précédente"
+                            >
+                              +{orderIntervals.get(o.id)}m
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       <ElapsedTimer createdAt={o.createdAt} />
                     </div>
                     <ul className="space-y-1.5 border-t border-mv-border/60 pt-2 text-[13px] text-mv-ink">
@@ -974,6 +1218,11 @@ export function CommandesView({
                         </li>
                       ))}
                     </ul>
+                    {cleanNotes(o.notes) && (
+                      <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[11.5px] italic text-mv-ink-soft">
+                        « {cleanNotes(o.notes)} »
+                      </p>
+                    )}
                     <div className="mt-3 flex items-center justify-between gap-1.5 pt-2 border-t border-mv-border/60">
                       <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total)}</span>
                       {canManage && (
@@ -1018,8 +1267,17 @@ export function CommandesView({
             <div className="space-y-2.5 max-h-[500px] overflow-y-auto">
               {servedOrders.slice(0, 8).map((o) => (
                 <div key={o.id} className="rounded-xl border border-mv-border bg-mv-surface p-2.5 text-[12px]">
-                  <div className="flex justify-between items-center font-medium text-mv-ink">
-                    <span>{o.guestName}</span>
+                  <div className="flex justify-between items-start font-medium text-mv-ink">
+                    <div>
+                      <span>{o.guestName}</span>
+                      <div className="mt-0.5 flex items-center gap-1">
+                        <SourceBadge source={o.source} />
+                        <DeliveryMeta order={o} />
+                        {orderIntervals.has(o.id) && (
+                          <span className="text-[10px] font-mono text-mv-ink-faint">+{orderIntervals.get(o.id)}m</span>
+                        )}
+                      </div>
+                    </div>
                     <span className="font-mono">{formatCurrency(o.total)}</span>
                   </div>
                   <p className="text-[11px] text-mv-ink-faint mt-0.5">
@@ -1035,6 +1293,7 @@ export function CommandesView({
         <Table>
           <THead>
             <Th>Heure</Th>
+            <Th>Canal</Th>
             <Th>Client</Th>
             <Th>Articles</Th>
             <Th className="text-right">Total</Th>
@@ -1049,8 +1308,22 @@ export function CommandesView({
                 <Tr key={o.id}>
                   <Td className="text-mv-ink-soft">{formatTime(o.createdAt)}</Td>
                   <Td>
+                    <div className="flex items-center gap-1.5">
+                      <SourceBadge source={o.source} />
+                      <DeliveryMeta order={o} />
+                      {orderIntervals.has(o.id) && (
+                        <span className="text-[10px] font-mono text-mv-ink-faint" title="Délai par rapport à la commande précédente">
+                          +{orderIntervals.get(o.id)}m
+                        </span>
+                      )}
+                    </div>
+                  </Td>
+                  <Td>
                     <p className="font-semibold text-mv-ink">{o.guestName}</p>
                     {o.guestPhone && <p className="text-[11.5px] text-mv-ink-faint">{o.guestPhone}</p>}
+                    {cleanNotes(o.notes) && (
+                      <p className="text-[11px] text-mv-ink-soft italic">« {cleanNotes(o.notes)} »</p>
+                    )}
                   </Td>
                   <Td className="text-mv-ink-soft">
                     {o.items.map((i) => `${i.quantity}× ${i.itemName}`).join(", ")}

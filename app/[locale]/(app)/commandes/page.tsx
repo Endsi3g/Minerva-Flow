@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentRestaurantId, getCurrentRestaurant } from "@/lib/data/current-restaurant";
 import { getOrdersForDay } from "@/lib/data/orders";
 import { getMenuItems } from "@/lib/data/menu";
+import { getTodayMenuViews } from "@/lib/data/menu-views";
 import { CommandesView } from "./CommandesView";
 
 function todayRange() {
@@ -22,9 +23,13 @@ export default async function CommandesPage() {
   const [restaurant, restaurantId] = await Promise.all([getCurrentRestaurant(), getCurrentRestaurantId()]);
   const { start, end } = todayRange();
 
-  const [orders, menuItems] = restaurantId
-    ? await Promise.all([getOrdersForDay(restaurantId, start, end), getMenuItems(restaurantId)])
-    : [[], []];
+  const [orders, menuItems, menuViews] = restaurantId
+    ? await Promise.all([
+        getOrdersForDay(restaurantId, start, end),
+        getMenuItems(restaurantId),
+        getTodayMenuViews(restaurantId),
+      ])
+    : [[], [], 0];
 
   return (
     <CommandesView
@@ -34,6 +39,7 @@ export default async function CommandesPage() {
       dayEnd={end}
       menuItems={menuItems.filter((m) => m.active)}
       planTier={restaurant?.planTier ?? "essentiel"}
+      todayMenuViews={menuViews}
     />
   );
 }

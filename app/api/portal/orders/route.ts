@@ -18,7 +18,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Non autorisé" }, { status: 401 });
   }
 
-  let body: { cart?: PortalOrderCartLine[]; tipAmount?: number; paymentMethod?: string | null };
+  let body: {
+    cart?: PortalOrderCartLine[];
+    tipAmount?: number;
+    paymentMethod?: string | null;
+    delivery?: { address?: string; latitude?: number | null; longitude?: number | null };
+  };
   try {
     body = await req.json();
   } catch {
@@ -30,7 +35,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Le panier est vide" }, { status: 400 });
   }
 
-  const result = await submitPortalOrder(customer, cart, body.tipAmount ?? 0, body.paymentMethod ?? null);
+  const delivery = body.delivery?.address?.trim()
+    ? {
+        address: body.delivery.address,
+        latitude: body.delivery.latitude ?? null,
+        longitude: body.delivery.longitude ?? null,
+      }
+    : undefined;
+  const result = await submitPortalOrder(customer, cart, body.tipAmount ?? 0, body.paymentMethod ?? null, "mobile", delivery);
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: "La commande a échoué" }, { status: 500 });
   }

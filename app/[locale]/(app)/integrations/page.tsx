@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { getRestaurantIntegrations } from "@/lib/data/integrations";
 import { getCurrentRestaurant } from "@/lib/data/current-restaurant";
-import { IntegrationsView } from "@/components/integrations/IntegrationsView";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { IntegrationsGrid } from "@/components/minerva/IntegrationsGrid";
 import { redirect } from "next/navigation";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -16,7 +16,14 @@ export default async function IntegrationsPage() {
     redirect("/overview");
   }
 
-  const integrations = await getRestaurantIntegrations(restaurant.id);
-
-  return <IntegrationsView initialIntegrations={integrations} restaurantName={restaurant.name} restaurantId={restaurant.id} />;
+  return (
+    <div>
+      <PageHeader
+        eyebrow="Écosystème & Connexions"
+        title="Intégrations"
+        description="Connectez vos caisses POS, passerelles de paiement, comptabilité, plateformes publicitaires et services de livraison."
+      />
+      <IntegrationsGrid />
+    </div>
+  );
 }
