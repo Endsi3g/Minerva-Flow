@@ -129,7 +129,7 @@ struct RootView: View {
         let path: String
         switch link {
         case .touchpoint(let code): path = "/api/portal/resolve-touchpoint/\(code)"
-        case .referral(let code): path = "/api/portal/resolve-referral/\(code)"
+        case .referral(let code, let channel): path = "/api/portal/resolve-referral/\(code)?via=\(channel.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "direct")"
         }
         guard let url = URL(string: path, relativeTo: Config.apiBaseURL) else { return }
 

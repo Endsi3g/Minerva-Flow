@@ -18,7 +18,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
   const landing = await getReferralLandingByCode(code);
   if (!landing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  await recordClick(code);
+  const channel = new URL(req.url).searchParams.get("via");
+  await recordClick(code, channel);
 
   return NextResponse.json({
     kind: "restaurant",

@@ -2,10 +2,29 @@ import SwiftUI
 
 struct OwnerMainTabView: View {
     @EnvironmentObject private var supabase: SupabaseManager
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selection = 0
 
     var body: some View {
-        TabView(selection: $selection) {
+        Group {
+          if horizontalSizeClass == .regular {
+            NavigationSplitView {
+                List {
+                    ownerTabletTab(0, title: "Overview", icon: "rectangle.grid.2x2.fill")
+                    ownerTabletTab(1, title: "Orders", icon: "list.clipboard.fill")
+                    ownerTabletTab(2, title: "Menu", icon: "fork.knife")
+                    ownerTabletTab(3, title: "Loyalty", icon: "heart.text.square.fill")
+                    ownerTabletTab(4, title: "Manage", icon: "slider.horizontal.3")
+                }
+                .listStyle(.sidebar)
+                .navigationTitle(supabase.ownerBranding?.brandName ?? "Minerva Flow")
+                .navigationSplitViewColumnWidth(min: 220, ideal: 260)
+            } detail: {
+                ownerSelectedContent.frame(maxWidth: 1100).frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .navigationSplitViewStyle(.balanced)
+          } else {
+            TabView(selection: $selection) {
             OwnerOverviewView()
                 .tabItem { Label("Overview", systemImage: "rectangle.grid.2x2.fill") }
                 .tag(0)
@@ -21,8 +40,26 @@ struct OwnerMainTabView: View {
             OwnerManagementView()
                 .tabItem { Label("Manage", systemImage: "slider.horizontal.3") }
                 .tag(4)
+            }
+          }
         }
         .tint(MinervaColor.emeraldDark)
+    }
+
+    private func ownerTabletTab(_ tab: Int, title: String, icon: String) -> some View {
+        Button { selection = tab } label: { Label(title, systemImage: icon).frame(maxWidth: .infinity, alignment: .leading) }
+            .buttonStyle(.plain)
+            .listRowBackground(selection == tab ? MinervaColor.emerald.opacity(0.14) : Color.clear)
+    }
+
+    @ViewBuilder private var ownerSelectedContent: some View {
+        switch selection {
+        case 0: OwnerOverviewView()
+        case 1: OwnerOrdersView()
+        case 2: OwnerMenuView()
+        case 3: OwnerLoyaltyView()
+        default: OwnerManagementView()
+        }
     }
 }
 

@@ -156,7 +156,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
   };
 
   return (
-    <Card className="relative overflow-visible">
+    <Card className="relative w-full min-w-0 overflow-visible">
       <CardHeader
         eyebrow="Chronologie"
         title="Activité de parrainage"
@@ -245,17 +245,16 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
       </div>
 
       {/* The GitHub Activity Heatmap Grid Container */}
-      <div className="overflow-x-auto pb-2">
-        <div className="inline-block min-w-full">
+      <div className="w-full min-w-0 overflow-x-auto pb-2">
+        <div className="min-w-[620px] sm:min-w-0">
           {/* Month Header row */}
-          <div className="flex text-[11px] font-semibold text-mv-ink-faint mb-1.5 pl-7">
+          <div className="relative mb-1.5 ml-7 h-4 text-[11px] font-semibold text-mv-ink-faint">
             {monthHeaders.map((m, idx) => (
               <span
                 key={`${m.month}-${idx}`}
-                className="inline-block"
+                className="absolute top-0"
                 style={{
-                  width: `${(weeks.length / monthHeaders.length) * 16}px`,
-                  minWidth: "48px",
+                  left: `${(m.colIndex / Math.max(1, weeks.length)) * 100}%`,
                 }}
               >
                 {m.month}
@@ -263,7 +262,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             ))}
           </div>
 
-          <div className="flex items-start gap-2">
+          <div className="flex min-w-0 items-start gap-2">
             {/* Day of week labels (Y axis) */}
             <div className="flex flex-col justify-between text-[10px] font-medium text-mv-ink-faint h-[105px] pr-1 select-none">
               <span>Lun</span>
@@ -272,9 +271,9 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             </div>
 
             {/* Weeks Columns Grid */}
-            <div className="flex gap-[3.5px]">
+            <div className="grid min-w-0 flex-1 grid-flow-col auto-cols-fr gap-[3px]">
               {weeks.map((week, wIdx) => (
-                <div key={wIdx} className="flex flex-col gap-[3.5px]">
+                <div key={wIdx} className="grid min-w-0 grid-rows-7 gap-[3px]">
                   {week.map((day, dIdx) => {
                     const level = getCellLevel(day);
                     const colorClass = getLevelColor(level);
@@ -293,7 +292,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
                           }
                         }}
                         onMouseLeave={() => setHoveredDay(null)}
-                        className={`h-3 w-3 rounded-[2.5px] border transition-all cursor-pointer ${
+                        className={`aspect-square w-full rounded-[2.5px] border transition-all cursor-pointer ${
                           day
                             ? `${colorClass} hover:scale-125 hover:z-10 hover:shadow-mv-sm`
                             : "bg-transparent border-transparent cursor-default pointer-events-none"

@@ -9,6 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   ChevronDown,
@@ -38,7 +39,6 @@ import {
   ClipboardList,
   UserCircle,
   FolderOpen,
-  Zap,
   Star,
   Shield,
   TrendingUp,
@@ -47,7 +47,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Role } from "@/lib/types";
 import { SearchDialog } from "./SearchDialog";
@@ -120,7 +120,6 @@ export const operationalAnalyticsItems: NavItem[] = [
 
 // 4. Sub settings & help items (with Intégrations inclus)
 export const settingsGroupItems: NavItem[] = [
-  { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
   { key: "billing", href: "/billing", icon: CreditCard, roles: ["owner"] },
   { key: "guide", href: "/guide", icon: BookOpen, roles: allRoles },
   { key: "support", href: "/support", icon: LifeBuoy, roles: allRoles },
@@ -276,9 +275,26 @@ import { MINERVA_FLOW_ATTRIBUTION } from "@/lib/branding/workspace-branding";
 
 function TeamSwitcher() {
   const t = useTranslations("nav");
-  const { restaurantId, setRestaurantId, restaurants, branding } = useApp();
+  const { restaurantId, setRestaurantId, restaurants, workspaces, branding } = useApp();
   const router = useRouter();
   const current = restaurants.find((r) => r.id === restaurantId) ?? restaurants[0];
+  const [openWorkspaceId, setOpenWorkspaceId] = useState<string | null>(
+    () => restaurants.find((r) => r.id === restaurantId)?.workspaceId ?? `restaurant:${restaurantId}`
+  );
+
+  const groupedRestaurants = useMemo(() => {
+    const groups = new Map<string, typeof restaurants>();
+    for (const restaurant of restaurants) {
+      const workspaceId = restaurant.workspaceId ?? `restaurant:${restaurant.id}`;
+      groups.set(workspaceId, [...(groups.get(workspaceId) ?? []), restaurant]);
+    }
+    return [...groups.entries()].map(([id, locations]) => ({
+      id,
+      name: workspaces.find((workspace) => workspace.id === id)?.name ?? locations[0]?.name ?? "Espace de travail",
+      locations,
+    }));
+  }, [restaurants, workspaces]);
+
   if (!current) return null;
 
   const currentFavicon = branding?.logoUrl ?? getRestaurantFaviconUrl(current.website);
@@ -302,14 +318,28 @@ function TeamSwitcher() {
         </span>
         <ChevronDown size={14} className="shrink-0 text-mv-ink-faint" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64 max-h-80 overflow-y-auto">
-        {restaurants.map((r) => {
+      <DropdownMenuContent align="start" className="w-72 max-h-[min(70vh,32rem)] overflow-y-auto">
+        {groupedRestaurants.map((group) => {
+          const expanded = openWorkspaceId === group.id;
+          return (
+            <div key={group.id} className="border-b border-mv-border-soft last:border-0">
+              <button
+                type="button"
+                aria-expanded={expanded}
+                onClick={() => setOpenWorkspaceId(expanded ? null : group.id)}
+                className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[12px] font-semibold text-mv-ink-soft hover:bg-mv-ink/[0.04]"
+              >
+                <Building2 size={14} className="shrink-0 text-mv-ink-faint" />
+                <span className="min-w-0 flex-1 truncate">{group.name}</span>
+                <ChevronDown size={13} className={cn("shrink-0 transition-transform", expanded && "rotate-180")} />
+              </button>
+              {expanded && group.locations.map((r) => {
           const favicon = branding?.logoUrl ?? getRestaurantFaviconUrl(r.website);
           return (
             <DropdownMenuItem
               key={r.id}
-              onClick={() => setRestaurantId(r.id)}
-              className="flex items-center gap-2.5"
+              onClick={() => { setOpenWorkspaceId(group.id); setRestaurantId(r.id); }}
+              className="ml-2 flex items-center gap-2.5"
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- tenant-controlled external logo hosts are not known at build time. */}
               <img
@@ -328,7 +358,10 @@ function TeamSwitcher() {
             </DropdownMenuItem>
           );
         })}
-        <div className="my-1 border-t border-mv-border-soft" />
+            </div>
+          );
+        })}
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => router.push("/workspace")}
           className="flex items-center gap-2.5 text-mv-ink-soft"
@@ -502,14 +535,6 @@ export function AppSidebar() {
 
           {/* Settings Section at the bottom */}
           <div className="border-t border-mv-border p-2.5 space-y-1">
-            <NavLink
-              href="/integrations"
-              label={t("integrations")}
-              icon={Zap}
-              active={pathname.startsWith("/integrations")}
-              onNavigate={closeMobile}
-            />
-
             {isPlatformAdmin && (
               <NavLink
                 href="/admin/restaurants"

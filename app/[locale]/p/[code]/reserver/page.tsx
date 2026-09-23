@@ -3,8 +3,8 @@ import { getReferralLandingByCode } from "@/lib/data/customer-referrals";
 import { notFound } from "next/navigation";
 import { ReservationRequestFlow } from "./ReservationRequestFlow";
 
-export default async function ReferralReservationPage({ params }: { params: Promise<{ code: string }> }) {
-  const { code } = await params;
+export default async function ReferralReservationPage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ via?: string }> }) {
+  const [{ code }, query] = await Promise.all([params, searchParams]);
   const landing = await getReferralLandingByCode(code);
   if (!landing) notFound();
 
@@ -14,6 +14,6 @@ export default async function ReferralReservationPage({ params }: { params: Prom
   } = await supabase.auth.getUser();
 
   return (
-    <ReservationRequestFlow code={code} restaurantName={landing.restaurantName} authenticated={Boolean(user)} />
+    <ReservationRequestFlow code={code} restaurantName={landing.restaurantName} authenticated={Boolean(user)} invitationChannel={query.via ?? "direct"} />
   );
 }

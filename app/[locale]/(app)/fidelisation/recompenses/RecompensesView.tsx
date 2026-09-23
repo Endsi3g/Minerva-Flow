@@ -249,7 +249,7 @@ export function RecompensesView({
           <p className="mb-5 text-[11px] font-bold uppercase tracking-wide text-mv-ink-faint">
             Échelle des paliers — visite n° → récompense
           </p>
-          <div className="relative pb-7 pt-1">
+          <div className="relative mx-3 pb-7 pt-1">
             <div className="absolute left-0 right-0 top-3 h-1 rounded-full bg-mv-border" />
             {sortedTiers.map((tier, i) => {
               const toneKey = loyaltyTierOrder[i] ?? loyaltyTierOrder[loyaltyTierOrder.length - 1];
@@ -261,8 +261,8 @@ export function RecompensesView({
                   className="absolute top-0 flex -translate-x-1/2 flex-col items-center"
                   style={{ left: `${leftPct}%` }}
                 >
-                  <Badge tone={tone} size="xs" className="mb-1.5 h-7 w-7 shrink-0 justify-center rounded-full p-0">
-                    <Icon size={13} strokeWidth={2.2} />
+                  <Badge tone={tone} size="xs" className="mb-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0">
+                    <Icon size={13} strokeWidth={2.2} className="block shrink-0" />
                   </Badge>
                   <span className="whitespace-nowrap text-[11px] font-semibold text-mv-ink">
                     {tier.visits} visite{tier.visits > 1 ? "s" : ""}

@@ -122,8 +122,19 @@ export type CounterCustomerResult = {
   visitCount: number;
   totalSpent: number;
   avatarUrl: string | null;
-  matchedBy: "code" | "phone" | "name";
+  matchedBy: "code" | "phone" | "verified" | "name";
 };
+
+export async function confirmCounterCustomerAction(
+  restaurantId: string,
+  customerId: string,
+  pairingCode: string
+): Promise<CounterCustomerResult | null> {
+  if (!/^\d{6}$/.test(pairingCode)) return null;
+  const resolved = await resolvePairingCode(restaurantId, pairingCode);
+  if (!("customer" in resolved) || resolved.customer.id !== customerId) return null;
+  return { ...resolved.customer, phone: null, matchedBy: "verified" };
+}
 
 export async function searchCustomerAtCounterAction(
   restaurantId: string,
@@ -166,9 +177,9 @@ export async function searchCustomerAtCounterAction(
           id: cust.id,
           name: cust.name,
           phone: cust.phone,
-          loyaltyPoints: cust.loyaltyPoints,
-          visitCount: cust.visitCount,
-          totalSpent: cust.totalSpent,
+          loyaltyPoints: 0,
+          visitCount: 0,
+          totalSpent: 0,
           avatarUrl: cust.avatarUrl,
           matchedBy: "phone",
         },
@@ -192,9 +203,9 @@ export async function searchCustomerAtCounterAction(
         id: data.id,
         name: data.name,
         phone: data.phone,
-        loyaltyPoints: data.loyalty_points,
-        visitCount: data.visit_count,
-        totalSpent: data.total_spent,
+        loyaltyPoints: 0,
+        visitCount: 0,
+        totalSpent: 0,
         avatarUrl: data.avatar_url,
         matchedBy: "name",
       },
@@ -461,4 +472,3 @@ export async function recordQrCodeDisplayedAction(
     // Non-blocking
   }
 }
-

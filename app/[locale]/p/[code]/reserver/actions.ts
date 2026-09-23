@@ -4,10 +4,11 @@ import { submitPublicReservationRequest, type PublicReservationRequestInput } fr
 
 export async function submitReservationRequestAction(
   code: string,
-  input: PublicReservationRequestInput
+  input: PublicReservationRequestInput,
+  invitationChannel?: string
 ): Promise<boolean> {
   if (!input.guestName.trim() || !input.reservationTime || !Number.isFinite(input.partySize) || input.partySize < 1) {
     return false;
   }
-  return submitPublicReservationRequest(code, input);
+  return submitPublicReservationRequest(code, input, invitationChannel);
 }

@@ -13,10 +13,12 @@ export function ReservationRequestFlow({
   code,
   restaurantName,
   authenticated,
+  invitationChannel,
 }: {
   code: string;
   restaurantName: string;
   authenticated: boolean;
+  invitationChannel: string;
 }) {
   const [email, setEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -27,7 +29,7 @@ export function ReservationRequestFlow({
   async function handleEmailSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setEmailStatus("sending");
-    const result = await requestCustomerMagicLink(email, `/p/${code}/reserver`);
+    const result = await requestCustomerMagicLink(email, `/p/${code}/reserver?via=${encodeURIComponent(invitationChannel)}`);
     if (result.ok) {
       setEmailStatus("sent");
     } else {
@@ -45,7 +47,7 @@ export function ReservationRequestFlow({
       guestPhone: String(form.get("guestPhone") ?? "") || null,
       partySize: Number(form.get("partySize") ?? 2),
       reservationTime: String(form.get("reservationTime") ?? ""),
-    });
+    }, invitationChannel);
     if (ok) {
       setSubmitStatus("done");
     } else {

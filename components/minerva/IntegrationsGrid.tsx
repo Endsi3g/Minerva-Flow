@@ -11,12 +11,14 @@ export function IntegrationsGrid() {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <PosConnectionsCard />
-      <StripeConnectCard />
       <AccountingConnectionsCard />
       <ReservationDeliveryConnectionsCard />
       <GoogleWorkspaceCard />
       <AdPlatformsCard />
-      <InstagramCard />
+      <div className="col-span-full grid grid-cols-1 gap-4 md:grid-cols-2">
+        <InstagramCard />
+        <StripeConnectCard />
+      </div>
     </div>
   );
 }

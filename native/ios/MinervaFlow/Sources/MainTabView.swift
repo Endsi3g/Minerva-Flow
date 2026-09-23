@@ -5,6 +5,7 @@ private let lastSeenSurveyBuildKey = "lastSeenSurveyBuild"
 struct MainTabView: View {
     @EnvironmentObject var router: DeepLinkRouter
     @EnvironmentObject var supabase: SupabaseManager
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selection: AppTab = .home
     @State private var showVersionSurvey = false
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
@@ -12,7 +13,28 @@ struct MainTabView: View {
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
     var body: some View {
-        TabView(selection: $selection) {
+        Group {
+          if horizontalSizeClass == .regular {
+            NavigationSplitView {
+                List {
+                    tabletTab(.home, title: isFrench ? "Accueil" : "Home", icon: "house.fill")
+                    tabletTab(.order, title: isFrench ? "Commander" : "Order", icon: "fork.knife")
+                    tabletTab(.scan, title: isFrench ? "Scanner" : "Scan", icon: "qrcode.viewfinder")
+                    tabletTab(.rewards, title: isFrench ? "Offres" : "Offers", icon: "gift.fill")
+                    tabletTab(.cards, title: isFrench ? "Mes cartes" : "My cards", icon: "creditcard.fill")
+                    tabletTab(.profile, title: isFrench ? "Plus" : "More", icon: "ellipsis.circle.fill")
+                }
+                .listStyle(.sidebar)
+                .navigationTitle("Minerva Flow")
+                .navigationSplitViewColumnWidth(min: 220, ideal: 260)
+            } detail: {
+                selectedContent
+                    .frame(maxWidth: 1100)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .navigationSplitViewStyle(.balanced)
+          } else {
+            TabView(selection: $selection) {
             HomeView()
                 .tabItem { Label(isFrench ? "Accueil" : "Home", systemImage: "house.fill") }
                 .tag(AppTab.home)
@@ -36,6 +58,8 @@ struct MainTabView: View {
             ProfileView()
                 .tabItem { Label(isFrench ? "Plus" : "More", systemImage: "ellipsis.circle.fill") }
                 .tag(AppTab.profile)
+            }
+          }
         }
         .tint(MinervaColor.emeraldDark)
         // A widget tap can arrive before this view even exists (the app
@@ -55,6 +79,26 @@ struct MainTabView: View {
         }
         .sheet(isPresented: $showVersionSurvey) {
             SurveyView()
+        }
+    }
+
+    private func tabletTab(_ tab: AppTab, title: String, icon: String) -> some View {
+        Button { selection = tab } label: {
+            Label(title, systemImage: icon).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(selection == tab ? MinervaColor.emerald.opacity(0.14) : Color.clear)
+    }
+
+    @ViewBuilder
+    private var selectedContent: some View {
+        switch selection {
+        case .home: HomeView()
+        case .order: MenuView()
+        case .scan: ScannerTabView()
+        case .rewards: RewardsView()
+        case .cards: MembershipCardsView()
+        case .profile: ProfileView()
         }
     }
 

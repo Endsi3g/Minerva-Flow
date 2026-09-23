@@ -19,6 +19,23 @@ export type ReferralLinkTracking = {
   customerName: string;
 };
 
+export type ReferralChannel = "qr" | "share" | "copy" | "code" | "direct";
+
+export type ReferralInvitationActivity = {
+  id: string;
+  inviterName: string;
+  inviteeName: string;
+  channel: ReferralChannel;
+  createdAt: string;
+  conversionType: "reservation" | "achat";
+};
+
+const referralChannels = new Set<ReferralChannel>(["qr", "share", "copy", "code", "direct"]);
+
+export function normalizeReferralChannel(value: string | null | undefined): ReferralChannel {
+  return value && referralChannels.has(value as ReferralChannel) ? (value as ReferralChannel) : "direct";
+}
+
 /**
  * Flat, staff-facing view across every program's links for one restaurant —
  * powers the tracking table on /fidelisation ("où il a fait du
@@ -57,6 +74,63 @@ export async function getReferralLinksForRestaurant(restaurantId: string): Promi
     programName: programNameById.get(link.referralProgramId) ?? "—",
     customerName: customerNameById.get(link.customerId) ?? "—",
   }));
+}
+
+export async function getReferralInvitationActivity(restaurantId: string): Promise<ReferralInvitationActivity[]> {
+  const admin = createAdminClient();
+  const { data: programs } = await admin.from("referral_programs").select("id").eq("restaurant_id", restaurantId);
+  const programIds = ((programs ?? []) as { id: string }[]).map((program) => program.id);
+  if (!programIds.length) return [];
+
+  const { data: links } = await admin.from("customer_referral_links").select("id, customer_id").in("referral_program_id", programIds);
+  const linkRows = (links ?? []) as { id: string; customer_id: string }[];
+  if (!linkRows.length) return [];
+
+  const linkById = new Map(linkRows.map((link) => [link.id, link]));
+  const { data: eventRows } = await admin
+    .from("customer_referral_events")
+    .select("id, referral_link_id, invited_customer_id, invitation_channel, conversion_id, created_at")
+    .eq("event_type", "conversion")
+    .in("referral_link_id", linkRows.map((link) => link.id))
+    .order("created_at", { ascending: false })
+    .limit(100);
+  const events = (eventRows ?? []) as {
+    id: string;
+    referral_link_id: string;
+    invited_customer_id: string | null;
+    invitation_channel: string;
+    conversion_id: string | null;
+    created_at: string;
+  }[];
+  if (!events.length) return [];
+
+  const conversionIds = [...new Set(events.map((event) => event.conversion_id).filter((id): id is string => Boolean(id)))];
+  const { data: conversions } = conversionIds.length
+    ? await admin.from("customer_referral_conversions").select("id, conversion_type").in("id", conversionIds)
+    : { data: [] };
+  const conversionTypes = new Map(((conversions ?? []) as { id: string; conversion_type: string }[]).map((row) => [row.id, row.conversion_type]));
+  const customerIds = [...new Set([
+    ...events.map((event) => event.invited_customer_id),
+    ...events.map((event) => linkById.get(event.referral_link_id)?.customer_id ?? null),
+  ].filter((id): id is string => Boolean(id)))];
+  const { data: customerRows } = customerIds.length
+    ? await admin.from("customers").select("id, name").in("id", customerIds)
+    : { data: [] };
+  const names = new Map(((customerRows ?? []) as { id: string; name: string }[]).map((row) => [row.id, row.name]));
+
+  return events.flatMap((event) => {
+    const link = linkById.get(event.referral_link_id);
+    const conversionType = event.conversion_id ? conversionTypes.get(event.conversion_id) : null;
+    if (!link || !event.invited_customer_id || (conversionType !== "reservation" && conversionType !== "achat")) return [];
+    return [{
+      id: event.id,
+      inviterName: names.get(link.customer_id) ?? "Client",
+      inviteeName: names.get(event.invited_customer_id) ?? "Nouveau client",
+      channel: normalizeReferralChannel(event.invitation_channel),
+      createdAt: event.created_at,
+      conversionType,
+    }];
+  });
 }
 
 export type CustomerReferralLinkRow = {
@@ -176,9 +250,19 @@ export async function getReferralLandingByCode(code: string): Promise<PublicRefe
 }
 
 /** Atomic increment (see migration) — no auth check by design, called anonymously from the public /p/[code] landing page. */
-export async function recordClick(code: string): Promise<void> {
+export async function recordClick(code: string, channelInput?: string | null): Promise<void> {
   const admin = createAdminClient();
-  await admin.rpc("increment_referral_link_clicks", { p_code: code });
+  const { data } = await admin.from("customer_referral_links").select("id").eq("code", code).maybeSingle();
+  if (!data) return;
+  const linkId = (data as { id: string }).id;
+  await Promise.all([
+    admin.rpc("increment_referral_link_clicks", { p_code: code }),
+    admin.from("customer_referral_events").insert({
+      referral_link_id: linkId,
+      event_type: "click",
+      invitation_channel: normalizeReferralChannel(channelInput),
+    }),
+  ]);
 }
 
 /**
@@ -245,7 +329,8 @@ export type PublicReservationRequestInput = {
  */
 export async function submitPublicReservationRequest(
   code: string,
-  input: PublicReservationRequestInput
+  input: PublicReservationRequestInput,
+  channelInput?: string | null
 ): Promise<boolean> {
   // The page load itself is rate-limited, but that only throttles GETs — a
   // scripted client can call this server action repeatedly without ever
@@ -303,6 +388,8 @@ export async function submitPublicReservationRequest(
     referral_link_id: link.id,
     conversion_type: "reservation",
     reservation_id: (reservation as { id: string }).id,
+    invited_customer_id: customerId,
+    invitation_channel: normalizeReferralChannel(channelInput),
   });
 
   return true;
@@ -463,7 +550,8 @@ export async function submitPublicOrder(
   menuToken: string,
   referralCode: string | null,
   cart: PublicOrderCartLine[],
-  guestInfo: PublicOrderGuestInfo
+  guestInfo: PublicOrderGuestInfo,
+  invitationChannelInput?: string | null
 ): Promise<SubmitPublicOrderResult> {
   if (cart.length === 0) return { ok: false };
 
@@ -626,6 +714,8 @@ export async function submitPublicOrder(
       referral_link_id: referralLinkId,
       conversion_type: "achat",
       order_id: orderId,
+      invited_customer_id: customerId,
+      invitation_channel: normalizeReferralChannel(invitationChannelInput),
     });
   }
 

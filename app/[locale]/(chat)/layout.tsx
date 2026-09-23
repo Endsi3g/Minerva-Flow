@@ -9,7 +9,7 @@ import type { Role } from "@/lib/types";
 const ALLOWED_ROLES: Role[] = ["owner", "manager", "staff", "consultant"];
 
 export default async function ChatLayout({ children }: { children: React.ReactNode }) {
-  const { authUser, restaurants, branding, role, sidebarPermissions, isPlatformAdmin, initialRestaurantId, onboardingCompleted } =
+  const { authUser, restaurants, workspaces, branding, role, sidebarPermissions, isPlatformAdmin, initialRestaurantId, onboardingCompleted } =
     await getAppSessionData();
 
   if (!authUser || !ALLOWED_ROLES.includes(role)) {
@@ -27,6 +27,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
       sidebarPermissions={sidebarPermissions}
       isPlatformAdmin={isPlatformAdmin}
       restaurants={restaurants}
+      workspaces={workspaces}
       branding={branding}
       initialRestaurantId={initialRestaurantId}
     >

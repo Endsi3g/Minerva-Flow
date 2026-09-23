@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getLoyaltyRewards } from "@/lib/data/customers";
 import { getReferralPrograms } from "@/lib/data/referral-programs";
-import { getReferralLinksForRestaurant } from "@/lib/data/customer-referrals";
+import { getReferralInvitationActivity, getReferralLinksForRestaurant } from "@/lib/data/customer-referrals";
 import {
   computeReferralRoiMetrics,
   getTopAmbassadors,
@@ -29,7 +29,7 @@ const EMPTY_ROI = {
 export default async function ParrainagePage() {
   const restaurantId = await getCurrentRestaurantId();
 
-  const [rewards, referralPrograms, referralLinks, referralRoi, topAmbassadors, dailyActivity] = restaurantId
+  const [rewards, referralPrograms, referralLinks, referralRoi, topAmbassadors, dailyActivity, invitations] = restaurantId
     ? await Promise.all([
         getLoyaltyRewards(restaurantId),
         getReferralPrograms(restaurantId),
@@ -37,8 +37,9 @@ export default async function ParrainagePage() {
         computeReferralRoiMetrics(restaurantId),
         getTopAmbassadors(restaurantId),
         getReferralDailyActivity(restaurantId),
+        getReferralInvitationActivity(restaurantId),
       ])
-    : [[], [], [], EMPTY_ROI, [], []];
+    : [[], [], [], EMPTY_ROI, [], [], []];
 
   return (
     <ParrainageView
@@ -49,6 +50,7 @@ export default async function ParrainagePage() {
       referralRoi={referralRoi}
       topAmbassadors={topAmbassadors}
       dailyActivity={dailyActivity}
+      invitations={invitations}
     />
   );
 }

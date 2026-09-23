@@ -17,7 +17,7 @@ import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav
 import { TablePagination } from "@/components/minerva/TablePagination";
 import { CustomerOriginMap } from "@/components/fidelisation/CustomerOriginMap";
 import { getCustomerOriginByCity } from "@/lib/customer-origin";
-import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download, Megaphone, Phone } from "lucide-react";
+import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download, Megaphone } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -27,8 +27,8 @@ import {
   createCustomerAction,
   claimRewardRedemptionAction,
   grantBirthdayBonusAction,
-  resolvePairingCodeAction,
   searchCustomerAtCounterAction,
+  confirmCounterCustomerAction,
   type CounterCustomerResult,
   logVisitAction,
   sendAnnouncementAction,
@@ -213,13 +213,18 @@ function IdentificationAuComptoirCard({
   const [isResolving, setIsResolving] = useState(false);
   const [found, setFound] = useState<CounterCustomerResult | null>(null);
   const [amount, setAmount] = useState("");
+  const [confirmationCode, setConfirmationCode] = useState("");
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
+  const needsClientConfirmation = found?.matchedBy === "phone" || found?.matchedBy === "name";
 
   async function handleSearch(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!query.trim()) return;
     setIsResolving(true);
     setFound(null);
+    setConfirmationError(null);
     try {
       const result = await searchCustomerAtCounterAction(restaurantId, query);
       if (result.error) {
@@ -230,6 +235,25 @@ function IdentificationAuComptoirCard({
       }
     } finally {
       setIsResolving(false);
+    }
+  }
+
+  async function confirmClientIdentity() {
+    if (!found || confirmationCode.length !== 6) return;
+    setIsConfirming(true);
+    setConfirmationError(null);
+    try {
+      const confirmed = await confirmCounterCustomerAction(restaurantId, found.id, confirmationCode);
+      if (!confirmed) {
+        setConfirmationError("Le code ne correspond pas à ce compte ou a expiré. Demandez au client d’en générer un nouveau.");
+        return;
+      }
+      setFound(confirmed);
+      setConfirmationCode("");
+    } catch {
+      setConfirmationError("La vérification n’a pas abouti. Réessayez dans un instant.");
+    } finally {
+      setIsConfirming(false);
     }
   }
 
@@ -247,7 +271,7 @@ function IdentificationAuComptoirCard({
         found.id,
         parsed,
         "Visite comptoir",
-        found.matchedBy === "code"
+        found.matchedBy === "code" || found.matchedBy === "verified"
       );
       if (updated) {
         onVisitLogged(updated);
@@ -275,7 +299,7 @@ function IdentificationAuComptoirCard({
       <CardHeader
         eyebrow="Au comptoir & caisse"
         title="Identification rapide du client"
-        description="Flashez le QR code ou entrez le numéro de téléphone / code à 6 chiffres pour créditer instantanément la visite."
+        description="Recherchez le client par téléphone, puis confirmez son identité avec son code temporaire à 6 chiffres, ou faites-lui présenter directement ce code."
       />
       {!found ? (
         <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-2.5">
@@ -314,6 +338,8 @@ function IdentificationAuComptoirCard({
                   <Badge variant="subtle" tone="green" size="sm">
                     {found.matchedBy === "phone"
                       ? "Téléphone"
+                      : found.matchedBy === "verified"
+                        ? "Identité confirmée"
                       : found.matchedBy === "code"
                         ? "Code 6 chiffres"
                         : "Nom"}
@@ -322,7 +348,9 @@ function IdentificationAuComptoirCard({
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-right text-xs text-mv-ink-soft">
+            {needsClientConfirmation ? (
+              <p className="max-w-xs text-right text-[11.5px] text-mv-ink-soft">Demandez au client de confirmer son compte avec le code temporaire affiché dans son application. Le solde reste masqué d’ici là.</p>
+            ) : <div className="flex items-center gap-3 text-right text-xs text-mv-ink-soft">
               <div>
                 <span className="block font-serif text-sm font-bold text-mv-green">
                   {found.loyaltyPoints} pts
@@ -335,10 +363,21 @@ function IdentificationAuComptoirCard({
                 </span>
                 <span>dépensés</span>
               </div>
-            </div>
+            </div>}
           </div>
 
-          <div className="flex flex-wrap items-end gap-2 pt-1">
+          {needsClientConfirmation ? (
+            <div className="flex flex-wrap items-end gap-2 pt-1">
+              <Field label="Code temporaire du client" hint="Onglet Scanner · code à 6 chiffres">
+                <Input value={confirmationCode} onChange={(event) => setConfirmationCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="123456" className="w-32 font-mono tracking-widest" />
+              </Field>
+              <Button type="button" size="sm" onClick={confirmClientIdentity} disabled={isConfirming || confirmationCode.length !== 6}>
+                {isConfirming ? "Vérification…" : "Confirmer l’identité"}
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => { setFound(null); setConfirmationCode(""); }}>Changer de client</Button>
+              {confirmationError && <p role="alert" className="basis-full text-[12px] text-mv-red">{confirmationError}</p>}
+            </div>
+          ) : <div className="flex flex-wrap items-end gap-2 pt-1">
             <Field label="Montant de l'addition">
               <Input
                 value={amount}
@@ -368,7 +407,7 @@ function IdentificationAuComptoirCard({
             >
               Changer de client
             </Button>
-          </div>
+          </div>}
         </div>
       )}
     </Card>

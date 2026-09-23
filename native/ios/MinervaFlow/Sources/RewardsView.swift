@@ -329,7 +329,7 @@ struct RewardsView: View {
                     Button {
                         qrProgram = progress
                     } label: {
-                        if let qrImage = QRCodeGenerator.image(for: referralShareURL(code: link.code)) {
+                        if let qrImage = QRCodeGenerator.image(for: referralShareURL(code: link.code, channel: "qr")) {
                             Image(uiImage: qrImage)
                                 .interpolation(.none)
                                 .resizable()
@@ -348,7 +348,7 @@ struct RewardsView: View {
                     .accessibilityLabel("Code QR de parrainage")
                     .accessibilityHint("Agrandir pour le faire scanner")
 
-                    ShareLink(item: referralShareURL(code: link.code), message: Text(referralShareText(program: program, code: link.code))) {
+                    ShareLink(item: referralShareURL(code: link.code, channel: "share"), message: Text(referralShareText(program: program, code: link.code))) {
                         HStack(spacing: 6) {
                             Image(systemName: "square.and.arrow.up")
                             Text("Partager mon lien")
@@ -386,13 +386,15 @@ struct RewardsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
-    private func referralShareURL(code: String) -> URL {
-        Config.apiBaseURL.appending(path: "/p/\(code)")
+    private func referralShareURL(code: String, channel: String = "direct") -> URL {
+        var components = URLComponents(url: Config.apiBaseURL.appending(path: "/p/\(code)"), resolvingAgainstBaseURL: false)
+        components?.queryItems = [URLQueryItem(name: "via", value: channel)]
+        return components?.url ?? Config.apiBaseURL.appending(path: "/p/\(code)")
     }
 
     private func referralShareText(program: ProgramLike, code: String) -> String {
         let name = supabase.restaurantName ?? "notre restaurant"
-        return "Je t'invite chez \(name) ! Utilise mon lien pour découvrir la carte et recevoir ton cadeau de bienvenue : \(referralShareURL(code: code).absoluteString)"
+        return "Je t'invite chez \(name) ! Utilise mon lien pour découvrir la carte et recevoir ton cadeau de bienvenue : \(referralShareURL(code: code, channel: "share").absoluteString)"
     }
 }
 
@@ -409,7 +411,9 @@ struct ReferralQRSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private var shareURL: URL {
-        Config.apiBaseURL.appending(path: "/p/\(progress.link?.code ?? "")")
+        var components = URLComponents(url: Config.apiBaseURL.appending(path: "/p/\(progress.link?.code ?? "")"), resolvingAgainstBaseURL: false)
+        components?.queryItems = [URLQueryItem(name: "via", value: "qr")]
+        return components?.url ?? Config.apiBaseURL.appending(path: "/p/\(progress.link?.code ?? "")")
     }
 
     private var qrImage: UIImage? { QRCodeGenerator.image(for: shareURL) }

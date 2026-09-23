@@ -7,8 +7,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CalendarClock, Gift } from "lucide-react";
 
-export default async function ReferralLandingPage({ params }: { params: Promise<{ code: string }> }) {
-  const { code } = await params;
+export default async function ReferralLandingPage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ via?: string }> }) {
+  const [{ code }, query] = await Promise.all([params, searchParams]);
+  const channel = query.via ?? "direct";
 
   const ip = await getClientIp();
   const { allowed } = await checkRateLimit(`referral-link:${ip}`, { max: 30, windowSeconds: 300 });
@@ -23,7 +24,7 @@ export default async function ReferralLandingPage({ params }: { params: Promise<
   const landing = await getReferralLandingByCode(code);
   if (!landing) notFound();
 
-  await recordClick(code);
+  await recordClick(code, channel);
 
   const { program, restaurantName, referrerName } = landing;
   const referrerInitial = referrerName.trim().charAt(0).toUpperCase() || "?";
@@ -71,7 +72,7 @@ export default async function ReferralLandingPage({ params }: { params: Promise<
             </div>
           )}
 
-          <Link href={`/p/${code}/reserver`} className="mt-6 block">
+          <Link href={`/p/${code}/reserver?via=${encodeURIComponent(channel)}`} className="mt-6 block">
             <Button className="w-full" size="lg">
               <CalendarClock size={16} /> Réserver une table
             </Button>

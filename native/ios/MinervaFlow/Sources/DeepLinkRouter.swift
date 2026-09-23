@@ -11,7 +11,7 @@ enum AppTab: Int {
 /// RootView can observe it with .onChange.
 enum PendingUniversalLink: Equatable {
     case touchpoint(code: String)
-    case referral(code: String)
+    case referral(code: String, channel: String)
 }
 
 /// Routes minervaflow:// URLs (currently only the home-screen widget's tap
@@ -41,7 +41,7 @@ final class DeepLinkRouter: ObservableObject {
         guard segments.count == 2, let code = segments.last else { return }
         switch segments.first {
         case "t": pendingUniversalLink = .touchpoint(code: code)
-        case "p": pendingUniversalLink = .referral(code: code)
+        case "p": pendingUniversalLink = .referral(code: code, channel: URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "via" })?.value ?? "direct")
         default: break
         }
     }

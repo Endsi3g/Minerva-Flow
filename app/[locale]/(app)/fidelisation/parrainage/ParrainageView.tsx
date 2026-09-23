@@ -11,7 +11,7 @@ import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav
 import { ReferralRoiDashboard } from "@/components/fidelisation/ReferralRoiDashboard";
 import { ReferralActivityHeatmap } from "@/components/fidelisation/ReferralActivityHeatmap";
 import type { LoyaltyReward, ReferralProgram } from "@/lib/types";
-import type { ReferralLinkTracking } from "@/lib/data/customer-referrals";
+import type { ReferralInvitationActivity, ReferralLinkTracking } from "@/lib/data/customer-referrals";
 import type { ReferralRoiMetrics, TopAmbassador, ReferralDailyActivity } from "@/lib/data/referral-roi";
 import { Plus, Trash2, Link2, MousePointerClick, Copy, Check, ExternalLink } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -124,7 +124,7 @@ function NewReferralProgramModal({
 
 function ReferralLinkRow({ tracking }: { tracking: ReferralLinkTracking }) {
   const [copied, setCopied] = useState(false);
-  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/p/${tracking.link.code}`;
+  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/p/${tracking.link.code}?via=copy`;
 
   function handleCopy() {
     navigator.clipboard.writeText(url);
@@ -303,6 +303,7 @@ export function ParrainageView({
   referralRoi,
   topAmbassadors,
   dailyActivity = [],
+  invitations = [],
 }: {
   restaurantId: string | null;
   initialReferralPrograms: ReferralProgram[];
@@ -311,6 +312,7 @@ export function ParrainageView({
   referralRoi: ReferralRoiMetrics;
   topAmbassadors: TopAmbassador[];
   dailyActivity?: ReferralDailyActivity[];
+  invitations?: ReferralInvitationActivity[];
 }) {
   const [referralPrograms, setReferralPrograms] = useState(initialReferralPrograms);
 
@@ -325,6 +327,7 @@ export function ParrainageView({
       <div className="space-y-6">
         <ReferralRoiDashboard metrics={referralRoi} ambassadors={topAmbassadors} />
         <ReferralActivityHeatmap activity={dailyActivity} />
+        <ReferralInvitationsTable invitations={invitations} />
         {restaurantId && (
           <ReferralProgramsCard
             restaurantId={restaurantId}
@@ -336,5 +339,34 @@ export function ParrainageView({
         )}
       </div>
     </div>
+  );
+}
+
+function ReferralInvitationsTable({ invitations }: { invitations: ReferralInvitationActivity[] }) {
+  const channelLabels = { qr: "Code QR", share: "Partage", copy: "Lien copié", code: "Code", direct: "Lien direct" };
+  return (
+    <Card className="w-full min-w-0">
+      <CardHeader eyebrow="Traçabilité" title="Invitations converties" description="Qui a invité chaque nouveau client, par quel canal et à quelle date." />
+      {invitations.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-mv-border-soft p-5 text-center text-[12.5px] text-mv-ink-faint">Les invitations apparaîtront dès qu’un nouveau client aura réservé ou commandé avec un lien de parrainage.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[520px] text-left text-[12.5px]">
+            <thead><tr className="border-b border-mv-border-soft text-[10.5px] font-semibold uppercase tracking-wide text-mv-ink-faint"><th className="py-2 pr-3">Invitant</th><th className="py-2 pr-3">Nouveau client</th><th className="py-2 pr-3">Canal</th><th className="py-2 pr-3">Action</th><th className="py-2 text-right">Date</th></tr></thead>
+            <tbody className="divide-y divide-mv-border-soft">
+              {invitations.map((invitation) => (
+                <tr key={invitation.id}>
+                  <td className="py-2.5 pr-3 font-medium text-mv-ink">{invitation.inviterName}</td>
+                  <td className="py-2.5 pr-3 text-mv-ink-soft">{invitation.inviteeName}</td>
+                  <td className="py-2.5 pr-3"><Badge tone="green" variant="subtle" size="sm">{channelLabels[invitation.channel]}</Badge></td>
+                  <td className="py-2.5 pr-3 text-mv-ink-soft">{invitation.conversionType === "reservation" ? "Réservation" : "Commande"}</td>
+                  <td className="py-2.5 text-right text-mv-ink-faint">{new Date(invitation.createdAt).toLocaleDateString("fr-CA")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }

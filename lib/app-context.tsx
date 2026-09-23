@@ -21,6 +21,7 @@ type AppState = {
   restaurantId: string;
   setRestaurantId: (id: string) => void;
   restaurants: Restaurant[];
+  workspaces: { id: string; name: string }[];
   branding: WorkspaceBranding | null;
   period: Period;
   setPeriod: (p: Period) => void;
@@ -39,6 +40,7 @@ export function AppProvider({
   sidebarPermissions = null,
   isPlatformAdmin = false,
   restaurants,
+  workspaces = [],
   branding = null,
   initialRestaurantId,
 }: {
@@ -48,6 +50,7 @@ export function AppProvider({
   sidebarPermissions?: string[] | null;
   isPlatformAdmin?: boolean;
   restaurants: Restaurant[];
+  workspaces?: { id: string; name: string }[];
   branding?: WorkspaceBranding | null;
   initialRestaurantId: string;
 }) {
@@ -75,6 +78,7 @@ export function AppProvider({
       restaurantId,
       setRestaurantId,
       restaurants,
+      workspaces,
       branding,
       period,
       setPeriod,
@@ -83,7 +87,7 @@ export function AppProvider({
       authUser: localAuthUser,
       updateAuthUser,
     }),
-    [role, sidebarPermissions, isPlatformAdmin, restaurantId, restaurants, branding, period, sidebarCollapsed, localAuthUser, setRestaurantId]
+    [role, sidebarPermissions, isPlatformAdmin, restaurantId, restaurants, workspaces, branding, period, sidebarCollapsed, localAuthUser, setRestaurantId]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
