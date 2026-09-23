@@ -62,6 +62,7 @@ function AuthCardInner({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
+  const [productUpdatesOptIn, setProductUpdatesOptIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -124,6 +125,8 @@ function AuthCardInner({
           referralCode,
           inviteToken,
           workspaceInviteToken,
+          productUpdatesOptIn,
+          preferredLanguage: locale,
         });
 
         if (!signUpRes.success) {
@@ -181,6 +184,7 @@ function AuthCardInner({
   function toggleMode(newMode: "login" | "signup") {
     setError(null);
     setMode(newMode);
+    setProductUpdatesOptIn(false);
     const href = getPathname({ href: newMode === "login" ? "/login" : "/sign-up", locale });
     window.history.pushState(null, "", href);
   }
@@ -317,6 +321,21 @@ function AuthCardInner({
                   className="h-11 w-full rounded-xl border border-mv-border bg-mv-cream-soft px-3.5 text-[13.5px] text-mv-ink placeholder:text-mv-ink-faint transition-colors focus:border-mv-green focus:bg-mv-surface focus:outline-none focus:ring-2 focus:ring-mv-green/15"
                 />
               </div>
+            )}
+
+            {mode === "signup" && (
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-mv-border bg-mv-cream-soft p-3.5">
+                <input
+                  type="checkbox"
+                  checked={productUpdatesOptIn}
+                  onChange={(event) => setProductUpdatesOptIn(event.target.checked)}
+                  className="mt-0.5 size-4 shrink-0 accent-mv-green"
+                />
+                <span className="text-[12px] leading-5 text-mv-ink-soft">
+                  <span className="block font-semibold text-mv-ink">{t("productUpdatesConsentLabel")}</span>
+                  {t("productUpdatesConsentDescription")}
+                </span>
+              </label>
             )}
 
             {error && (

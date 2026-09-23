@@ -10,6 +10,7 @@ import {
   deleteLoyaltyReward,
   claimRewardRedemption,
   resolvePairingCode,
+  resolvePairingCodeForCustomer,
   findCustomerByPhone,
   mapCustomer,
   type CustomerRow,
@@ -64,9 +65,13 @@ export async function logVisitAction(
   customerId: string,
   amountSpent: number,
   note?: string | null,
-  viaPairingCode = false
+  viaPairingCode = false,
+  viaPhoneLookup = false
 ): Promise<Customer | null> {
-  const customer = await logVisit(restaurantId, customerId, amountSpent, note, viaPairingCode);
+  const customer = await logVisit(restaurantId, customerId, amountSpent, note, {
+    viaPairingCode,
+    viaPhoneLookup,
+  });
   if (customer) revalidatePath("/fidelisation");
   return customer;
 }
@@ -124,17 +129,24 @@ export type CounterCustomerResult = {
   totalSpent: number;
   avatarUrl: string | null;
   matchedBy: "code" | "phone" | "verified" | "name";
+  viaPhoneLookup?: boolean;
 };
 
 export async function confirmCounterCustomerAction(
   restaurantId: string,
   customerId: string,
-  pairingCode: string
+  pairingCode: string,
+  originalMatch: "phone" | "name" = "phone"
 ): Promise<CounterCustomerResult | null> {
   if (!/^\d{6}$/.test(pairingCode)) return null;
-  const resolved = await resolvePairingCode(restaurantId, pairingCode);
+  const resolved = await resolvePairingCodeForCustomer(restaurantId, customerId, pairingCode);
   if (!("customer" in resolved) || resolved.customer.id !== customerId) return null;
-  return { ...resolved.customer, phone: null, matchedBy: "verified" };
+  return {
+    ...resolved.customer,
+    phone: null,
+    matchedBy: "verified",
+    viaPhoneLookup: originalMatch === "phone",
+  };
 }
 
 export async function searchCustomerAtCounterAction(

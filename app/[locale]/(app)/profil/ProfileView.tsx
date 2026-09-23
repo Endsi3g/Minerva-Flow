@@ -13,12 +13,12 @@ import { DeleteAccountCard } from "@/components/minerva/DeleteAccountCard";
 import { GoogleCalendarCard } from "@/components/minerva/GoogleCalendarCard";
 import { roleLabels, useApp } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
-import { updateProfileNameAction } from "./actions";
+import { setProductUpdatesEmailConsentAction, updateProfileNameAction } from "./actions";
 import { formatRelativeTime } from "@/lib/utils";
 import { useActivityLogRealtime, type ActivityLogRow } from "@/hooks/use-activity-log-realtime";
 import type { MyProfile } from "@/lib/data/profile";
 import type { ActivityLogEntry, Role } from "@/lib/types";
-import { Camera, Check, History, Pencil, X } from "lucide-react";
+import { Camera, Check, History, MailCheck, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { EcosystemProposalCard } from "./EcosystemProposalCard";
@@ -158,6 +158,70 @@ function NameEditor({ profile }: { profile: MyProfile }) {
   );
 }
 
+function ProductUpdatesPreference({ initialValue }: { initialValue: boolean }) {
+  const t = useTranslations("profile");
+  const [enabled, setEnabled] = useState(initialValue);
+  const [saving, setSaving] = useState(false);
+
+  async function handleChange(nextValue: boolean) {
+    const previousValue = enabled;
+    setEnabled(nextValue);
+    setSaving(true);
+    const result = await setProductUpdatesEmailConsentAction(nextValue);
+    setSaving(false);
+
+    if (!result.ok) {
+      setEnabled(previousValue);
+      toast.error(result.error);
+      return;
+    }
+
+    if ("syncWarning" in result && result.syncWarning) {
+      toast.error(t("emailUpdatesSyncWarning"));
+      return;
+    }
+    toast.success(nextValue ? t("emailUpdatesEnabled") : t("emailUpdatesDisabled"));
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        eyebrow={t("emailPreferencesEyebrow")}
+        title={t("emailPreferencesTitle")}
+        description={t("emailPreferencesDescription")}
+      />
+      <label
+        htmlFor="product-updates-email-opt-in"
+        className="flex cursor-pointer items-start gap-3 rounded-xl border border-mv-border-soft bg-mv-cream-soft/55 p-4 transition-colors hover:bg-mv-cream-soft has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-mv-green/35"
+      >
+        <input
+          id="product-updates-email-opt-in"
+          type="checkbox"
+          checked={enabled}
+          disabled={saving}
+          onChange={(event) => void handleChange(event.target.checked)}
+          className="mt-0.5 size-4 shrink-0 accent-mv-green disabled:cursor-wait"
+        />
+        <span className="min-w-0">
+          <span className="flex items-center gap-2 text-[13px] font-medium text-mv-ink">
+            <MailCheck size={15} className="shrink-0 text-mv-green" aria-hidden="true" />
+            {t("emailUpdatesLabel")}
+          </span>
+          <span className="mt-1 block text-[12px] leading-relaxed text-mv-ink-soft">
+            {t("emailUpdatesHelp")}
+          </span>
+          <span className="mt-2 block text-[11px] leading-relaxed text-mv-ink-faint">
+            {t("emailUpdatesOptional")}
+          </span>
+        </span>
+      </label>
+      <p className="mt-3 text-[11.5px] text-mv-ink-faint" aria-live="polite">
+        {saving ? t("emailUpdatesSaving") : enabled ? t("emailUpdatesStatusOn") : t("emailUpdatesStatusOff")}
+      </p>
+    </Card>
+  );
+}
+
 export function ProfileView({
   profile,
   role,
@@ -224,6 +288,8 @@ export function ProfileView({
         </Card>
 
         <EcosystemProposalCard />
+
+        <ProductUpdatesPreference initialValue={profile.productUpdatesOptIn} />
 
         <GoogleCalendarCard />
 

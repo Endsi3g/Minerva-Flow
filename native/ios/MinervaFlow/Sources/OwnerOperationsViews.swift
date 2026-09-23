@@ -180,47 +180,203 @@ private struct MenuItemEditor: View {
 
 struct OwnerLoyaltyView: View {
     @EnvironmentObject private var supabase: SupabaseManager
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     @State private var respondingTo: NativeOwnerRestaurantReview?
+    @State private var counterPhone = ""
+    @State private var counterMatches: [NativeOwnerCustomerLookup] = []
+    @State private var selectedCounterMatch: NativeOwnerCustomerLookup?
+    @State private var confirmedCounterCustomer: NativeCounterCustomer?
+    @State private var counterCode = ""
+    @State private var counterAmount = ""
+    @State private var counterSearching = false
+    @State private var counterConfirming = false
+    @State private var counterSaving = false
+    @State private var counterDidSearch = false
+    @State private var counterSuccess: String?
+
+    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+    private var parsedCounterAmount: Double? {
+        guard let amount = Double(counterAmount.replacingOccurrences(of: ",", with: ".")),
+              amount.isFinite, amount > 0, amount <= 100_000 else { return nil }
+        return amount
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                Section("Customers") {
-                    if supabase.ownerCustomers.isEmpty { Text("No customers yet").foregroundStyle(.secondary) }
+                Section(isFrench ? "Identifier et créditer une visite" : "Identify and credit a visit") {
+                    Text(isFrench
+                         ? "Recherchez par téléphone. Le solde reste masqué jusqu’à ce que le client confirme son identité avec le code temporaire de sa carte."
+                         : "Search by phone. The balance stays hidden until the customer confirms their identity with the temporary code on their card.")
+                        .font(.footnote).foregroundStyle(.secondary)
+
+                    HStack {
+                        TextField(isFrench ? "Numéro de téléphone" : "Phone number", text: $counterPhone)
+                            .keyboardType(.phonePad)
+                            .textContentType(.telephoneNumber)
+                        Button {
+                            counterSearching = true
+                            counterDidSearch = false
+                            counterMatches = []
+                            selectedCounterMatch = nil
+                            confirmedCounterCustomer = nil
+                            counterCode = ""
+                            counterAmount = ""
+                            counterSuccess = nil
+                            Task {
+                                counterMatches = await supabase.lookupOwnerCustomersByPhone(counterPhone)
+                                counterDidSearch = true
+                                counterSearching = false
+                            }
+                        } label: {
+                            if counterSearching { ProgressView() }
+                            else { Label(isFrench ? "Rechercher" : "Search", systemImage: "magnifyingglass") }
+                        }
+                        .disabled(counterSearching || counterPhone.filter(\.isNumber).count < 7)
+                    }
+
+                    if counterDidSearch && counterMatches.isEmpty && supabase.lastError == nil {
+                        Label(
+                            isFrench ? "Aucun client trouvé avec ce numéro." : "No customer found for that number.",
+                            systemImage: "person.crop.circle.badge.questionmark"
+                        ).font(.footnote).foregroundStyle(.secondary)
+                    }
+
+                    ForEach(counterMatches) { match in
+                        Button {
+                            selectedCounterMatch = match
+                            confirmedCounterCustomer = nil
+                            counterCode = ""
+                            counterAmount = ""
+                            counterSuccess = nil
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(match.name).font(.headline).foregroundStyle(MinervaColor.ink)
+                                    if let phone = match.phone { Text(phone).font(.caption).foregroundStyle(.secondary) }
+                                }
+                                Spacer()
+                                if selectedCounterMatch?.id == match.id { Image(systemName: "checkmark.circle.fill").foregroundStyle(MinervaColor.emeraldDark) }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(counterConfirming)
+                    }
+
+                    if let selected = selectedCounterMatch, confirmedCounterCustomer == nil {
+                        Text(isFrench
+                             ? "Demandez au client d’ouvrir sa carte et de vous communiquer le code actuel à 6 chiffres."
+                             : "Ask the customer to open their card and share the current 6-digit code.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                        HStack {
+                            TextField(isFrench ? "Code client" : "Customer code", text: $counterCode)
+                                .keyboardType(.numberPad)
+                                .textContentType(.oneTimeCode)
+                                .monospacedDigit()
+                            Button {
+                                counterConfirming = true
+                                Task {
+                                    confirmedCounterCustomer = await supabase.confirmOwnerCustomerIdentity(selected, code: counterCode)
+                                    counterConfirming = false
+                                    if confirmedCounterCustomer == nil {
+                                        counterSuccess = nil
+                                    }
+                                }
+                            } label: {
+                                if counterConfirming { ProgressView() }
+                                else { Text(isFrench ? "Confirmer" : "Confirm") }
+                            }
+                            .disabled(counterConfirming || counterCode.count != 6)
+                        }
+                    }
+
+                    if let customer = confirmedCounterCustomer {
+                        Label(isFrench ? "Identité confirmée" : "Identity confirmed", systemImage: "checkmark.seal.fill")
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(MinervaColor.emeraldDark)
+                        Text("\(customer.name) · \(customer.loyaltyPoints) \(isFrench ? "points" : "points") · \(customer.visitCount) \(isFrench ? "visites" : "visits")")
+                            .font(.footnote).foregroundStyle(MinervaColor.ink)
+                        TextField(isFrench ? "Montant de l’achat" : "Purchase amount", text: $counterAmount)
+                            .keyboardType(.decimalPad)
+                        Button {
+                            guard let amount = parsedCounterAmount else { return }
+                            counterSaving = true
+                            counterSuccess = nil
+                            Task {
+                                if let updated = await supabase.recordOwnerCustomerVisit(customer: customer, amountSpent: amount) {
+                                    confirmedCounterCustomer = NativeCounterCustomer(
+                                        id: updated.id,
+                                        name: updated.name,
+                                        phone: updated.phone,
+                                        loyaltyPoints: updated.loyaltyPoints,
+                                        visitCount: updated.visitCount,
+                                        totalSpent: updated.totalSpent
+                                    )
+                                    counterSuccess = isFrench ? "Visite enregistrée et points crédités." : "Visit recorded and points credited."
+                                    counterAmount = ""
+                                }
+                                counterSaving = false
+                            }
+                        } label: {
+                            if counterSaving { ProgressView() }
+                            else { Label(isFrench ? "Enregistrer la visite" : "Record visit", systemImage: "plus.circle.fill") }
+                        }
+                        .disabled(counterSaving || parsedCounterAmount == nil)
+                        if let counterSuccess {
+                            Text(counterSuccess).font(.footnote.weight(.medium)).foregroundStyle(MinervaColor.emeraldDark)
+                        }
+                    }
+                }
+
+                Section(isFrench ? "Clients" : "Customers") {
+                    if supabase.ownerCustomers.isEmpty {
+                        Text(isFrench ? "Aucun client pour le moment." : "No customers yet.").foregroundStyle(.secondary)
+                    }
                     ForEach(supabase.ownerCustomers) { customer in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(customer.name).font(.headline)
-                            Text("\(customer.loyaltyPoints) points · \(customer.visitCount) visits · \(customer.totalSpent.cad)").font(.caption).foregroundStyle(.secondary)
+                            Text(isFrench
+                                 ? "\(customer.loyaltyPoints) points · \(customer.visitCount) visites · \(customer.totalSpent.cad)"
+                                 : "\(customer.loyaltyPoints) points · \(customer.visitCount) visits · \(customer.totalSpent.cad)")
+                                .font(.caption).foregroundStyle(.secondary)
                             if let email = customer.email { Text(email).font(.caption2).foregroundStyle(.secondary) }
                         }
                     }
                 }
-                Section("Rewards") {
-                    if supabase.ownerRewards.isEmpty { Text("No rewards yet").foregroundStyle(.secondary) }
+                Section(isFrench ? "Récompenses" : "Rewards") {
+                    if supabase.ownerRewards.isEmpty {
+                        Text(isFrench ? "Aucune récompense pour le moment." : "No rewards yet.").foregroundStyle(.secondary)
+                    }
                     ForEach(supabase.ownerRewards) { reward in
                         HStack { VStack(alignment: .leading) { Text(reward.name); if let description = reward.description { Text(description).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Text("\(reward.pointsCost) pts").font(.caption.weight(.semibold)) }
                     }
                 }
-                Section("Offers") {
-                    if supabase.ownerOffers.isEmpty { Text("No offers yet").foregroundStyle(.secondary) }
+                Section(isFrench ? "Offres" : "Offers") {
+                    if supabase.ownerOffers.isEmpty {
+                        Text(isFrench ? "Aucune offre pour le moment." : "No offers yet.").foregroundStyle(.secondary)
+                    }
                     ForEach(supabase.ownerOffers) { offer in
-                        HStack { VStack(alignment: .leading) { Text(offer.title); if let description = offer.description { Text(description).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Text(offer.active ? "Live" : "Paused").font(.caption.weight(.semibold)).foregroundStyle(offer.active ? MinervaColor.emeraldDark : .secondary) }
+                        HStack { VStack(alignment: .leading) { Text(offer.title); if let description = offer.description { Text(description).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Text(offer.active ? (isFrench ? "Active" : "Live") : (isFrench ? "En pause" : "Paused")).font(.caption.weight(.semibold)).foregroundStyle(offer.active ? MinervaColor.emeraldDark : .secondary) }
                     }
                 }
-                Section("Reviews and replies") {
-                    if supabase.ownerReviews.isEmpty { Text("No reviews yet").foregroundStyle(.secondary) }
+                Section(isFrench ? "Avis et réponses" : "Reviews and replies") {
+                    if supabase.ownerReviews.isEmpty {
+                        Text(isFrench ? "Aucun avis pour le moment." : "No reviews yet.").foregroundStyle(.secondary)
+                    }
                     ForEach(supabase.ownerReviews) { review in
                         Button { respondingTo = review } label: {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(String(repeating: "★", count: review.rating)).foregroundStyle(.orange)
                                 if let comment = review.comment, !comment.isEmpty { Text(comment).foregroundStyle(MinervaColor.ink) }
-                                Text(review.ownerResponse?.isEmpty == false ? "Reply sent" : "Reply to this review").font(.caption).foregroundStyle(MinervaColor.emeraldDark)
+                                Text(review.ownerResponse?.isEmpty == false
+                                     ? (isFrench ? "Réponse envoyée" : "Reply sent")
+                                     : (isFrench ? "Répondre à cet avis" : "Reply to this review"))
+                                    .font(.caption).foregroundStyle(MinervaColor.emeraldDark)
                             }
                         }.buttonStyle(.plain)
                     }
                 }
             }
-            .navigationTitle("Loyalty")
+            .navigationTitle(isFrench ? "Fidélité" : "Loyalty")
             .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
             .refreshable { await supabase.refreshOwnerOperations() }
             .sheet(item: $respondingTo) { ReviewReplyEditor(review: $0) }

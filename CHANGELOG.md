@@ -2,6 +2,14 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.47.1] — 2026-09-23
+
+### Préférences de courriel et fidélisation
+- Le consentement facultatif aux annonces produit est proposé à la création du compte, décoché par défaut et modifiable depuis le profil.
+- Les consentements sont journalisés; les contacts Resend avec accord explicite rejoignent le segment des annonces produit.
+- Ajout de propriétés de contact pour la langue, l’établissement, le forfait et le consentement, utilisées dans deux brouillons de broadcasts personnalisés.
+- Renforcement des opérations de fidélisation et partage d’image des résultats.
+
 ## [v2.47.0] — Candidat de publication, 2026-09-23
 
 ### Campagnes, fidélisation et navigation

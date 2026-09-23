@@ -12,6 +12,7 @@ import {
 } from "@/lib/data/member-calendar";
 import { fetchUpcomingEvents, type UpcomingCalendarEvent } from "@/lib/google/member-calendar";
 import { createClient } from "@/lib/supabase/server";
+import { syncProductUpdatesContact } from "@/lib/email/product-updates";
 
 export type UpdateProfileResult = { ok: true } | { ok: false; error: string };
 
@@ -51,6 +52,37 @@ export async function updateProfileAvatarAction(avatarUrl: string): Promise<Upda
 
   revalidatePath("/profil");
   return { ok: true };
+}
+
+export async function setProductUpdatesEmailConsentAction(
+  consented: boolean
+): Promise<UpdateProfileResult | { ok: true; syncWarning: true }> {
+  if (typeof consented !== "boolean") {
+    return { ok: false, error: "Préférence invalide." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Non authentifié." };
+
+  const { error } = await supabase.rpc("set_product_updates_email_consent", {
+    p_consented: consented,
+  });
+  if (error) return { ok: false, error: "Impossible d'enregistrer cette préférence. Réessayez." };
+
+  const syncOk = user.email
+    ? await syncProductUpdatesContact({
+        email: user.email,
+        fullName: String(user.user_metadata?.full_name ?? ""),
+        optedIn: consented,
+        preferredLanguage: String(user.user_metadata?.preferred_language ?? "fr"),
+      }).catch(() => false)
+    : false;
+
+  revalidatePath("/profil");
+  return syncOk ? { ok: true } : { ok: true, syncWarning: true };
 }
 
 export async function getMyCalendarConnectionAction(): Promise<MemberCalendarConnection> {
@@ -162,4 +194,3 @@ export async function getMyProposalsAction(): Promise<import("@/lib/types").Ecos
     createdAt: row.created_at,
   }));
 }
-

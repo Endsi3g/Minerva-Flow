@@ -246,7 +246,12 @@ function IdentificationAuComptoirCard({
     setIsConfirming(true);
     setConfirmationError(null);
     try {
-      const confirmed = await confirmCounterCustomerAction(restaurantId, found.id, confirmationCode);
+      const confirmed = await confirmCounterCustomerAction(
+        restaurantId,
+        found.id,
+        confirmationCode,
+        found.matchedBy === "name" ? "name" : "phone"
+      );
       if (!confirmed) {
         setConfirmationError("Le code ne correspond pas à ce compte ou a expiré. Demandez au client d’en générer un nouveau.");
         return;
@@ -274,7 +279,8 @@ function IdentificationAuComptoirCard({
         found.id,
         parsed,
         "Visite comptoir",
-        found.matchedBy === "code" || found.matchedBy === "verified"
+        found.matchedBy === "code" || found.matchedBy === "verified",
+        found.viaPhoneLookup ?? false
       );
       if (updated) {
         onVisitLogged(updated);

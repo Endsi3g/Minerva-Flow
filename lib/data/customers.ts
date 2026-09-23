@@ -970,3 +970,36 @@ export async function resolvePairingCode(
     },
   };
 }
+
+/**
+ * Confirms a one-time pairing code against the exact customer already found
+ * by phone/name. The database checks the customer before consuming the code,
+ * so a mistyped/mismatched code remains usable by its actual customer.
+ */
+export async function resolvePairingCodeForCustomer(
+  restaurantId: string,
+  customerId: string,
+  code: string
+): Promise<{ error: string } | { customer: { id: string; name: string; loyaltyPoints: number; visitCount: number; totalSpent: number; avatarUrl: string | null } }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("resolve_pairing_code_for_customer", {
+    p_restaurant_id: restaurantId,
+    p_customer_id: customerId,
+    p_code: code.trim(),
+  });
+
+  if (error) return { error: error.message || "Code invalide." };
+  const rows = data as PairingCodeRpcRow[] | null;
+  if (!rows?.length) return { error: "Code invalide." };
+  const row = rows[0];
+  return {
+    customer: {
+      id: row.customer_id,
+      name: row.customer_name,
+      loyaltyPoints: row.loyalty_points,
+      visitCount: row.visit_count,
+      totalSpent: row.total_spent,
+      avatarUrl: row.avatar_url,
+    },
+  };
+}

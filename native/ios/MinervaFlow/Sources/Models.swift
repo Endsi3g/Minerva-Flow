@@ -87,6 +87,36 @@ struct NativeOwnerCustomer: Codable, Identifiable {
     }
 }
 
+/// Minimal counter lookup result. Deliberately excludes loyalty totals until
+/// the customer confirms possession of the rotating pairing code.
+struct NativeOwnerCustomerLookup: Codable, Identifiable {
+    let id: String
+    let name: String
+    let phone: String?
+    enum CodingKeys: String, CodingKey {
+        case id = "customer_id"
+        case name = "customer_name"
+        case phone = "customer_phone"
+    }
+}
+
+struct NativeCounterCustomer: Codable, Identifiable {
+    let id: String
+    let name: String
+    let phone: String?
+    let loyaltyPoints: Int
+    let visitCount: Int
+    let totalSpent: Double
+    enum CodingKeys: String, CodingKey {
+        case id = "customer_id"
+        case name = "customer_name"
+        case phone = "customer_phone"
+        case loyaltyPoints = "loyalty_points"
+        case visitCount = "visit_count"
+        case totalSpent = "total_spent"
+    }
+}
+
 struct NativeOwnerReward: Codable, Identifiable {
     let id: String
     let name: String

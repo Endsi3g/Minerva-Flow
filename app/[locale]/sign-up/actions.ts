@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 import * as Sentry from "@sentry/nextjs";
 import { notifyCriticalError } from "@/lib/alerts/error-notifier";
+import { syncProductUpdatesContact } from "@/lib/email/product-updates";
 
 export type SignUpActionResult =
   | { success: true; userId: string }
@@ -15,6 +16,8 @@ export async function signUpAction(params: {
   referralCode?: string | null;
   inviteToken?: string | null;
   workspaceInviteToken?: string | null;
+  productUpdatesOptIn?: boolean;
+  preferredLanguage?: string;
 }): Promise<SignUpActionResult> {
   try {
     const email = params.email?.trim().toLowerCase();
@@ -25,6 +28,10 @@ export async function signUpAction(params: {
     }
 
     const signUpMetadata: Record<string, string> = {};
+    signUpMetadata.product_updates_opt_in = params.productUpdatesOptIn === true ? "true" : "false";
+    signUpMetadata.preferred_language = ["fr", "en", "tr"].includes(params.preferredLanguage ?? "")
+      ? params.preferredLanguage!
+      : "fr";
     if (params.referralCode) signUpMetadata.referral_code = params.referralCode;
     if (params.inviteToken) signUpMetadata.invite_token = params.inviteToken;
     if (params.workspaceInviteToken) signUpMetadata.workspace_invite_token = params.workspaceInviteToken;
@@ -65,6 +72,17 @@ export async function signUpAction(params: {
 
     if (!data.user) {
       return { success: false, error: "GENERIC", message: "Impossible d'initialiser le compte utilisateur." };
+    }
+
+    if (params.productUpdatesOptIn === true && data.user.email) {
+      await syncProductUpdatesContact({
+        email: data.user.email,
+        fullName: String(data.user.user_metadata?.full_name ?? ""),
+        optedIn: true,
+        preferredLanguage: signUpMetadata.preferred_language,
+      }).catch((syncError) => {
+        Sentry.captureException(syncError);
+      });
     }
 
     return { success: true, userId: data.user.id };

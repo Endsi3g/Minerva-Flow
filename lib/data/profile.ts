@@ -12,6 +12,7 @@ export type MyProfile = {
   fullName: string;
   email: string;
   avatarUrl: string | null;
+  productUpdatesOptIn: boolean;
 };
 
 /**
@@ -29,12 +30,17 @@ export async function getMyProfile(): Promise<MyProfile | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, full_name, email, avatar_url")
+    .select("id, full_name, email, avatar_url, product_updates_opt_in")
     .eq("id", user.id)
     .maybeSingle();
 
   const row = data as
-    | { full_name: string | null; email: string | null; avatar_url: string | null }
+    | {
+        full_name: string | null;
+        email: string | null;
+        avatar_url: string | null;
+        product_updates_opt_in: boolean | null;
+      }
     | null;
 
   return {
@@ -43,6 +49,7 @@ export async function getMyProfile(): Promise<MyProfile | null> {
       row?.full_name || (user.user_metadata?.full_name as string | undefined) || user.email || "",
     email: row?.email || user.email || "",
     avatarUrl: row?.avatar_url || (user.user_metadata?.avatar_url as string | undefined) || null,
+    productUpdatesOptIn: row?.product_updates_opt_in ?? false,
   };
 }
 

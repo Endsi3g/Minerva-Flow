@@ -521,6 +521,122 @@ final class SupabaseManager: ObservableObject {
         await fetchOwnerMealSuggestions(for: restaurantId)
     }
 
+    /// Search an owner's current restaurant by a customer's phone number.
+    /// The RPC returns only identity fields, never points or spending totals.
+    func lookupOwnerCustomersByPhone(_ phone: String) async -> [NativeOwnerCustomerLookup] {
+        guard isOwnerExperience,
+              let restaurantId = selectedOwnerRestaurantId,
+              ownerRestaurants.contains(where: { $0.id == restaurantId }) else {
+            lastError = "Aucun établissement autorisé n’est sélectionné."
+            return []
+        }
+        let digits = phone.filter(\.isNumber)
+        guard digits.count >= 7 else { return [] }
+        struct Params: Encodable { let p_restaurant_id: String; let p_phone: String }
+        do {
+            lastError = nil
+            return try await client.rpc(
+                "lookup_customer_by_phone",
+                params: Params(p_restaurant_id: restaurantId, p_phone: phone)
+            ).execute().value
+        } catch {
+            lastError = "La recherche client a échoué. Vérifiez le numéro et réessayez."
+            print("lookupOwnerCustomersByPhone error: \(error)")
+            return []
+        }
+    }
+
+    /// Reveals the loyalty balance only after the server confirms that the
+    /// customer's active six-digit card code belongs to this exact phone hit.
+    func confirmOwnerCustomerIdentity(
+        _ customer: NativeOwnerCustomerLookup,
+        code: String
+    ) async -> NativeCounterCustomer? {
+        guard isOwnerExperience,
+              let restaurantId = selectedOwnerRestaurantId,
+              ownerRestaurants.contains(where: { $0.id == restaurantId }),
+              code.count == 6, code.allSatisfy(\.isNumber) else { return nil }
+        struct Params: Encodable { let p_restaurant_id: String; let p_customer_id: String; let p_code: String }
+        do {
+            lastError = nil
+            let rows: [NativeCounterCustomer] = try await client.rpc(
+                "resolve_pairing_code_for_customer",
+                params: Params(p_restaurant_id: restaurantId, p_customer_id: customer.id, p_code: code)
+            ).execute().value
+            guard let confirmed = rows.first, confirmed.id == customer.id else {
+                lastError = "Le code ne correspond pas à ce client ou a expiré."
+                return nil
+            }
+            return NativeCounterCustomer(
+                id: confirmed.id,
+                name: confirmed.name,
+                phone: customer.phone,
+                loyaltyPoints: confirmed.loyaltyPoints,
+                visitCount: confirmed.visitCount,
+                totalSpent: confirmed.totalSpent
+            )
+        } catch {
+            lastError = "La confirmation d’identité a échoué. Demandez un nouveau code au client."
+            print("confirmOwnerCustomerIdentity error: \(error)")
+            return nil
+        }
+    }
+
+    /// Records a counter visit through the existing atomic loyalty RPC. The
+    /// database recalculates points from restaurant settings; the submitted
+    /// points value is intentionally zero and ignored for authenticated users.
+    func recordOwnerCustomerVisit(customer: NativeCounterCustomer, amountSpent: Double) async -> NativeOwnerCustomer? {
+        guard isOwnerExperience,
+              let restaurantId = selectedOwnerRestaurantId,
+              ownerRestaurants.contains(where: { $0.id == restaurantId }),
+              amountSpent.isFinite, amountSpent > 0, amountSpent <= 100_000 else {
+            lastError = "Entrez un montant valide pour l’établissement sélectionné."
+            return nil
+        }
+        struct Params: Encodable {
+            let p_customer_id: String
+            let p_restaurant_id: String
+            let p_amount_spent: Double
+            let p_points_delta: Int
+            let p_note: String
+            let p_via_pairing_code: Bool
+            let p_via_pos_sync: Bool
+            let p_via_phone_lookup: Bool
+        }
+        do {
+            lastError = nil
+            try await client.rpc(
+                "increment_customer_visit",
+                params: Params(
+                    p_customer_id: customer.id,
+                    p_restaurant_id: restaurantId,
+                    p_amount_spent: amountSpent,
+                    p_points_delta: 0,
+                    p_note: "Visite comptoir — identité confirmée",
+                    p_via_pairing_code: true,
+                    p_via_pos_sync: false,
+                    p_via_phone_lookup: true
+                )
+            ).execute()
+            let updated: NativeOwnerCustomer = try await client.from("customers")
+                .select("id, name, email, phone, loyalty_points, visit_count, total_spent")
+                .eq("id", value: customer.id)
+                .eq("restaurant_id", value: restaurantId)
+                .single()
+                .execute().value
+            if let index = ownerCustomers.firstIndex(where: { $0.id == updated.id }) {
+                ownerCustomers[index] = updated
+            } else {
+                ownerCustomers.insert(updated, at: 0)
+            }
+            return updated
+        } catch {
+            lastError = "La visite et les points n’ont pas pu être enregistrés. Réessayez."
+            print("recordOwnerCustomerVisit error: \(error)")
+            return nil
+        }
+    }
+
     func fetchMealSuggestions() async {
         guard let restaurantId = customer?.restaurantId else { return }
         struct Params: Encodable { let p_restaurant_id: String }
