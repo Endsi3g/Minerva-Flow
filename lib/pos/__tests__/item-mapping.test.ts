@@ -18,7 +18,7 @@ const mockInsert = vi.fn().mockReturnValue({
 
 const mockSelect = vi.fn();
 
-const mockFrom = vi.fn((table: string) => {
+const mockFrom = vi.fn(() => {
   return {
     select: mockSelect,
     insert: mockInsert,
@@ -34,17 +34,24 @@ vi.mock("@/lib/supabase/admin", () => ({
 // Mock recordSale and decrementInventory
 const mockRecordSale = vi.fn().mockResolvedValue(null);
 vi.mock("@/lib/data/menu", () => ({
-  recordSale: (...args: any[]) => mockRecordSale(...args),
+  recordSale: (...args: unknown[]) => mockRecordSale(...args),
 }));
 
 const mockDecrementInventory = vi.fn().mockResolvedValue(true);
 vi.mock("@/lib/data/orders", () => ({
-  decrementInventoryForOrderItems: (...args: any[]) => mockDecrementInventory(...args),
+  decrementInventoryForOrderItems: (...args: unknown[]) => mockDecrementInventory(...args),
 }));
 
 const mockUpsertServiceDay = vi.fn().mockResolvedValue("synced");
 vi.mock("@/lib/data/service-days", () => ({
-  upsertSyncedServiceDayRevenue: (...args: any[]) => mockUpsertServiceDay(...args),
+  upsertSyncedServiceDayRevenue: (...args: unknown[]) => mockUpsertServiceDay(...args),
+}));
+
+const mockFindOrCreateCustomerFromPos = vi.fn();
+const mockLogVisitAdmin = vi.fn();
+vi.mock("@/lib/data/customers", () => ({
+  findOrCreateCustomerFromPos: (...args: unknown[]) => mockFindOrCreateCustomerFromPos(...args),
+  logVisitAdmin: (...args: unknown[]) => mockLogVisitAdmin(...args),
 }));
 
 describe("POS Item Mapping & Ticket Ingestion Engine", () => {
@@ -191,11 +198,71 @@ describe("POS Item Mapping & Ticket Ingestion Engine", () => {
       expect(mockInsert).not.toHaveBeenCalled();
     });
 
+    it("does not mark a ticket ingested when customer reconciliation fails, so loyalty can retry", async () => {
+      mockSelect.mockImplementation((fields?: string) => ({
+        eq: vi.fn().mockImplementation((column: string) => {
+          if (column === "restaurant_id" && fields?.includes("name")) {
+            return Promise.resolve({ data: [] });
+          }
+          return {
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+              }),
+            }),
+          };
+        }),
+      }));
+      mockFindOrCreateCustomerFromPos.mockRejectedValueOnce(new Error("temporary customer lookup failure"));
+
+      const result = await ingestPosTickets("resto-1", "square", [{
+        externalOrderId: "retry-ticket-1",
+        closedAt: "2026-09-23T17:30:00Z",
+        subtotal: 30,
+        total: 34.5,
+        customerPhone: "+15145550123",
+        lineItems: [],
+      }]);
+
+      expect(result.ingestedCount).toBe(0);
+      expect(mockInsert).not.toHaveBeenCalled();
+      expect(mockUpsertServiceDay).toHaveBeenCalledWith("resto-1", "2026-09-23", 30, "square");
+    });
+
+    it("retries a POS ticket that has a provider customer ID even without phone or email", async () => {
+      mockSelect.mockImplementation((fields?: string) => ({
+        eq: vi.fn().mockImplementation((column: string) => {
+          if (column === "restaurant_id" && fields?.includes("name")) return Promise.resolve({ data: [] });
+          return {
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null }) }),
+            }),
+          };
+        }),
+      }));
+      mockFindOrCreateCustomerFromPos.mockResolvedValueOnce(null);
+
+      const result = await ingestPosTickets("resto-1", "toast", [{
+        externalOrderId: "toast-ticket-retry",
+        closedAt: "2026-09-23T17:30:00Z",
+        subtotal: 22,
+        total: 25.3,
+        externalCustomerId: "toast-customer-73",
+        lineItems: [],
+      }]);
+
+      expect(mockFindOrCreateCustomerFromPos).toHaveBeenCalledWith("resto-1", expect.objectContaining({
+        externalCustomerId: "toast-customer-73",
+      }));
+      expect(result.ingestedCount).toBe(0);
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
     it("ingests new ticket, updates dish popularity, recipe inventory, and service day revenue", async () => {
       // Mock: menu items preload, then existing order check (null), then order insert
       mockSelect.mockImplementation((fields?: string) => {
         return {
-          eq: vi.fn().mockImplementation((col: string, val: any) => {
+          eq: vi.fn().mockImplementation((col: string) => {
             if (col === "restaurant_id" && fields?.includes("name")) {
               // Preload menu items
               return Promise.resolve({
@@ -213,7 +280,7 @@ describe("POS Item Mapping & Ticket Ingestion Engine", () => {
         };
       });
 
-      mockInsert.mockImplementation((record: any) => {
+      mockInsert.mockImplementation((record: Record<string, unknown>) => {
         if (record.subtotal !== undefined) {
           // Orders insert
           return {
@@ -279,6 +346,21 @@ describe("POS Item Mapping & Ticket Ingestion Engine", () => {
     it("extracts selections from checks with line item details", async () => {
       const mockToastOrders = [
         {
+          guid: "toast-open-ord",
+          totalAmount: 18,
+          checks: [{ guid: "chk-open", paymentStatus: "OPEN", selections: [] }],
+        },
+        {
+          guid: "toast-partial-ord",
+          totalAmount: 24,
+          checks: [{ guid: "chk-partial", paymentStatus: "CLOSED" }, { guid: "chk-unpaid", paymentStatus: "OPEN" }],
+        },
+        {
+          guid: "toast-refunded-ord",
+          totalAmount: 24,
+          checks: [{ guid: "chk-refunded", paymentStatus: "CLOSED", payments: [{ paymentStatus: "CAPTURED", refundStatus: "FULL" }] }],
+        },
+        {
           guid: "toast-ord-1",
           closedDate: "2026-09-09T19:00:00Z",
           totalAmount: 42.0,
@@ -287,6 +369,7 @@ describe("POS Item Mapping & Ticket Ingestion Engine", () => {
           checks: [
             {
               guid: "chk-1",
+              paymentStatus: "CLOSED",
               selections: [
                 {
                   guid: "sel-1",

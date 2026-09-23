@@ -1,18 +1,25 @@
 # Minerva Flow — Apple Developer, App Store Connect et TestFlight
 
-> Ouvrez ce document dans l’aperçu Markdown de l’éditeur, puis utilisez le
-> mode plein écran. Il sert de tableau de bord unique jusqu’au premier build
-> TestFlight. Les secrets, mots de passe, codes 2FA et clés `.p8` ne doivent
-> jamais être collés ici ni envoyés dans une conversation.
+> État de publication mis à jour le 23 septembre 2026. Les secrets, mots de
+> passe, codes 2FA et clés `.p8` ne doivent jamais être collés ici ni envoyés
+> dans une conversation.
 
-## État de départ confirmé
+## État actuel — build 1.0 (11)
+
+- L’archive Release a été signée, exportée en IPA et vérifiée pour iPhone/iPad; le dSYM Sentry correspond au framework.
+- Le build **n’a pas été téléversé** à App Store Connect. L’export Xcode a signalé qu’aucun fournisseur/utilisateur App Store Connect n’était authentifié.
+- Le lien bêta communiqué par le propriétaire est <https://testflight.apple.com/join/xGr45uuF>. Il ne faut pas annoncer le build 11 comme disponible tant qu’il n’a pas été traité par Apple et associé au groupe.
+- Le garde-fou de conformité du 23 septembre 2026 : 0 risque critique, 0 risque élevé, 2 points manuels à confirmer (déclaration de chiffrement de l’extension Widget; compte démo, métadonnées/captures, privacy labels, notes et contrats).
+- Pour achever l’envoi, un membre autorisé doit ouvrir App Store Connect/Transporter sur l’ordinateur connecté, se connecter et téléverser l’IPA exporté du build 11. Ne jamais demander ni consigner son mot de passe ou son code 2FA.
+
+## Références de signature et de fiche
 
 | Élément | Valeur / état |
 |---|---|
 | Produit | Minerva Flow |
 | Bundle ID iOS | `com.minervaflow.loyalty` |
 | Apple Developer Team actuel | `NHMPLN46TN` |
-| Équipe inscrite dans le projet | À aligner : l’ancien identifiant ne correspond pas à l’équipe Apple connectée |
+| Équipe inscrite dans le projet | Alignée sur `NHMPLN46TN`; profils App Store installés pour l’app et le widget |
 | Compte Apple Developer | Actif, renouvellement le 16 septembre 2027 |
 | Cible minimale | iOS 17 |
 | Langue initiale des captures | Anglais |
@@ -37,7 +44,7 @@
 - [ ] Dans le projet Xcode, définir `DEVELOPMENT_TEAM = NHMPLN46TN` pour l’app, le widget et les cibles de test.
 - [ ] Régénérer le projet depuis `native/ios/project.yml` avec XcodeGen.
 - [ ] Ouvrir `MinervaFlow.xcodeproj` dans Xcode.
-- [ ] Dans **Signing & Capabilities**, sélectionner l’équipe Apple active et conserver **Automatically manage signing**.
+- [ ] Dans **Signing & Capabilities**, sélectionner l’équipe Apple active et conserver la signature manuelle configurée avec les profils App Store de l’app et du widget.
 - [ ] Vérifier que le bundle de l’app est exactement `com.minervaflow.loyalty`.
 - [ ] Vérifier que le bundle du widget est exactement `com.minervaflow.loyalty.widget`.
 - [ ] Compiler une archive Release sans erreur de signature.
@@ -104,7 +111,7 @@ APNS_ENVIRONMENT=production
 
 ### 4. Créer la fiche Minerva Flow
 
-Dans **App Store Connect → Apps → + → New App**.
+Dans **App Store Connect → Apps**, rechercher d’abord la fiche existante Minerva Flow. Ne créer une nouvelle fiche que si elle n’existe pas.
 
 - [ ] Plateforme : iOS.
 - [ ] Nom : `Minerva Flow`.
@@ -230,7 +237,7 @@ Si ce script n’est pas installé à ce chemin, utiliser le script de la skill
 - [ ] Catégorie App Store finale : Business ou Food & Drink.
 - [ ] Confirmation au moment de générer la clé APNs.
 
-## Résultat attendu avant le premier TestFlight
+## Résultat attendu avant la prochaine diffusion TestFlight
 
 Le build est signé avec l’équipe Apple correcte, les notifications APNs
 arrivent sur un iPhone réel, les deux rôles testent des données isolées, et

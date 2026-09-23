@@ -17,14 +17,39 @@ begin;
 -- prerequisite for DM privacy actually being real and not just a UI illusion.
 -- ═══════════════════════════════════════════════════════════════════════
 
--- team_chat_messages AND team_channel_members both predate any migration in
--- this repo (created by hand in the Supabase dashboard — see comment above),
--- and neither's restaurant_id column turned out to be uuid like every other
--- table in this schema (confirmed live: the uuid-typed version of this
--- function failed first on team_channel_members, then again on
--- team_chat_messages once that was fixed). p_restaurant_id is plain text so
--- callers can pass either table's column as-is; it's cast to uuid only where
--- is_restaurant_member() strictly requires it.
+-- Existing deployments created these tables manually. Define the same
+-- baseline when bootstrapping a clean project so this migration chain is
+-- reproducible; restaurant_id remains text for compatibility with deployed
+-- schemas and is cast only where is_restaurant_member() requires uuid.
+create table if not exists team_chat_messages (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id text not null,
+  channel text not null check (channel in ('general', 'cuisine', 'service', 'urgences')),
+  author_id text not null,
+  author_name text not null,
+  author_role text,
+  author_avatar_url text,
+  content text not null,
+  is_ai_response boolean not null default false,
+  is_pinned boolean not null default false,
+  deleted boolean not null default false,
+  reply_to jsonb,
+  reactions jsonb not null default '{}'::jsonb,
+  attachments jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists team_channel_members (
+  restaurant_id text not null,
+  channel text not null check (channel in ('general', 'cuisine', 'service', 'urgences')),
+  member_id text not null,
+  added_by text,
+  created_at timestamptz not null default now(),
+  primary key (restaurant_id, channel, member_id)
+);
+
+-- p_restaurant_id is plain text so callers can pass either table's column
+-- as-is; it is cast to uuid only where is_restaurant_member() requires it.
 create or replace function can_access_team_channel(p_restaurant_id text, p_channel text)
 returns boolean
 language sql

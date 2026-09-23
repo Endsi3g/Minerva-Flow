@@ -14,7 +14,7 @@ test.describe("Marketing Studio & Viral Story Stickers", () => {
       .insert({ name: "Bistro E2E Studio", service_model: "table" })
       .select("id")
       .single();
-    if (restErr || !rest) throw new Error("Failed to create test restaurant");
+    if (restErr || !rest) throw new Error(`Failed to create test restaurant: ${restErr?.message ?? "no row returned"}`);
     restaurantId = rest.id;
 
     await supabaseAdmin.from("restaurant_members").insert({
@@ -54,8 +54,11 @@ test.describe("Marketing Studio & Viral Story Stickers", () => {
     await page.goto("/campaigns");
     await page.waitForLoadState("networkidle");
 
-    // Verify Studio is displayed
-    await expect(page.getByRole("heading", { name: /Studio Marketing/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "Historique des campagnes" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Sections des campagnes" }).getByRole("link", { name: "Automatisations" })).toBeVisible();
+
+    await page.goto("/campaigns/studio");
+    await expect(page.getByRole("heading", { name: "Studio visuel" })).toBeVisible({ timeout: 15000 });
 
     // Verify all 5 objectives exist
     await expect(page.getByRole("button", { name: /Menu & Plats/i })).toBeVisible();

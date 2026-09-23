@@ -2,6 +2,35 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [v2.47.0] — Candidat de publication, 2026-09-23
+
+### Campagnes, fidélisation et navigation
+- Historique des campagnes comme page d’entrée, avec recherche, filtres et indicateurs; automatisations et studio visuel accessibles dans leurs propres pages.
+- Retour des groupes de navigation secondaires et de tous les espaces de travail dont l’utilisateur est membre actif.
+- Résultats de fidélisation filtrables par période, avec partage d’image via les fonctions du navigateur et téléchargement de secours.
+- Connecteurs de caisses présentés selon leur véritable état; les accès Toast et Lightspeed indiquent leurs exigences de partenaire.
+
+### Commandes et parcours client
+- Améliorations des commandes, précommandes, acomptes, demandes de repas sur mesure, devis traiteur et suggestions de plats, sur le web et dans l’application iOS.
+- Les migrations Supabase `0127` à `0132` doivent être appliquées manuellement dans le projet cible avant toute mise en production de ces flux.
+
+## [Publication web — 2026-09-23] — commit `2b8c4cc`
+
+### Côté propriétaire et équipe
+- Retour des restaurants regroupés par workspace dans le sélecteur repliable; le changement de restaurant conserve la navigation existante.
+- Retrait du raccourci Intégrations en doublon dans la barre latérale; accès depuis Paramètres. Instagram et Stripe sont présentés côte à côte.
+- Recherche client au comptoir par téléphone avec solde masqué jusqu’à confirmation par code à six chiffres; le code fourni directement reste un accès rapide.
+- Ajustements d’alignement des récompenses et largeur complète de l’activité de parrainage.
+
+### Côté client et traçabilité
+- Canal de parrainage conservé pour QR, partage, lien copié, code et accès direct; activité visible avec l’invitant et le client invité lors d’une conversion créditée.
+- L’application iOS prend en charge les vues client et propriétaire, avec interface iPad en portrait et paysage.
+
+### Statut de publication
+- Le web correspondant au commit `2b8c4cc` est déployé en production Vercel.
+- Le build iOS `1.0 (11)` est archivé et exporté, mais **n’est pas téléversé sur TestFlight**; une authentification App Store Connect reste nécessaire. Ne pas annoncer sa disponibilité TestFlight avant vérification du traitement Apple.
+- Détails : [`docs/PRODUCT_GUIDE_OWNER_CLIENT.md`](docs/PRODUCT_GUIDE_OWNER_CLIENT.md) et [`docs/MOBILE_APP_AUDIT_AND_ROADMAP.md`](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md).
+
 ## [v2.46.0] - 2026-09-20
 
 ### 🛡️ Système d'Alerte Critique en Temps Réel & Architecture Défensive
@@ -221,7 +250,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - La carte de provenance géographique des clients est maintenant directement sur la page Clients plutôt que dans une sous-page à part.
 
 ### ✨ Votre nom de marque, corrigé partout
-- « Flow par Minerva » apparaissait encore à plusieurs endroits vus par vos clients — tout affiche maintenant « Minerva Flow », votre vrai nom, sur l'ensemble de l'application.
+- Un ancien libellé de marque apparaissait encore à plusieurs endroits vus par les clients — tout affiche maintenant « Minerva Flow », le nom officiel, sur l'ensemble de l'application.
 
 ### 🌤️ Correctif cron quotidien (plan Vercel Hobby)
 - La synchronisation des alertes tournait plus d'une fois par jour, ce qui dépassait la limite du plan Vercel Hobby et bloquait le déploiement — remise à une fois par jour.

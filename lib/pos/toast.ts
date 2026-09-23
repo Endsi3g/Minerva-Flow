@@ -184,6 +184,8 @@ interface ToastSelection {
 
 interface ToastCheck {
   guid?: string;
+  paymentStatus?: string;
+  payments?: Array<{ paymentStatus?: string; refundStatus?: string }>;
   totalAmount?: number;
   amount?: number;
   taxAmount?: number;
@@ -252,7 +254,16 @@ export async function fetchToastDailyTickets(
     }
 
     for (const order of orders) {
-      if (order.voided || order.deleted) continue;
+      // Toast can return open/unpaid orders in the business-date result.
+      // CLOSED means the check is fully paid (including tip finalization);
+      // PAID is an intermediate card-payment state, so wait for closeout.
+      if (order.voided || order.deleted || !order.checks?.length
+        || order.checks.some((check) => check.paymentStatus !== "CLOSED")
+        || order.checks.some((check) => check.payments?.some((payment) =>
+          payment.paymentStatus === "VOIDED" || payment.refundStatus === "PARTIAL" || payment.refundStatus === "FULL"))) continue;
+      // The external ticket ID is the idempotency key for order and loyalty
+      // ingestion. Missing provider IDs must be skipped, never randomized.
+      if (!order.guid) continue;
       const orderTotal = typeof order.totalAmount === "number"
         ? order.totalAmount
         : typeof order.amount === "number"
@@ -293,7 +304,7 @@ export async function fetchToastDailyTickets(
         : undefined;
 
       tickets.push({
-        externalOrderId: order.guid || `toast-order-${Math.random()}`,
+        externalOrderId: order.guid,
         closedAt: order.closedDate || order.paidDate || new Date().toISOString(),
         subtotal: Math.round(subtotal * 100) / 100,
         taxAmount: Math.round(taxAmount * 100) / 100,
@@ -332,4 +343,3 @@ export async function fetchToastDailySales(
     orderCount: tickets.length,
   };
 }
-

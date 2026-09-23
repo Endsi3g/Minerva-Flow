@@ -17,8 +17,10 @@ final class SupabaseManager: ObservableObject {
     @Published var rewards: [LoyaltyReward] = []
     @Published var redemptions: [RewardRedemption] = []
     @Published var offers: [Offer] = []
+    @Published var birthdayOffer: Offer?
     @Published var restaurantName: String?
     @Published var restaurantCity: String?
+    @Published var restaurantTimezone: TimeZone = .current
     @Published var restaurantGoogleMapsUrl: String?
     @Published var restaurantGooglePlaceId: String?
     /// Manual "on est débordés" toggle OR live en_preparation count over the owner's threshold — same signal as the web menu's delay banner (see computeIsBusy).
@@ -35,8 +37,14 @@ final class SupabaseManager: ObservableObject {
     @Published var loyaltyTier3Threshold: Double = 400
     @Published var announcements: [PlatformAnnouncement] = []
     @Published var menuItems: [NativeMenuItem] = []
+    @Published var customerMealSuggestions: [NativeMealSuggestion] = []
     @Published var taxRate: Double = 0.14975
     @Published var acceptsTips: Bool = true
+    @Published var onlinePaymentEnabled: Bool = false
+    @Published var canPayAtReceipt: Bool = true
+    @Published var canPayOnline: Bool = false
+    @Published var pickupEnabled: Bool = true
+    @Published var deliveryEnabled: Bool = false
     @Published var referralPrograms: [ReferralProgress] = []
     /// Every restaurant loyalty relationship this account has, and the
     /// points/rewards history across all of them combined — a customer can
@@ -81,6 +89,7 @@ final class SupabaseManager: ObservableObject {
     @Published var ownerMetrics = NativeOwnerMetrics()
     @Published var ownerOrders: [NativeOwnerOrder] = []
     @Published var ownerMenuItems: [NativeMenuItem] = []
+    @Published var ownerMealSuggestions: [NativeMealSuggestion] = []
     @Published var ownerOffers: [Offer] = []
     @Published var ownerRewards: [NativeOwnerReward] = []
     @Published var ownerCustomers: [NativeOwnerCustomer] = []
@@ -241,6 +250,7 @@ final class SupabaseManager: ObservableObject {
     /// exactly one restaurant).
     func loadPortalData() async {
         isLoadingData = true
+        birthdayOffer = nil
         defer { isLoadingData = false }
         do {
             await loadOwnerContext()
@@ -314,7 +324,9 @@ final class SupabaseManager: ObservableObject {
             )
             transactions = txs
             rewards = rewardsResult
-            offers = offersResult.filter { $0.isLive }
+            let liveOffers = offersResult.filter { $0.isLive }
+            birthdayOffer = liveOffers.first(where: \.isBirthdaySpecial)
+            offers = liveOffers.filter { !$0.isBirthdaySpecial }
             redemptions = redemptionsResult
             announcements = announcementsResult
             lastError = nil
@@ -380,6 +392,7 @@ final class SupabaseManager: ObservableObject {
             await loadOwnerMetrics()
             await loadOwnerOrders()
             await loadOwnerOperations(for: selectedOwnerRestaurantId ?? first.restaurantId)
+            await fetchOwnerMealSuggestions(for: selectedOwnerRestaurantId ?? first.restaurantId)
             if let workspaceId = first.restaurant?.workspaceId {
                 struct Branding: Decodable {
                     let brandName: String
@@ -434,7 +447,7 @@ final class SupabaseManager: ObservableObject {
         let restaurants = ownerRestaurants.filter { selectedOwnerRestaurantId == nil || $0.id == selectedOwnerRestaurantId }
         for restaurant in restaurants {
             do {
-                let rows: [NativeOwnerOrder] = try await client.from("orders").select("id, restaurant_id, status, guest_name, total, created_at").eq("restaurant_id", value: restaurant.id).order("created_at", ascending: false).limit(20).execute().value
+                let rows: [NativeOwnerOrder] = try await client.from("orders").select("id, restaurant_id, status, guest_name, total, created_at, requested_ready_at, order_kind").eq("restaurant_id", value: restaurant.id).order("created_at", ascending: false).limit(50).execute().value
                 result.append(contentsOf: rows)
             } catch { print("loadOwnerOrders error: \(error)") }
         }
@@ -478,6 +491,7 @@ final class SupabaseManager: ObservableObject {
         selectedOwnerRestaurantId = restaurantId
         await loadOwnerOrders()
         await loadOwnerOperations(for: restaurantId)
+        await fetchOwnerMealSuggestions(for: restaurantId)
     }
 
     /// Persists the required establishment name during the native owner setup
@@ -504,13 +518,131 @@ final class SupabaseManager: ObservableObject {
         await loadOwnerMetrics()
         await loadOwnerOrders()
         await loadOwnerOperations(for: restaurantId)
+        await fetchOwnerMealSuggestions(for: restaurantId)
     }
 
-    func updateOwnerMenuItem(_ item: NativeMenuItem, name: String, price: Double, description: String?, active: Bool) async -> Bool {
-        guard let restaurantId = selectedOwnerRestaurantId, name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false, price >= 0 else { return false }
-        struct Patch: Encodable { let name: String; let price: Double; let description: String?; let active: Bool }
+    func fetchMealSuggestions() async {
+        guard let restaurantId = customer?.restaurantId else { return }
+        struct Params: Encodable { let p_restaurant_id: String }
         do {
-            try await client.from("menu_items").update(Patch(name: name.trimmingCharacters(in: .whitespacesAndNewlines), price: price, description: description?.trimmingCharacters(in: .whitespacesAndNewlines), active: active)).eq("restaurant_id", value: restaurantId).eq("id", value: item.id).execute()
+            customerMealSuggestions = try await client.rpc("get_meal_suggestions", params: Params(p_restaurant_id: restaurantId)).execute().value
+        } catch {
+            // The menu remains usable while an older environment is waiting
+            // for the suggestion migration; expose no fake suggestions.
+            customerMealSuggestions = []
+            print("fetchMealSuggestions error: \(error)")
+        }
+    }
+
+    func submitMealSuggestion(title: String, description: String?) async -> Bool {
+        guard let restaurantId = customer?.restaurantId else { return false }
+        let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (3...120).contains(cleanTitle.count) else { return false }
+        let cleanDescription = description?.trimmingCharacters(in: .whitespacesAndNewlines)
+        struct Params: Encodable { let p_restaurant_id: String; let p_title: String; let p_description: String? }
+        do {
+            let _: UUID = try await client.rpc("submit_meal_suggestion", params: Params(
+                p_restaurant_id: restaurantId,
+                p_title: cleanTitle,
+                p_description: cleanDescription?.isEmpty == false ? cleanDescription : nil
+            )).execute().value
+            await fetchMealSuggestions()
+            return true
+        } catch {
+            lastError = "Votre suggestion n’a pas pu être envoyée. Réessayez."
+            print("submitMealSuggestion error: \(error)")
+            return false
+        }
+    }
+
+    func voteForMealSuggestion(_ suggestion: NativeMealSuggestion) async -> Bool {
+        guard suggestion.status == "open" else { return false }
+        struct Params: Encodable { let p_suggestion_id: String }
+        do {
+            let result: [NativeMealSuggestionVoteResult] = try await client.rpc(
+                "vote_meal_suggestion",
+                params: Params(p_suggestion_id: suggestion.id)
+            ).execute().value
+            guard let updated = result.first else { return false }
+            customerMealSuggestions = customerMealSuggestions.map { item in
+                guard item.id == suggestion.id else { return item }
+                return NativeMealSuggestion(
+                    id: item.id, restaurantId: item.restaurantId, title: item.title,
+                    description: item.description, status: item.status, menuItemId: item.menuItemId,
+                    createdAt: item.createdAt, voteCount: updated.voteCount, hasVoted: updated.hasVoted
+                )
+            }
+            return true
+        } catch {
+            lastError = "Votre vote n’a pas pu être enregistré. Réessayez."
+            print("voteForMealSuggestion error: \(error)")
+            return false
+        }
+    }
+
+    private func fetchOwnerMealSuggestions(for restaurantId: String) async {
+        guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return }
+        struct Params: Encodable { let p_restaurant_id: String }
+        do {
+            ownerMealSuggestions = try await client.rpc("get_meal_suggestions", params: Params(p_restaurant_id: restaurantId)).execute().value
+        } catch {
+            ownerMealSuggestions = []
+            print("fetchOwnerMealSuggestions error: \(error)")
+        }
+    }
+
+    func addMealSuggestionAsDraft(_ suggestion: NativeMealSuggestion) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId,
+              ownerRestaurants.contains(where: { $0.id == restaurantId }),
+              suggestion.restaurantId == restaurantId,
+              ["open", "under_review"].contains(suggestion.status) else { return false }
+
+        struct Params: Encodable { let p_suggestion_id: String }
+        do {
+            // The server RPC takes a row lock, validates owner/manager
+            // membership, creates an unpublished menu draft and links it to
+            // the suggestion in one transaction. It is idempotent, so an
+            // interrupted request can safely be retried from `under_review`.
+            let _: UUID = try await client.rpc(
+                "create_menu_draft_from_suggestion",
+                params: Params(p_suggestion_id: suggestion.id)
+            ).execute().value
+            await refreshOwnerOperations()
+            return true
+        } catch {
+            lastError = "Le brouillon n’a pas pu être créé. Réessayez."
+            print("addMealSuggestionAsDraft error: \(error)")
+            return false
+        }
+    }
+
+    func updateOwnerMenuItem(_ item: NativeMenuItem, name: String, price: Double, description: String?, active: Bool, allergens: [String], allergensConfirmed: Bool) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId, name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false, price >= 0 else { return false }
+        if active && item.isDraft == true && (price <= 0 || !allergensConfirmed) { return false }
+        struct Patch: Encodable {
+            let name: String
+            let price: Double
+            let description: String?
+            let active: Bool
+            let isDraft: Bool
+            let allergens: [String]
+            let allergensConfirmed: Bool
+            enum CodingKeys: String, CodingKey {
+                case name, price, description, active, allergens
+                case isDraft = "is_draft"
+                case allergensConfirmed = "allergens_confirmed"
+            }
+        }
+        do {
+            try await client.from("menu_items").update(Patch(
+                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                price: price,
+                description: description?.trimmingCharacters(in: .whitespacesAndNewlines),
+                active: active,
+                isDraft: active ? false : (item.isDraft ?? false),
+                allergens: allergens,
+                allergensConfirmed: allergensConfirmed
+            )).eq("restaurant_id", value: restaurantId).eq("id", value: item.id).execute()
             await refreshOwnerOperations()
             return true
         } catch { print("updateOwnerMenuItem error: \(error)"); return false }
@@ -984,6 +1116,7 @@ final class SupabaseManager: ObservableObject {
         struct RestaurantInfoResponse: Decodable {
             let name: String
             let city: String?
+            let timezone: String?
             let loyaltyTier2Threshold: Double
             let loyaltyTier3Threshold: Double
             let googleMapsUrl: String?
@@ -995,6 +1128,9 @@ final class SupabaseManager: ObservableObject {
             let decoded = try JSONDecoder().decode(RestaurantInfoResponse.self, from: data)
             restaurantName = decoded.name
             restaurantCity = decoded.city
+            if let identifier = decoded.timezone, let timezone = TimeZone(identifier: identifier) {
+                restaurantTimezone = timezone
+            }
             loyaltyTier2Threshold = decoded.loyaltyTier2Threshold
             loyaltyTier3Threshold = decoded.loyaltyTier3Threshold
             restaurantGoogleMapsUrl = decoded.googleMapsUrl
@@ -1115,6 +1251,11 @@ final class SupabaseManager: ObservableObject {
             menuItems = decoded.items.filter(\.active)
             taxRate = decoded.taxRate
             acceptsTips = decoded.acceptsTips
+            onlinePaymentEnabled = decoded.onlinePaymentEnabled
+            canPayAtReceipt = decoded.canPayAtReceipt ?? true
+            canPayOnline = decoded.canPayOnline ?? decoded.onlinePaymentEnabled
+            pickupEnabled = decoded.pickupEnabled ?? true
+            deliveryEnabled = decoded.deliveryEnabled
             lastError = nil
         } catch let error as URLError where error.code == .notConnectedToInternet {
             applyDemoMenuFallback(message: "Connexion indisponible : le menu démo reste accessible hors ligne.")
@@ -1132,6 +1273,11 @@ final class SupabaseManager: ObservableObject {
         menuItems = NativeMenuItem.demoCatalog
         taxRate = 0.14975
         acceptsTips = true
+        onlinePaymentEnabled = false
+        canPayAtReceipt = true
+        canPayOnline = false
+        pickupEnabled = true
+        deliveryEnabled = false
         isUsingDemoMenuFallback = true
         lastError = message
     }
@@ -1205,25 +1351,56 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
-    struct OrderResult { let ok: Bool; let orderId: String?; let estimatedReadyAt: Date? }
+    struct OrderResult { let ok: Bool; let orderId: String?; let estimatedReadyAt: Date?; let paymentURL: URL? }
+    struct DeliveryOrderInfo: Encodable { let address: String }
+
+    func quoteDelivery(address: String) async -> PortalDeliveryQuote? {
+        struct Request: Encodable { let address: String }
+        struct Response: Decodable { let ok: Bool; let quote: PortalDeliveryQuote }
+        do {
+            let bodyData = try JSONEncoder().encode(Request(address: address))
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/delivery-quote"), method: "POST", body: bodyData)
+            let response = try JSONDecoder().decode(Response.self, from: data)
+            guard response.ok, response.quote.available else {
+                lastError = response.quote.reason == "outside_radius"
+                    ? "Cette adresse est au-delà de la zone de livraison du restaurant."
+                    : "Impossible de calculer la livraison pour cette adresse."
+                return nil
+            }
+            return response.quote
+        } catch {
+            lastError = "Le tarif de livraison n’a pas pu être calculé. Vérifiez l’adresse et réessayez."
+            print("quoteDelivery error: \(error)")
+            return nil
+        }
+    }
 
     /// estimatedReadyAt arrives as a raw ISO8601 string (the bridge routes
     /// never configure JSONDecoder's dateDecodingStrategy — only the direct
     /// Supabase client calls elsewhere get automatic Date decoding, via the
     /// SDK's own internal decoder), so this is parsed by hand rather than
     /// declared as `Date?` on OrderResponse directly.
-    func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?) async -> OrderResult {
+    func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?, requestedReadyAt: Date? = nil, payOnline: Bool = false, delivery: DeliveryOrderInfo? = nil) async -> OrderResult {
         struct CartLine: Encodable { let menuItemId: String; let quantity: Int }
-        struct OrderBody: Encodable { let cart: [CartLine]; let tipAmount: Double; let paymentMethod: String? }
-        struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String? }
+        struct OrderBody: Encodable { let cart: [CartLine]; let tipAmount: Double; let paymentMethod: String?; let payOnline: Bool; let delivery: DeliveryOrderInfo?; let requestedReadyAtLocal: String? }
+        struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String?; let paymentUrl: String? }
 
         let lines = cart.compactMap { key, qty -> CartLine? in
             qty > 0 ? CartLine(menuItemId: key, quantity: qty) : nil
         }
-        guard !lines.isEmpty else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil) }
+        guard !lines.isEmpty else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil) }
+        guard !payOnline || onlinePaymentEnabled else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil) }
 
         do {
-            let bodyData = try JSONEncoder().encode(OrderBody(cart: lines, tipAmount: tipAmount, paymentMethod: paymentMethod))
+            let dateFormatter = ISO8601DateFormatter()
+            let bodyData = try JSONEncoder().encode(OrderBody(
+                cart: lines,
+                tipAmount: tipAmount,
+                paymentMethod: paymentMethod,
+                payOnline: payOnline,
+                delivery: delivery,
+                requestedReadyAtLocal: requestedReadyAt.map(dateFormatter.string(from:))
+            ))
             let data = try await authorizedRequest(
                 Config.apiBaseURL.appending(path: "/api/portal/orders"),
                 method: "POST",
@@ -1231,14 +1408,14 @@ final class SupabaseManager: ObservableObject {
             )
             let decoded = try JSONDecoder().decode(OrderResponse.self, from: data)
             let eta = decoded.estimatedReadyAt.flatMap { ISO8601DateFormatter().date(from: $0) }
-            return OrderResult(ok: decoded.ok, orderId: decoded.orderId, estimatedReadyAt: eta)
+            return OrderResult(ok: decoded.ok, orderId: decoded.orderId, estimatedReadyAt: eta, paymentURL: decoded.paymentUrl.flatMap(URL.init(string:)))
         } catch let error as URLError where error.code == .notConnectedToInternet {
             lastError = "Aucune connexion internet. Votre commande n'a pas été envoyée."
-            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil)
+            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil)
         } catch {
             lastError = "La commande a échoué. Réessayez."
             print("submitOrder error: \(error)")
-            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil)
+            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil)
         }
     }
 

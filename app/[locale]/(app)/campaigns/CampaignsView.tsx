@@ -4,16 +4,15 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/minerva/FormField";
+import { Input, Select } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { updateCampaignStatusAction, getCampaignAssetsAction } from "@/app/[locale]/(app)/campaigns/actions";
-import { useApp, useCurrentRestaurant } from "@/lib/app-context";
+import { useApp } from "@/lib/app-context";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Campaign, CampaignAsset, CampaignChannel, CampaignStatus, CampaignType } from "@/lib/types";
-import { MarketingStudioView } from "./MarketingStudioView";
-import { PrioritizedCampaignsStudio } from "@/components/campaigns/PrioritizedCampaignsStudio";
-import { Sparkles, Megaphone, Plus, Camera, Mail, Store, Users, FileText, ShieldCheck } from "lucide-react";
+import { Megaphone, Plus, Camera, Mail, Store, Users, FileText } from "lucide-react";
+import { CampaignsSubNav } from "./CampaignsSubNav";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -57,10 +56,9 @@ export function CampaignsView({
   initialChannel?: string;
 }) {
   const { role } = useApp();
-  const restaurant = useCurrentRestaurant();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"prioritized" | "studio" | "campaigns">("prioritized");
   const [statusFilter, setStatusFilter] = useState<"all" | CampaignStatus>("all");
+  const [search, setSearch] = useState("");
   const [channelFilter, setChannelFilter] = useState<"all" | CampaignChannel>(
     initialChannel && ["Instagram", "Email", "En salle", "Facebook"].includes(initialChannel)
       ? (initialChannel as CampaignChannel)
@@ -70,6 +68,7 @@ export function CampaignsView({
   const [isPending, startTransition] = useTransition();
 
   function handleSelect(id: string) {
+    setAssets([]);
     setSelectedId(id);
     router.push(`/campaigns?id=${id}`, { scroll: false });
   }
@@ -80,11 +79,14 @@ export function CampaignsView({
   const [assets, setAssets] = useState<(CampaignAsset & { url: string | null })[]>([]);
 
   useEffect(() => {
-    if (!selectedId) {
-      setAssets([]);
-      return;
-    }
-    getCampaignAssetsAction(selectedId).then(setAssets);
+    if (!selectedId) return;
+    let active = true;
+    getCampaignAssetsAction(selectedId).then((nextAssets) => {
+      if (active) setAssets(nextAssets);
+    });
+    return () => {
+      active = false;
+    };
   }, [selectedId]);
 
   function handleStatusChange(status: "active" | "terminee") {
@@ -106,54 +108,25 @@ export function CampaignsView({
       campaigns.filter(
         (c) =>
           (statusFilter === "all" || c.status === statusFilter) &&
-          (channelFilter === "all" || c.channel === channelFilter)
+          (channelFilter === "all" || c.channel === channelFilter) &&
+          (!search.trim() || `${c.name} ${c.channel} ${typeLabel[c.type]}`.toLocaleLowerCase("fr-CA").includes(search.trim().toLocaleLowerCase("fr-CA")))
       ),
-    [campaigns, statusFilter, channelFilter]
+    [campaigns, statusFilter, channelFilter, search]
   );
 
   const selected: Campaign | undefined = campaigns.find((c) => c.id === selectedId);
+  const activeCount = campaigns.filter((campaign) => campaign.status === "active").length;
+  const attributedRevenue = campaigns.reduce((sum, campaign) => sum + (campaign.estimatedRevenue ?? 0), 0);
 
   return (
     <div className="space-y-5">
+      <CampaignsSubNav />
       <PageHeader
-        eyebrow="Marketing & Fidélisation"
-        title="Studio Marketing & Campagnes"
-        description="Créez des visuels ultra-personnalisés pour vos réseaux sociaux et gérez vos campagnes de relance."
+        eyebrow="Marketing"
+        title="Historique des campagnes"
+        description="Retrouvez les campagnes envoyées ou planifiées, vérifiez leurs résultats et ouvrez leur contenu."
         action={
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 rounded-xl border border-mv-border bg-mv-surface p-1 shadow-mv-xs">
-              <button
-                onClick={() => setActiveTab("prioritized")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-semibold rounded-lg transition-all ${
-                  activeTab === "prioritized"
-                    ? "bg-mv-green text-white shadow-sm"
-                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
-                }`}
-              >
-                <ShieldCheck size={14} /> Modèles Prêts à l’Emploi (LCAP)
-              </button>
-              <button
-                onClick={() => setActiveTab("studio")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-semibold rounded-lg transition-all ${
-                  activeTab === "studio"
-                    ? "bg-mv-green text-white shadow-sm"
-                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
-                }`}
-              >
-                <Sparkles size={14} /> Visual Kits & Studio
-              </button>
-              <button
-                onClick={() => setActiveTab("campaigns")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-semibold rounded-lg transition-all ${
-                  activeTab === "campaigns"
-                    ? "bg-mv-green text-white shadow-sm"
-                    : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
-                }`}
-              >
-                <Megaphone size={14} /> Historique ({campaigns.length})
-              </button>
-            </div>
-
             {canCreate && (
               <Button size="sm" href="/campaigns/new">
                 <Plus size={15} /> Nouvelle campagne
@@ -163,18 +136,24 @@ export function CampaignsView({
         }
       />
 
-      {activeTab === "prioritized" && (
-        <PrioritizedCampaignsStudio
-          restaurantId={restaurantId!}
-          restaurantName={restaurant?.name}
-        />
-      )}
+      <section aria-label="Aperçu des campagnes" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card className="py-4">
+          <p className="text-[12px] font-medium text-mv-ink-faint">Campagnes suivies</p>
+          <p className="mt-1 font-display text-2xl font-semibold text-mv-ink">{campaigns.length}</p>
+        </Card>
+        <Card className="py-4">
+          <p className="text-[12px] font-medium text-mv-ink-faint">Actives</p>
+          <p className="mt-1 font-display text-2xl font-semibold text-mv-green-dark">{activeCount}</p>
+        </Card>
+        <Card className="py-4">
+          <p className="text-[12px] font-medium text-mv-ink-faint">Revenus attribués estimés</p>
+          <p className="mt-1 font-display text-2xl font-semibold text-mv-ink">{formatCurrency(attributedRevenue)}</p>
+        </Card>
+      </section>
 
-      {activeTab === "studio" && <MarketingStudioView />}
-
-      {activeTab === "campaigns" && (
-        <div className="space-y-4">
-          <div className="mb-4 flex flex-wrap items-center gap-2.5">
+      <div className="space-y-4">
+          <search className="mb-4 flex flex-wrap items-center gap-2.5" aria-label="Rechercher et filtrer les campagnes">
+            <Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher une campagne…" aria-label="Rechercher une campagne" className="w-full sm:max-w-xs" />
             <Select
               className="w-auto"
               value={statusFilter}
@@ -202,7 +181,7 @@ export function CampaignsView({
             <span className="text-[12.5px] text-mv-ink-faint">
               {filtered.length} campagne{filtered.length > 1 ? "s" : ""}
             </span>
-          </div>
+          </search>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
             <div className={selected ? "xl:col-span-7" : "xl:col-span-12"}>
@@ -377,8 +356,7 @@ export function CampaignsView({
               </div>
             )}
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

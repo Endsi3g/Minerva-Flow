@@ -7,8 +7,13 @@ import {
   updateMenuItem,
   deleteMenuItem,
   recordSale,
+  getMenuItems,
+  mapMenuItem,
   type MenuItemInput,
+  type MenuItemRow,
 } from "@/lib/data/menu";
+import { getCurrentMembership } from "@/lib/data/current-restaurant";
+import { createClient } from "@/lib/supabase/server";
 import { createMenuShare, deleteMenuShare } from "@/lib/data/menu-shares";
 import { createOffer, updateOffer, deleteOffer, type OfferInput } from "@/lib/data/offers";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
@@ -22,7 +27,6 @@ import {
   getConnectedCatalogProviders,
   reconcileMenuItemsForProvider,
 } from "@/lib/pos/catalog-sync";
-import { getMenuItems } from "@/lib/data/menu";
 
 export async function createMenuItemAction(
   restaurantId: string,
@@ -80,7 +84,7 @@ export async function resyncMenuToPosAction(restaurantId: string): Promise<{ pro
     await pushMenuItemToConnectedProviders(restaurantId, item).catch(() => {});
   }
 
-  let pushed = items.length * providers.length;
+  const pushed = items.length * providers.length;
   let pulled = 0;
   for (const provider of providers) {
     const result = await reconcileMenuItemsForProvider(restaurantId, provider);
@@ -252,3 +256,25 @@ export async function createMenuItemFromPosAction(
   return item;
 }
 
+export async function createMenuDraftFromSuggestionAction(
+  restaurantId: string,
+  suggestionId: string
+): Promise<{ ok: true; item: MenuItem } | { ok: false; reason: "not_authorized" | "create_failed" }> {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return { ok: false, reason: "not_authorized" };
+  }
+  const supabase = await createClient();
+  const { data: itemId, error } = await supabase.rpc("create_menu_draft_from_suggestion", {
+    p_suggestion_id: suggestionId,
+  });
+  if (error || typeof itemId !== "string") {
+    if (error) console.error("createMenuDraftFromSuggestionAction failed:", error.message);
+    return { ok: false, reason: "create_failed" };
+  }
+  const { data, error: itemError } = await supabase.from("menu_items").select("*")
+    .eq("id", itemId).eq("restaurant_id", restaurantId).maybeSingle();
+  if (itemError || !data) return { ok: false, reason: "create_failed" };
+  revalidatePath("/menu");
+  return { ok: true, item: mapMenuItem(data as MenuItemRow) };
+}

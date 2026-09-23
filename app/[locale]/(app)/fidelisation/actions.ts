@@ -12,6 +12,7 @@ import {
   resolvePairingCode,
   findCustomerByPhone,
   mapCustomer,
+  type CustomerRow,
   type CustomerInput,
 } from "@/lib/data/customers";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
@@ -383,43 +384,21 @@ export async function updateVisitRewardTiersAction(
 
 export async function grantBirthdayBonusAction(
   restaurantId: string,
-  customerId: string,
-  bonusPoints: number = 50
-): Promise<Customer | null> {
-  const supabase = createAdminClient();
-  const { data: current } = await supabase
-    .from("customers")
-    .select("loyalty_points")
-    .eq("restaurant_id", restaurantId)
-    .eq("id", customerId)
-    .single();
+  customerId: string
+): Promise<{ customer: Customer; alreadyGranted: boolean } | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("grant_customer_birthday_bonus", {
+    p_restaurant_id: restaurantId,
+    p_customer_id: customerId,
+  });
+  if (error || !data?.[0]?.customer) return null;
 
-  const newPoints = (current?.loyalty_points ?? 0) + bonusPoints;
-
-  const { data, error } = await supabase
-    .from("customers")
-    .update({ loyalty_points: newPoints })
-    .eq("restaurant_id", restaurantId)
-    .eq("id", customerId)
-    .select()
-    .single();
-
-  if (error || !data) return null;
-
-  // Insert loyalty transaction log if table exists
-  try {
-    await supabase.from("loyalty_transactions").insert({
-      restaurant_id: restaurantId,
-      customer_id: customerId,
-      points_delta: bonusPoints,
-      reason: "Bonus Anniversaire 🎂",
-    });
-  } catch {
-    // Non-critical audit log failure
-  }
-
+  const result = data[0] as { applied: boolean; customer: CustomerRow };
   revalidatePath("/fidelisation");
-  return mapCustomer(data, []);
+  return {
+    customer: mapCustomer(result.customer, []),
+    alreadyGranted: !result.applied,
+  };
 }
 
 /** "Annoncer" — a manual, owner-authored broadcast to every consented customer. See broadcastAnnouncement. */

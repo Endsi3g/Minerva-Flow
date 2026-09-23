@@ -10,6 +10,11 @@
 
 begin;
 
+-- The franchise fixture belongs to the separately provisioned demo account.
+-- Skip it when bootstrapping a clean staging project without that auth user.
+do $$ begin
+if exists (select 1 from auth.users where id = 'fbcf1300-e360-4804-b0a0-46807ccecb4d') then
+
 insert into workspaces (id, name)
 values ('7a3f9c1e-2b4d-4e6a-9f8c-1d5e6a7b8c9d', 'Minerva Flow — Groupe démo');
 
@@ -60,5 +65,8 @@ insert into loyalty_rewards (restaurant_id, name, points_cost, description, acti
 ('b2e4f6a8-1c3d-4e5f-8a9b-0c1d2e3f4a5b', 'Café ou thé offert', 50, 'Tout format, toute la journée.', true),
 ('b2e4f6a8-1c3d-4e5f-8a9b-0c1d2e3f4a5b', 'Pâtisserie offerte', 90, 'Une pâtisserie au choix, gratuite.', true)
 on conflict do nothing;
+
+end if;
+end $$;
 
 commit;

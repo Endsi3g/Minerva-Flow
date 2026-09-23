@@ -1,5 +1,7 @@
 # Brief de copywriting — Page d'accueil publique (`/`)
 
+> Mise à jour du périmètre produit : le produit comprend désormais un espace web restaurateur, une application iOS avec des parcours client et propriétaire, et des pages publiques. Ce brief doit rester factuel et ne pas présenter l’app comme une simple PWA.
+
 Ce document remplace la page d'accueil marketing qui existait à `/` (retirée le
 15 juillet 2026, faute d'être utilisée). Il sert de brief pour rédiger — ou
 faire rédiger — un vrai texte avant de reconstruire la page. Le code de
@@ -8,9 +10,11 @@ commit `3cb8046` si on veut repartir de cette base plutôt que de zéro.
 
 ## 1. Ce qu'est le produit
 
-Minerva Flow est un cockpit de gestion pour restaurants et cafés indépendants
-ou petites chaînes (2 à 5 établissements) : suivi du revenu quotidien,
-campagnes marketing, gestion d'équipe, assistant IA, rapports partageables.
+Minerva Flow relie l’espace d’exploitation des restaurants et cafés à leur
+relation client : suivi de l’activité disponible, menu, commandes,
+fidélisation, équipe et rapports. Les propriétaires y accèdent sur le web et
+dans l’app iOS; les clients ont un parcours iOS et des pages web publiques
+pour les menus, liens de fidélité et commandes activées.
 
 ## 2. Client cible — à qui on parle
 
@@ -52,16 +56,22 @@ calculatrice."
 Vérifier l'état du produit avant d'écrire — certaines pièces sont des
 scaffolds techniques, pas des fonctionnalités activées :
 
-- ✅ **Réel et fonctionnel** : suivi de revenu quotidien, import CSV
-  d'historique, assistant IA conversationnel, rapports partageables par
-  lien, invitations d'équipe par lien, suivi des employés et revues de
-  performance, revue de performance automatique par IA.
-- ⚠️ **Construit mais pas branché** (nécessite un compte externe côté
-  Minerva avant d'être réellement actif) : facturation Stripe, connexion
-  Square, banque ouverte. **Ne pas promettre ces intégrations comme
-  disponibles tant qu'elles n'ont pas été activées et testées.**
-- ❌ **N'existe pas** : application mobile native (c'est une PWA), support
-  multi-langue, intégration Lightspeed/Clover.
+- ✅ **Parcours présents** : espace propriétaire avec modules dépendant du
+  rôle; gestion du menu, commandes, fidélisation, espaces/restaurants,
+  collaborateurs et outils d’exploitation; application iOS avec vues client
+  et propriétaire; identification téléphone + confirmation par code; suivi
+  des conversions de parrainage.
+- ⚠️ **À activer et vérifier par restaurant** : synchronisation POS,
+  paiements, envoi de campagnes, notifications, commande et livraison. Une
+  intégration mentionnée dans l’interface ne signifie pas qu’un compte
+  externe est connecté ou qu’un flux a été validé en production.
+- 🧭 **Cible, pas capacité générale à promettre** : app Android white-label,
+  création/publication automatisée d’apps par client et livraison tarifée
+  selon distance/temps. L’iOS natif est livré comme app Minerva Flow; le
+  build 1.0 (11) est exporté mais pas encore téléversé sur TestFlight.
+
+Pour les formulations exactes et les parcours détaillés, consulter
+[`docs/PRODUCT_GUIDE_OWNER_CLIENT.md`](PRODUCT_GUIDE_OWNER_CLIENT.md).
 
 ## 6. Structure de page recommandée
 

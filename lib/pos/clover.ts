@@ -175,7 +175,13 @@ export async function fetchCloverDailyTickets(
     const elements = data.elements ?? [];
 
     for (const order of elements) {
-      if (order.state === "deleted" || order.paymentState === "OPEN_VOID") continue;
+      // Only award loyalty for fully paid orders. Clover also returns OPEN,
+      // PARTIALLY_PAID, refunded, and credited orders from this date query.
+      if (order.state === "deleted" || order.paymentState !== "PAID") continue;
+      // A stable provider ID is required for exactly-once imports. Never
+      // invent a random ID here: doing so would make cron/webhook retries
+      // create duplicate orders and loyalty credits.
+      if (!order.id) continue;
       const orderTotal = typeof order.total === "number" ? order.total : 0;
       if (orderTotal <= 0) continue;
 
@@ -191,7 +197,7 @@ export async function fetchCloverDailyTickets(
       });
 
       tickets.push({
-        externalOrderId: order.id || `clover-order-${Math.random()}`,
+        externalOrderId: order.id,
         closedAt: order.createdTime ? new Date(order.createdTime).toISOString() : new Date().toISOString(),
         subtotal: Math.round((orderTotal / 100) * 100) / 100,
         total: Math.round((orderTotal / 100) * 100) / 100,
@@ -386,5 +392,3 @@ export async function updateCloverItemStock(
   });
   return res.ok;
 }
-
-

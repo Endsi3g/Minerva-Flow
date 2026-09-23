@@ -6,6 +6,7 @@ import { logMovement } from "@/lib/data/inventory";
 import { logVisit } from "@/lib/data/customers";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
 import { computeIsBusy, computeEstimatedReadyAt } from "@/lib/orders/eta";
+import { isOrderPaymentUnresolved } from "@/lib/orders/payment-gate";
 import type { Order, OrderItem, OrderStatus, OrderPaymentStatus, OrderFulfillmentMode, OrderSource } from "@/lib/types";
 
 type OrderRow = {
@@ -29,6 +30,9 @@ type OrderRow = {
   delivery_distance_km: number | null;
   delivery_fee: number;
   delivery_eta_minutes: number | null;
+  requested_ready_at?: string | null;
+  order_kind?: "standard" | "custom" | "catering";
+  deposit_paid_amount?: number;
   notes: string | null;
   customer_id: string | null;
   referral_link_id: string | null;
@@ -92,6 +96,9 @@ function mapOrder(row: OrderRow, items: OrderItemRow[]): Order {
     deliveryDistanceKm: row.delivery_distance_km,
     deliveryFee: row.delivery_fee ?? 0,
     deliveryEtaMinutes: row.delivery_eta_minutes,
+    requestedReadyAt: row.requested_ready_at ?? null,
+    orderKind: row.order_kind ?? "standard",
+    depositPaidAmount: Number(row.deposit_paid_amount ?? 0),
     notes: row.notes,
     customerId: row.customer_id,
     referralLinkId: row.referral_link_id,
@@ -227,8 +234,7 @@ export async function getOrdersForDay(restaurantId: string, dayStart: string, da
     .from("orders")
     .select("*")
     .eq("restaurant_id", restaurantId)
-    .gte("created_at", dayStart)
-    .lt("created_at", dayEnd)
+    .or(`and(created_at.gte.${dayStart},created_at.lt.${dayEnd}),and(requested_ready_at.gte.${dayStart},requested_ready_at.lt.${dayEnd})`)
     .order("created_at", { ascending: false });
 
   if (error || !orders) return [];
@@ -260,19 +266,18 @@ export async function updateOrderStatus(restaurantId: string, id: string, status
   // be able to bypass it).
   const { data: current } = await supabase
     .from("orders")
-    .select("status, fulfillment_mode, payment_status")
+    .select("status, fulfillment_mode, payment_status, deposit_paid_amount")
     .eq("restaurant_id", restaurantId)
     .eq("id", id)
     .maybeSingle();
   const currentRow = current as
-    | { status: OrderStatus; fulfillment_mode: OrderFulfillmentMode | null; payment_status: OrderPaymentStatus }
+    | { status: OrderStatus; fulfillment_mode: OrderFulfillmentMode | null; payment_status: OrderPaymentStatus; deposit_paid_amount: number | null }
     | null;
   const wasAlreadyServed = currentRow?.status === "servie";
 
-  const isAwaitingPayment =
-    Boolean(currentRow?.fulfillment_mode) &&
-    currentRow?.fulfillment_mode !== "sur_place" &&
-    currentRow?.payment_status !== "paye";
+  const isAwaitingPayment = currentRow
+    ? isOrderPaymentUnresolved(currentRow.payment_status, currentRow.deposit_paid_amount)
+    : false;
   if (PREP_GATED_STATUSES.includes(status) && isAwaitingPayment) return false;
 
   const { error } = await supabase.from("orders").update({ status }).eq("restaurant_id", restaurantId).eq("id", id);

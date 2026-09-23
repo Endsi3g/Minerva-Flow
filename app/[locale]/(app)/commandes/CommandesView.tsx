@@ -8,10 +8,12 @@ import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Textarea } from "@/components/minerva/FormField";
-import { formatCurrency, formatTime, cn } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
+import { formatRestaurantTime } from "@/lib/orders/scheduling";
 import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import { planTierAtLeast, type PlanTier } from "@/lib/plan-tier";
 import { PlanTierLockedState } from "@/components/ui/PlanTierLockedState";
+import { isOrderPaymentUnresolved } from "@/lib/orders/payment-gate";
 import type { Order, OrderStatus, OrderPaymentStatus, MenuItem, OrderSource } from "@/lib/types";
 import {
   ClipboardList,
@@ -51,6 +53,8 @@ import { notifyError } from "@/lib/notify-error";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRealtimeBus } from "@/lib/realtime/RealtimeProvider";
+import { ServiceQuotesPanel } from "./ServiceQuotesPanel";
+import type { ServiceQuoteRow } from "@/lib/data/service-quotes";
 
 const statusLabel: Record<OrderStatus, string> = {
   soumise: "Soumise",
@@ -90,13 +94,11 @@ const nextStatus: Partial<Record<OrderStatus, { status: OrderStatus; label: stri
 };
 
 /**
- * True for an order placed under an online-payment mode ("immediat" or
- * "prep_apres_paiement") whose payment hasn't been confirmed yet — the
- * server rejects moving these to "en_preparation" (see updateOrderStatus),
- * so the UI holds them in their own column instead of the normal queue.
+ * Payment state, not the pickup/delivery choice, is the authority: a delivery
+ * can be paid at the door and a pickup can be paid online.
  */
 function isAwaitingPayment(o: Order): boolean {
-  return Boolean(o.fulfillmentMode) && o.fulfillmentMode !== "sur_place" && o.paymentStatus !== "paye";
+  return isOrderPaymentUnresolved(o.paymentStatus, o.depositPaidAmount);
 }
 
 function cleanNotes(notes?: string | null): string | null {
@@ -145,6 +147,15 @@ function DeliveryMeta({ order }: { order: Order }) {
   );
 }
 
+function ScheduledOrderBadge({ order, timeZone }: { order: Order; timeZone: string }) {
+  if (!order.requestedReadyAt) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-violet-800">
+      <Clock size={10.5} /> Précommande · {formatRestaurantTime(order.requestedReadyAt, timeZone)}
+    </span>
+  );
+}
+
 /**
  * Inline "prêt vers HH:MM" — staff override for one order's estimate (see
  * updateOrderEstimatedReadyAt). Shows nothing for a non-manager when no
@@ -155,11 +166,13 @@ function OrderEtaEditor({
   order,
   restaurantId,
   canManage,
+  timeZone,
   onSaved,
 }: {
   order: Order;
   restaurantId: string;
   canManage: boolean;
+  timeZone: string;
   onSaved: (estimatedReadyAt: string | null) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -218,7 +231,7 @@ function OrderEtaEditor({
       className="mt-1 flex items-center gap-1 text-[11px] font-medium text-mv-ink-faint transition-colors hover:text-mv-ink-soft disabled:cursor-default"
     >
       <Clock size={11} />
-      {order.estimatedReadyAt ? `Prêt vers ${formatTime(order.estimatedReadyAt)}` : "Ajouter un délai"}
+      {order.estimatedReadyAt ? `Prêt vers ${formatRestaurantTime(order.estimatedReadyAt, timeZone)}` : "Ajouter un délai"}
     </button>
   );
 }
@@ -468,6 +481,11 @@ export function CommandesView({
   menuItems,
   planTier,
   todayMenuViews = 0,
+  initialServiceQuotes,
+  initialServiceQuotesError,
+  taxRate,
+  restaurantTimezone,
+  initialNowMs,
 }: {
   restaurantId: string | null;
   initialOrders: Order[];
@@ -476,21 +494,28 @@ export function CommandesView({
   menuItems: MenuItem[];
   planTier: PlanTier;
   todayMenuViews?: number;
+  initialServiceQuotes: ServiceQuoteRow[];
+  initialServiceQuotesError: boolean;
+  taxRate: number;
+  restaurantTimezone: string;
+  initialNowMs: number;
 }) {
   const { role } = useApp();
   const restaurant = useCurrentRestaurant();
   // Local + optimistic: the AppContext's `restaurants` array is seeded once
   // at page load and has no live refresh path, so it wouldn't reflect a
   // toggle flipped here without this.
-  const [busyModeLocal, setBusyModeLocal] = useState(restaurant?.busyModeManual ?? false);
+  const [busyModeLocal, setBusyModeLocal] = useState(() => restaurant?.busyModeManual ?? false);
   const [busyPending, setBusyPending] = useState(false);
   const [notifyingId, setNotifyingId] = useState<string | null>(null);
   const [orders, setOrders] = useState(initialOrders);
   const [loading, setLoading] = useState(false);
 
+  const [clockNowMs, setClockNowMs] = useState(initialNowMs);
   useEffect(() => {
-    if (restaurant) setBusyModeLocal(restaurant.busyModeManual);
-  }, [restaurant?.id, restaurant?.busyModeManual]);
+    const timer = setInterval(() => setClockNowMs(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
   const [viewMode, setViewMode] = useState<"kds" | "table">("kds");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [activeFilter, setActiveFilter] = useState<ChannelFilter>("all");
@@ -503,6 +528,7 @@ export function CommandesView({
   }, [soundEnabled]);
 
   const canManage = role === "owner" || role === "manager" || role === "staff";
+  const canManageQuotes = role === "owner" || role === "manager";
   const { subscribeOrders } = useRealtimeBus();
 
   // Handle incoming real-time orders via unified bus
@@ -549,7 +575,7 @@ export function CommandesView({
   const averageDelayMinutes = intervalPairs > 0 ? Math.round(totalIntervalMinutes / intervalPairs) : null;
   const latestOrder = chronologicalActiveOrders[chronologicalActiveOrders.length - 1];
   const minutesSinceLatestOrder = latestOrder
-    ? Math.max(0, Math.round((Date.now() - new Date(latestOrder.createdAt).getTime()) / 60_000))
+    ? Math.max(0, Math.round((clockNowMs - new Date(latestOrder.createdAt).getTime()) / 60_000))
     : null;
 
   // Menu visits & Conversion rate
@@ -662,8 +688,8 @@ export function CommandesView({
       )}
       <PageHeader
         eyebrow="Opérations"
-        title="Commandes & Écran Cuisine (KDS)"
-        description="Gestion en direct des tickets de cuisine et commandes directes sans commission (0% frais Flow)."
+        title="Commandes en direct"
+        description="Suivez la file de préparation, les paiements et les commandes du restaurant depuis une vue de cuisine ou une liste détaillée."
         action={
           <div className="flex flex-wrap items-center gap-2">
             {canManage && (
@@ -759,7 +785,7 @@ export function CommandesView({
                 className={cn(
                   "flex items-center gap-1 px-2.5 py-1 text-[12px] font-medium rounded-lg transition-all",
                   activeFilter === "mobile"
-                    ? "bg-purple-700 text-white shadow-sm"
+                    ? "bg-mv-ink text-white shadow-sm"
                     : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
                 )}
                 title="Commandes issues de l'application mobile iOS"
@@ -805,6 +831,10 @@ export function CommandesView({
         }
       />
 
+      {restaurantId && canManageQuotes && (
+        <ServiceQuotesPanel restaurantId={restaurantId} initialQuotes={initialServiceQuotes} initialLoadFailed={initialServiceQuotesError} taxRate={taxRate} restaurantTimezone={restaurantTimezone} initialDay={dayStart} />
+      )}
+
       {/* Metrics Header Grid — 4 Columns */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* 1. Volume & Commandes */}
@@ -822,14 +852,14 @@ export function CommandesView({
           </div>
           <div className="mt-2 pt-2 border-t border-mv-border-soft flex flex-wrap items-center gap-1.5 text-[11.5px] text-mv-ink-soft">
             <span className="font-semibold text-mv-ink">{orderCount}</span> commande{orderCount > 1 ? "s" : ""} :
-            <span className="inline-flex items-center gap-0.5 text-purple-700 font-medium bg-purple-50 px-1.5 py-0.5 rounded">
-              📱 {mobileOrderCount}
+            <span className="inline-flex items-center gap-1 text-mv-ink-soft font-medium bg-mv-cream-soft px-1.5 py-0.5 rounded">
+              <Smartphone size={11} aria-hidden="true" /> {mobileOrderCount}
             </span>
             <span className="inline-flex items-center gap-0.5 text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded">
-              🌐 {webOrderCount}
+              <Globe size={11} aria-hidden="true" /> {webOrderCount}
             </span>
             <span className="inline-flex items-center gap-0.5 text-amber-800 font-medium bg-amber-50 px-1.5 py-0.5 rounded">
-              📞 {manualOrderCount}
+              <PhoneCall size={11} aria-hidden="true" /> {manualOrderCount}
             </span>
           </div>
         </Card>
@@ -855,7 +885,7 @@ export function CommandesView({
                 Dernière commande : <span className="font-semibold text-mv-ink font-mono">{minutesSinceLatestOrder === 0 ? "À l'instant" : `Il y a ${minutesSinceLatestOrder} min`}</span>
               </p>
             ) : (
-              <p className="text-mv-ink-faint italic">Aucune commande pour l'instant aujourd'hui</p>
+            <p className="text-mv-ink-faint italic">Aucune commande pour le moment aujourd’hui</p>
             )}
           </div>
         </Card>
@@ -967,6 +997,7 @@ export function CommandesView({
                         <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <SourceBadge source={o.source} />
+                          <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
                           <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
@@ -998,7 +1029,9 @@ export function CommandesView({
                     <div className="mt-3 flex items-center justify-between pt-2 border-t border-mv-border/60">
                       <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total)}</span>
                       <Badge tone={paymentStatusTone[o.paymentStatus] ?? "red"}>
-                        {paymentStatusLabel[o.paymentStatus] ?? "Paiement en attente"}
+                        {o.depositPaidAmount && o.depositPaidAmount > 0 && o.paymentStatus !== "paye"
+                          ? `Acompte reçu · solde ${formatCurrency(Math.max(0, o.total - o.depositPaidAmount))}`
+                          : paymentStatusLabel[o.paymentStatus] ?? "Paiement en attente"}
                       </Badge>
                     </div>
                   </div>
@@ -1033,6 +1066,7 @@ export function CommandesView({
                         <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <SourceBadge source={o.source} />
+                          <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
                           <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
@@ -1051,6 +1085,7 @@ export function CommandesView({
                         order={o}
                         restaurantId={restaurantId!}
                         canManage={canManage}
+                        timeZone={restaurantTimezone}
                         onSaved={(eta) => handleEtaSaved(o.id, eta)}
                       />
                     )}
@@ -1114,6 +1149,7 @@ export function CommandesView({
                         <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <SourceBadge source={o.source} />
+                          <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
                           <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
@@ -1132,6 +1168,7 @@ export function CommandesView({
                         order={o}
                         restaurantId={restaurantId!}
                         canManage={canManage}
+                        timeZone={restaurantTimezone}
                         onSaved={(eta) => handleEtaSaved(o.id, eta)}
                       />
                     )}
@@ -1195,6 +1232,7 @@ export function CommandesView({
                         <p className="font-bold text-[14px] text-mv-ink">{o.guestName}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           <SourceBadge source={o.source} />
+                          <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
                           <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
@@ -1233,7 +1271,7 @@ export function CommandesView({
                             onClick={() => handleNotifyReady(o.id)}
                             disabled={notifyingId === o.id}
                             className="text-[11.5px] h-7 px-2 text-mv-ink-soft hover:text-mv-ink"
-                            title={o.readyNotifiedAt ? `Notifié à ${formatTime(o.readyNotifiedAt)}` : "Notifier le client par courriel/push/SMS"}
+                            title={o.readyNotifiedAt ? `Notifié à ${formatRestaurantTime(o.readyNotifiedAt, restaurantTimezone)}` : "Notifier le client par courriel/push/SMS"}
                           >
                             {o.readyNotifiedAt ? <BellRing size={12} /> : <Bell size={12} />}
                             {o.readyNotifiedAt ? "Renvoyer" : "Notifier"}
@@ -1272,6 +1310,7 @@ export function CommandesView({
                       <span>{o.guestName}</span>
                       <div className="mt-0.5 flex items-center gap-1">
                         <SourceBadge source={o.source} />
+                        <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
                         <DeliveryMeta order={o} />
                         {orderIntervals.has(o.id) && (
                           <span className="text-[10px] font-mono text-mv-ink-faint">+{orderIntervals.get(o.id)}m</span>
@@ -1306,10 +1345,11 @@ export function CommandesView({
               const nextBlockedByPayment = next?.status === "en_preparation" && isAwaitingPayment(o);
               return (
                 <Tr key={o.id}>
-                  <Td className="text-mv-ink-soft">{formatTime(o.createdAt)}</Td>
+                  <Td className="text-mv-ink-soft">{formatRestaurantTime(o.createdAt, restaurantTimezone)}</Td>
                   <Td>
                     <div className="flex items-center gap-1.5">
                       <SourceBadge source={o.source} />
+                      <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
                       <DeliveryMeta order={o} />
                       {orderIntervals.has(o.id) && (
                         <span className="text-[10px] font-mono text-mv-ink-faint" title="Délai par rapport à la commande précédente">
@@ -1334,7 +1374,9 @@ export function CommandesView({
                       <Badge tone={statusTone[o.status]}>{statusLabel[o.status]}</Badge>
                       {o.paymentStatus !== "non_requis" && (
                         <Badge tone={paymentStatusTone[o.paymentStatus]}>
-                          {paymentStatusLabel[o.paymentStatus]}
+                          {o.depositPaidAmount && o.depositPaidAmount > 0 && o.paymentStatus !== "paye"
+                            ? `Acompte ${formatCurrency(o.depositPaidAmount)} · solde ${formatCurrency(Math.max(0, o.total - o.depositPaidAmount))}`
+                            : paymentStatusLabel[o.paymentStatus]}
                         </Badge>
                       )}
                     </div>

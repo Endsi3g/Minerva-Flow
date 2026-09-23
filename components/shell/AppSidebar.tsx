@@ -44,6 +44,8 @@ import {
   TrendingUp,
   Building2,
   Lock,
+  Wallet,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -78,9 +80,8 @@ export const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 export const ltvCoreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
-  { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
-  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
   { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
+  { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
 ];
 
 // 1b. Day-to-day operational tools — still top-level for staff/consultant,
@@ -90,7 +91,18 @@ export const operationalToolsItems: NavItem[] = [
   { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
 ];
 
-const coreNavItems: NavItem[] = [...ltvCoreNavItems, ...operationalToolsItems];
+const coreNavItems: NavItem[] = [
+  ...ltvCoreNavItems,
+  { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
+  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
+  ...operationalToolsItems,
+];
+
+const dailyManagementItems: NavItem[] = [
+  { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
+  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
+  ...operationalToolsItems,
+];
 
 // 2. Opérations & Équipe
 export const operationsItems: NavItem[] = [
@@ -120,6 +132,7 @@ export const operationalAnalyticsItems: NavItem[] = [
 
 // 4. Sub settings & help items (with Intégrations inclus)
 export const settingsGroupItems: NavItem[] = [
+  { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
   { key: "billing", href: "/billing", icon: CreditCard, roles: ["owner"] },
   { key: "guide", href: "/guide", icon: BookOpen, roles: allRoles },
   { key: "support", href: "/support", icon: LifeBuoy, roles: allRoles },
@@ -284,6 +297,7 @@ function TeamSwitcher() {
 
   const groupedRestaurants = useMemo(() => {
     const groups = new Map<string, typeof restaurants>();
+    for (const workspace of workspaces) groups.set(workspace.id, []);
     for (const restaurant of restaurants) {
       const workspaceId = restaurant.workspaceId ?? `restaurant:${restaurant.id}`;
       groups.set(workspaceId, [...(groups.get(workspaceId) ?? []), restaurant]);
@@ -531,6 +545,33 @@ export function AppSidebar() {
               ))
             )}
             </div>
+
+            {isLtvFocusedRole && (
+              <SidebarNavGroup title="Gestion quotidienne" active={dailyManagementItems.some((item) => pathname.startsWith(item.href))}>
+                {dailyManagementItems.filter(allowedByRole).map((item) => (
+                  <NavLink key={item.href} href={item.href} label={t(navTranslationKeys[item.key] || item.key)} icon={item.icon} active={pathname.startsWith(item.href)} onNavigate={closeMobile} />
+                ))}
+              </SidebarNavGroup>
+            )}
+
+            <SidebarNavGroup title="Opérations" active={operationsItems.some((item) => pathname.startsWith(item.href))}>
+              {operationsItems.filter(allowedByRole).map((item) => (
+                <NavLink key={item.href} href={item.href} label={t(navTranslationKeys[item.key] || item.key)} icon={item.icon} active={pathname.startsWith(item.href)} onNavigate={closeMobile} />
+              ))}
+              <NavLink href="/workspace" label="Équipes et espaces de travail" icon={Building2} active={pathname.startsWith("/workspace")} onNavigate={closeMobile} />
+            </SidebarNavGroup>
+
+            <SidebarNavGroup title="Performance & Analytics" active={operationalAnalyticsItems.some((item) => pathname.startsWith(item.href))}>
+              {operationalAnalyticsItems.filter(allowedByRole).map((item) => (
+                <NavLink key={item.href} href={item.href} label={t(navTranslationKeys[item.key] || item.key)} icon={item.icon} active={pathname.startsWith(item.href)} onNavigate={closeMobile} />
+              ))}
+            </SidebarNavGroup>
+
+            <SidebarNavGroup title="Paramètres et plus" active={settingsGroupItems.some((item) => pathname.startsWith(item.href))}>
+              {settingsGroupItems.filter(allowedByRole).map((item) => (
+                <NavLink key={item.href} href={item.href} label={t(navTranslationKeys[item.key] || item.key)} icon={item.icon} active={pathname.startsWith(item.href)} onNavigate={closeMobile} />
+              ))}
+            </SidebarNavGroup>
           </div>
 
           {/* Settings Section at the bottom */}
@@ -571,5 +612,20 @@ export function AppSidebar() {
         restaurantId={restaurantId}
       />
     </>
+  );
+}
+
+function SidebarNavGroup({ title, active, children }: { title: string; active: boolean; children: React.ReactNode }) {
+  const [manualOpen, setManualOpen] = useState<boolean | null>(null);
+  const open = manualOpen ?? active;
+
+  return (
+    <details className="group/nav rounded-md" open={open} onToggle={(event) => setManualOpen(event.currentTarget.open)}>
+      <summary className="flex cursor-pointer list-none items-center justify-between rounded-md px-2.5 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-mv-ink-faint hover:bg-mv-ink/[0.04] hover:text-mv-ink-soft [&::-webkit-details-marker]:hidden">
+        {title}
+        <ChevronDown size={13} className="transition-transform group-open/nav:rotate-180" aria-hidden="true" />
+      </summary>
+      <div className="mt-0.5 space-y-0.5 pl-1">{children}</div>
+    </details>
   );
 }

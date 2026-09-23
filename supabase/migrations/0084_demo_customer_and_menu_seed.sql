@@ -15,6 +15,11 @@
 
 begin;
 
+-- This fixture targets the pre-seeded native demo tenant; leave clean staging
+-- databases empty until that tenant has been provisioned.
+do $$ begin
+if exists (select 1 from restaurants where id = '38038211-f045-4f1c-af96-a44cb51179a3') then
+
 update customers
 set restaurant_id = '38038211-f045-4f1c-af96-a44cb51179a3'
 where user_id = 'f43acb06-4025-4953-b225-666587619c64';
@@ -47,5 +52,8 @@ insert into loyalty_rewards (restaurant_id, name, points_cost, description, acti
 ('38038211-f045-4f1c-af96-a44cb51179a3', 'Bol déjeuner offert', 180, 'Le bol déjeuner protéiné, gratuit.', true),
 ('38038211-f045-4f1c-af96-a44cb51179a3', 'Burger Wagyu offert', 320, 'Notre burger signature, gratuit.', true)
 on conflict do nothing;
+
+end if;
+end $$;
 
 commit;

@@ -32,7 +32,43 @@ struct NativeOwnerOrder: Codable, Identifiable {
     let guestName: String
     let total: Double
     let createdAt: String
-    enum CodingKeys: String, CodingKey { case id, restaurantId = "restaurant_id", status, guestName = "guest_name", total, createdAt = "created_at" }
+    let requestedReadyAt: String?
+    let orderKind: String?
+    enum CodingKeys: String, CodingKey {
+        case id, status, total
+        case restaurantId = "restaurant_id"
+        case guestName = "guest_name"
+        case createdAt = "created_at"
+        case requestedReadyAt = "requested_ready_at"
+        case orderKind = "order_kind"
+    }
+}
+
+struct NativeMealSuggestion: Codable, Identifiable {
+    let id: String
+    let restaurantId: String
+    let title: String
+    let description: String?
+    let status: String
+    let menuItemId: String?
+    let createdAt: String
+    let voteCount: Int
+    let hasVoted: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, status
+        case restaurantId = "restaurant_id"
+        case menuItemId = "menu_item_id"
+        case createdAt = "created_at"
+        case voteCount = "vote_count"
+        case hasVoted = "has_voted"
+    }
+}
+
+struct NativeMealSuggestionVoteResult: Decodable {
+    let voteCount: Int
+    let hasVoted: Bool
+    enum CodingKeys: String, CodingKey { case voteCount = "vote_count", hasVoted = "has_voted" }
 }
 
 struct NativeOwnerCustomer: Codable, Identifiable {
@@ -128,6 +164,7 @@ struct Customer: Codable, Identifiable {
     var marketingConsent: Bool
     var favoriteOfferIds: [String]
     var favoriteMenuItemIds: [String]
+    var birthday: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -143,6 +180,7 @@ struct Customer: Codable, Identifiable {
         case marketingConsent = "marketing_consent"
         case favoriteOfferIds = "favorite_offer_ids"
         case favoriteMenuItemIds = "favorite_menu_item_ids"
+        case birthday
     }
 }
 
@@ -179,6 +217,7 @@ struct Offer: Codable, Identifiable {
     let includedItems: [String]
     let excludedItems: [String]
     let active: Bool
+    let isBirthdaySpecial: Bool
     let startsAt: Date?
     let endsAt: Date?
 
@@ -191,6 +230,7 @@ struct Offer: Codable, Identifiable {
         case includedItems = "included_items"
         case excludedItems = "excluded_items"
         case active
+        case isBirthdaySpecial = "is_birthday_special"
         case startsAt = "starts_at"
         case endsAt = "ends_at"
     }
@@ -204,6 +244,42 @@ struct Offer: Codable, Identifiable {
     }
 }
 
+enum BirthdayOfferEligibility {
+    /// Customer birthdays arrive from Postgres as YYYY-MM-DD. Compare the
+    /// calendar month/day locally so UTC conversion cannot shift the day.
+    static func isBirthdayToday(_ birthday: String?, today: Date = Date(), calendar: Calendar = .current) -> Bool {
+        guard let birthday else { return false }
+        let parts = birthday.split(separator: "-", omittingEmptySubsequences: false)
+        guard parts.count == 3,
+              parts[0].count == 4,
+              let birthYear = Int(parts[0]),
+              let month = Int(parts[1]),
+              let day = Int(parts[2]),
+              (1...12).contains(month)
+        else { return false }
+
+        let maxDay: Int
+        switch month {
+        case 2: maxDay = isLeapYear(birthYear) ? 29 : 28
+        case 4, 6, 9, 11: maxDay = 30
+        default: maxDay = 31
+        }
+        guard (1...maxDay).contains(day) else { return false }
+
+        let todayParts = calendar.dateComponents([.month, .day, .year], from: today)
+        guard let todayMonth = todayParts.month, let todayDay = todayParts.day else { return false }
+        if month == 2, day == 29, !isLeapYear(todayParts.year ?? 0) {
+            // Leap-day birthdays are celebrated on February 28 in non-leap years.
+            return todayMonth == 2 && todayDay == 28
+        }
+        return todayMonth == month && todayDay == day
+    }
+
+    private static func isLeapYear(_ year: Int) -> Bool {
+        year.isMultiple(of: 400) || (year.isMultiple(of: 4) && !year.isMultiple(of: 100))
+    }
+}
+
 struct NativeMenuItem: Codable, Identifiable {
     let id: String
     let restaurantId: String
@@ -214,6 +290,9 @@ struct NativeMenuItem: Codable, Identifiable {
     let active: Bool
     let imageUrl: String?
     let imageUrls: [String]
+    var isDraft: Bool? = nil
+    var allergens: [String]? = nil
+    var allergensConfirmed: Bool? = nil
 
     /// Every photo available for the carousel — the single legacy
     /// image_url first (if it isn't already duplicated in image_urls),
@@ -230,7 +309,9 @@ struct NativeMenuItem: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id
         case restaurantId = "restaurant_id"
-        case name, category, price, description, active
+        case name, category, price, description, active, allergens
+        case isDraft = "is_draft"
+        case allergensConfirmed = "allergens_confirmed"
         case imageUrl = "image_url"
         case imageUrls = "image_urls"
     }
@@ -240,6 +321,19 @@ struct MenuResponse: Codable {
     let items: [NativeMenuItem]
     let taxRate: Double
     let acceptsTips: Bool
+    let onlinePaymentEnabled: Bool
+    let canPayAtReceipt: Bool?
+    let canPayOnline: Bool?
+    let pickupEnabled: Bool?
+    let deliveryEnabled: Bool
+}
+
+struct PortalDeliveryQuote: Codable {
+    let distanceKm: Double?
+    let fee: Double
+    let etaMinutes: Int?
+    let available: Bool
+    let reason: String?
 }
 
 extension NativeMenuItem {

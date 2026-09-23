@@ -4,6 +4,7 @@ import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { isPlatformAdmin } from "@/lib/data/admin";
 import { getVerifiedUser } from "@/lib/supabase/auth-user";
 import { getWorkspaceBranding } from "@/lib/data/workspace-branding";
+import { getUserWorkspaces } from "@/lib/data/workspaces";
 import type { WorkspaceBranding } from "@/lib/branding/workspace-branding";
 import { brandingForRequestHost } from "@/lib/branding/request-branding";
 import { headers } from "next/headers";
@@ -40,9 +41,10 @@ export async function getAppSessionData(): Promise<AppSessionData> {
       }
     : null;
 
-  const [restaurants, membership, onboardingCompleted, platformAdmin] = await Promise.all([
+  const [restaurants, membership, userWorkspaces, onboardingCompleted, platformAdmin] = await Promise.all([
     getUserRestaurants(),
     getCurrentMembership(),
+    getUserWorkspaces(),
     user
       ? supabase
           .from("profiles")
@@ -53,11 +55,6 @@ export async function getAppSessionData(): Promise<AppSessionData> {
       : Promise.resolve(true),
     user ? isPlatformAdmin() : Promise.resolve(false),
   ]);
-
-  const workspaceIds = [...new Set(restaurants.map((restaurant) => restaurant.workspaceId).filter((id): id is string => Boolean(id)))];
-  const { data: workspaceRows } = workspaceIds.length
-    ? await supabase.from("workspaces").select("id, name").in("id", workspaceIds)
-    : { data: [] };
 
   const initialRestaurantId = membership?.restaurantId ?? restaurants[0]?.id ?? "";
   const currentRestaurant = restaurants.find((restaurant) => restaurant.id === initialRestaurantId);
@@ -71,7 +68,7 @@ export async function getAppSessionData(): Promise<AppSessionData> {
   return {
     authUser,
     restaurants,
-    workspaces: (workspaceRows ?? []).map((workspace) => ({ id: workspace.id as string, name: workspace.name as string })),
+    workspaces: userWorkspaces.map((workspace) => ({ id: workspace.id, name: workspace.name })),
     branding,
     role: membership?.role ?? "staff",
     sidebarPermissions: membership?.sidebarPermissions ?? null,

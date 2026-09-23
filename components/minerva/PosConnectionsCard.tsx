@@ -12,7 +12,7 @@ import {
 } from "@/app/[locale]/(app)/settings/pos-actions";
 import type { PosConnection, PosProvider } from "@/lib/data/pos-connections";
 import { formatDate } from "@/lib/utils";
-import { RefreshCw, Store, Landmark, KeyRound } from "lucide-react";
+import { RefreshCw, Store, KeyRound } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { Square, QuickBooks, Clover, Toast } from "@/components/ui/BrandIcons";
 import { toast as sonnerToast } from "sonner";
@@ -70,7 +70,7 @@ function ConnectRow({
   const hasError = connection?.status === "erreur";
 
   function statusLine() {
-    if (!configured && provider !== "clover") return "Pas encore disponible";
+    if (!configured && provider !== "clover") return "Identifiants d’application à configurer";
     if (!connection) return "Non connecté";
     if (hasError) return "La connexion a été interrompue — reconnectez pour reprendre la synchronisation.";
     if (connection.lastSyncedAt) return `Dernière synchronisation — ${formatDate(connection.lastSyncedAt)}`;

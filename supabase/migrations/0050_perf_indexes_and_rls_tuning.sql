@@ -33,10 +33,8 @@ create index if not exists idx_orders_restaurant_created_desc
 create index if not exists idx_order_items_order_menu_item
   on order_items (order_id, menu_item_id);
 
--- 3. Inventory & Movements Indexes
-create index if not exists idx_inventory_movements_restaurant_created
-  on inventory_movements (restaurant_id, created_at desc);
-
+-- Movements are scoped through inventory_items; this table has no
+-- restaurant_id column, so index its actual foreign key and timestamp.
 create index if not exists idx_inventory_movements_item_created
   on inventory_movements (inventory_item_id, created_at desc);
 
@@ -52,7 +50,7 @@ create index if not exists idx_customers_restaurant_created
 
 -- 5. Realtime Alerts & Topbar Notifications Indexes
 create index if not exists idx_alerts_restaurant_unread
-  on alerts (restaurant_id, read, created_at desc);
+  on alerts (restaurant_id, status, created_at desc);
 
 create index if not exists idx_notifications_user_unread
   on notifications (user_id, read, created_at desc);

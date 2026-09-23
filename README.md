@@ -24,11 +24,15 @@
 
 ## Aperçu Général
 
-**Minerva Flow** est la plateforme logicielle complète conçue pour simplifier et unifier le pilotage quotidien des établissements de restauration indépendants, cafés, bistros et brasseries au Québec et en France.
+**Minerva Flow** est une plateforme de gestion pour restaurants et cafés indépendants. Elle relie l’espace d’exploitation du restaurateur au parcours fidélité de ses clients : les opérations, les ventes et les préférences sont organisées par restaurant et par rôle.
 
-Dans un secteur où les marges sont souvent serrées et les opérations fragmentées entre de multiples outils incomplets, Minerva Flow offre une interface centralisée, intuitive et moderne. Elle permet aux propriétaires et gérants d'éliminer la gestion manuelle sur papier ou tableur, d'optimiser leurs coûts de revient et d'assurer une rentabilité durable.
+Elle comprend trois surfaces complémentaires :
 
-Deux applications, une seule plateforme : un **tableau de bord web** pour le propriétaire et son équipe, et une **application native iOS** que leurs clients installent pour cumuler des points, commander et suivre leurs récompenses.
+- **Espace web propriétaire et équipe** : aperçu, menu, commandes, fidélisation, horaires, collaborateurs, inventaire, rapports et paramètres. Les pages disponibles dépendent du rôle et des accès accordés.
+- **Application iOS** : le même client natif oriente les comptes vers une expérience client ou propriétaire après authentification. Le parcours client couvre l’accueil, le menu/la commande, le code de jumelage, les offres, les cartes et le profil. Le parcours propriétaire donne accès à l’aperçu, aux commandes, au menu, à la fidélisation et à la gestion; sur iPad, la navigation s’adapte au format large.
+- **Pages web publiques** : menu partagé, lien de parrainage, demandes de réservation et parcours de commande activés par restaurant.
+
+Le modèle complet — qui fait quoi, comment les parcours s’enchaînent et ce qui dépend d’une intégration — est décrit dans le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md). L’état de TestFlight est suivi dans [l’audit mobile](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md).
 
 ---
 
@@ -49,7 +53,7 @@ Deux applications, une seule plateforme : un **tableau de bord web** pour le pro
 </tr>
 </table>
 
-### Application native iOS (client)
+### Application native iOS (client et propriétaire)
 
 <table>
 <tr>
@@ -89,7 +93,7 @@ Numérisation de la relation fournisseur. Les bons de commande sont générés e
 Chaque plat de la carte est automatiquement classé selon sa popularité et sa rentabilité (*Étoiles, Poids morts, Énigmes, Chevaux de bataille*). Cette analyse permet au chef et au restaurateur de retravailler les recettes peu rentables et d'optimiser l'affichage du menu.
 
 ### 7. Fidélisation Client, Parrainage & Application Native iOS
-L'application intègre un programme de fidélité complet. Les clients rejoignent le programme via un QR code ou un code de jumelage à 6 chiffres, accumulent des points et accèdent à une **application native iOS dédiée** (SwiftUI) — 5 onglets (Accueil, Commander, Scanner, Récompenses, Profil) — pour consulter leur solde, commander directement, jumeler leur compte au comptoir sans mot de passe, et partager leur lien de parrainage. Les liens de parrainage et les points de contact physiques (NFC, QR) s'ouvrent directement dans l'application via *Universal Links*, sans passer par un navigateur.
+Les clients consultent leur solde, leurs récompenses et leur code de jumelage à 6 chiffres, découvrent les restaurants et menus, passent une commande lorsque cette option est activée, et partagent leur lien de parrainage. Le code du client permet à l’équipe de confirmer son identité au comptoir avant d’afficher son solde ou de créditer une visite. Les liens compatibles peuvent ouvrir directement la bonne vue native. L’application comprend aussi un espace propriétaire natif avec des outils opérationnels essentiels; la version iPad utilise une navigation adaptée au portrait et au paysage.
 
 ### 8. Réputation, Avis Clients & Commandes Directes
 La page **Réputation** centralise les avis Google Maps (détection automatique quotidienne) et les avis internes en-dessous de 4★ — gardés privés et acheminés directement au propriétaire pour une réponse avant qu'ils n'atteignent une plateforme publique. Les avis 4-5★ sont au contraire encouragés à être partagés sur Google Maps. L'établissement bénéficie également d'un module de commande en ligne directe sans commission, avec paiement sécurisé Stripe Connect crédité directement au restaurant.
@@ -164,7 +168,7 @@ Minerva Flow est conçu pour supporter des montées en charge massives avec des 
 - **Intégrations POS & Monétique** : Square, Clover, Toast POS, Lightspeed Restaurant, Stripe Connect, Stripe Checkout — Square et Clover incluent une synchronisation bidirectionnelle du menu et de l'inventaire (pas seulement le chiffre d'affaires)
 - **Liens intelligents** : Universal Links iOS (`apple-app-site-association`) pour les liens de parrainage et points de contact NFC/QR
 - **Services Webhooks & Cron** : Webhooks Square/Clover/Toast/Stripe/Twilio ; tâches planifiées via GitHub Actions (`.github/workflows/cron-*.yml`) plutôt que les Cron Jobs Vercel — le plan Vercel Hobby du projet limite les crons natifs à 2 au total, une fois par jour chacun
-- **Tests & Assurance Qualité** : Vitest (28 suites de tests, 157+ tests unitaires réussis), TypeScript strict (`tsc --noEmit` à 0 erreur)
+- **Tests & Assurance Qualité** : Vitest (179 tests réussis lors du contrôle du 23 septembre 2026), TypeScript (`tsc --noEmit`)
 - **Hébergement Cloud** : Vercel Production Infrastructure
 
 ---

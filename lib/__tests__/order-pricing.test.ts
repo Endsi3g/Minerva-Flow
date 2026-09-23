@@ -30,7 +30,7 @@ describe("computeOrderPricing", () => {
     ]);
   });
 
-  it("drops lines for items no longer in the active menu (deleted/deactivated since page load)", () => {
+  it("rejects the whole cart when a menu item became inactive since page load", () => {
     const result = computeOrderPricing({
       cart: [
         { menuItemId: "item-1", quantity: 1 },
@@ -42,11 +42,10 @@ describe("computeOrderPricing", () => {
       requestedTipAmount: 0,
     });
 
-    expect(result!.lineItems).toHaveLength(1);
-    expect(result!.subtotal).toBe(15);
+    expect(result).toBeNull();
   });
 
-  it("drops non-finite or non-positive quantities", () => {
+  it("rejects non-finite or non-positive quantities", () => {
     const result = computeOrderPricing({
       cart: [
         { menuItemId: "item-1", quantity: 0 },
@@ -60,6 +59,44 @@ describe("computeOrderPricing", () => {
     });
 
     expect(result).toBeNull();
+  });
+
+  it("rejects fractional quantities rather than allowing a database error or a partial cart", () => {
+    const result = computeOrderPricing({
+      cart: [
+        { menuItemId: "item-1", quantity: 1 },
+        { menuItemId: "item-2", quantity: 1.5 },
+      ],
+      menuItemById: MENU,
+      taxRate: 0.14975,
+      acceptsTips: false,
+      requestedTipAmount: 0,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("rejects corrupted tax/menu prices and totals that cannot fit order money columns", () => {
+    const base = {
+      cart: [{ menuItemId: "item-1", quantity: 1 }],
+      menuItemById: MENU,
+      acceptsTips: false,
+      requestedTipAmount: 0,
+    };
+
+    expect(computeOrderPricing({ ...base, taxRate: Number.NaN })).toBeNull();
+    expect(computeOrderPricing({ ...base, taxRate: 1.01 })).toBeNull();
+    expect(computeOrderPricing({
+      ...base,
+      menuItemById: new Map([["item-1", { id: "item-1", name: "Broken", price: Number.POSITIVE_INFINITY }]]),
+      taxRate: 0,
+    })).toBeNull();
+    expect(computeOrderPricing({
+      ...base,
+      cart: [{ menuItemId: "item-1", quantity: 2 }],
+      menuItemById: new Map([["item-1", { id: "item-1", name: "Bulk order", price: 60_000_000 }]]),
+      taxRate: 0,
+    })).toBeNull();
   });
 
   it("ignores the requested tip when the restaurant doesn't accept tips", () => {

@@ -4,15 +4,9 @@ import { getCurrentRestaurantId, getCurrentRestaurant } from "@/lib/data/current
 import { getOrdersForDay } from "@/lib/data/orders";
 import { getMenuItems } from "@/lib/data/menu";
 import { getTodayMenuViews } from "@/lib/data/menu-views";
+import { getServiceQuotesForRestaurant } from "@/lib/data/service-quotes";
+import { getRestaurantDayWindow } from "@/lib/orders/scheduling";
 import { CommandesView } from "./CommandesView";
-
-function todayRange() {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-  return { start: start.toISOString(), end: end.toISOString() };
-}
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("breadcrumb");
@@ -21,18 +15,20 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CommandesPage() {
   const [restaurant, restaurantId] = await Promise.all([getCurrentRestaurant(), getCurrentRestaurantId()]);
-  const { start, end } = todayRange();
+  const { start, end, nowMs } = getRestaurantDayWindow(restaurant?.timezone ?? "America/Toronto");
 
-  const [orders, menuItems, menuViews] = restaurantId
+  const [orders, menuItems, menuViews, serviceQuotesResult] = restaurantId
     ? await Promise.all([
         getOrdersForDay(restaurantId, start, end),
         getMenuItems(restaurantId),
         getTodayMenuViews(restaurantId),
+        getServiceQuotesForRestaurant(restaurantId),
       ])
-    : [[], [], 0];
+    : [[], [], 0, { ok: true as const, quotes: [] }];
 
   return (
     <CommandesView
+      key={restaurantId ?? "aucun-restaurant"}
       restaurantId={restaurantId}
       initialOrders={orders}
       dayStart={start}
@@ -40,6 +36,11 @@ export default async function CommandesPage() {
       menuItems={menuItems.filter((m) => m.active)}
       planTier={restaurant?.planTier ?? "essentiel"}
       todayMenuViews={menuViews}
+      initialServiceQuotes={serviceQuotesResult.ok ? serviceQuotesResult.quotes : []}
+      initialServiceQuotesError={!serviceQuotesResult.ok}
+      taxRate={restaurant?.taxRate ?? 0.14975}
+      restaurantTimezone={restaurant?.timezone ?? "America/Toronto"}
+      initialNowMs={nowMs}
     />
   );
 }

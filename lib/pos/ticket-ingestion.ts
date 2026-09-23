@@ -28,6 +28,8 @@ export type PosTicket = {
   lineItems: PosTicketLineItem[];
 };
 
+type TicketIngestionProvider = Extract<PosProvider, "square" | "clover" | "toast">;
+
 export type IngestionResult = {
   ingestedCount: number;
   skippedDuplicateCount: number;
@@ -44,7 +46,7 @@ export type IngestionResult = {
  */
 export async function ingestPosTickets(
   restaurantId: string,
-  provider: PosProvider,
+  provider: TicketIngestionProvider,
   tickets: PosTicket[]
 ): Promise<IngestionResult> {
   const admin = createAdminClient();
@@ -111,16 +113,35 @@ export async function ingestPosTickets(
           identifiedCustomersCount++;
 
           // Credit loyalty points and record visit automatically
-          await logVisitAdmin(
+          const creditedCustomer = await logVisitAdmin(
             restaurantId,
             resolved.customer.id,
             ticket.total,
             `Ticket caisse ${provider.toUpperCase()} (#${ticket.externalOrderId})`,
-            { viaPosSync: true, viaPhoneLookup: !!ticket.customerPhone }
+            {
+              viaPosSync: true,
+              viaPhoneLookup: !!ticket.customerPhone,
+              posProvider: provider,
+              posExternalOrderId: ticket.externalOrderId,
+            }
           );
+          if (!creditedCustomer) {
+            console.warn(`L'attribution fidélité du ticket ${ticket.externalOrderId} a échoué; le ticket sera repris à la prochaine synchronisation.`);
+            continue;
+          }
+        } else {
+          // A POS identity was supplied, so null means it could not be
+          // resolved or persisted. Leave the order idempotency marker absent
+          // and retry on the next webhook/scheduled sync.
+          console.warn(`L'identité client du ticket ${ticket.externalOrderId} n'a pas pu être résolue; le ticket sera repris à la prochaine synchronisation.`);
+          continue;
         }
       } catch (custErr) {
         console.warn(`Could not reconcile customer for POS order ${ticket.externalOrderId}:`, custErr);
+        // Do not persist the order idempotency marker when identity/loyalty
+        // reconciliation failed transiently. Otherwise the next webhook or
+        // scheduled sync would skip the ticket forever and points are lost.
+        continue;
       }
     }
 

@@ -9,8 +9,12 @@ import { formatCurrency } from "@/lib/utils";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
 import { createOrderPaymentIntent } from "@/lib/stripe/connect";
 import { quoteDelivery } from "@/lib/orders/delivery-pricing";
+import type { DeliveryQuote } from "@/lib/orders/delivery-pricing";
+import { geocodeAddress } from "@/lib/geocode";
+import { getPublicCheckoutOptions } from "@/lib/orders/checkout-options";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { computeEstimatedReadyAt } from "@/lib/orders/eta";
+import { validateRequestedReadyAt } from "@/lib/orders/scheduling";
 import type { CustomerReferralLink, ReferralProgram, OrderFulfillmentMode } from "@/lib/types";
 
 export type ReferralLinkTracking = {
@@ -499,13 +503,18 @@ export type PublicOrderGuestInfo = {
    * The mode the guest picked at checkout, among the restaurant's
    * orderModesEnabled. "immediat" and "prep_apres_paiement" both request
    * online payment — only honored if the restaurant's Connect account is
-   * actually active (getRestaurantOrderSettings.onlinePaymentEnabled),
-   * otherwise silently falls back to "sur_place".
+   * actually active (getRestaurantOrderSettings.onlinePaymentEnabled).
+   * An unavailable requested mode is rejected; the server never silently
+   * changes delivery/payment intent into a different order.
    */
   fulfillmentMode: OrderFulfillmentMode;
+  /** Payment choice is independent of pickup/delivery. Omitted only for older clients. */
+  payOnline?: boolean;
   deliveryAddress?: string | null;
   deliveryLatitude?: number | null;
   deliveryLongitude?: number | null;
+  /** Restaurant-local datetime-local value; validated and converted server-side. */
+  requestedReadyAtLocal?: string | null;
   /**
    * Set when the guest tapped "J'en profite" on a live offer before
    * ordering. Offers carry no discount schema (title/description only, see
@@ -542,9 +551,9 @@ export type SubmitPublicOrderResult =
  * staff sees it in /commandes immediately even if the guest never
  * completes payment (payment_status stays 'en_attente' until the webhook
  * confirms it — see app/api/stripe/webhook/route.ts). If PaymentIntent
- * creation itself fails (e.g. the Connect account got disabled between
- * page load and submit), degrade gracefully to a normal pay-on-site order
- * rather than losing the order entirely.
+ * creation itself fails (e.g. the Connect account is disabled between page
+ * load and submit), the order is cancelled rather than silently becoming an
+ * unpaid pickup/delivery order.
  */
 export async function submitPublicOrder(
   menuToken: string,
@@ -582,7 +591,7 @@ export async function submitPublicOrder(
   // These four all depend only on restaurantId (or nothing) — never on each
   // other's result — so they run concurrently instead of as four sequential
   // round trips.
-  const [orderSettings, menuItemsResult, referralLinkResult, customerId] = await Promise.all([
+  const [orderSettings, menuItemsResult, referralLinkResult, customerId, restaurantResult] = await Promise.all([
     getRestaurantOrderSettings(admin, restaurantId),
     admin
       .from("menu_items")
@@ -602,9 +611,12 @@ export async function submitPublicOrder(
       { id: user.id, email: user.email },
       { name: guestInfo.guestName, phone: guestInfo.guestPhone, marketingConsent: guestInfo.marketingConsent }
     ),
+    admin.from("restaurants").select("timezone, city, province").eq("id", restaurantId).maybeSingle(),
   ]);
 
   if (!orderSettings || !customerId) return { ok: false };
+  const schedule = validateRequestedReadyAt(guestInfo.requestedReadyAtLocal, restaurantResult.data?.timezone ?? "America/Toronto");
+  if (!schedule.ok) return { ok: false };
 
   const menuItemById = new Map(
     ((menuItemsResult.data as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
@@ -620,33 +632,49 @@ export async function submitPublicOrder(
   if (!pricing) return { ok: false };
   const { lineItems, subtotal, taxAmount, tipAmount, total } = pricing;
 
-  const deliveryRequested = guestInfo.fulfillmentMode === "livraison";
-  const deliveryQuote = deliveryRequested
-    ? quoteDelivery(
-        orderSettings.delivery.config,
-        { lat: orderSettings.delivery.restaurantLat, lng: orderSettings.delivery.restaurantLng },
-        { lat: guestInfo.deliveryLatitude ?? null, lng: guestInfo.deliveryLongitude ?? null }
-      )
-    : { available: true, fee: 0, distanceKm: null, etaMinutes: null };
+  const orderMode = guestInfo.fulfillmentMode;
+  const legacyOnlineChoice = orderMode === "immediat" || orderMode === "prep_apres_paiement";
+  const deliveryRequested = orderMode === "livraison";
+  const checkoutOptions = getPublicCheckoutOptions(
+    orderSettings.orderModesEnabled,
+    orderSettings.onlinePaymentEnabled,
+    orderSettings.delivery.config.enabled
+  );
+  const normalizedFulfillmentMode = deliveryRequested ? "livraison" : "sur_place";
+  if (!checkoutOptions.fulfillmentModes.includes(normalizedFulfillmentMode)) return { ok: false };
+  const wantsOnlinePayment = guestInfo.payOnline ?? (legacyOnlineChoice || deliveryRequested);
+  if (wantsOnlinePayment ? !checkoutOptions.canPayOnline : !checkoutOptions.canPayAtReceipt) return { ok: false };
+
+  let deliveryQuote: DeliveryQuote = { available: true, fee: 0, distanceKm: null, etaMinutes: null };
+  let deliveryCoordinates: { lat: number; lng: number } | null = null;
+  if (deliveryRequested) {
+    const cleanAddress = guestInfo.deliveryAddress?.trim() ?? "";
+    if (cleanAddress.length < 6 || cleanAddress.length > 240) return { ok: false };
+    const restaurant = restaurantResult.data as { timezone?: string | null; city?: string | null; province?: string | null } | null;
+    const destination = await geocodeAddress(cleanAddress, restaurant?.city ?? "", restaurant?.province ?? undefined);
+    deliveryCoordinates = destination ? { lat: destination.lat, lng: destination.lng } : null;
+    deliveryQuote = quoteDelivery(
+      orderSettings.delivery.config,
+      { lat: orderSettings.delivery.restaurantLat, lng: orderSettings.delivery.restaurantLng },
+      deliveryCoordinates
+    );
+    if (!destination || !deliveryQuote.available || deliveryQuote.reason === "missing_location") return { ok: false };
+  }
   if (deliveryRequested && (!guestInfo.deliveryAddress?.trim() || !deliveryQuote.available)) return { ok: false };
   const deliveryFee = deliveryRequested ? deliveryQuote.fee : 0;
   const orderTotal = total + deliveryFee;
 
   const referralLinkId = (referralLinkResult.data as { id: string } | null)?.id ?? null;
 
-  // A tampered request could ask for a mode the restaurant never enabled
-  // (order_modes_enabled), or online payment when Connect isn't actually
-  // active — fall back to "sur_place" rather than trusting the client, the
-  // one mode that never requires anything from Stripe.
-  let fulfillmentMode: OrderFulfillmentMode = orderSettings.orderModesEnabled.includes(guestInfo.fulfillmentMode)
-    ? guestInfo.fulfillmentMode
-    : "sur_place";
-  let wantsOnlinePayment = fulfillmentMode !== "sur_place" && orderSettings.onlinePaymentEnabled;
-  if (!wantsOnlinePayment) fulfillmentMode = "sur_place";
+  // Fulfillment and payment are separate customer choices. Validate both
+  // against owner settings on the server instead of silently turning an
+  // unavailable online request into an unpaid order.
+  const fulfillmentMode: OrderFulfillmentMode = normalizedFulfillmentMode;
 
-  const estimatedReadyAt = computeEstimatedReadyAt(orderSettings.defaultPrepMinutes, orderSettings.isBusy);
+  const computedReadyAt = computeEstimatedReadyAt(orderSettings.defaultPrepMinutes, orderSettings.isBusy);
+  const estimatedReadyAt = schedule.requestedReadyAt ? new Date(schedule.requestedReadyAt) : computedReadyAt;
 
-  const baseOrderFields = {
+  const baseOrderFields: Record<string, unknown> = {
     restaurant_id: restaurantId,
     status: "soumise",
     guest_name: guestInfo.guestName,
@@ -661,12 +689,13 @@ export async function submitPublicOrder(
     notes: guestInfo.mentionedOfferTitle ? `Offre mentionnée : ${guestInfo.mentionedOfferTitle}` : null,
     estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
     delivery_address: deliveryRequested ? guestInfo.deliveryAddress?.trim() : null,
-    delivery_lat: deliveryRequested ? guestInfo.deliveryLatitude ?? null : null,
-    delivery_lng: deliveryRequested ? guestInfo.deliveryLongitude ?? null : null,
+    delivery_lat: deliveryCoordinates?.lat ?? null,
+    delivery_lng: deliveryCoordinates?.lng ?? null,
     delivery_distance_km: deliveryRequested ? deliveryQuote.distanceKm : null,
     delivery_fee: deliveryFee,
     delivery_eta_minutes: deliveryRequested ? deliveryQuote.etaMinutes : null,
   };
+  if (schedule.requestedReadyAt) baseOrderFields.requested_ready_at = schedule.requestedReadyAt;
 
   let { data: order, error: orderError } = await admin
     .from("orders")
@@ -680,14 +709,12 @@ export async function submitPublicOrder(
     .select("id")
     .single();
 
-  // payment_status/stripe_payment_intent_id/fulfillment_mode/estimated_ready_at
-  // (migrations 0026, 0108, 0112) may not exist yet in every environment —
-  // retry without any of them rather than breaking order submission
-  // entirely for a column PostgREST can't find.
-  if (orderError?.code === "PGRST204") {
-    wantsOnlinePayment = false;
-    fulfillmentMode = "sur_place";
+  // Older installations may not have the ETA column yet. Only degrade for a
+  // receipt-paid pickup, never silently turn an online/delivery order into a
+  // different order when its required schema is absent.
+  if (orderError?.code === "PGRST204" && !schedule.requestedReadyAt && !wantsOnlinePayment && !deliveryRequested) {
     const { estimated_ready_at: _omit, ...minimalFields } = baseOrderFields;
+    void _omit;
     ({ data: order, error: orderError } = await admin
       .from("orders")
       .insert({ ...minimalFields, payment_method: guestInfo.paymentMethod })
@@ -707,7 +734,25 @@ export async function submitPublicOrder(
       quantity: l.quantity,
     }))
   );
-  if (itemsError) return { ok: false };
+  if (itemsError) {
+    // The order row is intentionally created first so operations can see a
+    // submitted request. If its line-item batch fails, compensate immediately
+    // so staff never mistake an empty, unpaid order for valid work.
+    const cancellation: { status: string; payment_status?: string } = { status: "annulee" };
+    if (wantsOnlinePayment) cancellation.payment_status = "echoue";
+    const { error: cancellationError } = await admin.from("orders")
+      .update(cancellation)
+      .eq("id", orderId)
+      .eq("restaurant_id", restaurantId);
+    if (cancellationError) {
+      console.error("submitPublicOrder: failed to cancel order after item insert failure", {
+        orderId,
+        itemError: itemsError.message,
+        cancellationError: cancellationError.message,
+      });
+    }
+    return { ok: false };
+  }
 
   if (referralLinkId) {
     await admin.from("customer_referral_conversions").insert({
@@ -740,13 +785,50 @@ export async function submitPublicOrder(
       connectedAccountId: orderSettings.stripeConnectAccountId,
       amountCents: Math.round(orderTotal * 100),
     });
-    await admin.from("orders").update({ stripe_payment_intent_id: intent.id }).eq("id", orderId);
+    const { error: paymentIntentSaveError } = await admin.from("orders")
+      .update({ stripe_payment_intent_id: intent.id })
+      .eq("id", orderId)
+      .eq("restaurant_id", restaurantId);
+    if (paymentIntentSaveError) throw paymentIntentSaveError;
     return { ok: true, orderId, clientSecret: intent.clientSecret, estimatedReadyAt: estimatedReadyAtIso };
   } catch {
-    // Stripe call failed (e.g. account got disabled mid-flow) — the order
-    // itself is already safely committed as a normal order; just fall back
-    // to pay-on-site rather than losing it.
-    await admin.from("orders").update({ payment_status: "non_requis", fulfillment_mode: "sur_place" }).eq("id", orderId);
-    return { ok: true, orderId, clientSecret: null, estimatedReadyAt: estimatedReadyAtIso };
+    // Never silently convert an explicitly requested online payment into an
+    // unpaid order (particularly for delivery). Keep the failed attempt
+    // visible for operations, but do not treat it as a valid order.
+    await admin.from("orders").update({ status: "annulee", payment_status: "echoue" }).eq("id", orderId);
+    return { ok: false };
   }
+}
+
+/** Server-authoritative delivery estimate for a public menu checkout. */
+export async function getPublicOrderDeliveryQuote(menuToken: string, address: string): Promise<DeliveryQuote> {
+  const cleanAddress = address.trim();
+  if (!menuToken || cleanAddress.length < 6 || cleanAddress.length > 240) {
+    return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "missing_location" };
+  }
+  const ip = await getClientIp();
+  const { allowed } = await checkRateLimit(`public-delivery-quote:${ip}`, { max: 12, windowSeconds: 300 });
+  if (!allowed) return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "missing_location" };
+
+  const admin = createAdminClient();
+  const { data: share } = await admin.from("menu_shares").select("restaurant_id").eq("token", menuToken).maybeSingle();
+  const restaurantId = (share as { restaurant_id: string } | null)?.restaurant_id;
+  if (!restaurantId) return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "disabled" };
+
+  const [settings, restaurantResult] = await Promise.all([
+    getRestaurantOrderSettings(admin, restaurantId),
+    admin.from("restaurants").select("city, province").eq("id", restaurantId).maybeSingle(),
+  ]);
+  if (!settings?.delivery.config.enabled) {
+    return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "disabled" };
+  }
+  const location = restaurantResult.data as { city?: string | null; province?: string | null } | null;
+  const destination = await geocodeAddress(cleanAddress, location?.city ?? "", location?.province ?? undefined);
+  if (!destination) return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "missing_location" };
+  const quote = quoteDelivery(
+    settings.delivery.config,
+    { lat: settings.delivery.restaurantLat, lng: settings.delivery.restaurantLng },
+    { lat: destination.lat, lng: destination.lng }
+  );
+  return quote.reason === "missing_location" ? { ...quote, available: false } : quote;
 }

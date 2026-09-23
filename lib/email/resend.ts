@@ -655,3 +655,64 @@ export async function sendEmployeeScheduleEmail({
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
+
+export async function sendServiceQuotePaymentEmail(input: {
+  to: string;
+  guestName: string;
+  restaurantName: string;
+  checkoutUrl: string;
+  amount: number;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  lines: { name: string; quantity: number; unitPrice: number }[];
+  eventAt: string | null;
+  timeZone: string;
+  expiresAt: string;
+}): Promise<{ ok: boolean }> {
+  if (!resend) return { ok: false };
+  let checkoutUrl: URL;
+  try {
+    checkoutUrl = new URL(input.checkoutUrl);
+    if (checkoutUrl.protocol !== "https:") return { ok: false };
+  } catch { return { ok: false }; }
+  const event = input.eventAt
+    ? new Intl.DateTimeFormat("fr-CA", { dateStyle: "long", timeStyle: "short", timeZone: input.timeZone }).format(new Date(input.eventAt))
+    : "à confirmer avec le restaurant";
+  const expiry = new Intl.DateTimeFormat("fr-CA", { dateStyle: "long", timeStyle: "short", timeZone: input.timeZone }).format(new Date(input.expiresAt));
+  const amount = new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(input.amount);
+  const total = new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(input.total);
+  const subtotal = new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(input.subtotal);
+  const taxAmount = new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(input.taxAmount);
+  const lineRows = input.lines.map((line) => `<tr>
+    <td style="padding:9px 0;border-bottom:1px solid #eee9db;font-size:13px;color:#1a1e16">${escapeHtml(line.name)} <span style="color:#8d9488">× ${line.quantity}</span></td>
+    <td align="right" style="padding:9px 0;border-bottom:1px solid #eee9db;font-size:13px;color:#1a1e16">${new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(line.quantity * line.unitPrice)}</td>
+  </tr>`).join("");
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"></head>
+    <body style="margin:0;padding:28px;background:#f5f1e6;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1e16">
+      <main style="max-width:540px;margin:0 auto;padding:36px 30px;background:#fffefa;border:1px solid #e6e0d0;border-radius:22px">
+        <p style="margin:0 0 18px;color:#167f5b;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">Minerva Flow · Devis</p>
+        <h1 style="font-family:'New York',Georgia,serif;font-size:26px;line-height:1.2;margin:0 0 16px">Votre devis est prêt</h1>
+        <p style="font-size:14px;line-height:1.7;color:#565f52">Bonjour ${escapeHtml(input.guestName)}, <strong>${escapeHtml(input.restaurantName)}</strong> a préparé votre proposition pour le ${escapeHtml(event)}.</p>
+        <section style="margin:22px 0;padding:18px;border:1px solid #e6e0d0;border-radius:14px;background:#fbf9f3">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tbody>${lineRows}</tbody></table>
+          <p style="margin:14px 0 7px;font-size:12px;color:#565f52">Sous-total <strong style="float:right;color:#1a1e16">${subtotal}</strong></p>
+          <p style="margin:0 0 7px;font-size:12px;color:#565f52">Taxes <strong style="float:right;color:#1a1e16">${taxAmount}</strong></p>
+          <p style="margin:0 0 12px;font-size:13px;color:#565f52">Total du devis <strong style="float:right;color:#1a1e16">${total}</strong></p>
+          <p style="margin:0;font-size:13px;color:#565f52">Acompte à régler <strong style="float:right;color:#0e5a40">${amount}</strong></p>
+        </section>
+        <p style="font-size:12px;color:#8d9488">Le lien de paiement expire le ${escapeHtml(expiry)}. Le solde, s’il y a lieu, sera à régler selon les modalités convenues avec le restaurant.</p>
+        <p style="margin:28px 0;text-align:center"><a href="${escapeHtml(checkoutUrl.toString())}" style="display:inline-block;padding:14px 28px;background:#167f5b;color:#fffefa;text-decoration:none;border-radius:999px;font-weight:700">Consulter et régler le devis</a></p>
+        <p style="border-top:1px solid #eee9db;padding-top:18px;color:#8d9488;font-size:11px;text-align:center">Minerva Flow · Minerva Technologies Inc.</p>
+      </main>
+    </body></html>`;
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: input.to,
+    replyTo: REPLY_TO,
+    subject: `Votre devis est prêt — ${input.restaurantName}`,
+    html,
+  });
+  if (error) console.error("sendServiceQuotePaymentEmail failed:", error.message);
+  return { ok: !error };
+}

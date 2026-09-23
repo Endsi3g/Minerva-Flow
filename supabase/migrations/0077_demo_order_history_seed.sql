@@ -9,6 +9,25 @@
 
 begin;
 
+-- This optional demo fixture references pre-seeded restaurants and menu UUIDs.
+-- Skip it on a clean staging database that has not provisioned those tenants.
+do $$ begin
+if (select count(*) from restaurants where id in (
+  '63f93302-0ab4-431b-b66e-2deba424367c',
+  'da568e75-dd95-446d-89ef-00a6d46be984',
+  'cbfcb330-6d1b-4663-8727-8402dbbf8c0e',
+  '6b322c70-76d4-4d04-8af9-2ab82fe40333',
+  'f2a51496-edff-45f9-b3e0-70a43f75f869',
+  'c122ce6e-7cbb-404b-b712-6c055154d7c2',
+  '94ddcaa0-51e3-4bd2-9d1e-30e2d696213d'
+)) = 7 and (select count(*) from menu_items where id in (
+  'dd378740-daed-4cb4-8d8c-563e9f7b886c',
+  'f7024c64-8ea5-4de9-90e4-7e18787353aa',
+  '879c2b75-59e4-4b01-8a0f-4f455f38d0cf',
+  'a924d049-0365-4026-9922-87d03c409529',
+  'e75a0938-5975-4cb9-bc29-c240200249ab'
+)) = 5 then
+
 with o1 as (insert into orders (restaurant_id, status, subtotal, tax_amount, total, guest_name, created_at) values ('63f93302-0ab4-431b-b66e-2deba424367c','servie',17.95,2.69,20.64,'Client démo', now() - interval '2 days') returning id)
 insert into order_items (order_id, menu_item_id, item_name, unit_price, quantity) select id, 'dd378740-daed-4cb4-8d8c-563e9f7b886c', 'Tartare de saumon', 17.95, 1 from o1;
 
@@ -36,5 +55,8 @@ insert into order_items (order_id, menu_item_id, item_name, unit_price, quantity
 
 with o10 as (insert into orders (restaurant_id, status, subtotal, tax_amount, total, guest_name, created_at) values ('94ddcaa0-51e3-4bd2-9d1e-30e2d696213d','servie',3.25,0.49,3.74,'Client démo', now() - interval '1 days') returning id)
 insert into order_items (order_id, menu_item_id, item_name, unit_price, quantity) select id, 'e75a0938-5975-4cb9-bc29-c240200249ab', 'Croissant', 3.25, 5 from o10;
+
+end if;
+end $$;
 
 commit;

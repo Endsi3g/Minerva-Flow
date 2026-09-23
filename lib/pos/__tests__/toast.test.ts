@@ -121,11 +121,14 @@ describe("Toast POS Configuration & API Client", () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
-          { guid: "ord-1", totalAmount: 35.5, voided: false, deleted: false },
-          { guid: "ord-2", totalAmount: 14.5, voided: false, deleted: false },
+          { guid: "ord-open", totalAmount: 17, voided: false, deleted: false, checks: [{ paymentStatus: "OPEN" }] },
+          { guid: "ord-1", totalAmount: 35.5, voided: false, deleted: false, checks: [{ paymentStatus: "CLOSED" }] },
+          { guid: "ord-pending-tip", totalAmount: 19, voided: false, deleted: false, checks: [{ paymentStatus: "PAID" }] },
+          { guid: "ord-2", totalAmount: 14.5, voided: false, deleted: false, checks: [{ paymentStatus: "CLOSED" }] },
           { guid: "ord-3", totalAmount: 90.0, voided: true, deleted: false }, // Voided: ignored
           { guid: "ord-4", totalAmount: 50.0, voided: false, deleted: true }, // Deleted: ignored
           { guid: "ord-5", totalAmount: 0, voided: false, deleted: false }, // Zero: ignored
+          { totalAmount: 99.0, voided: false, deleted: false }, // Ignore: no stable idempotency key
         ],
       });
       global.fetch = mockFetch;

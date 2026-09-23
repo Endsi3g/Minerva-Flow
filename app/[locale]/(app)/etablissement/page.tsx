@@ -293,13 +293,8 @@ function RestaurantFormFields({
 
 function EstablishmentIdentityCard() {
   const restaurant = useCurrentRestaurant();
-  const [form, setForm] = useState<RestaurantFormValues>(emptyForm);
+  const [form, setForm] = useState<RestaurantFormValues>(() => restaurant ? restaurantToForm(restaurant) : emptyForm);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!restaurant) return;
-    setForm(restaurantToForm(restaurant));
-  }, [restaurant?.id]);
 
   async function handleSave() {
     if (!restaurant || !form.name.trim()) return;
@@ -355,7 +350,7 @@ const ORDER_MODE_OPTIONS: { value: OrderFulfillmentMode; label: string; hint: st
   {
     value: "livraison",
     label: "Livrer au client",
-    hint: "Ajoute une adresse de livraison et calcule les frais selon la distance. Nécessite le paiement en ligne.",
+    hint: "Ajoute l’adresse, estime les frais selon la distance et le temps; le client choisit paiement en ligne ou à la réception.",
   },
 ];
 
@@ -367,12 +362,8 @@ const ORDER_MODE_OPTIONS: { value: OrderFulfillmentMode; label: string; hint: st
  */
 function OrderModesCard() {
   const restaurant = useCurrentRestaurant();
-  const [modes, setModes] = useState<OrderFulfillmentMode[]>([]);
+  const [modes, setModes] = useState<OrderFulfillmentMode[]>(() => restaurant?.orderModesEnabled ?? []);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (restaurant) setModes(restaurant.orderModesEnabled);
-  }, [restaurant?.id]);
 
   async function toggle(mode: OrderFulfillmentMode, checked: boolean) {
     if (!restaurant) return;
@@ -429,13 +420,16 @@ function OrderModesCard() {
 
 function DeliveryPricingCard() {
   const restaurant = useCurrentRestaurant();
-  const [values, setValues] = useState({ enabled: false, base: "3.99", perKm: "1.25", freeKm: "2", maxKm: "10", speed: "25" });
+  const [values, setValues] = useState(() => ({
+    enabled: restaurant?.deliveryEnabled ?? false,
+    base: String(restaurant?.deliveryBaseFee ?? 3.99),
+    perKm: String(restaurant?.deliveryPerKmFee ?? 1.25),
+    freeKm: String(restaurant?.deliveryFreeKm ?? 2),
+    maxKm: String(restaurant?.deliveryMaxKm ?? 10),
+    speed: String(restaurant?.deliveryAverageSpeedKmh ?? 25),
+    perMinute: String(restaurant?.deliveryPerMinuteFee ?? 0),
+  }));
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!restaurant) return;
-    setValues({ enabled: restaurant.deliveryEnabled ?? false, base: String(restaurant.deliveryBaseFee ?? 3.99), perKm: String(restaurant.deliveryPerKmFee ?? 1.25), freeKm: String(restaurant.deliveryFreeKm ?? 2), maxKm: String(restaurant.deliveryMaxKm ?? 10), speed: String(restaurant.deliveryAverageSpeedKmh ?? 25) });
-  }, [restaurant?.id]);
 
   async function save() {
     if (!restaurant) return;
@@ -447,6 +441,7 @@ function DeliveryPricingCard() {
       deliveryFreeKm: Number(values.freeKm),
       deliveryMaxKm: Number(values.maxKm),
       deliveryAverageSpeedKmh: Number(values.speed),
+      deliveryPerMinuteFee: Number(values.perMinute),
     });
     setSaving(false);
     if (updated) toast.success("Tarification de livraison mise à jour.");
@@ -456,11 +451,11 @@ function DeliveryPricingCard() {
   if (!restaurant) return null;
   return (
     <Card>
-      <CardHeader eyebrow="Commande en ligne" title="Livraison directe" description="Configurez le rayon, le prix de base et le tarif au kilomètre. Le montant est recalculé côté serveur avant Stripe." />
+      <CardHeader eyebrow="Commande en ligne" title="Livraison directe" description="Configurez le rayon, les frais de base, la distance et le temps de trajet estimé. Le serveur recalcule toujours le tarif avant Stripe; le tarif par minute est facultatif et à zéro par défaut." />
       <div className="space-y-3">
         <label className="flex items-center gap-2 text-[13px] font-medium text-mv-ink"><input type="checkbox" checked={values.enabled} onChange={(e) => setValues((v) => ({ ...v, enabled: e.target.checked }))} /> Activer la livraison</label>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {[["base", "Frais de base"], ["perKm", "$/km supplémentaire"], ["freeKm", "Km inclus"], ["maxKm", "Rayon max (km)"], ["speed", "Vitesse moyenne (km/h)"]].map(([key, label]) => (
+          {[["base", "Frais de base"], ["perKm", "$/km supplémentaire"], ["freeKm", "Km inclus"], ["maxKm", "Rayon max (km)"], ["speed", "Vitesse moyenne (km/h)"], ["perMinute", "$/minute estimée"]].map(([key, label]) => (
             <Field key={key} label={label}>
               <Input type="number" min={0} step="0.01" value={values[key as keyof typeof values] as string} onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))} />
             </Field>
@@ -480,12 +475,8 @@ function DeliveryPricingCard() {
  */
 function BusyThresholdCard() {
   const restaurant = useCurrentRestaurant();
-  const [threshold, setThreshold] = useState("");
+  const [threshold, setThreshold] = useState(() => restaurant?.busyThreshold ? String(restaurant.busyThreshold) : "");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (restaurant) setThreshold(restaurant.busyThreshold ? String(restaurant.busyThreshold) : "");
-  }, [restaurant?.id]);
 
   async function handleSave() {
     if (!restaurant) return;
@@ -539,12 +530,8 @@ function BusyThresholdCard() {
  */
 function PrepTimeCard() {
   const restaurant = useCurrentRestaurant();
-  const [minutes, setMinutes] = useState("");
+  const [minutes, setMinutes] = useState(() => restaurant?.defaultPrepMinutes ? String(restaurant.defaultPrepMinutes) : "");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (restaurant) setMinutes(restaurant.defaultPrepMinutes ? String(restaurant.defaultPrepMinutes) : "");
-  }, [restaurant?.id]);
 
   async function handleSave() {
     if (!restaurant) return;
@@ -728,7 +715,6 @@ function DirectOrderingWidgetSection({ restaurant }: { restaurant: Restaurant })
 
   useEffect(() => {
     let cancelled = false;
-    setToken(null);
     getOrCreateDefaultMenuShareTokenAction(restaurant.id).then((t) => {
       if (!cancelled) setToken(t);
     });
@@ -759,12 +745,12 @@ export default function EtablissementPage() {
         description="Configurez l'identité de votre établissement et gérez vos autres emplacements."
       />
       <div className="space-y-8">
-        <EstablishmentIdentityCard />
-        <OrderModesCard />
-        <DeliveryPricingCard />
-        <BusyThresholdCard />
-        <PrepTimeCard />
-        {restaurant && <DirectOrderingWidgetSection restaurant={restaurant} />}
+        <EstablishmentIdentityCard key={restaurant?.id ?? "loading"} />
+        <OrderModesCard key={restaurant?.id ?? "loading"} />
+        <DeliveryPricingCard key={restaurant?.id ?? "loading"} />
+        <BusyThresholdCard key={restaurant?.id ?? "loading"} />
+        <PrepTimeCard key={restaurant?.id ?? "loading"} />
+        {restaurant && <DirectOrderingWidgetSection key={restaurant.id} restaurant={restaurant} />}
         <OtherEstablishments />
       </div>
     </div>

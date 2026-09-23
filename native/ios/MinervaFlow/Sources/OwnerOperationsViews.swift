@@ -26,15 +26,60 @@ struct OwnerRestaurantPicker: View {
 
 struct OwnerMenuView: View {
     @EnvironmentObject private var supabase: SupabaseManager
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     @State private var selectedItem: NativeMenuItem?
+
+    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
 
     var body: some View {
         NavigationStack {
-            Group {
-                if supabase.ownerMenuItems.isEmpty {
-                    ContentUnavailableView("No menu items", systemImage: "fork.knife", description: Text("Items from this location will appear here."))
-                } else {
-                    List(supabase.ownerMenuItems) { item in
+            List {
+                if !supabase.ownerMealSuggestions.isEmpty {
+                    Section {
+                        ForEach(supabase.ownerMealSuggestions) { suggestion in
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(suggestion.title).font(.headline).foregroundStyle(MinervaColor.ink)
+                                    if let description = suggestion.description, !description.isEmpty {
+                                        Text(description).font(.caption).foregroundStyle(MinervaColor.inkFaint).lineLimit(2)
+                                    }
+                                    Label("\(suggestion.voteCount) votes", systemImage: "hand.thumbsup.fill")
+                                        .font(.caption2.weight(.semibold)).foregroundStyle(MinervaColor.emeraldDark)
+                                }
+                                Spacer()
+                                if suggestion.status == "draft_added" {
+                                    Label {
+                                        Text(verbatim: isFrench ? "Brouillon" : "Draft")
+                                    } icon: {
+                                        Image(systemName: "checkmark.circle.fill")
+                                    }
+                                    .font(.caption.weight(.semibold)).foregroundStyle(MinervaColor.emeraldDark)
+                                } else if suggestion.status == "open" || suggestion.status == "under_review" {
+                                    Button {
+                                        Task { _ = await supabase.addMealSuggestionAsDraft(suggestion) }
+                                    } label: {
+                                        Text(verbatim: isFrench
+                                            ? (suggestion.status == "under_review" ? "Réessayer" : "Ajouter en brouillon")
+                                            : (suggestion.status == "under_review" ? "Retry" : "Add as draft"))
+                                    }
+                                    .font(.caption.weight(.semibold))
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(MinervaColor.emeraldDark)
+                                }
+                            }
+                            .padding(.vertical, 3)
+                        }
+                    } header: {
+                        Text(verbatim: isFrench
+                            ? "Idées de plats · classées par votes"
+                            : "Customer meal ideas · ranked by votes")
+                    }
+                }
+                Section("Official menu · \(supabase.ownerMenuItems.count)") {
+                    if supabase.ownerMenuItems.isEmpty {
+                        ContentUnavailableView("No menu items", systemImage: "fork.knife", description: Text("Items from this location will appear here."))
+                    } else {
+                        ForEach(supabase.ownerMenuItems) { item in
                         Button { selectedItem = item } label: {
                             HStack(spacing: 12) {
                                 if let urlString = item.imageUrl, let url = URL(string: urlString) {
@@ -46,6 +91,7 @@ struct OwnerMenuView: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(item.name).font(.headline).foregroundStyle(MinervaColor.ink)
                                     Text(item.category ?? "Uncategorized").font(.caption).foregroundStyle(MinervaColor.inkFaint)
+                                    if item.isDraft == true { Label("Draft · complete details", systemImage: "pencil.line").font(.caption2.weight(.semibold)).foregroundStyle(.orange) }
                                 }
                                 Spacer()
                                 VStack(alignment: .trailing, spacing: 4) {
@@ -55,10 +101,12 @@ struct OwnerMenuView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        }
                     }
-                    .listStyle(.plain)
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
             .background(MinervaColor.cream.ignoresSafeArea())
             .navigationTitle("Menu")
             .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
@@ -75,6 +123,8 @@ private struct MenuItemEditor: View {
     @State private var name: String
     @State private var price: String
     @State private var description: String
+    @State private var allergens: String
+    @State private var allergensConfirmed: Bool
     @State private var active: Bool
     @State private var saving = false
 
@@ -83,6 +133,8 @@ private struct MenuItemEditor: View {
         _name = State(initialValue: item.name)
         _price = State(initialValue: String(format: "%.2f", item.price))
         _description = State(initialValue: item.description ?? "")
+        _allergens = State(initialValue: (item.allergens ?? []).joined(separator: ", "))
+        _allergensConfirmed = State(initialValue: item.allergensConfirmed ?? false)
         _active = State(initialValue: item.active)
     }
 
@@ -95,6 +147,16 @@ private struct MenuItemEditor: View {
                     TextField("Description", text: $description, axis: .vertical).lineLimit(3...6)
                 }
                 Section("Availability") { Toggle("Available to customers", isOn: $active) }
+                Section("Allergens & safety") {
+                    TextField("Allergens, comma-separated", text: $allergens, axis: .vertical).lineLimit(2...4)
+                    Toggle("Allergen information checked", isOn: $allergensConfirmed)
+                }
+                if item.isDraft == true {
+                    Section {
+                        Text("This customer idea stays hidden from the live menu until you complete its price and confirm allergen information, then mark it available.")
+                            .font(.caption).foregroundStyle(MinervaColor.inkSoft)
+                    } header: { Text("Draft review") }
+                }
             }
             .navigationTitle("Edit item")
             .toolbar {
@@ -104,7 +166,8 @@ private struct MenuItemEditor: View {
                         guard let amount = Double(price.replacingOccurrences(of: ",", with: ".")) else { return }
                         saving = true
                         Task {
-                            let ok = await supabase.updateOwnerMenuItem(item, name: name, price: amount, description: description, active: active)
+                            let parsedAllergens = allergens.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+                            let ok = await supabase.updateOwnerMenuItem(item, name: name, price: amount, description: description, active: active, allergens: parsedAllergens, allergensConfirmed: allergensConfirmed)
                             saving = false
                             if ok { dismiss() }
                         }

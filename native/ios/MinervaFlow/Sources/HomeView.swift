@@ -8,11 +8,24 @@ struct HomeView: View {
     @EnvironmentObject var supabase: SupabaseManager
     @EnvironmentObject var notifications: NotificationManager
     @EnvironmentObject var router: DeepLinkRouter
+    @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
     @State private var showMyCard = false
     @State private var showRestaurantMap = false
     @State private var notificationDeniedAlert = false
     @State private var selectedOffer: Offer?
+    @State private var birthdayOffer: Offer?
+    @State private var showBirthdayOfferAlert = false
     @State private var selectedReward: LoyaltyReward?
+
+    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+    private var birthdayOfferTriggerKey: String {
+        [
+            supabase.customer?.id ?? "none",
+            supabase.customer?.birthday ?? "no-birthday",
+            supabase.birthdayOffer?.id ?? "no-offer",
+            supabase.isLoadingData ? "loading" : "ready",
+        ].joined(separator: "|")
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -29,6 +42,12 @@ struct HomeView: View {
 
                         nextRewardCard(for: customer)
 
+                        if customer.marketingConsent,
+                           BirthdayOfferEligibility.isBirthdayToday(customer.birthday),
+                           let offer = supabase.birthdayOffer {
+                            birthdayOfferCard(offer)
+                        }
+
                         if !supabase.offers.isEmpty {
                             offersFeed
                         }
@@ -38,6 +57,24 @@ struct HomeView: View {
                         }
                     }
                     .padding(18)
+                }
+                .task(id: birthdayOfferTriggerKey) {
+                    presentBirthdayOfferIfNeeded()
+                }
+                .alert(
+                    isFrench ? "Joyeux anniversaire, \(birthdayFirstName)!" : "Happy birthday, \(birthdayFirstName)!",
+                    isPresented: $showBirthdayOfferAlert
+                ) {
+                    Button(isFrench ? "Découvrir l’offre" : "View offer") {
+                        if let birthdayOffer { selectedOffer = birthdayOffer }
+                    }
+                    Button(isFrench ? "Plus tard" : "Later", role: .cancel) {}
+                } message: {
+                    if let birthdayOffer {
+                        Text(isFrench
+                             ? "\(birthdayOffer.title) vous attend chez \(supabase.restaurantName ?? "votre restaurant")."
+                             : "\(birthdayOffer.title) is waiting for you at \(supabase.restaurantName ?? "your restaurant").")
+                    }
                 }
                 .refreshable { await supabase.loadPortalData() }
             } else if supabase.isLoadingData {
@@ -79,6 +116,59 @@ struct HomeView: View {
         } message: {
             Text("Activez les notifications dans Réglages pour être averti des nouvelles offres.")
         }
+    }
+
+    private var birthdayFirstName: String {
+        supabase.customer?.name.split(separator: " ").first.map(String.init) ?? ""
+    }
+
+    private func presentBirthdayOfferIfNeeded() {
+        guard !supabase.isLoadingData,
+              let customer = supabase.customer,
+              customer.marketingConsent,
+              BirthdayOfferEligibility.isBirthdayToday(customer.birthday),
+              let offer = supabase.birthdayOffer
+        else { return }
+
+        let year = Calendar.current.component(.year, from: Date())
+        let seenKey = "birthday-offer-shown-\(customer.id)-\(year)"
+        guard !UserDefaults.standard.bool(forKey: seenKey) else { return }
+        birthdayOffer = offer
+        UserDefaults.standard.set(true, forKey: seenKey)
+        showBirthdayOfferAlert = true
+    }
+
+    private func birthdayOfferCard(_ offer: Offer) -> some View {
+        Button {
+            selectedOffer = offer
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "birthday.cake.fill")
+                    .font(.system(size: 19))
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .frame(width: 42, height: 42)
+                    .background(MinervaColor.emerald.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(isFrench ? "Votre offre d’anniversaire" : "Your birthday offer")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                    Text(offer.title)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(MinervaColor.ink)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(MinervaColor.emeraldDark)
+            }
+            .padding(13)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(MinervaColor.cream, in: RoundedRectangle(cornerRadius: 15))
+            .overlay(RoundedRectangle(cornerRadius: 15).stroke(MinervaColor.emerald.opacity(0.25), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(isFrench ? "Ouvrir les détails de l’offre" : "Open offer details")
     }
 
     private func handleBellTap() {

@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/data/activity";
 import { notifyFavoritedItemAvailable } from "@/lib/favorites/notify";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { MenuItem, RecipeItem, InventoryItem } from "@/lib/types";
+import type { MenuItem } from "@/lib/types";
 
 export type MenuItemRow = {
   id: string;
@@ -18,6 +18,9 @@ export type MenuItemRow = {
   image_url: string | null;
   image_urls: string[] | null;
   video_url: string | null;
+  is_draft?: boolean;
+  allergens?: string[];
+  allergens_confirmed?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -36,9 +39,16 @@ export function mapMenuItem(row: MenuItemRow): MenuItem {
     imageUrl: row.image_url,
     imageUrls: row.image_urls ?? [],
     videoUrl: row.video_url ?? null,
+    isDraft: row.is_draft ?? false,
+    allergens: row.allergens ?? [],
+    allergensConfirmed: row.allergens_confirmed ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function normalizeAllergens(values: string[] | undefined): string[] {
+  return [...new Set((values ?? []).map((value) => value.trim()).filter(Boolean).map((value) => value.slice(0, 80)))].slice(0, 50);
 }
 
 export async function getMenuItems(restaurantId: string, client?: SupabaseClient): Promise<MenuItem[]> {
@@ -85,6 +95,9 @@ export type MenuItemInput = {
   active?: boolean;
   imageUrl?: string | null;
   videoUrl?: string | null;
+  isDraft?: boolean;
+  allergens?: string[];
+  allergensConfirmed?: boolean;
 };
 
 export async function createMenuItem(restaurantId: string, input: MenuItemInput): Promise<MenuItem | null> {
@@ -98,7 +111,10 @@ export async function createMenuItem(restaurantId: string, input: MenuItemInput)
       price: input.price,
       food_cost: input.foodCost,
       description: input.description ?? null,
-      active: input.active ?? true,
+      active: input.isDraft ? false : (input.active ?? true),
+      is_draft: input.isDraft ?? false,
+      allergens: normalizeAllergens(input.allergens),
+      allergens_confirmed: input.allergensConfirmed ?? false,
       image_url: input.imageUrl ?? null,
       video_url: input.videoUrl ?? null,
     })
@@ -136,7 +152,10 @@ export async function createMenuItems(restaurantId: string, inputs: MenuItemInpu
     price: input.price,
     food_cost: input.foodCost,
     description: input.description ?? null,
-    active: input.active ?? true,
+    active: input.isDraft ? false : (input.active ?? true),
+    is_draft: input.isDraft ?? false,
+    allergens: normalizeAllergens(input.allergens),
+    allergens_confirmed: input.allergensConfirmed ?? false,
     image_url: input.imageUrl ?? null,
     video_url: input.videoUrl ?? null,
   }));
@@ -168,14 +187,19 @@ export async function updateMenuItem(
   // Only worth a pre-read when this update might actually flip the item
   // back on — that's the one transition favorited-item alerts fire for.
   let wasInactive = false;
+  let currentDraft = false;
   if (patch.active === true) {
-    const { data: current } = await supabase
+    const { data: current, error: currentError } = await supabase
       .from("menu_items")
-      .select("active")
+      .select("active, is_draft, price, allergens_confirmed")
       .eq("restaurant_id", restaurantId)
       .eq("id", id)
       .maybeSingle();
-    wasInactive = (current as { active: boolean } | null)?.active === false;
+    if (currentError || !current) return null;
+    const currentRow = current as { active: boolean; is_draft: boolean; price: number; allergens_confirmed: boolean };
+    currentDraft = currentRow.is_draft;
+    if (currentDraft && (!(Number(currentRow.price) > 0) || !currentRow.allergens_confirmed)) return null;
+    wasInactive = currentRow.active === false;
   }
 
   const dbPatch: Record<string, unknown> = {};
@@ -187,6 +211,10 @@ export async function updateMenuItem(
   if (patch.active !== undefined) dbPatch.active = patch.active;
   if (patch.imageUrl !== undefined) dbPatch.image_url = patch.imageUrl;
   if (patch.videoUrl !== undefined) dbPatch.video_url = patch.videoUrl;
+  if (patch.isDraft !== undefined) dbPatch.is_draft = patch.isDraft;
+  else if (patch.active === true && currentDraft) dbPatch.is_draft = false;
+  if (patch.allergens !== undefined) dbPatch.allergens = normalizeAllergens(patch.allergens);
+  if (patch.allergensConfirmed !== undefined) dbPatch.allergens_confirmed = patch.allergensConfirmed;
 
   const { data, error } = await supabase
     .from("menu_items")
@@ -233,4 +261,3 @@ export async function recordSale(restaurantId: string, id: string, quantity: num
 }
 
 export { calculateMenuItemStockStatus, type MenuItemStockStatus } from "@/lib/stock-availability";
-

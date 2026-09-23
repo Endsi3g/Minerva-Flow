@@ -7,6 +7,8 @@ export type DeliveryPricingConfig = {
   freeKm: number;
   maxKm: number;
   averageSpeedKmh: number;
+  /** Additional charge per estimated driving minute; zero preserves legacy rates. */
+  perMinuteFee: number;
 };
 
 export type DeliveryQuote = {
@@ -16,6 +18,26 @@ export type DeliveryQuote = {
   available: boolean;
   reason?: "disabled" | "outside_radius" | "missing_location";
 };
+
+export type DeliveryPricingPatch = Partial<Pick<DeliveryPricingConfig,
+  "baseFee" | "perKmFee" | "freeKm" | "maxKm" | "averageSpeedKmh" | "perMinuteFee"
+>>;
+
+/** Reject malformed owner-entered rates instead of persisting NaN or extreme charges. */
+export function isValidDeliveryPricingPatch(patch: DeliveryPricingPatch): boolean {
+  const limits: Record<keyof DeliveryPricingPatch, { min: number; max: number }> = {
+    baseFee: { min: 0, max: 10_000 },
+    perKmFee: { min: 0, max: 10_000 },
+    freeKm: { min: 0, max: 1_000 },
+    maxKm: { min: 0.1, max: 1_000 },
+    averageSpeedKmh: { min: 1, max: 200 },
+    perMinuteFee: { min: 0, max: 100 },
+  };
+  return (Object.entries(patch) as [keyof DeliveryPricingPatch, number][]).every(([key, value]) => {
+    const range = limits[key];
+    return Number.isFinite(value) && value >= range.min && value <= range.max;
+  });
+}
 
 const EARTH_RADIUS_KM = 6371;
 
@@ -59,7 +81,8 @@ export function quoteDelivery(
   }
 
   const billableKm = Math.max(0, distanceKm - config.freeKm);
-  const fee = roundToCents(config.baseFee + billableKm * config.perKmFee);
-  const etaMinutes = Math.max(10, Math.round((distanceKm / Math.max(1, config.averageSpeedKmh)) * 60) + 10);
+  const travelMinutes = (distanceKm / Math.max(1, config.averageSpeedKmh)) * 60;
+  const fee = roundToCents(config.baseFee + billableKm * config.perKmFee + travelMinutes * Math.max(0, config.perMinuteFee));
+  const etaMinutes = Math.max(10, Math.round(travelMinutes) + 10);
   return { distanceKm: Math.round(distanceKm * 10) / 10, fee, etaMinutes, available: true };
 }

@@ -8,6 +8,11 @@
 
 begin;
 
+-- The discovery demo restaurant is provisioned separately in shared envs.
+-- On a clean test project, skip its optional menu fixture.
+do $$ begin
+if exists (select 1 from restaurants where id = '60a59423-c7a0-4d92-a866-3058f34c17d1') then
+
 delete from offers where restaurant_id = '60a59423-c7a0-4d92-a866-3058f34c17d1';
 delete from menu_items where restaurant_id = '60a59423-c7a0-4d92-a866-3058f34c17d1';
 
@@ -72,5 +77,8 @@ insert into offers (restaurant_id, title, description, active, price, included_i
 ('60a59423-c7a0-4d92-a866-3058f34c17d1', 'Soirée pizza en duo', 'Deux pizzas au choix pour partager.', true, 27.95, array['Deux pizzas au choix']),
 ('60a59423-c7a0-4d92-a866-3058f34c17d1', 'Table d''hôte du soir', 'Entrée, plat principal et dessert.', true, 34.95, array['Entrée au choix','Plat principal au choix','Dessert au choix'])
 on conflict do nothing;
+
+end if;
+end $$;
 
 commit;

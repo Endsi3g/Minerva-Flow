@@ -91,6 +91,7 @@ export type PublicMenuLanding = {
   share: MenuShare;
   restaurantId: string;
   restaurantName: string;
+  restaurantTimezone: string;
   taxRate: number;
   acceptsTips: boolean;
   onlinePaymentEnabled: boolean;
@@ -160,7 +161,7 @@ export async function getRestaurantOrderSettings(
   const [{ data, error: restaurantError }, connect, isBusy] = await Promise.all([
     admin
       .from("restaurants")
-      .select("tax_rate, accepts_tips, order_modes_enabled, default_prep_minutes, delivery_enabled, delivery_base_fee, delivery_per_km_fee, delivery_free_km, delivery_max_km, delivery_average_speed_kmh, lat, lng")
+      .select("tax_rate, accepts_tips, order_modes_enabled, default_prep_minutes, delivery_enabled, delivery_base_fee, delivery_per_km_fee, delivery_free_km, delivery_max_km, delivery_average_speed_kmh, delivery_per_minute_fee, lat, lng")
       .eq("id", restaurantId)
       .maybeSingle(),
     getConnectPaymentAvailability(admin, restaurantId),
@@ -169,14 +170,14 @@ export async function getRestaurantOrderSettings(
   // Keep existing restaurants usable while a deployment is waiting for the
   // delivery migration. Delivery remains disabled until the new columns exist.
   let restaurantData = data;
-  if (restaurantError && /delivery_(enabled|base_fee|per_km_fee|free_km|max_km|average_speed_kmh)/i.test(restaurantError.message)) {
+  if (restaurantError && /delivery_(enabled|base_fee|per_km_fee|free_km|max_km|average_speed_kmh|per_minute_fee)/i.test(restaurantError.message)) {
     const fallback = await admin
       .from("restaurants")
       .select("tax_rate, accepts_tips, order_modes_enabled, default_prep_minutes, lat, lng")
       .eq("id", restaurantId)
       .maybeSingle();
     restaurantData = fallback.data
-      ? { ...fallback.data, delivery_enabled: false, delivery_base_fee: null, delivery_per_km_fee: null, delivery_free_km: null, delivery_max_km: null, delivery_average_speed_kmh: null }
+      ? { ...fallback.data, delivery_enabled: false, delivery_base_fee: null, delivery_per_km_fee: null, delivery_free_km: null, delivery_max_km: null, delivery_average_speed_kmh: null, delivery_per_minute_fee: null }
       : null;
   }
   if (!restaurantData) return null;
@@ -191,6 +192,7 @@ export async function getRestaurantOrderSettings(
     delivery_free_km: number | null;
     delivery_max_km: number | null;
     delivery_average_speed_kmh: number | null;
+    delivery_per_minute_fee: number | null;
     lat: number | null;
     lng: number | null;
   };
@@ -209,6 +211,7 @@ export async function getRestaurantOrderSettings(
         freeKm: row.delivery_free_km ?? 2,
         maxKm: row.delivery_max_km ?? 10,
         averageSpeedKmh: row.delivery_average_speed_kmh ?? 25,
+        perMinuteFee: row.delivery_per_minute_fee ?? 0,
       },
       restaurantLat: row.lat,
       restaurantLng: row.lng,
@@ -248,7 +251,7 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
   const [restaurantResult, itemsResult, connect, preparingCount] = await Promise.all([
     admin
       .from("restaurants")
-      .select("name, tax_rate, accepts_tips, order_modes_enabled, busy_mode_manual, busy_threshold, delivery_enabled, delivery_base_fee, delivery_per_km_fee, delivery_free_km, delivery_max_km, delivery_average_speed_kmh, lat, lng")
+      .select("name, timezone, tax_rate, accepts_tips, order_modes_enabled, busy_mode_manual, busy_threshold, delivery_enabled, delivery_base_fee, delivery_per_km_fee, delivery_free_km, delivery_max_km, delivery_average_speed_kmh, delivery_per_minute_fee, lat, lng")
       .eq("id", share.restaurantId)
       .maybeSingle(),
     itemsQuery.order("category").order("name"),
@@ -263,20 +266,21 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
   let restaurantData = restaurantResult.data;
   if (restaurantResult.error) {
     console.error("getMenuShareByToken: restaurant lookup failed:", restaurantResult.error.message);
-    if (/delivery_(enabled|base_fee|per_km_fee|free_km|max_km|average_speed_kmh)/i.test(restaurantResult.error.message)) {
+    if (/delivery_(enabled|base_fee|per_km_fee|free_km|max_km|average_speed_kmh|per_minute_fee)/i.test(restaurantResult.error.message)) {
       const fallback = await admin
         .from("restaurants")
-        .select("name, tax_rate, accepts_tips, order_modes_enabled, busy_mode_manual, busy_threshold, lat, lng")
+        .select("name, timezone, tax_rate, accepts_tips, order_modes_enabled, busy_mode_manual, busy_threshold, lat, lng")
         .eq("id", share.restaurantId)
         .maybeSingle();
       restaurantData = fallback.data
-        ? { ...fallback.data, delivery_enabled: false, delivery_base_fee: null, delivery_per_km_fee: null, delivery_free_km: null, delivery_max_km: null, delivery_average_speed_kmh: null }
+        ? { ...fallback.data, delivery_enabled: false, delivery_base_fee: null, delivery_per_km_fee: null, delivery_free_km: null, delivery_max_km: null, delivery_average_speed_kmh: null, delivery_per_minute_fee: null }
         : null;
     }
   }
   if (!restaurantData) return null;
   const restaurant = restaurantData as {
     name: string;
+    timezone: string | null;
     tax_rate: number;
     accepts_tips: boolean;
     order_modes_enabled: string[] | null;
@@ -288,6 +292,7 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     delivery_free_km: number | null;
     delivery_max_km: number | null;
     delivery_average_speed_kmh: number | null;
+    delivery_per_minute_fee: number | null;
     lat: number | null;
     lng: number | null;
   };
@@ -300,6 +305,7 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     share,
     restaurantId: share.restaurantId,
     restaurantName: restaurant.name,
+    restaurantTimezone: restaurant.timezone ?? "America/Toronto",
     taxRate: restaurant.tax_rate,
     acceptsTips: restaurant.accepts_tips,
     onlinePaymentEnabled: connect.onlinePaymentEnabled,
@@ -312,6 +318,7 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
         freeKm: restaurant.delivery_free_km ?? 2,
         maxKm: restaurant.delivery_max_km ?? 10,
         averageSpeedKmh: restaurant.delivery_average_speed_kmh ?? 25,
+        perMinuteFee: restaurant.delivery_per_minute_fee ?? 0,
       },
       restaurantLat: restaurant.lat,
       restaurantLng: restaurant.lng,

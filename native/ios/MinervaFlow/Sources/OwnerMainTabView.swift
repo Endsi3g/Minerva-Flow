@@ -90,6 +90,10 @@ private struct OwnerOrdersView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(order.guestName).font(.headline)
                                 Text(statusLabel(order.status)).font(.caption).foregroundStyle(MinervaColor.inkFaint)
+                                if let readyAt = order.requestedReadyAt, let date = ISO8601DateFormatter().date(from: readyAt) {
+                                    Label("Précommande · \(date.formatted(date: .abbreviated, time: .shortened))", systemImage: "calendar.badge.clock")
+                                        .font(.caption2.weight(.semibold)).foregroundStyle(MinervaColor.emeraldDark)
+                                }
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 7) {

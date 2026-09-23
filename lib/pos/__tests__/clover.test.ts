@@ -8,7 +8,7 @@ import {
   cloverAuthBaseUrl,
   cloverApiBaseUrl,
 } from "@/lib/pos/config";
-import { exchangeCloverCode, fetchCloverDailySales } from "@/lib/pos/clover";
+import { exchangeCloverCode, fetchCloverDailySales, fetchCloverDailyTickets } from "@/lib/pos/clover";
 
 
 describe("Clover POS Configuration & API Client", () => {
@@ -90,10 +90,11 @@ describe("Clover POS Configuration & API Client", () => {
         ok: true,
         json: async () => ({
           elements: [
-            { id: "ord-1", total: 2450, state: "locked" }, // 24.50 $
-            { id: "ord-2", total: 1800, state: "locked" }, // 18.00 $
+            { id: "ord-1", total: 2450, state: "locked", paymentState: "PAID" }, // 24.50 $
+            { id: "ord-2", total: 1800, state: "locked", paymentState: "PAID" }, // 18.00 $
             { id: "ord-3", total: 5000, state: "deleted" }, // Ignore
             { id: "ord-4", total: 0, state: "locked" }, // Ignore empty
+            { total: 9900, state: "locked" }, // Ignore: no stable idempotency key
           ],
         }),
       });
@@ -108,6 +109,24 @@ describe("Clover POS Configuration & API Client", () => {
 
       expect(sales.orderCount).toBe(2);
       expect(sales.revenue).toBe(42.5); // 24.50 + 18.00
+    });
+  });
+
+  describe("fetchCloverDailyTickets", () => {
+    it("imports only fully paid tickets, never open or refunded tickets", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ elements: [
+          { id: "open-1", paymentState: "OPEN", total: 2500, createdTime: 1790186400000 },
+          { id: "partial-1", paymentState: "PARTIALLY_PAID", total: 2500, createdTime: 1790186400000 },
+          { id: "refund-1", paymentState: "REFUNDED", total: 2500, createdTime: 1790186400000 },
+          { id: "paid-1", paymentState: "PAID", total: 2500, createdTime: 1790186400000 },
+        ] }),
+      });
+
+      const tickets = await fetchCloverDailyTickets("token", "merchant-1", "2026-09-23", "America/Toronto");
+
+      expect(tickets.map((ticket) => ticket.externalOrderId)).toEqual(["paid-1"]);
     });
   });
 });

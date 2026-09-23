@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { logActivity } from "@/lib/data/activity";
 import {
   getLoyaltyTier,
@@ -10,6 +11,7 @@ import {
 import { sendRetentionEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
 import { normalizePhoneNumber, getLocalPhoneDigits } from "@/lib/phone";
+import { emailMatchOperator } from "@/lib/data/email-match";
 import type { Customer, LoyaltyReward, LoyaltyTransaction, LoyaltyTransactionType, VisitRewardTier } from "@/lib/types";
 
 export type CustomerRow = {
@@ -286,10 +288,12 @@ export type LogVisitOptions = {
   viaPairingCode?: boolean;
   viaPosSync?: boolean;
   viaPhoneLookup?: boolean;
+  posProvider?: "square" | "lightspeed" | "clover" | "toast";
+  posExternalOrderId?: string;
 };
 
 async function executeLogVisit(
-  client: any,
+  client: SupabaseClient,
   restaurantId: string,
   customerId: string,
   amountSpent: number,
@@ -315,19 +319,40 @@ async function executeLogVisit(
   const rate = restaurantRow?.loyalty_points_per_dollar ?? 1;
   const pointsEarned = Math.round(amountSpent * rate * getVisitBonusMultiplier(amountSpent));
 
-  const { data: rpcRows, error: rpcError } = await client.rpc("increment_customer_visit", {
-    p_customer_id: customerId,
-    p_restaurant_id: restaurantId,
-    p_amount_spent: amountSpent,
-    p_points_delta: pointsEarned,
-    p_note: note ?? null,
-    p_via_pairing_code: !!options.viaPairingCode,
-    p_via_pos_sync: !!options.viaPosSync,
-    p_via_phone_lookup: !!options.viaPhoneLookup,
-  });
-
-  if (rpcError || !rpcRows || (rpcRows as CustomerRow[]).length === 0) return null;
-  const customer = (rpcRows as CustomerRow[])[0];
+  let customer: CustomerRow;
+  if (options.posProvider && options.posExternalOrderId) {
+    const { data: posRows, error: posError } = await client.rpc("increment_customer_visit_from_pos", {
+      p_customer_id: customerId,
+      p_restaurant_id: restaurantId,
+      p_amount_spent: amountSpent,
+      p_points_delta: pointsEarned,
+      p_note: note ?? null,
+      p_via_phone_lookup: !!options.viaPhoneLookup,
+      p_pos_provider: options.posProvider,
+      p_external_order_id: options.posExternalOrderId,
+    });
+    const result = (posRows as { applied: boolean; customer: CustomerRow }[] | null)?.[0];
+    if (posError || !result?.customer) return null;
+    customer = result.customer;
+    if (!result.applied) {
+      const { data: duplicateTransactions } = await client.from("loyalty_transactions").select("*")
+        .eq("restaurant_id", restaurantId).eq("customer_id", customerId).order("created_at", { ascending: false });
+      return mapCustomer(customer, ((duplicateTransactions as LoyaltyTransactionRow[]) ?? []).map(mapTransaction));
+    }
+  } else {
+    const { data: rpcRows, error: rpcError } = await client.rpc("increment_customer_visit", {
+      p_customer_id: customerId,
+      p_restaurant_id: restaurantId,
+      p_amount_spent: amountSpent,
+      p_points_delta: pointsEarned,
+      p_note: note ?? null,
+      p_via_pairing_code: !!options.viaPairingCode,
+      p_via_pos_sync: !!options.viaPosSync,
+      p_via_phone_lookup: !!options.viaPhoneLookup,
+    });
+    if (rpcError || !rpcRows || (rpcRows as CustomerRow[]).length === 0) return null;
+    customer = (rpcRows as CustomerRow[])[0];
+  }
 
   try {
     await logActivity({
@@ -535,7 +560,7 @@ export async function findCustomerByPhoneAdmin(
 }
 
 async function internalFindCustomerByPhone(
-  client: any,
+  client: SupabaseClient,
   restaurantId: string,
   rawPhone: string
 ): Promise<Customer | null> {
@@ -629,19 +654,24 @@ export async function findOrCreateCustomerFromPos(
 
   // 3. Match by email if present
   if (params.email?.trim()) {
-    const { data: emailMatch } = await admin
+    const email = params.email.trim().toLowerCase();
+    const customerEmailQuery = admin
       .from("customers")
       .select("*")
-      .eq("restaurant_id", restaurantId)
-      .ilike("email", params.email.trim())
-      .maybeSingle();
+      .eq("restaurant_id", restaurantId);
+    const emailLookup = emailMatchOperator(email) === "eq"
+      ? customerEmailQuery.eq("email", email)
+      : customerEmailQuery.ilike("email", email);
+    const { data: emailMatch } = await emailLookup.maybeSingle();
     if (emailMatch) {
       return { customer: mapCustomer(emailMatch as CustomerRow, []), isNew: false };
     }
   }
 
-  // 4. If neither phone nor email is provided, cannot create an identified member
-  if (!params.phone && !params.email) {
+  // A stable provider customer ID is also a valid identity when the POS
+  // does not expose phone/email (common for walk-up or privacy-restricted
+  // tickets). It allows later tickets to resolve to the same loyalty row.
+  if (!params.phone && !params.email && !params.externalCustomerId) {
     return null;
   }
 
@@ -655,11 +685,11 @@ export async function findOrCreateCustomerFromPos(
       restaurant_id: restaurantId,
       name: guestName,
       phone: normalizedPhone ?? null,
-      email: params.email?.trim() ?? null,
+      email: params.email?.trim().toLowerCase() ?? null,
       pos_customer_id: params.externalCustomerId ?? null,
-      consent_source: "pos_cashier",
-      marketing_consent: true,
-      consent_at: new Date().toISOString(),
+      consent_source: null,
+      marketing_consent: false,
+      consent_at: null,
       notes: "Créé automatiquement lors du passage en caisse",
     })
     .select("*")

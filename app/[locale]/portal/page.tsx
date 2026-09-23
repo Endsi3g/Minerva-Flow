@@ -13,6 +13,9 @@ import { NoCustomerFoundActions } from "./NoCustomerFound";
 import { Link } from "@/i18n/navigation";
 import { ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getRestaurantOrderSettings } from "@/lib/data/menu-shares";
+import { getPublicCheckoutOptions } from "@/lib/orders/checkout-options";
 
 export default async function PortalPage({
   searchParams,
@@ -87,17 +90,23 @@ export default async function PortalPage({
   // Record daily menu view asynchronously for customer portal
   recordMenuView(selected.restaurantId).catch(() => {});
 
-  const [data, restaurant, menuItems, offers, announcements] = await Promise.all([
+  const [data, restaurant, menuItems, offers, announcements, orderSettings] = await Promise.all([
     getPortalData(selected),
     getRestaurant(selected.restaurantId),
     getActiveMenuItemsForCustomers(selected.restaurantId),
     getActiveOffersForCustomers(selected.restaurantId),
     getActiveAnnouncements(),
+    getRestaurantOrderSettings(createAdminClient(), selected.restaurantId),
   ]);
   const loyaltyTierThresholds = {
     tier2: restaurant?.loyaltyTier2Threshold ?? 150,
     tier3: restaurant?.loyaltyTier3Threshold ?? 400,
   };
+  const checkoutOptions = getPublicCheckoutOptions(
+    orderSettings?.orderModesEnabled ?? ["sur_place"],
+    orderSettings?.onlinePaymentEnabled ?? false,
+    orderSettings?.delivery.config.enabled ?? false
+  );
   return (
     <PortalView
       customer={selected}
@@ -107,6 +116,10 @@ export default async function PortalPage({
       offers={offers}
       taxRate={restaurant?.taxRate ?? 0.14975}
       acceptsTips={restaurant?.acceptsTips ?? false}
+      restaurantTimezone={restaurant?.timezone ?? "America/Toronto"}
+      fulfillmentModes={checkoutOptions.fulfillmentModes}
+      canPayAtReceipt={checkoutOptions.canPayAtReceipt}
+      canPayOnline={checkoutOptions.canPayOnline}
       restaurantName={restaurant?.name ?? null}
       appleWalletEnabled={isAppleWalletConfigured()}
       googleWalletEnabled={isGoogleWalletConfigured()}

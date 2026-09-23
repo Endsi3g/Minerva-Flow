@@ -14,6 +14,10 @@
 
 begin;
 
+-- Expand the menu only when its demo tenant has been provisioned.
+do $$ begin
+if exists (select 1 from restaurants where id = '38038211-f045-4f1c-af96-a44cb51179a3') then
+
 delete from offers where restaurant_id = '38038211-f045-4f1c-af96-a44cb51179a3';
 delete from menu_items where restaurant_id = '38038211-f045-4f1c-af96-a44cb51179a3';
 
@@ -89,5 +93,8 @@ insert into offers (restaurant_id, title, description, active, price, included_i
 ('38038211-f045-4f1c-af96-a44cb51179a3', 'Soirée pizza en duo', 'Deux pizzas au choix pour partager.', true, 27.95, array['Deux pizzas au choix']),
 ('38038211-f045-4f1c-af96-a44cb51179a3', 'Table d''hôte du soir', 'Entrée, plat principal et dessert.', true, 34.95, array['Entrée au choix','Plat principal au choix','Dessert au choix'])
 on conflict do nothing;
+
+end if;
+end $$;
 
 commit;

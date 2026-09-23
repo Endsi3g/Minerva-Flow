@@ -43,7 +43,7 @@ export type IntegrationItem = {
     | "apple-pay"
     | "instagram"
     | "facebook";
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 };
 
 
@@ -135,7 +135,6 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
   // simply doesn't clutter the list, but an existing connection always
   // shows even if the env got unconfigured later.
   const posItems: IntegrationItem[] = (["square", "lightspeed", "clover", "toast"] as PosProvider[])
-    .filter((provider) => posConfigured[provider] || posConnections.some((c) => c.provider === provider))
     .map((provider) => {
       const connection = posConnections.find((c) => c.provider === provider);
       const meta = posProviderMeta[provider];
@@ -158,47 +157,20 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
         details: {
           externalAccountId: connection?.externalAccountId || "Non configuré",
           autoSync: status === "connected",
+          platformAppConfigured: posConfigured[provider],
+          prerequisite: provider === "toast"
+            ? "Accès Toast Partner, identifiants API et GUID du restaurant."
+            : provider === "lightspeed"
+              ? "Accès K-Series approuvé par Lightspeed et identifiants de production."
+              : provider === "square"
+                ? "Application Square enregistrée et identifiants OAuth."
+                : "Application Clover et autorisation du compte marchand (ou jeton marchand).",
         },
       };
     });
 
-  const cloverInPosItems = posItems.some((item) => item.id === "clover-pos");
-  const toastInPosItems = posItems.some((item) => item.id === "toast-pos");
-
   return [
     ...posItems,
-    ...(!cloverInPosItems
-      ? [
-          {
-            id: "clover-pos",
-            name: "Clover Restaurant",
-            category: "caisse" as const,
-            description: "Synchronisation des terminaux de caisse Clover et tickets de vente en salle.",
-            status: "coming_soon" as const,
-            iconName: "clover" as const,
-            details: {
-              disponibilite: "Prochaine mise à jour",
-              mode: "Connexion Cloud directe",
-            },
-          },
-        ]
-      : []),
-    ...(!toastInPosItems
-      ? [
-          {
-            id: "toast-pos",
-            name: "Toast Restaurant",
-            category: "caisse" as const,
-            description: "Synchronisation directe des commandes et encaissements de salle via Toast Cloud.",
-            status: "coming_soon" as const,
-            iconName: "toast" as const,
-            details: {
-              disponibilite: "Toast Partner Connect",
-              mode: "Connexion Cloud sécurisée",
-            },
-          },
-        ]
-      : []),
 
     {
       id: "stripe-connect",

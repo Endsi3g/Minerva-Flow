@@ -1,139 +1,67 @@
-# Minerva Flow — Audit de l'Application Mobile iOS & Feuille de Route Marque Blanche
+# Minerva Flow — audit iOS et feuille de route white-label
 
-> **Document de Référence & Statut Opérationnel** — Version 1.0 (Septembre 2026).  
-> Ce document fait l'état des lieux complet de l'application mobile native iOS (`native/ios`), de sa configuration de soumission TestFlight, et définit la feuille de route pour sa conversion en template marque blanche (white-label) avec commande pour livraison dynamique (type Uber Eats).
+> **État vérifié le 23 septembre 2026.** Ce document distingue les fonctions existantes, les artefacts locaux et ce qui reste à publier ou valider. Il ne vaut pas approbation de soumission Apple.
 
----
+## 1. Produit mobile actuel
 
-## 1. État des Lieux de l'Application Mobile Native iOS
+L’application est native en SwiftUI et utilise Supabase Auth et les données de Minerva Flow. Après résolution sécurisée du rôle, elle présente une expérience **client** ou **propriétaire/gérant** dans le même bundle iOS.
 
-### 1.1 Architecture & Stack Technique
-* **Plateforme cible** : iOS 17.0+ (iPhone & iPad), 100% natif en **SwiftUI** & **Swift 5.9+**.
-* **Génération de projet** : **XcodeGen** (`native/ios/project.yml`) garantissant des builds reproductibles, sans conflits Git sur le fichier `.xcodeproj`.
-* **Backend & Données** : `supabase-swift` (v2.29.0) avec sécurité niveau ligne (RLS strict) et synchronisation temps réel.
-* **Monitoring & Crash Reporting** : `sentry-cocoa` (v8.44.0).
-* **Extensions natives** : Extension de Widget iOS (`MinervaFlowWidgetExtension`) pour l'affichage des points et du palier fidélité directement sur l'écran d'accueil de l'iPhone.
-* **Sécurité & Biométrie** : `LocalAuthentication` (Face ID / Touch ID) pour le verrouillage du compte.
-* **Conformité & Données personnelles** : Export de données en 1 tap (Loi 25 Québec / RGPD), gestion du consentement aux communications LCAP (CASL).
+### Expérience client
 
-### 1.2 Les 4 Onglets Cœurs Construits en Profondeur
+- Accueil avec restaurants, contenu de fidélité et offres disponibles.
+- Menu et commande directe lorsqu’un restaurant a activé le parcours correspondant.
+- Onglets Scanner, Offres/Récompenses, Cartes et Profil.
+- QR et code temporaire à six chiffres pour s’identifier au restaurant; le code peut aussi confirmer l’identité après recherche du client par téléphone.
+- Partage de lien et QR de parrainage.
+- Liens universels vers les parcours pris en charge.
 
-1. **Accueil (`HomeView.swift`)** :
-   * Carte d'adhérent dynamique avec indicateur de palier (*Découverte*, *Habitué*, *Privilégié*, *Ambassadeur*).
-   * Visualisation de la progression vers le palier supérieur avec les seuils réels du restaurant.
-   * Accès rapide « Ma Carte » (code QR client pour le scan en caisse).
-   * Découverte cartographique des restaurants partenaires (MapKit avec tri par proximité).
-   * Fil d'offres promotionnelles actives et récompense la plus proche débloquable.
+### Expérience propriétaire/gérant
 
-2. **Commander (`MenuView.swift` & `MenuItemDetailView.swift`)** :
-   * Navigation par catégories de menu (Boissons, Plats, Desserts) avec icônes contextuelles.
-   * Fiche détaillée par plat avec gestion des déclinaisons et options.
-   * Panier complet avec calcul des taxes officielles (TPS 5% + TVQ 9,975% = 14,975%) et sélection du pourboire (sur le sous-total).
-   * Envoi de la commande directement dans la file de production du restaurant (`orders`).
+- Aperçu, commandes, menu, fidélisation et gestion dans l’application native.
+- Données filtrées par workspace/restaurant et permissions.
+- Sur iPad, présentation à colonnes; l’application déclare les orientations portrait, portrait inversé et paysage.
 
-3. **Récompenses (`RewardsView.swift`)** :
-   * Catalogue des récompenses échangeables contre des points.
-   * Générateur de parrainage instantané : QR code large pleine largeur + lien de partage natif iOS (`UIActivityViewController`).
-   * Liste des coupons et codes de récompenses en attente de validation en salle.
+L’application web reste l’espace d’administration le plus complet. La documentation fonctionnelle commune est dans [le guide propriétaire et client](PRODUCT_GUIDE_OWNER_CLIENT.md).
 
-4. **Profil (`ProfileView.swift`)** :
-   * Gestion du profil (nom, email, téléphone).
-   * Historique chronologique complet des transactions de points.
-   * Bascule Face ID / Touch ID.
-   * Gestion du consentement marketing et suppression irréversible du compte (obligation App Store).
+## 2. État du build et de TestFlight
 
----
+| Élément | État confirmé |
+|---|---|
+| Bundle iOS | `com.minervaflow.loyalty` |
+| Version / build local | `1.0` / `11` |
+| Cible | iPhone et iPad, iOS 17 minimum déclaré dans le projet |
+| Signature/archive | Archive Release signée avec l’équipe configurée; export IPA réussi |
+| Sentry | UUID du framework identique à celui du dSYM de l’archive (`F52B2FE8-3C4B-3651-B5BD-22388DDF800E`, arm64) |
+| Téléversement App Store Connect | **Non effectué** : aucune session/fournisseur App Store Connect autorisé n’était disponible lors du contrôle |
+| Lien bêta fourni | <https://testflight.apple.com/join/xGr45uuF> — son accessibilité ne prouve pas la présence du build 11 |
 
-## 2. Statut de Soumission App Store & TestFlight
+Le build 11 existe comme archive et IPA exportés sur le poste de génération; il n’est pas encore installable depuis le groupe TestFlight. Après connexion autorisée à App Store Connect, il reste à téléverser cet IPA, attendre le traitement Apple, associer le build au groupe de test et vérifier la version réellement proposée aux testeurs.
 
-### 2.1 Archives de Build Existantes
-* Plusieurs archives de distribution App Store ont été générées avec succès dans `build/archives/` :
-  * `MinervaFlow-AppStore-final5.xcarchive`
-  * `MinervaFlow-AppStore-final4.xcarchive`
-  * `MinervaFlow-Distribution.xcarchive`
-* **Bundle ID** : `com.minervaflow.loyalty`
-* **Team ID Apple Developer** : `NHMPLN46TN`
-* **Version marketing** : `1.0.0` (Build `1`)
+## 3. Contrôle de conformité effectué
 
-### 2.2 Notifications Push & Clé APNs
-* La clé d'authentification Apple Push Notification Service (APNs) est présente à la racine du dépôt :
-  * Fichier : `AuthKey_VM6PL9H8X3.p8`
-  * Key ID : `VM6PL9H8X3`
-  * Le serveur d'envoi de notifications push (`NotificationManager.swift` / bridge serveur) est prêt à router les alertes d'offres et de récompenses dès l'activation sur le portail développeur.
+Le garde-fou iOS exécuté le 23 septembre 2026 a trouvé **0 risque critique et 0 risque élevé**, avec deux points manuels :
 
-### 2.3 Comment Tester l'Application Immédiatement
+1. confirmer la déclaration `ITSAppUsesNonExemptEncryption` pour l’extension Widget;
+2. vérifier les comptes de démonstration, métadonnées/captures, déclarations de confidentialité, notes de révision et contrats dans App Store Connect.
 
-#### Option A — Test en Simulateur iOS (Recommandé en local)
-Exécuter le script de build dédié depuis le dossier racine :
-```bash
-cd "native/ios"
-./build-simulator.sh
-```
-Ou ouvrir `MinervaFlow.xcodeproj` dans Xcode, sélectionner une cible simulateur (ex: *iPhone 16 Pro*), et faire **Cmd + R**.
+Ce résultat est un contrôle statique, pas une validation « prêt à soumettre ». Les parcours propriétaires et clients sur appareil réel, les captures aux deux tailles, les déclarations App Privacy et l’accès de révision restent à confirmer avant diffusion externe.
 
-#### Option B — Installation directe sur un iPhone physique (Sideload)
-1. Brancher votre iPhone au Mac par câble USB.
-2. Ouvrir `MinervaFlow.xcodeproj` dans Xcode.
-3. Sélectionner votre iPhone dans la liste des appareils cibles.
-4. Si demandé, sélectionner votre compte Apple dans l'onglet **Signing & Capabilities** (Personal Team ou Developer Program).
-5. Appuyer sur **Run** (Cmd + R) pour installer et lancer l'application directement sur l'appareil.
+## 4. Séquence de téléversement et de vérification
 
-#### Option C — Téléversement TestFlight (App Store Connect)
-1. Ouvrir l'archive existante dans Xcode :  
-   `open build/archives/MinervaFlow-AppStore-final5.xcarchive`
-2. Cliquer sur **Distribute App** → **TestFlight & App Store** → **Upload**.
-3. Une fois téléversée, l'app apparaît dans [App Store Connect](https://appstoreconnect.apple.com/) sous la section **TestFlight**.
-4. Les testeurs internes reçoivent immédiatement l'invitation par email pour installer l'application via l'app officielle TestFlight.
+1. Ouvrir App Store Connect avec un compte membre autorisé de l’équipe Apple; ne jamais partager mot de passe ou code 2FA dans ce document.
+2. Vérifier le bundle, la version 1.0 (build 11), l’équipe et les profils de signature.
+3. Téléverser l’IPA de build 11 via Transporter ou Xcode Organizer.
+4. Attendre le traitement Apple et relever le statut exact du build.
+5. L’ajouter au groupe TestFlight souhaité et confirmer le lien avec un appareil de test.
+6. Tester au minimum les comptes client et propriétaire, les commandes activées, le code de fidélité, les liens de parrainage, ainsi que l’iPad portrait/paysage.
+7. Examiner les crashs et le dSYM Sentry, puis consigner les captures et résultats avant d’annoncer la mise à jour.
 
----
+## 5. Objectif white-label — non équivalent à une fonctionnalité déjà livrée
 
-## 3. Stratégie de Transformation en Template Marque Blanche (White-Label)
+Le workspace prend en charge des éléments d’identité de marque. Une offre white-label entièrement autonome par restaurant demande encore un pipeline contrôlé pour bundle IDs, icônes, configuration par tenant, certificats, fiches App Store/Google Play, paiements, intégrations et support. L’application Android cliente et l’automatisation de publication par client ne sont pas déclarées livrées ici.
 
-Pour permettre à n'importe quel restaurateur ou franchise de déployer sa propre application personnalisée sans modifier le code source :
+Avant de vendre un déploiement client, valider l’isolation des tenants, les secrets côté serveur, le fonctionnement POS/Stripe réel, les droits légaux et les parcours de suppression/consentement sur les deux plateformes.
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                 Modèle Marque Blanche                     │
-├──────────────────────────────────────────────────────────┤
-│ 1. Identité Visuelle :                                   │
-│    • Nom de l'application & Display Name                 │
-│    • Icône d'application (`AppIcon.appiconset`)         │
-│    • Couleurs de marque : Accent, Surface, Fond          │
-│    • Logo vectoriel / Favicon                            │
-│                                                          │
-│ 2. Configuration Backend :                               │
-│    • `restaurant_id` et `workspace_id` par défaut        │
-│    • Domaine d'API Supabase personnalisé                 │
-│    • Clé Stripe Connect spécifique au restaurant         │
-│                                                          │
-│ 3. Automatisation XcodeGen (`project.yml`) :             │
-│    • Script CLI `scripts/generate-whitelabel.sh`         │
-│    • Injection des paramètres dans `Config.swift`        │
-│    • Génération automatique des certificats de build     │
-└──────────────────────────────────────────────────────────┘
-```
+## 6. Livraison et tarification de commande
 
----
-
-## 4. Spécifications du Module de Commande en Livraison Dynamique (Type Uber)
-
-### 4.1 Objectifs
-Permettre au client final de passer une commande en livraison directement depuis l'application ou le portail web, avec :
-1. Calcul des frais de livraison en fonction de l'adresse de destination (distance routière et durée estimée).
-2. Validation du rayon de livraison maximal configuré par le restaurateur.
-3. Paiement direct sur le compte Stripe Connect du restaurant.
-4. Notification temps réel sur la caisse / tablette cuisine.
-
-### 4.2 Formule de Tarification Dynamique
-$$\text{Frais de livraison} = \text{Frais de base} + \left(\max(0, \text{Distance (km)} - \text{Distance franchise}) \times \text{Tarif / km}\right) + \text{Majoration pointe}$$
-
-* **Exemple de configuration standard** :
-  * Frais de base (jusqu'à 2 km) : `3,99 $`
-  * Tarif au kilomètre additionnel : `1,25 $ / km`
-  * Rayon maximal autorisé : `10 km`
-  * Majoration météo ou forte affluence (rush) : `+1,50 $` (activable depuis le dashboard)
-
-### 4.3 Intégration Technique Prévue (Phase 2)
-* **Calcul de distance** : API MapKit Directions (côté iOS) et OpenStreetMap / Google Routes (côté serveur).
-* **Paiement** : Stripe PaymentIntents avec transfert direct au compte connecté (`destination: restaurant.stripe_account_id`), 0% de commission Minerva.
-* **Suivi de commande** : États d'avancement synchronisés en temps réel (`en attente`, `en préparation`, `en cours de livraison`, `livrée`).
+Les pages web exposent des parcours de menu, réservation et commande selon le restaurant. Une livraison façon marketplace, avec prix par distance/temps et paiement acheminé au compte propre du restaurant, ne doit pas être annoncée comme active sans un essai complet des zones, calculs serveur, paiement, POS, annulations, remboursements et notifications pour ce restaurant.

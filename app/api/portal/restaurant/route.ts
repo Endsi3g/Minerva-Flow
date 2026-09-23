@@ -28,7 +28,7 @@ export async function GET(req: Request) {
   const [{ data, error }, isBusy] = await Promise.all([
     admin
       .from("restaurants")
-      .select("name, city, loyalty_tier_2_threshold, loyalty_tier_3_threshold, google_maps_url, google_place_id")
+      .select("name, city, timezone, loyalty_tier_2_threshold, loyalty_tier_3_threshold, google_maps_url, google_place_id")
       .eq("id", customer.restaurantId)
       .single(),
     computeIsBusy(admin, customer.restaurantId),
@@ -41,6 +41,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     name: data.name as string,
     city: data.city as string | null,
+    timezone: (data.timezone as string | null) ?? "America/Toronto",
     loyaltyTier2Threshold: (data.loyalty_tier_2_threshold as number | null) ?? 150,
     loyaltyTier3Threshold: (data.loyalty_tier_3_threshold as number | null) ?? 400,
     googleMapsUrl: data.google_maps_url as string | null,

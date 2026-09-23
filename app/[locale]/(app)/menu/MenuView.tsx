@@ -64,6 +64,8 @@ import { VideoUploadWithUrl } from "@/components/media/VideoUploadWithUrl";
 import { VideoPlayerModal } from "@/components/media/VideoPlayerModal";
 import { toast } from "sonner";
 import { createCampaignAction } from "@/app/[locale]/(app)/campaigns/actions";
+import { MealSuggestionsOwnerPanel } from "./MealSuggestionsOwnerPanel";
+import type { MealSuggestion } from "@/lib/data/meal-suggestions";
 
 const quadrantTone: Record<MenuQuadrant, "green" | "amber" | "lime" | "neutral"> = {
   etoile: "green",
@@ -94,6 +96,7 @@ function NewMenuItemModal({
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const allergens = String(form.get("allergens") ?? "").split(",").map((value) => value.trim()).filter(Boolean);
     setIsSubmitting(true);
     try {
       const item = await createMenuItemAction(restaurantId, {
@@ -102,6 +105,8 @@ function NewMenuItemModal({
         price: Number(form.get("price") ?? 0),
         foodCost: Number(form.get("foodCost") ?? 0),
         description: String(form.get("description") ?? "") || null,
+        allergens,
+        allergensConfirmed: form.get("allergensConfirmed") === "on",
         imageUrl,
         videoUrl,
       });
@@ -140,6 +145,13 @@ function NewMenuItemModal({
         <Field label={t("descriptionLabel")} hint={t("optional")}>
           <Input name="description" />
         </Field>
+        <Field label={t("allergensLabel")} hint={t("allergensHint")}>
+          <Input name="allergens" placeholder={t("allergensPlaceholder")} />
+        </Field>
+        <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
+          <input type="checkbox" name="allergensConfirmed" className="mt-0.5 accent-mv-green" />
+          <span>{t("allergensConfirmed")}</span>
+        </label>
         <Field label={t("imageLabel")} hint={t("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} onUploaded={setImageUrl} />
         </Field>
@@ -336,6 +348,7 @@ function EditMenuItemModal({
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
+    const allergens = String(form.get("allergens") ?? "").split(",").map((value) => value.trim()).filter(Boolean);
     setIsSubmitting(true);
     try {
       const updated = await updateMenuItemAction(restaurantId, item.id, {
@@ -344,6 +357,8 @@ function EditMenuItemModal({
         price: Number(form.get("price") ?? 0),
         foodCost: Number(form.get("foodCost") ?? 0),
         description: String(form.get("description") ?? "") || null,
+        allergens,
+        allergensConfirmed: form.get("allergensConfirmed") === "on",
         imageUrl,
         videoUrl,
       });
@@ -385,6 +400,13 @@ function EditMenuItemModal({
         <Field label={tn("descriptionLabel")} hint={tn("optional")}>
           <Input name="description" defaultValue={item.description ?? ""} />
         </Field>
+        <Field label={tn("allergensLabel")} hint={tn("allergensHint")}>
+          <Input name="allergens" defaultValue={(item.allergens ?? []).join(", ")} placeholder={tn("allergensPlaceholder")} />
+        </Field>
+        <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
+          <input type="checkbox" name="allergensConfirmed" defaultChecked={item.allergensConfirmed ?? false} className="mt-0.5 accent-mv-green" />
+          <span>{tn("allergensConfirmed")}</span>
+        </label>
         <Field label={tn("imageLabel")} hint={tn("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={item.id} currentUrl={item.imageUrl} onUploaded={setImageUrl} />
         </Field>
@@ -436,6 +458,10 @@ function MenuItemRow({
   const [isToggling, setIsToggling] = useState(false);
 
   async function handleToggleActive() {
+    if (!item.active && item.isDraft && (item.price <= 0 || !item.allergensConfirmed)) {
+      notifyError("Complétez le prix et confirmez les allergènes avant de publier ce brouillon.");
+      return;
+    }
     setIsToggling(true);
     try {
       const updated = await updateMenuItemAction(restaurantId, item.id, { active: !item.active });
@@ -465,7 +491,8 @@ function MenuItemRow({
                 Vidéo
               </button>
             )}
-            {!item.active && <Badge tone="neutral">Retiré du menu</Badge>}
+            {item.isDraft && <Badge tone="amber">Brouillon à compléter</Badge>}
+            {!item.active && !item.isDraft && <Badge tone="neutral">Retiré du menu</Badge>}
             {stockStatus?.status === "rupture" && (
               <span
                 title={
@@ -781,6 +808,7 @@ function OfferModal({
       cost: costRaw ? Number(costRaw) : null,
       includedItems: included,
       excludedItems: excluded,
+      isBirthdaySpecial: form.get("isBirthdaySpecial") === "on",
       startsAt: fromDatetimeLocal(String(form.get("startsAt") ?? "")),
       endsAt: fromDatetimeLocal(String(form.get("endsAt") ?? "")),
     };
@@ -890,6 +918,18 @@ function OfferModal({
             />
           </Field>
         </div>
+        <label className="flex items-start gap-2.5 rounded-lg border border-mv-amber/30 bg-mv-amber-bg/50 px-3 py-2.5 text-[12px] text-mv-ink-soft">
+          <input
+            type="checkbox"
+            name="isBirthdaySpecial"
+            defaultChecked={offer?.isBirthdaySpecial ?? false}
+            className="mt-0.5 accent-mv-green"
+          />
+          <span>
+            <span className="block font-semibold text-mv-ink">{t("birthdaySpecialLabel")}</span>
+            <span className="block mt-0.5">{t("birthdaySpecialHint")}</span>
+          </span>
+        </label>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("startsLabel")} hint={tn("optional")}>
             <Input name="startsAt" type="datetime-local" defaultValue={toDatetimeLocal(offer?.startsAt)} />
@@ -1002,6 +1042,7 @@ function OfferRow({
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-[13px] font-semibold text-mv-ink">{offer.title}</span>
+            {offer.isBirthdaySpecial && <Badge tone="amber" size="xs">Anniversaire</Badge>}
             {offer.videoUrl && onPlayVideo && (
               <button
                 type="button"
@@ -1271,6 +1312,8 @@ export function MenuView({
   initialOffers,
   inventoryItems = [],
   initialRecipes = {},
+  initialMealSuggestions = [],
+  initialMealSuggestionsError = false,
   isPlatformAdminUser = false,
 }: {
   restaurantId: string | null;
@@ -1281,6 +1324,8 @@ export function MenuView({
   initialOffers: Offer[];
   inventoryItems?: InventoryItem[];
   initialRecipes?: Record<string, RecipeItem[]>;
+  initialMealSuggestions?: MealSuggestion[];
+  initialMealSuggestionsError?: boolean;
   isPlatformAdminUser?: boolean;
 }) {
   const t = useTranslations("menu.page");
@@ -1328,11 +1373,11 @@ export function MenuView({
   );
 
   const categories = useMemo(
-    () => Array.from(new Set(items.map((i) => i.category).filter((c): c is string => Boolean(c)))),
+    () => Array.from(new Set(items.filter((item) => !item.isDraft).map((i) => i.category).filter((c): c is string => Boolean(c)))),
     [items]
   );
   const filtered = useMemo(() => {
-    let list = items;
+    let list = items.filter((item) => !item.isDraft);
     if (categoryFilter !== "all") {
       list = list.filter((i) => i.category === categoryFilter);
     }
@@ -1344,6 +1389,7 @@ export function MenuView({
     }
     return list;
   }, [items, categoryFilter, stockFilter, stockStatusByItemId]);
+  const draftItems = useMemo(() => items.filter((item) => item.isDraft), [items]);
   const classified = useMemo(() => classifyMenuItems(filtered), [filtered]);
   const marginDriftItems = useMemo(() => getMarginDriftItems(classified), [classified]);
   const byQuadrant = useMemo(() => {
@@ -1483,6 +1529,15 @@ export function MenuView({
       )}
 
       {canManage && restaurantId && (
+        <MealSuggestionsOwnerPanel
+          restaurantId={restaurantId}
+          initialSuggestions={initialMealSuggestions}
+          initialLoadFailed={initialMealSuggestionsError}
+          onDraftCreated={(item) => setItems((current) => current.some((existing) => existing.id === item.id) ? current : [...current, item])}
+        />
+      )}
+
+      {canManage && restaurantId && (
         <MarginDriftPanel
           items={marginDriftItems}
           restaurantId={restaurantId}
@@ -1503,8 +1558,37 @@ export function MenuView({
         />
       )}
 
+      {canManage && draftItems.length > 0 && (
+        <Card className="mb-6 overflow-hidden border-mv-amber/30">
+          <div className="flex items-start justify-between gap-3 border-b border-mv-border-soft bg-mv-cream-soft/60 px-4 py-3.5 sm:px-5">
+            <div>
+              <h2 className="font-serif text-[17px] text-mv-ink">{t("draftsTitle")}</h2>
+              <p className="mt-0.5 text-[11.5px] text-mv-ink-soft">{t("draftsDescription")}</p>
+            </div>
+            <Badge tone="amber">{draftItems.length}</Badge>
+          </div>
+          <div className="divide-y divide-mv-border-soft px-4 sm:px-5">
+            {draftItems.map((draft) => (
+              <div key={draft.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-mv-ink">{draft.name}</p>
+                  <p className="mt-0.5 text-[11.5px] text-mv-ink-soft">
+                    {draft.price > 0 ? t("draftPriceReady") : t("draftPriceMissing")}
+                    {" · "}
+                    {draft.allergensConfirmed ? t("draftAllergensReady") : t("draftAllergensMissing")}
+                  </p>
+                </div>
+                <Link href={`/menu/${draft.id}`} className="text-[12px] font-semibold text-mv-green-dark hover:underline">
+                  {t("openDraft")}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
-      {items.length === 0 ? (
+
+      {filtered.length === 0 ? (
         <EmptyState
           icon={UtensilsCrossed}
           title={t("emptyTitle")}

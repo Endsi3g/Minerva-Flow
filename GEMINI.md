@@ -8,7 +8,7 @@
 ## 1. Identité de Marque & Règles d'Invariance Strictes
 
 * **Nom de marque officiel** : **`Minerva Flow`** (ou **`Flow`** en contexte abrégé dans l'interface).
-* **TERME STRICTEMENT INTERDIT** : **`Flow par Minerva`** est formellement banni de tous les fichiers, interfaces, emails, métadonnées, documentations et communications. Ne JAMAIS écrire « Flow par Minerva ».
+* **NOM DE MARQUE** : utiliser uniquement **Minerva Flow** dans les fichiers, interfaces, courriels, métadonnées, documentations et communications.
 * **Entité légale** : `Minerva Technologies Inc.`
 * **Domaine officiel de l'application** : `https://minervaflow.app`
 * **Site vitrine & Référence marketing** : `https://minervaflow.framer.website/`

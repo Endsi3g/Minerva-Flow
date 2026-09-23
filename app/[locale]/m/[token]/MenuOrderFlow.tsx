@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
 import { Field, Input } from "@/components/minerva/FormField";
@@ -8,13 +8,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { requestCustomerMagicLink } from "@/lib/auth/customer-magic-link";
-import { submitPublicOrderAction } from "./actions";
+import { getPublicOrderDeliveryQuoteAction, submitPublicOrderAction } from "./actions";
 import { OnlinePaymentForm } from "./OnlinePaymentForm";
+import { MealSuggestionsPanel } from "./MealSuggestionsPanel";
+import { ServiceQuoteRequest } from "./ServiceQuoteRequest";
 import { formatCurrency, roundToCents, cn } from "@/lib/utils";
 import { InstallAppPrompt } from "@/components/pwa/InstallAppPrompt";
 import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
 import type { MenuItem, Offer, OrderFulfillmentMode } from "@/lib/types";
-import { quoteDelivery, type DeliveryPricingConfig } from "@/lib/orders/delivery-pricing";
+import type { DeliveryPricingConfig, DeliveryQuote } from "@/lib/orders/delivery-pricing";
+import { getPublicCheckoutOptions } from "@/lib/orders/checkout-options";
+import { formatRestaurantTime } from "@/lib/orders/scheduling";
 import type { PublicMenuLanding, SiblingLocation } from "@/lib/data/menu-shares";
 import { Map as MapView, MapControls, MapMarker, MarkerContent, MarkerLabel, MarkerPopup } from "@/components/ui/map";
 import Link from "next/link";
@@ -39,17 +43,6 @@ function categorySlug(category: string, index: number): string {
 
 const TIP_PRESETS = [0, 0.1, 0.15, 0.2];
 
-function formatEtaTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" });
-}
-
-const FULFILLMENT_MODE_LABEL: Record<OrderFulfillmentMode, string> = {
-  sur_place: "Sur place",
-  immediat: "En ligne maintenant",
-  prep_apres_paiement: "En ligne (prêt après paiement)",
-  livraison: "Livraison",
-};
-
 function CheckoutModal({
   open,
   onClose,
@@ -66,6 +59,7 @@ function CheckoutModal({
   onOrdered,
   shareProgramId,
   restaurantName,
+  restaurantTimezone,
   mentionedOfferTitle,
   delivery,
 }: {
@@ -84,6 +78,7 @@ function CheckoutModal({
   onOrdered: () => void;
   shareProgramId: string | null;
   restaurantName: string;
+  restaurantTimezone: string;
   mentionedOfferTitle: string | null;
   delivery: { config: DeliveryPricingConfig; restaurantLat: number | null; restaurantLng: number | null };
 }) {
@@ -94,21 +89,43 @@ function CheckoutModal({
   const [submitStatus, setSubmitStatus] = useState<"idle" | "submitting" | "done" | "paying" | "paid" | "error">(
     "idle"
   );
-  // "sur_place" never requires Stripe, so it's always offered even if the
-  // owner listed an online mode without Connect actually being active yet.
-  const availableModes = orderModesEnabled.filter(
-    (m) => m === "sur_place" || (onlinePaymentEnabled && (m !== "livraison" || delivery.config.enabled))
-  );
+  const checkoutOptions = getPublicCheckoutOptions(orderModesEnabled, onlinePaymentEnabled, delivery.config.enabled);
   const [fulfillmentMode, setFulfillmentMode] = useState<OrderFulfillmentMode>(
-    availableModes.includes("sur_place") ? "sur_place" : (availableModes[0] ?? "sur_place")
+    checkoutOptions.fulfillmentModes.includes("sur_place") ? "sur_place" : (checkoutOptions.fulfillmentModes[0] ?? "sur_place")
   );
-  const payOnline = fulfillmentMode !== "sur_place";
+  const [payOnline, setPayOnline] = useState(!checkoutOptions.canPayAtReceipt);
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryLatitude, setDeliveryLatitude] = useState<number | null>(null);
-  const [deliveryLongitude, setDeliveryLongitude] = useState<number | null>(null);
-  const deliveryQuote = fulfillmentMode === "livraison"
-    ? quoteDelivery(delivery.config, { lat: delivery.restaurantLat, lng: delivery.restaurantLng }, { lat: deliveryLatitude, lng: deliveryLongitude })
-    : { fee: 0, distanceKm: null, etaMinutes: null, available: true };
+  const [serverDeliveryQuote, setServerDeliveryQuote] = useState<DeliveryQuote | null>(null);
+  const [quotedDeliveryAddress, setQuotedDeliveryAddress] = useState("");
+  const normalizedDeliveryAddress = deliveryAddress.trim();
+  const deliveryQuoteLoading = fulfillmentMode === "livraison"
+    && normalizedDeliveryAddress.length >= 6
+    && quotedDeliveryAddress !== normalizedDeliveryAddress;
+  const deliveryQuote: DeliveryQuote = fulfillmentMode !== "livraison"
+    ? { fee: 0, distanceKm: null, etaMinutes: null, available: true }
+    : normalizedDeliveryAddress.length < 6
+      ? { fee: 0, distanceKm: null, etaMinutes: null, available: false, reason: "missing_location" }
+      : quotedDeliveryAddress === normalizedDeliveryAddress && serverDeliveryQuote
+        ? serverDeliveryQuote
+        : { fee: 0, distanceKm: null, etaMinutes: null, available: false, reason: "missing_location" };
+
+  useEffect(() => {
+    if (fulfillmentMode !== "livraison" || normalizedDeliveryAddress.length < 6 || quotedDeliveryAddress === normalizedDeliveryAddress) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      startTransition(async () => {
+        const quote = await getPublicOrderDeliveryQuoteAction(token, deliveryAddress);
+        if (!cancelled) {
+          setServerDeliveryQuote(quote);
+          setQuotedDeliveryAddress(normalizedDeliveryAddress);
+        }
+      });
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [deliveryAddress, fulfillmentMode, normalizedDeliveryAddress, quotedDeliveryAddress, token]);
   const displayTotal = total + deliveryQuote.fee;
   // Unchecked by default (CASL/LCAP) — only applied if this order creates a
   // brand-new customer row; a returning customer's existing consent choice
@@ -175,8 +192,8 @@ function CheckoutModal({
         tipAmount,
         fulfillmentMode,
         deliveryAddress: fulfillmentMode === "livraison" ? deliveryAddress : null,
-        deliveryLatitude: fulfillmentMode === "livraison" ? deliveryLatitude : null,
-        deliveryLongitude: fulfillmentMode === "livraison" ? deliveryLongitude : null,
+        payOnline,
+        requestedReadyAtLocal: String(form.get("requestedReadyAtLocal") ?? "") || null,
         marketingConsent,
         mentionedOfferTitle,
       }
@@ -222,7 +239,7 @@ function CheckoutModal({
           </p>
           {estimatedReadyAt && (
             <p className="mt-2 text-[12.5px] font-medium text-mv-green-dark">
-              Prêt vers {formatEtaTime(estimatedReadyAt)}
+              Prêt vers {formatRestaurantTime(estimatedReadyAt, restaurantTimezone)}
             </p>
           )}
           {shareProgramId && (
@@ -248,7 +265,7 @@ function CheckoutModal({
           </p>
           {estimatedReadyAt && (
             <p className="mt-2 text-[12.5px] font-medium text-mv-green-dark">
-              Prêt vers {formatEtaTime(estimatedReadyAt)}
+              Prêt vers {formatRestaurantTime(estimatedReadyAt, restaurantTimezone)}
             </p>
           )}
           {shareProgramId && (
@@ -339,11 +356,14 @@ function CheckoutModal({
               <Field label="Téléphone" hint="Optionnel">
                 <Input name="guestPhone" type="tel" />
               </Field>
-              {availableModes.length > 1 && (
+              <Field label="Heure souhaitée (facultatif)" hint={`Heure locale du restaurant (${restaurantTimezone}) · créneaux de 15 min · jusqu’à 30 jours`}>
+                <Input name="requestedReadyAtLocal" type="datetime-local" step={900} />
+              </Field>
+              {checkoutOptions.fulfillmentModes.length > 1 && (
                 <div>
-                  <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Paiement</p>
+                  <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Mode de réception</p>
                   <div className="flex gap-1.5">
-                    {availableModes.map((mode) => (
+                    {checkoutOptions.fulfillmentModes.map((mode) => (
                       <button
                         key={mode}
                         type="button"
@@ -355,7 +375,7 @@ function CheckoutModal({
                             : "border-mv-border text-mv-ink-soft"
                         )}
                       >
-                        {FULFILLMENT_MODE_LABEL[mode]}
+                          {mode === "livraison" ? "Livraison" : "Cueillette"}
                       </button>
                     ))}
                   </div>
@@ -368,29 +388,38 @@ function CheckoutModal({
               )}
               {fulfillmentMode === "livraison" && (
                 <div className="space-y-2 rounded-xl border border-mv-green/20 bg-mv-green-tint/40 p-3">
-                  <Field label="Adresse de livraison" hint="Rue, ville et code postal">
-                    <Input value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} required />
+                  <Field label="Adresse de livraison" hint="Rue, ville et code postal — le tarif est calculé par le restaurant">
+                    <Input value={deliveryAddress} onChange={(e) => {
+                      setDeliveryAddress(e.target.value);
+                    }} required autoComplete="street-address" />
                   </Field>
-                  <button
-                    type="button"
-                    onClick={() => navigator.geolocation?.getCurrentPosition(
-                      (position) => {
-                        setDeliveryLatitude(position.coords.latitude);
-                        setDeliveryLongitude(position.coords.longitude);
-                        toast.success("Position utilisée pour calculer la distance.");
-                      },
-                      () => toast.error("Position indisponible — les frais de base seront appliqués.")
-                    )}
-                    className="text-left text-[11.5px] font-semibold text-mv-green-dark hover:underline"
-                  >
-                    Utiliser ma position pour un tarif précis
-                  </button>
-                  {!deliveryQuote.available && (
-                    <p className="text-[12px] text-mv-red">Cette adresse est hors du rayon de livraison configuré.</p>
+                  {deliveryQuoteLoading && <p className="text-[11.5px] text-mv-ink-faint">Calcul des frais…</p>}
+                  {!deliveryQuoteLoading && !deliveryQuote.available && (
+                    <p className="text-[12px] text-mv-red">{deliveryQuote.reason === "outside_radius" ? "Cette adresse est hors du rayon de livraison configuré." : "Entrez une adresse complète pour calculer les frais."}</p>
                   )}
-                  {deliveryQuote.etaMinutes != null && (
-                    <p className="text-[11.5px] text-mv-ink-faint">Temps estimé : {deliveryQuote.etaMinutes} min</p>
+                  {deliveryQuote.available && deliveryQuote.etaMinutes != null && (
+                    <p className="text-[11.5px] text-mv-ink-faint">Frais : {formatCurrency(deliveryQuote.fee)} · Temps estimé : {deliveryQuote.etaMinutes} min</p>
                   )}
+                </div>
+              )}
+              {checkoutOptions.canPayOnline && checkoutOptions.canPayAtReceipt && (
+                <div>
+                  <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Paiement</p>
+                  <div className="flex gap-1.5">
+                    {[
+                      { value: false, label: fulfillmentMode === "livraison" ? "À la livraison" : "À la cueillette" },
+                      { value: true, label: "En ligne" },
+                    ].map((choice) => (
+                      <button
+                        key={String(choice.value)}
+                        type="button"
+                        onClick={() => setPayOnline(choice.value)}
+                        className={cn("flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium", payOnline === choice.value ? "border-mv-green bg-mv-green-tint text-mv-green-dark" : "border-mv-border text-mv-ink-soft")}
+                      >
+                        {choice.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
               {!payOnline && (
@@ -409,7 +438,7 @@ function CheckoutModal({
               {submitStatus === "error" && (
                 <p className="text-[12.5px] text-mv-red">La commande a échoué. Réessayez.</p>
               )}
-              <Button type="submit" disabled={submitStatus === "submitting" || (fulfillmentMode === "livraison" && !deliveryQuote.available)} className="w-full">
+              <Button type="submit" disabled={submitStatus === "submitting" || (fulfillmentMode === "livraison" && (deliveryQuoteLoading || !deliveryQuote.available))} className="w-full">
                 {submitStatus === "submitting" ? "Envoi…" : `Envoyer la commande — ${formatCurrency(displayTotal)}`}
               </Button>
             </form>
@@ -715,7 +744,7 @@ export function MenuOrderFlow({
   favoriteMenuItemIds: string[];
   favoriteOfferIds: string[];
 }) {
-  const { restaurantName, items, taxRate, acceptsTips, onlinePaymentEnabled, orderModesEnabled, delivery } = landing;
+  const { restaurantName, restaurantTimezone, items, taxRate, acceptsTips, onlinePaymentEnabled, orderModesEnabled, delivery } = landing;
   const [favMenuItems, setFavMenuItems] = useState(new Set(favoriteMenuItemIds));
   const [favOffers, setFavOffers] = useState(new Set(favoriteOfferIds));
 
@@ -725,13 +754,15 @@ export function MenuOrderFlow({
     const setter = kind === "menu_item" ? setFavMenuItems : setFavOffers;
     const next = new Set(set);
     const wasFavorite = next.has(itemId);
-    wasFavorite ? next.delete(itemId) : next.add(itemId);
+    if (wasFavorite) next.delete(itemId);
+    else next.add(itemId);
     setter(next);
     const ok = await toggleFavoriteAction(customerId, kind, itemId, !wasFavorite);
     if (!ok) {
       // Revert on failure
       const reverted = new Set(next);
-      wasFavorite ? reverted.add(itemId) : reverted.delete(itemId);
+      if (wasFavorite) reverted.add(itemId);
+      else reverted.delete(itemId);
       setter(reverted);
     }
   }
@@ -931,6 +962,9 @@ export function MenuOrderFlow({
           </div>
         )}
 
+        {customerId && <MealSuggestionsPanel key={landing.restaurantId} restaurantId={landing.restaurantId} />}
+        <ServiceQuoteRequest token={token} restaurantTimezone={restaurantTimezone} deliveryEnabled={delivery.config.enabled} />
+
         {items.length === 0 ? (
           <p className="text-[13px] text-mv-ink-faint">Aucun plat disponible pour l&apos;instant.</p>
         ) : (
@@ -999,6 +1033,7 @@ export function MenuOrderFlow({
         onOrdered={handleOrdered}
         shareProgramId={shareProgramId}
         restaurantName={restaurantName}
+        restaurantTimezone={restaurantTimezone}
         mentionedOfferTitle={activeOffer}
         delivery={delivery}
       />

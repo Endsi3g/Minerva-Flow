@@ -46,6 +46,7 @@ export type Restaurant = {
   deliveryFreeKm?: number;
   deliveryMaxKm?: number;
   deliveryAverageSpeedKmh?: number;
+  deliveryPerMinuteFee?: number;
   // Finance "seuil de rentabilité" simulator assumptions — null until the
   // owner has adjusted the simulator at least once (see BreakEvenSimulator).
   breakEvenFixedCosts: number | null;
@@ -708,6 +709,9 @@ export type MenuItem = {
   imageUrl: string | null;
   imageUrls: string[];
   videoUrl?: string | null;
+  isDraft?: boolean;
+  allergens?: string[];
+  allergensConfirmed?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -775,6 +779,9 @@ export type Order = {
   deliveryDistanceKm: number | null;
   deliveryFee: number;
   deliveryEtaMinutes: number | null;
+  requestedReadyAt?: string | null;
+  orderKind?: "standard" | "custom" | "catering";
+  depositPaidAmount?: number;
   notes: string | null;
   customerId: string | null;
   referralLinkId: string | null;
@@ -869,6 +876,7 @@ export type Offer = {
   includedItems: string[];
   excludedItems: string[];
   active: boolean;
+  isBirthdaySpecial?: boolean;
   startsAt: string | null;
   endsAt: string | null;
   createdAt: string;

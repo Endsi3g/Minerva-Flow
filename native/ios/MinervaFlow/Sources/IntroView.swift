@@ -48,14 +48,19 @@ struct IntroView: View {
                     .foregroundStyle(.white)
                     .padding(.bottom, 28)
 
-                Text(language == .fr ? "Votre fidélité,\nrécompensée" : "Your loyalty,\nrewarded")
+                // These strings are already selected from the user's saved
+                // in-app language. Treat them as verbatim; interpreting the
+                // French branch as a LocalizedStringKey lets iOS's bundle
+                // locale translate "Commencer" back to English even while
+                // the in-app selector says FR.
+                Text(verbatim: language == .fr ? "Votre fidélité,\nrécompensée" : "Your loyalty,\nrewarded")
                     .font(MinervaFont.display(34))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.bottom, 12)
 
-                Text(language == .fr ? "Cumulez des points à chaque visite et échangez-les contre de vraies récompenses." : "Earn points with every visit and exchange them for real rewards.")
+                Text(verbatim: language == .fr ? "Cumulez des points à chaque visite et échangez-les contre de vraies récompenses." : "Earn points with every visit and exchange them for real rewards.")
                     .font(.system(size: 14.5))
                     .foregroundStyle(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
@@ -66,7 +71,7 @@ struct IntroView: View {
 
                 VStack(spacing: 12) {
                     Button(action: onContinue) {
-                        Text(language == .fr ? "Commencer" : "Get started")
+                        Text(verbatim: language == .fr ? "Commencer" : "Get started")
                             .font(.system(size: 15.5, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 15)
@@ -77,7 +82,7 @@ struct IntroView: View {
                     .buttonStyle(PressableButtonStyle())
 
                     Button(action: onContinue) {
-                        Text(language == .fr ? "Se connecter" : "Sign in")
+                        Text(verbatim: language == .fr ? "Se connecter" : "Sign in")
                             .font(.system(size: 15.5, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 15)

@@ -9,6 +9,7 @@ import { ResultsShareCard, type CardBackground, type CardFormat, type TextColor,
 import type { ShareableMetric } from "@/lib/data/retention-metrics";
 import {
   Download,
+  Share2,
   Loader2,
   Star,
   Quote as QuoteIcon,
@@ -240,6 +241,42 @@ export function ShareCardConfigurator({
       toast.success(`Carrousel téléchargé (${1 + statsDisplay.length} images).`);
     } catch {
       toast.error("Le téléchargement a échoué. Réessayez.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  async function handleShare() {
+    if (!mainCardRef.current || !heroDisplay || format === "carousel") return;
+    setIsExporting(true);
+    try {
+      const dataUrl = await toPng(mainCardRef.current, { pixelRatio: 3, cacheBust: true });
+      const response = await fetch(dataUrl);
+      const file = new File([await response.blob()], `${filePrefix}-resultats-${format}.png`, { type: "image/png" });
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share({ title: `Résultats de fidélisation — ${restaurantName}`, files: [file] });
+        toast.success("Image partagée.");
+      } else {
+        const link = document.createElement("a");
+        link.download = file.name;
+        link.href = dataUrl;
+        link.click();
+        toast.info("Le partage direct n’est pas offert dans ce navigateur. L’image a été téléchargée.");
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      if (mainCardRef.current) {
+        try {
+          const dataUrl = await toPng(mainCardRef.current, { pixelRatio: 3, cacheBust: true });
+          const link = document.createElement("a");
+          link.download = `${filePrefix}-resultats-${format}.png`;
+          link.href = dataUrl;
+          link.click();
+          toast.info("Le partage n’a pas abouti dans ce navigateur. L’image a été téléchargée.");
+        } catch {
+          toast.error("Le partage de l’image a échoué. Réessayez ou téléchargez-la.");
+        }
+      }
     } finally {
       setIsExporting(false);
     }
@@ -541,14 +578,20 @@ export function ShareCardConfigurator({
             </div>
           )}
 
-          <Button onClick={handleDownload} disabled={isExporting || !heroDisplay} className="w-full">
-            {isExporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-            {isExporting
-              ? "Génération…"
-              : format === "carousel"
-                ? `Télécharger le carrousel (${1 + statsDisplay.length})`
-                : "Télécharger"}
-          </Button>
+          <div className="grid w-full gap-2 sm:grid-cols-2">
+            <Button onClick={handleDownload} disabled={isExporting || !heroDisplay} className="w-full">
+              {isExporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+              {isExporting
+                ? "Génération…"
+                : format === "carousel"
+                  ? `Télécharger (${1 + statsDisplay.length} images)`
+                  : "Télécharger l’image"}
+            </Button>
+            <Button onClick={handleShare} variant="secondary" disabled={isExporting || !heroDisplay || format === "carousel"} className="w-full" title={format === "carousel" ? "Téléchargez les diapositives séparément pour les publier en carrousel." : undefined}>
+              <Share2 size={15} />
+              {format === "carousel" ? "Téléchargez le carrousel" : "Partager l’image"}
+            </Button>
+          </div>
         </Card>
       </div>
     </div>

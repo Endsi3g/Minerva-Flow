@@ -21,6 +21,7 @@ export default async function FidelisationPage() {
     <FidelisationView
       restaurantId={restaurantId}
       restaurantName={restaurant?.name ?? "Restaurant"}
+      restaurantTimezone={restaurant?.timezone ?? "America/Toronto"}
       initialCustomers={customers}
       loyaltyPointsPerDollar={restaurant?.loyaltyPointsPerDollar ?? 1}
       loyaltyTierThresholds={{

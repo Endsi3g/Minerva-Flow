@@ -9,6 +9,7 @@ import { getInventoryItems } from "@/lib/data/inventory";
 import { getRecipeItemsForMenuItems } from "@/lib/data/recipes";
 import { isPlatformAdmin } from "@/lib/data/admin";
 import { MenuView } from "./MenuView";
+import { getMealSuggestionsForRestaurant } from "@/lib/data/meal-suggestions";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("breadcrumb");
@@ -19,15 +20,16 @@ export default async function MenuPage() {
   const restaurantId = await getCurrentRestaurantId();
   const isPlatformAdminUser = await isPlatformAdmin();
 
-  const [items, restaurant, shares, offers, inventoryItems] = restaurantId
+  const [items, restaurant, shares, offers, inventoryItems, mealSuggestionsResult] = restaurantId
     ? await Promise.all([
         getMenuItems(restaurantId),
         getRestaurant(restaurantId),
         getMenuSharesForRestaurant(restaurantId),
         getOffersForRestaurant(restaurantId),
         getInventoryItems(restaurantId),
+        getMealSuggestionsForRestaurant(restaurantId),
       ])
-    : [[], null, [], [], []];
+    : [[], null, [], [], [], { ok: true as const, suggestions: [] }];
 
   const recipesByMenuItem = restaurantId
     ? await getRecipeItemsForMenuItems(
@@ -46,6 +48,8 @@ export default async function MenuPage() {
       initialOffers={offers}
       inventoryItems={inventoryItems}
       initialRecipes={Object.fromEntries(recipesByMenuItem)}
+      initialMealSuggestions={mealSuggestionsResult.ok ? mealSuggestionsResult.suggestions : []}
+      initialMealSuggestionsError={!mealSuggestionsResult.ok}
       isPlatformAdminUser={isPlatformAdminUser}
     />
   );

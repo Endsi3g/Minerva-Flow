@@ -1,0 +1,102 @@
+/* French source strings shared by the app and its WidgetKit extension.
+   Keep every English catalogue key here so an in-app French choice cannot
+   fall through to the English development localization. */
+
+"points" = "points";
+"Votre restaurant" = "Votre restaurant";
+"Vous" = "Vous";
+"Café ou thé offert" = "Café ou thé offert";
+"Café gratuit à l'achat d'une pâtisserie" = "Café gratuit à l'achat d'une pâtisserie";
+"Ouvrez Minerva Flow" = "Ouvrez Minerva Flow";
+"Ouvrez Minerva Flow\npour voir vos points" = "Ouvrez Minerva Flow\npour voir vos points";
+"Solde de points" = "Solde de points";
+"Votre solde de points de fidélité Minerva Flow, à même l'écran d'accueil ou verrouillé." = "Votre solde de points de fidélité Minerva Flow, à même l'écran d'accueil ou verrouillé.";
+
+/* Review prompt */
+"Merci pour votre avis !" = "Merci pour votre avis !";
+"Plus tard" = "Plus tard";
+"Publier sur Google Maps" = "Publier sur Google Maps";
+"Partagez aussi votre expérience sur Google Maps — ça aide vraiment ce restaurant." = "Partagez aussi votre expérience sur Google Maps — ça aide vraiment ce restaurant.";
+"Laisser un avis" = "Laisser un avis";
+"Votre commentaire (optionnel)" = "Votre commentaire (optionnel)";
+"Photos (%lld/%lld)" = "Photos (%lld/%lld)";
+"Ajouter" = "Ajouter";
+"Envoi…" = "Envoi…";
+"Publier mon avis" = "Publier mon avis";
+"Annuler" = "Annuler";
+"L'envoi de votre avis a échoué. Réessayez." = "L'envoi de votre avis a échoué. Réessayez.";
+
+/* First-run and authentication */
+"RÉCOMPENSES" = "RÉCOMPENSES";
+"MINERVA FLOW\nRÉCOMPENSES" = "MINERVA FLOW\nRÉCOMPENSES";
+"Bienvenue dans\nvotre espace fidélité" = "Bienvenue dans\nvotre espace fidélité";
+"Voir mon statut" = "Voir mon statut";
+"Voir mes avantages" = "Voir mes avantages";
+"Continuer" = "Continuer";
+"Trouvez les restaurants\nautour de vous" = "Trouvez les restaurants\nautour de vous";
+"Votre position sert uniquement à trouver et trier les restaurants et cafés participants les plus proches de vous sur la carte de découverte. Elle n'est jamais partagée ni utilisée à d'autres fins." = "Votre position sert uniquement à trouver et trier les restaurants et cafés participants les plus proches de vous sur la carte de découverte. Elle n'est jamais partagée ni utilisée à d'autres fins.";
+"Activer la localisation" = "Activer la localisation";
+"Localisation activée ✓" = "Localisation activée ✓";
+"Ne manquez\naucune offre" = "Ne manquez\naucune offre";
+"Recevez une notification dès qu'une nouvelle offre est publiée par votre restaurant, et un rappel discret pour vos récompenses prêtes à échanger. Vous pouvez changer d'avis à tout moment dans Réglages." = "Recevez une notification dès qu'une nouvelle offre est publiée par votre restaurant, et un rappel discret pour vos récompenses prêtes à échanger. Vous pouvez changer d'avis à tout moment dans Réglages.";
+"Activer les notifications" = "Activer les notifications";
+"Notifications activées ✓" = "Notifications activées ✓";
+"Terminer" = "Terminer";
+"Votre fidélité,\nrécompensée" = "Votre fidélité,\nrécompensée";
+"Cumulez des points à chaque visite et échangez-les contre de vraies récompenses." = "Cumulez des points à chaque visite et échangez-les contre de vraies récompenses.";
+"Commencer" = "Commencer";
+"Se connecter" = "Se connecter";
+"Courriel" = "Courriel";
+"Cette adresse ne semble pas valide." = "Cette adresse ne semble pas valide.";
+"Mot de passe oublié ?" = "Mot de passe oublié ?";
+"Continuer avec Apple" = "Continuer avec Apple";
+"Continuer avec Google" = "Continuer avec Google";
+"Code par courriel" = "Code par courriel";
+"Mot de passe" = "Mot de passe";
+"Créer un mot de passe" = "Créer un mot de passe";
+"8 caractères minimum" = "8 caractères minimum";
+"Confirmer le mot de passe" = "Confirmer le mot de passe";
+"Les mots de passe ne correspondent pas." = "Les mots de passe ne correspondent pas.";
+"Déjà client ? Se connecter" = "Déjà client ? Se connecter";
+"Nouveau ? Créer un compte" = "Nouveau ? Créer un compte";
+"Vérifiez vos courriels" = "Vérifiez vos courriels";
+"Retour à la connexion" = "Retour à la connexion";
+"OU" = "OU";
+"Confirmer" = "Confirmer";
+"Vérification…" = "Vérification…";
+"Vous n'avez rien reçu ?" = "Vous n'avez rien reçu ?";
+"Renvoyer le code" = "Renvoyer le code";
+"Changer de courriel" = "Changer de courriel";
+"Bienvenue" = "Bienvenue";
+"Content de vous revoir" = "Content de vous revoir";
+"Créer votre compte" = "Créer votre compte";
+"Retrouvez vos points, vos récompenses et les offres de vos restaurants préférés." = "Retrouvez vos points, vos récompenses et les offres de vos restaurants préférés.";
+"Connectez-vous pour accéder à vos points et récompenses." = "Connectez-vous pour accéder à vos points et récompenses.";
+"Aucune carte requise — rejoignez votre restaurant préféré en quelques secondes." = "Aucune carte requise — rejoignez votre restaurant préféré en quelques secondes.";
+"Recevoir le code" = "Recevoir le code";
+"Créer mon compte" = "Créer mon compte";
+"Création…" = "Création…";
+"Connexion…" = "Connexion…";
+"Conditions d'utilisation" = "Conditions d'utilisation";
+"Politique de confidentialité" = "Politique de confidentialité";
+"Fermer" = "Fermer";
+
+/* Customer and owner navigation */
+"Accueil" = "Accueil";
+"Commander" = "Commander";
+"Scanner" = "Scanner";
+"Récompenses" = "Récompenses";
+"Profil" = "Profil";
+"Vue d'ensemble" = "Vue d'ensemble";
+"Commandes" = "Commandes";
+"Aucune commande" = "Aucune commande";
+"Les nouvelles commandes de vos établissements apparaîtront ici." = "Les nouvelles commandes de vos établissements apparaîtront ici.";
+"Espace propriétaire" = "Espace propriétaire";
+"Vos établissements" = "Vos établissements";
+"Passez d'une adresse à l'autre tout en gardant une identité de marque unifiée." = "Passez d'une adresse à l'autre tout en gardant une identité de marque unifiée.";
+"Ce mois-ci" = "Ce mois-ci";
+"Ventes" = "Ventes";
+"Adresses" = "Adresses";
+"Statut" = "Statut";
+"Actif" = "Actif";
+"Propulsé par Minerva Flow" = "Propulsé par Minerva Flow";

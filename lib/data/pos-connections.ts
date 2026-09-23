@@ -133,6 +133,21 @@ export async function getRestaurantIdBySquareMerchant(merchantId: string): Promi
   return data?.restaurant_id ?? null;
 }
 
+/** Restaurant id for a provider's external location/account identifier. */
+export async function getRestaurantIdByPosExternalAccount(
+  provider: PosProvider,
+  externalAccountId: string
+): Promise<string | null> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("pos_connections")
+    .select("restaurant_id")
+    .eq("provider", provider)
+    .eq("external_account_id", externalAccountId)
+    .maybeSingle();
+  return data?.restaurant_id ?? null;
+}
+
 export async function updatePosConnectionStatus(
   restaurantId: string,
   provider: PosProvider,

@@ -1,8 +1,19 @@
-# Minerva Flow — Spécification mobile white-label iOS & Android
+# Minerva Flow — Cible white-label mobile iOS & Android
+
+> **Nature de ce document : spécification cible, pas liste de fonctionnalités actuellement livrées.** Mise à jour le 23 septembre 2026.
+
+## État produit actuel
+
+- Une application iOS native existe pour les parcours client et propriétaire/gérant. Le rôle est résolu après authentification; la navigation iPad prend en charge le portrait et le paysage.
+- Le build iOS `1.0 (11)` a été archivé et exporté localement, mais il n’a pas été téléversé sur TestFlight. Le lien bêta existant ne confirme pas sa disponibilité.
+- L’espace web prend en charge la gestion par workspace, une identité de marque, plusieurs restaurants, les commandes, la fidélisation et des intégrations selon leur configuration.
+- Ce document décrit le niveau cible d’une application autonome white-label. Il ne faut pas présenter les fonctions ci-dessous — notamment Android, livraison dynamique, tarification par distance/temps et déploiement automatisé — comme déjà actives chez chaque restaurant.
+
+Pour comprendre les parcours existants, consulter le [guide produit propriétaire et client](PRODUCT_GUIDE_OWNER_CLIENT.md). Pour le statut TestFlight et les conditions de validation, consulter [l’audit mobile](MOBILE_APP_AUDIT_AND_ROADMAP.md).
 
 ## Objectif
 
-Fournir à chaque client une application mobile complète, personnalisée à sa marque, disponible sur iOS et Android, tout en conservant une base de code et des systèmes fonctionnels communs.
+**Objectif à atteindre :** fournir à chaque client une application mobile complète, personnalisée à sa marque, disponible sur iOS et Android, tout en conservant une base de code et des systèmes fonctionnels communs.
 
 Chaque déploiement client doit pouvoir remplacer le nom, l’icône, les couleurs, les textes, les restaurants, les intégrations et les règles métier sans fork du produit.
 
@@ -227,4 +238,3 @@ Le handoff doit contenir :
 - les comptes de démonstration ;
 - le rapport de tests et les limites connues ;
 - le plan de support, rollback et renouvellement des certificats.
-

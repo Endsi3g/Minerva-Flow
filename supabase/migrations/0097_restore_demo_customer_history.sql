@@ -8,6 +8,11 @@
 
 begin;
 
+-- Restore history only when the dedicated demo restaurant and customer exist.
+do $$ begin
+if exists (select 1 from restaurants where id = '60a59423-c7a0-4d92-a866-3058f34c17d1')
+and exists (select 1 from customers where id = 'b6bdc959-a32f-4239-bd66-d69756c6f208') then
+
 update customers
 set loyalty_points = 180,
     visit_count = 4,
@@ -22,5 +27,8 @@ insert into loyalty_transactions (restaurant_id, customer_id, type, amount_spent
 ('60a59423-c7a0-4d92-a866-3058f34c17d1', 'b6bdc959-a32f-4239-bd66-d69756c6f208', 'visite', 44.00, 55, '2026-08-27 12:00:00+00'),
 ('60a59423-c7a0-4d92-a866-3058f34c17d1', 'b6bdc959-a32f-4239-bd66-d69756c6f208', 'visite', 40.00, 50, '2026-09-03 12:00:00+00'),
 ('60a59423-c7a0-4d92-a866-3058f34c17d1', 'b6bdc959-a32f-4239-bd66-d69756c6f208', 'ajustement', null, -10, '2026-09-04 12:00:00+00');
+
+end if;
+end $$;
 
 commit;

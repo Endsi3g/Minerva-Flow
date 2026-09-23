@@ -12,6 +12,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import type { Customer } from "@/lib/types";
 import { type LoyaltyTierThresholds, getLoyaltyTier } from "@/lib/loyalty-tiers";
+import { getDaysUntilBirthday } from "@/lib/loyalty/birthday";
 import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
 import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
 import { TablePagination } from "@/components/minerva/TablePagination";
@@ -233,6 +234,8 @@ function IdentificationAuComptoirCard({
         setFound(result.customer);
         setQuery("");
       }
+    } catch {
+      notifyError("La recherche n’a pas abouti. Vérifiez la connexion et réessayez.");
     } finally {
       setIsResolving(false);
     }
@@ -281,6 +284,8 @@ function IdentificationAuComptoirCard({
       } else {
         notifyError("L'enregistrement de la visite a échoué.");
       }
+    } catch {
+      notifyError("La visite n’a pas pu être enregistrée. Réessayez.");
     } finally {
       setIsLogging(false);
     }
@@ -476,26 +481,6 @@ function CustomerOriginCard({ customers }: { customers: Customer[] }) {
   );
 }
 
-function getDaysUntilBirthday(birthdayStr?: string | null): number | null {
-  if (!birthdayStr) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const currentYear = today.getFullYear();
-  const parts = birthdayStr.split("-");
-  const month = parseInt(parts.length === 3 ? parts[1] : parts[0], 10) - 1;
-  const day = parseInt(parts.length === 3 ? parts[2] : parts[1], 10);
-  if (isNaN(month) || isNaN(day)) return null;
-
-  let nextBday = new Date(currentYear, month, day);
-  nextBday.setHours(0, 0, 0, 0);
-  if (nextBday.getTime() < today.getTime()) {
-    nextBday = new Date(currentYear + 1, month, day);
-    nextBday.setHours(0, 0, 0, 0);
-  }
-  const diffMs = nextBday.getTime() - today.getTime();
-  return Math.round(diffMs / (1000 * 60 * 60 * 24));
-}
-
 function DigitalLoyaltyPassModal({
   customer,
   restaurantName,
@@ -634,10 +619,12 @@ function DigitalLoyaltyPassModal({
 
 function BirthdayPerksCard({
   restaurantId,
+  restaurantTimezone,
   customers,
   onGranted,
 }: {
   restaurantId: string | null;
+  restaurantTimezone: string;
   customers: Customer[];
   onGranted: (updated: Customer) => void;
 }) {
@@ -647,19 +634,21 @@ function BirthdayPerksCard({
     return customers
       .map((c) => ({
         customer: c,
-        daysUntil: getDaysUntilBirthday(c.birthday),
+        daysUntil: getDaysUntilBirthday(c.birthday, new Date(), restaurantTimezone),
       }))
       .filter((item): item is { customer: Customer; daysUntil: number } => item.daysUntil !== null && item.daysUntil <= 14)
       .sort((a, b) => a.daysUntil - b.daysUntil);
-  }, [customers]);
+  }, [customers, restaurantTimezone]);
 
   async function handleGrantBonus(customer: Customer) {
     if (!restaurantId) return;
     setGrantingId(customer.id);
     try {
-      const updated = await grantBirthdayBonusAction(restaurantId, customer.id, 50);
-      if (updated) {
-        onGranted(updated);
+      const updated = await grantBirthdayBonusAction(restaurantId, customer.id);
+      if (updated?.alreadyGranted) {
+        toast.info(`Le bonus d'anniversaire a déjà été accordé à ${customer.name} cette année.`);
+      } else if (updated) {
+        onGranted(updated.customer);
         toast.success(`Cadeau d'anniversaire (+50 pts) accordé à ${customer.name} ! 🎂`);
       } else {
         notifyError("L'attribution du bonus a échoué.");
@@ -800,12 +789,14 @@ function AnnouncementModal({
 export function FidelisationView({
   restaurantId,
   restaurantName = "Restaurant",
+  restaurantTimezone = "America/Toronto",
   initialCustomers,
   loyaltyPointsPerDollar,
   loyaltyTierThresholds,
 }: {
   restaurantId: string | null;
   restaurantName?: string;
+  restaurantTimezone?: string;
   initialCustomers: Customer[];
   loyaltyPointsPerDollar: number;
   loyaltyTierThresholds: LoyaltyTierThresholds;
@@ -879,6 +870,7 @@ export function FidelisationView({
         <RewardValidationCard restaurantId={restaurantId!} />
         <BirthdayPerksCard
           restaurantId={restaurantId}
+          restaurantTimezone={restaurantTimezone}
           customers={customers}
           onGranted={(updated) => {
             setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
@@ -931,7 +923,7 @@ export function FidelisationView({
             </THead>
             <tbody>
               {visible.map((c) => {
-                const daysUntilBday = getDaysUntilBirthday(c.birthday);
+                const daysUntilBday = getDaysUntilBirthday(c.birthday, new Date(), restaurantTimezone);
                 return (
                   <Tr key={c.id} onClick={() => router.push(`/fidelisation/${c.id}`)}>
                     <Td className="font-semibold">

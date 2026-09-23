@@ -8,6 +8,18 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     var localeIdentifier: String { self == .fr ? "fr_CA" : "en_CA" }
 }
 
+enum AppLanguagePreference {
+    static let key = "appLanguage"
+
+    /// Persist a French first-launch default so every @AppStorage-backed
+    /// surface observes the same value from the app's first render. Preserve
+    /// an explicit English choice across future launches and upgrades.
+    static func ensureFrenchDefault(in defaults: UserDefaults = .standard) {
+        guard defaults.object(forKey: key) == nil else { return }
+        defaults.set(AppLanguage.fr.rawValue, forKey: key)
+    }
+}
+
 struct LanguageMenu: View {
     @Binding var language: AppLanguage
 

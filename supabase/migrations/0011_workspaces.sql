@@ -24,6 +24,9 @@ drop policy if exists "company_members_select" on workspace_members;
 drop policy if exists "company_members_insert" on workspace_members;
 drop policy if exists "company_members_update" on workspace_members;
 drop policy if exists "company_members_delete" on workspace_members;
+-- The restaurant visibility policy also calls is_company_member() from
+-- 0003_companies.sql, so remove it before dropping that function.
+drop policy if exists "restaurants_member_select" on restaurants;
 
 drop function if exists is_company_member(uuid, member_role[]);
 

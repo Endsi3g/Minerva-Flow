@@ -16,6 +16,7 @@ type OfferRow = {
   included_items: string[] | null;
   excluded_items: string[] | null;
   active: boolean;
+  is_birthday_special?: boolean | null;
   starts_at: string | null;
   ends_at: string | null;
   created_at: string;
@@ -63,6 +64,7 @@ function mapOffer(row: OfferRow): Offer {
     includedItems: row.included_items ?? [],
     excludedItems: row.excluded_items ?? [],
     active: row.active,
+    isBirthdaySpecial: row.is_birthday_special === true,
     startsAt: row.starts_at,
     endsAt: row.ends_at,
     createdAt: row.created_at,
@@ -79,6 +81,7 @@ export type OfferInput = {
   includedItems?: string[];
   excludedItems?: string[];
   active?: boolean;
+  isBirthdaySpecial?: boolean;
   startsAt?: string | null;
   endsAt?: string | null;
 };
@@ -107,6 +110,7 @@ export async function getActiveOffersForCustomers(restaurantId: string): Promise
     .from("offers")
     .select("*")
     .eq("restaurant_id", restaurantId)
+    .eq("is_birthday_special", false)
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];
@@ -128,6 +132,7 @@ export async function getActiveOffersForRestaurant(restaurantId: string): Promis
     .eq("active", true)
     .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
     .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
+    .eq("is_birthday_special", false)
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];
@@ -161,6 +166,7 @@ export async function createOffer(restaurantId: string, input: OfferInput): Prom
       included_items: input.includedItems ?? [],
       excluded_items: input.excludedItems ?? [],
       active: input.active ?? true,
+      is_birthday_special: input.isBirthdaySpecial ?? false,
       starts_at: input.startsAt ?? null,
       ends_at: input.endsAt ?? null,
       created_by: user?.id ?? null,
@@ -171,7 +177,7 @@ export async function createOffer(restaurantId: string, input: OfferInput): Prom
   if (error || !data) return null;
   const offer = mapOffer(data as OfferRow);
 
-  if (isEffectivelyLive(offer)) {
+  if (isEffectivelyLive(offer) && !offer.isBirthdaySpecial) {
     await notifyCustomers({
       restaurantId,
       type: "offer.published",
@@ -194,13 +200,22 @@ export async function updateOffer(
 
   const { data: existing } = await supabase
     .from("offers")
-    .select("active, starts_at, ends_at")
+    .select("active, starts_at, ends_at, is_birthday_special")
     .eq("restaurant_id", restaurantId)
     .eq("id", offerId)
     .maybeSingle();
-  const existingRow = existing as { active: boolean; starts_at: string | null; ends_at: string | null } | null;
+  const existingRow = existing as {
+    active: boolean;
+    starts_at: string | null;
+    ends_at: string | null;
+    is_birthday_special: boolean;
+  } | null;
   const wasLive = existingRow
-    ? isEffectivelyLive({ active: existingRow.active, startsAt: existingRow.starts_at, endsAt: existingRow.ends_at })
+    ? !existingRow.is_birthday_special && isEffectivelyLive({
+        active: existingRow.active,
+        startsAt: existingRow.starts_at,
+        endsAt: existingRow.ends_at,
+      })
     : false;
 
   const patch: Record<string, unknown> = {};
@@ -213,6 +228,7 @@ export async function updateOffer(
   if (input.includedItems !== undefined) patch.included_items = input.includedItems;
   if (input.excludedItems !== undefined) patch.excluded_items = input.excludedItems;
   if (input.active !== undefined) patch.active = input.active;
+  if (input.isBirthdaySpecial !== undefined) patch.is_birthday_special = input.isBirthdaySpecial;
   if (input.startsAt !== undefined) patch.starts_at = input.startsAt;
   if (input.endsAt !== undefined) patch.ends_at = input.endsAt;
 
@@ -227,7 +243,7 @@ export async function updateOffer(
   if (error || !data) return null;
   const offer = mapOffer(data as OfferRow);
 
-  if (isEffectivelyLive(offer) && !wasLive) {
+  if (isEffectivelyLive(offer) && !offer.isBirthdaySpecial && !wasLive) {
     await notifyCustomers({
       restaurantId,
       type: "offer.published",

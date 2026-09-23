@@ -1,8 +1,7 @@
 # HANDOFF & DOSSIER DE VÉRIFICATION — MINERVA FLOW
 
-> **Version** : 2.36.0 — Clôture de Sprint & Déploiement Pilote (15 septembre 2026)  
-> **Document de référence pour le passage de relais et la validation complète de la plateforme.**  
-> Ce document synthétise l'intégralité des fonctionnalités livrées, les architectures techniques, les tables de base de données, les protocoles de conformité légale et le guide de vérification pas à pas.
+> **Base historique** : 2.36.0 — clôture de sprint du 15 septembre 2026.
+> **État produit actualisé** : 23 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
 
 ---
 
@@ -22,7 +21,7 @@
 4. [Schémas de Base de Données & Migrations Supabase](#4-schémas-de-base-de-données--migrations-supabase)
 5. [Guide de Vérification Pas-à-Pas (Validation Complète)](#5-guide-de-vérification-pas-à-pas-validation-complète)
 6. [État des Intégrations & Roadmap Résiduelle](#6-état-des-intégrations--roadmap-résiduelle)
-7. [App Native Owner (iPad/iPhone) — Cadrage & Architecture Cible](#7-app-native-owner-ipadiphone--cadrage--architecture-cible)
+7. [Application iOS — rôles livrés et prochaine publication](#7-application-ios--rôles-livrés-et-prochaine-publication)
 8. [Session du 2026-09-10 — Synchro POS Bidirectionnelle & Infrastructure](#8-session-du-2026-09-10--synchro-pos-bidirectionnelle--infrastructure)
 
 ---
@@ -30,7 +29,7 @@
 ## 1. Identité de Marque & Directives Inviolables
 
 * **Nom de marque officiel** : **`Minerva Flow`** (ou **`Flow`** en contexte abrégé dans l'interface).
-* **RÈGLE STRICTE** : Le terme **`Flow par Minerva`** est **FORMELLEMENT BANNI** de toutes les pages, courriels, documentations, métadonnées et prompts d'IA.
+* **RÈGLE STRICTE** : utiliser uniquement le nom officiel **Minerva Flow** dans les pages, courriels, documentations, métadonnées et prompts d'IA.
 * **Entité légale** : `Minerva Technologies Inc.`
 * **Siège social & juridiction** : Montréal (Québec), Canada — Régie par la législation canadienne LCAP / CASL.
 * **Domaine officiel** : `https://minervaflow.app`
@@ -347,25 +346,26 @@ npm run test lib/__tests__/campaigns-and-casl-consent.test.ts
 
 ---
 
-## 7. App Native Owner (iPad/iPhone) — Cadrage & Architecture Cible
+## 7. Application iOS — rôles livrés et prochaine publication
 
-L'application native propriétaire (**Minerva Flow Owner**) est conçue pour les gérants et chefs d'exploitation de restaurant en salle ou en cuisine, sans accès permanent à un ordinateur de bureau :
+L’application SwiftUI utilise un seul bundle et dirige chaque compte vers une expérience client ou propriétaire/gérant après résolution du rôle.
 
-### 7.1 Rôle Opérationnel & Cas d'Usage Terrain
-1. **Supervision du Service en Temps Réel** :
-   - Flux d'encaissement en direct, nombre de couverts servis minute par minute, ticket moyen instantané et comparaison dynamique avec le même service de la semaine passée (S-1).
-2. **Mode Rush (« Busy-Mode ») & Délais ETA en 1 Tap** :
-   - Capacité pour le gérant ou le chef de cuisine d'ajuster instantanément le délai estimé de commande (`estimated_ready_minutes`, +15 min, +30 min) ou de basculer en mode « Service Saturé », affichant une bannière d'attente sur la commande mobile sans interrompre le POS.
-3. **Alertes Push Proactives Flow AI** :
-   - Notification native lors du franchissement de seuils critiques : dérive du *Prime Cost* (> 60 %), rupture imminente d'un ingrédient clé liée à la popularité d'un plat, ou signalement d'un avis client défavorable (1-3 étoiles) nécessitant une réponse immédiate.
-4. **Validation des Clôtures de Service** :
-   - Rapprochement rapide caisse/recettes, validation des heures du personnel de service et approbation du rapport journalier avant archivage.
+### 7.1 Parcours existants
 
-### 7.2 Architecture & Pré-requis Techniques
-- **Backend unifié** : Consommation directe des routes API REST existantes (`/api/orders`, `/api/lifecycle/track`, `/api/pos/*`, `/api/ai/*`) et des tables Supabase sous RLS stricte (`role: owner | manager`).
-- **Authentification** : Supabase Auth (Magic Link, Apple Sign-In natif).
-- **Notifications Push** : Service APNs (Apple Push Notification service) orchestré côté serveur, complétant le canal Twilio SMS.
-- **Statut d'Avancement** : Spécifications fonctionnelles et routes API sous-jacentes opérationnelles ; développement du client natif planifié post-déploiement du pilote.
+- **Client** : accueil, restaurants et menus, commande lorsque le restaurant l’a activée, code de fidélité, offres, cartes, profil et partage de parrainage.
+- **Propriétaire/gérant** : Aperçu, Commandes, Menu, Fidélisation et Gestion. Les autres fonctions d’administration demeurent principalement dans l’application web.
+- **iPad** : navigation à colonnes en taille régulière et orientations portrait/paysage.
+- **Identification en caisse** : la recherche par téléphone masque le solde jusqu’à confirmation avec le code temporaire à six chiffres du client; le code présenté directement permet aussi de retrouver le compte.
+- **Parrainage** : canal QR/partage/lien/code/direct conservé avec les événements; l’activité de conversion n’est comptabilisée qu’après crédit de la conversion.
+
+### 7.2 État de publication au 23 septembre 2026
+
+- iOS `1.0 (11)` : archive Release et IPA exportés localement; UUID du dSYM Sentry vérifié contre le framework.
+- TestFlight : build 11 non téléversé, faute d’authentification App Store Connect. Le lien bêta existant ne confirme pas la présence de ce build.
+- Le compte propriétaire natif est livré comme une tranche opérationnelle; ne pas lui attribuer les écrans/alertes de la roadmap non implémentés.
+- La livraison dynamique au tarif par distance/temps, Android white-label et l’automatisation d’une app par restaurant restent à traiter comme objectifs, sauf validation d’un déploiement spécifique.
+
+Voir [`docs/MOBILE_APP_AUDIT_AND_ROADMAP.md`](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md) pour les contrôles requis avant diffusion.
 
 ---
 

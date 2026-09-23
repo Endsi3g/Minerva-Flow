@@ -7,10 +7,15 @@ import { mapLink, type CustomerReferralLinkRow } from "@/lib/data/customer-refer
 import { getRestaurantOrderSettings } from "@/lib/data/menu-shares";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
 import { quoteDelivery } from "@/lib/orders/delivery-pricing";
+import type { DeliveryQuote } from "@/lib/orders/delivery-pricing";
+import { geocodeAddress } from "@/lib/geocode";
 import { notifyRestaurant } from "@/lib/data/notifications";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { formatCurrency } from "@/lib/utils";
 import { computeEstimatedReadyAt } from "@/lib/orders/eta";
+import { validateRequestedReadyAt } from "@/lib/orders/scheduling";
+import { getPublicCheckoutOptions } from "@/lib/orders/checkout-options";
+import { createPortalOrderCheckoutSession } from "@/lib/stripe/connect";
 import type {
   Customer,
   CustomerReferralLink,
@@ -262,17 +267,35 @@ export type PortalOrderCartLine = {
   quantity: number;
 };
 
+export async function getPortalDeliveryQuote(customer: Customer, address: string): Promise<DeliveryQuote> {
+  const normalizedAddress = address.trim();
+  if (!normalizedAddress || normalizedAddress.length > 240) {
+    return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "missing_location" };
+  }
+  const admin = createAdminClient();
+  const [settings, restaurantResult] = await Promise.all([
+    getRestaurantOrderSettings(admin, customer.restaurantId),
+    admin.from("restaurants").select("address, city, province").eq("id", customer.restaurantId).maybeSingle(),
+  ]);
+  if (!settings) return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "disabled" };
+  const restaurant = restaurantResult.data as { address?: string | null; city?: string | null; province?: string | null } | null;
+  const destination = await geocodeAddress(normalizedAddress, restaurant?.city ?? "", restaurant?.province ?? undefined);
+  const quote = quoteDelivery(
+    settings.delivery.config,
+    { lat: settings.delivery.restaurantLat, lng: settings.delivery.restaurantLng },
+    destination ? { lat: destination.lat, lng: destination.lng } : null
+  );
+  return quote.reason === "missing_location" ? { ...quote, available: false } : quote;
+}
+
 export type SubmitPortalOrderResult =
   | { ok: false }
-  | { ok: true; orderId: string; estimatedReadyAt: string | null };
+  | { ok: true; orderId: string; estimatedReadyAt: string | null; paymentUrl: string | null };
 
 /**
- * Pay-on-site ordering from an already-authenticated portal customer — the
- * order lands directly in the restaurant's own /commandes queue as
- * 'soumise', same entry point staff already use for a QR-code table order
- * (see submitPublicOrder in customer-referrals.ts). Online payment isn't
- * wired here: payment_status is always 'non_requis', staff collects
- * payment in person. `customer` is trusted here — the caller
+ * Ordering from an already-authenticated portal customer — the order lands
+ * directly in the restaurant's own /commandes queue as 'soumise', and can
+ * optionally use hosted Stripe Checkout. `customer` is trusted here — the caller
  * (submitPortalOrderAction) has already confirmed the id belongs to the
  * authenticated session, same pattern as updateMyProfileAction.
  */
@@ -282,7 +305,9 @@ export async function submitPortalOrder(
   tipAmount: number,
   paymentMethod: string | null,
   source: OrderSource = "web",
-  delivery?: { address: string; latitude?: number | null; longitude?: number | null }
+  delivery?: { address: string },
+  requestedReadyAtLocal?: string | null,
+  payOnline = false
 ): Promise<SubmitPortalOrderResult> {
   if (cart.length === 0) return { ok: false };
 
@@ -293,7 +318,7 @@ export async function submitPortalOrder(
   if (!allowed) return { ok: false };
 
   const admin = createAdminClient();
-  const [orderSettings, menuItemsResult] = await Promise.all([
+  const [orderSettings, menuItemsResult, restaurantResult] = await Promise.all([
     getRestaurantOrderSettings(admin, customer.restaurantId),
     admin
       .from("menu_items")
@@ -304,8 +329,20 @@ export async function submitPortalOrder(
         "id",
         cart.map((l) => l.menuItemId)
       ),
+    admin.from("restaurants").select("timezone, name, city, province").eq("id", customer.restaurantId).maybeSingle(),
   ]);
   if (!orderSettings) return { ok: false };
+  const checkoutOptions = getPublicCheckoutOptions(
+    orderSettings.orderModesEnabled,
+    orderSettings.onlinePaymentEnabled && Boolean(orderSettings.stripeConnectAccountId),
+    orderSettings.delivery.config.enabled
+  );
+  const fulfillmentMode = delivery ? "livraison" : "sur_place";
+  if (!checkoutOptions.fulfillmentModes.includes(fulfillmentMode)) return { ok: false };
+  if (payOnline ? !checkoutOptions.canPayOnline : !checkoutOptions.canPayAtReceipt) return { ok: false };
+
+  const schedule = validateRequestedReadyAt(requestedReadyAtLocal, restaurantResult.data?.timezone ?? "America/Toronto");
+  if (!schedule.ok) return { ok: false };
 
   const menuItemById = new Map(
     ((menuItemsResult.data as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
@@ -321,17 +358,32 @@ export async function submitPortalOrder(
   if (!pricing) return { ok: false };
   const { lineItems, subtotal, taxAmount, tipAmount: appliedTip, total } = pricing;
 
+  const restaurantAddress = restaurantResult.data as { timezone?: string | null; city?: string | null; province?: string | null; name?: string | null } | null;
+  if (delivery && (!delivery.address.trim() || delivery.address.length > 240)) return { ok: false };
+  let deliveryCoordinates: { lat: number; lng: number } | null = null;
+  if (delivery) {
+    // Delivery fees/radius must be derived from the submitted address on the
+    // server. Never trust client coordinates: a modified app/request could
+    // otherwise quote a nearby address while delivering somewhere else.
+    deliveryCoordinates = await geocodeAddress(
+      delivery.address,
+      restaurantAddress?.city ?? "",
+      restaurantAddress?.province ?? undefined
+    );
+  }
   const deliveryQuote = delivery
     ? quoteDelivery(
         orderSettings.delivery.config,
         { lat: orderSettings.delivery.restaurantLat, lng: orderSettings.delivery.restaurantLng },
-        { lat: delivery.latitude ?? null, lng: delivery.longitude ?? null }
+        deliveryCoordinates
       )
     : { available: true, fee: 0, distanceKm: null, etaMinutes: null };
   if (delivery && (!delivery.address.trim() || !deliveryQuote.available)) return { ok: false };
+  if (delivery && deliveryQuote.reason === "missing_location") return { ok: false };
   const deliveryFee = delivery ? deliveryQuote.fee : 0;
 
-  const estimatedReadyAt = computeEstimatedReadyAt(orderSettings.defaultPrepMinutes, orderSettings.isBusy);
+  const computedReadyAt = computeEstimatedReadyAt(orderSettings.defaultPrepMinutes, orderSettings.isBusy);
+  const estimatedReadyAt = schedule.requestedReadyAt ? new Date(schedule.requestedReadyAt) : computedReadyAt;
 
   const baseOrderFields: Record<string, unknown> = {
     restaurant_id: customer.restaurantId,
@@ -343,19 +395,23 @@ export async function submitPortalOrder(
     tip_amount: appliedTip,
     total: total + deliveryFee,
     payment_method: paymentMethod,
-    payment_status: "non_requis",
-    fulfillment_mode: "sur_place",
+    payment_status: payOnline ? "en_attente" : "non_requis",
+    fulfillment_mode: fulfillmentMode,
     is_public_request: true,
     customer_id: customer.id,
     notes: `[${source}]`,
     estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
     delivery_address: delivery?.address.trim() ?? null,
-    delivery_lat: delivery?.latitude ?? null,
-    delivery_lng: delivery?.longitude ?? null,
+    delivery_lat: deliveryCoordinates?.lat ?? null,
+    delivery_lng: deliveryCoordinates?.lng ?? null,
     delivery_distance_km: deliveryQuote.distanceKm,
     delivery_fee: deliveryFee,
     delivery_eta_minutes: deliveryQuote.etaMinutes,
   };
+  if (schedule.requestedReadyAt) {
+    baseOrderFields.requested_ready_at = schedule.requestedReadyAt;
+    baseOrderFields.order_kind = "standard";
+  }
 
   let { data: order, error: orderError } = await admin
     .from("orders")
@@ -380,15 +436,42 @@ export async function submitPortalOrder(
       quantity: l.quantity,
     }))
   );
-  if (itemsError) return { ok: false };
+  if (itemsError) {
+    await admin.from("orders").update({ status: "annulee", payment_status: "echoue" }).eq("id", orderId);
+    return { ok: false };
+  }
+
+  let paymentUrl: string | null = null;
+  if (payOnline) {
+    try {
+      const checkout = await createPortalOrderCheckoutSession({
+        orderId,
+        restaurantId: customer.restaurantId,
+        connectedAccountId: orderSettings.stripeConnectAccountId!,
+        amountCents: Math.round((total + deliveryFee) * 100),
+        restaurantName: restaurantAddress?.name ?? "Minerva Flow",
+        customerEmail: customer.email,
+      });
+      const { error: sessionSaveError } = await admin.from("orders")
+        .update({ stripe_checkout_session_id: checkout.id })
+        .eq("id", orderId)
+        .eq("restaurant_id", customer.restaurantId);
+      if (sessionSaveError) throw sessionSaveError;
+      paymentUrl = checkout.url;
+    } catch (error) {
+      console.error("submitPortalOrder: Stripe Checkout creation failed", error);
+      await admin.from("orders").update({ status: "annulee", payment_status: "echoue" }).eq("id", orderId);
+      return { ok: false };
+    }
+  }
 
   await notifyRestaurant({
     restaurantId: customer.restaurantId,
     type: "order.created",
     title: "Nouvelle commande — portail client",
-    body: `${customer.name} — ${formatCurrency(total)}`,
+    body: `${customer.name} — ${formatCurrency(total + deliveryFee)}${payOnline ? " · paiement en attente" : ""}`,
     link: "/commandes",
   });
 
-  return { ok: true, orderId, estimatedReadyAt: estimatedReadyAt?.toISOString() ?? null };
+  return { ok: true, orderId, estimatedReadyAt: estimatedReadyAt?.toISOString() ?? null, paymentUrl };
 }

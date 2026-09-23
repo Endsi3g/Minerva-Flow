@@ -9,6 +9,16 @@
 
 begin;
 
+-- A clean staging database has no pre-provisioned public discovery tenants.
+-- Keep these demo-only fixtures optional until all four demo restaurants exist.
+do $$ begin
+if (select count(*) from restaurants where id in (
+  'c122ce6e-7cbb-404b-b712-6c055154d7c2',
+  '94ddcaa0-51e3-4bd2-9d1e-30e2d696213d',
+  '996dd4ba-1059-4cd9-8ea9-8436b860ec1b',
+  'a991f13e-1f6a-46c2-b024-b4820eb97180'
+)) = 4 then
+
 -- Minerva — Plateau Mont-Royal
 insert into menu_items (restaurant_id, name, category, price, description, active) values
 ('c122ce6e-7cbb-404b-b712-6c055154d7c2', 'Latte', 'Boissons', 5.25, 'Espresso, lait mousseux, une touche de vanille.', true),
@@ -90,5 +100,8 @@ on conflict do nothing;
 update restaurants set image_urls = array[
   'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1000&q=80'
 ] where id = 'a991f13e-1f6a-46c2-b024-b4820eb97180' and coalesce(array_length(image_urls, 1), 0) = 0;
+
+end if;
+end $$;
 
 commit;

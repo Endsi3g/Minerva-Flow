@@ -247,8 +247,7 @@ export function IntegrationsView({
             Services & Outils Connectés
           </h1>
           <p className="mt-1 text-[13.5px] leading-relaxed text-mv-ink-soft max-w-3xl">
-            Centralisez votre système de caisse, vos passerelles d&apos;encaissement, votre comptabilité
-            et vos avis clients. Toutes les données sont synchronisées automatiquement et sans saisie manuelle.
+            Consultez les services vraiment associés à cet établissement. Une carte « non connecté » décrit une option disponible; elle ne signifie pas qu’un fournisseur est déjà relié.
           </p>
         </div>
 
@@ -299,9 +298,9 @@ export function IntegrationsView({
             </span>
           </div>
           <div className="mt-2">
-            <span className="font-display text-[17px] font-semibold text-mv-ink">En continu & Automatique</span>
+              <span className="font-display text-[17px] font-semibold text-mv-ink">Selon le service connecté</span>
           </div>
-          <p className="mt-1 text-[11.5px] text-mv-ink-faint">Ventes, clôtures et stocks actualisés en direct</p>
+          <p className="mt-1 text-[11.5px] text-mv-ink-faint">Les caisses connectées se synchronisent selon leur cycle; une synchronisation manuelle est aussi possible.</p>
         </div>
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-xs">
@@ -501,6 +500,17 @@ export function IntegrationsView({
                     <span className="font-semibold text-mv-ink">Bénéfice direct : </span>
                     {getOperationalSummary(selectedIntegration)}
                   </div>
+                  {selectedIntegration.category === "caisse" && (
+                    <div className="mt-3 rounded-xl border border-mv-border-soft p-3 text-[12px]">
+                      <p className="font-semibold text-mv-ink">Prérequis de connexion</p>
+                      <p className="mt-1 leading-relaxed text-mv-ink-soft">
+                        {String(selectedIntegration.details?.prerequisite ?? "Autorisez Minerva Flow dans les paramètres de votre fournisseur.")}
+                      </p>
+                      <p className="mt-2 text-mv-ink-faint">
+                        Application configurée côté Minerva : {selectedIntegration.details?.platformAppConfigured ? "oui" : "non — l’accès partenaire ou les identifiants doivent d’abord être configurés"}.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Status & Operational Box (Restaurateur-First, No Raw Dev JSON) */}
@@ -534,7 +544,7 @@ export function IntegrationsView({
 
                   <div className="flex items-center justify-between">
                     <span className="text-mv-ink-soft">Fréquence de relève</span>
-                    <span className="font-medium text-mv-ink">Automatique en continu</span>
+                    <span className="font-medium text-mv-ink">Selon le service; synchronisation manuelle possible</span>
                   </div>
                 </div>
 

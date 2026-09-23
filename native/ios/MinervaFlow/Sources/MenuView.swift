@@ -4,8 +4,8 @@ import SwiftUI
 /// category, build a cart with quantity steppers, then a real checkout
 /// sheet (tip selection, tax breakdown, payment method note, submission).
 /// Mirrors the web portal's MenuBrowserCard + CheckoutModal pair exactly —
-/// same pay-on-site model (no online payment wired in yet on either
-/// platform), same order landing in the restaurant's own /commandes queue
+/// including hosted Stripe checkout where the restaurant has Connect enabled,
+/// with payment state finalized only by the signed webhook.
 /// as a normal `soumise` order. The only structural difference from web:
 /// this talks to app/api/portal/menu and /orders instead of a Server
 /// Action, since native has no way to call one of those directly.
@@ -60,7 +60,13 @@ struct MenuView: View {
                             .padding(18)
                         }
                     } else if supabase.menuItems.isEmpty {
-                        emptyState
+                        ScrollView {
+                            VStack(spacing: 20) {
+                                emptyState
+                                mealSuggestionsSection
+                            }
+                            .padding(18)
+                        }
                     } else {
                         categoryGrid
                     }
@@ -94,6 +100,7 @@ struct MenuView: View {
                 if supabase.popularNearby.isEmpty {
                     await supabase.fetchPopularNearby()
                 }
+                await supabase.fetchMealSuggestions()
             }
             .refreshable { await supabase.fetchMenu() }
             .fullScreenCover(isPresented: $showScanner) {
@@ -104,6 +111,10 @@ struct MenuView: View {
                     lines: cartLines,
                     taxRate: supabase.taxRate,
                     acceptsTips: supabase.acceptsTips,
+                    canPayAtReceipt: supabase.canPayAtReceipt && !supabase.isUsingDemoMenuFallback,
+                    canPayOnline: supabase.canPayOnline && !supabase.isUsingDemoMenuFallback,
+                    pickupEnabled: supabase.pickupEnabled && !supabase.isUsingDemoMenuFallback,
+                    deliveryEnabled: supabase.deliveryEnabled && !supabase.isUsingDemoMenuFallback,
                     googleMapsUrl: supabase.restaurantGoogleMapsUrl,
                     onOrdered: {
                         cart = [:]
@@ -197,9 +208,104 @@ struct MenuView: View {
                     }
                 }
 
+                mealSuggestionsSection
+
                 Color.clear.frame(height: cartCount > 0 ? 80 : 8)
             }
             .padding(18)
+        }
+    }
+
+    private var mealSuggestionsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(isFrench ? "Proposer un plat" : "Suggest a dish")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+            Text(isFrench ? "Une idée pour le menu ? Les clients peuvent voter." : "Have a menu idea? Customers can vote for it.")
+                .font(.system(size: 11.5))
+                .foregroundStyle(MinervaColor.inkFaint)
+            MealSuggestionComposer(isFrench: isFrench)
+            if !supabase.customerMealSuggestions.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(supabase.customerMealSuggestions) { suggestion in
+                        HStack(spacing: 10) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(suggestion.title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                                if let description = suggestion.description, !description.isEmpty {
+                                    Text(description).font(.system(size: 11)).foregroundStyle(MinervaColor.inkFaint).lineLimit(2)
+                                }
+                            }
+                            Spacer(minLength: 4)
+                            Button {
+                                Task { _ = await supabase.voteForMealSuggestion(suggestion) }
+                            } label: {
+                                Label("\(suggestion.voteCount)", systemImage: suggestion.hasVoted ? "hand.thumbsup.fill" : "hand.thumbsup")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(suggestion.hasVoted ? MinervaColor.emeraldDark : MinervaColor.inkSoft)
+                            }
+                            .disabled(suggestion.hasVoted || suggestion.status != "open")
+                        }
+                        .padding(11)
+                        .background(MinervaColor.creamSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.border.opacity(0.7)))
+    }
+
+    private struct MealSuggestionComposer: View {
+        @EnvironmentObject private var supabase: SupabaseManager
+        let isFrench: Bool
+        @State private var title = ""
+        @State private var description = ""
+        @State private var submitting = false
+        @State private var message: String?
+
+        var body: some View {
+            VStack(spacing: 8) {
+                TextField(isFrench ? "Nom du plat" : "Dish name", text: $title)
+                    .textFieldStyle(.roundedBorder)
+                    .textInputAutocapitalization(.words)
+                    .accessibilityLabel(isFrench ? "Nom du plat suggéré" : "Suggested dish name")
+                TextField(isFrench ? "Détails facultatifs" : "Optional details", text: $description, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .lineLimit(2...4)
+                if let message {
+                    Text(message).font(.caption).foregroundStyle(MinervaColor.emeraldDark)
+                }
+                Button {
+                    submitting = true
+                    message = nil
+                    Task {
+                        let ok = await supabase.submitMealSuggestion(title: title, description: description)
+                        submitting = false
+                        if ok {
+                            title = ""
+                            description = ""
+                            message = isFrench ? "Merci, votre idée est proposée au restaurant." : "Thanks, your idea was sent to the restaurant."
+                        } else {
+                            message = isFrench ? "Échec de l’envoi. Vérifiez le nom et réessayez." : "Could not submit. Check the name and try again."
+                        }
+                    }
+                } label: {
+                    HStack {
+                        if submitting { ProgressView().tint(.white) }
+                        Text(submitting ? (isFrench ? "Envoi…" : "Sending…") : (isFrench ? "Proposer ce plat" : "Suggest this dish"))
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(MinervaColor.emerald)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .disabled(submitting || title.trimmingCharacters(in: .whitespacesAndNewlines).count < 3)
+            }
         }
     }
 
@@ -432,7 +538,8 @@ struct MenuView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 40)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 34)
     }
 }
 
@@ -581,22 +688,34 @@ struct CategoryItemListView: View {
 
 private let tipPresets: [Double] = [0, 0.10, 0.15, 0.20]
 
-/// Full checkout: line-item review, tip selection, tax breakdown, an
-/// optional payment-method note (pay-on-site — no card capture, same as
-/// web), then submission with real success/error states rather than just
-/// dismissing the sheet and hoping.
+/// Full checkout: line-item review, tip selection, tax breakdown, the
+/// restaurant's available fulfillment/payment choices, then submission
+/// with real success/error states rather than just dismissing and hoping.
 struct CheckoutSheet: View {
     let lines: [(item: NativeMenuItem, quantity: Int)]
     let taxRate: Double
     let acceptsTips: Bool
+    let canPayAtReceipt: Bool
+    let canPayOnline: Bool
+    let pickupEnabled: Bool
+    let deliveryEnabled: Bool
     var googleMapsUrl: String? = nil
     let onOrdered: () -> Void
 
     @EnvironmentObject var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     @State private var tipPct: Double?
     @State private var paymentMethod = ""
+    @State private var payOnline = false
+    @State private var paymentURL: URL?
+    @State private var deliverySelected = false
+    @State private var deliveryAddress = ""
+    @State private var deliveryQuote: PortalDeliveryQuote?
+    @State private var isQuotingDelivery = false
+    @State private var isScheduled = false
+    @State private var requestedReadyAt = Date(timeIntervalSince1970: Double((Int(Date().timeIntervalSince1970) / 900 + 1) * 900))
     @State private var status: Status = .idle
     @State private var estimatedReadyAt: Date?
 
@@ -606,7 +725,10 @@ struct CheckoutSheet: View {
     private var subtotal: Double { totals.subtotal }
     private var taxAmount: Double { totals.taxAmount }
     private var tipAmount: Double { totals.tipAmount }
-    private var total: Double { totals.total }
+    private var total: Double { totals.total + (deliverySelected ? (deliveryQuote?.fee ?? 0) : 0) }
+    private var checkoutAvailable: Bool {
+        (pickupEnabled || deliveryEnabled) && (canPayAtReceipt || canPayOnline)
+    }
 
     var body: some View {
         NavigationStack {
@@ -628,7 +750,11 @@ struct CheckoutSheet: View {
                 }
             }
         }
-        .onAppear { tipPct = acceptsTips ? 0.15 : nil }
+        .onAppear {
+            tipPct = acceptsTips ? 0.15 : nil
+            payOnline = !canPayAtReceipt && canPayOnline
+            deliverySelected = !pickupEnabled && deliveryEnabled
+        }
         .interactiveDismissDisabled(status == .submitting)
     }
 
@@ -684,6 +810,7 @@ struct CheckoutSheet: View {
                     totalRow("Sous-total", subtotal)
                     totalRow("Taxes", taxAmount)
                     if acceptsTips { totalRow("Pourboire", tipAmount) }
+                    if deliverySelected, let deliveryQuote { totalRow("Livraison · \(deliveryQuote.distanceKm.map { String(format: "%.1f km", $0) } ?? "distance estimée")", deliveryQuote.fee) }
                     Divider()
                     totalRow("Total", total, emphasized: true)
                 }
@@ -691,19 +818,129 @@ struct CheckoutSheet: View {
                 .background(MinervaColor.creamSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Comment payez-vous en salle ?")
-                        .font(.system(size: 11.5, weight: .semibold))
+                if deliveryEnabled {
+                    VStack(alignment: .leading, spacing: 9) {
+                        Text("Réception")
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundStyle(MinervaColor.inkSoft)
+                        if pickupEnabled {
+                            HStack(spacing: 8) {
+                                paymentChoice("À emporter", selected: !deliverySelected) {
+                                    deliverySelected = false
+                                    deliveryQuote = nil
+                                }
+                                paymentChoice("Livraison", selected: deliverySelected) { deliverySelected = true }
+                            }
+                        } else {
+                            Text("Livraison")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(MinervaColor.emeraldDark)
+                        }
+                        if deliverySelected {
+                            TextField("Adresse complète", text: $deliveryAddress, prompt: Text("123, rue Principale, Montréal").foregroundStyle(MinervaColor.inkFaint))
+                                .textContentType(.fullStreetAddress)
+                                .textInputAutocapitalization(.words)
+                                .padding(12)
+                                .background(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 11))
+                                .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
+                                .onChange(of: deliveryAddress) { _, _ in deliveryQuote = nil }
+                            Button {
+                                Task {
+                                    isQuotingDelivery = true
+                                    defer { isQuotingDelivery = false }
+                                    deliveryQuote = await supabase.quoteDelivery(address: deliveryAddress.trimmingCharacters(in: .whitespacesAndNewlines))
+                                }
+                            } label: {
+                                HStack(spacing: 7) {
+                                    if isQuotingDelivery { ProgressView().tint(MinervaColor.emeraldDark) }
+                                    Text(isQuotingDelivery ? "Calcul en cours…" : "Calculer le prix et le délai")
+                                }
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(MinervaColor.emeraldDark)
+                            }
+                            .disabled(isQuotingDelivery || deliveryAddress.trimmingCharacters(in: .whitespacesAndNewlines).count < 6)
+                            if let deliveryQuote {
+                                Text("\(String(format: "%.2f $", deliveryQuote.fee)) · environ \(deliveryQuote.etaMinutes ?? 0) min · \(deliveryQuote.distanceKm.map { String(format: "%.1f km", $0) } ?? "distance confirmée")")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(MinervaColor.emeraldDark)
+                            }
+                        }
+                    }
+                    .padding(14)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                } else if pickupEnabled {
+                    Text("Cueillette sur place")
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(MinervaColor.inkSoft)
-                    TextField("", text: $paymentMethod, prompt: Text("Carte, comptant…").foregroundStyle(MinervaColor.inkFaint))
-                        .padding(12)
-                        .background(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 11))
-                        .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
-                    Text("Le paiement se fait sur place, pas dans l'app.")
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(MinervaColor.inkFaint)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(MinervaColor.creamSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+
+                if checkoutAvailable {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Mode de paiement")
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundStyle(MinervaColor.inkSoft)
+                        if canPayAtReceipt && canPayOnline {
+                            HStack(spacing: 8) {
+                                paymentChoice("À la réception", selected: !payOnline) { payOnline = false }
+                                paymentChoice("En ligne", selected: payOnline) { payOnline = true }
+                            }
+                        } else if canPayOnline {
+                            Text("Paiement en ligne sécurisé par Stripe")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(MinervaColor.emeraldDark)
+                        } else {
+                            Text("Paiement à la réception")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(MinervaColor.inkSoft)
+                            TextField("", text: $paymentMethod, prompt: Text("Carte, comptant…").foregroundStyle(MinervaColor.inkFaint))
+                                .padding(12)
+                                .background(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 11))
+                                .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
+                        }
+                        if canPayOnline && payOnline {
+                            Text("La commande est confirmée après validation du paiement.")
+                                .font(.system(size: 10.5))
+                                .foregroundStyle(MinervaColor.inkFaint)
+                        }
+                    }
+                } else {
+                    Text("La cueillette, la livraison ou le paiement des commandes ne sont pas encore configurés par ce restaurant.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.red)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(MinervaColor.creamSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle("Planifier cette commande", isOn: $isScheduled)
+                        .font(.system(size: 13, weight: .semibold))
+                        .tint(MinervaColor.emerald)
+                    if isScheduled {
+                        DatePicker(
+                            "Prêt le",
+                            selection: $requestedReadyAt,
+                            in: Date().addingTimeInterval(15 * 60)...Date().addingTimeInterval(30 * 24 * 60 * 60),
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        .datePickerStyle(.compact)
+                        .environment(\.timeZone, supabase.restaurantTimezone)
+                        Text("Heure du restaurant · créneaux de 15 minutes · jusqu’à 30 jours.")
+                            .font(.system(size: 10.5))
+                            .foregroundStyle(MinervaColor.inkFaint)
+                    }
+                }
+                .padding(14)
+                .background(MinervaColor.creamSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
 
                 if status == .error {
                     Text("La commande a échoué. Réessayez.")
@@ -726,7 +963,7 @@ struct CheckoutSheet: View {
                 .foregroundStyle(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .buttonStyle(PressableButtonStyle())
-                .disabled(status == .submitting)
+                .disabled(status == .submitting || !checkoutAvailable || (deliverySelected && deliveryQuote == nil))
             }
             .padding(18)
         }
@@ -752,12 +989,25 @@ struct CheckoutSheet: View {
             Text("Commande envoyée")
                 .font(MinervaFont.display(22))
                 .foregroundStyle(MinervaColor.ink)
-            Text("Le restaurant a reçu votre commande. Vous recevrez une confirmation sur place.")
+            Text(payOnline ? "Ouvrez le paiement sécurisé pour confirmer votre commande. Le restaurant reçoit la confirmation après vérification du paiement." : "Le restaurant a reçu votre commande. Vous paierez à la réception.")
                 .font(.system(size: 13))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 30)
+
+            if let paymentURL {
+                Button { openURL(paymentURL) } label: {
+                    Label("Payer en ligne avec Stripe", systemImage: "lock.fill")
+                        .font(.system(size: 13.5, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                }
+                .foregroundStyle(.white)
+                .background(MinervaColor.emerald)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 24)
+            }
 
             if let estimatedReadyAt {
                 Text("Prêt vers \(estimatedReadyAt.formatted(date: .omitted, time: .shortened))")
@@ -800,15 +1050,37 @@ struct CheckoutSheet: View {
     private func submit() async {
         status = .submitting
         let cartDict = Dictionary(uniqueKeysWithValues: lines.map { ($0.item.id, $0.quantity) })
-        let result = await supabase.submitOrder(cart: cartDict, tipAmount: tipAmount, paymentMethod: paymentMethod.isEmpty ? nil : paymentMethod)
+        let result = await supabase.submitOrder(
+            cart: cartDict,
+            tipAmount: tipAmount,
+            paymentMethod: payOnline || paymentMethod.isEmpty ? nil : paymentMethod,
+            requestedReadyAt: isScheduled ? requestedReadyAt : nil,
+            payOnline: payOnline,
+            delivery: deliverySelected ? .init(address: deliveryAddress.trimmingCharacters(in: .whitespacesAndNewlines)) : nil
+        )
         let generator = UINotificationFeedbackGenerator()
         if result.ok {
             estimatedReadyAt = result.estimatedReadyAt
+            paymentURL = result.paymentURL
             generator.notificationOccurred(.success)
             status = .done
         } else {
             generator.notificationOccurred(.error)
             status = .error
         }
+    }
+
+    private func paymentChoice(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .foregroundStyle(selected ? MinervaColor.emeraldDark : MinervaColor.inkSoft)
+                .background(selected ? MinervaColor.emerald.opacity(0.12) : .white)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(selected ? MinervaColor.emerald : MinervaColor.border))
+        }
+        .buttonStyle(.plain)
     }
 }

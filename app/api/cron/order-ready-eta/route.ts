@@ -12,6 +12,7 @@ type DueOrderRow = {
   customer_id: string | null;
   fulfillment_mode: OrderFulfillmentMode | null;
   payment_status: OrderPaymentStatus;
+  deposit_paid_amount: number | null;
 };
 
 /**
@@ -39,13 +40,13 @@ export async function GET(req: Request) {
 
   const { data: dueOrders } = await admin
     .from("orders")
-    .select("id, restaurant_id, status, guest_name, guest_phone, customer_id, fulfillment_mode, payment_status")
+    .select("id, restaurant_id, status, guest_name, guest_phone, customer_id, fulfillment_mode, payment_status, deposit_paid_amount")
     .lte("estimated_ready_at", nowIso)
     .is("ready_notified_at", null);
 
   const eligible = ((dueOrders ?? []) as DueOrderRow[]).filter((o) => {
     if (o.status === "servie" || o.status === "annulee") return false;
-    const isAwaitingPayment = Boolean(o.fulfillment_mode) && o.fulfillment_mode !== "sur_place" && o.payment_status !== "paye";
+    const isAwaitingPayment = Boolean(o.fulfillment_mode) && o.fulfillment_mode !== "sur_place" && o.payment_status !== "paye" && Number(o.deposit_paid_amount ?? 0) <= 0;
     return !isAwaitingPayment;
   });
 

@@ -4,6 +4,7 @@ import { getActiveMenuItemsForCustomers } from "@/lib/data/menu";
 import { getRestaurantOrderSettings } from "@/lib/data/menu-shares";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recordMenuView } from "@/lib/data/menu-views";
+import { getPublicCheckoutOptions } from "@/lib/orders/checkout-options";
 
 /**
  * Bridge for the native app's Order tab — menu_items has no customer-facing
@@ -26,9 +27,19 @@ export async function GET(req: Request) {
     getActiveMenuItemsForCustomers(customer.restaurantId),
     getRestaurantOrderSettings(createAdminClient(), customer.restaurantId),
   ]);
+  const checkout = getPublicCheckoutOptions(
+    settings?.orderModesEnabled ?? [],
+    settings?.onlinePaymentEnabled ?? false,
+    Boolean(settings?.delivery.config.enabled)
+  );
   return NextResponse.json({
     items,
     taxRate: settings?.taxRate ?? 0.14975,
     acceptsTips: settings?.acceptsTips ?? true,
+    onlinePaymentEnabled: settings?.onlinePaymentEnabled ?? false,
+    canPayAtReceipt: checkout.canPayAtReceipt,
+    canPayOnline: checkout.canPayOnline,
+    pickupEnabled: checkout.fulfillmentModes.includes("sur_place"),
+    deliveryEnabled: checkout.fulfillmentModes.includes("livraison"),
   });
 }

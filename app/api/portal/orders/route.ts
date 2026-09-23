@@ -22,7 +22,9 @@ export async function POST(req: Request) {
     cart?: PortalOrderCartLine[];
     tipAmount?: number;
     paymentMethod?: string | null;
-    delivery?: { address?: string; latitude?: number | null; longitude?: number | null };
+    payOnline?: boolean;
+    delivery?: { address?: string };
+    requestedReadyAtLocal?: string | null;
   };
   try {
     body = await req.json();
@@ -36,13 +38,18 @@ export async function POST(req: Request) {
   }
 
   const delivery = body.delivery?.address?.trim()
-    ? {
-        address: body.delivery.address,
-        latitude: body.delivery.latitude ?? null,
-        longitude: body.delivery.longitude ?? null,
-      }
+    ? { address: body.delivery.address }
     : undefined;
-  const result = await submitPortalOrder(customer, cart, body.tipAmount ?? 0, body.paymentMethod ?? null, "mobile", delivery);
+  const result = await submitPortalOrder(
+    customer,
+    cart,
+    body.tipAmount ?? 0,
+    body.paymentMethod ?? null,
+    "mobile",
+    delivery,
+    body.requestedReadyAtLocal ?? null,
+    body.payOnline === true
+  );
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: "La commande a échoué" }, { status: 500 });
   }

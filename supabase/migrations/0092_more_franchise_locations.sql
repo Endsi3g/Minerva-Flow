@@ -4,6 +4,10 @@
 
 begin;
 
+-- Add sibling demo locations only after the demo workspace has been seeded.
+do $$ begin
+if exists (select 1 from workspaces where id = '7a3f9c1e-2b4d-4e6a-9f8c-1d5e6a7b8c9d') then
+
 insert into restaurants (id, name, address, city, province, lat, lng, service_model, workspace_id, plan_tier)
 values
   (
@@ -59,5 +63,8 @@ insert into loyalty_rewards (restaurant_id, name, points_cost, description, acti
 ('c3f5a7b9-2d4e-4f6a-9b8c-1e2d3f4a5b6c', 'Café ou thé offert', 50, 'Tout format, toute la journée.', true),
 ('d4a6b8c0-3e5f-4a7b-8c9d-2f3a4b5c6d7e', 'Menu du jour offert', 450, 'Un menu du jour au choix, un par visite.', true)
 on conflict do nothing;
+
+end if;
+end $$;
 
 commit;

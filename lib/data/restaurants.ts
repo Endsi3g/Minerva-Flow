@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getVerifiedUser } from "@/lib/supabase/auth-user";
 import { logActivity } from "@/lib/data/activity";
 import { geocodeAddress, geocodeCity } from "@/lib/geocode";
+import { isValidDeliveryPricingPatch } from "@/lib/orders/delivery-pricing";
 import { fetchWebsiteDescription, fetchWebsiteBusinessInfo } from "@/lib/website-description";
 import { CAFE_BREAK_EVEN_DEFAULTS } from "@/lib/engine/break-even";
 import type { Restaurant, OpeningHours, VisitRewardTier, OrderFulfillmentMode } from "@/lib/types";
@@ -55,6 +56,7 @@ type RestaurantRow = {
   delivery_free_km: number | null;
   delivery_max_km: number | null;
   delivery_average_speed_kmh: number | null;
+  delivery_per_minute_fee: number | null;
 };
 
 function mapRestaurant(row: RestaurantRow): Restaurant {
@@ -105,6 +107,7 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     deliveryFreeKm: row.delivery_free_km ?? 2,
     deliveryMaxKm: row.delivery_max_km ?? 10,
     deliveryAverageSpeedKmh: row.delivery_average_speed_kmh ?? 25,
+    deliveryPerMinuteFee: row.delivery_per_minute_fee ?? 0,
   };
 }
 
@@ -323,6 +326,7 @@ export type RestaurantInput = {
   deliveryFreeKm?: number;
   deliveryMaxKm?: number;
   deliveryAverageSpeedKmh?: number;
+  deliveryPerMinuteFee?: number;
 };
 
 // The 21-day retention inactivity threshold is calibrated for a sit-down
@@ -463,6 +467,15 @@ export async function updateRestaurant(
   id: string,
   patch: Partial<RestaurantInput>
 ): Promise<Restaurant | null> {
+  if (!isValidDeliveryPricingPatch({
+    baseFee: patch.deliveryBaseFee,
+    perKmFee: patch.deliveryPerKmFee,
+    freeKm: patch.deliveryFreeKm,
+    maxKm: patch.deliveryMaxKm,
+    averageSpeedKmh: patch.deliveryAverageSpeedKmh,
+    perMinuteFee: patch.deliveryPerMinuteFee,
+  })) return null;
+
   const supabase = await createClient();
 
   const dbPatch: Record<string, unknown> = {};
@@ -502,6 +515,7 @@ export async function updateRestaurant(
   if (patch.deliveryFreeKm !== undefined) dbPatch.delivery_free_km = Math.max(0, patch.deliveryFreeKm);
   if (patch.deliveryMaxKm !== undefined) dbPatch.delivery_max_km = Math.max(0.1, patch.deliveryMaxKm);
   if (patch.deliveryAverageSpeedKmh !== undefined) dbPatch.delivery_average_speed_kmh = Math.max(1, patch.deliveryAverageSpeedKmh);
+  if (patch.deliveryPerMinuteFee !== undefined) dbPatch.delivery_per_minute_fee = Math.min(100, Math.max(0, patch.deliveryPerMinuteFee));
 
   // Explicit coordinates (e.g. a Google Places import, authoritative) take
   // priority and skip re-geocoding entirely.

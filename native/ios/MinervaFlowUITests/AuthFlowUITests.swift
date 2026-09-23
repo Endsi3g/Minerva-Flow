@@ -19,6 +19,31 @@ final class AuthFlowUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Se connecter"].exists)
     }
 
+    func testLanguagePickerSwitchesAndRestoresWelcomeLanguage() throws {
+        let app = XCUIApplication()
+        app.launch()
+        ensureSignedOut(app)
+
+        let frenchPicker = app.buttons["Langue: français"]
+        XCTAssertTrue(frenchPicker.waitForExistence(timeout: 5))
+        frenchPicker.tap()
+
+        let englishOption = app.buttons["English"]
+        XCTAssertTrue(englishOption.waitForExistence(timeout: 3))
+        englishOption.tap()
+
+        XCTAssertTrue(app.staticTexts["Your loyalty,\nrewarded"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Language: English"].exists)
+
+        app.buttons["Language: English"].tap()
+        let frenchOption = app.buttons["Français"]
+        XCTAssertTrue(frenchOption.waitForExistence(timeout: 3))
+        frenchOption.tap()
+
+        XCTAssertTrue(app.staticTexts["Votre fidélité,\nrécompensée"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Langue: français"].exists)
+    }
+
     func testTappingSeConnecterReachesLoginCard() throws {
         let app = XCUIApplication()
         app.launch()

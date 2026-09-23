@@ -17,8 +17,11 @@ import { LogoMark } from "@/components/shell/Logo";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "@/i18n/navigation";
 import { formatCurrency, formatDate, roundToCents, cn } from "@/lib/utils";
+import { formatRestaurantTime } from "@/lib/orders/scheduling";
 import type { Customer, CustomerReferralLink, LoyaltyReward, MenuItem, Offer, PlatformAnnouncement, ReferralProgram, RewardRedemption } from "@/lib/types";
 import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-portal";
+import type { DeliveryQuote } from "@/lib/orders/delivery-pricing";
+import type { PublicFulfillmentMode } from "@/lib/orders/checkout-options";
 import { AnnouncementCard } from "./AnnouncementCard";
 import {
   getOrCreateReferralLinkAction,
@@ -26,6 +29,7 @@ import {
   requestEmailChangeAction,
   selfRedeemRewardAction,
   submitPortalOrderAction,
+  quoteMyDeliveryAction,
   deleteMyAccountAction,
   exportMyDataAction,
 } from "./actions";
@@ -55,7 +59,7 @@ import {
   Pencil,
   Mail,
 } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { startTransition, useMemo, useState, useEffect } from "react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -987,6 +991,10 @@ function CheckoutModal({
   cartLines,
   taxRate,
   acceptsTips,
+  restaurantTimezone,
+  fulfillmentModes,
+  canPayAtReceipt,
+  canPayOnline,
   onOrdered,
 }: {
   open: boolean;
@@ -995,18 +1003,59 @@ function CheckoutModal({
   cartLines: { item: MenuItem; quantity: number }[];
   taxRate: number;
   acceptsTips: boolean;
+  restaurantTimezone: string;
+  fulfillmentModes: PublicFulfillmentMode[];
+  canPayAtReceipt: boolean;
+  canPayOnline: boolean;
   onOrdered: () => void;
 }) {
   const t = useTranslations("portal.view");
   const [tipPct, setTipPct] = useState<number | null>(acceptsTips ? 0.15 : null);
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [requestedReadyAtLocal, setRequestedReadyAtLocal] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [estimatedReadyAt, setEstimatedReadyAt] = useState<string | null>(null);
+  const [fulfillmentMode, setFulfillmentMode] = useState<PublicFulfillmentMode>(
+    fulfillmentModes.includes("sur_place") ? "sur_place" : (fulfillmentModes[0] ?? "sur_place")
+  );
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [serverDeliveryQuote, setServerDeliveryQuote] = useState<DeliveryQuote | null>(null);
+  const [quotedDeliveryAddress, setQuotedDeliveryAddress] = useState("");
+  const normalizedDeliveryAddress = deliveryAddress.trim();
+  const deliveryQuoteLoading = fulfillmentMode === "livraison"
+    && normalizedDeliveryAddress.length >= 6
+    && quotedDeliveryAddress !== normalizedDeliveryAddress;
+  const deliveryQuote: DeliveryQuote = fulfillmentMode !== "livraison"
+    ? { fee: 0, distanceKm: null, etaMinutes: null, available: true }
+    : normalizedDeliveryAddress.length < 6
+      ? { fee: 0, distanceKm: null, etaMinutes: null, available: false, reason: "missing_location" }
+      : quotedDeliveryAddress === normalizedDeliveryAddress && serverDeliveryQuote
+        ? serverDeliveryQuote
+        : { fee: 0, distanceKm: null, etaMinutes: null, available: false, reason: "missing_location" };
+  const [payOnline, setPayOnline] = useState(!canPayAtReceipt);
+
+  useEffect(() => {
+    if (fulfillmentMode !== "livraison" || normalizedDeliveryAddress.length < 6 || quotedDeliveryAddress === normalizedDeliveryAddress) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      startTransition(async () => {
+        const quote = await quoteMyDeliveryAction(customerId, deliveryAddress);
+        if (!cancelled) {
+          setServerDeliveryQuote(quote);
+          setQuotedDeliveryAddress(normalizedDeliveryAddress);
+        }
+      });
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [customerId, deliveryAddress, fulfillmentMode, normalizedDeliveryAddress, quotedDeliveryAddress]);
 
   const subtotal = cartLines.reduce((sum, l) => sum + l.item.price * l.quantity, 0);
   const taxAmount = roundToCents(subtotal * taxRate);
   const tipAmount = tipPct != null ? roundToCents(subtotal * tipPct) : 0;
-  const total = subtotal + taxAmount + tipAmount;
+  const total = subtotal + taxAmount + tipAmount + deliveryQuote.fee;
 
   async function handleSubmit() {
     setStatus("submitting");
@@ -1014,10 +1063,17 @@ function CheckoutModal({
       customerId,
       cartLines.map((l) => ({ menuItemId: l.item.id, quantity: l.quantity })),
       tipAmount,
-      paymentMethod.trim() || null
+      paymentMethod.trim() || null,
+      requestedReadyAtLocal || null,
+      payOnline,
+      fulfillmentMode === "livraison" ? { address: deliveryAddress.trim() } : undefined
     );
     if (!result.ok) {
       setStatus("error");
+      return;
+    }
+    if (result.paymentUrl) {
+      window.location.assign(result.paymentUrl);
       return;
     }
     setEstimatedReadyAt(result.estimatedReadyAt);
@@ -1038,10 +1094,10 @@ function CheckoutModal({
             <CheckCircle2 size={26} />
           </div>
           <p className="font-display text-[19px] font-medium text-mv-ink">{t("orderSuccessTitle")}</p>
-          <p className="mx-auto mt-1.5 max-w-xs text-[13px] text-mv-ink-soft">{t("orderSuccessDescription")}</p>
+          <p className="mx-auto mt-1.5 max-w-xs text-[13px] text-mv-ink-soft">{payOnline ? t("orderPaymentRedirectDescription") : t("orderSuccessDescription")}</p>
           {estimatedReadyAt && (
             <p className="mt-2 text-[12.5px] font-medium text-mv-green-dark">
-              Prêt vers {new Date(estimatedReadyAt).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}
+              Prêt vers {formatRestaurantTime(estimatedReadyAt, restaurantTimezone)}
             </p>
           )}
           <div className="mx-auto mt-4 flex items-center justify-center gap-1.5 text-[12px] text-mv-ink-faint">
@@ -1087,6 +1143,30 @@ function CheckoutModal({
             </div>
           )}
 
+          {fulfillmentModes.length > 1 && (
+            <div>
+              <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("fulfillmentTitle")}</p>
+              <div className="flex gap-1.5">
+                {fulfillmentModes.map((mode) => (
+                  <button key={mode} type="button" onClick={() => setFulfillmentMode(mode)} className={cn("flex-1 rounded-lg border px-2 py-2 text-[12px] font-medium", fulfillmentMode === mode ? "border-mv-green bg-mv-green-tint text-mv-green-dark" : "border-mv-border text-mv-ink-soft")}>
+                    {mode === "livraison" ? t("delivery") : t("pickup")}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {fulfillmentMode === "livraison" && (
+            <div className="space-y-2 rounded-xl border border-mv-green/20 bg-mv-green-tint/40 p-3">
+              <Field label={t("deliveryAddress")}>
+                <Input value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} autoComplete="street-address" required />
+              </Field>
+              {deliveryQuoteLoading && <p className="text-[11.5px] text-mv-ink-faint">{t("deliveryFeeLoading")}</p>}
+              {!deliveryQuoteLoading && !deliveryQuote.available && <p className="text-[12px] text-mv-red">{deliveryQuote.reason === "outside_radius" ? t("deliveryFeeOutsideRadius") : t("deliveryFeeAddressError")}</p>}
+              {deliveryQuote.available && deliveryQuote.etaMinutes != null && <p className="text-[11.5px] text-mv-ink-faint">{t("deliveryFeeEstimate", { fee: formatCurrency(deliveryQuote.fee), minutes: deliveryQuote.etaMinutes })}</p>}
+            </div>
+          )}
+
           <div className="space-y-1 border-t border-mv-border-soft pt-3 text-[12.5px]">
             <div className="flex justify-between text-mv-ink-soft">
               <span>{t("checkoutSubtotal")}</span>
@@ -1102,23 +1182,36 @@ function CheckoutModal({
                 <span>{formatCurrency(tipAmount)}</span>
               </div>
             )}
+            {fulfillmentMode === "livraison" && <div className="flex justify-between text-mv-ink-soft"><span>{t("delivery")}</span><span>{formatCurrency(deliveryQuote.fee)}</span></div>}
             <div className="flex justify-between text-[14px] font-semibold text-mv-ink">
               <span>{t("checkoutTotal")}</span>
               <span>{formatCurrency(total)}</span>
             </div>
           </div>
 
-          <Field label={t("paymentMethodLabel")} hint={t("paymentMethodHint")}>
+          {canPayOnline && canPayAtReceipt && (
+            <div className="flex gap-2 rounded-xl border border-mv-border-soft bg-mv-cream-soft p-1">
+              <button type="button" onClick={() => setPayOnline(false)} className={cn("flex-1 rounded-lg px-3 py-2 text-[12px] font-medium", !payOnline ? "bg-white text-mv-green-dark shadow-sm" : "text-mv-ink-soft")}>{t("payAtRestaurant")}</button>
+              <button type="button" onClick={() => setPayOnline(true)} className={cn("flex-1 rounded-lg px-3 py-2 text-[12px] font-medium", payOnline ? "bg-white text-mv-green-dark shadow-sm" : "text-mv-ink-soft")}>{t("payOnline")}</button>
+            </div>
+          )}
+
+          {!payOnline && <Field label={t("paymentMethodLabel")} hint={t("paymentMethodHint")}>
+            <Input value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} placeholder={t("paymentMethodPlaceholder")} />
+          </Field>}
+
+          <Field label={t("scheduleOrderLabel")} hint={t("scheduleOrderHint", { timezone: restaurantTimezone })}>
             <Input
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              placeholder={t("paymentMethodPlaceholder")}
+              type="datetime-local"
+              step={900}
+              value={requestedReadyAtLocal}
+              onChange={(event) => setRequestedReadyAtLocal(event.target.value)}
             />
           </Field>
 
           {status === "error" && <p className="text-[12.5px] text-mv-red">{t("orderError")}</p>}
 
-          <Button onClick={handleSubmit} disabled={status === "submitting"} className="w-full">
+          <Button onClick={handleSubmit} disabled={status === "submitting" || (fulfillmentMode === "livraison" && (deliveryQuoteLoading || !deliveryQuote.available)) || (payOnline ? !canPayOnline : !canPayAtReceipt)} className="w-full">
             {status === "submitting" ? t("orderSubmitting") : t("orderSubmit", { total: formatCurrency(total) })}
           </Button>
         </div>
@@ -1191,6 +1284,10 @@ export function PortalView({
   offers,
   taxRate,
   acceptsTips,
+  restaurantTimezone,
+  fulfillmentModes,
+  canPayAtReceipt,
+  canPayOnline,
   restaurantName,
   appleWalletEnabled,
   googleWalletEnabled,
@@ -1203,6 +1300,10 @@ export function PortalView({
   offers: Offer[];
   taxRate: number;
   acceptsTips: boolean;
+  restaurantTimezone: string;
+  fulfillmentModes: PublicFulfillmentMode[];
+  canPayAtReceipt: boolean;
+  canPayOnline: boolean;
   restaurantName?: string | null;
   appleWalletEnabled: boolean;
   googleWalletEnabled: boolean;
@@ -1450,6 +1551,10 @@ export function PortalView({
         cartLines={cartLines}
         taxRate={taxRate}
         acceptsTips={acceptsTips}
+        restaurantTimezone={restaurantTimezone}
+        fulfillmentModes={fulfillmentModes}
+        canPayAtReceipt={canPayAtReceipt}
+        canPayOnline={canPayOnline}
         onOrdered={handleOrdered}
       />
 

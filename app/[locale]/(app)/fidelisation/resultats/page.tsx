@@ -7,13 +7,18 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Store } from "lucide-react";
+import type { RetentionTimeRange } from "@/lib/data/retention-metrics";
+
+const validRanges: RetentionTimeRange[] = ["7d", "30d", "90d", "all"];
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: "Résultats à partager — Fidélisation" };
 }
 
-export default async function ResultatsPage() {
+export default async function ResultatsPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
   const restaurant = await getCurrentRestaurant();
+  const { period } = await searchParams;
+  const timeRange = validRanges.includes(period as RetentionTimeRange) ? (period as RetentionTimeRange) : "30d";
 
   if (!restaurant) {
     return (
@@ -38,7 +43,7 @@ export default async function ResultatsPage() {
   }
 
   const [data, workspace] = await Promise.all([
-    getRetentionFunnelMetrics(restaurant.id, "30d"),
+    getRetentionFunnelMetrics(restaurant.id, timeRange),
     restaurant.workspaceId ? getWorkspace(restaurant.workspaceId) : Promise.resolve(null),
   ]);
 
@@ -48,6 +53,7 @@ export default async function ResultatsPage() {
   return (
     <ResultatsView
       metrics={metrics}
+      timeRange={timeRange}
       restaurantName={restaurant.name}
       logoUrl={workspace?.logoUrl ?? null}
       restaurantUrl={restaurantUrl}

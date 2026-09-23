@@ -8,6 +8,7 @@ import {
   getCustomersForUser,
   selfRedeemReward,
   submitPortalOrder,
+  getPortalDeliveryQuote,
   deleteMyAccount,
   exportCustomerData,
   type PortalOrderCartLine,
@@ -16,6 +17,8 @@ import {
 import { toggleFavorite } from "@/lib/data/customers";
 import { updateCustomer } from "@/lib/data/customers";
 import type { CustomerReferralLink, RewardRedemption } from "@/lib/types";
+import type { DeliveryQuote } from "@/lib/orders/delivery-pricing";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
  * customerId is never trusted from the client — derived from the session
@@ -167,7 +170,10 @@ export async function submitPortalOrderAction(
   customerId: string,
   cart: PortalOrderCartLine[],
   tipAmount: number,
-  paymentMethod: string | null
+  paymentMethod: string | null,
+  requestedReadyAtLocal?: string | null,
+  payOnline = false,
+  delivery?: { address: string }
 ): Promise<SubmitPortalOrderResult> {
   if (cart.length === 0) return { ok: false };
 
@@ -181,9 +187,31 @@ export async function submitPortalOrderAction(
   const customer = customers.find((c) => c.id === customerId);
   if (!customer) return { ok: false };
 
-  const result = await submitPortalOrder(customer, cart, tipAmount, paymentMethod);
+  const result = await submitPortalOrder(customer, cart, tipAmount, paymentMethod, "web", delivery, requestedReadyAtLocal, payOnline);
   if (result.ok) revalidatePath("/portal");
   return result;
+}
+
+export async function quoteMyDeliveryAction(customerId: string, address: string): Promise<DeliveryQuote> {
+  const cleanAddress = address.trim();
+  if (!customerId || cleanAddress.length < 6 || cleanAddress.length > 240) {
+    return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "missing_location" };
+  }
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "disabled" };
+  const customers = await getCustomersForUser(user.id);
+  const customer = customers.find((entry) => entry.id === customerId);
+  if (!customer) return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "disabled" };
+  const ip = await getClientIp();
+  const { allowed } = await checkRateLimit(`portal-delivery-quote:${ip}`, { max: 12, windowSeconds: 300 });
+  if (!allowed) return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "missing_location" };
+  try {
+    return await getPortalDeliveryQuote(customer, cleanAddress);
+  } catch (error) {
+    console.error("quoteMyDeliveryAction failed:", error);
+    return { available: false, fee: 0, distanceKm: null, etaMinutes: null, reason: "missing_location" };
+  }
 }
 
 /**

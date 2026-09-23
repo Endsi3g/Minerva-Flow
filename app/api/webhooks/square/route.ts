@@ -48,7 +48,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Signature invalide" }, { status: 401 });
   }
 
-  const event = JSON.parse(body) as { type?: string; merchant_id?: string };
+  let event: { type?: string; merchant_id?: string };
+  try {
+    event = JSON.parse(body) as { type?: string; merchant_id?: string };
+  } catch {
+    return NextResponse.json({ error: "Payload invalide" }, { status: 400 });
+  }
   if (!event.merchant_id || !event.type) return NextResponse.json({ received: true });
 
   const restaurantId = await getRestaurantIdBySquareMerchant(event.merchant_id);

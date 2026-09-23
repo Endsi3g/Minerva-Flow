@@ -90,7 +90,7 @@ Permet aux restaurateurs, gérants et clients de se connecter en un clic avec le
 1. Allez dans **API et services** > **Écran de consentement OAuth**.
 2. Type d'utilisateur : Sélectionnez **Externe** (External), puis cliquez sur **Créer**.
 3. Informations sur l'application :
-   - **Nom de l'application** : `Minerva Flow` (Rappel : le terme « Flow par Minerva » est banni).
+   - **Nom de l'application** : `Minerva Flow` (utiliser exclusivement le nom de marque officiel).
    - **Adresse e-mail d'assistance utilisateur** : `support@minervaflow.app`.
    - **Logo de l'application** : Téléchargez le logo officiel de Minerva Flow (disponible dans `public/`).
    - **Domaine de l'application** :

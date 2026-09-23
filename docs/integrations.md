@@ -214,7 +214,16 @@ Bloqué par le palier de forfait Supabase actuel, pas par une mauvaise configura
 | `RELEASE_WEBHOOK_SECRET` | Protège `/api/system/publish-release`, appelé par `.github/workflows/publish-release.yml` à chaque release GitHub publiée |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Notifications push (Web Push), déjà actives sur mobile et ordinateur |
 | `SQUARE_APPLICATION_ID` / `SQUARE_APPLICATION_SECRET` / `SQUARE_ENVIRONMENT` / `SQUARE_WEBHOOK_*` | Synchronisation des ventes Square |
+| `CLOVER_WEBHOOK_AUTH_CODE` | Code « Clover Auth Code » affiché après validation du callback Clover |
+| `TOAST_WEBHOOK_SECRET` | Secret de signature propre à l'abonnement Toast et à l'environnement |
 | `GOOGLE_PLACES_API_KEY` | Recherche d'adresse à la création d'un établissement |
+
+### Webhooks POS
+
+- **Clover** : enregistrer `https://minervaflow.app/api/webhooks/clover` dans les paramètres Webhooks de l'application Clover, terminer la vérification du callback, puis ajouter le `Clover Auth Code` obtenu à `CLOVER_WEBHOOK_AUTH_CODE`. Les notifications de commandes et paiements relancent la synchronisation des tickets pour leur date locale. Les autres catégories sont ignorées.
+- **Toast** : enregistrer `https://minervaflow.app/api/webhooks/toast` dans l'abonnement Orders fourni par Toast Support, puis enregistrer le secret de signature de cet abonnement dans `TOAST_WEBHOOK_SECRET`. Le handler vérifie le HMAC Toast sur le corps brut et l'horodatage du payload avant de relancer la synchronisation de la journée locale.
+- Les deux routes sont fermées par défaut tant que leur secret n'est pas configuré. Elles réutilisent la synchronisation existante et l'identifiant externe unique de ticket afin que les notifications répétées soient sans effet secondaire; le cron quotidien reste le mécanisme de rattrapage.
+- Le code des routes ne configure pas à lui seul les abonnements externes. Clover nécessite une validation dans son Developer Dashboard; Toast nécessite une souscription gérée avec Toast Support. Tester un webhook de bout en bout exige donc les accès de ces fournisseurs et au moins un restaurant sandbox connecté.
 
 ---
 

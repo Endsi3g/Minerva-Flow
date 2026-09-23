@@ -15,6 +15,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyOrderReadyById } from "@/lib/orders/notify-ready";
 import { setBusyModeManual } from "@/lib/data/restaurants";
 import type { Order, OrderStatus } from "@/lib/types";
+import { getServiceQuotesForRestaurant, issueServiceQuote, type ServiceQuoteLineInput } from "@/lib/data/service-quotes";
 
 export async function createOrderAction(restaurantId: string, input: CreateOrderInput): Promise<Order | null> {
   if (!restaurantId) return null;
@@ -93,4 +94,34 @@ export async function updateOrderEtaAction(
   const ok = await updateOrderEstimatedReadyAt(restaurantId, orderId, minutesFromNow);
   if (ok) revalidatePath("/commandes");
   return ok;
+}
+
+export async function getServiceQuotesAction(restaurantId: string) {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return { ok: false as const, reason: "unavailable" as const };
+  }
+  return getServiceQuotesForRestaurant(restaurantId);
+}
+
+export async function issueServiceQuoteAction(
+  restaurantId: string,
+  quoteId: string,
+  lines: ServiceQuoteLineInput[],
+  taxRate: number,
+  depositPercent: number,
+  ownerNotes: string | null
+) {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return { ok: false as const, reason: "not_authorized" };
+  }
+  try {
+    const result = await issueServiceQuote(restaurantId, quoteId, lines, taxRate, depositPercent, ownerNotes);
+    if (result.ok) revalidatePath("/commandes");
+    return result;
+  } catch (error) {
+    console.error("issueServiceQuoteAction failed:", error);
+    return { ok: false as const, reason: "issue_failed" };
+  }
 }

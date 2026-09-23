@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { generateToken } from "@/lib/tokens";
 import { mapReward } from "@/lib/data/customers";
 import type { LoyaltyReward, LoyaltyShare } from "@/lib/types";
+import { emailMatchOperator } from "@/lib/data/email-match";
 
 type LoyaltyShareRow = {
   id: string;
@@ -152,12 +153,10 @@ export async function joinLoyaltyProgram(
   const admin = createAdminClient();
   const email = input.email.trim().toLowerCase();
 
-  const { data: existing } = await admin
-    .from("customers")
-    .select("id")
-    .eq("restaurant_id", restaurantId)
-    .ilike("email", email)
-    .maybeSingle();
+  const customerEmailQuery = admin.from("customers").select("id").eq("restaurant_id", restaurantId);
+  const { data: existing } = await (emailMatchOperator(email) === "eq"
+    ? customerEmailQuery.eq("email", email)
+    : customerEmailQuery.ilike("email", email)).maybeSingle();
 
   if (existing) return { ok: true, alreadyMember: true };
 

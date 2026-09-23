@@ -12,6 +12,8 @@ struct MinervaFlowApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        AppLanguagePreference.ensureFrenchDefault()
+
         // AsyncImage (menu items, offers, restaurant photos) uses
         // URLSession.shared under the hood, whose default URLCache is tiny
         // (iOS default: 512KB memory / 10MB disk) — every menu item photo
