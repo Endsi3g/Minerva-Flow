@@ -326,6 +326,7 @@
 				F408578363D1E7F396B0A172 /* Resources */,
 				5A742E5A09BE4841A102776D /* Frameworks */,
 				862D1C7F6421C50DF5C19C96 /* Embed Foundation Extensions */,
+				D5C9628355377BB603F3BFD5 /* Copy Sentry dSYM */,
 			);
 			buildRules = (
 			);
@@ -470,6 +471,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D5C9628355377BB603F3BFD5 /* Copy Sentry dSYM */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy Sentry dSYM";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "bash \"${SRCROOT}/scripts/copy-sentry-dsym.sh\"";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		64E16299CE77D99AAE6A8F4F /* Sources */ = {
@@ -649,7 +673,7 @@
 				CODE_SIGN_ENTITLEMENTS = MinervaFlowWidget/MinervaFlowWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlowWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -676,7 +700,7 @@
 				CODE_SIGN_ENTITLEMENTS = MinervaFlow/Resources/MinervaFlow.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlow/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -58,6 +58,11 @@ targets:
         product: Sentry
       - target: MinervaFlowWidgetExtension
         embed: true
+    postBuildScripts:
+      - name: Copy Sentry dSYM
+        script: "bash \"${SRCROOT}/scripts/copy-sentry-dsym.sh\""
+        basedOnDependencyAnalysis: false
+        showEnvVars: false
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.minervaflow.loyalty
