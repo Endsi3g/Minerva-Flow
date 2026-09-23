@@ -56,6 +56,8 @@ const counts = {
   customer_referral_links: 0,
   offers: 0,
   loyalty_rewards: 0,
+  orders: 0,
+  order_items: 0,
   retention_sends: 0,
   loyalty_shares: 0,
   consent_backfilled: 0,
@@ -195,7 +197,15 @@ async function seedMenuItems(restaurantId) {
     .select("id", { count: "exact", head: true })
     .eq("restaurant_id", restaurantId);
   if (countError) throw countError;
-  if (count && count > 0) return;
+  if (count && count > 0) {
+    const { data } = await supabase
+      .from("menu_items")
+      .select("id, name, price")
+      .eq("restaurant_id", restaurantId)
+      .eq("active", true)
+      .order("category", { ascending: true });
+    return data ?? [];
+  }
 
   const rows = MENU_ITEM_DEFS.map((m) => ({
     restaurant_id: restaurantId,
@@ -208,9 +218,64 @@ async function seedMenuItems(restaurantId) {
     description: null,
   }));
 
-  const { data, error } = await supabase.from("menu_items").insert(rows).select("id");
+  const { data, error } = await supabase.from("menu_items").insert(rows).select("id, name, price");
   if (error) throw error;
   counts.menu_items += data.length;
+  return data;
+}
+
+// Historique de commandes réaliste pour que le compte démo soit utile dès
+// la première connexion (statistiques, commandes récentes et parcours client).
+// Idempotent : on ne duplique jamais l'historique d'un restaurant démo.
+async function seedOrders(restaurantId, customers, menuItems) {
+  const { count, error: countError } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("restaurant_id", restaurantId);
+  if (countError) throw countError;
+  if (count && count > 0) return;
+  if (!menuItems?.length) return;
+
+  const rows = [];
+  const itemRows = [];
+  const statuses = ["servie", "servie", "confirmee", "en_preparation", "prete"];
+  for (let i = 0; i < 12; i += 1) {
+    const first = menuItems[i % menuItems.length];
+    const second = menuItems[(i + 3) % menuItems.length];
+    const quantity = (i % 3) + 1;
+    const secondQuantity = i % 2 === 0 ? 1 : 0;
+    const subtotal = Number(first.price) * quantity + Number(second.price) * secondQuantity;
+    const tax = Math.round(subtotal * 0.14975 * 100) / 100;
+    const createdAt = addDays(TODAY, -i).toISOString();
+    rows.push({
+      restaurant_id: restaurantId,
+      status: statuses[i % statuses.length],
+      guest_name: customers[i % customers.length]?.name ?? "Client démo",
+      guest_phone: customers[i % customers.length]?.phone ?? "514-555-0199",
+      subtotal,
+      tax_amount: tax,
+      tip_amount: i % 4 === 0 ? 3 : 0,
+      total: subtotal + tax + (i % 4 === 0 ? 3 : 0),
+      payment_method: "sur_place",
+      payment_status: "non_requis",
+      fulfillment_mode: "sur_place",
+      customer_id: customers[i % customers.length]?.id ?? null,
+      is_public_request: true,
+      created_at: createdAt,
+    });
+    itemRows.push([
+      { item_name: first.name, unit_price: first.price, quantity },
+      ...(secondQuantity ? [{ item_name: second.name, unit_price: second.price, quantity: secondQuantity }] : []),
+    ]);
+  }
+
+  const { data: orders, error } = await supabase.from("orders").insert(rows).select("id");
+  if (error) throw error;
+  counts.orders += orders.length;
+  const orderItems = orders.flatMap((order, i) => itemRows[i].map((item) => ({ order_id: order.id, ...item })));
+  const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
+  if (itemsError) throw itemsError;
+  counts.order_items += orderItems.length;
 }
 
 // ── 3. clients (activité variée, alimente fidélité + rétention) ───────
@@ -944,8 +1009,9 @@ async function main() {
   await seedConnections(restaurantId);
   await seedAlertRules(restaurantId);
 
-  await seedMenuItems(restaurantId);
+  const menuItems = await seedMenuItems(restaurantId);
   const customers = await seedCustomersAndTransactions(restaurantId);
+  await seedOrders(restaurantId, customers, menuItems);
   const customersWithJoinDates = await backfillCustomerJoinDates(restaurantId);
   await seedLifecycleEvents(restaurantId, customersWithJoinDates);
   await seedReferralPrograms(restaurantId, customers);

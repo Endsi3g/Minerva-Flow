@@ -16,6 +16,9 @@ struct MenuView: View {
     @State private var checkoutOpen = false
     @State private var hasLoadedOnce = false
     @State private var showScanner = false
+    @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
+
+    private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
     private var cartCount: Int { cart.values.reduce(0, +) }
     private var cartLines: [(item: NativeMenuItem, quantity: Int)] {
@@ -125,11 +128,30 @@ struct MenuView: View {
     /// count so it's obvious how much is behind it before tapping in.
     private var categoryGrid: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                Text("Commander")
+                VStack(alignment: .leading, spacing: 22) {
+                    Text(isFrench ? "Commander" : "Order")
                     .font(MinervaFont.display(24))
                     .foregroundStyle(MinervaColor.ink)
                     .padding(.top, 4)
+
+                if supabase.isUsingDemoMenuFallback {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "wifi.exclamationmark")
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(isFrench ? "Mode démo actif" : "Demo mode active")
+                                .font(.system(size: 12.5, weight: .semibold))
+                            Text(isFrench ? "Le menu local reste disponible. Réessayez quand la connexion est rétablie." : "The local menu is available. Retry when your connection is restored.")
+                                .font(.system(size: 11.5))
+                        }
+                        Spacer()
+                        Button(isFrench ? "Réessayer" : "Retry") { Task { await supabase.fetchMenu() } }
+                            .font(.system(size: 11.5, weight: .semibold))
+                    }
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .padding(12)
+                    .background(MinervaColor.emerald.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
 
                 if supabase.restaurantIsBusy {
                     busyBanner
@@ -144,7 +166,7 @@ struct MenuView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Catégories")
+                        Text(isFrench ? "Catégories" : "Categories")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
 

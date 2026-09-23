@@ -17,6 +17,9 @@ struct RewardsView: View {
     @State private var qrProgram: ReferralProgress?
     @State private var selectedOffer: Offer?
     @State private var selectedReward: LoyaltyReward?
+    @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
+
+    private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
     var body: some View {
         Group {
@@ -82,11 +85,11 @@ struct RewardsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Récompenses")
+            Text(isFrench ? "Offres" : "Offers")
                 .font(MinervaFont.display(24))
                 .foregroundStyle(MinervaColor.ink)
             if let points = supabase.customer?.loyaltyPoints {
-                Text("\(points) points disponibles")
+                Text(isFrench ? "\(points) points disponibles pour vos offres" : "\(points) points available for your offers")
                     .font(.system(size: 13))
                     .foregroundStyle(MinervaColor.inkSoft)
             }

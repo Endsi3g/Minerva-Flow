@@ -111,12 +111,28 @@ struct ScanToOrderView: View {
                     QRScannerRepresentable(onScan: handleScan)
                         .ignoresSafeArea()
 
+                    LinearGradient(
+                        colors: [.black.opacity(0.58), .clear, .black.opacity(0.7)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
+
                     VStack {
-                        Spacer()
+                        Text("Scannez pour découvrir le menu")
+                            .font(MinervaFont.display(25, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.top, 30)
+                        Text("Placez le code dans le cadre")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.8))
+                        Spacer(minLength: 24)
                         scanFrame
-                        Spacer()
+                        Spacer(minLength: 24)
                         instructions
                     }
+                    .padding(.horizontal, 22)
                 } else if permissionDenied {
                     deniedState
                 } else {
@@ -166,9 +182,15 @@ struct ScanToOrderView: View {
     }
 
     private var scanFrame: some View {
-        RoundedRectangle(cornerRadius: 24)
-            .stroke(.white, lineWidth: 3)
-            .frame(width: 240, height: 240)
+        ZStack {
+            RoundedRectangle(cornerRadius: 30)
+                .fill(.clear)
+                .frame(width: min(UIScreen.main.bounds.width - 42, 340), height: min(UIScreen.main.bounds.width - 42, 340))
+                .overlay(RoundedRectangle(cornerRadius: 30).stroke(.white.opacity(0.25), lineWidth: 1))
+            Image(systemName: "viewfinder")
+                .font(.system(size: min(UIScreen.main.bounds.width - 42, 340), weight: .ultraLight))
+                .foregroundStyle(MinervaColor.limeAccent)
+        }
     }
 
     private var instructions: some View {

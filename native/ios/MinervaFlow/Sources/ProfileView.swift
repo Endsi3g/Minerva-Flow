@@ -8,6 +8,7 @@ struct ProfileView: View {
     @EnvironmentObject var supabase: SupabaseManager
     @EnvironmentObject var biometricLock: BiometricLock
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
+    private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
     @State private var frequency = "all"
     @State private var isSavingFrequency = false
     @State private var savedTick = false
@@ -122,10 +123,10 @@ struct ProfileView: View {
                 .resizable()
                 .frame(width: 34, height: 34)
             VStack(alignment: .leading, spacing: 3) {
-                Text("Compte")
+                Text(isFrench ? "Plus" : "More")
                     .font(MinervaFont.display(28, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
-                Text("Votre compte, vos cartes et vos préférences au même endroit")
+                Text(isFrench ? "Votre compte, vos cartes, vos offres et vos préférences au même endroit" : "Your account, cards, offers and preferences in one place")
                     .font(.system(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
             }

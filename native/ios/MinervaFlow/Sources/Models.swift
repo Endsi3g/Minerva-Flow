@@ -242,6 +242,20 @@ struct MenuResponse: Codable {
     let acceptsTips: Bool
 }
 
+extension NativeMenuItem {
+    /// Offline-safe catalog used by the TestFlight demo account. The real
+    /// API remains the source of truth; this catalog keeps the ordering flow
+    /// usable when a transient bridge/network failure occurs.
+    static let demoCatalog: [NativeMenuItem] = [
+        NativeMenuItem(id: "demo-burger", restaurantId: "demo", name: "Burger Minerva", category: "Plats principaux", price: 22, description: "Bœuf local, cheddar, oignons confits et pommes allumettes.", active: true, imageUrl: nil, imageUrls: []),
+        NativeMenuItem(id: "demo-risotto", restaurantId: "demo", name: "Risotto aux champignons", category: "Plats principaux", price: 24, description: "Champignons sauvages, parmesan et huile de truffe.", active: true, imageUrl: nil, imageUrls: []),
+        NativeMenuItem(id: "demo-soupe", restaurantId: "demo", name: "Soupe à l’oignon gratinée", category: "Entrées", price: 12, description: "Bouillon maison, oignons caramélisés et gruyère.", active: true, imageUrl: nil, imageUrls: []),
+        NativeMenuItem(id: "demo-saumon", restaurantId: "demo", name: "Tartare de saumon", category: "Entrées", price: 18, description: "Saumon, citron, ciboulette et croûtons.", active: true, imageUrl: nil, imageUrls: []),
+        NativeMenuItem(id: "demo-creme", restaurantId: "demo", name: "Crème brûlée", category: "Desserts", price: 9, description: "Vanille de Madagascar et sucre caramélisé.", active: true, imageUrl: nil, imageUrls: []),
+        NativeMenuItem(id: "demo-cafe", restaurantId: "demo", name: "Café allongé", category: "Boissons", price: 4, description: "Torréfaction locale, servi chaud.", active: true, imageUrl: nil, imageUrls: []),
+    ]
+}
+
 struct MenuItemReview: Codable, Identifiable {
     let id: String
     let menuItemId: String

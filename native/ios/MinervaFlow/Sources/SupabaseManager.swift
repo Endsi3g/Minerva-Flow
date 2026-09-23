@@ -50,12 +50,25 @@ final class SupabaseManager: ObservableObject {
     @Published var allRedemptions: [RewardRedemption] = []
     @Published var isLoadingData = false
     @Published var isLoadingMenu = false
+    @Published private(set) var isUsingDemoMenuFallback = false
     @Published var isLoadingReferrals = false
     /// Surfaced by any screen after a failed network/RPC call — cleared the
     /// next time that screen's action is retried. Centralized here rather
     /// than each view inventing its own error state, so every screen fails
     /// the same way instead of some showing nothing at all.
-    @Published var lastError: String?
+    @Published var lastError: String? {
+        didSet {
+            guard let message = lastError else { return }
+            // Errors are actionable feedback, not global navigation state.
+            // Auto-expire them so a failure on one tab cannot reappear as an
+            // alert after the user changes tabs several seconds later.
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 6_000_000_000)
+                guard let self, self.lastError == message else { return }
+                self.lastError = nil
+            }
+        }
+    }
     /// Native owner/manager mode is resolved from the authenticated user's
     /// restaurant membership, never from a client-side flag.
     @Published var isOwnerExperience = false
@@ -1095,6 +1108,7 @@ final class SupabaseManager: ObservableObject {
     func fetchMenu() async {
         isLoadingMenu = true
         defer { isLoadingMenu = false }
+        isUsingDemoMenuFallback = false
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/menu"))
             let decoded = try JSONDecoder().decode(MenuResponse.self, from: data)
@@ -1103,11 +1117,23 @@ final class SupabaseManager: ObservableObject {
             acceptsTips = decoded.acceptsTips
             lastError = nil
         } catch let error as URLError where error.code == .notConnectedToInternet {
-            lastError = "Aucune connexion internet. Vérifiez votre réseau et réessayez."
+            applyDemoMenuFallback(message: "Connexion indisponible : le menu démo reste accessible hors ligne.")
         } catch {
-            lastError = "Le menu n'a pas pu être chargé. Réessayez."
+            applyDemoMenuFallback(message: "Le menu en ligne n’a pas pu être chargé. Le menu démo est affiché pour continuer le test.")
             print("fetchMenu error: \(error)")
         }
+    }
+
+    private func applyDemoMenuFallback(message: String) {
+        guard menuItems.isEmpty else {
+            lastError = message
+            return
+        }
+        menuItems = NativeMenuItem.demoCatalog
+        taxRate = 0.14975
+        acceptsTips = true
+        isUsingDemoMenuFallback = true
+        lastError = message
     }
 
     /// Downloads the signed pass for the selected loyalty relationship. The

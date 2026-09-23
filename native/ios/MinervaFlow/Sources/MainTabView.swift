@@ -4,33 +4,37 @@ private let lastSeenSurveyBuildKey = "lastSeenSurveyBuild"
 
 struct MainTabView: View {
     @EnvironmentObject var router: DeepLinkRouter
+    @EnvironmentObject var supabase: SupabaseManager
     @State private var selection: AppTab = .home
     @State private var showVersionSurvey = false
+    @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
+
+    private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
     var body: some View {
         TabView(selection: $selection) {
             HomeView()
-                .tabItem { Label("Accueil", systemImage: "house.fill") }
+                .tabItem { Label(isFrench ? "Accueil" : "Home", systemImage: "house.fill") }
                 .tag(AppTab.home)
 
             MenuView()
-                .tabItem { Label("Commander", systemImage: "fork.knife") }
+                .tabItem { Label(isFrench ? "Commander" : "Order", systemImage: "fork.knife") }
                 .tag(AppTab.order)
 
             ScannerTabView()
-                .tabItem { Label("Scanner", systemImage: "qrcode.viewfinder") }
+                .tabItem { Label(isFrench ? "Scanner" : "Scan", systemImage: "qrcode.viewfinder") }
                 .tag(AppTab.scan)
 
             RewardsView()
-                .tabItem { Label("Récompenses", systemImage: "gift.fill") }
+                .tabItem { Label(isFrench ? "Offres" : "Offers", systemImage: "gift.fill") }
                 .tag(AppTab.rewards)
 
             MembershipCardsView()
-                .tabItem { Label("Mes cartes", systemImage: "creditcard.fill") }
+                .tabItem { Label(isFrench ? "Mes cartes" : "My cards", systemImage: "creditcard.fill") }
                 .tag(AppTab.cards)
 
             ProfileView()
-                .tabItem { Label("Compte", systemImage: "ellipsis.circle.fill") }
+                .tabItem { Label(isFrench ? "Plus" : "More", systemImage: "ellipsis.circle.fill") }
                 .tag(AppTab.profile)
         }
         .tint(MinervaColor.emeraldDark)
@@ -44,6 +48,11 @@ struct MainTabView: View {
             checkVersionBumpSurvey()
         }
         .onChange(of: router.pendingTab) { _, _ in applyPendingTabIfNeeded() }
+        .onChange(of: selection) { _, _ in
+            // A failed request belongs to the screen that made it. Never
+            // replay that error as the user navigates to another tab.
+            supabase.lastError = nil
+        }
         .sheet(isPresented: $showVersionSurvey) {
             SurveyView()
         }
