@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { requestCustomerMagicLink } from "@/lib/auth/customer-magic-link";
-import { getPublicOrderDeliveryQuoteAction, submitPublicOrderAction } from "./actions";
+import { getPublicOrderDeliveryQuoteAction, resumePublicOrderAction, submitPublicOrderAction } from "./actions";
 import { OnlinePaymentForm } from "./OnlinePaymentForm";
 import { MealSuggestionsPanel } from "./MealSuggestionsPanel";
 import { ServiceQuoteRequest } from "./ServiceQuoteRequest";
@@ -133,8 +133,51 @@ function CheckoutModal({
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [estimatedReadyAt, setEstimatedReadyAt] = useState<string | null>(null);
+  const [checkoutAttemptId, setCheckoutAttemptId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(`mv-order-attempt-${token}`);
+    } catch {
+      return null;
+    }
+  });
+  const [checkoutTotal, setCheckoutTotal] = useState<number | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
+  const cartFingerprint = JSON.stringify(cartLines.map((line) => [line.item.id, line.quantity]));
+  const lastCartFingerprint = useRef(cartFingerprint);
+
+  useEffect(() => {
+    if (lastCartFingerprint.current === cartFingerprint) return;
+    lastCartFingerprint.current = cartFingerprint;
+    setCheckoutAttemptId(null);
+    try {
+      localStorage.removeItem(`mv-order-attempt-${token}`);
+    } catch {
+      // ignore storage failures; the order action still has a server key
+    }
+  }, [cartFingerprint, token]);
+
+  function getCheckoutAttemptId(): string {
+    if (checkoutAttemptId) return checkoutAttemptId;
+    const key = crypto.randomUUID();
+    setCheckoutAttemptId(key);
+    try {
+      localStorage.setItem(`mv-order-attempt-${token}`, key);
+    } catch {
+      // The in-memory key still protects retries until this page closes.
+    }
+    return key;
+  }
+
+  function finishOrder() {
+    setCheckoutAttemptId(null);
+    try {
+      localStorage.removeItem(`mv-order-attempt-${token}`);
+    } catch {
+      // ignore
+    }
+    onOrdered();
+  }
 
   async function handleShareOrder() {
     if (!shareProgramId) return;
@@ -165,15 +208,21 @@ function CheckoutModal({
   async function handleEmailSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setEmailStatus("sending");
-    const result = await requestCustomerMagicLink(
-      email,
-      `/m/${token}${referralCode ? `?ref=${referralCode}` : ""}`
-    );
-    if (result.ok) {
-      setEmailStatus("sent");
-    } else {
+    setEmailError(null);
+    try {
+      const result = await requestCustomerMagicLink(
+        email,
+        `/m/${token}${referralCode ? `?ref=${referralCode}` : ""}`
+      );
+      if (result.ok) {
+        setEmailStatus("sent");
+      } else {
+        setEmailStatus("error");
+        setEmailError(result.error ?? "Une erreur est survenue.");
+      }
+    } catch {
       setEmailStatus("error");
-      setEmailError(result.error ?? "Une erreur est survenue.");
+      setEmailError("Impossible d’envoyer le lien maintenant. Vérifiez votre connexion et réessayez.");
     }
   }
 
@@ -181,34 +230,64 @@ function CheckoutModal({
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     setSubmitStatus("submitting");
-    const result = await submitPublicOrderAction(
-      token,
-      referralCode,
-      cartLines.map((l) => ({ menuItemId: l.item.id, quantity: l.quantity })),
-      {
-        guestName: String(form.get("guestName") ?? ""),
-        guestPhone: String(form.get("guestPhone") ?? "") || null,
-        paymentMethod: payOnline ? null : String(form.get("paymentMethod") ?? "") || null,
-        tipAmount,
-        fulfillmentMode,
-        deliveryAddress: fulfillmentMode === "livraison" ? deliveryAddress : null,
-        payOnline,
-        requestedReadyAtLocal: String(form.get("requestedReadyAtLocal") ?? "") || null,
-        marketingConsent,
-        mentionedOfferTitle,
+    try {
+      const idempotencyKey = getCheckoutAttemptId();
+      const result = await submitPublicOrderAction(
+        token,
+        referralCode,
+        cartLines.map((l) => ({ menuItemId: l.item.id, quantity: l.quantity })),
+        {
+          guestName: String(form.get("guestName") ?? ""),
+          guestPhone: String(form.get("guestPhone") ?? "") || null,
+          paymentMethod: payOnline ? null : String(form.get("paymentMethod") ?? "") || null,
+          tipAmount,
+          fulfillmentMode,
+          deliveryAddress: fulfillmentMode === "livraison" ? deliveryAddress : null,
+          payOnline,
+          requestedReadyAtLocal: String(form.get("requestedReadyAtLocal") ?? "") || null,
+          marketingConsent,
+          mentionedOfferTitle,
+        },
+        idempotencyKey
+      );
+      if (!result.ok) {
+        setSubmitStatus("error");
+        return;
       }
-    );
-    if (!result.ok) {
+      setEstimatedReadyAt(result.estimatedReadyAt);
+      setCheckoutTotal(result.total);
+      if (result.clientSecret) {
+        setClientSecret(result.clientSecret);
+        setSubmitStatus("paying");
+      } else {
+        finishOrder();
+        setSubmitStatus(result.paymentConfirmed ? "paid" : "done");
+      }
+    } catch {
       setSubmitStatus("error");
-      return;
     }
-    setEstimatedReadyAt(result.estimatedReadyAt);
-    if (result.clientSecret) {
-      setClientSecret(result.clientSecret);
-      setSubmitStatus("paying");
-    } else {
-      onOrdered();
-      setSubmitStatus("done");
+  }
+
+  async function handleResumeOrder() {
+    if (!checkoutAttemptId) return;
+    setSubmitStatus("submitting");
+    try {
+      const result = await resumePublicOrderAction(token, checkoutAttemptId);
+      if (!result.ok) {
+        setSubmitStatus("error");
+        return;
+      }
+      setEstimatedReadyAt(result.estimatedReadyAt);
+      setCheckoutTotal(result.total);
+      if (result.clientSecret) {
+        setClientSecret(result.clientSecret);
+        setSubmitStatus("paying");
+      } else {
+        finishOrder();
+        setSubmitStatus(result.paymentConfirmed ? "paid" : "done");
+      }
+    } catch {
+      setSubmitStatus("error");
     }
   }
 
@@ -221,9 +300,9 @@ function CheckoutModal({
           </p>
           <OnlinePaymentForm
             clientSecret={clientSecret}
-            total={total}
+            total={checkoutTotal ?? displayTotal}
             onPaid={() => {
-              onOrdered();
+              finishOrder();
               setSubmitStatus("paid");
             }}
           />
@@ -282,6 +361,16 @@ function CheckoutModal({
         </div>
       ) : (
         <div className="space-y-4">
+          {authenticated && checkoutAttemptId && submitStatus !== "submitting" && (
+            <div className="rounded-xl border border-mv-green/20 bg-mv-green-tint/40 p-3">
+              <p className="mb-2 text-[12px] text-mv-ink-soft">
+                Une tentative précédente a peut-être déjà été reçue. Reprenez-la pour retrouver la même commande et le même paiement, sans en créer une autre.
+              </p>
+              <Button type="button" variant="secondary" size="sm" onClick={handleResumeOrder} className="w-full">
+                Reprendre ma commande
+              </Button>
+            </div>
+          )}
           {mentionedOfferTitle && (
             <div className="flex items-center gap-1.5 rounded-lg bg-mv-lime-tint px-3 py-2 text-[12px] font-medium text-mv-green-darker">
               <Sparkles size={13} /> Offre mentionnée : {mentionedOfferTitle}
@@ -852,6 +941,7 @@ export function MenuOrderFlow({
     setCart({});
     try {
       localStorage.removeItem(`mv-cart-${token}`);
+      localStorage.removeItem(`mv-order-attempt-${token}`);
     } catch {
       // ignore
     }

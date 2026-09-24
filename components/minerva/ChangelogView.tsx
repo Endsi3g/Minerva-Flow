@@ -6,7 +6,45 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ChangelogMarkdownRenderer } from "@/components/minerva/ChangelogMarkdownRenderer";
 import { formatDateFull } from "@/lib/utils";
 import type { ChangelogEntry, ChangelogCategory } from "@/lib/data/changelog";
-import { History, Search, X } from "lucide-react";
+import { Camera, History, ImageOff, Search, Sparkles, X } from "lucide-react";
+
+const RECENT_ENTRY_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+
+function ChangelogScreenshot({ entry, isFirst }: { entry: ChangelogEntry; isFirst: boolean }) {
+  const [failed, setFailed] = useState(false);
+  if (!entry.imageUrl) return null;
+
+  return (
+    <figure className="mb-5 overflow-hidden rounded-xl border border-mv-border-soft bg-mv-surface">
+      {failed ? (
+        <div
+          role="img"
+          aria-label={`La capture d’écran de « ${entry.title} » est indisponible.`}
+          className="flex aspect-video flex-col items-center justify-center gap-2 bg-mv-cream-soft text-mv-ink-faint"
+        >
+          <ImageOff size={22} aria-hidden="true" />
+          <span className="text-xs">Capture d’écran indisponible</span>
+        </div>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={entry.imageUrl}
+          alt={`Capture d’écran : ${entry.title}`}
+          width={1200}
+          height={675}
+          loading={isFirst ? "eager" : "lazy"}
+          fetchPriority={isFirst ? "high" : "low"}
+          decoding="async"
+          onError={() => setFailed(true)}
+          className="block aspect-video w-full bg-mv-cream-soft object-cover"
+        />
+      )}
+      <figcaption className="flex items-center gap-2 px-3.5 py-2.5 text-[11px] text-mv-ink-faint">
+        <Camera size={13} aria-hidden="true" /> Capture de la fonctionnalité
+      </figcaption>
+    </figure>
+  );
+}
 
 const categoryLabel: Record<ChangelogCategory, string> = {
   fonctionnalite: "Nouveauté",
@@ -21,7 +59,13 @@ const FILTERS: { value: ChangelogCategory | "all"; label: string }[] = [
   { value: "correctif", label: "Correctifs" },
 ];
 
-export function ChangelogView({ initialEntries }: { initialEntries: ChangelogEntry[] }) {
+export function ChangelogView({
+  initialEntries,
+  referenceTime,
+}: {
+  initialEntries: ChangelogEntry[];
+  referenceTime: string;
+}) {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ChangelogCategory | "all">("all");
 
@@ -34,6 +78,7 @@ export function ChangelogView({ initialEntries }: { initialEntries: ChangelogEnt
       return matchCategory && matchSearch;
     });
   }, [initialEntries, selectedCategory, search]);
+  const referenceTimestamp = new Date(referenceTime).getTime();
 
   return (
     <div className="mx-auto w-full max-w-xl space-y-10">
@@ -88,12 +133,17 @@ export function ChangelogView({ initialEntries }: { initialEntries: ChangelogEnt
         />
       ) : (
         <div className="divide-y divide-mv-border-soft">
-          {filteredEntries.map((entry) => {
+          {filteredEntries.map((entry, index) => {
             const versionMatch = entry.title.match(/v\d+\.\d+(\.\d+)?/i);
             const versionTag = versionMatch ? versionMatch[0] : null;
             const cleanTitle = versionTag
               ? entry.title.replace(`Version ${versionTag} : `, "").replace(`${versionTag} — `, "")
               : entry.title;
+            const publishedTimestamp = new Date(entry.publishedAt).getTime();
+            const isNew =
+              Number.isFinite(publishedTimestamp) &&
+              publishedTimestamp <= referenceTimestamp &&
+              referenceTimestamp - publishedTimestamp <= RECENT_ENTRY_WINDOW_MS;
 
             return (
               <article key={entry.id} className="py-8 first:pt-0">
@@ -101,6 +151,14 @@ export function ChangelogView({ initialEntries }: { initialEntries: ChangelogEnt
                   <time>{formatDateFull(entry.publishedAt.slice(0, 10))}</time>
                   <span aria-hidden>·</span>
                   <span>{categoryLabel[entry.category]}</span>
+                  {isNew && (
+                    <span
+                      aria-label="Mise à jour récente"
+                      className="inline-flex items-center gap-1 rounded-full border border-mv-green/15 bg-mv-green/8 px-2 py-0.5 font-semibold text-mv-green-dark"
+                    >
+                      <Sparkles size={11} aria-hidden="true" /> Nouveau
+                    </span>
+                  )}
                   {versionTag && (
                     <>
                       <span aria-hidden>·</span>
@@ -113,14 +171,7 @@ export function ChangelogView({ initialEntries }: { initialEntries: ChangelogEnt
                   {cleanTitle}
                 </h3>
 
-                {entry.imageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={entry.imageUrl}
-                    alt=""
-                    className="mb-4 w-full rounded-lg object-cover"
-                  />
-                )}
+                <ChangelogScreenshot entry={entry} isFirst={index === 0} />
 
                 <ChangelogMarkdownRenderer content={entry.description} category={entry.category} />
               </article>

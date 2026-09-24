@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createTestUser, cleanupTestUser, cleanupOrphanRestaurants, loginAs, type TestUser } from "./fixtures";
+import { createTestUser, cleanupTestUser, cleanupOrphanRestaurants, loginAs, supabaseAdmin, type TestUser } from "./fixtures";
 
 test.describe("Menu", () => {
   let user: TestUser;
@@ -16,6 +16,9 @@ test.describe("Menu", () => {
   test("adding a dish succeeds and shows up in the list with no error toast", async ({ page }) => {
     await loginAs(page, user);
     await page.goto("/menu");
+    await page.locator('[data-interactive-ready="true"]').waitFor();
+    await expect(page.getByRole("heading", { name: /Customer dish ideas|Idées de plats des clients/ })).toBeVisible();
+    await expect(page.getByTestId("meal-suggestions-load-error")).toHaveCount(0);
 
     const itemName = `Item E2E ${Date.now()}`;
     // Exact match — a loose /ajouter|nouveau|add/i also matches the sidebar's
@@ -30,11 +33,20 @@ test.describe("Menu", () => {
 
     await expect(page.getByText(itemName)).toBeVisible({ timeout: 10000 });
     await expect(page.locator('[data-sonner-toast][data-type="error"]')).toHaveCount(0);
+    const { data: persistedItem, error: persistenceError } = await supabaseAdmin
+      .from("menu_items")
+      .select("id")
+      .eq("name", itemName)
+      .maybeSingle();
+    expect(persistenceError).toBeNull();
+    expect(persistedItem?.id).toBeTruthy();
   });
 
   test("sharing the menu produces a public link", async ({ page }) => {
     await loginAs(page, user);
     await page.goto("/menu");
+    await page.locator('[data-interactive-ready="true"]').waitFor();
+    await expect(page.getByTestId("meal-suggestions-load-error")).toHaveCount(0);
 
     // Exact match — a loose /ajouter|nouveau|add/i also matches the sidebar's
     // per-nav-item "Ajouter aux favoris" toggle (a title attribute, so it has

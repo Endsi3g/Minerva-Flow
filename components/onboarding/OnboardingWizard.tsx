@@ -162,7 +162,7 @@ export function OnboardingWizard({
       await sendInviteIfFilled();
       const finished = await finishOnboardingAction();
       if (!finished) throw new Error("Impossible de terminer la configuration. Réessayez.");
-      router.push("/overview");
+      router.replace("/workspace");
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Une erreur est survenue.");
       setSubmitting(false);

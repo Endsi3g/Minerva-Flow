@@ -4,10 +4,13 @@ import {
   getInstagramAppId,
   oauthRedirectUri,
   INSTAGRAM_DIRECT_SCOPES,
+  INSTAGRAM_AMBASSADOR_SCOPES,
   INSTAGRAM_FACEBOOK_SCOPES,
 } from "@/lib/ad-platforms/config";
 import { signOAuthState } from "@/lib/ad-platforms/state";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const INSTAGRAM_DIRECT_AUTHORIZE_URL = "https://www.instagram.com/oauth/authorize";
 const FACEBOOK_OAUTH_DIALOG_URL = "https://www.facebook.com/v21.0/dialog/oauth";
@@ -20,13 +23,28 @@ export async function GET(req: Request) {
     );
   }
 
+  const url = new URL(req.url);
+  const mode = url.searchParams.get("mode") === "facebook" ? "facebook" : url.searchParams.get("mode") === "ambassador" ? "ambassador" : "direct";
+  if (mode === "ambassador") {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.redirect(new URL("/fr/login", url.origin));
+    const { data: ambassador } = await createAdminClient().from("flow_ambassadors").select("id").eq("user_id", user.id).eq("status", "active").maybeSingle();
+    if (!ambassador) return NextResponse.json({ error: "Rejoignez le programme ambassadeur avant de connecter Instagram." }, { status: 403 });
+    const authorizeUrl = new URL(INSTAGRAM_DIRECT_AUTHORIZE_URL);
+    authorizeUrl.searchParams.set("client_id", getInstagramAppId()!);
+    authorizeUrl.searchParams.set("redirect_uri", oauthRedirectUri("instagram", url.origin));
+    authorizeUrl.searchParams.set("response_type", "code");
+    authorizeUrl.searchParams.set("scope", INSTAGRAM_AMBASSADOR_SCOPES);
+    authorizeUrl.searchParams.set("state", signOAuthState(`ambassador:${user.id}`, "ambassador"));
+    return NextResponse.redirect(authorizeUrl.toString());
+  }
+
   const membership = await getCurrentMembership();
   if (!membership || !["owner", "manager"].includes(membership.role)) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 403 });
   }
 
-  const url = new URL(req.url);
-  const mode = url.searchParams.get("mode") === "facebook" ? "facebook" : "direct";
   const origin = url.origin;
   const state = signOAuthState(membership.restaurantId, mode);
 

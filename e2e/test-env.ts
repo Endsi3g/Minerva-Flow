@@ -44,6 +44,8 @@ function configureE2eEnvironment() {
   // process variables win over Next.js loading .env.local in dev mode.
   process.env.NEXT_PUBLIC_SUPABASE_URL = supabaseUrl;
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = anonKey;
+  process.env.SUPABASE_URL = supabaseUrl;
+  process.env.SUPABASE_SECRET_KEY = serviceRoleKey;
   process.env.SUPABASE_SERVICE_ROLE_KEY = serviceRoleKey;
 
   // Simulated webhook tests can use a local/test Stripe key; never inherit a

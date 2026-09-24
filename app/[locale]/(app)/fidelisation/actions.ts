@@ -11,7 +11,7 @@ import {
   claimRewardRedemption,
   resolvePairingCode,
   resolvePairingCodeForCustomer,
-  findCustomerByPhone,
+  findCounterCustomersByPhone,
   mapCustomer,
   type CustomerRow,
   type CustomerInput,
@@ -43,6 +43,7 @@ import type {
   PhysicalTouchpointType,
 } from "@/lib/types";
 import type { Customer, LoyaltyReward, LoyaltyShare, ReferralProgram, VisitRewardTier } from "@/lib/types";
+import { selectCounterPhoneMatch } from "@/lib/loyalty/counter-identification";
 
 export async function createCustomerAction(
   restaurantId: string,
@@ -183,7 +184,9 @@ export async function searchCustomerAtCounterAction(
 
   // 2. If phone number (digits length >= 7)
   if (digits.length >= 7) {
-    const cust = await findCustomerByPhone(restaurantId, clean);
+    const matches = await findCounterCustomersByPhone(restaurantId, clean);
+    if (!matches) return { error: "La recherche par téléphone est temporairement indisponible. Réessayez." };
+    const { match: cust, ambiguous } = selectCounterPhoneMatch(matches, clean);
     if (cust) {
       return {
         customer: {
@@ -193,10 +196,13 @@ export async function searchCustomerAtCounterAction(
           loyaltyPoints: 0,
           visitCount: 0,
           totalSpent: 0,
-          avatarUrl: cust.avatarUrl,
+          avatarUrl: null,
           matchedBy: "phone",
         },
       };
+    }
+    if (ambiguous) {
+      return { error: "Plusieurs comptes correspondent à ce numéro. Entrez le numéro complet pour choisir le bon client." };
     }
   }
 
@@ -443,7 +449,9 @@ export async function getCachedCityCoordinatesAction(cities: string[]): Promise<
 
 /** Geocodes one city at a time from the client — mirrors the /maps lazy-backfill pattern. */
 export async function geocodeCityIfMissingAction(city: string): Promise<CityCoordinates | null> {
-  return geocodeCityIfMissing(city);
+  const trimmed = city.trim().slice(0, 120);
+  if (!trimmed) return null;
+  return geocodeCityIfMissing(trimmed);
 }
 
 export async function recordQrCodeDisplayedAction(

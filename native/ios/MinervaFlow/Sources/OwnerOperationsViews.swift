@@ -405,6 +405,7 @@ private struct ReviewReplyEditor: View {
 }
 
 struct OwnerManagementView: View {
+    @State private var showAmbassadorProgram = false
     var body: some View {
         NavigationStack {
             List {
@@ -414,9 +415,13 @@ struct OwnerManagementView: View {
                     NavigationLink("Finance", destination: OwnerFinanceView())
                 }
                 Section("Performance") { NavigationLink("Reports", destination: OwnerReportsView()) }
+                Section("Growth") {
+                    Button { showAmbassadorProgram = true } label: { Label("Ambassador program", systemImage: "megaphone.fill") }
+                }
                 Section("Account") { NavigationLink("Settings", destination: OwnerSettingsView()) }
             }
             .navigationTitle("Manage")
+            .sheet(isPresented: $showAmbassadorProgram) { FlowAmbassadorMobileView() }
         }
     }
 }
@@ -517,8 +522,8 @@ struct OwnerReportsView: View {
                     Text("Net by category").font(MinervaFont.display(22, weight: .semibold))
                     if netByCategory.isEmpty { ContentUnavailableView("No finance data", systemImage: "chart.bar", description: Text("Transactions will appear here as they are recorded.")) }
                     else { Chart(netByCategory, id: \.name) { entry in BarMark(x: .value("Category", entry.name), y: .value("Net", entry.total)).foregroundStyle(entry.total >= 0 ? MinervaColor.emeraldDark : .red) }.frame(height: 280).chartYAxis { AxisMarks(position: .leading) } }
-                }.frame(maxWidth: .infinity, alignment: .leading).padding(18).background(.white).clipShape(RoundedRectangle(cornerRadius: 18))
-                VStack(alignment: .leading, spacing: 10) { Text("Recent activity").font(MinervaFont.display(22, weight: .semibold)); ForEach(supabase.ownerTransactions.prefix(12)) { tx in HStack { Text(tx.date).font(.caption.monospacedDigit()).foregroundStyle(.secondary); Text(tx.description); Spacer(); Text(tx.amount.cad).font(.subheadline.weight(.semibold)) }.padding(.vertical, 4) } }.frame(maxWidth: .infinity, alignment: .leading).padding(18).background(.white).clipShape(RoundedRectangle(cornerRadius: 18))
+                }.frame(maxWidth: .infinity, alignment: .leading).padding(18).background(MinervaColor.surface).clipShape(RoundedRectangle(cornerRadius: 18))
+                VStack(alignment: .leading, spacing: 10) { Text("Recent activity").font(MinervaFont.display(22, weight: .semibold)); ForEach(supabase.ownerTransactions.prefix(12)) { tx in HStack { Text(tx.date).font(.caption.monospacedDigit()).foregroundStyle(.secondary); Text(tx.description); Spacer(); Text(tx.amount.cad).font(.subheadline.weight(.semibold)) }.padding(.vertical, 4) } }.frame(maxWidth: .infinity, alignment: .leading).padding(18).background(MinervaColor.surface).clipShape(RoundedRectangle(cornerRadius: 18))
             }.padding(20)
         }.background(MinervaColor.cream.ignoresSafeArea()).navigationTitle("Reports").toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
     }
@@ -526,8 +531,17 @@ struct OwnerReportsView: View {
 
 struct OwnerSettingsView: View {
     @EnvironmentObject private var supabase: SupabaseManager
+    @AppStorage("appAppearance") private var storedAppearance = AppAppearance.light.rawValue
     var body: some View {
         Form {
+            Section("Appearance") {
+                Picker("Theme", selection: $storedAppearance) {
+                    ForEach(AppAppearance.allCases) { option in
+                        Text(option.label(isFrench: false)).tag(option.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
             Section("Location") { LabeledContent("Selected location", value: supabase.selectedOwnerRestaurant?.name ?? "None") }
             Section("Notifications") {
                 Text("Order-ready messages use push, in-app presentation and transactional email. SMS is not used.").font(.footnote).foregroundStyle(.secondary)

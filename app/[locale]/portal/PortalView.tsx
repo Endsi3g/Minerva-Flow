@@ -25,6 +25,7 @@ import type { PublicFulfillmentMode } from "@/lib/orders/checkout-options";
 import { AnnouncementCard } from "./AnnouncementCard";
 import {
   getOrCreateReferralLinkAction,
+  resumePortalOrderAction,
   updateMyProfileAction,
   requestEmailChangeAction,
   selfRedeemRewardAction,
@@ -59,12 +60,19 @@ import {
   Pencil,
   Mail,
 } from "lucide-react";
-import { startTransition, useMemo, useState, useEffect } from "react";
+import { startTransition, useMemo, useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
 type PortalTab = "home" | "order" | "rewards" | "profile";
+
+export type PortalCheckoutReturn = {
+  status: "paid" | "pending" | "cancelled" | "failed";
+  orderId: string;
+  total: number;
+  estimatedReadyAt: string | null;
+};
 
 const walletTierBg: Record<LoyaltyTier, string> = {
   habitue: "bg-mv-ink text-mv-cream",
@@ -277,6 +285,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
   const [phone, setPhone] = useState(customer.phone ?? "");
   const [birthday, setBirthday] = useState(customer.birthday ?? "");
   const [city, setCity] = useState(customer.city ?? "");
+  const [neighborhood, setNeighborhood] = useState(customer.neighborhood ?? "");
   const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
   const [isSaving, setIsSaving] = useState(false);
   const [savedTick, setSavedTick] = useState(false);
@@ -293,6 +302,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         marketingConsent,
         birthday: birthday || null,
         city: city.trim() || null,
+        neighborhood: neighborhood.trim() || null,
         name: name.trim() || customer.name,
         phone: phone.trim() || null,
         avatarUrl,
@@ -314,7 +324,8 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
     const ok = await updateMyProfileAction(customer.id, {
       marketingConsent,
       birthday: birthday || null,
-      city: city.trim() || null,
+        city: city.trim() || null,
+        neighborhood: neighborhood.trim() || null,
       avatarUrl: url,
     });
     if (ok) toast.success("Photo de profil mise à jour.");
@@ -405,6 +416,9 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         </Field>
         <Field label="Ville" hint="Optionnel — aide le restaurant à savoir d'où viennent ses clients">
           <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ex : Montréal" />
+        </Field>
+        <Field label="Quartier" hint="Optionnel — indiquez une zone générale, sans adresse ni position GPS">
+          <Input value={neighborhood} onChange={(e) => setNeighborhood(e.target.value.slice(0, 80))} placeholder="Ex : Plateau-Mont-Royal" maxLength={80} />
         </Field>
         <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
           <Checkbox
@@ -1033,6 +1047,34 @@ function CheckoutModal({
         ? serverDeliveryQuote
         : { fee: 0, distanceKm: null, etaMinutes: null, available: false, reason: "missing_location" };
   const [payOnline, setPayOnline] = useState(!canPayAtReceipt);
+  const [checkoutAttemptId, setCheckoutAttemptId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(`mv-portal-order-attempt-${customerId}`);
+    } catch {
+      return null;
+    }
+  });
+
+  function getCheckoutAttemptId(): string {
+    if (checkoutAttemptId) return checkoutAttemptId;
+    const id = crypto.randomUUID();
+    setCheckoutAttemptId(id);
+    try {
+      localStorage.setItem(`mv-portal-order-attempt-${customerId}`, id);
+    } catch {
+      // Still protects retries in this live checkout session.
+    }
+    return id;
+  }
+
+  function clearCheckoutAttempt() {
+    setCheckoutAttemptId(null);
+    try {
+      localStorage.removeItem(`mv-portal-order-attempt-${customerId}`);
+    } catch {
+      // The completed order is safe even when browser storage is unavailable.
+    }
+  }
 
   useEffect(() => {
     if (fulfillmentMode !== "livraison" || normalizedDeliveryAddress.length < 6 || quotedDeliveryAddress === normalizedDeliveryAddress) return;
@@ -1059,26 +1101,54 @@ function CheckoutModal({
 
   async function handleSubmit() {
     setStatus("submitting");
-    const result = await submitPortalOrderAction(
-      customerId,
-      cartLines.map((l) => ({ menuItemId: l.item.id, quantity: l.quantity })),
-      tipAmount,
-      paymentMethod.trim() || null,
-      requestedReadyAtLocal || null,
-      payOnline,
-      fulfillmentMode === "livraison" ? { address: deliveryAddress.trim() } : undefined
-    );
-    if (!result.ok) {
+    try {
+      const result = await submitPortalOrderAction(
+        customerId,
+        cartLines.map((l) => ({ menuItemId: l.item.id, quantity: l.quantity })),
+        tipAmount,
+        paymentMethod.trim() || null,
+        getCheckoutAttemptId(),
+        requestedReadyAtLocal || null,
+        payOnline,
+        fulfillmentMode === "livraison" ? { address: deliveryAddress.trim() } : undefined
+      );
+      if (!result.ok) {
+        setStatus("error");
+        return;
+      }
+      if (result.paymentUrl) {
+        window.location.assign(result.paymentUrl);
+        return;
+      }
+      setEstimatedReadyAt(result.estimatedReadyAt);
+      onOrdered();
+      clearCheckoutAttempt();
+      setStatus("done");
+    } catch {
       setStatus("error");
-      return;
     }
-    if (result.paymentUrl) {
-      window.location.assign(result.paymentUrl);
-      return;
+  }
+
+  async function handleResume() {
+    if (!checkoutAttemptId) return;
+    setStatus("submitting");
+    try {
+      const result = await resumePortalOrderAction(customerId, checkoutAttemptId);
+      if (!result.ok) {
+        setStatus("error");
+        return;
+      }
+      if (result.paymentUrl) {
+        window.location.assign(result.paymentUrl);
+        return;
+      }
+      setEstimatedReadyAt(result.estimatedReadyAt);
+      onOrdered();
+      clearCheckoutAttempt();
+      setStatus("done");
+    } catch {
+      setStatus("error");
     }
-    setEstimatedReadyAt(result.estimatedReadyAt);
-    onOrdered();
-    setStatus("done");
   }
 
   function handleClose() {
@@ -1210,6 +1280,14 @@ function CheckoutModal({
           </Field>
 
           {status === "error" && <p className="text-[12.5px] text-mv-red">{t("orderError")}</p>}
+          {checkoutAttemptId && status !== "submitting" && (
+            <div className="rounded-xl border border-mv-green/20 bg-mv-green-tint/40 p-3">
+              <p className="mb-2 text-[12px] text-mv-ink-soft">{t("resumeOrderHint")}</p>
+              <Button variant="secondary" size="sm" onClick={handleResume} className="w-full">
+                {t("resumeOrder")}
+              </Button>
+            </div>
+          )}
 
           <Button onClick={handleSubmit} disabled={status === "submitting" || (fulfillmentMode === "livraison" && (deliveryQuoteLoading || !deliveryQuote.available)) || (payOnline ? !canPayOnline : !canPayAtReceipt)} className="w-full">
             {status === "submitting" ? t("orderSubmitting") : t("orderSubmit", { total: formatCurrency(total) })}
@@ -1292,6 +1370,7 @@ export function PortalView({
   appleWalletEnabled,
   googleWalletEnabled,
   announcements,
+  checkoutReturn,
 }: {
   customer: Customer;
   data: PortalData;
@@ -1308,14 +1387,53 @@ export function PortalView({
   appleWalletEnabled: boolean;
   googleWalletEnabled: boolean;
   announcements?: PlatformAnnouncement[];
+  checkoutReturn?: PortalCheckoutReturn | null;
 }) {
   const t = useTranslations("portal.view");
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<PortalTab>("home");
   const [programs, setPrograms] = useState<PortalReferralProgress[]>(data.programs);
   const [points, setPoints] = useState(customer.loyaltyPoints);
   const [redemptions, setRedemptions] = useState<RewardRedemption[]>(data.redemptions);
-  const [cart, setCart] = useState<Record<string, number>>({});
+  const [cart, setCart] = useState<Record<string, number>>(() => {
+    if (checkoutReturn?.status === "paid") return {};
+    try {
+      const saved = localStorage.getItem(`mv-portal-cart-${customer.id}`);
+      return saved ? JSON.parse(saved) as Record<string, number> : {};
+    } catch {
+      return {};
+    }
+  });
+  const cartFingerprint = JSON.stringify(Object.entries(cart).filter(([, qty]) => qty > 0).sort(([a], [b]) => a.localeCompare(b)));
+  const previousCartFingerprint = useRef(cartFingerprint);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  useEffect(() => {
+    if (checkoutReturn?.status !== "paid") return;
+    try {
+      localStorage.removeItem(`mv-portal-cart-${customer.id}`);
+      localStorage.removeItem(`mv-portal-order-attempt-${customer.id}`);
+    } catch {
+      // The verified payment is complete even if browser storage is unavailable.
+    }
+  }, [checkoutReturn?.orderId, checkoutReturn?.status, customer.id]);
+
+  useEffect(() => {
+    try {
+      if (Object.values(cart).some((qty) => qty > 0)) localStorage.setItem(`mv-portal-cart-${customer.id}`, JSON.stringify(cart));
+      else localStorage.removeItem(`mv-portal-cart-${customer.id}`);
+    } catch {
+      // Keep the cart usable in memory if browser storage is unavailable.
+    }
+    if (previousCartFingerprint.current !== cartFingerprint) {
+      previousCartFingerprint.current = cartFingerprint;
+      try {
+        localStorage.removeItem(`mv-portal-order-attempt-${customer.id}`);
+      } catch {
+        // ignore
+      }
+    }
+  }, [cart, cartFingerprint, customer.id]);
 
   function handleLinkCreated(programId: string, link: CustomerReferralLink) {
     setPrograms((prev) => prev.map((p) => (p.program.id === programId ? { ...p, link } : p)));
@@ -1333,6 +1451,12 @@ export function PortalView({
 
   function handleOrdered() {
     setCart({});
+    try {
+      localStorage.removeItem(`mv-portal-cart-${customer.id}`);
+      localStorage.removeItem(`mv-portal-order-attempt-${customer.id}`);
+    } catch {
+      // ignore
+    }
   }
 
   const cartLines = menuItems
@@ -1365,6 +1489,54 @@ export function PortalView({
             </span>
           )}
         </div>
+
+        {checkoutReturn && (
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className={cn(
+              "mb-5 rounded-2xl border p-4",
+              checkoutReturn.status === "paid"
+                ? "border-mv-green/25 bg-mv-green-tint/50"
+                : checkoutReturn.status === "failed"
+                  ? "border-mv-red/25 bg-mv-red-bg"
+                  : "border-mv-border-soft bg-mv-surface"
+            )}
+          >
+            <div className="flex items-start gap-3">
+              {checkoutReturn.status === "paid" ? (
+                <CheckCircle2 size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-mv-green-dark" />
+              ) : (
+                <AlertTriangle size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-mv-ink-soft" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold text-mv-ink">
+                  {t(`checkoutReturn${checkoutReturn.status[0].toUpperCase()}${checkoutReturn.status.slice(1)}Title`)}
+                </p>
+                <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">
+                  {t(`checkoutReturn${checkoutReturn.status[0].toUpperCase()}${checkoutReturn.status.slice(1)}Description`)}
+                </p>
+                <p className="mt-1.5 text-[11.5px] text-mv-ink-faint">
+                  {t("checkoutReturnOrderSummary", { total: formatCurrency(checkoutReturn.total), order: checkoutReturn.orderId.slice(0, 8) })}
+                  {checkoutReturn.status === "paid" && checkoutReturn.estimatedReadyAt
+                    ? ` · ${t("checkoutReturnReadyAt", { time: formatRestaurantTime(checkoutReturn.estimatedReadyAt, restaurantTimezone) })}`
+                    : ""}
+                </p>
+                {checkoutReturn.status === "pending" && (
+                  <Button variant="secondary" size="sm" className="mt-3" onClick={() => router.refresh()}>
+                    {t("checkoutReturnRefresh")}
+                  </Button>
+                )}
+                {(checkoutReturn.status === "cancelled" || checkoutReturn.status === "failed") && (
+                  <Button variant="secondary" size="sm" className="mt-3" onClick={() => setActiveTab("order")}>
+                    {t("checkoutReturnViewOrder")}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {activeTab === "home" && (
           <div className="space-y-6">

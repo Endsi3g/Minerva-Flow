@@ -34,6 +34,8 @@ Elle comprend trois surfaces complémentaires :
 
 Le modèle complet — qui fait quoi, comment les parcours s’enchaînent et ce qui dépend d’une intégration — est décrit dans le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md). L’état de TestFlight est suivi dans [l’audit mobile](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md).
 
+La proposition de prochaine version web/iOS, ses notes de version, son illustration de référence et les portes de validation encore ouvertes sont consignées dans le [dossier de release 2.48.0](docs/releases/RELEASE_CANDIDATE_2.48.0.md). Ce document est un brouillon interne, pas une annonce de disponibilité.
+
 ---
 
 ## Aperçu Visuel

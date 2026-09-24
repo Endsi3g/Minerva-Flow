@@ -67,7 +67,7 @@ struct SurveyView: View {
             TextField("Un commentaire à ajouter ? (optionnel)", text: $comment, axis: .vertical)
                 .lineLimit(5, reservesSpace: true)
                 .padding(12)
-                .background(.white)
+                .background(MinervaColor.surface)
                 .clipShape(RoundedRectangle(cornerRadius: 11))
                 .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
 

@@ -1,5 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { classifyServiceQuoteCheckout, resolveServiceQuoteCheckoutStatus } from "../checkout-status";
+import {
+  classifyServiceQuoteCheckout,
+  portalOrderCheckoutIdempotencyKey,
+  resolvePortalOrderCheckoutAction,
+  resolveServiceQuoteCheckoutStatus,
+} from "../checkout-status";
+
+describe("portal order Checkout retry policy", () => {
+  it("reuses only an open unpaid session with an active URL", () => {
+    expect(resolvePortalOrderCheckoutAction({ status: "open", paymentStatus: "unpaid", url: "https://checkout.stripe.com/session" }))
+      .toBe("reuse");
+  });
+
+  it("creates a replacement only for an expired unpaid session", () => {
+    expect(resolvePortalOrderCheckoutAction({ status: "expired", paymentStatus: "unpaid", url: null })).toBe("retry");
+  });
+
+  it("confirms paid sessions and blocks completed unpaid sessions", () => {
+    expect(resolvePortalOrderCheckoutAction({ status: "complete", paymentStatus: "paid", url: null })).toBe("paid");
+    expect(resolvePortalOrderCheckoutAction({ status: "complete", paymentStatus: "unpaid", url: null })).toBe("blocked");
+  });
+
+  it("uses deterministic, attempt-specific Stripe keys for expired-session retries", () => {
+    const priorSession = "cs_test_abc123";
+    const firstRetry = portalOrderCheckoutIdempotencyKey("order-1", priorSession);
+    expect(firstRetry).toBe(portalOrderCheckoutIdempotencyKey("order-1", priorSession));
+    expect(firstRetry).not.toBe(portalOrderCheckoutIdempotencyKey("order-1", "cs_test_other"));
+    expect(portalOrderCheckoutIdempotencyKey("order-1")).toBe("portal-order-order-1");
+    expect(firstRetry.length).toBeLessThanOrEqual(255);
+  });
+});
 
 describe("classifyServiceQuoteCheckout", () => {
   it("confirms only completed service-quote sessions paid by Stripe", () => {

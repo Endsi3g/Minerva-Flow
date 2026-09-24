@@ -7,6 +7,7 @@ import { notifyWorkspaceOwners, notifyRestaurant } from "@/lib/data/notification
 import { getRestaurantIdByStripeConnectAccountId, syncConnectAccountStatus } from "@/lib/data/restaurant-payments";
 import { sendBillingLifecycleEmail, getWorkspaceOwnerContact } from "@/lib/email/billing-lifecycle";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recordFlowAmbassadorFirstPaidInvoice } from "@/lib/data/flow-ambassadors";
 import { recordPaidNfcCardOrder } from "@/lib/data/nfc-card-orders";
 import { formatCurrency } from "@/lib/utils";
 import { validateServiceQuoteCheckoutPayment } from "@/lib/stripe/service-quote-payment";
@@ -88,12 +89,14 @@ async function completeServiceQuoteCheckout(session: Stripe.Checkout.Session, ev
   });
   if (invalidPayment) throw new Error(`Paiement traiteur incohérent (${invalidPayment}).`);
 
-  const { data: orderId, error } = await admin.rpc("complete_service_quote_payment", {
+  const { data: completionRows, error } = await admin.rpc("complete_service_quote_payment_once", {
     p_quote_id: session.metadata.quoteId,
     p_checkout_session_id: session.id,
     p_payment_intent_id: paymentIntentId,
   });
-  if (error || !orderId) throw new Error(`Conversion du devis traiteur échouée: ${error?.message ?? "commande manquante"}`);
+  const completion = (completionRows as { order_id: string; created: boolean }[] | null)?.[0];
+  if (error || !completion?.order_id) throw new Error(`Conversion du devis traiteur échouée: ${error?.message ?? "commande manquante"}`);
+  if (!completion.created) return;
   const { data: quoteNotification } = await admin.from("service_quotes")
     .select("restaurant_id, guest_name, total, deposit_amount")
     .eq("id", session.metadata.quoteId).maybeSingle();
@@ -105,6 +108,8 @@ async function completeServiceQuoteCheckout(session: Stripe.Checkout.Session, ev
       title: "Acompte traiteur reçu — commande planifiée",
       body: `${row.guest_name} · ${formatCurrency(row.deposit_amount)} reçu sur ${formatCurrency(row.total)} · production planifiée.`,
       link: "/commandes",
+    }).catch((notificationError) => {
+      console.error("Service quote order persisted but owner notification failed:", notificationError);
     });
   }
 }
@@ -434,6 +439,22 @@ export async function POST(req: Request) {
     case "invoice.payment_succeeded": {
       const invoice = event.data.object as Stripe.Invoice;
       const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+      if (customerId) {
+        const subscription = await getSubscriptionByStripeCustomerId(customerId);
+        if (subscription?.workspaceId) {
+          const currency = (invoice.currency ?? "cad").toUpperCase();
+          const minorDigits = new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2;
+          await recordFlowAmbassadorFirstPaidInvoice({
+            workspaceId: subscription.workspaceId,
+            invoiceId: invoice.id,
+            amountPaid: invoice.amount_paid / (10 ** minorDigits),
+            currency,
+            paidAt: invoice.status_transitions?.paid_at
+              ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
+              : new Date(event.created * 1000).toISOString(),
+          });
+        }
+      }
       // Skip the very first invoice — checkout.session.completed already
       // sends an "abonnement activé" notification for that one.
       if (customerId && invoice.billing_reason !== "subscription_create") {

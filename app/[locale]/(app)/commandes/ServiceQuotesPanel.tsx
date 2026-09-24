@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/minerva/PageCard";
 import { Field, Input, Textarea } from "@/components/minerva/FormField";
 import { formatCurrency } from "@/lib/utils";
+import { calculateServiceQuoteTotals, normalizeServiceQuoteLines } from "@/lib/orders/service-quote-pricing";
+import { getServiceQuotePaymentLabel } from "@/lib/orders/service-quote-status";
 import { CalendarDays, Check, ChevronLeft, ChevronRight, ClipboardCopy, Clock3, CookingPot, MapPin, Plus, RefreshCw, Send, Trash2, Utensils, Users } from "lucide-react";
 import { toast } from "sonner";
 import type { ServiceQuoteLineInput, ServiceQuoteRow } from "@/lib/data/service-quotes";
@@ -45,6 +47,13 @@ export function ServiceQuotesPanel({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null);
   const [links, setLinks] = useState<Record<string, string>>({});
+  const [quoteAttempted, setQuoteAttempted] = useState(false);
+  const normalizedQuoteLines = normalizeServiceQuoteLines(lines);
+  const quoteTotals = normalizedQuoteLines
+    ? calculateServiceQuoteTotals(normalizedQuoteLines, Number(taxPercent) / 100, Number(depositPercent))
+    : null;
+  const quoteLinesValid = normalizedQuoteLines !== null;
+  const canIssueQuote = quoteLinesValid && quoteTotals !== null;
 
   async function refreshQuotes() {
     setRefreshing(true);
@@ -65,6 +74,7 @@ export function ServiceQuotesPanel({
 
   function openQuote(id: string) {
     setExpandedId((current) => current === id ? null : id);
+    setQuoteAttempted(false);
     setOwnerNotes("");
     const quote = quotes.find((item) => item.id === id);
     if (quote?.service_quote_lines?.length) setLines(quote.service_quote_lines);
@@ -76,11 +86,23 @@ export function ServiceQuotesPanel({
   }
 
   async function issue(quote: ServiceQuoteRow) {
+    setQuoteAttempted(true);
+    if (!canIssueQuote) {
+      toast.error("Corrigez les postes et les montants avant d’envoyer le devis.");
+      return;
+    }
     setBusyId(quote.id);
-    const result = await issueServiceQuoteAction(
-      restaurantId, quote.id, lines, Number(taxPercent) / 100, Number(depositPercent), ownerNotes || null,
-    );
-    setBusyId(null);
+    let result: Awaited<ReturnType<typeof issueServiceQuoteAction>>;
+    try {
+      result = await issueServiceQuoteAction(
+        restaurantId, quote.id, lines, Number(taxPercent) / 100, Number(depositPercent), ownerNotes || null,
+      );
+    } catch {
+      toast.error("Le devis n’a pas pu être envoyé. Vérifiez votre connexion et réessayez.");
+      return;
+    } finally {
+      setBusyId(null);
+    }
     if (!result.ok) {
       toast.error(result.reason === "stripe_not_ready"
         ? "Activez les paiements Stripe Connect du restaurant avant d’envoyer un devis."
@@ -195,6 +217,14 @@ export function ServiceQuotesPanel({
             {selectedDayQuotes.length === 0 ? <p className="rounded-lg bg-white/70 px-3 py-3 text-center text-[11.5px] text-mv-ink-faint">{loadFailed ? "Calendrier indisponible tant que les demandes ne sont pas chargées." : "Aucune production planifiée cette journée."}</p> : <div className="space-y-2">
               {selectedDayQuotes.map((quote) => {
                 const orderStatus = quote.order_status;
+                const depositPaidAmount = quote.order_deposit_paid_amount ?? 0;
+                const paymentLabel = getServiceQuotePaymentLabel(
+                  quote.order_payment_status,
+                  depositPaidAmount,
+                  quote.total,
+                );
+                const showPaidAmount = depositPaidAmount > 0
+                  && (quote.total == null || depositPaidAmount < quote.total);
                 const statusLabel = orderStatus === "en_preparation" ? "En préparation" : orderStatus === "prete" ? "Prête" : orderStatus === "servie" ? "Servie" : orderStatus === "annulee" ? "Commande annulée" : orderStatus === "confirmee" ? "Confirmée" : STATUS[quote.status];
                 const tone = orderStatus === "servie" || orderStatus === "prete" ? "green" : quote.status === "requested" || quote.status === "quoted" ? "amber" : "neutral";
                 const nextProductionLabel = orderStatus === "confirmee" ? "Démarrer" : orderStatus === "en_preparation" ? "Marquer prête" : orderStatus === "prete" ? "Terminer" : null;
@@ -214,7 +244,7 @@ export function ServiceQuotesPanel({
                     <Badge tone={tone}>{statusLabel}</Badge>
                   </div>
                   <div className="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
-                    <span className="text-[10.5px] text-mv-ink-faint">{quote.order_payment_status === "paye" ? "Acompte reçu" : quote.order_payment_status === "en_attente" ? "Paiement en attente" : quote.order_payment_status === "echoue" ? "Paiement échoué" : "Paiement sur place"}{quote.order_deposit_paid_amount ? ` · ${formatCurrency(quote.order_deposit_paid_amount)} versé` : ""}</span>
+                    <span className="text-[10.5px] text-mv-ink-faint">{paymentLabel}{showPaidAmount ? ` · ${formatCurrency(depositPaidAmount)} versé` : ""}</span>
                     {quote.total != null && <span className="text-[11px] font-mono text-mv-ink-soft">{formatCurrency(quote.total)}</span>}
                     {nextProductionLabel && <Button type="button" size="sm" variant="secondary" disabled={statusBusyId === quote.id} onClick={() => void advanceProduction(quote)}>{orderStatus === "confirmee" ? <CookingPot size={13} /> : <Check size={13} />}{statusBusyId === quote.id ? "Mise à jour…" : nextProductionLabel}</Button>}
                   </div>
@@ -245,25 +275,26 @@ export function ServiceQuotesPanel({
                   <p className="text-[12px] font-semibold text-mv-ink">Détail du devis</p>
                   {lines.map((line, index) => (
                     <div key={index} className="grid grid-cols-12 gap-2 rounded-lg bg-mv-cream-soft/60 p-2.5">
-                      <div className="col-span-12 sm:col-span-5"><Input aria-label="Description du poste" placeholder="Plat, main-d’œuvre, livraison…" value={line.name} onChange={(e) => patchLine(index, { name: e.target.value })} /></div>
-                      <div className="col-span-4 sm:col-span-2"><Input aria-label="Quantité" type="number" min="1" step="1" value={line.quantity} onChange={(e) => patchLine(index, { quantity: Number(e.target.value) })} /></div>
-                      <div className="col-span-6 sm:col-span-4"><Input aria-label="Prix unitaire" type="number" min="0" step="0.01" value={line.unitPrice} onChange={(e) => patchLine(index, { unitPrice: Number(e.target.value) })} /></div>
+                      <div className="col-span-12 sm:col-span-5"><Input aria-label="Description du poste" placeholder="Plat, main-d’œuvre, livraison…" maxLength={120} value={line.name} onChange={(e) => patchLine(index, { name: e.target.value })} /></div>
+                      <div className="col-span-4 sm:col-span-2"><Input aria-label="Quantité" type="number" min="1" max="10000" step="1" value={line.quantity} onChange={(e) => patchLine(index, { quantity: Number(e.target.value) })} /></div>
+                      <div className="col-span-6 sm:col-span-4"><Input aria-label="Prix unitaire" type="number" min="0" max="100000" step="0.01" value={line.unitPrice} onChange={(e) => patchLine(index, { unitPrice: Number(e.target.value) })} /></div>
                       <button type="button" aria-label="Retirer ce poste" disabled={lines.length < 2} onClick={() => setLines((current) => current.filter((_, i) => i !== index))} className="col-span-2 flex items-center justify-center text-mv-ink-faint hover:text-mv-red disabled:opacity-30 sm:col-span-1"><Trash2 size={15} /></button>
-                      <div className="col-span-12"><Input aria-label="Précision sur le poste" placeholder="Détails facultatifs" value={line.description ?? ""} onChange={(e) => patchLine(index, { description: e.target.value })} /></div>
+                      <div className="col-span-12"><Input aria-label="Précision sur le poste" placeholder="Détails facultatifs" maxLength={500} value={line.description ?? ""} onChange={(e) => patchLine(index, { description: e.target.value })} /></div>
                     </div>
                   ))}
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setLines((current) => [...current, { name: "", quantity: 1, unitPrice: 0, description: "" }])}><Plus size={13} /> Ajouter un poste</Button>
+                  <Button type="button" variant="ghost" size="sm" disabled={lines.length >= 50} onClick={() => setLines((current) => current.length >= 50 ? current : [...current, { name: "", quantity: 1, unitPrice: 0, description: "" }])}><Plus size={13} /> Ajouter un poste ({lines.length}/50)</Button>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Taxe (%)"><Input type="number" min="0" max="30" step="0.001" value={taxPercent} onChange={(e) => setTaxPercent(e.target.value)} /></Field>
                     <Field label="Acompte (%)"><Input type="number" min="1" max="100" step="1" value={depositPercent} onChange={(e) => setDepositPercent(e.target.value)} /></Field>
                   </div>
                   <Field label="Note au client"><Textarea rows={2} maxLength={1000} value={ownerNotes} onChange={(e) => setOwnerNotes(e.target.value)} placeholder="Modalités, inclusions ou conditions…" /></Field>
-                  <div className="rounded-lg bg-mv-cream-soft px-3 py-2 text-[12px] text-mv-ink-soft">
-                    Total estimé : <strong className="text-mv-ink">{formatCurrency(lines.reduce((sum, line) => sum + Math.max(0, line.quantity) * Math.max(0, line.unitPrice), 0) * (1 + Number(taxPercent) / 100))}</strong>
-                    <span className="ml-3">Acompte : <strong className="text-mv-green-dark">{formatCurrency(lines.reduce((sum, line) => sum + Math.max(0, line.quantity) * Math.max(0, line.unitPrice), 0) * (1 + Number(taxPercent) / 100) * Number(depositPercent) / 100)}</strong></span>
+                  <div aria-live="polite" className="rounded-lg bg-mv-cream-soft px-3 py-2 text-[12px] text-mv-ink-soft">
+                    Total estimé : <strong className="text-mv-ink">{quoteTotals ? formatCurrency(quoteTotals.total) : "—"}</strong>
+                    <span className="ml-3">Acompte : <strong className="text-mv-green-dark">{quoteTotals ? formatCurrency(quoteTotals.depositAmount) : "—"}</strong></span>
                   </div>
+                  {!canIssueQuote && quoteAttempted && <p role="status" className="text-[11px] text-mv-red">Vérifiez les postes, les quantités, les montants et l’acompte. Un devis accepte jusqu’à 50 postes.</p>}
                   <div className="flex justify-end">
-                    <Button type="button" onClick={() => void issue(quote)} disabled={busyId === quote.id || lines.some((line) => !line.name.trim() || line.quantity < 1 || line.unitPrice < 0)}>
+                    <Button type="button" onClick={() => void issue(quote)} disabled={busyId === quote.id}>
                       <Send size={14} /> {busyId === quote.id ? "Envoi…" : "Envoyer le devis et le lien d’acompte"}
                     </Button>
                   </div>

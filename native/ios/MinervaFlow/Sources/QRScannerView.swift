@@ -224,7 +224,7 @@ struct ScanToOrderView: View {
             .font(.system(size: 13.5, weight: .semibold))
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
-            .background(.white)
+            .background(MinervaColor.surface)
             .foregroundStyle(.black)
             .clipShape(Capsule())
         }

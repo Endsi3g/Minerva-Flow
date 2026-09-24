@@ -48,12 +48,8 @@ struct MinervaFlowApp: App {
                 .environmentObject(locationManager)
                 .environmentObject(notificationManager)
                 .environmentObject(deepLinkRouter)
-                // Minerva Flow's brand (AGENTS.md) only defines one light
-                // cream/emerald palette — no dark variant exists yet, same
-                // as the web app. Forcing light avoids every color in this
-                // app silently inheriting Dark Mode defaults (the invisible
-                // white-on-cream input text bug came from exactly this).
-                .preferredColorScheme(.light)
+                // Follow the device appearance. Brand colors are semantic and
+                // resolve to the matching Minerva palette in Theme.swift.
                 .onOpenURL { url in
                     // Supabase's PKCE exchange must consume the callback
                     // before any app-level deep-link routing. Without this,

@@ -7,9 +7,43 @@ import {
   sanitizePhoneInput,
 } from "@/lib/phone";
 import { buildGoogleLoyaltyPayload } from "@/lib/wallet/google-loyalty-payload";
+import { selectCounterPhoneMatch } from "@/lib/loyalty/counter-identification";
 import type { PosTicket } from "@/lib/pos/ticket-ingestion";
 
 describe("Cashier Identification & Phone Normalization Engine", () => {
+  describe("Counter customer selection", () => {
+    const first = { id: "customer-1", name: "Camille", phone: "+15145551234" };
+    const second = { id: "customer-2", name: "Noah", phone: "+445145551234" };
+
+    it("selects the exact full-number match ahead of a shared suffix", () => {
+      expect(selectCounterPhoneMatch([second, first], "+1 (514) 555-1234")).toEqual({
+        match: first,
+        ambiguous: false,
+      });
+    });
+
+    it("returns a unique suffix match when country code formatting differs", () => {
+      expect(selectCounterPhoneMatch([first], "514-555-1234")).toEqual({
+        match: first,
+        ambiguous: false,
+      });
+    });
+
+    it("refuses to guess when multiple accounts share a phone suffix", () => {
+      expect(selectCounterPhoneMatch([first, second], "514-555-1234")).toEqual({
+        match: null,
+        ambiguous: true,
+      });
+    });
+
+    it("refuses duplicate exact numbers instead of crediting an arbitrary account", () => {
+      expect(selectCounterPhoneMatch([first, { ...first, id: "customer-3" }], "15145551234")).toEqual({
+        match: null,
+        ambiguous: true,
+      });
+    });
+  });
+
   describe("Phone Number Normalization & Sanitization", () => {
     it("sanitizes phone inputs by stripping spaces, dashes and brackets", () => {
       expect(sanitizePhoneInput("(514) 555-1234")).toBe("5145551234");

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
@@ -10,8 +9,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Field, Input, Select } from "@/components/minerva/FormField";
 import { Avatar } from "@/components/minerva/PersonAvatar";
 import { InviteWorkspaceMemberModal } from "@/components/forms/InviteWorkspaceMemberModal";
+import { Link } from "@/i18n/navigation";
+import { CustomerOriginCard, type AcquisitionSourceCount } from "@/components/fidelisation/CustomerOriginCard";
 import { useApp, roleLabels } from "@/lib/app-context";
 import { formatRelativeTime } from "@/lib/utils";
+import type { CityOrigin } from "@/lib/customer-origin";
 import {
   createWorkspaceForCurrentRestaurantAction,
   renameWorkspaceAction,
@@ -31,7 +33,7 @@ import {
   type WorkspaceBrandingInput,
 } from "@/lib/branding/workspace-branding";
 import type { WorkspaceDomainVerification } from "@/lib/data/workspace-branding";
-import { Plus, Mail, CreditCard, Building2, Palette, Globe2, Bot } from "lucide-react";
+import { Plus, Mail, Building2, Palette, Globe2, Bot, ArrowRight, Sparkles } from "lucide-react";
 
 function brandingInput(branding: WorkspaceBranding): WorkspaceBrandingInput {
   return {
@@ -206,11 +208,25 @@ function NoWorkspaceYet() {
           </p>
         )}
       </Card>
+      <Card className="mt-5 max-w-lg border-mv-green/20 bg-mv-green/5">
+        <CardHeader eyebrow="Ouvert à tous" title="Ambassadeurs & UGC" description="Rejoignez le programme, recommandez Minerva Flow et créez du contenu avec des restaurants participants." />
+        <Link href="/workspace/ambassadeurs" className="inline-flex items-center gap-2 text-[13px] font-semibold text-mv-green-dark">Ouvrir mon espace ambassadeur <ArrowRight size={15} /></Link>
+      </Card>
     </div>
   );
 }
 
-export function WorkspaceView({ data }: { data: WorkspaceHubData | null }) {
+export function WorkspaceView({
+  data,
+  originCities = [],
+  originProfileCount = 0,
+  acquisitionSources = [],
+}: {
+  data: WorkspaceHubData | null;
+  originCities?: CityOrigin[];
+  originProfileCount?: number;
+  acquisitionSources?: AcquisitionSourceCount[];
+}) {
   const router = useRouter();
   const { restaurants: myRestaurants } = useApp();
   const [, startTransition] = useTransition();
@@ -263,6 +279,15 @@ export function WorkspaceView({ data }: { data: WorkspaceHubData | null }) {
       />
 
       <div className="space-y-6">
+        {canManage && (
+          <CustomerOriginCard cities={originCities} profileCount={originProfileCount} sources={acquisitionSources} />
+        )}
+
+        <Card className="border-mv-green/20 bg-mv-green/5">
+          <CardHeader eyebrow="Communauté Minerva Flow" title="Ambassadeurs & UGC" description="Un programme accessible à chaque membre du workspace : lien personnel, commissions suivies, versements Stripe et contenus avec des restaurants consentants." action={<Sparkles size={17} className="text-mv-green-dark" />} />
+          <Link href="/workspace/ambassadeurs" className="inline-flex items-center gap-2 text-[13px] font-semibold text-mv-green-dark">Ouvrir l’espace dédié <ArrowRight size={15} /></Link>
+        </Card>
+
         {canManage && (
           <Card>
             <CardHeader eyebrow="Identité" title="Nom du workspace" />
@@ -377,17 +402,6 @@ export function WorkspaceView({ data }: { data: WorkspaceHubData | null }) {
           </Card>
         )}
 
-        {canManage && (
-          <Card>
-            <CardHeader eyebrow="Facturation" title="Abonnement" description="Un seul abonnement pour tous les établissements de ce workspace." />
-            <Link
-              href="/billing"
-              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-mv-green-dark hover:underline"
-            >
-              <CreditCard size={15} /> Gérer la facturation
-            </Link>
-          </Card>
-        )}
       </div>
 
       <InviteWorkspaceMemberModal

@@ -192,6 +192,7 @@ export default async function LocaleLayout({
       )}
     >
       <head>
+        <meta name="color-scheme" content="light dark" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

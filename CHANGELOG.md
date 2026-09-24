@@ -2,6 +2,37 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [Non publié] — Vérifications du 2026-09-24
+
+### Fiabilité et application iOS
+- Les fermetures de flux RSC Next.js exactement reconnues comme `The destination stream closed early.` restent transmises à Sentry pour diagnostic, mais ne déclenchent plus de fausse alerte par courriel « critique ».
+- Dans l’application iOS, l’ajout d’un article depuis la liste ou sa fiche ouvre immédiatement le checkout; le panier est conservé et aucun retour manuel au Menu n’est nécessaire.
+- La page Scanner présente la carte de fidélité, le QR/code de jumelage temporaire, son expiration, les états de chargement/erreur et l’accès au scanner caméra.
+- L’apparence claire reste le choix initial; les préférences Clair, Système et Sombre utilisent les palettes adaptatives web et iOS.
+
+### Vérification
+- Tests unitaires : 321 réussis; TypeScript et lint ciblé réussis.
+- Tests UI iOS ciblés (iPhone 17 Pro Simulator) : ajout au panier et Scanner, 2 réussis.
+- Le build iOS `1.0 (11)` a été traité par Apple, soumis et activé dans les groupes TestFlight interne et externe. Le groupe externe compte 8 testeurs; le lien public `https://testflight.apple.com/join/xGr45uuF` répond HTTP 200. La notification automatique après approbation est activée.
+- Le dSYM de `Sentry.framework` correspond au binaire par UUID, corrigeant l’avertissement de symboles manquants reçu précédemment.
+- Le compte de démonstration fonctionne sur le même backend que l’application native; les identifiants et notes de review sont renseignés dans App Store Connect. Aucun paiement réel n’est requis pour les tests.
+- La publication publique App Store reste distincte et non déclarée prête; les contrôles manuels Apple encore nécessaires restent ouverts.
+
+## [v2.48.0] — 2026-09-24
+
+### Ambassadeurs, UGC et navigation
+- Espace ambassadeur dédié avec liens de recommandation suivis, attribution des inscriptions et suivi des commissions de 10 % sur la première facture admissible.
+- Configuration des versements par Stripe Connect; les commissions restent en attente pendant 30 jours et suivent les vérifications prévues.
+- Soumission de contenu UGC liée à un restaurant ayant donné son accord; contrôle avant réutilisation et suivi des liens/vidéos par canal.
+- Les propriétaires peuvent relier leur compte Instagram partenaire pour consulter les statistiques disponibles.
+- Accès produit recentré sur Workspace, Fournisseurs, Inventaire et Commandes; les autres pages authentifiées redirigent vers Workspace.
+
+### Vérification de release
+- Build web local de production réussi, avec upload Sentry, vérification TypeScript et 328 pages statiques générées.
+- Schémas staging et production vérifiés en lecture seule; `public.restaurants`, les objets ambassadeur/UGC, les fonctions de commande et le défaut de consentement Auth sont présents.
+- Audience courriel de release : segment Resend « Minerva Flow · consentement explicite — abonnés actifs », 18 membres actifs au dernier contrôle.
+- La promotion production et l’envoi du courriel attendent la vérification du Preview correspondant au commit final.
+
 ## [v2.47.1] — 2026-09-23
 
 ### Préférences de courriel et fidélisation

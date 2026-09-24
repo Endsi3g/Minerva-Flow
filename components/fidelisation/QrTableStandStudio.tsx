@@ -280,7 +280,7 @@ export function QrTableStandStudio({
             <p className="mt-1 text-[10px] opacity-75 line-clamp-2">{subline}</p>
           </div>
 
-          <div className="my-auto rounded-xl bg-white p-2 shadow-md">
+          <div className="my-auto rounded-xl bg-white mv-fixed-light-surface p-2 shadow-md">
             {qrDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={qrDataUrl} alt="QR Code de table" className="h-32 w-32 object-contain" />

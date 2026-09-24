@@ -8,7 +8,7 @@ import { getCustomers } from "@/lib/data/customers";
 import { getMenuItems } from "@/lib/data/menu";
 import { getInventoryItems } from "@/lib/data/inventory";
 import { getOrdersForDay } from "@/lib/data/orders";
-import { NAV_ITEMS } from "@/lib/nav-items";
+import { NAV_ITEMS, PRIMARY_NAV_KEYS } from "@/lib/nav-items";
 
 export type SearchResult = {
   id: string;
@@ -207,7 +207,7 @@ export async function searchEverythingAction(
   }
 
   // 3. Search Navigation
-  for (const item of NAV_ITEMS) {
+  for (const item of NAV_ITEMS.filter((navItem) => PRIMARY_NAV_KEYS.has(navItem.key))) {
     if (
       item.title.toLowerCase().includes(normalizedQuery) ||
       item.subtitle.toLowerCase().includes(normalizedQuery)
@@ -367,5 +367,8 @@ export async function searchEverythingAction(
     }
   }
 
-  return results;
+  return results.filter((result) => {
+    const path = result.href.split(/[?#]/, 1)[0];
+    return [...PRIMARY_NAV_KEYS].some((root) => path === `/${root}` || path.startsWith(`/${root}/`));
+  });
 }

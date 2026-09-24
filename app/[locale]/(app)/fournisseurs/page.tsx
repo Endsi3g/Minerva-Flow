@@ -4,6 +4,9 @@ import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getSuppliers } from "@/lib/data/suppliers";
 import { getPurchaseOrders } from "@/lib/data/purchase-orders";
 import { getInventoryItems } from "@/lib/data/inventory";
+import { getCurrentMembership } from "@/lib/data/current-restaurant";
+import { redirect } from "@/i18n/navigation";
+import { getLocale } from "next-intl/server";
 import { FournisseursView } from "./FournisseursView";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -12,7 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function FournisseursPage() {
-  const restaurantId = await getCurrentRestaurantId();
+  const [restaurantId, membership] = await Promise.all([getCurrentRestaurantId(), getCurrentMembership()]);
+  if (!membership || !["owner", "manager"].includes(membership.role)) {
+    redirect({ href: "/workspace", locale: await getLocale() });
+  }
 
   const [suppliers, orders, inventoryItems] = restaurantId
     ? await Promise.all([

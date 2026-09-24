@@ -12,7 +12,10 @@ test.describe("Onboarding", () => {
     userId = undefined;
   });
 
-  test("signup completes the 4-step wizard and lands on Overview", async ({ page }) => {
+  test("signup completes the 4-step wizard and lands on Workspace", async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    test.setTimeout(90_000);
     const email = `e2e-onboarding-${Date.now()}@example.com`;
 
     // AuthCard's inputs are React-controlled — a fill() that lands before the
@@ -30,46 +33,39 @@ test.describe("Onboarding", () => {
     if ((await emailInput.inputValue()) !== email) await emailInput.fill(email);
     if ((await passwordInputs.nth(0).inputValue()) !== TEST_PASSWORD) await passwordInputs.nth(0).fill(TEST_PASSWORD);
     if ((await passwordInputs.nth(1).inputValue()) !== TEST_PASSWORD) await passwordInputs.nth(1).fill(TEST_PASSWORD);
-    await page.click('button[type="submit"]');
+    const signupSubmit = page.locator('button[type="submit"]')
+      .click({ timeout: 20_000 })
+      .catch(() => undefined);
 
-    // Confirm the account server-side so the test doesn't depend on email
-    // delivery — mirrors what a real "click the confirmation link" would do.
-    await page.waitForTimeout(1000);
-    const { data } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-    const created = data.users.find((u) => u.email === email);
-    expect(created).toBeDefined();
-    userId = created!.id;
-    await supabaseAdmin.auth.admin.updateUserById(userId, { email_confirm: true });
+    // Signup confirms and signs in the account itself; capture its ID for
+    // cleanup while the browser follows the real post-signup redirect.
+    await expect.poll(async () => {
+      const { data } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+      const created = data.users.find((u) => u.email === email);
+      userId = created?.id;
+      return Boolean(userId);
+    }, { timeout: 30_000, intervals: [500, 1_000] }).toBe(true);
 
-    await page.goto("/login");
-    await page.fill('input[type="email"]', email);
-    await page.fill('input[type="password"]', TEST_PASSWORD);
-    await page.click('button[type="submit"]');
-    await page.waitForURL(/overview/, { timeout: 15000 });
-
-    // Step 1's inner feature carousel advances before moving to step 2 —
-    // click "Suivant" until the step-2 name field shows up.
+    await expect(page).toHaveURL(/onboarding/, { timeout: 30_000 });
+    await signupSubmit;
     const nameInput = page.locator('input[placeholder="Alex Tremblay"]');
-    for (let i = 0; i < 6 && !(await nameInput.isVisible().catch(() => false)); i++) {
-      await page.getByRole("button", { name: /suivant/i }).click();
-      await page.waitForTimeout(300);
-    }
-    await expect(nameInput).toBeVisible();
+    await expect(nameInput).toBeVisible({ timeout: 15000 });
 
     await nameInput.fill("E2E Test User");
-    await page.getByRole("button", { name: /suivant/i }).click();
-    await page.waitForTimeout(300);
+    await page.getByPlaceholder("Ex : Bistro du Coin").fill("E2E Bistro");
+    await page.getByRole("button", { name: /^continuer$/i }).click();
+    await expect(page.getByRole("heading", { name: "Connectez vos outils" })).toBeVisible({ timeout: 15_000 });
 
-    // Step 3 (Google Places / website import) is entirely optional — skip
-    // it without filling anything.
-    await page.getByRole("button", { name: /suivant/i }).click();
-    await page.waitForTimeout(300);
+    // Tool connections and team invites are optional; use their visible skip
+    // actions and let the actual completion action persist onboarding state.
+    await page.getByRole("button", { name: /plus tard/i }).click();
+    await expect(page.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
 
-    await page.getByRole("button", { name: /commencer/i }).click();
+    await page.getByRole("button", { name: /plus tard, terminer sans inviter/i }).click();
     // The post-completion client-side redirect has been flaky under
     // Playwright's default waitForURL (likely the service worker interfering
     // with the "load" event) even though the server confirms success — poll
     // for the URL instead of waiting on a single load event.
-    await expect(page).toHaveURL(/overview/, { timeout: 15000 });
+    await expect(page).toHaveURL(/workspace/, { timeout: 15000 });
   });
 });

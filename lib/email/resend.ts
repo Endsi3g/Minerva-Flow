@@ -1,6 +1,7 @@
 import "server-only";
 import { Resend } from "resend";
 import { getActiveUserContacts } from "@/lib/data/users";
+import { renderMinervaEmail } from "@/lib/email/brand-shell";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -18,27 +19,7 @@ export {
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
 
 function emailShell(bodyHtml: string, ctaLabel: string, ctaUrl: string): string {
-  return `<!doctype html>
-<html lang="fr">
-<head><meta charset="utf-8" /></head>
-<body style="margin:0; padding:24px; background-color:#f5f1e6; font-family:'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color:#1a1e16;">
-  <div style="max-width:500px; margin:0 auto; padding:38px 28px; background:#fffefa; border:1px solid #e6e0d0; border-radius:22px; box-shadow:0 8px 24px rgba(26, 30, 22, 0.05); text-align:center;">
-    <div style="margin-bottom:20px;">
-      <img src="https://minervaflow.app/icon-192.png" width="56" height="56" alt="Minerva Flow" style="display:inline-block; border-radius:15px; box-shadow:0 4px 14px rgba(22,127,91,0.20);" />
-    </div>
-    <div style="font-size:14.5px; line-height:1.65; color:#4a5245; text-align:left; margin-bottom:24px;">
-      ${bodyHtml}
-    </div>
-    <div style="margin:24px 0 10px; text-align:center;">
-      <a href="${ctaUrl}" style="display:inline-block; padding:13px 30px; background-color:#167f5b; color:#fffefa; text-decoration:none; border-radius:999px; font-size:14.5px; font-weight:700;">${ctaLabel} →</a>
-    </div>
-    <p style="margin-top:28px; padding-top:18px; border-top:1px solid #eee9db; font-size:12px; line-height:1.5; color:#8d9488; text-align:center;">
-      Ce lien expire dans 7 jours. Si vous n'êtes pas à l'origine de cette demande, ignorez ce courriel.<br />
-      © 2026 Minerva Flow · Minerva Technologies Inc.
-    </p>
-  </div>
-</body>
-</html>`;
+  return renderMinervaEmail({ bodyHtml, ctaLabel, ctaUrl });
 }
 
 const AUTH_ACTION_COPY: Record<string, { subject: string; body: string; cta: string }> = {
@@ -334,6 +315,65 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Branded transactional notices for the Minerva Flow ambassador program. */
+export async function sendFlowAmbassadorEmail(input: {
+  to: string;
+  kind: "welcome" | "commission" | "payout" | "ugc-approved" | "ugc-revision";
+  commissionAmount?: number;
+  currency?: string;
+  payableAt?: string;
+  payoutReference?: string;
+  restaurantName?: string;
+  reviewNote?: string;
+}): Promise<boolean> {
+  if (!resend) return false;
+  const commission = input.commissionAmount !== undefined
+    ? new Intl.NumberFormat("fr-CA", { style: "currency", currency: (input.currency ?? "CAD").toUpperCase() }).format(input.commissionAmount)
+    : "";
+  const payableDate = input.payableAt
+    ? new Date(input.payableAt).toLocaleDateString("fr-CA", { dateStyle: "long" })
+    : "";
+  const copy = input.kind === "welcome"
+    ? {
+        subject: "Bienvenue dans le programme Ambassadeur Minerva Flow",
+        heading: "Votre lien ambassadeur est prêt",
+        body: "Partagez votre expérience avec d’autres restaurateurs. Les nouvelles inscriptions via votre lien seront attribuées à votre compte.",
+      }
+    : input.kind === "commission"
+    ? {
+        subject: `Une commission Minerva Flow est en attente · ${commission}`,
+        heading: "Une commission vient d’être enregistrée",
+        body: `Votre recommandation a généré une commission de <strong>${escapeHtml(commission)}</strong> (10 % de la première facture payée). Elle devient payable après le délai de 30 jours, à partir du <strong>${escapeHtml(payableDate)}</strong>.`,
+      }
+    : input.kind === "payout"
+    ? {
+        subject: `Votre versement ambassadeur a été envoyé à Stripe · ${commission}`,
+        heading: "Votre versement est parti",
+        body: `Un montant de <strong>${escapeHtml(commission)}</strong> a été envoyé à votre compte Stripe connecté. Stripe dépose ensuite les fonds selon son calendrier bancaire.<br /><br />Référence : <span style="font-family:monospace">${escapeHtml(input.payoutReference ?? "consultable dans votre espace")}</span>`,
+      }
+    : input.kind === "ugc-approved"
+    ? {
+        subject: "Votre publication restaurant est approuvée",
+        heading: "Votre contenu est approuvé",
+        body: `Votre publication pour <strong>${escapeHtml(input.restaurantName ?? "le restaurant partenaire")}</strong> est approuvée par l’équipe Minerva Flow. Merci de respecter la divulgation publicitaire et l’accord du restaurant lors de sa diffusion.`,
+      }
+    : {
+        subject: "Une modification est requise pour votre contenu ambassadeur",
+        heading: "Votre publication demande une modification",
+        body: `Consultez la note de révision dans votre espace ambassadeur et soumettez une nouvelle version lorsque les ajustements sont faits.${input.reviewNote ? `<br /><br /><strong>Note :</strong> ${escapeHtml(input.reviewNote)}` : ""}`,
+      };
+  const html = renderMinervaEmail({
+    eyebrow: "Ambassadeur Minerva Flow",
+    title: copy.heading,
+    bodyHtml: `<p style="margin:0">${copy.body}</p>`,
+    ctaLabel: input.kind.startsWith("ugc-") ? "Voir mon contenu" : "Ouvrir mon espace ambassadeur",
+    ctaUrl: `${APP_ORIGIN}/workspace/ambassadeurs`,
+    footer: "Minerva Flow · Minerva Technologies Inc.<br />Vous recevez ce courriel au sujet de votre compte ambassadeur.",
+  });
+  const { error } = await resend.emails.send({ from: FROM_EMAIL, to: input.to, subject: copy.subject, html });
+  return !error;
+}
+
 /**
  * Table-based layout (not flex/grid) and every style inlined — Outlook and
  * most webmail clients strip <style> blocks and ignore modern CSS, so this
@@ -377,6 +417,7 @@ function campaignEmailHtml({
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
             <tr>
               <td style="padding:0 8px 24px;">
+                <img src="https://minervaflow.app/icon-192.png" width="36" height="36" alt="Minerva Flow" border="0" style="display:inline-block;width:36px;height:36px;margin-right:10px;vertical-align:middle;border:0;border-radius:11px;" />
                 <span style="font-family:'New York', Georgia, serif; font-size:20px; font-weight:700; color:#1a1e16; letter-spacing:-0.02em;">Minerva <span style="color:#167f5b;">Flow</span></span>
               </td>
             </tr>
@@ -691,6 +732,7 @@ export async function sendServiceQuotePaymentEmail(input: {
   const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"></head>
     <body style="margin:0;padding:28px;background:#f5f1e6;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1e16">
       <main style="max-width:540px;margin:0 auto;padding:36px 30px;background:#fffefa;border:1px solid #e6e0d0;border-radius:22px">
+        <p style="margin:0 0 18px"><img src="https://minervaflow.app/icon-192.png" width="44" height="44" alt="Minerva Flow" border="0" style="display:block;width:44px;height:44px;border:0;border-radius:13px" /></p>
         <p style="margin:0 0 18px;color:#167f5b;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">Minerva Flow · Devis</p>
         <h1 style="font-family:'New York',Georgia,serif;font-size:26px;line-height:1.2;margin:0 0 16px">Votre devis est prêt</h1>
         <p style="font-size:14px;line-height:1.7;color:#565f52">Bonjour ${escapeHtml(input.guestName)}, <strong>${escapeHtml(input.restaurantName)}</strong> a préparé votre proposition pour le ${escapeHtml(event)}.</p>

@@ -7,7 +7,7 @@ import { notifyRestaurant } from "@/lib/data/notifications";
 import { createServiceQuoteCheckoutSession } from "@/lib/stripe/connect";
 import { sendServiceQuotePaymentEmail } from "@/lib/email/resend";
 import { resolveRestaurantLocalDateTime } from "@/lib/orders/scheduling";
-import { calculateServiceQuoteTotals } from "@/lib/orders/service-quote-pricing";
+import { calculateServiceQuoteTotals, normalizeServiceQuoteLines } from "@/lib/orders/service-quote-pricing";
 import { emailMatchOperator } from "@/lib/data/email-match";
 import { getRestaurantOrderSettings } from "@/lib/data/menu-shares";
 import { isQuoteFulfillmentAvailable } from "@/lib/orders/checkout-options";
@@ -74,15 +74,16 @@ function cleanText(value: string, max: number): string {
 }
 
 export async function submitPublicServiceQuote(
-  menuToken: string,
-  input: PublicServiceQuoteInput
+  menuToken: string | null,
+  input: PublicServiceQuoteInput,
+  trustedCustomer?: { restaurantId: string; customerId: string }
 ): Promise<{ ok: true; id: string } | { ok: false; reason: string }> {
   const name = cleanText(input.guestName, 120);
   const phone = cleanText(input.guestPhone, 40);
   const email = cleanText(input.guestEmail, 254).toLowerCase();
   const description = input.description.trim().slice(0, 2000);
   const clientNotes = cleanText(input.clientNotes ?? "", 1000) || null;
-  if (!menuToken || name.length < 2 || phone.length < 7 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, reason: "contact_invalid" };
+  if ((!trustedCustomer && !menuToken) || name.length < 2 || phone.length < 7 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, reason: "contact_invalid" };
   if (description.length < 10 || (input.quoteType !== "custom_meal" && input.quoteType !== "catering")) return { ok: false, reason: "details_invalid" };
   if (input.guestCount != null && (!Number.isInteger(input.guestCount) || input.guestCount < 1 || input.guestCount > 5000)) return { ok: false, reason: "guest_count_invalid" };
   if (input.fulfillmentMode === "livraison" && cleanText(input.deliveryAddress ?? "", 500).length < 8) return { ok: false, reason: "delivery_address_required" };
@@ -93,11 +94,14 @@ export async function submitPublicServiceQuote(
 
   const admin = createAdminClient();
   const supabase = await createClient();
-  const [{ data: share }, authResult] = await Promise.all([
-    admin.from("menu_shares").select("restaurant_id").eq("token", menuToken).maybeSingle(),
+  const [shareResult, authResult] = await Promise.all([
+    trustedCustomer || !menuToken
+      ? Promise.resolve({ data: null })
+      : admin.from("menu_shares").select("restaurant_id").eq("token", menuToken).maybeSingle(),
     supabase.auth.getUser(),
   ]);
-  const restaurantId = (share as { restaurant_id: string } | null)?.restaurant_id;
+  const restaurantId = trustedCustomer?.restaurantId
+    ?? (shareResult.data as { restaurant_id: string } | null)?.restaurant_id;
   if (!restaurantId) return { ok: false, reason: "menu_not_found" };
   const user = authResult.data.user;
 
@@ -116,8 +120,8 @@ export async function submitPublicServiceQuote(
     return { ok: false, reason: "event_time_invalid" };
   }
 
-  let customerId: string | null = null;
-  if (user) {
+  let customerId: string | null = trustedCustomer?.customerId ?? null;
+  if (!trustedCustomer && user) {
     const { data: customer } = await admin.from("customers").select("id, user_id")
       .eq("restaurant_id", restaurantId).eq("user_id", user.id).maybeSingle();
     customerId = (customer as { id: string } | null)?.id ?? null;
@@ -239,13 +243,8 @@ export async function issueServiceQuote(
     .eq("id", restaurantId).maybeSingle();
   const config = restaurant as { name?: string; timezone?: string; stripe_connect_account_id?: string | null; stripe_connect_charges_enabled?: boolean } | null;
   if (!config?.stripe_connect_account_id || config.stripe_connect_charges_enabled !== true) return { ok: false, reason: "stripe_not_ready" };
-  const cleanLines = lines.slice(0, 50).map((line) => ({
-    name: cleanText(line.name, 120),
-    description: cleanText(line.description ?? "", 500) || null,
-    quantity: Math.round(line.quantity),
-    unitPrice: Math.round(line.unitPrice * 100) / 100,
-  }));
-  if (!cleanLines.length || cleanLines.some((line) => !line.name || line.quantity < 1 || !Number.isFinite(line.unitPrice) || line.unitPrice < 0)) {
+  const cleanLines = normalizeServiceQuoteLines(lines);
+  if (!cleanLines) {
     return { ok: false, reason: "invalid_lines" };
   }
   if (!calculateServiceQuoteTotals(cleanLines, taxRate, depositPercent)) return { ok: false, reason: "invalid_totals" };

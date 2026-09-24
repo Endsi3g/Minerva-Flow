@@ -16,9 +16,9 @@ import { getDaysUntilBirthday } from "@/lib/loyalty/birthday";
 import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
 import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
 import { TablePagination } from "@/components/minerva/TablePagination";
-import { CustomerOriginMap } from "@/components/fidelisation/CustomerOriginMap";
+import { CustomerOriginCard } from "@/components/fidelisation/CustomerOriginCard";
 import { getCustomerOriginByCity } from "@/lib/customer-origin";
-import { Plus, Search, Check, MapPin, Gift, Cake, CreditCard, Sparkles, Copy, Download, Megaphone } from "lucide-react";
+import { Plus, Search, Check, Gift, Cake, CreditCard, Sparkles, Copy, Download, Megaphone } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -63,6 +63,7 @@ function NewCustomerModal({
         notes: String(form.get("notes") ?? "") || null,
         birthday: String(form.get("birthday") ?? "") || null,
         city: String(form.get("city") ?? "") || null,
+        neighborhood: String(form.get("neighborhood") ?? "") || null,
         marketingConsent,
         consentSource: "staff",
       });
@@ -102,6 +103,9 @@ function NewCustomerModal({
           </Field>
           <Field label="Ville" hint="Optionnel — d'où vient le client">
             <Input name="city" placeholder="Ex : Montréal" />
+          </Field>
+          <Field label="Quartier" hint="Optionnel — zone générale seulement">
+            <Input name="neighborhood" placeholder="Ex : Plateau-Mont-Royal" maxLength={80} />
           </Field>
         </div>
         <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
@@ -419,68 +423,6 @@ function IdentificationAuComptoirCard({
               Changer de client
             </Button>
           </div>}
-        </div>
-      )}
-    </Card>
-  );
-}
-
-/**
- * Ranked "where do my customers come from" list, grouped by the city each
- * customer entered (portal self-serve, or staff at creation — see
- * NewCustomerModal). Sorted by total visits rather than customer count so a
- * smaller but highly repeat-visiting city can outrank a bigger one-and-done
- * crowd — the actual ask was to spot where the people who "come back often"
- * live, not just where headcount is highest.
- */
-function CustomerOriginCard({ customers }: { customers: Customer[] }) {
-  const byCity = useMemo(() => getCustomerOriginByCity(customers), [customers]);
-
-  const withCity = customers.filter((c) => c.city?.trim()).length;
-  const maxVisits = Math.max(1, ...byCity.map((c) => c.visits));
-
-  return (
-    <Card>
-      <CardHeader
-        eyebrow="Géographie"
-        title="Provenance des clients"
-        description={
-          withCity > 0
-            ? `${withCity} client${withCity > 1 ? "s ont" : " a"} indiqué sa ville, dans ${byCity.length} ville${byCity.length > 1 ? "s" : ""} — classées par visites cumulées.`
-            : "Aucun client n'a encore indiqué sa ville — ça se remplit dès qu'un client le fait depuis son portail."
-        }
-      />
-      {byCity.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-6 text-center">
-          <MapPin size={20} className="text-mv-ink-faint" />
-          <p className="max-w-sm text-[12.5px] text-mv-ink-soft">
-            Demandez à vos clients d&apos;ajouter leur ville dans &laquo; Mon profil &raquo; sur leur portail, ou
-            ajoutez-la vous-même en créant une fiche client.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="h-72 overflow-hidden rounded-xl lg:h-80">
-            <CustomerOriginMap cities={byCity} maxGeocode={30} />
-          </div>
-          <div className="max-h-80 space-y-1.5 overflow-y-auto">
-            {byCity.map((c) => (
-              <div key={c.city} className="relative overflow-hidden rounded-lg bg-mv-cream-soft p-2.5">
-                <div
-                  className="absolute inset-y-0 left-0 bg-mv-green/10"
-                  style={{ width: `${Math.max(6, (c.visits / maxVisits) * 100)}%` }}
-                />
-                <div className="relative flex items-center justify-between gap-2">
-                  <span className="flex min-w-0 items-center gap-1.5 truncate text-[12.5px] font-medium text-mv-ink">
-                    <MapPin size={12} className="shrink-0 text-mv-green-dark" /> {c.city}
-                  </span>
-                  <span className="shrink-0 text-[11.5px] font-semibold text-mv-ink-soft">
-                    {c.visits} visite{c.visits > 1 ? "s" : ""}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
     </Card>
@@ -885,7 +827,10 @@ export function FidelisationView({
       </div>
 
       <div className="mb-5">
-        <CustomerOriginCard customers={customers} />
+        <CustomerOriginCard
+          cities={getCustomerOriginByCity(customers)}
+          profileCount={customers.filter((customer) => customer.city?.trim()).length}
+        />
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2.5">

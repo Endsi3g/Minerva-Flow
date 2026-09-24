@@ -18,11 +18,17 @@ jobs:
           RELEASE_TITLE: ${{ github.event.release.name }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_ASSETS_JSON: ${{ toJson(github.event.release.assets) }}
           RELEASE_WEBHOOK_SECRET: ${{ secrets.RELEASE_WEBHOOK_SECRET }}
         run: |
           TITLE="${RELEASE_TITLE:-$RELEASE_TAG}"
-          jq -n --arg title "$TITLE" --arg body "$RELEASE_BODY" \
-            '{title: $title, body: $body}' > payload.json
+          RELEASE_IMAGE_URL="$(printf '%s' "$RELEASE_ASSETS_JSON" | jq -r '[.[] | select((.content_type // "") | test("^image/(png|jpeg|webp|gif)$")) | .browser_download_url][0] // empty')"
+          if [ -z "$RELEASE_IMAGE_URL" ]; then
+            echo "::error::Attach a PNG, JPG, WebP, or GIF screenshot to the GitHub release before publishing."
+            exit 1
+          fi
+          jq -n --arg title "$TITLE" --arg body "$RELEASE_BODY" --arg imageUrl "$RELEASE_IMAGE_URL" \
+            '{title: $title, body: $body, imageUrl: $imageUrl}' > payload.json
           curl -sf -X POST "https://minerva-flow.vercel.app/api/system/publish-release" \
             -H "Authorization: Bearer $RELEASE_WEBHOOK_SECRET" \
             -H "Content-Type: application/json" \

@@ -25,6 +25,7 @@ struct RootView: View {
     @EnvironmentObject var biometricLock: BiometricLock
     @EnvironmentObject var router: DeepLinkRouter
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    @AppStorage("appAppearance") private var storedAppearance = AppAppearance.light.rawValue
 
     @State private var screen: RootScreen = .intro
     @State private var resolvedLinkRestaurant: ResolvedUniversalLinkRestaurant?
@@ -77,6 +78,7 @@ struct RootView: View {
         // Feed it to SwiftUI's LocalizedStringKey resolver too, so static
         // French copy does not fall through to the English bundle.
         .environment(\.locale, Locale(identifier: AppLanguage(rawValue: storedLanguage)?.localeIdentifier ?? AppLanguage.fr.localeIdentifier))
+        .preferredColorScheme(AppAppearance(rawValue: storedAppearance)?.colorScheme)
         .onAppear {
             syncScreen()
             if screen == .main { biometricLock.lockIfEnabled() }

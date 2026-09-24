@@ -6,6 +6,10 @@ import { getFixedTestUser } from "./fixtures";
 // signup — a sanity check that the login form itself works end-to-end for
 // an account shaped like a real user's, not just our synthetic fixtures.
 test("logging in with a real account leaves the login page", async ({ page }) => {
+  test.skip(
+    !process.env.E2E_FIXED_TEST_EMAIL || !process.env.E2E_FIXED_TEST_PASSWORD,
+    "A persistent, verified test account is not configured in this environment."
+  );
   const user = getFixedTestUser();
 
   await page.goto("/login");

@@ -8,6 +8,7 @@ import {
   getCustomersForUser,
   selfRedeemReward,
   submitPortalOrder,
+  resumePortalOrder,
   getPortalDeliveryQuote,
   deleteMyAccount,
   exportCustomerData,
@@ -65,6 +66,7 @@ export async function updateMyProfileAction(
     marketingConsent: boolean;
     birthday: string | null;
     city?: string | null;
+    neighborhood?: string | null;
     name?: string;
     phone?: string | null;
     avatarUrl?: string | null;
@@ -85,6 +87,7 @@ export async function updateMyProfileAction(
     consentSource: "portal",
     birthday: input.birthday,
     city: input.city,
+    neighborhood: input.neighborhood,
     ...(input.name !== undefined ? { name: input.name } : {}),
     ...(input.phone !== undefined ? { phone: input.phone } : {}),
     ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {}),
@@ -171,11 +174,12 @@ export async function submitPortalOrderAction(
   cart: PortalOrderCartLine[],
   tipAmount: number,
   paymentMethod: string | null,
+  idempotencyKey: string,
   requestedReadyAtLocal?: string | null,
   payOnline = false,
   delivery?: { address: string }
 ): Promise<SubmitPortalOrderResult> {
-  if (cart.length === 0) return { ok: false };
+  if (!Array.isArray(cart) || cart.length === 0 || typeof idempotencyKey !== "string") return { ok: false };
 
   const supabase = await createClient();
   const {
@@ -187,9 +191,20 @@ export async function submitPortalOrderAction(
   const customer = customers.find((c) => c.id === customerId);
   if (!customer) return { ok: false };
 
-  const result = await submitPortalOrder(customer, cart, tipAmount, paymentMethod, "web", delivery, requestedReadyAtLocal, payOnline);
+  const result = await submitPortalOrder(customer, cart, tipAmount, paymentMethod, idempotencyKey, "web", delivery, requestedReadyAtLocal, payOnline);
   if (result.ok) revalidatePath("/portal");
   return result;
+}
+
+export async function resumePortalOrderAction(customerId: string, idempotencyKey: string): Promise<SubmitPortalOrderResult> {
+  if (!customerId || typeof idempotencyKey !== "string") return { ok: false };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+  const customers = await getCustomersForUser(user.id);
+  const customer = customers.find((entry) => entry.id === customerId);
+  if (!customer) return { ok: false };
+  return resumePortalOrder(customer, idempotencyKey);
 }
 
 export async function quoteMyDeliveryAction(customerId: string, address: string): Promise<DeliveryQuote> {

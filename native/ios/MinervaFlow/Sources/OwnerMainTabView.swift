@@ -111,7 +111,7 @@ private struct OwnerOrdersView: View {
                                     } }
                                 }.font(.caption.weight(.semibold))
                             }
-                        }.listRowBackground(Color.white)
+                        }.listRowBackground(MinervaColor.surface)
                     }.listStyle(.plain)
                 }
             }.padding(20).background(MinervaColor.cream.ignoresSafeArea())
@@ -173,7 +173,7 @@ private struct OwnerOverviewView: View {
                             Spacer()
                             Image(systemName: "chevron.right").font(.caption.weight(.bold)).foregroundStyle(MinervaColor.inkFaint)
                         }
-                        .padding(15).background(.white).clipShape(RoundedRectangle(cornerRadius: 16)).shadow(color: .black.opacity(0.04), radius: 8, y: 3)
+                        .padding(15).background(MinervaColor.surface).clipShape(RoundedRectangle(cornerRadius: 16)).shadow(color: .black.opacity(0.04), radius: 8, y: 3)
                     }
                     VStack(alignment: .leading, spacing: 12) {
                         Text("This month").font(MinervaFont.display(21, weight: .semibold))
@@ -198,5 +198,5 @@ private struct OwnerOverviewView: View {
 
 struct OwnerMetric: View {
     let title: String; let value: String; let icon: String
-    var body: some View { VStack(alignment: .leading, spacing: 8) { Image(systemName: icon).foregroundStyle(MinervaColor.emeraldDark); Text(value).font(.title3.bold()).foregroundStyle(MinervaColor.ink); Text(title).font(.caption).foregroundStyle(MinervaColor.inkFaint) }.frame(maxWidth: .infinity, alignment: .leading).padding(14).background(.white).clipShape(RoundedRectangle(cornerRadius: 14)) }
+    var body: some View { VStack(alignment: .leading, spacing: 8) { Image(systemName: icon).foregroundStyle(MinervaColor.emeraldDark); Text(value).font(.title3.bold()).foregroundStyle(MinervaColor.ink); Text(title).font(.caption).foregroundStyle(MinervaColor.inkFaint) }.frame(maxWidth: .infinity, alignment: .leading).padding(14).background(MinervaColor.surface).clipShape(RoundedRectangle(cornerRadius: 14)) }
 }

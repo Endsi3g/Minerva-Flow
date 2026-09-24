@@ -229,6 +229,54 @@ describe("POS Item Mapping & Ticket Ingestion Engine", () => {
       expect(mockUpsertServiceDay).toHaveBeenCalledWith("resto-1", "2026-09-23", 30, "square");
     });
 
+    it("does not count an identified POS customer until the loyalty credit succeeds", async () => {
+      mockSelect.mockImplementation((fields?: string) => ({
+        eq: vi.fn().mockImplementation((column: string) => {
+          if (column === "restaurant_id" && fields?.includes("name")) {
+            return Promise.resolve({ data: [] });
+          }
+          return {
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+              }),
+            }),
+          };
+        }),
+      }));
+      mockFindOrCreateCustomerFromPos.mockResolvedValueOnce({
+        customer: { id: "customer-retry-1" },
+        isNew: true,
+      });
+      mockLogVisitAdmin.mockResolvedValueOnce(null);
+
+      const result = await ingestPosTickets("resto-1", "square", [{
+        externalOrderId: "loyalty-retry-ticket-1",
+        closedAt: "2026-09-23T17:30:00Z",
+        subtotal: 30,
+        total: 34.5,
+        customerPhone: "+15145550123",
+        lineItems: [],
+      }]);
+
+      expect(mockLogVisitAdmin).toHaveBeenCalledWith(
+        "resto-1",
+        "customer-retry-1",
+        34.5,
+        expect.stringContaining("loyalty-retry-ticket-1"),
+        expect.objectContaining({
+          viaPosSync: true,
+          viaPhoneLookup: true,
+          posProvider: "square",
+          posExternalOrderId: "loyalty-retry-ticket-1",
+        })
+      );
+      expect(result.ingestedCount).toBe(0);
+      expect(result.identifiedCustomersCount).toBe(0);
+      expect(result.newCustomersCount).toBe(0);
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
     it("retries a POS ticket that has a provider customer ID even without phone or email", async () => {
       mockSelect.mockImplementation((fields?: string) => ({
         eq: vi.fn().mockImplementation((column: string) => {

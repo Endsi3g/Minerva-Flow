@@ -1,13 +1,14 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateToken } from "@/lib/tokens";
 import { mapReferralProgram, type ReferralProgramRow } from "@/lib/data/referral-programs";
 import { getRestaurantOrderSettings } from "@/lib/data/menu-shares";
 import { notifyRestaurant } from "@/lib/data/notifications";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, roundToCents } from "@/lib/utils";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
-import { createOrderPaymentIntent } from "@/lib/stripe/connect";
+import { createOrderPaymentIntent, retrieveOrderPaymentIntent } from "@/lib/stripe/connect";
 import { quoteDelivery } from "@/lib/orders/delivery-pricing";
 import type { DeliveryQuote } from "@/lib/orders/delivery-pricing";
 import { geocodeAddress } from "@/lib/geocode";
@@ -534,8 +535,112 @@ export type PublicOrderGuestInfo = {
 
 export type SubmitPublicOrderResult =
   | { ok: false }
-  | { ok: true; orderId: string; clientSecret: null; estimatedReadyAt: string | null }
-  | { ok: true; orderId: string; clientSecret: string; estimatedReadyAt: string | null };
+  | { ok: true; orderId: string; clientSecret: null; estimatedReadyAt: string | null; total: number; paymentConfirmed?: boolean }
+  | { ok: true; orderId: string; clientSecret: string; estimatedReadyAt: string | null; total: number; paymentConfirmed?: boolean };
+
+type PublicOrderCheckoutRow = {
+  order_id: string;
+  created: boolean;
+  order_status: string;
+  payment_status: string;
+  stripe_payment_intent_id: string | null;
+  estimated_ready_at: string | null;
+  total: number;
+  stripe_account_id: string | null;
+};
+
+function publicOrderRequestFingerprint(input: {
+  restaurantId: string;
+  userId: string;
+  menuToken: string;
+  referralCode: string | null;
+  cart: PublicOrderCartLine[];
+  guestInfo: PublicOrderGuestInfo;
+}): string {
+  const canonical = {
+    restaurantId: input.restaurantId,
+    userId: input.userId,
+    menuToken: input.menuToken,
+    referralCode: input.referralCode?.trim() || null,
+    cart: input.cart
+      .map((line) => ({ menuItemId: line.menuItemId, quantity: line.quantity }))
+      .sort((a, b) => a.menuItemId.localeCompare(b.menuItemId)),
+    guestInfo: {
+      guestName: input.guestInfo.guestName.trim(),
+      guestPhone: input.guestInfo.guestPhone?.trim() || null,
+      paymentMethod: input.guestInfo.paymentMethod?.trim() || null,
+      tipAmount: roundToCents(input.guestInfo.tipAmount),
+      fulfillmentMode: input.guestInfo.fulfillmentMode,
+      payOnline: input.guestInfo.payOnline ?? null,
+      deliveryAddress: input.guestInfo.deliveryAddress?.trim() || null,
+      requestedReadyAtLocal: input.guestInfo.requestedReadyAtLocal?.trim() || null,
+      mentionedOfferTitle: input.guestInfo.mentionedOfferTitle?.trim() || null,
+      marketingConsent: input.guestInfo.marketingConsent,
+    },
+  };
+  return createHash("sha256").update(JSON.stringify(canonical)).digest("hex");
+}
+
+async function completePublicOrderPayment(
+  admin: ReturnType<typeof createAdminClient>,
+  input: {
+    orderId: string;
+    restaurantId: string;
+    paymentStatus: string;
+    orderStatus: string;
+    total: number;
+    stripeAccountId: string | null;
+    stripePaymentIntentId: string | null;
+    estimatedReadyAt: string | null;
+  }
+): Promise<SubmitPublicOrderResult> {
+  if (input.orderStatus === "annulee") return { ok: false };
+  if (input.paymentStatus === "paye") {
+    return { ok: true, orderId: input.orderId, clientSecret: null, estimatedReadyAt: input.estimatedReadyAt, total: Number(input.total), paymentConfirmed: true };
+  }
+  if (input.paymentStatus === "non_requis") {
+    return { ok: true, orderId: input.orderId, clientSecret: null, estimatedReadyAt: input.estimatedReadyAt, total: Number(input.total) };
+  }
+  if (!input.stripeAccountId) return { ok: false };
+
+  try {
+    const intent = input.stripePaymentIntentId
+      ? await retrieveOrderPaymentIntent({
+          orderId: input.orderId,
+          restaurantId: input.restaurantId,
+          paymentIntentId: input.stripePaymentIntentId,
+        })
+      : await createOrderPaymentIntent({
+          orderId: input.orderId,
+          restaurantId: input.restaurantId,
+          connectedAccountId: input.stripeAccountId,
+          amountCents: Math.round(Number(input.total) * 100),
+        });
+
+    if (intent.status === "succeeded") {
+      return { ok: true, orderId: input.orderId, clientSecret: null, estimatedReadyAt: input.estimatedReadyAt, total: Number(input.total), paymentConfirmed: true };
+    }
+    if (!intent.clientSecret) return { ok: false };
+
+    const { error } = await admin.from("orders")
+      .update({ stripe_payment_intent_id: intent.id, payment_status: "en_attente" })
+      .eq("id", input.orderId)
+      .eq("restaurant_id", input.restaurantId);
+    if (error) throw error;
+    return { ok: true, orderId: input.orderId, clientSecret: intent.clientSecret, estimatedReadyAt: input.estimatedReadyAt, total: Number(input.total) };
+  } catch (error) {
+    console.error("submitPublicOrder: Stripe payment retry unavailable", {
+      orderId: input.orderId,
+      message: error instanceof Error ? error.message : "unknown_error",
+    });
+    await admin.from("orders")
+      .update({ payment_status: "echoue" })
+      .eq("id", input.orderId)
+      .eq("restaurant_id", input.restaurantId)
+      .neq("payment_status", "paye");
+    return { ok: false };
+  }
+}
 
 /**
  * Same shape as submitPublicReservationRequest: identify the visitor via
@@ -547,22 +652,25 @@ export type SubmitPublicOrderResult =
  * client-submitted cart only supplies item ids and quantities, never
  * amounts, so a tampered request can't change what's actually charged.
  *
- * The order row is always committed first, before any Stripe call, so
- * staff sees it in /commandes immediately even if the guest never
- * completes payment (payment_status stays 'en_attente' until the webhook
- * confirms it — see app/api/stripe/webhook/route.ts). If PaymentIntent
- * creation itself fails (e.g. the Connect account is disabled between page
- * load and submit), the order is cancelled rather than silently becoming an
- * unpaid pickup/delivery order.
+ * The order and all line items are committed atomically under a durable
+ * per-attempt key before any Stripe call. A retry finds that same order and
+ * retrieves (or idempotently recreates) its PaymentIntent; it never creates
+ * a second order or repeats notification/referral side effects.
  */
 export async function submitPublicOrder(
   menuToken: string,
   referralCode: string | null,
   cart: PublicOrderCartLine[],
   guestInfo: PublicOrderGuestInfo,
+  idempotencyKey: string,
   invitationChannelInput?: string | null
 ): Promise<SubmitPublicOrderResult> {
-  if (cart.length === 0) return { ok: false };
+  if (!Array.isArray(cart) || cart.length === 0 || cart.length > 100
+      || cart.some((line) => !line || typeof line.menuItemId !== "string" || !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > 99)
+      || !guestInfo || typeof guestInfo.guestName !== "string" || !guestInfo.guestName.trim()) return { ok: false };
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+    return { ok: false };
+  }
 
   // Same reasoning as submitPublicReservationRequest — the page load is
   // rate-limited, but a scripted client calling this action directly isn't,
@@ -587,6 +695,50 @@ export async function submitPublicOrder(
     .maybeSingle();
   const restaurantId = (shareRow as { restaurant_id: string } | null)?.restaurant_id;
   if (!restaurantId) return { ok: false };
+
+  const requestFingerprint = publicOrderRequestFingerprint({
+    restaurantId,
+    userId: user.id,
+    menuToken,
+    referralCode,
+    cart,
+    guestInfo,
+  });
+  const { data: existingOrder, error: existingLookupError } = await admin.from("orders")
+    .select("id, public_checkout_user_id, public_checkout_fingerprint, status, payment_status, stripe_payment_intent_id, estimated_ready_at, total, checkout_stripe_account_id")
+    .eq("restaurant_id", restaurantId)
+    .eq("public_checkout_key", idempotencyKey)
+    .maybeSingle();
+  if (existingLookupError) {
+    console.error("submitPublicOrder: idempotency lookup unavailable", existingLookupError.code ?? "unknown");
+    return { ok: false };
+  }
+  if (existingOrder) {
+    const existing = existingOrder as {
+      id: string;
+      public_checkout_user_id: string | null;
+      public_checkout_fingerprint: string | null;
+      status: string;
+      payment_status: string;
+      stripe_payment_intent_id: string | null;
+      estimated_ready_at: string | null;
+      total: number;
+      checkout_stripe_account_id: string | null;
+    };
+    if (existing.public_checkout_user_id !== user.id || existing.public_checkout_fingerprint !== requestFingerprint) {
+      return { ok: false };
+    }
+    return completePublicOrderPayment(admin, {
+      orderId: existing.id,
+      restaurantId,
+      paymentStatus: existing.payment_status,
+      orderStatus: existing.status,
+      total: existing.total,
+      stripeAccountId: existing.checkout_stripe_account_id,
+      stripePaymentIntentId: existing.stripe_payment_intent_id,
+      estimatedReadyAt: existing.estimated_ready_at,
+    });
+  }
 
   // These four all depend only on restaurantId (or nothing) — never on each
   // other's result — so they run concurrently instead of as four sequential
@@ -674,130 +826,119 @@ export async function submitPublicOrder(
   const computedReadyAt = computeEstimatedReadyAt(orderSettings.defaultPrepMinutes, orderSettings.isBusy);
   const estimatedReadyAt = schedule.requestedReadyAt ? new Date(schedule.requestedReadyAt) : computedReadyAt;
 
-  const baseOrderFields: Record<string, unknown> = {
-    restaurant_id: restaurantId,
-    status: "soumise",
-    guest_name: guestInfo.guestName,
-    guest_phone: guestInfo.guestPhone,
-    subtotal,
-    tax_amount: taxAmount,
-    tip_amount: tipAmount,
-    total: orderTotal,
-    is_public_request: true,
-    customer_id: customerId,
-    referral_link_id: referralLinkId,
-    notes: guestInfo.mentionedOfferTitle ? `Offre mentionnée : ${guestInfo.mentionedOfferTitle}` : null,
-    estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
-    delivery_address: deliveryRequested ? guestInfo.deliveryAddress?.trim() : null,
-    delivery_lat: deliveryCoordinates?.lat ?? null,
-    delivery_lng: deliveryCoordinates?.lng ?? null,
-    delivery_distance_km: deliveryRequested ? deliveryQuote.distanceKm : null,
-    delivery_fee: deliveryFee,
-    delivery_eta_minutes: deliveryRequested ? deliveryQuote.etaMinutes : null,
-  };
-  if (schedule.requestedReadyAt) baseOrderFields.requested_ready_at = schedule.requestedReadyAt;
-
-  let { data: order, error: orderError } = await admin
-    .from("orders")
-    .insert({
-      ...baseOrderFields,
-      source: "web",
-      payment_method: wantsOnlinePayment ? "Carte (en ligne)" : guestInfo.paymentMethod,
-      payment_status: wantsOnlinePayment ? "en_attente" : "non_requis",
-      fulfillment_mode: fulfillmentMode,
-    })
-    .select("id")
-    .single();
-
-  // Older installations may not have the ETA column yet. Only degrade for a
-  // receipt-paid pickup, never silently turn an online/delivery order into a
-  // different order when its required schema is absent.
-  if (orderError?.code === "PGRST204" && !schedule.requestedReadyAt && !wantsOnlinePayment && !deliveryRequested) {
-    const { estimated_ready_at: _omit, ...minimalFields } = baseOrderFields;
-    void _omit;
-    ({ data: order, error: orderError } = await admin
-      .from("orders")
-      .insert({ ...minimalFields, payment_method: guestInfo.paymentMethod })
-      .select("id")
-      .single());
-  }
-
-  if (orderError || !order) return { ok: false };
-  const orderId = (order as { id: string }).id;
-
-  const { error: itemsError } = await admin.from("order_items").insert(
-    lineItems.map((l) => ({
-      order_id: orderId,
-      menu_item_id: l.menuItemId,
-      item_name: l.itemName,
-      unit_price: l.unitPrice,
-      quantity: l.quantity,
-    }))
-  );
-  if (itemsError) {
-    // The order row is intentionally created first so operations can see a
-    // submitted request. If its line-item batch fails, compensate immediately
-    // so staff never mistake an empty, unpaid order for valid work.
-    const cancellation: { status: string; payment_status?: string } = { status: "annulee" };
-    if (wantsOnlinePayment) cancellation.payment_status = "echoue";
-    const { error: cancellationError } = await admin.from("orders")
-      .update(cancellation)
-      .eq("id", orderId)
-      .eq("restaurant_id", restaurantId);
-    if (cancellationError) {
-      console.error("submitPublicOrder: failed to cancel order after item insert failure", {
-        orderId,
-        itemError: itemsError.message,
-        cancellationError: cancellationError.message,
-      });
-    }
-    return { ok: false };
-  }
-
-  if (referralLinkId) {
-    await admin.from("customer_referral_conversions").insert({
-      referral_link_id: referralLinkId,
-      conversion_type: "achat",
-      order_id: orderId,
-      invited_customer_id: customerId,
-      invitation_channel: normalizeReferralChannel(invitationChannelInput),
-    });
-  }
-
-  await notifyRestaurant({
-    restaurantId,
-    type: "order.created",
-    title: "Nouvelle commande en ligne",
-    body: `${guestInfo.guestName} — ${formatCurrency(orderTotal)}${deliveryRequested ? " · Livraison" : ""}`,
-    link: "/commandes",
+  const { data: checkoutRows, error: checkoutError } = await admin.rpc("create_or_get_public_order", {
+    p_restaurant_id: restaurantId,
+    p_checkout_key: idempotencyKey,
+    p_checkout_user_id: user.id,
+    p_request_fingerprint: requestFingerprint,
+    p_customer_id: customerId,
+    p_guest_name: guestInfo.guestName.trim(),
+    p_guest_phone: guestInfo.guestPhone?.trim() || null,
+    p_subtotal: subtotal,
+    p_tax_amount: taxAmount,
+    p_tip_amount: tipAmount,
+    p_total: orderTotal,
+    p_payment_method: wantsOnlinePayment ? "Carte (en ligne)" : guestInfo.paymentMethod,
+    p_payment_status: wantsOnlinePayment ? "en_attente" : "non_requis",
+    p_fulfillment_mode: fulfillmentMode,
+    p_delivery_address: deliveryRequested ? guestInfo.deliveryAddress?.trim() : null,
+    p_delivery_lat: deliveryCoordinates?.lat ?? null,
+    p_delivery_lng: deliveryCoordinates?.lng ?? null,
+    p_delivery_distance_km: deliveryRequested ? deliveryQuote.distanceKm : null,
+    p_delivery_fee: deliveryFee,
+    p_delivery_eta_minutes: deliveryRequested ? deliveryQuote.etaMinutes : null,
+    p_estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
+    p_requested_ready_at: schedule.requestedReadyAt,
+    p_referral_link_id: referralLinkId,
+    p_referral_channel: normalizeReferralChannel(invitationChannelInput),
+    p_notes: guestInfo.mentionedOfferTitle ? `Offre mentionnée : ${guestInfo.mentionedOfferTitle}` : null,
+    p_stripe_account_id: orderSettings.stripeConnectAccountId,
+    p_source: "web",
+    p_items: lineItems.map((line) => ({
+      menu_item_id: line.menuItemId,
+      item_name: line.itemName,
+      unit_price: line.unitPrice,
+      quantity: line.quantity,
+    })),
   });
-
-  const estimatedReadyAtIso = estimatedReadyAt?.toISOString() ?? null;
-
-  if (!wantsOnlinePayment || !orderSettings.stripeConnectAccountId) {
-    return { ok: true, orderId, clientSecret: null, estimatedReadyAt: estimatedReadyAtIso };
-  }
-
-  try {
-    const intent = await createOrderPaymentIntent({
-      orderId,
-      restaurantId,
-      connectedAccountId: orderSettings.stripeConnectAccountId,
-      amountCents: Math.round(orderTotal * 100),
-    });
-    const { error: paymentIntentSaveError } = await admin.from("orders")
-      .update({ stripe_payment_intent_id: intent.id })
-      .eq("id", orderId)
-      .eq("restaurant_id", restaurantId);
-    if (paymentIntentSaveError) throw paymentIntentSaveError;
-    return { ok: true, orderId, clientSecret: intent.clientSecret, estimatedReadyAt: estimatedReadyAtIso };
-  } catch {
-    // Never silently convert an explicitly requested online payment into an
-    // unpaid order (particularly for delivery). Keep the failed attempt
-    // visible for operations, but do not treat it as a valid order.
-    await admin.from("orders").update({ status: "annulee", payment_status: "echoue" }).eq("id", orderId);
+  const checkout = (checkoutRows as PublicOrderCheckoutRow[] | null)?.[0];
+  if (checkoutError || !checkout) {
+    console.error("submitPublicOrder: atomic checkout persistence failed", checkoutError?.code ?? "empty_result");
     return { ok: false };
   }
+
+  if (checkout.created) {
+    await notifyRestaurant({
+      restaurantId,
+      type: "order.created",
+      title: "Nouvelle commande en ligne",
+      body: `${guestInfo.guestName.trim()} — ${formatCurrency(orderTotal)}${deliveryRequested ? " · Livraison" : ""}`,
+      link: "/commandes",
+    }).catch(() => {
+      // Persistence succeeded; retries must return the same order rather than
+      // repeat the notification or create duplicate work.
+    });
+  }
+
+  return completePublicOrderPayment(admin, {
+    orderId: checkout.order_id,
+    restaurantId,
+    paymentStatus: checkout.payment_status,
+    orderStatus: checkout.order_status,
+    total: Number(checkout.total),
+    stripeAccountId: checkout.stripe_account_id,
+    stripePaymentIntentId: checkout.stripe_payment_intent_id,
+    estimatedReadyAt: checkout.estimated_ready_at,
+  });
+}
+
+/** Resume a submitted checkout from its persisted opaque key after reload. */
+export async function resumePublicOrder(
+  menuToken: string,
+  idempotencyKey: string
+): Promise<SubmitPublicOrderResult> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+    return { ok: false };
+  }
+  const ip = await getClientIp();
+  const { allowed } = await checkRateLimit(`order-resume:${ip}`, { max: 30, windowSeconds: 300 });
+  if (!allowed) return { ok: false };
+
+  const session = await createClient();
+  const { data: { user } } = await session.auth.getUser();
+  if (!user?.id) return { ok: false };
+
+  const admin = createAdminClient();
+  const { data: share } = await admin.from("menu_shares").select("restaurant_id").eq("token", menuToken).maybeSingle();
+  const restaurantId = (share as { restaurant_id: string } | null)?.restaurant_id;
+  if (!restaurantId) return { ok: false };
+
+  const { data: order, error } = await admin.from("orders")
+    .select("id, status, payment_status, stripe_payment_intent_id, estimated_ready_at, total, checkout_stripe_account_id")
+    .eq("restaurant_id", restaurantId)
+    .eq("public_checkout_key", idempotencyKey)
+    .eq("public_checkout_user_id", user.id)
+    .maybeSingle();
+  if (error || !order) return { ok: false };
+  const existing = order as {
+    id: string;
+    status: string;
+    payment_status: string;
+    stripe_payment_intent_id: string | null;
+    estimated_ready_at: string | null;
+    total: number;
+    checkout_stripe_account_id: string | null;
+  };
+  return completePublicOrderPayment(admin, {
+    orderId: existing.id,
+    restaurantId,
+    paymentStatus: existing.payment_status,
+    orderStatus: existing.status,
+    total: existing.total,
+    stripeAccountId: existing.checkout_stripe_account_id,
+    stripePaymentIntentId: existing.stripe_payment_intent_id,
+    estimatedReadyAt: existing.estimated_ready_at,
+  });
 }
 
 /** Server-authoritative delivery estimate for a public menu checkout. */

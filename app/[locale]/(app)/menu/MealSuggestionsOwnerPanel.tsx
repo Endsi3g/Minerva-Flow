@@ -64,7 +64,7 @@ export function MealSuggestionsOwnerPanel({
       </div>
       <div className="divide-y divide-mv-border-soft px-4 sm:px-5">
         {initialLoadFailed ? (
-          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 py-4 text-[12px] text-mv-ink-soft">
+          <div data-testid="meal-suggestions-load-error" role="alert" className="flex flex-wrap items-center justify-between gap-3 py-4 text-[12px] text-mv-ink-soft">
             <p>{t("loadFailed")}</p>
             <Button size="sm" variant="secondary" onClick={() => router.refresh()}><RefreshCw size={13} />{t("retry")}</Button>
           </div>

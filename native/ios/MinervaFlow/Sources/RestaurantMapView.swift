@@ -207,7 +207,7 @@ struct RestaurantMapView: View {
         }
         .padding(12)
         .frame(width: 190, alignment: .leading)
-        .background(.white)
+        .background(MinervaColor.surface)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .shadow(color: MinervaColor.ink.opacity(0.08), radius: 8, x: 0, y: 3)
     }

@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { createHash } from "crypto";
+import { isExpectedClientDisconnect } from "@/lib/alerts/request-errors";
 
 // Fallback recipient if ALERT_NOTIFICATION_EMAIL is not set
 const DEFAULT_ALERT_RECIPIENT = "kbelceus776@gmail.com";
@@ -39,6 +40,9 @@ const recentDispatches: number[] = [];
  */
 export function isIgnorableError(err: unknown): boolean {
   if (!err) return true;
+  // Next.js can report a client-cancelled RSC stream as a render error. Keep
+  // it visible in Sentry, but don't mislabel this transport close as critical.
+  if (isExpectedClientDisconnect(err)) return true;
 
   const message = (err instanceof Error ? err.message : String(err)).toLowerCase();
   const name = err instanceof Error ? err.name : "";
@@ -123,7 +127,8 @@ function renderCriticalAlertEmail(
     
     <!-- En-tête de marque avec accent émeraude -->
     <div style="background:#0e5a40; padding:28px 32px; border-bottom:3px solid #167f5b; color:#fffefa;">
-      <div style="display:inline-block; padding:4px 12px; background:#dfff5f; color:#0a4531; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; border-radius:999px; margin-bottom:12px;">
+      <img src="https://minervaflow.app/icon-192.png" width="40" height="40" alt="Minerva Flow" border="0" style="display:block;width:40px;height:40px;margin-bottom:14px;border:0;border-radius:12px;" />
+      <div style="display:inline-block; padding:4px 12px; background:#f6efd9; color:#8a6414; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; border-radius:999px; margin-bottom:12px;">
         Alerte Système Critique
       </div>
       <h1 style="margin:0; font-family:'New York', -apple-system-serif, 'Playfair Display', Georgia, serif; font-size:24px; font-weight:700; line-height:1.25; color:#ffffff;">

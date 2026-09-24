@@ -30,6 +30,8 @@ const PANEL_POINTS = [
 
 type AuthParams = {
   referralCode: string | null;
+  ambassadorCode: string | null;
+  ambassadorLinkSlug: string | null;
   inviteToken: string | null;
   workspaceInviteToken: string | null;
 };
@@ -37,12 +39,14 @@ type AuthParams = {
 function SearchParamsReader({ onParams }: { onParams: (params: AuthParams) => void }) {
   const searchParams = useSearchParams();
   const referralCode = searchParams?.get("ref") ?? null;
+  const ambassadorCode = searchParams?.get("amb") ?? null;
+  const ambassadorLinkSlug = searchParams?.get("ref_link") ?? null;
   const inviteToken = searchParams?.get("inviteToken") ?? null;
   const workspaceInviteToken = searchParams?.get("wInviteToken") ?? null;
 
   useEffect(() => {
-    onParams({ referralCode, inviteToken, workspaceInviteToken });
-  }, [referralCode, inviteToken, workspaceInviteToken, onParams]);
+    onParams({ referralCode, ambassadorCode, ambassadorLinkSlug, inviteToken, workspaceInviteToken });
+  }, [referralCode, ambassadorCode, ambassadorLinkSlug, inviteToken, workspaceInviteToken, onParams]);
 
   return null;
 }
@@ -66,13 +70,13 @@ function AuthCardInner({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { referralCode, inviteToken, workspaceInviteToken } = authParams;
+  const { referralCode, ambassadorCode, ambassadorLinkSlug, inviteToken, workspaceInviteToken } = authParams;
 
   const postAuthPath = workspaceInviteToken
     ? `/invite/w/${workspaceInviteToken}`
     : inviteToken
       ? `/invite/${inviteToken}`
-      : "/overview";
+      : "/workspace";
 
   const localizedPostAuthPath = getPathname({ href: postAuthPath, locale });
 
@@ -114,8 +118,7 @@ function AuthCardInner({
           posthog.identify(data.user.id, { email: data.user.email });
           posthog.capture("user_logged_in", { method: "email" });
         }
-        router.push(postAuthPath);
-        router.refresh();
+        router.replace(postAuthPath);
       } else {
         if (password !== repeatPassword) throw new Error(t("errorPasswordMismatch"));
 
@@ -123,6 +126,8 @@ function AuthCardInner({
           email,
           password,
           referralCode,
+          ambassadorCode,
+          ambassadorLinkSlug,
           inviteToken,
           workspaceInviteToken,
           productUpdatesOptIn,
@@ -153,8 +158,7 @@ function AuthCardInner({
           });
         }
 
-        router.push(postAuthPath);
-        router.refresh();
+        router.replace(postAuthPath);
       }
     } catch (err) {
       posthog.captureException(err);
@@ -171,9 +175,12 @@ function AuthCardInner({
       has_invite: Boolean(inviteToken || workspaceInviteToken),
     });
     const supabase = createClient();
+    const oauthNextPath = mode === "signup" && ambassadorCode
+      ? `${localizedPostAuthPath}?flow_amb=${encodeURIComponent(ambassadorCode)}${ambassadorLinkSlug ? `&flow_amb_link=${encodeURIComponent(ambassadorLinkSlug)}` : ""}`
+      : localizedPostAuthPath;
     const { error: authErr } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/confirm?next=${localizedPostAuthPath}` },
+      options: { redirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(oauthNextPath)}` },
     });
     if (authErr) {
       posthog.captureException(authErr);
@@ -374,6 +381,8 @@ function AuthCardInner({
 export function AuthCard({ initialMode }: { initialMode: "login" | "signup" }) {
   const [params, setParams] = useState<AuthParams>({
     referralCode: null,
+    ambassadorCode: null,
+    ambassadorLinkSlug: null,
     inviteToken: null,
     workspaceInviteToken: null,
   });

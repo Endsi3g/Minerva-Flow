@@ -18,11 +18,17 @@ struct HomeView: View {
     @State private var selectedReward: LoyaltyReward?
 
     private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+    private var restaurantCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = supabase.restaurantTimezone
+        return calendar
+    }
     private var birthdayOfferTriggerKey: String {
         [
             supabase.customer?.id ?? "none",
             supabase.customer?.birthday ?? "no-birthday",
             supabase.birthdayOffer?.id ?? "no-offer",
+            supabase.restaurantTimezone.identifier,
             supabase.isLoadingData ? "loading" : "ready",
         ].joined(separator: "|")
     }
@@ -43,7 +49,7 @@ struct HomeView: View {
                         nextRewardCard(for: customer)
 
                         if customer.marketingConsent,
-                           BirthdayOfferEligibility.isBirthdayToday(customer.birthday),
+                           BirthdayOfferEligibility.isBirthdayToday(customer.birthday, calendar: restaurantCalendar),
                            let offer = supabase.birthdayOffer {
                             birthdayOfferCard(offer)
                         }
@@ -126,11 +132,11 @@ struct HomeView: View {
         guard !supabase.isLoadingData,
               let customer = supabase.customer,
               customer.marketingConsent,
-              BirthdayOfferEligibility.isBirthdayToday(customer.birthday),
+              BirthdayOfferEligibility.isBirthdayToday(customer.birthday, calendar: restaurantCalendar),
               let offer = supabase.birthdayOffer
         else { return }
 
-        let year = Calendar.current.component(.year, from: Date())
+        let year = restaurantCalendar.component(.year, from: Date())
         let seenKey = "birthday-offer-shown-\(customer.id)-\(year)"
         guard !UserDefaults.standard.bool(forKey: seenKey) else { return }
         birthdayOffer = offer

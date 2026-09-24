@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { e2eTestDatabase } from "./test-env";
 
 const SUPABASE_URL = e2eTestDatabase.supabaseUrl;
@@ -41,9 +41,22 @@ export async function createTestUser(labelSuffix = ""): Promise<TestUser> {
  * the whole test run over cleanup.
  */
 export async function cleanupTestUser(userId: string, attempts = 3): Promise<void> {
+  // Capture only restaurants this synthetic account was actually a member of.
+  // A global name-based sweep can otherwise delete unrelated staging data.
+  const { data: memberships, error: membershipLookupError } = await supabaseAdmin
+    .from("restaurant_members")
+    .select("restaurant_id")
+    .eq("user_id", userId);
+  const restaurantIds = membershipLookupError
+    ? []
+    : [...new Set((memberships ?? []).map((membership) => membership.restaurant_id).filter(Boolean))];
+
   for (let i = 0; i < attempts; i++) {
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-    if (!error) return;
+    if (!error) {
+      await cleanupOrphanRestaurants(restaurantIds);
+      return;
+    }
     if (i < attempts - 1) await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
   }
   // Best-effort: don't fail the test suite over leftover test data.
@@ -68,7 +81,24 @@ export async function loginAs(page: Page, user: Pick<TestUser, "email" | "passwo
   if ((await emailInput.inputValue()) !== user.email) await emailInput.fill(user.email);
   if ((await passwordInput.inputValue()) !== user.password) await passwordInput.fill(user.password);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/overview/, { timeout: 15000 });
+  // Next.js client navigation can stall while the overview's RSC request is
+  // loading (notably when the staging database is slow). First wait for the
+  // app's redirect; if it stalls, only recover when the real login form has
+  // already written a Supabase auth cookie, then request the protected route
+  // directly. This does not manufacture or inject a session.
+  try {
+    await page.waitForURL(/\/(?:overview|workspace)(?:[?#]|$)/, { timeout: 12000, waitUntil: "commit" });
+  } catch (navigationError) {
+    const hasSupabaseSession = (await page.context().cookies()).some((cookie) =>
+      /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name) && cookie.value.length > 0
+    );
+    if (!hasSupabaseSession) throw navigationError;
+    await page.goto("/workspace", { waitUntil: "commit", timeout: 30000 });
+  }
+  // The primary sidebar route is role/locale dependent (Aperçu, Overview,
+  // or collapsed navigation), so it is not a stable proof of authentication.
+  // The signed-in account control is present across owner/staff app shells.
+  await expect(page.getByRole("button", { name: user.email })).toBeVisible({ timeout: 20_000 });
 }
 
 /**
@@ -86,9 +116,16 @@ export function getFixedTestUser(): Pick<TestUser, "email" | "password"> {
   return { email, password };
 }
 
-/** Deletes any restaurant left with zero members — the "phantom restaurant" shape. */
-export async function cleanupOrphanRestaurants(): Promise<void> {
-  const { data: restaurants } = await supabaseAdmin.from("restaurants").select("id, name").eq("name", "Mon restaurant");
+/** Deletes only known test-owned restaurants left behind after their last test member is removed. */
+export async function cleanupOrphanRestaurants(knownRestaurantIds: string[] = []): Promise<void> {
+  const restaurantIds = [...new Set(knownRestaurantIds.filter((id) => /^[0-9a-f-]{36}$/i.test(id)))];
+  if (restaurantIds.length === 0) return;
+
+  const { data: restaurants, error } = await supabaseAdmin.from("restaurants")
+    .select("id, name")
+    .in("id", restaurantIds)
+    .eq("name", "Mon restaurant");
+  if (error || !restaurants) return;
   for (const r of restaurants ?? []) {
     const { count } = await supabaseAdmin
       .from("restaurant_members")

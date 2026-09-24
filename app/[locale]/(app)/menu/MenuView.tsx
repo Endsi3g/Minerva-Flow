@@ -40,7 +40,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { AlertBanner } from "@/components/ui/AlertBanner";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import QRCode from "qrcode";
 import {
@@ -120,6 +120,9 @@ function NewMenuItemModal({
       } else {
         notifyError(t("createFailed"));
       }
+    } catch (error) {
+      console.error("createMenuItemAction failed:", error);
+      notifyError(t("createFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -1331,6 +1334,7 @@ export function MenuView({
   const t = useTranslations("menu.page");
   const tq = useTranslations("menu.quadrant");
   const { role } = useApp();
+  const interactiveRootRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState(initialItems);
   const [recipesByMenuItem] = useState(initialRecipes);
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -1346,6 +1350,10 @@ export function MenuView({
   const [tax, setTax] = useState(taxRate);
   const [tips, setTips] = useState(acceptsTips);
   const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
+
+  useEffect(() => {
+    if (interactiveRootRef.current) interactiveRootRef.current.dataset.interactiveReady = "true";
+  }, []);
 
   const canManage = role === "owner" || role === "manager";
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
@@ -1440,7 +1448,7 @@ export function MenuView({
   }
 
   return (
-    <div>
+    <div ref={interactiveRootRef} data-interactive-ready="false">
       <PageHeader
         eyebrow={t("eyebrow")}
         title={t("title")}

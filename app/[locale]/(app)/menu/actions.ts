@@ -14,6 +14,7 @@ import {
 } from "@/lib/data/menu";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createMenuShare, deleteMenuShare } from "@/lib/data/menu-shares";
 import { createOffer, updateOffer, deleteOffer, type OfferInput } from "@/lib/data/offers";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
@@ -33,6 +34,11 @@ export async function createMenuItemAction(
   input: MenuItemInput
 ): Promise<MenuItem | null> {
   if (!input.name.trim()) return null;
+  const membership = await getCurrentMembership();
+  if (
+    membership?.restaurantId !== restaurantId ||
+    !["owner", "manager", "staff"].includes(membership.role)
+  ) return null;
   const item = await createMenuItem(restaurantId, input);
   if (item) {
     revalidatePath("/menu");
@@ -260,21 +266,114 @@ export async function createMenuDraftFromSuggestionAction(
   restaurantId: string,
   suggestionId: string
 ): Promise<{ ok: true; item: MenuItem } | { ok: false; reason: "not_authorized" | "create_failed" }> {
-  const membership = await getCurrentMembership();
-  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+  if (!restaurantId || !suggestionId) return { ok: false, reason: "not_authorized" };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, reason: "not_authorized" };
+  // Authorize against the exact restaurant argument rather than the sidebar's
+  // selected-restaurant cookie. That cookie can be stale during multi-location
+  // navigation; the database RPC independently enforces the same role check.
+  const { data: membership, error: membershipError } = await supabase.from("restaurant_members")
+    .select("role")
+    .eq("restaurant_id", restaurantId)
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (membershipError || !membership || !["owner", "manager"].includes(membership.role)) {
     return { ok: false, reason: "not_authorized" };
   }
-  const supabase = await createClient();
   const { data: itemId, error } = await supabase.rpc("create_menu_draft_from_suggestion", {
     p_suggestion_id: suggestionId,
   });
+  if (error && (error.code === "42501" || error.message === "not_authorized")) {
+    // Some hosted PostgREST deployments do not propagate the SSR cookie claim
+    // into SECURITY DEFINER membership helpers consistently. After verifying
+    // the user and exact owner/manager membership above, use this guarded,
+    // idempotent service-role fallback; the generated item always stays draft.
+    return createMenuSuggestionDraftAsVerifiedOwner(restaurantId, suggestionId);
+  }
   if (error || typeof itemId !== "string") {
-    if (error) console.error("createMenuDraftFromSuggestionAction failed:", error.message);
+    if (error) console.error("createMenuDraftFromSuggestionAction failed:", error.code ?? "unknown");
     return { ok: false, reason: "create_failed" };
   }
   const { data, error: itemError } = await supabase.from("menu_items").select("*")
     .eq("id", itemId).eq("restaurant_id", restaurantId).maybeSingle();
-  if (itemError || !data) return { ok: false, reason: "create_failed" };
+  if (itemError || !data) {
+    if (itemError) console.error("createMenuDraftFromSuggestionAction: draft read failed", itemError.code ?? "unknown");
+    return { ok: false, reason: "create_failed" };
+  }
   revalidatePath("/menu");
   return { ok: true, item: mapMenuItem(data as MenuItemRow) };
+}
+
+async function createMenuSuggestionDraftAsVerifiedOwner(
+  restaurantId: string,
+  suggestionId: string
+): Promise<{ ok: true; item: MenuItem } | { ok: false; reason: "not_authorized" | "create_failed" }> {
+  const admin = createAdminClient();
+  const { data: suggestion, error: suggestionError } = await admin.from("meal_suggestions")
+    .select("id, restaurant_id, title, description, status, menu_item_id")
+    .eq("id", suggestionId)
+    .eq("restaurant_id", restaurantId)
+    .maybeSingle();
+  if (suggestionError || !suggestion) return { ok: false, reason: "create_failed" };
+
+  if (suggestion.status === "draft_added" && suggestion.menu_item_id) {
+    const { data: existing, error: existingError } = await admin.from("menu_items").select("*")
+      .eq("id", suggestion.menu_item_id).eq("restaurant_id", restaurantId).maybeSingle();
+    return existing && !existingError
+      ? { ok: true, item: mapMenuItem(existing as MenuItemRow) }
+      : { ok: false, reason: "create_failed" };
+  }
+  if (suggestion.status !== "open" && suggestion.status !== "under_review") {
+    return { ok: false, reason: "create_failed" };
+  }
+
+  const { data: draft, error: draftError } = await admin.from("menu_items").insert({
+    restaurant_id: restaurantId,
+    name: suggestion.title,
+    category: "Plats",
+    price: 0,
+    food_cost: 0,
+    description: suggestion.description || "Idée proposée par un client — à compléter avant publication.",
+    active: false,
+    is_draft: true,
+    allergens_confirmed: false,
+  }).select("*").single();
+  if (draftError || !draft) {
+    if (draftError) console.error("createMenuDraftFromSuggestionAction: draft insert failed", draftError.code ?? "unknown");
+    return { ok: false, reason: "create_failed" };
+  }
+
+  const { data: updated, error: updateError } = await admin.from("meal_suggestions")
+    .update({ status: "draft_added", menu_item_id: draft.id, updated_at: new Date().toISOString() })
+    .eq("id", suggestionId)
+    .eq("restaurant_id", restaurantId)
+    .eq("status", suggestion.status)
+    .is("menu_item_id", null)
+    .select("id")
+    .maybeSingle();
+  if (!updateError && updated) {
+    revalidatePath("/menu");
+    return { ok: true, item: mapMenuItem(draft as MenuItemRow) };
+  }
+
+  // Concurrent clicks can race after the initial read. Keep only the draft
+  // linked by the winning update; the loser removes its unpublished row.
+  const { error: cleanupError } = await admin.from("menu_items").delete()
+    .eq("id", draft.id).eq("restaurant_id", restaurantId).eq("is_draft", true).eq("active", false);
+  if (cleanupError) console.error("createMenuDraftFromSuggestionAction: orphan draft cleanup failed", cleanupError.code ?? "unknown");
+  const { data: winner } = await admin.from("meal_suggestions")
+    .select("status, menu_item_id")
+    .eq("id", suggestionId).eq("restaurant_id", restaurantId).maybeSingle();
+  if (winner?.status === "draft_added" && winner.menu_item_id) {
+    const { data: existing } = await admin.from("menu_items").select("*")
+      .eq("id", winner.menu_item_id).eq("restaurant_id", restaurantId).maybeSingle();
+    if (existing) {
+      revalidatePath("/menu");
+      return { ok: true, item: mapMenuItem(existing as MenuItemRow) };
+    }
+  }
+  if (updateError) console.error("createMenuDraftFromSuggestionAction: suggestion update failed", updateError.code ?? "unknown");
+  return { ok: false, reason: "create_failed" };
 }

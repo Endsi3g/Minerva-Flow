@@ -130,6 +130,97 @@ struct NativeCounterCustomer: Codable, Identifiable {
     }
 }
 
+struct NativeServiceQuote: Codable, Identifiable {
+    let id: String
+    let quoteType: String
+    let status: String
+    let eventAt: String?
+    let guestCount: Int?
+    let fulfillmentMode: String
+    let currency: String?
+    let subtotal: Double?
+    let taxAmount: Double?
+    let total: Double?
+    let depositPercent: Double?
+    let depositAmount: Double?
+    let expiresAt: String?
+    let checkoutUrl: String?
+    let ownerNotes: String?
+    let orderStatus: String?
+    let paymentStatus: String?
+    let lines: [NativeServiceQuoteLine]
+
+    init(
+        id: String,
+        quoteType: String,
+        status: String,
+        eventAt: String?,
+        guestCount: Int?,
+        fulfillmentMode: String,
+        currency: String? = nil,
+        subtotal: Double? = nil,
+        taxAmount: Double? = nil,
+        total: Double? = nil,
+        depositPercent: Double? = nil,
+        depositAmount: Double? = nil,
+        expiresAt: String? = nil,
+        checkoutUrl: String? = nil,
+        ownerNotes: String? = nil,
+        orderStatus: String? = nil,
+        paymentStatus: String? = nil,
+        lines: [NativeServiceQuoteLine] = []
+    ) {
+        self.id = id
+        self.quoteType = quoteType
+        self.status = status
+        self.eventAt = eventAt
+        self.guestCount = guestCount
+        self.fulfillmentMode = fulfillmentMode
+        self.currency = currency
+        self.subtotal = subtotal
+        self.taxAmount = taxAmount
+        self.total = total
+        self.depositPercent = depositPercent
+        self.depositAmount = depositAmount
+        self.expiresAt = expiresAt
+        self.checkoutUrl = checkoutUrl
+        self.ownerNotes = ownerNotes
+        self.orderStatus = orderStatus
+        self.paymentStatus = paymentStatus
+        self.lines = lines
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, status, currency, subtotal, total
+        case quoteType = "quote_type"
+        case eventAt = "event_at"
+        case guestCount = "guest_count"
+        case fulfillmentMode = "fulfillment_mode"
+        case taxAmount = "tax_amount"
+        case depositPercent = "deposit_percent"
+        case depositAmount = "deposit_amount"
+        case expiresAt = "expires_at"
+        case checkoutUrl = "checkout_url"
+        case ownerNotes = "owner_notes"
+        case orderStatus = "order_status"
+        case paymentStatus = "payment_status"
+        case lines = "service_quote_lines"
+    }
+}
+
+struct NativeServiceQuoteLine: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String?
+    let quantity: Int
+    let unitPrice: Double
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, quantity
+        case unitPrice = "unit_price"
+    }
+}
+
 struct NativeOwnerReward: Codable, Identifiable {
     let id: String
     let name: String
@@ -225,6 +316,65 @@ struct Customer: Codable, Identifiable {
         case favoriteMenuItemIds = "favorite_menu_item_ids"
         case birthday
     }
+}
+
+struct FlowAmbassadorCommission: Codable, Identifiable {
+    let id: String
+    let amount: Double
+    let currency: String
+    let payableAt: String
+    let status: String
+    let transferId: String?
+    enum CodingKeys: String, CodingKey {
+        case id, amount, currency, status
+        case payableAt = "payableAt"
+        case transferId = "transferId"
+    }
+}
+
+struct FlowAmbassadorSummary: Codable {
+    let code: String
+    let referrals: Int
+    let links: [FlowAmbassadorTrackedLink]?
+    let stripeConnected: Bool
+    let commissions: [FlowAmbassadorCommission]
+}
+
+struct FlowAmbassadorTrackedLink: Codable, Identifiable {
+    let id: String
+    let slug: String
+    let label: String
+    let platform: String?
+    let contentUrl: String?
+    let clicks: Int
+    let signups: Int
+    var shareURL: URL? { URL(string: "https://minervaflow.app/r/\(slug)") }
+}
+
+struct FlowAmbassadorRestaurantProfile: Codable, Identifiable {
+    let id: String
+    let name: String
+    let city: String?
+    let quote: String?
+}
+
+struct FlowAmbassadorUgcSubmission: Codable, Identifiable {
+    let id: String
+    let platform: String
+    let postUrl: String
+    let caption: String
+    let status: String
+    let reviewNote: String?
+    let createdAt: String
+    let restaurantName: String
+}
+
+struct FlowAmbassadorDashboard: Codable {
+    let summary: FlowAmbassadorSummary?
+    let payoutsEnabled: Bool
+    let shareUrl: String?
+    let profiles: [FlowAmbassadorRestaurantProfile]
+    let submissions: [FlowAmbassadorUgcSubmission]
 }
 
 struct LoyaltyReward: Codable, Identifiable {

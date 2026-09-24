@@ -659,6 +659,7 @@ export type Customer = {
   consentAt: string | null;
   birthday: string | null;
   city: string | null;
+  neighborhood?: string | null;
   avatarUrl: string | null;
   favoriteOfferIds: string[];
   favoriteMenuItemIds: string[];

@@ -19,6 +19,9 @@ struct MenuItemDetailView: View {
     /// honestly instead of pretending to add to an order that can't be
     /// placed.
     var cart: Binding<[String: Int]>? = nil
+    /// Opens the owning menu's checkout after the cart mutation. This keeps
+    /// the customer from having to back out through the category and menu.
+    var onAddToCart: (() -> Void)? = nil
 
     @EnvironmentObject var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
@@ -251,8 +254,9 @@ struct MenuItemDetailView: View {
                 cart.wrappedValue[item.id] = quantity + 1
                 if quantity == 0 {
                     NotificationManager.shared.cancelMenuViewReminder(itemName: item.name)
-                    dismiss()
                 }
+                dismiss()
+                onAddToCart?()
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "cart.fill")
@@ -365,7 +369,7 @@ struct MenuItemDetailView: View {
                 HStack(spacing: 12) {
                     ForEach(relatedItems) { related in
                         NavigationLink {
-                            MenuItemDetailView(item: related, restaurantId: restaurantId, allItemsInCategory: allItemsInCategory, cart: cart)
+                            MenuItemDetailView(item: related, restaurantId: restaurantId, allItemsInCategory: allItemsInCategory, cart: cart, onAddToCart: onAddToCart)
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
                                 ZStack {
@@ -440,7 +444,7 @@ private struct WriteReviewSheet: View {
                     TextField("Votre commentaire (optionnel)", text: $comment, axis: .vertical)
                         .lineLimit(4, reservesSpace: true)
                         .padding(12)
-                        .background(.white)
+                        .background(MinervaColor.surface)
                         .clipShape(RoundedRectangle(cornerRadius: 11))
                         .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
 

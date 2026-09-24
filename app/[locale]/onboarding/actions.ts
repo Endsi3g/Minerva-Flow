@@ -4,7 +4,9 @@ import { completeOnboarding, updateMyRole } from "@/lib/data/profile";
 import { createClient } from "@/lib/supabase/server";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { getCurrentRestaurantId, getCurrentMembership } from "@/lib/data/current-restaurant";
+import { getCurrentWorkspaceMembership } from "@/lib/data/current-workspace";
 import { activateReferral } from "@/lib/data/referrals";
+import { attributeFlowAmbassadorSignup } from "@/lib/data/flow-ambassadors";
 import { getPosConnections } from "@/lib/data/pos-connections";
 import { getAdPlatformConnections } from "@/lib/data/ad-platforms";
 import { getGoogleConnection } from "@/lib/data/google-connections";
@@ -134,9 +136,17 @@ export async function finishOnboardingAction(): Promise<boolean> {
       await posthog.flush();
 
       const referralCode = user.user_metadata?.referral_code as string | undefined;
+      const ambassadorCode = user.user_metadata?.flow_ambassador_code as string | undefined;
+      const ambassadorLinkSlug = user.user_metadata?.flow_ambassador_link_slug as string | undefined;
       const restaurantId = await getCurrentRestaurantId();
       if (referralCode && user.email && restaurantId) {
         await activateReferral(referralCode, user.email, restaurantId);
+      }
+      if (ambassadorCode && restaurantId) {
+        const membership = await getCurrentWorkspaceMembership();
+        if (membership?.workspaceId) {
+          await attributeFlowAmbassadorSignup(ambassadorCode, user.id, membership.workspaceId, ambassadorLinkSlug);
+        }
       }
 
       // Déclenchement immédiat de l'Email 1 (Bienvenue & première action)
@@ -224,4 +234,3 @@ export async function activateOnboardingReferralProgramAction(restaurantId: stri
     return { ok: false };
   }
 }
-

@@ -107,10 +107,6 @@ export async function ingestPosTickets(
         });
         if (resolved) {
           matchedCustomerId = resolved.customer.id;
-          if (resolved.isNew) {
-            newCustomersCount++;
-          }
-          identifiedCustomersCount++;
 
           // Credit loyalty points and record visit automatically
           const creditedCustomer = await logVisitAdmin(
@@ -129,6 +125,10 @@ export async function ingestPosTickets(
             console.warn(`L'attribution fidélité du ticket ${ticket.externalOrderId} a échoué; le ticket sera repris à la prochaine synchronisation.`);
             continue;
           }
+          if (resolved.isNew) {
+            newCustomersCount++;
+          }
+          identifiedCustomersCount++;
         } else {
           // A POS identity was supplied, so null means it could not be
           // resolved or persisted. Leave the order idempotency marker absent

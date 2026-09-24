@@ -49,6 +49,39 @@ function normalizeTitle(title: string): string {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-09-23-v2-47-0",
+    title: "v2.47.0 — Campagnes, fidélisation et commandes repensées",
+    description: `- **Campagnes** : historique enrichi avec filtres et recherche; le studio visuel et les automatisations ont leurs propres pages.
+- **Équipes et workspaces** : groupes de navigation restaurés et retour de tous les espaces de travail actifs.
+- **Fidélisation** : résultats filtrables par période et partage en image.
+- **Commandes** : nouveaux parcours de précommande, acompte, demande de repas sur mesure et devis traiteur, sur le web et iOS.`,
+    category: "amelioration",
+    publishedAt: "2026-09-23T19:00:00.000Z",
+    imageUrl: null,
+  },
+  {
+    id: "ch-2026-09-23-v2-47-1",
+    title: "v2.47.1 — Consentement aux annonces produit et fidélisation renforcée",
+    description: `- **Préférences courriel** : choix facultatif à l’inscription, décoché par défaut et modifiable dans le profil; chaque changement est conservé dans un journal de consentement.
+- **Audiences et personnalisation** : les contacts ayant activé les annonces produit sont regroupés dans un segment dédié, avec des propriétés de contact disponibles pour personnaliser les messages.
+- **Fidélisation** : partage des résultats en image et protections renforcées pour les opérations de fidélité.`,
+    category: "fonctionnalite",
+    publishedAt: "2026-09-23T20:00:00.000Z",
+    imageUrl: null,
+  },
+  {
+    id: "ch-2026-09-24-v2-48-0",
+    title: "v2.48.0 — Ambassadeurs & UGC — recommandations rémunérées et contenu authentique",
+    description: `- **Ouvert à tous** : chaque membre peut créer un lien personnel et suivre les workspaces recommandés.
+- **Commissions** : 10 % de la première facture d’abonnement payée; paiement admissible après 30 jours, puis transfert vers un compte Stripe vérifié.
+- **UGC réel** : seuls les restaurants qui acceptent explicitement apparaissent dans le répertoire. Les publications sont modérées avant réutilisation; les ambassadeurs doivent divulguer leur commission.
+- **Espace dédié** : guide de démarrage, lien de partage, suivi des gains, configuration Stripe et soumission de contenu au même endroit.
+- **Nouveau cette semaine** : l’entrée comprend une capture 16:9 de l’espace partenaire.`,
+    category: "fonctionnalite",
+    publishedAt: "2026-09-24T02:45:00.000Z",
+    imageUrl: "/assets/changelog/ambassadeurs-ugc.png",
+  },
+  {
     id: "ch-2026-09-03-v2-29-0",
     title: "Version v2.29.0 : Flow AI Studio, TipTap WYSIWYG Canvas, RAG Multi-Dossiers & Agents Store Restaurant",
     description: `- **Workspace Flow AI 3-Colonnes** : Refonte intégrale de l'interface conversationnelle inspirée de l'architecture minerva-os-lite-desktop (Volet gauche Sessions & Dossiers RAG, Chat streaming central, Volet droit Canvas TipTap) avec raccourcis \`Cmd+B\` et \`Cmd+J\`.

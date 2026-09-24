@@ -11,9 +11,10 @@ import { createTestUser, cleanupTestUser, cleanupOrphanRestaurants, loginAs, sup
 test.use({ locale: "fr-CA" });
 
 test.describe("Loyalty self-enrollment", () => {
-  let owner: TestUser;
+  let owner: TestUser | undefined;
   let restaurantId: string;
   let customerUserId: string | null = null;
+  let checkoutOrderId: string | null = null;
 
   test.beforeEach(async () => {
     owner = await createTestUser("loyalty-owner");
@@ -27,12 +28,16 @@ test.describe("Loyalty self-enrollment", () => {
   });
 
   test.afterEach(async () => {
+    if (checkoutOrderId) {
+      await supabaseAdmin.from("orders").delete().eq("id", checkoutOrderId).eq("restaurant_id", restaurantId);
+    }
     if (customerUserId) await cleanupTestUser(customerUserId).catch(() => {});
-    await cleanupTestUser(owner.id);
+    if (owner?.id) await cleanupTestUser(owner.id);
     await cleanupOrphanRestaurants();
   });
 
-  test("a stranger can join the loyalty program from a public link and see their points in the portal", async ({ page, context }) => {
+  test("a stranger can join, verify a paid checkout return, and clear the completed cart", async ({ page, context }, testInfo) => {
+    if (!owner) throw new Error("Owner test account was not provisioned.");
     await loginAs(page, owner);
     // The "nouveau lien" button lived on the main /fidelisation page before
     // it was split into subroutes (see FidelisationSubNav) — it's on
@@ -70,12 +75,59 @@ test.describe("Loyalty self-enrollment", () => {
     expect(linkData?.properties).toBeTruthy();
     const tokenHash = linkData!.properties!.hashed_token;
 
-    await page.goto(`/auth/confirm?token_hash=${tokenHash}&type=magiclink&next=%2Fportal`);
-    await expect(page).toHaveURL(/\/portal$/, { timeout: 10000 });
+    const confirmationUrl = `/auth/confirm?token_hash=${tokenHash}&type=magiclink&next=%2Fportal`;
+    try {
+      await page.goto(confirmationUrl, { waitUntil: "domcontentloaded", timeout: 15_000 });
+      await expect(page).toHaveURL(/\/portal$/, { timeout: 10_000 });
+    } catch (navigationError) {
+      // Auth confirmation can set the real Supabase session and redirect while
+      // the service worker aborts the initiating navigation. Recover only if
+      // the confirmation route already issued a session cookie; never inject
+      // one from the test.
+      const hasSupabaseSession = (await context.cookies()).some((cookie) =>
+        /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name) && cookie.value.length > 0
+      );
+      if (!hasSupabaseSession) throw navigationError;
+      await page.goto("/portal", { waitUntil: "domcontentloaded", timeout: 15_000 });
+    }
     await expect(page.getByText(/bonjour client e2e/i)).toBeVisible({ timeout: 10000 });
 
     const { data: customer } = await supabaseAdmin.from("customers").select("id, user_id").ilike("email", email).maybeSingle();
     expect(customer?.user_id).toBeTruthy();
     customerUserId = customer!.user_id as string;
+
+    const { data: order, error: orderError } = await supabaseAdmin.from("orders").insert({
+      restaurant_id: restaurantId,
+      customer_id: customer!.id,
+      status: "confirmee",
+      guest_name: "Client E2E",
+      subtotal: 16,
+      tax_amount: 2.4,
+      total: 18.4,
+      payment_method: "Carte (Stripe)",
+      payment_status: "paye",
+      is_public_request: true,
+    }).select("id").single();
+    expect(orderError).toBeNull();
+    expect(order?.id).toBeTruthy();
+    const paidOrderId = order!.id as string;
+    checkoutOrderId = paidOrderId;
+
+    // Seed once in the already authenticated portal tab. `addInitScript`
+    // would rerun on the payment-return navigation and reintroduce stale cart
+    // entries after the app correctly clears them.
+    await page.evaluate((customerId: string) => {
+      localStorage.setItem(`mv-portal-cart-${customerId}`, JSON.stringify({ "stale-menu-item": 1 }));
+      localStorage.setItem(`mv-portal-order-attempt-${customerId}`, "00000000-0000-4000-8000-000000000099");
+    }, customer!.id);
+    await page.goto(`/portal?payment=return&order=${encodeURIComponent(paidOrderId)}`);
+    await expect(page.getByRole("status").getByText("Paiement confirmé")).toBeVisible({ timeout: 10000 });
+    await page.screenshot({ path: testInfo.outputPath("portal-payment-confirmation-desktop.png"), fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: testInfo.outputPath("portal-payment-confirmation-mobile.png"), fullPage: true });
+    await expect.poll(() => page.evaluate((customerId: string) => ({
+      cart: localStorage.getItem(`mv-portal-cart-${customerId}`),
+      attempt: localStorage.getItem(`mv-portal-order-attempt-${customerId}`),
+    }), customer!.id)).toEqual({ cart: null, attempt: null });
   });
 });

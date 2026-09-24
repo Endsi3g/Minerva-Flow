@@ -38,6 +38,11 @@ final class SupabaseManager: ObservableObject {
     @Published var announcements: [PlatformAnnouncement] = []
     @Published var menuItems: [NativeMenuItem] = []
     @Published var customerMealSuggestions: [NativeMealSuggestion] = []
+    @Published var isLoadingCustomerMealSuggestions = false
+    @Published var customerMealSuggestionsError: String?
+    @Published var customerServiceQuotes: [NativeServiceQuote] = []
+    @Published var isLoadingCustomerServiceQuotes = false
+    @Published var customerServiceQuotesError: String?
     @Published var taxRate: Double = 0.14975
     @Published var acceptsTips: Bool = true
     @Published var onlinePaymentEnabled: Bool = false
@@ -651,14 +656,20 @@ final class SupabaseManager: ObservableObject {
     }
 
     func fetchMealSuggestions() async {
-        guard let restaurantId = customer?.restaurantId else { return }
+        guard let restaurantId = customer?.restaurantId else {
+            customerMealSuggestions = []
+            customerMealSuggestionsError = nil
+            return
+        }
+        isLoadingCustomerMealSuggestions = true
+        customerMealSuggestionsError = nil
+        defer { isLoadingCustomerMealSuggestions = false }
         struct Params: Encodable { let p_restaurant_id: String }
         do {
             customerMealSuggestions = try await client.rpc("get_meal_suggestions", params: Params(p_restaurant_id: restaurantId)).execute().value
         } catch {
-            // The menu remains usable while an older environment is waiting
-            // for the suggestion migration; expose no fake suggestions.
             customerMealSuggestions = []
+            customerMealSuggestionsError = "Les suggestions ne sont pas disponibles. Vérifiez votre connexion, puis réessayez."
             print("fetchMealSuggestions error: \(error)")
         }
     }
@@ -1193,6 +1204,60 @@ final class SupabaseManager: ObservableObject {
         return data
     }
 
+    func fetchFlowAmbassador() async -> FlowAmbassadorDashboard? {
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/ambassador"))
+            return try JSONDecoder().decode(FlowAmbassadorDashboard.self, from: data)
+        } catch {
+            lastError = "Le programme ambassadeur n’a pas pu être chargé. Réessayez."
+            return nil
+        }
+    }
+
+    func joinFlowAmbassador() async -> FlowAmbassadorDashboard? {
+        await ambassadorRequest(["action": "join"])
+    }
+
+    func connectFlowAmbassadorPayouts(locale: String) async -> URL? {
+        guard let data = await ambassadorRequestData(["action": "connectStripe", "locale": locale]),
+              let value = try? JSONDecoder().decode([String: String].self, from: data),
+              let rawURL = value["url"] else { return nil }
+        return URL(string: rawURL)
+    }
+
+    func requestFlowAmbassadorPayout(commissionId: String) async -> FlowAmbassadorDashboard? {
+        await ambassadorRequest(["action": "payout", "commissionId": commissionId])
+    }
+
+    func submitFlowAmbassadorUgc(restaurantProfileId: String, platform: String, postUrl: String, caption: String, referralLinkId: String?) async -> FlowAmbassadorDashboard? {
+        var body: [String: Any] = [
+            "action": "submitUgc", "restaurantProfileId": restaurantProfileId,
+            "platform": platform, "postUrl": postUrl, "caption": caption,
+            "disclosureConfirmed": true, "usageRightsConfirmed": true,
+        ]
+        if let referralLinkId { body["referralLinkId"] = referralLinkId }
+        return await ambassadorRequest(body)
+    }
+
+    func createFlowAmbassadorLink(label: String, platform: String, contentUrl: String) async -> FlowAmbassadorDashboard? {
+        await ambassadorRequest(["action": "createLink", "label": label, "platform": platform, "contentUrl": contentUrl])
+    }
+
+    private func ambassadorRequest(_ body: [String: Any]) async -> FlowAmbassadorDashboard? {
+        guard let data = await ambassadorRequestData(body) else { return nil }
+        return try? JSONDecoder().decode(FlowAmbassadorDashboard.self, from: data)
+    }
+
+    private func ambassadorRequestData(_ body: [String: Any]) async -> Data? {
+        do {
+            let requestBody = try JSONSerialization.data(withJSONObject: body)
+            return try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/ambassador"), method: "POST", body: requestBody)
+        } catch {
+            lastError = "Cette action n’a pas abouti. Vérifiez votre connexion et réessayez."
+            return nil
+        }
+    }
+
     /// Loi 25 self-serve data export, native equivalent of the web portal's
     /// exportMyDataAction — writes the returned JSON to a temp file (rather
     /// than returning raw Data) so the caller can hand it straight to a
@@ -1480,7 +1545,7 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
-    struct OrderResult { let ok: Bool; let orderId: String?; let estimatedReadyAt: Date?; let paymentURL: URL? }
+    struct OrderResult { let ok: Bool; let orderId: String?; let estimatedReadyAt: Date?; let paymentURL: URL?; let paymentConfirmed: Bool }
     struct DeliveryOrderInfo: Encodable { let address: String }
 
     func quoteDelivery(address: String) async -> PortalDeliveryQuote? {
@@ -1504,21 +1569,107 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    func submitServiceQuote(
+        quoteType: String,
+        guestName: String,
+        guestPhone: String,
+        guestEmail: String,
+        description: String,
+        eventAt: Date,
+        guestCount: Int?,
+        fulfillmentMode: String,
+        deliveryAddress: String?,
+        clientNotes: String?
+    ) async -> Bool {
+        struct Body: Encodable {
+            let quoteType: String
+            let guestName: String
+            let guestPhone: String
+            let guestEmail: String
+            let description: String
+            let eventAtLocal: String
+            let guestCount: Int?
+            let fulfillmentMode: String
+            let deliveryAddress: String?
+            let clientNotes: String?
+        }
+        struct Response: Decodable { let ok: Bool; let id: String?; let reason: String? }
+        guard customer != nil else {
+            lastError = "Connectez-vous à votre compte client pour envoyer une demande."
+            return false
+        }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        let body = Body(
+            quoteType: quoteType,
+            guestName: guestName,
+            guestPhone: guestPhone,
+            guestEmail: guestEmail,
+            description: description,
+            eventAtLocal: formatter.string(from: eventAt),
+            guestCount: guestCount,
+            fulfillmentMode: fulfillmentMode,
+            deliveryAddress: deliveryAddress,
+            clientNotes: clientNotes
+        )
+        do {
+            lastError = nil
+            let data = try JSONEncoder().encode(body)
+            let responseData = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/portal/service-quotes"),
+                method: "POST",
+                body: data
+            )
+            let response = try JSONDecoder().decode(Response.self, from: responseData)
+            guard response.ok, response.id != nil else {
+                lastError = response.reason == "rate_limited"
+                    ? "Trop de demandes ont été envoyées. Réessayez plus tard."
+                    : "La demande n’a pas pu être envoyée. Vérifiez les renseignements et réessayez."
+                return false
+            }
+            await fetchCustomerServiceQuotes()
+            return true
+        } catch {
+            lastError = "La demande de devis n’a pas pu être envoyée. Vérifiez votre connexion et réessayez."
+            print("submitServiceQuote error: \(error)")
+            return false
+        }
+    }
+
+    func fetchCustomerServiceQuotes() async {
+        guard customer != nil else {
+            customerServiceQuotes = []
+            customerServiceQuotesError = nil
+            return
+        }
+        isLoadingCustomerServiceQuotes = true
+        customerServiceQuotesError = nil
+        defer { isLoadingCustomerServiceQuotes = false }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/service-quotes"))
+            struct Response: Decodable { let quotes: [NativeServiceQuote] }
+            customerServiceQuotes = try JSONDecoder().decode(Response.self, from: data).quotes
+        } catch {
+            customerServiceQuotesError = "Les demandes de devis n’ont pas pu être chargées. Vérifiez votre connexion, puis réessayez."
+            print("fetchCustomerServiceQuotes error: \(error)")
+        }
+    }
+
     /// estimatedReadyAt arrives as a raw ISO8601 string (the bridge routes
     /// never configure JSONDecoder's dateDecodingStrategy — only the direct
     /// Supabase client calls elsewhere get automatic Date decoding, via the
     /// SDK's own internal decoder), so this is parsed by hand rather than
     /// declared as `Date?` on OrderResponse directly.
-    func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?, requestedReadyAt: Date? = nil, payOnline: Bool = false, delivery: DeliveryOrderInfo? = nil) async -> OrderResult {
+    func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?, requestedReadyAt: Date? = nil, payOnline: Bool = false, delivery: DeliveryOrderInfo? = nil, idempotencyKey: String) async -> OrderResult {
         struct CartLine: Encodable { let menuItemId: String; let quantity: Int }
-        struct OrderBody: Encodable { let cart: [CartLine]; let tipAmount: Double; let paymentMethod: String?; let payOnline: Bool; let delivery: DeliveryOrderInfo?; let requestedReadyAtLocal: String? }
-        struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String?; let paymentUrl: String? }
+        struct OrderBody: Encodable { let cart: [CartLine]?; let tipAmount: Double?; let paymentMethod: String?; let payOnline: Bool?; let delivery: DeliveryOrderInfo?; let requestedReadyAtLocal: String?; let idempotencyKey: String; let resumeOnly: Bool? }
+        struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String?; let paymentUrl: String?; let paymentConfirmed: Bool? }
 
         let lines = cart.compactMap { key, qty -> CartLine? in
             qty > 0 ? CartLine(menuItemId: key, quantity: qty) : nil
         }
-        guard !lines.isEmpty else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil) }
-        guard !payOnline || onlinePaymentEnabled else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil) }
+        guard !lines.isEmpty else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false) }
+        guard !payOnline || onlinePaymentEnabled else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false) }
 
         do {
             let dateFormatter = ISO8601DateFormatter()
@@ -1528,7 +1679,9 @@ final class SupabaseManager: ObservableObject {
                 paymentMethod: paymentMethod,
                 payOnline: payOnline,
                 delivery: delivery,
-                requestedReadyAtLocal: requestedReadyAt.map(dateFormatter.string(from:))
+                requestedReadyAtLocal: requestedReadyAt.map(dateFormatter.string(from:)),
+                idempotencyKey: idempotencyKey,
+                resumeOnly: nil
             ))
             let data = try await authorizedRequest(
                 Config.apiBaseURL.appending(path: "/api/portal/orders"),
@@ -1537,14 +1690,34 @@ final class SupabaseManager: ObservableObject {
             )
             let decoded = try JSONDecoder().decode(OrderResponse.self, from: data)
             let eta = decoded.estimatedReadyAt.flatMap { ISO8601DateFormatter().date(from: $0) }
-            return OrderResult(ok: decoded.ok, orderId: decoded.orderId, estimatedReadyAt: eta, paymentURL: decoded.paymentUrl.flatMap(URL.init(string:)))
+            return OrderResult(ok: decoded.ok, orderId: decoded.orderId, estimatedReadyAt: eta, paymentURL: decoded.paymentUrl.flatMap(URL.init(string:)), paymentConfirmed: decoded.paymentConfirmed ?? false)
         } catch let error as URLError where error.code == .notConnectedToInternet {
             lastError = "Aucune connexion internet. Votre commande n'a pas été envoyée."
-            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil)
+            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false)
         } catch {
             lastError = "La commande a échoué. Réessayez."
             print("submitOrder error: \(error)")
-            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil)
+            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false)
+        }
+    }
+
+    /// Recovers the durable order/Stripe checkout after a lost response or
+    /// app restart. The server scopes the key to the authenticated customer.
+    func resumeOrder(idempotencyKey: String) async -> OrderResult {
+        struct ResumeBody: Encodable { let idempotencyKey: String; let resumeOnly = true }
+        struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String?; let paymentUrl: String?; let paymentConfirmed: Bool? }
+        do {
+            let bodyData = try JSONEncoder().encode(ResumeBody(idempotencyKey: idempotencyKey))
+            let data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/portal/orders"),
+                method: "POST",
+                body: bodyData
+            )
+            let decoded = try JSONDecoder().decode(OrderResponse.self, from: data)
+            let eta = decoded.estimatedReadyAt.flatMap { ISO8601DateFormatter().date(from: $0) }
+            return OrderResult(ok: decoded.ok, orderId: decoded.orderId, estimatedReadyAt: eta, paymentURL: decoded.paymentUrl.flatMap(URL.init(string:)), paymentConfirmed: decoded.paymentConfirmed ?? false)
+        } catch {
+            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false)
         }
     }
 

@@ -23,8 +23,29 @@ export type SearchableNavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 const managerRoles: Role[] = ["owner", "manager"];
+export const PRIMARY_NAV_KEYS = new Set(["workspace", "menu", "fidelisation", "fournisseurs", "inventaire", "commandes"]);
+
+// Paths restaurant accounts can open directly. The owner requested four
+// accessible app sections; secondary management pages must redirect to the
+// workspace even when someone enters their URL manually. Public customer,
+// authentication, API and system routes use their separate Proxy exceptions.
+export const AUTHENTICATED_PRODUCT_ROOTS = [
+  "/workspace",
+  "/menu",
+  "/fidelisation",
+  "/fournisseurs",
+  "/inventaire",
+  "/commandes",
+] as const;
+
+export function isAuthenticatedProductPath(pathname: string): boolean {
+  return AUTHENTICATED_PRODUCT_ROOTS.some(
+    (root) => pathname === root || pathname.startsWith(`${root}/`)
+  );
+}
 
 export const NAV_ITEMS: SearchableNavItem[] = [
+  { key: "workspace", href: "/workspace", title: "Workspace", subtitle: "Restaurants et espaces de travail", roles: allRoles },
   { key: "overview", href: "/overview", title: "Aperçu", subtitle: "Tableau de bord principal", roles: allRoles },
   { key: "assistant", href: "/assistant", title: "Flow AI", subtitle: "Assistant IA conversationnel", roles: allRoles },
   { key: "franchise", href: "/franchise", title: "Vue franchise", subtitle: "Résultats combinés sur vos établissements", roles: managerRoles },
@@ -56,6 +77,6 @@ export const NAV_ITEMS: SearchableNavItem[] = [
 
 export function navItemsForRole(role: Role, sidebarPermissions?: string[] | null): SearchableNavItem[] {
   return NAV_ITEMS.filter(
-    (item) => item.roles.includes(role) && (!sidebarPermissions || sidebarPermissions.includes(item.key))
+    (item) => PRIMARY_NAV_KEYS.has(item.key) && item.roles.includes(role) && (item.key === "workspace" || !sidebarPermissions || sidebarPermissions.includes(item.key))
   );
 }

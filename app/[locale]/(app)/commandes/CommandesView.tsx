@@ -23,7 +23,6 @@ import {
   Minus,
   TrendingUp,
   DollarSign,
-  QrCode,
   Globe,
   Smartphone,
   Eye,
@@ -51,7 +50,6 @@ import {
 } from "./actions";
 import { notifyError } from "@/lib/notify-error";
 import { toast } from "sonner";
-import Link from "next/link";
 import { useRealtimeBus } from "@/lib/realtime/RealtimeProvider";
 import { ServiceQuotesPanel } from "./ServiceQuotesPanel";
 import type { ServiceQuoteRow } from "@/lib/data/service-quotes";
@@ -957,14 +955,7 @@ export function CommandesView({
         <EmptyState
           icon={ClipboardList}
           title="Aucune commande aujourd'hui"
-          description="Partagez votre lien de menu ou votre widget web depuis les paramètres pour recevoir des commandes directes."
-          action={
-            <Link href="/etablissement">
-              <Button size="sm" variant="secondary" className="text-[12px]">
-                <QrCode size={13} /> Générer QR Code / Widget
-              </Button>
-            </Link>
-          }
+          description="Les nouvelles commandes reçues apparaîtront ici."
           secondaryAction={
             canManage && (
               <Button size="sm" variant="ghost" className="text-[12px]" onClick={() => setNewOrderOpen(true)}>

@@ -13,7 +13,10 @@ struct MenuView: View {
     @EnvironmentObject var supabase: SupabaseManager
 
     @State private var cart: [String: Int] = [:]
+    @State private var restoredCart: [String: Int]?
+    @State private var checkoutAttemptId: String?
     @State private var checkoutOpen = false
+    @State private var serviceQuoteOpen = false
     @State private var hasLoadedOnce = false
     @State private var showScanner = false
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
@@ -29,6 +32,16 @@ struct MenuView: View {
     }
     private var cartSubtotal: Double {
         cartLines.reduce(0) { $0 + $1.item.price * Double($1.quantity) }
+    }
+
+    private var cartStorageKey: String? {
+        guard let customer = supabase.customer else { return nil }
+        return "minerva.native.order.cart.\(customer.restaurantId).\(customer.id)"
+    }
+
+    private var checkoutAttemptStorageKey: String? {
+        guard let customer = supabase.customer else { return nil }
+        return "minerva.native.order.attempt.\(customer.restaurantId).\(customer.id)"
     }
 
     private var groupedMenu: [(category: String, items: [NativeMenuItem])] {
@@ -90,10 +103,24 @@ struct MenuView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: cartCount)
+            .onChange(of: cart) { _, newCart in
+                persistCart(newCart)
+                if restoredCart == newCart {
+                    restoredCart = nil
+                } else {
+                    checkoutAttemptId = nil
+                }
+            }
+            .onChange(of: checkoutAttemptId) { _, newValue in
+                guard let key = checkoutAttemptStorageKey else { return }
+                if let newValue { UserDefaults.standard.set(newValue, forKey: key) }
+                else { UserDefaults.standard.removeObject(forKey: key) }
+            }
             .task {
                 guard !hasLoadedOnce else { return }
                 hasLoadedOnce = true
                 await supabase.fetchMenu()
+                restoreCheckoutDraft()
                 if supabase.nearbyRestaurants.isEmpty {
                     await supabase.fetchNearbyRestaurants()
                 }
@@ -101,8 +128,13 @@ struct MenuView: View {
                     await supabase.fetchPopularNearby()
                 }
                 await supabase.fetchMealSuggestions()
+                await supabase.fetchCustomerServiceQuotes()
             }
-            .refreshable { await supabase.fetchMenu() }
+            .refreshable {
+                await supabase.fetchMenu()
+                await supabase.fetchMealSuggestions()
+                await supabase.fetchCustomerServiceQuotes()
+            }
             .fullScreenCover(isPresented: $showScanner) {
                 ScanToOrderView()
             }
@@ -116,11 +148,19 @@ struct MenuView: View {
                     pickupEnabled: supabase.pickupEnabled && !supabase.isUsingDemoMenuFallback,
                     deliveryEnabled: supabase.deliveryEnabled && !supabase.isUsingDemoMenuFallback,
                     googleMapsUrl: supabase.restaurantGoogleMapsUrl,
+                    checkoutAttemptId: $checkoutAttemptId,
+                    checkoutAttemptStorageKey: checkoutAttemptStorageKey,
                     onOrdered: {
                         cart = [:]
+                        checkoutAttemptId = nil
+                        if let key = cartStorageKey { UserDefaults.standard.removeObject(forKey: key) }
                         checkoutOpen = false
                     }
                 )
+            }
+            .sheet(isPresented: $serviceQuoteOpen) {
+                NativeServiceQuoteSheet()
+                    .environmentObject(supabase)
             }
             .alert("Erreur", isPresented: Binding(
                 get: { supabase.lastError != nil },
@@ -130,6 +170,31 @@ struct MenuView: View {
             } message: {
                 Text(supabase.lastError ?? "")
             }
+        }
+    }
+
+    private func restoreCheckoutDraft() {
+        if let key = cartStorageKey,
+           let data = UserDefaults.standard.data(forKey: key),
+           let savedCart = try? JSONDecoder().decode([String: Int].self, from: data) {
+            let availableItemIds = Set(supabase.menuItems.map(\.id))
+            let validCart = savedCart.filter { availableItemIds.contains($0.key) && $0.value > 0 }
+            restoredCart = validCart
+            cart = validCart
+        }
+        if let key = checkoutAttemptStorageKey,
+           let savedAttempt = UserDefaults.standard.string(forKey: key),
+           UUID(uuidString: savedAttempt) != nil {
+            checkoutAttemptId = savedAttempt
+        }
+    }
+
+    private func persistCart(_ value: [String: Int]) {
+        guard let key = cartStorageKey else { return }
+        if value.isEmpty {
+            UserDefaults.standard.removeObject(forKey: key)
+        } else if let data = try? JSONEncoder().encode(value) {
+            UserDefaults.standard.set(data, forKey: key)
         }
     }
 
@@ -184,7 +249,9 @@ struct MenuView: View {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(groupedMenu, id: \.category) { group in
                             NavigationLink {
-                                CategoryItemListView(category: group.category, items: group.items, cart: $cart)
+                                CategoryItemListView(category: group.category, items: group.items, cart: $cart) {
+                                    checkoutOpen = true
+                                }
                             } label: {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Image(systemName: MenuCategoryIcon.symbolName(for: group.category))
@@ -225,7 +292,42 @@ struct MenuView: View {
                 .font(.system(size: 11.5))
                 .foregroundStyle(MinervaColor.inkFaint)
             MealSuggestionComposer(isFrench: isFrench)
-            if !supabase.customerMealSuggestions.isEmpty {
+            if supabase.isLoadingCustomerMealSuggestions && supabase.customerMealSuggestions.isEmpty {
+                HStack(spacing: 8) {
+                    ProgressView().tint(MinervaColor.emeraldDark)
+                    Text(isFrench ? "Chargement des suggestions…" : "Loading suggestions…")
+                        .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(MinervaColor.creamSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else if let error = supabase.customerMealSuggestionsError {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(isFrench ? error : "Suggestions couldn’t be loaded. Check your connection and try again.")
+                        .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
+                    Button {
+                        Task { await supabase.fetchMealSuggestions() }
+                    } label: {
+                        Label(isFrench ? "Réessayer" : "Retry", systemImage: "arrow.clockwise")
+                            .font(.system(size: 11.5, weight: .semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .disabled(supabase.isLoadingCustomerMealSuggestions)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(MinervaColor.creamSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else if supabase.customerMealSuggestions.isEmpty {
+                Text(isFrench ? "Aucune suggestion pour le moment." : "No meal suggestions yet.")
+                    .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else {
                 VStack(spacing: 8) {
                     ForEach(supabase.customerMealSuggestions) { suggestion in
                         HStack(spacing: 10) {
@@ -251,11 +353,199 @@ struct MenuView: View {
                     }
                 }
             }
+            if supabase.customer != nil {
+                Button {
+                    serviceQuoteOpen = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.system(size: 16, weight: .semibold))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(isFrench ? "Demander un devis traiteur" : "Request catering or custom meal quote")
+                                .font(.system(size: 12.5, weight: .semibold))
+                            Text(isFrench ? "Décrivez votre événement ou un repas sur mesure." : "Tell us about your event or custom meal.")
+                                .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .padding(12)
+                    .background(MinervaColor.emerald.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+            }
+            if supabase.isLoadingCustomerServiceQuotes && supabase.customerServiceQuotes.isEmpty {
+                HStack(spacing: 8) {
+                    ProgressView().tint(MinervaColor.emeraldDark)
+                    Text(isFrench ? "Chargement de vos demandes…" : "Loading your requests…")
+                        .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(MinervaColor.creamSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else if let error = supabase.customerServiceQuotesError {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(isFrench ? error : "Your quote requests couldn’t be loaded. Check your connection and try again.")
+                        .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
+                    Button {
+                        Task { await supabase.fetchCustomerServiceQuotes() }
+                    } label: {
+                        Label(isFrench ? "Réessayer" : "Retry", systemImage: "arrow.clockwise")
+                            .font(.system(size: 11.5, weight: .semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .disabled(supabase.isLoadingCustomerServiceQuotes)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(MinervaColor.creamSoft)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else if supabase.customer != nil && supabase.customerServiceQuotes.isEmpty {
+                Text(isFrench ? "Aucune demande de devis pour le moment." : "No quote requests yet.")
+                    .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else if !supabase.customerServiceQuotes.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(isFrench ? "Mes demandes de devis" : "My quote requests")
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                    ForEach(supabase.customerServiceQuotes) { quote in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text(quote.quoteType == "catering"
+                                     ? (isFrench ? "Traiteur" : "Catering")
+                                     : (isFrench ? "Repas sur mesure" : "Custom meal"))
+                                    .font(.system(size: 12, weight: .semibold))
+                                Spacer()
+                                Text(serviceQuoteStatus(quote))
+                                    .font(.system(size: 10.5, weight: .semibold))
+                                    .foregroundStyle(quote.status == "declined" || quote.status == "expired" ? .secondary : MinervaColor.emeraldDark)
+                            }
+                            if let eventAt = parseServiceQuoteDate(quote.eventAt) {
+                                Text(isFrench ? "Événement · \(formatRestaurantDate(eventAt))" : "Event · \(formatRestaurantDate(eventAt))")
+                                    .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
+                            }
+                            if let guests = quote.guestCount {
+                                Text(isFrench ? "\(guests) convives" : "\(guests) guests")
+                                    .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
+                            }
+                            if !quote.lines.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    ForEach(quote.lines) { line in
+                                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                            Text("\(line.quantity) × \(line.name)")
+                                                .lineLimit(2)
+                                            Spacer(minLength: 4)
+                                            Text((line.unitPrice * Double(line.quantity)).cad)
+                                                .monospacedDigit()
+                                        }
+                                        .font(.system(size: 10.5))
+                                        .foregroundStyle(MinervaColor.inkSoft)
+                                        if let detail = line.description, !detail.isEmpty {
+                                            Text(detail)
+                                                .font(.system(size: 9.5))
+                                                .foregroundStyle(MinervaColor.inkFaint)
+                                        }
+                                    }
+                                    if let subtotal = quote.subtotal {
+                                        quoteAmountRow(isFrench ? "Sous-total" : "Subtotal", amount: subtotal)
+                                    }
+                                    if let taxAmount = quote.taxAmount {
+                                        quoteAmountRow(isFrench ? "Taxes" : "Tax", amount: taxAmount)
+                                    }
+                                }
+                                .padding(.top, 2)
+                            }
+                            if let total = quote.total {
+                                Text("\(isFrench ? "Total" : "Total") · \(total.cad)")
+                                    .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkSoft)
+                            }
+                            if quote.status == "quoted", let deposit = quote.depositAmount {
+                                Text(isFrench
+                                     ? "Acompte à régler · \(deposit.cad) (\(Int(quote.depositPercent ?? 0)) %)"
+                                     : "Deposit due · \(deposit.cad) (\(Int(quote.depositPercent ?? 0))%)")
+                                    .font(.system(size: 10.5, weight: .semibold))
+                                    .foregroundStyle(MinervaColor.emeraldDark)
+                            }
+                            if let notes = quote.ownerNotes, !notes.isEmpty {
+                                Text(notes)
+                                    .font(.system(size: 10.5))
+                                    .foregroundStyle(MinervaColor.inkSoft)
+                            }
+                            if quote.status == "quoted", let urlString = quote.checkoutUrl, let url = URL(string: urlString) {
+                                Link(isFrench ? "Consulter et payer l’acompte" : "Review and pay deposit", destination: url)
+                                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(MinervaColor.emeraldDark)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(11)
+                        .background(MinervaColor.creamSoft)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+            }
         }
         .padding(14)
-        .background(.white)
+        .background(MinervaColor.surface)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.border.opacity(0.7)))
+    }
+
+    private func quoteAmountRow(_ title: String, amount: Double) -> some View {
+        HStack {
+            Text(title)
+            Spacer(minLength: 4)
+            Text(amount.cad).monospacedDigit()
+        }
+        .font(.system(size: 9.5))
+        .foregroundStyle(MinervaColor.inkFaint)
+    }
+
+    private func serviceQuoteStatus(_ quote: NativeServiceQuote) -> String {
+        if let orderStatus = quote.orderStatus {
+            switch orderStatus {
+            case "confirmee": return isFrench ? "Confirmée" : "Confirmed"
+            case "en_preparation": return isFrench ? "En préparation" : "In preparation"
+            case "prete": return isFrench ? "Prête" : "Ready"
+            case "servie": return isFrench ? "Terminée" : "Completed"
+            case "annulee": return isFrench ? "Annulée" : "Cancelled"
+            default: break
+            }
+        }
+        switch quote.status {
+        case "requested": return isFrench ? "Demande reçue" : "Request received"
+        case "quoted": return isFrench ? "Devis envoyé" : "Quote sent"
+        case "accepted": return isFrench ? "Acceptée" : "Accepted"
+        case "declined": return isFrench ? "Refusée" : "Declined"
+        case "expired": return isFrench ? "Expirée" : "Expired"
+        case "converted": return isFrench ? "Commande créée" : "Order created"
+        default: return isFrench ? "Annulée" : "Cancelled"
+        }
+    }
+
+    private func parseServiceQuoteDate(_ value: String?) -> Date? {
+        guard let value else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: value) ?? {
+            formatter.formatOptions = [.withInternetDateTime]
+            return formatter.date(from: value)
+        }()
+    }
+
+    private func formatRestaurantDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: isFrench ? "fr_CA" : "en_CA")
+        formatter.timeZone = supabase.restaurantTimezone
+        formatter.dateStyle = .long
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 
     private struct MealSuggestionComposer: View {
@@ -543,6 +833,150 @@ struct MenuView: View {
     }
 }
 
+private struct NativeServiceQuoteSheet: View {
+    @EnvironmentObject private var supabase: SupabaseManager
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    @State private var quoteType = "catering"
+    @State private var fulfillmentMode = "sur_place"
+    @State private var guestName = ""
+    @State private var guestPhone = ""
+    @State private var guestEmail = ""
+    @State private var guestCount = "10"
+    @State private var description = ""
+    @State private var deliveryAddress = ""
+    @State private var clientNotes = ""
+    @State private var eventAt = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date().addingTimeInterval(7 * 86_400)
+    @State private var isSubmitting = false
+    @State private var isSent = false
+    @State private var errorMessage: String?
+
+    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+    private var guestCountValue: Int? { Int(guestCount).flatMap { (1...5000).contains($0) ? $0 : nil } }
+    private var canSubmit: Bool {
+        guestName.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
+            && guestPhone.filter(\.isNumber).count >= 7
+            && guestEmail.contains("@")
+            && description.trimmingCharacters(in: .whitespacesAndNewlines).count >= 10
+            && (quoteType != "catering" || guestCountValue != nil)
+            && (fulfillmentMode != "livraison" || deliveryAddress.trimmingCharacters(in: .whitespacesAndNewlines).count >= 8)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isSent {
+                    ContentUnavailableView(
+                        isFrench ? "Demande envoyée" : "Request sent",
+                        systemImage: "checkmark.seal.fill",
+                        description: Text(isFrench
+                            ? "Le restaurant a reçu votre demande et vous contactera avec un devis."
+                            : "The restaurant received your request and will follow up with a quote.")
+                    )
+                } else {
+                    Form {
+                        Section(isFrench ? "Type de demande" : "Request type") {
+                            Picker(isFrench ? "Service" : "Service", selection: $quoteType) {
+                                Text(isFrench ? "Traiteur / événement" : "Catering / event").tag("catering")
+                                Text(isFrench ? "Repas sur mesure" : "Custom meal").tag("custom_meal")
+                            }.pickerStyle(.segmented)
+                        }
+                        Section(isFrench ? "Vos coordonnées" : "Your contact details") {
+                            TextField(isFrench ? "Nom complet" : "Full name", text: $guestName)
+                                .textContentType(.name).textInputAutocapitalization(.words)
+                            TextField(isFrench ? "Téléphone" : "Phone", text: $guestPhone)
+                                .keyboardType(.phonePad).textContentType(.telephoneNumber)
+                            TextField(isFrench ? "Courriel" : "Email", text: $guestEmail)
+                                .keyboardType(.emailAddress).textContentType(.emailAddress).textInputAutocapitalization(.never)
+                        }
+                        Section(isFrench ? "Événement" : "Event") {
+                            DatePicker(
+                                isFrench ? "Date et heure" : "Date and time",
+                                selection: $eventAt,
+                                in: Date().addingTimeInterval(12 * 60 * 60)...Date().addingTimeInterval(365 * 24 * 60 * 60),
+                                displayedComponents: [.date, .hourAndMinute]
+                            )
+                            .environment(\.timeZone, supabase.restaurantTimezone)
+                            if quoteType == "catering" {
+                                TextField(isFrench ? "Nombre de convives" : "Number of guests", text: $guestCount)
+                                    .keyboardType(.numberPad)
+                            }
+                            TextField(
+                                isFrench ? "Menus souhaités, préférences, contraintes…" : "Menu ideas, preferences, dietary needs…",
+                                text: $description,
+                                axis: .vertical
+                            ).lineLimit(4...8)
+                        }
+                        Section(isFrench ? "Réception" : "Fulfillment") {
+                            Picker(isFrench ? "Mode" : "Mode", selection: $fulfillmentMode) {
+                                Text(isFrench ? "Sur place / cueillette" : "Pickup").tag("sur_place")
+                                if supabase.deliveryEnabled {
+                                    Text(isFrench ? "Livraison" : "Delivery").tag("livraison")
+                                }
+                            }.pickerStyle(.segmented)
+                            if fulfillmentMode == "livraison" {
+                                TextField(isFrench ? "Adresse de livraison" : "Delivery address", text: $deliveryAddress, axis: .vertical)
+                                    .textContentType(.fullStreetAddress)
+                            }
+                            TextField(isFrench ? "Notes supplémentaires (facultatif)" : "Additional notes (optional)", text: $clientNotes, axis: .vertical)
+                                .lineLimit(2...4)
+                        }
+                        if let errorMessage {
+                            Section { Text(errorMessage).foregroundStyle(.red).font(.footnote) }
+                        }
+                    }
+                }
+            }
+            .navigationTitle(isSent ? (isFrench ? "C’est envoyé" : "Sent") : (isFrench ? "Demande de devis" : "Quote request"))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(isSent ? (isFrench ? "Terminer" : "Done") : (isFrench ? "Annuler" : "Cancel")) { dismiss() }
+                }
+                if !isSent {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(isSubmitting ? (isFrench ? "Envoi…" : "Sending…") : (isFrench ? "Envoyer" : "Send")) {
+                            submit()
+                        }
+                        .disabled(isSubmitting || !canSubmit)
+                    }
+                }
+            }
+            .onAppear {
+                guard let customer = supabase.customer else { return }
+                guestName = customer.name
+                guestPhone = customer.phone ?? ""
+                guestEmail = customer.email ?? ""
+            }
+        }
+    }
+
+    private func submit() {
+        guard canSubmit else { return }
+        isSubmitting = true
+        errorMessage = nil
+        Task {
+            let ok = await supabase.submitServiceQuote(
+                quoteType: quoteType,
+                guestName: guestName,
+                guestPhone: guestPhone,
+                guestEmail: guestEmail,
+                description: description,
+                eventAt: eventAt,
+                guestCount: quoteType == "catering" ? guestCountValue : nil,
+                fulfillmentMode: fulfillmentMode,
+                deliveryAddress: fulfillmentMode == "livraison" ? deliveryAddress : nil,
+                clientNotes: clientNotes.isEmpty ? nil : clientNotes
+            )
+            isSubmitting = false
+            if ok {
+                isSent = true
+            } else {
+                errorMessage = supabase.lastError ?? (isFrench ? "Échec de l’envoi. Réessayez." : "Could not send the request. Please retry.")
+            }
+        }
+    }
+}
+
 /// One category's items — the second step of the category-first browse
 /// (category grid → this list → MenuItemDetailView). The quantity stepper
 /// lives here rather than on the detail page, so adding to cart never
@@ -552,6 +986,7 @@ struct CategoryItemListView: View {
     let category: String
     let items: [NativeMenuItem]
     @Binding var cart: [String: Int]
+    var onAddToCart: () -> Void = {}
     @EnvironmentObject var supabase: SupabaseManager
 
     var body: some View {
@@ -577,8 +1012,8 @@ struct CategoryItemListView: View {
         let isFavorite = supabase.customer?.favoriteMenuItemIds.contains(item.id) ?? false
 
         return HStack(spacing: 12) {
-            NavigationLink {
-                MenuItemDetailView(item: item, restaurantId: item.restaurantId, allItemsInCategory: items, cart: $cart)
+                NavigationLink {
+                MenuItemDetailView(item: item, restaurantId: item.restaurantId, allItemsInCategory: items, cart: $cart, onAddToCart: onAddToCart)
             } label: {
                 HStack(spacing: 12) {
                     ZStack(alignment: .topTrailing) {
@@ -654,9 +1089,9 @@ struct CategoryItemListView: View {
         HStack(spacing: 10) {
             if quantity > 0 {
                 Button {
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    cart[itemId] = max(0, quantity - 1)
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                cart[itemId] = max(0, quantity - 1)
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(.system(size: 22))
@@ -675,6 +1110,7 @@ struct CategoryItemListView: View {
                 let generator = UIImpactFeedbackGenerator(style: .light)
                 generator.impactOccurred()
                 cart[itemId] = quantity + 1
+                onAddToCart()
             } label: {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 22))
@@ -700,26 +1136,35 @@ struct CheckoutSheet: View {
     let pickupEnabled: Bool
     let deliveryEnabled: Bool
     var googleMapsUrl: String? = nil
+    @Binding var checkoutAttemptId: String?
+    let checkoutAttemptStorageKey: String?
     let onOrdered: () -> Void
 
     @EnvironmentObject var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
 
     @State private var tipPct: Double?
     @State private var paymentMethod = ""
     @State private var payOnline = false
     @State private var paymentURL: URL?
+    @State private var paymentConfirmed = false
+    @State private var isRefreshingPayment = false
+    @State private var paymentStatusError: String?
     @State private var deliverySelected = false
     @State private var deliveryAddress = ""
     @State private var deliveryQuote: PortalDeliveryQuote?
     @State private var isQuotingDelivery = false
     @State private var isScheduled = false
-    @State private var requestedReadyAt = Date(timeIntervalSince1970: Double((Int(Date().timeIntervalSince1970) / 900 + 1) * 900))
+    @State private var requestedReadyAt = Date(timeIntervalSince1970: ceil((Date().timeIntervalSince1970 + 15 * 60) / 900) * 900)
     @State private var status: Status = .idle
     @State private var estimatedReadyAt: Date?
 
     enum Status { case idle, submitting, done, error }
+
+    private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
     private var totals: OrderTotals { OrderTotals(lines: lines, taxRate: taxRate, tipPct: tipPct) }
     private var subtotal: Double { totals.subtotal }
@@ -728,6 +1173,24 @@ struct CheckoutSheet: View {
     private var total: Double { totals.total + (deliverySelected ? (deliveryQuote?.fee ?? 0) : 0) }
     private var checkoutAvailable: Bool {
         (pickupEnabled || deliveryEnabled) && (canPayAtReceipt || canPayOnline)
+    }
+
+    private var scheduleRange: ClosedRange<Date> {
+        let now = Date().timeIntervalSince1970
+        let earliest = Date(timeIntervalSince1970: ceil((now + 15 * 60) / 900) * 900)
+        let latest = Date(timeIntervalSince1970: floor((now + 30 * 24 * 60 * 60) / 900) * 900)
+        return earliest...latest
+    }
+
+    private var scheduledReadyAtBinding: Binding<Date> {
+        Binding(
+            get: { nearestQuarterHour(requestedReadyAt) },
+            set: { requestedReadyAt = nearestQuarterHour($0) }
+        )
+    }
+
+    private func nearestQuarterHour(_ date: Date) -> Date {
+        Date(timeIntervalSince1970: (date.timeIntervalSince1970 / 900).rounded() * 900)
     }
 
     var body: some View {
@@ -740,12 +1203,12 @@ struct CheckoutSheet: View {
                 }
             }
             .background(MinervaColor.cream.ignoresSafeArea())
-            .navigationTitle("Votre commande")
+            .navigationTitle(isFrench ? "Votre commande" : "Your order")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     if status != .done {
-                        Button("Fermer") { dismiss() }
+                        Button(isFrench ? "Fermer" : "Close") { dismiss() }
                     }
                 }
             }
@@ -756,6 +1219,17 @@ struct CheckoutSheet: View {
             deliverySelected = !pickupEnabled && deliveryEnabled
         }
         .interactiveDismissDisabled(status == .submitting)
+        .onChange(of: tipPct) { _, _ in invalidateAttemptAfterEdit() }
+        .onChange(of: paymentMethod) { _, _ in invalidateAttemptAfterEdit() }
+        .onChange(of: payOnline) { _, _ in invalidateAttemptAfterEdit() }
+        .onChange(of: deliverySelected) { _, _ in invalidateAttemptAfterEdit() }
+        .onChange(of: deliveryAddress) { _, _ in invalidateAttemptAfterEdit() }
+        .onChange(of: isScheduled) { _, _ in invalidateAttemptAfterEdit() }
+        .onChange(of: requestedReadyAt) { _, _ in invalidateAttemptAfterEdit() }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active, paymentURL != nil, !paymentConfirmed else { return }
+            Task { await refreshPaymentStatus() }
+        }
     }
 
     private var formState: some View {
@@ -781,7 +1255,7 @@ struct CheckoutSheet: View {
 
                 if acceptsTips {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Pourboire")
+                        Text(isFrench ? "Pourboire" : "Tip")
                             .font(.system(size: 12.5, weight: .semibold))
                             .foregroundStyle(MinervaColor.inkSoft)
                         HStack(spacing: 8) {
@@ -789,7 +1263,7 @@ struct CheckoutSheet: View {
                                 Button {
                                     tipPct = pct
                                 } label: {
-                                    Text(pct == 0 ? "Aucun" : "\(Int(pct * 100))%")
+                                    Text(pct == 0 ? (isFrench ? "Aucun" : "None") : "\(Int(pct * 100))%")
                                         .font(.system(size: 12.5, weight: .semibold))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 10)
@@ -807,12 +1281,16 @@ struct CheckoutSheet: View {
                 }
 
                 VStack(spacing: 6) {
-                    totalRow("Sous-total", subtotal)
-                    totalRow("Taxes", taxAmount)
-                    if acceptsTips { totalRow("Pourboire", tipAmount) }
-                    if deliverySelected, let deliveryQuote { totalRow("Livraison · \(deliveryQuote.distanceKm.map { String(format: "%.1f km", $0) } ?? "distance estimée")", deliveryQuote.fee) }
+                    totalRow(isFrench ? "Sous-total" : "Subtotal", subtotal)
+                    totalRow(isFrench ? "Taxes" : "Tax", taxAmount)
+                    if acceptsTips { totalRow(isFrench ? "Pourboire" : "Tip", tipAmount) }
+                    if deliverySelected, let deliveryQuote {
+                        let distance = deliveryQuote.distanceKm.map { String(format: "%.1f km", $0) }
+                            ?? (isFrench ? "distance estimée" : "estimated distance")
+                        totalRow("\(isFrench ? "Livraison" : "Delivery") · \(distance)", deliveryQuote.fee)
+                    }
                     Divider()
-                    totalRow("Total", total, emphasized: true)
+                    totalRow(isFrench ? "Total" : "Total", total, emphasized: true)
                 }
                 .padding(14)
                 .background(MinervaColor.creamSoft)
@@ -820,28 +1298,32 @@ struct CheckoutSheet: View {
 
                 if deliveryEnabled {
                     VStack(alignment: .leading, spacing: 9) {
-                        Text("Réception")
+                        Text(isFrench ? "Réception" : "Fulfillment")
                             .font(.system(size: 11.5, weight: .semibold))
                             .foregroundStyle(MinervaColor.inkSoft)
                         if pickupEnabled {
                             HStack(spacing: 8) {
-                                paymentChoice("À emporter", selected: !deliverySelected) {
+                                paymentChoice(isFrench ? "À emporter" : "Pickup", selected: !deliverySelected) {
                                     deliverySelected = false
                                     deliveryQuote = nil
                                 }
-                                paymentChoice("Livraison", selected: deliverySelected) { deliverySelected = true }
+                                paymentChoice(isFrench ? "Livraison" : "Delivery", selected: deliverySelected) { deliverySelected = true }
                             }
                         } else {
-                            Text("Livraison")
+                            Text(isFrench ? "Livraison" : "Delivery")
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                         }
                         if deliverySelected {
-                            TextField("Adresse complète", text: $deliveryAddress, prompt: Text("123, rue Principale, Montréal").foregroundStyle(MinervaColor.inkFaint))
+                            TextField(
+                                isFrench ? "Adresse complète" : "Full address",
+                                text: $deliveryAddress,
+                                prompt: Text(isFrench ? "123, rue Principale, Montréal" : "123 Main Street, Toronto").foregroundStyle(MinervaColor.inkFaint)
+                            )
                                 .textContentType(.fullStreetAddress)
                                 .textInputAutocapitalization(.words)
                                 .padding(12)
-                                .background(.white)
+                                .background(MinervaColor.surface)
                                 .clipShape(RoundedRectangle(cornerRadius: 11))
                                 .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
                                 .onChange(of: deliveryAddress) { _, _ in deliveryQuote = nil }
@@ -854,14 +1336,18 @@ struct CheckoutSheet: View {
                             } label: {
                                 HStack(spacing: 7) {
                                     if isQuotingDelivery { ProgressView().tint(MinervaColor.emeraldDark) }
-                                    Text(isQuotingDelivery ? "Calcul en cours…" : "Calculer le prix et le délai")
+                                    Text(isQuotingDelivery
+                                         ? (isFrench ? "Calcul en cours…" : "Calculating…")
+                                         : (isFrench ? "Calculer le prix et le délai" : "Calculate fee and time"))
                                 }
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                             }
                             .disabled(isQuotingDelivery || deliveryAddress.trimmingCharacters(in: .whitespacesAndNewlines).count < 6)
                             if let deliveryQuote {
-                                Text("\(String(format: "%.2f $", deliveryQuote.fee)) · environ \(deliveryQuote.etaMinutes ?? 0) min · \(deliveryQuote.distanceKm.map { String(format: "%.1f km", $0) } ?? "distance confirmée")")
+                                Text(isFrench
+                                     ? "\(String(format: "%.2f $", deliveryQuote.fee)) · environ \(deliveryQuote.etaMinutes ?? 0) min · \(deliveryQuote.distanceKm.map { String(format: "%.1f km", $0) } ?? "distance confirmée")"
+                                     : "\(String(format: "%.2f $", deliveryQuote.fee)) · about \(deliveryQuote.etaMinutes ?? 0) min · \(deliveryQuote.distanceKm.map { String(format: "%.1f km", $0) } ?? "distance confirmed")")
                                     .font(.system(size: 11, weight: .medium))
                                     .foregroundStyle(MinervaColor.emeraldDark)
                             }
@@ -871,7 +1357,7 @@ struct CheckoutSheet: View {
                     .background(MinervaColor.creamSoft)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 } else if pickupEnabled {
-                    Text("Cueillette sur place")
+                    Text(isFrench ? "Cueillette sur place" : "Pickup")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .padding(14)
@@ -882,36 +1368,38 @@ struct CheckoutSheet: View {
 
                 if checkoutAvailable {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Mode de paiement")
+                        Text(isFrench ? "Mode de paiement" : "Payment method")
                             .font(.system(size: 11.5, weight: .semibold))
                             .foregroundStyle(MinervaColor.inkSoft)
                         if canPayAtReceipt && canPayOnline {
                             HStack(spacing: 8) {
-                                paymentChoice("À la réception", selected: !payOnline) { payOnline = false }
-                                paymentChoice("En ligne", selected: payOnline) { payOnline = true }
+                                paymentChoice(isFrench ? "À la réception" : "Pay on pickup", selected: !payOnline) { payOnline = false }
+                                paymentChoice(isFrench ? "En ligne" : "Online", selected: payOnline) { payOnline = true }
                             }
                         } else if canPayOnline {
-                            Text("Paiement en ligne sécurisé par Stripe")
+                            Text(isFrench ? "Paiement en ligne sécurisé par Stripe" : "Secure online payment by Stripe")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                         } else {
-                            Text("Paiement à la réception")
+                            Text(isFrench ? "Paiement à la réception" : "Pay on pickup")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(MinervaColor.inkSoft)
-                            TextField("", text: $paymentMethod, prompt: Text("Carte, comptant…").foregroundStyle(MinervaColor.inkFaint))
+                            TextField("", text: $paymentMethod, prompt: Text(isFrench ? "Carte, comptant…" : "Card, cash…").foregroundStyle(MinervaColor.inkFaint))
                                 .padding(12)
-                                .background(.white)
+                                .background(MinervaColor.surface)
                                 .clipShape(RoundedRectangle(cornerRadius: 11))
                                 .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
                         }
                         if canPayOnline && payOnline {
-                            Text("La commande est confirmée après validation du paiement.")
+                            Text(isFrench ? "La commande est confirmée après validation du paiement." : "Your order is confirmed once payment is verified.")
                                 .font(.system(size: 10.5))
                                 .foregroundStyle(MinervaColor.inkFaint)
                         }
                     }
                 } else {
-                    Text("La cueillette, la livraison ou le paiement des commandes ne sont pas encore configurés par ce restaurant.")
+                    Text(isFrench
+                         ? "La cueillette, la livraison ou le paiement des commandes ne sont pas encore configurés par ce restaurant."
+                         : "This restaurant has not configured pickup, delivery, or order payment yet.")
                         .font(.system(size: 12))
                         .foregroundStyle(.red)
                         .padding(14)
@@ -921,19 +1409,21 @@ struct CheckoutSheet: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Toggle("Planifier cette commande", isOn: $isScheduled)
+                    Toggle(isFrench ? "Planifier cette commande" : "Schedule this order", isOn: $isScheduled)
                         .font(.system(size: 13, weight: .semibold))
                         .tint(MinervaColor.emerald)
                     if isScheduled {
                         DatePicker(
-                            "Prêt le",
-                            selection: $requestedReadyAt,
-                            in: Date().addingTimeInterval(15 * 60)...Date().addingTimeInterval(30 * 24 * 60 * 60),
+                            isFrench ? "Prêt le" : "Ready at",
+                            selection: scheduledReadyAtBinding,
+                            in: scheduleRange,
                             displayedComponents: [.date, .hourAndMinute]
                         )
                         .datePickerStyle(.compact)
                         .environment(\.timeZone, supabase.restaurantTimezone)
-                        Text("Heure du restaurant · créneaux de 15 minutes · jusqu’à 30 jours.")
+                        Text(isFrench
+                             ? "Heure du restaurant · créneaux de 15 minutes · jusqu’à 30 jours."
+                             : "Restaurant local time · 15-minute slots · up to 30 days.")
                             .font(.system(size: 10.5))
                             .foregroundStyle(MinervaColor.inkFaint)
                     }
@@ -943,9 +1433,21 @@ struct CheckoutSheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
                 if status == .error {
-                    Text("La commande a échoué. Réessayez.")
+                    Text(isFrench ? "La commande a échoué. Réessayez." : "The order failed. Please try again.")
                         .font(.system(size: 12.5))
                         .foregroundStyle(.red)
+                    if checkoutAttemptId != nil {
+                        Button {
+                            Task { await resume() }
+                        } label: {
+                            Label(isFrench ? "Reprendre ma commande" : "Resume my order", systemImage: "arrow.clockwise")
+                                .font(.system(size: 12.5, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 9)
+                        }
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                        .disabled(status == .submitting)
+                    }
                 }
 
                 Button {
@@ -953,7 +1455,11 @@ struct CheckoutSheet: View {
                 } label: {
                     HStack {
                         if status == .submitting { ProgressView().tint(.white) }
-                        Text(status == .submitting ? "Envoi…" : "Envoyer la commande (\(String(format: "%.2f $", total)))")
+                        Text(status == .submitting
+                             ? (isFrench ? "Envoi…" : "Submitting…")
+                             : (isFrench
+                                ? "Envoyer la commande (\(String(format: "%.2f $", total)))"
+                                : "Place order (\(String(format: "%.2f $", total)))"))
                             .font(.system(size: 14.5, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
@@ -986,10 +1492,18 @@ struct CheckoutSheet: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(MinervaColor.emeraldDark)
-            Text("Commande envoyée")
+            Text(isFrench ? "Commande envoyée" : "Order received")
                 .font(MinervaFont.display(22))
                 .foregroundStyle(MinervaColor.ink)
-            Text(payOnline ? "Ouvrez le paiement sécurisé pour confirmer votre commande. Le restaurant reçoit la confirmation après vérification du paiement." : "Le restaurant a reçu votre commande. Vous paierez à la réception.")
+            Text(payOnline
+                 ? (paymentConfirmed
+                    ? (isFrench ? "Paiement confirmé. Le restaurant prépare votre commande." : "Payment confirmed. The restaurant is preparing your order.")
+                    : (isFrench
+                       ? "Ouvrez le paiement sécurisé pour confirmer votre commande. Au retour dans l’app, son statut sera vérifié automatiquement."
+                       : "Open secure checkout to confirm your order. Its status will be checked automatically when you return to the app."))
+                 : (isFrench
+                    ? "Le restaurant a reçu votre commande. Vous paierez à la réception."
+                    : "The restaurant received your order. You will pay on pickup."))
                 .font(.system(size: 13))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.center)
@@ -998,7 +1512,7 @@ struct CheckoutSheet: View {
 
             if let paymentURL {
                 Button { openURL(paymentURL) } label: {
-                    Label("Payer en ligne avec Stripe", systemImage: "lock.fill")
+                    Label(isFrench ? "Payer en ligne avec Stripe" : "Pay online with Stripe", systemImage: "lock.fill")
                         .font(.system(size: 13.5, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
@@ -1009,8 +1523,35 @@ struct CheckoutSheet: View {
                 .padding(.horizontal, 24)
             }
 
+            if payOnline && !paymentConfirmed && checkoutAttemptId != nil {
+                Button {
+                    Task { await refreshPaymentStatus() }
+                } label: {
+                    HStack(spacing: 8) {
+                        if isRefreshingPayment { ProgressView().tint(MinervaColor.emeraldDark) }
+                        Text(isRefreshingPayment
+                             ? (isFrench ? "Vérification…" : "Checking…")
+                             : (isFrench ? "J’ai terminé le paiement — vérifier" : "I’ve paid — check status"))
+                            .font(.system(size: 12.5, weight: .semibold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                }
+                .foregroundStyle(MinervaColor.emeraldDark)
+                .disabled(isRefreshingPayment)
+                if let paymentStatusError {
+                    Text(isFrench ? paymentStatusError : "Could not check payment status. Check your connection and try again.")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
             if let estimatedReadyAt {
-                Text("Prêt vers \(estimatedReadyAt.formatted(date: .omitted, time: .shortened))")
+                Text(isFrench
+                     ? "Prêt vers \(estimatedReadyAt.formatted(date: .omitted, time: .shortened))"
+                     : "Ready around \(estimatedReadyAt.formatted(date: .omitted, time: .shortened))")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
@@ -1019,7 +1560,7 @@ struct CheckoutSheet: View {
                 Link(destination: url) {
                     HStack(spacing: 8) {
                         Image(systemName: "star.fill")
-                        Text("Laisser un avis Google")
+                        Text(isFrench ? "Laisser un avis Google" : "Leave a Google review")
                     }
                     .font(.system(size: 13.5, weight: .semibold))
                     .frame(maxWidth: .infinity)
@@ -1032,7 +1573,7 @@ struct CheckoutSheet: View {
             }
 
             Spacer()
-            Button("Fermer") {
+            Button(isFrench ? "Fermer" : "Close") {
                 onOrdered()
                 dismiss()
             }
@@ -1049,6 +1590,13 @@ struct CheckoutSheet: View {
 
     private func submit() async {
         status = .submitting
+        if checkoutAttemptId == nil {
+            let newAttempt = UUID().uuidString.lowercased()
+            checkoutAttemptId = newAttempt
+            if let checkoutAttemptStorageKey {
+                UserDefaults.standard.set(newAttempt, forKey: checkoutAttemptStorageKey)
+            }
+        }
         let cartDict = Dictionary(uniqueKeysWithValues: lines.map { ($0.item.id, $0.quantity) })
         let result = await supabase.submitOrder(
             cart: cartDict,
@@ -1056,17 +1604,60 @@ struct CheckoutSheet: View {
             paymentMethod: payOnline || paymentMethod.isEmpty ? nil : paymentMethod,
             requestedReadyAt: isScheduled ? requestedReadyAt : nil,
             payOnline: payOnline,
-            delivery: deliverySelected ? .init(address: deliveryAddress.trimmingCharacters(in: .whitespacesAndNewlines)) : nil
+            delivery: deliverySelected ? .init(address: deliveryAddress.trimmingCharacters(in: .whitespacesAndNewlines)) : nil,
+            idempotencyKey: checkoutAttemptId!
         )
         let generator = UINotificationFeedbackGenerator()
         if result.ok {
             estimatedReadyAt = result.estimatedReadyAt
             paymentURL = result.paymentURL
+            paymentConfirmed = result.paymentConfirmed
             generator.notificationOccurred(.success)
             status = .done
         } else {
             generator.notificationOccurred(.error)
             status = .error
+        }
+    }
+
+    private func resume() async {
+        guard let checkoutAttemptId else { return }
+        status = .submitting
+        let result = await supabase.resumeOrder(idempotencyKey: checkoutAttemptId)
+        if result.ok {
+            estimatedReadyAt = result.estimatedReadyAt
+            paymentURL = result.paymentURL
+            paymentConfirmed = result.paymentConfirmed
+            status = .done
+        } else {
+            status = .error
+        }
+    }
+
+    private func refreshPaymentStatus() async {
+        guard !isRefreshingPayment, let checkoutAttemptId else { return }
+        isRefreshingPayment = true
+        paymentStatusError = nil
+        defer { isRefreshingPayment = false }
+        let result = await supabase.resumeOrder(idempotencyKey: checkoutAttemptId)
+        guard result.ok else {
+            paymentStatusError = "Le statut n’a pas pu être vérifié. Vérifiez votre connexion et réessayez."
+            return
+        }
+        estimatedReadyAt = result.estimatedReadyAt
+        paymentConfirmed = result.paymentConfirmed
+        if result.paymentConfirmed {
+            paymentURL = nil
+        } else if let refreshedURL = result.paymentURL {
+            paymentURL = refreshedURL
+        }
+    }
+
+    private func invalidateAttemptAfterEdit() {
+        guard status == .error else { return }
+        checkoutAttemptId = nil
+        if let checkoutAttemptStorageKey {
+            UserDefaults.standard.removeObject(forKey: checkoutAttemptStorageKey)
         }
     }
 

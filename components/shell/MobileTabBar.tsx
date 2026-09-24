@@ -2,39 +2,16 @@
 
 import { cn } from "@/lib/utils";
 import {
-  LayoutGrid,
-  Sparkles,
-  Database,
-  FileBarChart2,
   MoreHorizontal,
-  GitCommit,
-  BarChart3,
-  Boxes,
-  Map as MapIcon,
-  CalendarClock,
-  CalendarDays,
   Truck,
-  Users,
-  User,
-  Settings,
-  CreditCard,
-  BookOpen,
-  LifeBuoy,
-  History,
-  Wallet,
-  TrendingDown,
-  UserCircle,
-  Lock,
   ClipboardList,
-  UtensilsCrossed,
-  Heart,
-  Zap,
   Building2,
   PackageSearch,
+  Check,
 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useApp } from "@/lib/app-context";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -44,7 +21,6 @@ import {
   DrawerTitle,
   DrawerSwipeHandle,
 } from "@/components/ui/drawer";
-import type { Role } from "@/lib/types";
 
 type TabItem = {
   href: string;
@@ -52,75 +28,42 @@ type TabItem = {
   icon: LucideIcon;
 };
 
-type MoreItem = TabItem & { roles: Role[] };
-
-const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
-
-const MORE_ITEMS: MoreItem[] = [
-  { href: "/commandes", translationKey: "commandes", icon: ClipboardList, roles: allRoles },
-  { href: "/menu", translationKey: "menu", icon: UtensilsCrossed, roles: allRoles },
-  { href: "/fidelisation", translationKey: "fidelisation", icon: Heart, roles: allRoles },
-  { href: "/inventaire", translationKey: "inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
-  { href: "/programs", translationKey: "programs", icon: GitCommit, roles: allRoles },
-  { href: "/days", translationKey: "days", icon: BarChart3, roles: allRoles },
-  { href: "/employees", translationKey: "employees", icon: Boxes, roles: ["owner", "manager"] },
-  { href: "/maps", translationKey: "maps", icon: MapIcon, roles: allRoles },
-  { href: "/finance", translationKey: "finance", icon: Wallet, roles: ["owner", "manager"] },
-  { href: "/depenses", translationKey: "favDepenses", icon: TrendingDown, roles: ["owner", "manager"] },
-  { href: "/reservations", translationKey: "reservations", icon: CalendarClock, roles: allRoles },
-  { href: "/horaire", translationKey: "horaire", icon: CalendarDays, roles: allRoles },
-  { href: "/mon-espace", translationKey: "monEspace", icon: UserCircle, roles: allRoles },
-  { href: "/fournisseurs", translationKey: "fournisseurs", icon: Truck, roles: ["owner", "manager"] },
-  { href: "/collaborateurs", translationKey: "collaborateurs", icon: Users, roles: ["owner", "manager"] },
-  { href: "/profil", translationKey: "profil", icon: User, roles: allRoles },
-  { href: "/settings", translationKey: "settings", icon: Settings, roles: ["owner", "manager"] },
-  { href: "/billing", translationKey: "billing", icon: CreditCard, roles: ["owner"] },
-  { href: "/guide", translationKey: "guide", icon: BookOpen, roles: allRoles },
-  { href: "/support", translationKey: "support", icon: LifeBuoy, roles: allRoles },
-  { href: "/changelog", translationKey: "changelog", icon: History, roles: allRoles },
-  { href: "/integrations", translationKey: "integrations", icon: Zap, roles: allRoles },
-  { href: "/workspace", translationKey: "manageWorkspace", icon: Building2, roles: ["owner", "manager"] },
-];
-
 /**
- * Fixed 5-tab bottom navigation shown only on mobile (<768px): 4 fixed
- * destinations plus a "Plus" tab that opens a swipeable bottom drawer with
- * everything else, instead of trying to cram the whole sidebar into 5 slots.
+ * Four core destinations plus a restaurant switcher drawer.
  */
 export function MobileTabBar() {
   const t = useTranslations("nav");
   const pathname = usePathname();
-  const { role, isPlatformAdmin, restaurants } = useApp();
+  const { role, restaurants, workspaces, restaurantId, setRestaurantId } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
-  const flowAiLocked = !isPlatformAdmin;
-
-  // Owners run their business from their phone. When they have more than one
-  // establishment, the home tab opens the consolidated group view first.
-  const ownerHomeHref = restaurants.length > 1 ? "/overview?scope=group" : "/overview";
-  const tabs: TabItem[] =
-    role === "owner" || role === "manager"
+  const tabs: TabItem[] = [
+    { href: "/workspace", translationKey: "workspace", icon: Building2 },
+    ...(role === "owner" || role === "manager"
       ? [
-          { href: ownerHomeHref, translationKey: "mobileHome", icon: LayoutGrid },
-          { href: "/commandes", translationKey: "commandes", icon: ClipboardList },
-          { href: "/menu", translationKey: "menu", icon: UtensilsCrossed },
-          { href: "/fidelisation", translationKey: "fidelisation", icon: Heart },
+          { href: "/fournisseurs", translationKey: "fournisseurs", icon: Truck },
+          { href: "/inventaire", translationKey: "inventaire", icon: PackageSearch },
         ]
-      : [
-          { href: "/overview", translationKey: "mobileHome", icon: LayoutGrid },
-          { href: "/assistant", translationKey: "mobileChat", icon: Sparkles },
-          { href: "/data", translationKey: "favData", icon: Database },
-          { href: "/reports", translationKey: "reports", icon: FileBarChart2 },
-        ];
+      : []),
+    { href: "/commandes", translationKey: "commandes", icon: ClipboardList },
+  ];
 
-  const visibleMoreItems = MORE_ITEMS.filter((item) => item.roles.includes(role));
-  const isMoreActive = visibleMoreItems.some((item) => pathname.startsWith(item.href));
+  const restaurantGroups = useMemo(() => {
+    const groups = new Map<string, { name: string; restaurants: typeof restaurants }>();
+    for (const workspace of workspaces) groups.set(workspace.id, { name: workspace.name, restaurants: [] });
+    for (const restaurant of restaurants) {
+      const id = restaurant.workspaceId ?? `restaurant:${restaurant.id}`;
+      const group = groups.get(id) ?? { name: restaurant.name, restaurants: [] };
+      group.restaurants.push(restaurant);
+      groups.set(id, group);
+    }
+    return [...groups.entries()].map(([id, group]) => ({ id, ...group }));
+  }, [restaurants, workspaces]);
 
   return (
     <>
       <nav className="fixed inset-x-0 bottom-0 z-50 flex h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] items-stretch border-t border-mv-border bg-mv-cream-soft/95 backdrop-blur-sm md:hidden">
         {tabs.map((tab) => {
           const active = pathname.startsWith(tab.href);
-          const locked = tab.href === "/assistant" && flowAiLocked;
           const Icon = tab.icon;
           return (
             <Link
@@ -128,25 +71,19 @@ export function MobileTabBar() {
               href={tab.href}
               className={cn(
                 "relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition-colors",
-                locked ? "text-mv-ink-faint opacity-60" : active ? "text-mv-green-dark" : "text-mv-ink-faint"
+                active ? "text-mv-green-dark" : "text-mv-ink-faint"
               )}
             >
               <Icon size={19} strokeWidth={active ? 2.2 : 1.8} className={active ? "text-mv-green-dark" : undefined} />
-              {locked && (
-                <Lock size={10} className="absolute right-[26%] top-0.5 text-mv-ink-faint" />
-              )}
               <span>{t(tab.translationKey)}</span>
             </Link>
           );
         })}
         <button
           onClick={() => setMoreOpen(true)}
-          className={cn(
-            "flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition-colors",
-            isMoreActive ? "text-mv-green-dark" : "text-mv-ink-faint"
-          )}
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium text-mv-ink-faint transition-colors"
         >
-          <MoreHorizontal size={19} strokeWidth={isMoreActive ? 2.2 : 1.8} />
+          <MoreHorizontal size={19} strokeWidth={1.8} />
           <span>{t("more")}</span>
         </button>
       </nav>
@@ -155,27 +92,56 @@ export function MobileTabBar() {
         <DrawerContent className="max-h-[75dvh]">
           <DrawerSwipeHandle className="mx-auto mt-2" />
           <DrawerHeader>
-            <DrawerTitle>{t("more")}</DrawerTitle>
+            <DrawerTitle>{t("sectionTeams")}</DrawerTitle>
           </DrawerHeader>
-          <div className="grid grid-cols-4 gap-1 overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-            {visibleMoreItems.map((item) => {
-              const active = pathname.startsWith(item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMoreOpen(false)}
-                  className={cn(
-                    "flex flex-col items-center gap-1.5 rounded-xl px-1.5 py-3 text-center text-[11px] font-medium transition-colors",
-                    active ? "bg-mv-green/10 text-mv-green-dark" : "text-mv-ink-soft hover:bg-mv-ink/[0.04]"
-                  )}
-                >
-                  <Icon size={20} strokeWidth={active ? 2.2 : 1.6} />
-                  <span className="leading-tight">{t(item.translationKey)}</span>
-                </Link>
-              );
-            })}
+          <div className="overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            {restaurantGroups.length > 0 && (
+              <section className="mb-4" aria-label={t("sectionTeams")}>
+                <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-mv-ink-faint">
+                  {t("sectionTeams")}
+                </h2>
+                <div className="space-y-3">
+                  {restaurantGroups.map((group) => (
+                    <div key={group.id}>
+                      <div className="mb-1 flex items-center gap-1.5 px-1 text-xs font-semibold text-mv-ink-soft">
+                        <Building2 size={13} aria-hidden="true" />
+                        <span className="truncate">{group.name}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {group.restaurants.map((restaurant) => {
+                          const selected = restaurant.id === restaurantId;
+                          return (
+                            <button
+                              key={restaurant.id}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => {
+                                setRestaurantId(restaurant.id);
+                                setMoreOpen(false);
+                              }}
+                              className={cn(
+                                "flex min-h-11 items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition-colors",
+                                selected ? "bg-mv-green/10 text-mv-green-dark" : "text-mv-ink-soft hover:bg-mv-ink/[0.04]"
+                              )}
+                            >
+                              <span className="min-w-0 flex-1 truncate">{restaurant.name.replace("Minerva — ", "")}</span>
+                              {selected && <Check size={14} className="shrink-0" aria-hidden="true" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+            <Link
+              href="/workspace"
+              onClick={() => setMoreOpen(false)}
+              className="flex min-h-11 items-center justify-center rounded-lg border border-mv-border-soft bg-mv-cream-soft px-3 text-xs font-semibold text-mv-green-dark transition-colors hover:bg-mv-green/10"
+            >
+              {t("allTeams")}
+            </Link>
           </div>
         </DrawerContent>
       </Drawer>

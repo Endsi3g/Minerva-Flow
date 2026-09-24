@@ -46,6 +46,7 @@ function emailLayout({
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
             <tr>
               <td style="padding:0 8px 20px;">
+                <img src="https://minervaflow.app/icon-192.png" width="36" height="36" alt="Minerva Flow" border="0" style="display:inline-block;width:36px;height:36px;margin-right:10px;vertical-align:middle;border:0;border-radius:11px;" />
                 <span style="font-family:'New York', Georgia, serif; font-size:20px; font-weight:700; color:#1A1E16; letter-spacing:-0.02em;">Minerva <span style="color:#167F5B;">Flow</span></span>
               </td>
             </tr>
@@ -62,7 +63,7 @@ function emailLayout({
             <tr>
               <td style="padding:24px 8px 0; text-align:center;">
                 <p style="margin:0 0 6px; font-size:12px; line-height:1.5; color:#8D9488;">
-                  Minerva Studio &middot; Solutions digitales pour la restauration qu&eacute;b&eacute;coise
+                  Minerva Flow &middot; Minerva Technologies Inc.
                 </p>
                 <p style="margin:0; font-size:11.5px; line-height:1.5; color:#A0A69B;">
                   Vous recevez ce diagnostic car votre &eacute;tablissement a &eacute;t&eacute; analys&eacute; pour optimisation de commande directe.
@@ -151,6 +152,7 @@ export async function sendProspectAuditEmail({
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
       to,
+      replyTo: REPLY_TO,
       subject: `Diagnostic & Démonstration interactive pour ${prospect.restaurantName}`,
       html: emailLayout({
         title: `Audit & Démo pour ${prospect.restaurantName}`,
@@ -250,7 +252,7 @@ export async function sendProspectRelanceEmail({
           : ""
       }
       <p style="margin:0 0 16px; font-size:14px; line-height:1.6; color:#4B5563;">
-        La mise en place prend moins de 48 heures et nos &eacute;quipes s'occupent de toute la migration technique de votre menu.
+        Consultez la d&eacute;monstration pour voir le parcours de commande et les &eacute;tapes de configuration propos&eacute;es pour votre restaurant. Notre &eacute;quipe peut vous guider selon vos besoins.
       </p>
     `;
   }
@@ -259,6 +261,7 @@ export async function sendProspectRelanceEmail({
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
       to,
+      replyTo: REPLY_TO,
       subject,
       html: emailLayout({
         title: subject,

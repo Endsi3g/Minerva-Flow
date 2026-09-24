@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapCustomer, mapReward, type CustomerRow, mapTransaction, type LoyaltyTransactionRow } from "@/lib/data/customers";
@@ -15,7 +16,9 @@ import { formatCurrency } from "@/lib/utils";
 import { computeEstimatedReadyAt } from "@/lib/orders/eta";
 import { validateRequestedReadyAt } from "@/lib/orders/scheduling";
 import { getPublicCheckoutOptions } from "@/lib/orders/checkout-options";
-import { createPortalOrderCheckoutSession } from "@/lib/stripe/connect";
+import { createPortalOrderCheckoutSession, retrievePortalOrderCheckoutSession } from "@/lib/stripe/connect";
+import { resolvePortalOrderCheckoutAction } from "@/lib/stripe/checkout-status";
+import type Stripe from "stripe";
 import type {
   Customer,
   CustomerReferralLink,
@@ -170,6 +173,7 @@ export async function exportCustomerData(customer: Customer): Promise<Record<str
       phone: customer.phone,
       birthday: customer.birthday,
       city: customer.city,
+      neighborhood: customer.neighborhood,
       marketingConsent: customer.marketingConsent,
       consentSource: customer.consentSource,
       consentAt: customer.consentAt,
@@ -290,7 +294,129 @@ export async function getPortalDeliveryQuote(customer: Customer, address: string
 
 export type SubmitPortalOrderResult =
   | { ok: false }
-  | { ok: true; orderId: string; estimatedReadyAt: string | null; paymentUrl: string | null };
+  | { ok: true; orderId: string; estimatedReadyAt: string | null; paymentUrl: string | null; paymentConfirmed?: boolean };
+
+type PortalCheckoutRow = {
+  order_id: string;
+  created: boolean;
+  order_status: string;
+  payment_status: string;
+  stripe_payment_intent_id: string | null;
+  stripe_checkout_session_id: string | null;
+  estimated_ready_at: string | null;
+  total: number;
+  stripe_account_id: string | null;
+};
+
+function portalOrderFingerprint(input: {
+  customer: Customer;
+  cart: PortalOrderCartLine[];
+  tipAmount: number;
+  paymentMethod: string | null;
+  source: OrderSource;
+  delivery?: { address: string };
+  requestedReadyAtLocal?: string | null;
+  payOnline: boolean;
+}): string {
+  const canonical = {
+    restaurantId: input.customer.restaurantId,
+    customerId: input.customer.id,
+    userId: input.customer.userId,
+    source: input.source,
+    cart: input.cart.map((line) => ({ menuItemId: line.menuItemId, quantity: line.quantity }))
+      .sort((a, b) => a.menuItemId.localeCompare(b.menuItemId)),
+    tipAmount: Math.round(input.tipAmount * 100) / 100,
+    paymentMethod: input.paymentMethod?.trim() || null,
+    deliveryAddress: input.delivery?.address.trim() || null,
+    requestedReadyAtLocal: input.requestedReadyAtLocal?.trim() || null,
+    payOnline: input.payOnline,
+  };
+  return createHash("sha256").update(JSON.stringify(canonical)).digest("hex");
+}
+
+async function completePortalOrderCheckout(
+  admin: ReturnType<typeof createAdminClient>,
+  input: {
+    orderId: string;
+    restaurantId: string;
+    status: string;
+    paymentStatus: string;
+    estimatedReadyAt: string | null;
+    total: number;
+    stripeAccountId: string | null;
+    stripeCheckoutSessionId: string | null;
+    restaurantName: string;
+    customerEmail: string | null;
+  }
+): Promise<SubmitPortalOrderResult> {
+  if (input.status === "annulee") return { ok: false };
+  if (input.paymentStatus === "non_requis") {
+    return { ok: true, orderId: input.orderId, estimatedReadyAt: input.estimatedReadyAt, paymentUrl: null };
+  }
+  if (input.paymentStatus === "paye") {
+    return { ok: true, orderId: input.orderId, estimatedReadyAt: input.estimatedReadyAt, paymentUrl: null, paymentConfirmed: true };
+  }
+  if (!input.stripeAccountId) return { ok: false };
+
+  try {
+    let checkout: {
+      id: string;
+      url: string | null;
+      paymentStatus?: Stripe.Checkout.Session.PaymentStatus;
+      status?: Stripe.Checkout.Session.Status | null;
+    };
+    if (input.stripeCheckoutSessionId) {
+      const existingCheckout = await retrievePortalOrderCheckoutSession({
+          orderId: input.orderId,
+          restaurantId: input.restaurantId,
+          checkoutSessionId: input.stripeCheckoutSessionId,
+      });
+      const action = resolvePortalOrderCheckoutAction(existingCheckout);
+      if (action === "paid") {
+        return { ok: true, orderId: input.orderId, estimatedReadyAt: input.estimatedReadyAt, paymentUrl: null, paymentConfirmed: true };
+      }
+      if (action === "blocked") return { ok: false };
+      checkout = action === "retry"
+        ? await createPortalOrderCheckoutSession({
+            orderId: input.orderId,
+            retryOfSessionId: existingCheckout.id,
+            restaurantId: input.restaurantId,
+            connectedAccountId: input.stripeAccountId,
+            amountCents: Math.round(Number(input.total) * 100),
+            restaurantName: input.restaurantName,
+            customerEmail: input.customerEmail,
+          })
+        : existingCheckout;
+    } else {
+      checkout = await createPortalOrderCheckoutSession({
+          orderId: input.orderId,
+          restaurantId: input.restaurantId,
+          connectedAccountId: input.stripeAccountId,
+          amountCents: Math.round(Number(input.total) * 100),
+          restaurantName: input.restaurantName,
+          customerEmail: input.customerEmail,
+      });
+    }
+    if (!checkout.url) return { ok: false };
+    const { error } = await admin.from("orders")
+      .update({ stripe_checkout_session_id: checkout.id, payment_status: "en_attente" })
+      .eq("id", input.orderId)
+      .eq("restaurant_id", input.restaurantId);
+    if (error) throw error;
+    return { ok: true, orderId: input.orderId, estimatedReadyAt: input.estimatedReadyAt, paymentUrl: checkout.url };
+  } catch (error) {
+    console.error("submitPortalOrder: Stripe retry unavailable", {
+      orderId: input.orderId,
+      message: error instanceof Error ? error.message : "unknown_error",
+    });
+    await admin.from("orders")
+      .update({ payment_status: "echoue" })
+      .eq("id", input.orderId)
+      .eq("restaurant_id", input.restaurantId)
+      .neq("payment_status", "paye");
+    return { ok: false };
+  }
+}
 
 /**
  * Ordering from an already-authenticated portal customer — the order lands
@@ -304,12 +430,16 @@ export async function submitPortalOrder(
   cart: PortalOrderCartLine[],
   tipAmount: number,
   paymentMethod: string | null,
+  idempotencyKey: string,
   source: OrderSource = "web",
   delivery?: { address: string },
   requestedReadyAtLocal?: string | null,
   payOnline = false
 ): Promise<SubmitPortalOrderResult> {
-  if (cart.length === 0) return { ok: false };
+  if (!Array.isArray(cart) || cart.length === 0 || cart.length > 100
+      || cart.some((line) => !line || typeof line.menuItemId !== "string" || !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > 99)
+      || !customer.userId
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) return { ok: false };
 
   // Same reasoning as submitPublicOrder — a scripted client calling this
   // action directly could otherwise create unlimited real orders.
@@ -318,6 +448,48 @@ export async function submitPortalOrder(
   if (!allowed) return { ok: false };
 
   const admin = createAdminClient();
+  const fingerprint = portalOrderFingerprint({
+    customer, cart, tipAmount, paymentMethod, source, delivery, requestedReadyAtLocal, payOnline,
+  });
+  const { data: existingOrder, error: existingLookupError } = await admin.from("orders")
+    .select("id, public_checkout_user_id, public_checkout_fingerprint, status, payment_status, stripe_payment_intent_id, stripe_checkout_session_id, estimated_ready_at, total, checkout_stripe_account_id")
+    .eq("restaurant_id", customer.restaurantId)
+    .eq("public_checkout_key", idempotencyKey)
+    .maybeSingle();
+  if (existingLookupError) {
+    console.error("submitPortalOrder: idempotency lookup unavailable", existingLookupError.code ?? "unknown");
+    return { ok: false };
+  }
+  if (existingOrder) {
+    const existing = existingOrder as {
+      id: string;
+      public_checkout_user_id: string | null;
+      public_checkout_fingerprint: string | null;
+      status: string;
+      payment_status: string;
+      stripe_checkout_session_id: string | null;
+      estimated_ready_at: string | null;
+      total: number;
+      checkout_stripe_account_id: string | null;
+    };
+    if (existing.public_checkout_user_id !== customer.userId || existing.public_checkout_fingerprint !== fingerprint) {
+      return { ok: false };
+    }
+    const { data: restaurantRow } = await admin.from("restaurants").select("name")
+      .eq("id", customer.restaurantId).maybeSingle();
+    return completePortalOrderCheckout(admin, {
+      orderId: existing.id,
+      restaurantId: customer.restaurantId,
+      status: existing.status,
+      paymentStatus: existing.payment_status,
+      estimatedReadyAt: existing.estimated_ready_at,
+      total: existing.total,
+      stripeAccountId: existing.checkout_stripe_account_id,
+      stripeCheckoutSessionId: existing.stripe_checkout_session_id,
+      restaurantName: (restaurantRow as { name?: string } | null)?.name ?? "Minerva Flow",
+      customerEmail: customer.email,
+    });
+  }
   const [orderSettings, menuItemsResult, restaurantResult] = await Promise.all([
     getRestaurantOrderSettings(admin, customer.restaurantId),
     admin
@@ -385,93 +557,116 @@ export async function submitPortalOrder(
   const computedReadyAt = computeEstimatedReadyAt(orderSettings.defaultPrepMinutes, orderSettings.isBusy);
   const estimatedReadyAt = schedule.requestedReadyAt ? new Date(schedule.requestedReadyAt) : computedReadyAt;
 
-  const baseOrderFields: Record<string, unknown> = {
-    restaurant_id: customer.restaurantId,
-    status: "soumise",
-    guest_name: customer.name,
-    guest_phone: customer.phone,
-    subtotal,
-    tax_amount: taxAmount,
-    tip_amount: appliedTip,
-    total: total + deliveryFee,
-    payment_method: paymentMethod,
-    payment_status: payOnline ? "en_attente" : "non_requis",
-    fulfillment_mode: fulfillmentMode,
-    is_public_request: true,
-    customer_id: customer.id,
-    notes: `[${source}]`,
-    estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
-    delivery_address: delivery?.address.trim() ?? null,
-    delivery_lat: deliveryCoordinates?.lat ?? null,
-    delivery_lng: deliveryCoordinates?.lng ?? null,
-    delivery_distance_km: deliveryQuote.distanceKm,
-    delivery_fee: deliveryFee,
-    delivery_eta_minutes: deliveryQuote.etaMinutes,
-  };
-  if (schedule.requestedReadyAt) {
-    baseOrderFields.requested_ready_at = schedule.requestedReadyAt;
-    baseOrderFields.order_kind = "standard";
-  }
-
-  let { data: order, error: orderError } = await admin
-    .from("orders")
-    .insert({ ...baseOrderFields, source })
-    .select("id")
-    .single();
-
-  if (orderError && (orderError.code === "PGRST204" || orderError.message?.includes("source"))) {
-    const retry = await admin.from("orders").insert(baseOrderFields).select("id").single();
-    order = retry.data;
-    orderError = retry.error;
-  }
-  if (orderError || !order) return { ok: false };
-  const orderId = (order as { id: string }).id;
-
-  const { error: itemsError } = await admin.from("order_items").insert(
-    lineItems.map((l) => ({
-      order_id: orderId,
-      menu_item_id: l.menuItemId,
-      item_name: l.itemName,
-      unit_price: l.unitPrice,
-      quantity: l.quantity,
-    }))
-  );
-  if (itemsError) {
-    await admin.from("orders").update({ status: "annulee", payment_status: "echoue" }).eq("id", orderId);
+  const { data: checkoutRows, error: checkoutError } = await admin.rpc("create_or_get_public_order", {
+    p_restaurant_id: customer.restaurantId,
+    p_checkout_key: idempotencyKey,
+    p_checkout_user_id: customer.userId,
+    p_request_fingerprint: fingerprint,
+    p_customer_id: customer.id,
+    p_guest_name: customer.name,
+    p_guest_phone: customer.phone,
+    p_subtotal: subtotal,
+    p_tax_amount: taxAmount,
+    p_tip_amount: appliedTip,
+    p_total: total + deliveryFee,
+    p_payment_method: payOnline ? "Carte (en ligne)" : paymentMethod,
+    p_payment_status: payOnline ? "en_attente" : "non_requis",
+    p_fulfillment_mode: fulfillmentMode,
+    p_delivery_address: delivery?.address.trim() ?? null,
+    p_delivery_lat: deliveryCoordinates?.lat ?? null,
+    p_delivery_lng: deliveryCoordinates?.lng ?? null,
+    p_delivery_distance_km: deliveryQuote.distanceKm,
+    p_delivery_fee: deliveryFee,
+    p_delivery_eta_minutes: deliveryQuote.etaMinutes,
+    p_estimated_ready_at: estimatedReadyAt?.toISOString() ?? null,
+    p_requested_ready_at: schedule.requestedReadyAt,
+    p_referral_link_id: null,
+    p_referral_channel: "direct",
+    p_notes: `[${source}]`,
+    p_stripe_account_id: orderSettings.stripeConnectAccountId,
+    p_source: source,
+    p_items: lineItems.map((line) => ({
+      menu_item_id: line.menuItemId,
+      item_name: line.itemName,
+      unit_price: line.unitPrice,
+      quantity: line.quantity,
+    })),
+  });
+  const checkout = (checkoutRows as PortalCheckoutRow[] | null)?.[0];
+  if (checkoutError || !checkout) {
+    console.error("submitPortalOrder: atomic checkout persistence failed", checkoutError?.code ?? "empty_result");
     return { ok: false };
   }
 
-  let paymentUrl: string | null = null;
-  if (payOnline) {
-    try {
-      const checkout = await createPortalOrderCheckoutSession({
-        orderId,
-        restaurantId: customer.restaurantId,
-        connectedAccountId: orderSettings.stripeConnectAccountId!,
-        amountCents: Math.round((total + deliveryFee) * 100),
-        restaurantName: restaurantAddress?.name ?? "Minerva Flow",
-        customerEmail: customer.email,
-      });
-      const { error: sessionSaveError } = await admin.from("orders")
-        .update({ stripe_checkout_session_id: checkout.id })
-        .eq("id", orderId)
-        .eq("restaurant_id", customer.restaurantId);
-      if (sessionSaveError) throw sessionSaveError;
-      paymentUrl = checkout.url;
-    } catch (error) {
-      console.error("submitPortalOrder: Stripe Checkout creation failed", error);
-      await admin.from("orders").update({ status: "annulee", payment_status: "echoue" }).eq("id", orderId);
-      return { ok: false };
-    }
+  if (checkout.created) {
+    await notifyRestaurant({
+      restaurantId: customer.restaurantId,
+      type: "order.created",
+      title: "Nouvelle commande — portail client",
+      body: `${customer.name} — ${formatCurrency(total + deliveryFee)}${payOnline ? " · paiement en attente" : ""}`,
+      link: "/commandes",
+    }).catch(() => {
+      // The persisted checkout attempt is returned on retries; never resend
+      // this best-effort notification for the same idempotency key.
+    });
   }
 
-  await notifyRestaurant({
+  return completePortalOrderCheckout(admin, {
+    orderId: checkout.order_id,
     restaurantId: customer.restaurantId,
-    type: "order.created",
-    title: "Nouvelle commande — portail client",
-    body: `${customer.name} — ${formatCurrency(total + deliveryFee)}${payOnline ? " · paiement en attente" : ""}`,
-    link: "/commandes",
+    status: checkout.order_status,
+    paymentStatus: checkout.payment_status,
+    estimatedReadyAt: checkout.estimated_ready_at,
+    total: Number(checkout.total),
+    stripeAccountId: checkout.stripe_account_id,
+    stripeCheckoutSessionId: checkout.stripe_checkout_session_id,
+    restaurantName: restaurantAddress?.name ?? "Minerva Flow",
+    customerEmail: customer.email,
   });
+}
 
-  return { ok: true, orderId, estimatedReadyAt: estimatedReadyAt?.toISOString() ?? null, paymentUrl };
+export async function resumePortalOrder(
+  customer: Customer,
+  idempotencyKey: string
+): Promise<SubmitPortalOrderResult> {
+  if (!customer.userId || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+    return { ok: false };
+  }
+  const ip = await getClientIp();
+  const { allowed } = await checkRateLimit(`order-resume:${ip}`, { max: 30, windowSeconds: 300 });
+  if (!allowed) return { ok: false };
+
+  const admin = createAdminClient();
+  const { data: order, error } = await admin.from("orders")
+    .select("id, status, payment_status, stripe_checkout_session_id, estimated_ready_at, total, checkout_stripe_account_id")
+    .eq("restaurant_id", customer.restaurantId)
+    .eq("customer_id", customer.id)
+    .eq("public_checkout_user_id", customer.userId)
+    .eq("public_checkout_key", idempotencyKey)
+    .maybeSingle();
+  if (error || !order) return { ok: false };
+
+  const existing = order as {
+    id: string;
+    status: string;
+    payment_status: string;
+    stripe_checkout_session_id: string | null;
+    estimated_ready_at: string | null;
+    total: number;
+    checkout_stripe_account_id: string | null;
+  };
+  const { data: restaurantRow } = await admin.from("restaurants").select("name")
+    .eq("id", customer.restaurantId).maybeSingle();
+  return completePortalOrderCheckout(admin, {
+    orderId: existing.id,
+    restaurantId: customer.restaurantId,
+    status: existing.status,
+    paymentStatus: existing.payment_status,
+    estimatedReadyAt: existing.estimated_ready_at,
+    total: existing.total,
+    stripeAccountId: existing.checkout_stripe_account_id,
+    stripeCheckoutSessionId: existing.stripe_checkout_session_id,
+    restaurantName: (restaurantRow as { name?: string } | null)?.name ?? "Minerva Flow",
+    customerEmail: customer.email,
+  });
 }

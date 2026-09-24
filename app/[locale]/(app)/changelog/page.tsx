@@ -11,5 +11,5 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ChangelogPage() {
   const entries = await getChangelogEntries();
 
-  return <ChangelogView initialEntries={entries} />;
+  return <ChangelogView initialEntries={entries} referenceTime={new Date().toISOString()} />;
 }
