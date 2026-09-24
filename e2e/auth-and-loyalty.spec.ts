@@ -89,7 +89,7 @@ test.describe("Auth, Role Navigation & Core Workflows", () => {
     await expect(page.getByRole("button", { name: user.email })).toBeVisible();
   });
 
-  test("4. owner core workflows stay visible and their routes remain reachable", async ({ page }) => {
+  test("4. only the four essential workspace sections remain reachable", async ({ page }) => {
     test.setTimeout(90_000);
     const user = await createTestUser("finance-redirect");
     createdUserId = user.id;
@@ -101,28 +101,20 @@ test.describe("Auth, Role Navigation & Core Workflows", () => {
     await loginAs(page, user);
 
     const primaryNav = page.getByRole("navigation", { name: "Navigation principale" });
-    await expect(primaryNav.getByRole("link", { name: "Aperçu" })).toBeVisible();
-    await expect(primaryNav.getByRole("link", { name: "Flow AI" })).toBeVisible();
-    await expect(primaryNav.getByRole("link", { name: "Menu" })).toBeVisible();
-    await expect(primaryNav.getByRole("link", { name: "Fidélisation" })).toBeVisible();
+    for (const section of ["Workspace", "Fournisseurs", "Inventaire", "Commandes"]) {
+      await expect(primaryNav.getByRole("link", { name: section })).toBeVisible();
+    }
+    for (const section of ["Menu", "Fidélisation", "Finance", "Collaborateurs", "Aperçu", "Flow AI"]) {
+      await expect(primaryNav.getByRole("link", { name: section })).toHaveCount(0);
+    }
 
-    const dailyGroup = page.getByRole("button", { name: "Gestion quotidienne" });
-    await expect(dailyGroup).toHaveAttribute("aria-expanded", "false");
-    await dailyGroup.click();
-    await expect(dailyGroup).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByRole("link", { name: "Commandes" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Finance" })).toBeVisible();
-
-    await page.goto("/fr/menu");
-    await expect(page).toHaveURL(/\/menu$/);
-    await expect(page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Menu" })).toBeVisible();
-    await page.goto("/fr/fidelisation");
-    await expect(page).toHaveURL(/\/fidelisation$/);
-    await expect(page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Fidélisation" })).toBeVisible();
-
-    await page.goto("/fr/unknown-product-route");
-    await page.waitForURL(/\/workspace$/, { timeout: 15000 });
-    await page.screenshot({ path: "test-results/verified-owner-core-navigation.png", fullPage: true });
+    for (const restrictedPath of [
+      "/fr/overview", "/fr/assistant", "/fr/changelog", "/fr/campaigns", "/fr/settings",
+      "/fr/collaborateurs", "/fr/menu", "/fr/fidelisation", "/fr/finance",
+    ]) {
+      await page.goto(restrictedPath);
+      await page.waitForURL(/\/workspace$/, { timeout: 15000 });
+    }
   });
 
   test("5. Capture login page with new loyalty copy", async ({ page }) => {

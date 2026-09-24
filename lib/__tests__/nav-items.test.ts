@@ -1,25 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { isAuthenticatedProductPath, NAV_ITEMS, navItemsForRole } from "@/lib/nav-items";
+import { isAuthenticatedProductPath, navItemsForRole } from "@/lib/nav-items";
 
 describe("authenticated product route allowlist", () => {
-  it("keeps every authenticated navigation route reachable", () => {
-    for (const { href } of NAV_ITEMS) {
-      expect(isAuthenticatedProductPath(href), `${href} should be reachable`).toBe(true);
-    }
-  });
-
   it.each([
+    "/workspace",
     "/workspace/ambassadeurs",
+    "/fournisseurs",
     "/fournisseurs/catalogue",
+    "/inventaire",
     "/inventaire/recettes",
+    "/commandes",
     "/commandes/service-quotes",
-    "/fidelisation/partage",
-    "/menu/suggestions",
-  ])("keeps the nested core route %s reachable", (path) => {
+  ])("keeps the product route %s reachable", (path) => {
     expect(isAuthenticatedProductPath(path)).toBe(true);
   });
 
   it.each([
+    "/overview",
+    "/assistant",
+    "/menu",
+    "/menu/suggestions",
+    "/fidelisation",
+    "/fidelisation/customers",
+    "/finance",
+    "/collaborateurs",
+    "/changelog",
+    "/settings",
     "/menu-settings",
     "/fidelisationx",
     "/unknown",
@@ -28,11 +34,9 @@ describe("authenticated product route allowlist", () => {
     expect(isAuthenticatedProductPath(path)).toBe(false);
   });
 
-  it("keeps owner ordering and loyalty tools in the searchable primary routes", () => {
-    const keys = navItemsForRole("owner").map(({ key }) => key);
-    expect(keys).toContain("menu");
-    expect(keys).toContain("fidelisation");
-    expect(keys).toContain("overview");
-    expect(keys).toContain("assistant");
+  it("exposes only the requested four owner navigation routes", () => {
+    expect(navItemsForRole("owner").map(({ key }) => key)).toEqual([
+      "workspace", "commandes", "inventaire", "fournisseurs",
+    ]);
   });
 });

@@ -23,9 +23,7 @@ export type SearchableNavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 const managerRoles: Role[] = ["owner", "manager"];
-export const PRIMARY_NAV_KEYS = new Set([
-  "overview", "assistant", "menu", "fidelisation", "finance", "commandes", "collaborateurs", "inventaire",
-]);
+export const PRIMARY_NAV_KEYS = new Set(["workspace", "fournisseurs", "inventaire", "commandes"]);
 
 export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "workspace", href: "/workspace", title: "Workspace", subtitle: "Restaurants et espaces de travail", roles: allRoles },
@@ -58,9 +56,8 @@ export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "settings", href: "/settings", title: "Paramètres", subtitle: "Configuration de l'établissement", roles: managerRoles },
 ];
 
-// Direct authenticated links and the sidebar share one route catalog.
-// Actions and row-level permissions continue to enforce data boundaries.
-export const AUTHENTICATED_PRODUCT_ROOTS = NAV_ITEMS.map(({ href }) => href);
+// Only these four restaurant workspace pages are reachable when authenticated.
+export const AUTHENTICATED_PRODUCT_ROOTS = ["/workspace", "/fournisseurs", "/inventaire", "/commandes"] as const;
 
 export function isAuthenticatedProductPath(pathname: string): boolean {
   return AUTHENTICATED_PRODUCT_ROOTS.some(

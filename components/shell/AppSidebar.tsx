@@ -126,11 +126,11 @@ export const settingsGroupItems: NavItem[] = [
   { key: "changelog", href: "/changelog", icon: History, roles: allRoles },
 ];
 
-const dailyManagementItems: NavItem[] = [
-  { key: "finance", href: "/finance", icon: CreditCard, roles: ["owner", "manager"] },
-  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
-  { key: "collaborateurs", href: "/collaborateurs", icon: Users, roles: allRoles },
+const workspacePrimaryItems: NavItem[] = [
+  { key: "workspace", href: "/workspace", icon: Building2, roles: allRoles },
+  { key: "fournisseurs", href: "/fournisseurs", icon: Truck, roles: ["owner", "manager"] },
   { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
+  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
 ];
 
 type RestaurantWorkspaceGroup = { id: string; name: string; locations: Restaurant[] };
@@ -517,19 +517,10 @@ export function AppSidebar() {
   const allowedByRole = (n: NavItem) =>
     n.roles.includes(role) && (!sidebarPermissions || sidebarPermissions.includes(n.key));
 
-  const ownerManager = role === "owner" || role === "manager";
-  const visiblePrimaryItems = ownerManager
-    ? ltvCoreNavItems.filter(allowedByRole)
-    : [...ltvCoreNavItems, ...dailyManagementItems].filter(allowedByRole);
-  const visibleDailyItems = dailyManagementItems.filter(allowedByRole);
-  const visibleOperationsItems = operationsItems.filter(allowedByRole);
-  const visibleAnalyticsItems = [...ltvAnalyticsItems, ...operationalAnalyticsItems].filter(allowedByRole);
-  const visibleSettingsItems = settingsGroupItems.filter(allowedByRole);
   const isActive = (item: NavItem) => pathname === item.href || pathname.startsWith(`${item.href}/`);
-  const dailyActive = visibleDailyItems.some(isActive);
-  const operationsActive = visibleOperationsItems.some(isActive);
-  const analyticsActive = visibleAnalyticsItems.some(isActive);
-  const settingsActive = visibleSettingsItems.some(isActive);
+  const visiblePrimaryItems = workspacePrimaryItems.filter((item) =>
+    item.key === "workspace" ? item.roles.includes(role) : allowedByRole(item)
+  );
   function closeMobile() {
     if (isMobile) setSidebarCollapsed(true);
   }
@@ -598,30 +589,6 @@ export function AppSidebar() {
             <nav aria-label="Navigation principale" className="space-y-0.5">
               {renderNavItems(visiblePrimaryItems)}
             </nav>
-
-            {ownerManager && visibleDailyItems.length > 0 && (
-              <SidebarNavGroup title={t("dailyManagement")} active={dailyActive}>
-                <div className="space-y-0.5">{renderNavItems(visibleDailyItems)}</div>
-              </SidebarNavGroup>
-            )}
-
-            {visibleOperationsItems.length > 0 && (
-              <SidebarNavGroup title={t("sectionOperations")} active={operationsActive}>
-                <div className="space-y-0.5">{renderNavItems(visibleOperationsItems)}</div>
-              </SidebarNavGroup>
-            )}
-
-            {visibleAnalyticsItems.length > 0 && (
-              <SidebarNavGroup title={t("performanceAnalytics")} active={analyticsActive}>
-                <div className="space-y-0.5">{renderNavItems(visibleAnalyticsItems)}</div>
-              </SidebarNavGroup>
-            )}
-
-            {visibleSettingsItems.length > 0 && (
-              <SidebarNavGroup title={t("sectionSettingsMore")} active={settingsActive}>
-                <div className="space-y-0.5">{renderNavItems(visibleSettingsItems)}</div>
-              </SidebarNavGroup>
-            )}
 
             <TeamRestaurantsGroup onNavigate={closeMobile} />
 
