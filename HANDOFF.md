@@ -1,7 +1,18 @@
 # HANDOFF & DOSSIER DE VÉRIFICATION — MINERVA FLOW
 
 > **Base historique** : 2.36.0 — clôture de sprint du 15 septembre 2026.
-> **État produit actualisé** : 23 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
+> **État produit actualisé** : 24 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
+
+## Vérification de reprise — 2026-09-24
+
+- L’alerte reçue (« The destination stream closed early. », requête `/en/overview`) correspond à la fermeture d’un flux de rendu RSC; le courriel ne contenait ni frame d’erreur métier ni frame Supabase. Le signal continue d’être capturé dans Sentry, mais `lib/alerts/error-notifier.ts` classe désormais cette seule erreur transport exacte comme non critique pour éviter une alerte email trompeuse. Les erreurs différentes restent alertables.
+- Le checkout natif s’ouvre immédiatement après un ajout depuis le Menu; le code Scanner a été remis en page avec QR/code temporaire, expiration, reprise d’erreur et accès caméra.
+- Validation locale : Vitest 321/321, `tsc --noEmit` et lint ciblé passent. Sur iPhone 17 Pro Simulator, les 2 tests UI ciblés de navigation panier et Scanner passent. La première tentative de tests UI a échoué à cause de sélecteurs de test/accessibilité; ces sélecteurs ont été corrigés et la reprise passe.
+- App Store Connect : compte démo vérifié et renseigné, notes de review et consignes de test enregistrées; politique de confidentialité renseignée. Le build iOS `1.0 (11)` est traité et « En cours de test » dans les groupes interne et externe. Le groupe externe compte 8 testeurs; lien public vérifié HTTP 200 : https://testflight.apple.com/join/xGr45uuF. La notification automatique est activée. Les autres vérifications manuelles (déclarations de confidentialité, captures et accords) restent à confirmer avant une soumission publique App Store.
+- dSYM Sentry de l’archive `1.0 (11)` : UUID du framework et du DWARF dSYM vérifiés identiques (`B84D512C-9978-3080-BDCE-725FCB04589E`), corrigeant le signalement précédent.
+- Journal natif « Mises à jour » ajouté au commit `bb25ec8`, poussé sur `main`; son déploiement web associé (`dpl_2G2kSTuTUECJ1LAH52H75kizmx59`) est `READY` et la racine du déploiement répond `307`. Cette modification SwiftUI n’est pas dans le build TestFlight `1.0 (11)` actuellement actif; aucun nouveau binaire iOS n’a été téléversé.
+- Compilation iOS Simulator du changement réussie. Une tentative XCTest ciblant `OrderTotalsTests` s’est bloquée dans le nettoyage de session Xcode après environ 55 secondes; aucun résultat de test n’est confirmé pour cette tentative.
+- **Production : NOT READY.** Le build TestFlight est disponible pour les tests externes, mais ne pas publier en production avant les E2E complets client/owner, la validation visuelle des écrans finaux, les vérifications App Store restantes et la preuve que le déploiement correspond au commit testé.
 
 ---
 
@@ -358,10 +369,13 @@ L’application SwiftUI utilise un seul bundle et dirige chaque compte vers une 
 - **Identification en caisse** : la recherche par téléphone masque le solde jusqu’à confirmation avec le code temporaire à six chiffres du client; le code présenté directement permet aussi de retrouver le compte.
 - **Parrainage** : canal QR/partage/lien/code/direct conservé avec les événements; l’activité de conversion n’est comptabilisée qu’après crédit de la conversion.
 
-### 7.2 État de publication au 23 septembre 2026
+### 7.2 État de publication au 24 septembre 2026
 
-- iOS `1.0 (11)` : archive Release et IPA exportés localement; UUID du dSYM Sentry vérifié contre le framework.
-- TestFlight : build 11 non téléversé, faute d’authentification App Store Connect. Le lien bêta existant ne confirme pas la présence de ce build.
+- iOS `1.0 (11)` : archive Release et IPA exportés; UUID du dSYM Sentry vérifié contre le framework.
+- TestFlight : build `1.0 (11)` traitée et en test dans les groupes interne et externe; 8 testeurs externes, lien public HTTP 200, notification automatique activée. Le build actif ne contient pas le journal natif du commit `bb25ec8`.
+- Source iOS : compilation Simulator réussie. Les 2 tests UI panier/Scanner ont passé sur la version antérieure testée; la tentative XCTest après `bb25ec8` est bloquée par le runner et n’a pas produit de résultat. Aucun build 12 ni nouvel upload TestFlight.
+- Audit App Store statique du 24 septembre : 0 risque critique, 0 élevé et 2 avertissements; les contrôles manuels de démonstration, métadonnées/captures, confidentialité, notes de review et accords restent à confirmer avant une soumission publique.
+- Git : commit `bb25ec8` poussé sur `main`. Déploiement Vercel de production associé `dpl_2G2kSTuTUECJ1LAH52H75kizmx59` en état `READY`; smoke HTTP racine `307` (redirection prévue). Pas de GitHub Release ni de nouvelle release iOS publiée.
 - Le compte propriétaire natif est livré comme une tranche opérationnelle; ne pas lui attribuer les écrans/alertes de la roadmap non implémentés.
 - La livraison dynamique au tarif par distance/temps, Android white-label et l’automatisation d’une app par restaurant restent à traiter comme objectifs, sauf validation d’un déploiement spécifique.
 
