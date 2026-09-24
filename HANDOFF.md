@@ -5,6 +5,13 @@
 
 ## Vérification de reprise — 2026-09-24
 
+- Nouvelle candidate `2.48.0` sur `release/2.48.0`, commit poussé `246061f`. Vercel Preview `dpl_HyDx4j5WAAs3dLTmjKKg2FhC2YcR`, `READY`; alias `https://minerva-flow-git-release-2480-endsi3gs-projects.vercel.app`. Créé 9 s après le commit de la branche; les métadonnées CLI consultées n’exposent pas le SHA, association exacte non prouvée. Vérification HTTP en lecture seule : racine `307` vers connexion, `/login` `200`.
+- Vérification fonctionnelle staging : 330 tests unitaires (57 fichiers), `tsc --noEmit`, lint ciblé, et 6/6 E2E (précommande à créneau et cueillette, suggestion/vote client puis brouillon owner, traiteur sur place/livraison, demande traiteur propriétaire, conversion idempotente de devis payé). Données E2E synthétiques nettoyées.
+- Inspection visuelle du reçu de précommande à 390 px : modale lisible, action de fermeture visible, aucun débordement horizontal. Captures conservées dans `docs/screenshots/`.
+- La compilation iOS Simulator est réussie; XCTest actuel ne fournit aucun résultat confirmé, le runner Xcode se bloque. Le build TestFlight actif `1.0 (11)` ne contient pas la source `2.48.0`; aucun nouveau build iOS téléversé.
+- Audit App Store actuel : 0 critique, 0 élevé, 2 avertissements (clé de chiffrement à confirmer côté widget; contrôles manuels métadonnées/confidentialité/review encore ouverts).
+- **Pas de promotion production ni de GitHub Release/notification utilisateur.** Restent le Checkout Connect et ses reprises en mode test, E2E POS, XCTest sur runner stable, revue visuelle complète des écrans authentifiés Preview, preuve exacte du SHA déployé, et build iOS aligné. Les fichiers inclus dans le commit release ne sont pas tous validés par revue ligne par ligne.
+
 - L’alerte reçue (« The destination stream closed early. », requête `/en/overview`) correspond à la fermeture d’un flux de rendu RSC; le courriel ne contenait ni frame d’erreur métier ni frame Supabase. Le signal continue d’être capturé dans Sentry, mais `lib/alerts/error-notifier.ts` classe désormais cette seule erreur transport exacte comme non critique pour éviter une alerte email trompeuse. Les erreurs différentes restent alertables.
 - Le checkout natif s’ouvre immédiatement après un ajout depuis le Menu; le code Scanner a été remis en page avec QR/code temporaire, expiration, reprise d’erreur et accès caméra.
 - Validation locale : Vitest 321/321, `tsc --noEmit` et lint ciblé passent. Sur iPhone 17 Pro Simulator, les 2 tests UI ciblés de navigation panier et Scanner passent. La première tentative de tests UI a échoué à cause de sélecteurs de test/accessibilité; ces sélecteurs ont été corrigés et la reprise passe.

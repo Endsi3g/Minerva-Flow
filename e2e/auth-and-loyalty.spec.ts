@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { supabaseAdmin, cleanupTestUser, createTestUser, loginAs, TEST_PASSWORD } from "./fixtures";
 
-test.describe("Auth, Loyalty Focus & Finance Removal", () => {
+test.describe("Auth, Role Navigation & Core Workflows", () => {
+  test.use({ locale: "fr-CA" });
   let createdUserId: string | undefined;
 
   test.afterEach(async () => {
@@ -88,7 +89,7 @@ test.describe("Auth, Loyalty Focus & Finance Removal", () => {
     await expect(page.getByRole("button", { name: user.email })).toBeVisible();
   });
 
-  test("4. essential menu and loyalty workflows remain reachable", async ({ page }) => {
+  test("4. owner core workflows stay visible and their routes remain reachable", async ({ page }) => {
     test.setTimeout(90_000);
     const user = await createTestUser("finance-redirect");
     createdUserId = user.id;
@@ -99,31 +100,29 @@ test.describe("Auth, Loyalty Focus & Finance Removal", () => {
     expect(error).toBeNull();
     await loginAs(page, user);
 
-    // Finance remains outside this release scope; menu and loyalty power
-    // the customer ordering and retention flows and must stay available.
-    await page.goto("/fr/finance");
-    await page.waitForURL(/\/workspace$/, { timeout: 15000 });
-    expect(page.url()).toMatch(/\/workspace$/);
-
-    const financeNavLink = page.locator('aside a[href*="/finance"], nav a[href*="/finance"]');
-    await expect(financeNavLink).toHaveCount(0);
     const primaryNav = page.getByRole("navigation", { name: "Navigation principale" });
+    await expect(primaryNav.getByRole("link", { name: "Aperçu" })).toBeVisible();
+    await expect(primaryNav.getByRole("link", { name: "Flow AI" })).toBeVisible();
     await expect(primaryNav.getByRole("link", { name: "Menu" })).toBeVisible();
     await expect(primaryNav.getByRole("link", { name: "Fidélisation" })).toBeVisible();
 
-    for (const restrictedPath of [
-      "/fr/overview",
-      "/fr/assistant",
-      "/fr/changelog",
-      "/fr/campaigns",
-      "/fr/settings",
-      "/fr/collaborateurs",
-    ]) {
-      await page.goto(restrictedPath);
-      await page.waitForURL(/\/workspace$/, { timeout: 15000 });
-    }
+    const dailyGroup = page.getByRole("button", { name: "Gestion quotidienne" });
+    await expect(dailyGroup).toHaveAttribute("aria-expanded", "false");
+    await dailyGroup.click();
+    await expect(dailyGroup).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByRole("link", { name: "Commandes" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Finance" })).toBeVisible();
 
-    await page.screenshot({ path: "test-results/verified-workspace-restricted-navigation.png", fullPage: true });
+    await page.goto("/fr/menu");
+    await expect(page).toHaveURL(/\/menu$/);
+    await expect(page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Menu" })).toBeVisible();
+    await page.goto("/fr/fidelisation");
+    await expect(page).toHaveURL(/\/fidelisation$/);
+    await expect(page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link", { name: "Fidélisation" })).toBeVisible();
+
+    await page.goto("/fr/unknown-product-route");
+    await page.waitForURL(/\/workspace$/, { timeout: 15000 });
+    await page.screenshot({ path: "test-results/verified-owner-core-navigation.png", fullPage: true });
   });
 
   test("5. Capture login page with new loyalty copy", async ({ page }) => {

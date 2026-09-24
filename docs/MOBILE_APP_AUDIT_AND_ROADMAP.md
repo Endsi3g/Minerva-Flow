@@ -1,6 +1,6 @@
 # Minerva Flow — audit iOS et feuille de route white-label
 
-> **État vérifié le 23 septembre 2026.** Ce document distingue les fonctions existantes, les artefacts locaux et ce qui reste à publier ou valider. Il ne vaut pas approbation de soumission Apple.
+> **État vérifié le 24 septembre 2026.** Ce document distingue les fonctions existantes, les artefacts locaux et ce qui reste à publier ou valider. Il ne vaut pas approbation de soumission Apple.
 
 ## 1. Produit mobile actuel
 
@@ -32,10 +32,10 @@ L’application web reste l’espace d’administration le plus complet. La docu
 | Cible | iPhone et iPad, iOS 17 minimum déclaré dans le projet |
 | Signature/archive | Archive Release signée avec l’équipe configurée; export IPA réussi |
 | Sentry | UUID du framework identique à celui du dSYM de l’archive (`F52B2FE8-3C4B-3651-B5BD-22388DDF800E`, arm64) |
-| Téléversement App Store Connect | **Non effectué** : aucune session/fournisseur App Store Connect autorisé n’était disponible lors du contrôle |
-| Lien bêta fourni | <https://testflight.apple.com/join/xGr45uuF> — son accessibilité ne prouve pas la présence du build 11 |
+| Téléversement App Store Connect | Build `1.0 (11)` traité et actif dans les groupes TestFlight interne et externe (8 testeurs externes) |
+| Lien bêta | <https://testflight.apple.com/join/xGr45uuF> — vérifié HTTP 200; sa réponse seule ne prouve pas qu’un build récent contient les changements source actuels |
 
-Le build 11 existe comme archive et IPA exportés sur le poste de génération; il n’est pas encore installable depuis le groupe TestFlight. Après connexion autorisée à App Store Connect, il reste à téléverser cet IPA, attendre le traitement Apple, associer le build au groupe de test et vérifier la version réellement proposée aux testeurs.
+Le build 11 est installable depuis TestFlight, mais précède les changements source de la candidate `2.48.0`. Il faut créer un nouveau build iOS, valider le binaire et les parcours iOS, téléverser l’archive, attendre le traitement Apple puis confirmer l’installation depuis le groupe externe.
 
 ## 3. Contrôle de conformité effectué
 
@@ -49,10 +49,10 @@ Ce résultat est un contrôle statique, pas une validation « prêt à soumettre
 ## 4. Séquence de téléversement et de vérification
 
 1. Ouvrir App Store Connect avec un compte membre autorisé de l’équipe Apple; ne jamais partager mot de passe ou code 2FA dans ce document.
-2. Vérifier le bundle, la version 1.0 (build 11), l’équipe et les profils de signature.
-3. Téléverser l’IPA de build 11 via Transporter ou Xcode Organizer.
-4. Attendre le traitement Apple et relever le statut exact du build.
-5. L’ajouter au groupe TestFlight souhaité et confirmer le lien avec un appareil de test.
+2. Incrémenter le numéro de build, vérifier bundle, équipe et profils de signature puis compiler la source iOS correspondante au commit web testé.
+3. Lancer les tests UI/XCTest sur un runner stable et exécuter le garde-fou de conformité avant téléversement.
+4. Téléverser le nouvel IPA via Transporter ou Xcode Organizer et attendre le traitement Apple.
+5. L’ajouter au groupe TestFlight externe souhaité et confirmer l’installation et les parcours avec un appareil de test.
 6. Tester au minimum les comptes client et propriétaire, les commandes activées, le code de fidélité, les liens de parrainage, ainsi que l’iPad portrait/paysage.
 7. Examiner les crashs et le dSYM Sentry, puis consigner les captures et résultats avant d’annoncer la mise à jour.
 

@@ -23,26 +23,9 @@ export type SearchableNavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 const managerRoles: Role[] = ["owner", "manager"];
-export const PRIMARY_NAV_KEYS = new Set(["workspace", "menu", "fidelisation", "fournisseurs", "inventaire", "commandes"]);
-
-// Paths restaurant accounts can open directly. The owner requested four
-// accessible app sections; secondary management pages must redirect to the
-// workspace even when someone enters their URL manually. Public customer,
-// authentication, API and system routes use their separate Proxy exceptions.
-export const AUTHENTICATED_PRODUCT_ROOTS = [
-  "/workspace",
-  "/menu",
-  "/fidelisation",
-  "/fournisseurs",
-  "/inventaire",
-  "/commandes",
-] as const;
-
-export function isAuthenticatedProductPath(pathname: string): boolean {
-  return AUTHENTICATED_PRODUCT_ROOTS.some(
-    (root) => pathname === root || pathname.startsWith(`${root}/`)
-  );
-}
+export const PRIMARY_NAV_KEYS = new Set([
+  "overview", "assistant", "menu", "fidelisation", "finance", "commandes", "collaborateurs", "inventaire",
+]);
 
 export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "workspace", href: "/workspace", title: "Workspace", subtitle: "Restaurants et espaces de travail", roles: allRoles },
@@ -74,6 +57,16 @@ export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "changelog", href: "/changelog", title: "Nouveautés", subtitle: "Journal des mises à jour", roles: allRoles },
   { key: "settings", href: "/settings", title: "Paramètres", subtitle: "Configuration de l'établissement", roles: managerRoles },
 ];
+
+// Direct authenticated links and the sidebar share one route catalog.
+// Actions and row-level permissions continue to enforce data boundaries.
+export const AUTHENTICATED_PRODUCT_ROOTS = NAV_ITEMS.map(({ href }) => href);
+
+export function isAuthenticatedProductPath(pathname: string): boolean {
+  return AUTHENTICATED_PRODUCT_ROOTS.some(
+    (root) => pathname === root || pathname.startsWith(`${root}/`)
+  );
+}
 
 export function navItemsForRole(role: Role, sidebarPermissions?: string[] | null): SearchableNavItem[] {
   return NAV_ITEMS.filter(

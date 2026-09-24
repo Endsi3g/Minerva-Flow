@@ -11,8 +11,11 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - L’apparence claire reste le choix initial; les préférences Clair, Système et Sombre utilisent les palettes adaptatives web et iOS.
 
 ### Vérification
-- Tests unitaires : 321 réussis; TypeScript et lint ciblé réussis.
-- Tests UI iOS ciblés (iPhone 17 Pro Simulator) : ajout au panier et Scanner, 2 réussis.
+- Tests unitaires : 330 réussis sur 57 fichiers; TypeScript et lint ciblé réussis.
+- E2E staging : 6/6 réussis — précommande planifiée et cueillette, suggestion/vote client puis brouillon owner, demandes traiteur sur place et livraison, demande owner, conversion de devis payé idempotente.
+- Le succès de précommande a été inspecté à 390 px; aucune largeur horizontale parasite. Captures : [`précommande mobile`](docs/screenshots/changelog-2.48.0-preorder-success-mobile.png) et [`traiteur desktop`](docs/screenshots/changelog-2.48.0-catering-success.png).
+- La compilation Simulator iOS a réussi sur la source récente; XCTest reste bloqué dans le runner Xcode et aucun résultat de test actuel n’est confirmé.
+- Audit App Store statique : 0 risque critique, 0 élevé, 2 avertissements; les déclarations/contrôles manuels avant publication publique restent ouverts.
 - Le build iOS `1.0 (11)` a été traité par Apple, soumis et activé dans les groupes TestFlight interne et externe. Le groupe externe compte 8 testeurs; le lien public `https://testflight.apple.com/join/xGr45uuF` répond HTTP 200. La notification automatique après approbation est activée.
 - Le dSYM de `Sentry.framework` correspond au binaire par UUID, corrigeant l’avertissement de symboles manquants reçu précédemment.
 - Le compte de démonstration fonctionne sur le même backend que l’application native; les identifiants et notes de review sont renseignés dans App Store Connect. Aucun paiement réel n’est requis pour les tests.
@@ -25,7 +28,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Configuration des versements par Stripe Connect; les commissions restent en attente pendant 30 jours et suivent les vérifications prévues.
 - Soumission de contenu UGC liée à un restaurant ayant donné son accord; contrôle avant réutilisation et suivi des liens/vidéos par canal.
 - Les propriétaires peuvent relier leur compte Instagram partenaire pour consulter les statistiques disponibles.
-- Accès produit recentré sur Workspace, Fournisseurs, Inventaire et Commandes; les autres pages authentifiées redirigent vers Workspace.
+- Navigation essentielle limitée à Workspace, Fournisseurs, Inventaire et Commandes; Menu, Fidélisation et les autres pages produit redirigent vers Workspace.
 
 ### Vérification de release
 - Build web local de production réussi, avec upload Sentry, vérification TypeScript et 328 pages statiques générées.

@@ -1,6 +1,6 @@
 # Minerva Flow — guide produit pour restaurateurs et clients
 
-> Guide de référence fonctionnel. Mis à jour le 23 septembre 2026. Les options peuvent varier selon le rôle, le restaurant, le forfait et les intégrations effectivement connectées.
+> Guide de référence fonctionnel. Mis à jour le 24 septembre 2026. Les options peuvent varier selon le rôle, le restaurant, le forfait et les intégrations effectivement connectées.
 
 ## En bref
 
@@ -14,7 +14,7 @@ Ce n’est pas un système de caisse universel qui remplace automatiquement chaq
 
 Le propriétaire crée ou rejoint un espace de travail, ajoute un ou plusieurs restaurants, puis invite ses collaborateurs avec des rôles adaptés. Lorsqu’un espace regroupe plusieurs établissements, le sélecteur permet de passer de l’un à l’autre; les restaurants sont regroupés dans des sections repliables.
 
-Les rôles et autorisations déterminent les pages et les actions disponibles. Les propriétaires et gérants disposent d’une navigation condensée, avec les outils d’exploitation accessibles dans des groupes secondaires. Le personnel reçoit les raccourcis utiles au travail quotidien.
+Les rôles et autorisations déterminent les pages et les actions disponibles. Dans l’espace propriétaire web, la navigation principale est limitée à Workspace, Fournisseurs, Inventaire et Commandes; Menu, Fidélisation et les autres pages produit redirigent vers Workspace. Les accès opérationnels restent soumis au rôle de chaque membre.
 
 ### 2. Suivre le service
 
@@ -74,6 +74,6 @@ Le client partage son lien ou son QR de parrainage. Le canal est conservé au fi
 | Commande/livraison | Précommande planifiée, choix de paiement, cueillette/livraison et tarification serveur par distance + minute estimée configurables | Le restaurant doit activer/configurer le mode; l’estimation actuelle n’est pas une route ou une circulation en temps réel |
 | Marque blanche | Identité de workspace et bases d’interface configurables | Une app iOS/Android autonome par client, entièrement automatisée et prête à publier, reste un objectif de produit, pas une capacité générale à promettre |
 
-## Statut iOS au 23 septembre 2026
+## Statut iOS au 24 septembre 2026
 
-Le build iOS `1.0 (11)` a été archivé et exporté localement. Il prend en charge iPhone et iPad, et le dSYM Sentry de l’archive correspond au framework. **Ce build n’a pas été téléversé sur App Store Connect/TestFlight** : il faut une session App Store Connect autorisée. Le lien bêta existant est [https://testflight.apple.com/join/xGr45uuF](https://testflight.apple.com/join/xGr45uuF); sa présence ne prouve pas que le build 11 y est disponible.
+Le build iOS `1.0 (11)` a été traité par Apple et est actif dans les groupes TestFlight interne et externe (8 testeurs externes); le lien [TestFlight](https://testflight.apple.com/join/xGr45uuF) a été vérifié. Le dSYM Sentry de l’archive correspond au framework. **Le build 11 ne contient pas les changements SwiftUI de la candidate web `2.48.0`**; un build iOS distinct doit être compilé, vérifié et traité par Apple avant que les testeurs puissent les utiliser. La compilation Simulator de cette source a réussi, mais XCTest reste bloqué dans le runner et aucun résultat récent n’est confirmé.

@@ -1,16 +1,17 @@
 # Minerva Flow — Apple Developer, App Store Connect et TestFlight
 
-> État de publication mis à jour le 23 septembre 2026. Les secrets, mots de
+> État de publication mis à jour le 24 septembre 2026. Les secrets, mots de
 > passe, codes 2FA et clés `.p8` ne doivent jamais être collés ici ni envoyés
 > dans une conversation.
 
 ## État actuel — build 1.0 (11)
 
 - L’archive Release a été signée, exportée en IPA et vérifiée pour iPhone/iPad; le dSYM Sentry correspond au framework.
-- Le build **n’a pas été téléversé** à App Store Connect. L’export Xcode a signalé qu’aucun fournisseur/utilisateur App Store Connect n’était authentifié.
-- Le lien bêta communiqué par le propriétaire est <https://testflight.apple.com/join/xGr45uuF>. Il ne faut pas annoncer le build 11 comme disponible tant qu’il n’a pas été traité par Apple et associé au groupe.
-- Le garde-fou de conformité du 23 septembre 2026 : 0 risque critique, 0 risque élevé, 2 points manuels à confirmer (déclaration de chiffrement de l’extension Widget; compte démo, métadonnées/captures, privacy labels, notes et contrats).
-- Pour achever l’envoi, un membre autorisé doit ouvrir App Store Connect/Transporter sur l’ordinateur connecté, se connecter et téléverser l’IPA exporté du build 11. Ne jamais demander ni consigner son mot de passe ou son code 2FA.
+- Le build 11 a été téléversé, traité par Apple et assigné aux groupes TestFlight interne/externe; 8 testeurs externes y ont accès. Le lien <https://testflight.apple.com/join/xGr45uuF> répond HTTP 200 et la notification automatique est configurée.
+- Le build 11 ne contient pas la source de la candidate web/iOS `2.48.0`; un nouveau build iOS doit être compilé et vérifié avant qu’on annonce ces changements aux testeurs.
+- Compilation Simulator récente réussie; XCTest est bloqué dans le runner et aucun résultat actuel n’est confirmé. Aucun build `1.0 (12)` n’a été téléversé.
+- Le garde-fou de conformité du 24 septembre 2026 : 0 risque critique, 0 risque élevé, 2 avertissements (déclaration de chiffrement du widget à confirmer côté build settings; contrôles manuels compte démo, métadonnées/captures, privacy labels, notes et contrats).
+- Pour envoyer le prochain build, un membre autorisé doit ouvrir App Store Connect/Transporter sur l’ordinateur connecté, sélectionner l’archive alignée avec le commit vérifié et l’envoyer. Ne jamais demander ni consigner son mot de passe ou son code 2FA.
 
 ## Références de signature et de fiche
 

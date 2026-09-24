@@ -78,7 +78,7 @@ test.describe("Public scheduled preorders", () => {
     if (restaurantId) await cleanupOrphanRestaurants([restaurantId]);
   });
 
-  test("adds an item, opens checkout from the cart banner, and persists a scheduled pickup", async ({ page }) => {
+  test("adds an item, opens checkout from the cart banner, and persists a scheduled pickup", async ({ page }, testInfo) => {
     test.setTimeout(120_000);
     await loginAs(page, user);
     await page.goto(`/fr/m/${token}`);
@@ -106,6 +106,11 @@ test.describe("Public scheduled preorders", () => {
     await page.locator('input[name="requestedReadyAtLocal"]').fill(requestedReadyAtLocal);
     await page.getByRole("button", { name: /envoyer la commande/i }).click();
     await expect(page.getByText("Commande envoyée")).toBeVisible({ timeout: 15_000 });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByRole("dialog", { name: "Votre commande" })).toBeVisible();
+    await page.getByRole("dialog").screenshot({ path: testInfo.outputPath("preorder-success-mobile.png") });
+    const viewportWidth = await page.locator("body").evaluate((body) => body.scrollWidth);
+    expect(viewportWidth).toBeLessThanOrEqual(390);
 
     const { data: orders, error: orderError } = await supabaseAdmin.from("orders")
       .select("id, status, guest_name, source, fulfillment_mode, payment_status, requested_ready_at, total")
