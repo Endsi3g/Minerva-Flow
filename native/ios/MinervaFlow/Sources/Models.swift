@@ -1,5 +1,18 @@
 import Foundation
 
+struct NativeChangelogEntry: Decodable, Identifiable {
+    let id: String
+    let title: String
+    let description: String
+    let category: String
+    let publishedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, category
+        case publishedAt = "published_at"
+    }
+}
+
 struct NativeOwnerRestaurant: Codable, Identifiable {
     let id: String
     let name: String

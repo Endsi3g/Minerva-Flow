@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A13B7E5C9F20468DAB761002 /* NativeChangelogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13B7E5C9F20468DAB761002 /* NativeChangelogView.swift */; };
 		006EB054257CBD3CCD3F7F25 /* RewardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639E5AD94A1648D1C2D5F907 /* RewardDetailView.swift */; };
 		068DD03953A5F45E4FDDA8F8 /* PointsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */; };
 		08C55E6F7B2E40809D55113E /* IntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */; };
@@ -106,6 +107,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B13B7E5C9F20468DAB761002 /* NativeChangelogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeChangelogView.swift; sourceTree = "<group>"; };
 		02F66981C3B41C8B5FD69ECE /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		03E2365512980AA23003195C /* RestaurantMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantMapView.swift; sourceTree = "<group>"; };
 		09A9F9AA5DBE86F0AA7FC36F /* IntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntroView.swift; sourceTree = "<group>"; };
@@ -254,6 +256,7 @@
 				53C1D3C584B13E05EBD01750 /* MenuView.swift */,
 				810F08C438D507EA2466CE51 /* MinervaFlowApp.swift */,
 				2D70223A1891BFC32372F3C5 /* Models.swift */,
+				B13B7E5C9F20468DAB761002 /* NativeChangelogView.swift */,
 				471F651B424DBE91D0FC0A0E /* MyCardView.swift */,
 				7C5D5FA0DA78F555E677749F /* NativeOwnerOnboardingView.swift */,
 				2AAE34A17A8295B8D5EFC27C /* NotificationManager.swift */,
@@ -555,6 +558,7 @@
 				442C4F1B2892675540E8B8B1 /* MenuView.swift in Sources */,
 				976156E8B4178E6B9A23B0AE /* MinervaFlowApp.swift in Sources */,
 				5C881A86FC3F7D67D6725336 /* Models.swift in Sources */,
+				A13B7E5C9F20468DAB761002 /* NativeChangelogView.swift in Sources */,
 				2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */,
 				E6A052C1285ECD5AE84FE33B /* NativeOwnerOnboardingView.swift in Sources */,
 				3AD982D4339D2835748F8A86 /* NotificationManager.swift in Sources */,

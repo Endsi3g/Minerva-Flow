@@ -24,6 +24,7 @@ struct ProfileView: View {
     @State private var showFavorites = false
     @State private var showCards = false
     @State private var showDiscovery = false
+    @State private var showChangelog = false
 
     private enum HistoryFilter: String, CaseIterable {
         case all, earned, redeemed
@@ -114,6 +115,11 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showDiscovery) {
             RestaurantMapView()
+        }
+        .sheet(isPresented: $showChangelog) {
+            NavigationStack {
+                NativeChangelogView()
+            }
         }
     }
 
@@ -623,6 +629,10 @@ struct ProfileView: View {
                 Divider().padding(.leading, 44)
                 aboutRow(icon: "text.bubble", title: "Donner votre avis") {
                     showSurvey = true
+                }
+                Divider().padding(.leading, 44)
+                aboutRow(icon: "sparkles", title: isFrench ? "Mises à jour" : "Updates") {
+                    showChangelog = true
                 }
                 Divider().padding(.leading, 44)
                 exportDataRow

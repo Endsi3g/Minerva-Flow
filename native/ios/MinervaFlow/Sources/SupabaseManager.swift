@@ -359,6 +359,19 @@ final class SupabaseManager: ObservableObject {
         isResolvingExperience = false
     }
 
+    /// Reads the platform-wide release history. The changelog table's
+    /// authenticated SELECT policy is the access boundary; no restaurant
+    /// data or privileged client is involved.
+    func fetchNativeChangelog() async throws -> [NativeChangelogEntry] {
+        try await client
+            .from("changelog_entries")
+            .select("id, title, description, category, published_at")
+            .order("published_at", ascending: false)
+            .limit(100)
+            .execute()
+            .value
+    }
+
     /// Loads only the owner surface needed by the native shell. RLS policies
     /// on `restaurant_members` and `workspace_brand_settings` remain the
     /// authority; this query does not trust role data supplied by the app.
