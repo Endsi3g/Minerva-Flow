@@ -703,6 +703,7 @@ export type MenuItem = {
   name: string;
   category: string | null;
   price: number;
+  priceOptions?: MenuPriceOption[];
   foodCost: number;
   unitsSold: number;
   active: boolean;
@@ -715,6 +716,14 @@ export type MenuItem = {
   allergensConfirmed?: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+/** A fixed portion/quantity and its total customer-facing price. */
+export type MenuPriceOption = {
+  id: string;
+  label: string;
+  quantity: number;
+  price: number;
 };
 
 /**

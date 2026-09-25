@@ -48,7 +48,7 @@ struct MenuItemDetailView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     titleBlock
 
-                    actionButtons
+            actionButtons
 
                     if let description = item.description {
                         descriptionSection(description)
@@ -90,7 +90,7 @@ struct MenuItemDetailView: View {
             // of yet has no order to remind anyone to finish. Skip entirely
             // if it's already in the cart — no reminder needed for
             // something already acted on.
-            if let cart, (cart.wrappedValue[item.id] ?? 0) == 0 {
+            if let cart, itemCartQuantity(cart.wrappedValue) == 0 {
                 NotificationManager.shared.scheduleMenuViewReminder(itemName: item.name, restaurantName: supabase.restaurantName ?? "votre restaurant")
             }
         }
@@ -156,7 +156,9 @@ struct MenuItemDetailView: View {
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
                 Spacer()
-                Text(String(format: "%.2f $", item.price))
+                Text(item.priceOptions?.isEmpty == false
+                     ? "Dès \(String(format: "%.2f $", (item.priceOptions ?? []).map(\.price).min() ?? 0))"
+                     : String(format: "%.2f $", item.price))
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
@@ -185,10 +187,30 @@ struct MenuItemDetailView: View {
     }
 
     private var actionButtons: some View {
-        HStack(spacing: 10) {
-            if let cart {
-                addToCartControl(cart)
+        VStack(spacing: 10) {
+            if item.priceOptions?.isEmpty == false {
+                priceOptionsPicker
             } else {
+                HStack(spacing: 10) {
+                    if let cart {
+                        addToCartControl(cart)
+                    } else {
+                        unavailableOrderingNotice
+                    }
+                    favoriteButton
+                    reviewButton
+                }
+            }
+            if item.priceOptions?.isEmpty == false {
+                HStack(spacing: 10) {
+                    favoriteButton
+                    reviewButton
+                }
+            }
+        }
+    }
+
+    private var unavailableOrderingNotice: some View {
                 // Reached from cross-restaurant discovery, not the
                 // Commander tab — ordering only works at the restaurant
                 // the customer is actually a member of, so this is
@@ -204,10 +226,9 @@ struct MenuItemDetailView: View {
                 .padding(.vertical, 12)
                 .background(MinervaColor.creamSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
+    }
 
-            favoriteButton
-
+    private var reviewButton: some View {
             Button {
                 showReviewSheet = true
             } label: {
@@ -220,7 +241,53 @@ struct MenuItemDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .buttonStyle(PressableButtonStyle())
             .accessibilityLabel("Écrire un avis")
+    }
+
+    private var priceOptionsPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Choisissez un format")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(MinervaColor.inkSoft)
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                ForEach(item.priceOptions ?? []) { option in
+                    Button {
+                        guard let cart else { return }
+                        let key = nativeMenuCartKey(menuItemId: item.id, priceOptionId: option.id)
+                        let previous = cart.wrappedValue[key] ?? 0
+                        cart.wrappedValue[key] = previous + 1
+                        if previous == 0 { NotificationManager.shared.cancelMenuViewReminder(itemName: item.name) }
+                        dismiss()
+                        onAddToCart?()
+                    } label: {
+                        VStack(spacing: 5) {
+                            Text(option.label)
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundStyle(MinervaColor.ink)
+                            Text(String(format: "%.2f $", option.price))
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(MinervaColor.emeraldDark)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                        .background(MinervaColor.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 11))
+                        .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border, lineWidth: 1))
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                    .disabled(cart == nil)
+                    .accessibilityLabel("\(item.name), format \(option.label), \(String(format: "%.2f", option.price)) dollars")
+                }
+            }
+            if cart == nil {
+                Text("Devenez client de ce restaurant pour commander")
+                    .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
+            }
         }
+    }
+
+    private func itemCartQuantity(_ value: [String: Int]) -> Int {
+        let optionKeys = (item.priceOptions ?? []).map { nativeMenuCartKey(menuItemId: item.id, priceOptionId: $0.id) }
+        let keys = optionKeys.isEmpty ? [item.id] : optionKeys
+        return keys.reduce(0) { $0 + (value[$1] ?? 0) }
     }
 
     /// A real add-to-cart control — quantity in, quantity out of the same

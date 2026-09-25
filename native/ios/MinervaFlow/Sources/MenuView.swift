@@ -24,14 +24,22 @@ struct MenuView: View {
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
     private var cartCount: Int { cart.values.reduce(0, +) }
-    private var cartLines: [(item: NativeMenuItem, quantity: Int)] {
-        supabase.menuItems.compactMap { item in
-            guard let qty = cart[item.id], qty > 0 else { return nil }
-            return (item, qty)
+    private var cartLines: [NativeCartLine] {
+        supabase.menuItems.flatMap { item -> [NativeCartLine] in
+            let options = item.priceOptions ?? []
+            if options.isEmpty {
+                guard let qty = cart[item.id], qty > 0 else { return [] }
+                return [NativeCartLine(key: item.id, item: item, option: nil, quantity: qty)]
+            }
+            return options.compactMap { option in
+                let key = nativeMenuCartKey(menuItemId: item.id, priceOptionId: option.id)
+                guard let qty = cart[key], qty > 0 else { return nil }
+                return NativeCartLine(key: key, item: item, option: option, quantity: qty)
+            }
         }
     }
     private var cartSubtotal: Double {
-        cartLines.reduce(0) { $0 + $1.item.price * Double($1.quantity) }
+        cartLines.reduce(0) { $0 + $1.total }
     }
 
     private var cartStorageKey: String? {
@@ -177,8 +185,10 @@ struct MenuView: View {
         if let key = cartStorageKey,
            let data = UserDefaults.standard.data(forKey: key),
            let savedCart = try? JSONDecoder().decode([String: Int].self, from: data) {
-            let availableItemIds = Set(supabase.menuItems.map(\.id))
-            let validCart = savedCart.filter { availableItemIds.contains($0.key) && $0.value > 0 }
+            let availableCartKeys = Set(supabase.menuItems.flatMap { item in
+                [item.id] + (item.priceOptions ?? []).map { nativeMenuCartKey(menuItemId: item.id, priceOptionId: $0.id) }
+            })
+            let validCart = savedCart.filter { availableCartKeys.contains($0.key) && $0.value > 0 }
             restoredCart = validCart
             cart = validCart
         }
@@ -988,6 +998,8 @@ struct CategoryItemListView: View {
     @Binding var cart: [String: Int]
     var onAddToCart: () -> Void = {}
     @EnvironmentObject var supabase: SupabaseManager
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
 
     var body: some View {
         ScrollView {
@@ -1008,7 +1020,10 @@ struct CategoryItemListView: View {
     }
 
     private func menuRow(_ item: NativeMenuItem) -> some View {
-        let quantity = cart[item.id] ?? 0
+        let options = item.priceOptions ?? []
+        let quantity = options.isEmpty
+            ? (cart[item.id] ?? 0)
+            : options.reduce(0) { $0 + (cart[nativeMenuCartKey(menuItemId: item.id, priceOptionId: $1.id)] ?? 0) }
         let isFavorite = supabase.customer?.favoriteMenuItemIds.contains(item.id) ?? false
 
         return HStack(spacing: 12) {
@@ -1064,7 +1079,9 @@ struct CategoryItemListView: View {
                                 .lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
-                        Text(String(format: "%.2f $", item.price))
+                        Text(options.isEmpty
+                             ? String(format: "%.2f $", item.price)
+                             : "Dès \(String(format: "%.2f $", options.map(\.price).min() ?? 0))")
                             .font(.system(size: 12.5, weight: .semibold))
                             .foregroundStyle(MinervaColor.emeraldDark)
                     }
@@ -1074,7 +1091,7 @@ struct CategoryItemListView: View {
 
             Spacer(minLength: 8)
 
-            stepper(quantity: quantity, itemId: item.id)
+            stepper(quantity: quantity, item: item)
         }
         .padding(12)
         .background(quantity > 0 ? MinervaColor.emerald.opacity(0.06) : MinervaColor.creamSoft)
@@ -1085,13 +1102,28 @@ struct CategoryItemListView: View {
         )
     }
 
-    private func stepper(quantity: Int, itemId: String) -> some View {
+    @ViewBuilder
+    private func stepper(quantity: Int, item: NativeMenuItem) -> some View {
+        if item.priceOptions?.isEmpty == false {
+            NavigationLink {
+                MenuItemDetailView(item: item, restaurantId: item.restaurantId, allItemsInCategory: items, cart: $cart, onAddToCart: onAddToCart)
+            } label: {
+                Label(isFrench ? "Choisir" : "Choose", systemImage: "slider.horizontal.3")
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 9)
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .background(MinervaColor.emerald.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        } else {
         HStack(spacing: 10) {
             if quantity > 0 {
                 Button {
                 let generator = UIImpactFeedbackGenerator(style: .light)
                 generator.impactOccurred()
-                cart[itemId] = max(0, quantity - 1)
+                cart[item.id] = max(0, quantity - 1)
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(.system(size: 22))
@@ -1109,7 +1141,7 @@ struct CategoryItemListView: View {
             Button {
                 let generator = UIImpactFeedbackGenerator(style: .light)
                 generator.impactOccurred()
-                cart[itemId] = quantity + 1
+                cart[item.id] = quantity + 1
                 onAddToCart()
             } label: {
                 Image(systemName: "plus.circle.fill")
@@ -1118,6 +1150,7 @@ struct CategoryItemListView: View {
             }
             .buttonStyle(PressableButtonStyle())
             .accessibilityLabel("Ajouter au panier")
+        }
         }
     }
 }
@@ -1128,7 +1161,7 @@ private let tipPresets: [Double] = [0, 0.10, 0.15, 0.20]
 /// restaurant's available fulfillment/payment choices, then submission
 /// with real success/error states rather than just dismissing and hoping.
 struct CheckoutSheet: View {
-    let lines: [(item: NativeMenuItem, quantity: Int)]
+    let lines: [NativeCartLine]
     let taxRate: Double
     let acceptsTips: Bool
     let canPayAtReceipt: Bool
@@ -1236,14 +1269,14 @@ struct CheckoutSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(spacing: 8) {
-                    ForEach(lines, id: \.item.id) { line in
+                    ForEach(lines) { line in
                         HStack {
-                            Text("\(line.quantity)× \(line.item.name)")
+                            Text(line.option == nil ? "\(line.quantity)× \(line.item.name)" : "\(line.quantity)× \(line.displayName)")
                                 .font(.system(size: 13))
                                 .foregroundStyle(MinervaColor.inkSoft)
                                 .fixedSize(horizontal: false, vertical: true)
                             Spacer(minLength: 8)
-                            Text(String(format: "%.2f $", line.item.price * Double(line.quantity)))
+                            Text(String(format: "%.2f $", line.total))
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(MinervaColor.ink)
                         }
@@ -1597,7 +1630,7 @@ struct CheckoutSheet: View {
                 UserDefaults.standard.set(newAttempt, forKey: checkoutAttemptStorageKey)
             }
         }
-        let cartDict = Dictionary(uniqueKeysWithValues: lines.map { ($0.item.id, $0.quantity) })
+        let cartDict = Dictionary(uniqueKeysWithValues: lines.map { ($0.key, $0.quantity) })
         let result = await supabase.submitOrder(
             cart: cartDict,
             tipAmount: tipAmount,

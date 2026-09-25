@@ -777,12 +777,20 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
-    func updateOwnerMenuItem(_ item: NativeMenuItem, name: String, price: Double, description: String?, active: Bool, allergens: [String], allergensConfirmed: Bool) async -> Bool {
+    func updateOwnerMenuItem(_ item: NativeMenuItem, name: String, price: Double, priceOptions: [NativeMenuPriceOption], description: String?, active: Bool, allergens: [String], allergensConfirmed: Bool) async -> Bool {
         guard let restaurantId = selectedOwnerRestaurantId, name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false, price >= 0 else { return false }
-        if active && item.isDraft == true && (price <= 0 || !allergensConfirmed) { return false }
+        var seenOptionIds = Set<String>()
+        let validOptions = Array(priceOptions.prefix(20).filter {
+            let unique = !$0.id.isEmpty && seenOptionIds.insert($0.id).inserted
+            return unique && !$0.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && (1...999).contains($0.quantity) && $0.price > 0 && $0.price <= 1_000_000 && $0.price.isFinite
+        })
+        let savedPrice = validOptions.map(\.price).min() ?? price
+        if active && item.isDraft == true && (savedPrice <= 0 || !allergensConfirmed) { return false }
         struct Patch: Encodable {
             let name: String
             let price: Double
+            let priceOptions: [NativeMenuPriceOption]
             let description: String?
             let active: Bool
             let isDraft: Bool
@@ -790,6 +798,7 @@ final class SupabaseManager: ObservableObject {
             let allergensConfirmed: Bool
             enum CodingKeys: String, CodingKey {
                 case name, price, description, active, allergens
+                case priceOptions = "price_options"
                 case isDraft = "is_draft"
                 case allergensConfirmed = "allergens_confirmed"
             }
@@ -797,7 +806,8 @@ final class SupabaseManager: ObservableObject {
         do {
             try await client.from("menu_items").update(Patch(
                 name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-                price: price,
+                price: savedPrice,
+                priceOptions: validOptions,
                 description: description?.trimmingCharacters(in: .whitespacesAndNewlines),
                 active: active,
                 isDraft: active ? false : (item.isDraft ?? false),
@@ -1682,12 +1692,16 @@ final class SupabaseManager: ObservableObject {
     /// SDK's own internal decoder), so this is parsed by hand rather than
     /// declared as `Date?` on OrderResponse directly.
     func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?, requestedReadyAt: Date? = nil, payOnline: Bool = false, delivery: DeliveryOrderInfo? = nil, idempotencyKey: String) async -> OrderResult {
-        struct CartLine: Encodable { let menuItemId: String; let quantity: Int }
+        struct CartLine: Encodable { let menuItemId: String; let quantity: Int; let priceOptionId: String? }
         struct OrderBody: Encodable { let cart: [CartLine]?; let tipAmount: Double?; let paymentMethod: String?; let payOnline: Bool?; let delivery: DeliveryOrderInfo?; let requestedReadyAtLocal: String?; let idempotencyKey: String; let resumeOnly: Bool? }
         struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String?; let paymentUrl: String?; let paymentConfirmed: Bool? }
 
-        let lines = cart.compactMap { key, qty -> CartLine? in
-            qty > 0 ? CartLine(menuItemId: key, quantity: qty) : nil
+        let lines = cart.sorted(by: { $0.key < $1.key }).compactMap { key, qty -> CartLine? in
+            guard qty > 0 else { return nil }
+            let parts = key.components(separatedBy: "::")
+            guard let menuItemId = parts.first, !menuItemId.isEmpty else { return nil }
+            let optionId = parts.count > 1 ? parts.dropFirst().joined(separator: "::") : nil
+            return CartLine(menuItemId: menuItemId, quantity: qty, priceOptionId: optionId)
         }
         guard !lines.isEmpty else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false) }
         guard !payOnline || onlinePaymentEnabled else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false) }

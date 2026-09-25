@@ -95,7 +95,7 @@ struct OwnerMenuView: View {
                                 }
                                 Spacer()
                                 VStack(alignment: .trailing, spacing: 4) {
-                                    Text(item.price.cad).font(.subheadline.weight(.semibold)).foregroundStyle(MinervaColor.ink)
+                                    Text(item.priceOptions.flatMap { $0.map(\.price).min() }.map { "À partir de \($0.cad)" } ?? item.price.cad).font(.subheadline.weight(.semibold)).foregroundStyle(MinervaColor.ink)
                                     Text(item.active ? "Active" : "Inactive").font(.caption2.weight(.bold)).foregroundStyle(item.active ? MinervaColor.emeraldDark : .secondary)
                                 }
                             }
@@ -122,6 +122,7 @@ private struct MenuItemEditor: View {
     let item: NativeMenuItem
     @State private var name: String
     @State private var price: String
+    @State private var priceOptions: [NativeMenuPriceOption]
     @State private var description: String
     @State private var allergens: String
     @State private var allergensConfirmed: Bool
@@ -132,6 +133,7 @@ private struct MenuItemEditor: View {
         self.item = item
         _name = State(initialValue: item.name)
         _price = State(initialValue: String(format: "%.2f", item.price))
+        _priceOptions = State(initialValue: item.priceOptions ?? [])
         _description = State(initialValue: item.description ?? "")
         _allergens = State(initialValue: (item.allergens ?? []).joined(separator: ", "))
         _allergensConfirmed = State(initialValue: item.allergensConfirmed ?? false)
@@ -141,33 +143,49 @@ private struct MenuItemEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Item") {
+                Section("Article") {
                     TextField("Name", text: $name)
-                    TextField("Price", text: $price).keyboardType(.decimalPad)
+                    TextField(priceOptions.isEmpty ? "Prix" : "Prix de départ (formats ci-dessous)", text: $price).keyboardType(.decimalPad)
                     TextField("Description", text: $description, axis: .vertical).lineLimit(3...6)
                 }
-                Section("Availability") { Toggle("Available to customers", isOn: $active) }
-                Section("Allergens & safety") {
-                    TextField("Allergens, comma-separated", text: $allergens, axis: .vertical).lineLimit(2...4)
-                    Toggle("Allergen information checked", isOn: $allergensConfirmed)
+                Section("Formats et prix") {
+                    Text("Ajoutez des choix fixes, comme 3, 6 ou 9. Le prix total du format choisi est utilisé pour la commande.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    ForEach($priceOptions) { $option in
+                        HStack(spacing: 8) {
+                            TextField("Format", text: $option.label).frame(minWidth: 70)
+                            TextField("Qté", value: $option.quantity, format: .number).keyboardType(.numberPad).frame(width: 54)
+                            TextField("Prix", value: $option.price, format: .number.precision(.fractionLength(2))).keyboardType(.decimalPad).frame(width: 86)
+                            Button(role: .destructive) { priceOptions.removeAll { $0.id == option.id } } label: { Image(systemName: "trash") }
+                                .accessibilityLabel("Retirer le format \(option.label)")
+                        }
+                    }
+                    Button { priceOptions.append(NativeMenuPriceOption(id: UUID().uuidString.lowercased(), label: "", quantity: 1, price: 0.01)) } label: {
+                        Label("Ajouter un format", systemImage: "plus")
+                    }.disabled(priceOptions.count >= 20)
+                }
+                Section("Disponibilité") { Toggle("Disponible aux clients", isOn: $active) }
+                Section("Allergènes et sécurité") {
+                    TextField("Allergènes, séparés par des virgules", text: $allergens, axis: .vertical).lineLimit(2...4)
+                    Toggle("Renseignements sur les allergènes vérifiés", isOn: $allergensConfirmed)
                 }
                 if item.isDraft == true {
                     Section {
-                        Text("This customer idea stays hidden from the live menu until you complete its price and confirm allergen information, then mark it available.")
+                        Text("Ce brouillon reste caché tant qu’un prix (ou des formats tarifés) et les renseignements sur les allergènes ne sont pas confirmés.")
                             .font(.caption).foregroundStyle(MinervaColor.inkSoft)
-                    } header: { Text("Draft review") }
+                    } header: { Text("Vérification du brouillon") }
                 }
             }
-            .navigationTitle("Edit item")
+            .navigationTitle("Modifier l’article")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Annuler") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Saving…" : "Save") {
+                    Button(saving ? "Enregistrement…" : "Enregistrer") {
                         guard let amount = Double(price.replacingOccurrences(of: ",", with: ".")) else { return }
                         saving = true
                         Task {
                             let parsedAllergens = allergens.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-                            let ok = await supabase.updateOwnerMenuItem(item, name: name, price: amount, description: description, active: active, allergens: parsedAllergens, allergensConfirmed: allergensConfirmed)
+                            let ok = await supabase.updateOwnerMenuItem(item, name: name, price: amount, priceOptions: priceOptions, description: description, active: active, allergens: parsedAllergens, allergensConfirmed: allergensConfirmed)
                             saving = false
                             if ok { dismiss() }
                         }

@@ -490,6 +490,30 @@ enum BirthdayOfferEligibility {
     }
 }
 
+struct NativeMenuPriceOption: Codable, Identifiable, Hashable {
+    let id: String
+    var label: String
+    var quantity: Int
+    var price: Double
+}
+
+struct NativeCartLine: Identifiable {
+    let key: String
+    let item: NativeMenuItem
+    let option: NativeMenuPriceOption?
+    let quantity: Int
+
+    var id: String { key }
+    var unitPrice: Double { option?.price ?? item.price }
+    var displayName: String { option.map { "\(item.name) · \($0.label)" } ?? item.name }
+    var total: Double { unitPrice * Double(quantity) }
+}
+
+func nativeMenuCartKey(menuItemId: String, priceOptionId: String? = nil) -> String {
+    guard let priceOptionId, !priceOptionId.isEmpty else { return menuItemId }
+    return "\(menuItemId)::\(priceOptionId)"
+}
+
 struct NativeMenuItem: Codable, Identifiable {
     let id: String
     let restaurantId: String
@@ -503,6 +527,7 @@ struct NativeMenuItem: Codable, Identifiable {
     var isDraft: Bool? = nil
     var allergens: [String]? = nil
     var allergensConfirmed: Bool? = nil
+    var priceOptions: [NativeMenuPriceOption]? = nil
 
     /// Every photo available for the carousel — the single legacy
     /// image_url first (if it isn't already duplicated in image_urls),
@@ -522,6 +547,7 @@ struct NativeMenuItem: Codable, Identifiable {
         case name, category, price, description, active, allergens
         case isDraft = "is_draft"
         case allergensConfirmed = "allergens_confirmed"
+        case priceOptions = "price_options"
         case imageUrl = "image_url"
         case imageUrls = "image_urls"
     }

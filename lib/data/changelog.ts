@@ -49,6 +49,13 @@ function normalizeTitle(title: string): string {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-09-25-order-format-choices",
+    title: "Choisissez le format qui vous convient",
+    description: `Quand un restaurant propose plusieurs formats, les quantités et les prix totaux sont maintenant présentés clairement dans le menu. Choisissez un format pour l’ajouter au panier, puis vérifiez-le avant de commander.`,
+    category: "amelioration",
+    publishedAt: "2026-09-25T19:00:00.000Z",
+  },
+  {
     id: "ch-2026-09-25-preorders-quotes",
     title: "Précommandes et devis traiteur",
     description: `- **Précommandes** : les clients peuvent choisir un créneau futur pour le ramassage et suivre les prochaines étapes après l’envoi.

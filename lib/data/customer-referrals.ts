@@ -16,7 +16,7 @@ import { getPublicCheckoutOptions } from "@/lib/orders/checkout-options";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { computeEstimatedReadyAt } from "@/lib/orders/eta";
 import { validateRequestedReadyAt } from "@/lib/orders/scheduling";
-import type { CustomerReferralLink, ReferralProgram, OrderFulfillmentMode } from "@/lib/types";
+import type { CustomerReferralLink, MenuPriceOption, ReferralProgram, OrderFulfillmentMode } from "@/lib/types";
 
 export type ReferralLinkTracking = {
   link: CustomerReferralLink;
@@ -492,6 +492,7 @@ export async function creditReferralConversionForOrder(orderId: string): Promise
 export type PublicOrderCartLine = {
   menuItemId: string;
   quantity: number;
+  priceOptionId?: string | null;
 };
 
 export type PublicOrderGuestInfo = {
@@ -563,8 +564,8 @@ function publicOrderRequestFingerprint(input: {
     menuToken: input.menuToken,
     referralCode: input.referralCode?.trim() || null,
     cart: input.cart
-      .map((line) => ({ menuItemId: line.menuItemId, quantity: line.quantity }))
-      .sort((a, b) => a.menuItemId.localeCompare(b.menuItemId)),
+      .map((line) => ({ menuItemId: line.menuItemId, priceOptionId: line.priceOptionId ?? null, quantity: line.quantity }))
+      .sort((a, b) => `${a.menuItemId}:${a.priceOptionId ?? ""}`.localeCompare(`${b.menuItemId}:${b.priceOptionId ?? ""}`)),
     guestInfo: {
       guestName: input.guestInfo.guestName.trim(),
       guestPhone: input.guestInfo.guestPhone?.trim() || null,
@@ -666,7 +667,7 @@ export async function submitPublicOrder(
   invitationChannelInput?: string | null
 ): Promise<SubmitPublicOrderResult> {
   if (!Array.isArray(cart) || cart.length === 0 || cart.length > 100
-      || cart.some((line) => !line || typeof line.menuItemId !== "string" || !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > 99)
+      || cart.some((line) => !line || typeof line.menuItemId !== "string" || !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > 99 || (line.priceOptionId != null && (typeof line.priceOptionId !== "string" || line.priceOptionId.length > 80)))
       || !guestInfo || typeof guestInfo.guestName !== "string" || !guestInfo.guestName.trim()) return { ok: false };
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
     return { ok: false };
@@ -747,7 +748,7 @@ export async function submitPublicOrder(
     getRestaurantOrderSettings(admin, restaurantId),
     admin
       .from("menu_items")
-      .select("id, name, price")
+      .select("id, name, price, price_options")
       .eq("restaurant_id", restaurantId)
       .eq("active", true)
       .in(
@@ -771,7 +772,9 @@ export async function submitPublicOrder(
   if (!schedule.ok) return { ok: false };
 
   const menuItemById = new Map(
-    ((menuItemsResult.data as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
+    ((menuItemsResult.data as { id: string; name: string; price: number; price_options?: MenuPriceOption[] }[]) ?? []).map((r) => [r.id, {
+      id: r.id, name: r.name, price: Number(r.price), priceOptions: r.price_options ?? [],
+    }])
   );
 
   const pricing = computeOrderPricing({
@@ -859,6 +862,7 @@ export async function submitPublicOrder(
       item_name: line.itemName,
       unit_price: line.unitPrice,
       quantity: line.quantity,
+      price_option_id: line.priceOptionId ?? null,
     })),
   });
   const checkout = (checkoutRows as PublicOrderCheckoutRow[] | null)?.[0];

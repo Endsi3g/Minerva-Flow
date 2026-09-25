@@ -4,6 +4,7 @@ import { logActivity } from "@/lib/data/activity";
 import { notifyFavoritedItemAvailable } from "@/lib/favorites/notify";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MenuItem } from "@/lib/types";
+import { normalizeMenuPriceOptions } from "@/lib/menu-pricing";
 
 export type MenuItemRow = {
   id: string;
@@ -11,6 +12,7 @@ export type MenuItemRow = {
   name: string;
   category: string | null;
   price: number;
+  price_options?: unknown;
   food_cost: number;
   units_sold: number;
   active: boolean;
@@ -32,6 +34,7 @@ export function mapMenuItem(row: MenuItemRow): MenuItem {
     name: row.name,
     category: row.category,
     price: row.price,
+    priceOptions: normalizeMenuPriceOptions(row.price_options),
     foodCost: row.food_cost,
     unitsSold: row.units_sold,
     active: row.active,
@@ -90,6 +93,7 @@ export type MenuItemInput = {
   name: string;
   category?: string | null;
   price: number;
+  priceOptions?: MenuItem["priceOptions"];
   foodCost: number;
   description?: string | null;
   active?: boolean;
@@ -109,6 +113,7 @@ export async function createMenuItem(restaurantId: string, input: MenuItemInput)
       name: input.name,
       category: input.category ?? null,
       price: input.price,
+      price_options: normalizeMenuPriceOptions(input.priceOptions),
       food_cost: input.foodCost,
       description: input.description ?? null,
       active: input.isDraft ? false : (input.active ?? true),
@@ -150,6 +155,7 @@ export async function createMenuItems(restaurantId: string, inputs: MenuItemInpu
     name: input.name,
     category: input.category ?? null,
     price: input.price,
+    price_options: normalizeMenuPriceOptions(input.priceOptions),
     food_cost: input.foodCost,
     description: input.description ?? null,
     active: input.isDraft ? false : (input.active ?? true),
@@ -191,14 +197,16 @@ export async function updateMenuItem(
   if (patch.active === true) {
     const { data: current, error: currentError } = await supabase
       .from("menu_items")
-      .select("active, is_draft, price, allergens_confirmed")
+      .select("active, is_draft, price, price_options, allergens_confirmed")
       .eq("restaurant_id", restaurantId)
       .eq("id", id)
       .maybeSingle();
     if (currentError || !current) return null;
-    const currentRow = current as { active: boolean; is_draft: boolean; price: number; allergens_confirmed: boolean };
+    const currentRow = current as { active: boolean; is_draft: boolean; price: number; price_options: unknown; allergens_confirmed: boolean };
     currentDraft = currentRow.is_draft;
-    if (currentDraft && (!(Number(currentRow.price) > 0) || !currentRow.allergens_confirmed)) return null;
+    const effectivePrice = patch.price ?? Number(currentRow.price);
+    const effectiveOptions = patch.priceOptions ?? normalizeMenuPriceOptions(currentRow.price_options);
+    if (currentDraft && (!(effectivePrice > 0 || normalizeMenuPriceOptions(effectiveOptions).length > 0) || !currentRow.allergens_confirmed)) return null;
     wasInactive = currentRow.active === false;
   }
 
@@ -206,6 +214,7 @@ export async function updateMenuItem(
   if (patch.name !== undefined) dbPatch.name = patch.name;
   if (patch.category !== undefined) dbPatch.category = patch.category;
   if (patch.price !== undefined) dbPatch.price = patch.price;
+  if (patch.priceOptions !== undefined) dbPatch.price_options = normalizeMenuPriceOptions(patch.priceOptions);
   if (patch.foodCost !== undefined) dbPatch.food_cost = patch.foodCost;
   if (patch.description !== undefined) dbPatch.description = patch.description;
   if (patch.active !== undefined) dbPatch.active = patch.active;

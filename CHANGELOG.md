@@ -4,6 +4,17 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 
 ## [Non publié] — Vérifications du 2026-09-25
 
+### Côté propriétaire — Formats et tarification du menu
+- L’app native et le tableau de bord permettent de configurer plusieurs formats par article, avec une quantité et un prix total pour chaque choix.
+- Le prix de départ est aligné sur le format le moins cher; les formats peuvent être modifiés avant activation du brouillon.
+- La commande vérifie le format sélectionné et son prix côté serveur avant de calculer le total.
+- **État de livraison** : l’interface et la migration `0151_menu_item_price_options.sql` sont prêtes. La migration doit être appliquée en production avant que cette option fonctionne sur les comptes réels.
+
+### Côté client — Choisir un format avant de commander
+- Lorsqu’un restaurant propose plusieurs formats, le client voit les quantités et les prix totaux, choisit son format dans le menu et le retrouve dans son panier avant de confirmer.
+- Le prix présenté est recalculé à partir du format configuré par le restaurant.
+- La note client est volontairement séparée des réglages propriétaire; elle ne décrit que le parcours de commande.
+
 ### Fiabilité et application iOS
 - Les fermetures de flux RSC Next.js exactement reconnues comme `The destination stream closed early.` restent transmises à Sentry pour diagnostic, mais ne déclenchent plus de fausse alerte par courriel « critique ».
 - Sentry web et iOS pointent maintenant vers des projets dédiés de l’organisation `minerva-s5m`; les événements d’erreur sont actifs, tandis que la collecte de PII, les corps HTTP, les journaux Sentry et Replay sont désactivés par défaut.

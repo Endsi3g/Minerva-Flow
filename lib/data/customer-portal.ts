@@ -24,6 +24,7 @@ import type {
   CustomerReferralLink,
   LoyaltyReward,
   LoyaltyTransaction,
+  MenuPriceOption,
   OrderSource,
   ReferralProgram,
   RewardRedemption,
@@ -269,6 +270,7 @@ export async function deleteMyAccount(userId: string): Promise<boolean> {
 export type PortalOrderCartLine = {
   menuItemId: string;
   quantity: number;
+  priceOptionId?: string | null;
 };
 
 export async function getPortalDeliveryQuote(customer: Customer, address: string): Promise<DeliveryQuote> {
@@ -323,8 +325,8 @@ function portalOrderFingerprint(input: {
     customerId: input.customer.id,
     userId: input.customer.userId,
     source: input.source,
-    cart: input.cart.map((line) => ({ menuItemId: line.menuItemId, quantity: line.quantity }))
-      .sort((a, b) => a.menuItemId.localeCompare(b.menuItemId)),
+    cart: input.cart.map((line) => ({ menuItemId: line.menuItemId, priceOptionId: line.priceOptionId ?? null, quantity: line.quantity }))
+      .sort((a, b) => `${a.menuItemId}:${a.priceOptionId ?? ""}`.localeCompare(`${b.menuItemId}:${b.priceOptionId ?? ""}`)),
     tipAmount: Math.round(input.tipAmount * 100) / 100,
     paymentMethod: input.paymentMethod?.trim() || null,
     deliveryAddress: input.delivery?.address.trim() || null,
@@ -437,7 +439,7 @@ export async function submitPortalOrder(
   payOnline = false
 ): Promise<SubmitPortalOrderResult> {
   if (!Array.isArray(cart) || cart.length === 0 || cart.length > 100
-      || cart.some((line) => !line || typeof line.menuItemId !== "string" || !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > 99)
+      || cart.some((line) => !line || typeof line.menuItemId !== "string" || !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > 99 || (line.priceOptionId != null && (typeof line.priceOptionId !== "string" || line.priceOptionId.length > 80)))
       || !customer.userId
       || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) return { ok: false };
 
@@ -494,7 +496,7 @@ export async function submitPortalOrder(
     getRestaurantOrderSettings(admin, customer.restaurantId),
     admin
       .from("menu_items")
-      .select("id, name, price")
+      .select("id, name, price, price_options")
       .eq("restaurant_id", customer.restaurantId)
       .eq("active", true)
       .in(
@@ -517,7 +519,9 @@ export async function submitPortalOrder(
   if (!schedule.ok) return { ok: false };
 
   const menuItemById = new Map(
-    ((menuItemsResult.data as { id: string; name: string; price: number }[]) ?? []).map((r) => [r.id, r])
+    ((menuItemsResult.data as { id: string; name: string; price: number; price_options?: MenuPriceOption[] }[]) ?? []).map((r) => [r.id, {
+      id: r.id, name: r.name, price: Number(r.price), priceOptions: r.price_options ?? [],
+    }])
   );
 
   const pricing = computeOrderPricing({
@@ -590,6 +594,7 @@ export async function submitPortalOrder(
       item_name: line.itemName,
       unit_price: line.unitPrice,
       quantity: line.quantity,
+      price_option_id: line.priceOptionId ?? null,
     })),
   });
   const checkout = (checkoutRows as PortalCheckoutRow[] | null)?.[0];
