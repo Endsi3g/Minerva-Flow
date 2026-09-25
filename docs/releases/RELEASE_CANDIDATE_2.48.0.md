@@ -1,13 +1,15 @@
 # Release candidate — Minerva Flow 2.48.0
 
-**État : candidat web `2.48.0` — code poussé au commit `1a63de8` (inclut changelog illustré, options de prix et correction Auth); Preview exact `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` READY et son journal confirme ce SHA. `/en/login` a été contrôlé avec Chromium bureau/mobile, en anglais, sans erreur JS ni overflow. Trois E2E staging retentés ont échoué avant assertions. Migrations 0150/0151 appliquées et vérifiées en production, mais application web non promue : Stripe Connect reste non fonctionnel de bout en bout et les tests POS ne sont pas exécutables. L’archive native `1.0.0 (12)` est téléversée à App Store Connect; traitement Apple et disponibilité testeurs restent à confirmer.**
+**État : web `2.48.0` déployé en Production depuis le commit `3521ec4`; déploiement exact `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9` READY, domaines `minervaflow.app` et `www.minervaflow.app` rattachés. L’option Connect est explicitement « Non configuré — bientôt disponible » et reste désactivée jusqu’à la configuration live; le parcours Connect n’est donc pas annoncé comme fonctionnel. Les routes `/login` et `/en/login` répondent 200, mais l’inspection authentifiée et visuelle du réglage n’a pas pu être faite. POS non testable/reporté. Build iOS `1.0.0 (12)` téléversé à Apple, mais le traitement et l’affectation aux groupes restent à confirmer; XCTest sans résultat confirmé.**
 Date de préparation : 2026-09-24.
 Dernière vérification : 2026-09-25.
 Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
 
 ### Actions de livraison encore ouvertes — 2026-09-25
 
-- [ ] Web production : 0150/0151 sont appliquées; ne pas promouvoir avant paiement Connect test réussi avec capacités actives, POS et E2E authentifiés réussis sur staging isolé, puis revue complète. Le code 0151 n’est pas en production et les articles Mains Magique restent à configurer. Production actuelle confirmée `dpl_A35dLpmKawVPfxhp9rWEWSiVcRLc` / commit `f969e15`.
+- [x] Web Production déployé avec le garde de disponibilité Connect désactivant le paiement en ligne en l’absence de configuration : `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9`, commit `3521ec4`. Smoke HTTP canonique `/login` et `/en/login` = 200; 0 erreur runtime Vercel observée dans les 15 premières minutes.
+- [ ] Stripe Connect : clé live absente de Vercel Production et compte test restreint; aucun checkout Connect n’est déclaré fonctionnel. Configurer la clé par un canal secret Vercel et un compte connecté actif, puis valider un paiement autorisé avant d’activer les paiements en ligne.
+- [ ] POS et E2E authentifiés : POS reportés comme demandé; E2E staging précédent échoué avant assertions et Preview utilise des ressources Supabase de production, donc aucune écriture distante lancée.
 - [ ] iOS/TestFlight : build `1.0.0 (12)` archivé, signé, dSYM vérifié et téléversé avec succès. Confirmer le traitement Apple, l’assignation au groupe externe et l’accès des testeurs; XCTest reste à relancer sur un runner stable. L’audit statique rapporte 0 critique, 0 élevé et 2 avertissements.
 - [ ] Après ces validations, finaliser le changelog/release et l’envoi de courriel aux utilisateurs consentants; aucune notification n’a été envoyée.
 - [x] Build Vercel du Preview courant compilé et READY; Sentry a téléversé les source maps et créé la release associée au SHA candidat. Le build local précédent (Webpack, 328 routes) a terminé avec le code 0.
@@ -16,7 +18,7 @@ Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
 
 | Cible | Sortie proposée | État |
 | --- | --- | --- |
-| Web | `2.48.0` | Preview `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` READY pour `1a63de8`; images changelog accessibles; `/en/login` vérifiée; migrations 0150/0151 appliquées en production; promotion toujours bloquée par les tests fonctionnels ci-dessous |
+| Web | `2.48.0` | Production `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9` READY pour `3521ec4`; domain aliases actifs; paiement Connect explicitement désactivé jusqu’à configuration; E2E authentifié visuel incomplet |
 | iOS / TestFlight | `1.0.0 (12)` | Téléversé à App Store Connect le 2026-09-25; traitement et assignation aux groupes en attente. `1.0 (11)` reste le dernier build confirmé chez les testeurs |
 | GitHub Release + changelog | `v2.48.0` | Notes FR/EN préparées; publication bloquée jusqu’à la capture réelle jointe comme asset |
 | Android / Google Play | Aucune | Aucun projet Android ni pipeline Android trouvé dans le dépôt |
@@ -110,4 +112,4 @@ Capture issue du vrai parcours public de demande traiteur, vérifié sur staging
 - 335 tests unitaires et E2E staging (6/6), reprise précommande/traiteur (2/2) et E2E owner Paramètres/Intégrations (1/1) passent. Aucun paiement Stripe Connect complet n’est confirmé : le destinataire de test ne possède pas de capacité de transfert (`insufficient_capabilities_for_transfer`). Les E2E POS ne sont pas terminés.
 - La migration 0150 est appliquée et vérifiée en staging et production; le journal production l’enregistre sous `20260925191042`. 0151 est appliquée en production (`20260925184354`). L’historique distant diverge du dépôt; ne pas lancer `supabase db push`.
 - Le build `1.0.0 (12)` a été téléversé à App Store Connect; son traitement et son activation TestFlight restent en attente. Aucun tag, release GitHub ni courriel utilisateur n’a été émis.
-- **Décision : NOT READY pour la production et TestFlight.** 0150/0151 sont présentes en production, mais restent un paiement/réessai Stripe avec destinataire actif, POS E2E, reprise E2E authentifiée staging, revue visuelle complète, XCTest stable, contrôles App Store et nouveau binaire iOS.
+- **Décision : Web Production déployé avec conditions; Stripe Connect n’est pas disponible pour accepter des paiements.** Restent à faire : configurer Stripe live et valider le paiement avant activation, reprendre les E2E POS/staging selon disponibilité, vérifier visuellement le parcours propriétaire en session authentifiée. TestFlight : build 12 téléversé, mais statut Apple/groupes et XCTest restent non confirmés.

@@ -4,6 +4,10 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 
 ## [Non publié] — Vérifications du 2026-09-25
 
+### Publication Web — 2026-09-25
+- La web app `2.48.0` est déployée en production depuis `3521ec4` (Vercel `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9`). Les routes de connexion française et anglaise répondent 200.
+- Stripe Connect est explicitement indiqué « Non configuré — bientôt disponible » et demeure désactivé en l’absence de clé live/capacités actives. Aucune transaction en ligne Connect n’est promise ni validée; les tests POS restent reportés.
+
 ### Build iOS — TestFlight
 - Archive native **1.0.0 (12)** créée et téléversée avec succès à App Store Connect le 2026-09-25. Le numéro de build est `12`; la version marketing reste `1.0.0` dans l’app et son widget.
 - Le téléversement est confirmé par Xcode; le traitement Apple et la disponibilité du build pour les groupes TestFlight restent à confirmer dans App Store Connect. Ce build n’est pas encore annoncé comme installable.
