@@ -168,6 +168,25 @@
     "searchSuggestedHeading": "Pages suggérées"
   },
   "auth": {
+    "modeLogin": "Se connecter",
+    "modeSignup": "Créer un compte",
+    "continueWithApple": "Continuer avec Apple",
+    "continueWithGoogle": "Continuer avec Google",
+    "orContinueWithEmail": "Ou continuer par courriel",
+    "forgotShort": "Oublié ?",
+    "submitting": "Connexion…",
+    "continueSignup": "Continuer",
+    "securityNote": "Sécurisé · Vos données d'exploitation restent protégées",
+    "panel": {
+      "loginHeadline": "Pilotez votre restaurant en toute sérénité.",
+      "signupHeadline": "Vos revenus, votre équipe et votre IA réunis.",
+      "point1Title": "75 % à 100 % de revisite client",
+      "point1Description": "Faites revenir vos clients sans budget publicitaire grâce à des programmes de fidélité éprouvés.",
+      "point2Title": "Une app mobile pour votre carte et votre menu",
+      "point2Description": "Offrez à vos clients une carte de fidélité sur leur téléphone, un menu interactif et des récompenses.",
+      "point3Title": "Un copilote IA pour vos chiffres et vos clients",
+      "point3Description": "Repérez les clients qui s'éloignent et envoyez la bonne offre au bon moment."
+    },
     "login": {
       "title": "Bon retour",
       "subtitle": "Connectez-vous à votre cockpit Minerva Flow."

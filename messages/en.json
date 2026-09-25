@@ -160,6 +160,33 @@
     "openChatAria": "Open AI Chat"
   },
   "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your Minerva Flow workspace."
+    },
+    "signup": {
+      "title": "Create your account",
+      "subtitle": "Start managing your restaurant today."
+    },
+    "modeLogin": "Sign in",
+    "modeSignup": "Create an account",
+    "continueWithApple": "Continue with Apple",
+    "continueWithGoogle": "Continue with Google",
+    "orContinueWithEmail": "Or continue with email",
+    "forgotShort": "Forgot?",
+    "submitting": "Signing in…",
+    "continueSignup": "Continue",
+    "securityNote": "Secure · Your operational data stays protected",
+    "panel": {
+      "loginHeadline": "Run your restaurant with confidence.",
+      "signupHeadline": "Your revenue, team, and AI in one place.",
+      "point1Title": "75% to 100% customer return rate",
+      "point1Description": "Bring customers back without ad spend using proven loyalty programs.",
+      "point2Title": "A mobile app for your loyalty card and menu",
+      "point2Description": "Give customers a loyalty card on their phone, an interactive menu, and rewards.",
+      "point3Title": "An AI copilot for your numbers and customers",
+      "point3Description": "Spot customers who are drifting away and send the right offer at the right time."
+    },
     "signInTitle": "Sign In",
     "signInSubtitle": "Access your Minerva Flow workspace",
     "emailLabel": "Email",
@@ -186,7 +213,7 @@
     "noAccount": "Don't have an account? ",
     "hasAccount": "Already have an account? ",
     "createAccount": "Create an account",
-    "termsAgreement": "By continuing, you agree to our Terms of Service and Privacy Policy.",
+    "termsAgreement": "By continuing, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>.",
     "errorPasswordMismatch": "Passwords do not match.",
     "errorInvalidCredentials": "The password or email is incorrect. Please try again.",
     "errorGoogleAccount": "This account was created with Google. Please click 'Continue with Google' above.",

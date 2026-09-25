@@ -278,6 +278,7 @@ describe("submitPublicOrder", () => {
       item_name: menuItem.name,
       unit_price: menuItem.price,
       quantity: 2,
+      price_option_id: null,
     }]);
   });
 

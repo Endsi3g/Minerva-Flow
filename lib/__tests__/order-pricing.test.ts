@@ -25,8 +25,8 @@ describe("computeOrderPricing", () => {
     expect(result!.tipAmount).toBe(5);
     expect(result!.total).toBeCloseTo(45.24, 2);
     expect(result!.lineItems).toEqual([
-      { menuItemId: "item-1", itemName: "Burger", unitPrice: 15, quantity: 2 },
-      { menuItemId: "item-2", itemName: "Frites", unitPrice: 5, quantity: 1 },
+      { menuItemId: "item-1", itemName: "Burger", unitPrice: 15, quantity: 2, priceOptionId: null },
+      { menuItemId: "item-2", itemName: "Frites", unitPrice: 5, quantity: 1, priceOptionId: null },
     ]);
   });
 

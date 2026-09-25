@@ -13,21 +13,6 @@ import { AuthShell } from "@/components/auth/AuthShell";
 import { cn } from "@/lib/utils";
 import { signUpAction, checkEmailAuthMethodAction } from "@/app/[locale]/sign-up/actions";
 
-const PANEL_POINTS = [
-  {
-    title: "75 % à 100 % de revisite client",
-    description: "Faites revenir vos clients sans budget pub grâce aux mécaniques de fidélisation éprouvées.",
-  },
-  {
-    title: "Une appplication mobile pour votre carte de fidelite et votre menu.",
-    description: "Une application simple pour vos clients : une carte fidélité dans leur téléphone en un tap et un menu interactif et des recompenses .",
-  },
-  {
-    title: "Un copilote IA qui analyse vos chiffres et vos clients .",
-    description: "Détecte les clients qui s'éloignent et envoie la bonne offre au bon moment.",
-  },
-];
-
 type AuthParams = {
   referralCode: string | null;
   ambassadorCode: string | null;
@@ -71,6 +56,12 @@ function AuthCardInner({
   const [isLoading, setIsLoading] = useState(false);
 
   const { referralCode, ambassadorCode, ambassadorLinkSlug, inviteToken, workspaceInviteToken } = authParams;
+
+  const panelPoints = [
+    { title: t("panel.point1Title"), description: t("panel.point1Description") },
+    { title: t("panel.point2Title"), description: t("panel.point2Description") },
+    { title: t("panel.point3Title"), description: t("panel.point3Description") },
+  ];
 
   const postAuthPath = workspaceInviteToken
     ? `/invite/w/${workspaceInviteToken}`
@@ -200,19 +191,14 @@ function AuthCardInner({
     <AuthShell
       step={mode === "signup" ? { current: 1, total: 2, label: "Compte" } : undefined}
       panelKey={mode}
-      panelHeadline={mode === "login" ? "Pilotez votre restaurant, sereinement." : "Vos revenus, votre équipe, votre IA — en un seul endroit."}
-      panelPoints={PANEL_POINTS}
+      panelHeadline={mode === "login" ? t("panel.loginHeadline") : t("panel.signupHeadline")}
+      panelPoints={panelPoints}
       footer={
         <p className="text-center text-[11.5px] leading-relaxed text-mv-ink-faint">
-          En continuant, vous acceptez les{" "}
-          <Link href="/legal/terms" className="font-medium text-mv-ink-soft underline underline-offset-2 hover:text-mv-ink">
-            Conditions d&apos;utilisation
-          </Link>{" "}
-          et la{" "}
-          <Link href="/legal/privacy" className="font-medium text-mv-ink-soft underline underline-offset-2 hover:text-mv-ink">
-            Politique de confidentialité
-          </Link>
-          .
+          {t.rich("termsAgreement", {
+            terms: (chunks) => <Link href="/legal/terms" className="font-medium text-mv-ink-soft underline underline-offset-2 hover:text-mv-ink">{chunks}</Link>,
+            privacy: (chunks) => <Link href="/legal/privacy" className="font-medium text-mv-ink-soft underline underline-offset-2 hover:text-mv-ink">{chunks}</Link>,
+          })}
         </p>
       }
     >
@@ -227,7 +213,7 @@ function AuthCardInner({
             mode === "login" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint hover:text-mv-ink-soft"
           )}
         >
-          Se connecter
+          {t("modeLogin")}
         </button>
         <button
           type="button"
@@ -237,7 +223,7 @@ function AuthCardInner({
             mode === "signup" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint hover:text-mv-ink-soft"
           )}
         >
-          Créer un compte
+          {t("modeSignup")}
         </button>
       </div>
 
@@ -250,12 +236,12 @@ function AuthCardInner({
           transition={{ duration: 0.16, ease: "easeOut" }}
         >
           <h1 className="mt-6 font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[32px]">
-            {mode === "login" ? "Content de vous revoir" : "Créer votre compte"}
+            {mode === "login" ? t("login.title") : t("signup.title")}
           </h1>
           <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
             {mode === "login"
-              ? "Accédez à votre espace de pilotage."
-              : "Aucune carte requise — configurez votre établissement en deux minutes."}
+              ? t("login.subtitle")
+              : t("signup.subtitle")}
           </p>
 
           {/* Social OAuth (Apple & Google) */}
@@ -266,7 +252,7 @@ function AuthCardInner({
               className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-mv-border bg-mv-surface text-[13px] font-semibold text-mv-ink shadow-mv-sm transition-colors hover:bg-mv-cream-soft focus:outline-none focus:ring-2 focus:ring-mv-green/20"
             >
               <Apple size={16} />
-              <span>Continuer avec Apple</span>
+              <span>{t("continueWithApple")}</span>
             </button>
             <button
               type="button"
@@ -274,22 +260,22 @@ function AuthCardInner({
               className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-mv-border bg-mv-surface text-[13px] font-semibold text-mv-ink shadow-mv-sm transition-colors hover:bg-mv-cream-soft focus:outline-none focus:ring-2 focus:ring-mv-green/20"
             >
               <Google size={16} />
-              <span>Continuer avec Google</span>
+              <span>{t("continueWithGoogle")}</span>
             </button>
           </div>
 
           <div className="my-5 flex items-center gap-3">
             <div className="h-px flex-1 bg-mv-border" />
-            <span className="font-mono text-[10px] uppercase tracking-wider text-mv-ink-faint">Ou par courriel</span>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-mv-ink-faint">{t("orContinueWithEmail")}</span>
             <div className="h-px flex-1 bg-mv-border" />
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Adresse courriel</label>
+              <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">{t("emailLabel")}</label>
               <input
                 type="email"
-                placeholder="demo@minervaflow.app"
+                placeholder={t("emailPlaceholder")}
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -299,10 +285,10 @@ function AuthCardInner({
 
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-[11.5px] font-semibold text-mv-ink-soft">Mot de passe</label>
+                <label className="text-[11.5px] font-semibold text-mv-ink-soft">{t("passwordLabel")}</label>
                 {mode === "login" && (
                   <Link href="/forgot-password" className="text-[11.5px] font-semibold text-mv-green-dark hover:underline">
-                    Oublié ?
+                    {t("forgotShort")}
                   </Link>
                 )}
               </div>
@@ -318,7 +304,7 @@ function AuthCardInner({
 
             {mode === "signup" && (
               <div>
-                <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Confirmer le mot de passe</label>
+                <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">{t("confirmPasswordLabel")}</label>
                 <input
                   type="password"
                   placeholder="••••••••••••"
@@ -357,11 +343,11 @@ function AuthCardInner({
               {isLoading ? (
                 <>
                   <Loader2 size={15} className="animate-spin" />
-                  <span>Vérification…</span>
+                  <span>{t("submitting")}</span>
                 </>
               ) : (
                 <>
-                  <span>{mode === "login" ? "Accéder à l'espace" : "Continuer"}</span>
+                  <span>{mode === "login" ? t("submitLogin") : t("continueSignup")}</span>
                   <ArrowRight size={14} />
                 </>
               )}
@@ -372,7 +358,7 @@ function AuthCardInner({
 
       <div className="mt-6 flex items-center justify-center gap-2 border-t border-mv-border-soft pt-5 text-[11px] text-mv-ink-faint">
         <ShieldCheck size={13} className="text-mv-green-dark" />
-        <span>Sécurisé · Conforme données d&apos;exploitation</span>
+        <span>{t("securityNote")}</span>
       </div>
     </AuthShell>
   );
