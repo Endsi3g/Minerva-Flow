@@ -8,7 +8,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - L’app native et le tableau de bord permettent de configurer plusieurs formats par article, avec une quantité et un prix total pour chaque choix.
 - Le prix de départ est aligné sur le format le moins cher; les formats peuvent être modifiés avant activation du brouillon.
 - La commande vérifie le format sélectionné et son prix côté serveur avant de calculer le total.
-- **État de livraison** : l’interface et la migration `0151_menu_item_price_options.sql` sont prêtes. La migration doit être appliquée en production avant que cette option fonctionne sur les comptes réels.
+- **État de livraison** : la migration `0151_menu_item_price_options.sql` est appliquée en production. Le code applicatif n’est pas encore livré en production et les formats des articles Mains Magique restent à configurer avant validation; aucun article n’a été activé.
 
 ### Côté client — Choisir un format avant de commander
 - Lorsqu’un restaurant propose plusieurs formats, le client voit les quantités et les prix totaux, choisit son format dans le menu et le retrouve dans son panier avant de confirmer.
