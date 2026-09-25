@@ -64,7 +64,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Build web local de production réussi, avec upload Sentry, vérification TypeScript et 328 pages statiques générées.
 - Schémas staging et production vérifiés en lecture seule; `public.restaurants`, les objets ambassadeur/UGC, les fonctions de commande et le défaut de consentement Auth sont présents.
 - Audience courriel de release : segment Resend « Minerva Flow · consentement explicite — abonnés actifs », 18 membres actifs au dernier contrôle; le brouillon conserve le lien de désabonnement.
-- Preview Vercel exact `20197a4` READY; smoke HTTP public réussi, redirection Auth confirmée. Promotion production et envoi du courriel restent suspendus jusqu’à la validation complète Stripe Connect, POS, schéma Supabase 0150 en production et revue visuelle/authentifiée.
+- Preview Vercel exact `ef4c04c` READY; smoke HTTP public/Auth réussi, captures changelog desktop/mobile servies en 200. Promotion production et notification restent suspendues : migration 0150 absente en production, Stripe Connect/POS et E2E staging authentifié non validés.
 
 ## [v2.47.1] — 2026-09-23
 

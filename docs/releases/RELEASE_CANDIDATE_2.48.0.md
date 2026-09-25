@@ -1,9 +1,9 @@
 # Release candidate — Minerva Flow 2.48.0
 
-**État : candidat web `2.48.0` — Preview courant `dpl_BZLJBoAYbFbcEmv4pSx3qfdXsSJG` (`d5f9b76`) READY; code applicatif `20197a4`. Smoke HTTP public/Auth réussi; login capturé en desktop et mobile avec Chromium headless Playwright 1.63 du cache. Les E2E authentifiés staging retentés (3 tests) ont échoué avant les assertions, avec timeouts de navigation et démarrage Chromium. Production non promue : quatre colonnes de migration 0150 sont absentes du schéma production; paiements Stripe Connect et POS E2E non validés. Le changelog in-app candidate inclut maintenant les captures traiteur desktop/mobile. L’application iOS suit une release séparée.**
+**État : candidat web `2.48.0` — code et changelog illustré commit `ef4c04ca52067328f477401301a4395a969fe8ea`; Preview exact `dpl_4jpApHymFozzWRMBMLKJiJsQxmRY` READY. Smoke HTTP public/Auth réussi; captures login desktop/mobile avec Chromium headless Playwright 1.63, et images précommande/traiteur servies en 200. Les E2E authentifiés staging retentés (3 tests) ont échoué avant les assertions, avec timeouts de navigation et démarrage Chromium. Production non promue : quatre colonnes de migration 0150 sont absentes du schéma production; paiements Stripe Connect et POS E2E non validés. L’application iOS suit une release séparée.**
 Date de préparation : 2026-09-24.
 Dernière vérification : 2026-09-25.
-Branche `release/2.48.0`, commit applicatif vérifié `20197a4` (commit docs ensuite `d5f9b76`); paquet web `2.48.0`.
+Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
 
 ### Actions de livraison encore ouvertes — 2026-09-25
 
@@ -16,7 +16,7 @@ Branche `release/2.48.0`, commit applicatif vérifié `20197a4` (commit docs ens
 
 | Cible | Sortie proposée | État |
 | --- | --- | --- |
-| Web | `2.48.0` | Preview `dpl_BZLJBoAYbFbcEmv4pSx3qfdXsSJG` READY; visuel login desktop/mobile capturé; promotion bloquée par le schéma prod et les tests fonctionnels ci-dessous |
+| Web | `2.48.0` | Preview `dpl_4jpApHymFozzWRMBMLKJiJsQxmRY` READY; captures login et changelog accessibles; promotion bloquée par le schéma prod et les tests fonctionnels ci-dessous |
 | iOS / TestFlight | `1.0 (11)` | Build actuel en test interne/externe (8 testeurs); il ne contient pas les changements source de cette candidate; prochain build requis |
 | GitHub Release + changelog | `v2.48.0` | Notes FR/EN préparées; publication bloquée jusqu’à la capture réelle jointe comme asset |
 | Android / Google Play | Aucune | Aucun projet Android ni pipeline Android trouvé dans le dépôt |
@@ -86,7 +86,7 @@ Capture issue du vrai parcours public de demande traiteur, vérifié sur staging
 - [x] Build Vercel du Preview exact vérifié; téléversement réel des source maps Sentry confirmé dans les logs du build.
 - [x] Parcours Auth et onboarding ciblés sur staging : inscription immédiate, rejet du doublon, connexion confirmée, préférence produit décochée par défaut, déclencheur Auth sans métadonnée de consentement et onboarding complet réussis.
 - [x] Navigation essentielle mise à jour et testée sur staging : Workspace, Fournisseurs, Inventaire et Commandes, plus Paramètres owner/manager requis par les intégrations; Menu, Fidélisation et les autres routes produit restent redirigées vers Workspace.
-- [x] Preview inspecté : `dpl_BZLJBoAYbFbcEmv4pSx3qfdXsSJG` READY pour le commit docs `d5f9b76` (code applicatif `20197a4`); smoke routes publiques et redirect owner sans session réussis.
+- [x] Preview inspecté : `dpl_4jpApHymFozzWRMBMLKJiJsQxmRY` READY pour `ef4c04c`; smoke routes publiques et redirect owner sans session réussis, images changelog répondent 200.
 - [ ] Vérifier les parcours E2E authentifiés sur le Preview après configuration d’une base Supabase de staging isolée; `e2e/test-env.ts` refuse explicitement les tests navigateur distants tant qu’un environnement isolé et vérifié n’est pas configuré. Ne pas contourner cette protection.
 - [ ] Appliquer/valider la migration additive 0150 en production de manière contrôlée : lecture seule a confirmé que les quatre colonnes Stripe 0150 sont absentes. Ne pas exécuter `supabase db push` avant réconciliation de l’historique divergent.
 - [x] Playwright visuel login Preview desktop 1440×900 et mobile 390×844 : pas d’overflow horizontal ni d’erreurs JavaScript; captures dans `docs/screenshots/preview-login-2026-09-25-*`. `/en/login` affiche du texte français, à examiner séparément.
@@ -103,7 +103,7 @@ Capture issue du vrai parcours public de demande traiteur, vérifié sur staging
 ## État des vérifications au 2026-09-25
 
 - Vérification locale de la candidate : 335 tests unitaires (58 fichiers), TypeScript `--noEmit`, lint ciblé et build Next passent; la compilation iOS Simulator passe également. Les XCTest précédents restent sans résultat confirmé, le runner Xcode s’étant bloqué.
-- Preview courant `dpl_BZLJBoAYbFbcEmv4pSx3qfdXsSJG` READY; source code `20197a4`, suivi d’un commit documentaire `d5f9b76`. Smoke HTTP : login, inscription, pages légales 200; routes owner redirigées au login. Playwright visuel login desktop/mobile réussi avec Chromium headless 1.63 récupéré dans le cache existant; le test E2E authentifié staging a échoué avant assertions.
+- Preview exact `dpl_4jpApHymFozzWRMBMLKJiJsQxmRY` READY pour `ef4c04c`. Smoke HTTP : login, inscription, pages légales 200; routes owner redirigées au login; les deux images de changelog sont en 200. Playwright visuel login desktop/mobile réussi avec Chromium headless 1.63 récupéré dans le cache existant; le test E2E authentifié staging a échoué avant assertions.
 - Aucun E2E authentifié ou avec écritures n’a été lancé contre le Preview : il utilise Supabase production, et le garde `e2e/test-env.ts` exige une base isolée explicitement autorisée. Le staging reste l’environnement utilisé pour les E2E synthétiques.
 - 335 tests unitaires et E2E staging (6/6), reprise précommande/traiteur (2/2) et E2E owner Paramètres/Intégrations (1/1) passent. Aucun paiement Stripe Connect complet n’est confirmé : le destinataire de test ne possède pas de capacité de transfert (`insufficient_capabilities_for_transfer`). Les E2E POS ne sont pas terminés.
 - La migration 0150 a été appliquée et vérifiée au staging seulement. Lecture seule sur production confirme l’absence des quatre colonnes Stripe 0150; ne pas promouvoir avant résolution et vérification du schéma, en tenant compte du journal Supabase distant divergent.
