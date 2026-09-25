@@ -1,6 +1,6 @@
 # Release candidate — Minerva Flow 2.48.0
 
-**État : candidat web `2.48.0` — code applicatif poussé jusqu’à `515312c` (inclut changelog illustré et options de prix); Preview `dpl_DVYtvAbBgrgqZtGR4PC8QrYMUkKs` READY. Une correction locale non encore déployée traduit maintenant `/en/login` (captures bureau/mobile ci-dessous). Trois E2E staging retentés ont échoué avant assertions (timeouts navigation/démarrage navigateur). Production non promue : les quatre colonnes 0150 sont absentes; 0151 est appliquée en production. Stripe Connect et POS E2E restent non validés. L’application iOS suit une release séparée.**
+**État : candidat web `2.48.0` — code poussé au commit `1a63de8` (inclut changelog illustré, options de prix et correction Auth); Preview exact `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` READY et son journal confirme ce SHA. `/en/login` a été contrôlé avec Chromium bureau/mobile, en anglais, sans erreur JS ni overflow. Trois E2E staging retentés ont échoué avant assertions (timeouts navigation/démarrage navigateur). Production non promue : les quatre colonnes 0150 sont absentes; 0151 est appliquée en production. Stripe Connect et POS E2E restent non validés. L’application iOS suit une release séparée.**
 Date de préparation : 2026-09-24.
 Dernière vérification : 2026-09-25.
 Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
@@ -16,7 +16,7 @@ Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
 
 | Cible | Sortie proposée | État |
 | --- | --- | --- |
-| Web | `2.48.0` | Preview `dpl_DVYtvAbBgrgqZtGR4PC8QrYMUkKs` READY pour `515312c`; images changelog accessibles; correction `/en/login` locale non déployée; promotion bloquée par 0150 et les tests fonctionnels ci-dessous |
+| Web | `2.48.0` | Preview `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` READY pour `1a63de8`; images changelog accessibles; `/en/login` vérifiée; promotion bloquée par 0150 et les tests fonctionnels ci-dessous |
 | iOS / TestFlight | `1.0 (11)` | Build actuel en test interne/externe (8 testeurs); il ne contient pas les changements source de cette candidate; prochain build requis |
 | GitHub Release + changelog | `v2.48.0` | Notes FR/EN préparées; publication bloquée jusqu’à la capture réelle jointe comme asset |
 | Android / Google Play | Aucune | Aucun projet Android ni pipeline Android trouvé dans le dépôt |
@@ -89,7 +89,7 @@ Capture issue du vrai parcours public de demande traiteur, vérifié sur staging
 - [x] Preview le plus récent inspecté : `dpl_DVYtvAbBgrgqZtGR4PC8QrYMUkKs` READY pour `515312c`; smoke routes publiques et redirect owner sans session réussis, images changelog répondent 200.
 - [ ] Vérifier les parcours E2E authentifiés sur le Preview après configuration d’une base Supabase de staging isolée; `e2e/test-env.ts` refuse explicitement les tests navigateur distants tant qu’un environnement isolé et vérifié n’est pas configuré. Ne pas contourner cette protection.
 - [ ] Appliquer/valider de manière contrôlée la migration additive 0150 en production : lecture seule confirme que ses quatre colonnes Stripe sont absentes. La migration 0151 est déjà appliquée (version `20260925184354`) et `menu_items.price_options` est présente. Ne pas exécuter `supabase db push` avant réconciliation de l’historique divergent.
-- [x] Playwright visuel login Preview avant correction desktop/mobile : pas d’overflow ni d’erreurs JavaScript. Correction locale `/en/login` vérifiée ensuite à 1440×900 et 390×844; `/fr/login` conserve le français. La correction n’est pas encore dans le Preview.
+- [x] Playwright visuel login Preview 1440×900 et 390×844 : `/en/login` est en anglais, sans overflow ni erreur JavaScript. `/fr/login` conserve le français. Captures vérifiées en local et le Preview `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` sert le même commit Auth `1a63de8`.
 - [ ] Refaire l’E2E authentifié/POS sur staging : la reprise actuelle échoue avant assertions métier par timeouts `/login`/`/workspace` et démarrage du navigateur; les traces sont dans `test-results/` local, non commitées.
 - [ ] Revue complète des écrans Preview, clavier et zoom, avant toute promotion.
 - [x] Compiler l’application, vérifier l’UUID du dSYM Sentry, téléverser l’archive `1.0 (11)` et confirmer son traitement par Apple.
