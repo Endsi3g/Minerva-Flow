@@ -1,7 +1,8 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isRestaurantConnectReady } from "@/lib/stripe/connect-capabilities";
+import { canAcceptRestaurantOnlinePayments } from "@/lib/stripe/connect-capabilities";
+import { isStripeConnectConfigured } from "@/lib/stripe/connect";
 import { generateToken } from "@/lib/tokens";
 import { mapMenuItem, type MenuItemRow } from "@/lib/data/menu";
 import { computeIsBusy } from "@/lib/orders/eta";
@@ -136,14 +137,16 @@ async function getConnectPaymentAvailability(
     stripe_connect_transfers_status: "active" | "pending" | "restricted" | "unsupported" | "unrequested";
     stripe_connect_recipient_payouts_status: "active" | "pending" | "restricted" | "unsupported" | "unrequested";
   };
-  const ready = isRestaurantConnectReady({
+  const onlinePaymentEnabled = canAcceptRestaurantOnlinePayments({
+    platformConfigured: isStripeConnectConfigured(),
+    accountId: row.stripe_connect_account_id,
     apiVersion: row.stripe_connect_account_api_version,
     legacyChargesEnabled: row.stripe_connect_charges_enabled,
     transfersStatus: row.stripe_connect_transfers_status,
     payoutsStatus: row.stripe_connect_recipient_payouts_status,
   });
   return {
-    onlinePaymentEnabled: Boolean(row.stripe_connect_account_id) && ready,
+    onlinePaymentEnabled,
     stripeConnectAccountId: row.stripe_connect_account_id,
   };
 }

@@ -93,7 +93,7 @@ export function StripeConnectCard() {
 
   function statusLine() {
     if (!status) return "";
-    if (!status.configured) return "Pas encore disponible";
+    if (!status.configured) return "Non configuré — bientôt disponible";
     if (!status.accountId) return "Non connecté";
     if (isReady) return "Connecté — paiements actifs";
     if (status.apiVersion === "v2" && status.requirementsDueCount > 0) return `${status.requirementsDueCount} information${status.requirementsDueCount > 1 ? "s" : ""} requise${status.requirementsDueCount > 1 ? "s" : ""} par Stripe`;
@@ -117,6 +117,13 @@ export function StripeConnectCard() {
         title="Paiements en ligne des clients"
         description="Connectez le compte Stripe de votre restaurant pour recevoir les transferts associés aux commandes web — séparément de votre abonnement Minerva Flow (voir Facturation)."
       />
+      {status && !status.configured && (
+        <div className="mb-3 rounded-lg border border-mv-border-soft bg-mv-cream-soft px-3.5 py-3" role="status">
+          <p className="text-[13px] leading-relaxed text-mv-ink-soft">
+            Stripe Connect n’est pas configuré sur cet environnement. Les paiements en ligne seront bientôt disponibles.
+          </p>
+        </div>
+      )}
       {isLoadingStatus && !status ? (
         <div className="space-y-2 rounded-lg border border-mv-border-soft px-3.5 py-3" role="status" aria-label="Chargement du statut Stripe Connect">
           <div className="h-4 w-40 animate-pulse rounded bg-mv-ink/10" />
@@ -174,7 +181,7 @@ export function StripeConnectCard() {
                 })
               }
             >
-              {status.accountId ? "Continuer l'inscription" : "Connecter Stripe"}
+              {!status.configured ? "Bientôt disponible" : status.accountId ? "Continuer l'inscription" : "Connecter Stripe"}
             </Button>
           )}
         </div>

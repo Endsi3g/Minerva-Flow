@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isRestaurantConnectReady } from "@/lib/stripe/connect-capabilities";
+import { canAcceptRestaurantOnlinePayments, isRestaurantConnectReady } from "@/lib/stripe/connect-capabilities";
 
 describe("restaurant Stripe Connect readiness", () => {
   it("preserves readiness for existing V1 restaurants using charges_enabled", () => {
@@ -41,5 +41,21 @@ describe("restaurant Stripe Connect readiness", () => {
       transfersStatus: "active",
       payoutsStatus: "active",
     })).toBe(true);
+  });
+
+  it("requires platform configuration and an enabled restaurant account before exposing online payment", () => {
+    const readyV2 = {
+      platformConfigured: true,
+      accountId: "acct_restaurant",
+      apiVersion: "v2" as const,
+      legacyChargesEnabled: false,
+      transfersStatus: "active" as const,
+      payoutsStatus: "active" as const,
+    };
+
+    expect(canAcceptRestaurantOnlinePayments({ ...readyV2, platformConfigured: false })).toBe(false);
+    expect(canAcceptRestaurantOnlinePayments({ ...readyV2, accountId: null })).toBe(false);
+    expect(canAcceptRestaurantOnlinePayments({ ...readyV2, transfersStatus: "restricted" })).toBe(false);
+    expect(canAcceptRestaurantOnlinePayments(readyV2)).toBe(true);
   });
 });

@@ -2,10 +2,10 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isRestaurantConnectReady } from "@/lib/stripe/connect-capabilities";
+import { canAcceptRestaurantOnlinePayments } from "@/lib/stripe/connect-capabilities";
 import { getClientIp, checkRateLimit } from "@/lib/rate-limit";
 import { notifyRestaurant } from "@/lib/data/notifications";
-import { createServiceQuoteCheckoutSession } from "@/lib/stripe/connect";
+import { createServiceQuoteCheckoutSession, isStripeConnectConfigured } from "@/lib/stripe/connect";
 import { sendServiceQuotePaymentEmail } from "@/lib/email/resend";
 import { resolveRestaurantLocalDateTime } from "@/lib/orders/scheduling";
 import { calculateServiceQuoteTotals, normalizeServiceQuoteLines } from "@/lib/orders/service-quote-pricing";
@@ -251,7 +251,10 @@ export async function issueServiceQuote(
     stripe_connect_transfers_status?: "active" | "pending" | "restricted" | "unsupported" | "unrequested";
     stripe_connect_recipient_payouts_status?: "active" | "pending" | "restricted" | "unsupported" | "unrequested";
   } | null;
-  if (!config?.stripe_connect_account_id || !config.stripe_connect_account_api_version || !isRestaurantConnectReady({
+  const connectedAccountId = config?.stripe_connect_account_id;
+  if (!config || !connectedAccountId || !canAcceptRestaurantOnlinePayments({
+    platformConfigured: isStripeConnectConfigured(),
+    accountId: connectedAccountId,
     apiVersion: config.stripe_connect_account_api_version,
     legacyChargesEnabled: config.stripe_connect_charges_enabled === true,
     transfersStatus: config.stripe_connect_transfers_status ?? "unrequested",
@@ -281,7 +284,7 @@ export async function issueServiceQuote(
       quoteId,
       attempt: Number(totals.checkout_attempt),
       restaurantId,
-      connectedAccountId: config.stripe_connect_account_id,
+      connectedAccountId,
       amountCents: Math.round(Number(totals.deposit_amount) * 100),
       expiresAt: Math.floor(Date.parse(expiresAt) / 1000),
       title: `Acompte — ${config.name ?? "Restaurant"}`,

@@ -1,14 +1,14 @@
 # Release candidate — Minerva Flow 2.48.0
 
-**État : candidat web `2.48.0` — code poussé au commit `1a63de8` (inclut changelog illustré, options de prix et correction Auth); Preview exact `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` READY et son journal confirme ce SHA. `/en/login` a été contrôlé avec Chromium bureau/mobile, en anglais, sans erreur JS ni overflow. Trois E2E staging retentés ont échoué avant assertions (timeouts navigation/démarrage navigateur). Production non promue : les quatre colonnes 0150 sont absentes; 0151 est appliquée en production. Stripe Connect et POS E2E restent non validés. L’application iOS suit une release séparée.**
+**État : candidat web `2.48.0` — code poussé au commit `1a63de8` (inclut changelog illustré, options de prix et correction Auth); Preview exact `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` READY et son journal confirme ce SHA. `/en/login` a été contrôlé avec Chromium bureau/mobile, en anglais, sans erreur JS ni overflow. Trois E2E staging retentés ont échoué avant assertions. Migrations 0150/0151 appliquées et vérifiées en production, mais application web non promue : Stripe Connect reste non fonctionnel de bout en bout et les tests POS ne sont pas exécutables. L’archive native `1.0.0 (12)` est téléversée à App Store Connect; traitement Apple et disponibilité testeurs restent à confirmer.**
 Date de préparation : 2026-09-24.
 Dernière vérification : 2026-09-25.
 Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
 
 ### Actions de livraison encore ouvertes — 2026-09-25
 
-- [ ] Web production : ne pas promouvoir avant application/validation contrôlée de 0150, paiement Connect test réussi avec capacités actives; achever POS et E2E authentifiés sur staging isolé; refaire revue complète. 0151 est appliquée, mais son code n’est pas en production et les articles Mains Magique restent à configurer. Production actuelle confirmée `dpl_A35dLpmKawVPfxhp9rWEWSiVcRLc` / commit `f969e15`.
-- [ ] iOS/TestFlight : actualiser l’app native et préparer le build suivant (`1.0.0`, build `12` proposé après confirmation/incrément), retenter XCTest sur un runner stable, exécuter `bash ~/.Codex/hooks/app-store-compliance-guard.sh native/ios`, valider archive et dSYM, téléverser puis confirmer l’accès testeur externe. Le build courant reste `1.0 (11)`.
+- [ ] Web production : 0150/0151 sont appliquées; ne pas promouvoir avant paiement Connect test réussi avec capacités actives, POS et E2E authentifiés réussis sur staging isolé, puis revue complète. Le code 0151 n’est pas en production et les articles Mains Magique restent à configurer. Production actuelle confirmée `dpl_A35dLpmKawVPfxhp9rWEWSiVcRLc` / commit `f969e15`.
+- [ ] iOS/TestFlight : build `1.0.0 (12)` archivé, signé, dSYM vérifié et téléversé avec succès. Confirmer le traitement Apple, l’assignation au groupe externe et l’accès des testeurs; XCTest reste à relancer sur un runner stable. L’audit statique rapporte 0 critique, 0 élevé et 2 avertissements.
 - [ ] Après ces validations, finaliser le changelog/release et l’envoi de courriel aux utilisateurs consentants; aucune notification n’a été envoyée.
 - [x] Build Vercel du Preview courant compilé et READY; Sentry a téléversé les source maps et créé la release associée au SHA candidat. Le build local précédent (Webpack, 328 routes) a terminé avec le code 0.
 
@@ -16,8 +16,8 @@ Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
 
 | Cible | Sortie proposée | État |
 | --- | --- | --- |
-| Web | `2.48.0` | Preview `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` READY pour `1a63de8`; images changelog accessibles; `/en/login` vérifiée; promotion bloquée par 0150 et les tests fonctionnels ci-dessous |
-| iOS / TestFlight | `1.0 (11)` | Build actuel en test interne/externe (8 testeurs); il ne contient pas les changements source de cette candidate; prochain build requis |
+| Web | `2.48.0` | Preview `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` READY pour `1a63de8`; images changelog accessibles; `/en/login` vérifiée; migrations 0150/0151 appliquées en production; promotion toujours bloquée par les tests fonctionnels ci-dessous |
+| iOS / TestFlight | `1.0.0 (12)` | Téléversé à App Store Connect le 2026-09-25; traitement et assignation aux groupes en attente. `1.0 (11)` reste le dernier build confirmé chez les testeurs |
 | GitHub Release + changelog | `v2.48.0` | Notes FR/EN préparées; publication bloquée jusqu’à la capture réelle jointe comme asset |
 | Android / Google Play | Aucune | Aucun projet Android ni pipeline Android trouvé dans le dépôt |
 
@@ -88,11 +88,13 @@ Capture issue du vrai parcours public de demande traiteur, vérifié sur staging
 - [x] Navigation essentielle mise à jour et testée sur staging : Workspace, Fournisseurs, Inventaire et Commandes, plus Paramètres owner/manager requis par les intégrations; Menu, Fidélisation et les autres routes produit restent redirigées vers Workspace.
 - [x] Preview le plus récent inspecté : `dpl_DVYtvAbBgrgqZtGR4PC8QrYMUkKs` READY pour `515312c`; smoke routes publiques et redirect owner sans session réussis, images changelog répondent 200.
 - [ ] Vérifier les parcours E2E authentifiés sur le Preview après configuration d’une base Supabase de staging isolée; `e2e/test-env.ts` refuse explicitement les tests navigateur distants tant qu’un environnement isolé et vérifié n’est pas configuré. Ne pas contourner cette protection.
-- [ ] Appliquer/valider de manière contrôlée la migration additive 0150 en production : lecture seule confirme que ses quatre colonnes Stripe sont absentes. La migration 0151 est déjà appliquée (version `20260925184354`) et `menu_items.price_options` est présente. Ne pas exécuter `supabase db push` avant réconciliation de l’historique divergent.
+- [x] Appliquer/valider de manière contrôlée la migration additive 0150 en production : les quatre colonnes Stripe sont présentes et les valeurs par défaut ont été vérifiées pour 106 restaurants. Journal Supabase `0150_restaurant_connect_v2` / `20260925191042`. 0151 (`20260925184354`) et `menu_items.price_options` sont aussi présents. Ne pas exécuter `supabase db push` avant réconciliation de l’historique divergent.
 - [x] Playwright visuel login Preview 1440×900 et 390×844 : `/en/login` est en anglais, sans overflow ni erreur JavaScript. `/fr/login` conserve le français. Captures vérifiées en local et le Preview `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` sert le même commit Auth `1a63de8`.
 - [ ] Refaire l’E2E authentifié/POS sur staging : la reprise actuelle échoue avant assertions métier par timeouts `/login`/`/workspace` et démarrage du navigateur; les traces sont dans `test-results/` local, non commitées.
 - [ ] Revue complète des écrans Preview, clavier et zoom, avant toute promotion.
 - [x] Compiler l’application, vérifier l’UUID du dSYM Sentry, téléverser l’archive `1.0 (11)` et confirmer son traitement par Apple.
+- [x] Nouvelle archive native **1.0.0 (12)** créée le 2026-09-25; `CFBundleShortVersionString` est aligné sur `MARKETING_VERSION` pour l’app et le widget, et l’UUID du dSYM Sentry correspond au framework.
+- [x] Xcode confirme le téléversement de `MinervaFlow 1.0.0 (12)` à App Store Connect. [ ] Confirmer le traitement, l’assignation aux groupes et l’accès des testeurs; l’upload seul ne prouve pas la disponibilité TestFlight.
 - [ ] Relancer XCTest sur un runner stable : la compilation Simulator est réussie, mais les dernières tentatives XCTest n’ont produit aucun résultat confirmé.
 - [x] Enregistrer les notes de test et de review, la politique de confidentialité, et les identifiants vérifiés du compte démo dans App Store Connect.
 - [x] Assigner le build 11 au groupe externe et soumettre à l’examen bêta avec notification automatique; Apple affiche le build « En cours de test » dans le groupe externe (8 testeurs). Lien public vérifié HTTP 200 : https://testflight.apple.com/join/xGr45uuF.
@@ -106,6 +108,6 @@ Capture issue du vrai parcours public de demande traiteur, vérifié sur staging
 - Preview exact `dpl_DVYtvAbBgrgqZtGR4PC8QrYMUkKs` READY pour `515312c`. Smoke HTTP : login, inscription, pages légales 200; routes owner redirigées au login; les deux images de changelog sont en 200. Playwright visuel login desktop/mobile réussi avec Chromium headless 1.63 récupéré dans le cache existant; les trois E2E staging retentés ont échoué avant assertions.
 - Aucun E2E authentifié ou avec écritures n’a été lancé contre le Preview : il utilise Supabase production, et le garde `e2e/test-env.ts` exige une base isolée explicitement autorisée. Le staging reste l’environnement utilisé pour les E2E synthétiques.
 - 335 tests unitaires et E2E staging (6/6), reprise précommande/traiteur (2/2) et E2E owner Paramètres/Intégrations (1/1) passent. Aucun paiement Stripe Connect complet n’est confirmé : le destinataire de test ne possède pas de capacité de transfert (`insufficient_capabilities_for_transfer`). Les E2E POS ne sont pas terminés.
-- La migration 0150 a été appliquée et vérifiée au staging seulement. Lecture seule confirme que ses quatre colonnes manquent en production; 0151 est maintenant appliquée en production. L’historique distant diverge du dépôt; ne pas lancer `supabase db push`.
-- Le build TestFlight actif `1.0 (11)` n’inclut pas cette candidate; aucun nouveau binaire iOS n’a été téléversé. Aucun tag, release GitHub ni courriel utilisateur n’a été émis.
-- **Décision : NOT READY pour la production et TestFlight.** Restent l’application/validation contrôlée 0150 en production, un paiement/réessai Stripe avec destinataire actif, POS E2E, reprise E2E authentifiée staging, revue visuelle complète, XCTest stable, contrôles App Store et nouveau binaire iOS.
+- La migration 0150 est appliquée et vérifiée en staging et production; le journal production l’enregistre sous `20260925191042`. 0151 est appliquée en production (`20260925184354`). L’historique distant diverge du dépôt; ne pas lancer `supabase db push`.
+- Le build `1.0.0 (12)` a été téléversé à App Store Connect; son traitement et son activation TestFlight restent en attente. Aucun tag, release GitHub ni courriel utilisateur n’a été émis.
+- **Décision : NOT READY pour la production et TestFlight.** 0150/0151 sont présentes en production, mais restent un paiement/réessai Stripe avec destinataire actif, POS E2E, reprise E2E authentifiée staging, revue visuelle complète, XCTest stable, contrôles App Store et nouveau binaire iOS.

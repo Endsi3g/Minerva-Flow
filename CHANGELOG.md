@@ -4,6 +4,16 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 
 ## [Non publié] — Vérifications du 2026-09-25
 
+### Build iOS — TestFlight
+- Archive native **1.0.0 (12)** créée et téléversée avec succès à App Store Connect le 2026-09-25. Le numéro de build est `12`; la version marketing reste `1.0.0` dans l’app et son widget.
+- Le téléversement est confirmé par Xcode; le traitement Apple et la disponibilité du build pour les groupes TestFlight restent à confirmer dans App Store Connect. Ce build n’est pas encore annoncé comme installable.
+- Audit App Store statique : 0 risque critique, 0 élevé, 2 avertissements (déclaration de chiffrement du widget à confirmer et contrôles manuels des métadonnées/démo/privacy/review). XCTest n’a toujours pas de résultat confirmé.
+
+### Paiements web — configuration explicite
+- Les paramètres Stripe Connect indiquent clairement si l’intégration n’est pas configurée et que le paiement en ligne sera bientôt disponible; le bouton d’activation reste désactivé dans cet état.
+- La disponibilité du paiement en ligne exige maintenant à la fois une clé Stripe de plateforme et un compte restaurant aux capacités actives. Sans configuration, les menus publics ne proposent pas ce mode et l’émission d’un devis payable en ligne est refusée côté serveur.
+- Cela ne configure pas Stripe : la clé live manque toujours dans Vercel Production, les transferts Connect restent à valider et les tests POS sont reportés.
+
 ### Côté propriétaire — Formats et tarification du menu
 - L’app native et le tableau de bord permettent de configurer plusieurs formats par article, avec une quantité et un prix total pour chaque choix.
 - Le prix de départ est aligné sur le format le moins cher; les formats peuvent être modifiés avant activation du brouillon.
@@ -35,7 +45,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Le succès de précommande a été inspecté à 390 px; aucune largeur horizontale parasite. Captures : [`précommande mobile`](docs/screenshots/changelog-2.48.0-preorder-success-mobile.png) et [`traiteur desktop`](docs/screenshots/changelog-2.48.0-catering-success.png).
 - Chromium est opérationnel via le binaire headless Playwright 1.63 déjà présent dans le cache. Après correction de la localisation Auth, vérification visuelle locale 1440×900 et 390×844 sans overflow ni `pageerror`; captures : [`anglais bureau`](docs/screenshots/auth-login-en-2026-09-25-desktop.png), [`anglais mobile`](docs/screenshots/auth-login-en-2026-09-25-mobile.png). Les anciennes captures Preview sont conservées séparément.
 - Nouvelle tentative de trois E2E staging : 0/3 réussis, échecs avant assertions métier (`/login` et `/workspace` expirent; un démarrage Chromium dépasse son délai). Traces locales dans `test-results/`, non commitées; ne pas considérer ces parcours comme validés.
-- Inspection production read-only : `restaurants.delivery_enabled`, `orders.delivery_address` et `menu_items.price_options` (0151) sont présentes; les quatre colonnes 0150 restent absentes. Aucune migration 0150 ni promotion n’a été exécutée dans cette reprise.
+- État final du schéma production : `restaurants.delivery_enabled`, `orders.delivery_address`, `menu_items.price_options` (0151) et les quatre colonnes Stripe 0150 sont présentes. 0150 a été appliquée le 2026-09-25 et vérifiée via PostgREST; les 106 restaurants existants gardent `v1`, `unrequested` et `0` par défaut. Cette migration seule ne constitue pas une promotion applicative.
 - Vérification Paramètres/Stripe : après une reprise initiale bloquée avant connexion, l’E2E Playwright a réussi avec le garde de rôle final (`1/1`) et confirme la carte et son CTA sur desktop/mobile. Le fixture synthétique et son utilisateur sont absents du staging après nettoyage.
 - La compilation Simulator iOS a réussi sur la source récente; XCTest reste bloqué dans le runner Xcode et aucun résultat de test actuel n’est confirmé.
 - Vérification Sentry du 25 septembre : un événement web synthétique sans données personnelles apparaît dans `minerva-flow-web`; build Webpack local réussi (328 routes), TypeScript et ESLint ciblés réussis, compilation iOS Simulator réussie. Le build Preview `20197a4` a téléversé les source maps et créé la release Sentry associée. La réception d’événements iOS reste à vérifier. La ressource Marketplace `sentry-copper-notebook` est provisionnée sur le forfait gratuit, mais sa liaison automatique a échoué; le jeton partagé dans la conversation doit être tourné.
@@ -47,7 +57,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 
 ### Stripe Connect — reprise technique
 - Les nouvelles connexions de restaurant utilisent Accounts v2 Recipient; les comptes Express v1 existants restent pris en charge sans conversion ni recréation.
-- La migration additive `0150_restaurant_connect_v2.sql` a été appliquée au seul staging autorisé puis les quatre colonnes et valeurs par défaut ont été vérifiées. Elle a été exécutée directement, car l’historique distant horodaté ne correspond pas aux migrations locales; ne pas lancer `supabase db push` sans réconciliation préalable.
+- La migration additive `0150_restaurant_connect_v2.sql` a été appliquée au staging puis en production, et les quatre colonnes ainsi que les valeurs par défaut ont été vérifiées sur les deux bases. En production, le journal Supabase l’enregistre comme `0150_restaurant_connect_v2` (version `20260925191042`). Elle a été exécutée de manière ciblée, car l’historique distant horodaté ne correspond pas aux migrations locales; ne pas lancer `supabase db push` sans réconciliation préalable.
 - Smoke test Stripe en mode test réussi pour créer un destinataire synthétique, générer son lien d’onboarding hébergé et relire son compte; le lien n’a pas été exposé et le compte synthétique a été fermé.
 - Le paiement Checkout/PaymentIntent n’est toujours pas validé de bout en bout : aucun destinataire de test activé n’est disponible. Aucune production, soumission TestFlight ou release n’est autorisée par ce résultat seul.
 - Le lien Paramètres est maintenant rétabli pour owner/manager et `/settings` est autorisé; l’E2E Intégrations confirme la carte Stripe à l’état « Non connecté » avec son action d’onboarding sur desktop et mobile.
@@ -65,7 +75,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Build web local de production réussi, avec upload Sentry, vérification TypeScript et 328 pages statiques générées.
 - Schémas staging et production vérifiés en lecture seule; `public.restaurants`, les objets ambassadeur/UGC, les fonctions de commande et le défaut de consentement Auth sont présents.
 - Audience courriel de release : segment Resend « Minerva Flow · consentement explicite — abonnés actifs », 18 membres actifs au dernier contrôle; le brouillon conserve le lien de désabonnement.
-- Preview Vercel exact `ef4c04c` READY; smoke HTTP public/Auth réussi, captures changelog desktop/mobile servies en 200. Promotion production et notification restent suspendues : migration 0150 absente en production, Stripe Connect/POS et E2E staging authentifié non validés.
+- Preview Vercel exact `ef4c04c` READY; smoke HTTP public/Auth réussi, captures changelog desktop/mobile servies en 200. La migration 0150 est maintenant appliquée en production; Stripe Connect/POS et E2E staging authentifié restent non validés, donc la promotion et la notification restent suspendues.
 
 ## [v2.47.1] — 2026-09-23
 
