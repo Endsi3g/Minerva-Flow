@@ -49,6 +49,16 @@ function normalizeTitle(title: string): string {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-09-25-preorders-quotes",
+    title: "Précommandes et devis traiteur",
+    description: `- **Précommandes** : les clients peuvent choisir un créneau futur pour le ramassage et suivre les prochaines étapes après l’envoi.
+- **Service traiteur** : les demandes personnalisées sont transmises au restaurant afin qu’il prépare un devis à confirmer.
+- **Captures du parcours** : [voir la version mobile](/assets/changelog/preorder-quote-mobile.png).`,
+    category: "amelioration",
+    publishedAt: "2026-09-25T18:00:00.000Z",
+    imageUrl: "/assets/changelog/preorder-quote-desktop.png",
+  },
+  {
     id: "ch-2026-09-23-v2-47-0",
     title: "v2.47.0 — Campagnes, fidélisation et commandes repensées",
     description: `- **Campagnes** : historique enrichi avec filtres et recherche; le studio visuel et les automatisations ont leurs propres pages.
