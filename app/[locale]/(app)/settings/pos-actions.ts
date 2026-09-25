@@ -21,6 +21,7 @@ import { todayInTimezone } from "@/lib/pos/shared";
 import { isoDaysAgo } from "@/lib/utils";
 import { loginToastMachineClient } from "@/lib/pos/toast";
 import { validateAndFetchCloverMerchant } from "@/lib/pos/clover";
+import { importCloverCatalogAsDrafts } from "@/lib/pos/catalog-import";
 
 export type PosProviderConfigured = Record<PosProvider, boolean>;
 
@@ -138,3 +139,20 @@ export async function syncPosNowAction(provider: PosProvider): Promise<boolean> 
   return true;
 }
 
+/** Imports the connected Clover catalog as inactive drafts for owner review. */
+export async function importCloverCatalogAction(): Promise<
+  | { ok: true; createdDrafts: number; linkedExisting: number; alreadyMapped: number }
+  | { ok: false; reason: "not_authorized" | "not_connected" | "empty_catalog" | "read_failed" }
+> {
+  const membership = await getCurrentMembership();
+  if (!membership || !["owner", "manager"].includes(membership.role)) {
+    return { ok: false, reason: "not_authorized" };
+  }
+
+  const result = await importCloverCatalogAsDrafts(membership.restaurantId);
+  if (!result.ok) return result;
+
+  revalidatePath("/menu");
+  revalidatePath("/settings");
+  return result;
+}

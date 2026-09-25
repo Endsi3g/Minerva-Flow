@@ -6,18 +6,21 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "https://c4d6e3d7d59071a83f305b335aa8c4ca@o4511091368525824.ingest.us.sentry.io/4511737334071296",
-
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
-
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
+  dsn:
+    process.env.NEXT_PUBLIC_MINERVA_SENTRY_DSN ??
+    "https://06040e3c08522cfaf3bf87729f1e942f@o4512147373686784.ingest.us.sentry.io/4512147451215872",
+  environment: process.env.NODE_ENV,
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
+  enableLogs: false,
   dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
+    userInfo: false,
+    cookies: false,
+    httpHeaders: { request: false, response: false },
+    httpBodies: [],
+    urlQueryParams: false,
+    graphQL: { document: false, variables: false },
+    genAI: { inputs: false, outputs: false },
+    databaseQueryData: false,
+    stackFrameVariables: false,
   },
 });

@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isRestaurantConnectReady } from "@/lib/stripe/connect-capabilities";
 import { generateToken } from "@/lib/tokens";
 import { mapMenuItem, type MenuItemRow } from "@/lib/data/menu";
 import { computeIsBusy } from "@/lib/orders/eta";
@@ -124,13 +125,25 @@ async function getConnectPaymentAvailability(
   const fallback: ConnectAvailability = { onlinePaymentEnabled: false, stripeConnectAccountId: null };
   const { data, error } = await admin
     .from("restaurants")
-    .select("stripe_connect_account_id, stripe_connect_charges_enabled")
+    .select("stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_account_api_version, stripe_connect_transfers_status, stripe_connect_recipient_payouts_status")
     .eq("id", restaurantId)
     .maybeSingle();
   if (error || !data) return fallback;
-  const row = data as { stripe_connect_account_id: string | null; stripe_connect_charges_enabled: boolean };
+  const row = data as {
+    stripe_connect_account_id: string | null;
+    stripe_connect_charges_enabled: boolean;
+    stripe_connect_account_api_version: "v1" | "v2";
+    stripe_connect_transfers_status: "active" | "pending" | "restricted" | "unsupported" | "unrequested";
+    stripe_connect_recipient_payouts_status: "active" | "pending" | "restricted" | "unsupported" | "unrequested";
+  };
+  const ready = isRestaurantConnectReady({
+    apiVersion: row.stripe_connect_account_api_version,
+    legacyChargesEnabled: row.stripe_connect_charges_enabled,
+    transfersStatus: row.stripe_connect_transfers_status,
+    payoutsStatus: row.stripe_connect_recipient_payouts_status,
+  });
   return {
-    onlinePaymentEnabled: Boolean(row.stripe_connect_account_id) && row.stripe_connect_charges_enabled,
+    onlinePaymentEnabled: Boolean(row.stripe_connect_account_id) && ready,
     stripeConnectAccountId: row.stripe_connect_account_id,
   };
 }

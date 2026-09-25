@@ -7,6 +7,7 @@ import {
 } from "@/lib/stripe/checkout-status";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { ConnectCapabilityStatus } from "@/lib/stripe/connect-capabilities";
 import type Stripe from "stripe";
 
 /**
@@ -77,6 +78,89 @@ export async function createExpressAccount(email: string | null): Promise<string
     capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
   });
   return account.id;
+}
+
+/**
+ * New restaurant checkouts use an Accounts v2 Recipient: Minerva Flow is
+ * the platform/Merchant of Record for destination charges, while the
+ * restaurant only needs to receive transfers and pay them out.
+ */
+export async function createRestaurantRecipientAccountV2(input: {
+  email: string | null;
+  restaurantId: string;
+  displayName?: string | null;
+}): Promise<string> {
+  const stripe = getStripeClient();
+  const account = await stripe.v2.core.accounts.create({
+    contact_email: input.email ?? undefined,
+    display_name: input.displayName?.trim().slice(0, 100) || undefined,
+    identity: { country: "ca" },
+    configuration: {
+      recipient: {
+        capabilities: {
+          stripe_balance: {
+            stripe_transfers: { requested: true },
+          },
+        },
+      },
+    },
+    defaults: {
+      responsibilities: { fees_collector: "application", losses_collector: "application" },
+    },
+    dashboard: "express",
+    metadata: { minerva_restaurant_id: input.restaurantId },
+    include: ["configuration.recipient", "requirements"],
+  }, { idempotencyKey: `minerva-restaurant-recipient-${input.restaurantId}` });
+  return account.id;
+}
+
+/** Stripe-hosted Account Link for the v2 recipient configuration. */
+export async function createRestaurantRecipientOnboardingLinkV2(
+  accountId: string,
+  refreshUrl: string,
+  returnUrl: string
+): Promise<string> {
+  const stripe = getStripeClient();
+  const link = await stripe.v2.core.accountLinks.create({
+    account: accountId,
+    use_case: {
+      type: "account_onboarding",
+      account_onboarding: {
+        configurations: ["recipient"],
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        collection_options: { fields: "currently_due", future_requirements: "include" },
+      },
+    },
+  });
+  return link.url;
+}
+
+export type RestaurantRecipientAccountStateV2 = {
+  transfersStatus: ConnectCapabilityStatus;
+  payoutsStatus: ConnectCapabilityStatus;
+  requirementsDueCount: number;
+};
+
+function normalizeCapabilityStatus(status: unknown): ConnectCapabilityStatus {
+  if (status === "active" || status === "pending" || status === "restricted" || status === "unsupported") {
+    return status;
+  }
+  return "unrequested";
+}
+
+export async function retrieveRestaurantRecipientAccountStateV2(
+  accountId: string
+): Promise<RestaurantRecipientAccountStateV2> {
+  const account = await getStripeClient().v2.core.accounts.retrieve(accountId, {
+    include: ["configuration.recipient", "requirements"],
+  });
+  const balance = account.configuration?.recipient?.capabilities?.stripe_balance;
+  return {
+    transfersStatus: normalizeCapabilityStatus(balance?.stripe_transfers?.status),
+    payoutsStatus: normalizeCapabilityStatus(balance?.payouts?.status),
+    requirementsDueCount: account.requirements?.entries?.length ?? 0,
+  };
 }
 
 export async function createOnboardingLink(

@@ -54,6 +54,7 @@ import type { Restaurant, Role } from "@/lib/types";
 import { SearchDialog } from "./SearchDialog";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { canAccessSettings } from "@/lib/nav-items";
 
 const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const;
 // 288px (was 256) — the longer page renames this session ("Performance
@@ -602,6 +603,16 @@ export function AppSidebar() {
                 label={t("admin")}
                 icon={Shield}
                 active={pathname.startsWith("/admin")}
+                onNavigate={closeMobile}
+              />
+            )}
+
+            {canAccessSettings(role) && (
+              <NavLink
+                href="/settings"
+                label={t("settings")}
+                icon={Settings}
+                active={pathname === "/settings" || pathname.startsWith("/settings/")}
                 onNavigate={closeMobile}
               />
             )}

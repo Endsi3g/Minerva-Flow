@@ -102,7 +102,7 @@ struct ScanToOrderView: View {
     @State private var permissionDenied = false
     @State private var isResolving = false
     @State private var resolveError: String?
-    @State private var resolvedRestaurant: (id: String, name: String)?
+    @State private var resolvedRestaurant: (id: String, name: String, branding: NativeTenantBranding?)?
 
     var body: some View {
         NavigationStack {
@@ -170,6 +170,7 @@ struct ScanToOrderView: View {
                 NavigationStack {
                     RestaurantDetailView(restaurantId: identifier.id, previewName: identifier.name)
                 }
+                .tint(MinervaColor.emeraldDark)
             }
             .task { await requestCameraPermission() }
         }
@@ -178,7 +179,12 @@ struct ScanToOrderView: View {
     private struct RestaurantIdentifier: Identifiable {
         let id: String
         let name: String
-        init(_ tuple: (id: String, name: String)) { id = tuple.id; name = tuple.name }
+        let branding: NativeTenantBranding?
+        init(_ tuple: (id: String, name: String, branding: NativeTenantBranding?)) {
+            id = tuple.id
+            name = tuple.name
+            branding = tuple.branding
+        }
     }
 
     private var scanFrame: some View {
@@ -254,8 +260,13 @@ struct ScanToOrderView: View {
             let result = await supabase.resolveScanToken(token)
             isResolving = false
             switch result {
-            case .success(let restaurant):
-                resolvedRestaurant = restaurant
+            case .success(let restaurant, let branding):
+                if let branding {
+                    supabase.activateTenantBranding(branding)
+                } else {
+                    await supabase.fetchTenantBranding(for: restaurant.id)
+                }
+                resolvedRestaurant = (restaurant.id, restaurant.name, branding)
             case .failure(let message):
                 resolveError = message
             }

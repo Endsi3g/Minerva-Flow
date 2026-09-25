@@ -13,6 +13,7 @@ final class SupabaseManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published private(set) var authUserID: UUID?
     @Published var customer: Customer?
+    @Published private(set) var activeTenantBranding: NativeTenantBranding?
     @Published var transactions: [LoyaltyTransaction] = []
     @Published var rewards: [LoyaltyReward] = []
     @Published var redemptions: [RewardRedemption] = []
@@ -133,6 +134,10 @@ final class SupabaseManager: ObservableObject {
                 isResolvingExperience = false
                 experienceResolutionError = nil
                 customer = nil
+                activeTenantBranding = nil
+                UserDefaults.standard.removeObject(forKey: "activeTenantPrimaryColor")
+                UserDefaults.standard.removeObject(forKey: "activeTenantSecondaryColor")
+                UserDefaults.standard.removeObject(forKey: "activeTenantAccentColor")
                 transactions = []
             }
         }
@@ -278,9 +283,11 @@ final class SupabaseManager: ObservableObject {
                 .value
             guard let mine = customers.first else {
                 customer = nil
+                activateTenantBranding(nil)
                 return
             }
             customer = mine
+            await fetchTenantBranding(for: mine.restaurantId)
 
             async let txsFetch: [LoyaltyTransaction] = client
                 .from("loyalty_transactions")
@@ -411,25 +418,7 @@ final class SupabaseManager: ObservableObject {
             await loadOwnerOrders()
             await loadOwnerOperations(for: selectedOwnerRestaurantId ?? first.restaurantId)
             await fetchOwnerMealSuggestions(for: selectedOwnerRestaurantId ?? first.restaurantId)
-            if let workspaceId = first.restaurant?.workspaceId {
-                struct Branding: Decodable {
-                    let brandName: String
-                    let logoUrl: String?
-                    let primaryColor: String
-                    let secondaryColor: String
-                    let accentColor: String
-                    enum CodingKeys: String, CodingKey {
-                        case brandName = "brand_name", logoUrl = "logo_url", primaryColor = "primary_color", secondaryColor = "secondary_color", accentColor = "accent_color"
-                    }
-                }
-                ownerBranding = try await client
-                    .from("workspace_brand_settings")
-                    .select("brand_name, logo_url, primary_color, secondary_color, accent_color")
-                    .eq("workspace_id", value: workspaceId)
-                    .single()
-                    .execute()
-                    .value
-            }
+            await loadSelectedOwnerBranding()
         } catch {
             // A customer session can legitimately receive no membership rows;
             // only surface errors for a session that looked privileged.
@@ -507,9 +496,41 @@ final class SupabaseManager: ObservableObject {
     func selectOwnerRestaurant(_ restaurantId: String) async {
         guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return }
         selectedOwnerRestaurantId = restaurantId
+        await loadSelectedOwnerBranding()
         await loadOwnerOrders()
         await loadOwnerOperations(for: restaurantId)
         await fetchOwnerMealSuggestions(for: restaurantId)
+    }
+
+    private func loadSelectedOwnerBranding() async {
+        guard let workspaceId = selectedOwnerRestaurant?.workspaceId else { return }
+        struct Branding: Decodable {
+            let brandName: String
+            let logoUrl: String?
+            let primaryColor: String
+            let secondaryColor: String
+            let accentColor: String
+            enum CodingKeys: String, CodingKey {
+                case brandName = "brand_name", logoUrl = "logo_url", primaryColor = "primary_color", secondaryColor = "secondary_color", accentColor = "accent_color"
+            }
+        }
+        do {
+            ownerBranding = try await client
+                .from("workspace_brand_settings")
+                .select("brand_name, logo_url, primary_color, secondary_color, accent_color")
+                .eq("workspace_id", value: workspaceId)
+                .single()
+                .execute()
+                .value
+            if let ownerBranding {
+                UserDefaults.standard.set(ownerBranding.primaryColor, forKey: "activeTenantPrimaryColor")
+                UserDefaults.standard.set(ownerBranding.secondaryColor, forKey: "activeTenantSecondaryColor")
+                UserDefaults.standard.set(ownerBranding.accentColor, forKey: "activeTenantAccentColor")
+            }
+        } catch {
+            ownerBranding = nil
+            print("loadSelectedOwnerBranding error: \(error)")
+        }
     }
 
     /// Persists the required establishment name during the native owner setup
@@ -1785,21 +1806,49 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
-    enum ScanResult { case success(restaurant: (id: String, name: String)); case failure(String) }
+    enum ScanResult { case success(restaurant: (id: String, name: String), branding: NativeTenantBranding?); case failure(String) }
 
     /// Resolves a scanned table QR (the same menu_shares token the web's
     /// own /m/[token] ordering page uses) to a restaurant — see
     /// app/api/portal/scan/[token]/route.ts's own comment.
     func resolveScanToken(_ token: String) async -> ScanResult {
-        struct ScanResponse: Decodable { let restaurantId: String; let restaurantName: String }
+        struct ScanResponse: Decodable {
+            let restaurantId: String
+            let restaurantName: String
+            let branding: NativeTenantBranding?
+        }
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/scan/\(token)"))
             let decoded = try JSONDecoder().decode(ScanResponse.self, from: data)
-            return .success(restaurant: (id: decoded.restaurantId, name: decoded.restaurantName))
+            return .success(restaurant: (id: decoded.restaurantId, name: decoded.restaurantName), branding: decoded.branding)
         } catch {
             print("resolveScanToken error: \(error)")
             return .failure("Ce code ne correspond à aucun restaurant Minerva Flow.")
         }
+    }
+
+    func fetchTenantBranding(for restaurantId: String) async {
+        struct BrandingResponse: Decodable { let branding: NativeTenantBranding }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurant/\(restaurantId)/branding"))
+            let response = try JSONDecoder().decode(BrandingResponse.self, from: data)
+            activateTenantBranding(response.branding)
+        } catch {
+            print("fetchTenantBranding error: \(error)")
+        }
+    }
+
+    func activateTenantBranding(_ branding: NativeTenantBranding?) {
+        activeTenantBranding = branding
+        guard let branding else {
+            UserDefaults.standard.removeObject(forKey: "activeTenantPrimaryColor")
+            UserDefaults.standard.removeObject(forKey: "activeTenantSecondaryColor")
+            UserDefaults.standard.removeObject(forKey: "activeTenantAccentColor")
+            return
+        }
+        UserDefaults.standard.set(branding.primaryColor, forKey: "activeTenantPrimaryColor")
+        UserDefaults.standard.set(branding.secondaryColor, forKey: "activeTenantSecondaryColor")
+        UserDefaults.standard.set(branding.accentColor, forKey: "activeTenantAccentColor")
     }
 
     // MARK: - Menu item reviews (public read via RLS, no bridge needed)

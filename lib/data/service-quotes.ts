@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isRestaurantConnectReady } from "@/lib/stripe/connect-capabilities";
 import { getClientIp, checkRateLimit } from "@/lib/rate-limit";
 import { notifyRestaurant } from "@/lib/data/notifications";
 import { createServiceQuoteCheckoutSession } from "@/lib/stripe/connect";
@@ -239,10 +240,23 @@ export async function issueServiceQuote(
   if (!quote.guest_email) return { ok: false, reason: "customer_email_missing" };
   const admin = createAdminClient();
   const { data: restaurant } = await admin.from("restaurants")
-    .select("name, timezone, stripe_connect_account_id, stripe_connect_charges_enabled")
+    .select("name, timezone, stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_account_api_version, stripe_connect_transfers_status, stripe_connect_recipient_payouts_status")
     .eq("id", restaurantId).maybeSingle();
-  const config = restaurant as { name?: string; timezone?: string; stripe_connect_account_id?: string | null; stripe_connect_charges_enabled?: boolean } | null;
-  if (!config?.stripe_connect_account_id || config.stripe_connect_charges_enabled !== true) return { ok: false, reason: "stripe_not_ready" };
+  const config = restaurant as {
+    name?: string;
+    timezone?: string;
+    stripe_connect_account_id?: string | null;
+    stripe_connect_charges_enabled?: boolean;
+    stripe_connect_account_api_version?: "v1" | "v2";
+    stripe_connect_transfers_status?: "active" | "pending" | "restricted" | "unsupported" | "unrequested";
+    stripe_connect_recipient_payouts_status?: "active" | "pending" | "restricted" | "unsupported" | "unrequested";
+  } | null;
+  if (!config?.stripe_connect_account_id || !config.stripe_connect_account_api_version || !isRestaurantConnectReady({
+    apiVersion: config.stripe_connect_account_api_version,
+    legacyChargesEnabled: config.stripe_connect_charges_enabled === true,
+    transfersStatus: config.stripe_connect_transfers_status ?? "unrequested",
+    payoutsStatus: config.stripe_connect_recipient_payouts_status ?? "unrequested",
+  })) return { ok: false, reason: "stripe_not_ready" };
   const cleanLines = normalizeServiceQuoteLines(lines);
   if (!cleanLines) {
     return { ok: false, reason: "invalid_lines" };

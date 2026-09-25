@@ -456,6 +456,7 @@ function CheckoutModal({
                       <button
                         key={mode}
                         type="button"
+                        aria-pressed={fulfillmentMode === mode}
                         onClick={() => setFulfillmentMode(mode)}
                         className={cn(
                           "flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium",
@@ -502,6 +503,7 @@ function CheckoutModal({
                       <button
                         key={String(choice.value)}
                         type="button"
+                        aria-pressed={payOnline === choice.value}
                         onClick={() => setPayOnline(choice.value)}
                         className={cn("flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium", payOnline === choice.value ? "border-mv-green bg-mv-green-tint text-mv-green-dark" : "border-mv-border text-mv-ink-soft")}
                       >
@@ -513,7 +515,7 @@ function CheckoutModal({
               )}
               {!payOnline && (
                 <Field label="Mode de paiement sur place" hint="Optionnel">
-                  <Input name="paymentMethod" placeholder="Ex : Carte, comptant" />
+                  <Input name="paymentMethod" aria-label="Mode de paiement sur place" placeholder="Ex : Carte, comptant" />
                 </Field>
               )}
               <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">

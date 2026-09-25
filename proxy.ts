@@ -174,8 +174,8 @@ export async function proxy(request: NextRequest) {
     // Prevent intermediate edge/browser proxies from caching private authenticated dashboards
     response.headers.set("Cache-Control", "private, no-cache, no-store, must-revalidate");
 
-    // Keep this redirect gate aligned with the four user-approved product
-    // sections. All other authenticated product pages remain unavailable.
+    // Keep this redirect gate aligned with the four core product sections
+    // and owner/manager Settings. Other product pages remain unavailable.
     const isAllowedProductPage = isAuthenticatedProductPath(pathWithoutLocale);
     if (!isApiRoute && !isAuthRoute && !isServerCallbackRoute && !isAllowedProductPage && !pathWithoutLocale.startsWith("/admin")) {
       const url = request.nextUrl.clone();

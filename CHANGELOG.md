@@ -2,24 +2,39 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
-## [Non publié] — Vérifications du 2026-09-24
+## [Non publié] — Vérifications du 2026-09-25
 
 ### Fiabilité et application iOS
 - Les fermetures de flux RSC Next.js exactement reconnues comme `The destination stream closed early.` restent transmises à Sentry pour diagnostic, mais ne déclenchent plus de fausse alerte par courriel « critique ».
+- Sentry web et iOS pointent maintenant vers des projets dédiés de l’organisation `minerva-s5m`; les événements d’erreur sont actifs, tandis que la collecte de PII, les corps HTTP, les journaux Sentry et Replay sont désactivés par défaut.
+- Les variables Sentry historiques ont été retirées de Vercel et remplacées par `NEXT_PUBLIC_MINERVA_SENTRY_DSN` en Production, Preview et Development, pointant vers `minerva-s5m/minerva-flow-web`. Le nouveau jeton est enregistré comme secret Vercel en Production et Preview et son authentification CLI a réussi; la configuration active les source maps, releases et moniteurs uniquement dans ces builds authentifiés. La prochaine build doit encore confirmer l’autorisation effective d’envoi.
 - Dans l’application iOS, l’ajout d’un article depuis la liste ou sa fiche ouvre immédiatement le checkout; le panier est conservé et aucun retour manuel au Menu n’est nécessaire.
 - La page Scanner présente la carte de fidélité, le QR/code de jumelage temporaire, son expiration, les états de chargement/erreur et l’accès au scanner caméra.
 - L’apparence claire reste le choix initial; les préférences Clair, Système et Sombre utilisent les palettes adaptatives web et iOS.
 
 ### Vérification
-- Tests unitaires : 330 réussis sur 57 fichiers; TypeScript et lint ciblé réussis.
+- Tests unitaires : 335 réussis sur 58 fichiers; lint ciblé réussi. Lors de la revalidation du 25 septembre, `npx tsc --noEmit` standard et ESLint ciblé sur la configuration Sentry passent.
+- Rebuild local de diagnostic : `npx next build --webpack --debug` termine avec le code 0 après 71 s de compilation et 13 s de TypeScript, en générant 328 routes. Les messages `cookies` de génération marquent des routes authentifiées comme dynamiques; ils n’empêchent pas le build. Aucun téléversement Sentry n’a été fait depuis ce build local.
 - E2E staging : 6/6 réussis — précommande planifiée et cueillette, suggestion/vote client puis brouillon owner, demandes traiteur sur place et livraison, demande owner, conversion de devis payé idempotente.
+- Reprise Playwright ciblée sur les parcours précommande et production traiteur : 2/2 réussis avec le bac à sable Stripe activé; le parcours précommande testé choisit le paiement à la cueillette et ne débite pas.
+- La clé Stripe fournie a été confirmée en mode test sur la plateforme Connect. Le test d’un compte destinataire synthétique révèle qu’aucun compte connecté de test n’a les virements actifs; Stripe refuse le PaymentIntent avec `insufficient_capabilities_for_transfer`. Le paiement en ligne Connect reste non validé; ne pas présenter le checkout complet comme testé.
+- Le harnais E2E n’hérite plus d’une clé Stripe publiable live : seule `E2E_TEST_STRIPE_PUBLISHABLE_KEY` (préfixe `pk_test_`) est exposée au navigateur, ou la clé est vide.
 - Le succès de précommande a été inspecté à 390 px; aucune largeur horizontale parasite. Captures : [`précommande mobile`](docs/screenshots/changelog-2.48.0-preorder-success-mobile.png) et [`traiteur desktop`](docs/screenshots/changelog-2.48.0-catering-success.png).
+- Vérification Paramètres/Stripe : après une reprise initiale bloquée avant connexion, l’E2E Playwright a réussi avec le garde de rôle final (`1/1`) et confirme la carte et son CTA sur desktop/mobile. Le fixture synthétique et son utilisateur sont absents du staging après nettoyage.
 - La compilation Simulator iOS a réussi sur la source récente; XCTest reste bloqué dans le runner Xcode et aucun résultat de test actuel n’est confirmé.
+- Vérification Sentry du 25 septembre : un événement web synthétique sans données personnelles apparaît dans `minerva-flow-web`; build Webpack local réussi (328 routes), TypeScript et ESLint ciblés réussis, compilation iOS Simulator réussie. La réception d’événements iOS reste à vérifier. La ressource Marketplace `sentry-copper-notebook` est provisionnée sur le forfait gratuit, mais sa liaison automatique a échoué; les anciennes variables Sentry Vercel ont été nettoyées, le DSN est configuré dans les trois environnements et le nouveau jeton est présent en Production/Preview. Auth CLI réussie; le téléversement réel des source maps reste à confirmer par une build Vercel authentifiée. Le jeton partagé dans la conversation doit être tourné après cette validation.
 - Audit App Store statique : 0 risque critique, 0 élevé, 2 avertissements; les déclarations/contrôles manuels avant publication publique restent ouverts.
 - Le build iOS `1.0 (11)` a été traité par Apple, soumis et activé dans les groupes TestFlight interne et externe. Le groupe externe compte 8 testeurs; le lien public `https://testflight.apple.com/join/xGr45uuF` répond HTTP 200. La notification automatique après approbation est activée.
 - Le dSYM de `Sentry.framework` correspond au binaire par UUID, corrigeant l’avertissement de symboles manquants reçu précédemment.
 - Le compte de démonstration fonctionne sur le même backend que l’application native; les identifiants et notes de review sont renseignés dans App Store Connect. Aucun paiement réel n’est requis pour les tests.
 - La publication publique App Store reste distincte et non déclarée prête; les contrôles manuels Apple encore nécessaires restent ouverts.
+
+### Stripe Connect — reprise technique
+- Les nouvelles connexions de restaurant utilisent Accounts v2 Recipient; les comptes Express v1 existants restent pris en charge sans conversion ni recréation.
+- La migration additive `0150_restaurant_connect_v2.sql` a été appliquée au seul staging autorisé puis les quatre colonnes et valeurs par défaut ont été vérifiées. Elle a été exécutée directement, car l’historique distant horodaté ne correspond pas aux migrations locales; ne pas lancer `supabase db push` sans réconciliation préalable.
+- Smoke test Stripe en mode test réussi pour créer un destinataire synthétique, générer son lien d’onboarding hébergé et relire son compte; le lien n’a pas été exposé et le compte synthétique a été fermé.
+- Le paiement Checkout/PaymentIntent n’est toujours pas validé de bout en bout : aucun destinataire de test activé n’est disponible. Aucune production, soumission TestFlight ou release n’est autorisée par ce résultat seul.
+- Le lien Paramètres est maintenant rétabli pour owner/manager et `/settings` est autorisé; l’E2E Intégrations confirme la carte Stripe à l’état « Non connecté » avec son action d’onboarding sur desktop et mobile.
 
 ## [v2.48.0] — 2026-09-24
 
@@ -28,13 +43,13 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Configuration des versements par Stripe Connect; les commissions restent en attente pendant 30 jours et suivent les vérifications prévues.
 - Soumission de contenu UGC liée à un restaurant ayant donné son accord; contrôle avant réutilisation et suivi des liens/vidéos par canal.
 - Les propriétaires peuvent relier leur compte Instagram partenaire pour consulter les statistiques disponibles.
-- Navigation essentielle limitée à Workspace, Fournisseurs, Inventaire et Commandes; Menu, Fidélisation et les autres pages produit redirigent vers Workspace.
+- Navigation essentielle limitée à Workspace, Fournisseurs, Inventaire et Commandes, avec Paramètres accessible aux propriétaires/gestionnaires pour configurer l’établissement et Stripe Connect; Menu, Fidélisation et les autres pages produit restent redirigées vers Workspace.
 
 ### Vérification de release
 - Build web local de production réussi, avec upload Sentry, vérification TypeScript et 328 pages statiques générées.
 - Schémas staging et production vérifiés en lecture seule; `public.restaurants`, les objets ambassadeur/UGC, les fonctions de commande et le défaut de consentement Auth sont présents.
-- Audience courriel de release : segment Resend « Minerva Flow · consentement explicite — abonnés actifs », 18 membres actifs au dernier contrôle.
-- La promotion production et l’envoi du courriel attendent la vérification du Preview correspondant au commit final.
+- Audience courriel de release : segment Resend « Minerva Flow · consentement explicite — abonnés actifs », 18 membres actifs au dernier contrôle; le brouillon conserve le lien de désabonnement.
+- Preview Vercel exact `94776e2` READY; promotion production et envoi du courriel restent suspendus jusqu’à la migration/validation Stripe Connect et aux autres gates de la candidate.
 
 ## [v2.47.1] — 2026-09-23
 

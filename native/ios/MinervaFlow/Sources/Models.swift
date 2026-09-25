@@ -32,6 +32,23 @@ struct NativeOwnerBranding: Codable {
     let accentColor: String
 }
 
+/// Branding that is safe to return to an authenticated customer app. It is
+/// scoped to the restaurant's workspace so every location in a franchise
+/// can share one identity without a separate app build.
+struct NativeTenantBranding: Codable, Equatable {
+    let restaurantId: String
+    let workspaceId: String?
+    let brandName: String
+    let logoUrl: String?
+    let primaryColor: String
+    let secondaryColor: String
+    let accentColor: String
+
+    enum CodingKeys: String, CodingKey {
+        case restaurantId, workspaceId, brandName, logoUrl, primaryColor, secondaryColor, accentColor
+    }
+}
+
 struct NativeOwnerMetrics {
     var monthRevenue: Double = 0
     var monthOrders: Int = 0
@@ -664,6 +681,7 @@ struct DiscoverRestaurantResponse: Codable {
     let restaurant: DiscoverRestaurantDetail
     let offers: [RestaurantDiscoverOffer]
     let menuItems: [NativeMenuItem]
+    let branding: NativeTenantBranding?
 }
 
 struct DiscoverListResponse: Codable {

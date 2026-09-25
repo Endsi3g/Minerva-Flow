@@ -90,6 +90,15 @@ enum MinervaColor {
         })
     }
 
+    private static func tenantAware(primaryKey: String, fallbackLight: UInt32, fallbackDark: UInt32) -> Color {
+        guard let hex = UserDefaults.standard.string(forKey: primaryKey),
+              hex.count == 7, hex.first == "#",
+              let value = UInt32(hex.dropFirst(), radix: 16) else {
+            return adaptive(light: fallbackLight, dark: fallbackDark)
+        }
+        return Color(uiColor: rgb(value))
+    }
+
     // Semantic palette shared by every native screen. Wallet/brand artwork
     // may opt into fixed colors; application surfaces and copy must not.
     static let cream = adaptive(light: 0xF5F1E6, dark: 0x14170F)
@@ -98,11 +107,11 @@ enum MinervaColor {
     static let ink = adaptive(light: 0x1B2620, dark: 0xF3F2EA)
     static let inkSoft = adaptive(light: 0x56645A, dark: 0xB9C0B0)
     static let inkFaint = adaptive(light: 0x687367, dark: 0xA0A794)
-    static let emerald = adaptive(light: 0x167F5B, dark: 0x1C9A6F)
-    static let emeraldDark = adaptive(light: 0x0E5A40, dark: 0x4ADE9B)
+    static var emerald: Color { tenantAware(primaryKey: "activeTenantPrimaryColor", fallbackLight: 0x167F5B, fallbackDark: 0x1C9A6F) }
+    static var emeraldDark: Color { tenantAware(primaryKey: "activeTenantSecondaryColor", fallbackLight: 0x0E5A40, fallbackDark: 0x4ADE9B) }
     /// Web's --mv-lime — the Ambassadeur tier's banner color, matching
     /// Starbucks' Gold-status treatment.
-    static let limeAccent = Color(red: 0xDF / 255, green: 0xFF / 255, blue: 0x5F / 255)
+    static var limeAccent: Color { tenantAware(primaryKey: "activeTenantAccentColor", fallbackLight: 0xDFFF5F, fallbackDark: 0xDFFF5F) }
     static let border = adaptive(light: 0xE6E0D0, dark: 0x33392A)
 }
 

@@ -30,12 +30,19 @@ test.describe("Public scheduled preorders", () => {
     }
     restaurantId = membership.restaurant_id;
 
+    const nonce = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const { error: settingsError } = await supabaseAdmin.from("restaurants")
-      .update({ order_modes_enabled: ["sur_place"], delivery_enabled: false, accepts_tips: false, tax_rate: 0 })
+      .update({
+        order_modes_enabled: ["sur_place", "immediat"],
+        delivery_enabled: false,
+        accepts_tips: false,
+        tax_rate: 0,
+        stripe_connect_account_id: `acct_e2e_preorder_${nonce}`,
+        stripe_connect_charges_enabled: true,
+      })
       .eq("id", restaurantId);
     if (settingsError) throw new Error(`Test checkout settings could not be configured: ${settingsError.message}`);
 
-    const nonce = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     token = `e2e-preorder-${nonce}`;
     guestName = `E2E Preorder ${nonce}`;
     const [{ data: share, error: shareError }, { data: item, error: itemError }] = await Promise.all([
@@ -87,6 +94,21 @@ test.describe("Public scheduled preorders", () => {
     await expect(page.getByText(/1 article\s*—/i)).toBeVisible();
     await page.getByRole("button", { name: /voir la commande/i }).click();
     await expect(page.getByRole("dialog", { name: "Votre commande" })).toBeVisible();
+    const checkoutViewport = page.viewportSize() ?? { width: 1280, height: 720 };
+
+    const payAtPickup = page.getByRole("button", { name: "À la cueillette", exact: true });
+    const payOnline = page.getByRole("button", { name: "En ligne", exact: true });
+    await expect(payAtPickup).toHaveAttribute("aria-pressed", "true");
+    await expect(payOnline).toHaveAttribute("aria-pressed", "false");
+    await payOnline.click();
+    await expect(payOnline).toHaveAttribute("aria-pressed", "true");
+    await payAtPickup.click();
+    await expect(page.getByRole("textbox", { name: "Mode de paiement sur place" })).toBeVisible();
+    await page.getByRole("textbox", { name: "Mode de paiement sur place" }).fill("Comptant");
+    await page.getByRole("dialog").screenshot({ path: testInfo.outputPath("preorder-payment-choice-desktop.png") });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole("dialog").screenshot({ path: testInfo.outputPath("preorder-payment-choice-mobile.png") });
+    await page.setViewportSize(checkoutViewport);
 
     const future = new Date(Date.now() + 48 * 60 * 60_000);
     future.setUTCMinutes(Math.ceil(future.getUTCMinutes() / 15) * 15, 0, 0);
@@ -113,7 +135,7 @@ test.describe("Public scheduled preorders", () => {
     expect(viewportWidth).toBeLessThanOrEqual(390);
 
     const { data: orders, error: orderError } = await supabaseAdmin.from("orders")
-      .select("id, status, guest_name, source, fulfillment_mode, payment_status, requested_ready_at, total")
+      .select("id, status, guest_name, source, fulfillment_mode, payment_status, payment_method, requested_ready_at, total")
       .eq("restaurant_id", restaurantId)
       .eq("guest_name", guestName);
     expect(orderError).toBeNull();
@@ -126,6 +148,7 @@ test.describe("Public scheduled preorders", () => {
       source: "web",
       fulfillment_mode: "sur_place",
       payment_status: "non_requis",
+      payment_method: "Comptant",
       total: 12.5,
     });
     expect(Date.parse(order.requested_ready_at ?? "")).toBeGreaterThan(Date.now() + 12 * 60 * 60_000);

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { resolveNativeUserId } from "@/lib/auth/native-bearer";
 import { getMenuShareByToken } from "@/lib/data/menu-shares";
 import { getLoyaltyShareByToken } from "@/lib/data/loyalty-shares";
+import { getPublicTenantBranding } from "@/lib/data/public-tenant-branding";
 
 /**
  * Resolves a physical QR code to a restaurant id — the native app's
@@ -29,17 +30,21 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
 
   const menuLanding = await getMenuShareByToken(token);
   if (menuLanding) {
+    const branding = await getPublicTenantBranding(menuLanding.restaurantId);
     return NextResponse.json({
       restaurantId: menuLanding.restaurantId,
       restaurantName: menuLanding.restaurantName,
+      branding,
     });
   }
 
   const loyaltyLanding = await getLoyaltyShareByToken(token);
   if (loyaltyLanding) {
+    const branding = await getPublicTenantBranding(loyaltyLanding.restaurantId);
     return NextResponse.json({
       restaurantId: loyaltyLanding.restaurantId,
       restaurantName: loyaltyLanding.restaurantName,
+      branding,
     });
   }
 

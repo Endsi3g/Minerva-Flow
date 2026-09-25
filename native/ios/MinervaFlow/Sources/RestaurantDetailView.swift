@@ -108,6 +108,11 @@ struct RestaurantDetailView: View {
             .task {
                 isLoading = true
                 detail = await supabase.fetchRestaurantDetail(id: restaurantId)
+                if let branding = detail?.branding {
+                    supabase.activateTenantBranding(branding)
+                } else {
+                    await supabase.fetchTenantBranding(for: restaurantId)
+                }
                 isLoading = false
                 isLoadingReviews = true
                 reviews = await supabase.fetchRestaurantReviews(restaurantId: restaurantId)
@@ -227,6 +232,23 @@ struct RestaurantDetailView: View {
 
     private func header(for restaurant: DiscoverRestaurantDetail) -> some View {
         VStack(alignment: .leading, spacing: 10) {
+            if let branding = supabase.activeTenantBranding, branding.restaurantId == restaurantId {
+                HStack(spacing: 9) {
+                    if let logo = branding.logoUrl, let url = URL(string: logo) {
+                        AsyncImage(url: url) { image in
+                            image.resizable().scaledToFit()
+                        } placeholder: {
+                            RoundedRectangle(cornerRadius: 9).fill(MinervaColor.emerald.opacity(0.1))
+                        }
+                        .frame(width: 34, height: 34)
+                        .clipShape(RoundedRectangle(cornerRadius: 9))
+                    }
+                    Text(branding.brandName)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                }
+                .accessibilityElement(children: .combine)
+            }
             Text(restaurant.name)
                 .font(MinervaFont.display(24))
                 .foregroundStyle(MinervaColor.ink)

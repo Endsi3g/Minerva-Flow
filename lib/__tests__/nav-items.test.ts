@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAuthenticatedProductPath, navItemsForRole } from "@/lib/nav-items";
+import { canAccessSettings, isAuthenticatedProductPath, navItemsForRole } from "@/lib/nav-items";
 
 describe("authenticated product route allowlist", () => {
   it.each([
@@ -11,6 +11,8 @@ describe("authenticated product route allowlist", () => {
     "/inventaire/recettes",
     "/commandes",
     "/commandes/service-quotes",
+    "/settings",
+    "/settings/alertes",
   ])("keeps the product route %s reachable", (path) => {
     expect(isAuthenticatedProductPath(path)).toBe(true);
   });
@@ -25,7 +27,6 @@ describe("authenticated product route allowlist", () => {
     "/finance",
     "/collaborateurs",
     "/changelog",
-    "/settings",
     "/menu-settings",
     "/fidelisationx",
     "/unknown",
@@ -34,9 +35,17 @@ describe("authenticated product route allowlist", () => {
     expect(isAuthenticatedProductPath(path)).toBe(false);
   });
 
-  it("exposes only the requested four owner navigation routes", () => {
+  it("exposes the four core owner routes and the necessary Settings entry", () => {
     expect(navItemsForRole("owner").map(({ key }) => key)).toEqual([
-      "workspace", "commandes", "inventaire", "fournisseurs",
+      "workspace", "commandes", "inventaire", "fournisseurs", "settings",
     ]);
+  });
+
+  it("does not expose Settings to staff", () => {
+    expect(navItemsForRole("staff").some(({ key }) => key === "settings")).toBe(false);
+    expect(canAccessSettings("staff")).toBe(false);
+    expect(canAccessSettings("consultant")).toBe(false);
+    expect(canAccessSettings("owner")).toBe(true);
+    expect(canAccessSettings("manager")).toBe(true);
   });
 });

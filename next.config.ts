@@ -3,6 +3,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+const sentryBuildAuthConfigured = Boolean(process.env.SENTRY_AUTH_TOKEN);
 
 const nextConfig: NextConfig = {
   devIndicators: false,
@@ -54,9 +55,9 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "uprising-studio",
+  org: "minerva-s5m",
 
-  project: "minerva-flow",
+  project: "minerva-flow-web",
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
@@ -64,8 +65,11 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
+  // Build-time uploads stay off locally unless an authenticated build
+  // environment explicitly provides the Sentry token. Vercel Production and
+  // Preview have a scoped token configured for this organization/project.
+  sourcemaps: { disable: !sentryBuildAuthConfigured },
+  release: { create: sentryBuildAuthConfigured },
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
@@ -78,7 +82,8 @@ export default withSentryConfig(withNextIntl(nextConfig), {
     // See the following for more information:
     // https://docs.sentry.io/product/crons/
     // https://vercel.com/docs/cron-jobs
-    automaticVercelMonitors: true,
+    // Only provision cron monitors in authenticated Vercel builds.
+    automaticVercelMonitors: sentryBuildAuthConfigured,
 
     // Tree-shaking options for reducing bundle size
     treeshake: {

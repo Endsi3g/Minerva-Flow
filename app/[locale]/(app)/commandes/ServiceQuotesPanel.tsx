@@ -184,21 +184,22 @@ export function ServiceQuotesPanel({
           </Button>
         </div>}
         <section aria-label="Calendrier de production traiteur" className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/40 p-3.5 sm:p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-2.5">
               <span className="rounded-lg bg-white p-2 text-mv-green-dark"><CalendarDays size={16} /></span>
-              <div>
+              <div className="min-w-0">
                 <h3 className="text-[13px] font-semibold text-mv-ink">Calendrier de production</h3>
-                <p className="text-[11px] text-mv-ink-faint">Événements à venir · fuseau {restaurantTimezone}</p>
+                <p className="break-words text-[11px] text-mv-ink-faint">Événements à venir · fuseau {restaurantTimezone}</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Button type="button" variant="ghost" size="sm" aria-label="Semaine précédente" onClick={() => shiftCalendar(-7)}><ChevronLeft size={15} /></Button>
-              <span className="min-w-[118px] text-center text-[11.5px] font-medium text-mv-ink-soft">
-                {formatCalendarDay(weekDays[0] ?? selectedDay, restaurantTimezone, { day: "numeric", month: "short" })} – {formatCalendarDay(weekDays[6] ?? selectedDay, restaurantTimezone, { day: "numeric", month: "short", year: "numeric" })}
+            <div className="grid w-full grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-1.5 sm:w-auto sm:flex">
+              <Button type="button" className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8" variant="ghost" size="sm" aria-label="Semaine précédente" onClick={() => shiftCalendar(-7)}><ChevronLeft size={15} /></Button>
+              <span className="min-w-0 text-center text-[11.5px] font-medium text-mv-ink-soft sm:min-w-[118px]">
+                <span className="sm:hidden">{formatCalendarDay(weekDays[0] ?? selectedDay, restaurantTimezone, { day: "numeric" })}–{formatCalendarDay(weekDays[6] ?? selectedDay, restaurantTimezone, { day: "numeric", month: "short", year: "numeric" })}</span>
+                <span className="hidden sm:inline">{formatCalendarDay(weekDays[0] ?? selectedDay, restaurantTimezone, { day: "numeric", month: "short" })} – {formatCalendarDay(weekDays[6] ?? selectedDay, restaurantTimezone, { day: "numeric", month: "short", year: "numeric" })}</span>
               </span>
-              <Button type="button" variant="ghost" size="sm" aria-label="Semaine suivante" onClick={() => shiftCalendar(7)}><ChevronRight size={15} /></Button>
-              <Button type="button" variant="secondary" size="sm" onClick={() => setSelectedDay(initialToday)}>Aujourd’hui</Button>
+              <Button type="button" className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8" variant="ghost" size="sm" aria-label="Semaine suivante" onClick={() => shiftCalendar(7)}><ChevronRight size={15} /></Button>
+              <Button type="button" className="col-span-3 min-h-11 justify-self-end px-2 sm:col-span-auto sm:min-h-8 sm:justify-self-auto sm:px-3" variant="secondary" size="sm" onClick={() => setSelectedDay(initialToday)}>Aujourd’hui</Button>
             </div>
           </div>
           <div className="grid grid-cols-7 gap-1.5" role="group" aria-label="Choisir une journée de production">

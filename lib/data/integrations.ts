@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { isRestaurantConnectReady } from "@/lib/stripe/connect-capabilities";
 import { getPosConnections, type PosProvider } from "@/lib/data/pos-connections";
 import {
   isSquareConfigured,
@@ -82,7 +83,7 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
   // 1. Fetch Restaurant Stripe Connect & Basic Status
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_connected_at")
+    .select("stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_connected_at, stripe_connect_account_api_version, stripe_connect_transfers_status, stripe_connect_recipient_payouts_status")
     .eq("id", restaurantId)
     .maybeSingle();
 
@@ -121,7 +122,12 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
     .eq("provider", "instagram")
     .maybeSingle();
 
-  const stripeConnected = Boolean(restaurant?.stripe_connect_account_id && restaurant?.stripe_connect_charges_enabled);
+  const stripeConnected = Boolean(restaurant?.stripe_connect_account_id && restaurant?.stripe_connect_account_api_version && isRestaurantConnectReady({
+    apiVersion: restaurant?.stripe_connect_account_api_version === "v2" ? "v2" : "v1",
+    legacyChargesEnabled: restaurant?.stripe_connect_charges_enabled === true,
+    transfersStatus: restaurant?.stripe_connect_transfers_status ?? "unrequested",
+    payoutsStatus: restaurant?.stripe_connect_recipient_payouts_status ?? "unrequested",
+  }));
   const googleConnected = Boolean(googleConn?.id);
   const deliveryConnected = Boolean(deliveryConn?.id);
   const instagramConnected = Boolean(instagramConn?.id && instagramConn?.status === "connecte");

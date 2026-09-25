@@ -3,6 +3,7 @@ import { resolveNativeUserId } from "@/lib/auth/native-bearer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveMenuItemsForCustomers } from "@/lib/data/menu";
 import { getActiveOffersForRestaurant } from "@/lib/data/offers";
+import { getPublicTenantBranding } from "@/lib/data/public-tenant-branding";
 
 /**
  * A single restaurant's public-safe profile — reached from the discovery
@@ -19,7 +20,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
 
   const admin = createAdminClient();
-  const [{ data: restaurant, error: restaurantError }, offers, menuItems] = await Promise.all([
+  const [{ data: restaurant, error: restaurantError }, offers, menuItems, branding] = await Promise.all([
     admin
       .from("restaurants")
       .select("id, name, description, address, city, province, lat, lng, phone, website, color, opening_hours, service_model, image_urls, google_maps_url")
@@ -27,6 +28,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       .single(),
     getActiveOffersForRestaurant(id),
     getActiveMenuItemsForCustomers(id),
+    getPublicTenantBranding(id),
   ]);
 
   if (restaurantError || !restaurant) {
@@ -49,6 +51,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       openingHours: restaurant.opening_hours,
       serviceModel: (restaurant.service_model as string | null) ?? "restaurant",
       imageUrls: (restaurant.image_urls as string[] | null) ?? [],
+      branding,
     },
     offers: offers ?? [],
     menuItems,

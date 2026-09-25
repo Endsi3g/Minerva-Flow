@@ -4,7 +4,13 @@ import type { PlanTier } from "@/lib/ai/quotas";
 import { upsertSubscription, getSubscriptionByStripeCustomerId } from "@/lib/data/subscriptions";
 import { setWorkspacePlanTier } from "@/lib/data/ai-usage";
 import { notifyWorkspaceOwners, notifyRestaurant } from "@/lib/data/notifications";
-import { getRestaurantIdByStripeConnectAccountId, syncConnectAccountStatus } from "@/lib/data/restaurant-payments";
+import {
+  getRestaurantIdByStripeConnectAccountId,
+  getRestaurantConnectApiVersionByStripeAccountId,
+  syncConnectAccountStatus,
+  syncRestaurantRecipientStatusV2,
+} from "@/lib/data/restaurant-payments";
+import { retrieveRestaurantRecipientAccountStateV2 } from "@/lib/stripe/connect";
 import { sendBillingLifecycleEmail, getWorkspaceOwnerContact } from "@/lib/email/billing-lifecycle";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recordFlowAmbassadorFirstPaidInvoice } from "@/lib/data/flow-ambassadors";
@@ -540,11 +546,14 @@ export async function POST(req: Request) {
       const account = event.data.object as Stripe.Account;
       const restaurantId = await getRestaurantIdByStripeConnectAccountId(account.id);
       if (restaurantId) {
-        const { justActivated } = await syncConnectAccountStatus(restaurantId, {
-          chargesEnabled: Boolean(account.charges_enabled),
-          payoutsEnabled: Boolean(account.payouts_enabled),
-          detailsSubmitted: Boolean(account.details_submitted),
-        });
+        const apiVersion = await getRestaurantConnectApiVersionByStripeAccountId(account.id);
+        const { justActivated } = apiVersion === "v2"
+          ? await syncRestaurantRecipientStatusV2(restaurantId, await retrieveRestaurantRecipientAccountStateV2(account.id))
+          : await syncConnectAccountStatus(restaurantId, {
+              chargesEnabled: Boolean(account.charges_enabled),
+              payoutsEnabled: Boolean(account.payouts_enabled),
+              detailsSubmitted: Boolean(account.details_submitted),
+            });
         if (justActivated) {
           await notifyRestaurant({
             restaurantId,

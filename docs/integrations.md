@@ -126,21 +126,21 @@ Dites-moi simplement quand vous voulez l'activer et je m'occupe du reste une foi
 
 ## 5b. Stripe Connect (paiements clients en ligne)
 
-Distinct de la section précédente : ceci fait que **vos clients** paient directement dans **le compte Stripe de chaque restaurant** (pas le vôtre) quand ils commandent depuis un menu partagé (`/m/[token]`) — le code est entièrement construit (compte Express, carte "Connecter Stripe" dans Paramètres → Intégrations, `PaymentElement` au checkout, webhook de confirmation), et utilise la **même clé secrète** que la facturation ci-dessus (un seul compte Stripe, un seul `STRIPE_SECRET_KEY`). Il reste seulement des étapes de configuration côté dashboard :
+Distinct de la facturation Minerva Flow : Stripe Connect sert à recevoir les transferts associés aux commandes clients depuis un menu partagé (`/m/[token]`). Les nouvelles connexions restaurant créent un destinataire Accounts v2 avec onboarding Stripe hébergé; les comptes Express v1 déjà liés restent pris en charge. Le checkout et les webhooks sont présents, mais le paiement Connect complet reste en attente d’un compte test activé et d’une validation de bout en bout. Le flux utilise la clé secrète du compte plateforme (`STRIPE_SECRET_KEY`) et une clé publique Stripe côté navigateur.
 
 1. [Dashboard Stripe](https://dashboard.stripe.com/) → **Connect** → activer le produit Connect sur votre compte plateforme (choix "Plateforme ou marketplace" à l'inscription si ce n'est pas déjà fait).
-2. **Developers → API keys** → récupérer la clé publique (`pk_...`) :
+2. **Developers → API keys** → configurer d’abord les clés de test du staging (`sk_test_…` côté serveur et `pk_test_…` côté navigateur); ne jamais utiliser les clés live pour un essai :
    ```bash
    vercel env add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY production
    ```
-3. **Developers → Webhooks** → ouvrir le endpoint existant (`https://minerva-flow.vercel.app/api/stripe/webhook`, déjà configuré pour la facturation) → activer **"Listen to events on connected accounts"** et ajouter l'événement `account.updated` à sa liste. Les événements `payment_intent.succeeded`/`payment_intent.payment_failed` n'ont besoin d'aucun changement — ils arrivent déjà comme des événements normaux de la plateforme.
+3. **Developers → Webhooks** → configurer l’endpoint de staging `/api/stripe/webhook` pour écouter les événements de comptes connectés et `account.updated`. Vérifier également la réception des événements de paiement plateforme (`payment_intent.succeeded` / `payment_intent.payment_failed`) dans l’environnement de test.
 4. Optionnel — commission plateforme (0 % par défaut tant que vous n'avez pas tranché un modèle d'affaires) :
    ```bash
    vercel env add STRIPE_CONNECT_FEE_PERCENT production
    # valeur : un nombre entre 0 et 100, ex. "2" pour 2 %
    ```
 
-Une fois ces étapes faites, chaque restaurant peut cliquer "Connecter Stripe" dans ses propres Paramètres et compléter son inscription Express (numéro d'entreprise, compte bancaire) directement chez Stripe — aucune autre action de votre part par restaurant.
+Une fois la configuration de test confirmée, un propriétaire peut connecter le compte du restaurant depuis Paramètres → Intégrations et terminer l’onboarding chez Stripe. Ne pas activer les commandes payées en ligne ni passer en production tant qu’un compte test actif n’a pas validé le transfert, le webhook et le réessai. La migration 0150 doit être appliquée et vérifiée sur chaque environnement; sur le staging courant elle a été exécutée en DDL ciblé car l’historique Supabase distant ne correspond pas aux migrations numérotées locales.
 
 ---
 

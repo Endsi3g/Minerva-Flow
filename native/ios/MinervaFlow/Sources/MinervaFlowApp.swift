@@ -24,9 +24,7 @@ struct MinervaFlowApp: App {
         // category" complaint, with no new dependency.
         URLCache.shared = URLCache(memoryCapacity: 50 * 1024 * 1024, diskCapacity: 200 * 1024 * 1024)
 
-        // Harmless no-op until Config.sentryDSN is filled in (see its own
-        // comment) — the web app already has a real Sentry organization,
-        // this just hasn't been pointed at an iOS project within it yet.
+        // Send native crashes to the dedicated Minerva Flow iOS Sentry project.
         if !Config.sentryDSN.isEmpty {
             SentrySDK.start { options in
                 options.dsn = Config.sentryDSN
