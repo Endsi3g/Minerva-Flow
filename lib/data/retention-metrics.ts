@@ -1,5 +1,4 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatCurrency } from "@/lib/utils";
 import { LifecycleEventType, LIFECYCLE_EVENT_CONFIG } from "@/lib/data/lifecycle-events";
@@ -44,6 +43,14 @@ export type LifecycleEventItem = {
   metadata: Record<string, unknown>;
 };
 
+export type CustomerVisitCohort = {
+  id: "not_visited" | "returning" | "regular";
+  label: string;
+  members: number;
+  averageVisits: number;
+  averageSpend: number;
+};
+
 export type RetentionFunnelDashboardData = {
   timeRange: RetentionTimeRange;
   kpis: {
@@ -59,6 +66,7 @@ export type RetentionFunnelDashboardData = {
     unsubscribeRate: RetentionKpi;
   };
   funnelSteps: FunnelStep[];
+  customerVisitCohorts: CustomerVisitCohort[];
   rawCounts: {
     scans: number;
     formStarts: number;
@@ -190,7 +198,6 @@ export async function getRetentionFunnelMetrics(
   restaurantId: string,
   timeRange: RetentionTimeRange = "30d"
 ): Promise<RetentionFunnelDashboardData> {
-  const supabase = await createClient();
   const admin = createAdminClient();
 
   const startDateIso = getRangeStartDate(timeRange);
@@ -233,7 +240,6 @@ export async function getRetentionFunnelMetrics(
   };
 
   let campaignRevenue = 0;
-  const reactivatedCustomerIds = new Set<string>();
 
   for (const ev of events) {
     const type = ev.event_type as LifecycleEventType;
@@ -244,9 +250,6 @@ export async function getRetentionFunnelMetrics(
       const meta = (ev.metadata ?? {}) as Record<string, unknown>;
       const spent = typeof meta.amountSpent === "number" ? meta.amountSpent : 0;
       campaignRevenue += spent;
-      if (ev.customer_id) {
-        reactivatedCustomerIds.add(ev.customer_id);
-      }
     }
   }
 
@@ -263,6 +266,24 @@ export async function getRetentionFunnelMetrics(
     : totalMembers;
   const customersWithOnePlusVisits = customers.filter((c) => c.visit_count >= 1);
   const customersWithTwoPlusVisits = customers.filter((c) => c.visit_count >= 2);
+  const customerVisitCohorts: CustomerVisitCohort[] = [
+    { id: "not_visited", label: "Aucune visite enregistrée", members: 0, averageVisits: 0, averageSpend: 0 },
+    { id: "returning", label: "Membres actifs · 1 à 4 visites", members: 0, averageVisits: 0, averageSpend: 0 },
+    { id: "regular", label: "Habitués · 5 visites et plus", members: 0, averageVisits: 0, averageSpend: 0 },
+  ];
+  for (const customer of customers) {
+    const visits = customer.visit_count || 0;
+    const cohort = customerVisitCohorts[visits === 0 ? 0 : visits < 5 ? 1 : 2];
+    cohort.members += 1;
+    cohort.averageVisits += visits;
+    cohort.averageSpend += Number(customer.total_spent) || 0;
+  }
+  for (const cohort of customerVisitCohorts) {
+    if (cohort.members > 0) {
+      cohort.averageVisits = Math.round((cohort.averageVisits / cohort.members) * 10) / 10;
+      cohort.averageSpend = Math.round((cohort.averageSpend / cohort.members) * 100) / 100;
+    }
+  }
 
   const totalVisits = customers.reduce((sum, c) => sum + (c.visit_count || 0), 0);
   const totalCustomerSpend = customers.reduce((sum, c) => sum + (Number(c.total_spent) || 0), 0);
@@ -273,12 +294,14 @@ export async function getRetentionFunnelMetrics(
     (c) => c.visit_count >= 2 && c.last_visit_at && c.last_visit_at >= thirtyDaysAgoIso
   ).length;
 
-  // 3. Fallbacks and blended metrics
-  const scansCount = Math.max(eventCounts.qr_code_scanned, eventCounts.registration_completed, 1);
-  const formStartsCount = Math.max(eventCounts.form_started, eventCounts.registration_completed);
-  const registrationCount = Math.max(eventCounts.registration_completed, totalMembers);
-  const firstVisitsCount = Math.max(eventCounts.first_visit_recognized, customersWithOnePlusVisits.length);
-  const secondVisitsCount = Math.max(eventCounts.second_visit_recognized, customersWithTwoPlusVisits.length);
+  // Funnel counts use events from the selected period only. Lifetime customer
+  // totals belong in the member KPIs below; blending them into the funnel made
+  // conversion rates look better than the events actually supported.
+  const scansCount = eventCounts.qr_code_scanned;
+  const formStartsCount = eventCounts.form_started;
+  const registrationCount = eventCounts.registration_completed;
+  const firstVisitsCount = eventCounts.first_visit_recognized;
+  const secondVisitsCount = eventCounts.second_visit_recognized;
 
   // KPI 1: Taux de scan vers inscription (inscriptions / scans)
   const scanToSignupVal = scansCount > 0 ? Math.min(100, Math.round((registrationCount / scansCount) * 1000) / 10) : 0;
@@ -286,12 +309,14 @@ export async function getRetentionFunnelMetrics(
     id: "scan_to_signup",
     label: "Taux de scan vers inscription",
     value: scanToSignupVal,
-    formattedValue: `${scanToSignupVal.toFixed(1)} %`,
+    formattedValue: scansCount > 0 ? `${scanToSignupVal.toFixed(1)} %` : "—",
     unit: "%",
     target: "Cible : ≥ 30 %",
-    status: scanToSignupVal >= 30 ? "excellent" : scanToSignupVal >= 20 ? "good" : "warning",
-    benchmarkNote: "Moyenne secteur : 22 % — Excellent au-delà de 35 %.",
-    description: "Pourcentage des visiteurs ayant scanné un QR code qui finalisent leur inscription au programme.",
+    status: scansCount === 0 ? "neutral" : scanToSignupVal >= 30 ? "excellent" : scanToSignupVal >= 20 ? "good" : "warning",
+    benchmarkNote: "Le résultat dépend du nombre réel de scans et d’inscriptions suivis pour la période.",
+    description: scansCount > 0
+      ? "Pourcentage des visiteurs ayant scanné un QR code qui finalisent leur inscription au programme."
+      : "Aucun scan QR n’a été enregistré pendant cette période.",
   };
 
   // KPI 2: Taux d'activation (clients avec ≥ 1 visite / total inscrits)
@@ -303,11 +328,11 @@ export async function getRetentionFunnelMetrics(
     id: "activation_rate",
     label: "Taux d'activation",
     value: activationVal,
-    formattedValue: `${activationVal.toFixed(1)} %`,
+    formattedValue: totalMembers > 0 ? `${activationVal.toFixed(1)} %` : "—",
     unit: "%",
     target: "Cible : ≥ 70 %",
-    status: activationVal >= 70 ? "excellent" : activationVal >= 50 ? "good" : "warning",
-    benchmarkNote: "Standard Minerva Flow : 75 % dès le palier débutant (Câlin Café).",
+    status: totalMembers === 0 ? "neutral" : activationVal >= 70 ? "excellent" : activationVal >= 50 ? "good" : "warning",
+    benchmarkNote: "Mesure cumulative : profils clients ayant au moins une visite enregistrée.",
     description: "Proportion des inscrits ayant validé au moins une première visite au comptoir.",
   };
 
@@ -323,12 +348,12 @@ export async function getRetentionFunnelMetrics(
     id: "second_visit_rate",
     label: "Taux de deuxième visite",
     value: secondVisitVal,
-    formattedValue: `${secondVisitVal.toFixed(1)} %`,
+    formattedValue: customersWithOnePlusVisits.length > 0 ? `${secondVisitVal.toFixed(1)} %` : "—",
     unit: "%",
     target: "Cible : 75 % – 100 %",
-    status: secondVisitVal >= 75 ? "excellent" : secondVisitVal >= 50 ? "good" : "warning",
-    benchmarkNote: "75 % pour Câlin Café (18j), 100 % pour Burger Nomade & Café Lucide (30j).",
-    description: "Le KPI d'or de la fidélisation : un client revenant une 2e fois a 4x plus de chances de devenir un régulier.",
+    status: customersWithOnePlusVisits.length === 0 ? "neutral" : secondVisitVal >= 75 ? "excellent" : secondVisitVal >= 50 ? "good" : "warning",
+    benchmarkNote: "Calculé à partir des visites cumulées consignées dans les profils membres.",
+    description: "Proportion des membres ayant au moins deux visites parmi ceux ayant déjà une visite enregistrée.",
   };
 
   // KPI 4: Taux de retour à 30 jours
@@ -340,11 +365,11 @@ export async function getRetentionFunnelMetrics(
     id: "thirty_day_return_rate",
     label: "Taux de retour à 30 jours",
     value: thirtyDayReturnVal,
-    formattedValue: `${thirtyDayReturnVal.toFixed(1)} %`,
+    formattedValue: customersWithTwoPlusVisits.length > 0 ? `${thirtyDayReturnVal.toFixed(1)} %` : "—",
     unit: "%",
     target: "Cible : ≥ 70 %",
-    status: thirtyDayReturnVal >= 70 ? "excellent" : thirtyDayReturnVal >= 45 ? "good" : "warning",
-    benchmarkNote: "Seuil de fidélité active sans risque d'attrition imminente.",
+    status: customersWithTwoPlusVisits.length === 0 ? "neutral" : thirtyDayReturnVal >= 70 ? "excellent" : thirtyDayReturnVal >= 45 ? "good" : "warning",
+    benchmarkNote: "Indicateur cumulatif; la fenêtre de retour est fixe à 30 jours.",
     description: "Pourcentage des membres actifs ayant renouvelé une visite au cours des 30 derniers jours.",
   };
 
@@ -356,16 +381,16 @@ export async function getRetentionFunnelMetrics(
     id: "avg_visit_frequency",
     label: "Fréquence moyenne des visites",
     value: avgFrequencyVal,
-    formattedValue: `${avgFrequencyVal.toFixed(1)} visites`,
+    formattedValue: activeMembersCount > 0 ? `${avgFrequencyVal.toFixed(1)} visites` : "—",
     unit: "visites",
     target: "Cible : ×3,6 (2,5 à 9,1)",
-    status: avgFrequencyVal >= 4.4 ? "excellent" : avgFrequencyVal >= 2.5 ? "good" : "neutral",
-    benchmarkNote: "Évolution audité : de 2,5 (Câlin Café) à 4,4 (Burger Nomade) jusqu'à 9,1 (Trèfle Doré).",
+    status: activeMembersCount === 0 ? "neutral" : avgFrequencyVal >= 4.4 ? "excellent" : avgFrequencyVal >= 2.5 ? "good" : "neutral",
+    benchmarkNote: "Moyenne cumulée des visites parmi les membres ayant au moins une visite enregistrée.",
     description: "Nombre moyen de passages effectués par chaque client fidélisé dans votre établissement.",
   };
 
   // KPI 6: Taux d'échange des récompenses
-  const rewardsUnlockedCount = Math.max(eventCounts.reward_unlocked, eventCounts.reward_redeemed, 1);
+  const rewardsUnlockedCount = eventCounts.reward_unlocked;
   const rewardsRedeemedCount = eventCounts.reward_redeemed;
   const rewardRedemptionVal =
     rewardsUnlockedCount > 0
@@ -375,16 +400,18 @@ export async function getRetentionFunnelMetrics(
     id: "reward_redemption_rate",
     label: "Taux d'échange des récompenses",
     value: rewardRedemptionVal,
-    formattedValue: `${rewardRedemptionVal.toFixed(1)} %`,
+    formattedValue: rewardsUnlockedCount > 0 ? `${rewardRedemptionVal.toFixed(1)} %` : "—",
     unit: "%",
     target: "Cible : 35 % – 60 %",
     status:
-      rewardRedemptionVal >= 35 && rewardRedemptionVal <= 70
+      rewardsUnlockedCount === 0
+        ? "neutral"
+        : rewardRedemptionVal >= 35 && rewardRedemptionVal <= 70
         ? "excellent"
         : rewardRedemptionVal > 0
           ? "good"
           : "neutral",
-    benchmarkNote: "Un taux sain prouve l'attractivité des paliers sans grever la marge.",
+    benchmarkNote: "Calculé uniquement lorsque des récompenses débloquées sont consignées.",
     description: "Ratio des récompenses débloquées qui ont été effectivement réclamées au comptoir.",
   };
 
@@ -394,11 +421,11 @@ export async function getRetentionFunnelMetrics(
     id: "avg_member_basket",
     label: "Panier moyen des membres",
     value: avgBasketVal,
-    formattedValue: formatCurrency(avgBasketVal),
+    formattedValue: totalVisits > 0 ? formatCurrency(avgBasketVal) : "—",
     unit: "$",
     target: "Cible : +15 % vs non-membres",
     status: avgBasketVal > 0 ? "excellent" : "neutral",
-    benchmarkNote: "Audits : 19,98 $ (Café quartier) · 86,84 $ (Burger) · 206,64 $ (Bistro).",
+    benchmarkNote: "Dépenses cumulées des membres divisées par leurs visites enregistrées.",
     description: "Dépense moyenne TTC enregistrée à chaque visite pour un client membre du programme.",
   };
 
@@ -412,34 +439,27 @@ export async function getRetentionFunnelMetrics(
     unit: "$",
     target: "Fenêtre : 7 jours post-envoi",
     status: campaignAttributedRevenueVal > 0 ? "excellent" : "neutral",
-    benchmarkNote: "Attribution directe : passage en caisse réalisé dans les 7 jours suivant une relance.",
-    description: "Chiffre d'affaires réel généré par les clients ayant visité suite à un email ou SMS promotionnel.",
+    benchmarkNote: "Addition des montants présents dans les événements de visite de campagne.",
+    description: "Montants associés aux visites explicitement enregistrées comme générées par une campagne.",
   };
 
   // KPI 9: Coût par client réactivé
-  const reactivatedCount = Math.max(reactivatedCustomerIds.size, eventCounts.campaign_visit_generated);
-  const estimatedCost = eventCounts.campaign_sent * 0.035; // Est. 0.035 $ par envoi combiné
-  const costPerReactivatedVal =
-    reactivatedCount > 0 ? Math.round((estimatedCost / reactivatedCount) * 100) / 100 : 0;
+  const costPerReactivatedVal = 0;
   const costPerReactivatedKpi: RetentionKpi = {
     id: "cost_per_reactivated",
     label: "Coût par client réactivé",
     value: costPerReactivatedVal,
-    formattedValue: costPerReactivatedVal > 0 ? formatCurrency(costPerReactivatedVal) : "0,00 $",
+    formattedValue: "Non mesuré",
     unit: "$",
     target: "Cible : < 3,00 $",
     status:
-      costPerReactivatedVal > 0 && costPerReactivatedVal <= 3
-        ? "excellent"
-        : costPerReactivatedVal > 3
-          ? "warning"
-          : "neutral",
-    benchmarkNote: "Comparé à 25 $ - 40 $ pour acquérir un client par de la publicité traditionnelle.",
-    description: "Coût technique des envois rapporté au nombre de clients réengagés revenus consommer.",
+      "neutral",
+    benchmarkNote: "Aucun coût réel par canal n’est enregistré pour l’instant.",
+    description: "Le coût des envois n’est pas connecté aux factures des fournisseurs; aucune estimation n’est affichée.",
   };
 
   // KPI 10: Taux de désinscription (désinscriptions / messages livrés)
-  const deliveredCount = Math.max(eventCounts.message_delivered, eventCounts.campaign_sent, 1);
+  const deliveredCount = eventCounts.message_delivered;
   const unsubscribesCount = eventCounts.unsubscribed;
   const unsubscribeRateVal =
     deliveredCount > 0 ? Math.min(100, Math.round((unsubscribesCount / deliveredCount) * 1000) / 10) : 0;
@@ -447,12 +467,14 @@ export async function getRetentionFunnelMetrics(
     id: "unsubscribe_rate",
     label: "Taux de désinscription",
     value: unsubscribeRateVal,
-    formattedValue: `${unsubscribeRateVal.toFixed(1)} %`,
+    formattedValue: deliveredCount > 0 ? `${unsubscribeRateVal.toFixed(1)} %` : "—",
     unit: "%",
     target: "Seuil d'alerte : < 2,0 %",
-    status: unsubscribeRateVal < 1.0 ? "excellent" : unsubscribeRateVal <= 2.0 ? "good" : "warning",
-    benchmarkNote: "Conformité LCAP / CASL stricte. Alerte déclenchée si > 2 %.",
-    description: "Proportion des destinataires ayant choisi de se désabonner suite à une communication.",
+    status: deliveredCount === 0 ? "neutral" : unsubscribeRateVal < 1.0 ? "excellent" : unsubscribeRateVal <= 2.0 ? "good" : "warning",
+    benchmarkNote: "Le taux est calculé uniquement lorsque des livraisons sont enregistrées.",
+    description: deliveredCount > 0
+      ? "Proportion des destinataires ayant choisi de se désabonner suite à une communication."
+      : "Aucune livraison de message n’a été enregistrée pendant cette période.",
   };
 
   // 4. Construct the 5-Step Funnel
@@ -463,7 +485,7 @@ export async function getRetentionFunnelMetrics(
       count: scansCount,
       conversionFromPrev: null,
       dropoffFromPrev: null,
-      conversionFromTotal: 100,
+      conversionFromTotal: scansCount > 0 ? 100 : 0,
       color: "#167F5B",
       icon: "QrCode",
     },
@@ -560,6 +582,7 @@ export async function getRetentionFunnelMetrics(
       unsubscribeRate: unsubscribeRateKpi,
     },
     funnelSteps,
+    customerVisitCohorts,
     rawCounts: {
       scans: scansCount,
       formStarts: formStartsCount,

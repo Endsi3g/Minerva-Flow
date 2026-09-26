@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import type { Role } from "@/lib/types";
+import { after } from "next/server";
 
 export type ProfilePatch = {
   fullName?: string;
@@ -68,7 +69,10 @@ export async function updateMyProfileField(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return false;
+  if (!user) {
+    console.error("profile.onboarding.complete_failed", { reason: "unauthenticated" });
+    return false;
+  }
 
   const dbPatch: Record<string, unknown> = {};
   if (patch.fullName !== undefined) dbPatch.full_name = patch.fullName;
@@ -86,22 +90,25 @@ export async function updateMyProfileField(
   const metadata: Record<string, unknown> = {};
   if (patch.fullName !== undefined) metadata.full_name = patch.fullName;
   if (patch.avatarUrl !== undefined) metadata.avatar_url = patch.avatarUrl;
-  if (Object.keys(metadata).length > 0) {
-    await supabase.auth.updateUser({ data: metadata });
-  }
+  after(async () => {
+    if (Object.keys(metadata).length > 0) {
+      const { error } = await supabase.auth.updateUser({ data: metadata });
+      if (error) console.warn("Profile auth-metadata sync failed", { code: error.status });
+    }
 
-  if (restaurantId) {
-    await logActivity({
-      restaurantId,
-      actionType: patch.avatarUrl !== undefined ? "profile.update_avatar" : "profile.update_name",
-      entityType: "profile",
-      entityId: user.id,
-      description:
-        patch.avatarUrl !== undefined
-          ? "A mis à jour sa photo de profil"
-          : "A mis à jour son nom de profil",
-    });
-  }
+    if (restaurantId) {
+      await logActivity({
+        restaurantId,
+        actionType: patch.avatarUrl !== undefined ? "profile.update_avatar" : "profile.update_name",
+        entityType: "profile",
+        entityId: user.id,
+        description:
+          patch.avatarUrl !== undefined
+            ? "A mis à jour sa photo de profil"
+            : "A mis à jour son nom de profil",
+      });
+    }
+  });
 
   return true;
 }
@@ -117,6 +124,7 @@ export async function completeOnboarding(): Promise<boolean> {
     .from("profiles")
     .update({ onboarding_completed: true })
     .eq("id", user.id);
+  if (error) console.error("profile.onboarding.complete_failed", { code: error.code });
   return !error;
 }
 

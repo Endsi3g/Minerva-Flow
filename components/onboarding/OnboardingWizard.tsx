@@ -1,7 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useLocale } from "next-intl";
+import Image from "next/image";
+import QRCode from "qrcode";
 import { Camera, Loader2, Wrench, Users, ArrowRight, Check, FileText, Landmark, Gift, Copy, MapPin, TrendingUp } from "lucide-react";
 import { Onboarding, ChoiceGroup, useOnboarding, StepIndicator } from "@/components/ui/onboarding";
 import { Instagram as InstagramIcon } from "@/components/ui/BrandIcons";
@@ -20,7 +23,7 @@ import {
   setMyRoleAction,
   finishOnboardingAction,
   sendTeamInviteAction,
-  activateOnboardingReferralProgramAction,
+  prepareLoyaltyOnboardingAction,
 } from "@/app/[locale]/onboarding/actions";
 import type { Role } from "@/lib/types";
 
@@ -40,9 +43,9 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
 type ServiceModel = "restaurant" | "cafe";
 
 /**
- * Three steps, not one — step 1 is still the fast, required core (name,
- * établissement, rôle); steps 2 and 3 are genuinely optional, each with a
- * prominent "Plus tard" skip. This is a deliberate departure from the prior
+ * Four steps — step 1 is still the fast, required core (name,
+ * établissement, rôle); tools and team invites can be skipped, while the
+ * loyalty step creates the first usable customer enrollment link. This is a departure from the prior
  * single-step design (see git history) — the onboarding UX simulation
  * surfaced real friction (wanting to connect Instagram or invite a
  * co-founder immediately, not later) that a strictly single-step flow
@@ -50,6 +53,7 @@ type ServiceModel = "restaurant" | "cafe";
  */
 export function OnboardingWizard({
   userId,
+  googlePlacesEnabled,
   restaurantId,
   restaurantName,
   initialServiceModel,
@@ -58,6 +62,7 @@ export function OnboardingWizard({
   initialRole,
 }: {
   userId: string;
+  googlePlacesEnabled: boolean;
   restaurantId: string;
   restaurantName: string;
   initialServiceModel: ServiceModel;
@@ -65,7 +70,7 @@ export function OnboardingWizard({
   initialAvatarUrl: string | null;
   initialRole: Role;
 }) {
-  const router = useRouter();
+  const locale = useLocale();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // getMyProfile() falls back to the account email when no real name was
@@ -84,6 +89,12 @@ export function OnboardingWizard({
   const [menuImportOpen, setMenuImportOpen] = useState(false);
   const [menuImportedCount, setMenuImportedCount] = useState<number | null>(null);
   const [googlePlaceLinked, setGooglePlaceLinked] = useState(false);
+  const [pointsPerDollar, setPointsPerDollar] = useState("1");
+  const [loyaltyJoinUrl, setLoyaltyJoinUrl] = useState<string | null>(null);
+  const [loyaltyQrDataUrl, setLoyaltyQrDataUrl] = useState<string | null>(null);
+  const [preparingLoyalty, setPreparingLoyalty] = useState(false);
+  const [loyaltyError, setLoyaltyError] = useState<string | null>(null);
+  const [copiedLoyalty, setCopiedLoyalty] = useState(false);
 
   // Tracks the restaurant once created, separately from the `restaurantId`
   // prop: an account that reaches this step with no restaurant (e.g. an
@@ -162,50 +173,51 @@ export function OnboardingWizard({
       await sendInviteIfFilled();
       const finished = await finishOnboardingAction();
       if (!finished) throw new Error("Impossible de terminer la configuration. Réessayez.");
-      router.replace("/workspace");
+      // The onboarding completion action updates the profile through Supabase;
+      // reload the app shell so its server session snapshot sees that write.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign(`/${locale}/workspace`);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Une erreur est survenue.");
       setSubmitting(false);
     }
   }
 
-  const [referralActive, setReferralActive] = useState(false);
-  const [referralLinkUrl, setReferralLinkUrl] = useState<string | null>(null);
-  const [activatingReferral, setActivatingReferral] = useState(false);
-  const [copiedReferral, setCopiedReferral] = useState(false);
-
-  async function handleActivateReferral() {
-    if (!currentRestaurantId || activatingReferral) return;
-    setActivatingReferral(true);
+  async function prepareLoyaltyJoin() {
+    if (!currentRestaurantId || preparingLoyalty) return;
+    setPreparingLoyalty(true);
+    setLoyaltyError(null);
     try {
-      const res = await activateOnboardingReferralProgramAction(currentRestaurantId);
-      if (res.ok && res.code) {
-        setReferralActive(true);
-        setReferralLinkUrl(`${window.location.origin}${res.url}`);
-        toast.success("Programme de parrainage activé !", {
-          description: "Votre premier lien de recommandation est prêt pour vos Stories.",
-        });
-      } else {
-        toast.error("Impossible d'activer le programme pour le moment.");
-      }
-    } catch {
-      toast.error("Une erreur est survenue lors de l'activation.");
+      const rate = Number(pointsPerDollar);
+      if (!Number.isFinite(rate) || rate < 0.1 || rate > 10) throw new Error("Choisissez un taux entre 0,1 et 10 points par dollar.");
+      const result = await prepareLoyaltyOnboardingAction(currentRestaurantId, rate, locale);
+      if (!result.ok || !result.url) throw new Error("Impossible de préparer le lien d’inscription. Vérifiez vos droits et réessayez.");
+      const qr = await QRCode.toDataURL(result.url, { width: 420, margin: 1, errorCorrectionLevel: "M" });
+      setLoyaltyJoinUrl(result.url);
+      setLoyaltyQrDataUrl(qr);
+      toast.success("Programme prêt pour les inscriptions", { description: "Votre taux et votre QR sont enregistrés." });
+    } catch (error) {
+      const message = error instanceof Error && error.message.startsWith("Choisissez")
+        ? error.message
+        : "Impossible de préparer le lien et le QR. Vérifiez le taux et réessayez.";
+      setLoyaltyError(message);
+      toast.error(message);
     } finally {
-      setActivatingReferral(false);
+      setPreparingLoyalty(false);
     }
   }
 
-  async function copyReferral() {
-    if (!referralLinkUrl) return;
+  async function copyLoyaltyLink() {
+    if (!loyaltyJoinUrl) return;
     try {
       if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(referralLinkUrl);
+        await navigator.clipboard.writeText(loyaltyJoinUrl);
       } else {
         throw new Error("Clipboard API unavailable");
       }
     } catch {
       const textarea = document.createElement("textarea");
-      textarea.value = referralLinkUrl;
+      textarea.value = loyaltyJoinUrl;
       textarea.style.position = "fixed";
       textarea.style.opacity = "0";
       document.body.appendChild(textarea);
@@ -216,17 +228,19 @@ export function OnboardingWizard({
         document.body.removeChild(textarea);
       }
     }
-    setCopiedReferral(true);
-    setTimeout(() => setCopiedReferral(false), 2000);
-    toast.success("Lien de parrainage copié !");
+    setCopiedLoyalty(true);
+    setTimeout(() => setCopiedLoyalty(false), 2000);
+    toast.success("Lien d’inscription copié.");
   }
 
   return (
     <Onboarding
       defaultValue={1}
-      totalSteps={3}
+      totalSteps={4}
       onComplete={handleFinish}
-      canGoNext={(step) => step !== 1 || (fullName.trim().length > 0 && restaurantNameInput.trim().length > 0)}
+      canGoNext={(step) => step === 1
+        ? fullName.trim().length > 0 && restaurantNameInput.trim().length > 0
+        : step !== 3 || Boolean(loyaltyJoinUrl)}
       className="border-none bg-transparent p-0 shadow-none"
     >
       <OnboardingProgressHeader />
@@ -350,7 +364,7 @@ export function OnboardingWizard({
                 <p className="text-[13.5px] font-semibold text-mv-ink">Fiche Google Maps et visibilité locale</p>
                 <p className="mt-0.5 text-[12px] text-mv-ink-faint">Importez l’adresse publique pour suivre vos avis et votre présence locale.</p>
                 {googlePlaceLinked && <p className="mt-2 text-[12px] font-semibold text-mv-green-dark">✓ Fiche associée</p>}
-                <div className="mt-3"><GooglePlacesSearch onSelect={handleGooglePlaceSelect} /></div>
+                <div className="mt-3"><GooglePlacesSearch enabled={googlePlacesEnabled} onSelect={handleGooglePlaceSelect} /></div>
                 <div className="mt-3 flex items-start gap-2 rounded-lg bg-mv-cream-soft p-3 text-[11.5px] leading-relaxed text-mv-ink-soft">
                   <TrendingUp size={15} className="mt-0.5 shrink-0 text-mv-green-dark" />
                   <span><strong>Estimation indicative :</strong> Flow s’appuie uniquement sur les signaux publics de Google (avis, note et présence locale). Nous ne pouvons pas connaître vos dépenses ni vos efforts marketing actuels; aucun chiffre n’est présenté comme une prévision garantie.</span>
@@ -362,7 +376,7 @@ export function OnboardingWizard({
           <div className="rounded-xl border border-mv-green/25 bg-mv-green/[0.05] p-4">
             <p className="text-[13.5px] font-semibold text-mv-ink">Besoin d’aller plus loin ?</p>
             <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">Notre offre Agence peut gérer votre marketing et certaines applications pour vous.</p>
-            <a href="/billing?plan=agency" className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-mv-green-dark hover:underline">Découvrir l’offre Agence <ArrowRight size={14} /></a>
+            <Link href="/billing?plan=agency" className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-mv-green-dark hover:underline">Découvrir l’offre Agence <ArrowRight size={14} /></Link>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -375,55 +389,9 @@ export function OnboardingWizard({
           </div>
           <p className="text-center text-[11.5px] text-mv-ink-faint">Instagram, Facebook et Google Business Profile sont nos premières intégrations. D’autres canaux pourront être ajoutés ensuite.</p>
 
-          {/* Referral Activation Card */}
-          {currentRestaurantId && (
-            <div className="rounded-xl border border-mv-border bg-mv-cream-soft p-4 transition-colors">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-mv-green/10 text-mv-green-dark">
-                    <Gift size={20} />
-                  </div>
-                  <div>
-                    <p className="text-[13.5px] font-semibold text-mv-ink">Programme de Parrainage & Liens</p>
-                    <p className="text-[12px] text-mv-ink-faint">
-                      Offre de bienvenue (10 $ filleul / 10 $ parrain) pour vos stickers en Story.
-                    </p>
-                  </div>
-                </div>
-
-                {referralActive ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-mv-green px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
-                    <Check size={13} /> Actif
-                  </span>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={handleActivateReferral}
-                    disabled={activatingReferral}
-                    className="shrink-0 text-[12px]"
-                  >
-                    {activatingReferral ? <Loader2 size={14} className="animate-spin" /> : "Activer en 1 clic"}
-                  </Button>
-                )}
-              </div>
-
-              {referralActive && referralLinkUrl && (
-                <div className="mt-3 flex items-center justify-between rounded-lg border border-mv-border-soft bg-mv-surface px-3 py-2">
-                  <span className="truncate font-mono text-[12px] text-mv-ink-soft">
-                    {referralLinkUrl}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={copyReferral}
-                    className="ml-2 flex items-center gap-1 rounded px-2 py-1 text-[11.5px] font-semibold text-mv-green-dark transition-colors hover:bg-mv-green-tint"
-                  >
-                    {copiedReferral ? <Check size={13} /> : <Copy size={13} />}
-                    {copiedReferral ? "Copié !" : "Copier"}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          <p className="rounded-lg bg-mv-cream-soft px-3 py-2.5 text-center text-[11.5px] text-mv-ink-faint">
+            Votre programme de fidélité et votre QR d’inscription se préparent à l’étape suivante.
+          </p>
 
           <a
             href="/settings?tab=integrations"
@@ -491,6 +459,45 @@ export function OnboardingWizard({
       </Onboarding.Step>
 
       <Onboarding.Step step={3}>
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-mv-green/10 text-mv-green-dark">
+              <Gift size={19} />
+            </div>
+            <div>
+              <h3 className="font-display text-[18px] font-medium text-mv-ink">Préparez les inscriptions fidélité</h3>
+              <p className="mt-1 text-[13px] leading-relaxed text-mv-ink-soft">Choisissez les points gagnés par dollar, puis créez un lien et un QR que vos clients peuvent scanner pour s’inscrire.</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-mv-border bg-mv-surface p-4">
+            <Field label="Points gagnés par dollar" hint="Vous pourrez ajouter vos récompenses et modifier ce taux dans Fidélisation.">
+              <Input type="number" min="0.1" max="10" step="0.1" value={pointsPerDollar} onChange={(event) => setPointsPerDollar(event.target.value)} />
+            </Field>
+            <Button className="mt-4 w-full" onClick={prepareLoyaltyJoin} loading={preparingLoyalty} disabled={!currentRestaurantId || preparingLoyalty}>
+              {loyaltyJoinUrl ? "Actualiser le QR" : "Créer mon lien et mon QR"}
+            </Button>
+          </div>
+
+          {loyaltyError && <p className="text-[12.5px] text-mv-red" role="alert">{loyaltyError}</p>}
+
+          {loyaltyJoinUrl && loyaltyQrDataUrl && (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-mv-green/20 bg-mv-green/[0.04] p-4 text-center">
+              <Image src={loyaltyQrDataUrl} alt={`QR d’inscription au programme de fidélité de ${restaurantNameInput}`} width={168} height={168} unoptimized className="rounded-lg bg-white p-2" />
+              <div className="w-full rounded-lg border border-mv-border-soft bg-mv-surface px-3 py-2">
+                <p className="truncate font-mono text-[11px] text-mv-ink-soft">{loyaltyJoinUrl}</p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button type="button" size="sm" variant="secondary" onClick={copyLoyaltyLink}><Copy size={13} /> {copiedLoyalty ? "Copié" : "Copier le lien"}</Button>
+                <a href={loyaltyJoinUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-lg px-3 text-[12px] font-semibold text-mv-green-dark underline underline-offset-4">Tester l’inscription client</a>
+              </div>
+              <p className="max-w-md text-[11.5px] leading-relaxed text-mv-ink-faint">Aucun faux membre ni récompense n’est créé. Scannez le code ou ouvrez le lien pour tester l’inscription; le consentement aux courriels reste facultatif.</p>
+            </div>
+          )}
+        </div>
+      </Onboarding.Step>
+
+      <Onboarding.Step step={4}>
         <div className="flex flex-col gap-4">
           <div className="text-center">
             <Users className="mx-auto mb-2 text-mv-green-dark" size={22} />
@@ -533,7 +540,7 @@ export function OnboardingWizard({
   );
 }
 
-const STEP_LABELS: Record<number, string> = { 1: "Profil", 2: "Outils", 3: "Équipe" };
+const STEP_LABELS: Record<number, string> = { 1: "Profil", 2: "Outils", 3: "Fidélité", 4: "Équipe" };
 
 /**
  * The single source of onboarding progress shown to the user — replaces a
@@ -586,7 +593,7 @@ function WizardFooter({
   inviting: boolean;
   onStepOneContinue: () => Promise<string | null>;
 }) {
-  const { currentStep, totalSteps, canGoBack, handleBack, setStep, handleComplete } = useOnboarding();
+  const { currentStep, totalSteps, canGoBack, canGoNext, handleBack, setStep, handleComplete } = useOnboarding();
   const isLastStep = currentStep === totalSteps;
 
   return (
@@ -610,13 +617,13 @@ function WizardFooter({
             {submitting ? "Un instant…" : inviting ? "Envoi…" : "Terminer"}
           </Button>
         ) : (
-          <Button type="button" className="flex-1" onClick={() => setStep((s) => s + 1)}>
+          <Button type="button" className="flex-1" disabled={currentStep === 3 && !canGoNext} onClick={() => setStep((s) => s + 1)}>
             Continuer
           </Button>
         )}
       </div>
 
-      {currentStep > 1 && !isLastStep && (
+      {currentStep > 1 && !isLastStep && currentStep !== 3 && (
         <button
           type="button"
           onClick={() => setStep((s) => s + 1)}
@@ -662,14 +669,19 @@ function StepOneContinueButton({
       disabled={!canGoNext || pending}
       onClick={async () => {
         setPending(true);
-        const error = await onContinue();
-        // Only clear `pending` on failure — on success it stays true (button
-        // stays disabled, "Un instant…" stays visible) until this component
-        // unmounts on step change, instead of flashing back to an idle,
-        // clickable "Continuer" the user could double-click while nothing on
-        // screen has changed yet.
-        if (error) setPending(false);
-        else onAdvance();
+        try {
+          const error = await onContinue();
+          // Only clear `pending` on failure — on success it stays true (button
+          // stays disabled, "Un instant…" stays visible) until this component
+          // unmounts on step change, instead of flashing back to an idle,
+          // clickable "Continuer" the user could double-click while nothing on
+          // screen has changed yet.
+          if (error) setPending(false);
+          else onAdvance();
+        } catch (error) {
+          console.error("Onboarding profile step failed", error);
+          setPending(false);
+        }
       }}
     >
       {pending ? <Loader2 size={15} className="animate-spin" /> : null}

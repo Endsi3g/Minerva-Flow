@@ -47,5 +47,5 @@ export default async function RetentionFunnelPage({ searchParams }: Props) {
 
   const data = await getRetentionFunnelMetrics(restaurantId, validRange);
 
-  return <RetentionFunnelView data={data} restaurantId={restaurantId} />;
+  return <RetentionFunnelView data={data} />;
 }

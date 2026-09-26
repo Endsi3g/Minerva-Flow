@@ -26,6 +26,13 @@ const providerLabel: Record<PosProvider, string> = {
   quickbooks: "QuickBooks",
 };
 
+const providerCapabilities: Partial<Record<PosProvider, string>> = {
+  square: "Connexion OAuth · ventes et commandes quotidiennes",
+  lightspeed: "Connexion API · ventes quotidiennes (selon votre édition Lightspeed)",
+  clover: "Connexion API · ventes et commandes; import du catalogue en brouillons",
+  toast: "API partenaire · ventes et commandes (accès Toast requis)",
+};
+
 // Square, QuickBooks, Clover, and Toast have official brand icons in BrandIcons.tsx.
 // Lightspeed only ships a full horizontal partner-badge lockup (icon +
 // wordmark + "Partenaire"), not an icon-only mark, so it's rendered as its
@@ -127,6 +134,7 @@ function ConnectRow({
             {provider !== "lightspeed" && (
               <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
             )}
+            <p className="text-[11px] leading-relaxed text-mv-ink-soft">{providerCapabilities[provider]}</p>
             <p className="text-[12px] text-mv-ink-faint">{statusLine()}</p>
           </div>
         </div>
@@ -315,7 +323,7 @@ export function PosConnectionsCard() {
       <CardHeader
         eyebrow="Point de vente"
         title="Systèmes de caisse"
-        description="Synchronisez vos ventes automatiquement plutôt que de les saisir à la main."
+        description="Square, Lightspeed, Clover et Toast peuvent transmettre les ventes quand l’accès API du fournisseur est activé. Seul Clover importe aussi un catalogue dans Minerva Flow; les articles importés restent des brouillons à valider."
       />
       <div className="space-y-2">
         <ConnectRow

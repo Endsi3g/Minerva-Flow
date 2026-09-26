@@ -123,10 +123,10 @@ export async function cleanupOrphanRestaurants(knownRestaurantIds: string[] = []
 
   const { data: restaurants, error } = await supabaseAdmin.from("restaurants")
     .select("id, name")
-    .in("id", restaurantIds)
-    .eq("name", "Mon restaurant");
+    .in("id", restaurantIds);
   if (error || !restaurants) return;
   for (const r of restaurants ?? []) {
+    if (r.name !== "Mon restaurant" && !r.name.startsWith("E2E ")) continue;
     const { count } = await supabaseAdmin
       .from("restaurant_members")
       .select("id", { count: "exact", head: true })

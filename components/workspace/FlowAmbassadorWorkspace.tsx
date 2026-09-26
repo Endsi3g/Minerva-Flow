@@ -151,8 +151,9 @@ export function FlowAmbassadorWorkspace({ initial }: { initial: Dashboard }) {
             </div>
             {summary.commissions.length > 0 ? <div className="mt-4 divide-y divide-mv-border-soft">{summary.commissions.map((item) => {
               const due = new Date(item.payableAt).getTime() <= new Date(initial.asOf).getTime();
-              const state = item.status === "paid" ? "Transférée à Stripe" : item.status === "void" ? "Annulée" : due ? "Prête au transfert" : "En attente · 30 jours";
-              return <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-[12px]"><div><p className="font-medium text-mv-ink">{new Intl.NumberFormat(locale, { style: "currency", currency: item.currency }).format(item.amount)}</p><p className="mt-0.5 text-mv-ink-faint">{state} · {new Date(item.payableAt).toLocaleDateString(locale)}</p></div>{item.status !== "paid" && item.status !== "void" && <Button size="sm" variant="secondary" disabled={!due || !initial.payoutsEnabled || busy === item.id} loading={busy === item.id} onClick={() => payout(item.id)}>Transférer</Button>}</div>;
+              const approved = Boolean(item.approvedAt);
+              const state = item.status === "paid" ? "Transférée à Stripe" : item.status === "void" ? "Annulée" : !due ? "En attente · 30 jours" : !approved ? "En attente d’approbation Minerva Flow" : "Approuvée · prête au transfert";
+              return <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-[12px]"><div><p className="font-medium text-mv-ink">{new Intl.NumberFormat(locale, { style: "currency", currency: item.currency }).format(item.amount)}</p><p className="mt-0.5 text-mv-ink-faint">{state} · {new Date(item.payableAt).toLocaleDateString(locale)}</p></div>{item.status !== "paid" && item.status !== "void" && approved && <Button size="sm" variant="secondary" disabled={!due || !initial.payoutsEnabled || busy === item.id} loading={busy === item.id} onClick={() => payout(item.id)}>Transférer</Button>}</div>;
             })}</div> : <p className="mt-4 text-[12px] text-mv-ink-faint">Vos commissions apparaîtront ici lorsqu’un workspace recommandé aura payé sa première facture admissible.</p>}
           </Card>
         </>

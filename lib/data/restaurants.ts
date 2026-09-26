@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getVerifiedUser } from "@/lib/supabase/auth-user";
@@ -441,23 +442,40 @@ export async function createRestaurant(input: RestaurantInput): Promise<Restaura
     .select("*")
     .single();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    console.error("restaurant.create.insert_failed", { code: error?.code ?? "missing_row" });
+    return null;
+  }
 
-  const { error: memberError } = await supabase.from("restaurant_members").insert({
+  // The RLS policy correctly prevents a user with no membership from
+  // inserting an owner membership directly. This server action has already
+  // authenticated the caller and created this restaurant in the same flow,
+  // so use the service role only for that narrowly-scoped bootstrap row.
+  const admin = createAdminClient();
+  const { error: memberError } = await admin.from("restaurant_members").insert({
     restaurant_id: data.id,
     user_id: user.id,
     role: "owner",
     status: "active",
   });
 
-  if (memberError) return null;
+  if (memberError) {
+    console.error("restaurant.create.owner_membership_failed", { code: memberError.code });
+    // Do not leave an inaccessible, ownerless restaurant behind if bootstrap
+    // fails. It was just created above and cannot have legitimate members yet.
+    const { error: cleanupError } = await admin.from("restaurants").delete().eq("id", data.id);
+    if (cleanupError) console.error("restaurant.create.rollback_failed", { code: cleanupError.code });
+    return null;
+  }
 
-  await logActivity({
-    restaurantId: data.id,
-    actionType: "restaurant.create",
-    entityType: "restaurant",
-    entityId: data.id,
-    description: `A ajouté l'établissement "${data.name}"`,
+  after(async () => {
+    await logActivity({
+      restaurantId: data.id,
+      actionType: "restaurant.create",
+      entityType: "restaurant",
+      entityId: data.id,
+      description: `A ajouté l'établissement "${data.name}"`,
+    });
   });
 
   return mapRestaurant(data as RestaurantRow);
@@ -562,12 +580,14 @@ export async function updateRestaurant(
 
   if (error || !data) return null;
 
-  await logActivity({
-    restaurantId: id,
-    actionType: "restaurant.update",
-    entityType: "restaurant",
-    entityId: id,
-    description: `A modifié l'établissement "${data.name}"`,
+  after(async () => {
+    await logActivity({
+      restaurantId: id,
+      actionType: "restaurant.update",
+      entityType: "restaurant",
+      entityId: id,
+      description: `A modifié l'établissement "${data.name}"`,
+    });
   });
 
   return mapRestaurant(data as RestaurantRow);

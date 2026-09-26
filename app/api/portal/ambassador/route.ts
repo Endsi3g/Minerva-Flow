@@ -5,6 +5,7 @@ import { getFlowAmbassadorSummary, getOrCreateFlowAmbassador, notifyFlowAmbassad
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createExpressAccount, createOnboardingLink, retrieveAccountState } from "@/lib/stripe/connect";
 import { getStripeClient } from "@/lib/stripe/config";
+import { getAmbassadorPayoutBlockReason } from "@/lib/ambassadors/payout-gate";
 
 const appOrigin = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
 
@@ -131,15 +132,24 @@ export async function POST(request: Request) {
     const { data: ambassador } = await admin.from("flow_ambassadors").select("id, stripe_account_id").eq("user_id", userId).maybeSingle();
     if (!ambassador?.stripe_account_id) return NextResponse.json({ error: "Connectez votre compte de versement Stripe." }, { status: 409 });
     const { data: commission } = await admin.from("flow_ambassador_commissions")
-      .select("id, referral_id, commission_amount, currency, payable_at, status, stripe_transfer_id, flow_ambassador_referrals!inner(ambassador_id)")
+      .select("id, referral_id, commission_amount, currency, payable_at, status, stripe_transfer_id, payout_approved_at, flow_ambassador_referrals!inner(ambassador_id)")
       .eq("id", commissionId).maybeSingle();
     const owner = (commission?.flow_ambassador_referrals as unknown as { ambassador_id: string } | null)?.ambassador_id;
     if (!commission || owner !== ambassador.id) return NextResponse.json({ error: "Commission introuvable." }, { status: 404 });
     if (commission.stripe_transfer_id) return NextResponse.json(await ambassadorDashboard(userId));
-    if (new Date(commission.payable_at).getTime() > Date.now()) return NextResponse.json({ error: "Cette commission sera disponible après le délai de 30 jours." }, { status: 409 });
-    if (!("payable pending".split(" ").includes(commission.status))) return NextResponse.json({ error: "Cette commission ne peut pas être versée." }, { status: 409 });
     try {
-      if (!(await retrieveAccountState(ambassador.stripe_account_id)).payoutsEnabled) return NextResponse.json({ error: "Stripe doit encore vérifier votre compte de versement." }, { status: 409 });
+      const state = await retrieveAccountState(ambassador.stripe_account_id);
+      const blockReason = getAmbassadorPayoutBlockReason({
+        status: commission.status,
+        payableAt: commission.payable_at,
+        approvedAt: commission.payout_approved_at,
+        transferId: commission.stripe_transfer_id,
+        payoutsEnabled: state.payoutsEnabled,
+      });
+      if (blockReason === "approval_required") return NextResponse.json({ error: "Cette commission attend l’approbation de Minerva Flow." }, { status: 409 });
+      if (blockReason === "not_mature") return NextResponse.json({ error: "Cette commission sera disponible après le délai de 30 jours." }, { status: 409 });
+      if (blockReason === "account_incomplete") return NextResponse.json({ error: "Stripe doit encore vérifier votre compte de versement." }, { status: 409 });
+      if (blockReason) return NextResponse.json({ error: "Cette commission ne peut pas être versée." }, { status: 409 });
       const transfer = await getStripeClient().transfers.create({
         amount: Math.round(Number(commission.commission_amount) * 100),
         currency: String(commission.currency).toLowerCase(),

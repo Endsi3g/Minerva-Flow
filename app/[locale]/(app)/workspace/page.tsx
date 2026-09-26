@@ -7,6 +7,7 @@ import { getCustomers } from "@/lib/data/customers";
 import { getAdConversions } from "@/lib/data/ad-platforms";
 import { getReferralInvitationActivity } from "@/lib/data/customer-referrals";
 import { getCustomerOriginByCity } from "@/lib/customer-origin";
+import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("breadcrumb");
@@ -28,10 +29,22 @@ export default async function WorkspacePage() {
 
   const sourceCounts = new Map<string, number>();
   for (const conversion of adConversions) {
-    sourceCounts.set(conversion.channel, (sourceCounts.get(conversion.channel) ?? 0) + 1);
+    const key = `ad:${conversion.channel}`;
+    sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
   }
   for (const referral of referralActivity) {
-    sourceCounts.set(referral.channel, (sourceCounts.get(referral.channel) ?? 0) + 1);
+    const key = `referral:${referral.channel}`;
+    sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
+  }
+  if (data?.canManage && restaurantId) {
+    const supabase = await createClient();
+    const { data: registrations } = await supabase.rpc("get_registration_source_counts", {
+      p_restaurant_id: restaurantId,
+    });
+    for (const registration of registrations ?? []) {
+      const key = `signup:${registration.source}`;
+      sourceCounts.set(key, Number(registration.registration_count) || 0);
+    }
   }
 
   const originCities = getCustomerOriginByCity(customers);

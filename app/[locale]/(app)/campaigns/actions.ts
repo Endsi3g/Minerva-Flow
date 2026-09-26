@@ -128,19 +128,17 @@ export type ReferralStoryContext = {
 export async function getReferralStoryContextAction(restaurantId: string): Promise<ReferralStoryContext> {
   const { getReferralPrograms } = await import("@/lib/data/referral-programs");
   const { getReferralLinksForRestaurant } = await import("@/lib/data/customer-referrals");
-  const { activateOnboardingReferralProgramAction } = await import("@/app/[locale]/onboarding/actions");
 
   const programs = await getReferralPrograms(restaurantId);
   const activeProg = programs.find((p) => p.active) ?? programs[0];
 
   if (!activeProg) {
-    const activated = await activateOnboardingReferralProgramAction(restaurantId);
     return {
-      hasProgram: Boolean(activated.ok),
-      programName: activated.programName ?? "Programme de Parrainage",
-      referralCode: activated.code ?? "VIP10",
-      referralUrl: activated.url ?? "/p/VIP10",
-      rewardText: "10 $ offerts",
+      hasProgram: false,
+      programName: "Programme de parrainage à configurer",
+      referralCode: null,
+      referralUrl: "/fidelisation/parrainage",
+      rewardText: "Définissez votre récompense avant de partager.",
     };
   }
 
@@ -148,13 +146,12 @@ export async function getReferralStoryContextAction(restaurantId: string): Promi
   const bestLink = links[0];
 
   if (!bestLink) {
-    const activated = await activateOnboardingReferralProgramAction(restaurantId);
     return {
       hasProgram: true,
       programName: activeProg.name,
-      referralCode: activated.code ?? "VIP10",
-      referralUrl: activated.url ?? "/p/VIP10",
-      rewardText: activeProg.rewardDescription ?? "10 $ de réduction",
+      referralCode: null,
+      referralUrl: "/fidelisation/parrainage",
+      rewardText: activeProg.rewardDescription || "Récompense à configurer.",
     };
   }
 
@@ -293,5 +290,4 @@ export async function dispatchBroadcastCampaignAction(
   revalidatePath("/campaigns");
   return { ok: true, sentCount: sent, totalConsented: list.length };
 }
-
 

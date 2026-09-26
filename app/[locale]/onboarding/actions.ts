@@ -15,9 +15,9 @@ import { createInviteLink as createWorkspaceInviteLink } from "@/lib/data/worksp
 import { getRestaurant } from "@/lib/data/restaurants";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendLifecycleEmail } from "@/lib/email/lifecycle";
-import { getReferralPrograms, createReferralProgram } from "@/lib/data/referral-programs";
-import { getOrCreateReferralLink } from "@/lib/data/customer-referrals";
+import { getOrCreateDefaultLoyaltyShare } from "@/lib/data/loyalty-shares";
 import type { Role } from "@/lib/types";
+import { after } from "next/server";
 
 export type ConnectedToolsStatus = {
   square: boolean;
@@ -128,108 +128,82 @@ export async function sendTeamInviteAction(
 export async function finishOnboardingAction(): Promise<boolean> {
   const ok = await completeOnboarding();
   if (ok) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const posthog = getPostHogClient();
-      posthog.capture({ distinctId: user.id, event: "onboarding_completed" });
-      await posthog.flush();
+    // Persist access first and let optional analytics, attribution and
+    // welcome-email work continue after the response. These integrations
+    // must never leave a new owner stuck on the final onboarding step.
+    after(async () => {
+      try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      const referralCode = user.user_metadata?.referral_code as string | undefined;
-      const ambassadorCode = user.user_metadata?.flow_ambassador_code as string | undefined;
-      const ambassadorLinkSlug = user.user_metadata?.flow_ambassador_link_slug as string | undefined;
-      const restaurantId = await getCurrentRestaurantId();
-      if (referralCode && user.email && restaurantId) {
-        await activateReferral(referralCode, user.email, restaurantId);
-      }
-      if (ambassadorCode && restaurantId) {
-        const membership = await getCurrentWorkspaceMembership();
-        if (membership?.workspaceId) {
-          await attributeFlowAmbassadorSignup(ambassadorCode, user.id, membership.workspaceId, ambassadorLinkSlug);
-        }
-      }
+        const posthog = getPostHogClient();
+        posthog.capture({ distinctId: user.id, event: "onboarding_completed" });
+        void posthog.flush().catch((error) => console.warn("[Onboarding] PostHog flush failed:", error));
 
-      // Déclenchement immédiat de l'Email 1 (Bienvenue & première action)
-      if (user.email) {
-        let restaurantName: string | null = null;
-        if (restaurantId) {
-          const restaurant = await getRestaurant(restaurantId);
-          restaurantName = restaurant?.name ?? null;
+        const referralCode = user.user_metadata?.referral_code as string | undefined;
+        const ambassadorCode = user.user_metadata?.flow_ambassador_code as string | undefined;
+        const ambassadorLinkSlug = user.user_metadata?.flow_ambassador_link_slug as string | undefined;
+        const restaurantId = await getCurrentRestaurantId();
+        if (referralCode && user.email && restaurantId) {
+          await activateReferral(referralCode, user.email, restaurantId);
         }
-        sendLifecycleEmail({
-          userId: user.id,
-          email: user.email,
-          step: "welcome",
-          params: {
-            firstName: (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ?? null,
-            restaurantName,
-            hasRestaurant: Boolean(restaurantId),
-          },
-        }).catch((err) => console.error("[Onboarding] Erreur envoi email bienvenue:", err));
+        if (ambassadorCode && restaurantId) {
+          const membership = await getCurrentWorkspaceMembership();
+          if (membership?.workspaceId) {
+            await attributeFlowAmbassadorSignup(ambassadorCode, user.id, membership.workspaceId, ambassadorLinkSlug);
+          }
+        }
+
+        if (user.email) {
+          let restaurantName: string | null = null;
+          if (restaurantId) {
+            const restaurant = await getRestaurant(restaurantId);
+            restaurantName = restaurant?.name ?? null;
+          }
+          await sendLifecycleEmail({
+            userId: user.id,
+            email: user.email,
+            step: "welcome",
+            params: {
+              firstName: (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ?? null,
+              restaurantName,
+              hasRestaurant: Boolean(restaurantId),
+            },
+          });
+        }
+      } catch (error) {
+        console.error("[Onboarding] Post-completion work failed:", error);
       }
-    }
+    });
   }
   return ok;
 }
 
-export async function activateOnboardingReferralProgramAction(restaurantId: string): Promise<{
-  ok: boolean;
-  programName?: string;
-  code?: string;
-  url?: string;
-}> {
+export async function prepareLoyaltyOnboardingAction(
+  restaurantId: string,
+  pointsPerDollar: number,
+  locale: string
+): Promise<{ ok: boolean; url?: string }> {
   try {
-    const programs = await getReferralPrograms(restaurantId);
-    let activeProg = programs.find((p) => p.active) ?? programs[0];
-
-    if (!activeProg) {
-      const created = await createReferralProgram(restaurantId, {
-        name: "Programme d'Accueil & Parrainage",
-        description:
-          "Invitez vos proches à découvrir notre établissement : 10 $ offerts pour le filleul et 10 $ pour le parrain.",
-        goalCount: 1,
-        rewardDescription: "10 $ de réduction sur l'addition",
-        newCustomerBonusPoints: 50,
-        referrerBonusPoints: 100,
-      });
-      if (created) activeProg = created;
+    if (!["fr", "en", "tr"].includes(locale) || !Number.isFinite(pointsPerDollar) || pointsPerDollar < 0.1 || pointsPerDollar > 10) {
+      return { ok: false };
     }
-
-    if (!activeProg) return { ok: false };
+    const membership = await getCurrentMembership();
+    if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+      return { ok: false };
+    }
 
     const admin = createAdminClient();
-    const { data: customer } = await admin
-      .from("customers")
-      .select("id")
-      .eq("restaurant_id", restaurantId)
-      .limit(1)
-      .maybeSingle();
+    const { error } = await admin.from("restaurants")
+      .update({ loyalty_points_per_dollar: pointsPerDollar })
+      .eq("id", restaurantId);
+    if (error) return { ok: false };
 
-    let customerId = (customer as { id: string } | null)?.id;
-    if (!customerId) {
-      const { data: newCust } = await admin
-        .from("customers")
-        .insert({
-          restaurant_id: restaurantId,
-          name: "Client Privilégié",
-          email: "ambassadeur@minervaflow.app",
-        })
-        .select("id")
-        .single();
-      customerId = (newCust as { id: string } | null)?.id;
-    }
-
-    if (!customerId) return { ok: false };
-
-    const link = await getOrCreateReferralLink(customerId, activeProg.id);
-    if (!link) return { ok: false };
-
-    return {
-      ok: true,
-      programName: activeProg.name,
-      code: link.code,
-      url: `/p/${link.code}`,
-    };
+    const share = await getOrCreateDefaultLoyaltyShare(restaurantId);
+    if (!share) return { ok: false };
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
+    return { ok: true, url: new URL(`/${locale}/f/${share.token}`, origin).toString() };
   } catch {
     return { ok: false };
   }

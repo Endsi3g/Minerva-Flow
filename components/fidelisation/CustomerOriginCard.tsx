@@ -19,6 +19,24 @@ const SOURCE_LABELS: Record<string, string> = {
   direct: "Parrainage direct",
 };
 
+function getSourceLabel(channel: string): string {
+  const [kind, value] = channel.split(":", 2);
+  if (kind === "signup") {
+    const signupLabels: Record<string, string> = {
+      qr_landing: "Inscription · QR / lien fidélité",
+      staff: "Inscription · équipe",
+      qr_join: "Inscription · QR code",
+      pos_cashier_auto_create: "Inscription · caisse",
+      portal: "Inscription · portail client",
+      unknown: "Inscription · source inconnue",
+    };
+    return signupLabels[value] ?? `Inscription · ${value}`;
+  }
+  if (kind === "ad") return `Conversion publicitaire · ${SOURCE_LABELS[value] ?? value}`;
+  if (kind === "referral") return `Conversion de parrainage · ${SOURCE_LABELS[value] ?? value}`;
+  return SOURCE_LABELS[channel] ?? channel;
+}
+
 export function CustomerOriginCard({
   cities,
   profileCount,
@@ -84,7 +102,7 @@ export function CustomerOriginCard({
             <div className="space-y-2">
               {sortedSources.map((source) => (
                 <div key={source.channel} className="flex items-center justify-between gap-3 text-[12.5px]">
-                  <span className="truncate text-mv-ink-soft">{SOURCE_LABELS[source.channel] ?? source.channel}</span>
+                  <span className="truncate text-mv-ink-soft">{getSourceLabel(source.channel)}</span>
                   <span className="font-semibold tabular-nums text-mv-ink">{source.count}</span>
                 </div>
               ))}

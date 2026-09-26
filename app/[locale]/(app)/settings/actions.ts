@@ -11,7 +11,6 @@ import { getAlertRules, upsertAlertRule } from "@/lib/data/alerts";
 import { getMySessions, revokeSession, type DeviceSession } from "@/lib/data/sessions";
 import { createClient } from "@/lib/supabase/server";
 import { getPostHogClient } from "@/lib/posthog-server";
-import { isGooglePlacesConfigured } from "@/lib/google/config";
 import { searchPlaces, getPlaceDetails, mapPlaceDetailsToRestaurantInput, type PlaceSuggestion } from "@/lib/google-places";
 import type {
   AlertRule,
@@ -30,7 +29,7 @@ export async function createRestaurantAction(input: RestaurantInput): Promise<Re
     if (user) {
       const posthog = getPostHogClient();
       posthog.capture({ distinctId: user.id, event: "restaurant_created", properties: { restaurant_id: restaurant.id } });
-      await posthog.flush();
+      void posthog.flush().catch((error) => console.warn("PostHog flush failed after restaurant creation", error));
     }
   }
   return restaurant;
@@ -50,10 +49,6 @@ export async function updateRestaurantAction(
  * result into its own local form state before calling
  * createRestaurantAction/updateRestaurantAction to actually persist it.
  */
-export async function isGooglePlacesEnabledAction(): Promise<boolean> {
-  return isGooglePlacesConfigured();
-}
-
 export async function searchPlacesAction(query: string): Promise<PlaceSuggestion[]> {
   return searchPlaces(query);
 }

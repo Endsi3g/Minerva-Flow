@@ -35,6 +35,7 @@ import { createExpressAccount, createOnboardingLink, retrieveAccountState } from
 import { getStripeClient } from "@/lib/stripe/config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { randomBytes } from "node:crypto";
+import { getAmbassadorPayoutBlockReason } from "@/lib/ambassadors/payout-gate";
 
 async function requireWorkspaceManager(workspaceId: string) {
   const membership = await getCurrentWorkspaceMembership();
@@ -201,7 +202,7 @@ export async function requestAmbassadorPayoutAction(commissionId: string): Promi
   const { data: ambassador } = await admin.from("flow_ambassadors").select("id, stripe_account_id").eq("user_id", user.id).maybeSingle();
   if (!ambassador?.stripe_account_id) return { ok: false, message: "Connectez d’abord votre compte de versement Stripe." };
   const { data: commission } = await admin.from("flow_ambassador_commissions")
-    .select("id, referral_id, commission_amount, currency, payable_at, status, stripe_transfer_id, flow_ambassador_referrals!inner(ambassador_id)")
+    .select("id, referral_id, commission_amount, currency, payable_at, status, stripe_transfer_id, payout_approved_at, flow_ambassador_referrals!inner(ambassador_id)")
     .eq("id", commissionId).maybeSingle();
   const owner = (commission?.flow_ambassador_referrals as unknown as { ambassador_id: string } | null)?.ambassador_id;
   if (!commission || owner !== ambassador.id) return { ok: false, message: "Commission introuvable." };
@@ -209,11 +210,19 @@ export async function requestAmbassadorPayoutAction(commissionId: string): Promi
   if (commission.status === "pending" && new Date(commission.payable_at).getTime() <= Date.now()) {
     await admin.from("flow_ambassador_commissions").update({ status: "payable" }).eq("id", commissionId).eq("status", "pending");
   }
-  if (new Date(commission.payable_at).getTime() > Date.now()) return { ok: false, message: "Cette commission doit attendre la fin du délai de 30 jours." };
-  if (!(["payable", "pending"].includes(commission.status))) return { ok: false, message: "Cette commission ne peut pas être versée." };
   try {
     const state = await retrieveAccountState(ambassador.stripe_account_id as string);
-    if (!state.payoutsEnabled) return { ok: false, message: "Stripe doit encore vérifier votre compte de versement." };
+    const blockReason = getAmbassadorPayoutBlockReason({
+      status: commission.status,
+      payableAt: commission.payable_at,
+      approvedAt: commission.payout_approved_at,
+      transferId: commission.stripe_transfer_id,
+      payoutsEnabled: state.payoutsEnabled,
+    });
+    if (blockReason === "approval_required") return { ok: false, message: "Cette commission attend l’approbation de Minerva Flow." };
+    if (blockReason === "not_mature") return { ok: false, message: "Cette commission doit attendre la fin du délai de 30 jours." };
+    if (blockReason === "account_incomplete") return { ok: false, message: "Stripe doit encore vérifier votre compte de versement." };
+    if (blockReason) return { ok: false, message: "Cette commission ne peut pas être versée." };
     const amount = Math.round(Number(commission.commission_amount) * 100);
     const currency = String(commission.currency).toLowerCase();
     const transfer = await getStripeClient().transfers.create({

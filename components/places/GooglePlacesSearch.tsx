@@ -3,15 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Field, Input } from "@/components/minerva/FormField";
-import { searchPlacesAction, getPlaceDetailsAction, isGooglePlacesEnabledAction } from "@/app/[locale]/(app)/settings/actions";
+import { searchPlacesAction, getPlaceDetailsAction } from "@/app/[locale]/(app)/settings/actions";
 import type { RestaurantInput } from "@/lib/data/restaurants";
 import { MapPin, Loader2, Search } from "lucide-react";
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 3;
 
-export function GooglePlacesSearch({ onSelect }: { onSelect: (patch: Partial<RestaurantInput>) => void }) {
-  const [enabled, setEnabled] = useState(false);
+export function GooglePlacesSearch({ onSelect, enabled = true }: { onSelect: (patch: Partial<RestaurantInput>) => void; enabled?: boolean }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<{ placeId: string; primaryText: string; secondaryText: string }[]>([]);
   const [open, setOpen] = useState(false);
@@ -21,10 +20,6 @@ export function GooglePlacesSearch({ onSelect }: { onSelect: (patch: Partial<Res
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
   const skipNextSearchRef = useRef(false);
-
-  useEffect(() => {
-    isGooglePlacesEnabledAction().then(setEnabled);
-  }, []);
 
   const updateCoords = () => {
     if (inputContainerRef.current) {
@@ -56,8 +51,6 @@ export function GooglePlacesSearch({ onSelect }: { onSelect: (patch: Partial<Res
     }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (query.trim().length < MIN_QUERY_LENGTH) {
-      setSuggestions([]);
-      setOpen(false);
       return;
     }
     debounceRef.current = setTimeout(() => {
@@ -93,7 +86,14 @@ export function GooglePlacesSearch({ onSelect }: { onSelect: (patch: Partial<Res
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-mv-ink-faint" />
           <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const nextQuery = e.target.value;
+              setQuery(nextQuery);
+              if (nextQuery.trim().length < MIN_QUERY_LENGTH) {
+                setSuggestions([]);
+                setOpen(false);
+              }
+            }}
             onFocus={() => {
               if (suggestions.length > 0) {
                 updateCoords();

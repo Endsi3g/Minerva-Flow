@@ -49,6 +49,17 @@ function normalizeTitle(title: string): string {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-09-26-loyalty-onboarding-qr",
+    title: "Démarrage fidélité et QR d’inscription",
+    description: `- **Configuration guidée** : définissez le nombre de points gagnés par dollar pendant la création de votre espace.
+- **Inscription client** : générez tout de suite un lien et un QR code partageables.
+- **Aucun faux client ni récompense surprise** : les membres ne sont créés qu’à leur inscription; les récompenses restent à configurer par le propriétaire.
+- **Capture mobile** : [voir le parcours sur téléphone](/assets/changelog/loyalty-onboarding-mobile.png).`,
+    category: "amelioration",
+    publishedAt: "2026-09-26T01:00:00.000Z",
+    imageUrl: "/assets/changelog/loyalty-onboarding-desktop.png",
+  },
+  {
     id: "ch-2026-09-25-order-format-choices",
     title: "Choisissez le format qui vous convient",
     description: `Quand un restaurant propose plusieurs formats, les quantités et les prix totaux sont maintenant présentés clairement dans le menu. Choisissez un format pour l’ajouter au panier, puis vérifiez-le avant de commander.`,
@@ -90,7 +101,7 @@ const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
     id: "ch-2026-09-24-v2-48-0",
     title: "v2.48.0 — Ambassadeurs & UGC — recommandations rémunérées et contenu authentique",
     description: `- **Ouvert à tous** : chaque membre peut créer un lien personnel et suivre les workspaces recommandés.
-- **Commissions** : 10 % de la première facture d’abonnement payée; paiement admissible après 30 jours, puis transfert vers un compte Stripe vérifié.
+- **Commissions** : 10 % de la première facture d’abonnement payée; versement admissible après 30 jours et approbation manuelle par Minerva Flow avant le transfert Stripe.
 - **UGC réel** : seuls les restaurants qui acceptent explicitement apparaissent dans le répertoire. Les publications sont modérées avant réutilisation; les ambassadeurs doivent divulguer leur commission.
 - **Espace dédié** : guide de démarrage, lien de partage, suivi des gains, configuration Stripe et soumission de contenu au même endroit.
 - **Nouveau cette semaine** : l’entrée comprend une capture 16:9 de l’espace partenaire.`,

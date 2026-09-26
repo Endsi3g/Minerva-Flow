@@ -47,6 +47,7 @@ function configureE2eEnvironment() {
   process.env.SUPABASE_URL = supabaseUrl;
   process.env.SUPABASE_SECRET_KEY = serviceRoleKey;
   process.env.SUPABASE_SERVICE_ROLE_KEY = serviceRoleKey;
+  process.env.NEXT_PUBLIC_APP_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3200";
 
   // Simulated webhook tests can use a local/test Stripe key; never inherit a
   // live Stripe credential from the shell or Next.js' .env.local loader.

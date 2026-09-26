@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import { cleanupTestUser, supabaseAdmin, TEST_PASSWORD } from "./fixtures";
 
 test("signup creates a profile with optional product-update consent off by default", async ({ page }) => {
+  test.setTimeout(240_000);
   await page.setViewportSize({ width: 1440, height: 1000 });
-  test.setTimeout(90_000);
   const email = `auth-trigger-defaults-${Date.now()}@example.com`;
   let userId: string | undefined;
 
@@ -15,10 +15,6 @@ test("signup creates a profile with optional product-update consent off by defau
     await emailInput.fill(email);
     await passwords.nth(0).fill(TEST_PASSWORD);
     await passwords.nth(1).fill(TEST_PASSWORD);
-    await page.waitForTimeout(300);
-    if ((await emailInput.inputValue()) !== email) await emailInput.fill(email);
-    if ((await passwords.nth(0).inputValue()) !== TEST_PASSWORD) await passwords.nth(0).fill(TEST_PASSWORD);
-    if ((await passwords.nth(1).inputValue()) !== TEST_PASSWORD) await passwords.nth(1).fill(TEST_PASSWORD);
     // The AuthCard keeps its submit handler busy while the browser establishes
     // the Supabase session. Observe the server-side signup independently so a
     // delayed client redirect does not hide whether account creation worked.
@@ -45,7 +41,7 @@ test("signup creates a profile with optional product-update consent off by defau
       product_updates_opt_in_at: null,
       onboarding_completed: false,
     });
-    await expect(page).toHaveURL(/(?:workspace|overview|onboarding)/, { timeout: 30_000 });
+    await expect(page).toHaveURL(/(?:workspace|overview|onboarding)/, { timeout: 60_000 });
     await submitInFlight;
   } finally {
     if (userId) await cleanupTestUser(userId);

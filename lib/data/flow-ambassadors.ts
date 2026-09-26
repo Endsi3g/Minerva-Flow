@@ -10,7 +10,7 @@ export type FlowAmbassadorSummary = {
   referrals: number;
   links: { id: string; slug: string; label: string; platform: string | null; contentUrl: string | null; clicks: number; signups: number }[];
   stripeConnected: boolean;
-  commissions: { id: string; amount: number; currency: string; payableAt: string; status: string; transferId: string | null }[];
+  commissions: { id: string; amount: number; currency: string; payableAt: string; status: string; transferId: string | null; approvedAt: string | null }[];
 };
 
 export async function getOrCreateFlowAmbassador(userId: string): Promise<string | null> {
@@ -58,7 +58,7 @@ export async function getFlowAmbassadorSummary(userId: string): Promise<FlowAmba
   }
   const { data: commissions } = referralIds.length
     ? await admin.from("flow_ambassador_commissions")
-        .select("id, commission_amount, currency, payable_at, status, stripe_transfer_id")
+        .select("id, commission_amount, currency, payable_at, status, stripe_transfer_id, payout_approved_at")
         .in("referral_id", referralIds)
         .order("created_at", { ascending: false })
     : { data: [] };
@@ -70,8 +70,8 @@ export async function getFlowAmbassadorSummary(userId: string): Promise<FlowAmba
       clicks: Number(row.clicks) || 0, signups: Number(row.signups) || 0,
     })),
     stripeConnected: Boolean(ambassador.stripe_account_id),
-    commissions: ((commissions ?? []) as { id: string; commission_amount: number; currency: string; payable_at: string; status: string; stripe_transfer_id: string | null }[])
-      .map((row) => ({ id: row.id, amount: Number(row.commission_amount), currency: row.currency.toUpperCase(), payableAt: row.payable_at, status: row.status, transferId: row.stripe_transfer_id })),
+    commissions: ((commissions ?? []) as { id: string; commission_amount: number; currency: string; payable_at: string; status: string; stripe_transfer_id: string | null; payout_approved_at: string | null }[])
+      .map((row) => ({ id: row.id, amount: Number(row.commission_amount), currency: row.currency.toUpperCase(), payableAt: row.payable_at, status: row.status, transferId: row.stripe_transfer_id, approvedAt: row.payout_approved_at })),
   };
 }
 

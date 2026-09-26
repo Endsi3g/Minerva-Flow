@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import posthog from "posthog-js";
-import { Link, getPathname, useRouter } from "@/i18n/navigation";
+import { Link, getPathname } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Suspense, useState, useEffect, type FormEvent } from "react";
@@ -45,7 +45,6 @@ function AuthCardInner({
 }) {
   const t = useTranslations("auth");
   const locale = useLocale();
-  const router = useRouter();
 
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [email, setEmail] = useState("");
@@ -70,6 +69,8 @@ function AuthCardInner({
       : "/workspace";
 
   const localizedPostAuthPath = getPathname({ href: postAuthPath, locale });
+  const postSignUpPath = workspaceInviteToken || inviteToken ? postAuthPath : "/onboarding";
+  const localizedPostSignUpPath = getPathname({ href: postSignUpPath, locale });
 
   const mapErrorMessage = (msg: string): string => {
     const normalized = msg.toLowerCase();
@@ -83,6 +84,22 @@ function AuthCardInner({
     }
     return msg;
   };
+
+  async function waitForServerSessionCookie() {
+    const hasSessionCookie = () => document.cookie.split(";").some((cookie) => {
+      const name = cookie.trim().split("=", 1)[0];
+      return name.startsWith("sb-") && name.includes("-auth-token");
+    });
+
+    const deadline = Date.now() + 5_000;
+    while (!hasSessionCookie() && Date.now() < deadline) {
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
+    }
+
+    if (!hasSessionCookie()) {
+      throw new Error("La session sécurisée ne s’est pas enregistrée. Réessaie de te connecter.");
+    }
+  }
 
   async function handleAuth(e: FormEvent) {
     e.preventDefault();
@@ -109,7 +126,11 @@ function AuthCardInner({
           posthog.identify(data.user.id, { email: data.user.email });
           posthog.capture("user_logged_in", { method: "email" });
         }
-        router.replace(postAuthPath);
+        await waitForServerSessionCookie();
+        // A full document navigation ensures the Supabase SSR cookie written
+        // by the browser client is present before the protected route's
+        // server layout evaluates onboarding state.
+        window.location.assign(localizedPostAuthPath);
       } else {
         if (password !== repeatPassword) throw new Error(t("errorPasswordMismatch"));
 
@@ -132,24 +153,21 @@ function AuthCardInner({
           throw new Error(signUpRes.message || t("errorGeneric"));
         }
 
-        // Instant login with confirmed session
-        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
+        // Authenticate in the browser so the SDK persists its normal session
+        // cookies before the protected onboarding route is requested.
+        const supabase = createClient();
+        const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
         if (signInErr) throw signInErr;
 
-        if (signInData.user) {
-          posthog.identify(signInData.user.id, { email: signInData.user.email });
-          posthog.capture("user_signed_up", {
-            method: "email",
-            has_referral: Boolean(referralCode),
-            has_invite: Boolean(inviteToken || workspaceInviteToken),
-          });
-        }
-
-        router.replace(postAuthPath);
+        posthog.identify(signUpRes.userId, { email });
+        posthog.capture("user_signed_up", {
+          method: "email",
+          has_referral: Boolean(referralCode),
+          has_invite: Boolean(inviteToken || workspaceInviteToken),
+        });
+        await waitForServerSessionCookie();
+        // signUpAction establishes the SSR cookie before it resolves.
+        window.location.assign(localizedPostSignUpPath);
       }
     } catch (err) {
       posthog.captureException(err);
