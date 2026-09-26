@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
 import { Field, Input } from "@/components/minerva/FormField";
@@ -32,8 +33,11 @@ function FacebookMark() {
   );
 }
 
-export default function PortalLoginPage() {
+function PortalLoginPageInner() {
   const t = useTranslations("portal.login");
+  const searchParams = useSearchParams();
+  const restaurantToJoin = searchParams.get("next")?.match(/^\/customer-join\?restaurant=([0-9a-f-]{36})$/i)?.[1] ?? null;
+  const nextDestination = restaurantToJoin ? `/customer-join?restaurant=${restaurantToJoin}` : "/portal";
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +46,7 @@ export default function PortalLoginPage() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("sending");
-    const result = await requestCustomerMagicLink(email, "/portal");
+    const result = await requestCustomerMagicLink(email, nextDestination);
     if (result.ok) {
       setStatus("sent");
     } else {
@@ -71,7 +75,7 @@ export default function PortalLoginPage() {
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent("/portal")}`,
+        redirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(nextDestination)}`,
       },
     });
     if (oauthError) {
@@ -164,4 +168,8 @@ export default function PortalLoginPage() {
       </div>
     </div>
   );
+}
+
+export default function PortalLoginPage() {
+  return <Suspense fallback={<div className="min-h-screen bg-mv-cream" />}><PortalLoginPageInner /></Suspense>;
 }

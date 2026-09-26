@@ -16,6 +16,7 @@ import { notifyOrderReadyById } from "@/lib/orders/notify-ready";
 import { setBusyModeManual } from "@/lib/data/restaurants";
 import type { Order, OrderStatus } from "@/lib/types";
 import { getServiceQuotesForRestaurant, issueServiceQuote, type ServiceQuoteLineInput } from "@/lib/data/service-quotes";
+import { notifyOrderStatusCustomer } from "@/lib/orders/status-notification";
 
 export async function createOrderAction(restaurantId: string, input: CreateOrderInput): Promise<Order | null> {
   if (!restaurantId) return null;
@@ -36,11 +37,15 @@ export async function getOrdersForDayAction(
 export async function updateOrderStatusAction(
   restaurantId: string,
   id: string,
-  status: OrderStatus
+  status: OrderStatus,
+  cancellationReason?: string
 ): Promise<boolean> {
-  const ok = await updateOrderStatus(restaurantId, id, status);
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager", "staff"].includes(membership.role)) return false;
+  const ok = await updateOrderStatus(restaurantId, id, status, cancellationReason);
   if (ok) {
     revalidatePath("/commandes");
+    await notifyOrderStatusCustomer(restaurantId, id, status, cancellationReason);
     if (status === "servie") {
       await creditReferralConversionForOrder(id);
       revalidatePath("/fidelisation");
@@ -48,6 +53,7 @@ export async function updateOrderStatusAction(
   }
   return ok;
 }
+
 
 export async function deleteOrderAction(restaurantId: string, id: string): Promise<boolean> {
   const ok = await deleteOrder(restaurantId, id);

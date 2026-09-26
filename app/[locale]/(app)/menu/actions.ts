@@ -19,7 +19,8 @@ import { createMenuShare, deleteMenuShare } from "@/lib/data/menu-shares";
 import { createOffer, updateOffer, deleteOffer, type OfferInput } from "@/lib/data/offers";
 import { updateRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
 import { getRecipeItems, setRecipeItems } from "@/lib/data/recipes";
-import type { MenuItem, MenuShare, Offer, RecipeItem } from "@/lib/types";
+import { validateMenuPresentation } from "@/lib/data/menu-presentation";
+import type { MenuItem, MenuPresentation, MenuShare, Offer, RecipeItem } from "@/lib/types";
 import { getPosItemMappings, upsertPosItemMapping, type PosItemMapping } from "@/lib/pos/item-mapping";
 import type { PosProvider } from "@/lib/data/pos-connections";
 import {
@@ -48,6 +49,8 @@ export async function createMenuItemAction(
 }
 
 export async function createMenuItemsAction(restaurantId: string, inputs: MenuItemInput[]): Promise<MenuItem[]> {
+  const membership = await getCurrentMembership();
+  if (membership?.restaurantId !== restaurantId || !["owner", "manager", "staff"].includes(membership.role)) return [];
   const valid = inputs.filter((i) => i.name.trim().length > 0 && Number.isFinite(i.price) && i.price >= 0);
   if (valid.length === 0) return [];
   const items = await createMenuItems(restaurantId, valid);
@@ -116,8 +119,19 @@ export async function createMenuShareAction(
   input: { title: string; itemIds?: string[] | null }
 ): Promise<MenuShare | null> {
   if (!input.title.trim()) return null;
+  const membership = await getCurrentMembership();
+  if (membership?.restaurantId !== restaurantId || !["owner", "manager", "staff"].includes(membership.role)) return null;
   const share = await createMenuShare(restaurantId, input);
   if (share) revalidatePath("/menu");
+  return share;
+}
+
+export async function ensureDefaultMenuShareAction(restaurantId: string): Promise<MenuShare | null> {
+  const membership = await getCurrentMembership();
+  if (membership?.restaurantId !== restaurantId || !["owner", "manager", "staff"].includes(membership.role)) return null;
+  const { getOrCreateDefaultMenuShare } = await import("@/lib/data/menu-shares");
+  const share = await getOrCreateDefaultMenuShare(restaurantId);
+  if (share) revalidatePath("/menu/qr");
   return share;
 }
 
@@ -203,6 +217,26 @@ export async function updateMenuSettingsAction(
   const restaurant = await updateRestaurantAction(restaurantId, input);
   if (restaurant) revalidatePath("/menu");
   return Boolean(restaurant);
+}
+
+export async function saveMenuPresentationAction(
+  restaurantId: string,
+  input: MenuPresentation
+): Promise<boolean> {
+  const membership = await getCurrentMembership();
+  if (membership?.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) return false;
+  const presentation = validateMenuPresentation(input);
+  if (!presentation) return false;
+  const supabase = await createClient();
+  const { error } = await supabase.from("restaurants").update({ menu_presentation: presentation }).eq("id", restaurantId);
+  if (error) {
+    console.error("saveMenuPresentationAction failed:", error.code ?? "unknown");
+    return false;
+  }
+  revalidatePath("/menu");
+  revalidatePath("/menu/design");
+  revalidatePath("/menu/settings");
+  return true;
 }
 
 export async function getPosItemMappingsAction(

@@ -4,6 +4,22 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 
 ## [Non publié] — Vérifications du 2026-09-26
 
+### Flow Direct — menu partageable et commande plus conviviale (en préparation)
+- Nouvelle page partageable `/app` avec captures iOS, étapes d’installation TestFlight, création de compte client avec confirmation par courriel et association au restaurant.
+- Après l’envoi d’une commande, la page d’installation garde un suivi public limité au statut et à l’heure estimée; le menu QR Studio distingue le lien du menu du lien d’installation.
+- Les propriétaires choisissent les plats « À découvrir ». Un bonus de première visite peut être configuré; à 0 il reste désactivé et il n’est crédité qu’une fois après une commande marquée « Servie ».
+- Nouveau studio organisé en pages dédiées : Menu, Identité visuelle, QR et partage, Coordonnées. Les liens sont des navigations de page, sans onglets.
+- Les routes dédiées du menu et de la fidélisation restent accessibles après connexion, tout en laissant les autres pages hors du périmètre produit configuré.
+- La présentation du menu peut définir logo, couleurs, typographie et liens Instagram, Facebook, TikTok, WhatsApp, téléphone, courriel et site web.
+- L’import de menu accepte PDF, JPG, PNG et WebP, avec une étape de vérification avant l’ajout. Un article peut être publié pour présentation sans être commandable; la base bloque aussi son ajout au panier.
+- La commande affiche son état dans le parcours public et actualise les changements par Realtime/polling. Les statuts déclenchent un courriel transactionnel, une notification in-app et une notification push si le client a un compte.
+- Les textes de commande sont réécrits dans un ton plus chaleureux tout en précisant l’heure de récupération, le paiement sur place et l’annulation sans frais en cas d’imprévu. Une annulation propriétaire recueille un court motif.
+- Page LTV & CAC ajoutée : LTV revenu et marge estimée séparément, et CAC sur 12 mois avec publicité, commissions, agence, promotions et équipement. Les coûts d’acquisition sont saisis par le propriétaire ou le gestionnaire.
+- Les commandes confirmées ou payées consomment maintenant, dans une transaction SQL idempotente, les quantités correspondant aux recettes configurées; les commandes POS importées sont aussi couvertes. Une annulation avant service remet en inventaire la quantité réellement prélevée. Les lignes sans recette ne déclenchent aucune déduction.
+- Le seuil d’alerte propriétaire est de 30 % de la cible de réapprovisionnement par défaut. Un franchissement crée une notification in-app pour les propriétaires/gestionnaires; le retour au-dessus du seuil permet une nouvelle alerte au prochain franchissement. Sans cible configurée, le ratio n’est pas calculé.
+- **État** : migrations `0156` à `0159` et correctifs idempotents `0160`–`0161` pour l’ordre des fonctions SQL et le déclencheur par ligne sont appliqués au staging et en production; les objets de schéma sont vérifiés. Les parcours staging de stock passent. La web app n’est pas encore déployée et le build 14 n’a pas été téléversé sur TestFlight.
+- **Limites** : la déduction exacte dépend des quantités initiales, recettes et cibles de réapprovisionnement configurées par restaurant. La LTV de marge reste estimée avec les food costs actuels; les coûts historiques par commande ne sont pas stockés.
+
 ### Publication Web — 2026-09-25
 - La web app `2.48.0` est déployée en production depuis `3521ec4` (Vercel `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9`). Les routes de connexion française et anglaise répondent 200.
 - Stripe Connect est explicitement indiqué « Non configuré — bientôt disponible » et demeure désactivé en l’absence de clé live/capacités actives. Aucune transaction en ligne Connect n’est promise ni validée; les tests POS restent reportés.

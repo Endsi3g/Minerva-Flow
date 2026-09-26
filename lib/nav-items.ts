@@ -56,10 +56,18 @@ export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "settings", href: "/settings", title: "Paramètres", subtitle: "Configuration de l'établissement", roles: managerRoles },
 ];
 
-// Keep the four core workspace areas plus owner/manager Settings reachable.
-// Settings is required for integrations and Connect onboarding; other product
-// routes remain behind the current product allowlist.
-export const AUTHENTICATED_PRODUCT_ROOTS = ["/workspace", "/fournisseurs", "/inventaire", "/commandes", "/settings"] as const;
+// Core workspace areas plus the dedicated menu and loyalty journeys that
+// owners configure and share. Settings remains available to owners/managers
+// for integrations and account configuration; unrelated legacy routes stay gated.
+export const AUTHENTICATED_PRODUCT_ROOTS = [
+  "/workspace",
+  "/fournisseurs",
+  "/inventaire",
+  "/commandes",
+  "/menu",
+  "/fidelisation",
+  "/settings",
+] as const;
 
 export function canAccessSettings(role: Role): boolean {
   return role === "owner" || role === "manager";

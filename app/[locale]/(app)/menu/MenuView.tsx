@@ -68,6 +68,7 @@ import { toast } from "sonner";
 import { createCampaignAction } from "@/app/[locale]/(app)/campaigns/actions";
 import { MealSuggestionsOwnerPanel } from "./MealSuggestionsOwnerPanel";
 import type { MealSuggestion } from "@/lib/data/meal-suggestions";
+import { MenuStudioNav } from "./MenuStudioNav";
 
 const quadrantTone: Record<MenuQuadrant, "green" | "amber" | "lime" | "neutral"> = {
   etoile: "green",
@@ -107,6 +108,7 @@ function NewMenuItemModal({
         category: String(form.get("category") ?? "") || null,
         price: priceOptions.length ? Math.min(...priceOptions.map((option) => option.price)) : Number(form.get("price") ?? 0),
         priceOptions,
+        isOrderable: form.get("isOrderable") === "on",
         foodCost: Number(form.get("foodCost") ?? 0),
         description: String(form.get("description") ?? "") || null,
         allergens,
@@ -151,6 +153,10 @@ function NewMenuItemModal({
           </Field>
         </div>
         <MenuPriceOptionsEditor options={priceOptions} onChange={setPriceOptions} />
+        <label className="flex items-start gap-2 rounded-lg border border-mv-border-soft bg-mv-cream-soft/60 p-3 text-[12px] text-mv-ink-soft">
+          <input type="checkbox" name="isOrderable" defaultChecked className="mt-0.5 accent-mv-green" />
+          <span><strong className="text-mv-ink">Proposé à la commande</strong><br />Décochez pour présenter cet article dans le menu sans permettre de le commander.</span>
+        </label>
         <Field label={t("descriptionLabel")} hint={t("optional")}>
           <Input name="description" />
         </Field>
@@ -366,6 +372,7 @@ function EditMenuItemModal({
         category: String(form.get("category") ?? "") || null,
         price: priceOptions.length ? Math.min(...priceOptions.map((option) => option.price)) : Number(form.get("price") ?? 0),
         priceOptions,
+        isOrderable: form.get("isOrderable") === "on",
         foodCost: Number(form.get("foodCost") ?? 0),
         description: String(form.get("description") ?? "") || null,
         allergens,
@@ -409,6 +416,10 @@ function EditMenuItemModal({
           </Field>
         </div>
         <MenuPriceOptionsEditor options={priceOptions} onChange={setPriceOptions} />
+        <label className="flex items-start gap-2 rounded-lg border border-mv-border-soft bg-mv-cream-soft/60 p-3 text-[12px] text-mv-ink-soft">
+          <input type="checkbox" name="isOrderable" defaultChecked={item.isOrderable !== false} className="mt-0.5 accent-mv-green" />
+          <span><strong className="text-mv-ink">Proposé à la commande</strong><br />Décochez pour présenter cet article dans le menu sans permettre de le commander.</span>
+        </label>
         <Field label={tn("descriptionLabel")} hint={tn("optional")}>
           <Input name="description" defaultValue={item.description ?? ""} />
         </Field>
@@ -504,6 +515,7 @@ function MenuItemRow({
               </button>
             )}
             {item.isDraft && <Badge tone="amber">Brouillon à compléter</Badge>}
+            {item.isOrderable === false && <Badge tone="neutral">Présentation seulement</Badge>}
             {!item.active && !item.isDraft && <Badge tone="neutral">Retiré du menu</Badge>}
             {stockStatus?.status === "rupture" && (
               <span
@@ -1482,6 +1494,7 @@ export function MenuView({
           </div>
         }
       />
+      <MenuStudioNav active="Menu" />
 
       {canManage && (
         <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl bg-mv-cream-soft px-4 py-3">

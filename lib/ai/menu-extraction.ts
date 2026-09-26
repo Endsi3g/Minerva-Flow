@@ -20,7 +20,7 @@ const ExtractedMenuSchema = z.object({
 export type ExtractedMenuItem = z.infer<typeof ExtractedItemSchema>;
 
 const EXTRACTION_PROMPT =
-  "Analyse ce PDF de menu de restaurant et extrait CHAQUE plat et boisson distinct qui y figure, avec son nom exact, sa section/catégorie telle qu'imprimée, son prix de base en dollars (nombre seul), et sa description si le menu en fournit une. N'invente aucun item, aucun prix, aucune description qui ne figure pas explicitement dans le document. Ignore les logos, coordonnées, mentions légales et allergènes génériques.";
+  "Analyse ce menu de restaurant (PDF ou image) et extrais CHAQUE plat et boisson distinct qui y figure, avec son nom exact, sa section/catégorie telle qu'imprimée, son prix de base en dollars (nombre seul; utilise 0 uniquement si aucun prix n'est affiché), et sa description si le menu en fournit une. N'invente aucun item, aucun prix, aucune description qui ne figure pas explicitement dans le document. Ignore les logos, coordonnées, mentions légales et allergènes génériques.";
 
 /**
  * One-shot structured extraction — no persistence, no review-state here.
@@ -29,6 +29,13 @@ const EXTRACTION_PROMPT =
  */
 export async function extractMenuFromPdf(
   pdfBytes: Uint8Array
+): Promise<{ items: ExtractedMenuItem[] } | { error: string }> {
+  return extractMenuFromFile(pdfBytes, "application/pdf");
+}
+
+export async function extractMenuFromFile(
+  fileBytes: Uint8Array,
+  mediaType: "application/pdf" | "image/jpeg" | "image/png" | "image/webp"
 ): Promise<{ items: ExtractedMenuItem[] } | { error: string }> {
   const apiKey = getGeminiApiKey();
   if (!apiKey) return { error: "L'extraction par IA n'est pas configurée pour ce compte." };
@@ -45,7 +52,7 @@ export async function extractMenuFromPdf(
           {
             role: "user",
             content: [
-              { type: "file", data: pdfBytes, mediaType: "application/pdf" },
+              { type: "file", data: fileBytes, mediaType },
               { type: "text", text: EXTRACTION_PROMPT },
             ],
           },

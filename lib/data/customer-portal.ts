@@ -499,6 +499,7 @@ export async function submitPortalOrder(
       .select("id, name, price, price_options")
       .eq("restaurant_id", customer.restaurantId)
       .eq("active", true)
+      .eq("is_orderable", true)
       .in(
         "id",
         cart.map((l) => l.menuItemId)

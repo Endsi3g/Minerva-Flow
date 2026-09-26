@@ -37,11 +37,6 @@ vi.mock("@/lib/data/menu", () => ({
   recordSale: (...args: unknown[]) => mockRecordSale(...args),
 }));
 
-const mockDecrementInventory = vi.fn().mockResolvedValue(true);
-vi.mock("@/lib/data/orders", () => ({
-  decrementInventoryForOrderItems: (...args: unknown[]) => mockDecrementInventory(...args),
-}));
-
 const mockUpsertServiceDay = vi.fn().mockResolvedValue("synced");
 vi.mock("@/lib/data/service-days", () => ({
   upsertSyncedServiceDayRevenue: (...args: unknown[]) => mockUpsertServiceDay(...args),
@@ -306,7 +301,7 @@ describe("POS Item Mapping & Ticket Ingestion Engine", () => {
       expect(mockInsert).not.toHaveBeenCalled();
     });
 
-    it("ingests new ticket, updates dish popularity, recipe inventory, and service day revenue", async () => {
+    it("ingests new ticket lines, updates dish popularity, and syncs service day revenue", async () => {
       // Mock: menu items preload, then existing order check (null), then order insert
       mockSelect.mockImplementation((fields?: string) => {
         return {
@@ -368,17 +363,10 @@ describe("POS Item Mapping & Ticket Ingestion Engine", () => {
       // Verify recordSale was triggered for the matched dish
       expect(mockRecordSale).toHaveBeenCalledWith("resto-1", "dish-poutine", 2);
 
-      // Verify inventory drawdown was called
-      expect(mockDecrementInventory).toHaveBeenCalledWith(
-        "resto-1",
-        "new-order-99",
-        expect.arrayContaining([
-          expect.objectContaining({
-            menu_item_id: "dish-poutine",
-            quantity: 2,
-          }),
-        ])
-      );
+      // The line is persisted here; recipe-based inventory consumption is
+      // applied by the database order_items trigger and covered by the
+      // staging transaction smoke test.
+      expect(mockFrom).toHaveBeenCalledWith("order_items");
 
       // Verify service day revenue was aggregated
       expect(mockUpsertServiceDay).toHaveBeenCalledWith(

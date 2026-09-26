@@ -1424,7 +1424,7 @@ struct CheckoutSheet: View {
                                 .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
                         }
                         if canPayOnline && payOnline {
-                            Text(isFrench ? "La commande est confirmée après validation du paiement." : "Your order is confirmed once payment is verified.")
+                            Text(isFrench ? "Merci ! Le restaurant confirme votre commande dès que possible. En cas d’imprévu, l’équipe vous contactera ou annulera la commande sans frais." : "Thanks! The restaurant will confirm your order as soon as possible. If anything comes up, the team will contact you or cancel at no charge.")
                                 .font(.system(size: 10.5))
                                 .foregroundStyle(MinervaColor.inkFaint)
                         }
@@ -1466,7 +1466,7 @@ struct CheckoutSheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
                 if status == .error {
-                    Text(isFrench ? "La commande a échoué. Réessayez." : "The order failed. Please try again.")
+                    Text(isFrench ? "Oups, l’envoi n’a pas abouti. Vous pouvez réessayer dans un instant." : "Oops, we couldn’t send that just yet. Please try again in a moment.")
                         .font(.system(size: 12.5))
                         .foregroundStyle(.red)
                     if checkoutAttemptId != nil {
@@ -1482,6 +1482,16 @@ struct CheckoutSheet: View {
                         .disabled(status == .submitting)
                     }
                 }
+
+                Text(isFrench
+                     ? "Hey ! Le restaurant vous confirme la commande bientôt. Si un article n’est pas disponible ou qu’un imprévu survient, l’équipe vous contactera ou annulera la commande sans frais."
+                     : "Hey! The restaurant will confirm your order soon. If an item is unavailable or plans change, the team will contact you or cancel at no charge.")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .padding(11)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 11))
 
                 Button {
                     Task { await submit() }
@@ -1525,7 +1535,7 @@ struct CheckoutSheet: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 56))
                 .foregroundStyle(MinervaColor.emeraldDark)
-            Text(isFrench ? "Commande envoyée" : "Order received")
+            Text(isFrench ? "Merci, on a bien reçu votre commande !" : "Thanks! We’ve received your order.")
                 .font(MinervaFont.display(22))
                 .foregroundStyle(MinervaColor.ink)
             Text(payOnline
@@ -1535,8 +1545,8 @@ struct CheckoutSheet: View {
                        ? "Ouvrez le paiement sécurisé pour confirmer votre commande. Au retour dans l’app, son statut sera vérifié automatiquement."
                        : "Open secure checkout to confirm your order. Its status will be checked automatically when you return to the app."))
                  : (isFrench
-                    ? "Le restaurant a reçu votre commande. Vous paierez à la réception."
-                    : "The restaurant received your order. You will pay on pickup."))
+                    ? "Hey ! Le restaurant vous confirme la commande bientôt. Vous paierez sur place. Si un imprévu survient, l’équipe vous contactera ou annulera la commande sans frais."
+                    : "Hey! The restaurant will confirm your order soon. You’ll pay in person. If anything comes up, the team will contact you or cancel at no charge."))
                 .font(.system(size: 13))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.center)

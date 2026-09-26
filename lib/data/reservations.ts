@@ -205,12 +205,14 @@ export async function createReservation(
 export async function updateReservationStatus(
   restaurantId: string,
   id: string,
-  status: ReservationStatus
+  status: ReservationStatus,
+  cancellationReason?: string
 ): Promise<boolean> {
   const supabase = await createClient();
+  if (status === "annulee" && !cancellationReason?.trim()) return false;
   const { error } = await supabase
     .from("reservations")
-    .update({ status })
+    .update({ status, ...(status === "annulee" ? { cancellation_reason: cancellationReason!.trim().slice(0, 500) } : {}) })
     .eq("restaurant_id", restaurantId)
     .eq("id", id);
   return !error;

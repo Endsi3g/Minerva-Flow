@@ -32,7 +32,11 @@ Elle comprend trois surfaces complémentaires :
 - **Application iOS** : le même client natif oriente les comptes vers une expérience client ou propriétaire après authentification. Le parcours client couvre l’accueil, le menu/la commande, le code de jumelage, les offres, les cartes et le profil. Le parcours propriétaire donne accès à l’aperçu, aux commandes, au menu, à la fidélisation et à la gestion; sur iPad, la navigation s’adapte au format large.
 - **Pages web publiques** : menu partagé, lien de parrainage, demandes de réservation et parcours de commande activés par restaurant.
 
-Le modèle complet — qui fait quoi, comment les parcours s’enchaînent et ce qui dépend d’une intégration — est décrit dans le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md). L’état de TestFlight est suivi dans [l’audit mobile](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md).
+Le modèle complet — qui fait quoi, comment les parcours s'enchaînent et ce qui dépend d'une intégration — est décrit dans le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md). L'état de TestFlight est suivi dans [l'audit mobile](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md).
+
+La route `/app` présente les captures, les étapes TestFlight et l’inscription client. Le bonus de première visite est désactivé à zéro point; la sélection « À découvrir » du menu est gérée par le propriétaire.
+
+Le menu partageable, son éditeur QR, la commande sans paiement en ligne et les indicateurs de valeur client sont décrits dans [l’architecture Flow Direct](docs/FLOW_DIRECT_MENU_AND_VALUE.md). L’état de développement de ces nouveautés est suivi dans le changelog; elles ne sont pas annoncées comme livrées avant la vérification et le déploiement correspondants.
 
 La proposition de prochaine version web/iOS, ses notes de version, son illustration de référence et les portes de validation encore ouvertes sont consignées dans le [dossier de release 2.48.0](docs/releases/RELEASE_CANDIDATE_2.48.0.md). Ce document est un brouillon interne, pas une annonce de disponibilité.
 

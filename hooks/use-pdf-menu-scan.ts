@@ -15,7 +15,7 @@ export type ScannedMenuItem = MenuItemInput & { include: boolean; key: string };
 
 /**
  * Same Dropzone-compatible shape as use-csv-service-days-import.ts, but the
- * "upload" step scans the PDF via /api/ai/menu-scan instead of writing
+ * "upload" step scans a PDF or menu image via /api/ai/menu-scan instead of writing
  * anything — extracted items land in review state here, and nothing
  * touches the real menu until confirmImport() is called with the
  * (possibly edited) items from the review screen.
@@ -50,7 +50,7 @@ export function usePdfMenuScan({
   const dropzoneProps = useDropzone({
     onDrop,
     noClick: true,
-    accept: { "application/pdf": [] },
+    accept: { "application/pdf": [], "image/jpeg": [".jpg", ".jpeg"], "image/png": [".png"], "image/webp": [".webp"] },
     maxSize: 8 * 1000 * 1000,
     maxFiles: 1,
     multiple: false,
@@ -80,6 +80,7 @@ export function usePdfMenuScan({
           price: item.price,
           foodCost: 0,
           description: item.description,
+          isOrderable: item.price > 0,
           include: true,
           key: `${i}-${item.name}`,
         }))
@@ -98,7 +99,14 @@ export function usePdfMenuScan({
     try {
       const created = await createMenuItemsAction(
         restaurantId,
-        toImport.map(({ include: _include, key: _key, ...rest }) => rest)
+        toImport.map((item) => ({
+          name: item.name,
+          category: item.category,
+          price: item.price,
+          foodCost: item.foodCost,
+          description: item.description,
+          isOrderable: item.isOrderable,
+        }))
       );
       onImported?.(created);
       return created;
@@ -129,7 +137,7 @@ export function usePdfMenuScan({
     reset,
     maxFileSize: 8 * 1000 * 1000,
     maxFiles: 1,
-    allowedMimeTypes: ["application/pdf"],
+    allowedMimeTypes: ["application/pdf", "image/jpeg", "image/png", "image/webp"],
     ...dropzoneProps,
   };
 }

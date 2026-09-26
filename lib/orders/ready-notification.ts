@@ -34,17 +34,17 @@ export async function sendOrderReadyNotification(
   const emailDelivery = customer.email
     ? sendTransactionalEmail({
       to: customer.email,
-      subject: `Votre commande est prête chez ${restaurant.name}`,
+      subject: `Bonne nouvelle : votre commande est prête chez ${restaurant.name}`,
       bodyHtml:
         p(`Bonjour ${firstName},`) +
-        p(`Votre commande chez ${restaurant.name} est prête — passez la récupérer quand vous voulez.`),
+        p(`Hey ! Votre repas chez ${restaurant.name} est prêt. L’équipe vous attend pour la cueillette; passez à l’heure prévue et réglez sur place. À bientôt !`),
       ctaLabel: "Itinéraire",
       ctaUrl: link,
     })
     : null;
 
   if (customer.userId) {
-    const payload = { title: "Votre commande est prête !", body: `${restaurant.name} vous attend pour la cueillette.`, link };
+    const payload = { title: "Bonne nouvelle, votre commande est prête !", body: `Hey ! ${restaurant.name} vous attend pour la cueillette à l’heure prévue.`, link };
     await sendPushToUsers([customer.userId], payload, restaurant.id);
     if (isAPNsConfigured()) {
       const { data: tokenRows } = await admin

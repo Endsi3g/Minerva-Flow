@@ -748,9 +748,10 @@ export async function submitPublicOrder(
     getRestaurantOrderSettings(admin, restaurantId),
     admin
       .from("menu_items")
-      .select("id, name, price, price_options")
+      .select("id, name, price, price_options, is_orderable")
       .eq("restaurant_id", restaurantId)
       .eq("active", true)
+      .eq("is_orderable", true)
       .in(
         "id",
         cart.map((line) => line.menuItemId)
@@ -772,7 +773,7 @@ export async function submitPublicOrder(
   if (!schedule.ok) return { ok: false };
 
   const menuItemById = new Map(
-    ((menuItemsResult.data as { id: string; name: string; price: number; price_options?: MenuPriceOption[] }[]) ?? []).map((r) => [r.id, {
+    ((menuItemsResult.data as { id: string; name: string; price: number; price_options?: MenuPriceOption[]; is_orderable?: boolean }[]) ?? []).filter((r) => r.is_orderable !== false).map((r) => [r.id, {
       id: r.id, name: r.name, price: Number(r.price), priceOptions: r.price_options ?? [],
     }])
   );

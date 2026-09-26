@@ -2,9 +2,10 @@
 
 import { useState, useMemo, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, CardHeader } from "@/components/minerva/PageCard";
+import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -85,6 +86,7 @@ export function MenuItemDetailView({
       const price = Number(form.get("price") ?? 0);
       const foodCost = Number(form.get("foodCost") ?? 0);
       const description = String(form.get("description") ?? "").trim() || null;
+      const isFeatured = form.get("isFeatured") === "on";
 
       if (!name) {
         notifyError("Le nom du plat est requis.");
@@ -97,6 +99,7 @@ export function MenuItemDetailView({
         price,
         foodCost,
         description,
+        isFeatured,
       });
 
       if (updated) {
@@ -419,9 +422,9 @@ export function MenuItemDetailView({
                 {inventoryItems.length === 0 ? (
                   <p className="text-[12.5px] text-mv-ink-faint">
                     Aucun ingrédient dans l&apos;inventaire. Ajoutez d&apos;abord des articles dans{" "}
-                    <a href="/inventaire" className="font-medium text-mv-green hover:underline">
+                    <Link href="/inventaire" className="font-medium text-mv-green hover:underline">
                       Inventaire
-                    </a>
+                    </Link>
                     .
                   </p>
                 ) : (
@@ -695,6 +698,11 @@ export function MenuItemDetailView({
                 placeholder="Description du plat, ingrédients phares, notes de dégustation ou allergènes..."
               />
             </Field>
+
+            <label className="flex items-start gap-3 rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 p-3.5 text-[12px] leading-5 text-mv-ink-soft">
+              <input name="isFeatured" type="checkbox" defaultChecked={item.isFeatured ?? false} className="mt-1 size-4 accent-mv-green" />
+              <span><span className="block font-semibold text-mv-ink">Mettre en vedette</span>Afficher ce plat dans la sélection « À découvrir » du menu public.</span>
+            </label>
 
             <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-3">
               <Button

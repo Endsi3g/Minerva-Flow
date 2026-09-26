@@ -481,16 +481,60 @@ private struct EmployeeEditor: View {
 struct OwnerInventoryView: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @State private var selected: NativeOwnerInventoryItem?
+
+    private var lowStockCount: Int {
+        supabase.ownerInventoryItems.filter { item in
+            guard let target = item.parLevel, target > 0 else { return false }
+            return item.quantityOnHand <= target * 0.3
+        }.count
+    }
+
     var body: some View {
-        List(supabase.ownerInventoryItems) { item in
-            Button { selected = item } label: {
-                HStack { VStack(alignment: .leading, spacing: 3) { Text(item.name).font(.headline); Text("\(item.quantityOnHand.formatted()) \(item.unit) on hand · par \(item.parLevel.formatted())").font(.caption).foregroundStyle(item.quantityOnHand <= item.parLevel ? .orange : .secondary) }; Spacer(); Text(item.unitCost.cad).font(.caption.weight(.semibold)) }
-            }.buttonStyle(.plain)
+        List {
+            if lowStockCount > 0 {
+                Section {
+                    Label("\(lowStockCount) item\(lowStockCount == 1 ? "" : "s") at or below 30% of target", systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.red)
+                } footer: {
+                    Text("Counts follow recipes configured for each menu item. Set a target to receive a reliable low-stock alert.")
+                }
+            }
+            Section("Items · \(supabase.ownerInventoryItems.count)") {
+                ForEach(supabase.ownerInventoryItems) { item in
+                    Button { selected = item } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.name).font(.headline)
+                                Text("\(item.quantityOnHand.formatted()) \(item.unit) on hand · target \(item.parLevel?.formatted() ?? "—")")
+                                    .font(.caption)
+                                    .foregroundStyle(inLowStock(item) ? .red : (belowTarget(item) ? .orange : .secondary))
+                                if inLowStock(item) {
+                                    Text("Reorder soon · at or below 30%")
+                                        .font(.caption2.weight(.semibold)).foregroundStyle(.red)
+                                }
+                            }
+                            Spacer()
+                            Text(item.unitCost.cad).font(.caption.weight(.semibold))
+                        }
+                    }.buttonStyle(.plain)
+                }
+            }
         }
         .overlay { if supabase.ownerInventoryItems.isEmpty { ContentUnavailableView("No inventory items", systemImage: "shippingbox", description: Text("Inventory from this location will appear here.")) } }
         .navigationTitle("Inventory")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
         .sheet(item: $selected) { InventoryEditor(item: $0) }
+    }
+
+    private func belowTarget(_ item: NativeOwnerInventoryItem) -> Bool {
+        guard let target = item.parLevel, target > 0 else { return false }
+        return item.quantityOnHand < target
+    }
+
+    private func inLowStock(_ item: NativeOwnerInventoryItem) -> Bool {
+        guard let target = item.parLevel, target > 0 else { return false }
+        return item.quantityOnHand <= target * 0.3
     }
 }
 
@@ -502,11 +546,43 @@ private struct InventoryEditor: View {
     @State private var parLevel: String
     @State private var unitCost: String
     @State private var saving = false
-    init(item: NativeOwnerInventoryItem) { self.item = item; _quantity = State(initialValue: item.quantityOnHand.formatted()); _parLevel = State(initialValue: item.parLevel.formatted()); _unitCost = State(initialValue: String(format: "%.2f", item.unitCost)) }
+
+    init(item: NativeOwnerInventoryItem) {
+        self.item = item
+        _quantity = State(initialValue: item.quantityOnHand.formatted())
+        _parLevel = State(initialValue: item.parLevel?.formatted() ?? "")
+        _unitCost = State(initialValue: String(format: "%.2f", item.unitCost))
+    }
+
     var body: some View {
-        NavigationStack { Form { Section(item.name) { TextField("Quantity on hand (\(item.unit))", text: $quantity).keyboardType(.decimalPad); TextField("Par level", text: $parLevel).keyboardType(.decimalPad); TextField("Unit cost", text: $unitCost).keyboardType(.decimalPad) } }
+        NavigationStack {
+            Form {
+                Section(item.name) {
+                    TextField("Quantity on hand (\(item.unit))", text: $quantity).keyboardType(.decimalPad)
+                    TextField("Replenishment target", text: $parLevel).keyboardType(.decimalPad)
+                    Text("A low-stock alert appears in app at 30% of this target. Leave blank if unknown.").font(.footnote).foregroundStyle(.secondary)
+                    TextField("Unit cost", text: $unitCost).keyboardType(.decimalPad)
+                }
+            }
             .navigationTitle("Edit inventory")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button(saving ? "Saving…" : "Save") { guard let q = Double(quantity.replacingOccurrences(of: ",", with: ".")), let p = Double(parLevel.replacingOccurrences(of: ",", with: ".")), let c = Double(unitCost.replacingOccurrences(of: ",", with: ".")) else { return }; saving = true; Task { let ok = await supabase.updateOwnerInventoryItem(item, quantity: q, parLevel: p, unitCost: c); saving = false; if ok { dismiss() } } }.disabled(saving) } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(saving ? "Saving…" : "Save") {
+                        guard let q = Double(quantity.replacingOccurrences(of: ",", with: ".")),
+                              let c = Double(unitCost.replacingOccurrences(of: ",", with: ".")) else { return }
+                        let targetText = parLevel.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let parsedTarget = targetText.isEmpty ? nil : Double(targetText.replacingOccurrences(of: ",", with: "."))
+                        if !targetText.isEmpty && parsedTarget == nil { return }
+                        saving = true
+                        Task {
+                            let ok = await supabase.updateOwnerInventoryItem(item, quantity: q, parLevel: parsedTarget, unitCost: c)
+                            saving = false
+                            if ok { dismiss() }
+                        }
+                    }.disabled(saving)
+                }
+            }
         }
     }
 }

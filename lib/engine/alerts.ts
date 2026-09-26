@@ -154,10 +154,9 @@ export function computeAlerts({
 
   const today = new Date().toISOString().slice(0, 10);
 
-  // 6. Low stock — an inventory item at or below its par level (threshold
-  // is a % of par level, so 100 = "at or under par", 50 = "at or under
-  // half of par" for restaurants that only want to be warned when it's
-  // more urgent).
+  // 6. Low stock — alert when an item's quantity reaches the configured
+  // percentage of its replenishment target (30% by default). Items without
+  // a target are skipped because there is no reliable percentage baseline.
   const lowStockRule = rules["low_stock"];
   if (lowStockRule?.enabled) {
     for (const item of inventoryItems) {
@@ -167,7 +166,7 @@ export function computeAlerts({
         alerts.push({
           id: `low-stock-${item.id}`,
           title: `Stock bas — ${item.name}`,
-          detail: `${item.quantityOnHand} ${item.unit} en stock, sous le seuil de ${item.parLevel} ${item.unit}. Commande fournisseur recommandée.`,
+          detail: `${item.quantityOnHand} ${item.unit} en stock (${Math.max(0, Math.round(pctOfPar))} % de la cible de ${item.parLevel} ${item.unit}). Pensez au réapprovisionnement.`,
           severity: pctOfPar <= 0 ? "critique" : severityFor(100 - pctOfPar),
           date: today,
           href: "/inventaire",

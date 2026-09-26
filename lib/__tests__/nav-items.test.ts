@@ -11,6 +11,10 @@ describe("authenticated product route allowlist", () => {
     "/inventaire/recettes",
     "/commandes",
     "/commandes/service-quotes",
+    "/menu",
+    "/menu/suggestions",
+    "/fidelisation",
+    "/fidelisation/customers",
     "/settings",
     "/settings/alertes",
   ])("keeps the product route %s reachable", (path) => {
@@ -20,10 +24,6 @@ describe("authenticated product route allowlist", () => {
   it.each([
     "/overview",
     "/assistant",
-    "/menu",
-    "/menu/suggestions",
-    "/fidelisation",
-    "/fidelisation/customers",
     "/finance",
     "/collaborateurs",
     "/changelog",

@@ -29,22 +29,6 @@ import { useState, type FormEvent } from "react";
 import { notifyError } from "@/lib/notify-error";
 import { formatTime } from "@/lib/utils";
 
-const statusLabel: Record<ReservationStatus, string> = {
-  demandee: "Demandée",
-  confirmee: "Confirmée",
-  annulee: "Annulée",
-  honoree: "Honorée",
-  no_show: "Non présentée",
-};
-
-const statusTone: Record<ReservationStatus, "green" | "amber" | "red" | "neutral"> = {
-  demandee: "amber",
-  confirmee: "amber",
-  honoree: "green",
-  no_show: "red",
-  annulee: "neutral",
-};
-
 function formatDayLabel(dayStart: string) {
   return new Date(dayStart).toLocaleDateString("fr-CA", {
     weekday: "long",
@@ -346,7 +330,13 @@ export function ReservationsView({
 
   async function handleStatusChange(id: string, status: ReservationStatus) {
     if (!restaurantId) return;
-    const ok = await updateReservationStatusAction(restaurantId, id, status);
+    let cancellationReason: string | undefined;
+    if (status === "annulee") {
+      const entered = window.prompt("Un petit mot pour expliquer au client pourquoi la réservation ne pourra pas être honorée.");
+      if (entered === null) return;
+      cancellationReason = entered.trim() || "Un imprévu empêche le restaurant d’honorer cette réservation.";
+    }
+    const ok = await updateReservationStatusAction(restaurantId, id, status, cancellationReason);
     if (ok) setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
   }
 
@@ -392,6 +382,7 @@ export function ReservationsView({
       <div className="mb-4 flex items-center gap-2">
         <button
           onClick={() => loadDay(shiftDay(dayStart, -1))}
+          disabled={loading}
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-mv-border text-mv-ink-soft transition-colors hover:bg-mv-ink/5"
         >
           <ChevronLeft size={15} />
@@ -401,12 +392,14 @@ export function ReservationsView({
         </span>
         <button
           onClick={() => loadDay(shiftDay(dayStart, 1))}
+          disabled={loading}
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-mv-border text-mv-ink-soft transition-colors hover:bg-mv-ink/5"
         >
           <ChevronRight size={15} />
         </button>
         <button
           onClick={() => loadDay(new Date(new Date().setHours(0, 0, 0, 0)).toISOString())}
+          disabled={loading}
           className="ml-1 rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-ink/5"
         >
           Aujourd&apos;hui

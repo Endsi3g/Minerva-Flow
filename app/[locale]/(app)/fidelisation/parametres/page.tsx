@@ -15,6 +15,7 @@ export default async function ParametresPage() {
     <ParametresView
       restaurantId={restaurantId}
       loyaltyPointsPerDollar={restaurant?.loyaltyPointsPerDollar ?? 1}
+      welcomeBonusPoints={restaurant?.welcomeBonusPoints ?? 0}
       loyaltyTierThresholds={{
         tier2: restaurant?.loyaltyTier2Threshold ?? 150,
         tier3: restaurant?.loyaltyTier3Threshold ?? 400,

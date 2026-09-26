@@ -620,9 +620,15 @@ export function CommandesView({
 
   async function handleStatusChange(id: string, status: OrderStatus) {
     if (!restaurantId) return;
+    let cancellationReason: string | undefined;
+    if (status === "annulee") {
+      const entered = window.prompt("Un petit mot pour expliquer l’annulation au client. Aucun paiement ne sera demandé.");
+      if (entered === null) return;
+      cancellationReason = entered.trim() || "Un imprévu empêche le restaurant de préparer cette commande.";
+    }
     // Optimistic UI update
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
-    const ok = await updateOrderStatusAction(restaurantId, id, status);
+    const ok = await updateOrderStatusAction(restaurantId, id, status, cancellationReason);
     if (!ok) {
       notifyError("La mise à jour du statut a échoué.");
       handleRefresh();

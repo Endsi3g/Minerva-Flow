@@ -822,8 +822,17 @@ final class SupabaseManager: ObservableObject {
     func updateOwnerOrderStatus(_ orderId: String, restaurantId: String, status: String) async -> Bool {
         guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return false }
         do {
-            struct Patch: Encodable { let status: String }
-            try await client.from("orders").update(Patch(status: status)).eq("restaurant_id", value: restaurantId).eq("id", value: orderId).execute()
+            struct Body: Encodable { let restaurantId: String; let status: String; let cancellationReason: String? }
+            let body = try JSONEncoder().encode(Body(
+                restaurantId: restaurantId,
+                status: status,
+                cancellationReason: status == "annulee" ? "Un imprévu empêche le restaurant de préparer cette commande." : nil
+            ))
+            let _: Data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/native/owner/orders/\(orderId)/status"),
+                method: "POST",
+                body: body
+            )
             await refreshOwnerOperations()
             return true
         } catch { print("updateOwnerOrderStatus error: \(error)"); return false }
@@ -875,9 +884,9 @@ final class SupabaseManager: ObservableObject {
         } catch { print("updateOwnerEmployee error: \(error)"); return false }
     }
 
-    func updateOwnerInventoryItem(_ item: NativeOwnerInventoryItem, quantity: Double, parLevel: Double, unitCost: Double) async -> Bool {
-        guard let restaurantId = selectedOwnerRestaurantId, quantity >= 0, parLevel >= 0, unitCost >= 0 else { return false }
-        struct Patch: Encodable { let quantityOnHand: Double; let parLevel: Double; let unitCost: Double
+    func updateOwnerInventoryItem(_ item: NativeOwnerInventoryItem, quantity: Double, parLevel: Double?, unitCost: Double) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId, quantity >= 0, (parLevel ?? 0) >= 0, unitCost >= 0 else { return false }
+        struct Patch: Encodable { let quantityOnHand: Double; let parLevel: Double?; let unitCost: Double
             enum CodingKeys: String, CodingKey { case quantityOnHand = "quantity_on_hand", parLevel = "par_level", unitCost = "unit_cost" }
         }
         do {

@@ -124,6 +124,37 @@ export async function sendAuthActionEmail({
   return { ok: !error };
 }
 
+export async function sendOrderStatusEmail(input: {
+  to: string;
+  restaurantName: string;
+  orderId: string;
+  status: "soumise" | "confirmee" | "en_preparation" | "prete" | "servie" | "annulee";
+  total: number;
+  cancellationReason?: string | null;
+}): Promise<{ ok: boolean }> {
+  if (!resend) return { ok: false };
+  const statusCopy: Record<typeof input.status, { label: string; explanation: string }> = {
+    soumise: { label: "Bien reçue", explanation: "Merci ! Le restaurant regarde votre commande et vous confirme la suite bientôt. Si un article n’est pas disponible, l’équipe vous écrira ou annulera la commande sans frais." },
+    confirmee: { label: "C’est confirmé !", explanation: "Votre repas sera bientôt prêt. Venez à l’heure prévue; le paiement se fera sur place. En cas d’imprévu, le restaurant vous contactera ou annulera la commande sans frais." },
+    en_preparation: { label: "En préparation", explanation: "L’équipe prépare votre repas avec soin. Nous vous préviendrons dès qu’il sera prêt." },
+    prete: { label: "Prête à vous accueillir", explanation: "Votre commande vous attend au restaurant. Vous pouvez venir la récupérer à l’heure prévue et payer sur place." },
+    servie: { label: "Bon appétit !", explanation: "Votre commande est terminée. Merci d’avoir choisi ce restaurant !" },
+    annulee: { label: "Commande annulée sans frais", explanation: `Petit imprévu : le restaurant ne pourra pas préparer cette commande. Aucun paiement ne vous sera demandé.${input.cancellationReason ? ` Motif : ${input.cancellationReason}` : ""} Vous pouvez contacter l’équipe si vous souhaitez en discuter.` },
+  };
+  const content = statusCopy[input.status];
+  const orderReference = input.orderId.slice(0, 8).toUpperCase();
+  const body = `<p>Hey ! Voici une petite nouvelle au sujet de votre commande chez <strong>${escapeHtml(input.restaurantName)}</strong>.</p><div style="padding:18px;border-radius:16px;background:#f5f1e6;margin:18px 0"><p style="margin:0;color:#167f5b;font-weight:700">${content.label}</p><p style="margin:8px 0 0">${escapeHtml(content.explanation)}</p><p style="margin:10px 0 0;color:#667">Commande #${orderReference} · ${new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(input.total)}</p></div><p>Vous pouvez retrouver les nouvelles de votre commande dans Flow Direct. À bientôt !</p>`;
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: input.to,
+    replyTo: REPLY_TO,
+    subject: `Commande ${orderReference} — ${content.label} · Minerva Flow`,
+    html: emailShell(body, "Consulter Flow Direct", APP_ORIGIN),
+  });
+  return { ok: !error };
+}
+
+
 /**
  * Best-effort: caller keeps the copyable link in the UI as the source of
  * truth regardless of what this returns — email delivery is a nicety, never

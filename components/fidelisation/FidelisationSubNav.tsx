@@ -3,7 +3,7 @@
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
-import { Users, Share2, Gift, QrCode, Settings, ChartNoAxesCombined } from "lucide-react";
+import { Users, Share2, Gift, QrCode, Settings, ChartNoAxesCombined, CircleDollarSign } from "lucide-react";
 
 const SECTIONS = [
   { href: "/fidelisation", label: "Clients", icon: Users, managerOnly: false },
@@ -11,6 +11,7 @@ const SECTIONS = [
   { href: "/fidelisation/parrainage", label: "Parrainage", icon: Share2, managerOnly: true },
   { href: "/fidelisation/partage", label: "Partage & QR", icon: QrCode, managerOnly: true },
   { href: "/fidelisation/resultats", label: "Résultats", icon: ChartNoAxesCombined, managerOnly: true },
+  { href: "/fidelisation/valeur-client", label: "LTV & CAC", icon: CircleDollarSign, managerOnly: true },
   { href: "/fidelisation/parametres", label: "Paramètres", icon: Settings, managerOnly: true },
 ] as const;
 

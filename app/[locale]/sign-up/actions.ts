@@ -13,6 +13,7 @@ export type SignUpActionResult =
 export async function signUpAction(params: {
   email: string;
   password: string;
+  fullName?: string;
   referralCode?: string | null;
   ambassadorCode?: string | null;
   ambassadorLinkSlug?: string | null;
@@ -30,6 +31,8 @@ export async function signUpAction(params: {
     }
 
     const signUpMetadata: Record<string, string> = {};
+    const fullName = params.fullName?.trim().replace(/\s+/g, " ").slice(0, 120);
+    if (fullName) signUpMetadata.full_name = fullName;
     signUpMetadata.product_updates_opt_in = params.productUpdatesOptIn === true ? "true" : "false";
     signUpMetadata.preferred_language = ["fr", "en", "tr"].includes(params.preferredLanguage ?? "")
       ? params.preferredLanguage!
