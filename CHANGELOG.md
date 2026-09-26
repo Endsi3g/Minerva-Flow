@@ -2,15 +2,15 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
-## [Non publié] — Vérifications du 2026-09-25
+## [Non publié] — Vérifications du 2026-09-26
 
 ### Publication Web — 2026-09-25
 - La web app `2.48.0` est déployée en production depuis `3521ec4` (Vercel `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9`). Les routes de connexion française et anglaise répondent 200.
 - Stripe Connect est explicitement indiqué « Non configuré — bientôt disponible » et demeure désactivé en l’absence de clé live/capacités actives. Aucune transaction en ligne Connect n’est promise ni validée; les tests POS restent reportés.
 
 ### Build iOS — TestFlight
-- Archive native **1.0.0 (12)** créée et téléversée avec succès à App Store Connect le 2026-09-25. Le numéro de build est `12`; la version marketing reste `1.0.0` dans l’app et son widget.
-- Le téléversement est confirmé par Xcode; le traitement Apple et la disponibilité du build pour les groupes TestFlight restent à confirmer dans App Store Connect. Ce build n’est pas encore annoncé comme installable.
+- Archive native **1.0.0 (13)** créée et téléversée avec succès à App Store Connect le 2026-09-25. Le numéro de build est `13`; la version marketing reste `1.0.0` dans l’app et son widget.
+- Signature et UUID du dSYM Sentry vérifiés. Xcode confirme l’envoi (`Uploaded`); le traitement Apple et l’affectation aux groupes TestFlight restent à confirmer. Ce build n’est pas encore annoncé comme installable.
 - Audit App Store statique : 0 risque critique, 0 élevé, 2 avertissements (déclaration de chiffrement du widget à confirmer et contrôles manuels des métadonnées/démo/privacy/review). XCTest n’a toujours pas de résultat confirmé.
 
 ### Paiements web — configuration explicite

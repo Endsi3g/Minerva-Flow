@@ -1,8 +1,8 @@
 # Release candidate — Minerva Flow 2.48.0
 
-**État : web `2.48.0` déployé en Production depuis le commit `3521ec4`; déploiement exact `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9` READY, domaines `minervaflow.app` et `www.minervaflow.app` rattachés. L’option Connect est explicitement « Non configuré — bientôt disponible » et reste désactivée jusqu’à la configuration live; le parcours Connect n’est donc pas annoncé comme fonctionnel. Les routes `/login` et `/en/login` répondent 200, mais l’inspection authentifiée et visuelle du réglage n’a pas pu être faite. POS non testable/reporté. Build iOS `1.0.0 (12)` téléversé à Apple, mais le traitement et l’affectation aux groupes restent à confirmer; XCTest sans résultat confirmé.**
+**État : web `2.48.0` déployé en Production depuis le commit `3521ec4`; déploiement exact `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9` READY, domaines `minervaflow.app` et `www.minervaflow.app` rattachés. L’option Connect est explicitement « Non configuré — bientôt disponible » et reste désactivée jusqu’à la configuration live; le parcours Connect n’est donc pas annoncé comme fonctionnel. Les routes `/login` et `/en/login` répondent 200, mais l’inspection authentifiée et visuelle du réglage n’a pas pu être faite. POS non testable/reporté. Build iOS `1.0.0 (13)` téléversé à Apple; traitement et affectation aux groupes à confirmer, XCTest sans résultat confirmé.**
 Date de préparation : 2026-09-24.
-Dernière vérification : 2026-09-25.
+Dernière vérification : 2026-09-26.
 Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
 
 ### Actions de livraison encore ouvertes — 2026-09-25
@@ -10,7 +10,7 @@ Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
 - [x] Web Production déployé avec le garde de disponibilité Connect désactivant le paiement en ligne en l’absence de configuration : `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9`, commit `3521ec4`. Smoke HTTP canonique `/login` et `/en/login` = 200; 0 erreur runtime Vercel observée dans les 15 premières minutes.
 - [ ] Stripe Connect : clé live absente de Vercel Production et compte test restreint; aucun checkout Connect n’est déclaré fonctionnel. Configurer la clé par un canal secret Vercel et un compte connecté actif, puis valider un paiement autorisé avant d’activer les paiements en ligne.
 - [ ] POS et E2E authentifiés : POS reportés comme demandé; E2E staging précédent échoué avant assertions et Preview utilise des ressources Supabase de production, donc aucune écriture distante lancée.
-- [ ] iOS/TestFlight : build `1.0.0 (12)` archivé, signé, dSYM vérifié et téléversé avec succès. Confirmer le traitement Apple, l’assignation au groupe externe et l’accès des testeurs; XCTest reste à relancer sur un runner stable. L’audit statique rapporte 0 critique, 0 élevé et 2 avertissements.
+- [x] iOS/TestFlight : build `1.0.0 (13)` archivé, signé, dSYM vérifié et téléversé avec succès. [ ] Confirmer le traitement Apple, l’assignation au groupe externe et l’accès des testeurs; XCTest reste à relancer sur un runner stable. L’audit statique rapporte 0 critique, 0 élevé et 2 avertissements.
 - [ ] Après ces validations, finaliser le changelog/release et l’envoi de courriel aux utilisateurs consentants; aucune notification n’a été envoyée.
 - [x] Build Vercel du Preview courant compilé et READY; Sentry a téléversé les source maps et créé la release associée au SHA candidat. Le build local précédent (Webpack, 328 routes) a terminé avec le code 0.
 
@@ -19,7 +19,7 @@ Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
 | Cible | Sortie proposée | État |
 | --- | --- | --- |
 | Web | `2.48.0` | Production `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9` READY pour `3521ec4`; domain aliases actifs; paiement Connect explicitement désactivé jusqu’à configuration; E2E authentifié visuel incomplet |
-| iOS / TestFlight | `1.0.0 (12)` | Téléversé à App Store Connect le 2026-09-25; traitement et assignation aux groupes en attente. `1.0 (11)` reste le dernier build confirmé chez les testeurs |
+| iOS / TestFlight | `1.0.0 (13)` | Téléversé à App Store Connect le 2026-09-25; traitement et assignation aux groupes en attente. `1.0 (11)` reste le dernier build confirmé chez les testeurs |
 | GitHub Release + changelog | `v2.48.0` | Notes FR/EN préparées; publication bloquée jusqu’à la capture réelle jointe comme asset |
 | Android / Google Play | Aucune | Aucun projet Android ni pipeline Android trouvé dans le dépôt |
 

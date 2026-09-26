@@ -1,24 +1,25 @@
 # HANDOFF & DOSSIER DE VÉRIFICATION — MINERVA FLOW
 
 > **Base historique** : 2.36.0 — clôture de sprint du 15 septembre 2026.
-> **État produit actualisé** : 25 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
+> **État produit actualisé** : 26 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
 
-## Vérification de reprise — 2026-09-25
+## Vérification de reprise — 2026-09-26
 
-### Mise à jour native — build TestFlight 12
+### Mise à jour native — build TestFlight 13
 
-- Archive signée `1.0.0 (12)` pour `com.minervaflow.loyalty`, équipe `NHMPLN46TN`; version marketing corrigée pour être cohérente dans l’app et le widget. Archive locale : `/tmp/minerva-flow-testflight-1.0.0-12-final.xcarchive`.
-- Vérifications : archive Xcode réussie; build `12` et version `1.0.0` confirmés dans les métadonnées; UUID du dSYM Sentry correspond au framework; `git diff --check` passe.
-- Téléversement App Store Connect réussi selon Xcode : **MinervaFlow 1.0.0 (12) uploaded**. Le traitement Apple, l’affectation aux groupes et la disponibilité TestFlight ne sont pas encore confirmés; ne pas partager le lien comme accès au build 12 avant ce contrôle.
+- Archive signée `1.0.0 (13)` pour `com.minervaflow.loyalty`, équipe `NHMPLN46TN`; version marketing `1.0.0` cohérente dans l’app et le widget. Archive locale : `~/Library/Developer/Xcode/Archives/2026-09-25/MinervaFlow 1.0.0 (13).xcarchive`.
+- Vérifications : archive Xcode réussie; build `13` et version `1.0.0` confirmés dans les métadonnées; signature valide; UUID du dSYM Sentry identique au framework (`F8157D84-7D82-3EFF-824A-FA39DEFEA828`); `git diff --check` passe.
+- Téléversement App Store Connect confirmé par Xcode le 2026-09-25 à 21:02, état **Uploaded** : **MinervaFlow 1.0.0 (13) uploaded**. Le traitement Apple, l’affectation aux groupes et la disponibilité TestFlight ne sont pas confirmés; ne pas annoncer le build comme installable.
 - Hook App Store : 0 critique, 0 élevé, 2 avertissements. Avertissements maintenus : `ITSAppUsesNonExemptEncryption` absent de l’Info.plist du widget (déclaration de build à vérifier) et contrôles manuels App Store. XCTest ne produit toujours aucun résultat confirmé. Les warnings Swift de compilation restent à corriger/évaluer.
+- Le numéro de build `13` est enregistré dans `native/ios/project.yml` et le projet Xcode. Commit `5834430` poussé sur `release/2.48.0`.
 - Commit `3521ec4` poussé sur `release/2.48.0`; Preview `dpl_3q8gfDazP8Uk7qfU9mqrGgD2gE4M` READY. Build Production exact du commit `3521ec4`: `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9` READY, domaines `https://www.minervaflow.app` et `https://minervaflow.app` rattachés. La release GitHub et le courriel utilisateurs n’ont pas été publiés.
 
 ### Demande de promotion web et statut Apple — 2026-09-25
 
 - **Web Production déployé avec Stripe Connect explicitement indisponible.** Carte Paramètres : « Non configuré — bientôt disponible », activation désactivée. Les paiements en ligne ne sont exposés que si la clé plateforme et les capacités du compte restaurant sont actives; les devis payables sont aussi refusés côté serveur sans cette configuration. Il n’y a pas de `STRIPE_SECRET_KEY` live dans Vercel Production et le destinataire de test reste `restricted`; aucun paiement Connect n’est déclaré fonctionnel. Les tests POS sont reportés comme demandé.
-- **TestFlight :** Xcode confirme le téléversement de `1.0.0 (12)`, pas son traitement Apple ni son affectation à un groupe. Le build `1.0 (11)` reste le dernier confirmé pour les groupes interne/externe (8 testeurs). Il faut vérifier dans App Store Connect que le 12 est traité, puis l’assigner aux groupes appropriés; ne pas annoncer sa disponibilité avant confirmation.
+- **TestFlight :** le build 13 est maintenant téléversé; Xcode confirme seulement `Uploaded`, pas son traitement Apple ni son affectation à un groupe. Le build `1.0 (11)` reste le dernier confirmé pour les groupes interne/externe (8 testeurs). À vérifier dans App Store Connect dès qu’une session connectée est disponible; ne pas annoncer le 13 comme disponible avant confirmation.
 - **Vérification web production :** routes `/login` et `/en/login` répondent 200 sur le domaine canonique; `minervaflow.app` redirige vers `www.minervaflow.app`. Les erreurs runtime Vercel étaient à 0 dans les 15 premières minutes. Le parcours Intégrations authentifié n’a pas été inspecté dans le navigateur de l’utilisateur; aucune session Browser connectée n’était disponible. XCTest n’a aucun résultat confirmé; l’audit App Store statique reste à 0 critique/0 élevé et 2 avertissements (déclaration chiffrement widget à confirmer; contrôles manuels App Store).
-- Le contrôle d’App Store Connect n’est pas accessible dans le navigateur lié à cette session (aucun navigateur connecté découvert). Dans Organizer, Xcode indique seulement `Uploaded` pour le build 12; le traitement Apple et les groupes restent donc **non vérifiés**, sans supposer que le build 12 est disponible.
+- App Store Connect reste inaccessible depuis la session navigateur liée (aucun navigateur connecté découvert). Organizer confirme `Uploaded` pour le build 13; son traitement Apple et son affectation aux groupes restent **non vérifiés**.
 - Carte web Stripe Connect clarifiée (`Non configuré — bientôt disponible`, action désactivée). Garde serveur ajouté : absence de clé plateforme ou de capacités actives masque/refuse le paiement en ligne, y compris l’émission d’acomptes de devis. Cette modification est destinée à préserver les parcours hors-ligne pendant que Stripe est configuré; tests POS reportés.
 
 ### Reprise des blocages — état confirmé après changement concurrent
@@ -34,7 +35,7 @@
 - [x] Web : code candidat poussé au commit `1a63de8`; Preview exact `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` `READY` et journal de build aligné sur ce SHA. La correction `/en/login` est maintenant vérifiée sur ce Preview. Production reste sur `dpl_A35dLpmKawVPfxhp9rWEWSiVcRLc` (`f969e15`).
 - [x] Chromium : cause trouvée — les dépendances attendent des builds Playwright différents de ceux installés dans le cache. Chromium headless existant, version Playwright 1.63, fonctionne avec un override temporaire. Le navigateur n’a pas été téléchargé ni la configuration permanente du projet modifiée.
 - [ ] E2E staging : 3 parcours retentés dans une worktree propre avec données synthétiques et staging `lhosxxtvgmedwarwgjhb`; 0/3 réussis. Les parcours n’atteignent pas l’état attendu : navigation `/workspace`/`/login` expire et le worker Chromium n’arrive pas à démarrer dans le délai. Traces Playwright ignorées localement sous `test-results/`; reprendre après réparation du serveur de test/runtime.
-- [x] iOS : archiver et téléverser `1.0.0 (12)` à App Store Connect; version de l’app/widget et dSYM vérifiés. [ ] Confirmer le traitement Apple, l’affectation au groupe externe et la disponibilité pour testeurs; relancer XCTest sur un runner stable.
+- [x] iOS : archiver et téléverser `1.0.0 (13)` à App Store Connect; version de l’app/widget, signature et dSYM vérifiés. [ ] Confirmer le traitement Apple, l’affectation au groupe externe et la disponibilité pour testeurs; relancer XCTest sur un runner stable.
 - [ ] Après validation des deux sorties : publier les notes/changelog et décider de l’envoi du courriel aux utilisateurs consentants; aucune release ni notification n’est encore émise.
 
 - **Diagnostic build — 2026-09-25** : `npx tsc --noEmit`, ESLint ciblé sur `next.config.ts` et `git diff --check` passent. `npx next build --webpack --debug` a pris 71 s pour compiler, 13 s pour TypeScript, a généré les 328 routes et s’est terminé avec le code 0; Next a signalé l’usage dynamique de `cookies` sur des routes privées, qui sont rendues dynamiquement. Aucun téléversement Sentry n’a été tenté localement. L’étape précédemment décrite comme bloquée était surtout une longue compilation silencieuse.
