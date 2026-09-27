@@ -4,6 +4,23 @@ import { createFinancialTransaction } from "@/lib/data/finance";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { InventoryItem, InventoryMovement, InventoryMovementType } from "@/lib/types";
 
+/**
+ * Pure sign rule shared with app/api/mcp/route.ts's minerva_update_stock_level
+ * tool, so both callers of the inventory_movements/quantity_on_hand write
+ * path agree on it. Reception is always a gain and utilisation/gaspillage
+ * are always a loss regardless of the sign a caller supplies (Math.abs) —
+ * "ajustement" is the one type meant to reconcile a physical count in
+ * either direction (e.g. a count come up short of what's on record), so
+ * it's the only type allowed to carry a negative quantity through as-is;
+ * there's no separate "gaspillage" misuse or financial write-off implied
+ * by a downward adjustment.
+ */
+export function computeInventoryMovementDelta(type: InventoryMovementType, quantity: number): number {
+  if (type === "reception") return Math.abs(quantity);
+  if (type === "ajustement") return quantity;
+  return -Math.abs(quantity);
+}
+
 type InventoryItemRow = {
   id: string;
   restaurant_id: string;
@@ -190,12 +207,12 @@ export async function logMovement(
   if (!itemRow) return null;
   const item = itemRow as InventoryItemRow;
 
-  const delta = type === "reception" || type === "ajustement" ? quantity : -quantity;
+  const delta = computeInventoryMovementDelta(type, quantity);
 
   const { error: movementError } = await supabase.from("inventory_movements").insert({
     inventory_item_id: itemId,
     type,
-    quantity,
+    quantity: delta,
     reason: reason ?? null,
     created_by: user?.id ?? null,
   });
@@ -218,7 +235,7 @@ export async function logMovement(
     actionType: "inventory_item.movement",
     entityType: "inventory_item",
     entityId: itemId,
-    description: `A enregistré un mouvement (${type}) de ${quantity} ${item.unit} sur "${item.name}"`,
+    description: `A enregistré un mouvement (${type}) de ${delta > 0 ? "+" : ""}${delta} ${item.unit} sur "${item.name}"`,
   });
 
   if (type === "gaspillage") {

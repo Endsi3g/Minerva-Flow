@@ -60,12 +60,20 @@ export function ReviewQueue({ items }: { items: PaidAdsReviewItem[] }) {
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
 
-  async function setStatus(id: string, status: PaidAdsReviewItem["status"]) {
+  async function setStatus(id: string, status: Exclude<PaidAdsReviewItem["status"], "nouveau">) {
+    if (busy) return;
     setBusy(id);
-    const ok = await updatePaidAdsRequestStatusAction(id, status);
-    setBusy("");
-    setNotice(ok ? "Statut mis à jour." : "La mise à jour a échoué.");
-    if (ok) router.refresh();
+    setNotice("");
+    try {
+      const ok = await updatePaidAdsRequestStatusAction(id, status);
+      if (!ok) throw new Error("Request status update failed");
+      setNotice("Statut mis à jour.");
+      router.refresh();
+    } catch {
+      setNotice("La mise à jour a échoué. Réessayez.");
+    } finally {
+      setBusy("");
+    }
   }
 
   if (items.length === 0) {

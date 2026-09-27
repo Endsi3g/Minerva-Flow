@@ -2,6 +2,8 @@
 
 Ce document décrit l’implémentation de Flow Direct et ses limites opérationnelles. Au 27 septembre 2026, les migrations `0156` à `0161` sont appliquées en staging et en production, la version web `2.48.0` est déployée, et le build iOS `1.0.0 (15)` est approuvé pour les testeurs externes TestFlight.
 
+La candidate native locale `1.0.1 (16)` ajoute un espace Owner compatible iPad/Mac Catalyst et une page Google Business Profile. Sa migration additive `0162_google_business_profile_native.sql` étend les métadonnées de `google_connections`; elle est appliquée en staging sous la version `20260927054659`, mais pas en production. Les appels natifs vers la nouvelle API nécessitent aussi le déploiement serveur correspondant, qui n’a pas encore été effectué. L’IPA iOS a été exporté localement mais n’est pas téléversé dans TestFlight; l’archive macOS n’est pas signée pour distribution.
+
 ## Pages du studio
 
 - `/menu` : catalogue, catégories, préparation et import.

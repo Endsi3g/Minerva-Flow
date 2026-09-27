@@ -8,7 +8,6 @@ import {
   Rocket,
   LayoutGrid,
   CalendarCheck2,
-  Wallet,
   Megaphone,
   Users,
   LineChart,
@@ -57,8 +56,8 @@ const sections: Section[] = [
     body: (
       <p>
         La barre latérale est organisée en groupes que vous pouvez replier : <strong>Opérations</strong> (journées,
-        programmes), <strong>Croissance</strong> (campagnes, cartes), <strong>Équipe</strong> (collaborateurs) et{" "}
-        <strong>Finance</strong>. L&apos;Aperçu et l&apos;Assistant restent toujours visibles en haut, car ce sont les pages
+        programmes), <strong>Croissance</strong> (campagnes, cartes) et <strong>Équipe</strong> (collaborateurs).
+        L&apos;Aperçu et l&apos;Assistant restent toujours visibles en haut, car ce sont les pages
         les plus utilisées au quotidien. Sur mobile, la navigation passe en bas de l&apos;écran.
       </p>
     ),
@@ -71,18 +70,6 @@ const sections: Section[] = [
         Chaque jour d&apos;ouverture, ajoutez une entrée avec le revenu, le niveau d&apos;affluence et les événements
         notables (promo active, changement de menu, etc.). Ces données servent à calculer vos tendances de revenu,
         détecter les anomalies et générer les recommandations automatiques.
-      </p>
-    ),
-  },
-  {
-    icon: Wallet,
-    title: "Finance",
-    body: (
-      <p>
-        Connectez vos comptes (banque, point de vente, livraison) dans{" "}
-        <Link href="/settings" className="text-mv-green-dark underline">Paramètres → Intégrations</Link> pour
-        importer vos transactions automatiquement, ou importez un fichier CSV directement depuis la page Finance.
-        Les règles d&apos;alertes (chute de revenu, pic de dépenses) se configurent au même endroit.
       </p>
     ),
   },
@@ -149,9 +136,8 @@ const sections: Section[] = [
       <div className="space-y-4">
         <p>
           Tous les branchements se font depuis{" "}
-          <Link href="/settings" className="text-mv-green-dark underline">Paramètres → Intégrations</Link>{" "}
-          (ou l&apos;onglet <Link href="/finance" className="text-mv-green-dark underline">Comptes</Link> de Finance
-          pour Square). Chacun est indépendant des autres — inutile de tous les connecter pour utiliser l&apos;app.
+          <Link href="/settings" className="text-mv-green-dark underline">Paramètres → Intégrations</Link>.
+          Chacun est indépendant des autres — inutile de tous les connecter pour utiliser l&apos;app.
         </p>
         <div>
           <p className="font-semibold text-mv-ink">Square (caisse)</p>

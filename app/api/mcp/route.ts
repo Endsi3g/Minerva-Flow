@@ -492,37 +492,38 @@ const handler = createMcpHandler(
       "minerva_update_stock_level",
       {
         title: "Mouvement de stock",
-        description: "Enregistre un mouvement de stock (réception, utilisation, gaspillage, ajustement).",
+        description: "Enregistre un mouvement de stock (réception, utilisation, gaspillage, ajustement). Pour ajustement seulement, quantity peut être négative afin de corriger le compte à la baisse (ex. un inventaire physique plus bas que le compte) sans passer par gaspillage.",
         inputSchema: z
           .object({
             restaurantId: z.string().uuid().optional(),
             itemId: z.string().uuid(),
             type: z.enum(["reception", "utilisation", "gaspillage", "ajustement"]),
-            quantity: z.number().positive(),
-            reason: z.string().optional(),
+            quantity: z.number().finite().refine((v) => v !== 0, "quantity must not be 0"),
+            reason: z.string().max(500).optional(),
           })
-          .strict(),
+          .strict()
+          .refine((v) => v.type === "ajustement" || v.quantity > 0, {
+            message: "quantity must be positive except for type \"ajustement\"",
+            path: ["quantity"],
+          }),
       },
       async ({ restaurantId: explicitId, itemId, type, quantity, reason }, ctx) => {
         const supabase = createAdminClient();
         const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
-        const delta = type === "reception" || type === "ajustement" ? quantity : -quantity;
-        await supabase.from("inventory_movements").insert({
-          inventory_item_id: itemId,
-          type,
-          quantity,
-          reason: reason ?? `Action MCP (${type})`,
-        });
-
-        const { data: updatedItem, error: rpcError } = await supabase.rpc("increment_inventory_quantity", {
+        const { data: updatedItem, error: movementError } = await supabase.rpc("record_inventory_movement_via_service_role", {
+          p_restaurant_id: restaurantId,
           p_item_id: itemId,
-          p_delta: delta,
+          p_type: type,
+          p_quantity: quantity,
+          p_reason: reason ?? `Action MCP (${type})`,
         });
 
-        if (rpcError) return { content: [{ type: "text" as const, text: `Erreur: ${rpcError.message}` }], isError: true };
-        return { content: [{ type: "text" as const, text: JSON.stringify({ item: updatedItem }) }] };
+        if (movementError || !updatedItem || (Array.isArray(updatedItem) && updatedItem.length === 0)) {
+          return { content: [{ type: "text" as const, text: "Le mouvement n’a pas pu être appliqué à cet article de cet espace." }], isError: true };
+        }
+        return { content: [{ type: "text" as const, text: JSON.stringify({ item: Array.isArray(updatedItem) ? updatedItem[0] : updatedItem }) }] };
       }
     );
 

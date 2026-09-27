@@ -21,6 +21,28 @@ create table if not exists public.paid_ads_requests (
   weekly_volume_estimate text not null default 'not_sure' check (weekly_volume_estimate in ('under_50', '50_150', '150_400', 'over_400', 'not_sure')),
   has_run_paid_ads_before boolean not null default false,
   desired_start_timeframe text not null default 'exploring' check (desired_start_timeframe in ('immediately', 'this_month', 'exploring')),
+  -- Keep the admin queue's transparent priority order queryable/indexable so
+  -- high-priority requests are not hidden behind the oldest 100 submissions.
+  priority_score integer generated always as (
+    (case monthly_budget_range
+      when 'over_5000' then 4
+      when '1500_5000' then 3
+      when '500_1500' then 2
+      when 'under_500' then 1
+      else 0
+    end * 3)
+    + (case weekly_volume_estimate
+      when 'over_400' then 3
+      when '150_400' then 2
+      when '50_150' then 1
+      else 0
+    end * 2)
+    + case desired_start_timeframe
+      when 'immediately' then 2
+      when 'this_month' then 1
+      else 0
+    end
+  ) stored,
   goals text not null check (char_length(goals) between 1 and 2000),
   status text not null default 'nouveau' check (status in ('nouveau', 'contacte', 'ferme')),
   admin_note text,
@@ -34,6 +56,9 @@ create index if not exists paid_ads_requests_restaurant_idx
 create index if not exists paid_ads_requests_status_idx
   on public.paid_ads_requests(status, created_at)
   where status = 'nouveau';
+create index if not exists paid_ads_requests_open_priority_idx
+  on public.paid_ads_requests(priority_score desc, created_at asc)
+  where status in ('nouveau', 'contacte');
 -- Enforce the one-open-request rule at the database boundary as well as in
 -- the form, so concurrent submissions cannot create duplicate follow-ups.
 create unique index if not exists paid_ads_requests_one_open_per_restaurant_idx
@@ -59,5 +84,7 @@ create policy paid_ads_requests_insert on public.paid_ads_requests
 
 comment on table public.paid_ads_requests is
   'Owner-initiated intake for Minerva Flow-managed paid advertising. Reviewed and updated by platform staff via the service-role client in /admin/campagnes-publicitaires, not through client-side RLS writes.';
+comment on column public.paid_ads_requests.priority_score is
+  'Transparent queue heuristic: budget tier × 3 + weekly volume tier × 2 + start urgency. Higher scores sort first; oldest submission breaks ties.';
 
 commit;

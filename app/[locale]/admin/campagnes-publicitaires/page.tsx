@@ -1,20 +1,21 @@
 import { PageHeader } from "@/components/ui/PageHeader";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { paidAdsPriorityScore, type PaidAdsBudgetRange, type PaidAdsVolumeEstimate, type PaidAdsTimeframe } from "@/lib/data/paid-ads-requests";
+import type { PaidAdsBudgetRange, PaidAdsVolumeEstimate, PaidAdsTimeframe } from "@/lib/data/paid-ads-requests";
 import { ReviewQueue, type PaidAdsReviewItem } from "./ReviewQueue";
 
 export default async function PaidAdsRequestsAdminPage() {
   const admin = createAdminClient();
   const { data } = await admin.from("paid_ads_requests")
-    .select("id, contact_name, contact_email, contact_phone, monthly_budget_range, weekly_volume_estimate, has_run_paid_ads_before, desired_start_timeframe, goals, status, created_at, restaurants!inner(name)")
+    .select("id, contact_name, contact_email, contact_phone, monthly_budget_range, weekly_volume_estimate, has_run_paid_ads_before, desired_start_timeframe, priority_score, goals, status, created_at, restaurants!inner(name)")
     .neq("status", "ferme")
+    .order("priority_score", { ascending: false })
     .order("created_at", { ascending: true })
     .limit(100);
   const raw = (data ?? []) as unknown as {
     id: string; contact_name: string; contact_email: string; contact_phone: string | null;
     monthly_budget_range: PaidAdsBudgetRange; weekly_volume_estimate: PaidAdsVolumeEstimate;
     has_run_paid_ads_before: boolean; desired_start_timeframe: PaidAdsTimeframe;
-    goals: string; status: string; created_at: string;
+    priority_score: number; goals: string; status: string; created_at: string;
     restaurants: { name: string };
   }[];
   const items: PaidAdsReviewItem[] = raw
@@ -31,15 +32,10 @@ export default async function PaidAdsRequestsAdminPage() {
       goals: row.goals,
       status: row.status as PaidAdsReviewItem["status"],
       createdAt: row.created_at,
-      priorityScore: paidAdsPriorityScore({
-        monthlyBudgetRange: row.monthly_budget_range,
-        weeklyVolumeEstimate: row.weekly_volume_estimate,
-        desiredStartTimeframe: row.desired_start_timeframe,
-      }),
+      priorityScore: row.priority_score,
     }))
-    // Highest priority first; submission order (already ascending from the
-    // query) breaks ties so this stays a fair queue, not just a leaderboard.
-    .sort((a, b) => b.priorityScore - a.priorityScore);
+    // The database sorts before the 100-row limit, keeping high-priority
+    // requests visible even when the queue grows beyond the first page.
   return (
     <div className="space-y-5">
       <PageHeader
