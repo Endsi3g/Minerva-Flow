@@ -13,7 +13,10 @@ import {
 } from "@/lib/data/campaigns";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { publishToInstagram, getInstagramConnectionStatus } from "@/lib/meta/instagram";
+import { createPaidAdsRequest, getOpenPaidAdsRequest, type PaidAdsBudgetRange, type PaidAdsRequest } from "@/lib/data/paid-ads-requests";
 import type { Campaign, CampaignAsset } from "@/lib/types";
+
+const BUDGET_RANGES: PaidAdsBudgetRange[] = ["under_500", "500_1500", "1500_5000", "over_5000", "not_sure"];
 
 /**
  * Creates a campaign for the given restaurant. Authorization is enforced
@@ -289,5 +292,49 @@ export async function dispatchBroadcastCampaignAction(
 
   revalidatePath("/campaigns");
   return { ok: true, sentCount: sent, totalConsented: list.length };
+}
+
+/**
+ * Intake for owners/managers who want Minerva Flow's team to run paid
+ * advertising on their behalf — the automations and studio above amplify
+ * traffic a restaurant already has; they don't create new traffic on
+ * their own. Re-checks membership server-side (the form is gated in the
+ * UI too, but that's not the authorization boundary) and refuses a
+ * second request while one is still open.
+ */
+export async function submitPaidAdsRequestAction(
+  restaurantId: string,
+  input: { contactName: string; contactEmail: string; contactPhone: string; monthlyBudgetRange: PaidAdsBudgetRange; goals: string }
+): Promise<{ ok: boolean; request?: PaidAdsRequest; error?: "forbidden" | "already_open" | "invalid" | "failed" }> {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return { ok: false, error: "forbidden" };
+  }
+  const contactName = input.contactName.trim().slice(0, 200);
+  const contactEmail = input.contactEmail.trim().toLowerCase().slice(0, 200);
+  const goals = input.goals.trim().slice(0, 2000);
+  if (!contactName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail) || !goals || !BUDGET_RANGES.includes(input.monthlyBudgetRange)) {
+    return { ok: false, error: "invalid" };
+  }
+
+  const existing = await getOpenPaidAdsRequest(restaurantId);
+  if (existing) return { ok: false, error: "already_open", request: existing };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "forbidden" };
+
+  const request = await createPaidAdsRequest({
+    restaurantId,
+    requestedBy: user.id,
+    contactName,
+    contactEmail,
+    contactPhone: input.contactPhone.trim().slice(0, 40) || null,
+    monthlyBudgetRange: input.monthlyBudgetRange,
+    goals,
+  });
+  if (!request) return { ok: false, error: "failed" };
+  revalidatePath("/campaigns");
+  return { ok: true, request };
 }
 

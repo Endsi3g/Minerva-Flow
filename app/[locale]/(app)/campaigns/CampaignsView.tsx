@@ -13,6 +13,8 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Campaign, CampaignAsset, CampaignChannel, CampaignStatus, CampaignType } from "@/lib/types";
 import { Megaphone, Plus, Camera, Mail, Store, Users, FileText } from "lucide-react";
 import { CampaignsSubNav } from "./CampaignsSubNav";
+import { PaidAdsRequestCard } from "./PaidAdsRequestCard";
+import type { PaidAdsRequest } from "@/lib/data/paid-ads-requests";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -49,11 +51,15 @@ export function CampaignsView({
   campaigns,
   initialSelectedId,
   initialChannel,
+  canManagePaidAds,
+  openPaidAdsRequest,
 }: {
   restaurantId: string | null;
   campaigns: Campaign[];
   initialSelectedId?: string;
   initialChannel?: string;
+  canManagePaidAds: boolean;
+  openPaidAdsRequest: PaidAdsRequest | null;
 }) {
   const { role } = useApp();
   const router = useRouter();
@@ -135,6 +141,8 @@ export function CampaignsView({
           </div>
         }
       />
+
+      <PaidAdsRequestCard restaurantId={restaurantId} canManage={canManagePaidAds} initialRequest={openPaidAdsRequest} />
 
       <section aria-label="Aperçu des campagnes" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card className="py-4">
