@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { getPrivateReviews, getMenuAndOfferReviews, getGoogleReviews } from "@/lib/data/reputation";
+import { isGooglePlacesConfigured } from "@/lib/google/config";
 import { ReputationView } from "./ReputationView";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -12,8 +13,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ReputationPage() {
   const restaurantId = await getCurrentRestaurantId();
+  const googlePlacesEnabled = isGooglePlacesConfigured();
   if (!restaurantId) {
-    return <ReputationView restaurantId={null} restaurant={null} privateReviews={[]} itemReviews={[]} googleReviews={[]} />;
+    return <ReputationView restaurantId={null} restaurant={null} privateReviews={[]} itemReviews={[]} googleReviews={[]} googlePlacesEnabled={googlePlacesEnabled} />;
   }
 
   const [restaurant, privateReviews, itemReviews, googleReviews] = await Promise.all([
@@ -30,6 +32,7 @@ export default async function ReputationPage() {
       privateReviews={privateReviews}
       itemReviews={itemReviews}
       googleReviews={googleReviews}
+      googlePlacesEnabled={googlePlacesEnabled}
     />
   );
 }
