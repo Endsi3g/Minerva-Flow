@@ -43,16 +43,11 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 
 struct LanguageMenu: View {
     @Binding var language: AppLanguage
+    @State private var isChoosingLanguage = false
 
     var body: some View {
-        Menu {
-            ForEach(AppLanguage.allCases) { option in
-                Button {
-                    language = option
-                } label: {
-                    Label(option == .fr ? "Français" : "English", systemImage: language == option ? "checkmark" : "")
-                }
-            }
+        Button {
+            isChoosingLanguage = true
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: "globe")
@@ -63,9 +58,22 @@ struct LanguageMenu: View {
             .padding(.vertical, 8)
             .background(.white.opacity(0.16))
             .clipShape(Capsule())
+            .contentShape(Capsule())
         }
+        .buttonStyle(.plain)
         .foregroundStyle(.white)
+        .confirmationDialog(
+            language == .fr ? "Choisir une langue" : "Choose a language",
+            isPresented: $isChoosingLanguage,
+            titleVisibility: .visible
+        ) {
+            ForEach(AppLanguage.allCases) { option in
+                Button(option == .fr ? "Français" : "English") { language = option }
+            }
+            Button(language == .fr ? "Annuler" : "Cancel", role: .cancel) {}
+        }
         .accessibilityLabel(language == .fr ? "Langue: français" : "Language: English")
+        .accessibilityIdentifier("languagePicker")
     }
 }
 

@@ -111,6 +111,10 @@ export async function proxy(request: NextRequest) {
     // differently). Same silent-redirect-to-/login trap as the two routes
     // above otherwise.
     pathWithoutLocale.startsWith("/api/portal/") ||
+    // Native owner actions authenticate with the app's Supabase Bearer token;
+    // the route handlers verify the user and tenant role themselves. They do
+    // not send browser cookies and must reach that authorization boundary.
+    pathWithoutLocale.startsWith("/api/native/") ||
     // Native Apple/Google Wallet downloads authenticate with the native
     // Bearer token rather than a browser cookie. Let the route handler return
     // the binary pass instead of redirecting the request to the login page.

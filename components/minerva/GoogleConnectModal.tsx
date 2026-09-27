@@ -8,9 +8,11 @@ import { GOOGLE_FEATURE_LABELS, type GoogleFeature } from "@/lib/google/config";
 import { useState } from "react";
 import { Gmail, GoogleSheets, GoogleDrive, GoogleCalendar, GoogleAnalytics, GoogleMonochrome } from "@/components/ui/BrandIcons";
 
-const FEATURES: GoogleFeature[] = ["gmail", "sheets", "drive", "calendar", "analytics"];
+type GoogleWorkspaceFeature = Exclude<GoogleFeature, "business_profile">;
 
-const FEATURE_ICON: Record<GoogleFeature, typeof Gmail> = {
+const FEATURES: GoogleWorkspaceFeature[] = ["gmail", "sheets", "drive", "calendar", "analytics"];
+
+const FEATURE_ICON: Record<Exclude<GoogleFeature, "business_profile">, typeof Gmail> = {
   gmail: Gmail,
   sheets: GoogleSheets,
   drive: GoogleDrive,

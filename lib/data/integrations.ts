@@ -11,6 +11,7 @@ import {
   isQuickBooksConfigured,
 } from "@/lib/pos/config";
 import { formatDate } from "@/lib/utils";
+import { GOOGLE_SCOPES } from "@/lib/google/config";
 
 
 export type IntegrationItem = {
@@ -103,7 +104,7 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
   // 3. Fetch Google Connections
   const { data: googleConn } = await supabase
     .from("google_connections")
-    .select("id, place_id, updated_at")
+    .select("id, place_id, updated_at, granted_scopes, business_profile_location_title, business_profile_synced_at")
     .eq("restaurant_id", restaurantId)
     .maybeSingle();
 
@@ -128,7 +129,10 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
     transfersStatus: restaurant?.stripe_connect_transfers_status ?? "unrequested",
     payoutsStatus: restaurant?.stripe_connect_recipient_payouts_status ?? "unrequested",
   }));
-  const googleConnected = Boolean(googleConn?.id);
+  const googleScopes = googleConn?.granted_scopes ?? [];
+  const googleBusinessConnected = googleScopes.includes(GOOGLE_SCOPES.business_profile);
+  const googleWorkspaceConnected = [GOOGLE_SCOPES.gmail, GOOGLE_SCOPES.sheets, GOOGLE_SCOPES.drive, GOOGLE_SCOPES.calendar].some((scope) => googleScopes.includes(scope));
+  const googleAnalyticsConnected = googleScopes.includes(GOOGLE_SCOPES.analytics);
   const deliveryConnected = Boolean(deliveryConn?.id);
   const instagramConnected = Boolean(instagramConn?.id && instagramConn?.status === "connecte");
   const facebookConnected = Boolean(
@@ -320,12 +324,13 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
       name: "Google Business Profile & Avis",
       category: "marketing",
       description: "Importation des avis clients, synchronisation de la fiche établissement et analyse de réputation par IA.",
-      status: googleConnected ? "connected" : "disconnected",
-      connectedAt: googleConn?.updated_at ? new Date(googleConn.updated_at).toLocaleDateString("fr-CA") : undefined,
+      status: googleBusinessConnected ? "connected" : "disconnected",
+      connectedAt: googleBusinessConnected && googleConn?.business_profile_synced_at ? new Date(googleConn.business_profile_synced_at).toLocaleDateString("fr-CA") : undefined,
       iconName: "google-maps",
       details: {
+        fiche: googleConn?.business_profile_location_title || "Non connectée",
         placeId: googleConn?.place_id || "Non connecté",
-        avisSynchronises: googleConnected ? "Oui" : "En attente",
+        avisSynchronises: googleBusinessConnected ? "Oui" : "En attente",
       },
     },
     {
@@ -333,8 +338,8 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
       name: "Google Workspace & Agenda",
       category: "marketing",
       description: "Synchronisation de l'agenda des réservations de groupes, plannings d'équipe et alertes Gmail.",
-      status: googleConnected ? "connected" : "disconnected",
-      connectedAt: googleConnected ? "Connecté" : undefined,
+      status: googleWorkspaceConnected ? "connected" : "disconnected",
+      connectedAt: googleWorkspaceConnected ? "Connecté" : undefined,
       iconName: "google-workspace",
       details: {
         modules: "Gmail, Calendar, Drive, Sheets",
@@ -345,8 +350,8 @@ export async function getRestaurantIntegrations(restaurantId: string): Promise<I
       name: "Google Analytics 4 (GA4)",
       category: "marketing",
       description: "Suivi des visites sur le menu digital, sources de trafic et taux de conversion des commandes.",
-      status: googleConnected ? "connected" : "disconnected",
-      connectedAt: googleConnected ? "Connecté" : undefined,
+      status: googleAnalyticsConnected ? "connected" : "disconnected",
+      connectedAt: googleAnalyticsConnected ? "Connecté" : undefined,
       iconName: "google-analytics",
       details: {
         mesure: "Trafic menu public & QR codes",

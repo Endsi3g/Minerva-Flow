@@ -9,7 +9,22 @@ import XCTest
 /// a session into whatever runs next.
 extension XCTestCase {
     func ensureSignedOut(_ app: XCUIApplication) {
-        let profileTab = app.tabBars.buttons["Profil"]
+        // A version-bump survey can be presented once on an upgraded
+        // install before the user can reach the tabs. Dismiss it first so
+        // the helper can perform the same sign-out action as the user.
+        let dismissSurvey = app.buttons["Annuler"]
+        if dismissSurvey.waitForExistence(timeout: 2) {
+            dismissSurvey.tap()
+        }
+
+        // The customer tab is labelled “Plus” in French and “More” in
+        // English; “Profil” was the old label and is kept as a fallback for
+        // older localized builds.
+        let profileTab = app.tabBars.buttons["Profil"].exists
+            ? app.tabBars.buttons["Profil"]
+            : app.tabBars.buttons["Plus"].exists
+                ? app.tabBars.buttons["Plus"]
+                : app.tabBars.buttons["More"]
         guard profileTab.waitForExistence(timeout: 3) else { return }
         profileTab.tap()
 

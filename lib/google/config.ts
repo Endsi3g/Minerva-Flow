@@ -7,7 +7,7 @@ import { canonicalOrigin } from "@/lib/canonical-url";
  * Distinct from lib/ad-platforms/config.ts, which is the Meta/Google Ads
  * OAuth flow — different connection, different tokens, same client app.
  */
-export type GoogleFeature = "gmail" | "sheets" | "drive" | "calendar" | "analytics";
+export type GoogleFeature = "gmail" | "sheets" | "drive" | "calendar" | "analytics" | "business_profile";
 
 export const GOOGLE_SCOPES: Record<GoogleFeature, string> = {
   gmail: "https://www.googleapis.com/auth/gmail.send",
@@ -15,6 +15,7 @@ export const GOOGLE_SCOPES: Record<GoogleFeature, string> = {
   drive: "https://www.googleapis.com/auth/drive.file",
   calendar: "https://www.googleapis.com/auth/calendar",
   analytics: "https://www.googleapis.com/auth/analytics.readonly",
+  business_profile: "https://www.googleapis.com/auth/business.manage",
 };
 
 export const GOOGLE_FEATURE_LABELS: Record<GoogleFeature, { title: string; description: string }> = {
@@ -37,6 +38,10 @@ export const GOOGLE_FEATURE_LABELS: Record<GoogleFeature, { title: string; descr
   analytics: {
     title: "Google Analytics",
     description: "Remplace les données simulées de la carte par vos vraies conversions en ligne.",
+  },
+  business_profile: {
+    title: "Google Business Profile",
+    description: "Gère la fiche du restaurant, ses horaires et ses avis Google.",
   },
 };
 

@@ -2,6 +2,31 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [À venir] — App Owner iPad et macOS, TestFlight 1.0.1 (16)
+
+- L’application SwiftUI cible maintenant iPad et Mac Catalyst avec un espace Owner à navigation latérale, raccourcis clavier, bascule de restaurant, commandes, menu, fidélisation et gestion; le rôle client garde son expérience distincte dans le même binaire.
+- La page Owner « Google Business Profile » connecte le compte via OAuth, laisse choisir une fiche autorisée, charge les avis Google, permet d’y répondre et d’actualiser les horaires. Les autorisations sont vérifiées côté serveur sur la session Supabase et le rôle propriétaire/gestionnaire.
+- Les avis Google se chargent maintenant progressivement par pages, avec compteur du total. Les jetons de page sont encodés dans la requête et restent liés au restaurant sélectionné; les réponses répétées ne sont pas ajoutées deux fois.
+- La découverte Google récupère toutes les pages de comptes et de fiches. La taille des pages de comptes respecte le maximum officiel de 20; les listes dédupliquent les ressources et s’arrêtent si Google renvoie un curseur répété ou plus de 100 pages.
+- Les jetons Google restent côté serveur dans Supabase Vault. Seuls les identifiants de ressource de la fiche liée et la date de synchronisation sont enregistrés dans `google_connections`.
+- L’intégration utilise l’API Business Profile officielle, qui exige une approbation d’accès du projet Google Cloud ainsi que les droits utilisateur sur chaque fiche. L’accès projet a été confirmé par le propriétaire; la connexion réelle d’une fiche reste à essayer par un propriétaire dans TestFlight.
+- Les requêtes Google natives portent maintenant explicitement l’identifiant du workspace dans l’URL ou le corps attendu par chaque route. Au changement de restaurant, les avis et la fiche précédents sont effacés immédiatement; les réponses réseau tardives d’un autre espace sont ignorées.
+- L’éditeur d’horaires conserve plusieurs plages par jour et les fermetures le lendemain; il ne réduit plus une journée à sa première plage. Les menus Owner et la validation des prix/formats sont localisés en français et en anglais, avec erreurs directement affichées avant l’enregistrement.
+- Candidate locale : `1.0.1` (build `16`), IPA signé exporté. Aucun téléversement ni aucune distribution TestFlight de cette candidate n’a eu lieu; le build externe actuel reste `1.0.0 (15)`. L’archive Mac Catalyst n’est pas distribuable : aucun profil macOS compatible n’est configuré.
+- Les migrations `0162_google_business_profile_native.sql`, `0163_paid_ads_requests.sql` et `0164_service_role_inventory_movement.sql` sont appliquées sur Supabase Staging et Production. En production, elles sont enregistrées sous `20260927215925`, `20260927215943`, `20260927221818`; en staging, `0162` est `20260927054659`, `0163` `20260927215853` et `0164` `20260927221742`. Les routes restent à déployer avec le code web.
+- L’approbation Business Profile du projet Google Cloud a été confirmée par le propriétaire. La connexion d’un compte réel, ses droits sur une fiche et les actions sur cette fiche restent à valider.
+- Vérification locale : le typecheck, le build web et 333 tests Vitest étaient verts au dernier commit vérifié; les changements web non commités doivent encore être vérifiés. Les 19 tests unitaires iOS existants, les 5 tests d’URL Owner, les 6 tests UI Auth et les builds iPad/Catalyst Debug précédents passent. Les tests ciblés Google/Supabase passent maintenant 12/12; les tests URL Owner sur simulateur passent 5/5. La distribution Mac reste bloquée par l’absence de profil de provisionnement macOS. L’IPA signé local `1.0.1 (16)` est antérieur aux derniers changements Owner/Google; il doit être reconstruit avant tout téléversement.
+- ESLint ciblé : 0 erreur, 1 avertissement préexistant. ESLint global échoue sur 400 erreurs réparties dans le dépôt. La session Owner réelle, les captures Owner desktop/mobile et le parcours UI restent à valider.
+- **Pas prêt pour TestFlight.** Aucun téléversement App Store Connect n’a été fait; l’archive macOS/iPad doit encore être validée et la connexion Google réelle reste à tester par une propriétaire. Le push et le déploiement web de cette candidate sont encore en cours. Voir le [rapport de vérification Owner et Google](.verify-artifacts/20260927T1812Z/report.md), le [rapport de pagination des avis](.verify-artifacts/20260927T1841Z/report.md) et la [vérification de la découverte paginée des fiches](.verify-artifacts/20260927T2131Z/report.md).
+
+### Fiabilité — demandes de campagnes et livraison web
+- Le score de priorité des demandes publicitaires est calculé en base et indexé; la file trie avant la limite de 100, donc une demande urgente récente n’est plus masquée par de vieilles demandes.
+- Une contrainte unique empêche les demandes ouvertes en double même si deux formulaires partent simultanément. Les coordonnées sont réservées aux propriétaires/gestionnaires et à l’équipe de plateforme.
+- Les actions de revue valident les entrées, empêchent les clics concurrents et présentent une erreur récupérable lorsque la mise à jour échoue.
+- Les corrections d’inventaire peuvent maintenant enregistrer un ajustement à la baisse. Le mouvement MCP est vérifié contre le restaurant de la clé API, puis le journal et le compte de stock sont mis à jour dans une seule transaction réservée au rôle serveur.
+- Les migrations `0162` à `0164` sont appliquées et contrôlées sur staging et production; la fonction RPC `0164` n’est exécutable que par `service_role` (testé par les privilèges SQL).
+- Ces modifications sont en cours de validation. Leur présence ici ne signifie pas encore qu’elles sont livrées en production.
+
 ## [À venir] — Correctifs navigation/traductions/onboarding et fonctionnalité Campagnes
 
 ### Correctifs — navigation, traductions, onboarding et métriques
