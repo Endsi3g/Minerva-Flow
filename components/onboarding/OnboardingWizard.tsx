@@ -377,9 +377,12 @@ export function OnboardingWizard({
           </div>
 
           <div className="rounded-xl border border-mv-green/25 bg-mv-green/[0.05] p-4">
-            <p className="text-[13.5px] font-semibold text-mv-ink">Besoin d’aller plus loin ?</p>
-            <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">Notre offre Agence peut gérer votre marketing et certaines applications pour vous.</p>
-            <Link href="/billing?plan=agency" className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-mv-green-dark hover:underline">Découvrir l’offre Agence <ArrowRight size={14} /></Link>
+            <p className="text-[13.5px] font-semibold text-mv-ink">Besoin de trafic, pas seulement d’outils ?</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">
+              Flow amplifie les clients que votre restaurant attire déjà (bouche-à-oreille, passage) — il n’en crée pas de nouveaux à lui seul.
+              Notre équipe peut mettre en place et gérer vos campagnes publicitaires payantes pour vous, à des frais déterminés selon vos besoins.
+            </p>
+            <Link href="/campaigns" className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-mv-green-dark hover:underline">Demander de l’aide pour la publicité <ArrowRight size={14} /></Link>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
