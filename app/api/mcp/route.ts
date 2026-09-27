@@ -7,6 +7,7 @@ import { sendProspectAuditEmail, sendProspectRelanceEmail } from "@/lib/email/pr
 import { generateEnrichedProspectAudit } from "@/lib/prospects/audit/ai-audit";
 import { generateDemoSlug } from "@/lib/prospects/slug";
 import { getDemoUrl } from "@/lib/prospects/demo-url";
+import { computeInventoryMovementDelta } from "@/lib/data/inventory";
 
 export const runtime = "nodejs";
 
@@ -492,27 +493,31 @@ const handler = createMcpHandler(
       "minerva_update_stock_level",
       {
         title: "Mouvement de stock",
-        description: "Enregistre un mouvement de stock (réception, utilisation, gaspillage, ajustement).",
+        description: "Enregistre un mouvement de stock (réception, utilisation, gaspillage, ajustement). Pour ajustement seulement, quantity peut être négative afin de corriger le compte à la baisse (ex. un inventaire physique plus bas que le compte) sans passer par gaspillage.",
         inputSchema: z
           .object({
             restaurantId: z.string().uuid().optional(),
             itemId: z.string().uuid(),
             type: z.enum(["reception", "utilisation", "gaspillage", "ajustement"]),
-            quantity: z.number().positive(),
+            quantity: z.number().refine((v) => v !== 0, "quantity must not be 0"),
             reason: z.string().optional(),
           })
-          .strict(),
+          .strict()
+          .refine((v) => v.type === "ajustement" || v.quantity > 0, {
+            message: "quantity must be positive except for type \"ajustement\"",
+            path: ["quantity"],
+          }),
       },
       async ({ restaurantId: explicitId, itemId, type, quantity, reason }, ctx) => {
         const supabase = createAdminClient();
         const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
-        const delta = type === "reception" || type === "ajustement" ? quantity : -quantity;
+        const delta = computeInventoryMovementDelta(type, quantity);
         await supabase.from("inventory_movements").insert({
           inventory_item_id: itemId,
           type,
-          quantity,
+          quantity: delta,
           reason: reason ?? `Action MCP (${type})`,
         });
 
