@@ -1,10 +1,10 @@
 # Minerva Flow — audit iOS et feuille de route white-label
 
-> **État vérifié le 24 septembre 2026.** Ce document distingue les fonctions existantes, les artefacts locaux et ce qui reste à publier ou valider. Il ne vaut pas approbation de soumission Apple.
+> **État vérifié le 27 septembre 2026 (passe Owner/Google).** Ce document distingue les fonctions existantes, les artefacts locaux et ce qui reste à publier ou valider. Il ne vaut pas approbation de soumission Apple.
 
 ## 1. Produit mobile actuel
 
-L’application est native en SwiftUI et utilise Supabase Auth et les données de Minerva Flow. Après résolution sécurisée du rôle, elle présente une expérience **client** ou **propriétaire/gérant** dans le même bundle iOS.
+L’application est native en SwiftUI et utilise Supabase Auth et les données de Minerva Flow. Après résolution sécurisée du rôle, elle présente une expérience **client** ou **propriétaire/gérant** dans le même bundle, sur iPhone, iPad et Mac Catalyst.
 
 ### Expérience client
 
@@ -18,6 +18,8 @@ L’application est native en SwiftUI et utilise Supabase Auth et les données d
 ### Expérience propriétaire/gérant
 
 - Aperçu, commandes, menu, fidélisation et gestion dans l’application native.
+- Sur iPad et Mac Catalyst, barre latérale, raccourcis clavier et vues adaptées au grand écran. La section Gestion contient les outils et réglages du compte.
+- Google Business Profile : connexion OAuth native, choix de fiche, chargement progressif des comptes, fiches et avis Google, réponses et modification des horaires. La découverte respecte la limite Google de 20 comptes par page; les curseurs répétés sont détectés. Les avis affichent un compteur et conservent la portée du workspace; le propriétaire doit sélectionner une fiche qui lui est déjà accessible dans Google.
 - Données filtrées par workspace/restaurant et permissions.
 - Sur iPad, présentation à colonnes; l’application déclare les orientations portrait, portrait inversé et paysage.
 
@@ -28,13 +30,24 @@ L’application web reste l’espace d’administration le plus complet. La docu
 | Élément | État confirmé |
 |---|---|
 | Bundle iOS | `com.minervaflow.loyalty` |
-| Version / build local | `1.0.0` / `15` |
-| Cible | iPhone et iPad, iOS 17 minimum déclaré dans le projet |
+| Version / build distribué | `1.0.0` / `15` |
+| Candidate locale en cours | `1.0.1` / `16` |
+| Cible | iPhone et iPad, iOS 17 minimum; Mac Catalyst 15 minimum |
 | Signature/archive | Archive Release signée avec l’équipe configurée; export IPA réussi |
 | Téléversement App Store Connect | Build `1.0.0 (15)` traité (`VALID`), assigné aux groupes TestFlight interne et externe; révision bêta externe `APPROVED` |
 | Lien bêta | <https://testflight.apple.com/join/xGr45uuF> — groupe externe public activé; URL vérifiée HTTP 200 |
 
-Le build 15 contient les changements natifs courants et est approuvé pour les testeurs externes. Les tests XCTest et les parcours E2E web passent; une installation et une revue physique sur iPhone restent à faire avec un testeur.
+### Candidate 1.0.1 (16) — état de vérification du 27 septembre
+
+- Un IPA iOS Release signé existe localement, mais il précède les derniers changements Owner/Google. Il doit être reconstruit et vérifié avant tout téléversement; la candidate n’est pas distribuée.
+- L’application compile en Debug pour iPad et Mac Catalyst avec la source actuelle. Pour macOS, la compilation Catalyst est sans signature : l’archive Release ne possède pas de profil de distribution Catalyst et ne peut pas être livrée.
+- Le projet Google Cloud a reçu l’approbation Business Profile selon le propriétaire. Les migrations `0162`, `0163` et `0164` sont appliquées aux deux bases; les routes API restent à livrer avec le déploiement web.
+- Les requêtes natives Google envoient l’identifiant du workspace dans les GET comme dans les mutations. Le changement de restaurant efface les anciennes données de fiche et ignore les réponses réseau d’un ancien espace. L’éditeur d’horaires garde les plages multiples et les fermetures le jour suivant.
+- Tests : 333 tests Vitest et build/typecheck web étaient verts au dernier commit vérifié; le worktree web actuel doit être revérifié. Les 19 tests unitaires iOS existants, 5 tests d’URL Owner et 6 tests XCTest Auth passent. Les tests Google/Supabase ciblés passent désormais 12/12; les tests URL Owner passent 5/5 sur simulateur. Le sélecteur confirme le changement et le retour à la langue mémorisée. Le lint global demeure en échec sur 400 erreurs réparties dans le dépôt; le lint ciblé des fichiers touchés a 0 erreur et 1 avertissement préexistant.
+- Le contrôle App Store du candidat compte 0 critique, 0 élevé et 1 avertissement; les métadonnées, le compte démo, la confidentialité et la revue humaine restent à confirmer. Rapports : `.verify-artifacts/20260927T1812Z/report.md`, `.verify-artifacts/20260927T1841Z/report.md` (pagination des avis) et `.verify-artifacts/20260927T2131Z/report.md` (comptes et fiches paginés).
+- **Recommandation : NOT READY pour téléversement TestFlight.** L’authentification Owner, l’OAuth Google réel et l’aspect des vues Owner avec un compte de test restent à valider. La signature de distribution Catalyst est absente et l’IPA local doit être reconstruit.
+
+Le build 15 contient les changements natifs précédents et est approuvé pour les testeurs externes. La candidate 1.0.1 (16) est en cours de validation locale; aucun nouvel artefact n’a été téléversé à App Store Connect. L’installation sur appareil physique et la validation par une propriétaire de sa fiche Business Profile restent à faire.
 
 ## 3. Contrôle de conformité effectué
 

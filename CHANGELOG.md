@@ -2,6 +2,35 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [À venir] — Espace Owner iPad/macOS, Google Business Profile et campagnes
+
+- L’application SwiftUI cible iPad et Mac Catalyst avec un espace Owner à navigation latérale, raccourcis clavier et changement de restaurant; l’expérience client reste distincte dans le même binaire.
+- L’espace Owner permet de connecter une fiche Google Business Profile autorisée, parcourir ses avis et répondre, puis consulter et modifier ses horaires. Les routes vérifient côté serveur la session Supabase et le rôle propriétaire/gestionnaire.
+- Les avis et la découverte des fiches sont paginés; les curseurs restent liés au restaurant actif, et les résultats en double ou tardifs ne remplacent pas ceux du nouvel espace.
+- Les jetons Google restent dans Supabase Vault. L’accès réel dépend de l’approbation du projet Google et des droits sur chaque fiche; une connexion réelle par une propriétaire reste à valider.
+- L’éditeur conserve les plages multiples et les fermetures qui passent minuit. Les changements natifs et les menus Owner sont localisés en français et en anglais.
+- Le candidat iOS `1.0.1 (16)` doit être reconstruit après les changements récents avant un téléversement TestFlight. Le profil macOS de distribution manque encore; aucune version iPad/macOS n’est déclarée distribuable.
+- Les migrations `0162` à `0164` sont appliquées sur Staging et Production. Les routes applicatives correspondantes attendent le déploiement du code web.
+- Le score de priorité des demandes publicitaires est calculé en base et indexé; une contrainte unique évite les demandes ouvertes en double. La file protège les coordonnées et les actions de revue traitent les erreurs de façon récupérable.
+- La correction d’inventaire accepte des ajustements à la baisse; le mouvement MCP est vérifié contre le restaurant de la clé API, puis le journal et le stock sont modifiés dans une transaction réservée au rôle serveur.
+
+## [À venir] — Correctifs navigation/traductions/onboarding et fonctionnalité Campagnes
+
+### Correctifs — navigation, traductions, onboarding et métriques
+- Navigation restaurée pour propriétaire/gérant selon la convention établie (Workspace, Aperçu, Flow AI, Menu, Fidélisation en premier niveau; Gestion quotidienne, Opérations, Performance et analyses, Paramètres et plus en sections repliables). Le verrou qui limitait la navigation authentifiée à quatre routes est retiré du proxy, de la recherche et de la liste de navigation.
+- Le studio de menu (Identité visuelle, QR et partage, Coordonnées) est maintenant traduit en français et en anglais; il ne l’était pas.
+- Les écrans natifs iOS de résolution de session, d’erreur et le code de jumelage (onglet Scanner) suivent maintenant la langue choisie dans l’application plutôt que d’afficher du français quel que soit ce choix.
+- La carte « LTV combinée » (revenu moyen additionné à une fraction de ce même revenu) est retirée de la page Valeur client & acquisition; elle ne correspondait à aucune quantité réelle.
+- L’étape « Fidélisation » de l’inscription (étape 3) peut maintenant être passée comme les autres étapes optionnelles; elle pouvait auparavant bloquer définitivement la fin de l’inscription si la préparation du lien de fidélité échouait.
+- La recherche Google Maps se masque de nouveau correctement sur Réputation et Établissement lorsque l’intégration n’est pas configurée, au lieu de s’afficher sans jamais retourner de résultat.
+
+### Campagnes — visibilité, publicité payante et priorisation
+- « Campagnes » apparaît maintenant comme onglet dans Fidélisation et dans la recherche globale; la section n’était accessible par aucun menu auparavant.
+- Nouvelle demande en trois étapes sur `/campagnes` : un propriétaire ou gérant peut demander à l’équipe Minerva Flow de mettre en place et de gérer ses campagnes publicitaires payantes (Meta, Google), avec un message explicite — les automatisations et le studio visuel amplifient le trafic déjà attiré par le restaurant, ils n’en créent pas à eux seuls. Les frais de gestion sont déterminés par restaurant, pas un forfait fixe.
+- Les demandes sont qualifiées (volume hebdomadaire, budget, expérience publicitaire antérieure, urgence de démarrage) et triées par priorité dans une nouvelle file `/admin/campagnes-publicitaires`, avec notification par courriel à l’équipe à chaque nouvelle demande.
+- Le lien « Offre Agence » de l’inscription, qui ne menait nulle part, pointe maintenant vers cette nouvelle demande.
+- **État** : les changements sont préparés sur la branche de release; les migrations `0162` à `0164` sont déjà appliquées en staging et en production. Le texte de la fonctionnalité Campagnes est en français seulement.
+
 ## [2.48.0] — 2026-09-26
 
 ### Flow Direct — menu partageable et commande plus conviviale

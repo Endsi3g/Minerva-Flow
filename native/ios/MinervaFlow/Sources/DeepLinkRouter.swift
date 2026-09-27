@@ -26,6 +26,8 @@ final class DeepLinkRouter: ObservableObject {
 
     @Published var pendingTab: AppTab?
     @Published var pendingUniversalLink: PendingUniversalLink?
+    @Published var googleBusinessProfileStatus: String?
+    @Published var googleBusinessProfileReason: String?
 
     /// Universal Link arrival (NSUserActivityTypeBrowsingWeb) — a tap on a
     /// /t/{code} or /p/{code} link that iOS verified belongs to this app
@@ -54,6 +56,9 @@ final class DeepLinkRouter: ObservableObject {
         guard url.host != "login-callback" else { return }
 
         switch url.host {
+        case "google-business-profile":
+            googleBusinessProfileStatus = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "status" })?.value
+            googleBusinessProfileReason = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == "reason" })?.value
         case "rewards": pendingTab = .rewards
         case "cards", "mes-cartes": pendingTab = .cards
         case "order", "commander": pendingTab = .order

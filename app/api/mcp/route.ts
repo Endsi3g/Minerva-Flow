@@ -7,7 +7,6 @@ import { sendProspectAuditEmail, sendProspectRelanceEmail } from "@/lib/email/pr
 import { generateEnrichedProspectAudit } from "@/lib/prospects/audit/ai-audit";
 import { generateDemoSlug } from "@/lib/prospects/slug";
 import { getDemoUrl } from "@/lib/prospects/demo-url";
-import { computeInventoryMovementDelta } from "@/lib/data/inventory";
 
 export const runtime = "nodejs";
 
@@ -499,8 +498,8 @@ const handler = createMcpHandler(
             restaurantId: z.string().uuid().optional(),
             itemId: z.string().uuid(),
             type: z.enum(["reception", "utilisation", "gaspillage", "ajustement"]),
-            quantity: z.number().refine((v) => v !== 0, "quantity must not be 0"),
-            reason: z.string().optional(),
+            quantity: z.number().finite().refine((v) => v !== 0, "quantity must not be 0"),
+            reason: z.string().max(500).optional(),
           })
           .strict()
           .refine((v) => v.type === "ajustement" || v.quantity > 0, {
@@ -513,21 +512,18 @@ const handler = createMcpHandler(
         const restaurantId = await resolveRestaurantId(supabase, explicitId, authRestaurantIdFrom(ctx));
         if (!restaurantId) return { content: [{ type: "text" as const, text: "Restaurant introuvable" }], isError: true };
 
-        const delta = computeInventoryMovementDelta(type, quantity);
-        await supabase.from("inventory_movements").insert({
-          inventory_item_id: itemId,
-          type,
-          quantity: delta,
-          reason: reason ?? `Action MCP (${type})`,
-        });
-
-        const { data: updatedItem, error: rpcError } = await supabase.rpc("increment_inventory_quantity", {
+        const { data: updatedItem, error: movementError } = await supabase.rpc("record_inventory_movement_via_service_role", {
+          p_restaurant_id: restaurantId,
           p_item_id: itemId,
-          p_delta: delta,
+          p_type: type,
+          p_quantity: quantity,
+          p_reason: reason ?? `Action MCP (${type})`,
         });
 
-        if (rpcError) return { content: [{ type: "text" as const, text: `Erreur: ${rpcError.message}` }], isError: true };
-        return { content: [{ type: "text" as const, text: JSON.stringify({ item: updatedItem }) }] };
+        if (movementError || !updatedItem || (Array.isArray(updatedItem) && updatedItem.length === 0)) {
+          return { content: [{ type: "text" as const, text: "Le mouvement n’a pas pu être appliqué à cet article de cet espace." }], isError: true };
+        }
+        return { content: [{ type: "text" as const, text: JSON.stringify({ item: Array.isArray(updatedItem) ? updatedItem[0] : updatedItem }) }] };
       }
     );
 

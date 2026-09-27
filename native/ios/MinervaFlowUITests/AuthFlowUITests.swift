@@ -25,23 +25,37 @@ final class AuthFlowUITests: XCTestCase {
         ensureSignedOut(app)
 
         let frenchPicker = app.buttons["Langue: français"]
-        XCTAssertTrue(frenchPicker.waitForExistence(timeout: 5))
-        frenchPicker.tap()
+        let englishPicker = app.buttons["Language: English"]
+        let startsInFrench = frenchPicker.waitForExistence(timeout: 5)
+        let initialPicker = startsInFrench ? frenchPicker : englishPicker
+        XCTAssertTrue(initialPicker.waitForExistence(timeout: 5))
+        initialPicker.tap()
 
-        let englishOption = app.buttons["English"]
-        XCTAssertTrue(englishOption.waitForExistence(timeout: 3))
-        englishOption.tap()
+        let changedLanguage = startsInFrench
+            ? (app.menuItems["English"].exists ? app.menuItems["English"] : app.buttons["English"])
+            : (app.menuItems["Français"].exists ? app.menuItems["Français"] : app.buttons["Français"])
+        XCTAssertTrue(changedLanguage.waitForExistence(timeout: 3))
+        changedLanguage.tap()
 
-        XCTAssertTrue(app.staticTexts["Your loyalty,\nrewarded"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Language: English"].exists)
+        let changedHeadline = startsInFrench ? "Your loyalty,\nrewarded" : "Votre fidélité,\nrécompensée"
+        XCTAssertTrue(app.staticTexts[changedHeadline].waitForExistence(timeout: 5))
 
-        app.buttons["Language: English"].tap()
-        let frenchOption = app.buttons["Français"]
-        XCTAssertTrue(frenchOption.waitForExistence(timeout: 3))
-        frenchOption.tap()
+        let changedPicker = startsInFrench ? englishPicker : frenchPicker
+        let pickerReady = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND hittable == true"),
+            object: changedPicker
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [pickerReady], timeout: 5), .completed)
+        changedPicker.tap()
+        let restoreLanguage = startsInFrench
+            ? (app.menuItems["Français"].exists ? app.menuItems["Français"] : app.buttons["Français"])
+            : (app.menuItems["English"].exists ? app.menuItems["English"] : app.buttons["English"])
+        XCTAssertTrue(restoreLanguage.waitForExistence(timeout: 3))
+        restoreLanguage.tap()
 
-        XCTAssertTrue(app.staticTexts["Votre fidélité,\nrécompensée"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Langue: français"].exists)
+        let initialHeadline = startsInFrench ? "Votre fidélité,\nrécompensée" : "Your loyalty,\nrewarded"
+        XCTAssertTrue(app.staticTexts[initialHeadline].waitForExistence(timeout: 5))
+        XCTAssertTrue((startsInFrench ? frenchPicker : englishPicker).exists)
     }
 
     func testTappingSeConnecterReachesLoginCard() throws {
