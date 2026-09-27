@@ -54,7 +54,7 @@ final class OrderTotalsTests: XCTestCase {
     }
 
     func testEmptyCartProducesZeroTotals() {
-        let totals = OrderTotals(lines: [], taxRate: 0.14975, tipPct: 0.15)
+        let totals = OrderTotals(lines: [(NativeMenuItem, Int)](), taxRate: 0.14975, tipPct: 0.15)
         XCTAssertEqual(totals.subtotal, 0)
         XCTAssertEqual(totals.taxAmount, 0)
         XCTAssertEqual(totals.tipAmount, 0)
