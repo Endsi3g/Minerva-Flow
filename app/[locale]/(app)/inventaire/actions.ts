@@ -46,7 +46,13 @@ export async function logMovementAction(
   quantity: number,
   reason?: string | null
 ): Promise<InventoryItem | null> {
-  if (!Number.isFinite(quantity) || quantity <= 0) return null;
+  // Every type except "ajustement" only ever moves stock in one direction
+  // (its sign is implied and enforced again in logMovement), so a zero or
+  // negative quantity there is always malformed input. "ajustement" is the
+  // one type meant to reconcile a physical count either way, so it's the
+  // only one allowed to carry a negative quantity — just never zero.
+  if (!Number.isFinite(quantity) || quantity === 0) return null;
+  if (type !== "ajustement" && quantity < 0) return null;
   const item = await logMovement(restaurantId, itemId, type, quantity, reason);
   if (item) {
     revalidatePath("/inventaire");
