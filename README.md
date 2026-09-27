@@ -174,7 +174,7 @@ Minerva Flow est conçu pour supporter des montées en charge massives avec des 
 - **Intégrations POS & Monétique** : Square, Clover, Toast POS, Lightspeed Restaurant, Stripe Connect, Stripe Checkout — Square et Clover incluent une synchronisation bidirectionnelle du menu et de l'inventaire (pas seulement le chiffre d'affaires)
 - **Liens intelligents** : Universal Links iOS (`apple-app-site-association`) pour les liens de parrainage et points de contact NFC/QR
 - **Services Webhooks & Cron** : Webhooks Square/Clover/Toast/Stripe/Twilio ; tâches planifiées via GitHub Actions (`.github/workflows/cron-*.yml`) plutôt que les Cron Jobs Vercel — le plan Vercel Hobby du projet limite les crons natifs à 2 au total, une fois par jour chacun
-- **Tests & Assurance Qualité** : Vitest (179 tests réussis lors du contrôle du 23 septembre 2026), TypeScript (`tsc --noEmit`)
+- **Tests & Assurance Qualité** : Vitest (333 tests réussis, 62 fichiers, lors du contrôle du 27 septembre 2026), TypeScript (`tsc --noEmit`)
 - **Hébergement Cloud** : Vercel Production Infrastructure
 
 ---
