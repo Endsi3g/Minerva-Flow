@@ -1494,7 +1494,7 @@ export function MenuView({
           </div>
         }
       />
-      <MenuStudioNav active="Menu" />
+      <MenuStudioNav active="menu" />
 
       {canManage && (
         <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl bg-mv-cream-soft px-4 py-3">
