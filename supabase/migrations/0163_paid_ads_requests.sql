@@ -34,12 +34,19 @@ create index if not exists paid_ads_requests_restaurant_idx
 create index if not exists paid_ads_requests_status_idx
   on public.paid_ads_requests(status, created_at)
   where status = 'nouveau';
+-- Enforce the one-open-request rule at the database boundary as well as in
+-- the form, so concurrent submissions cannot create duplicate follow-ups.
+create unique index if not exists paid_ads_requests_one_open_per_restaurant_idx
+  on public.paid_ads_requests(restaurant_id)
+  where status in ('nouveau', 'contacte');
 
 alter table public.paid_ads_requests enable row level security;
 
 drop policy if exists paid_ads_requests_select on public.paid_ads_requests;
 create policy paid_ads_requests_select on public.paid_ads_requests
-  for select using (public.is_restaurant_member(restaurant_id));
+  for select using (
+    public.is_restaurant_member(restaurant_id, array['owner','manager']::member_role[])
+  );
 
 -- Only owner/manager can actually commit the restaurant to a paid spend
 -- conversation, matching the LTV & CAC page's own edit gate.
