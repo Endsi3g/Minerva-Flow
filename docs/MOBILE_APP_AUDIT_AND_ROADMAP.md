@@ -28,23 +28,22 @@ L’application web reste l’espace d’administration le plus complet. La docu
 | Élément | État confirmé |
 |---|---|
 | Bundle iOS | `com.minervaflow.loyalty` |
-| Version / build local | `1.0` / `11` |
+| Version / build local | `1.0.0` / `15` |
 | Cible | iPhone et iPad, iOS 17 minimum déclaré dans le projet |
 | Signature/archive | Archive Release signée avec l’équipe configurée; export IPA réussi |
-| Sentry | UUID du framework identique à celui du dSYM de l’archive (`F52B2FE8-3C4B-3651-B5BD-22388DDF800E`, arm64) |
-| Téléversement App Store Connect | Build `1.0 (11)` traité et actif dans les groupes TestFlight interne et externe (8 testeurs externes) |
-| Lien bêta | <https://testflight.apple.com/join/xGr45uuF> — vérifié HTTP 200; sa réponse seule ne prouve pas qu’un build récent contient les changements source actuels |
+| Téléversement App Store Connect | Build `1.0.0 (15)` traité (`VALID`), assigné aux groupes TestFlight interne et externe; révision bêta externe `APPROVED` |
+| Lien bêta | <https://testflight.apple.com/join/xGr45uuF> — groupe externe public activé; URL vérifiée HTTP 200 |
 
-Le build 11 est installable depuis TestFlight, mais précède les changements source de la candidate `2.48.0`. Il faut créer un nouveau build iOS, valider le binaire et les parcours iOS, téléverser l’archive, attendre le traitement Apple puis confirmer l’installation depuis le groupe externe.
+Le build 15 contient les changements natifs courants et est approuvé pour les testeurs externes. Les tests XCTest et les parcours E2E web passent; une installation et une revue physique sur iPhone restent à faire avec un testeur.
 
 ## 3. Contrôle de conformité effectué
 
-Le garde-fou iOS exécuté le 23 septembre 2026 a trouvé **0 risque critique et 0 risque élevé**, avec deux points manuels :
+Le garde-fou iOS exécuté sur le build 15 le 27 septembre 2026 a trouvé **0 risque critique, 1 détection élevée et 7 avertissements**. La détection élevée est un faux négatif de recherche de texte : la suppression de compte est implémentée dans `ProfileView.swift` et `SupabaseManager.swift`, mais le scanner ne retrouve pas le code source Swift dans le binaire compilé. Les contrôles manuels suivants restent requis :
 
 1. confirmer la déclaration `ITSAppUsesNonExemptEncryption` pour l’extension Widget;
 2. vérifier les comptes de démonstration, métadonnées/captures, déclarations de confidentialité, notes de révision et contrats dans App Store Connect.
 
-Ce résultat est un contrôle statique, pas une validation « prêt à soumettre ». Les parcours propriétaires et clients sur appareil réel, les captures aux deux tailles, les déclarations App Privacy et l’accès de révision restent à confirmer avant diffusion externe.
+Ce contrôle statique n’est pas un audit de soumission App Store. Apple a approuvé le build pour TestFlight; cela n’équivaut pas à une approbation App Store. Les parcours propriétaires et clients sur appareil réel, les déclarations App Privacy et la suppression de compte doivent encore être revus manuellement.
 
 ## 4. Séquence de téléversement et de vérification
 

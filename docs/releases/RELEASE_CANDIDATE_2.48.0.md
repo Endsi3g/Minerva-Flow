@@ -1,5 +1,17 @@
 # Release candidate — Minerva Flow 2.48.0
 
+## Mise à jour de vérification — 2026-09-27
+
+Cette mise à jour remplace les états antérieurs ci-dessous pour les points mentionnés.
+
+- Web 2.48.0 : le déploiement Production courant apparaît `READY` dans Vercel et les domaines Minerva Flow restent associés. Le SHA source n’est pas exposé par l’inspection Vercel; les modifications web de menus, commandes et stock sont dans `4aee158`.
+- Base : les migrations `0156` à `0161` sont consignées en staging et production, avec les objets de menu, de commandes et d’inventaire attendus.
+- Parcours staging : E2E création du lien de menu réussi; E2E commande publique/ramassage réussi et commande `soumise` vérifiée en base; scénario stock synthétique réussi (10 → 2 à la confirmation, une alerte sous 30 %, pas de double déduction, restitution à 10 lors de l’annulation avant service). Les enregistrements E2E sont nettoyés.
+- Captures expurgées : [menu desktop](../../public/assets/changelog/flow-direct-menu-desktop.png), [menu mobile](../../public/assets/changelog/flow-direct-menu-mobile.png), [commande mobile](../../public/assets/changelog/flow-direct-order-mobile.png).
+- iOS/TestFlight : build **1.0.0 (15)** téléversé et traité (`VALID`), affecté aux groupes interne et externe, révision bêta externe **APPROVED**. Lien public : https://testflight.apple.com/join/xGr45uuF.
+- Contrôle iOS : l’audit statique du build 15 relève 0 critique, 1 détection élevée (faux négatif de recherche de suppression de compte dans un binaire compilé; implémentation native présente) et 7 avertissements nécessitant les contrôles manuels habituels. L’audit ne constitue pas une approbation de soumission App Store.
+- Vérification globale : connexion et inscription E2E réussies; tests iOS 19/19 et tests ciblés web 44/44 réussis. La suite web complète conserve un timeout de 1 test (344/345) et le lint conserve des erreurs préexistantes. L’envoi de courriels de lancement demeure soumis à la validation finale du texte et des destinataires.
+
 **État : web `2.48.0` déployé en Production depuis le commit `3521ec4`; déploiement exact `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9` READY, domaines `minervaflow.app` et `www.minervaflow.app` rattachés. L’option Connect est explicitement « Non configuré — bientôt disponible » et reste désactivée jusqu’à la configuration live; le parcours Connect n’est donc pas annoncé comme fonctionnel. Les routes `/login` et `/en/login` répondent 200, mais l’inspection authentifiée et visuelle du réglage n’a pas pu être faite. POS non testable/reporté. Build iOS `1.0.0 (13)` téléversé à Apple; traitement et affectation aux groupes à confirmer, XCTest sans résultat confirmé.**
 Date de préparation : 2026-09-24.
 Dernière vérification : 2026-09-26.

@@ -1,6 +1,6 @@
 # Flow Direct — menu, commandes et valeur client
 
-Ce document décrit la conception applicative en cours. Une migration locale ou une capture d’écran ne signifie pas que la fonction a été déployée ni activée en production.
+Ce document décrit l’implémentation de Flow Direct et ses limites opérationnelles. Au 27 septembre 2026, les migrations `0156` à `0161` sont appliquées en staging et en production, la version web `2.48.0` est déployée, et le build iOS `1.0.0 (15)` est approuvé pour les testeurs externes TestFlight.
 
 ## Pages du studio
 
@@ -49,4 +49,4 @@ Les alertes propriétaires se déclenchent à 30 % de la cible de réapprovision
 
 ## Déploiement et validation
 
-Les migrations de ce périmètre sont `0156_direct_menu_order_status_and_cancellation.sql`, `0157_customer_acquisition_costs.sql`, `0158_menu_featured_items.sql`, `0159_order_stock_deduction_and_low_stock_notifications.sql`, `0160_orderable_guard_after_price_options.sql` et `0161_fix_inventory_alert_row_trigger.sql`. Les deux dernières sont des garde-fous idempotents : elles réalignent un staging où la migration de prix était déjà appliquée et rétablissent le déclencheur SQL par ligne. Le staging et la production ont été migrés; les objets du schéma sont présents et les scénarios de stock contrôlés passent sur staging. Le déploiement applicatif web reste à faire. L’archive iOS signée 1.0.0 (14) et l’IPA sont prêts; l’envoi TestFlight attend une session App Store Connect utilisable et la fin des contrôles manuels App Store.
+Les migrations de ce périmètre sont `0156_direct_menu_order_status_and_cancellation.sql`, `0157_customer_acquisition_costs.sql`, `0158_menu_featured_items.sql`, `0159_order_stock_deduction_and_low_stock_notifications.sql`, `0160_orderable_guard_after_price_options.sql` et `0161_fix_inventory_alert_row_trigger.sql`. Les deux dernières sont des garde-fous idempotents : elles réalignent un staging où la migration de prix était déjà appliquée et rétablissent le déclencheur SQL par ligne. Les deux bases consignent `0161`. Le scénario synthétique staging confirme la consommation idempotente, l’alerte à 30 % et la restitution avant service; l’E2E public confirme la création du lien et la commande à récupérer sur place. Le web est publié en production. Le build iOS `1.0.0 (15)` est `VALID`, assigné aux groupes interne et externe, et sa révision bêta externe est `APPROVED`. Aucun test d’installation sur iPhone physique n’a été réalisé.

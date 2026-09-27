@@ -36,9 +36,9 @@ Le modèle complet — qui fait quoi, comment les parcours s'enchaînent et ce q
 
 La route `/app` présente les captures, les étapes TestFlight et l’inscription client. Le bonus de première visite est désactivé à zéro point; la sélection « À découvrir » du menu est gérée par le propriétaire.
 
-Le menu partageable, son éditeur QR, la commande sans paiement en ligne et les indicateurs de valeur client sont décrits dans [l’architecture Flow Direct](docs/FLOW_DIRECT_MENU_AND_VALUE.md). L’état de développement de ces nouveautés est suivi dans le changelog; elles ne sont pas annoncées comme livrées avant la vérification et le déploiement correspondants.
+Le menu partageable, son éditeur QR, les commandes suivies, les règles de stock et les indicateurs LTV/CAC sont décrits dans l’[architecture Flow Direct](docs/FLOW_DIRECT_MENU_AND_VALUE.md). Les migrations `0156` à `0161` sont présentes en staging et en production. Les principaux flux menu, commande et déduction de stock ont été vérifiés sur le staging. La version web `2.48.0` est en production; l’app iOS `1.0.0 (15)` est approuvée pour la bêta TestFlight externe.
 
-La proposition de prochaine version web/iOS, ses notes de version, son illustration de référence et les portes de validation encore ouvertes sont consignées dans le [dossier de release 2.48.0](docs/releases/RELEASE_CANDIDATE_2.48.0.md). Ce document est un brouillon interne, pas une annonce de disponibilité.
+Les preuves de validation, les limites restantes et les recommandations de communication sont consignées dans le [dossier de release 2.48.0](docs/releases/RELEASE_CANDIDATE_2.48.0.md). Les recettes, quantités de départ et cibles de réapprovisionnement doivent être configurées par chaque restaurant avant que les alertes de stock reflètent son inventaire réel.
 
 ---
 
