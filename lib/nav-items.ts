@@ -23,8 +23,6 @@ export type SearchableNavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 const managerRoles: Role[] = ["owner", "manager"];
-export const PRIMARY_NAV_KEYS = new Set(["workspace", "fournisseurs", "inventaire", "commandes", "settings"]);
-
 export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "workspace", href: "/workspace", title: "Workspace", subtitle: "Restaurants et espaces de travail", roles: allRoles },
   { key: "overview", href: "/overview", title: "Aperçu", subtitle: "Tableau de bord principal", roles: allRoles },
@@ -56,31 +54,12 @@ export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "settings", href: "/settings", title: "Paramètres", subtitle: "Configuration de l'établissement", roles: managerRoles },
 ];
 
-// Core workspace areas plus the dedicated menu and loyalty journeys that
-// owners configure and share. Settings remains available to owners/managers
-// for integrations and account configuration; unrelated legacy routes stay gated.
-export const AUTHENTICATED_PRODUCT_ROOTS = [
-  "/workspace",
-  "/fournisseurs",
-  "/inventaire",
-  "/commandes",
-  "/menu",
-  "/fidelisation",
-  "/settings",
-] as const;
-
 export function canAccessSettings(role: Role): boolean {
   return role === "owner" || role === "manager";
 }
 
-export function isAuthenticatedProductPath(pathname: string): boolean {
-  return AUTHENTICATED_PRODUCT_ROOTS.some(
-    (root) => pathname === root || pathname.startsWith(`${root}/`)
-  );
-}
-
 export function navItemsForRole(role: Role, sidebarPermissions?: string[] | null): SearchableNavItem[] {
   return NAV_ITEMS.filter(
-    (item) => PRIMARY_NAV_KEYS.has(item.key) && item.roles.includes(role) && (item.key === "workspace" || !sidebarPermissions || sidebarPermissions.includes(item.key))
+    (item) => item.roles.includes(role) && (item.key === "workspace" || !sidebarPermissions || sidebarPermissions.includes(item.key))
   );
 }

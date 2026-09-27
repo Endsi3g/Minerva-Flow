@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import createIntlProxy from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
-import { isAuthenticatedProductPath } from "@/lib/nav-items";
 
 const handleI18nRouting = createIntlProxy(routing);
 
@@ -179,18 +178,6 @@ export async function proxy(request: NextRequest) {
   if (user) {
     // Prevent intermediate edge/browser proxies from caching private authenticated dashboards
     response.headers.set("Cache-Control", "private, no-cache, no-store, must-revalidate");
-
-    // Keep the redirect gate aligned with the core areas and dedicated menu
-    // and loyalty journeys. Unrelated legacy product pages remain unavailable.
-    const isAllowedProductPage = isAuthenticatedProductPath(pathWithoutLocale);
-    if (!isApiRoute && !isAuthRoute && !isServerCallbackRoute && !isAllowedProductPage && !pathWithoutLocale.startsWith("/admin")) {
-      const url = request.nextUrl.clone();
-      url.pathname = locale === routing.defaultLocale ? "/workspace" : `/${locale}/workspace`;
-      url.search = "";
-      const redirectResponse = NextResponse.redirect(url);
-      response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
-      return redirectResponse;
-    }
   }
 
   return response;

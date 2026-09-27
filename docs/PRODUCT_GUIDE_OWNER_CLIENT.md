@@ -14,7 +14,7 @@ Ce n’est pas un système de caisse universel qui remplace automatiquement chaq
 
 Le propriétaire crée ou rejoint un espace de travail, ajoute un ou plusieurs restaurants, puis invite ses collaborateurs avec des rôles adaptés. Lorsqu’un espace regroupe plusieurs établissements, le sélecteur permet de passer de l’un à l’autre; les restaurants sont regroupés dans des sections repliables.
 
-Les rôles et autorisations déterminent les pages et les actions disponibles. Dans l’espace propriétaire web, la navigation principale est limitée à Workspace, Fournisseurs, Inventaire et Commandes; Menu, Fidélisation et les autres pages produit redirigent vers Workspace. Les accès opérationnels restent soumis au rôle de chaque membre.
+Les rôles et autorisations déterminent les pages et les actions disponibles. Dans l’espace propriétaire web, la navigation est centrée sur la valeur client pour les propriétaires et gérants (Workspace, Aperçu, Flow AI, Menu, Fidélisation). Finance, Commandes, Collaborateurs, Inventaire et Fournisseurs sont dans « Gestion quotidienne »; Opérations, Performance et analyses, puis Paramètres et plus (Paramètres, Intégrations, Facturation, Guide, Support, Nouveautés) sont des sections repliables. Le personnel et les consultants voient la liste opérationnelle complète à plat. Les accès opérationnels restent soumis au rôle de chaque membre.
 
 ### 2. Suivre le service
 

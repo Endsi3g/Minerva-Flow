@@ -1,48 +1,41 @@
 import { describe, expect, it } from "vitest";
-import { canAccessSettings, isAuthenticatedProductPath, navItemsForRole } from "@/lib/nav-items";
+import { canAccessSettings, navItemsForRole } from "@/lib/nav-items";
 
-describe("authenticated product route allowlist", () => {
-  it.each([
-    "/workspace",
-    "/workspace/ambassadeurs",
-    "/fournisseurs",
-    "/fournisseurs/catalogue",
-    "/inventaire",
-    "/inventaire/recettes",
-    "/commandes",
-    "/commandes/service-quotes",
-    "/menu",
-    "/menu/suggestions",
-    "/fidelisation",
-    "/fidelisation/customers",
-    "/settings",
-    "/settings/alertes",
-  ])("keeps the product route %s reachable", (path) => {
-    expect(isAuthenticatedProductPath(path)).toBe(true);
+describe("navigation items by role", () => {
+  it("exposes the LTV core, daily management, suppliers, settings and changelog to owners", () => {
+    const keys = navItemsForRole("owner").map(({ key }) => key);
+    for (const key of [
+      "workspace", "overview", "assistant", "menu", "fidelisation",
+      "finance", "commandes", "collaborateurs", "inventaire", "fournisseurs",
+      "settings", "changelog",
+    ]) {
+      expect(keys).toContain(key);
+    }
   });
 
-  it.each([
-    "/overview",
-    "/assistant",
-    "/finance",
-    "/collaborateurs",
-    "/changelog",
-    "/menu-settings",
-    "/fidelisationx",
-    "/unknown",
-    "/login",
-  ])("redirects restricted or unrelated route %s", (path) => {
-    expect(isAuthenticatedProductPath(path)).toBe(false);
+  it("keeps manager-only areas away from staff and consultants", () => {
+    for (const role of ["staff", "consultant"] as const) {
+      const keys = navItemsForRole(role).map(({ key }) => key);
+      for (const key of ["finance", "inventaire", "fournisseurs", "settings", "billing"]) {
+        expect(keys).not.toContain(key);
+      }
+      for (const key of ["overview", "assistant", "menu", "fidelisation", "commandes", "collaborateurs", "changelog"]) {
+        expect(keys).toContain(key);
+      }
+    }
   });
 
-  it("exposes the four core owner routes and the necessary Settings entry", () => {
-    expect(navItemsForRole("owner").map(({ key }) => key)).toEqual([
-      "workspace", "commandes", "inventaire", "fournisseurs", "settings",
-    ]);
+  it("restricts billing to owners", () => {
+    expect(navItemsForRole("owner").some(({ key }) => key === "billing")).toBe(true);
+    expect(navItemsForRole("manager").some(({ key }) => key === "billing")).toBe(false);
   });
 
-  it("does not expose Settings to staff", () => {
-    expect(navItemsForRole("staff").some(({ key }) => key === "settings")).toBe(false);
+  it("honors per-member sidebar permissions but always keeps the workspace entry", () => {
+    const keys = navItemsForRole("owner", ["menu"]).map(({ key }) => key);
+    expect(keys).toEqual(["workspace", "menu"]);
+  });
+
+  it("only lets owners and managers open Settings", () => {
     expect(canAccessSettings("staff")).toBe(false);
     expect(canAccessSettings("consultant")).toBe(false);
     expect(canAccessSettings("owner")).toBe(true);
