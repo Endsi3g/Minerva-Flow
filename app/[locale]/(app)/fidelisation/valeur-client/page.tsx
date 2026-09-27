@@ -41,7 +41,7 @@ export default async function LifetimeValuePage() {
       ? pricedItems.reduce((sum, item) => sum + Math.max(0, Math.min(1, (item.price - item.foodCost) / item.price)), 0) / pricedItems.length
       : 0;
   const marginLtv = revenueLtv * grossMarginPct;
-  const metrics = { customers: customersWithSpend.length, revenueLtv, marginLtv, combinedLtv: revenueLtv + marginLtv, grossMarginPct };
+  const metrics = { customers: customersWithSpend.length, revenueLtv, marginLtv, grossMarginPct };
   const canEdit = membership?.restaurantId === restaurantId && ["owner", "manager"].includes(membership.role);
 
   return <LifetimeValueView restaurantId={restaurantId} metrics={metrics} costs={costs} newCustomers={newCustomerResult.count ?? 0} canEdit={canEdit} />;

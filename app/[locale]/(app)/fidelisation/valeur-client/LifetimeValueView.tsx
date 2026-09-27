@@ -28,7 +28,7 @@ export function LifetimeValueView({
   canEdit,
 }: {
   restaurantId: string;
-  metrics: { customers: number; revenueLtv: number; marginLtv: number; combinedLtv: number; grossMarginPct: number };
+  metrics: { customers: number; revenueLtv: number; marginLtv: number; grossMarginPct: number };
   costs: AcquisitionCostRow[];
   newCustomers: number;
   canEdit: boolean;
@@ -60,10 +60,9 @@ export function LifetimeValueView({
       </Link>
       <PageHeader eyebrow="Fidélisation · Analyse client" title="Valeur client & acquisition" description="Suivez le revenu généré par client, la marge estimée et le coût d’acquisition sur les 12 derniers mois." />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard icon={<CircleDollarSign size={17} />} label="LTV revenu moyen" value={formatCurrency(metrics.revenueLtv)} detail="Revenu cumulé moyen par client avec achat" />
         <MetricCard icon={<ChartNoAxesCombined size={17} />} label="LTV marge estimée" value={formatCurrency(metrics.marginLtv)} detail={`Marge actuelle du menu : ${Math.round(metrics.grossMarginPct * 100)} %`} />
-        <MetricCard icon={<CircleDollarSign size={17} />} label="LTV combinée" value={formatCurrency(metrics.combinedLtv)} detail="Revenu moyen + marge estimée, selon votre définition" />
         <MetricCard icon={<ChartNoAxesCombined size={17} />} label="CAC moyen · 12 mois" value={cac === null ? "—" : formatCurrency(cac)} detail={`${formatCurrency(periodSpend)} de dépenses ÷ ${newCustomers} nouveaux clients`} />
       </div>
 
