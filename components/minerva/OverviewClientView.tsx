@@ -610,10 +610,17 @@ export function OverviewClientView({
               <div className="mt-2">
                 <MiniSparkline id="campagnes" data={campagnesSparkData} color="var(--mv-green)" />
               </div>
-              <p className="mt-1 flex items-center gap-1 text-[12px] sm:text-[12.5px] font-semibold text-mv-green-dark">
-                Voir les campagnes actives
-                <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
-              </p>
+              {activeCampaignsCount === 0 ? (
+                <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+                  Flow amplifie le trafic existant — sans campagne active, l’effet reste limité.{" "}
+                  <span className="font-semibold text-mv-green-dark">Démarrer ou demander de l’aide</span>
+                </p>
+              ) : (
+                <p className="mt-1 flex items-center gap-1 text-[12px] sm:text-[12.5px] font-semibold text-mv-green-dark">
+                  Voir les campagnes actives
+                  <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                </p>
+              )}
             </Link>
           </div>
         </div>

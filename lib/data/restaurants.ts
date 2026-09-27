@@ -31,6 +31,7 @@ type RestaurantRow = {
   google_place_id: string | null;
   workspace_id: string | null;
   loyalty_points_per_dollar: number;
+  welcome_bonus_points?: number | null;
   tax_rate: number;
   accepts_tips: boolean;
   break_even_fixed_costs: number | null;
@@ -82,6 +83,7 @@ function mapRestaurant(row: RestaurantRow): Restaurant {
     googlePlaceId: row.google_place_id,
     workspaceId: row.workspace_id,
     loyaltyPointsPerDollar: row.loyalty_points_per_dollar ?? 1,
+    welcomeBonusPoints: row.welcome_bonus_points ?? 0,
     taxRate: row.tax_rate ?? 0.14975,
     acceptsTips: row.accepts_tips ?? true,
     breakEvenFixedCosts: row.break_even_fixed_costs,

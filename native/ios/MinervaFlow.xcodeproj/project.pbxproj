@@ -336,6 +336,7 @@
 				F408578363D1E7F396B0A172 /* Resources */,
 				5A742E5A09BE4841A102776D /* Frameworks */,
 				862D1C7F6421C50DF5C19C96 /* Embed Foundation Extensions */,
+				D2BFC1160A5328A200A31E7C /* Remove empty required-reason manifest entries */,
 				D5C9628355377BB603F3BFD5 /* Copy Sentry dSYM */,
 			);
 			buildRules = (
@@ -483,6 +484,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		D2BFC1160A5328A200A31E7C /* Remove empty required-reason manifest entries */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Remove empty required-reason manifest entries";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "bash \"${SRCROOT}/scripts/remove-empty-required-reason-manifests.sh\"";
+			showEnvVarsInLog = 0;
+		};
 		D5C9628355377BB603F3BFD5 /* Copy Sentry dSYM */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -687,7 +708,7 @@
 				CODE_SIGN_ENTITLEMENTS = MinervaFlowWidget/MinervaFlowWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlowWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -714,7 +735,7 @@
 				CODE_SIGN_ENTITLEMENTS = MinervaFlow/Resources/MinervaFlow.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlow/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -791,7 +812,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MinervaFlowWidget/MinervaFlowWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlowWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -857,7 +878,7 @@
 				CODE_SIGN_ENTITLEMENTS = MinervaFlow/Resources/MinervaFlow.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_TEAM = NHMPLN46TN;
 				INFOPLIST_FILE = MinervaFlow/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

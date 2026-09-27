@@ -12,6 +12,7 @@ import { getMySessions, revokeSession, type DeviceSession } from "@/lib/data/ses
 import { createClient } from "@/lib/supabase/server";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { searchPlaces, getPlaceDetails, mapPlaceDetailsToRestaurantInput, type PlaceSuggestion } from "@/lib/google-places";
+import { isGooglePlacesConfigured } from "@/lib/google/config";
 import type {
   AlertRule,
   AlertRuleType,
@@ -51,6 +52,13 @@ export async function updateRestaurantAction(
  */
 export async function searchPlacesAction(query: string): Promise<PlaceSuggestion[]> {
   return searchPlaces(query);
+}
+
+// GooglePlacesSearch no longer self-checks (it takes `enabled` as a prop,
+// server-computed where the caller is itself a server component). This
+// stays for the client-rendered callers that still need to ask at runtime.
+export async function isGooglePlacesEnabledAction(): Promise<boolean> {
+  return isGooglePlacesConfigured();
 }
 
 export async function getPlaceDetailsAction(placeId: string): Promise<Partial<RestaurantInput> | null> {

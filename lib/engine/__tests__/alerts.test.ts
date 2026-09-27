@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { computeAlerts, type ComputeAlertsInput } from "@/lib/engine/alerts";
-import type { AlertRule, Connection, FinancialTransaction, ServiceDay } from "@/lib/types";
+import type { AlertRule, Connection, FinancialTransaction, InventoryItem, ServiceDay } from "@/lib/types";
 
 function rule(overrides: Partial<AlertRule>): AlertRule {
   return {
@@ -27,6 +27,23 @@ function serviceDay(overrides: Partial<ServiceDay>): ServiceDay {
     notes: "",
     anomaly: null,
     author: "Test",
+    ...overrides,
+  };
+}
+
+function inventoryItem(overrides: Partial<InventoryItem>): InventoryItem {
+  return {
+    id: "stock-1",
+    restaurantId: "restaurant-1",
+    name: "Soda",
+    category: "Drinks",
+    unit: "can",
+    quantityOnHand: 3,
+    parLevel: 10,
+    unitCost: 1,
+    supplierId: null,
+    createdAt: "2026-03-01T00:00:00Z",
+    updatedAt: "2026-03-01T00:00:00Z",
     ...overrides,
   };
 }
@@ -123,6 +140,32 @@ describe("computeAlerts — expense_spike", () => {
     });
     const alerts = computeAlerts(input);
     expect(alerts.some((a) => a.id === "expense-spike-3")).toBe(true);
+  });
+});
+
+describe("computeAlerts — low_stock", () => {
+  it("alerts at 30% or less of an item's configured replenishment target", () => {
+    const input = baseInput({
+      alertRules: [rule({ type: "low_stock", threshold: 30 })],
+      inventoryItems: [inventoryItem({ quantityOnHand: 3, parLevel: 10 })],
+    });
+    const alert = computeAlerts(input).find((item) => item.id === "low-stock-stock-1");
+    expect(alert?.detail).toContain("30 % de la cible de 10");
+    expect(alert?.href).toBe("/inventaire");
+  });
+
+  it("skips inventory without a target and respects a disabled rule", () => {
+    const missingTarget = baseInput({
+      alertRules: [rule({ type: "low_stock", threshold: 30 })],
+      inventoryItems: [inventoryItem({ parLevel: null })],
+    });
+    expect(computeAlerts(missingTarget)).toHaveLength(0);
+
+    const disabled = baseInput({
+      alertRules: [rule({ type: "low_stock", threshold: 30, enabled: false })],
+      inventoryItems: [inventoryItem({ quantityOnHand: 2 })],
+    });
+    expect(computeAlerts(disabled)).toHaveLength(0);
   });
 });
 

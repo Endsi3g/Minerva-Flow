@@ -8,21 +8,26 @@ import SwiftUI
 /// regresses, it just isn't the tab's default face anymore.
 struct ScannerTabView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     @State private var showCameraScan = false
+
+    private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("VOTRE COMPTE")
+                        Text(isFrench ? "VOTRE COMPTE" : "YOUR ACCOUNT")
                             .font(.system(size: 11, weight: .bold))
                             .tracking(1.2)
                             .foregroundStyle(MinervaColor.emeraldDark)
-                        Text("Présentez votre code")
+                        Text(isFrench ? "Présentez votre code" : "Show your code")
                             .font(MinervaFont.display(28, weight: .semibold))
                             .foregroundStyle(MinervaColor.ink)
-                        Text("Le personnel peut l’utiliser pour retrouver votre compte et enregistrer votre visite.")
+                        Text(isFrench
+                             ? "Le personnel peut l’utiliser pour retrouver votre compte et enregistrer votre visite."
+                             : "Staff can use it to find your account and record your visit.")
                             .font(.system(size: 15))
                             .foregroundStyle(MinervaColor.inkSoft)
                             .fixedSize(horizontal: false, vertical: true)
@@ -33,7 +38,7 @@ struct ScannerTabView: View {
                     Button {
                         showCameraScan = true
                     } label: {
-                        Label("Scanner le code d’un restaurant", systemImage: "camera.viewfinder")
+                        Label(isFrench ? "Scanner le code d’un restaurant" : "Scan a restaurant's code", systemImage: "camera.viewfinder")
                             .font(.system(size: 15, weight: .semibold))
                             .frame(maxWidth: .infinity, minHeight: 48)
                     }
@@ -56,7 +61,7 @@ struct ScannerTabView: View {
                     } label: {
                         Image(systemName: "camera.viewfinder")
                     }
-                    .accessibilityLabel("Scanner un code de restaurant")
+                    .accessibilityLabel(isFrench ? "Scanner un code de restaurant" : "Scan a restaurant's code")
                 }
             }
             .task {
@@ -72,7 +77,7 @@ struct ScannerTabView: View {
         VStack(spacing: 18) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Carte de fidélité")
+                    Text(isFrench ? "Carte de fidélité" : "Loyalty card")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.8))
                     Text(supabase.restaurantIdentityLabel)
@@ -97,7 +102,7 @@ struct ScannerTabView: View {
                         .background(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                         .frame(maxWidth: .infinity)
-                        .accessibilityLabel("Code QR temporaire de votre compte")
+                        .accessibilityLabel(isFrench ? "Code QR temporaire de votre compte" : "Temporary QR code for your account")
                 }
 
                 VStack(spacing: 6) {
@@ -111,18 +116,18 @@ struct ScannerTabView: View {
             } else if supabase.isMintingPairingCode {
                 VStack(spacing: 12) {
                     ProgressView().tint(.white)
-                    Text("Préparation de votre code…")
+                    Text(isFrench ? "Préparation de votre code…" : "Preparing your code…")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white.opacity(0.9))
                 }
                 .frame(maxWidth: .infinity, minHeight: 250)
             } else {
                 ContentUnavailableView {
-                    Label("Code indisponible", systemImage: "qrcode")
+                    Label(isFrench ? "Code indisponible" : "Code unavailable", systemImage: "qrcode")
                 } description: {
-                    Text(supabase.pairingCodeError ?? "Réessayez dans un instant.")
+                    Text(supabase.pairingCodeError ?? (isFrench ? "Réessayez dans un instant." : "Try again in a moment."))
                 } actions: {
-                    Button("Réessayer") { Task { await supabase.mintPairingCode() } }
+                    Button(isFrench ? "Réessayer" : "Try again") { Task { await supabase.mintPairingCode() } }
                         .buttonStyle(.borderedProminent)
                 }
                 .tint(MinervaColor.emeraldDark)
@@ -134,7 +139,7 @@ struct ScannerTabView: View {
             Button {
                 Task { await supabase.mintPairingCode() }
             } label: {
-                Label("Renouveler le code", systemImage: "arrow.clockwise")
+                Label(isFrench ? "Renouveler le code" : "Refresh the code", systemImage: "arrow.clockwise")
                     .font(.system(size: 14, weight: .semibold))
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
@@ -157,7 +162,9 @@ struct ScannerTabView: View {
                 HStack(spacing: 6) {
                     Image(systemName: remaining > 0 ? "clock" : "exclamationmark.triangle")
                         .accessibilityHidden(true)
-                    Text(remaining > 0 ? "Valide encore \(remaining) s" : "Code expiré — renouvelez-le")
+                    Text(remaining > 0
+                         ? (isFrench ? "Valide encore \(remaining) s" : "Valid for \(remaining)s more")
+                         : (isFrench ? "Code expiré — renouvelez-le" : "Code expired — refresh it"))
                 }
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.85))

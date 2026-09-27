@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import type { InventoryItem, InventoryMovementType, Supplier } from "@/lib/types";
 import { PackageSearch, Plus, Trash2, TriangleAlert, ShoppingCart, ArrowRight, Sparkles } from "lucide-react";
@@ -111,7 +111,7 @@ function NewInventoryItemModal({
           <Field label="Quantité initiale">
             <Input name="quantityOnHand" type="number" min="0" step="0.5" defaultValue="0" />
           </Field>
-          <Field label="Seuil de réappro" hint="Optionnel">
+          <Field label="Cible de réappro" hint="L’alerte propriétaire se déclenche à 30 % ou moins de cette quantité.">
             <Input name="parLevel" type="number" min="0" step="0.5" />
           </Field>
         </div>

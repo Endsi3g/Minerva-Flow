@@ -16,6 +16,7 @@ import {
 import { notifyRestaurant } from "@/lib/data/notifications";
 import { creditReferralConversion } from "@/lib/data/customer-referrals";
 import type { Reservation, ReservationStatus, RestaurantTable } from "@/lib/types";
+import { getCurrentMembership } from "@/lib/data/current-restaurant";
 
 export async function getTablesAction(restaurantId: string): Promise<RestaurantTable[]> {
   if (!restaurantId) return [];
@@ -69,9 +70,12 @@ export async function createReservationAction(
 export async function updateReservationStatusAction(
   restaurantId: string,
   id: string,
-  status: ReservationStatus
+  status: ReservationStatus,
+  cancellationReason?: string
 ): Promise<boolean> {
-  const ok = await updateReservationStatus(restaurantId, id, status);
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager", "staff"].includes(membership.role)) return false;
+  const ok = await updateReservationStatus(restaurantId, id, status, cancellationReason);
   if (ok) {
     revalidatePath("/reservations");
     if (status === "confirmee" || status === "honoree") {

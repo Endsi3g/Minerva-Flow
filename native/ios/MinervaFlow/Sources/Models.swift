@@ -266,7 +266,7 @@ struct NativeOwnerInventoryItem: Codable, Identifiable {
     var name: String
     var quantityOnHand: Double
     var unit: String
-    var parLevel: Double
+    var parLevel: Double?
     var unitCost: Double
     var supplierId: String?
     enum CodingKeys: String, CodingKey {

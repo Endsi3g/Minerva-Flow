@@ -2,9 +2,27 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
-## [Non publié] — Vérifications du 2026-09-26
+## [2.48.0] — 2026-09-26
 
-### Publication Web — 2026-09-25
+### Flow Direct — menu partageable et commande plus conviviale
+- Nouvelle page partageable `/app` avec captures iOS, étapes d’installation TestFlight, création de compte client avec confirmation par courriel et association au restaurant.
+- Après l’envoi d’une commande, la page d’installation garde un suivi public limité au statut et à l’heure estimée; le menu QR Studio distingue le lien du menu du lien d’installation.
+- Les propriétaires choisissent les plats « À découvrir ». Un bonus de première visite peut être configuré; à 0 il reste désactivé et il n’est crédité qu’une fois après une commande marquée « Servie ».
+- Nouveau studio organisé en pages dédiées : Menu, Identité visuelle, QR et partage, Coordonnées. Les liens sont des navigations de page, sans onglets.
+- Les routes dédiées du menu et de la fidélisation restent accessibles après connexion, tout en laissant les autres pages hors du périmètre produit configuré.
+- La présentation du menu peut définir logo, couleurs, typographie et liens Instagram, Facebook, TikTok, WhatsApp, téléphone, courriel et site web.
+- L’import de menu accepte PDF, JPG, PNG et WebP, avec une étape de vérification avant l’ajout. Un article peut être publié pour présentation sans être commandable; la base bloque aussi son ajout au panier.
+- La commande affiche son état dans le parcours public et actualise les changements par Realtime/polling. Les statuts déclenchent un courriel transactionnel, une notification in-app et une notification push si le client a un compte.
+- Les textes de commande sont réécrits dans un ton plus chaleureux tout en précisant l’heure de récupération, le paiement sur place et l’annulation sans frais en cas d’imprévu. Une annulation propriétaire recueille un court motif.
+- Page LTV & CAC ajoutée : LTV revenu et marge estimée séparément, et CAC sur 12 mois avec publicité, commissions, agence, promotions et équipement. Les coûts d’acquisition sont saisis par le propriétaire ou le gestionnaire.
+- Les commandes confirmées ou payées consomment maintenant, dans une transaction SQL idempotente, les quantités correspondant aux recettes configurées; les commandes POS importées sont aussi couvertes. Une annulation avant service remet en inventaire la quantité réellement prélevée. Les lignes sans recette ne déclenchent aucune déduction.
+- Le seuil d’alerte propriétaire est de 30 % de la cible de réapprovisionnement par défaut. Un franchissement crée une notification in-app pour les propriétaires/gestionnaires; le retour au-dessus du seuil permet une nouvelle alerte au prochain franchissement. Sans cible configurée, le ratio n’est pas calculé.
+- **État** : migrations `0156` à `0161` sont présentes en staging et en production. Les E2E staging valident la création du lien de menu, la commande à récupérer sur place, et la persistance de son statut `soumise`; l’installation mobile et les vues du menu ont été capturées sans données client. Build iOS **1.0.0 (15)** téléversé, traité, affecté au groupe TestFlight externe et **approuvé par Apple**; lien d’invitation : [Tester Minerva Flow](https://testflight.apple.com/join/xGr45uuF). Les notifications stock à 30 % et les déductions sont vérifiées par tests ciblés et migration SQL; leur effet réel dépend des recettes, quantités et cibles renseignées par chaque restaurant.
+- **Sécurité** : la nouvelle clé secrète Supabase est configurée dans Vercel Production; l’ancienne clé exposée a été révoquée et vérifiée absente. Les clés JWT API legacy exposées ont également été désactivées; web et natif utilisent les clés modernes publishable/secret.
+- **Observabilité** : la compilation web est réussie; l’envoi des sourcemaps Sentry a échoué car le jeton Vercel cible une organisation/projet Sentry incompatible. Le déploiement fonctionne, mais les sourcemaps de cette release ne sont pas disponibles dans Sentry.
+- **Limites** : la déduction exacte dépend des quantités initiales, recettes et cibles de réapprovisionnement configurées par restaurant. La LTV de marge reste estimée avec les food costs actuels; les coûts historiques par commande ne sont pas stockés.
+
+### Publication Web précédente — 2026-09-25
 - La web app `2.48.0` est déployée en production depuis `3521ec4` (Vercel `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9`). Les routes de connexion française et anglaise répondent 200.
 - Stripe Connect est explicitement indiqué « Non configuré — bientôt disponible » et demeure désactivé en l’absence de clé live/capacités actives. Aucune transaction en ligne Connect n’est promise ni validée; les tests POS restent reportés.
 

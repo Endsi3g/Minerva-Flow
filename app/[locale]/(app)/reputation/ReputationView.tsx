@@ -36,7 +36,7 @@ function StarRow({ rating }: { rating: number }) {
  * this page — never the rest of the address patch GooglePlacesSearch also
  * returns.
  */
-function GoogleConnectCard({ restaurantId, currentPlaceId }: { restaurantId: string; currentPlaceId: string | null }) {
+function GoogleConnectCard({ restaurantId, currentPlaceId, googlePlacesEnabled }: { restaurantId: string; currentPlaceId: string | null; googlePlacesEnabled: boolean }) {
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(Boolean(currentPlaceId));
 
@@ -71,11 +71,11 @@ function GoogleConnectCard({ restaurantId, currentPlaceId }: { restaurantId: str
       ) : (
         <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-3 py-2.5 text-[12.5px] text-mv-ink-soft">
           <MapPin size={15} className="shrink-0" />
-          Aucune fiche connectée pour l'instant.
+          Aucune fiche connectée pour l&apos;instant.
         </div>
       )}
       <div className="mt-3">
-        <GooglePlacesSearch onSelect={handleSelect} />
+        <GooglePlacesSearch onSelect={handleSelect} enabled={googlePlacesEnabled} />
       </div>
       {connecting && <p className="mt-2 text-[12px] text-mv-ink-faint">Connexion…</p>}
     </Card>
@@ -231,12 +231,14 @@ export function ReputationView({
   privateReviews,
   itemReviews,
   googleReviews,
+  googlePlacesEnabled,
 }: {
   restaurantId: string | null;
   restaurant: Restaurant | null;
   privateReviews: PrivateReviewWithCustomer[];
   itemReviews: ItemOrOfferReview[];
   googleReviews: GoogleReviewRow[];
+  googlePlacesEnabled: boolean;
 }) {
   const { role } = useApp();
   const [reviews, setReviews] = useState(privateReviews);
@@ -287,7 +289,7 @@ export function ReputationView({
         }
       />
 
-      <GoogleConnectCard restaurantId={restaurantId} currentPlaceId={restaurant.googlePlaceId} />
+      <GoogleConnectCard restaurantId={restaurantId} currentPlaceId={restaurant.googlePlaceId} googlePlacesEnabled={googlePlacesEnabled} />
 
       {restaurant.googlePlaceId && (
         <div className="mb-4">

@@ -89,7 +89,7 @@ test.describe("Auth, Role Navigation & Core Workflows", () => {
     await expect(page.getByRole("button", { name: user.email })).toBeVisible();
   });
 
-  test("4. only the four essential workspace sections remain reachable", async ({ page }) => {
+  test("4. owner sees the LTV-first navigation and can reach every product area", async ({ page }) => {
     test.setTimeout(90_000);
     const user = await createTestUser("finance-redirect");
     createdUserId = user.id;
@@ -101,19 +101,21 @@ test.describe("Auth, Role Navigation & Core Workflows", () => {
     await loginAs(page, user);
 
     const primaryNav = page.getByRole("navigation", { name: "Navigation principale" });
-    for (const section of ["Workspace", "Fournisseurs", "Inventaire", "Commandes"]) {
+    for (const section of ["Workspace", "Aperçu", "Flow AI", "Menu", "Fidélisation"]) {
       await expect(primaryNav.getByRole("link", { name: section })).toBeVisible();
     }
-    for (const section of ["Menu", "Fidélisation", "Finance", "Collaborateurs", "Aperçu", "Flow AI"]) {
-      await expect(primaryNav.getByRole("link", { name: section })).toHaveCount(0);
-    }
 
-    for (const restrictedPath of [
-      "/fr/overview", "/fr/assistant", "/fr/changelog", "/fr/campaigns", "/fr/settings",
-      "/fr/collaborateurs", "/fr/menu", "/fr/fidelisation", "/fr/finance",
-    ]) {
-      await page.goto(restrictedPath);
-      await page.waitForURL(/\/workspace$/, { timeout: 15000 });
+    // Daily management and settings groups are collapsed; opening them reveals the rest.
+    await page.getByRole("button", { name: "Gestion quotidienne" }).click();
+    for (const section of ["Commandes", "Inventaire", "Fournisseurs", "Finance", "Collaborateurs"]) {
+      await expect(page.getByRole("link", { name: section, exact: true })).toBeVisible();
+    }
+    await page.getByRole("button", { name: "Paramètres et plus" }).click();
+    await expect(page.getByRole("link", { name: "Nouveautés", exact: true })).toBeVisible();
+
+    for (const path of ["/fr/overview", "/fr/assistant", "/fr/changelog", "/fr/settings", "/fr/menu", "/fr/fidelisation", "/fr/finance"]) {
+      await page.goto(path);
+      await expect(page).toHaveURL(new RegExp(`${path}(?:[/?#]|$)`));
     }
   });
 

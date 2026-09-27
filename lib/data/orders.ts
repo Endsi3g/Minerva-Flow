@@ -1,8 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import { recordSale } from "@/lib/data/menu";
-import { getRecipeItemsForMenuItems } from "@/lib/data/recipes";
-import { logMovement } from "@/lib/data/inventory";
 import { logVisit } from "@/lib/data/customers";
 import { computeOrderPricing } from "@/lib/data/order-pricing";
 import { computeIsBusy, computeEstimatedReadyAt } from "@/lib/orders/eta";
@@ -255,7 +253,7 @@ export async function getOrdersForDay(restaurantId: string, dayStart: string, da
 
 const PREP_GATED_STATUSES: OrderStatus[] = ["en_preparation", "prete", "servie"];
 
-export async function updateOrderStatus(restaurantId: string, id: string, status: OrderStatus): Promise<boolean> {
+export async function updateOrderStatus(restaurantId: string, id: string, status: OrderStatus, cancellationReason?: string): Promise<boolean> {
   const supabase = await createClient();
 
   // Read the current status first so marking an order "servie" twice (e.g. a
@@ -279,8 +277,12 @@ export async function updateOrderStatus(restaurantId: string, id: string, status
     ? isOrderPaymentUnresolved(currentRow.payment_status, currentRow.deposit_paid_amount)
     : false;
   if (PREP_GATED_STATUSES.includes(status) && isAwaitingPayment) return false;
+  if (status === "annulee" && !cancellationReason?.trim()) return false;
 
-  const { error } = await supabase.from("orders").update({ status }).eq("restaurant_id", restaurantId).eq("id", id);
+  const { error } = await supabase.from("orders").update({
+    status,
+    ...(status === "annulee" ? { cancellation_reason: cancellationReason!.trim().slice(0, 500) } : {}),
+  }).eq("restaurant_id", restaurantId).eq("id", id);
 
   if (!error) {
     await logActivity({
@@ -345,47 +347,6 @@ async function applyServedOrderEffects(restaurantId: string, orderId: string): P
     }
   }
 
-  await decrementInventoryForOrderItems(restaurantId, orderId, orderItems);
-}
-
-/**
- * Resolves each order line's menu item to its recipe (if any) and logs an
- * "utilisation" movement per consumed inventory item, quantity aggregated
- * across all lines in the order (e.g. two dishes both using Saumon draw
- * down the same inventory item once, not via two racing writes). Reuses
- * logMovement (lib/data/inventory.ts) so this gets the same atomic
- * quantity_on_hand update and activity log entry a manual inventory
- * movement would get.
- */
-export async function decrementInventoryForOrderItems(
-  restaurantId: string,
-  orderId: string,
-  orderItems: { menu_item_id: string | null; item_name: string; quantity: number }[]
-): Promise<void> {
-  const menuItemIds = [...new Set(orderItems.map((i) => i.menu_item_id).filter((id): id is string => Boolean(id)))];
-  if (menuItemIds.length === 0) return;
-
-  const recipesByMenuItem = await getRecipeItemsForMenuItems(restaurantId, menuItemIds);
-  if (recipesByMenuItem.size === 0) return;
-
-  const consumedByInventoryItem = new Map<string, number>();
-  for (const item of orderItems) {
-    const recipe = item.menu_item_id ? recipesByMenuItem.get(item.menu_item_id) : undefined;
-    if (!recipe) continue;
-    for (const ingredient of recipe) {
-      const total = ingredient.quantityPerUnit * item.quantity;
-      consumedByInventoryItem.set(
-        ingredient.inventoryItemId,
-        (consumedByInventoryItem.get(ingredient.inventoryItemId) ?? 0) + total
-      );
-    }
-  }
-
-  const shortOrderId = orderId.slice(0, 8);
-  for (const [inventoryItemId, quantity] of consumedByInventoryItem) {
-    if (quantity <= 0) continue;
-    await logMovement(restaurantId, inventoryItemId, "utilisation", quantity, `Commande #${shortOrderId} servie`);
-  }
 }
 
 /**

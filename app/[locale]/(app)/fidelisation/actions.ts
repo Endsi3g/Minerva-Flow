@@ -241,6 +241,17 @@ export async function updateLoyaltyRateAction(restaurantId: string, rate: number
   return Boolean(restaurant);
 }
 
+export async function updateWelcomeBonusPointsAction(restaurantId: string, points: number): Promise<boolean> {
+  if (!Number.isInteger(points) || points < 0 || points > 100000) return false;
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) return false;
+  const supabase = await createClient();
+  const { error } = await supabase.from("restaurants").update({ welcome_bonus_points: points }).eq("id", restaurantId);
+  if (error) return false;
+  revalidatePath("/fidelisation/parametres");
+  return true;
+}
+
 export async function createReferralProgramAction(
   restaurantId: string,
   input: ReferralProgramInput

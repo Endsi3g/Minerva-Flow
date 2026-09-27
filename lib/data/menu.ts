@@ -16,6 +16,8 @@ export type MenuItemRow = {
   food_cost: number;
   units_sold: number;
   active: boolean;
+  is_orderable?: boolean;
+  is_featured?: boolean;
   description: string | null;
   image_url: string | null;
   image_urls: string[] | null;
@@ -38,6 +40,8 @@ export function mapMenuItem(row: MenuItemRow): MenuItem {
     foodCost: row.food_cost,
     unitsSold: row.units_sold,
     active: row.active,
+    isOrderable: row.is_orderable ?? true,
+    isFeatured: row.is_featured ?? false,
     description: row.description,
     imageUrl: row.image_url,
     imageUrls: row.image_urls ?? [],
@@ -97,6 +101,8 @@ export type MenuItemInput = {
   foodCost: number;
   description?: string | null;
   active?: boolean;
+  isOrderable?: boolean;
+  isFeatured?: boolean;
   imageUrl?: string | null;
   videoUrl?: string | null;
   isDraft?: boolean;
@@ -118,6 +124,8 @@ export async function createMenuItem(restaurantId: string, input: MenuItemInput)
       description: input.description ?? null,
       active: input.isDraft ? false : (input.active ?? true),
       is_draft: input.isDraft ?? false,
+      is_orderable: input.isOrderable ?? true,
+      is_featured: input.isFeatured ?? false,
       allergens: normalizeAllergens(input.allergens),
       allergens_confirmed: input.allergensConfirmed ?? false,
       image_url: input.imageUrl ?? null,
@@ -160,6 +168,8 @@ export async function createMenuItems(restaurantId: string, inputs: MenuItemInpu
     description: input.description ?? null,
     active: input.isDraft ? false : (input.active ?? true),
     is_draft: input.isDraft ?? false,
+    is_orderable: input.isOrderable ?? true,
+    is_featured: input.isFeatured ?? false,
     allergens: normalizeAllergens(input.allergens),
     allergens_confirmed: input.allergensConfirmed ?? false,
     image_url: input.imageUrl ?? null,
@@ -215,6 +225,8 @@ export async function updateMenuItem(
   if (patch.category !== undefined) dbPatch.category = patch.category;
   if (patch.price !== undefined) dbPatch.price = patch.price;
   if (patch.priceOptions !== undefined) dbPatch.price_options = normalizeMenuPriceOptions(patch.priceOptions);
+  if (patch.isOrderable !== undefined) dbPatch.is_orderable = patch.isOrderable;
+  if (patch.isFeatured !== undefined) dbPatch.is_featured = patch.isFeatured;
   if (patch.foodCost !== undefined) dbPatch.food_cost = patch.foodCost;
   if (patch.description !== undefined) dbPatch.description = patch.description;
   if (patch.active !== undefined) dbPatch.active = patch.active;

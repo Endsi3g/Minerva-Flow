@@ -1,6 +1,6 @@
 # Minerva Flow — guide produit pour restaurateurs et clients
 
-> Guide de référence fonctionnel. Mis à jour le 24 septembre 2026. Les options peuvent varier selon le rôle, le restaurant, le forfait et les intégrations effectivement connectées.
+> Guide de référence fonctionnel. Mis à jour le 27 septembre 2026. Les options peuvent varier selon le rôle, le restaurant, le forfait et les intégrations effectivement connectées.
 
 ## En bref
 
@@ -14,7 +14,7 @@ Ce n’est pas un système de caisse universel qui remplace automatiquement chaq
 
 Le propriétaire crée ou rejoint un espace de travail, ajoute un ou plusieurs restaurants, puis invite ses collaborateurs avec des rôles adaptés. Lorsqu’un espace regroupe plusieurs établissements, le sélecteur permet de passer de l’un à l’autre; les restaurants sont regroupés dans des sections repliables.
 
-Les rôles et autorisations déterminent les pages et les actions disponibles. Dans l’espace propriétaire web, la navigation principale est limitée à Workspace, Fournisseurs, Inventaire et Commandes; Menu, Fidélisation et les autres pages produit redirigent vers Workspace. Les accès opérationnels restent soumis au rôle de chaque membre.
+Les rôles et autorisations déterminent les pages et les actions disponibles. Dans l’espace propriétaire web, la navigation est centrée sur la valeur client pour les propriétaires et gérants (Workspace, Aperçu, Flow AI, Menu, Fidélisation). Finance, Commandes, Collaborateurs, Inventaire et Fournisseurs sont dans « Gestion quotidienne »; Opérations, Performance et analyses, puis Paramètres et plus (Paramètres, Intégrations, Facturation, Guide, Support, Nouveautés) sont des sections repliables. Le personnel et les consultants voient la liste opérationnelle complète à plat. Les accès opérationnels restent soumis au rôle de chaque membre.
 
 ### 2. Suivre le service
 
@@ -67,13 +67,13 @@ Le client partage son lien ou son QR de parrainage. Le canal est conservé au fi
 | Domaine | Fonctionnement général | Dépendance ou limite |
 |---|---|---|
 | Espace propriétaire web | Gestion par restaurant et par rôle; menu, commandes, fidélisation et outils opérationnels | Les données et permissions dépendent de l’établissement et du rôle |
-| iOS client et propriétaire | Expériences distinctes après authentification; navigation iPad adaptée | Un nouveau build doit être traité par Apple avant d’être installé via TestFlight |
+| iOS client et propriétaire | Expériences distinctes après authentification; navigation iPad adaptée | Le build 1.0.0 (15) est approuvé pour TestFlight externe; une installation sur iPhone physique reste à confirmer |
 | Identification client | Recherche par téléphone avec confirmation par code; code à six chiffres accepté directement | Le client doit fournir le code temporaire valide pour révéler son solde après recherche |
 | Parrainage | Traçabilité du canal et des conversions créditées | Un clic seul n’est pas une conversion; seules les règles d’attribution configurées s’appliquent |
 | POS et paiements | Des intégrations existent dans le produit | Connexion, permissions, région, forfait et validation en environnement réel requis |
 | Commande/livraison | Précommande planifiée, choix de paiement, cueillette/livraison et tarification serveur par distance + minute estimée configurables | Le restaurant doit activer/configurer le mode; l’estimation actuelle n’est pas une route ou une circulation en temps réel |
 | Marque blanche | Identité de workspace et bases d’interface configurables | Une app iOS/Android autonome par client, entièrement automatisée et prête à publier, reste un objectif de produit, pas une capacité générale à promettre |
 
-## Statut iOS au 24 septembre 2026
+## Statut iOS au 27 septembre 2026
 
-Le build iOS `1.0 (11)` a été traité par Apple et est actif dans les groupes TestFlight interne et externe (8 testeurs externes); le lien [TestFlight](https://testflight.apple.com/join/xGr45uuF) a été vérifié. Le dSYM Sentry de l’archive correspond au framework. **Le build 11 ne contient pas les changements SwiftUI de la candidate web `2.48.0`**; un build iOS distinct doit être compilé, vérifié et traité par Apple avant que les testeurs puissent les utiliser. La compilation Simulator de cette source a réussi, mais XCTest reste bloqué dans le runner et aucun résultat récent n’est confirmé.
+Le build iOS `1.0.0 (15)` est traité par Apple (`VALID`), affecté aux groupes TestFlight interne et externe et approuvé à la révision bêta. Le lien [TestFlight](https://testflight.apple.com/join/xGr45uuF) est public. XCTest ciblé passe (19/19); une installation physique par un testeur et la revue visuelle complète sur iPhone restent à faire. Le test E2E de commande web confirme l’envoi, le statut initial et le suivi public; il ne remplace pas le test d’installation native.

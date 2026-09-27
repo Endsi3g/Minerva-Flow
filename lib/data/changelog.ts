@@ -49,6 +49,19 @@ function normalizeTitle(title: string): string {
 
 const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    id: "ch-2026-09-27-flow-direct-menu-orders-stock",
+    title: "Flow Direct — menu partageable, commandes suivies et stock",
+    description: `- **Un menu prêt à partager** : mettez en avant vos plats, affichez aussi les créations non commandables, puis partagez le catalogue par lien ou QR code.
+- **Votre identité, vos coordonnées** : ajoutez logo, couleurs et liens de contact pour les réseaux et moyens de communication de votre restaurant.
+- **Commandes plus claires** : les clients choisissent le paiement sur place si le paiement en ligne n’est pas configuré; ils peuvent ensuite suivre le statut et reçoivent des nouvelles lors des changements.
+- **Stock lié aux recettes** : les quantités configurées sont déduites quand une commande est confirmée ou payée. Le seuil propriétaire démarre à 30 % de la cible de réapprovisionnement.
+- **Fidélisation et acquisition** : une page LTV & CAC regroupe revenu, marge estimée et dépenses d’acquisition; les récompenses et bonus restent sous le contrôle du propriétaire.
+- **Captures du parcours** : [voir le menu sur téléphone](/assets/changelog/flow-direct-menu-mobile.png) et [le choix de commande](/assets/changelog/flow-direct-order-mobile.png).`,
+    category: "fonctionnalite",
+    publishedAt: "2026-09-27T04:45:00.000Z",
+    imageUrl: "/assets/changelog/flow-direct-menu-desktop.png",
+  },
+  {
     id: "ch-2026-09-26-loyalty-onboarding-qr",
     title: "Démarrage fidélité et QR d’inscription",
     description: `- **Configuration guidée** : définissez le nombre de points gagnés par dollar pendant la création de votre espace.
