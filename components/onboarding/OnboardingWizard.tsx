@@ -44,12 +44,17 @@ type ServiceModel = "restaurant" | "cafe";
 
 /**
  * Four steps — step 1 is still the fast, required core (name,
- * établissement, rôle); tools and team invites can be skipped, while the
- * loyalty step creates the first usable customer enrollment link. This is a departure from the prior
- * single-step design (see git history) — the onboarding UX simulation
- * surfaced real friction (wanting to connect Instagram or invite a
- * co-founder immediately, not later) that a strictly single-step flow
- * can't address without making those actions invisible.
+ * établissement, rôle); tools, loyalty setup and team invites are all
+ * genuinely optional, each reachable via "Continuer" once configured or
+ * "Plus tard" to skip. The loyalty step (step 3) must never hard-block
+ * progress on prepareLoyaltyOnboardingAction succeeding — that call can
+ * fail for ordinary reasons (a stale membership snapshot right after the
+ * restaurant was created in step 1, a transient write error) and there is
+ * no going around a step with no skip once its one action starts failing.
+ * This is a departure from the prior single-step design (see git history) —
+ * the onboarding UX simulation surfaced real friction (wanting to connect
+ * Instagram or invite a co-founder immediately, not later) that a strictly
+ * single-step flow can't address without making those actions invisible.
  */
 export function OnboardingWizard({
   userId,
@@ -238,9 +243,7 @@ export function OnboardingWizard({
       defaultValue={1}
       totalSteps={4}
       onComplete={handleFinish}
-      canGoNext={(step) => step === 1
-        ? fullName.trim().length > 0 && restaurantNameInput.trim().length > 0
-        : step !== 3 || Boolean(loyaltyJoinUrl)}
+      canGoNext={(step) => step !== 1 || (fullName.trim().length > 0 && restaurantNameInput.trim().length > 0)}
       className="border-none bg-transparent p-0 shadow-none"
     >
       <OnboardingProgressHeader />
@@ -593,7 +596,7 @@ function WizardFooter({
   inviting: boolean;
   onStepOneContinue: () => Promise<string | null>;
 }) {
-  const { currentStep, totalSteps, canGoBack, canGoNext, handleBack, setStep, handleComplete } = useOnboarding();
+  const { currentStep, totalSteps, canGoBack, handleBack, setStep, handleComplete } = useOnboarding();
   const isLastStep = currentStep === totalSteps;
 
   return (
@@ -617,13 +620,13 @@ function WizardFooter({
             {submitting ? "Un instant…" : inviting ? "Envoi…" : "Terminer"}
           </Button>
         ) : (
-          <Button type="button" className="flex-1" disabled={currentStep === 3 && !canGoNext} onClick={() => setStep((s) => s + 1)}>
+          <Button type="button" className="flex-1" disabled={submitting} onClick={() => setStep((s) => s + 1)}>
             Continuer
           </Button>
         )}
       </div>
 
-      {currentStep > 1 && !isLastStep && currentStep !== 3 && (
+      {currentStep > 1 && !isLastStep && (
         <button
           type="button"
           onClick={() => setStep((s) => s + 1)}
