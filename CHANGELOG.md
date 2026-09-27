@@ -2,6 +2,23 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [À venir] — Correctifs navigation/traductions/onboarding et fonctionnalité Campagnes
+
+### Correctifs — navigation, traductions, onboarding et métriques
+- Navigation restaurée pour propriétaire/gérant selon la convention établie (Workspace, Aperçu, Flow AI, Menu, Fidélisation en premier niveau; Gestion quotidienne, Opérations, Performance et analyses, Paramètres et plus en sections repliables). Le verrou qui limitait la navigation authentifiée à quatre routes est retiré du proxy, de la recherche et de la liste de navigation.
+- Le studio de menu (Identité visuelle, QR et partage, Coordonnées) est maintenant traduit en français et en anglais; il ne l’était pas.
+- Les écrans natifs iOS de résolution de session, d’erreur et le code de jumelage (onglet Scanner) suivent maintenant la langue choisie dans l’application plutôt que d’afficher du français quel que soit ce choix.
+- La carte « LTV combinée » (revenu moyen additionné à une fraction de ce même revenu) est retirée de la page Valeur client & acquisition; elle ne correspondait à aucune quantité réelle.
+- L’étape « Fidélisation » de l’inscription (étape 3) peut maintenant être passée comme les autres étapes optionnelles; elle pouvait auparavant bloquer définitivement la fin de l’inscription si la préparation du lien de fidélité échouait.
+- La recherche Google Maps se masque de nouveau correctement sur Réputation et Établissement lorsque l’intégration n’est pas configurée, au lieu de s’afficher sans jamais retourner de résultat.
+
+### Campagnes — visibilité, publicité payante et priorisation
+- « Campagnes » apparaît maintenant comme onglet dans Fidélisation et dans la recherche globale; la section n’était accessible par aucun menu auparavant.
+- Nouvelle demande en trois étapes sur `/campagnes` : un propriétaire ou gérant peut demander à l’équipe Minerva Flow de mettre en place et de gérer ses campagnes publicitaires payantes (Meta, Google), avec un message explicite — les automatisations et le studio visuel amplifient le trafic déjà attiré par le restaurant, ils n’en créent pas à eux seuls. Les frais de gestion sont déterminés par restaurant, pas un forfait fixe.
+- Les demandes sont qualifiées (volume hebdomadaire, budget, expérience publicitaire antérieure, urgence de démarrage) et triées par priorité dans une nouvelle file `/admin/campagnes-publicitaires`, avec notification par courriel à l’équipe à chaque nouvelle demande.
+- Le lien « Offre Agence » de l’inscription, qui ne menait nulle part, pointe maintenant vers cette nouvelle demande.
+- **État** : ces changements vivent dans la demande de fusion vers `release/2.48.0`; la migration `paid_ads_requests` n’est appliquée sur aucun environnement. Le texte de la fonctionnalité Campagnes est en français seulement.
+
 ## [2.48.0] — 2026-09-26
 
 ### Flow Direct — menu partageable et commande plus conviviale
