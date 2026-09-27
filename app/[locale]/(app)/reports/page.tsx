@@ -103,9 +103,6 @@ export default async function ReportsIndexPage() {
         title={t("page.title")}
         action={
           <div className="flex items-center gap-2">
-            <Button href="/finance" size="sm" variant="secondary">
-              {t("page.addExpense")}
-            </Button>
             <Button href="/reports/ai-review" size="sm" variant="secondary">
               <Sparkles size={14} /> {t("page.aiReview")}
             </Button>
