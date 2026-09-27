@@ -131,7 +131,6 @@ const workspaceItem: NavItem = { key: "workspace", href: "/workspace", icon: Bui
 // Owner/manager: one click away in the collapsible "Gestion quotidienne" group.
 // Staff/consultant: merged flat under the LTV core (see AppSidebar()).
 const dailyManagementItems: NavItem[] = [
-  { key: "finance", href: "/finance", icon: CreditCard, roles: ["owner", "manager"] },
   { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
   { key: "collaborateurs", href: "/collaborateurs", icon: Users, roles: allRoles },
   { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
@@ -160,7 +159,6 @@ function groupRestaurantsByWorkspace(
 const navTranslationKeys: Record<string, string> = {
   overview: "overview",
   assistant: "assistant",
-  finance: "finance",
   commandes: "commandes",
   collaborateurs: "collaborateurs",
   inventaire: "inventaire",
@@ -199,7 +197,6 @@ export const navDescriptions: Record<string, string> = {
   "/fidelisation": "Programmes de fidélité, parrainages et rétention",
   "/reputation": "Gestion des avis clients et e-réputation",
   "/menu": "Gestion de la carte, marges et rentabilité des plats",
-  "/finance": "Gestion financière, trésorerie et rentabilité",
   "/commandes": "Suivi des commandes et encaissements en direct",
   "/collaborateurs": "Planning de l'équipe et fiches collaborateurs",
   "/inventaire": "Gestion des stocks, ingrédients et fiches techniques",

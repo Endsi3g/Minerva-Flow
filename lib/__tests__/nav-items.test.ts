@@ -6,7 +6,7 @@ describe("navigation items by role", () => {
     const keys = navItemsForRole("owner").map(({ key }) => key);
     for (const key of [
       "workspace", "overview", "assistant", "menu", "fidelisation",
-      "finance", "commandes", "collaborateurs", "inventaire", "fournisseurs",
+      "commandes", "collaborateurs", "inventaire", "fournisseurs",
       "settings", "changelog",
     ]) {
       expect(keys).toContain(key);
@@ -16,12 +16,18 @@ describe("navigation items by role", () => {
   it("keeps manager-only areas away from staff and consultants", () => {
     for (const role of ["staff", "consultant"] as const) {
       const keys = navItemsForRole(role).map(({ key }) => key);
-      for (const key of ["finance", "inventaire", "fournisseurs", "settings", "billing"]) {
+      for (const key of ["inventaire", "fournisseurs", "settings", "billing"]) {
         expect(keys).not.toContain(key);
       }
       for (const key of ["overview", "assistant", "menu", "fidelisation", "commandes", "collaborateurs", "changelog"]) {
         expect(keys).toContain(key);
       }
+    }
+  });
+
+  it("retires Finance — reachable by no role", () => {
+    for (const role of ["owner", "manager", "staff", "consultant"] as const) {
+      expect(navItemsForRole(role).some(({ key }) => key === "finance")).toBe(false);
     }
   });
 
