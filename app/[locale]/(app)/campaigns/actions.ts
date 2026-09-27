@@ -13,10 +13,61 @@ import {
 } from "@/lib/data/campaigns";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { publishToInstagram, getInstagramConnectionStatus } from "@/lib/meta/instagram";
-import { createPaidAdsRequest, getOpenPaidAdsRequest, type PaidAdsBudgetRange, type PaidAdsRequest } from "@/lib/data/paid-ads-requests";
+import {
+  createPaidAdsRequest,
+  getOpenPaidAdsRequest,
+  paidAdsPriorityScore,
+  type PaidAdsBudgetRange,
+  type PaidAdsVolumeEstimate,
+  type PaidAdsTimeframe,
+  type PaidAdsRequest,
+} from "@/lib/data/paid-ads-requests";
+import { getRestaurant } from "@/lib/data/restaurants";
+import { sendTransactionalEmail } from "@/lib/email/resend";
 import type { Campaign, CampaignAsset } from "@/lib/types";
 
 const BUDGET_RANGES: PaidAdsBudgetRange[] = ["under_500", "500_1500", "1500_5000", "over_5000", "not_sure"];
+const VOLUME_ESTIMATES: PaidAdsVolumeEstimate[] = ["under_50", "50_150", "150_400", "over_400", "not_sure"];
+const TIMEFRAMES: PaidAdsTimeframe[] = ["immediately", "this_month", "exploring"];
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * Internal-only — tells the Minerva Flow team a lead is waiting in
+ * /admin/campagnes-publicitaires. Best-effort: a delivery failure here
+ * must never fail the owner's own submission, so every error is caught
+ * and swallowed (logged, not thrown).
+ */
+async function notifyTeamOfPaidAdsRequest(request: PaidAdsRequest, restaurantName: string): Promise<void> {
+  try {
+    const score = paidAdsPriorityScore(request);
+    const recipient = process.env.ALERT_NOTIFICATION_EMAIL ?? "kbelceus776@gmail.com";
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
+    const rows = [
+      ["Restaurant", restaurantName],
+      ["Contact", `${request.contactName} · ${request.contactEmail}${request.contactPhone ? ` · ${request.contactPhone}` : ""}`],
+      ["Budget mensuel", request.monthlyBudgetRange],
+      ["Volume hebdomadaire", request.weeklyVolumeEstimate],
+      ["A déjà fait de la pub", request.hasRunPaidAdsBefore ? "Oui" : "Non"],
+      ["Veut démarrer", request.desiredStartTimeframe],
+      ["Score de priorité", String(score)],
+    ]
+      .map(([label, value]) => `<p style="margin:0 0 8px;font-size:14px;color:#1a1e16"><strong>${escapeHtml(label)} :</strong> ${escapeHtml(value)}</p>`)
+      .join("");
+    const bodyHtml = `${rows}<p style="margin:16px 0 0;font-size:14px;color:#1a1e16"><strong>Objectifs :</strong></p><p style="margin:4px 0 0;font-size:14px;color:#565f52;white-space:pre-wrap">${escapeHtml(request.goals)}</p>`;
+    await sendTransactionalEmail({
+      to: recipient,
+      subject: `Nouvelle demande de campagnes publicitaires — ${restaurantName}`,
+      bodyHtml,
+      ctaLabel: "Voir la file d’attente",
+      ctaUrl: `${origin}/admin/campagnes-publicitaires`,
+    });
+  } catch (error) {
+    console.error("[paid-ads] notifyTeamOfPaidAdsRequest failed:", error);
+  }
+}
 
 /**
  * Creates a campaign for the given restaurant. Authorization is enforced
@@ -304,7 +355,16 @@ export async function dispatchBroadcastCampaignAction(
  */
 export async function submitPaidAdsRequestAction(
   restaurantId: string,
-  input: { contactName: string; contactEmail: string; contactPhone: string; monthlyBudgetRange: PaidAdsBudgetRange; goals: string }
+  input: {
+    contactName: string;
+    contactEmail: string;
+    contactPhone: string;
+    monthlyBudgetRange: PaidAdsBudgetRange;
+    weeklyVolumeEstimate: PaidAdsVolumeEstimate;
+    hasRunPaidAdsBefore: boolean;
+    desiredStartTimeframe: PaidAdsTimeframe;
+    goals: string;
+  }
 ): Promise<{ ok: boolean; request?: PaidAdsRequest; error?: "forbidden" | "already_open" | "invalid" | "failed" }> {
   const membership = await getCurrentMembership();
   if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
@@ -313,7 +373,14 @@ export async function submitPaidAdsRequestAction(
   const contactName = input.contactName.trim().slice(0, 200);
   const contactEmail = input.contactEmail.trim().toLowerCase().slice(0, 200);
   const goals = input.goals.trim().slice(0, 2000);
-  if (!contactName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail) || !goals || !BUDGET_RANGES.includes(input.monthlyBudgetRange)) {
+  if (
+    !contactName
+    || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)
+    || !goals
+    || !BUDGET_RANGES.includes(input.monthlyBudgetRange)
+    || !VOLUME_ESTIMATES.includes(input.weeklyVolumeEstimate)
+    || !TIMEFRAMES.includes(input.desiredStartTimeframe)
+  ) {
     return { ok: false, error: "invalid" };
   }
 
@@ -331,10 +398,17 @@ export async function submitPaidAdsRequestAction(
     contactEmail,
     contactPhone: input.contactPhone.trim().slice(0, 40) || null,
     monthlyBudgetRange: input.monthlyBudgetRange,
+    weeklyVolumeEstimate: input.weeklyVolumeEstimate,
+    hasRunPaidAdsBefore: input.hasRunPaidAdsBefore,
+    desiredStartTimeframe: input.desiredStartTimeframe,
     goals,
   });
   if (!request) return { ok: false, error: "failed" };
   revalidatePath("/campaigns");
+
+  const restaurant = await getRestaurant(restaurantId);
+  await notifyTeamOfPaidAdsRequest(request, restaurant?.name ?? "Restaurant inconnu");
+
   return { ok: true, request };
 }
 

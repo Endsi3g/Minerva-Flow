@@ -14,6 +14,13 @@ create table if not exists public.paid_ads_requests (
   contact_email text not null,
   contact_phone text,
   monthly_budget_range text not null check (monthly_budget_range in ('under_500', '500_1500', '1500_5000', 'over_5000', 'not_sure')),
+  -- Qualifying signals, all optional-in-spirit (each has a "not_sure"/false
+  -- default so a rushed submission is never blocked) used only to compute a
+  -- read-time priority order for the admin queue — never to gate whether a
+  -- restaurant can submit at all.
+  weekly_volume_estimate text not null default 'not_sure' check (weekly_volume_estimate in ('under_50', '50_150', '150_400', 'over_400', 'not_sure')),
+  has_run_paid_ads_before boolean not null default false,
+  desired_start_timeframe text not null default 'exploring' check (desired_start_timeframe in ('immediately', 'this_month', 'exploring')),
   goals text not null check (char_length(goals) between 1 and 2000),
   status text not null default 'nouveau' check (status in ('nouveau', 'contacte', 'ferme')),
   admin_note text,
