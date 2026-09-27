@@ -30,6 +30,7 @@ export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "franchise", href: "/franchise", title: "Vue franchise", subtitle: "Résultats combinés sur vos établissements", roles: managerRoles },
   { key: "impact", href: "/impact", title: "Résultats fidélisation", subtitle: "Ce que la fidélisation vous rapporte, et qui relancer", roles: managerRoles },
   { key: "fidelisation", href: "/fidelisation", title: "Fidélisation", subtitle: "Fiches clients, visites et points de fidélité", roles: allRoles },
+  { key: "campaigns", href: "/campaigns", title: "Campagnes", subtitle: "Automatisations SMS/courriel, studio visuel et publicité payante", roles: managerRoles },
   { key: "menu", href: "/menu", title: "Menu", subtitle: "Rentabilité et popularité de chaque plat", roles: allRoles },
   { key: "finance", href: "/finance", title: "Finance", subtitle: "Transactions, revenus et seuil de rentabilité", roles: managerRoles },
   { key: "commandes", href: "/commandes", title: "Commandes", subtitle: "File de commandes en ligne et cuisine", roles: allRoles },
