@@ -370,6 +370,16 @@ export async function submitPaidAdsRequestAction(
   if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
     return { ok: false, error: "forbidden" };
   }
+  if (!input || typeof input !== "object") return { ok: false, error: "invalid" };
+  if (
+    typeof input.contactName !== "string"
+    || typeof input.contactEmail !== "string"
+    || typeof input.contactPhone !== "string"
+    || typeof input.goals !== "string"
+    || typeof input.hasRunPaidAdsBefore !== "boolean"
+  ) {
+    return { ok: false, error: "invalid" };
+  }
   const contactName = input.contactName.trim().slice(0, 200);
   const contactEmail = input.contactEmail.trim().toLowerCase().slice(0, 200);
   const goals = input.goals.trim().slice(0, 2000);
@@ -403,7 +413,14 @@ export async function submitPaidAdsRequestAction(
     desiredStartTimeframe: input.desiredStartTimeframe,
     goals,
   });
-  if (!request) return { ok: false, error: "failed" };
+  if (!request) {
+    // The database's partial unique index closes the race between two
+    // simultaneous requests. Return the already-open request as a normal
+    // state instead of surfacing a generic failure to the owner.
+    const concurrentRequest = await getOpenPaidAdsRequest(restaurantId);
+    if (concurrentRequest) return { ok: false, error: "already_open", request: concurrentRequest };
+    return { ok: false, error: "failed" };
+  }
   revalidatePath("/campaigns");
 
   const restaurant = await getRestaurant(restaurantId);
@@ -411,4 +428,3 @@ export async function submitPaidAdsRequestAction(
 
   return { ok: true, request };
 }
-
