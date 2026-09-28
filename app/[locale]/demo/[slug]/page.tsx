@@ -15,6 +15,7 @@ import {
   Lightbulb,
   Home,
   MessageSquare,
+  Wallet,
   ClipboardList,
   Users,
   PackageSearch,
@@ -25,6 +26,7 @@ import { getTranslations } from "next-intl/server";
 const ECOSYSTEM_ITEMS: { key: string; icon: LucideIcon }[] = [
   { key: "overview", icon: Home },
   { key: "assistant", icon: MessageSquare },
+  { key: "finance", icon: Wallet },
   { key: "commandes", icon: ClipboardList },
   { key: "collaborateurs", icon: Users },
   { key: "inventaire", icon: PackageSearch },

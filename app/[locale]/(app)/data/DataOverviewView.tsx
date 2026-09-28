@@ -36,10 +36,10 @@ function StatTile({
 
 /**
  * A single-glance summary across every domain of the app (revenue,
- * expenses, team, operations) — distinct on purpose from /reports
- * (financial detail; /finance is retired, see its page.tsx) and /overview
- * (day-to-day narrative): this is the "everything, at a glance" page,
- * each tile linking to its own page for detail.
+ * expenses, team, operations) — distinct on purpose from /finance
+ * (transaction management) and /overview (day-to-day narrative): this is
+ * the "everything, at a glance" page, each tile linking to its own page
+ * for detail.
  */
 export function DataOverviewView({
   revenue,
@@ -67,14 +67,14 @@ export function DataOverviewView({
       />
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <StatTile
-          href="/reports"
+          href="/finance"
           icon={Wallet}
           label="Revenu (mois)"
           value={formatCurrency(revenue.revenue)}
           badge={{ label: `${revenue.delta >= 0 ? "↑" : "↓"} ${Math.abs(revenue.delta).toFixed(1)}%`, tone: revenue.delta >= 0 ? "green" : "red" }}
         />
         <StatTile
-          href="/reports"
+          href="/finance"
           icon={TrendingDown}
           label="Dépenses (30j)"
           value={formatCurrency(expensesLast30d)}

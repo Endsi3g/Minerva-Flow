@@ -233,14 +233,17 @@ export function ProgramDetailView({
                 <p className="text-[11.5px] text-mv-ink-faint">Transactions financières et écritures taguées</p>
               </div>
             </div>
-            <Button href="/reports" variant="secondary" size="sm" className="text-[12px] gap-1">
-              Voir les rapports <ArrowUpRight size={12} />
+            <Button href="/finance" variant="secondary" size="sm" className="text-[12px] gap-1">
+              Ouvrir la Finance <ArrowUpRight size={12} />
             </Button>
           </div>
 
           {transactions.length === 0 ? (
             <div className="rounded-xl border border-dashed border-mv-border p-4 text-center text-mv-ink-soft text-[12.5px]">
               Aucune transaction financière n&apos;est actuellement rattachée à ce programme.
+              <p className="mt-1 text-[11px] text-mv-ink-faint">
+                Dans la section Finance, associez des écritures à « {program.name} » pour suivre les flux précis.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">

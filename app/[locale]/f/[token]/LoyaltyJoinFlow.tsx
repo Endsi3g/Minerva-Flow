@@ -25,7 +25,7 @@ export function LoyaltyJoinFlow({
   const [serviceConsent, setServiceConsent] = useState(true);
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [formStartedTracked, setFormStartedTracked] = useState(false);
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "email-pending" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
   function handleFirstStroke() {
@@ -48,8 +48,12 @@ export function LoyaltyJoinFlow({
       },
       touchpointCode
     );
-    if (result.ok) {
+    if (result.ok && result.emailSent) {
       setStatus("sent");
+      setError(null);
+    } else if (result.ok) {
+      setStatus("email-pending");
+      setError(null);
     } else {
       setStatus("error");
       setError(result.error ?? "Une erreur est survenue.");
@@ -67,7 +71,7 @@ export function LoyaltyJoinFlow({
         </div>
         <Card>
           {status === "sent" ? (
-            <div className="text-center">
+            <div role="status" className="text-center">
               <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
                 <Mail size={18} />
               </div>
@@ -103,6 +107,12 @@ export function LoyaltyJoinFlow({
               )}
 
               <form onSubmit={handleSubmit} className="mt-5 space-y-3 border-t border-mv-border-soft pt-4">
+                {status === "email-pending" && (
+                  <p role="status" className="rounded-xl bg-mv-amber/10 px-3.5 py-3 text-[12.5px] text-mv-ink-soft">
+                    Votre inscription est enregistrée. Le courriel de connexion n&apos;a pas pu être envoyé pour le moment.
+                    Réessayez dans quelques minutes pour recevoir votre lien à {email}.
+                  </p>
+                )}
                 <Field label="Votre nom">
                   <Input
                     value={name}
@@ -111,6 +121,7 @@ export function LoyaltyJoinFlow({
                       handleFirstStroke();
                     }}
                     placeholder="Alex Tremblay"
+                    readOnly={status === "email-pending"}
                     required
                     autoFocus
                   />
@@ -124,17 +135,19 @@ export function LoyaltyJoinFlow({
                       handleFirstStroke();
                     }}
                     placeholder="vous@exemple.com"
+                    readOnly={status === "email-pending"}
                     required
                   />
                 </Field>
                 <Field label="Date de naissance" hint="Optionnel">
-                  <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
+                  <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} disabled={status === "email-pending"} />
                 </Field>
                 <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
                   <Checkbox
                     checked={marketingConsent}
                     onCheckedChange={(checked) => setMarketingConsent(Boolean(checked))}
                     className="mt-0.5"
+                    disabled={status === "email-pending"}
                   />
                   <span>
                     J&apos;accepte de recevoir des offres et rappels par courriel ou SMS de {landing.restaurantName}.
@@ -142,7 +155,11 @@ export function LoyaltyJoinFlow({
                 </label>
                 {status === "error" && <p className="text-[12.5px] text-mv-red">{error}</p>}
                 <Button type="submit" disabled={status === "sending"} className="w-full">
-                  {status === "sending" ? "Envoi…" : "Rejoindre le programme"}
+                  {status === "sending"
+                    ? "Envoi…"
+                    : status === "email-pending"
+                      ? "Renvoyer mon lien de connexion"
+                      : "Rejoindre le programme"}
                 </Button>
               </form>
             </>

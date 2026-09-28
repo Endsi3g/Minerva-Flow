@@ -61,7 +61,7 @@ test.describe("Loyalty self-enrollment", () => {
     await page.locator('input[placeholder="Alex Tremblay"]').fill("Client E2E");
     await page.locator('input[type="email"]').fill(email);
     await page.getByRole("button", { name: /rejoindre le programme/i }).click();
-    await expect(page.getByText(/vérifiez vos courriels/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("status").getByText(/vérifiez vos courriels|inscription est enregistrée/i)).toBeVisible({ timeout: 10000 });
 
     await expect(async () => {
       const { data } = await supabaseAdmin.from("customers").select("id, restaurant_id").ilike("email", email).maybeSingle();

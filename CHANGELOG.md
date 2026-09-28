@@ -31,6 +31,12 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Le lien « Offre Agence » de l’inscription, qui ne menait nulle part, pointe maintenant vers cette nouvelle demande.
 - **État** : les changements sont préparés sur la branche de release; les migrations `0162` à `0164` sont déjà appliquées en staging et en production. Le texte de la fonctionnalité Campagnes est en français seulement.
 
+### Navigation propriétaire — Finance restaurée
+- Finance et ses catégories restent accessibles aux propriétaires et gestionnaires dans « Gestion quotidienne », conformément à la navigation du produit. Les raccourcis de recherche et les liens contextuels sont restaurés.
+
+### Inscription fidélité publique
+- Si Supabase limite l’envoi du lien de connexion après l’inscription, le client voit que son adhésion est enregistrée et peut redemander le lien plus tard. Un nouvel essai ne compte pas une deuxième fois le point de contact QR/NFC.
+
 ## [2.48.0] — 2026-09-26
 
 ### Flow Direct — menu partageable et commande plus conviviale
