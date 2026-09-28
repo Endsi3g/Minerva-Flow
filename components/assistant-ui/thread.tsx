@@ -90,14 +90,10 @@ const PROMPT_CHIPS = [
 
 export function Thread({
   userName = "Directeur d'exploitation",
-  isCanvasOpen,
-  onToggleCanvas,
   selectedModel = "Gemini 3.7",
   onSelectModel,
 }: {
   userName?: string;
-  isCanvasOpen?: boolean;
-  onToggleCanvas?: () => void;
   selectedModel?: string;
   onSelectModel?: (model: string) => void;
 }) {
@@ -129,8 +125,6 @@ export function Thread({
               {/* Claude-style composer centered */}
               <div className="w-full max-w-[680px] mb-6">
                 <MultifunctionComposer
-                  isCanvasOpen={isCanvasOpen}
-                  onToggleCanvas={onToggleCanvas}
                   selectedModel={selectedModel}
                   onSelectModel={onSelectModel}
                 />
@@ -188,8 +182,6 @@ export function Thread({
         <div className="p-3 sm:p-5 bg-gradient-to-t from-white via-white to-transparent sticky bottom-0 z-10">
           <div className="max-w-3xl mx-auto">
             <MultifunctionComposer
-              isCanvasOpen={isCanvasOpen}
-              onToggleCanvas={onToggleCanvas}
               selectedModel={selectedModel}
               onSelectModel={onSelectModel}
             />
@@ -375,13 +367,9 @@ function BranchPicker() {
 }
 
 function MultifunctionComposer({
-  isCanvasOpen,
-  onToggleCanvas,
   selectedModel = "Gemini 3.7",
   onSelectModel,
 }: {
-  isCanvasOpen?: boolean;
-  onToggleCanvas?: () => void;
   selectedModel?: string;
   onSelectModel?: (model: string) => void;
 }) {
@@ -498,21 +486,6 @@ function MultifunctionComposer({
                 <Plus size={15} />
               </button>
             </ComposerPrimitive.AddAttachment>
-
-            <button
-              type="button"
-              onClick={onToggleCanvas}
-              className={cn(
-                "h-8 px-3 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer",
-                isCanvasOpen
-                  ? "bg-[#059669]/10 text-[#059669] border-[#059669]/40 font-bold"
-                  : "border-[#e0e0dc] bg-white text-[#7a7a76] hover:bg-[#f4f4f3] hover:text-[#26251e]"
-              )}
-              title="Ouvrir le volet Canvas TipTap"
-            >
-              <FileText size={13.5} />
-              <span>Canvas</span>
-            </button>
           </div>
 
           <div className="flex items-center gap-2">
