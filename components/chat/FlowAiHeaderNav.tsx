@@ -5,13 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Brain,
-  Sparkles,
   Zap,
   BarChart3,
   ArrowLeft,
   Store,
   PanelLeft,
-  PanelRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -20,9 +18,9 @@ import { Button } from "@/components/ui/Button";
 const NAV_TABS = [
   {
     href: "/assistant",
-    label: "Assistant & Canvas",
+    label: "Assistant",
     icon: Brain,
-    description: "Chat conversationnel & Éditeur TipTap latéral",
+    description: "Chat conversationnel Flow AI",
   },
   {
     href: "/assistant/agents",
@@ -49,13 +47,11 @@ export function FlowAiHeaderNav({
   activeSpecialistName,
   activeSpecialistAvatar,
   onToggleSidebar,
-  onToggleCanvas,
 }: {
   restaurantName?: string;
   activeSpecialistName?: string;
   activeSpecialistAvatar?: string;
   onToggleSidebar?: () => void;
-  onToggleCanvas?: () => void;
 }) {
   const pathname = usePathname();
 
@@ -143,31 +139,13 @@ export function FlowAiHeaderNav({
         })}
       </nav>
 
-      {/* ── Droite : Spécialiste Actif & Toggle Canvas ────────────────────────── */}
+      {/* ── Droite : Spécialiste Actif ─────────────────────────────────────────── */}
       <div className="flex items-center gap-2">
         {activeSpecialistName && (
           <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-mv-green-tint text-mv-green-dark text-[11px] font-medium border border-mv-green/20">
             <span>{activeSpecialistAvatar ?? "👨‍🍳"}</span>
             <span>{activeSpecialistName}</span>
           </div>
-        )}
-
-        {onToggleCanvas && (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onToggleCanvas}
-                  className="h-8 w-8 p-0 text-mv-ink-soft hover:text-mv-ink"
-                >
-                  <PanelRight size={16} />
-                </Button>
-              }
-            />
-            <TooltipContent>Masquer/Afficher le Canvas TipTap (Cmd+J)</TooltipContent>
-          </Tooltip>
         )}
       </div>
     </header>

@@ -8,12 +8,10 @@ import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
 import type { UIMessage } from "ai";
 import { Thread } from "@/components/assistant-ui/thread";
-import { TipTapCanvas } from "@/components/chat/TipTapCanvas";
 import type {
   ChatArtifact,
   ChatConversation,
   ChatMessage,
-  ChatCanvasDoc,
   ChatProjectFolder,
 } from "@/lib/types";
 import type { CanvasContextData } from "@/components/chat/CanvasDefaultContext";
@@ -22,9 +20,7 @@ import { DEFAULT_DOSSIERS } from "@/lib/ai/dossier-types";
 import {
   executeTogglePinAction,
   executeDeleteSessionAction,
-  executeDeleteCanvasDocAction,
   executeCreateProjectFolderAction,
-  executeCanvasSaveAction,
 } from "@/app/[locale]/(chat)/assistant/flow-ai-actions";
 import {
   Brain,
@@ -35,7 +31,6 @@ import {
   FolderPlus,
   Plus,
   Layers,
-  FileText,
   Trash2,
   Pin,
   PinOff,
@@ -46,8 +41,6 @@ import {
   ArrowLeftRight,
   BookOpen,
   BarChart2,
-  ChevronRight,
-  X,
 } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { toast } from "sonner";
@@ -71,8 +64,6 @@ export function AssistantChatView({
   defaultContext,
   initialAgentId = "general",
   initialActiveDossiers = ["menu", "finance", "loyalty", "operations"],
-  initialCanvasDoc = null,
-  allCanvasDocs: initialCanvasDocs = [],
   projectFolders: initialProjectFolders = [],
   onHold = false,
 }: {
@@ -84,8 +75,6 @@ export function AssistantChatView({
   defaultContext: CanvasContextData;
   initialAgentId?: string;
   initialActiveDossiers?: string[];
-  initialCanvasDoc?: ChatCanvasDoc | null;
-  allCanvasDocs?: ChatCanvasDoc[];
   projectFolders?: ChatProjectFolder[];
   /** Flow AI kill switch (lib/ai/config.ts) — page stays reachable, sending is blocked. */
   onHold?: boolean;
@@ -104,14 +93,11 @@ export function AssistantChatView({
 
   // State
   const [conversations, setConversations] = useState<ChatConversation[]>(initialConversations);
-  const [canvasDocs, setCanvasDocs] = useState<ChatCanvasDoc[]>(initialCanvasDocs);
   const [projectFolders, setProjectFolders] = useState<ChatProjectFolder[]>(initialProjectFolders);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   // Panels visibility — exactly matching Image 2
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(true);
-  const [isCanvasOpen, setIsCanvasOpen] = useState(false);
-  const [currentCanvasDoc, setCurrentCanvasDoc] = useState<ChatCanvasDoc | null>(initialCanvasDoc);
   const [selectedModel, setSelectedModel] = useState("Gemini 3.7");
 
   const [agentId, setAgentId] = useState(initialAgentId);
@@ -121,9 +107,6 @@ export function AssistantChatView({
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderDesc, setNewFolderDesc] = useState("");
-
-  const [showNewDocModal, setShowNewDocModal] = useState(false);
-  const [newDocTitle, setNewDocTitle] = useState("");
 
   // Assistant runtime
   const runtime = useChatRuntime({
@@ -151,16 +134,12 @@ export function AssistantChatView({
     return conversations;
   }, [conversations]);
 
-  // Keyboard shortcuts Cmd+B (Workspace) and Cmd+J (Canvas)
+  // Keyboard shortcut Cmd+B (Workspace)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
         e.preventDefault();
         setIsWorkspaceOpen((v) => !v);
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
-        e.preventDefault();
-        setIsCanvasOpen((v) => !v);
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -188,18 +167,6 @@ export function AssistantChatView({
     }
   };
 
-  const handleDeleteCanvasDoc = async (e: React.MouseEvent, docId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCanvasDocs((prev) => prev.filter((d) => d.id !== docId));
-    if (currentCanvasDoc?.id === docId) {
-      setCurrentCanvasDoc(null);
-      setIsCanvasOpen(false);
-    }
-    await executeDeleteCanvasDocAction(docId);
-    toast.success("Document supprimé.");
-  };
-
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFolderName.trim()) return;
@@ -216,27 +183,6 @@ export function AssistantChatView({
       toast.success("Dossier de projet créé.");
     } else {
       toast.error(res.error || "Erreur lors de la création du dossier.");
-    }
-  };
-
-  const handleCreateCanvasDoc = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const title = newDocTitle.trim() || "Nouveau Document";
-    const res = await executeCanvasSaveAction({
-      restaurantId,
-      conversationId,
-      title,
-      content: "<h2>" + title + "</h2><p>Rédigez ici vos notes de service...</p>",
-    });
-    if (res.success && res.doc) {
-      setCanvasDocs((prev) => [res.doc!, ...prev]);
-      setCurrentCanvasDoc(res.doc!);
-      setIsCanvasOpen(true);
-      setShowNewDocModal(false);
-      setNewDocTitle("");
-      toast.success("Document créé dans le Canvas.");
-    } else {
-      toast.error(res.error || "Impossible de créer le document.");
     }
   };
 
@@ -532,65 +478,6 @@ export function AssistantChatView({
                 })
               )}
             </div>
-
-            {/* DOCUMENTS CANVAS */}
-            <div className="space-y-1 pt-1">
-              <div className="px-2 flex items-center justify-between">
-                <span className="text-[9px] font-bold text-[#7a7a76] uppercase tracking-wider">
-                  Documents Canvas
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowNewDocModal(true)}
-                  className="text-[9px] font-bold text-[#059669] hover:underline cursor-pointer"
-                  title="Ajouter un document"
-                >
-                  + Ajouter
-                </button>
-              </div>
-
-              {canvasDocs.length === 0 ? (
-                <div className="px-2 py-1 text-[11px] text-[#807d72] italic">
-                  Aucun document
-                </div>
-              ) : (
-                canvasDocs.map((doc) => {
-                  const isSelected = currentCanvasDoc?.id === doc.id && isCanvasOpen;
-                  return (
-                    <div
-                      key={doc.id}
-                      className={cn(
-                        "group flex items-center justify-between rounded-lg px-2 py-1.5 cursor-pointer text-[11px] font-medium transition-all",
-                        isSelected
-                          ? "bg-emerald-50/80 text-emerald-900 font-semibold"
-                          : "text-[#555552] hover:bg-neutral-100 hover:text-[#26251e]"
-                      )}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCurrentCanvasDoc(doc);
-                          setIsCanvasOpen(true);
-                        }}
-                        className="flex-1 text-left truncate flex items-center gap-1.5 mr-1 cursor-pointer"
-                      >
-                        <FileText className="h-3 w-3 text-neutral-400 shrink-0" />
-                        <span className="truncate">{doc.title}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteCanvasDoc(e, doc.id)}
-                        className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-red-600 transition-opacity p-0.5 cursor-pointer"
-                        title="Supprimer"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
           </div>
         </aside>
       )}
@@ -672,8 +559,6 @@ export function AssistantChatView({
           <AssistantRuntimeProvider runtime={runtime}>
             <Thread
               userName={userName}
-              isCanvasOpen={isCanvasOpen}
-              onToggleCanvas={() => setIsCanvasOpen((v) => !v)}
               selectedModel={selectedModel}
               onSelectModel={setSelectedModel}
             />
@@ -690,28 +575,6 @@ export function AssistantChatView({
           )}
         </div>
       </main>
-
-      {/* ── 4. VOLET CANVAS TIPTAP (Rétractable à droite) ────────────────────── */}
-      {isCanvasOpen && (
-        <aside className="w-full md:w-[45%] shrink-0 border-l border-[#e6e5e0] bg-[#fbf9f4] flex flex-col h-full z-20 animate-in fade-in slide-in-from-right-2 duration-200">
-          <TipTapCanvas
-            restaurantId={restaurantId}
-            conversationId={conversationId}
-            initialDoc={currentCanvasDoc}
-            onDocSaved={(doc) => {
-              setCurrentCanvasDoc(doc);
-              setCanvasDocs((prev) => {
-                const exists = prev.find((d) => d.id === doc.id);
-                if (exists) {
-                  return prev.map((d) => (d.id === doc.id ? doc : d));
-                }
-                return [doc, ...prev];
-              });
-            }}
-            onClose={() => setIsCanvasOpen(false)}
-          />
-        </aside>
-      )}
 
       {/* ── Modal Nouveau Dossier Projet ────────────────────────────────────── */}
       <Dialog open={showNewFolderModal} onOpenChange={setShowNewFolderModal}>
@@ -762,49 +625,6 @@ export function AssistantChatView({
                 className="bg-[#059669] hover:bg-[#047857] text-white"
               >
                 Créer le dossier
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Modal Nouveau Document Canvas ───────────────────────────────────── */}
-      <Dialog open={showNewDocModal} onOpenChange={setShowNewDocModal}>
-        <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-[#26251e]">
-              Créer un Document Canvas
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleCreateCanvasDoc} className="space-y-3 pt-2">
-            <div>
-              <label className="text-[11px] font-bold text-[#7a7a76] uppercase tracking-wider block mb-1">
-                Titre du document
-              </label>
-              <input
-                type="text"
-                value={newDocTitle}
-                onChange={(e) => setNewDocTitle(e.target.value)}
-                placeholder="Ex: Fiche Technique Cocktail Signature"
-                required
-                className="w-full text-xs px-3 py-2 rounded-lg border border-[#e0e0dc] focus:outline-none focus:ring-1 focus:ring-[#059669] bg-white text-[#26251e]"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowNewDocModal(false)}
-              >
-                Annuler
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                className="bg-[#059669] hover:bg-[#047857] text-white"
-              >
-                Ouvrir dans le Canvas
               </Button>
             </div>
           </form>
