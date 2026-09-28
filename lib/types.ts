@@ -662,6 +662,7 @@ export type Customer = {
   avatarUrl: string | null;
   favoriteOfferIds: string[];
   favoriteMenuItemIds: string[];
+  notificationFrequency: "all" | "important_only";
   posCustomerId?: string | null;
 };
 

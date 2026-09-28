@@ -68,6 +68,7 @@ export async function updateMyProfileAction(
     name?: string;
     phone?: string | null;
     avatarUrl?: string | null;
+    notificationFrequency?: "all" | "important_only";
   }
 ): Promise<boolean> {
   const supabase = await createClient();
@@ -88,6 +89,7 @@ export async function updateMyProfileAction(
     ...(input.name !== undefined ? { name: input.name } : {}),
     ...(input.phone !== undefined ? { phone: input.phone } : {}),
     ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {}),
+    ...(input.notificationFrequency !== undefined ? { notificationFrequency: input.notificationFrequency } : {}),
   });
 }
 
