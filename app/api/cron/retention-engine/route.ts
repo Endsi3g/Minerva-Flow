@@ -80,6 +80,10 @@ export async function GET(req: Request) {
       const recentlyContacted = new Set((recentSends ?? []).map((r) => r.customer_id as string));
 
       const eligible = (list: Customer[]) => list.filter((c) => !recentlyContacted.has(c.id));
+      // Routine nudges (inactivity, value_drift) respect the customer's own
+      // "important_only" preference; occasion-based ones (birthday,
+      // reward_available) are never routine enough to skip.
+      const eligibleRoutine = (list: Customer[]) => eligible(list).filter((c) => c.notificationFrequency !== "important_only");
 
       const { data: cheapestReward } = await admin
         .from("loyalty_rewards")
@@ -103,10 +107,10 @@ export async function GET(req: Request) {
           });
         }
       }
-      for (const c of eligible(getInactiveCustomers(mapped, restaurantRow.retention_inactivity_days))) {
+      for (const c of eligibleRoutine(getInactiveCustomers(mapped, restaurantRow.retention_inactivity_days))) {
         targets.set(c.id, { customer: c, trigger: "inactivity" });
       }
-      for (const c of eligible(getDriftingHighValueCustomers(mapped))) {
+      for (const c of eligibleRoutine(getDriftingHighValueCustomers(mapped))) {
         targets.set(c.id, { customer: c, trigger: "value_drift" });
       }
       for (const c of eligible(getUpcomingBirthdays(mapped, restaurantRow.retention_birthday_lead_days))) {

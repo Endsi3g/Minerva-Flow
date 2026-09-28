@@ -36,6 +36,7 @@ export type CustomerRow = {
   avatar_url: string | null;
   favorite_offer_ids: string[] | null;
   favorite_menu_item_ids: string[] | null;
+  notification_frequency: "all" | "important_only" | null;
   pos_customer_id?: string | null;
 };
 
@@ -95,6 +96,7 @@ export function mapCustomer(row: CustomerRow, transactions: LoyaltyTransaction[]
     avatarUrl: row.avatar_url,
     favoriteOfferIds: row.favorite_offer_ids ?? [],
     favoriteMenuItemIds: row.favorite_menu_item_ids ?? [],
+    notificationFrequency: row.notification_frequency ?? "all",
     posCustomerId: row.pos_customer_id ?? null,
   };
 }
@@ -159,6 +161,7 @@ export type CustomerInput = {
   city?: string | null;
   neighborhood?: string | null;
   avatarUrl?: string | null;
+  notificationFrequency?: "all" | "important_only";
 };
 
 export async function createCustomer(restaurantId: string, input: CustomerInput): Promise<Customer | null> {
@@ -224,6 +227,7 @@ export async function updateCustomer(
   if (patch.city !== undefined) dbPatch.city = patch.city;
   if (patch.neighborhood !== undefined) dbPatch.neighborhood = patch.neighborhood;
   if (patch.avatarUrl !== undefined) dbPatch.avatar_url = patch.avatarUrl;
+  if (patch.notificationFrequency !== undefined) dbPatch.notification_frequency = patch.notificationFrequency;
   if (patch.marketingConsent !== undefined) {
     dbPatch.marketing_consent = patch.marketingConsent;
     if (patch.marketingConsent) {

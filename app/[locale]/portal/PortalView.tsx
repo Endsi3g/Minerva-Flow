@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/minerva/FormField";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Modal } from "@/components/ui/Modal";
+import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
 import {
   getLoyaltyTier,
   loyaltyTierLabel,
@@ -33,6 +35,7 @@ import {
   quoteMyDeliveryAction,
   deleteMyAccountAction,
   exportMyDataAction,
+  toggleFavoriteAction,
 } from "./actions";
 import {
   Copy,
@@ -59,6 +62,7 @@ import {
   Camera,
   Pencil,
   Mail,
+  Star,
 } from "lucide-react";
 import { startTransition, useMemo, useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
@@ -287,6 +291,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
   const [city, setCity] = useState(customer.city ?? "");
   const [neighborhood, setNeighborhood] = useState(customer.neighborhood ?? "");
   const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
+  const [notificationFrequency, setNotificationFrequency] = useState(customer.notificationFrequency);
   const [isSaving, setIsSaving] = useState(false);
   const [savedTick, setSavedTick] = useState(false);
 
@@ -306,6 +311,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         name: name.trim() || customer.name,
         phone: phone.trim() || null,
         avatarUrl,
+        notificationFrequency,
       });
       if (ok) {
         toast.success("Profil mis à jour.");
@@ -428,6 +434,26 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
           />
           <span>J&apos;accepte de recevoir des offres et rappels par courriel ou SMS.</span>
         </label>
+
+        <div>
+          <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Fréquence des messages</p>
+          <RadioGroup value={notificationFrequency} onValueChange={(value) => setNotificationFrequency(value as "all" | "important_only")} className="space-y-1.5">
+            <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
+              <RadioGroupItem value="all" className="mt-0.5" />
+              <span>Tous les messages — rappels, récompenses et anniversaire.</span>
+            </label>
+            <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
+              <RadioGroupItem value="important_only" className="mt-0.5" />
+              <span>Seulement l&apos;essentiel — récompenses et anniversaire, sans les rappels.</span>
+            </label>
+          </RadioGroup>
+        </div>
+
+        <div>
+          <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Notifications sur cet appareil</p>
+          <CustomerPushToggle restaurantId={customer.restaurantId} />
+        </div>
+
         <Button size="sm" onClick={handleSave} disabled={isSaving}>
           {isSaving ? "Enregistrement…" : savedTick ? "Enregistré ✓" : "Enregistrer"}
         </Button>
@@ -871,32 +897,90 @@ function isOfferLive(offer: Offer, now = Date.now()) {
 /** Home tab's discovery feed — offers live here (not buried in the ordering
  * screen) since checking "what's new" is a browsing action, distinct from
  * the deliberate task of building a cart. Each offer hands off to Order. */
-function OffersFeed({ offers, onOrderClick }: { offers: Offer[]; onOrderClick: () => void }) {
+function OffersFeed({
+  offers,
+  customerId,
+  favoriteOfferIds,
+  onOrderClick,
+}: {
+  offers: Offer[];
+  customerId: string;
+  favoriteOfferIds: string[];
+  onOrderClick: () => void;
+}) {
   const t = useTranslations("portal.view");
-  const liveOffers = useMemo(() => offers.filter((o) => isOfferLive(o)), [offers]);
+  const [favorites, setFavorites] = useState(new Set(favoriteOfferIds));
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const liveOffers = useMemo(() => {
+    // Favorites first, then live-status order preserved within each group —
+    // a manual pin should be the fastest way back to an offer someone
+    // already cares about, not just another item in a chronological feed.
+    return offers
+      .filter((o) => isOfferLive(o))
+      .slice()
+      .sort((a, b) => Number(favorites.has(b.id)) - Number(favorites.has(a.id)));
+  }, [offers, favorites]);
+
+  async function toggleFavorite(offerId: string, next: boolean) {
+    setPendingId(offerId);
+    setFavorites((prev) => {
+      const updated = new Set(prev);
+      if (next) updated.add(offerId);
+      else updated.delete(offerId);
+      return updated;
+    });
+    const ok = await toggleFavoriteAction(customerId, "offer", offerId, next);
+    setPendingId(null);
+    if (!ok) {
+      // Revert on failure — the optimistic toggle above assumed success.
+      setFavorites((prev) => {
+        const reverted = new Set(prev);
+        if (next) reverted.delete(offerId);
+        else reverted.add(offerId);
+        return reverted;
+      });
+    }
+  }
+
   if (liveOffers.length === 0) return null;
 
   return (
     <div>
       <p className="mb-2.5 text-[13px] font-semibold text-mv-ink">{t("offersTitle")}</p>
       <div className="space-y-2">
-        {liveOffers.map((offer) => (
-          <button
-            key={offer.id}
-            type="button"
-            onClick={onOrderClick}
-            className="flex w-full items-center gap-3 rounded-2xl border border-mv-green/25 bg-mv-green-tint px-4 py-3.5 text-left transition-transform hover:-translate-y-0.5"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-mv-green-dark">
-              <Tag size={15} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold text-mv-green-darker">{offer.title}</p>
-              {offer.description && <p className="truncate text-[11.5px] text-mv-green-dark">{offer.description}</p>}
+        {liveOffers.map((offer) => {
+          const isFavorite = favorites.has(offer.id);
+          return (
+            <div
+              key={offer.id}
+              className="flex w-full items-center gap-3 rounded-2xl border border-mv-green/25 bg-mv-green-tint px-4 py-3.5 text-left transition-transform hover:-translate-y-0.5"
+            >
+              <button type="button" onClick={onOrderClick} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-mv-green-dark">
+                  <Tag size={15} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-mv-green-darker">{offer.title}</p>
+                  {offer.description && <p className="truncate text-[11.5px] text-mv-green-dark">{offer.description}</p>}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleFavorite(offer.id, !isFavorite)}
+                disabled={pendingId === offer.id}
+                aria-pressed={isFavorite}
+                aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                className="shrink-0 rounded-full p-1.5 text-mv-green-dark transition-colors hover:bg-white/60 disabled:opacity-50"
+              >
+                <Star size={16} className={isFavorite ? "fill-mv-green-dark" : ""} />
+              </button>
+              <button type="button" onClick={onOrderClick} aria-label={t("offersTitle")} className="shrink-0 p-1.5 text-mv-green-dark">
+                <ArrowRight size={14} />
+              </button>
             </div>
-            <ArrowRight size={14} className="shrink-0 text-mv-green-dark" />
-          </button>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -1568,7 +1652,7 @@ export function PortalView({
               </div>
             )}
 
-            <OffersFeed offers={offers} onOrderClick={() => setActiveTab("order")} />
+            <OffersFeed offers={offers} customerId={customer.id} favoriteOfferIds={customer.favoriteOfferIds} onOrderClick={() => setActiveTab("order")} />
 
             {data.rewards.length > 0 && (
               <button
