@@ -2,13 +2,13 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
-## [À venir] — Synchronisation temps réel web et iOS
+## 2026-09-28 — Synchronisation temps réel web et iOS
 
 - Le bus Realtime du web couvre les commandes, réservations, fidélité, menus, stocks, alertes, campagnes, équipe et activités avec abonnement limité au restaurant courant et rafraîchissement groupé.
 - Le portail client suit ses propres points, récompenses, commandes et changements de menu; les règles RLS de chaque table restent la frontière d’accès. Les abonnements n’écoutent pas les suppressions Postgres, dont les événements ne sont pas filtrés par RLS.
 - L’application iOS/iPad réutilise le SDK Supabase pour synchroniser les espaces propriétaire et client. Elle suspend le socket en arrière-plan, recharge au retour, et montre l’état de la connexion.
 - Les notifications hors app utilisent l’envoi APNs existant en plus de Web Push. Le jeton iOS est réassocié à la session à la connexion et retiré du compte lors de la déconnexion; un tap ouvre l’onglet natif lié.
-- La migration `0166_app_realtime_publication.sql` ajoute uniquement les tables métier RLS à la publication Realtime. Elle doit être appliquée en staging puis les flux multi-rôle doivent y être validés avant de préparer une release.
+- La migration `0166_app_realtime_publication.sql` a été appliquée en production : 25 tables métier avec RLS sont publiées pour Realtime; les tables de jetons d’appareil et d’authentification restent exclues de cette migration.
 
 ## [À venir] — Espace Owner iPad/macOS, Google Business Profile et campagnes
 
