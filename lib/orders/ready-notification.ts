@@ -2,7 +2,6 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendTransactionalEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
-import { sendApnsToTokens, isAPNsConfigured } from "@/lib/push/apns";
 
 /** Prefers the owner-set Maps link (Restaurant.googleMapsUrl) — falls back to a search query built from address/city. */
 function mapsUrl(restaurant: { googleMapsUrl: string | null; address: string; city: string }): string {
@@ -46,17 +45,6 @@ export async function sendOrderReadyNotification(
   if (customer.userId) {
     const payload = { title: "Bonne nouvelle, votre commande est prête !", body: `Hey ! ${restaurant.name} vous attend pour la cueillette à l’heure prévue.`, link };
     await sendPushToUsers([customer.userId], payload, restaurant.id);
-    if (isAPNsConfigured()) {
-      const { data: tokenRows } = await admin
-        .from("device_push_tokens")
-        .select("token")
-        .eq("platform", "ios")
-        .eq("user_id", customer.userId);
-      const tokens = ((tokenRows ?? []) as { token: string }[]).map((r) => r.token);
-      if (tokens.length > 0) {
-        await sendApnsToTokens(tokens, payload);
-      }
-    }
     deliveries.push("push");
   }
 

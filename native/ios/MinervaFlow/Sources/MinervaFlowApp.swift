@@ -63,6 +63,9 @@ struct MinervaFlowApp: App {
             // the scenario this feature exists for.
             if newPhase == .active {
                 biometricLock.lockIfEnabled()
+                Task { await supabase.resumeRealtimeFromForeground() }
+            } else if newPhase == .background {
+                Task { await supabase.pauseRealtimeForBackground() }
             }
         }
     }

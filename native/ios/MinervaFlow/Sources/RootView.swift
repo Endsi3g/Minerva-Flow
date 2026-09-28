@@ -33,6 +33,14 @@ struct RootView: View {
 
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
+    private func applyPendingNotificationIfReady() {
+        guard supabase.isAuthenticated,
+              !supabase.isResolvingExperience,
+              let link = router.pendingNotificationLink else { return }
+        router.pendingNotificationLink = nil
+        router.handleNotificationLink(link, isOwner: supabase.isOwnerExperience)
+    }
+
     var body: some View {
         ZStack {
             switch screen {
@@ -83,11 +91,12 @@ struct RootView: View {
         .preferredColorScheme(AppAppearance(rawValue: storedAppearance)?.colorScheme)
         .onAppear {
             syncScreen()
+            applyPendingNotificationIfReady()
             if screen == .main { biometricLock.lockIfEnabled() }
         }
-        .onChange(of: supabase.isAuthenticated) { syncScreen() }
+        .onChange(of: supabase.isAuthenticated) { syncScreen(); applyPendingNotificationIfReady() }
         .onChange(of: supabase.isOwnerExperience) { syncScreen() }
-        .onChange(of: supabase.isResolvingExperience) { syncScreen() }
+        .onChange(of: supabase.isResolvingExperience) { syncScreen(); applyPendingNotificationIfReady() }
         .onChange(of: supabase.experienceResolutionError) { syncScreen() }
         // Only ever covers .main — the lock protects the loyalty account's
         // data, not the login/onboarding screens that precede having one.
@@ -224,5 +233,42 @@ struct RootView: View {
             }
         }
         .padding(28)
+    }
+}
+
+struct NativeRealtimeStatusPill: View {
+    @EnvironmentObject private var supabase: SupabaseManager
+    let isFrench: Bool
+
+    private var title: String {
+        switch supabase.realtimeStatus {
+        case "live": return isFrench ? "En direct" : "Live"
+        case "connecting": return isFrench ? "Connexion…" : "Connecting…"
+        case "reconnecting": return isFrench ? "Reconnexion…" : "Reconnecting…"
+        case "offline": return isFrench ? "Hors ligne" : "Offline"
+        default: return isFrench ? "En attente" : "Waiting"
+        }
+    }
+
+    private var color: Color {
+        switch supabase.realtimeStatus {
+        case "live": return MinervaColor.emeraldDark
+        case "offline": return .red
+        case "connecting", "reconnecting": return .orange
+        default: return MinervaColor.inkFaint
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Circle().fill(color).frame(width: 6, height: 6)
+            Text(title).font(.system(size: 10, weight: .medium))
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(color.opacity(0.08), in: Capsule())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(isFrench ? "État de la connexion temps réel : \(title)" : "Realtime connection: \(title)")
     }
 }

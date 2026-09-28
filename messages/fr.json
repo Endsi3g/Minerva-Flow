@@ -1420,6 +1420,14 @@
     "statusPlanned": "En feuille de route",
     "statusDeclined": "Classée"
   },
+  "realtime": {
+    "idle": "En attente",
+    "connecting": "Connexion en direct…",
+    "live": "En direct",
+    "reconnecting": "Reconnexion…",
+    "offline": "Hors ligne",
+    "lastUpdate": "mis à jour à {time}"
+  },
   "announcements": {
     "badgeDefault": "Nouveauté",
     "voteSuccess": "Merci pour votre avis !",

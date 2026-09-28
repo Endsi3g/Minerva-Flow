@@ -58,6 +58,21 @@ final class NotificationManager: NSObject, ObservableObject, UNUserNotificationC
         [.banner, .sound, .list]
     }
 
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        let link = response.notification.request.content.userInfo["link"] as? String
+        await MainActor.run {
+            let supabase = SupabaseManager.shared
+            if supabase.isAuthenticated && !supabase.isResolvingExperience {
+                DeepLinkRouter.shared.handleNotificationLink(link, isOwner: supabase.isOwnerExperience)
+            } else {
+                DeepLinkRouter.shared.pendingNotificationLink = link ?? "/portal"
+            }
+        }
+    }
+
     // MARK: - "Viewed but didn't order" reminder
 
     /// Schedules a purely local, on-device reminder for 2 hours out when

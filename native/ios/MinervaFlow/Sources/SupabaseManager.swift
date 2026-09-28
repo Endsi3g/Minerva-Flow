@@ -11,6 +11,8 @@ final class SupabaseManager: ObservableObject {
     let client: SupabaseClient
 
     @Published var isAuthenticated = false
+    @Published private(set) var realtimeStatus = "idle"
+    @Published private(set) var realtimeLastUpdate: Date?
     @Published private(set) var authUserID: UUID?
     @Published var customer: Customer?
     @Published private(set) var activeTenantBranding: NativeTenantBranding?
@@ -125,6 +127,8 @@ final class SupabaseManager: ObservableObject {
                         self.experienceResolutionError = "La préparation de votre espace prend trop de temps. Vérifiez votre connexion, puis réessayez."
                     }
                     await loadPortalData()
+                    await configureRealtimeSubscriptions()
+                    await registerStoredPushToken()
                     watchdog.cancel()
                     isResolvingExperience = false
                 }
@@ -134,6 +138,8 @@ final class SupabaseManager: ObservableObject {
                 isResolvingExperience = false
                 experienceResolutionError = nil
                 customer = nil
+                realtimeStatus = "idle"
+                await stopRealtimeSubscriptions()
                 activeTenantBranding = nil
                 UserDefaults.standard.removeObject(forKey: "activeTenantPrimaryColor")
                 UserDefaults.standard.removeObject(forKey: "activeTenantSecondaryColor")
@@ -168,7 +174,139 @@ final class SupabaseManager: ObservableObject {
     }
 
     func signOut() async {
+        if let userID = authUserID, let token = UserDefaults.standard.string(forKey: "minervaAPNsDeviceToken") {
+            _ = try? await client.from("device_push_tokens").delete()
+                .eq("user_id", value: userID)
+                .eq("token", value: token)
+                .execute()
+        }
+        await stopRealtimeSubscriptions()
         try? await client.auth.signOut()
+    }
+
+    private var realtimeChannel: RealtimeChannelV2?
+    private var realtimeSubscriptions: [RealtimeSubscription] = []
+    private var realtimeTenantKey: String?
+    private var realtimeRefreshTask: Task<Void, Never>?
+    private var realtimeStatusTask: Task<Void, Never>?
+
+    /// Opens one RLS-scoped channel for the authenticated customer's current
+    /// restaurant, or all restaurants the owner/manager belongs to.
+    private func configureRealtimeSubscriptions(force: Bool = false) async {
+        guard isAuthenticated, let userID = authUserID else {
+            await stopRealtimeSubscriptions()
+            return
+        }
+        let restaurantIDs = isOwnerExperience
+            ? ownerRestaurants.map(\.id).sorted()
+            : [customer?.restaurantId].compactMap { $0 }
+        guard !restaurantIDs.isEmpty else { return }
+        let tenantKey = "\(userID.uuidString):\(restaurantIDs.joined(separator: ",")):owner=\(isOwnerExperience)"
+        guard force || tenantKey != realtimeTenantKey else { return }
+
+        await stopRealtimeSubscriptions()
+        realtimeTenantKey = tenantKey
+        realtimeStatus = "connecting"
+
+        let channel = client.channel("app-live-\(userID.uuidString.lowercased())")
+        let restaurantFilter: RealtimePostgresFilter = restaurantIDs.count == 1
+            ? .eq("restaurant_id", value: restaurantIDs[0])
+            : .in("restaurant_id", values: restaurantIDs)
+        let refreshTables = [
+            "activity_log", "alerts", "campaigns", "customers", "employees",
+            "financial_transactions", "inventory_items", "inventory_low_stock_state",
+            "loyalty_rewards", "loyalty_transactions",
+            "menu_items", "notifications", "offers", "order_status_events", "orders",
+            "purchase_orders", "reservation_status_events", "reservations",
+            "restaurant_members", "revenue_programs", "reward_redemptions", "service_days",
+            "shift_schedules", "suppliers", "team_chat_messages"
+        ]
+
+        for table in refreshTables {
+            realtimeSubscriptions.append(channel.onPostgresChange(InsertAction.self, schema: "public", table: table, filter: restaurantFilter) { [weak self] _ in
+                Task { @MainActor [weak self] in self?.scheduleRealtimeRefresh() }
+            })
+            realtimeSubscriptions.append(channel.onPostgresChange(UpdateAction.self, schema: "public", table: table, filter: restaurantFilter) { [weak self] _ in
+                Task { @MainActor [weak self] in self?.scheduleRealtimeRefresh() }
+            })
+        }
+
+        // Customer-owned events have finer row filters. These are additive
+        // and remain constrained by each table's own RLS policy.
+        if !isOwnerExperience, let customerID = customer?.id {
+            for table in ["loyalty_transactions", "reward_redemptions"] {
+                realtimeSubscriptions.append(channel.onPostgresChange(InsertAction.self, schema: "public", table: table, filter: .eq("customer_id", value: customerID)) { [weak self] _ in
+                    Task { @MainActor [weak self] in self?.scheduleRealtimeRefresh() }
+                })
+            }
+            for event in ["INSERT", "UPDATE"] {
+                if event == "INSERT" {
+                    realtimeSubscriptions.append(channel.onPostgresChange(InsertAction.self, schema: "public", table: "orders", filter: .eq("customer_id", value: customerID)) { [weak self] _ in
+                        Task { @MainActor [weak self] in self?.scheduleRealtimeRefresh() }
+                    })
+                } else {
+                    realtimeSubscriptions.append(channel.onPostgresChange(UpdateAction.self, schema: "public", table: "orders", filter: .eq("customer_id", value: customerID)) { [weak self] _ in
+                        Task { @MainActor [weak self] in self?.scheduleRealtimeRefresh() }
+                    })
+                }
+            }
+        }
+
+        realtimeChannel = channel
+        realtimeStatusTask = Task { @MainActor [weak self] in
+            for await status in channel.statusChange {
+                guard let self, !Task.isCancelled else { return }
+                switch status {
+                case .subscribed: self.realtimeStatus = "live"
+                case .subscribing: self.realtimeStatus = "connecting"
+                case .unsubscribed: self.realtimeStatus = "reconnecting"
+                case .unsubscribing: self.realtimeStatus = "reconnecting"
+                }
+            }
+        }
+        do {
+            try await channel.subscribeWithError()
+            realtimeStatus = "live"
+            realtimeLastUpdate = Date()
+        } catch {
+            realtimeStatus = "reconnecting"
+            print("Realtime subscribe error: \(error)")
+        }
+    }
+
+    private func scheduleRealtimeRefresh() {
+        realtimeLastUpdate = Date()
+        realtimeRefreshTask?.cancel()
+        realtimeRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard !Task.isCancelled, let self else { return }
+            await self.loadPortalData()
+        }
+    }
+
+    private func stopRealtimeSubscriptions() async {
+        realtimeRefreshTask?.cancel()
+        realtimeRefreshTask = nil
+        realtimeStatusTask?.cancel()
+        realtimeStatusTask = nil
+        realtimeSubscriptions.removeAll()
+        if let realtimeChannel {
+            await client.removeChannel(realtimeChannel)
+            self.realtimeChannel = nil
+        }
+        realtimeTenantKey = nil
+    }
+
+    func pauseRealtimeForBackground() async {
+        realtimeStatus = "idle"
+        await stopRealtimeSubscriptions()
+    }
+
+    func resumeRealtimeFromForeground() async {
+        guard isAuthenticated else { return }
+        realtimeStatus = "connecting"
+        await loadPortalData()
+        await configureRealtimeSubscriptions(force: true)
     }
 
     /// Google/Facebook via ASWebAuthenticationSession (the supabase-swift
@@ -2049,6 +2187,16 @@ final class SupabaseManager: ObservableObject {
     /// (permission, registration, token storage) works regardless of that.
     func registerPushToken(_ tokenData: Data) async {
         let token = tokenData.map { String(format: "%02.2hhx", $0) }.joined()
+        UserDefaults.standard.set(token, forKey: "minervaAPNsDeviceToken")
+        await persistPushToken(token)
+    }
+
+    private func registerStoredPushToken() async {
+        guard let token = UserDefaults.standard.string(forKey: "minervaAPNsDeviceToken") else { return }
+        await persistPushToken(token)
+    }
+
+    private func persistPushToken(_ token: String) async {
         guard let userId = try? await client.auth.session.user.id else { return }
         do {
             struct TokenRow: Encodable {

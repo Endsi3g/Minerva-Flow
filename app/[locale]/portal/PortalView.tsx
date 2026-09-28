@@ -25,6 +25,7 @@ import type { PortalData, PortalReferralProgress } from "@/lib/data/customer-por
 import type { DeliveryQuote } from "@/lib/orders/delivery-pricing";
 import type { PublicFulfillmentMode } from "@/lib/orders/checkout-options";
 import { AnnouncementCard } from "./AnnouncementCard";
+import { PortalRealtimeSync } from "./PortalRealtimeSync";
 import {
   getOrCreateReferralLinkAction,
   resumePortalOrderAction,
@@ -1503,6 +1504,14 @@ export function PortalView({
   }, [checkoutReturn?.orderId, checkoutReturn?.status, customer.id]);
 
   useEffect(() => {
+    // Apply the new server snapshot after a debounced Realtime refresh.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPoints(customer.loyaltyPoints);
+    setPrograms(data.programs);
+    setRedemptions(data.redemptions);
+  }, [customer.loyaltyPoints, data.programs, data.redemptions]);
+
+  useEffect(() => {
     try {
       if (Object.values(cart).some((qty) => qty > 0)) localStorage.setItem(`mv-portal-cart-${customer.id}`, JSON.stringify(cart));
       else localStorage.removeItem(`mv-portal-cart-${customer.id}`);
@@ -1567,11 +1576,14 @@ export function PortalView({
               Minerva <span className="text-mv-green-dark">Flow</span>
             </span>
           </div>
-          {restaurantName && (
-            <span className="rounded-full border border-mv-border bg-mv-surface px-3 py-1 text-[11.5px] font-semibold text-mv-ink-soft">
-              {restaurantName}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            <PortalRealtimeSync customerId={customer.id} restaurantId={customer.restaurantId} />
+            {restaurantName && (
+              <span className="rounded-full border border-mv-border bg-mv-surface px-3 py-1 text-[11.5px] font-semibold text-mv-ink-soft">
+                {restaurantName}
+              </span>
+            )}
+          </div>
         </div>
 
         {checkoutReturn && (

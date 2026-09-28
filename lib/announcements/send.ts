@@ -2,7 +2,6 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendTransactionalEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
-import { sendApnsToTokens, isAPNsConfigured } from "@/lib/push/apns";
 import { sendSms, isSmsConfigured } from "@/lib/sms/send";
 
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
@@ -47,21 +46,6 @@ export async function broadcastAnnouncement(
   }[];
   if (customers.length === 0) return { sent: 0, total: 0 };
 
-  const userIds = customers.map((c) => c.user_id).filter((id): id is string => Boolean(id));
-  const apnsTokensByUser = new Map<string, string[]>();
-  if (isAPNsConfigured() && userIds.length > 0) {
-    const { data: tokenRows } = await admin
-      .from("device_push_tokens")
-      .select("user_id, token")
-      .eq("platform", "ios")
-      .in("user_id", userIds);
-    for (const row of (tokenRows ?? []) as { user_id: string; token: string }[]) {
-      const list = apnsTokensByUser.get(row.user_id) ?? [];
-      list.push(row.token);
-      apnsTokensByUser.set(row.user_id, list);
-    }
-  }
-
   let sent = 0;
   await Promise.all(
     customers.map(async (c) => {
@@ -79,8 +63,6 @@ export async function broadcastAnnouncement(
       }
       if (!delivered && c.user_id) {
         await sendPushToUsers([c.user_id], { title: payload.title, body: payload.body, link }, restaurantId);
-        const apnsTokens = apnsTokensByUser.get(c.user_id);
-        if (apnsTokens?.length) await sendApnsToTokens(apnsTokens, { title: payload.title, body: payload.body, link });
         delivered = true;
       }
       if (!delivered && isSmsConfigured() && c.phone) {

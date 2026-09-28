@@ -25,6 +25,8 @@ final class DeepLinkRouter: ObservableObject {
     static let shared = DeepLinkRouter()
 
     @Published var pendingTab: AppTab?
+    @Published var pendingOwnerSection: Int?
+    @Published var pendingNotificationLink: String?
     @Published var pendingUniversalLink: PendingUniversalLink?
     @Published var googleBusinessProfileStatus: String?
     @Published var googleBusinessProfileReason: String?
@@ -65,6 +67,35 @@ final class DeepLinkRouter: ObservableObject {
         case "scan", "scanner": pendingTab = .scan
         case "profile", "profil": pendingTab = .profile
         default: pendingTab = .home
+        }
+    }
+
+    /// APNs payloads carry the same relative web links as in-app alerts.
+    /// Resolve known destinations into native sections instead of opening
+    /// a web URL inside the app.
+    func handleNotificationLink(_ rawLink: String?, isOwner: Bool) {
+        guard let rawLink, !rawLink.isEmpty else {
+            if isOwner { pendingOwnerSection = 0 } else { pendingTab = .home }
+            return
+        }
+        let path: String
+        if let url = URL(string: rawLink), let host = url.host {
+            path = url.path.isEmpty ? "/" + host : url.path
+        } else {
+            path = rawLink.hasPrefix("/") ? rawLink : "/\(rawLink)"
+        }
+        let normalized = path.lowercased()
+        switch true {
+        case normalized.contains("/commandes") || normalized.contains("/orders"):
+            if isOwner { pendingOwnerSection = 1 } else { pendingTab = .order }
+        case normalized.contains("/menu"):
+            if isOwner { pendingOwnerSection = 2 } else { pendingTab = .order }
+        case normalized.contains("/fidelisation") || normalized.contains("/rewards") || normalized.contains("/loyalty"):
+            if isOwner { pendingOwnerSection = 3 } else { pendingTab = .rewards }
+        case normalized.contains("/inventaire") || normalized.contains("/inventory") || normalized.contains("/finance"):
+            if isOwner { pendingOwnerSection = 4 } else { pendingTab = .profile }
+        default:
+            if isOwner { pendingOwnerSection = 0 } else { pendingTab = .home }
         }
     }
 }

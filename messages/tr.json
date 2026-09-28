@@ -1293,6 +1293,14 @@
     "statusPlanned": "Yol Haritasında",
     "statusDeclined": "Reddedildi"
   },
+  "realtime": {
+    "idle": "Beklemede",
+    "connecting": "Canlı bağlanıyor…",
+    "live": "Canlı",
+    "reconnecting": "Yeniden bağlanıyor…",
+    "offline": "Çevrimdışı",
+    "lastUpdate": "güncelleme: {time}"
+  },
   "announcements": {
     "badgeDefault": "Yeni",
     "voteSuccess": "Geri bildiriminiz için teşekkürler!",

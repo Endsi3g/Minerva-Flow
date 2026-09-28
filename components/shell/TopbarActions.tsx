@@ -32,6 +32,7 @@ import { SearchDialog } from "@/components/shell/SearchDialog";
 import { TeamPresenceStack } from "@/components/shell/TeamPresenceStack";
 import { DemoRoleSwitcher } from "@/components/demo/DemoRoleSwitcher";
 import { isDemoAccount } from "@/lib/demo";
+import { LiveConnectionStatus } from "@/components/realtime/LiveConnectionStatus";
 
 const alertSeverityTone: Record<AlertSeverity, "red" | "amber" | "neutral"> = {
   critique: "red",
@@ -387,6 +388,7 @@ function TopbarSearchTrigger() {
 export function TopbarActions() {
   return (
     <div className="flex items-center gap-3">
+      <LiveConnectionStatus />
       <TeamPresenceStack />
       <TopbarSearchTrigger />
       <NotificationBell />

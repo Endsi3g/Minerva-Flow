@@ -43,6 +43,7 @@ struct HomeView: View {
                             tenantBrandHeader(branding)
                         }
                         pinnedHeader(for: customer)
+                        HStack { NativeRealtimeStatusPill(isFrench: isFrench); Spacer() }
 
                         if !supabase.announcements.isEmpty {
                             ForEach(supabase.announcements) { announcement in

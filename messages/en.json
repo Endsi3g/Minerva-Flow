@@ -823,6 +823,14 @@
     "statusPlanned": "Planned",
     "statusDeclined": "Declined"
   },
+  "realtime": {
+    "idle": "Waiting",
+    "connecting": "Connecting live…",
+    "live": "Live",
+    "reconnecting": "Reconnecting…",
+    "offline": "Offline",
+    "lastUpdate": "updated at {time}"
+  },
   "announcements": {
     "badgeDefault": "New",
     "voteSuccess": "Thank you for your feedback!",

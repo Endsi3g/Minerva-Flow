@@ -1,4 +1,5 @@
 import webpush from "web-push";
+import { sendAPNsToUsers } from "@/lib/push/apns";
 import {
   getPushSubscriptionsForUsers,
   deletePushSubscriptionByEndpoint,
@@ -28,40 +29,48 @@ export type PushPayload = {
 };
 
 /**
- * Sends a native push notification to every device a set of users has
- * subscribed from. Silently drops (and deletes) subscriptions Web Push
- * reports as gone — a browser can unregister without telling us. Never
- * throws: a push failure must not break the notification flow that
- * triggered it (in-app notifications already succeeded by this point).
+ * Fans out to installed browser PWAs and native iOS devices. Silently drops
+ * (and deletes) subscriptions Web Push reports as gone. A transport failure
+ * must not break the in-app notification flow that triggered it.
  */
 export async function sendPushToUsers(
   userIds: string[],
   payload: PushPayload,
   restaurantId?: string
 ): Promise<void> {
-  if (!isPushConfigured() || userIds.length === 0) return;
-  ensureConfigured();
+  if (userIds.length === 0) return;
 
-  const subscriptions = await getPushSubscriptionsForUsers(userIds, restaurantId);
-  if (subscriptions.length === 0) return;
+  const deliveries: Promise<void>[] = [
+    sendAPNsToUsers(userIds, payload).catch((error) => {
+      console.error("APNs fan-out failed:", error);
+    }),
+  ];
+  if (isPushConfigured()) {
+    ensureConfigured();
+    deliveries.push((async () => {
+      const subscriptions = await getPushSubscriptionsForUsers(userIds, restaurantId);
+      if (subscriptions.length === 0) return;
 
-  const body = JSON.stringify(payload);
+      const body = JSON.stringify(payload);
 
-  await Promise.all(
-    subscriptions.map(async (sub) => {
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          body
-        );
-      } catch (err) {
-        const statusCode = (err as { statusCode?: number }).statusCode;
-        if (statusCode === 404 || statusCode === 410) {
-          await deletePushSubscriptionByEndpoint(sub.endpoint);
-        } else {
-          console.error("Web push failed:", err);
-        }
-      }
-    })
-  );
+      await Promise.all(
+        subscriptions.map(async (sub) => {
+          try {
+            await webpush.sendNotification(
+              { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+              body
+            );
+          } catch (err) {
+            const statusCode = (err as { statusCode?: number }).statusCode;
+            if (statusCode === 404 || statusCode === 410) {
+              await deletePushSubscriptionByEndpoint(sub.endpoint);
+            } else {
+              console.error("Web push failed:", err);
+            }
+          }
+        })
+      );
+    })());
+  }
+  await Promise.all(deliveries);
 }

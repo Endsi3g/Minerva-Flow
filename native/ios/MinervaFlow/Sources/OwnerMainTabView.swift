@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OwnerMainTabView: View {
     @EnvironmentObject private var supabase: SupabaseManager
+    @EnvironmentObject private var router: DeepLinkRouter
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     @State private var selection = 0
@@ -60,9 +61,17 @@ struct OwnerMainTabView: View {
         }
         .tint(MinervaColor.emeraldDark)
         .task { await supabase.refreshOwnerOperations() }
+        .onAppear { applyPendingNotificationSection() }
+        .onChange(of: router.pendingOwnerSection) { _, _ in applyPendingNotificationSection() }
         .onChange(of: supabase.selectedOwnerRestaurantId) { _, _ in
             Task { await supabase.refreshOwnerOperations() }
         }
+    }
+
+    private func applyPendingNotificationSection() {
+        guard let section = router.pendingOwnerSection else { return }
+        selection = min(max(section, 0), 4)
+        router.pendingOwnerSection = nil
     }
 
     private var pendingOrderCount: Int {
@@ -84,6 +93,7 @@ struct OwnerMainTabView: View {
                         .foregroundStyle(MinervaColor.ink)
                         .lineLimit(1)
                 }
+                NativeRealtimeStatusPill(isFrench: isFrench)
                 Spacer(minLength: 4)
                 OwnerRestaurantPicker()
             }
