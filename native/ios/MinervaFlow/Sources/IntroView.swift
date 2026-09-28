@@ -76,7 +76,7 @@ struct IntroView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 15)
                     }
-                    .background(.white)
+                    .background(MinervaColor.surface)
                     .foregroundStyle(MinervaColor.emeraldDark)
                     .clipShape(Capsule())
                     .buttonStyle(PressableButtonStyle())

@@ -2,34 +2,27 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, CardHeader } from "@/components/minerva/PageCard";
+import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import type {
   RetentionFunnelDashboardData,
   RetentionTimeRange,
   RetentionKpi,
-  FunnelStep,
-  LifecycleEventItem,
 } from "@/lib/data/retention-metrics";
 import {
   QrCode,
   UserCheck,
   Repeat,
   Clock,
-  ArrowRight,
   Gift,
   ShoppingBag,
   DollarSign,
   UserX,
   TrendingUp,
   Sparkles,
-  Share2,
   Send,
   CheckCircle2,
-  AlertTriangle,
   Info,
-  Calendar,
   Layers,
   Activity,
   Award,
@@ -38,10 +31,9 @@ import {
 
 type Props = {
   data: RetentionFunnelDashboardData;
-  restaurantId: string;
 };
 
-export function RetentionFunnelView({ data, restaurantId }: Props) {
+export function RetentionFunnelView({ data }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<"funnel" | "matrix" | "events">("funnel");
@@ -55,7 +47,7 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
     router.push(`/reports/retention-funnel?${params.toString()}`);
   };
 
-  const { kpis, funnelSteps, recentEvents, rawCounts } = data;
+  const { kpis, funnelSteps, recentEvents, rawCounts, customerVisitCohorts } = data;
 
   const filteredEvents =
     stageFilter === "all"
@@ -131,7 +123,7 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
             }`}
           >
             <Award size={14} />
-            Matrice des 6 profils audités
+            Cohortes de visite
           </button>
           <button
             onClick={() => setActiveTab("events")}
@@ -142,7 +134,7 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
             }`}
           >
             <Activity size={14} />
-            Flux des 15 événements en direct ({recentEvents.length})
+            Journal d’événements ({recentEvents.length})
           </button>
         </div>
       </div>
@@ -162,6 +154,9 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
               </div>
               <p className="text-xs text-mv-ink-soft">
                 De l&apos;exposition du QR code jusqu&apos;à la confirmation de l&apos;habitude au comptoir.
+              </p>
+              <p className="mt-2 text-[11px] text-mv-ink-faint">
+                La période choisie filtre les événements; les indicateurs calculés depuis les profils clients (visites, fréquence, cohortes) sont cumulatifs.
               </p>
             </div>
 
@@ -250,21 +245,18 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
               <KpiCard
                 kpi={kpis.scanToSignupRate}
                 icon={QrCode}
-                accent="green"
               />
 
               {/* KPI 2 */}
               <KpiCard
                 kpi={kpis.activationRate}
                 icon={UserCheck}
-                accent="blue"
               />
 
               {/* KPI 3 - Featured Gold KPI */}
               <KpiCard
                 kpi={kpis.secondVisitRate}
                 icon={Repeat}
-                accent="gold"
                 highlighted
               />
 
@@ -272,49 +264,42 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
               <KpiCard
                 kpi={kpis.thirtyDayReturnRate}
                 icon={Clock}
-                accent="teal"
               />
 
               {/* KPI 5 */}
               <KpiCard
                 kpi={kpis.averageVisitFrequency}
                 icon={TrendingUp}
-                accent="emerald"
               />
 
               {/* KPI 6 */}
               <KpiCard
                 kpi={kpis.rewardRedemptionRate}
                 icon={Gift}
-                accent="purple"
               />
 
               {/* KPI 7 */}
               <KpiCard
                 kpi={kpis.averageMemberBasket}
                 icon={ShoppingBag}
-                accent="indigo"
               />
 
               {/* KPI 8 */}
               <KpiCard
                 kpi={kpis.campaignAttributedRevenue}
                 icon={DollarSign}
-                accent="amber"
               />
 
               {/* KPI 9 */}
               <KpiCard
                 kpi={kpis.costPerReactivatedCustomer}
                 icon={Send}
-                accent="emerald"
               />
 
               {/* KPI 10 */}
               <KpiCard
                 kpi={kpis.unsubscribeRate}
                 icon={UserX}
-                accent="rose"
               />
             </div>
           </div>
@@ -329,8 +314,8 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
                 </h3>
               </div>
               <p className="text-xs text-mv-ink-soft leading-relaxed">
-                Toute visite réalisée sous 7 jours après l&apos;envoi d&apos;une relance est rattachée à la campagne.
-                Ce mois-ci : <strong className="text-mv-ink">{kpis.campaignAttributedRevenue.formattedValue}</strong> de CA direct issu de <strong className="text-mv-ink">{rawCounts.campaignVisits}</strong> visites relancées.
+                Les visites reliées à une campagne sont celles enregistrées explicitement dans les événements de fidélité.
+                Sur la période choisie : <strong className="text-mv-ink">{kpis.campaignAttributedRevenue.formattedValue}</strong> associés à <strong className="text-mv-ink">{rawCounts.campaignVisits}</strong> visites explicitement attribuées.
               </p>
             </Card>
 
@@ -342,7 +327,7 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
                 </h3>
               </div>
               <p className="text-xs text-mv-ink-soft leading-relaxed">
-                <strong className="text-mv-ink">{rawCounts.referralsSent}</strong> liens de parrainage ont été partagés par vos habitués, générant <strong className="text-mv-ink">{rawCounts.referralsConverted}</strong> nouvelles réservations et commandes directes vérifiées.
+                <strong className="text-mv-ink">{rawCounts.referralsSent}</strong> envois et <strong className="text-mv-ink">{rawCounts.referralsConverted}</strong> conversions de parrainage ont été consignés.
               </p>
             </Card>
 
@@ -354,7 +339,7 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
                 </h3>
               </div>
               <p className="text-xs text-mv-ink-soft leading-relaxed">
-                Taux de désinscription mesuré à <strong className="text-mv-ink">{kpis.unsubscribeRate.formattedValue}</strong> ({rawCounts.unsubscribes} opt-outs sur {rawCounts.messagesDelivered} messages). Votre délivrabilité est optimale et conforme à la législation canadienne.
+                Taux de désinscription : <strong className="text-mv-ink">{kpis.unsubscribeRate.formattedValue}</strong> ({rawCounts.unsubscribes} désinscriptions sur {rawCounts.messagesDelivered} livraisons observées). Ce taux ne permet pas à lui seul de conclure sur la conformité ou la délivrabilité.
               </p>
             </Card>
           </div>
@@ -362,82 +347,31 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
       )}
 
       {activeTab === "matrix" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Card className="border border-mv-border bg-mv-surface p-6">
-            <div className="max-w-2xl mb-6">
-              <span className="text-xs font-semibold uppercase tracking-wider text-mv-ink-faint font-mono">
-                Audit de référence — 2 septembre 2026
-              </span>
-              <h2 className="font-serif text-xl font-medium text-mv-ink mt-1">
-                Les 6 Profils d’Établissements Audités
-              </h2>
-              <p className="text-xs text-mv-ink-soft mt-1.5 leading-relaxed">
-                Comparatif réel issu des audits d&apos;exploitation Minerva Flow à Montréal. Observez la transition du palier Débutant (75 % de rétention) vers le palier Établi et Mature (100 % de rétention, fréquence multipliée par 3,6).
-              </p>
+            <div className="mb-5 max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-wider text-mv-ink-faint font-mono">Données du restaurant sélectionné</span>
+              <h2 className="mt-1 font-serif text-xl font-medium text-mv-ink">Groupes selon les visites cumulées</h2>
+              <p className="mt-1.5 text-xs leading-relaxed text-mv-ink-soft">Ces groupes sont calculés à partir des profils membres de cet établissement. Ils ne partagent aucun nom ni indicateur d’un autre restaurant.</p>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="border-b border-mv-border bg-mv-cream-soft">
-                    <th className="py-3 px-4 font-semibold text-mv-ink">Échelle</th>
-                    <th className="py-3 px-4 font-semibold text-mv-ink">Établissement & Fondateur</th>
-                    <th className="py-3 px-4 font-semibold text-mv-ink">Type</th>
-                    <th className="py-3 px-4 font-semibold text-mv-ink">Période</th>
-                    <th className="py-3 px-4 font-semibold text-mv-ink">Taux 2e Visite</th>
-                    <th className="py-3 px-4 font-semibold text-mv-ink">Fréquence Moy.</th>
-                    <th className="py-3 px-4 font-semibold text-mv-ink">Panier Moyen</th>
-                    <th className="py-3 px-4 font-semibold text-mv-ink">CA Audité</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-mv-border-soft">
-                  {AUDIT_PROFILES.map((p) => (
-                    <tr key={p.name} className="hover:bg-mv-cream/40 transition-colors">
-                      <td className="py-3.5 px-4 font-semibold text-mv-ink font-mono">
-                        <span
-                          className={`inline-block rounded px-2 py-0.5 text-[11px] ${
-                            p.tier === "PETIT"
-                              ? "bg-amber-100 text-amber-900"
-                              : p.tier === "MOYEN"
-                                ? "bg-emerald-100 text-emerald-900"
-                                : "bg-purple-100 text-purple-900"
-                          }`}
-                        >
-                          {p.tier}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-serif font-semibold text-mv-ink">{p.name}</div>
-                        <div className="text-[11px] text-mv-ink-faint">{p.owner}</div>
-                      </td>
-                      <td className="py-3.5 px-4 text-mv-ink-soft">{p.type}</td>
-                      <td className="py-3.5 px-4 font-mono text-mv-ink-soft">{p.period}</td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-mv-green-dark">
-                        {p.retention2x}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-mv-ink font-medium">
-                        {p.frequency}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-mv-ink font-medium">
-                        {p.basket}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-mv-ink">
-                        {p.revenue}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-6 rounded-xl border border-mv-border-soft bg-mv-cream-soft p-4">
-              <h4 className="font-serif text-sm font-semibold text-mv-ink mb-1.5">
-                Enseignement clé pour votre établissement
-              </h4>
-              <p className="text-xs text-mv-ink-soft leading-relaxed">
-                Le passage de <strong>2,5 visites</strong> (Câlin Café, Débutant) à <strong>4,4 visites</strong> (Burger Nomade, Moyen) s&apos;effectue principalement grâce à la relance automatique de la deuxième visite envoyée 3 à 5 jours après le premier passage. Dès le deuxième palier, 100 % des membres reviennent régulièrement.
-              </p>
-            </div>
+            {customerVisitCohorts.every((cohort) => cohort.members === 0) ? (
+              <div className="rounded-xl border border-dashed border-mv-border p-6 text-center text-sm text-mv-ink-faint">Aucun membre à segmenter pour le moment.</div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-3">
+                {customerVisitCohorts.map((cohort) => (
+                  <section key={cohort.id} className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/50 p-4">
+                    <h3 className="text-sm font-semibold text-mv-ink">{cohort.label}</h3>
+                    <p className="mt-3 font-serif text-3xl text-mv-green-dark">{cohort.members}</p>
+                    <p className="text-xs text-mv-ink-faint">membres</p>
+                    <dl className="mt-4 space-y-2 border-t border-mv-border-soft pt-3 text-xs">
+                      <div className="flex justify-between gap-3"><dt className="text-mv-ink-faint">Visites moyennes</dt><dd className="font-semibold text-mv-ink">{cohort.averageVisits.toFixed(1)}</dd></div>
+                      <div className="flex justify-between gap-3"><dt className="text-mv-ink-faint">Dépenses cumulées moyennes</dt><dd className="font-semibold text-mv-ink">{new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(cohort.averageSpend)}</dd></div>
+                    </dl>
+                  </section>
+                ))}
+              </div>
+            )}
+            <p className="mt-4 text-[11px] text-mv-ink-faint">Les visites et dépenses reflètent les valeurs cumulées dans les profils clients; leur disponibilité dépend des connexions caisse et des mises à jour manuelles.</p>
           </Card>
         </div>
       )}
@@ -448,10 +382,10 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
               <div>
                 <h2 className="font-serif text-lg font-semibold text-mv-ink">
-                  Journal des 15 événements de cycle de vie
+                  Événements de cycle de vie
                 </h2>
                 <p className="text-xs text-mv-ink-soft">
-                  Événements horodatés en direct : acquisition, scans, visites, récompenses, campagnes et parrainages.
+                  Événements horodatés enregistrés : acquisition, scans, visites, récompenses, campagnes et parrainages.
                 </p>
               </div>
 
@@ -541,12 +475,10 @@ export function RetentionFunnelView({ data, restaurantId }: Props) {
 function KpiCard({
   kpi,
   icon: Icon,
-  accent,
   highlighted = false,
 }: {
   kpi: RetentionKpi;
   icon: React.ComponentType<{ size?: number; className?: string }>;
-  accent: string;
   highlighted?: boolean;
 }) {
   const statusColor =
@@ -593,72 +525,3 @@ function KpiCard({
     </Card>
   );
 }
-
-const AUDIT_PROFILES = [
-  {
-    tier: "PETIT",
-    name: "Câlin Café",
-    owner: "Denis Paquette",
-    type: "Café de quartier",
-    period: "18 j",
-    retention2x: "75 %",
-    frequency: "2,5 vis.",
-    basket: "19,98 $",
-    revenue: "5 193 $",
-  },
-  {
-    tier: "PETIT",
-    name: "Poutine & Cie",
-    owner: "Rania Haddad",
-    type: "Comptoir rapide",
-    period: "18 j",
-    retention2x: "75 %",
-    frequency: "2,5 vis.",
-    basket: "44,65 $",
-    revenue: "10 205 $",
-  },
-  {
-    tier: "MOYEN",
-    name: "Café Lucide",
-    owner: "Théo Bernier",
-    type: "Café spécialisé",
-    period: "30 j",
-    retention2x: "100 %",
-    frequency: "4,4 vis.",
-    basket: "37,22 $",
-    revenue: "15 144 $",
-  },
-  {
-    tier: "MOYEN",
-    name: "Burger Nomade",
-    owner: "Jade Simard",
-    type: "Restaurant fixe",
-    period: "30 j",
-    retention2x: "100 %",
-    frequency: "4,4 vis.",
-    basket: "86,84 $",
-    revenue: "33 288 $",
-  },
-  {
-    tier: "GRAND",
-    name: "Bureau & Brew",
-    owner: "Camille Lortie",
-    type: "Café d'affaires",
-    period: "43 j",
-    retention2x: "100 %",
-    frequency: "9,1 vis.",
-    basket: "81,80 $",
-    revenue: "41 050 $",
-  },
-  {
-    tier: "GRAND",
-    name: "Le Trèfle Doré",
-    owner: "Marc-André Fournier",
-    type: "Bistro établi",
-    period: "43 j",
-    retention2x: "100 %",
-    frequency: "9,1 vis.",
-    basket: "206,64 $",
-    revenue: "86 392 $",
-  },
-];

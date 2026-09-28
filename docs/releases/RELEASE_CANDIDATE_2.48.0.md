@@ -1,15 +1,37 @@
 # Release candidate — Minerva Flow 2.48.0
 
-**État : brouillon interne — non publié; l’application iOS `1.0 (11)` est disponible en bêta externe, mais la release web/App Store n’est pas prête pour production.**
+## Mise à jour de vérification — 2026-09-27
+
+Cette mise à jour remplace les états antérieurs ci-dessous pour les points mentionnés.
+
+- Web 2.48.0 : le déploiement Production courant apparaît `READY` dans Vercel et les domaines Minerva Flow restent associés. Le SHA source n’est pas exposé par l’inspection Vercel; les modifications web de menus, commandes et stock sont dans `4aee158`.
+- Base : les migrations `0156` à `0161` sont consignées en staging et production, avec les objets de menu, de commandes et d’inventaire attendus.
+- Parcours staging : E2E création du lien de menu réussi; E2E commande publique/ramassage réussi et commande `soumise` vérifiée en base; scénario stock synthétique réussi (10 → 2 à la confirmation, une alerte sous 30 %, pas de double déduction, restitution à 10 lors de l’annulation avant service). Les enregistrements E2E sont nettoyés.
+- Captures expurgées : [menu desktop](../../public/assets/changelog/flow-direct-menu-desktop.png), [menu mobile](../../public/assets/changelog/flow-direct-menu-mobile.png), [commande mobile](../../public/assets/changelog/flow-direct-order-mobile.png).
+- iOS/TestFlight : build **1.0.0 (15)** téléversé et traité (`VALID`), affecté aux groupes interne et externe, révision bêta externe **APPROVED**. Lien public : https://testflight.apple.com/join/xGr45uuF.
+- Contrôle iOS : l’audit statique du build 15 relève 0 critique, 1 détection élevée (faux négatif de recherche de suppression de compte dans un binaire compilé; implémentation native présente) et 7 avertissements nécessitant les contrôles manuels habituels. L’audit ne constitue pas une approbation de soumission App Store.
+- Vérification globale : connexion et inscription E2E réussies; tests iOS 19/19 et tests ciblés web 44/44 réussis. La suite web complète conserve un timeout de 1 test (344/345) et le lint conserve des erreurs préexistantes. L’envoi de courriels de lancement demeure soumis à la validation finale du texte et des destinataires.
+
+**État : web `2.48.0` déployé en Production depuis le commit `3521ec4`; déploiement exact `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9` READY, domaines `minervaflow.app` et `www.minervaflow.app` rattachés. L’option Connect est explicitement « Non configuré — bientôt disponible » et reste désactivée jusqu’à la configuration live; le parcours Connect n’est donc pas annoncé comme fonctionnel. Les routes `/login` et `/en/login` répondent 200, mais l’inspection authentifiée et visuelle du réglage n’a pas pu être faite. POS non testable/reporté. Build iOS `1.0.0 (13)` téléversé à Apple; traitement et affectation aux groupes à confirmer, XCTest sans résultat confirmé.**
 Date de préparation : 2026-09-24.
-Base web actuelle : `2.47.1`. La version proposée reste à confirmer au moment du gel de release.
+Dernière vérification : 2026-09-26.
+Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
+
+### Actions de livraison encore ouvertes — 2026-09-25
+
+- [x] Web Production déployé avec le garde de disponibilité Connect désactivant le paiement en ligne en l’absence de configuration : `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9`, commit `3521ec4`. Smoke HTTP canonique `/login` et `/en/login` = 200; 0 erreur runtime Vercel observée dans les 15 premières minutes.
+- [ ] Stripe Connect : clé live absente de Vercel Production et compte test restreint; aucun checkout Connect n’est déclaré fonctionnel. Configurer la clé par un canal secret Vercel et un compte connecté actif, puis valider un paiement autorisé avant d’activer les paiements en ligne.
+- [ ] POS et E2E authentifiés : POS reportés comme demandé; E2E staging précédent échoué avant assertions et Preview utilise des ressources Supabase de production, donc aucune écriture distante lancée.
+- [x] iOS/TestFlight : build `1.0.0 (13)` archivé, signé, dSYM vérifié et téléversé avec succès. [ ] Confirmer le traitement Apple, l’assignation au groupe externe et l’accès des testeurs; XCTest reste à relancer sur un runner stable. L’audit statique rapporte 0 critique, 0 élevé et 2 avertissements.
+- [ ] Après ces validations, finaliser le changelog/release et l’envoi de courriel aux utilisateurs consentants; aucune notification n’a été envoyée.
+- [x] Build Vercel du Preview courant compilé et READY; Sentry a téléversé les source maps et créé la release associée au SHA candidat. Le build local précédent (Webpack, 328 routes) a terminé avec le code 0.
 
 ## Sorties envisagées
 
 | Cible | Sortie proposée | État |
 | --- | --- | --- |
-| Web | `2.48.0` | Brouillon; build de production local non terminé; ne pas déployer avant déblocage Auth et E2E owner/client |
-| iOS / TestFlight | `1.0 (11)` | En cours de test dans les groupes interne et externe; 8 testeurs externes; lien public vérifié HTTP 200 |
+| Web | `2.48.0` | Production `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9` READY pour `3521ec4`; domain aliases actifs; paiement Connect explicitement désactivé jusqu’à configuration; E2E authentifié visuel incomplet |
+| iOS / TestFlight | `1.0.0 (13)` | Téléversé à App Store Connect le 2026-09-25; traitement et assignation aux groupes en attente. `1.0 (11)` reste le dernier build confirmé chez les testeurs |
 | GitHub Release + changelog | `v2.48.0` | Notes FR/EN préparées; publication bloquée jusqu’à la capture réelle jointe comme asset |
 | Android / Google Play | Aucune | Aucun projet Android ni pipeline Android trouvé dans le dépôt |
 
@@ -61,31 +83,45 @@ Base web actuelle : `2.47.1`. La version proposée reste à confirmer au moment 
 
 ![Confirmation réelle d’une demande de devis traiteur après E2E staging, capture desktop sans données de contact](../screenshots/changelog-2.48.0-catering-success.png)
 
-Capture issue du vrai parcours public de demande traiteur, vérifié sur staging avec données synthétiques nettoyées. La version mobile est aussi jointe dans `docs/screenshots/changelog-2.48.0-catering-success-mobile.png`. Avant la GitHub Release, joindre la capture desktop en asset image à la release publiée afin que le workflow alimente le changelog applicatif.
+Capture issue du vrai parcours public de demande traiteur, vérifié sur staging avec données synthétiques nettoyées. Les vues mobiles sont aussi conservées dans `docs/screenshots/changelog-2.48.0-catering-success-mobile.png` et [confirmation de précommande](../screenshots/changelog-2.48.0-preorder-success-mobile.png). Avant la GitHub Release, joindre une capture desktop en asset image à la release publiée afin que le workflow alimente le changelog applicatif.
 
 ## Gates avant publication
 
-- [x] Vérifier le schéma staging en lecture seule : les colonnes, fonctions, index et tables cœur (`delivery_enabled`, adresse, idempotence, devis, ambassadeurs/UGC) sont déjà présents. Le dry-run refuse la divergence entre 146 versions distantes horodatées et les migrations locales numérotées; aucune migration/historique n’a été modifié.
-- [x] E2E staging public traiteur (demande sur place et livraison) et conversion de devis en commande avec protection idempotente : 3 tests distincts réussis; données synthétiques nettoyées et vérifiées.
-- [ ] Exécuter les parcours staging de précommande/commande client, reprise après expiration d’une session Stripe réelle en mode test, et vérification du tableau propriétaire.
-- [x] Capture de confirmation client desktop/mobile ajoutée à ce changelog depuis l’E2E staging.
+- [x] Vérifier le staging en lecture seule : tables/colonnes utilisées par la candidate et `profiles.product_updates_opt_in DEFAULT false` sont présentes. L’historique distant est horodaté et divergent des noms numérotés locaux; aucune migration en double ni entrée d’historique n’a été ajoutée.
+- [x] E2E staging : 6/6 réussis — précommande planifiée payée à la cueillette, suggestion/vote et brouillon owner, devis traiteur sur place/livraison, demande owner et conversion idempotente d’un devis payé; fixtures synthétiques nettoyées.
+- [x] Accounts v2 Recipient ajouté pour les nouvelles connexions restaurant, avec conservation des comptes Express v1; migration additive 0150 appliquée et colonnes vérifiées sur le staging autorisé. Historique Supabase distant horodaté divergent : SQL ciblé utilisé à la place de `db push`.
+- [x] Smoke Stripe test-mode : création du destinataire synthétique, création du lien d’onboarding hébergé et lecture d’état; URL gardée secrète et compte fermé après le test.
+- [ ] Valider Checkout/PaymentIntent et les reprises avec un compte Connect test dont les capacités transfert/payout sont actives. Aucun paiement en ligne complet n’est confirmé; le test précédent a été refusé (`insufficient_capabilities_for_transfer`). Le Preview utilise les ressources Supabase de production, donc aucun paiement n’y est lancé.
+- [ ] Vérifier les flux POS réels et compléter les tests UI natifs.
+- [x] Captures réelles E2E ajoutées : confirmation de devis traiteur desktop/mobile et confirmation de précommande mobile à 390 px.
 - [x] Corriger le défaut Auth causé par `profiles.product_updates_opt_in` NOT NULL sans défaut dans le trigger d’inscription; migration `0149_signup_product_updates_default_false.sql` appliquée au staging autorisé, inscription owner et test devis staging réussis.
-- [ ] Joindre la capture finale PNG/JPG/WebP/GIF comme asset de la GitHub Release; le workflow la publie dans `changelog_entries.image_url` et refuse une release sans capture.
-- [ ] Terminer le build web de production (Turbopack a stagné; Webpack a dépassé la limite mémoire par défaut; la reprise à 4 Go est restée en attente pendant que l’espace libre atteignait 688 Mo et a dû être terminée. Les fichiers `.next` partiels ne sont pas un artefact de release).
+- [x] Captures précommande/devis traiteur ajoutées au changelog in-app candidate dans `public/assets/changelog/` et reliées à l’entrée fallback; les captures brutes sont dans `docs/screenshots/`.
+- [ ] Publier l’entrée DB/GitHub Release seulement après validation du déploiement production; la publication GitHub déclenche des notifications email/push et doit inclure une image asset.
+- [x] Build Vercel du Preview exact vérifié; téléversement réel des source maps Sentry confirmé dans les logs du build.
+- [x] Parcours Auth et onboarding ciblés sur staging : inscription immédiate, rejet du doublon, connexion confirmée, préférence produit décochée par défaut, déclencheur Auth sans métadonnée de consentement et onboarding complet réussis.
+- [ ] Navigation rétablie selon AGENTS.md (LTV d’abord; Gestion quotidienne avec Fournisseurs; Paramètres et plus avec Nouveautés) et verrou de routes retiré du proxy — à valider sur un déploiement Preview; l’ancien test staging du verrou à quatre sections n’est plus applicable.
+- [x] Preview le plus récent inspecté : `dpl_DVYtvAbBgrgqZtGR4PC8QrYMUkKs` READY pour `515312c`; smoke routes publiques et redirect owner sans session réussis, images changelog répondent 200.
+- [ ] Vérifier les parcours E2E authentifiés sur le Preview après configuration d’une base Supabase de staging isolée; `e2e/test-env.ts` refuse explicitement les tests navigateur distants tant qu’un environnement isolé et vérifié n’est pas configuré. Ne pas contourner cette protection.
+- [x] Appliquer/valider de manière contrôlée la migration additive 0150 en production : les quatre colonnes Stripe sont présentes et les valeurs par défaut ont été vérifiées pour 106 restaurants. Journal Supabase `0150_restaurant_connect_v2` / `20260925191042`. 0151 (`20260925184354`) et `menu_items.price_options` sont aussi présents. Ne pas exécuter `supabase db push` avant réconciliation de l’historique divergent.
+- [x] Playwright visuel login Preview 1440×900 et 390×844 : `/en/login` est en anglais, sans overflow ni erreur JavaScript. `/fr/login` conserve le français. Captures vérifiées en local et le Preview `dpl_Hg2V8PaycRn86dVFCJWCfJbMtkqF` sert le même commit Auth `1a63de8`.
+- [ ] Refaire l’E2E authentifié/POS sur staging : la reprise actuelle échoue avant assertions métier par timeouts `/login`/`/workspace` et démarrage du navigateur; les traces sont dans `test-results/` local, non commitées.
+- [ ] Revue complète des écrans Preview, clavier et zoom, avant toute promotion.
 - [x] Compiler l’application, vérifier l’UUID du dSYM Sentry, téléverser l’archive `1.0 (11)` et confirmer son traitement par Apple.
-- [x] Exécuter les tests UI ciblés sur iPhone 17 Pro Simulator : checkout direct après ajout et page Scanner (2/2 réussis).
+- [x] Nouvelle archive native **1.0.0 (12)** créée le 2026-09-25; `CFBundleShortVersionString` est aligné sur `MARKETING_VERSION` pour l’app et le widget, et l’UUID du dSYM Sentry correspond au framework.
+- [x] Xcode confirme le téléversement de `MinervaFlow 1.0.0 (12)` à App Store Connect. [ ] Confirmer le traitement, l’assignation aux groupes et l’accès des testeurs; l’upload seul ne prouve pas la disponibilité TestFlight.
+- [ ] Relancer XCTest sur un runner stable : la compilation Simulator est réussie, mais les dernières tentatives XCTest n’ont produit aucun résultat confirmé.
 - [x] Enregistrer les notes de test et de review, la politique de confidentialité, et les identifiants vérifiés du compte démo dans App Store Connect.
 - [x] Assigner le build 11 au groupe externe et soumettre à l’examen bêta avec notification automatique; Apple affiche le build « En cours de test » dans le groupe externe (8 testeurs). Lien public vérifié HTTP 200 : https://testflight.apple.com/join/xGr45uuF.
 - [x] Audit App Store statique du 2026-09-24 : 0 risque critique, 0 élevé et 2 avertissements; les contrôles manuels de publication publique (captures, déclarations de confidentialité, accords et métadonnées) restent ouverts.
 - [ ] Vérifier la parité des descriptions publiées avec les capacités réellement activées chez chaque restaurant.
 - [ ] Ne créer une release GitHub publiée qu’après validation des parcours restants et d’un build aligné sur le commit; `.github/workflows/publish-release.yml` publie l’entrée de changelog et déclenche les notifications associées.
 
-## État des vérifications au 2026-09-24
+## État des vérifications au 2026-09-25
 
-- 321 tests unitaires passent; TypeScript et lint ciblé passent; les tests iOS ciblés passent (2/2); 3 parcours E2E staging distincts passent, avec un quatrième passage de capture.
-- Le lint global reste en échec sur des erreurs réparties dans plusieurs zones du dépôt; le lint ciblé sur les fichiers modifiés de cette phase passe.
-- Les 36 tests Playwright sont découverts; seuls les 3 parcours traiteur ci-dessus ont été exécutés sur staging.
-- L’audit statique App Store indique 0 risque critique et 0 risque élevé; les contrôles manuels pour la publication publique restent ouverts.
-- Aucune commande Docker n’a été relancée. Le build TestFlight `1.0 (11)` est actif en externe et son lien public répond HTTP 200. Le commit `bb25ec8` (journal des mises à jour iOS) est poussé sur `main`; le déploiement Vercel associé `dpl_2G2kSTuTUECJ1LAH52H75kizmx59` est `READY` et la racine répond `307`. Le build TestFlight actif ne contient pas ce changement; aucun nouvel upload iOS ni GitHub Release n’a été effectué.
-- Compilation iOS Simulator réussie pour le changement. Une tentative XCTest ciblée a été interrompue après environ 55 secondes, bloquée dans le nettoyage du runner Xcode; aucun résultat XCTest n’est confirmé pour cette tentative.
-- **Décision : NOT READY pour la production.** Le test externe iOS est ouvert; les parcours owner/client complets, la validation visuelle exhaustive, les vérifications manuelles Apple restantes et le déploiement correspondant au commit testé sont encore à établir avant d’envisager la production.
+- Vérification locale de la candidate : 335 tests unitaires (58 fichiers), TypeScript `--noEmit`, lint ciblé et build Next passent; la compilation iOS Simulator passe également. Les XCTest précédents restent sans résultat confirmé, le runner Xcode s’étant bloqué.
+- Preview exact `dpl_DVYtvAbBgrgqZtGR4PC8QrYMUkKs` READY pour `515312c`. Smoke HTTP : login, inscription, pages légales 200; routes owner redirigées au login; les deux images de changelog sont en 200. Playwright visuel login desktop/mobile réussi avec Chromium headless 1.63 récupéré dans le cache existant; les trois E2E staging retentés ont échoué avant assertions.
+- Aucun E2E authentifié ou avec écritures n’a été lancé contre le Preview : il utilise Supabase production, et le garde `e2e/test-env.ts` exige une base isolée explicitement autorisée. Le staging reste l’environnement utilisé pour les E2E synthétiques.
+- 335 tests unitaires et E2E staging (6/6), reprise précommande/traiteur (2/2) et E2E owner Paramètres/Intégrations (1/1) passent. Aucun paiement Stripe Connect complet n’est confirmé : le destinataire de test ne possède pas de capacité de transfert (`insufficient_capabilities_for_transfer`). Les E2E POS ne sont pas terminés.
+- La migration 0150 est appliquée et vérifiée en staging et production; le journal production l’enregistre sous `20260925191042`. 0151 est appliquée en production (`20260925184354`). L’historique distant diverge du dépôt; ne pas lancer `supabase db push`.
+- Le build `1.0.0 (12)` a été téléversé à App Store Connect; son traitement et son activation TestFlight restent en attente. Aucun tag, release GitHub ni courriel utilisateur n’a été émis.
+- **Décision : Web Production déployé avec conditions; Stripe Connect n’est pas disponible pour accepter des paiements.** Restent à faire : configurer Stripe live et valider le paiement avant activation, reprendre les E2E POS/staging selon disponibilité, vérifier visuellement le parcours propriétaire en session authentifiée. TestFlight : build 12 téléversé, mais statut Apple/groupes et XCTest restent non confirmés.

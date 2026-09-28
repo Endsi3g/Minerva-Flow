@@ -5,6 +5,7 @@ import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { isGooglePlacesConfigured } from "@/lib/google/config";
 
 const ONBOARDING_PANEL_POINTS = [
   { title: "Aucune carte requise", description: "Vous entrez dans l'application dès cette étape — aucun engagement, aucun paiement." },
@@ -55,6 +56,7 @@ export default async function OnboardingPage() {
     >
       <OnboardingWizard
         userId={user.id}
+        googlePlacesEnabled={isGooglePlacesConfigured()}
         restaurantId={membership?.restaurantId ?? ""}
         restaurantName={restaurant?.name ?? "Mon restaurant"}
         initialServiceModel={restaurant?.serviceModel === "cafe" ? "cafe" : "restaurant"}

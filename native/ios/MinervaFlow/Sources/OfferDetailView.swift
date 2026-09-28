@@ -313,7 +313,7 @@ struct OfferDetailView: View {
             .padding(10)
         }
         .frame(width: 170, alignment: .leading)
-        .background(.white)
+        .background(MinervaColor.surface)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .shadow(color: MinervaColor.ink.opacity(0.08), radius: 8, x: 0, y: 3)
     }
@@ -476,7 +476,7 @@ private struct WriteOfferReviewSheet: View {
                     TextField("Votre commentaire (optionnel)", text: $comment, axis: .vertical)
                         .lineLimit(4, reservesSpace: true)
                         .padding(12)
-                        .background(.white)
+                        .background(MinervaColor.surface)
                         .clipShape(RoundedRectangle(cornerRadius: 11))
                         .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
 

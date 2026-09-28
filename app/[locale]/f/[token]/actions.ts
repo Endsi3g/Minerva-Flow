@@ -18,7 +18,7 @@ export async function joinLoyaltyProgramAction(
   token: string,
   input: { name: string; email: string; marketingConsent: boolean; birthday?: string | null },
   touchpointCode?: string | null
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: false; error: string } | { ok: true; emailSent: boolean }> {
   const ip = await getClientIp();
   const { allowed } = await checkRateLimit(`loyalty-join:${ip}`, { max: 10, windowSeconds: 300 });
   if (!allowed) return { ok: false, error: "Trop de tentatives. Réessayez dans quelques minutes." };
@@ -28,13 +28,15 @@ export async function joinLoyaltyProgramAction(
   const landing = await getLoyaltyShareByToken(token);
   if (!landing) return { ok: false, error: "Ce lien n'est plus valide." };
 
-  const { ok } = await joinLoyaltyProgram(landing.restaurantId, input);
+  const { ok, alreadyMember } = await joinLoyaltyProgram(landing.restaurantId, input);
   if (!ok) return { ok: false, error: "Une erreur est survenue." };
 
   // Attribution: this join arrived via a physical touchpoint tap (the /t/
   // redirect appended ?tp=<code>, threaded down from page.tsx) — credit the
   // exact NFC tag/sticker/chevalet that drove it, not just "someone joined."
-  if (touchpointCode) {
+  // A retry after an email delivery error is idempotent. Do not count that
+  // retry as a second visit or loyalty activation for the same touchpoint.
+  if (touchpointCode && !alreadyMember) {
     await recordTouchpointEventByCode(touchpointCode, "venue_joined");
     await recordTouchpointEventByCode(touchpointCode, "loyalty_activated");
   }
@@ -50,8 +52,14 @@ export async function joinLoyaltyProgramAction(
     },
   });
 
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
+  if (error) {
+    // The customer row is already persisted. Keep the signup successful and
+    // let the customer retry the sign-in email instead of implying their
+    // enrollment was lost (Supabase can rate-limit OTP email delivery).
+    console.error("joinLoyaltyProgramAction: OTP email could not be sent:", error.message);
+    return { ok: true, emailSent: false };
+  }
+  return { ok: true, emailSent: true };
 }
 
 export async function recordFormStartedAction(restaurantId: string): Promise<void> {
@@ -65,4 +73,3 @@ export async function recordFormStartedAction(restaurantId: string): Promise<voi
     // Non-blocking
   }
 }
-

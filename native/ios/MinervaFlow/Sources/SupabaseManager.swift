@@ -13,6 +13,7 @@ final class SupabaseManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published private(set) var authUserID: UUID?
     @Published var customer: Customer?
+    @Published private(set) var activeTenantBranding: NativeTenantBranding?
     @Published var transactions: [LoyaltyTransaction] = []
     @Published var rewards: [LoyaltyReward] = []
     @Published var redemptions: [RewardRedemption] = []
@@ -38,6 +39,11 @@ final class SupabaseManager: ObservableObject {
     @Published var announcements: [PlatformAnnouncement] = []
     @Published var menuItems: [NativeMenuItem] = []
     @Published var customerMealSuggestions: [NativeMealSuggestion] = []
+    @Published var isLoadingCustomerMealSuggestions = false
+    @Published var customerMealSuggestionsError: String?
+    @Published var customerServiceQuotes: [NativeServiceQuote] = []
+    @Published var isLoadingCustomerServiceQuotes = false
+    @Published var customerServiceQuotesError: String?
     @Published var taxRate: Double = 0.14975
     @Published var acceptsTips: Bool = true
     @Published var onlinePaymentEnabled: Bool = false
@@ -128,6 +134,10 @@ final class SupabaseManager: ObservableObject {
                 isResolvingExperience = false
                 experienceResolutionError = nil
                 customer = nil
+                activeTenantBranding = nil
+                UserDefaults.standard.removeObject(forKey: "activeTenantPrimaryColor")
+                UserDefaults.standard.removeObject(forKey: "activeTenantSecondaryColor")
+                UserDefaults.standard.removeObject(forKey: "activeTenantAccentColor")
                 transactions = []
             }
         }
@@ -273,9 +283,11 @@ final class SupabaseManager: ObservableObject {
                 .value
             guard let mine = customers.first else {
                 customer = nil
+                activateTenantBranding(nil)
                 return
             }
             customer = mine
+            await fetchTenantBranding(for: mine.restaurantId)
 
             async let txsFetch: [LoyaltyTransaction] = client
                 .from("loyalty_transactions")
@@ -406,25 +418,7 @@ final class SupabaseManager: ObservableObject {
             await loadOwnerOrders()
             await loadOwnerOperations(for: selectedOwnerRestaurantId ?? first.restaurantId)
             await fetchOwnerMealSuggestions(for: selectedOwnerRestaurantId ?? first.restaurantId)
-            if let workspaceId = first.restaurant?.workspaceId {
-                struct Branding: Decodable {
-                    let brandName: String
-                    let logoUrl: String?
-                    let primaryColor: String
-                    let secondaryColor: String
-                    let accentColor: String
-                    enum CodingKeys: String, CodingKey {
-                        case brandName = "brand_name", logoUrl = "logo_url", primaryColor = "primary_color", secondaryColor = "secondary_color", accentColor = "accent_color"
-                    }
-                }
-                ownerBranding = try await client
-                    .from("workspace_brand_settings")
-                    .select("brand_name, logo_url, primary_color, secondary_color, accent_color")
-                    .eq("workspace_id", value: workspaceId)
-                    .single()
-                    .execute()
-                    .value
-            }
+            await loadSelectedOwnerBranding()
         } catch {
             // A customer session can legitimately receive no membership rows;
             // only surface errors for a session that looked privileged.
@@ -502,9 +496,41 @@ final class SupabaseManager: ObservableObject {
     func selectOwnerRestaurant(_ restaurantId: String) async {
         guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return }
         selectedOwnerRestaurantId = restaurantId
+        await loadSelectedOwnerBranding()
         await loadOwnerOrders()
         await loadOwnerOperations(for: restaurantId)
         await fetchOwnerMealSuggestions(for: restaurantId)
+    }
+
+    private func loadSelectedOwnerBranding() async {
+        guard let workspaceId = selectedOwnerRestaurant?.workspaceId else { return }
+        struct Branding: Decodable {
+            let brandName: String
+            let logoUrl: String?
+            let primaryColor: String
+            let secondaryColor: String
+            let accentColor: String
+            enum CodingKeys: String, CodingKey {
+                case brandName = "brand_name", logoUrl = "logo_url", primaryColor = "primary_color", secondaryColor = "secondary_color", accentColor = "accent_color"
+            }
+        }
+        do {
+            ownerBranding = try await client
+                .from("workspace_brand_settings")
+                .select("brand_name, logo_url, primary_color, secondary_color, accent_color")
+                .eq("workspace_id", value: workspaceId)
+                .single()
+                .execute()
+                .value
+            if let ownerBranding {
+                UserDefaults.standard.set(ownerBranding.primaryColor, forKey: "activeTenantPrimaryColor")
+                UserDefaults.standard.set(ownerBranding.secondaryColor, forKey: "activeTenantSecondaryColor")
+                UserDefaults.standard.set(ownerBranding.accentColor, forKey: "activeTenantAccentColor")
+            }
+        } catch {
+            ownerBranding = nil
+            print("loadSelectedOwnerBranding error: \(error)")
+        }
     }
 
     /// Persists the required establishment name during the native owner setup
@@ -651,14 +677,20 @@ final class SupabaseManager: ObservableObject {
     }
 
     func fetchMealSuggestions() async {
-        guard let restaurantId = customer?.restaurantId else { return }
+        guard let restaurantId = customer?.restaurantId else {
+            customerMealSuggestions = []
+            customerMealSuggestionsError = nil
+            return
+        }
+        isLoadingCustomerMealSuggestions = true
+        customerMealSuggestionsError = nil
+        defer { isLoadingCustomerMealSuggestions = false }
         struct Params: Encodable { let p_restaurant_id: String }
         do {
             customerMealSuggestions = try await client.rpc("get_meal_suggestions", params: Params(p_restaurant_id: restaurantId)).execute().value
         } catch {
-            // The menu remains usable while an older environment is waiting
-            // for the suggestion migration; expose no fake suggestions.
             customerMealSuggestions = []
+            customerMealSuggestionsError = "Les suggestions ne sont pas disponibles. Vérifiez votre connexion, puis réessayez."
             print("fetchMealSuggestions error: \(error)")
         }
     }
@@ -745,12 +777,20 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
-    func updateOwnerMenuItem(_ item: NativeMenuItem, name: String, price: Double, description: String?, active: Bool, allergens: [String], allergensConfirmed: Bool) async -> Bool {
+    func updateOwnerMenuItem(_ item: NativeMenuItem, name: String, price: Double, priceOptions: [NativeMenuPriceOption], description: String?, active: Bool, allergens: [String], allergensConfirmed: Bool) async -> Bool {
         guard let restaurantId = selectedOwnerRestaurantId, name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false, price >= 0 else { return false }
-        if active && item.isDraft == true && (price <= 0 || !allergensConfirmed) { return false }
+        var seenOptionIds = Set<String>()
+        let validOptions = Array(priceOptions.prefix(20).filter {
+            let unique = !$0.id.isEmpty && seenOptionIds.insert($0.id).inserted
+            return unique && !$0.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && (1...999).contains($0.quantity) && $0.price > 0 && $0.price <= 1_000_000 && $0.price.isFinite
+        })
+        let savedPrice = validOptions.map(\.price).min() ?? price
+        if active && item.isDraft == true && (savedPrice <= 0 || !allergensConfirmed) { return false }
         struct Patch: Encodable {
             let name: String
             let price: Double
+            let priceOptions: [NativeMenuPriceOption]
             let description: String?
             let active: Bool
             let isDraft: Bool
@@ -758,6 +798,7 @@ final class SupabaseManager: ObservableObject {
             let allergensConfirmed: Bool
             enum CodingKeys: String, CodingKey {
                 case name, price, description, active, allergens
+                case priceOptions = "price_options"
                 case isDraft = "is_draft"
                 case allergensConfirmed = "allergens_confirmed"
             }
@@ -765,7 +806,8 @@ final class SupabaseManager: ObservableObject {
         do {
             try await client.from("menu_items").update(Patch(
                 name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-                price: price,
+                price: savedPrice,
+                priceOptions: validOptions,
                 description: description?.trimmingCharacters(in: .whitespacesAndNewlines),
                 active: active,
                 isDraft: active ? false : (item.isDraft ?? false),
@@ -780,8 +822,17 @@ final class SupabaseManager: ObservableObject {
     func updateOwnerOrderStatus(_ orderId: String, restaurantId: String, status: String) async -> Bool {
         guard ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return false }
         do {
-            struct Patch: Encodable { let status: String }
-            try await client.from("orders").update(Patch(status: status)).eq("restaurant_id", value: restaurantId).eq("id", value: orderId).execute()
+            struct Body: Encodable { let restaurantId: String; let status: String; let cancellationReason: String? }
+            let body = try JSONEncoder().encode(Body(
+                restaurantId: restaurantId,
+                status: status,
+                cancellationReason: status == "annulee" ? "Un imprévu empêche le restaurant de préparer cette commande." : nil
+            ))
+            let _: Data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/native/owner/orders/\(orderId)/status"),
+                method: "POST",
+                body: body
+            )
             await refreshOwnerOperations()
             return true
         } catch { print("updateOwnerOrderStatus error: \(error)"); return false }
@@ -833,9 +884,9 @@ final class SupabaseManager: ObservableObject {
         } catch { print("updateOwnerEmployee error: \(error)"); return false }
     }
 
-    func updateOwnerInventoryItem(_ item: NativeOwnerInventoryItem, quantity: Double, parLevel: Double, unitCost: Double) async -> Bool {
-        guard let restaurantId = selectedOwnerRestaurantId, quantity >= 0, parLevel >= 0, unitCost >= 0 else { return false }
-        struct Patch: Encodable { let quantityOnHand: Double; let parLevel: Double; let unitCost: Double
+    func updateOwnerInventoryItem(_ item: NativeOwnerInventoryItem, quantity: Double, parLevel: Double?, unitCost: Double) async -> Bool {
+        guard let restaurantId = selectedOwnerRestaurantId, quantity >= 0, (parLevel ?? 0) >= 0, unitCost >= 0 else { return false }
+        struct Patch: Encodable { let quantityOnHand: Double; let parLevel: Double?; let unitCost: Double
             enum CodingKeys: String, CodingKey { case quantityOnHand = "quantity_on_hand", parLevel = "par_level", unitCost = "unit_cost" }
         }
         do {
@@ -1193,6 +1244,60 @@ final class SupabaseManager: ObservableObject {
         return data
     }
 
+    func fetchFlowAmbassador() async -> FlowAmbassadorDashboard? {
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/ambassador"))
+            return try JSONDecoder().decode(FlowAmbassadorDashboard.self, from: data)
+        } catch {
+            lastError = "Le programme ambassadeur n’a pas pu être chargé. Réessayez."
+            return nil
+        }
+    }
+
+    func joinFlowAmbassador() async -> FlowAmbassadorDashboard? {
+        await ambassadorRequest(["action": "join"])
+    }
+
+    func connectFlowAmbassadorPayouts(locale: String) async -> URL? {
+        guard let data = await ambassadorRequestData(["action": "connectStripe", "locale": locale]),
+              let value = try? JSONDecoder().decode([String: String].self, from: data),
+              let rawURL = value["url"] else { return nil }
+        return URL(string: rawURL)
+    }
+
+    func requestFlowAmbassadorPayout(commissionId: String) async -> FlowAmbassadorDashboard? {
+        await ambassadorRequest(["action": "payout", "commissionId": commissionId])
+    }
+
+    func submitFlowAmbassadorUgc(restaurantProfileId: String, platform: String, postUrl: String, caption: String, referralLinkId: String?) async -> FlowAmbassadorDashboard? {
+        var body: [String: Any] = [
+            "action": "submitUgc", "restaurantProfileId": restaurantProfileId,
+            "platform": platform, "postUrl": postUrl, "caption": caption,
+            "disclosureConfirmed": true, "usageRightsConfirmed": true,
+        ]
+        if let referralLinkId { body["referralLinkId"] = referralLinkId }
+        return await ambassadorRequest(body)
+    }
+
+    func createFlowAmbassadorLink(label: String, platform: String, contentUrl: String) async -> FlowAmbassadorDashboard? {
+        await ambassadorRequest(["action": "createLink", "label": label, "platform": platform, "contentUrl": contentUrl])
+    }
+
+    private func ambassadorRequest(_ body: [String: Any]) async -> FlowAmbassadorDashboard? {
+        guard let data = await ambassadorRequestData(body) else { return nil }
+        return try? JSONDecoder().decode(FlowAmbassadorDashboard.self, from: data)
+    }
+
+    private func ambassadorRequestData(_ body: [String: Any]) async -> Data? {
+        do {
+            let requestBody = try JSONSerialization.data(withJSONObject: body)
+            return try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/ambassador"), method: "POST", body: requestBody)
+        } catch {
+            lastError = "Cette action n’a pas abouti. Vérifiez votre connexion et réessayez."
+            return nil
+        }
+    }
+
     /// Loi 25 self-serve data export, native equivalent of the web portal's
     /// exportMyDataAction — writes the returned JSON to a temp file (rather
     /// than returning raw Data) so the caller can hand it straight to a
@@ -1480,7 +1585,7 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
-    struct OrderResult { let ok: Bool; let orderId: String?; let estimatedReadyAt: Date?; let paymentURL: URL? }
+    struct OrderResult { let ok: Bool; let orderId: String?; let estimatedReadyAt: Date?; let paymentURL: URL?; let paymentConfirmed: Bool }
     struct DeliveryOrderInfo: Encodable { let address: String }
 
     func quoteDelivery(address: String) async -> PortalDeliveryQuote? {
@@ -1504,21 +1609,111 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    func submitServiceQuote(
+        quoteType: String,
+        guestName: String,
+        guestPhone: String,
+        guestEmail: String,
+        description: String,
+        eventAt: Date,
+        guestCount: Int?,
+        fulfillmentMode: String,
+        deliveryAddress: String?,
+        clientNotes: String?
+    ) async -> Bool {
+        struct Body: Encodable {
+            let quoteType: String
+            let guestName: String
+            let guestPhone: String
+            let guestEmail: String
+            let description: String
+            let eventAtLocal: String
+            let guestCount: Int?
+            let fulfillmentMode: String
+            let deliveryAddress: String?
+            let clientNotes: String?
+        }
+        struct Response: Decodable { let ok: Bool; let id: String?; let reason: String? }
+        guard customer != nil else {
+            lastError = "Connectez-vous à votre compte client pour envoyer une demande."
+            return false
+        }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        let body = Body(
+            quoteType: quoteType,
+            guestName: guestName,
+            guestPhone: guestPhone,
+            guestEmail: guestEmail,
+            description: description,
+            eventAtLocal: formatter.string(from: eventAt),
+            guestCount: guestCount,
+            fulfillmentMode: fulfillmentMode,
+            deliveryAddress: deliveryAddress,
+            clientNotes: clientNotes
+        )
+        do {
+            lastError = nil
+            let data = try JSONEncoder().encode(body)
+            let responseData = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/portal/service-quotes"),
+                method: "POST",
+                body: data
+            )
+            let response = try JSONDecoder().decode(Response.self, from: responseData)
+            guard response.ok, response.id != nil else {
+                lastError = response.reason == "rate_limited"
+                    ? "Trop de demandes ont été envoyées. Réessayez plus tard."
+                    : "La demande n’a pas pu être envoyée. Vérifiez les renseignements et réessayez."
+                return false
+            }
+            await fetchCustomerServiceQuotes()
+            return true
+        } catch {
+            lastError = "La demande de devis n’a pas pu être envoyée. Vérifiez votre connexion et réessayez."
+            print("submitServiceQuote error: \(error)")
+            return false
+        }
+    }
+
+    func fetchCustomerServiceQuotes() async {
+        guard customer != nil else {
+            customerServiceQuotes = []
+            customerServiceQuotesError = nil
+            return
+        }
+        isLoadingCustomerServiceQuotes = true
+        customerServiceQuotesError = nil
+        defer { isLoadingCustomerServiceQuotes = false }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/service-quotes"))
+            struct Response: Decodable { let quotes: [NativeServiceQuote] }
+            customerServiceQuotes = try JSONDecoder().decode(Response.self, from: data).quotes
+        } catch {
+            customerServiceQuotesError = "Les demandes de devis n’ont pas pu être chargées. Vérifiez votre connexion, puis réessayez."
+            print("fetchCustomerServiceQuotes error: \(error)")
+        }
+    }
+
     /// estimatedReadyAt arrives as a raw ISO8601 string (the bridge routes
     /// never configure JSONDecoder's dateDecodingStrategy — only the direct
     /// Supabase client calls elsewhere get automatic Date decoding, via the
     /// SDK's own internal decoder), so this is parsed by hand rather than
     /// declared as `Date?` on OrderResponse directly.
-    func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?, requestedReadyAt: Date? = nil, payOnline: Bool = false, delivery: DeliveryOrderInfo? = nil) async -> OrderResult {
-        struct CartLine: Encodable { let menuItemId: String; let quantity: Int }
-        struct OrderBody: Encodable { let cart: [CartLine]; let tipAmount: Double; let paymentMethod: String?; let payOnline: Bool; let delivery: DeliveryOrderInfo?; let requestedReadyAtLocal: String? }
-        struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String?; let paymentUrl: String? }
+    func submitOrder(cart: [String: Int], tipAmount: Double, paymentMethod: String?, requestedReadyAt: Date? = nil, payOnline: Bool = false, delivery: DeliveryOrderInfo? = nil, idempotencyKey: String) async -> OrderResult {
+        struct CartLine: Encodable { let menuItemId: String; let quantity: Int; let priceOptionId: String? }
+        struct OrderBody: Encodable { let cart: [CartLine]?; let tipAmount: Double?; let paymentMethod: String?; let payOnline: Bool?; let delivery: DeliveryOrderInfo?; let requestedReadyAtLocal: String?; let idempotencyKey: String; let resumeOnly: Bool? }
+        struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String?; let paymentUrl: String?; let paymentConfirmed: Bool? }
 
-        let lines = cart.compactMap { key, qty -> CartLine? in
-            qty > 0 ? CartLine(menuItemId: key, quantity: qty) : nil
+        let lines = cart.sorted(by: { $0.key < $1.key }).compactMap { key, qty -> CartLine? in
+            guard qty > 0 else { return nil }
+            let parts = key.components(separatedBy: "::")
+            guard let menuItemId = parts.first, !menuItemId.isEmpty else { return nil }
+            let optionId = parts.count > 1 ? parts.dropFirst().joined(separator: "::") : nil
+            return CartLine(menuItemId: menuItemId, quantity: qty, priceOptionId: optionId)
         }
-        guard !lines.isEmpty else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil) }
-        guard !payOnline || onlinePaymentEnabled else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil) }
+        guard !lines.isEmpty else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false) }
+        guard !payOnline || onlinePaymentEnabled else { return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false) }
 
         do {
             let dateFormatter = ISO8601DateFormatter()
@@ -1528,7 +1723,9 @@ final class SupabaseManager: ObservableObject {
                 paymentMethod: paymentMethod,
                 payOnline: payOnline,
                 delivery: delivery,
-                requestedReadyAtLocal: requestedReadyAt.map(dateFormatter.string(from:))
+                requestedReadyAtLocal: requestedReadyAt.map(dateFormatter.string(from:)),
+                idempotencyKey: idempotencyKey,
+                resumeOnly: nil
             ))
             let data = try await authorizedRequest(
                 Config.apiBaseURL.appending(path: "/api/portal/orders"),
@@ -1537,14 +1734,34 @@ final class SupabaseManager: ObservableObject {
             )
             let decoded = try JSONDecoder().decode(OrderResponse.self, from: data)
             let eta = decoded.estimatedReadyAt.flatMap { ISO8601DateFormatter().date(from: $0) }
-            return OrderResult(ok: decoded.ok, orderId: decoded.orderId, estimatedReadyAt: eta, paymentURL: decoded.paymentUrl.flatMap(URL.init(string:)))
+            return OrderResult(ok: decoded.ok, orderId: decoded.orderId, estimatedReadyAt: eta, paymentURL: decoded.paymentUrl.flatMap(URL.init(string:)), paymentConfirmed: decoded.paymentConfirmed ?? false)
         } catch let error as URLError where error.code == .notConnectedToInternet {
             lastError = "Aucune connexion internet. Votre commande n'a pas été envoyée."
-            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil)
+            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false)
         } catch {
             lastError = "La commande a échoué. Réessayez."
             print("submitOrder error: \(error)")
-            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil)
+            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false)
+        }
+    }
+
+    /// Recovers the durable order/Stripe checkout after a lost response or
+    /// app restart. The server scopes the key to the authenticated customer.
+    func resumeOrder(idempotencyKey: String) async -> OrderResult {
+        struct ResumeBody: Encodable { let idempotencyKey: String; let resumeOnly = true }
+        struct OrderResponse: Decodable { let ok: Bool; let orderId: String?; let estimatedReadyAt: String?; let paymentUrl: String?; let paymentConfirmed: Bool? }
+        do {
+            let bodyData = try JSONEncoder().encode(ResumeBody(idempotencyKey: idempotencyKey))
+            let data = try await authorizedRequest(
+                Config.apiBaseURL.appending(path: "/api/portal/orders"),
+                method: "POST",
+                body: bodyData
+            )
+            let decoded = try JSONDecoder().decode(OrderResponse.self, from: data)
+            let eta = decoded.estimatedReadyAt.flatMap { ISO8601DateFormatter().date(from: $0) }
+            return OrderResult(ok: decoded.ok, orderId: decoded.orderId, estimatedReadyAt: eta, paymentURL: decoded.paymentUrl.flatMap(URL.init(string:)), paymentConfirmed: decoded.paymentConfirmed ?? false)
+        } catch {
+            return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false)
         }
     }
 
@@ -1612,21 +1829,49 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
-    enum ScanResult { case success(restaurant: (id: String, name: String)); case failure(String) }
+    enum ScanResult { case success(restaurant: (id: String, name: String), branding: NativeTenantBranding?); case failure(String) }
 
     /// Resolves a scanned table QR (the same menu_shares token the web's
     /// own /m/[token] ordering page uses) to a restaurant — see
     /// app/api/portal/scan/[token]/route.ts's own comment.
     func resolveScanToken(_ token: String) async -> ScanResult {
-        struct ScanResponse: Decodable { let restaurantId: String; let restaurantName: String }
+        struct ScanResponse: Decodable {
+            let restaurantId: String
+            let restaurantName: String
+            let branding: NativeTenantBranding?
+        }
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/scan/\(token)"))
             let decoded = try JSONDecoder().decode(ScanResponse.self, from: data)
-            return .success(restaurant: (id: decoded.restaurantId, name: decoded.restaurantName))
+            return .success(restaurant: (id: decoded.restaurantId, name: decoded.restaurantName), branding: decoded.branding)
         } catch {
             print("resolveScanToken error: \(error)")
             return .failure("Ce code ne correspond à aucun restaurant Minerva Flow.")
         }
+    }
+
+    func fetchTenantBranding(for restaurantId: String) async {
+        struct BrandingResponse: Decodable { let branding: NativeTenantBranding }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurant/\(restaurantId)/branding"))
+            let response = try JSONDecoder().decode(BrandingResponse.self, from: data)
+            activateTenantBranding(response.branding)
+        } catch {
+            print("fetchTenantBranding error: \(error)")
+        }
+    }
+
+    func activateTenantBranding(_ branding: NativeTenantBranding?) {
+        activeTenantBranding = branding
+        guard let branding else {
+            UserDefaults.standard.removeObject(forKey: "activeTenantPrimaryColor")
+            UserDefaults.standard.removeObject(forKey: "activeTenantSecondaryColor")
+            UserDefaults.standard.removeObject(forKey: "activeTenantAccentColor")
+            return
+        }
+        UserDefaults.standard.set(branding.primaryColor, forKey: "activeTenantPrimaryColor")
+        UserDefaults.standard.set(branding.secondaryColor, forKey: "activeTenantSecondaryColor")
+        UserDefaults.standard.set(branding.accentColor, forKey: "activeTenantAccentColor")
     }
 
     // MARK: - Menu item reviews (public read via RLS, no bridge needed)

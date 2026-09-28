@@ -7,9 +7,9 @@ import { Switch } from "@/components/ui/Switch";
 import { HelperTooltip } from "@/components/ui/HelperTooltip";
 import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav";
 import { loyaltyTierOrder, loyaltyTierLabel, loyaltyTierDescription, loyaltyTierBadge, type LoyaltyTierThresholds } from "@/lib/loyalty-tiers";
-import { Zap, Coins } from "lucide-react";
+import { Zap, Coins, Gift, Save } from "lucide-react";
 import { useState } from "react";
-import { updateRetentionSettingsAction, updateLoyaltyTierThresholdsAction, updateLoyaltyRateAction } from "../actions";
+import { updateRetentionSettingsAction, updateLoyaltyTierThresholdsAction, updateLoyaltyRateAction, updateWelcomeBonusPointsAction } from "../actions";
 import { notifyError } from "@/lib/notify-error";
 
 function LoyaltyRateCard({ restaurantId, initialRate }: { restaurantId: string; initialRate: number }) {
@@ -176,12 +176,14 @@ function LoyaltyTierSettingsCard({
 export function ParametresView({
   restaurantId,
   loyaltyPointsPerDollar,
+  welcomeBonusPoints,
   loyaltyTierThresholds,
   retentionEngineEnabled,
   retentionInactivityDays,
 }: {
   restaurantId: string | null;
   loyaltyPointsPerDollar: number;
+  welcomeBonusPoints: number;
   loyaltyTierThresholds: LoyaltyTierThresholds;
   retentionEngineEnabled: boolean;
   retentionInactivityDays: number;
@@ -197,6 +199,7 @@ export function ParametresView({
       {restaurantId && (
         <div className="space-y-6">
           <LoyaltyRateCard restaurantId={restaurantId} initialRate={loyaltyPointsPerDollar} />
+          <WelcomeBonusCard restaurantId={restaurantId} initialPoints={welcomeBonusPoints} />
           <LoyaltyTierSettingsCard restaurantId={restaurantId} initialThresholds={loyaltyTierThresholds} />
           <RetentionSettingsCard
             restaurantId={restaurantId}
@@ -207,4 +210,30 @@ export function ParametresView({
       )}
     </div>
   );
+}
+
+function WelcomeBonusCard({ restaurantId, initialPoints }: { restaurantId: string; initialPoints: number }) {
+  const [points, setPoints] = useState(initialPoints);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  async function save() {
+    setSaving(true);
+    setSaved(false);
+    const ok = await updateWelcomeBonusPointsAction(restaurantId, points);
+    setSaving(false);
+    if (!ok) { notifyError("Le bonus n’a pas pu être enregistré."); return; }
+    setSaved(true);
+  }
+  return <Card>
+    <CardHeader eyebrow="Accueil client" title="Bonus de première visite" description="Optionnel. Il est crédité une seule fois lorsque la première commande admissible est marquée « Servie »." />
+    <div className="flex flex-wrap items-center gap-3 text-[13px] text-mv-ink-soft">
+      <Gift size={16} className="text-mv-green-dark" />
+      <label className="flex items-center gap-2">Points offerts
+        <input type="number" min="0" max="100000" step="1" value={points} onChange={(event) => { setPoints(Math.max(0, Number(event.target.value) || 0)); setSaved(false); }} className="h-9 w-28 rounded-lg border border-mv-border bg-mv-surface px-3 text-center" />
+      </label>
+      <button type="button" onClick={save} disabled={saving} className="inline-flex h-9 items-center gap-2 rounded-lg bg-mv-green px-3 text-xs font-semibold text-white disabled:opacity-60"><Save size={13} />{saving ? "Enregistrement…" : "Enregistrer"}</button>
+      {saved && <span role="status" className="text-xs font-medium text-mv-green-dark">Enregistré</span>}
+      <p className="basis-full text-[11.5px] leading-5 text-mv-ink-faint">À 0 point, le bonus est désactivé. Après attribution, un message chaleureux confirme les points reçus.</p>
+    </div>
+  </Card>;
 }

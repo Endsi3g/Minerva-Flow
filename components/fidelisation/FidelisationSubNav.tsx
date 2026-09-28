@@ -3,14 +3,20 @@
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
-import { Users, Share2, Gift, QrCode, Settings, ChartNoAxesCombined } from "lucide-react";
+import { Users, Share2, Gift, QrCode, Settings, ChartNoAxesCombined, CircleDollarSign, Megaphone } from "lucide-react";
 
 const SECTIONS = [
   { href: "/fidelisation", label: "Clients", icon: Users, managerOnly: false },
   { href: "/fidelisation/recompenses", label: "Récompenses", icon: Gift, managerOnly: true },
   { href: "/fidelisation/parrainage", label: "Parrainage", icon: Share2, managerOnly: true },
   { href: "/fidelisation/partage", label: "Partage & QR", icon: QrCode, managerOnly: true },
+  // Campaigns keeps its own established /campaigns/* tree (history,
+  // automations, visual studio) rather than being physically moved under
+  // /fidelisation — this is a cross-link tab into it, not a nested route,
+  // so its active state is matched against /campaigns instead of the href.
+  { href: "/campaigns", label: "Campagnes", icon: Megaphone, managerOnly: true },
   { href: "/fidelisation/resultats", label: "Résultats", icon: ChartNoAxesCombined, managerOnly: true },
+  { href: "/fidelisation/valeur-client", label: "LTV & CAC", icon: CircleDollarSign, managerOnly: true },
   { href: "/fidelisation/parametres", label: "Paramètres", icon: Settings, managerOnly: true },
 ] as const;
 
@@ -33,7 +39,11 @@ export function FidelisationSubNav() {
   return (
     <div className="mb-6 flex items-center gap-6 border-b border-mv-border overflow-x-auto">
       {sections.map(({ href, label, icon: Icon }) => {
-        const active = href === "/fidelisation" ? pathname === "/fidelisation" : pathname.startsWith(href);
+        const active = href === "/fidelisation"
+          ? pathname === "/fidelisation"
+          : href === "/campaigns"
+            ? pathname.startsWith("/campaigns")
+            : pathname.startsWith(href);
         return (
           <Link
             key={href}

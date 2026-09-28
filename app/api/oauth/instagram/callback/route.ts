@@ -6,6 +6,7 @@ import {
 } from "@/lib/ad-platforms/config";
 import { verifyOAuthState } from "@/lib/ad-platforms/state";
 import { saveAdPlatformTokens } from "@/lib/data/ad-platforms";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const GRAPH_VERSION = "v21.0";
 const META_FACEBOOK_TOKEN_URL = `https://graph.facebook.com/${GRAPH_VERSION}/oauth/access_token`;
@@ -114,6 +115,38 @@ export async function GET(req: Request) {
       }
     } catch {
       // If long-lived exchange fails, fallback to short-lived token
+    }
+
+    if (verified.extra === "ambassador" && verified.restaurantId.startsWith("ambassador:")) {
+      const userId = verified.restaurantId.slice("ambassador:".length);
+      const admin = createAdminClient();
+      const { data: ambassador } = await admin.from("flow_ambassadors").select("id").eq("user_id", userId).eq("status", "active").maybeSingle();
+      if (!ambassador) {
+        const target = new URL("/fr/workspace/ambassadeurs?instagram=connection_failed", url.origin);
+        return NextResponse.redirect(target);
+      }
+      const profileRes = await fetch(`https://graph.instagram.com/me?fields=id,username&access_token=${encodeURIComponent(finalAccessToken)}`, { cache: "no-store" });
+      const profile = profileRes.ok ? await profileRes.json() as { id?: string; username?: string } : {};
+      const instagramUserId = profile.id;
+      if (!instagramUserId) {
+        return NextResponse.redirect(new URL("/fr/workspace/ambassadeurs?instagram=profile_failed", url.origin));
+      }
+      const { data: tokenId, error: vaultError } = await admin.rpc("store_vault_secret", {
+        secret: finalAccessToken,
+        secret_name: `instagram_ambassador_${ambassador.id}_${Date.now()}`,
+      });
+      if (vaultError || !tokenId) {
+        return NextResponse.redirect(new URL("/fr/workspace/ambassadeurs?instagram=save_failed", url.origin));
+      }
+      const { error: saveError } = await admin.from("flow_ambassador_instagram_connections").upsert({
+        ambassador_id: ambassador.id,
+        instagram_user_id: String(instagramUserId),
+        username: profile.username ?? null,
+        access_token_id: tokenId,
+        expires_at: new Date(Date.now() + expiresInSec * 1000).toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "ambassador_id" });
+      return NextResponse.redirect(new URL(`/fr/workspace/ambassadeurs?instagram=${saveError ? "save_failed" : "connected"}`, url.origin));
     }
 
     await saveAdPlatformTokens(verified.restaurantId, "instagram", {

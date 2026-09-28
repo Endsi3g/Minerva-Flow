@@ -2,6 +2,138 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [À venir] — Espace Owner iPad/macOS, Google Business Profile et campagnes
+
+- L’application SwiftUI cible iPad et Mac Catalyst avec un espace Owner à navigation latérale, raccourcis clavier et changement de restaurant; l’expérience client reste distincte dans le même binaire.
+- L’espace Owner permet de connecter une fiche Google Business Profile autorisée, parcourir ses avis et répondre, puis consulter et modifier ses horaires. Les routes vérifient côté serveur la session Supabase et le rôle propriétaire/gestionnaire.
+- Les avis et la découverte des fiches sont paginés; les curseurs restent liés au restaurant actif, et les résultats en double ou tardifs ne remplacent pas ceux du nouvel espace.
+- Les jetons Google restent dans Supabase Vault. L’accès réel dépend de l’approbation du projet Google et des droits sur chaque fiche; une connexion réelle par une propriétaire reste à valider.
+- L’éditeur conserve les plages multiples et les fermetures qui passent minuit. Les changements natifs et les menus Owner sont localisés en français et en anglais.
+- Le candidat iOS `1.0.1 (16)` doit être reconstruit après les changements récents avant un téléversement TestFlight. Le profil macOS de distribution manque encore; aucune version iPad/macOS n’est déclarée distribuable.
+- Les migrations `0162` à `0164` sont appliquées sur Staging et Production. Les routes applicatives correspondantes attendent le déploiement du code web.
+- Le score de priorité des demandes publicitaires est calculé en base et indexé; une contrainte unique évite les demandes ouvertes en double. La file protège les coordonnées et les actions de revue traitent les erreurs de façon récupérable.
+- La correction d’inventaire accepte des ajustements à la baisse; le mouvement MCP est vérifié contre le restaurant de la clé API, puis le journal et le stock sont modifiés dans une transaction réservée au rôle serveur.
+
+## [À venir] — Correctifs navigation/traductions/onboarding et fonctionnalité Campagnes
+
+### Correctifs — navigation, traductions, onboarding et métriques
+- Navigation restaurée pour propriétaire/gérant selon la convention établie (Workspace, Aperçu, Flow AI, Menu, Fidélisation en premier niveau; Gestion quotidienne, Opérations, Performance et analyses, Paramètres et plus en sections repliables). Le verrou qui limitait la navigation authentifiée à quatre routes est retiré du proxy, de la recherche et de la liste de navigation.
+- Le studio de menu (Identité visuelle, QR et partage, Coordonnées) est maintenant traduit en français et en anglais; il ne l’était pas.
+- Les écrans natifs iOS de résolution de session, d’erreur et le code de jumelage (onglet Scanner) suivent maintenant la langue choisie dans l’application plutôt que d’afficher du français quel que soit ce choix.
+- La carte « LTV combinée » (revenu moyen additionné à une fraction de ce même revenu) est retirée de la page Valeur client & acquisition; elle ne correspondait à aucune quantité réelle.
+- L’étape « Fidélisation » de l’inscription (étape 3) peut maintenant être passée comme les autres étapes optionnelles; elle pouvait auparavant bloquer définitivement la fin de l’inscription si la préparation du lien de fidélité échouait.
+- La recherche Google Maps se masque de nouveau correctement sur Réputation et Établissement lorsque l’intégration n’est pas configurée, au lieu de s’afficher sans jamais retourner de résultat.
+
+### Campagnes — visibilité, publicité payante et priorisation
+- « Campagnes » apparaît maintenant comme onglet dans Fidélisation et dans la recherche globale; la section n’était accessible par aucun menu auparavant.
+- Nouvelle demande en trois étapes sur `/campagnes` : un propriétaire ou gérant peut demander à l’équipe Minerva Flow de mettre en place et de gérer ses campagnes publicitaires payantes (Meta, Google), avec un message explicite — les automatisations et le studio visuel amplifient le trafic déjà attiré par le restaurant, ils n’en créent pas à eux seuls. Les frais de gestion sont déterminés par restaurant, pas un forfait fixe.
+- Les demandes sont qualifiées (volume hebdomadaire, budget, expérience publicitaire antérieure, urgence de démarrage) et triées par priorité dans une nouvelle file `/admin/campagnes-publicitaires`, avec notification par courriel à l’équipe à chaque nouvelle demande.
+- Le lien « Offre Agence » de l’inscription, qui ne menait nulle part, pointe maintenant vers cette nouvelle demande.
+- **État** : les changements sont préparés sur la branche de release; les migrations `0162` à `0164` sont déjà appliquées en staging et en production. Le texte de la fonctionnalité Campagnes est en français seulement.
+
+### Navigation propriétaire — Finance restaurée
+- Finance et ses catégories restent accessibles aux propriétaires et gestionnaires dans « Gestion quotidienne », conformément à la navigation du produit. Les raccourcis de recherche et les liens contextuels sont restaurés.
+
+### Inscription fidélité publique
+- Si Supabase limite l’envoi du lien de connexion après l’inscription, le client voit que son adhésion est enregistrée et peut redemander le lien plus tard. Un nouvel essai ne compte pas une deuxième fois le point de contact QR/NFC.
+
+## [2.48.0] — 2026-09-26
+
+### Flow Direct — menu partageable et commande plus conviviale
+- Nouvelle page partageable `/app` avec captures iOS, étapes d’installation TestFlight, création de compte client avec confirmation par courriel et association au restaurant.
+- Après l’envoi d’une commande, la page d’installation garde un suivi public limité au statut et à l’heure estimée; le menu QR Studio distingue le lien du menu du lien d’installation.
+- Les propriétaires choisissent les plats « À découvrir ». Un bonus de première visite peut être configuré; à 0 il reste désactivé et il n’est crédité qu’une fois après une commande marquée « Servie ».
+- Nouveau studio organisé en pages dédiées : Menu, Identité visuelle, QR et partage, Coordonnées. Les liens sont des navigations de page, sans onglets.
+- Les routes dédiées du menu et de la fidélisation restent accessibles après connexion, tout en laissant les autres pages hors du périmètre produit configuré.
+- La présentation du menu peut définir logo, couleurs, typographie et liens Instagram, Facebook, TikTok, WhatsApp, téléphone, courriel et site web.
+- L’import de menu accepte PDF, JPG, PNG et WebP, avec une étape de vérification avant l’ajout. Un article peut être publié pour présentation sans être commandable; la base bloque aussi son ajout au panier.
+- La commande affiche son état dans le parcours public et actualise les changements par Realtime/polling. Les statuts déclenchent un courriel transactionnel, une notification in-app et une notification push si le client a un compte.
+- Les textes de commande sont réécrits dans un ton plus chaleureux tout en précisant l’heure de récupération, le paiement sur place et l’annulation sans frais en cas d’imprévu. Une annulation propriétaire recueille un court motif.
+- Page LTV & CAC ajoutée : LTV revenu et marge estimée séparément, et CAC sur 12 mois avec publicité, commissions, agence, promotions et équipement. Les coûts d’acquisition sont saisis par le propriétaire ou le gestionnaire.
+- Les commandes confirmées ou payées consomment maintenant, dans une transaction SQL idempotente, les quantités correspondant aux recettes configurées; les commandes POS importées sont aussi couvertes. Une annulation avant service remet en inventaire la quantité réellement prélevée. Les lignes sans recette ne déclenchent aucune déduction.
+- Le seuil d’alerte propriétaire est de 30 % de la cible de réapprovisionnement par défaut. Un franchissement crée une notification in-app pour les propriétaires/gestionnaires; le retour au-dessus du seuil permet une nouvelle alerte au prochain franchissement. Sans cible configurée, le ratio n’est pas calculé.
+- **État** : migrations `0156` à `0161` sont présentes en staging et en production. Les E2E staging valident la création du lien de menu, la commande à récupérer sur place, et la persistance de son statut `soumise`; l’installation mobile et les vues du menu ont été capturées sans données client. Build iOS **1.0.0 (15)** téléversé, traité, affecté au groupe TestFlight externe et **approuvé par Apple**; lien d’invitation : [Tester Minerva Flow](https://testflight.apple.com/join/xGr45uuF). Les notifications stock à 30 % et les déductions sont vérifiées par tests ciblés et migration SQL; leur effet réel dépend des recettes, quantités et cibles renseignées par chaque restaurant.
+- **Sécurité** : la nouvelle clé secrète Supabase est configurée dans Vercel Production; l’ancienne clé exposée a été révoquée et vérifiée absente. Les clés JWT API legacy exposées ont également été désactivées; web et natif utilisent les clés modernes publishable/secret.
+- **Observabilité** : la compilation web est réussie; l’envoi des sourcemaps Sentry a échoué car le jeton Vercel cible une organisation/projet Sentry incompatible. Le déploiement fonctionne, mais les sourcemaps de cette release ne sont pas disponibles dans Sentry.
+- **Limites** : la déduction exacte dépend des quantités initiales, recettes et cibles de réapprovisionnement configurées par restaurant. La LTV de marge reste estimée avec les food costs actuels; les coûts historiques par commande ne sont pas stockés.
+
+### Publication Web précédente — 2026-09-25
+- La web app `2.48.0` est déployée en production depuis `3521ec4` (Vercel `dpl_ENHPeX99EKXdWoTH2WtPHfYAhcR9`). Les routes de connexion française et anglaise répondent 200.
+- Stripe Connect est explicitement indiqué « Non configuré — bientôt disponible » et demeure désactivé en l’absence de clé live/capacités actives. Aucune transaction en ligne Connect n’est promise ni validée; les tests POS restent reportés.
+
+### Build iOS — TestFlight
+- Archive native **1.0.0 (13)** créée et téléversée avec succès à App Store Connect le 2026-09-25. Le numéro de build est `13`; la version marketing reste `1.0.0` dans l’app et son widget.
+- Signature et UUID du dSYM Sentry vérifiés. Xcode confirme l’envoi (`Uploaded`); le traitement Apple et l’affectation aux groupes TestFlight restent à confirmer. Ce build n’est pas encore annoncé comme installable.
+- Audit App Store statique : 0 risque critique, 0 élevé, 2 avertissements (déclaration de chiffrement du widget à confirmer et contrôles manuels des métadonnées/démo/privacy/review). XCTest n’a toujours pas de résultat confirmé.
+
+### Paiements web — configuration explicite
+- Les paramètres Stripe Connect indiquent clairement si l’intégration n’est pas configurée et que le paiement en ligne sera bientôt disponible; le bouton d’activation reste désactivé dans cet état.
+- La disponibilité du paiement en ligne exige maintenant à la fois une clé Stripe de plateforme et un compte restaurant aux capacités actives. Sans configuration, les menus publics ne proposent pas ce mode et l’émission d’un devis payable en ligne est refusée côté serveur.
+- Cela ne configure pas Stripe : la clé live manque toujours dans Vercel Production, les transferts Connect restent à valider et les tests POS sont reportés.
+
+### Côté propriétaire — Formats et tarification du menu
+- L’app native et le tableau de bord permettent de configurer plusieurs formats par article, avec une quantité et un prix total pour chaque choix.
+- Le prix de départ est aligné sur le format le moins cher; les formats peuvent être modifiés avant activation du brouillon.
+- La commande vérifie le format sélectionné et son prix côté serveur avant de calculer le total.
+- **État de livraison** : la migration `0151_menu_item_price_options.sql` est appliquée en production. Les trois formats de chaque article Magie sont configurés dans les brouillons Mains Magique; les articles restent inactifs en attendant la validation de la propriétaire. Le code applicatif n’est pas encore livré en production.
+
+### Côté client — Choisir un format avant de commander
+- Lorsqu’un restaurant propose plusieurs formats, le client voit les quantités et les prix totaux, choisit son format dans le menu et le retrouve dans son panier avant de confirmer.
+- Le prix présenté est recalculé à partir du format configuré par le restaurant.
+- La note client est volontairement séparée des réglages propriétaire; elle ne décrit que le parcours de commande.
+
+### Fiabilité et application iOS
+- L’écran d’authentification suit maintenant la langue demandée : `/en/login` est affiché en anglais et `/fr/login` en français, y compris les boutons, les mentions légales et le panneau de présentation.
+- Les fermetures de flux RSC Next.js exactement reconnues comme `The destination stream closed early.` restent transmises à Sentry pour diagnostic, mais ne déclenchent plus de fausse alerte par courriel « critique ».
+- Sentry web et iOS pointent maintenant vers des projets dédiés de l’organisation `minerva-s5m`; les événements d’erreur sont actifs, tandis que la collecte de PII, les corps HTTP, les journaux Sentry et Replay sont désactivés par défaut.
+- Les variables Sentry historiques ont été retirées de Vercel et remplacées par `NEXT_PUBLIC_MINERVA_SENTRY_DSN` en Production, Preview et Development, pointant vers `minerva-s5m/minerva-flow-web`. Le jeton reste secret dans Vercel; le build Preview `20197a4` a confirmé l’envoi des source maps et la création de la release Sentry liée au commit.
+- Dans l’application iOS, l’ajout d’un article depuis la liste ou sa fiche ouvre immédiatement le checkout; le panier est conservé et aucun retour manuel au Menu n’est nécessaire.
+- La page Scanner présente la carte de fidélité, le QR/code de jumelage temporaire, son expiration, les états de chargement/erreur et l’accès au scanner caméra.
+- L’apparence claire reste le choix initial; les préférences Clair, Système et Sombre utilisent les palettes adaptatives web et iOS.
+- Le changelog in-app candidate ajoute « Précommandes et devis traiteur », avec une capture desktop affichée et une capture mobile liée; ces captures correspondent à des parcours synthétiques staging.
+
+### Vérification
+- Tests unitaires : 335 réussis sur 58 fichiers; lint ciblé réussi. Lors de la revalidation du 25 septembre, `npx tsc --noEmit` standard et ESLint ciblé sur la configuration Sentry passent.
+- Rebuild local de diagnostic : `npx next build --webpack --debug` termine avec le code 0 après 71 s de compilation et 13 s de TypeScript, en générant 328 routes. Les messages `cookies` de génération marquent des routes authentifiées comme dynamiques; ils n’empêchent pas le build. Aucun téléversement Sentry n’a été fait depuis ce build local.
+- E2E staging : 6/6 réussis — précommande planifiée et cueillette, suggestion/vote client puis brouillon owner, demandes traiteur sur place et livraison, demande owner, conversion de devis payé idempotente.
+- Reprise Playwright ciblée sur les parcours précommande et production traiteur : 2/2 réussis avec le bac à sable Stripe activé; le parcours précommande testé choisit le paiement à la cueillette et ne débite pas.
+- La clé Stripe fournie a été confirmée en mode test sur la plateforme Connect. Le test d’un compte destinataire synthétique révèle qu’aucun compte connecté de test n’a les virements actifs; Stripe refuse le PaymentIntent avec `insufficient_capabilities_for_transfer`. Le paiement en ligne Connect reste non validé; ne pas présenter le checkout complet comme testé.
+- Le harnais E2E n’hérite plus d’une clé Stripe publiable live : seule `E2E_TEST_STRIPE_PUBLISHABLE_KEY` (préfixe `pk_test_`) est exposée au navigateur, ou la clé est vide.
+- Le succès de précommande a été inspecté à 390 px; aucune largeur horizontale parasite. Captures : [`précommande mobile`](docs/screenshots/changelog-2.48.0-preorder-success-mobile.png) et [`traiteur desktop`](docs/screenshots/changelog-2.48.0-catering-success.png).
+- Chromium est opérationnel via le binaire headless Playwright 1.63 déjà présent dans le cache. Après correction de la localisation Auth, vérification visuelle locale 1440×900 et 390×844 sans overflow ni `pageerror`; captures : [`anglais bureau`](docs/screenshots/auth-login-en-2026-09-25-desktop.png), [`anglais mobile`](docs/screenshots/auth-login-en-2026-09-25-mobile.png). Les anciennes captures Preview sont conservées séparément.
+- Nouvelle tentative de trois E2E staging : 0/3 réussis, échecs avant assertions métier (`/login` et `/workspace` expirent; un démarrage Chromium dépasse son délai). Traces locales dans `test-results/`, non commitées; ne pas considérer ces parcours comme validés.
+- État final du schéma production : `restaurants.delivery_enabled`, `orders.delivery_address`, `menu_items.price_options` (0151) et les quatre colonnes Stripe 0150 sont présentes. 0150 a été appliquée le 2026-09-25 et vérifiée via PostgREST; les 106 restaurants existants gardent `v1`, `unrequested` et `0` par défaut. Cette migration seule ne constitue pas une promotion applicative.
+- Vérification Paramètres/Stripe : après une reprise initiale bloquée avant connexion, l’E2E Playwright a réussi avec le garde de rôle final (`1/1`) et confirme la carte et son CTA sur desktop/mobile. Le fixture synthétique et son utilisateur sont absents du staging après nettoyage.
+- La compilation Simulator iOS a réussi sur la source récente; XCTest reste bloqué dans le runner Xcode et aucun résultat de test actuel n’est confirmé.
+- Vérification Sentry du 25 septembre : un événement web synthétique sans données personnelles apparaît dans `minerva-flow-web`; build Webpack local réussi (328 routes), TypeScript et ESLint ciblés réussis, compilation iOS Simulator réussie. Le build Preview `20197a4` a téléversé les source maps et créé la release Sentry associée. La réception d’événements iOS reste à vérifier. La ressource Marketplace `sentry-copper-notebook` est provisionnée sur le forfait gratuit, mais sa liaison automatique a échoué; le jeton partagé dans la conversation doit être tourné.
+- Audit App Store statique : 0 risque critique, 0 élevé, 2 avertissements; les déclarations/contrôles manuels avant publication publique restent ouverts.
+- Le build iOS `1.0 (11)` a été traité par Apple, soumis et activé dans les groupes TestFlight interne et externe. Le groupe externe compte 8 testeurs; le lien public `https://testflight.apple.com/join/xGr45uuF` répond HTTP 200. La notification automatique après approbation est activée.
+- Le dSYM de `Sentry.framework` correspond au binaire par UUID, corrigeant l’avertissement de symboles manquants reçu précédemment.
+- Le compte de démonstration fonctionne sur le même backend que l’application native; les identifiants et notes de review sont renseignés dans App Store Connect. Aucun paiement réel n’est requis pour les tests.
+- La publication publique App Store reste distincte et non déclarée prête; les contrôles manuels Apple encore nécessaires restent ouverts.
+
+### Stripe Connect — reprise technique
+- Les nouvelles connexions de restaurant utilisent Accounts v2 Recipient; les comptes Express v1 existants restent pris en charge sans conversion ni recréation.
+- La migration additive `0150_restaurant_connect_v2.sql` a été appliquée au staging puis en production, et les quatre colonnes ainsi que les valeurs par défaut ont été vérifiées sur les deux bases. En production, le journal Supabase l’enregistre comme `0150_restaurant_connect_v2` (version `20260925191042`). Elle a été exécutée de manière ciblée, car l’historique distant horodaté ne correspond pas aux migrations locales; ne pas lancer `supabase db push` sans réconciliation préalable.
+- Smoke test Stripe en mode test réussi pour créer un destinataire synthétique, générer son lien d’onboarding hébergé et relire son compte; le lien n’a pas été exposé et le compte synthétique a été fermé.
+- Le paiement Checkout/PaymentIntent n’est toujours pas validé de bout en bout : aucun destinataire de test activé n’est disponible. Aucune production, soumission TestFlight ou release n’est autorisée par ce résultat seul.
+- Le lien Paramètres est maintenant rétabli pour owner/manager et `/settings` est autorisé; l’E2E Intégrations confirme la carte Stripe à l’état « Non connecté » avec son action d’onboarding sur desktop et mobile.
+
+## [v2.48.0] — 2026-09-24
+
+### Ambassadeurs, UGC et navigation
+- Espace ambassadeur dédié avec liens de recommandation suivis, attribution des inscriptions et suivi des commissions de 10 % sur la première facture admissible.
+- Configuration des versements par Stripe Connect; les commissions restent en attente pendant 30 jours et suivent les vérifications prévues.
+- Soumission de contenu UGC liée à un restaurant ayant donné son accord; contrôle avant réutilisation et suivi des liens/vidéos par canal.
+- Les propriétaires peuvent relier leur compte Instagram partenaire pour consulter les statistiques disponibles.
+- Navigation essentielle limitée à Workspace, Fournisseurs, Inventaire et Commandes, avec Paramètres accessible aux propriétaires/gestionnaires pour configurer l’établissement et Stripe Connect; Menu, Fidélisation et les autres pages produit restent redirigées vers Workspace.
+
+### Vérification de release
+- Build web local de production réussi, avec upload Sentry, vérification TypeScript et 328 pages statiques générées.
+- Schémas staging et production vérifiés en lecture seule; `public.restaurants`, les objets ambassadeur/UGC, les fonctions de commande et le défaut de consentement Auth sont présents.
+- Audience courriel de release : segment Resend « Minerva Flow · consentement explicite — abonnés actifs », 18 membres actifs au dernier contrôle; le brouillon conserve le lien de désabonnement.
+- Preview Vercel exact `ef4c04c` READY; smoke HTTP public/Auth réussi, captures changelog desktop/mobile servies en 200. La migration 0150 est maintenant appliquée en production; Stripe Connect/POS et E2E staging authentifié restent non validés, donc la promotion et la notification restent suspendues.
+
 ## [v2.47.1] — 2026-09-23
 
 ### Préférences de courriel et fidélisation

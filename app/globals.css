@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   /* Brand */
   --mv-green: #167f5b;
   --mv-green-dark: #0e5a40;
@@ -343,6 +343,48 @@ body {
   --sidebar-ring: oklch(0.55 0.02 107.1);
   --background: oklch(0.16 0.006 107.1);
   --foreground: oklch(0.95 0.004 106.5);
+}
+
+.light {
+  color-scheme: light;
+}
+
+/* Compatibility bridge for legacy white/gray utility classes. New UI should
+   use Minerva surface/text tokens; this keeps older screens readable when
+   the dark palette is selected without overriding branded QR artwork. */
+.dark .bg-white:not(.mv-fixed-light-surface) {
+  background-color: var(--mv-surface) !important;
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-neutral-50,
+.dark [class*="bg-[#FAF8F5]"],
+.dark [class*="bg-[#f4f4f3]"] {
+  background-color: var(--mv-cream-soft) !important;
+}
+
+.dark [class*="text-[#1F1E1D]"],
+.dark [class*="text-[#26251e]"] {
+  color: var(--mv-ink) !important;
+}
+
+.dark [class*="text-[#555552]"],
+.dark [class*="text-[#5A5851]"],
+.dark [class*="text-[#8A887F]"] {
+  color: var(--mv-ink-soft) !important;
+}
+
+.dark [class*="text-[#0E7C5A]"],
+.dark [class*="text-[#0A3F2F]"] {
+  color: var(--mv-green-dark) !important;
+}
+
+.dark [class*="border-[#E2E0D8]"],
+.dark [class*="border-[#E8E5DF]"],
+.dark [class*="border-[#e0e0dc]"],
+.dark [class*="border-[#D1CECA]"] {
+  border-color: var(--mv-border) !important;
 }
 
 /* Forces the light palette regardless of the visitor's OS/app theme

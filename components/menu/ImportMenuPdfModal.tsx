@@ -65,13 +65,13 @@ export function ImportMenuPdfModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title="Importer un menu (PDF)"
+      title="Importer un menu (PDF ou image)"
       description={
         done !== null
           ? undefined
           : showReview
             ? "Vérifiez et corrigez les plats détectés avant l'import — rien n'est encore ajouté à votre menu."
-            : "L'IA lit votre PDF et propose une liste de plats, prix et catégories à valider."
+            : "L’IA lit un PDF ou une photo du menu, puis propose les plats, prix et catégories à vérifier avant l’ajout. Sans prix affiché, l’article sera présenté sans pouvoir être commandé."
       }
       width={showReview ? 640 : 480}
     >
@@ -126,6 +126,15 @@ export function ImportMenuPdfModal({
                           className="h-8 w-16 rounded-md border border-mv-border bg-mv-cream-soft px-1.5 text-[12.5px] text-mv-ink focus:border-mv-green focus:outline-none"
                         />
                       </div>
+                      <label className="flex shrink-0 items-center gap-1 text-[10.5px] text-mv-ink-faint">
+                        <input
+                          type="checkbox"
+                          checked={item.isOrderable !== false}
+                          onChange={(e) => updateItem(item.key, { isOrderable: e.target.checked })}
+                          className="size-3.5 accent-mv-green"
+                        />
+                        À commander
+                      </label>
                       <button
                         type="button"
                         onClick={() => removeItem(item.key)}
@@ -149,7 +158,7 @@ export function ImportMenuPdfModal({
 
         {!showReview && done === null && scan.files.length > 0 && !scan.loading && (
           <Button className="w-full" onClick={scan.onUpload}>
-            Analyser le PDF
+            Analyser le menu
           </Button>
         )}
         {scan.loading && (

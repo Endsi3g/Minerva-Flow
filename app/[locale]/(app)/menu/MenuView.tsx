@@ -19,7 +19,9 @@ import {
   type MenuItemWithQuadrant,
 } from "@/lib/menu-engineering";
 import { calculateMenuItemStockStatus, type MenuItemStockStatus } from "@/lib/stock-availability";
-import type { InventoryItem, MenuItem, MenuQuadrant, MenuShare, Offer, RecipeItem } from "@/lib/types";
+import type { InventoryItem, MenuItem, MenuPriceOption, MenuQuadrant, MenuShare, Offer, RecipeItem } from "@/lib/types";
+import { MenuPriceOptionsEditor } from "@/components/menu/MenuPriceOptionsEditor";
+import { hasValidMenuPricing, menuStartingPrice } from "@/lib/menu-pricing";
 import {
   UtensilsCrossed,
   Plus,
@@ -40,7 +42,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { AlertBanner } from "@/components/ui/AlertBanner";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import QRCode from "qrcode";
 import {
@@ -66,6 +68,7 @@ import { toast } from "sonner";
 import { createCampaignAction } from "@/app/[locale]/(app)/campaigns/actions";
 import { MealSuggestionsOwnerPanel } from "./MealSuggestionsOwnerPanel";
 import type { MealSuggestion } from "@/lib/data/meal-suggestions";
+import { MenuStudioNav } from "./MenuStudioNav";
 
 const quadrantTone: Record<MenuQuadrant, "green" | "amber" | "lime" | "neutral"> = {
   etoile: "green",
@@ -92,6 +95,7 @@ function NewMenuItemModal({
   const [scopeId, setScopeId] = useState(() => crypto.randomUUID());
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [priceOptions, setPriceOptions] = useState<MenuPriceOption[]>([]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -102,7 +106,9 @@ function NewMenuItemModal({
       const item = await createMenuItemAction(restaurantId, {
         name: String(form.get("name") ?? ""),
         category: String(form.get("category") ?? "") || null,
-        price: Number(form.get("price") ?? 0),
+        price: priceOptions.length ? Math.min(...priceOptions.map((option) => option.price)) : Number(form.get("price") ?? 0),
+        priceOptions,
+        isOrderable: form.get("isOrderable") === "on",
         foodCost: Number(form.get("foodCost") ?? 0),
         description: String(form.get("description") ?? "") || null,
         allergens,
@@ -116,10 +122,14 @@ function NewMenuItemModal({
         (e.target as HTMLFormElement).reset();
         setImageUrl(null);
         setVideoUrl(null);
+        setPriceOptions([]);
         setScopeId(crypto.randomUUID());
       } else {
         notifyError(t("createFailed"));
       }
+    } catch (error) {
+      console.error("createMenuItemAction failed:", error);
+      notifyError(t("createFailed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -135,13 +145,18 @@ function NewMenuItemModal({
           <Input name="category" placeholder={t("categoryPlaceholder")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={t("priceLabel")}>
+          <Field label={priceOptions.length ? "Prix de départ (minimum des formats)" : t("priceLabel")}>
             <Input name="price" type="number" min="0" step="0.01" required />
           </Field>
           <Field label={t("foodCostLabel")}>
             <Input name="foodCost" type="number" min="0" step="0.01" required />
           </Field>
         </div>
+        <MenuPriceOptionsEditor options={priceOptions} onChange={setPriceOptions} />
+        <label className="flex items-start gap-2 rounded-lg border border-mv-border-soft bg-mv-cream-soft/60 p-3 text-[12px] text-mv-ink-soft">
+          <input type="checkbox" name="isOrderable" defaultChecked className="mt-0.5 accent-mv-green" />
+          <span><strong className="text-mv-ink">Proposé à la commande</strong><br />Décochez pour présenter cet article dans le menu sans permettre de le commander.</span>
+        </label>
         <Field label={t("descriptionLabel")} hint={t("optional")}>
           <Input name="description" />
         </Field>
@@ -344,6 +359,7 @@ function EditMenuItemModal({
   const [recipeRows, setRecipeRows] = useState<RecipeRow[]>(() =>
     initialRecipe.map((r) => ({ inventoryItemId: r.inventoryItemId, quantityPerUnit: String(r.quantityPerUnit) }))
   );
+  const [priceOptions, setPriceOptions] = useState<MenuPriceOption[]>(item.priceOptions ?? []);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -354,7 +370,9 @@ function EditMenuItemModal({
       const updated = await updateMenuItemAction(restaurantId, item.id, {
         name: String(form.get("name") ?? ""),
         category: String(form.get("category") ?? "") || null,
-        price: Number(form.get("price") ?? 0),
+        price: priceOptions.length ? Math.min(...priceOptions.map((option) => option.price)) : Number(form.get("price") ?? 0),
+        priceOptions,
+        isOrderable: form.get("isOrderable") === "on",
         foodCost: Number(form.get("foodCost") ?? 0),
         description: String(form.get("description") ?? "") || null,
         allergens,
@@ -390,13 +408,18 @@ function EditMenuItemModal({
           <Input name="category" defaultValue={item.category ?? ""} placeholder={tn("categoryPlaceholder")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={tn("priceLabel")}>
+          <Field label={priceOptions.length ? "Prix de départ (minimum des formats)" : tn("priceLabel")}>
             <Input name="price" type="number" min="0" step="0.01" defaultValue={item.price} required />
           </Field>
           <Field label={tn("foodCostLabel")}>
             <Input name="foodCost" type="number" min="0" step="0.01" defaultValue={item.foodCost} required />
           </Field>
         </div>
+        <MenuPriceOptionsEditor options={priceOptions} onChange={setPriceOptions} />
+        <label className="flex items-start gap-2 rounded-lg border border-mv-border-soft bg-mv-cream-soft/60 p-3 text-[12px] text-mv-ink-soft">
+          <input type="checkbox" name="isOrderable" defaultChecked={item.isOrderable !== false} className="mt-0.5 accent-mv-green" />
+          <span><strong className="text-mv-ink">Proposé à la commande</strong><br />Décochez pour présenter cet article dans le menu sans permettre de le commander.</span>
+        </label>
         <Field label={tn("descriptionLabel")} hint={tn("optional")}>
           <Input name="description" defaultValue={item.description ?? ""} />
         </Field>
@@ -458,8 +481,8 @@ function MenuItemRow({
   const [isToggling, setIsToggling] = useState(false);
 
   async function handleToggleActive() {
-    if (!item.active && item.isDraft && (item.price <= 0 || !item.allergensConfirmed)) {
-      notifyError("Complétez le prix et confirmez les allergènes avant de publier ce brouillon.");
+    if (!item.active && item.isDraft && (!hasValidMenuPricing(item) || !item.allergensConfirmed)) {
+      notifyError("Ajoutez un prix ou des formats tarifés, puis confirmez les allergènes avant de publier ce brouillon.");
       return;
     }
     setIsToggling(true);
@@ -492,6 +515,7 @@ function MenuItemRow({
               </button>
             )}
             {item.isDraft && <Badge tone="amber">Brouillon à compléter</Badge>}
+            {item.isOrderable === false && <Badge tone="neutral">Présentation seulement</Badge>}
             {!item.active && !item.isDraft && <Badge tone="neutral">Retiré du menu</Badge>}
             {stockStatus?.status === "rupture" && (
               <span
@@ -549,7 +573,7 @@ function MenuItemRow({
       <div className="mt-2 grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-4">
         <div>
           <p className="text-mv-ink-faint">{t("price")}</p>
-          <p className="font-medium text-mv-ink">{formatCurrency(item.price)}</p>
+          <p className="font-medium text-mv-ink">{item.priceOptions?.length ? `À partir de ${formatCurrency(menuStartingPrice(item))}` : formatCurrency(item.price)}</p>
         </div>
         <div>
           <p className="text-mv-ink-faint">{t("margin")}</p>
@@ -1331,6 +1355,7 @@ export function MenuView({
   const t = useTranslations("menu.page");
   const tq = useTranslations("menu.quadrant");
   const { role } = useApp();
+  const interactiveRootRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState(initialItems);
   const [recipesByMenuItem] = useState(initialRecipes);
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -1346,6 +1371,10 @@ export function MenuView({
   const [tax, setTax] = useState(taxRate);
   const [tips, setTips] = useState(acceptsTips);
   const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
+
+  useEffect(() => {
+    if (interactiveRootRef.current) interactiveRootRef.current.dataset.interactiveReady = "true";
+  }, []);
 
   const canManage = role === "owner" || role === "manager";
   const canCreate = Boolean(restaurantId) && (role === "owner" || role === "manager" || role === "staff");
@@ -1440,7 +1469,7 @@ export function MenuView({
   }
 
   return (
-    <div>
+    <div ref={interactiveRootRef} data-interactive-ready="false">
       <PageHeader
         eyebrow={t("eyebrow")}
         title={t("title")}
@@ -1465,6 +1494,7 @@ export function MenuView({
           </div>
         }
       />
+      <MenuStudioNav active="menu" />
 
       {canManage && (
         <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl bg-mv-cream-soft px-4 py-3">

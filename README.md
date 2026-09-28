@@ -29,10 +29,16 @@
 Elle comprend trois surfaces complémentaires :
 
 - **Espace web propriétaire et équipe** : aperçu, menu, commandes, fidélisation, horaires, collaborateurs, inventaire, rapports et paramètres. Les pages disponibles dépendent du rôle et des accès accordés.
-- **Application iOS** : le même client natif oriente les comptes vers une expérience client ou propriétaire après authentification. Le parcours client couvre l’accueil, le menu/la commande, le code de jumelage, les offres, les cartes et le profil. Le parcours propriétaire donne accès à l’aperçu, aux commandes, au menu, à la fidélisation et à la gestion; sur iPad, la navigation s’adapte au format large.
+- **Application native iPhone, iPad et Mac** : le même client SwiftUI oriente les comptes vers une expérience client ou propriétaire après authentification. Le parcours client couvre l’accueil, le menu/la commande, le code de jumelage, les offres, les cartes et le profil. Le parcours Owner donne accès à l’aperçu, aux commandes, au menu, à la fidélisation et aux outils de gestion; iPad et Mac Catalyst utilisent une navigation latérale adaptée au grand écran. Google Business Profile donne accès à la fiche, aux horaires et aux avis après autorisation du propriétaire.
 - **Pages web publiques** : menu partagé, lien de parrainage, demandes de réservation et parcours de commande activés par restaurant.
 
-Le modèle complet — qui fait quoi, comment les parcours s’enchaînent et ce qui dépend d’une intégration — est décrit dans le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md). L’état de TestFlight est suivi dans [l’audit mobile](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md).
+Le modèle complet — qui fait quoi, comment les parcours s'enchaînent et ce qui dépend d'une intégration — est décrit dans le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md). L'état de TestFlight est suivi dans [l'audit mobile](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md).
+
+La route `/app` présente les captures, les étapes TestFlight et l’inscription client. Le bonus de première visite est désactivé à zéro point; la sélection « À découvrir » du menu est gérée par le propriétaire.
+
+Le menu partageable, son éditeur QR, les commandes suivies, les règles de stock et les indicateurs LTV/CAC sont décrits dans l’[architecture Flow Direct](docs/FLOW_DIRECT_MENU_AND_VALUE.md). Les migrations `0156` à `0164` sont présentes en staging et en production. Les principaux flux menu, commande et déduction de stock ont été vérifiés sur le staging. La version web `2.48.0` est en production; l’app iOS `1.0.0 (15)` est approuvée pour la bêta TestFlight externe.
+
+Les preuves de validation, les limites restantes et les recommandations de communication sont consignées dans le [dossier de release 2.48.0](docs/releases/RELEASE_CANDIDATE_2.48.0.md). Le build TestFlight `1.0.0 (15)` demeure la version distribuée. La nouvelle candidate native `1.0.1 (16)` ajoute l’espace Owner iPad/Mac Catalyst et Google Business Profile; elle attend encore la validation complète et le téléversement. La fiche Google doit être reliée par un propriétaire après l’installation. Les recettes, quantités de départ et cibles de réapprovisionnement doivent être configurées par chaque restaurant avant que les alertes de stock reflètent son inventaire réel.
 
 ---
 
@@ -168,7 +174,7 @@ Minerva Flow est conçu pour supporter des montées en charge massives avec des 
 - **Intégrations POS & Monétique** : Square, Clover, Toast POS, Lightspeed Restaurant, Stripe Connect, Stripe Checkout — Square et Clover incluent une synchronisation bidirectionnelle du menu et de l'inventaire (pas seulement le chiffre d'affaires)
 - **Liens intelligents** : Universal Links iOS (`apple-app-site-association`) pour les liens de parrainage et points de contact NFC/QR
 - **Services Webhooks & Cron** : Webhooks Square/Clover/Toast/Stripe/Twilio ; tâches planifiées via GitHub Actions (`.github/workflows/cron-*.yml`) plutôt que les Cron Jobs Vercel — le plan Vercel Hobby du projet limite les crons natifs à 2 au total, une fois par jour chacun
-- **Tests & Assurance Qualité** : Vitest (179 tests réussis lors du contrôle du 23 septembre 2026), TypeScript (`tsc --noEmit`)
+- **Tests & Assurance Qualité** : Vitest (333 tests réussis, 62 fichiers, lors du contrôle du 27 septembre 2026), TypeScript (`tsc --noEmit`)
 - **Hébergement Cloud** : Vercel Production Infrastructure
 
 ---

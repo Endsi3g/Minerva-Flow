@@ -22,24 +22,29 @@ export function ServiceQuoteRequest({ token, restaurantTimezone, deliveryEnabled
     const form = new FormData(event.currentTarget);
     setBusy(true);
     setError(null);
-    const result = await submitPublicServiceQuoteAction(token, {
-      quoteType,
-      guestName: String(form.get("guestName") ?? ""),
-      guestPhone: String(form.get("guestPhone") ?? ""),
-      guestEmail: String(form.get("guestEmail") ?? ""),
-      description: String(form.get("description") ?? ""),
-      eventAtLocal: String(form.get("eventAtLocal") ?? ""),
-      guestCount: quoteType === "catering" ? Number(form.get("guestCount") ?? 0) : null,
-      fulfillmentMode,
-      deliveryAddress: String(form.get("deliveryAddress") ?? ""),
-      clientNotes: String(form.get("clientNotes") ?? ""),
-    });
-    setBusy(false);
-    if (!result.ok) {
-      setError(t(result.reason === "rate_limited" ? "rateLimited" : "submitFailed"));
-      return;
+    try {
+      const result = await submitPublicServiceQuoteAction(token, {
+        quoteType,
+        guestName: String(form.get("guestName") ?? ""),
+        guestPhone: String(form.get("guestPhone") ?? ""),
+        guestEmail: String(form.get("guestEmail") ?? ""),
+        description: String(form.get("description") ?? ""),
+        eventAtLocal: String(form.get("eventAtLocal") ?? ""),
+        guestCount: quoteType === "catering" ? Number(form.get("guestCount") ?? 0) : null,
+        fulfillmentMode,
+        deliveryAddress: String(form.get("deliveryAddress") ?? ""),
+        clientNotes: String(form.get("clientNotes") ?? ""),
+      });
+      if (!result.ok) {
+        setError(t(result.reason === "rate_limited" ? "rateLimited" : "submitFailed"));
+        return;
+      }
+      setSent(true);
+    } catch {
+      setError(t("submitFailed"));
+    } finally {
+      setBusy(false);
     }
-    setSent(true);
   }
 
   return (
@@ -71,11 +76,11 @@ export function ServiceQuoteRequest({ token, restaurantTimezone, deliveryEnabled
               ))}
             </div>
             <Field label={t("name")}><Input name="guestName" autoComplete="name" required minLength={2} maxLength={120} /></Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label={t("phone")}><Input name="guestPhone" type="tel" autoComplete="tel" required minLength={7} maxLength={40} /></Field>
               <Field label={t("email")}><Input name="guestEmail" type="email" autoComplete="email" required maxLength={254} /></Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label={t("eventDate")} hint={t("timezoneHint", { timezone: restaurantTimezone })}><Input name="eventAtLocal" type="datetime-local" required /></Field>
               {quoteType === "catering" && <Field label={t("guestCount")}><Input name="guestCount" type="number" min="1" max="5000" required /></Field>}
             </div>

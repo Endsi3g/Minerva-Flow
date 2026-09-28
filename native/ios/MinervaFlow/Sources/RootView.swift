@@ -25,10 +25,13 @@ struct RootView: View {
     @EnvironmentObject var biometricLock: BiometricLock
     @EnvironmentObject var router: DeepLinkRouter
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    @AppStorage("appAppearance") private var storedAppearance = AppAppearance.light.rawValue
 
     @State private var screen: RootScreen = .intro
     @State private var resolvedLinkRestaurant: ResolvedUniversalLinkRestaurant?
     @State private var universalLinkError: String?
+
+    private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
     var body: some View {
         ZStack {
@@ -77,6 +80,7 @@ struct RootView: View {
         // Feed it to SwiftUI's LocalizedStringKey resolver too, so static
         // French copy does not fall through to the English bundle.
         .environment(\.locale, Locale(identifier: AppLanguage(rawValue: storedLanguage)?.localeIdentifier ?? AppLanguage.fr.localeIdentifier))
+        .preferredColorScheme(AppAppearance(rawValue: storedAppearance)?.colorScheme)
         .onAppear {
             syncScreen()
             if screen == .main { biometricLock.lockIfEnabled() }
@@ -107,7 +111,7 @@ struct RootView: View {
         .fullScreenCover(item: $resolvedLinkRestaurant) { restaurant in
             RestaurantDetailView(restaurantId: restaurant.id, previewName: restaurant.name)
         }
-        .alert("Lien invalide", isPresented: Binding(
+        .alert(isFrench ? "Lien invalide" : "Invalid link", isPresented: Binding(
             get: { universalLinkError != nil },
             set: { if !$0 { universalLinkError = nil } }
         )) {
@@ -141,7 +145,7 @@ struct RootView: View {
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
             guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-                universalLinkError = "Ce lien n'est plus valide."
+                universalLinkError = isFrench ? "Ce lien n'est plus valide." : "This link is no longer valid."
                 return
             }
             let resolved = try JSONDecoder().decode(RestaurantResolution.self, from: data)
@@ -151,7 +155,7 @@ struct RootView: View {
                 resolvedLinkRestaurant = ResolvedUniversalLinkRestaurant(id: id, name: resolved.restaurantName ?? "Restaurant")
             }
         } catch {
-            universalLinkError = "Ce lien n'est plus valide."
+            universalLinkError = isFrench ? "Ce lien n'est plus valide." : "This link is no longer valid."
             print("resolveUniversalLink error: \(error)")
         }
     }
@@ -198,15 +202,15 @@ struct RootView: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 30))
                     .foregroundStyle(.orange)
-                Text("Impossible de préparer votre espace")
+                Text(isFrench ? "Impossible de préparer votre espace" : "We couldn't prepare your workspace")
                     .font(MinervaFont.display(24))
                     .foregroundStyle(MinervaColor.ink)
                     .multilineTextAlignment(.center)
-                Text(supabase.experienceResolutionError ?? "Réessayez dans un instant.")
+                Text(supabase.experienceResolutionError ?? (isFrench ? "Réessayez dans un instant." : "Try again in a moment."))
                     .font(.system(size: 14))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
-                Button("Réessayer") {
+                Button(isFrench ? "Réessayer" : "Try again") {
                     Task { await supabase.retryExperienceResolution() }
                 }
                 .buttonStyle(.borderedProminent)
@@ -214,7 +218,7 @@ struct RootView: View {
             } else {
                 ProgressView()
                     .tint(MinervaColor.emerald)
-                Text("Préparation de votre espace…")
+                Text(isFrench ? "Préparation de votre espace…" : "Preparing your workspace…")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(MinervaColor.inkSoft)
             }

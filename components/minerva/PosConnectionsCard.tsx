@@ -6,13 +6,14 @@ import { useApp } from "@/lib/app-context";
 import {
   getPosStatusAction,
   syncPosNowAction,
+  importCloverCatalogAction,
   connectToastWithGuidAction,
   connectCloverWithTokenAction,
   type PosProviderConfigured,
 } from "@/app/[locale]/(app)/settings/pos-actions";
 import type { PosConnection, PosProvider } from "@/lib/data/pos-connections";
 import { formatDate } from "@/lib/utils";
-import { RefreshCw, Store, KeyRound } from "lucide-react";
+import { RefreshCw, Store, KeyRound, Download } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { Square, QuickBooks, Clover, Toast } from "@/components/ui/BrandIcons";
 import { toast as sonnerToast } from "sonner";
@@ -23,6 +24,13 @@ const providerLabel: Record<PosProvider, string> = {
   clover: "Clover",
   toast: "Toast POS",
   quickbooks: "QuickBooks",
+};
+
+const providerCapabilities: Partial<Record<PosProvider, string>> = {
+  square: "Connexion OAuth · ventes et commandes quotidiennes",
+  lightspeed: "Connexion API · ventes quotidiennes (selon votre édition Lightspeed)",
+  clover: "Connexion API · ventes et commandes; import du catalogue en brouillons",
+  toast: "API partenaire · ventes et commandes (accès Toast requis)",
 };
 
 // Square, QuickBooks, Clover, and Toast have official brand icons in BrandIcons.tsx.
@@ -70,6 +78,9 @@ function ConnectRow({
   const hasError = connection?.status === "erreur";
 
   function statusLine() {
+    if (provider === "clover" && !configured) {
+      return "En attente de l’activation de l’application Clover de production par Minerva Flow.";
+    }
     if (!configured && provider !== "clover") return "Identifiants d’application à configurer";
     if (!connection) return "Non connecté";
     if (hasError) return "La connexion a été interrompue — reconnectez pour reprendre la synchronisation.";
@@ -112,7 +123,7 @@ function ConnectRow({
 
   return (
     <div className="rounded-lg border border-mv-border-soft px-3.5 py-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           {provider === "lightspeed" ? (
             <LightspeedBadge />
@@ -123,12 +134,45 @@ function ConnectRow({
             {provider !== "lightspeed" && (
               <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
             )}
+            <p className="text-[11px] leading-relaxed text-mv-ink-soft">{providerCapabilities[provider]}</p>
             <p className="text-[12px] text-mv-ink-faint">{statusLine()}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
           {connection && !hasError && (
             <>
+              {provider === "clover" && configured && (
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => startTransition(async () => {
+                    const result = await importCloverCatalogAction();
+                    if (result.ok) {
+                      const messages = [
+                        `${result.createdDrafts} brouillon${result.createdDrafts === 1 ? "" : "s"} créé${result.createdDrafts === 1 ? "" : "s"}`,
+                        `${result.linkedExisting} article${result.linkedExisting === 1 ? "" : "s"} associé${result.linkedExisting === 1 ? "" : "s"}`,
+                        `${result.alreadyMapped} déjà associé${result.alreadyMapped === 1 ? "" : "s"}`,
+                      ];
+                      sonnerToast.success("Catalogue Clover importé", { description: messages.join(" · ") });
+                    } else {
+                      const description = result.reason === "not_authorized"
+                        ? "Seul un propriétaire ou gestionnaire peut importer le catalogue."
+                        : result.reason === "not_connected"
+                          ? "Reconnectez Clover avant d’importer son catalogue."
+                          : result.reason === "empty_catalog"
+                            ? "Aucun article reçu de Clover. Vérifiez les autorisations du compte."
+                            : "Le catalogue n’a pas pu être importé. Réessayez après avoir vérifié la connexion.";
+                      sonnerToast.error("Import du catalogue impossible", { description });
+                    }
+                  })}
+                  aria-label="Importer le catalogue Clover en brouillons inactifs"
+                  className="flex min-h-10 items-center gap-1.5 rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink disabled:opacity-50"
+                  title="Importe le catalogue en brouillons inactifs, à vérifier avant publication."
+                >
+                  <Download size={13} className={isPending ? "animate-bounce" : ""} />
+                  <span className="hidden sm:inline">{isPending ? "Import…" : "Importer le catalogue"}</span>
+                </button>
+              )}
               <Badge tone="green" dot>
                 Connecté
               </Badge>
@@ -156,7 +200,7 @@ function ConnectRow({
           )}
           {!connection && (
             <div className="flex items-center gap-1.5">
-              {provider === "clover" && (
+              {provider === "clover" && configured && (
                 <button
                   type="button"
                   onClick={() => setShowManualClover(!showManualClover)}
@@ -178,21 +222,31 @@ function ConnectRow({
                   Identifiant
                 </button>
               )}
-              <a
-                href={configured ? `/api/oauth/${provider}` : undefined}
-                aria-disabled={!configured}
-                className={
-                  configured
-                    ? "rounded-lg bg-mv-ink px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-ink/90"
-                    : "cursor-not-allowed rounded-lg bg-mv-ink/[0.06] px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink-faint"
-                }
-              >
-                Connecter
-              </a>
+              {configured ? (
+                <a
+                  href={`/api/oauth/${provider}`}
+                  className="rounded-lg bg-mv-ink px-3 py-1.5 text-[12.5px] font-semibold text-mv-cream-soft transition-colors hover:bg-mv-ink/90"
+                >
+                  Connecter
+                </a>
+              ) : (
+                <span
+                  aria-disabled="true"
+                  className="cursor-not-allowed rounded-lg bg-mv-ink/[0.06] px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink-faint"
+                >
+                  En préparation
+                </span>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {connection && provider === "clover" && (
+        <p className="mt-2 text-[11.5px] leading-relaxed text-mv-ink-faint">
+          Les articles importés arrivent en brouillons inactifs. Vérifiez les prix, variantes et allergènes avant de les publier.
+        </p>
+      )}
 
       {showManualClover && !connection && (
         <form onSubmit={handleManualCloverSubmit} className="mt-2.5 space-y-2 border-t border-mv-border-soft pt-2.5">
@@ -269,7 +323,7 @@ export function PosConnectionsCard() {
       <CardHeader
         eyebrow="Point de vente"
         title="Systèmes de caisse"
-        description="Synchronisez vos ventes automatiquement plutôt que de les saisir à la main."
+        description="Square, Lightspeed, Clover et Toast peuvent transmettre les ventes quand l’accès API du fournisseur est activé. Seul Clover importe aussi un catalogue dans Minerva Flow; les articles importés restent des brouillons à valider."
       />
       <div className="space-y-2">
         <ConnectRow

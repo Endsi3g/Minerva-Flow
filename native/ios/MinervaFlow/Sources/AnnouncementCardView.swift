@@ -50,7 +50,7 @@ struct AnnouncementCardView: View {
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(MinervaColor.inkFaint)
                             .padding(6)
-                            .background(Color.white.opacity(0.6))
+                            .background(MinervaColor.surface.opacity(0.8))
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
@@ -98,7 +98,7 @@ struct AnnouncementCardView: View {
                                     .background(
                                         isSelected
                                             ? MinervaColor.emerald
-                                            : Color.white.opacity(0.9)
+                                            : MinervaColor.surface.opacity(0.9)
                                     )
                                     .foregroundStyle(
                                         isSelected
@@ -127,7 +127,7 @@ struct AnnouncementCardView: View {
                                     .font(.system(size: 12))
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
-                                    .background(Color.white)
+                                    .background(MinervaColor.surface)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -168,7 +168,7 @@ struct AnnouncementCardView: View {
                         }
                     }
                     .padding(12)
-                    .background(Color.white.opacity(0.65))
+                    .background(MinervaColor.surface.opacity(0.8))
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)

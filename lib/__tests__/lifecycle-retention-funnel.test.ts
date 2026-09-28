@@ -130,7 +130,7 @@ describe("Lifecycle Events & Retention Funnel Suite", () => {
     }
   });
 
-  it("calculates the 10 essential KPIs with correct values and benchmarks", async () => {
+  it("calculates the 10 essential KPIs from observed events and member totals", async () => {
     const data: RetentionFunnelDashboardData = await getRetentionFunnelMetrics(
       "test-rest-id",
       "30d"
@@ -140,7 +140,7 @@ describe("Lifecycle Events & Retention Funnel Suite", () => {
 
     // 1. Scan to signup rate
     expect(kpis.scanToSignupRate.id).toBe("scan_to_signup");
-    expect(kpis.scanToSignupRate.value).toBeGreaterThan(0);
+    expect(kpis.scanToSignupRate.value).toBeCloseTo(66.7, 1);
     expect(kpis.scanToSignupRate.unit).toBe("%");
 
     // 2. Activation rate
@@ -177,7 +177,7 @@ describe("Lifecycle Events & Retention Funnel Suite", () => {
 
     // 9. Cost per reactivated customer
     expect(kpis.costPerReactivatedCustomer.id).toBe("cost_per_reactivated");
-    expect(kpis.costPerReactivatedCustomer.value).toBeLessThan(3.0); // very cheap vs 25 $ ads
+    expect(kpis.costPerReactivatedCustomer.formattedValue).toBe("Non mesuré");
 
     // 10. Unsubscribe rate
     expect(kpis.unsubscribeRate.id).toBe("unsubscribe_rate");
@@ -194,5 +194,9 @@ describe("Lifecycle Events & Retention Funnel Suite", () => {
     expect(rawCounts.referralsSent).toBe(1);
     expect(rawCounts.referralsConverted).toBe(1);
     expect(rawCounts.totalMembers).toBe(2);
+    expect(rawCounts.scans).toBe(3);
+    expect(rawCounts.registrations).toBe(2);
+    expect(rawCounts.messagesDelivered).toBe(1);
   });
+
 });

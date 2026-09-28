@@ -5,29 +5,26 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "https://c4d6e3d7d59071a83f305b335aa8c4ca@o4511091368525824.ingest.us.sentry.io/4511737334071296",
-
-  // Add optional integrations for additional features
-  integrations: [Sentry.replayIntegration()],
-
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
-  // Define how likely Replay events are sampled.
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
-
-  // Define how likely Replay events are sampled when an error occurs.
-  replaysOnErrorSampleRate: 1.0,
-
+  // Keep this separate from NEXT_PUBLIC_SENTRY_DSN, which already exists in
+  // the linked Vercel project and blocked the new Marketplace resource from
+  // connecting. DSNs are public client identifiers, not auth tokens.
+  dsn:
+    process.env.NEXT_PUBLIC_MINERVA_SENTRY_DSN ??
+    "https://06040e3c08522cfaf3bf87729f1e942f@o4512147373686784.ingest.us.sentry.io/4512147451215872",
+  environment: process.env.NODE_ENV,
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
+  enableLogs: false,
+  // Replay remains disabled until a consent/retention policy is in place.
   dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
+    userInfo: false,
+    cookies: false,
+    httpHeaders: { request: false, response: false },
+    httpBodies: [],
+    urlQueryParams: false,
+    graphQL: { document: false, variables: false },
+    genAI: { inputs: false, outputs: false },
+    databaseQueryData: false,
+    stackFrameVariables: false,
   },
 });
 

@@ -1,11 +1,13 @@
 import { roundToCents } from "@/lib/utils";
+import { findMenuPriceOption } from "@/lib/menu-pricing";
+import type { MenuPriceOption } from "@/lib/types";
 
 const MAX_DATABASE_MONEY = 99_999_999.99;
 const MAX_POSTGRES_INTEGER = 2_147_483_647;
 
 export type OrderPricingInput = {
-  cart: { menuItemId: string; quantity: number }[];
-  menuItemById: Map<string, { id: string; name: string; price: number }>;
+  cart: { menuItemId: string; quantity: number; priceOptionId?: string | null }[];
+  menuItemById: Map<string, { id: string; name: string; price: number; priceOptions?: MenuPriceOption[] }>;
   taxRate: number;
   acceptsTips: boolean;
   requestedTipAmount: number;
@@ -16,6 +18,7 @@ export type OrderPricingLineItem = {
   itemName: string;
   unitPrice: number;
   quantity: number;
+  priceOptionId: string | null;
 };
 
 export type OrderPricingResult = {
@@ -40,6 +43,8 @@ export function computeOrderPricing(input: OrderPricingInput): OrderPricingResul
   const lineItems = input.cart
     .map((line) => {
       const item = input.menuItemById.get(line.menuItemId);
+      const hasOptions = Boolean(item?.priceOptions?.length);
+      const option = findMenuPriceOption(item?.priceOptions, line.priceOptionId);
       if (
         !item ||
         !Number.isSafeInteger(line.quantity) ||
@@ -47,9 +52,18 @@ export function computeOrderPricing(input: OrderPricingInput): OrderPricingResul
         line.quantity > MAX_POSTGRES_INTEGER ||
         !Number.isFinite(item.price) ||
         item.price < 0 ||
-        item.price > MAX_DATABASE_MONEY
+        item.price > MAX_DATABASE_MONEY ||
+        hasOptions !== Boolean(line.priceOptionId) ||
+        (hasOptions && !option)
       ) return null;
-      return { menuItemId: item.id, itemName: item.name, unitPrice: roundToCents(item.price), quantity: line.quantity };
+      const unitPrice = option?.price ?? item.price;
+      return {
+        menuItemId: item.id,
+        itemName: option ? `${item.name} · ${option.label}` : item.name,
+        unitPrice: roundToCents(unitPrice),
+        quantity: line.quantity,
+        priceOptionId: option?.id ?? null,
+      };
     })
     .filter((l): l is OrderPricingLineItem => l !== null);
 

@@ -29,6 +29,10 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!imageUrl) {
+      toast.error(t("screenshotRequired"));
+      return;
+    }
     const form = new FormData(e.currentTarget);
     setIsSubmitting(true);
     try {
@@ -77,12 +81,29 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
               restaurantId="changelog"
               scopeId={uploadScopeId}
               bucket="changelog-images"
-              currentUrl={imageUrl}
+              currentUrl={null}
               onUploaded={setImageUrl}
               onUploadingChange={setIsImageUploading}
             />
+            {imageUrl && (
+              <figure className="mt-3 max-w-xl overflow-hidden rounded-xl border border-mv-border-soft bg-mv-surface">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrl}
+                  alt="Aperçu de la capture qui sera affichée dans le changelog"
+                  width={1200}
+                  height={675}
+                  loading="lazy"
+                  decoding="async"
+                  className="block aspect-video w-full object-cover"
+                />
+                <figcaption className="px-3 py-2 text-[11px] text-mv-ink-faint">
+                  Capture ajoutée à la mise à jour
+                </figcaption>
+              </figure>
+            )}
           </Field>
-          <Button type="submit" disabled={isSubmitting || isImageUploading}>
+          <Button type="submit" disabled={isSubmitting || isImageUploading || !imageUrl}>
             {isImageUploading ? t("waitingForImage") : isSubmitting ? t("publishing") : t("publishAndNotify")}
           </Button>
         </form>
@@ -98,6 +119,20 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
               </span>
             </div>
             <p className="text-[13.5px] font-semibold text-mv-ink">{entry.title}</p>
+            {entry.imageUrl && (
+              <div className="mt-2 max-w-xs overflow-hidden rounded-lg border border-mv-border-soft">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={entry.imageUrl}
+                  alt={`Capture d’écran : ${entry.title}`}
+                  width={800}
+                  height={450}
+                  loading="lazy"
+                  decoding="async"
+                  className="block aspect-video w-full object-cover"
+                />
+              </div>
+            )}
             <p className="mt-1 text-[12.5px] text-mv-ink-soft">{entry.description}</p>
           </div>
         ))}

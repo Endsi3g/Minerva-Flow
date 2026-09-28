@@ -141,8 +141,8 @@ const RULE_META: Record<
   low_stock: {
     label: "Stock bas",
     description:
-      "Alerter quand un article d'inventaire tombe à ce pourcentage (ou moins) de son seuil minimal.",
-    defaultThreshold: 100,
+      "Alerter le propriétaire quand le stock tombe à ce pourcentage (ou moins) de la cible de réapprovisionnement configurée pour l'article.",
+    defaultThreshold: 30,
     unit: "%",
   },
   unfilled_shift: {

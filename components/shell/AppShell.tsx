@@ -4,8 +4,6 @@ import { AppSidebar } from "@/components/shell/AppSidebar";
 import { AppBreadcrumb } from "@/components/shell/AppBreadcrumb";
 import { TopbarActions } from "@/components/shell/TopbarActions";
 import { MobileTabBar } from "@/components/shell/MobileTabBar";
-import { WorkspaceSetupBanner } from "@/components/shell/WorkspaceSetupBanner";
-import { UpdateBanner } from "@/components/shell/UpdateBanner";
 import { PageTransition } from "@/components/shell/PageTransition";
 import { PresenceProvider } from "@/lib/presence/context";
 import { RealtimeProvider } from "@/lib/realtime/RealtimeProvider";
@@ -67,8 +65,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <PageTransition>{children}</PageTransition>
             ) : (
               <div className={cn("mx-auto", sidebarCollapsed ? "max-w-[1800px]" : "max-w-[1600px]")}>
-                {!pathname.startsWith("/changelog") && <UpdateBanner />}
-                {!pathname.startsWith("/etablissement") && <WorkspaceSetupBanner />}
                 <PageTransition>{children}</PageTransition>
               </div>
             )}

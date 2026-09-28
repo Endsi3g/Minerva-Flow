@@ -3602,6 +3602,23 @@ alter table restaurants add column if not exists stripe_connect_charges_enabled 
 alter table restaurants add column if not exists stripe_connect_payouts_enabled boolean not null default false;
 alter table restaurants add column if not exists stripe_connect_details_submitted boolean not null default false;
 alter table restaurants add column if not exists stripe_connect_connected_at timestamptz;
+alter table restaurants add column if not exists stripe_connect_account_api_version text not null default 'v1';
+alter table restaurants add column if not exists stripe_connect_transfers_status text not null default 'unrequested';
+alter table restaurants add column if not exists stripe_connect_recipient_payouts_status text not null default 'unrequested';
+alter table restaurants add column if not exists stripe_connect_requirements_due_count integer not null default 0;
+alter table restaurants
+  drop constraint if exists restaurants_stripe_connect_account_api_version_check,
+  add constraint restaurants_stripe_connect_account_api_version_check
+    check (stripe_connect_account_api_version in ('v1', 'v2')),
+  drop constraint if exists restaurants_stripe_connect_transfers_status_check,
+  add constraint restaurants_stripe_connect_transfers_status_check
+    check (stripe_connect_transfers_status in ('active', 'pending', 'restricted', 'unsupported', 'unrequested')),
+  drop constraint if exists restaurants_stripe_connect_recipient_payouts_status_check,
+  add constraint restaurants_stripe_connect_recipient_payouts_status_check
+    check (stripe_connect_recipient_payouts_status in ('active', 'pending', 'restricted', 'unsupported', 'unrequested')),
+  drop constraint if exists restaurants_stripe_connect_requirements_due_count_check,
+  add constraint restaurants_stripe_connect_requirements_due_count_check
+    check (stripe_connect_requirements_due_count >= 0);
 
 do $$ begin
   create type order_payment_status as enum ('non_requis', 'en_attente', 'paye', 'echoue');
@@ -9610,4 +9627,3 @@ grant execute on function grant_customer_birthday_bonus(uuid, uuid) to authentic
 commit;
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES ('0132', 'secure_birthday_loyalty_bonus') ON CONFLICT (version) DO UPDATE SET name = EXCLUDED.name;
 -- <<< END MIGRATION 0132_secure_birthday_loyalty_bonus.sql <<<
-

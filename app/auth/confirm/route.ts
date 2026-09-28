@@ -13,7 +13,15 @@ export async function GET(request: NextRequest) {
   // it as a protocol-relative URL to an external host — reject it so a
   // crafted magic-link "next" param can't bounce a freshly-authenticated
   // victim off to an attacker-controlled site.
-  const next = nextParam?.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/overview";
+  let next = nextParam?.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/workspace";
+  const nextUrl = new URL(next, request.url);
+  const ambassadorCode = nextUrl.searchParams.get("flow_amb")?.trim().toUpperCase();
+  const ambassadorLinkSlug = nextUrl.searchParams.get("flow_amb_link")?.trim();
+  if (ambassadorCode) {
+    nextUrl.searchParams.delete("flow_amb");
+    nextUrl.searchParams.delete("flow_amb_link");
+    next = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+  }
 
   if (token_hash && type) {
     const supabase = await createClient();
@@ -32,6 +40,10 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      if (ambassadorCode) await supabase.auth.updateUser({ data: {
+        flow_ambassador_code: ambassadorCode,
+        ...(ambassadorLinkSlug && /^[a-f0-9]{12}$/i.test(ambassadorLinkSlug) ? { flow_ambassador_link_slug: ambassadorLinkSlug } : {}),
+      } });
       redirect(next);
     }
     redirect(`/auth/error?error=${encodeURIComponent(error.message)}`);

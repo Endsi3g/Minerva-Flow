@@ -32,15 +32,30 @@ test.describe("Integrations Ecosystem (Google Workspace & Accounting)", () => {
   });
 
   test("verifies Google Workspace pills and extended Accounting cards in /settings", async ({ page }) => {
+    test.setTimeout(90_000);
     await loginAs(page, user);
 
     // Navigate to Settings Integrations tab
     await page.goto("/settings?tab=integrations");
-    await page.waitForLoadState("networkidle");
 
     // 1. Google Workspace Card & Pills
     await expect(page.getByText("Google Workspace")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Google", exact: true })).toBeVisible();
+
+    // The Connect surface must be reachable, but only report a ready state
+    // after a restaurant has completed its hosted onboarding.
+    const stripeCard = page.getByText("Paiements en ligne des clients").locator('xpath=ancestor::div[contains(@class,"rounded-2xl")][1]');
+    await expect(stripeCard).toBeVisible();
+    await expect(stripeCard.getByText("Non connecté")).toBeVisible({ timeout: 20_000 });
+    await expect(stripeCard.getByRole("button", { name: "Connecter Stripe" })).toBeVisible();
+    const verifyArtifactsDir = process.env.VERIFY_ARTIFACTS_DIR;
+    if (verifyArtifactsDir) {
+      await stripeCard.screenshot({ path: `${verifyArtifactsDir}/screens/stripe-connect-desktop.png` });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expect(stripeCard.getByRole("button", { name: "Connecter Stripe" })).toBeVisible();
+      await stripeCard.screenshot({ path: `${verifyArtifactsDir}/screens/stripe-connect-mobile.png` });
+      await page.setViewportSize({ width: 1440, height: 900 });
+    }
 
     // Verify all Google service pills with SVG icons are rendered
     await expect(page.getByText("Gmail", { exact: true }).first()).toBeVisible();

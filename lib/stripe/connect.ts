@@ -1,8 +1,13 @@
 import "server-only";
 import { getStripeClient } from "@/lib/stripe/config";
-import { classifyServiceQuoteCheckout, resolveServiceQuoteCheckoutStatus } from "@/lib/stripe/checkout-status";
+import {
+  classifyServiceQuoteCheckout,
+  portalOrderCheckoutIdempotencyKey,
+  resolveServiceQuoteCheckoutStatus,
+} from "@/lib/stripe/checkout-status";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { ConnectCapabilityStatus } from "@/lib/stripe/connect-capabilities";
 import type Stripe from "stripe";
 
 /**
@@ -75,6 +80,89 @@ export async function createExpressAccount(email: string | null): Promise<string
   return account.id;
 }
 
+/**
+ * New restaurant checkouts use an Accounts v2 Recipient: Minerva Flow is
+ * the platform/Merchant of Record for destination charges, while the
+ * restaurant only needs to receive transfers and pay them out.
+ */
+export async function createRestaurantRecipientAccountV2(input: {
+  email: string | null;
+  restaurantId: string;
+  displayName?: string | null;
+}): Promise<string> {
+  const stripe = getStripeClient();
+  const account = await stripe.v2.core.accounts.create({
+    contact_email: input.email ?? undefined,
+    display_name: input.displayName?.trim().slice(0, 100) || undefined,
+    identity: { country: "ca" },
+    configuration: {
+      recipient: {
+        capabilities: {
+          stripe_balance: {
+            stripe_transfers: { requested: true },
+          },
+        },
+      },
+    },
+    defaults: {
+      responsibilities: { fees_collector: "application", losses_collector: "application" },
+    },
+    dashboard: "express",
+    metadata: { minerva_restaurant_id: input.restaurantId },
+    include: ["configuration.recipient", "requirements"],
+  }, { idempotencyKey: `minerva-restaurant-recipient-${input.restaurantId}` });
+  return account.id;
+}
+
+/** Stripe-hosted Account Link for the v2 recipient configuration. */
+export async function createRestaurantRecipientOnboardingLinkV2(
+  accountId: string,
+  refreshUrl: string,
+  returnUrl: string
+): Promise<string> {
+  const stripe = getStripeClient();
+  const link = await stripe.v2.core.accountLinks.create({
+    account: accountId,
+    use_case: {
+      type: "account_onboarding",
+      account_onboarding: {
+        configurations: ["recipient"],
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        collection_options: { fields: "currently_due", future_requirements: "include" },
+      },
+    },
+  });
+  return link.url;
+}
+
+export type RestaurantRecipientAccountStateV2 = {
+  transfersStatus: ConnectCapabilityStatus;
+  payoutsStatus: ConnectCapabilityStatus;
+  requirementsDueCount: number;
+};
+
+function normalizeCapabilityStatus(status: unknown): ConnectCapabilityStatus {
+  if (status === "active" || status === "pending" || status === "restricted" || status === "unsupported") {
+    return status;
+  }
+  return "unrequested";
+}
+
+export async function retrieveRestaurantRecipientAccountStateV2(
+  accountId: string
+): Promise<RestaurantRecipientAccountStateV2> {
+  const account = await getStripeClient().v2.core.accounts.retrieve(accountId, {
+    include: ["configuration.recipient", "requirements"],
+  });
+  const balance = account.configuration?.recipient?.capabilities?.stripe_balance;
+  return {
+    transfersStatus: normalizeCapabilityStatus(balance?.stripe_transfers?.status),
+    payoutsStatus: normalizeCapabilityStatus(balance?.payouts?.status),
+    requirementsDueCount: account.requirements?.entries?.length ?? 0,
+  };
+}
+
 export async function createOnboardingLink(
   accountId: string,
   refreshUrl: string,
@@ -118,7 +206,10 @@ export async function createOrderPaymentIntent(input: {
   restaurantId: string;
   connectedAccountId: string;
   amountCents: number;
-}): Promise<{ id: string; clientSecret: string }> {
+}): Promise<{ id: string; clientSecret: string; status: Stripe.PaymentIntent.Status }> {
+  if (!Number.isSafeInteger(input.amountCents) || input.amountCents < 50) {
+    throw new Error("Le montant de la commande doit être d'au moins 0,50 $.");
+  }
   const stripe = getStripeClient();
   const fee = Math.min(input.amountCents, Math.round((input.amountCents * connectFeeBasisPoints()) / 10000));
   const intent = await stripe.paymentIntents.create({
@@ -127,10 +218,26 @@ export async function createOrderPaymentIntent(input: {
     automatic_payment_methods: { enabled: true },
     application_fee_amount: fee,
     transfer_data: { destination: input.connectedAccountId },
-    metadata: { orderId: input.orderId, restaurantId: input.restaurantId },
-  });
+    metadata: { orderId: input.orderId, restaurantId: input.restaurantId, flow: "public_order" },
+  }, { idempotencyKey: `minerva-public-order-${input.orderId}` });
   if (!intent.client_secret) throw new Error("Stripe n'a pas retourné de client_secret.");
-  return { id: intent.id, clientSecret: intent.client_secret };
+  return { id: intent.id, clientSecret: intent.client_secret, status: intent.status };
+}
+
+/** Retrieve the PaymentIntent pinned to an existing public order attempt. */
+export async function retrieveOrderPaymentIntent(input: {
+  orderId: string;
+  restaurantId: string;
+  paymentIntentId: string;
+}): Promise<{ id: string; clientSecret: string | null; status: Stripe.PaymentIntent.Status }> {
+  const stripe = getStripeClient();
+  const intent = await stripe.paymentIntents.retrieve(input.paymentIntentId);
+  if (intent.metadata.orderId !== input.orderId || intent.metadata.restaurantId !== input.restaurantId
+      || intent.metadata.flow !== "public_order") {
+    throw new Error("Le PaymentIntent ne correspond pas à cette commande.");
+  }
+  if (intent.status === "canceled") throw new Error("Le paiement de cette commande a été annulé.");
+  return { id: intent.id, clientSecret: intent.client_secret, status: intent.status };
 }
 
 /**
@@ -190,6 +297,8 @@ export async function createServiceQuoteCheckoutSession(input: {
 /** Stripe-hosted checkout for authenticated portal/native menu orders. */
 export async function createPortalOrderCheckoutSession(input: {
   orderId: string;
+  /** Set only when replacing a retrieved, expired session. */
+  retryOfSessionId?: string;
   restaurantId: string;
   connectedAccountId: string;
   amountCents: number;
@@ -202,8 +311,15 @@ export async function createPortalOrderCheckoutSession(input: {
   const stripe = getStripeClient();
   const fee = Math.min(input.amountCents, Math.round((input.amountCents * connectFeeBasisPoints()) / 10000));
   const origin = (process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app").replace(/\/$/, "");
+  const retryOfSessionId = input.retryOfSessionId;
+  if (retryOfSessionId && !/^cs_(?:test|live)_[A-Za-z0-9]+$/.test(retryOfSessionId)) {
+    throw new Error("La session Stripe précédente est invalide.");
+  }
+  const idempotencyKey = portalOrderCheckoutIdempotencyKey(input.orderId, retryOfSessionId);
   const session = await stripe.checkout.sessions.create({
-    integration_identifier: integrationIdentifier("portal-order", input.orderId),
+    integration_identifier: integrationIdentifier("portal-order", retryOfSessionId
+      ? `${input.orderId}-${retryOfSessionId}`
+      : input.orderId),
     mode: "payment",
     success_url: `${origin}/portal?payment=return&order=${encodeURIComponent(input.orderId)}`,
     cancel_url: `${origin}/portal?payment=cancelled&order=${encodeURIComponent(input.orderId)}`,
@@ -222,7 +338,21 @@ export async function createPortalOrderCheckoutSession(input: {
       transfer_data: { destination: input.connectedAccountId },
       metadata: { kind: "portal_order", orderId: input.orderId, restaurantId: input.restaurantId },
     },
-  }, { idempotencyKey: `portal-order-${input.orderId}` });
+  }, { idempotencyKey });
   if (!session.url) throw new Error("Stripe n'a pas retourné de lien de paiement.");
   return { id: session.id, url: session.url };
+}
+
+export async function retrievePortalOrderCheckoutSession(input: {
+  orderId: string;
+  restaurantId: string;
+  checkoutSessionId: string;
+}): Promise<{ id: string; url: string | null; status: Stripe.Checkout.Session.Status | null; paymentStatus: Stripe.Checkout.Session.PaymentStatus }> {
+  const stripe = getStripeClient();
+  const session = await stripe.checkout.sessions.retrieve(input.checkoutSessionId);
+  if (session.metadata?.kind !== "portal_order" || session.metadata.orderId !== input.orderId
+      || session.metadata.restaurantId !== input.restaurantId) {
+    throw new Error("La session Stripe ne correspond pas à cette commande.");
+  }
+  return { id: session.id, url: session.url, status: session.status, paymentStatus: session.payment_status };
 }

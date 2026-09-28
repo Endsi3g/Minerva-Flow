@@ -25,6 +25,18 @@ final class BirthdayOfferEligibilityTests: XCTestCase {
         XCTAssertTrue(BirthdayOfferEligibility.isBirthdayToday("2000-02-29", today: date(2024, 2, 29), calendar: calendar))
     }
 
+    func testEligibilityUsesTheRestaurantCalendarNearMidnight() {
+        let instant = ISO8601DateFormatter().date(from: "2026-06-18T03:30:00Z")!
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        var montrealCalendar = Calendar(identifier: .gregorian)
+        montrealCalendar.timeZone = TimeZone(identifier: "America/Montreal")!
+
+        XCTAssertTrue(BirthdayOfferEligibility.isBirthdayToday("1994-06-18", today: instant, calendar: utcCalendar))
+        XCTAssertFalse(BirthdayOfferEligibility.isBirthdayToday("1994-06-18", today: instant, calendar: montrealCalendar))
+        XCTAssertTrue(BirthdayOfferEligibility.isBirthdayToday("1994-06-17", today: instant, calendar: montrealCalendar))
+    }
+
     func testMissingAndMalformedBirthdaysAreIneligible() {
         XCTAssertFalse(BirthdayOfferEligibility.isBirthdayToday(nil, today: date(2026, 1, 1)))
         XCTAssertFalse(BirthdayOfferEligibility.isBirthdayToday("not-a-date", today: date(2026, 1, 1)))

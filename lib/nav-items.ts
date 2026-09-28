@@ -23,13 +23,14 @@ export type SearchableNavItem = {
 
 const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 const managerRoles: Role[] = ["owner", "manager"];
-
 export const NAV_ITEMS: SearchableNavItem[] = [
+  { key: "workspace", href: "/workspace", title: "Workspace", subtitle: "Restaurants et espaces de travail", roles: allRoles },
   { key: "overview", href: "/overview", title: "Aperçu", subtitle: "Tableau de bord principal", roles: allRoles },
   { key: "assistant", href: "/assistant", title: "Flow AI", subtitle: "Assistant IA conversationnel", roles: allRoles },
   { key: "franchise", href: "/franchise", title: "Vue franchise", subtitle: "Résultats combinés sur vos établissements", roles: managerRoles },
   { key: "impact", href: "/impact", title: "Résultats fidélisation", subtitle: "Ce que la fidélisation vous rapporte, et qui relancer", roles: managerRoles },
   { key: "fidelisation", href: "/fidelisation", title: "Fidélisation", subtitle: "Fiches clients, visites et points de fidélité", roles: allRoles },
+  { key: "campaigns", href: "/campaigns", title: "Campagnes", subtitle: "Automatisations SMS/courriel, studio visuel et publicité payante", roles: managerRoles },
   { key: "menu", href: "/menu", title: "Menu", subtitle: "Rentabilité et popularité de chaque plat", roles: allRoles },
   { key: "finance", href: "/finance", title: "Finance", subtitle: "Transactions, revenus et seuil de rentabilité", roles: managerRoles },
   { key: "commandes", href: "/commandes", title: "Commandes", subtitle: "File de commandes en ligne et cuisine", roles: allRoles },
@@ -54,8 +55,12 @@ export const NAV_ITEMS: SearchableNavItem[] = [
   { key: "settings", href: "/settings", title: "Paramètres", subtitle: "Configuration de l'établissement", roles: managerRoles },
 ];
 
+export function canAccessSettings(role: Role): boolean {
+  return role === "owner" || role === "manager";
+}
+
 export function navItemsForRole(role: Role, sidebarPermissions?: string[] | null): SearchableNavItem[] {
   return NAV_ITEMS.filter(
-    (item) => item.roles.includes(role) && (!sidebarPermissions || sidebarPermissions.includes(item.key))
+    (item) => item.roles.includes(role) && (item.key === "workspace" || !sidebarPermissions || sidebarPermissions.includes(item.key))
   );
 }

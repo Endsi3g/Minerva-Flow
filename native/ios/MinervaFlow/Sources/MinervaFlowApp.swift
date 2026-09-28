@@ -24,9 +24,7 @@ struct MinervaFlowApp: App {
         // category" complaint, with no new dependency.
         URLCache.shared = URLCache(memoryCapacity: 50 * 1024 * 1024, diskCapacity: 200 * 1024 * 1024)
 
-        // Harmless no-op until Config.sentryDSN is filled in (see its own
-        // comment) — the web app already has a real Sentry organization,
-        // this just hasn't been pointed at an iOS project within it yet.
+        // Send native crashes to the dedicated Minerva Flow iOS Sentry project.
         if !Config.sentryDSN.isEmpty {
             SentrySDK.start { options in
                 options.dsn = Config.sentryDSN
@@ -48,12 +46,8 @@ struct MinervaFlowApp: App {
                 .environmentObject(locationManager)
                 .environmentObject(notificationManager)
                 .environmentObject(deepLinkRouter)
-                // Minerva Flow's brand (AGENTS.md) only defines one light
-                // cream/emerald palette — no dark variant exists yet, same
-                // as the web app. Forcing light avoids every color in this
-                // app silently inheriting Dark Mode defaults (the invisible
-                // white-on-cream input text bug came from exactly this).
-                .preferredColorScheme(.light)
+                // Follow the device appearance. Brand colors are semantic and
+                // resolve to the matching Minerva palette in Theme.swift.
                 .onOpenURL { url in
                     // Supabase's PKCE exchange must consume the callback
                     // before any app-level deep-link routing. Without this,

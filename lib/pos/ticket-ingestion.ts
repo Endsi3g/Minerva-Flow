@@ -2,7 +2,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { PosProvider } from "@/lib/data/pos-connections";
 import { resolvePosItemMapping } from "./item-mapping";
 import { recordSale } from "@/lib/data/menu";
-import { decrementInventoryForOrderItems } from "@/lib/data/orders";
 import { upsertSyncedServiceDayRevenue } from "@/lib/data/service-days";
 import { findOrCreateCustomerFromPos, logVisitAdmin } from "@/lib/data/customers";
 
@@ -107,10 +106,6 @@ export async function ingestPosTickets(
         });
         if (resolved) {
           matchedCustomerId = resolved.customer.id;
-          if (resolved.isNew) {
-            newCustomersCount++;
-          }
-          identifiedCustomersCount++;
 
           // Credit loyalty points and record visit automatically
           const creditedCustomer = await logVisitAdmin(
@@ -129,6 +124,10 @@ export async function ingestPosTickets(
             console.warn(`L'attribution fidélité du ticket ${ticket.externalOrderId} a échoué; le ticket sera repris à la prochaine synchronisation.`);
             continue;
           }
+          if (resolved.isNew) {
+            newCustomersCount++;
+          }
+          identifiedCustomersCount++;
         } else {
           // A POS identity was supplied, so null means it could not be
           // resolved or persisted. Leave the order idempotency marker absent
@@ -176,8 +175,6 @@ export async function ingestPosTickets(
     totalRevenue += ticket.total;
 
     // 3. Resolve each line item and insert into order_items
-    const resolvedOrderItems: { menu_item_id: string | null; item_name: string; quantity: number }[] = [];
-
     for (const item of ticket.lineItems) {
       const menuItemId = await resolvePosItemMapping(
         restaurantId,
@@ -196,12 +193,6 @@ export async function ingestPosTickets(
         notes: item.notes ?? null,
       });
 
-      resolvedOrderItems.push({
-        menu_item_id: menuItemId,
-        item_name: item.name,
-        quantity: item.quantity,
-      });
-
       itemsProcessed += item.quantity;
 
       // 4. Update dish popularity for Menu Engineering (units_sold)
@@ -214,12 +205,8 @@ export async function ingestPosTickets(
       }
     }
 
-    // 5. Decrement inventory based on recipes (if recipe_items are defined)
-    try {
-      await decrementInventoryForOrderItems(restaurantId, newOrder.id, resolvedOrderItems);
-    } catch (err) {
-      console.warn(`Could not decrement inventory for order ${newOrder.id}:`, err);
-    }
+    // The order_items trigger applies recipe consumption transactionally,
+    // once per line, for imported POS tickets too.
   }
 
   // 6. Synchronize aggregated service_days revenue for each affected date

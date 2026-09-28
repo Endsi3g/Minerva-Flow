@@ -32,6 +32,7 @@ export type CustomerRow = {
   consent_at: string | null;
   birthday: string | null;
   city: string | null;
+  neighborhood?: string | null;
   avatar_url: string | null;
   favorite_offer_ids: string[] | null;
   favorite_menu_item_ids: string[] | null;
@@ -90,6 +91,7 @@ export function mapCustomer(row: CustomerRow, transactions: LoyaltyTransaction[]
     consentAt: row.consent_at,
     birthday: row.birthday,
     city: row.city,
+    neighborhood: row.neighborhood ?? null,
     avatarUrl: row.avatar_url,
     favoriteOfferIds: row.favorite_offer_ids ?? [],
     favoriteMenuItemIds: row.favorite_menu_item_ids ?? [],
@@ -155,6 +157,7 @@ export type CustomerInput = {
   consentSource?: string | null;
   birthday?: string | null;
   city?: string | null;
+  neighborhood?: string | null;
   avatarUrl?: string | null;
 };
 
@@ -173,6 +176,7 @@ export async function createCustomer(restaurantId: string, input: CustomerInput)
       consent_at: input.marketingConsent ? new Date().toISOString() : null,
       birthday: input.birthday ?? null,
       city: input.city ?? null,
+      neighborhood: input.neighborhood ?? null,
     })
     .select("*")
     .single();
@@ -218,6 +222,7 @@ export async function updateCustomer(
   if (patch.notes !== undefined) dbPatch.notes = patch.notes;
   if (patch.birthday !== undefined) dbPatch.birthday = patch.birthday;
   if (patch.city !== undefined) dbPatch.city = patch.city;
+  if (patch.neighborhood !== undefined) dbPatch.neighborhood = patch.neighborhood;
   if (patch.avatarUrl !== undefined) dbPatch.avatar_url = patch.avatarUrl;
   if (patch.marketingConsent !== undefined) {
     dbPatch.marketing_consent = patch.marketingConsent;
@@ -546,6 +551,29 @@ export async function findCustomerByPhone(
 ): Promise<Customer | null> {
   const supabase = await createClient();
   return internalFindCustomerByPhone(supabase, restaurantId, rawPhone);
+}
+
+/**
+ * Minimal, role-checked phone lookup for the counter identification flow.
+ * Unlike the general/POS resolver below, this uses the bounded database RPC
+ * and never loads a customer's full private profile into the owner UI path.
+ */
+export async function findCounterCustomersByPhone(
+  restaurantId: string,
+  rawPhone: string
+): Promise<Array<{ id: string; name: string; phone: string | null }> | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("lookup_customer_by_phone", {
+    p_restaurant_id: restaurantId,
+    p_phone: rawPhone,
+  });
+
+  if (error || !Array.isArray(data)) return null;
+  return (data as Array<{ customer_id: string; customer_name: string; customer_phone: string | null }>).map((row) => ({
+    id: row.customer_id,
+    name: row.customer_name,
+    phone: row.customer_phone,
+  }));
 }
 
 /**

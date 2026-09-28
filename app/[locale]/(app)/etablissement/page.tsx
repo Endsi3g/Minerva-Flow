@@ -11,6 +11,7 @@ import { useApp, useCurrentRestaurant } from "@/lib/app-context";
 import {
   createRestaurantAction,
   updateRestaurantAction,
+  isGooglePlacesEnabledAction,
 } from "@/app/[locale]/(app)/settings/actions";
 import { getOrCreateDefaultMenuShareTokenAction } from "./actions";
 import { checkCanAddEstablishmentAction } from "@/app/[locale]/(app)/billing/actions";
@@ -163,6 +164,14 @@ function RestaurantFormFields({
    * appears once one exists (edit mode). */
   restaurantId?: string;
 }) {
+  // GooglePlacesSearch takes `enabled` as a prop now (no more internal
+  // self-check) — this is the one remaining fully client-rendered caller,
+  // so it still has to ask at runtime rather than compute it server-side.
+  const [googlePlacesEnabled, setGooglePlacesEnabled] = useState(false);
+  useEffect(() => {
+    isGooglePlacesEnabledAction().then(setGooglePlacesEnabled);
+  }, []);
+
   function handlePlacesSelect(patch: Partial<RestaurantInput>) {
     onChange({
       address: patch.address ?? values.address,
@@ -179,7 +188,7 @@ function RestaurantFormFields({
 
   return (
     <div className="space-y-4">
-      <GooglePlacesSearch onSelect={handlePlacesSelect} />
+      <GooglePlacesSearch onSelect={handlePlacesSelect} enabled={googlePlacesEnabled} />
 
       <div className="flex items-end gap-3">
         <div className="flex-1">

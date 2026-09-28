@@ -28,6 +28,7 @@ describe("POST /api/portal/orders", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         cart: [{ menuItemId: "item-1", quantity: 1 }],
+        idempotencyKey: "00000000-0000-4000-8000-000000000001",
         delivery: {
           address: "100 Queen St W, Toronto, ON",
           latitude: 0,
@@ -44,6 +45,7 @@ describe("POST /api/portal/orders", () => {
       [{ menuItemId: "item-1", quantity: 1 }],
       0,
       null,
+      "00000000-0000-4000-8000-000000000001",
       "mobile",
       { address: "100 Queen St W, Toronto, ON" },
       null,

@@ -29,6 +29,7 @@ export type Restaurant = {
   googlePlaceId: string | null;
   workspaceId?: string | null;
   loyaltyPointsPerDollar: number;
+  welcomeBonusPoints?: number;
   taxRate: number;
   acceptsTips: boolean;
   /** Which of the 3 order modes this restaurant offers at checkout — see OrderFulfillmentMode. */
@@ -63,6 +64,33 @@ export type Restaurant = {
   imageUrls: string[];
   googleMapsUrl: string | null;
   planTier: "essentiel" | "croissance" | "marque_blanche";
+};
+
+/** Public-facing Flow Direct theme and contact destinations for a restaurant menu. */
+export type MenuPresentation = {
+  backgroundColor: string;
+  accentColor: string;
+  textColor: string;
+  fontFamily: "Plus Jakarta Sans" | "Inter" | "Georgia" | "Arial";
+  logoUrl: string | null;
+  socialLinks: {
+    instagram: string;
+    facebook: string;
+    tiktok: string;
+    whatsapp: string;
+    email: string;
+    phone: string;
+    website: string;
+  };
+};
+
+export const DEFAULT_MENU_PRESENTATION: MenuPresentation = {
+  backgroundColor: "#fafaf5",
+  accentColor: "#167f5b",
+  textColor: "#1a1e16",
+  fontFamily: "Plus Jakarta Sans",
+  logoUrl: null,
+  socialLinks: { instagram: "", facebook: "", tiktok: "", whatsapp: "", email: "", phone: "", website: "" },
 };
 
 export type Employee = {
@@ -659,6 +687,7 @@ export type Customer = {
   consentAt: string | null;
   birthday: string | null;
   city: string | null;
+  neighborhood?: string | null;
   avatarUrl: string | null;
   favoriteOfferIds: string[];
   favoriteMenuItemIds: string[];
@@ -702,9 +731,14 @@ export type MenuItem = {
   name: string;
   category: string | null;
   price: number;
+  priceOptions?: MenuPriceOption[];
   foodCost: number;
   unitsSold: number;
   active: boolean;
+  /** Visible in the digital menu while intentionally excluded from checkout. */
+  isOrderable?: boolean;
+  /** Owner-selected featured dish shown before the full menu on public pages. */
+  isFeatured?: boolean;
   description: string | null;
   imageUrl: string | null;
   imageUrls: string[];
@@ -714,6 +748,14 @@ export type MenuItem = {
   allergensConfirmed?: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+/** A fixed portion/quantity and its total customer-facing price. */
+export type MenuPriceOption = {
+  id: string;
+  label: string;
+  quantity: number;
+  price: number;
 };
 
 /**
@@ -786,6 +828,8 @@ export type Order = {
   customerId: string | null;
   referralLinkId: string | null;
   isPublicRequest: boolean;
+  cancellationReason?: string | null;
+  statusChangedAt?: string | null;
   source?: OrderSource;
   createdAt: string;
   items: OrderItem[];

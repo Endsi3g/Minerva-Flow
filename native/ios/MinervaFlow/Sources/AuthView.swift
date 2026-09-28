@@ -180,7 +180,7 @@ struct AuthView: View {
                     .foregroundStyle(MinervaColor.ink)
                     .tint(MinervaColor.emerald)
                     .padding(12)
-                    .background(.white)
+                    .background(MinervaColor.surface)
                     .clipShape(RoundedRectangle(cornerRadius: 11))
                     .overlay(
                         RoundedRectangle(cornerRadius: 11)
@@ -323,7 +323,7 @@ struct AuthView: View {
                     .foregroundStyle(MinervaColor.ink)
                     .tint(MinervaColor.emerald)
                     .padding(12)
-                    .background(.white)
+                    .background(MinervaColor.surface)
                     .clipShape(RoundedRectangle(cornerRadius: 11))
                     .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
 
@@ -347,7 +347,7 @@ struct AuthView: View {
                         .foregroundStyle(MinervaColor.ink)
                         .tint(MinervaColor.emerald)
                         .padding(12)
-                        .background(.white)
+                        .background(MinervaColor.surface)
                         .clipShape(RoundedRectangle(cornerRadius: 11))
                         .overlay(
                             RoundedRectangle(cornerRadius: 11)
@@ -435,7 +435,7 @@ struct AuthView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
         }
-        .background(.white)
+        .background(MinervaColor.surface)
         .clipShape(RoundedRectangle(cornerRadius: 11))
         .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
         .buttonStyle(PressableButtonStyle())
@@ -521,7 +521,7 @@ struct AuthView: View {
                 .foregroundStyle(MinervaColor.ink)
                 .tint(MinervaColor.emerald)
                 .padding(14)
-                .background(.white)
+                .background(MinervaColor.surface)
                 .clipShape(RoundedRectangle(cornerRadius: 11))
                 .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
                 .onChange(of: code) { _, newValue in

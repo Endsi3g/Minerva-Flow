@@ -337,7 +337,7 @@ struct RewardsView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 220)
                                 .padding(16)
-                                .background(.white)
+                                .background(MinervaColor.surface)
                                 .clipShape(RoundedRectangle(cornerRadius: 16))
                                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.emerald.opacity(0.25), lineWidth: 2))
                         }
@@ -432,7 +432,7 @@ struct ReferralQRSheet: View {
                         .scaledToFit()
                         .frame(width: 220, height: 220)
                         .padding(16)
-                        .background(.white)
+                        .background(MinervaColor.surface)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .overlay(RoundedRectangle(cornerRadius: 20).stroke(MinervaColor.emerald.opacity(0.3), lineWidth: 3))
                 } else {

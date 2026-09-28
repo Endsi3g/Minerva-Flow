@@ -13,7 +13,61 @@ import {
 } from "@/lib/data/campaigns";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
 import { publishToInstagram, getInstagramConnectionStatus } from "@/lib/meta/instagram";
+import {
+  createPaidAdsRequest,
+  getOpenPaidAdsRequest,
+  paidAdsPriorityScore,
+  type PaidAdsBudgetRange,
+  type PaidAdsVolumeEstimate,
+  type PaidAdsTimeframe,
+  type PaidAdsRequest,
+} from "@/lib/data/paid-ads-requests";
+import { getRestaurant } from "@/lib/data/restaurants";
+import { sendTransactionalEmail } from "@/lib/email/resend";
 import type { Campaign, CampaignAsset } from "@/lib/types";
+
+const BUDGET_RANGES: PaidAdsBudgetRange[] = ["under_500", "500_1500", "1500_5000", "over_5000", "not_sure"];
+const VOLUME_ESTIMATES: PaidAdsVolumeEstimate[] = ["under_50", "50_150", "150_400", "over_400", "not_sure"];
+const TIMEFRAMES: PaidAdsTimeframe[] = ["immediately", "this_month", "exploring"];
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * Internal-only — tells the Minerva Flow team a lead is waiting in
+ * /admin/campagnes-publicitaires. Best-effort: a delivery failure here
+ * must never fail the owner's own submission, so every error is caught
+ * and swallowed (logged, not thrown).
+ */
+async function notifyTeamOfPaidAdsRequest(request: PaidAdsRequest, restaurantName: string): Promise<void> {
+  try {
+    const score = paidAdsPriorityScore(request);
+    const recipient = process.env.ALERT_NOTIFICATION_EMAIL ?? "kbelceus776@gmail.com";
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
+    const rows = [
+      ["Restaurant", restaurantName],
+      ["Contact", `${request.contactName} · ${request.contactEmail}${request.contactPhone ? ` · ${request.contactPhone}` : ""}`],
+      ["Budget mensuel", request.monthlyBudgetRange],
+      ["Volume hebdomadaire", request.weeklyVolumeEstimate],
+      ["A déjà fait de la pub", request.hasRunPaidAdsBefore ? "Oui" : "Non"],
+      ["Veut démarrer", request.desiredStartTimeframe],
+      ["Score de priorité", String(score)],
+    ]
+      .map(([label, value]) => `<p style="margin:0 0 8px;font-size:14px;color:#1a1e16"><strong>${escapeHtml(label)} :</strong> ${escapeHtml(value)}</p>`)
+      .join("");
+    const bodyHtml = `${rows}<p style="margin:16px 0 0;font-size:14px;color:#1a1e16"><strong>Objectifs :</strong></p><p style="margin:4px 0 0;font-size:14px;color:#565f52;white-space:pre-wrap">${escapeHtml(request.goals)}</p>`;
+    await sendTransactionalEmail({
+      to: recipient,
+      subject: `Nouvelle demande de campagnes publicitaires — ${restaurantName}`,
+      bodyHtml,
+      ctaLabel: "Voir la file d’attente",
+      ctaUrl: `${origin}/admin/campagnes-publicitaires`,
+    });
+  } catch (error) {
+    console.error("[paid-ads] notifyTeamOfPaidAdsRequest failed:", error);
+  }
+}
 
 /**
  * Creates a campaign for the given restaurant. Authorization is enforced
@@ -128,19 +182,17 @@ export type ReferralStoryContext = {
 export async function getReferralStoryContextAction(restaurantId: string): Promise<ReferralStoryContext> {
   const { getReferralPrograms } = await import("@/lib/data/referral-programs");
   const { getReferralLinksForRestaurant } = await import("@/lib/data/customer-referrals");
-  const { activateOnboardingReferralProgramAction } = await import("@/app/[locale]/onboarding/actions");
 
   const programs = await getReferralPrograms(restaurantId);
   const activeProg = programs.find((p) => p.active) ?? programs[0];
 
   if (!activeProg) {
-    const activated = await activateOnboardingReferralProgramAction(restaurantId);
     return {
-      hasProgram: Boolean(activated.ok),
-      programName: activated.programName ?? "Programme de Parrainage",
-      referralCode: activated.code ?? "VIP10",
-      referralUrl: activated.url ?? "/p/VIP10",
-      rewardText: "10 $ offerts",
+      hasProgram: false,
+      programName: "Programme de parrainage à configurer",
+      referralCode: null,
+      referralUrl: "/fidelisation/parrainage",
+      rewardText: "Définissez votre récompense avant de partager.",
     };
   }
 
@@ -148,13 +200,12 @@ export async function getReferralStoryContextAction(restaurantId: string): Promi
   const bestLink = links[0];
 
   if (!bestLink) {
-    const activated = await activateOnboardingReferralProgramAction(restaurantId);
     return {
       hasProgram: true,
       programName: activeProg.name,
-      referralCode: activated.code ?? "VIP10",
-      referralUrl: activated.url ?? "/p/VIP10",
-      rewardText: activeProg.rewardDescription ?? "10 $ de réduction",
+      referralCode: null,
+      referralUrl: "/fidelisation/parrainage",
+      rewardText: activeProg.rewardDescription || "Récompense à configurer.",
     };
   }
 
@@ -294,4 +345,86 @@ export async function dispatchBroadcastCampaignAction(
   return { ok: true, sentCount: sent, totalConsented: list.length };
 }
 
+/**
+ * Intake for owners/managers who want Minerva Flow's team to run paid
+ * advertising on their behalf — the automations and studio above amplify
+ * traffic a restaurant already has; they don't create new traffic on
+ * their own. Re-checks membership server-side (the form is gated in the
+ * UI too, but that's not the authorization boundary) and refuses a
+ * second request while one is still open.
+ */
+export async function submitPaidAdsRequestAction(
+  restaurantId: string,
+  input: {
+    contactName: string;
+    contactEmail: string;
+    contactPhone: string;
+    monthlyBudgetRange: PaidAdsBudgetRange;
+    weeklyVolumeEstimate: PaidAdsVolumeEstimate;
+    hasRunPaidAdsBefore: boolean;
+    desiredStartTimeframe: PaidAdsTimeframe;
+    goals: string;
+  }
+): Promise<{ ok: boolean; request?: PaidAdsRequest; error?: "forbidden" | "already_open" | "invalid" | "failed" }> {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) {
+    return { ok: false, error: "forbidden" };
+  }
+  if (!input || typeof input !== "object") return { ok: false, error: "invalid" };
+  if (
+    typeof input.contactName !== "string"
+    || typeof input.contactEmail !== "string"
+    || typeof input.contactPhone !== "string"
+    || typeof input.goals !== "string"
+    || typeof input.hasRunPaidAdsBefore !== "boolean"
+  ) {
+    return { ok: false, error: "invalid" };
+  }
+  const contactName = input.contactName.trim().slice(0, 200);
+  const contactEmail = input.contactEmail.trim().toLowerCase().slice(0, 200);
+  const goals = input.goals.trim().slice(0, 2000);
+  if (
+    !contactName
+    || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)
+    || !goals
+    || !BUDGET_RANGES.includes(input.monthlyBudgetRange)
+    || !VOLUME_ESTIMATES.includes(input.weeklyVolumeEstimate)
+    || !TIMEFRAMES.includes(input.desiredStartTimeframe)
+  ) {
+    return { ok: false, error: "invalid" };
+  }
 
+  const existing = await getOpenPaidAdsRequest(restaurantId);
+  if (existing) return { ok: false, error: "already_open", request: existing };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "forbidden" };
+
+  const request = await createPaidAdsRequest({
+    restaurantId,
+    requestedBy: user.id,
+    contactName,
+    contactEmail,
+    contactPhone: input.contactPhone.trim().slice(0, 40) || null,
+    monthlyBudgetRange: input.monthlyBudgetRange,
+    weeklyVolumeEstimate: input.weeklyVolumeEstimate,
+    hasRunPaidAdsBefore: input.hasRunPaidAdsBefore,
+    desiredStartTimeframe: input.desiredStartTimeframe,
+    goals,
+  });
+  if (!request) {
+    // The database's partial unique index closes the race between two
+    // simultaneous requests. Return the already-open request as a normal
+    // state instead of surfacing a generic failure to the owner.
+    const concurrentRequest = await getOpenPaidAdsRequest(restaurantId);
+    if (concurrentRequest) return { ok: false, error: "already_open", request: concurrentRequest };
+    return { ok: false, error: "failed" };
+  }
+  revalidatePath("/campaigns");
+
+  const restaurant = await getRestaurant(restaurantId);
+  await notifyTeamOfPaidAdsRequest(request, restaurant?.name ?? "Restaurant inconnu");
+
+  return { ok: true, request };
+}

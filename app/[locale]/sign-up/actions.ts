@@ -13,7 +13,10 @@ export type SignUpActionResult =
 export async function signUpAction(params: {
   email: string;
   password: string;
+  fullName?: string;
   referralCode?: string | null;
+  ambassadorCode?: string | null;
+  ambassadorLinkSlug?: string | null;
   inviteToken?: string | null;
   workspaceInviteToken?: string | null;
   productUpdatesOptIn?: boolean;
@@ -28,6 +31,8 @@ export async function signUpAction(params: {
     }
 
     const signUpMetadata: Record<string, string> = {};
+    const fullName = params.fullName?.trim().replace(/\s+/g, " ").slice(0, 120);
+    if (fullName) signUpMetadata.full_name = fullName;
     signUpMetadata.product_updates_opt_in = params.productUpdatesOptIn === true ? "true" : "false";
     signUpMetadata.preferred_language = ["fr", "en", "tr"].includes(params.preferredLanguage ?? "")
       ? params.preferredLanguage!
@@ -37,6 +42,24 @@ export async function signUpAction(params: {
     if (params.workspaceInviteToken) signUpMetadata.workspace_invite_token = params.workspaceInviteToken;
 
     const admin = createAdminClient();
+
+    const ambassadorCode = params.ambassadorCode?.trim().toUpperCase().slice(0, 24);
+    if (ambassadorCode && !params.inviteToken && !params.workspaceInviteToken) {
+      const { data: ambassador } = await admin.from("flow_ambassadors")
+        .select("id, code")
+        .eq("code", ambassadorCode)
+        .eq("status", "active")
+        .maybeSingle();
+      if (ambassador) {
+        signUpMetadata.flow_ambassador_code = ambassador.code as string;
+        const slug = params.ambassadorLinkSlug?.trim().slice(0, 32);
+        if (slug && /^[a-f0-9]{12}$/i.test(slug)) {
+          const { data: link } = await admin.from("flow_ambassador_links").select("slug")
+            .eq("slug", slug).eq("ambassador_id", ambassador.id).maybeSingle();
+          if (link?.slug) signUpMetadata.flow_ambassador_link_slug = link.slug as string;
+        }
+      }
+    }
 
     const { data, error } = await admin.auth.admin.createUser({
       email,

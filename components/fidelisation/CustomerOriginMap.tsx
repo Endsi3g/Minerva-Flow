@@ -22,7 +22,7 @@ export function CustomerOriginMap({ cities, maxGeocode = 12 }: { cities: CityOri
   const backfilledRef = useRef(false);
 
   const candidateCities = useMemo(
-    () => cities.slice(0, maxGeocode).map((c) => c.city),
+    () => cities.slice(0, maxGeocode).map((c) => c.label),
     [cities, maxGeocode]
   );
 
@@ -46,7 +46,7 @@ export function CustomerOriginMap({ cities, maxGeocode = 12 }: { cities: CityOri
         const resolved = await geocodeCityIfMissingAction(city);
         if (cancelled) return;
         if (resolved) setCoords((prev) => ({ ...prev, [key]: resolved }));
-        await new Promise((r) => setTimeout(r, 300));
+        await new Promise((r) => setTimeout(r, 1100));
       }
     }
     backfill();
@@ -60,7 +60,7 @@ export function CustomerOriginMap({ cities, maxGeocode = 12 }: { cities: CityOri
   }, [candidateCities]);
 
   const plotted = cities
-    .map((c) => ({ ...c, coords: coords[c.city.trim().toLowerCase()] }))
+    .map((c) => ({ ...c, coords: coords[c.label.trim().toLowerCase()] }))
     .filter((c): c is CityOrigin & { coords: CityCoordinates } => Boolean(c.coords));
 
   const maxVisits = Math.max(1, ...plotted.map((c) => c.visits));
@@ -79,7 +79,7 @@ export function CustomerOriginMap({ cities, maxGeocode = 12 }: { cities: CityOri
         {plotted.map((c) => {
           const scale = 0.55 + (c.visits / maxVisits) * 0.65;
           return (
-            <MapMarker key={c.city} longitude={c.coords.lng} latitude={c.coords.lat}>
+            <MapMarker key={c.label} longitude={c.coords.lng} latitude={c.coords.lat}>
               <MarkerContent>
                 <span
                   className="flex items-center justify-center rounded-full border-2 border-white bg-mv-green text-[10px] font-bold text-white shadow-lg"
@@ -87,10 +87,10 @@ export function CustomerOriginMap({ cities, maxGeocode = 12 }: { cities: CityOri
                 >
                   {c.customerCount}
                 </span>
-                <MarkerLabel position="bottom">{c.city}</MarkerLabel>
+                <MarkerLabel position="bottom">{c.label}</MarkerLabel>
               </MarkerContent>
               <MarkerPopup className="w-56 p-3.5">
-                <p className="font-display text-[14px] font-medium text-mv-ink">{c.city}</p>
+                <p className="font-display text-[14px] font-medium text-mv-ink">{c.label}</p>
                 <div className="mt-2 space-y-1 text-[12px] text-mv-ink-soft">
                   <div className="flex items-center justify-between">
                     <span>Clients</span>
@@ -110,6 +110,9 @@ export function CustomerOriginMap({ cities, maxGeocode = 12 }: { cities: CityOri
           );
         })}
       </Map>
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="absolute bottom-2 left-2 rounded bg-white/90 px-1.5 py-1 text-[9px] text-mv-ink-soft shadow-sm">
+        © OpenStreetMap contributors · points approximatifs
+      </a>
     </div>
   );
 }

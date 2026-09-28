@@ -4,6 +4,9 @@ import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getInventoryItems, getWasteSummary } from "@/lib/data/inventory";
 import { getSuppliers } from "@/lib/data/suppliers";
 import { getConnectedCatalogProviders } from "@/lib/pos/catalog-sync";
+import { getCurrentMembership } from "@/lib/data/current-restaurant";
+import { redirect } from "@/i18n/navigation";
+import { getLocale } from "next-intl/server";
 import { InventaireView } from "./InventaireView";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -12,7 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function InventairePage() {
-  const restaurantId = await getCurrentRestaurantId();
+  const [restaurantId, membership] = await Promise.all([getCurrentRestaurantId(), getCurrentMembership()]);
+  if (!membership || !["owner", "manager"].includes(membership.role)) {
+    redirect({ href: "/workspace", locale: await getLocale() });
+  }
   const monthStart = new Date();
   monthStart.setDate(1);
   const from = monthStart.toISOString().slice(0, 10);

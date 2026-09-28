@@ -4,9 +4,16 @@ import type { PlanTier } from "@/lib/ai/quotas";
 import { upsertSubscription, getSubscriptionByStripeCustomerId } from "@/lib/data/subscriptions";
 import { setWorkspacePlanTier } from "@/lib/data/ai-usage";
 import { notifyWorkspaceOwners, notifyRestaurant } from "@/lib/data/notifications";
-import { getRestaurantIdByStripeConnectAccountId, syncConnectAccountStatus } from "@/lib/data/restaurant-payments";
+import {
+  getRestaurantIdByStripeConnectAccountId,
+  getRestaurantConnectApiVersionByStripeAccountId,
+  syncConnectAccountStatus,
+  syncRestaurantRecipientStatusV2,
+} from "@/lib/data/restaurant-payments";
+import { retrieveRestaurantRecipientAccountStateV2 } from "@/lib/stripe/connect";
 import { sendBillingLifecycleEmail, getWorkspaceOwnerContact } from "@/lib/email/billing-lifecycle";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recordFlowAmbassadorFirstPaidInvoice } from "@/lib/data/flow-ambassadors";
 import { recordPaidNfcCardOrder } from "@/lib/data/nfc-card-orders";
 import { formatCurrency } from "@/lib/utils";
 import { validateServiceQuoteCheckoutPayment } from "@/lib/stripe/service-quote-payment";
@@ -88,12 +95,14 @@ async function completeServiceQuoteCheckout(session: Stripe.Checkout.Session, ev
   });
   if (invalidPayment) throw new Error(`Paiement traiteur incohérent (${invalidPayment}).`);
 
-  const { data: orderId, error } = await admin.rpc("complete_service_quote_payment", {
+  const { data: completionRows, error } = await admin.rpc("complete_service_quote_payment_once", {
     p_quote_id: session.metadata.quoteId,
     p_checkout_session_id: session.id,
     p_payment_intent_id: paymentIntentId,
   });
-  if (error || !orderId) throw new Error(`Conversion du devis traiteur échouée: ${error?.message ?? "commande manquante"}`);
+  const completion = (completionRows as { order_id: string; created: boolean }[] | null)?.[0];
+  if (error || !completion?.order_id) throw new Error(`Conversion du devis traiteur échouée: ${error?.message ?? "commande manquante"}`);
+  if (!completion.created) return;
   const { data: quoteNotification } = await admin.from("service_quotes")
     .select("restaurant_id, guest_name, total, deposit_amount")
     .eq("id", session.metadata.quoteId).maybeSingle();
@@ -105,6 +114,8 @@ async function completeServiceQuoteCheckout(session: Stripe.Checkout.Session, ev
       title: "Acompte traiteur reçu — commande planifiée",
       body: `${row.guest_name} · ${formatCurrency(row.deposit_amount)} reçu sur ${formatCurrency(row.total)} · production planifiée.`,
       link: "/commandes",
+    }).catch((notificationError) => {
+      console.error("Service quote order persisted but owner notification failed:", notificationError);
     });
   }
 }
@@ -434,6 +445,22 @@ export async function POST(req: Request) {
     case "invoice.payment_succeeded": {
       const invoice = event.data.object as Stripe.Invoice;
       const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+      if (customerId) {
+        const subscription = await getSubscriptionByStripeCustomerId(customerId);
+        if (subscription?.workspaceId) {
+          const currency = (invoice.currency ?? "cad").toUpperCase();
+          const minorDigits = new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2;
+          await recordFlowAmbassadorFirstPaidInvoice({
+            workspaceId: subscription.workspaceId,
+            invoiceId: invoice.id,
+            amountPaid: invoice.amount_paid / (10 ** minorDigits),
+            currency,
+            paidAt: invoice.status_transitions?.paid_at
+              ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
+              : new Date(event.created * 1000).toISOString(),
+          });
+        }
+      }
       // Skip the very first invoice — checkout.session.completed already
       // sends an "abonnement activé" notification for that one.
       if (customerId && invoice.billing_reason !== "subscription_create") {
@@ -519,11 +546,14 @@ export async function POST(req: Request) {
       const account = event.data.object as Stripe.Account;
       const restaurantId = await getRestaurantIdByStripeConnectAccountId(account.id);
       if (restaurantId) {
-        const { justActivated } = await syncConnectAccountStatus(restaurantId, {
-          chargesEnabled: Boolean(account.charges_enabled),
-          payoutsEnabled: Boolean(account.payouts_enabled),
-          detailsSubmitted: Boolean(account.details_submitted),
-        });
+        const apiVersion = await getRestaurantConnectApiVersionByStripeAccountId(account.id);
+        const { justActivated } = apiVersion === "v2"
+          ? await syncRestaurantRecipientStatusV2(restaurantId, await retrieveRestaurantRecipientAccountStateV2(account.id))
+          : await syncConnectAccountStatus(restaurantId, {
+              chargesEnabled: Boolean(account.charges_enabled),
+              payoutsEnabled: Boolean(account.payouts_enabled),
+              detailsSubmitted: Boolean(account.details_submitted),
+            });
         if (justActivated) {
           await notifyRestaurant({
             restaurantId,

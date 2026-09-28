@@ -3,7 +3,7 @@
 import { useApp } from "@/lib/app-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,17 +44,17 @@ import {
   TrendingUp,
   Building2,
   Lock,
-  Wallet,
   Zap,
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { Role } from "@/lib/types";
+import type { Restaurant, Role } from "@/lib/types";
 import { SearchDialog } from "./SearchDialog";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { canAccessSettings } from "@/lib/nav-items";
 
 const SPRING = { type: "spring", stiffness: 300, damping: 30, mass: 1 } as const;
 // 288px (was 256) — the longer page renames this session ("Performance
@@ -91,23 +91,9 @@ export const operationalToolsItems: NavItem[] = [
   { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
 ];
 
-const coreNavItems: NavItem[] = [
-  ...ltvCoreNavItems,
-  { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
-  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
-  ...operationalToolsItems,
-];
-
-const dailyManagementItems: NavItem[] = [
-  { key: "finance", href: "/finance", icon: Wallet, roles: ["owner", "manager"] },
-  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
-  ...operationalToolsItems,
-];
-
 // 2. Opérations & Équipe
 export const operationsItems: NavItem[] = [
   { key: "horaire", href: "/horaire", icon: CalendarDays, roles: allRoles },
-  { key: "fournisseurs", href: "/fournisseurs", icon: Truck, roles: ["owner", "manager"] },
   { key: "reservations", href: "/reservations", icon: CalendarClock, roles: allRoles },
   { key: "monEspace", href: "/mon-espace", icon: UserCircle, roles: allRoles },
   { key: "employees", href: "/employees", icon: Boxes, roles: ["owner", "manager"] },
@@ -132,12 +118,44 @@ export const operationalAnalyticsItems: NavItem[] = [
 
 // 4. Sub settings & help items (with Intégrations inclus)
 export const settingsGroupItems: NavItem[] = [
+  { key: "settings", href: "/settings", icon: Settings, roles: ["owner", "manager"] },
   { key: "integrations", href: "/integrations", icon: Zap, roles: allRoles },
   { key: "billing", href: "/billing", icon: CreditCard, roles: ["owner"] },
   { key: "guide", href: "/guide", icon: BookOpen, roles: allRoles },
   { key: "support", href: "/support", icon: LifeBuoy, roles: allRoles },
   { key: "changelog", href: "/changelog", icon: History, roles: allRoles },
 ];
+
+const workspaceItem: NavItem = { key: "workspace", href: "/workspace", icon: Building2, roles: allRoles };
+
+// Owner/manager: one click away in the collapsible "Gestion quotidienne" group.
+// Staff/consultant: merged flat under the LTV core (see AppSidebar()).
+const dailyManagementItems: NavItem[] = [
+  { key: "finance", href: "/finance", icon: CreditCard, roles: ["owner", "manager"] },
+  { key: "commandes", href: "/commandes", icon: ClipboardList, roles: allRoles },
+  { key: "collaborateurs", href: "/collaborateurs", icon: Users, roles: allRoles },
+  { key: "inventaire", href: "/inventaire", icon: PackageSearch, roles: ["owner", "manager"] },
+  { key: "fournisseurs", href: "/fournisseurs", icon: Truck, roles: ["owner", "manager"] },
+];
+
+type RestaurantWorkspaceGroup = { id: string; name: string; locations: Restaurant[] };
+
+function groupRestaurantsByWorkspace(
+  restaurants: Restaurant[],
+  workspaces: { id: string; name: string }[]
+): RestaurantWorkspaceGroup[] {
+  const groups = new Map<string, Restaurant[]>();
+  for (const workspace of workspaces) groups.set(workspace.id, []);
+  for (const restaurant of restaurants) {
+    const workspaceId = restaurant.workspaceId ?? `restaurant:${restaurant.id}`;
+    groups.set(workspaceId, [...(groups.get(workspaceId) ?? []), restaurant]);
+  }
+  return [...groups.entries()].map(([id, locations]) => ({
+    id,
+    name: workspaces.find((workspace) => workspace.id === id)?.name ?? locations[0]?.name ?? "Espace de travail",
+    locations,
+  }));
+}
 
 const navTranslationKeys: Record<string, string> = {
   overview: "overview",
@@ -295,19 +313,10 @@ function TeamSwitcher() {
     () => restaurants.find((r) => r.id === restaurantId)?.workspaceId ?? `restaurant:${restaurantId}`
   );
 
-  const groupedRestaurants = useMemo(() => {
-    const groups = new Map<string, typeof restaurants>();
-    for (const workspace of workspaces) groups.set(workspace.id, []);
-    for (const restaurant of restaurants) {
-      const workspaceId = restaurant.workspaceId ?? `restaurant:${restaurant.id}`;
-      groups.set(workspaceId, [...(groups.get(workspaceId) ?? []), restaurant]);
-    }
-    return [...groups.entries()].map(([id, locations]) => ({
-      id,
-      name: workspaces.find((workspace) => workspace.id === id)?.name ?? locations[0]?.name ?? "Espace de travail",
-      locations,
-    }));
-  }, [restaurants, workspaces]);
+  const groupedRestaurants = useMemo(
+    () => groupRestaurantsByWorkspace(restaurants, workspaces),
+    [restaurants, workspaces]
+  );
 
   if (!current) return null;
 
@@ -388,6 +397,114 @@ function TeamSwitcher() {
   );
 }
 
+function TeamRestaurantsGroup({ onNavigate }: { onNavigate: () => void }) {
+  const t = useTranslations("nav");
+  const { restaurantId, restaurants, workspaces, setRestaurantId } = useApp();
+  const groups = useMemo(
+    () => groupRestaurantsByWorkspace(restaurants, workspaces),
+    [restaurants, workspaces]
+  );
+  const currentWorkspaceId = restaurants.find((restaurant) => restaurant.id === restaurantId)?.workspaceId
+    ?? (restaurantId ? `restaurant:${restaurantId}` : null);
+  const [workspaceDisclosure, setWorkspaceDisclosure] = useState({ restaurantId, openId: currentWorkspaceId });
+  const openWorkspaceId = workspaceDisclosure.restaurantId === restaurantId
+    ? workspaceDisclosure.openId
+    : currentWorkspaceId;
+  const reduceMotion = useReducedMotion();
+
+  if (restaurants.length === 0) return null;
+
+  return (
+    <SidebarNavGroup title={t("sectionTeams")} active={false} defaultOpen>
+      <div className="space-y-1 pb-1">
+        {groups.map((group) => {
+          const expanded = openWorkspaceId === group.id;
+          return (
+            <div key={group.id} className="rounded-md border border-mv-border-soft/70 bg-mv-cream/50 p-1">
+              <button
+                type="button"
+                aria-expanded={expanded}
+                onClick={() => setWorkspaceDisclosure({ restaurantId, openId: expanded ? null : group.id })}
+                className="flex min-h-9 w-full items-center gap-2 rounded px-2 text-left text-[11.5px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/[0.04]"
+              >
+                <Building2 size={13} className="shrink-0 text-mv-green-dark" aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate">{group.name}</span>
+                <motion.span
+                  animate={{ rotate: expanded ? 180 : 0 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.18 }}
+                  className="shrink-0"
+                >
+                  <ChevronDown size={12} aria-hidden="true" />
+                </motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {expanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 350, damping: 40 }}
+                    aria-hidden={!expanded}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-0.5 pb-1 pt-1">
+                      {group.locations.length === 0 ? (
+                        <p className="px-2 py-1.5 text-[11px] text-mv-ink-faint">Aucun restaurant dans ce workspace.</p>
+                      ) : group.locations.map((restaurant) => {
+                        const selected = restaurant.id === restaurantId;
+                        const favicon = getRestaurantFaviconUrl(restaurant.website);
+                        return (
+                          <button
+                            key={restaurant.id}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => {
+                              setWorkspaceDisclosure({ restaurantId: restaurant.id, openId: group.id });
+                              setRestaurantId(restaurant.id);
+                              onNavigate();
+                            }}
+                            className={cn(
+                              "flex min-h-10 w-full items-center gap-2 rounded px-2 text-left transition-colors",
+                              selected
+                                ? "bg-mv-green/10 text-mv-green-dark"
+                                : "text-mv-ink-soft hover:bg-mv-ink/[0.04] hover:text-mv-ink"
+                            )}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element -- restaurant logo hosts are tenant-controlled. */}
+                            <img
+                              src={favicon}
+                              alt=""
+                              aria-hidden="true"
+                              className="h-5 w-5 shrink-0 rounded object-contain"
+                              onError={(event) => { event.currentTarget.src = "/icon-512.png"; }}
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[12px] font-medium">{restaurant.name.replace("Minerva — ", "")}</span>
+                              {restaurant.city && <span className="block truncate text-[10.5px] text-mv-ink-faint">{restaurant.city}</span>}
+                            </span>
+                            {selected && <Check size={14} className="shrink-0" aria-hidden="true" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+        <NavLink
+          href="/workspace"
+          label={t("allTeams")}
+          icon={Building2}
+          active={false}
+          onNavigate={onNavigate}
+        />
+      </div>
+    </SidebarNavGroup>
+  );
+}
+
 export function AppSidebar() {
   const t = useTranslations("nav");
   const pathname = usePathname();
@@ -398,7 +515,6 @@ export function AppSidebar() {
     sidebarCollapsed,
     setSidebarCollapsed,
     restaurantId,
-    restaurants,
   } = useApp();
   const isMobile = useIsMobile();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -406,39 +522,40 @@ export function AppSidebar() {
   const allowedByRole = (n: NavItem) =>
     n.roles.includes(role) && (!sidebarPermissions || sidebarPermissions.includes(n.key));
 
-  // Flow AI is in construction — locked for everyone except platform admins,
-  // who keep real access to build/test it.
-  const isFlowAiLocked = (n: NavItem) => n.key === "assistant" && !isPlatformAdmin;
-
-  // Owner/manager get a condensed, LTV-first core list (Overview, Flow AI,
-  // Menu, Fidélisation) with the operational tools one click away in
-  // "Gestion quotidienne" — staff/consultant, who need those tools daily,
-  // keep the flat combined list unchanged.
-  const isLtvFocusedRole = role === "owner" || role === "manager";
-  const visibleCoreItems = (isLtvFocusedRole ? ltvCoreNavItems : coreNavItems).filter(allowedByRole);
-  // Owner/manager see Impact LTV / Vue franchise as their own small block
-  // (not buried inside the generic analytics dropdown alongside non-LTV
-  // reporting) — the rest of "Performance & Analyse" stays collapsed by
-  // default instead of forced open, same "hidden, not removed" treatment
-  // as every other non-LTV group. Staff/consultant never see impact/
-  // franchise (role-gated to owner/manager already) so their flat
-  // analytics list is unaffected either way.
-  // "Vue franchise" leads to a permanently empty page for an account with
-  // only one restaurant (it can never have a second location to roll up
-  // against) — hidden rather than shown-then-disappointing, same "don't
-  // show a dead end" principle as the rest of this role-conditional nav.
-  // Every signup gets wrapped in its own workspace now (see
-  // 0024_customer_self_enrollment.sql), so a bare workspace_id check would
-  // show this for every solo owner too — restaurant COUNT is what actually
-  // determines whether Franchise has anything to roll up.
-  const hasMultipleRestaurants = restaurants.length > 1;
-  const visibleLtvAnalyticsItems = isLtvFocusedRole
-    ? ltvAnalyticsItems.filter(allowedByRole).filter((item) => item.key !== "franchise" || hasMultipleRestaurants)
-    : [];
-  const hasSettingsAccess = ["owner", "manager"].includes(role);
-
+  const ownerManager = role === "owner" || role === "manager";
+  const workspaceLinks = workspaceItem.roles.includes(role) ? [workspaceItem] : [];
+  const visiblePrimaryItems = [
+    ...workspaceLinks,
+    ...(ownerManager
+      ? ltvCoreNavItems.filter(allowedByRole)
+      : [...ltvCoreNavItems, ...dailyManagementItems].filter(allowedByRole)),
+  ];
+  const visibleDailyItems = dailyManagementItems.filter(allowedByRole);
+  const visibleOperationsItems = operationsItems.filter(allowedByRole);
+  const visibleAnalyticsItems = [...ltvAnalyticsItems, ...operationalAnalyticsItems].filter(allowedByRole);
+  const visibleSettingsItems = settingsGroupItems.filter(
+    (item) => item.key !== "settings" && allowedByRole(item)
+  );
+  const isActive = (item: NavItem) => pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const dailyActive = visibleDailyItems.some(isActive);
+  const operationsActive = visibleOperationsItems.some(isActive);
+  const analyticsActive = visibleAnalyticsItems.some(isActive);
+  const settingsActive = visibleSettingsItems.some(isActive);
   function closeMobile() {
     if (isMobile) setSidebarCollapsed(true);
+  }
+
+  function renderNavItems(items: NavItem[]) {
+    return items.map((item) => (
+      <NavLink
+        key={item.href}
+        href={item.href}
+        label={t(navTranslationKeys[item.key] || item.key)}
+        icon={item.icon}
+        active={isActive(item)}
+        onNavigate={closeMobile}
+      />
+    ));
   }
 
   return (
@@ -488,90 +605,37 @@ export function AppSidebar() {
             </button>
           </div>
 
-          <div className="flex-1 space-y-4 overflow-y-auto px-2.5 py-3">
-            {/* Core General List — for owner/manager, Vue franchise / Impact
-                are interleaved right after Flow AI (before Fidélisation /
-                Menu), not tacked on as a separate block. Staff/consultant
-                render visibleCoreItems flat and unchanged (their list never
-                contains franchise/impact — role-gated to owner/manager). */}
-            <div className="space-y-0.5">
-            {isLtvFocusedRole ? (
-              <>
-                {visibleCoreItems.slice(0, 2).map((item) => (
-                  <NavLink
-                    key={item.href}
-                    href={item.href}
-                    label={t(navTranslationKeys[item.key] || item.key)}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                    locked={isFlowAiLocked(item)}
-                    lockedTooltip="Bientôt disponible"
-                  />
-                ))}
-                {visibleLtvAnalyticsItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    href={item.href}
-                    label={t(navTranslationKeys[item.key] || item.key)}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                  />
-                ))}
-                {visibleCoreItems.slice(2).map((item) => (
-                  <NavLink
-                    key={item.href}
-                    href={item.href}
-                    label={t(navTranslationKeys[item.key] || item.key)}
-                    icon={item.icon}
-                    active={pathname.startsWith(item.href)}
-                    onNavigate={closeMobile}
-                  />
-                ))}
-              </>
-            ) : (
-              visibleCoreItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  href={item.href}
-                  label={t(navTranslationKeys[item.key] || item.key)}
-                  icon={item.icon}
-                  active={pathname.startsWith(item.href)}
-                  onNavigate={closeMobile}
-                  locked={isFlowAiLocked(item)}
-                  lockedTooltip="Bientôt disponible"
-                />
-              ))
-            )}
-            </div>
+          <div className="flex-1 space-y-3 overflow-y-auto px-2.5 py-3">
+            <nav aria-label="Navigation principale" className="space-y-0.5">
+              {renderNavItems(visiblePrimaryItems)}
+            </nav>
 
-            {isLtvFocusedRole && (
-              <SidebarNavGroup title="Gestion quotidienne" active={dailyManagementItems.some((item) => pathname.startsWith(item.href))}>
-                {dailyManagementItems.filter(allowedByRole).map((item) => (
-                  <NavLink key={item.href} href={item.href} label={t(navTranslationKeys[item.key] || item.key)} icon={item.icon} active={pathname.startsWith(item.href)} onNavigate={closeMobile} />
-                ))}
+            {ownerManager && visibleDailyItems.length > 0 && (
+              <SidebarNavGroup title={t("dailyManagement")} active={dailyActive}>
+                <div className="space-y-0.5">{renderNavItems(visibleDailyItems)}</div>
               </SidebarNavGroup>
             )}
 
-            <SidebarNavGroup title="Opérations" active={operationsItems.some((item) => pathname.startsWith(item.href))}>
-              {operationsItems.filter(allowedByRole).map((item) => (
-                <NavLink key={item.href} href={item.href} label={t(navTranslationKeys[item.key] || item.key)} icon={item.icon} active={pathname.startsWith(item.href)} onNavigate={closeMobile} />
-              ))}
-              <NavLink href="/workspace" label="Équipes et espaces de travail" icon={Building2} active={pathname.startsWith("/workspace")} onNavigate={closeMobile} />
-            </SidebarNavGroup>
+            {visibleOperationsItems.length > 0 && (
+              <SidebarNavGroup title={t("sectionOperations")} active={operationsActive}>
+                <div className="space-y-0.5">{renderNavItems(visibleOperationsItems)}</div>
+              </SidebarNavGroup>
+            )}
 
-            <SidebarNavGroup title="Performance & Analytics" active={operationalAnalyticsItems.some((item) => pathname.startsWith(item.href))}>
-              {operationalAnalyticsItems.filter(allowedByRole).map((item) => (
-                <NavLink key={item.href} href={item.href} label={t(navTranslationKeys[item.key] || item.key)} icon={item.icon} active={pathname.startsWith(item.href)} onNavigate={closeMobile} />
-              ))}
-            </SidebarNavGroup>
+            {visibleAnalyticsItems.length > 0 && (
+              <SidebarNavGroup title={t("performanceAnalytics")} active={analyticsActive}>
+                <div className="space-y-0.5">{renderNavItems(visibleAnalyticsItems)}</div>
+              </SidebarNavGroup>
+            )}
 
-            <SidebarNavGroup title="Paramètres et plus" active={settingsGroupItems.some((item) => pathname.startsWith(item.href))}>
-              {settingsGroupItems.filter(allowedByRole).map((item) => (
-                <NavLink key={item.href} href={item.href} label={t(navTranslationKeys[item.key] || item.key)} icon={item.icon} active={pathname.startsWith(item.href)} onNavigate={closeMobile} />
-              ))}
-            </SidebarNavGroup>
+            {visibleSettingsItems.length > 0 && (
+              <SidebarNavGroup title={t("sectionSettingsMore")} active={settingsActive}>
+                <div className="space-y-0.5">{renderNavItems(visibleSettingsItems)}</div>
+              </SidebarNavGroup>
+            )}
+
+            <TeamRestaurantsGroup onNavigate={closeMobile} />
+
           </div>
 
           {/* Settings Section at the bottom */}
@@ -586,12 +650,12 @@ export function AppSidebar() {
               />
             )}
 
-            {hasSettingsAccess && (
+            {canAccessSettings(role) && (
               <NavLink
                 href="/settings"
                 label={t("settings")}
                 icon={Settings}
-                active={pathname.startsWith("/settings")}
+                active={pathname === "/settings" || pathname.startsWith("/settings/")}
                 onNavigate={closeMobile}
               />
             )}
@@ -615,17 +679,57 @@ export function AppSidebar() {
   );
 }
 
-function SidebarNavGroup({ title, active, children }: { title: string; active: boolean; children: React.ReactNode }) {
+function SidebarNavGroup({
+  title,
+  active,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  active: boolean;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
   const [manualOpen, setManualOpen] = useState<boolean | null>(null);
-  const open = manualOpen ?? active;
+  const id = useId();
+  const open = manualOpen ?? (active || defaultOpen);
+  const reduceMotion = useReducedMotion();
+  const groupTransition = reduceMotion
+    ? { duration: 0 }
+    : { type: "spring" as const, stiffness: 350, damping: 40 };
 
   return (
-    <details className="group/nav rounded-md" open={open} onToggle={(event) => setManualOpen(event.currentTarget.open)}>
-      <summary className="flex cursor-pointer list-none items-center justify-between rounded-md px-2.5 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-mv-ink-faint hover:bg-mv-ink/[0.04] hover:text-mv-ink-soft [&::-webkit-details-marker]:hidden">
+    <section className="rounded-md">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setManualOpen(!open)}
+        className={cn(
+          "flex min-h-9 w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors hover:bg-mv-ink/[0.04] hover:text-mv-ink-soft",
+          active ? "text-mv-green-dark" : "text-mv-ink-faint"
+        )}
+      >
         {title}
-        <ChevronDown size={13} className="transition-transform group-open/nav:rotate-180" aria-hidden="true" />
-      </summary>
-      <div className="mt-0.5 space-y-0.5 pl-1">{children}</div>
-    </details>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.18 }}
+          className="shrink-0"
+        >
+          <ChevronDown size={13} aria-hidden="true" />
+        </motion.span>
+      </button>
+      <motion.div
+        id={id}
+        initial={false}
+        animate={open ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+        transition={groupTransition}
+        aria-hidden={!open}
+        inert={!open}
+        className="overflow-hidden"
+      >
+        <div className="mt-0.5 space-y-0.5 pl-1">{children}</div>
+      </motion.div>
+    </section>
   );
 }

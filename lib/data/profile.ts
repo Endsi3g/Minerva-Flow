@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/lib/data/activity";
 import type { Role } from "@/lib/types";
+import { after } from "next/server";
 
 export type ProfilePatch = {
   fullName?: string;
@@ -53,26 +54,9 @@ export async function getMyProfile(): Promise<MyProfile | null> {
   };
 }
 
-/** Self-service update — RLS (profiles_self_update) restricts this to the caller's own row. */
-export async function updateProfile(patch: ProfilePatch): Promise<boolean> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const dbPatch: Record<string, unknown> = {};
-  if (patch.fullName !== undefined) dbPatch.full_name = patch.fullName;
-  if (patch.avatarUrl !== undefined) dbPatch.avatar_url = patch.avatarUrl;
-  if (Object.keys(dbPatch).length === 0) return true;
-
-  const { error } = await supabase.from("profiles").update(dbPatch).eq("id", user.id);
-  return !error;
-}
-
 /**
- * Name/avatar edits from the /profil page — wraps updateProfile() above and
- * additionally mirrors the change into the auth user_metadata (so
+ * Name/avatar edits from the /profil page update the caller's RLS-protected
+ * profile row and mirror the change into auth user_metadata (so
  * lib/data/session.ts, which bootstraps AuthUser from the auth user rather
  * than `profiles`, reflects it on the next server render too) and logs the
  * activity for the current restaurant.
@@ -81,34 +65,50 @@ export async function updateMyProfileField(
   restaurantId: string | null,
   patch: ProfilePatch
 ): Promise<boolean> {
-  const ok = await updateProfile(patch);
-  if (!ok) return false;
-
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return false;
+  if (!user) {
+    console.error("profile.onboarding.complete_failed", { reason: "unauthenticated" });
+    return false;
+  }
+
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.fullName !== undefined) dbPatch.full_name = patch.fullName;
+  if (patch.avatarUrl !== undefined) dbPatch.avatar_url = patch.avatarUrl;
+  if (Object.keys(dbPatch).length > 0) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update(dbPatch)
+      .eq("id", user.id)
+      .select("id")
+      .maybeSingle();
+    if (error || data?.id !== user.id) return false;
+  }
 
   const metadata: Record<string, unknown> = {};
   if (patch.fullName !== undefined) metadata.full_name = patch.fullName;
   if (patch.avatarUrl !== undefined) metadata.avatar_url = patch.avatarUrl;
-  if (Object.keys(metadata).length > 0) {
-    await supabase.auth.updateUser({ data: metadata });
-  }
+  after(async () => {
+    if (Object.keys(metadata).length > 0) {
+      const { error } = await supabase.auth.updateUser({ data: metadata });
+      if (error) console.warn("Profile auth-metadata sync failed", { code: error.status });
+    }
 
-  if (restaurantId) {
-    await logActivity({
-      restaurantId,
-      actionType: patch.avatarUrl !== undefined ? "profile.update_avatar" : "profile.update_name",
-      entityType: "profile",
-      entityId: user.id,
-      description:
-        patch.avatarUrl !== undefined
-          ? "A mis à jour sa photo de profil"
-          : "A mis à jour son nom de profil",
-    });
-  }
+    if (restaurantId) {
+      await logActivity({
+        restaurantId,
+        actionType: patch.avatarUrl !== undefined ? "profile.update_avatar" : "profile.update_name",
+        entityType: "profile",
+        entityId: user.id,
+        description:
+          patch.avatarUrl !== undefined
+            ? "A mis à jour sa photo de profil"
+            : "A mis à jour son nom de profil",
+      });
+    }
+  });
 
   return true;
 }
@@ -124,6 +124,7 @@ export async function completeOnboarding(): Promise<boolean> {
     .from("profiles")
     .update({ onboarding_completed: true })
     .eq("id", user.id);
+  if (error) console.error("profile.onboarding.complete_failed", { code: error.code });
   return !error;
 }
 

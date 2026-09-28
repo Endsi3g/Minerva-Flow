@@ -2,6 +2,7 @@
 
 import {
   getPublicOrderDeliveryQuote,
+  resumePublicOrder,
   submitPublicOrder,
   type PublicOrderCartLine,
   type PublicOrderGuestInfo,
@@ -76,10 +77,17 @@ export async function submitPublicOrderAction(
   token: string,
   referralCode: string | null,
   cart: PublicOrderCartLine[],
-  guestInfo: PublicOrderGuestInfo
+  guestInfo: PublicOrderGuestInfo,
+  idempotencyKey: string
 ): Promise<SubmitPublicOrderResult> {
-  if (cart.length === 0 || !guestInfo.guestName.trim()) return { ok: false };
-  return submitPublicOrder(token, referralCode, cart, guestInfo);
+  if (!Array.isArray(cart) || cart.length === 0 || !guestInfo || typeof guestInfo.guestName !== "string"
+      || !guestInfo.guestName.trim() || typeof idempotencyKey !== "string") return { ok: false };
+  return submitPublicOrder(token, referralCode, cart, guestInfo, idempotencyKey);
+}
+
+export async function resumePublicOrderAction(token: string, idempotencyKey: string): Promise<SubmitPublicOrderResult> {
+  if (typeof token !== "string" || !token || typeof idempotencyKey !== "string") return { ok: false };
+  return resumePublicOrder(token, idempotencyKey);
 }
 
 export async function getPublicOrderDeliveryQuoteAction(token: string, address: string): Promise<DeliveryQuote> {

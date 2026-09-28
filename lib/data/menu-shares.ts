@@ -1,11 +1,15 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canAcceptRestaurantOnlinePayments } from "@/lib/stripe/connect-capabilities";
+import { isStripeConnectConfigured } from "@/lib/stripe/connect";
 import { generateToken } from "@/lib/tokens";
 import { mapMenuItem, type MenuItemRow } from "@/lib/data/menu";
 import { computeIsBusy } from "@/lib/orders/eta";
 import type { MenuItem, MenuShare, OrderFulfillmentMode } from "@/lib/types";
 import type { DeliveryPricingConfig } from "@/lib/orders/delivery-pricing";
+import { getPublicMenuPresentation } from "@/lib/data/menu-presentation";
+import type { MenuPresentation } from "@/lib/types";
 
 type MenuShareRow = {
   id: string;
@@ -91,6 +95,8 @@ export type PublicMenuLanding = {
   share: MenuShare;
   restaurantId: string;
   restaurantName: string;
+  restaurantAddress: string | null;
+  presentation: MenuPresentation;
   restaurantTimezone: string;
   taxRate: number;
   acceptsTips: boolean;
@@ -124,13 +130,27 @@ async function getConnectPaymentAvailability(
   const fallback: ConnectAvailability = { onlinePaymentEnabled: false, stripeConnectAccountId: null };
   const { data, error } = await admin
     .from("restaurants")
-    .select("stripe_connect_account_id, stripe_connect_charges_enabled")
+    .select("stripe_connect_account_id, stripe_connect_charges_enabled, stripe_connect_account_api_version, stripe_connect_transfers_status, stripe_connect_recipient_payouts_status")
     .eq("id", restaurantId)
     .maybeSingle();
   if (error || !data) return fallback;
-  const row = data as { stripe_connect_account_id: string | null; stripe_connect_charges_enabled: boolean };
+  const row = data as {
+    stripe_connect_account_id: string | null;
+    stripe_connect_charges_enabled: boolean;
+    stripe_connect_account_api_version: "v1" | "v2";
+    stripe_connect_transfers_status: "active" | "pending" | "restricted" | "unsupported" | "unrequested";
+    stripe_connect_recipient_payouts_status: "active" | "pending" | "restricted" | "unsupported" | "unrequested";
+  };
+  const onlinePaymentEnabled = canAcceptRestaurantOnlinePayments({
+    platformConfigured: isStripeConnectConfigured(),
+    accountId: row.stripe_connect_account_id,
+    apiVersion: row.stripe_connect_account_api_version,
+    legacyChargesEnabled: row.stripe_connect_charges_enabled,
+    transfersStatus: row.stripe_connect_transfers_status,
+    payoutsStatus: row.stripe_connect_recipient_payouts_status,
+  });
   return {
-    onlinePaymentEnabled: Boolean(row.stripe_connect_account_id) && row.stripe_connect_charges_enabled,
+    onlinePaymentEnabled,
     stripeConnectAccountId: row.stripe_connect_account_id,
   };
 }
@@ -251,7 +271,7 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
   const [restaurantResult, itemsResult, connect, preparingCount] = await Promise.all([
     admin
       .from("restaurants")
-      .select("name, timezone, tax_rate, accepts_tips, order_modes_enabled, busy_mode_manual, busy_threshold, delivery_enabled, delivery_base_fee, delivery_per_km_fee, delivery_free_km, delivery_max_km, delivery_average_speed_kmh, delivery_per_minute_fee, lat, lng")
+      .select("name, address, timezone, tax_rate, accepts_tips, order_modes_enabled, busy_mode_manual, busy_threshold, delivery_enabled, delivery_base_fee, delivery_per_km_fee, delivery_free_km, delivery_max_km, delivery_average_speed_kmh, delivery_per_minute_fee, lat, lng")
       .eq("id", share.restaurantId)
       .maybeSingle(),
     itemsQuery.order("category").order("name"),
@@ -269,7 +289,7 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     if (/delivery_(enabled|base_fee|per_km_fee|free_km|max_km|average_speed_kmh|per_minute_fee)/i.test(restaurantResult.error.message)) {
       const fallback = await admin
         .from("restaurants")
-        .select("name, timezone, tax_rate, accepts_tips, order_modes_enabled, busy_mode_manual, busy_threshold, lat, lng")
+        .select("name, address, timezone, tax_rate, accepts_tips, order_modes_enabled, busy_mode_manual, busy_threshold, lat, lng")
         .eq("id", share.restaurantId)
         .maybeSingle();
       restaurantData = fallback.data
@@ -280,6 +300,7 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
   if (!restaurantData) return null;
   const restaurant = restaurantData as {
     name: string;
+    address: string | null;
     timezone: string | null;
     tax_rate: number;
     accepts_tips: boolean;
@@ -305,6 +326,8 @@ export async function getMenuShareByToken(token: string): Promise<PublicMenuLand
     share,
     restaurantId: share.restaurantId,
     restaurantName: restaurant.name,
+    restaurantAddress: restaurant.address,
+    presentation: await getPublicMenuPresentation(share.restaurantId),
     restaurantTimezone: restaurant.timezone ?? "America/Toronto",
     taxRate: restaurant.tax_rate,
     acceptsTips: restaurant.accepts_tips,

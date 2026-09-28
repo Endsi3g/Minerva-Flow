@@ -173,7 +173,7 @@ struct EditProfileSheet: View {
                     .keyboardType(keyboardType)
                     .foregroundStyle(MinervaColor.ink)
                     .padding(12)
-                    .background(.white)
+                    .background(MinervaColor.surface)
                     .clipShape(RoundedRectangle(cornerRadius: 11))
                     .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
 
@@ -248,7 +248,7 @@ struct EditProfileSheet: View {
                         .autocorrectionDisabled()
                         .foregroundStyle(MinervaColor.ink)
                         .padding(12)
-                        .background(.white)
+                        .background(MinervaColor.surface)
                         .clipShape(RoundedRectangle(cornerRadius: 11))
                         .overlay(RoundedRectangle(cornerRadius: 11).stroke(MinervaColor.border))
 

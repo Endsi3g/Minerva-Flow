@@ -12,6 +12,10 @@ export type GoogleConnection = {
   calendarId: string | null;
   driveFolderId: string | null;
   ga4PropertyId: string | null;
+  businessProfileAccountName: string | null;
+  businessProfileLocationName: string | null;
+  businessProfileLocationTitle: string | null;
+  businessProfileSyncedAt: string | null;
   status: "connecte" | "erreur" | "attente";
 };
 
@@ -24,6 +28,10 @@ type ConnectionRow = {
   calendar_id: string | null;
   drive_folder_id: string | null;
   ga4_property_id: string | null;
+  business_profile_account_name: string | null;
+  business_profile_location_name: string | null;
+  business_profile_location_title: string | null;
+  business_profile_synced_at: string | null;
   status: "connecte" | "erreur" | "attente";
 };
 
@@ -37,6 +45,10 @@ function mapConnection(row: ConnectionRow): GoogleConnection {
     calendarId: row.calendar_id,
     driveFolderId: row.drive_folder_id,
     ga4PropertyId: row.ga4_property_id,
+    businessProfileAccountName: row.business_profile_account_name,
+    businessProfileLocationName: row.business_profile_location_name,
+    businessProfileLocationTitle: row.business_profile_location_title,
+    businessProfileSyncedAt: row.business_profile_synced_at,
     status: row.status,
   };
 }
@@ -45,7 +57,7 @@ export async function getGoogleConnection(restaurantId: string): Promise<GoogleC
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("google_connections")
-    .select("id, restaurant_id, connected_email, granted_scopes, expires_at, calendar_id, drive_folder_id, ga4_property_id, status")
+    .select("id, restaurant_id, connected_email, granted_scopes, expires_at, calendar_id, drive_folder_id, ga4_property_id, business_profile_account_name, business_profile_location_name, business_profile_location_title, business_profile_synced_at, status")
     .eq("restaurant_id", restaurantId)
     .maybeSingle();
 
@@ -74,35 +86,49 @@ export type GoogleTokens = {
  */
 export async function saveGoogleTokens(restaurantId: string, tokens: GoogleTokens): Promise<void> {
   const admin = createAdminClient();
+  const { data: existing } = await admin
+    .from("google_connections")
+    .select("granted_scopes, refresh_token_id")
+    .eq("restaurant_id", restaurantId)
+    .maybeSingle();
 
-  const { data: accessTokenId } = await admin.rpc("store_vault_secret", {
+  const { data: accessTokenId, error: accessTokenError } = await admin.rpc("store_vault_secret", {
     secret: tokens.accessToken,
     secret_name: `google_access_${restaurantId}_${Date.now()}`,
   });
+  if (accessTokenError || typeof accessTokenId !== "string" || accessTokenId.length === 0) {
+    throw new Error("Unable to securely store Google access token.");
+  }
 
   let refreshTokenId: string | null = null;
   if (tokens.refreshToken) {
-    const { data } = await admin.rpc("store_vault_secret", {
+    const { data, error } = await admin.rpc("store_vault_secret", {
       secret: tokens.refreshToken,
       secret_name: `google_refresh_${restaurantId}_${Date.now()}`,
     });
+    if (error || typeof data !== "string" || data.length === 0) {
+      throw new Error("Unable to securely store Google refresh token.");
+    }
     refreshTokenId = data ?? null;
   }
 
-  const patch: Record<string, any> = {
+  const patch: Record<string, unknown> = {
     restaurant_id: restaurantId,
     connected_email: tokens.connectedEmail ?? null,
-    granted_scopes: tokens.scopes,
+    // Google returns the complete set granted to this token during the OAuth
+    // exchange. Prefer it over a union so a scope the user later revokes is
+    // not left looking connected in the app.
+    granted_scopes: tokens.scopes.length ? [...new Set(tokens.scopes)] : (existing?.granted_scopes ?? []),
     access_token_id: accessTokenId,
     expires_at: tokens.expiresAt ?? null,
     status: "connecte",
   };
 
-  if (refreshTokenId) {
-    patch.refresh_token_id = refreshTokenId;
-  }
+  if (refreshTokenId) patch.refresh_token_id = refreshTokenId;
+  else if (existing?.refresh_token_id) patch.refresh_token_id = existing.refresh_token_id;
 
-  await admin.from("google_connections").upsert(patch, { onConflict: "restaurant_id" });
+  const { error: upsertError } = await admin.from("google_connections").upsert(patch, { onConflict: "restaurant_id" });
+  if (upsertError) throw new Error("Unable to save Google connection metadata.");
 }
 
 /**
@@ -179,13 +205,25 @@ export async function getGoogleTokens(
 /** Server-only — persists ids created lazily (calendar, Drive folder) back onto the connection row. */
 export async function updateGoogleConnectionMeta(
   restaurantId: string,
-  patch: { calendarId?: string; driveFolderId?: string; ga4PropertyId?: string }
+  patch: {
+    calendarId?: string;
+    driveFolderId?: string;
+    ga4PropertyId?: string;
+    businessProfileAccountName?: string;
+    businessProfileLocationName?: string;
+    businessProfileLocationTitle?: string;
+    businessProfileSyncedAt?: string;
+  }
 ): Promise<void> {
   const admin = createAdminClient();
-  const update: Record<string, string> = {};
+  const update: Record<string, string | null> = {};
   if (patch.calendarId) update.calendar_id = patch.calendarId;
   if (patch.driveFolderId) update.drive_folder_id = patch.driveFolderId;
   if (patch.ga4PropertyId) update.ga4_property_id = patch.ga4PropertyId;
+  if (patch.businessProfileAccountName !== undefined) update.business_profile_account_name = patch.businessProfileAccountName;
+  if (patch.businessProfileLocationName !== undefined) update.business_profile_location_name = patch.businessProfileLocationName;
+  if (patch.businessProfileLocationTitle !== undefined) update.business_profile_location_title = patch.businessProfileLocationTitle;
+  if (patch.businessProfileSyncedAt) update.business_profile_synced_at = patch.businessProfileSyncedAt;
   if (Object.keys(update).length === 0) return;
 
   await admin.from("google_connections").update(update).eq("restaurant_id", restaurantId);

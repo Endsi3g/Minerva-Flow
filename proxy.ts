@@ -37,11 +37,15 @@ export async function proxy(request: NextRequest) {
 
   const publicRoutes = [
     "/login",
+    "/ambassadeurs",
     "/sign-up",
     "/sign-up-success",
     "/forgot-password",
     "/update-password",
     "/onboarding",
+    "/app",
+    "/customer-sign-up",
+    "/customer-join",
   ];
   // skipTrailingSlashRedirect (next.config.ts) means "/login" and "/login/"
   // are both live, distinct paths — strip the trailing slash before matching
@@ -82,6 +86,9 @@ export async function proxy(request: NextRequest) {
     // a verified brand's visual fields and is needed before a customer has a
     // session on their own custom domain.
     pathWithoutLocale === "/api/branding" ||
+    // Opaque public order IDs grant access only to non-identifying status
+    // fields; the handler applies UUID validation and IP rate limiting.
+    pathWithoutLocale.startsWith("/api/public/orders/") ||
     pathWithoutLocale.startsWith("/api/v1/") ||
     pathWithoutLocale.startsWith("/api/mcp") ||
     pathWithoutLocale.startsWith("/api/leads/") ||
@@ -104,6 +111,10 @@ export async function proxy(request: NextRequest) {
     // differently). Same silent-redirect-to-/login trap as the two routes
     // above otherwise.
     pathWithoutLocale.startsWith("/api/portal/") ||
+    // Native owner actions authenticate with the app's Supabase Bearer token;
+    // the route handlers verify the user and tenant role themselves. They do
+    // not send browser cookies and must reach that authorization boundary.
+    pathWithoutLocale.startsWith("/api/native/") ||
     // Native Apple/Google Wallet downloads authenticate with the native
     // Bearer token rather than a browser cookie. Let the route handler return
     // the binary pass instead of redirecting the request to the login page.

@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/Badge";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { ChevronDown, LogOut, User, Bell, Gift, Settings, Search } from "lucide-react";
+import { ChevronDown, LogOut, Bell, Gift, Search } from "lucide-react";
 import { ReferralModal } from "@/components/chat/ReferralModal";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -127,15 +127,6 @@ function UserMenu() {
           </div>
           {isDemoAccount(authUser?.email) && <DemoRoleSwitcher currentRole={role} />}
           <div className="mt-1 border-t border-mv-border-soft pt-1.5">
-            <button
-              onClick={() => {
-                setOpen(false);
-                router.push("/profil");
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft"
-            >
-              <User size={15} /> {t("accountManagement")}
-            </button>
             {restaurantId && (
               <button
                 onClick={() => {
@@ -145,17 +136,6 @@ function UserMenu() {
                 className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft"
               >
                 <Gift size={15} /> {t("referral")}
-              </button>
-            )}
-            {(role === "owner" || role === "manager") && (
-              <button
-                onClick={() => {
-                  setOpen(false);
-                  router.push("/settings");
-                }}
-                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft"
-              >
-                <Settings size={15} /> {t("settings")}
               </button>
             )}
           </div>
@@ -212,7 +192,7 @@ function NotificationBell() {
   const [open, setOpen] = useState(false);
   const unreadCount = notifications.filter((n) => !n.read).length + alerts.length;
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     if (!restaurantId) return;
     const [notifs, unreadAlerts] = await Promise.all([
       getNotificationsAction(restaurantId),
@@ -220,11 +200,17 @@ function NotificationBell() {
     ]);
     setNotifications(notifs);
     setAlerts(unreadAlerts);
-  }
+  }, [restaurantId]);
 
   useEffect(() => {
-    refresh();
-  }, [restaurantId]);
+    let mounted = true;
+    queueMicrotask(() => {
+      if (mounted) void refresh();
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [refresh]);
 
   // Live badge — new rows inserted into `alerts` for this restaurant show
   // up on the bell immediately via the unified restaurant realtime bus.

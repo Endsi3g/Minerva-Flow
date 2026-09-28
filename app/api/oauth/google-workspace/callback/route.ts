@@ -25,17 +25,30 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
+  const oauthError = url.searchParams.get("error");
   const settingsUrl = new URL("/settings", url.origin);
 
-  if (!code || !state) {
-    settingsUrl.searchParams.set("google_error", "missing_params");
+  const verified = state ? verifyOAuthState(state) : null;
+  const isNativeOwnerFlow = verified?.extra?.startsWith("native:") ?? false;
+  const nativeReturnUrl = new URL("minervaflow://google-business-profile");
+  const redirectWithError = (error: string) => {
+    if (isNativeOwnerFlow) {
+      nativeReturnUrl.searchParams.set("status", "error");
+      nativeReturnUrl.searchParams.set("reason", error);
+      return NextResponse.redirect(nativeReturnUrl);
+    }
+    settingsUrl.searchParams.set("google_error", error);
     return NextResponse.redirect(settingsUrl);
+  };
+
+  if (oauthError) return redirectWithError(oauthError === "access_denied" ? "consent_declined" : "oauth_failed");
+
+  if (!code || !state) {
+    return redirectWithError("missing_params");
   }
 
-  const verified = verifyOAuthState(state);
   if (!verified) {
-    settingsUrl.searchParams.set("google_error", "invalid_state");
-    return NextResponse.redirect(settingsUrl);
+    return redirectWithError("invalid_state");
   }
 
   const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
@@ -51,8 +64,7 @@ export async function GET(req: Request) {
   });
 
   if (!tokenRes.ok) {
-    settingsUrl.searchParams.set("google_error", "token_exchange_failed");
-    return NextResponse.redirect(settingsUrl);
+    return redirectWithError("token_exchange_failed");
   }
 
   const tokenData = (await tokenRes.json()) as {
@@ -64,20 +76,27 @@ export async function GET(req: Request) {
   };
 
   if (!tokenData.access_token) {
-    settingsUrl.searchParams.set("google_error", "no_access_token");
-    return NextResponse.redirect(settingsUrl);
+    return redirectWithError("no_access_token");
   }
 
-  await saveGoogleTokens(verified.restaurantId, {
-    accessToken: tokenData.access_token,
-    refreshToken: tokenData.refresh_token,
-    expiresAt: tokenData.expires_in
-      ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
-      : undefined,
-    connectedEmail: tokenData.id_token ? decodeEmailFromIdToken(tokenData.id_token) : undefined,
-    scopes: tokenData.scope ? tokenData.scope.split(" ") : [],
-  });
+  try {
+    await saveGoogleTokens(verified.restaurantId, {
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      expiresAt: tokenData.expires_in
+        ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
+        : undefined,
+      connectedEmail: tokenData.id_token ? decodeEmailFromIdToken(tokenData.id_token) : undefined,
+      scopes: tokenData.scope ? tokenData.scope.split(" ") : [],
+    });
+  } catch {
+    return redirectWithError("token_storage_failed");
+  }
 
+  if (isNativeOwnerFlow) {
+    nativeReturnUrl.searchParams.set("status", "connected");
+    return NextResponse.redirect(nativeReturnUrl);
+  }
   settingsUrl.searchParams.set("google_connected", "1");
   return NextResponse.redirect(settingsUrl);
 }

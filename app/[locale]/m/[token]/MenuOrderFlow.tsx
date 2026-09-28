@@ -8,20 +8,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { requestCustomerMagicLink } from "@/lib/auth/customer-magic-link";
-import { getPublicOrderDeliveryQuoteAction, submitPublicOrderAction } from "./actions";
+import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { getPublicOrderDeliveryQuoteAction, resumePublicOrderAction, submitPublicOrderAction } from "./actions";
 import { OnlinePaymentForm } from "./OnlinePaymentForm";
 import { MealSuggestionsPanel } from "./MealSuggestionsPanel";
 import { ServiceQuoteRequest } from "./ServiceQuoteRequest";
 import { formatCurrency, roundToCents, cn } from "@/lib/utils";
 import { InstallAppPrompt } from "@/components/pwa/InstallAppPrompt";
 import { CustomerPushToggle } from "@/components/pwa/CustomerPushToggle";
-import type { MenuItem, Offer, OrderFulfillmentMode } from "@/lib/types";
+import type { MenuItem, Offer, OrderFulfillmentMode, OrderStatus } from "@/lib/types";
 import type { DeliveryPricingConfig, DeliveryQuote } from "@/lib/orders/delivery-pricing";
 import { getPublicCheckoutOptions } from "@/lib/orders/checkout-options";
 import { formatRestaurantTime } from "@/lib/orders/scheduling";
 import type { PublicMenuLanding, SiblingLocation } from "@/lib/data/menu-shares";
 import { Map as MapView, MapControls, MapMarker, MarkerContent, MarkerLabel, MarkerPopup } from "@/components/ui/map";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Plus, Minus, ShoppingCart, Mail, CheckCircle2, Heart, Share2, Sparkles, UtensilsCrossed, X, MapPin, ArrowRight, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { getOrCreateReferralLinkAction, toggleFavoriteAction } from "@/app/[locale]/portal/actions";
@@ -75,7 +78,7 @@ function CheckoutModal({
   referralCode: string | null;
   orderModesEnabled: OrderFulfillmentMode[];
   onlinePaymentEnabled: boolean;
-  onOrdered: () => void;
+  onOrdered: (orderId: string) => void;
   shareProgramId: string | null;
   restaurantName: string;
   restaurantTimezone: string;
@@ -86,6 +89,8 @@ function CheckoutModal({
   const [email, setEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [trackedOrderId, setTrackedOrderId] = useState<string | null>(null);
+  const [trackedOrderStatus, setTrackedOrderStatus] = useState<{ status: OrderStatus; changedAt: string; reason: string | null } | null>(null);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "submitting" | "done" | "paying" | "paid" | "error">(
     "idle"
   );
@@ -133,8 +138,70 @@ function CheckoutModal({
   const [marketingConsent, setMarketingConsent] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [estimatedReadyAt, setEstimatedReadyAt] = useState<string | null>(null);
+  const [checkoutAttemptId, setCheckoutAttemptId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(`mv-order-attempt-${token}`);
+    } catch {
+      return null;
+    }
+  });
+  const [checkoutTotal, setCheckoutTotal] = useState<number | null>(null);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
+  const cartFingerprint = JSON.stringify(cartLines.map((line) => [line.item.id, line.quantity]));
+  const lastCartFingerprint = useRef(cartFingerprint);
+
+  useEffect(() => {
+    if (lastCartFingerprint.current === cartFingerprint) return;
+    lastCartFingerprint.current = cartFingerprint;
+    setCheckoutAttemptId(null);
+    try {
+      localStorage.removeItem(`mv-order-attempt-${token}`);
+    } catch {
+      // ignore storage failures; the order action still has a server key
+    }
+  }, [cartFingerprint, token]);
+
+  function getCheckoutAttemptId(): string {
+    if (checkoutAttemptId) return checkoutAttemptId;
+    const key = crypto.randomUUID();
+    setCheckoutAttemptId(key);
+    try {
+      localStorage.setItem(`mv-order-attempt-${token}`, key);
+    } catch {
+      // The in-memory key still protects retries until this page closes.
+    }
+    return key;
+  }
+
+  function finishOrder(orderId = trackedOrderId) {
+    setCheckoutAttemptId(null);
+    try {
+      localStorage.removeItem(`mv-order-attempt-${token}`);
+    } catch {
+      // ignore
+    }
+    if (orderId) onOrdered(orderId);
+  }
+
+  useEffect(() => {
+    if (!trackedOrderId || !["done", "paid"].includes(submitStatus)) return;
+    const supabase = createBrowserSupabaseClient();
+    let disposed = false;
+    const refresh = async () => {
+      const { data } = await supabase.from("orders").select("status, status_changed_at, cancellation_reason").eq("id", trackedOrderId).maybeSingle();
+      if (!disposed && data) setTrackedOrderStatus({ status: data.status as OrderStatus, changedAt: data.status_changed_at ?? "", reason: data.cancellation_reason ?? null });
+    };
+    void refresh();
+    const timer = window.setInterval(refresh, 15000);
+    const channel = supabase.channel(`customer-order-${trackedOrderId}`).on("postgres_changes", {
+      event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${trackedOrderId}`,
+    }, (payload) => {
+      const row = payload.new as { status: OrderStatus; status_changed_at?: string; cancellation_reason?: string | null };
+      setTrackedOrderStatus({ status: row.status, changedAt: row.status_changed_at ?? "", reason: row.cancellation_reason ?? null });
+    }).subscribe();
+    return () => { disposed = true; window.clearInterval(timer); void supabase.removeChannel(channel); };
+  }, [trackedOrderId, submitStatus]);
 
   async function handleShareOrder() {
     if (!shareProgramId) return;
@@ -165,15 +232,21 @@ function CheckoutModal({
   async function handleEmailSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setEmailStatus("sending");
-    const result = await requestCustomerMagicLink(
-      email,
-      `/m/${token}${referralCode ? `?ref=${referralCode}` : ""}`
-    );
-    if (result.ok) {
-      setEmailStatus("sent");
-    } else {
+    setEmailError(null);
+    try {
+      const result = await requestCustomerMagicLink(
+        email,
+        `/m/${token}${referralCode ? `?ref=${referralCode}` : ""}`
+      );
+      if (result.ok) {
+        setEmailStatus("sent");
+      } else {
+        setEmailStatus("error");
+        setEmailError(result.error ?? "Une erreur est survenue.");
+      }
+    } catch {
       setEmailStatus("error");
-      setEmailError(result.error ?? "Une erreur est survenue.");
+      setEmailError("Impossible d’envoyer le lien maintenant. Vérifiez votre connexion et réessayez.");
     }
   }
 
@@ -181,34 +254,66 @@ function CheckoutModal({
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     setSubmitStatus("submitting");
-    const result = await submitPublicOrderAction(
-      token,
-      referralCode,
-      cartLines.map((l) => ({ menuItemId: l.item.id, quantity: l.quantity })),
-      {
-        guestName: String(form.get("guestName") ?? ""),
-        guestPhone: String(form.get("guestPhone") ?? "") || null,
-        paymentMethod: payOnline ? null : String(form.get("paymentMethod") ?? "") || null,
-        tipAmount,
-        fulfillmentMode,
-        deliveryAddress: fulfillmentMode === "livraison" ? deliveryAddress : null,
-        payOnline,
-        requestedReadyAtLocal: String(form.get("requestedReadyAtLocal") ?? "") || null,
-        marketingConsent,
-        mentionedOfferTitle,
+    try {
+      const idempotencyKey = getCheckoutAttemptId();
+      const result = await submitPublicOrderAction(
+        token,
+        referralCode,
+        cartLines.map((l) => ({ menuItemId: l.item.id, quantity: l.quantity })),
+        {
+          guestName: String(form.get("guestName") ?? ""),
+          guestPhone: String(form.get("guestPhone") ?? "") || null,
+          paymentMethod: payOnline ? null : String(form.get("paymentMethod") ?? "") || null,
+          tipAmount,
+          fulfillmentMode,
+          deliveryAddress: fulfillmentMode === "livraison" ? deliveryAddress : null,
+          payOnline,
+          requestedReadyAtLocal: String(form.get("requestedReadyAtLocal") ?? "") || null,
+          marketingConsent,
+          mentionedOfferTitle,
+        },
+        idempotencyKey
+      );
+      if (!result.ok) {
+        setSubmitStatus("error");
+        return;
       }
-    );
-    if (!result.ok) {
+      setTrackedOrderId(result.orderId);
+      setEstimatedReadyAt(result.estimatedReadyAt);
+      setCheckoutTotal(result.total);
+      if (result.clientSecret) {
+        setClientSecret(result.clientSecret);
+        setSubmitStatus("paying");
+      } else {
+        finishOrder(result.orderId);
+        setSubmitStatus(result.paymentConfirmed ? "paid" : "done");
+      }
+    } catch {
       setSubmitStatus("error");
-      return;
     }
-    setEstimatedReadyAt(result.estimatedReadyAt);
-    if (result.clientSecret) {
-      setClientSecret(result.clientSecret);
-      setSubmitStatus("paying");
-    } else {
-      onOrdered();
-      setSubmitStatus("done");
+  }
+
+  async function handleResumeOrder() {
+    if (!checkoutAttemptId) return;
+    setSubmitStatus("submitting");
+    try {
+      const result = await resumePublicOrderAction(token, checkoutAttemptId);
+      if (!result.ok) {
+        setSubmitStatus("error");
+        return;
+      }
+      setTrackedOrderId(result.orderId);
+      setEstimatedReadyAt(result.estimatedReadyAt);
+      setCheckoutTotal(result.total);
+      if (result.clientSecret) {
+        setClientSecret(result.clientSecret);
+        setSubmitStatus("paying");
+      } else {
+        finishOrder(result.orderId);
+        setSubmitStatus(result.paymentConfirmed ? "paid" : "done");
+      }
+    } catch {
+      setSubmitStatus("error");
     }
   }
 
@@ -221,9 +326,9 @@ function CheckoutModal({
           </p>
           <OnlinePaymentForm
             clientSecret={clientSecret}
-            total={total}
+            total={checkoutTotal ?? displayTotal}
             onPaid={() => {
-              onOrdered();
+              finishOrder();
               setSubmitStatus("paid");
             }}
           />
@@ -241,6 +346,16 @@ function CheckoutModal({
             <p className="mt-2 text-[12.5px] font-medium text-mv-green-dark">
               Prêt vers {formatRestaurantTime(estimatedReadyAt, restaurantTimezone)}
             </p>
+          )}
+          {trackedOrderId && (
+            <div className="mx-auto mt-4 max-w-sm rounded-xl border border-mv-border-soft bg-mv-cream-soft/70 p-3 text-left" aria-live="polite">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Suivi de la commande</p>
+              <p className="mt-1 text-[13px] font-semibold text-mv-green-dark">
+                {trackedOrderStatus ? orderStatusFriendlyCopy(trackedOrderStatus.status) : "Le restaurant prépare la confirmation…"}
+              </p>
+              {trackedOrderStatus?.status === "annulee" && <p className="mt-1 text-[12px] text-mv-ink-soft">La commande est annulée sans frais. {trackedOrderStatus.reason ?? "Aucun paiement ne vous sera demandé."}</p>}
+              <p className="mt-1 text-[10.5px] text-mv-ink-faint">Réf. {trackedOrderId.slice(0, 8).toUpperCase()} · actualisation automatique</p>
+            </div>
           )}
           {shareProgramId && (
             <div className="mt-4 border-t border-mv-border-soft pt-4">
@@ -282,6 +397,16 @@ function CheckoutModal({
         </div>
       ) : (
         <div className="space-y-4">
+          {authenticated && checkoutAttemptId && submitStatus !== "submitting" && (
+            <div className="rounded-xl border border-mv-green/20 bg-mv-green-tint/40 p-3">
+              <p className="mb-2 text-[12px] text-mv-ink-soft">
+                Une tentative précédente a peut-être déjà été reçue. Reprenez-la pour retrouver la même commande et le même paiement, sans en créer une autre.
+              </p>
+              <Button type="button" variant="secondary" size="sm" onClick={handleResumeOrder} className="w-full">
+                Reprendre ma commande
+              </Button>
+            </div>
+          )}
           {mentionedOfferTitle && (
             <div className="flex items-center gap-1.5 rounded-lg bg-mv-lime-tint px-3 py-2 text-[12px] font-medium text-mv-green-darker">
               <Sparkles size={13} /> Offre mentionnée : {mentionedOfferTitle}
@@ -367,6 +492,7 @@ function CheckoutModal({
                       <button
                         key={mode}
                         type="button"
+                        aria-pressed={fulfillmentMode === mode}
                         onClick={() => setFulfillmentMode(mode)}
                         className={cn(
                           "flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium",
@@ -413,6 +539,7 @@ function CheckoutModal({
                       <button
                         key={String(choice.value)}
                         type="button"
+                        aria-pressed={payOnline === choice.value}
                         onClick={() => setPayOnline(choice.value)}
                         className={cn("flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-medium", payOnline === choice.value ? "border-mv-green bg-mv-green-tint text-mv-green-dark" : "border-mv-border text-mv-ink-soft")}
                       >
@@ -424,9 +551,12 @@ function CheckoutModal({
               )}
               {!payOnline && (
                 <Field label="Mode de paiement sur place" hint="Optionnel">
-                  <Input name="paymentMethod" placeholder="Ex : Carte, comptant" />
+                  <Input name="paymentMethod" aria-label="Mode de paiement sur place" placeholder="Ex : Carte, comptant" />
                 </Field>
               )}
+              <p className="rounded-lg bg-mv-green-tint/45 px-3 py-2.5 text-[11.5px] leading-relaxed text-mv-ink-soft">
+                Hey ! Le restaurant vous confirme la commande bientôt. Si un article n’est pas disponible ou qu’un imprévu survient, son équipe vous contactera ou annulera la commande sans frais.
+              </p>
               <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
                 <Checkbox
                   checked={marketingConsent}
@@ -436,7 +566,7 @@ function CheckoutModal({
                 <span>J&apos;accepte de recevoir des offres et rappels par courriel ou SMS de {restaurantName}.</span>
               </label>
               {submitStatus === "error" && (
-                <p className="text-[12.5px] text-mv-red">La commande a échoué. Réessayez.</p>
+                <p className="text-[12.5px] text-mv-red">Oups, l’envoi n’a pas abouti. Vous pouvez réessayer dans un instant.</p>
               )}
               <Button type="submit" disabled={submitStatus === "submitting" || (fulfillmentMode === "livraison" && (deliveryQuoteLoading || !deliveryQuote.available))} className="w-full">
                 {submitStatus === "submitting" ? "Envoi…" : `Envoyer la commande — ${formatCurrency(displayTotal)}`}
@@ -466,6 +596,18 @@ function CheckoutModal({
   );
 }
 
+function orderStatusFriendlyCopy(status: OrderStatus): string {
+  const copy: Record<OrderStatus, string> = {
+    soumise: "Bien reçue — le restaurant vous confirme bientôt la suite.",
+    confirmee: "C’est confirmé ! Votre repas sera bientôt prêt.",
+    en_preparation: "Votre repas se prépare avec soin.",
+    prete: "Bonne nouvelle, votre repas vous attend au restaurant !",
+    servie: "Bon appétit ! Merci d’avoir choisi ce restaurant.",
+    annulee: "Petit imprévu — votre commande est annulée sans frais.",
+  };
+  return copy[status];
+}
+
 /** Grid tile for one menu item — image up top so the menu reads as a real
  * ordering app instead of a plain price list, quick-add without opening
  * the detail view for the common case. */
@@ -475,6 +617,7 @@ function MenuItemGridCard({
   onOpen,
   onQuickAdd,
   isFavorite,
+  isOrderable,
   onToggleFavorite,
 }: {
   item: MenuItem;
@@ -482,13 +625,14 @@ function MenuItemGridCard({
   onOpen: () => void;
   onQuickAdd: () => void;
   isFavorite: boolean;
+  isOrderable: boolean;
   onToggleFavorite?: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-mv-border bg-mv-surface text-left shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
+      className={cn("group flex flex-col overflow-hidden rounded-2xl border border-mv-border bg-mv-surface text-left shadow-mv-sm transition-all", isOrderable && "hover:-translate-y-0.5 hover:shadow-mv-md")}
     >
       <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-mv-cream-soft">
         {item.imageUrl ? (
@@ -503,7 +647,7 @@ function MenuItemGridCard({
             <UtensilsCrossed size={26} className="text-mv-ink-faint" />
           </div>
         )}
-        <span
+        {isOrderable ? <span
           role="button"
           tabIndex={0}
           aria-label={`Ajouter ${item.name}`}
@@ -521,7 +665,7 @@ function MenuItemGridCard({
           className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft shadow-mv-md transition-transform hover:scale-110"
         >
           <Plus size={15} />
-        </span>
+        </span> : <span className="absolute bottom-2 right-2 rounded-full bg-white/90 px-2.5 py-1 text-[10.5px] font-medium text-mv-ink-soft">Présentation seulement</span>}
         {quantity > 0 && (
           <span className="absolute left-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-mv-ink px-1.5 text-[11px] font-bold text-white shadow-mv-md">
             {quantity}
@@ -554,7 +698,7 @@ function MenuItemGridCard({
         {item.description && (
           <p className="line-clamp-2 text-[11.5px] leading-snug text-mv-ink-faint">{item.description}</p>
         )}
-        <p className="mt-auto pt-1 text-[13px] font-semibold text-mv-green-dark">{formatCurrency(item.price)}</p>
+        <p className="mt-auto pt-1 text-[13px] font-semibold text-mv-green-dark">{isOrderable ? formatCurrency(item.price) : "À découvrir"}</p>
       </div>
     </button>
   );
@@ -744,6 +888,7 @@ export function MenuOrderFlow({
   favoriteMenuItemIds: string[];
   favoriteOfferIds: string[];
 }) {
+  const router = useRouter();
   const { restaurantName, restaurantTimezone, items, taxRate, acceptsTips, onlinePaymentEnabled, orderModesEnabled, delivery } = landing;
   const [favMenuItems, setFavMenuItems] = useState(new Set(favoriteMenuItemIds));
   const [favOffers, setFavOffers] = useState(new Set(favoriteOfferIds));
@@ -831,6 +976,7 @@ export function MenuOrderFlow({
   const itemCount = cartLines.reduce((sum, l) => sum + l.quantity, 0);
 
   function updateQty(itemId: string, delta: number) {
+    if (items.find((item) => item.id === itemId)?.isOrderable === false) return;
     setCart((prev) => ({ ...prev, [itemId]: Math.max(0, (prev[itemId] ?? 0) + delta) }));
   }
 
@@ -838,31 +984,40 @@ export function MenuOrderFlow({
   const [detailQty, setDetailQty] = useState(1);
 
   function openDetail(item: MenuItem) {
+    if (item.isOrderable === false) return;
     setDetailItem(item);
     setDetailQty(Math.max(1, cart[item.id] ?? 1));
   }
 
   function confirmDetailAdd() {
-    if (!detailItem) return;
+    if (!detailItem || detailItem.isOrderable === false) return;
     setCart((prev) => ({ ...prev, [detailItem.id]: detailQty }));
     setDetailItem(null);
   }
 
-  function handleOrdered() {
+  function handleOrdered(orderId: string) {
     setCart({});
     try {
       localStorage.removeItem(`mv-cart-${token}`);
+      localStorage.removeItem(`mv-order-attempt-${token}`);
     } catch {
       // ignore
     }
+    const params = new URLSearchParams({
+      order: orderId,
+      restaurant: landing.restaurantId,
+      name: restaurantName,
+      menu: token,
+    });
+    router.push(`/app?${params.toString()}`);
   }
 
   return (
-    <div className="min-h-screen bg-mv-cream pb-28">
+    <div className="min-h-screen pb-28" style={{ backgroundColor: landing.presentation.backgroundColor, color: landing.presentation.textColor, fontFamily: landing.presentation.fontFamily }}>
       <div className="mx-auto max-w-2xl px-6 py-10">
         <div className="mb-6 flex items-center gap-2.5">
-          <LogoMark size={26} />
-          <span className="font-sans text-[15px] font-medium text-mv-ink">
+          {landing.presentation.logoUrl ? <Image src={landing.presentation.logoUrl} alt={`Logo ${restaurantName}`} width={128} height={36} unoptimized className="h-9 max-w-32 object-contain" /> : <LogoMark size={26} />}
+          <span className="font-sans text-[15px] font-medium" style={{ color: landing.presentation.textColor }}>
             Minerva <span className="text-mv-green-dark">Flow</span>
           </span>
         </div>
@@ -870,7 +1025,9 @@ export function MenuOrderFlow({
           {landing.share.title}
         </p>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-          <h1 className="font-display text-[26px] font-medium text-mv-ink">{restaurantName}</h1>
+          <div><h1 className="font-display text-[26px] font-medium" style={{ color: landing.presentation.textColor }}>{restaurantName}</h1>
+            {landing.restaurantAddress && <p className="mt-1 text-[12px] opacity-70">{landing.restaurantAddress}</p>}
+          </div>
           <div className="flex shrink-0 items-center gap-2">
             {siblingLocations.length > 0 && (
               <button
@@ -905,7 +1062,25 @@ export function MenuOrderFlow({
           </div>
         </div>
 
+        <div className="mb-5 flex flex-wrap gap-2">
+          {Object.entries(landing.presentation.socialLinks).filter(([, value]) => Boolean(value)).map(([kind, rawValue]) => {
+            const value = rawValue.trim();
+            const href = kind === "email" ? `mailto:${value}` : kind === "phone" ? `tel:${value.replace(/[^+\d]/g, "")}`
+              : kind === "whatsapp" && !/^https?:/i.test(value) ? `https://wa.me/${value.replace(/[^\d]/g, "")}`
+              : /^https?:/i.test(value) ? value : `https://${kind === "instagram" ? "instagram.com/" : kind === "tiktok" ? "tiktok.com/@" : kind === "facebook" ? "facebook.com/" : ""}${value.replace(/^@/, "")}`;
+            const labels: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", whatsapp: "WhatsApp", email: "Courriel", phone: "Téléphone", website: "Site web" };
+            return <a key={kind} href={href} target={kind === "email" || kind === "phone" ? undefined : "_blank"} rel="noreferrer" className="rounded-full border px-3 py-1.5 text-[11.5px] font-medium" style={{ borderColor: `${landing.presentation.accentColor}55`, color: landing.presentation.accentColor }}>{labels[kind]}</a>;
+          })}
+        </div>
+
         <InstallAppPrompt />
+        <Link
+          href={`/app?restaurant=${encodeURIComponent(landing.restaurantId)}&name=${encodeURIComponent(restaurantName)}&menu=${encodeURIComponent(token)}`}
+          className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-mv-green/20 bg-mv-green-tint/35 px-4 py-3 text-[12.5px] text-mv-ink-soft transition hover:bg-mv-green-tint/60"
+        >
+          <span><span className="block font-semibold text-mv-green-dark">Installez Minerva Flow</span><span>Vos commandes et vos points, réunis au même endroit.</span></span>
+          <ArrowRight size={16} className="shrink-0 text-mv-green-dark" />
+        </Link>
         {authenticated && <CustomerPushToggle restaurantId={landing.restaurantId} />}
 
         {landing.isBusy && (
@@ -969,13 +1144,34 @@ export function MenuOrderFlow({
           <p className="text-[13px] text-mv-ink-faint">Aucun plat disponible pour l&apos;instant.</p>
         ) : (
           <div ref={menuSectionRef}>
+            {items.some((item) => item.isFeatured) && (
+              <section className="mb-8" aria-labelledby="menu-featured-title">
+                <p className="mb-3 text-[13px] font-semibold" style={{ color: landing.presentation.accentColor }} id="menu-featured-title">À découvrir</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {items.filter((item) => item.isFeatured).map((item) => (
+                    <MenuItemGridCard
+                      key={`featured-${item.id}`}
+                      item={item}
+                      quantity={cart[item.id] ?? 0}
+                      onOpen={() => openDetail(item)}
+                      onQuickAdd={() => updateQty(item.id, 1)}
+                      isFavorite={favMenuItems.has(item.id)}
+                      isOrderable={item.isOrderable !== false}
+                      onToggleFavorite={customerId ? () => handleToggleFavorite("menu_item", item.id) : undefined}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+            <p className="mb-4 font-display text-xl text-mv-ink">Tout le menu</p>
             {categories.length > 1 && (
-              <div className="sticky top-0 z-10 -mx-6 mb-6 flex gap-2 overflow-x-auto bg-mv-cream/95 px-6 py-2.5 backdrop-blur-sm">
+              <div className="sticky top-0 z-10 -mx-6 mb-6 flex gap-2 overflow-x-auto px-6 py-2.5 backdrop-blur-sm" style={{ backgroundColor: `${landing.presentation.backgroundColor}f2` }}>
                 {categories.map(([category], i) => (
                   <a
                     key={category}
                     href={`#${categorySlug(category, i)}`}
-                    className="shrink-0 rounded-full border border-mv-border bg-mv-surface px-3.5 py-1.5 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:border-mv-green hover:text-mv-ink"
+                    className="shrink-0 rounded-full border bg-white/70 px-3.5 py-1.5 text-[12.5px] font-medium transition-colors"
+                    style={{ borderColor: `${landing.presentation.accentColor}66`, color: landing.presentation.textColor }}
                   >
                     {category}
                   </a>
@@ -984,7 +1180,7 @@ export function MenuOrderFlow({
             )}
             {categories.map(([category, catItems], i) => (
               <div key={category} id={categorySlug(category, i)} className="mb-8 scroll-mt-16">
-                <p className="mb-3 text-[13px] font-semibold text-mv-ink">{category}</p>
+                <p className="mb-3 text-[13px] font-semibold" style={{ color: landing.presentation.accentColor }}>{category}</p>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {catItems.map((item) => (
                     <MenuItemGridCard
@@ -994,6 +1190,7 @@ export function MenuOrderFlow({
                       onOpen={() => openDetail(item)}
                       onQuickAdd={() => updateQty(item.id, 1)}
                       isFavorite={favMenuItems.has(item.id)}
+                      isOrderable={item.isOrderable !== false}
                       onToggleFavorite={customerId ? () => handleToggleFavorite("menu_item", item.id) : undefined}
                     />
                   ))}

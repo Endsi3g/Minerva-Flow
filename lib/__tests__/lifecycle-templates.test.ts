@@ -66,20 +66,22 @@ describe("Lifecycle & Operational Email Templates", () => {
     expect(result.html.toLowerCase()).not.toContain("#dfff5f");
   });
 
-  it("renders special offer email with transparent features", () => {
+  it("renders special offer email with the supplied offer and transparent features", () => {
     const result = renderSpecialOfferEmail({
       firstName: "Alexandre",
       restaurantName: "Bistro Minerva",
-      discountSummary: "2 mois offerts",
+      discountSummary: "2 mois offerts\r\nBcc: invalid@example.com",
       appUrl: "https://minervaflow.app",
     });
 
     expect(result.subject).toContain("2 mois offerts");
-    expect(result.html).toContain("Connexions de caisse illimitées");
+    expect(result.subject).not.toContain("\n");
+    expect(result.html).toContain("2 mois offerts");
+    expect(result.html).toContain("Opérations quotidiennes");
     expect(result.html.toLowerCase()).not.toContain("#dfff5f");
   });
 
-  it("renders rich loyalty retention email with points and tiers", () => {
+  it("renders configured loyalty details without inventing tiers", () => {
     const result = renderLoyaltyRetentionEmail({
       customerName: "Camille",
       restaurantName: "Café Lucide",
@@ -94,7 +96,7 @@ describe("Lifecycle & Operational Email Templates", () => {
     expect(result.html).toContain("85 points");
     expect(result.html).toContain("Café de spécialité offert");
     expect(result.html).toContain("Habitué");
-    expect(result.html).toContain("Privilégié");
+    expect(result.html).not.toContain("Privilégié");
     expect(result.html.toLowerCase()).not.toContain("#dfff5f");
   });
 });

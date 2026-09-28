@@ -128,15 +128,26 @@ export async function fetchGoogleCalendarEvents(
 
   if (!res.ok) return [];
 
-  const data = await res.json();
-  const items = data.items || [];
+  const data: unknown = await res.json();
+  const items = data && typeof data === "object" && "items" in data && Array.isArray(data.items)
+    ? data.items as {
+        id?: string;
+        summary?: string;
+        description?: string;
+        start?: { dateTime?: string; date?: string };
+        end?: { dateTime?: string; date?: string };
+      }[]
+    : [];
 
-  return items.map((item: any) => ({
-    id: item.id,
-    summary: item.summary || "Événement Google Calendar",
-    description: item.description,
-    start: item.start?.dateTime || item.start?.date || "",
-    end: item.end?.dateTime || item.end?.date || "",
-    isAllDay: Boolean(item.start?.date),
-  }));
+  return items.flatMap((item) => {
+    if (typeof item.id !== "string" || !item.id) return [];
+    return [{
+      id: item.id,
+      summary: item.summary || "Événement Google Calendar",
+      description: item.description,
+      start: item.start?.dateTime || item.start?.date || "",
+      end: item.end?.dateTime || item.end?.date || "",
+      isAllDay: Boolean(item.start?.date),
+    }];
+  });
 }

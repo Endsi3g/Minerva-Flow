@@ -67,8 +67,9 @@ scaffolds techniques, pas des fonctionnalités activées :
   externe est connecté ou qu’un flux a été validé en production.
 - 🧭 **Cible, pas capacité générale à promettre** : app Android white-label,
   création/publication automatisée d’apps par client et livraison tarifée
-  selon distance/temps. L’iOS natif est livré comme app Minerva Flow; le
-  build 1.0 (11) est exporté mais pas encore téléversé sur TestFlight.
+  selon distance/temps. L’iOS natif Minerva Flow `1.0 (11)` est disponible
+  dans TestFlight; il ne contient pas la source de la candidate `2.48.0`,
+  qui nécessite un nouveau build iOS avant d’être annoncée aux testeurs.
 
 Pour les formulations exactes et les parcours détaillés, consulter
 [`docs/PRODUCT_GUIDE_OWNER_CLIENT.md`](PRODUCT_GUIDE_OWNER_CLIENT.md).

@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Field, Input, Select } from "@/components/minerva/FormField";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import type { InventoryItem, InventoryMovementType, Supplier } from "@/lib/types";
 import { PackageSearch, Plus, Trash2, TriangleAlert, ShoppingCart, ArrowRight, Sparkles } from "lucide-react";
@@ -111,7 +111,7 @@ function NewInventoryItemModal({
           <Field label="Quantité initiale">
             <Input name="quantityOnHand" type="number" min="0" step="0.5" defaultValue="0" />
           </Field>
-          <Field label="Seuil de réappro" hint="Optionnel">
+          <Field label="Cible de réappro" hint="L’alerte propriétaire se déclenche à 30 % ou moins de cette quantité.">
             <Input name="parLevel" type="number" min="0" step="0.5" />
           </Field>
         </div>
@@ -157,13 +157,18 @@ function MovementModal({
   onUpdated: (item: InventoryItem) => void;
 }) {
   const [type, setType] = useState<InventoryMovementType>("reception");
+  const [adjustDirection, setAdjustDirection] = useState<"add" | "remove">("add");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!item) return;
     const form = new FormData(e.currentTarget);
-    const quantity = Number(form.get("quantity") ?? 0);
+    const enteredQuantity = Number(form.get("quantity") ?? 0);
+    // The field always asks for a positive magnitude — only "ajustement"
+    // needs a direction, since it's the one type meant to reconcile a
+    // physical count either way instead of always moving stock one way.
+    const quantity = type === "ajustement" && adjustDirection === "remove" ? -enteredQuantity : enteredQuantity;
     const reason = String(form.get("reason") ?? "") || null;
 
     setIsSubmitting(true);
@@ -195,6 +200,14 @@ function MovementModal({
             ))}
           </Select>
         </Field>
+        {type === "ajustement" && (
+          <Field label="Sens de la correction" hint="Pour aligner le compte sur un inventaire physique, sans passer par le gaspillage.">
+            <Select value={adjustDirection} onChange={(e) => setAdjustDirection(e.target.value as "add" | "remove")}>
+              <option value="add">Ajouter au compte (ex : oubli de réception)</option>
+              <option value="remove">Retirer du compte (ex : compte physique plus bas)</option>
+            </Select>
+          </Field>
+        )}
         <Field label={`Quantité (${item.unit})`}>
           <Input name="quantity" type="number" min="0.01" step="0.01" required autoFocus />
         </Field>

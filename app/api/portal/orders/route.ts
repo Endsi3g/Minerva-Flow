@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveNativeCustomer } from "@/lib/auth/native-bearer";
-import { submitPortalOrder, type PortalOrderCartLine } from "@/lib/data/customer-portal";
+import { resumePortalOrder, submitPortalOrder, type PortalOrderCartLine } from "@/lib/data/customer-portal";
 
 /**
  * Bridge for the native app's checkout — submitPortalOrder is a
@@ -25,6 +25,8 @@ export async function POST(req: Request) {
     payOnline?: boolean;
     delivery?: { address?: string };
     requestedReadyAtLocal?: string | null;
+    idempotencyKey?: string;
+    resumeOnly?: boolean;
   };
   try {
     body = await req.json();
@@ -32,9 +34,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Requête invalide" }, { status: 400 });
   }
 
+  if (body.resumeOnly === true) {
+    if (!body.idempotencyKey || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.idempotencyKey)) {
+      return NextResponse.json({ ok: false, error: "Identifiant de commande invalide" }, { status: 400 });
+    }
+    const result = await resumePortalOrder(customer, body.idempotencyKey);
+    if (!result.ok) return NextResponse.json({ ok: false, error: "Commande introuvable ou non récupérable" }, { status: 404 });
+    return NextResponse.json(result);
+  }
+
   const cart = Array.isArray(body.cart) ? body.cart : [];
   if (cart.length === 0) {
     return NextResponse.json({ ok: false, error: "Le panier est vide" }, { status: 400 });
+  }
+  if (!body.idempotencyKey || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.idempotencyKey)) {
+    return NextResponse.json({ ok: false, error: "Identifiant de commande invalide" }, { status: 400 });
   }
 
   const delivery = body.delivery?.address?.trim()
@@ -45,6 +59,7 @@ export async function POST(req: Request) {
     cart,
     body.tipAmount ?? 0,
     body.paymentMethod ?? null,
+    body.idempotencyKey,
     "mobile",
     delivery,
     body.requestedReadyAtLocal ?? null,

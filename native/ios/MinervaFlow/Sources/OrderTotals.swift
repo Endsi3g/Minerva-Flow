@@ -16,6 +16,15 @@ struct OrderTotals {
 
     init(lines: [(item: NativeMenuItem, quantity: Int)], taxRate: Double, tipPct: Double?) {
         let subtotal = lines.reduce(0) { $0 + $1.item.price * Double($1.quantity) }
+        self.init(subtotal: subtotal, taxRate: taxRate, tipPct: tipPct)
+    }
+
+    init(lines: [NativeCartLine], taxRate: Double, tipPct: Double?) {
+        let subtotal = lines.reduce(0) { $0 + $1.total }
+        self.init(subtotal: subtotal, taxRate: taxRate, tipPct: tipPct)
+    }
+
+    private init(subtotal: Double, taxRate: Double, tipPct: Double?) {
         let taxAmount = Self.roundedToCents(subtotal * taxRate)
         let tipAmount = tipPct.map { Self.roundedToCents(subtotal * $0) } ?? 0
         self.subtotal = subtotal

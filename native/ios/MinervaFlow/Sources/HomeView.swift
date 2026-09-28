@@ -18,11 +18,17 @@ struct HomeView: View {
     @State private var selectedReward: LoyaltyReward?
 
     private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+    private var restaurantCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = supabase.restaurantTimezone
+        return calendar
+    }
     private var birthdayOfferTriggerKey: String {
         [
             supabase.customer?.id ?? "none",
             supabase.customer?.birthday ?? "no-birthday",
             supabase.birthdayOffer?.id ?? "no-offer",
+            supabase.restaurantTimezone.identifier,
             supabase.isLoadingData ? "loading" : "ready",
         ].joined(separator: "|")
     }
@@ -32,6 +38,10 @@ struct HomeView: View {
             if let customer = supabase.customer {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
+                        if let branding = supabase.activeTenantBranding,
+                           branding.restaurantId == customer.restaurantId {
+                            tenantBrandHeader(branding)
+                        }
                         pinnedHeader(for: customer)
 
                         if !supabase.announcements.isEmpty {
@@ -43,7 +53,7 @@ struct HomeView: View {
                         nextRewardCard(for: customer)
 
                         if customer.marketingConsent,
-                           BirthdayOfferEligibility.isBirthdayToday(customer.birthday),
+                           BirthdayOfferEligibility.isBirthdayToday(customer.birthday, calendar: restaurantCalendar),
                            let offer = supabase.birthdayOffer {
                             birthdayOfferCard(offer)
                         }
@@ -122,15 +132,49 @@ struct HomeView: View {
         supabase.customer?.name.split(separator: " ").first.map(String.init) ?? ""
     }
 
+    private func tenantBrandHeader(_ branding: NativeTenantBranding) -> some View {
+        HStack(spacing: 10) {
+            if let logoUrl = branding.logoUrl, let url = URL(string: logoUrl) {
+                AsyncImage(url: url) { image in
+                    image.resizable().scaledToFit()
+                } placeholder: {
+                    RoundedRectangle(cornerRadius: 10).fill(MinervaColor.emerald.opacity(0.1))
+                }
+                .frame(width: 38, height: 38)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+            } else {
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .frame(width: 38, height: 38)
+                    .background(MinervaColor.emerald.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(branding.brandName)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+                Text(isFrench ? "Votre espace restaurant" : "Your restaurant space")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(MinervaColor.inkSoft)
+            }
+            Spacer()
+            Circle().fill(MinervaColor.emerald).frame(width: 7, height: 7)
+        }
+        .padding(11)
+        .background(MinervaColor.surface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MinervaColor.border, lineWidth: 1))
+        .accessibilityElement(children: .combine)
+    }
+
     private func presentBirthdayOfferIfNeeded() {
         guard !supabase.isLoadingData,
               let customer = supabase.customer,
               customer.marketingConsent,
-              BirthdayOfferEligibility.isBirthdayToday(customer.birthday),
+              BirthdayOfferEligibility.isBirthdayToday(customer.birthday, calendar: restaurantCalendar),
               let offer = supabase.birthdayOffer
         else { return }
 
-        let year = Calendar.current.component(.year, from: Date())
+        let year = restaurantCalendar.component(.year, from: Date())
         let seenKey = "birthday-offer-shown-\(customer.id)-\(year)"
         guard !UserDefaults.standard.bool(forKey: seenKey) else { return }
         birthdayOffer = offer

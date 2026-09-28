@@ -20,18 +20,34 @@ enum AppLanguagePreference {
     }
 }
 
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case light, system, dark
+    var id: String { rawValue }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .light: .light
+        case .system: nil
+        case .dark: .dark
+        }
+    }
+
+    func label(isFrench: Bool) -> String {
+        switch self {
+        case .light: isFrench ? "Clair" : "Light"
+        case .system: isFrench ? "Système" : "System"
+        case .dark: isFrench ? "Sombre" : "Dark"
+        }
+    }
+}
+
 struct LanguageMenu: View {
     @Binding var language: AppLanguage
+    @State private var isChoosingLanguage = false
 
     var body: some View {
-        Menu {
-            ForEach(AppLanguage.allCases) { option in
-                Button {
-                    language = option
-                } label: {
-                    Label(option == .fr ? "Français" : "English", systemImage: language == option ? "checkmark" : "")
-                }
-            }
+        Button {
+            isChoosingLanguage = true
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: "globe")
@@ -42,9 +58,22 @@ struct LanguageMenu: View {
             .padding(.vertical, 8)
             .background(.white.opacity(0.16))
             .clipShape(Capsule())
+            .contentShape(Capsule())
         }
+        .buttonStyle(.plain)
         .foregroundStyle(.white)
+        .confirmationDialog(
+            language == .fr ? "Choisir une langue" : "Choose a language",
+            isPresented: $isChoosingLanguage,
+            titleVisibility: .visible
+        ) {
+            ForEach(AppLanguage.allCases) { option in
+                Button(option == .fr ? "Français" : "English") { language = option }
+            }
+            Button(language == .fr ? "Annuler" : "Cancel", role: .cancel) {}
+        }
         .accessibilityLabel(language == .fr ? "Langue: français" : "Language: English")
+        .accessibilityIdentifier("languagePicker")
     }
 }
 
@@ -54,17 +83,44 @@ struct LanguageMenu: View {
 /// between light/dark (the wallet card is always dark-on-brand regardless
 /// of system appearance, matching the web version).
 enum MinervaColor {
-    static let cream = Color(red: 0xF5 / 255, green: 0xF1 / 255, blue: 0xE6 / 255)
-    static let creamSoft = Color(red: 0xFA / 255, green: 0xFA / 255, blue: 0xF5 / 255)
-    static let ink = Color(red: 0x1B / 255, green: 0x26 / 255, blue: 0x20 / 255)
-    static let inkSoft = Color(red: 0x56 / 255, green: 0x64 / 255, blue: 0x5A / 255)
-    static let inkFaint = Color(red: 0x8A / 255, green: 0x91 / 255, blue: 0x88 / 255)
-    static let emerald = Color(red: 0x16 / 255, green: 0x7F / 255, blue: 0x5B / 255)
-    static let emeraldDark = Color(red: 0x0E / 255, green: 0x5A / 255, blue: 0x40 / 255)
+    private static func rgb(_ hex: UInt32) -> UIColor {
+        UIColor(
+            red: CGFloat((hex >> 16) & 0xff) / 255,
+            green: CGFloat((hex >> 8) & 0xff) / 255,
+            blue: CGFloat(hex & 0xff) / 255,
+            alpha: 1
+        )
+    }
+
+    private static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark ? rgb(dark) : rgb(light)
+        })
+    }
+
+    private static func tenantAware(primaryKey: String, fallbackLight: UInt32, fallbackDark: UInt32) -> Color {
+        guard let hex = UserDefaults.standard.string(forKey: primaryKey),
+              hex.count == 7, hex.first == "#",
+              let value = UInt32(hex.dropFirst(), radix: 16) else {
+            return adaptive(light: fallbackLight, dark: fallbackDark)
+        }
+        return Color(uiColor: rgb(value))
+    }
+
+    // Semantic palette shared by every native screen. Wallet/brand artwork
+    // may opt into fixed colors; application surfaces and copy must not.
+    static let cream = adaptive(light: 0xF5F1E6, dark: 0x14170F)
+    static let creamSoft = adaptive(light: 0xFAFAF5, dark: 0x1A1E14)
+    static let surface = adaptive(light: 0xFFFEFA, dark: 0x1F2418)
+    static let ink = adaptive(light: 0x1B2620, dark: 0xF3F2EA)
+    static let inkSoft = adaptive(light: 0x56645A, dark: 0xB9C0B0)
+    static let inkFaint = adaptive(light: 0x687367, dark: 0xA0A794)
+    static var emerald: Color { tenantAware(primaryKey: "activeTenantPrimaryColor", fallbackLight: 0x167F5B, fallbackDark: 0x1C9A6F) }
+    static var emeraldDark: Color { tenantAware(primaryKey: "activeTenantSecondaryColor", fallbackLight: 0x0E5A40, fallbackDark: 0x4ADE9B) }
     /// Web's --mv-lime — the Ambassadeur tier's banner color, matching
     /// Starbucks' Gold-status treatment.
-    static let limeAccent = Color(red: 0xDF / 255, green: 0xFF / 255, blue: 0x5F / 255)
-    static let border = Color(red: 0x1B / 255, green: 0x26 / 255, blue: 0x20 / 255).opacity(0.1)
+    static var limeAccent: Color { tenantAware(primaryKey: "activeTenantAccentColor", fallbackLight: 0xDFFF5F, fallbackDark: 0xDFFF5F) }
+    static let border = adaptive(light: 0xE6E0D0, dark: 0x33392A)
 }
 
 /// Every primary button in the app uses this — a bare Button with no
