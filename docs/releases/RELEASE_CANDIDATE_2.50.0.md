@@ -30,6 +30,10 @@ Captures illustratives construites avec des données synthétiques : [recommanda
 
 ## Livraison
 
-Commit de code livré : `b6b069288e59bca07da3de67f85368532d6aa56f` (`main`). Le déploiement Vercel Production `dpl_FgQPXkfKNPibTiydqBzdF4riTPPw` est `READY` et sert `https://minerva-flow-q6w91xijt-endsi3gs-projects.vercel.app`; les domaines `minervaflow.app` et `www.minervaflow.app` y sont rattachés. Le tag GitHub `v2.50.0` publie les notes et captures, puis le workflow dédié crée l’entrée de changelog et envoie l’annonce au segment de consentement explicite; son exécution consigne le résultat.
+Commit de code livré : `b6b069288e59bca07da3de67f85368532d6aa56f` (`main`); le dossier de release est au commit `21da60d6b04c2caa83871dd8bcd1661daac4a916`. Le déploiement Vercel Production du code `dpl_FgQPXkfKNPibTiydqBzdF4riTPPw` est `READY`; après le commit de dossier, `dpl_3NaVU6DyjDcVu1bB6iPebD6dLvFH` est aussi `READY` sur `main`. Les routes de connexion répondent 200 sur `https://minervaflow.app`.
+
+La release GitHub [v2.50.0](https://github.com/Endsi3g/Minerva-Flow/releases/tag/v2.50.0) est publiée avec les captures ordinateur et mobile. Son workflow automatique a échoué sur HTTP 500 avant de créer l’entrée de changelog; une lecture seule de la base a confirmé l’absence de ligne. L’entrée a ensuite été créée une fois dans le journal de l’application et vérifiée en production (ID `d8d250f5-9e3e-4c1c-9e61-4d45eb33fd51`).
+
+Le broadcast automatisé n’ayant pas été créé, l’annonce a été envoyée manuellement par Resend au segment des 22 contacts actifs ayant explicitement accepté les annonces produit. État Resend : `sent`, le 2026-09-29 à 14:34 UTC; désabonnement et adresse postale inclus. L’action automatique GitHub → journal/notifications doit être diagnostiquée avant la prochaine release. Cette réparation de l’entrée de journal n’a pas ré-envoyé l’annonce et n’a pas déclenché une notification push.
 
 La recommandation de release est `READY WITH CONDITIONS` tant que le parcours Owner authentifié n’a pas été vérifié avec une session de staging. Le déploiement demandé par le propriétaire peut être effectué; cette limitation doit rester visible.
