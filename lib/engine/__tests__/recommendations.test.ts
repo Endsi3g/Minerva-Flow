@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeRecommendations, type ComputeRecommendationsInput } from "@/lib/engine/recommendations";
-import type { Alert, Campaign, Program, ServiceDay } from "@/lib/types";
+import type { Alert, Campaign, MenuItem, Program, ServiceDay } from "@/lib/types";
 
 function alert(overrides: Partial<Alert>): Alert {
   return {
@@ -37,8 +37,42 @@ function baseInput(overrides: Partial<ComputeRecommendationsInput> = {}): Comput
 
 describe("computeRecommendations", () => {
   it("suggests a weekday activation from a revenue-drop alert", () => {
-    const recs = computeRecommendations(baseInput({ alerts: [alert({ id: "revenue-drop-x", date: "2026-03-09" })] }));
-    expect(recs.some((r) => r.id === "rec-weak-weekday")).toBe(true);
+    const recs = computeRecommendations(baseInput({ alerts: [alert({ id: "revenue-drop-x", date: new Date().toISOString().slice(0, 10) })] }));
+    const rec = recs.find((r) => r.id === "rec-weak-weekday");
+    expect(rec).toBeDefined();
+    expect(rec?.evidenceFreshness).toMatchObject({ status: "recent", asOf: new Date().toISOString().slice(0, 10) });
+    expect(rec?.confidenceScore).toBeUndefined();
+    expect(rec?.impactEstimate).toBeUndefined();
+  });
+
+  it("marks old signals and unknown source dates without implying freshness", () => {
+    const oldDate = new Date(Date.now() - 60 * 86_400_000).toISOString().slice(0, 10);
+    const stale = computeRecommendations(baseInput({ alerts: [alert({ id: "revenue-drop-x", date: oldDate })] }))
+      .find((r) => r.id === "rec-weak-weekday");
+    expect(stale?.evidenceFreshness).toMatchObject({ status: "stale", asOf: oldDate });
+
+    const unknown = computeRecommendations(baseInput({
+      campaigns: [{ id: "c-unknown", name: "Sans date", type: "post", channel: "Instagram", restaurantId: "r1", startDate: "2026-01-01", endDate: "2026-12-31", status: "active", description: "", estimatedRevenue: 50, impact: "faible", visites: 100, timeline: [], notes: [] }],
+    })).find((r) => r.id === "rec-campaign-c-unknown");
+    expect(unknown?.evidenceFreshness).toMatchObject({ status: "unknown", asOf: null });
+  });
+
+  it("flags a menu cost ratio and a missing food cost without projecting a sales gain", () => {
+    const menu: MenuItem[] = [
+      { id: "item-1", restaurantId: "r1", name: "Plat faible marge", category: "Mains", price: 10, foodCost: 4, unitsSold: 20, active: true, description: null, imageUrl: null, imageUrls: [], isDraft: false, createdAt: "2026-01-01", updatedAt: new Date().toISOString() },
+      { id: "item-2", restaurantId: "r1", name: "Coût à vérifier", category: "Mains", price: 12, foodCost: 0, unitsSold: 2, active: true, description: null, imageUrl: null, imageUrls: [], isDraft: false, createdAt: "2026-01-01", updatedAt: new Date().toISOString() },
+    ];
+    const recs = computeRecommendations(baseInput({ menuItems: menu }));
+    expect(recs.find((r) => r.id === "rec-menu-margin-item-1")?.impactKind).toBe("qualitative");
+    expect(recs.find((r) => r.id === "rec-menu-costs-missing")?.diagnosis).toContain("coût matière");
+  });
+
+  it("suggests reviewing loyalty rewards without applying a reward automatically", () => {
+    const recs = computeRecommendations(baseInput({ loyaltyState: { memberCount: 4, activeRewards: [] } }));
+    const rec = recs.find((item) => item.id === "rec-loyalty-no-active-rewards");
+    expect(rec?.category).toBe("fidelite");
+    expect(rec?.suggestedAction).toContain("Vérifier");
+    expect(rec?.evidenceFreshness).toMatchObject({ status: "unknown" });
   });
 
   it("suggests checking an expense category from a spike alert", () => {

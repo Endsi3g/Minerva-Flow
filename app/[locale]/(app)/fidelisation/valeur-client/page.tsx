@@ -6,6 +6,7 @@ import { getCurrentMembership, getCurrentRestaurantId } from "@/lib/data/current
 import { getCustomers } from "@/lib/data/customers";
 import { getMenuItems } from "@/lib/data/menu";
 import { createClient } from "@/lib/supabase/server";
+import { computeLifetimeValueComponents } from "@/lib/engine/lifetime-value";
 import { LifetimeValueView, type AcquisitionCostRow } from "./LifetimeValueView";
 import type { AcquisitionCostCategory } from "./actions";
 
@@ -31,17 +32,8 @@ export default async function LifetimeValuePage() {
     spentOn: row.spent_on,
     note: row.note,
   })) satisfies AcquisitionCostRow[];
-  const customersWithSpend = customers.filter((customer) => customer.totalSpent > 0);
-  const revenueLtv = customersWithSpend.length ? customersWithSpend.reduce((sum, customer) => sum + customer.totalSpent, 0) / customersWithSpend.length : 0;
-  const pricedItems = menuItems.filter((item) => item.price > 0 && item.active && !item.isDraft);
-  const weightedUnits = pricedItems.reduce((sum, item) => sum + Math.max(0, item.unitsSold), 0);
-  const grossMarginPct = weightedUnits > 0
-    ? pricedItems.reduce((sum, item) => sum + Math.max(0, item.unitsSold) * Math.max(0, Math.min(1, (item.price - item.foodCost) / item.price)), 0) / weightedUnits
-    : pricedItems.length
-      ? pricedItems.reduce((sum, item) => sum + Math.max(0, Math.min(1, (item.price - item.foodCost) / item.price)), 0) / pricedItems.length
-      : 0;
-  const marginLtv = revenueLtv * grossMarginPct;
-  const metrics = { customers: customersWithSpend.length, revenueLtv, marginLtv, grossMarginPct };
+  const ltv = computeLifetimeValueComponents(customers, menuItems);
+  const metrics = { ...ltv };
   const canEdit = membership?.restaurantId === restaurantId && ["owner", "manager"].includes(membership.role);
 
   return <LifetimeValueView restaurantId={restaurantId} metrics={metrics} costs={costs} newCustomers={newCustomerResult.count ?? 0} canEdit={canEdit} />;

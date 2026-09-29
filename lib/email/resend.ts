@@ -1,6 +1,6 @@
 import "server-only";
 import { Resend } from "resend";
-import { getActiveUserContacts } from "@/lib/data/users";
+import { ACTIVE_PRODUCT_UPDATES_SEGMENT_ID } from "@/lib/email/product-updates";
 import { renderMinervaEmail } from "@/lib/email/brand-shell";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -475,10 +475,10 @@ function campaignEmailHtml({
             <tr>
               <td style="padding:28px 8px 0;">
                 <p style="margin:0 0 6px; font-size:12px; line-height:1.6; color:#8d9488;">
-                  Vous recevez ce courriel parce que vous avez un compte actif sur Minerva Flow.
+                  Vous recevez ce courriel parce que vous avez choisi de recevoir les annonces produit de Minerva Flow.
                 </p>
                 <p style="margin:0; font-size:12px; line-height:1.6; color:#8d9488;">
-                  <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#8d9488; text-decoration:underline;">Se désabonner des annonces</a> · Minerva Flow
+                  <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#8d9488; text-decoration:underline;">Se désabonner des annonces</a> · Minerva Flow<br />Minerva Technologies Inc. · 367 rue Laberge, Repentigny (Québec) J6A 4C2
                 </p>
               </td>
             </tr>
@@ -490,62 +490,10 @@ function campaignEmailHtml({
 </html>`;
 }
 
-const UPDATES_SEGMENT_NAME = "Mises à jour — Minerva Flow";
-
-/**
- * Resend Segments (formerly "Audiences") hold the contact list a Broadcast
- * sends to. Looked up by name rather than cached by id since this only runs
- * on a changelog publish (a few times a month at most) — the extra list
- * call is negligible and avoids a stale-id env var to maintain.
- */
-async function getOrCreateUpdatesSegment(): Promise<string | null> {
-  if (!resend) return null;
-
-  const { data: existing } = await resend.segments.list();
-  const found = existing?.data.find((s) => s.name === UPDATES_SEGMENT_NAME);
-  if (found) return found.id;
-
-  const { data: created, error } = await resend.segments.create({ name: UPDATES_SEGMENT_NAME });
-  if (error || !created) return null;
-  return created.id;
-}
-
-/**
- * Best-effort upsert: Resend's create-contact call errors on an email
- * already in the segment, which we don't distinguish from a real failure
- * here — the segment membership is what matters and it's already correct
- * either way. Run in parallel since this can be a few dozen contacts.
- */
-async function syncUpdatesSegmentContacts(
-  segmentId: string,
-  contacts: { email: string; fullName: string | null }[]
-): Promise<void> {
-  if (!resend) return;
-  await Promise.all(
-    contacts.map((c) =>
-      resend!.contacts.create({
-        email: c.email,
-        firstName: c.fullName ?? undefined,
-        segments: [{ id: segmentId }],
-      })
-    )
-  );
-}
-
 /**
  * Sends the changelog announcement as an email campaign (Resend Broadcast)
- * to every active platform user, in addition to the in-app/push
- * notification `notifyAllUsers` already fires. Complements, doesn't
- * replace: push is the "come back now" nudge, this is the durable copy
- * that lands in an inbox even for someone who never opened the app since
- * the last update.
- *
- * Resend rejects Broadcasts entirely — even as a draft — when `from` is on
- * the shared `resend.dev` sandbox domain ("Broadcasts cannot be sent from
- * resend.dev. Please use a verified domain owned by your team."). Until
- * RESEND_FROM_EMAIL points at a verified domain, this stays a no-op that
- * still keeps the Resend contact segment in sync so the campaign is ready
- * to fire the moment a domain is verified — no code change needed then.
+ * only to the curated, active opt-in segment. In-app/push announcements
+ * remain separate and may still reach all eligible application users.
  */
 export async function sendChangelogCampaignEmail({
   title,
@@ -560,17 +508,9 @@ export async function sendChangelogCampaignEmail({
 }): Promise<{ ok: boolean; reason?: string }> {
   if (!resend) return { ok: false, reason: "resend_not_configured" };
 
-  const contacts = await getActiveUserContacts();
-  if (contacts.length === 0) return { ok: false, reason: "no_recipients" };
-
-  const segmentId = await getOrCreateUpdatesSegment();
-  if (!segmentId) return { ok: false, reason: "segment_unavailable" };
-
-  await syncUpdatesSegmentContacts(segmentId, contacts);
-
   const ctaUrl = `${APP_ORIGIN}${link}`;
   const { error } = await resend.broadcasts.create({
-    segmentId,
+    segmentId: ACTIVE_PRODUCT_UPDATES_SEGMENT_ID,
     from: FROM_EMAIL,
     subject: `Nouveauté sur Minerva Flow : ${title}`,
     previewText: description.slice(0, 120),

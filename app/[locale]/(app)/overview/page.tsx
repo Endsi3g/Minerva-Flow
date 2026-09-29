@@ -23,6 +23,7 @@ import { getEmployees } from "@/lib/data/employees";
 import { getPurchaseOrders } from "@/lib/data/purchase-orders";
 import { getSuppliers } from "@/lib/data/suppliers";
 import { getCustomers } from "@/lib/data/customers";
+import { getLoyaltyRewards } from "@/lib/data/customers";
 import { getRetentionSends } from "@/lib/data/retention-sends";
 import { revenueTrend, margeTrend, joursTrend, type ReportData } from "@/lib/reports";
 import { computeAlerts } from "@/lib/engine/alerts";
@@ -111,7 +112,7 @@ export default async function OverviewPage({
       return new Date().toISOString().slice(0, 10);
     }
   })();
-  const weekAheadIso = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+  const weekAheadIso = new Date(new Date(`${todayIso}T12:00:00`).getTime() + 7 * 86_400_000).toISOString().slice(0, 10);
 
   // Single or active restaurant data loading
   const [
@@ -134,6 +135,7 @@ export default async function OverviewPage({
     retentionSends,
     retentionSendsAllTime,
     menuItems,
+    loyaltyRewards,
     syncTelemetry,
   ] = await Promise.all([
     getMyProfile(),
@@ -155,6 +157,7 @@ export default async function OverviewPage({
     getRetentionSends(activeRestaurantId, { from, to }),
     getRetentionSends(activeRestaurantId),
     getMenuItems(activeRestaurantId),
+    getLoyaltyRewards(activeRestaurantId),
     getRestaurantSyncTelemetry(activeRestaurantId),
   ]);
 
@@ -169,7 +172,8 @@ export default async function OverviewPage({
   const monthMarge = margTrend.reduce((sum, d) => sum + d.revenue, 0);
   const monthMargeIsEstimated = serviceDays.some((d) => d.expenses === undefined);
   const todayLabel = formatDateFull(todayIso);
-  const greeting = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+  const greetingIndex = todayIso.split("-").reduce((sum, part) => sum + Number(part), 0) % GREETINGS.length;
+  const greeting = GREETINGS[greetingIndex];
 
   const alerts = computeAlerts({
     serviceDays,
@@ -207,6 +211,9 @@ export default async function OverviewPage({
     serviceDays,
     alerts,
     laborCostPct: laborCost.pct,
+    menuItems,
+    inventoryItems,
+    loyaltyState: { memberCount: customers.length, activeRewards: loyaltyRewards.filter((reward) => reward.active) },
   });
 
   const unreadTableAlerts = tableAlerts.filter((a) => a.status === "nouvelle");

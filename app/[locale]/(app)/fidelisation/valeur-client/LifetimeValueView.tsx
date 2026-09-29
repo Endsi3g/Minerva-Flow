@@ -28,7 +28,7 @@ export function LifetimeValueView({
   canEdit,
 }: {
   restaurantId: string;
-  metrics: { customers: number; revenueLtv: number; marginLtv: number; grossMarginPct: number };
+  metrics: { customerCount: number; revenueLtv: number; marginLtv: number | null; combinedLtv: number | null; grossMarginPct: number | null; missingCostItemCount: number; hasSalesWeights: boolean };
   costs: AcquisitionCostRow[];
   newCustomers: number;
   canEdit: boolean;
@@ -60,9 +60,10 @@ export function LifetimeValueView({
       </Link>
       <PageHeader eyebrow="Fidélisation · Analyse client" title="Valeur client & acquisition" description="Suivez le revenu généré par client, la marge estimée et le coût d’acquisition sur les 12 derniers mois." />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard icon={<CircleDollarSign size={17} />} label="LTV combinée" value={metrics.combinedLtv === null ? "À confirmer" : formatCurrency(metrics.combinedLtv)} detail="LTV revenu + LTV marge estimée, selon votre méthode" />
         <MetricCard icon={<CircleDollarSign size={17} />} label="LTV revenu moyen" value={formatCurrency(metrics.revenueLtv)} detail="Revenu cumulé moyen par client avec achat" />
-        <MetricCard icon={<ChartNoAxesCombined size={17} />} label="LTV marge estimée" value={formatCurrency(metrics.marginLtv)} detail={`Marge actuelle du menu : ${Math.round(metrics.grossMarginPct * 100)} %`} />
+        <MetricCard icon={<ChartNoAxesCombined size={17} />} label="LTV marge estimée" value={metrics.marginLtv === null ? "À confirmer" : formatCurrency(metrics.marginLtv)} detail={metrics.grossMarginPct === null ? `${metrics.missingCostItemCount} coût(s) à confirmer; ${metrics.hasSalesWeights ? "marge" : "volumes vendus"} incomplets` : `Marge pondérée du menu : ${Math.round(metrics.grossMarginPct * 100)} %`} />
         <MetricCard icon={<ChartNoAxesCombined size={17} />} label="CAC moyen · 12 mois" value={cac === null ? "—" : formatCurrency(cac)} detail={`${formatCurrency(periodSpend)} de dépenses ÷ ${newCustomers} nouveaux clients`} />
       </div>
 

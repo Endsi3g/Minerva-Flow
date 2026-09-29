@@ -2,6 +2,18 @@
 
 Tous les changements notables apportés à Minerva Flow sont documentés dans ce fichier.
 
+## [2.50.0] — Recommandations explicables et qualité des données · 2026-09-29
+
+- Flow AI classe les conseils par menu, marge, stock, fidélité, opérations, finances ou campagnes. Une recommandation ne modifie aucune donnée sans validation du propriétaire.
+- Les cartes indiquent la date du signal source et distinguent les données récentes (14 jours ou moins), à actualiser (15–45 jours), anciennes (plus de 45 jours) et les dates inconnues.
+- Les scores de confiance en pourcentage et gains de campagnes non étayés ont été retirés. Les calculs de marge sont présentés comme des scénarios et leurs hypothèses sont visibles.
+- Les coûts matière à 0 $ ou à confirmer sont signalés pour vérification; les marges menu dont le coût dépasse 35 % du prix sont mises en évidence sans changer les prix.
+- Les membres sans récompense fidélité active reçoivent un conseil de configuration, sans activer de récompense automatiquement.
+- L’actualisation des recommandations utilise le moteur de règles vérifiables pendant que l’enrichissement IA est suspendu; les données et sources seront consolidées avant son retour.
+- La page Valeur client affiche la LTV combinée comme LTV revenu + LTV marge estimée, ainsi que les deux composantes et le CAC basé sur publicité, commissions, agence, promotions et équipement. La LTV marge et la somme combinée restent « à confirmer » si les coûts matière ou les volumes vendus manquent.
+- Aperçus du panneau de recommandations avec données synthétiques : [ordinateur](docs/screenshots/recommendations-menu-desktop-2026-09-28.png) · [mobile](docs/screenshots/recommendations-menu-mobile-2026-09-28.png).
+- Les annonces par courriel de cette release utilisent le segment des contacts actifs ayant explicitement choisi les mises à jour produit. Les destinataires peuvent se désabonner; l’avis comprend l’adresse postale de Minerva Technologies Inc.
+
 ## 2026-09-28 — Synchronisation temps réel web et iOS
 
 - Le bus Realtime du web couvre les commandes, réservations, fidélité, menus, stocks, alertes, campagnes, équipe et activités avec abonnement limité au restaurant courant et rafraîchissement groupé.

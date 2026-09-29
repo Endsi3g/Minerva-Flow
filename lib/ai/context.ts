@@ -10,6 +10,7 @@ import { getAlertRules } from "@/lib/data/alerts";
 import { getConnections, getFinancialTransactions } from "@/lib/data/finance";
 import { getMenuItems } from "@/lib/data/menu";
 import { getCustomers } from "@/lib/data/customers";
+import { getLoyaltyRewards } from "@/lib/data/customers";
 import { getInventoryItems } from "@/lib/data/inventory";
 import { classifyMenuItems, getMarginDriftItems, quadrantLabel, MARGIN_DRIFT_FOOD_COST_PCT } from "@/lib/menu-engineering";
 import { getInactiveCustomers } from "@/lib/engine/retention";
@@ -153,7 +154,7 @@ ${marginDriftLines ? `- Dérives marge: ${marginDriftLines}\n` : ""}- Fidélité
 }
 
 export async function ruleBasedFallback(restaurantId: string): Promise<Recommendation[]> {
-  const [days, restaurantPrograms, restaurantCampaigns, restaurantConnections, transactions, rules] =
+  const [days, restaurantPrograms, restaurantCampaigns, restaurantConnections, transactions, rules, inventoryItems, menuItems, customers, rewards] =
     await Promise.all([
       getServiceDays(restaurantId, { from: isoDaysAgo(CONTEXT_WINDOW_DAYS) }),
       getPrograms(restaurantId),
@@ -161,6 +162,10 @@ export async function ruleBasedFallback(restaurantId: string): Promise<Recommend
       getConnections(restaurantId),
       getFinancialTransactions(restaurantId, { from: isoDaysAgo(CONTEXT_WINDOW_DAYS) }),
       getAlertRules(restaurantId),
+      getInventoryItems(restaurantId),
+      getMenuItems(restaurantId),
+      getCustomers(restaurantId),
+      getLoyaltyRewards(restaurantId),
     ]);
 
   const alerts = computeAlerts({
@@ -168,6 +173,7 @@ export async function ruleBasedFallback(restaurantId: string): Promise<Recommend
     connections: restaurantConnections,
     alertRules: rules,
     financialTransactions: transactions,
+    inventoryItems,
   });
   const windowRevenue = days.reduce((sum, d) => sum + d.revenue, 0);
   const laborCost = computeLaborCostPct({ amount: sumLaborCost(transactions), revenue: windowRevenue });
@@ -177,5 +183,8 @@ export async function ruleBasedFallback(restaurantId: string): Promise<Recommend
     serviceDays: days,
     alerts,
     laborCostPct: laborCost.pct,
+    inventoryItems,
+    menuItems,
+    loyaltyState: { memberCount: customers.length, activeRewards: rewards.filter((reward) => reward.active) },
   });
 }

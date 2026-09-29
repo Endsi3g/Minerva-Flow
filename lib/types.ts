@@ -471,6 +471,8 @@ export type RecommendationStatus =
   | "ignoree"
   | "terminee";
 
+export type RecommendationCategory = "menu" | "marge" | "stock" | "fidelite" | "operations" | "finances" | "campagnes";
+
 export type Recommendation = {
   id: string;
   diagnosis: string;
@@ -480,12 +482,18 @@ export type Recommendation = {
   relatedCampaignId?: string | null;
   status: RecommendationStatus;
   source: "regles" | "ia";
+  category?: RecommendationCategory;
   confidenceScore?: number;
   confidenceLevel?: "elevee" | "moyenne" | "indicative";
   dataSources?: string[];
   actionUrl?: string;
   actionLabel?: string;
   impactEstimate?: string;
+  impactKind?: "measured" | "scenario" | "qualitative";
+  evidenceFreshness?: {
+    status: "recent" | "aging" | "stale" | "unknown";
+    asOf: string | null;
+  };
   explanation?: string;
 };
 

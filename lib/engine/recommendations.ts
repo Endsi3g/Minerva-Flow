@@ -1,5 +1,6 @@
-import type { Alert, Campaign, Program, Recommendation, ServiceDay } from "@/lib/types";
+import type { Alert, Campaign, InventoryItem, LoyaltyReward, MenuItem, Program, Recommendation, ServiceDay } from "@/lib/types";
 import { LABOR_COST_TARGET_PCT } from "@/lib/engine/labor-cost";
+import { classifyMenuItems, MARGIN_DRIFT_FOOD_COST_PCT } from "@/lib/menu-engineering";
 
 const weekdayNames = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
@@ -9,6 +10,9 @@ export type ComputeRecommendationsInput = {
   serviceDays: ServiceDay[];
   alerts: Alert[];
   laborCostPct?: number | null;
+  menuItems?: MenuItem[];
+  inventoryItems?: InventoryItem[];
+  loyaltyState?: { memberCount: number; activeRewards: LoyaltyReward[] };
 };
 
 /**
@@ -27,6 +31,9 @@ export function computeRecommendations({
   serviceDays,
   alerts,
   laborCostPct,
+  menuItems = [],
+  inventoryItems = [],
+  loyaltyState,
 }: ComputeRecommendationsInput): Recommendation[] {
   const recs: Recommendation[] = [];
 
@@ -39,15 +46,15 @@ export function computeRecommendations({
       diagnosis: `Le ${weekdayNames[dow]} ressort régulièrement sous la moyenne des autres jours de la semaine.`,
       suggestedAction: `Tester une activation ciblée (promo, événement) le ${weekdayNames[dow]} pour combler ce creux.`,
       relatedMetric: "revenu",
+      category: "operations",
       status: "nouvelle",
       source: "regles",
-      confidenceScore: 0.91,
-      confidenceLevel: "elevee",
+      confidenceLevel: "indicative",
       dataSources: [`Historique des ventes sur 30 jours`, `Tickets de caisse des ${weekdayNames[dow]}s`],
       actionUrl: "/campaigns",
       actionLabel: "Créer une offre du jour",
-      impactEstimate: "+250 $ à +450 $ par service ciblé",
-      explanation: `L'écart de fréquentation récurrent le ${weekdayNames[dow]} indique une sous-capacité d'accueil rentable sans coût fixe additionnel.`,
+      impactKind: "qualitative",
+      explanation: `Une baisse de revenu est signalée le ${weekdayNames[dow]}. Le gain d'une activation n'est pas estimable avec les données actuelles.`,
     });
   }
 
@@ -60,14 +67,15 @@ export function computeRecommendations({
       diagnosis: `Une dépense sort nettement de la moyenne habituelle sur la catégorie "${category}".`,
       suggestedAction: `Vérifier cette transaction dans Finance → Transactions et confirmer qu'elle est justifiée.`,
       relatedMetric: "dépenses",
+      category: "finances",
       status: "nouvelle",
       source: "regles",
-      confidenceScore: 0.94,
-      confidenceLevel: "elevee",
+      confidenceLevel: "moyenne",
       dataSources: [`Grand livre des dépenses`, `Seuils de variance budgétaire`],
       actionUrl: "/finance",
       actionLabel: "Vérifier la transaction",
-      impactEstimate: "Contrôle immédiat des sorties de trésorerie",
+      impactEstimate: "Montant à vérifier dans la transaction source",
+      impactKind: "qualitative",
       explanation: `Cette ligne dépasse de plus de 2 écarts-types la moyenne observée sur la catégorie ${category}.`,
     });
   }
@@ -79,14 +87,15 @@ export function computeRecommendations({
       diagnosis: "Plusieurs journées récentes n'ont pas encore été saisies par l'équipe.",
       suggestedAction: "Relancer le staff pour compléter les notes de service sur Days — surtout les jours à forte variance.",
       relatedMetric: "journées de service",
+      category: "operations",
       status: "nouvelle",
       source: "regles",
-      confidenceScore: 0.88,
       confidenceLevel: "moyenne",
       dataSources: [`Rapports de clôture de caisse`, `Calendrier des services actifs`],
       actionUrl: "/days",
       actionLabel: "Compléter les journées",
-      impactEstimate: "Précision des calculs de rentabilité restaurée",
+      impactEstimate: "Impact non chiffré : des journées sont manquantes",
+      impactKind: "qualitative",
       explanation: `Sans ces données, la marge cumulée et le coût des aliments reposent sur des moyennes estimées.`,
     });
   }
@@ -107,16 +116,17 @@ export function computeRecommendations({
         diagnosis: `"${lowest.p.name}" tourne à ${Math.round(lowest.margin * 100)}% de marge, sous la moyenne de vos programmes actifs (${Math.round(avgMargin * 100)}%).`,
         suggestedAction: "Revoir le coût matière ou le prix de ce programme dans Programs.",
         relatedMetric: "marge",
+        category: "marge",
         relatedProgramId: lowest.p.id,
         status: "nouvelle",
         source: "regles",
-        confidenceScore: 0.92,
-        confidenceLevel: "elevee",
+        confidenceLevel: "moyenne",
         dataSources: [`Fiches de prix des programmes`, `Historique des coûts d'exécution`],
         actionUrl: `/programs?id=${lowest.p.id}`,
         actionLabel: "Optimiser le programme",
-        impactEstimate: `+${Math.round((avgMargin - lowest.margin) * lowest.p.revenue)} $ de marge recouvrable`,
-        explanation: `Ce programme génère du chiffre d'affaires mais dilue la rentabilité globale de l'établissement.`,
+        impactEstimate: `Scénario indicatif : ${Math.round((avgMargin - lowest.margin) * lowest.p.revenue)} $ si la marge rejoignait la moyenne, toutes choses égales par ailleurs.`,
+        impactKind: "scenario",
+        explanation: `Calcul basé sur le revenu et le coût enregistrés pour ce programme; ce montant n'est pas une prévision garantie.`,
       });
     }
   }
@@ -130,16 +140,17 @@ export function computeRecommendations({
       diagnosis: `"${weakCampaign.name}" génère beaucoup de visites mais peu de revenu mesurable par visite.`,
       suggestedAction: "Ajuster le ciblage ou l'offre de cette campagne, ou la remplacer par un format plus direct.",
       relatedMetric: "campagnes",
+      category: "campagnes",
       relatedCampaignId: weakCampaign.id,
       status: "nouvelle",
       source: "regles",
-      confidenceScore: 0.89,
       confidenceLevel: "moyenne",
       dataSources: [`Attribution des visites POS`, `Retombées de campagne`],
       actionUrl: "/campaigns",
       actionLabel: "Revoir la campagne",
-      impactEstimate: "Recentrage sur des clients à panier moyen plus élevé",
-      explanation: `Le coût d'acquisition ou la remise consentie est trop proche du panier additionnel constaté.`,
+      impactEstimate: "Impact financier non calculable : coût de campagne et attribution manquants",
+      impactKind: "qualitative",
+      explanation: `Le revenu estimé par visite est faible selon les données de campagne; le coût d'acquisition et la marge incrémentale ne sont pas disponibles ici.`,
     });
   }
 
@@ -151,14 +162,15 @@ export function computeRecommendations({
       diagnosis: `${rushDays.length} journées récentes ont été marquées "rush" — la demande dépasse parfois la capacité de service.`,
       suggestedAction: "Envisager un service supplémentaire ou une réservation obligatoire sur ces créneaux.",
       relatedMetric: "journées de service",
+      category: "operations",
       status: "nouvelle",
       source: "regles",
-      confidenceScore: 0.87,
       confidenceLevel: "moyenne",
       dataSources: [`Pointages de vitesse de rotation`, `Journal des incidents de service`],
       actionUrl: "/reservations",
       actionLabel: "Gérer les créneaux",
-      impactEstimate: "Fluidité du service et satisfaction client préservées",
+      impactEstimate: "Impact non chiffré : incidents et capacité non mesurés",
+      impactKind: "qualitative",
       explanation: `Les pics non gérés génèrent des retards en cuisine et risquent d'éroder la fidélité client.`,
     });
   }
@@ -174,14 +186,15 @@ export function computeRecommendations({
       diagnosis: `${itemName} est sous son seuil de réapprovisionnement.`,
       suggestedAction: `Passer une commande fournisseur pour ${itemName} depuis Fournisseurs avant la prochaine rupture.`,
       relatedMetric: "inventaire",
+      category: "stock",
       status: "nouvelle",
       source: "regles",
-      confidenceScore: 0.96,
-      confidenceLevel: "elevee",
+      confidenceLevel: "moyenne",
       dataSources: [`Stocks physiques en cuisine`, `Seuils de sécurité par ingrédient`],
       actionUrl: "/fournisseurs",
       actionLabel: "Commander au fournisseur",
-      impactEstimate: "Évite une rupture de plat en plein coup de feu",
+      impactEstimate: "Risque de rupture signalé; consommation et délai fournisseur à confirmer",
+      impactKind: "qualitative",
       explanation: `Le stock actuel est inférieur au délai de réapprovisionnement du fournisseur référencé.`,
     });
   }
@@ -195,17 +208,133 @@ export function computeRecommendations({
       diagnosis: `La masse salariale représente ${laborCostPct}% du chiffre d'affaires ce mois-ci, au-dessus de la cible de ${LABOR_COST_TARGET_PCT}%.`,
       suggestedAction: "Revoir les horaires de la semaine prochaine dans Horaire pour réduire la sur-couverture aux heures creuses.",
       relatedMetric: "masse salariale",
+      category: "finances",
       status: "nouvelle",
       source: "regles",
-      confidenceScore: 0.93,
-      confidenceLevel: "elevee",
+      confidenceLevel: "moyenne",
       dataSources: [`Planning des heures travaillées`, `Chiffre d'affaires net déclaré`],
       actionUrl: "/horaire",
       actionLabel: "Ajuster les shifts",
-      impactEstimate: `Gain estimé de ${Math.round((laborCostPct - LABOR_COST_TARGET_PCT) * 10) / 10} pt de masse salariale`,
-      explanation: `Chaque point de masse salariale au-dessus de ${LABOR_COST_TARGET_PCT}% réduit directement le bénéfice net de votre établissement.`,
+      impactEstimate: `${Math.round((laborCostPct - LABOR_COST_TARGET_PCT) * 10) / 10} point(s) au-dessus de la cible; aucun gain financier n'est projeté.`,
+      impactKind: "qualitative",
+      explanation: `La masse salariale calculée dépasse la cible de ${LABOR_COST_TARGET_PCT} %. Cet écart n'est pas une estimation d'économie réalisable.`,
     });
   }
 
-  return recs;
+  const publishedMenuItems = menuItems.filter((item) => item.active && !item.isDraft);
+  const activeMenuItems = publishedMenuItems.filter((item) => item.price > 0);
+  const menuWithMargin = classifyMenuItems(publishedMenuItems);
+  const costDrift = menuWithMargin.filter((item) => item.active && item.foodCost > 0 && item.foodCostPct !== null && item.foodCostPct > MARGIN_DRIFT_FOOD_COST_PCT);
+  for (const item of costDrift.slice(0, 3)) {
+    recs.push({
+      id: `rec-menu-margin-${item.id}`,
+      diagnosis: `Le coût matière de « ${item.name} » représente ${Math.round((item.foodCostPct ?? 0) * 100)} % de son prix.`,
+      suggestedAction: "Vérifier la fiche de coût et les portions, puis décider si une mise à jour du menu est pertinente.",
+      relatedMetric: "coût matière",
+      category: "marge",
+      status: "nouvelle",
+      source: "regles",
+      confidenceLevel: item.updatedAt ? "moyenne" : "indicative",
+      dataSources: ["Fiche de prix active", "Coût matière enregistré"],
+      actionUrl: "/menu",
+      actionLabel: "Examiner le menu",
+      impactEstimate: "Écart observé au seuil de 35 %; aucun gain financier n'est projeté sans volume de ventes fiable.",
+      impactKind: "qualitative",
+      explanation: `Prix enregistré : ${item.price.toFixed(2)} $. Coût matière enregistré : ${item.foodCost.toFixed(2)} $. Le seuil est un repère de diagnostic, pas une recommandation automatique de hausse de prix.`,
+    });
+  }
+  const activeItemsWithoutCost = activeMenuItems.filter((item) => item.foodCost <= 0);
+  if (activeItemsWithoutCost.length > 0) {
+    recs.push({
+      id: "rec-menu-costs-missing",
+      diagnosis: `${activeItemsWithoutCost.length} plat(s) actif(s) ont un coût matière à 0 $ ou à confirmer.`,
+      suggestedAction: "Compléter les coûts ou fiches recettes avant d'utiliser les estimations de marge et de LTV marge.",
+      relatedMetric: "qualité des coûts",
+      category: "menu",
+      status: "nouvelle",
+      source: "regles",
+      confidenceLevel: "indicative",
+      dataSources: ["Fiches de menu actives", ...activeItemsWithoutCost.slice(0, 4).map((item) => item.name)],
+      actionUrl: "/menu",
+      actionLabel: "Compléter les coûts",
+      impactEstimate: "Marge non calculable de façon fiable avec les coûts actuels.",
+      impactKind: "qualitative",
+      explanation: "Un coût à 0 $ peut être exact ou signaler une donnée manquante; vérifiez les fiches avant de tirer une conclusion.",
+    });
+  }
+
+  if (loyaltyState && loyaltyState.memberCount > 0 && loyaltyState.activeRewards.length === 0) {
+    recs.push({
+      id: "rec-loyalty-no-active-rewards",
+      diagnosis: `${loyaltyState.memberCount} profil(s) fidélité existent, mais aucune récompense n'est active.`,
+      suggestedAction: "Vérifier qu'une récompense simple et soutenable est configurée avant de promouvoir le programme.",
+      relatedMetric: "fidélité",
+      category: "fidelite",
+      status: "nouvelle",
+      source: "regles",
+      confidenceLevel: "moyenne",
+      dataSources: ["Profils clients fidélité", "Catalogue de récompenses"],
+      actionUrl: "/fidelisation/recompenses",
+      actionLabel: "Vérifier les récompenses",
+      impactEstimate: "Effet sur les visites à mesurer après validation de la récompense.",
+      impactKind: "qualitative",
+      explanation: "Aucun coût de récompense ni seuil n'est présumé; le propriétaire conserve la décision d'activation.",
+    });
+  }
+
+  return recs.map((recommendation) => ({
+    ...recommendation,
+    evidenceFreshness: inferEvidenceFreshness(recommendation, alerts, serviceDays, programs, menuItems, inventoryItems),
+  }));
+}
+
+function inferEvidenceFreshness(
+  recommendation: Recommendation,
+  alerts: Alert[],
+  serviceDays: ServiceDay[],
+  programs: Program[],
+  menuItems: MenuItem[],
+  inventoryItems: InventoryItem[],
+): NonNullable<Recommendation["evidenceFreshness"]> {
+  const alert = alerts.find((item) => {
+    if (recommendation.id === "rec-weak-weekday") return item.id.startsWith("revenue-drop");
+    if (recommendation.id === "rec-expense-spike") return item.id.startsWith("expense-spike");
+    if (recommendation.id === "rec-missing-days") return item.id === "missing-day-input";
+    return recommendation.id.includes(item.id) || item.id.includes(recommendation.id.replace(/^rec-/, ""));
+  });
+  const program = recommendation.relatedProgramId
+    ? programs.find((item) => item.id === recommendation.relatedProgramId)
+    : undefined;
+  const programDates = program?.dailyRevenue.map((entry) => entry.date).filter(Boolean) ?? [];
+  const serviceDates = serviceDays.map((day) => day.date).filter(Boolean);
+  const linkedInventoryAlert = recommendation.id.startsWith("rec-low-stock-")
+    ? alerts.find((item) => recommendation.id.includes(item.id))
+    : undefined;
+  const inventory = linkedInventoryAlert
+    ? inventoryItems.find((item) => item.id === linkedInventoryAlert.relatedEntityId) ??
+      inventoryItems.find((item) => linkedInventoryAlert.title.toLocaleLowerCase().includes(item.name.toLocaleLowerCase()))
+    : undefined;
+  const latestMenuUpdate = menuItems.map((item) => item.updatedAt).filter(Boolean).sort().at(-1) ?? null;
+  const asOf = recommendation.category === "campagnes"
+    ? null
+    : recommendation.category === "marge" && recommendation.id.startsWith("rec-menu-margin-")
+      ? menuItems.find((item) => recommendation.id.endsWith(item.id))?.updatedAt.slice(0, 10) ?? null
+      : recommendation.id === "rec-menu-costs-missing"
+        ? latestMenuUpdate?.slice(0, 10) ?? null
+        : recommendation.category === "stock"
+          ? inventory?.updatedAt.slice(0, 10) ?? alert?.date ?? null
+          : recommendation.id.startsWith("rec-margin-")
+            ? programDates.sort().at(-1) ?? null
+            : alert?.date ?? (recommendation.category === "operations" || recommendation.category === "finances"
+              ? serviceDates.sort().at(-1) ?? null
+              : null);
+  if (!asOf) return { status: "unknown", asOf: null };
+
+  const timestamp = new Date(`${asOf}T23:59:59`).getTime();
+  if (!Number.isFinite(timestamp)) return { status: "unknown", asOf: null };
+  const ageDays = Math.max(0, Math.floor((Date.now() - timestamp) / 86_400_000));
+  return {
+    status: ageDays <= 14 ? "recent" : ageDays <= 45 ? "aging" : "stale",
+    asOf,
+  };
 }

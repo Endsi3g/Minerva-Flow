@@ -4,6 +4,8 @@ import { Resend } from "resend";
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export const PRODUCT_UPDATES_SEGMENT_ID = "e284ea32-e32b-4d29-bd41-ffadf8586fb9";
+/** Curated, active opt-in segment used for release broadcasts. */
+export const ACTIVE_PRODUCT_UPDATES_SEGMENT_ID = "145e8afd-eb34-4033-806a-86484febd86d";
 export const ALL_ACCOUNTS_SEGMENT_ID = "c5b9b03c-273b-441e-bd47-22293f5f289a";
 
 type ProductUpdatesContact = {
@@ -40,7 +42,11 @@ export async function syncProductUpdatesContact({
         product_updates_opt_in: "true",
       },
       unsubscribed: false,
-      segments: [{ id: ALL_ACCOUNTS_SEGMENT_ID }, { id: PRODUCT_UPDATES_SEGMENT_ID }],
+      segments: [
+        { id: ALL_ACCOUNTS_SEGMENT_ID },
+        { id: PRODUCT_UPDATES_SEGMENT_ID },
+        { id: ACTIVE_PRODUCT_UPDATES_SEGMENT_ID },
+      ],
     });
     return !created.error;
   }
@@ -63,6 +69,7 @@ export async function syncProductUpdatesContact({
 
   const hasAllAccounts = memberships?.data?.some((segment) => segment.id === ALL_ACCOUNTS_SEGMENT_ID);
   const hasProductUpdates = memberships?.data?.some((segment) => segment.id === PRODUCT_UPDATES_SEGMENT_ID);
+  const hasActiveProductUpdates = memberships?.data?.some((segment) => segment.id === ACTIVE_PRODUCT_UPDATES_SEGMENT_ID);
 
   if (!hasAllAccounts) {
     const result = await resend.contacts.segments.add({
@@ -82,6 +89,20 @@ export async function syncProductUpdatesContact({
     const result = await resend.contacts.segments.remove({
       email: trimmedEmail,
       segmentId: PRODUCT_UPDATES_SEGMENT_ID,
+    });
+    if (result.error) return false;
+  }
+
+  if (optedIn && !hasActiveProductUpdates) {
+    const result = await resend.contacts.segments.add({
+      email: trimmedEmail,
+      segmentId: ACTIVE_PRODUCT_UPDATES_SEGMENT_ID,
+    });
+    if (result.error) return false;
+  } else if (!optedIn && hasActiveProductUpdates) {
+    const result = await resend.contacts.segments.remove({
+      email: trimmedEmail,
+      segmentId: ACTIVE_PRODUCT_UPDATES_SEGMENT_ID,
     });
     if (result.error) return false;
   }

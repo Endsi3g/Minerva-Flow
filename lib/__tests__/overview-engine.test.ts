@@ -282,7 +282,7 @@ describe("Overview Action-Oriented Engine", () => {
   });
 
   describe("computeRecommendations with explainability", () => {
-    it("generates recommendations with data sources, confidence, impact, and actions", () => {
+    it("generates evidence-aware recommendations with source dates and actions", () => {
       const alerts: Alert[] = [
         {
           id: "low-stock-saumon",
@@ -304,7 +304,7 @@ describe("Overview Action-Oriented Engine", () => {
       expect(recs.length).toBeGreaterThan(0);
       const stockRec = recs.find((r) => r.id.includes("low-stock"));
       expect(stockRec).toBeDefined();
-      expect(stockRec?.confidenceLevel).toBe("elevee");
+      expect(stockRec?.confidenceLevel).toBe("moyenne");
       expect(stockRec?.actionUrl).toBe("/fournisseurs");
       expect(stockRec?.dataSources).toBeDefined();
       expect(stockRec?.impactEstimate).toBeDefined();
@@ -312,7 +312,8 @@ describe("Overview Action-Oriented Engine", () => {
       const laborRec = recs.find((r) => r.id === "rec-labor-cost-high");
       expect(laborRec).toBeDefined();
       expect(laborRec?.actionUrl).toBe("/horaire");
-      expect(laborRec?.confidenceScore).toBeGreaterThan(0.9);
+      expect(laborRec?.confidenceScore).toBeUndefined();
+      expect(laborRec?.evidenceFreshness?.status).toBe("unknown");
     });
   });
 });
