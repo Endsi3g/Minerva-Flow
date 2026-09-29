@@ -25,9 +25,11 @@ Captures illustratives construites avec des données synthétiques : [recommanda
 | Build production (`npm run build`) | PASS — 355 routes générées |
 | `git diff --check` | PASS |
 | Parcours Owner authentifié sur staging | BLOQUÉ — aucun navigateur/session Owner n’était accessible dans cette session |
+| Smoke Production | PASS — `/fr/login`, `/en/login` et le manifeste répondent 200; les routes authentifiées redirigent vers la connexion |
+| Inspection visuelle réelle en navigateur | BLOQUÉE — navigateur interactif indisponible; les captures du dépôt sont des aperçus synthétiques, pas des captures de Production |
 
 ## Livraison
 
-À compléter après publication : SHA du commit, URL/ID du déploiement Production, état des smoke checks, tag GitHub, état du workflow d’annonce et résultat du broadcast consentant.
+Commit de code livré : `b6b069288e59bca07da3de67f85368532d6aa56f` (`main`). Le déploiement Vercel Production `dpl_FgQPXkfKNPibTiydqBzdF4riTPPw` est `READY` et sert `https://minerva-flow-q6w91xijt-endsi3gs-projects.vercel.app`; les domaines `minervaflow.app` et `www.minervaflow.app` y sont rattachés. Le tag GitHub `v2.50.0` publie les notes et captures, puis le workflow dédié crée l’entrée de changelog et envoie l’annonce au segment de consentement explicite; son exécution consigne le résultat.
 
 La recommandation de release est `READY WITH CONDITIONS` tant que le parcours Owner authentifié n’a pas été vérifié avec une session de staging. Le déploiement demandé par le propriétaire peut être effectué; cette limitation doit rester visible.
