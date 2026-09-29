@@ -515,7 +515,7 @@ export async function sendChangelogCampaignEmail({
     subject: `Nouveauté sur Minerva Flow : ${title}`,
     previewText: description.slice(0, 120),
     html: campaignEmailHtml({ title, description, category, ctaUrl }),
-    text: `${CAMPAIGN_CATEGORY_LABEL[category]}\n${title}\n\n${description}\n\n${ctaUrl}`,
+    text: `${CAMPAIGN_CATEGORY_LABEL[category]}\n${title}\n\n${description}\n\n${ctaUrl}\n\nVous recevez ce courriel parce que vous avez choisi de recevoir les annonces produit de Minerva Flow.\nSe désabonner : {{{RESEND_UNSUBSCRIBE_URL}}}\nMinerva Technologies Inc. · 367 rue Laberge, Repentigny (Québec) J6A 4C2`,
     send: true,
   });
 
