@@ -2,6 +2,7 @@ import "server-only";
 import { Resend } from "resend";
 import { ACTIVE_PRODUCT_UPDATES_SEGMENT_ID } from "@/lib/email/product-updates";
 import { renderMinervaEmail } from "@/lib/email/brand-shell";
+import { renderCampaignAnnouncementEmail } from "@/lib/email/campaign-template";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -329,15 +330,6 @@ const CAMPAIGN_CATEGORY_LABEL: Record<CampaignCategory, string> = {
   correctif: "Correctif",
 };
 
-// Mirrors the badge tones ChangelogAdminView uses on-screen (categoryTone),
-// resolved to the underlying --mv-* hex values since email clients can't
-// read CSS custom properties.
-const CAMPAIGN_CATEGORY_COLOR: Record<CampaignCategory, { bg: string; fg: string }> = {
-  fonctionnalite: { bg: "#dcece3", fg: "#0e5a40" },
-  amelioration: { bg: "#f6efd9", fg: "#ab7d1f" },
-  correctif: { bg: "#eee9db", fg: "#565f52" },
-};
-
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -406,13 +398,9 @@ export async function sendFlowAmbassadorEmail(input: {
 }
 
 /**
- * Table-based layout (not flex/grid) and every style inlined — Outlook and
- * most webmail clients strip <style> blocks and ignore modern CSS, so this
- * is the only layout approach that renders consistently across clients.
- * Distinct from the narrower emailShell() used by transactional invite
- * emails: this is the wider marketing-style template for the changelog
- * broadcast specifically, matching what recipients expect from a product
- * update email rather than a one-line transactional notice.
+ * Reuses the editorial campaign shell used by the recent release emails.
+ * Product updates keep the same centered logo, typography, spacing, CTA,
+ * warm surfaces, and footer across future releases.
  *
  * Includes the {{{RESEND_UNSUBSCRIBE_URL}}} merge tag Resend requires on
  * Broadcasts sent to a contacts segment.
@@ -428,66 +416,15 @@ function campaignEmailHtml({
   category: CampaignCategory;
   ctaUrl: string;
 }): string {
-  const badge = CAMPAIGN_CATEGORY_COLOR[category];
-  const safeTitle = escapeHtml(title);
   const safeDescription = escapeHtml(description);
-
-  return `<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light" />
-    <title>${safeTitle}</title>
-  </head>
-  <body style="margin:0; padding:0; background-color:#f5f1e6; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-    <div style="display:none; max-height:0; overflow:hidden; opacity:0;">${safeDescription.slice(0, 150)}</div>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f1e6;">
-      <tr>
-        <td align="center" style="padding:40px 16px;">
-          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
-            <tr>
-              <td style="padding:0 8px 24px;">
-                <img src="https://minervaflow.app/icon-192.png" width="36" height="36" alt="Minerva Flow" border="0" style="display:inline-block;width:36px;height:36px;margin-right:10px;vertical-align:middle;border:0;border-radius:11px;" />
-                <span style="font-family:'New York', Georgia, serif; font-size:20px; font-weight:700; color:#1a1e16; letter-spacing:-0.02em;">Minerva <span style="color:#167f5b;">Flow</span></span>
-              </td>
-            </tr>
-            <tr>
-              <td style="background-color:#fbf9f3; border:1px solid #e6e0d0; border-radius:16px; padding:40px 40px 32px;">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td style="background-color:${badge.bg}; color:${badge.fg}; font-size:11px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; padding:5px 12px; border-radius:999px;">
-                      ${CAMPAIGN_CATEGORY_LABEL[category]}
-                    </td>
-                  </tr>
-                </table>
-                <h1 style="margin:20px 0 12px; font-size:24px; line-height:1.3; font-weight:700; color:#1a1e16;">${safeTitle}</h1>
-                <p style="margin:0 0 28px; font-size:15px; line-height:1.65; color:#565f52; white-space:pre-line;">${safeDescription}</p>
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td style="background-color:#167f5b; border-radius:10px;">
-                      <a href="${ctaUrl}" style="display:inline-block; padding:13px 26px; font-size:14px; font-weight:600; color:#fbf9f3; text-decoration:none;">Voir le journal des mises à jour →</a>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:28px 8px 0;">
-                <p style="margin:0 0 6px; font-size:12px; line-height:1.6; color:#8d9488;">
-                  Vous recevez ce courriel parce que vous avez choisi de recevoir les annonces produit de Minerva Flow.
-                </p>
-                <p style="margin:0; font-size:12px; line-height:1.6; color:#8d9488;">
-                  <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#8d9488; text-decoration:underline;">Se désabonner des annonces</a> · Minerva Flow<br />Minerva Technologies Inc. · 367 rue Laberge, Repentigny (Québec) J6A 4C2
-                </p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
+  return renderCampaignAnnouncementEmail({
+    title,
+    eyebrow: CAMPAIGN_CATEGORY_LABEL[category],
+    preheader: description.slice(0, 150),
+    bodyHtml: `<p style="margin:0;white-space:pre-line;">${safeDescription}</p>`,
+    ctaLabel: "Voir le journal des nouveautés",
+    ctaUrl,
+  });
 }
 
 /**
