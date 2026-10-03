@@ -1,11 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
 import { useLocale } from "next-intl";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { Camera, Loader2, Wrench, Users, ArrowRight, Check, FileText, Landmark, Gift, Copy, MapPin, TrendingUp } from "lucide-react";
+import { Camera, Loader2, Wrench, Users, ArrowRight, Check, FileText, Landmark, Gift, Copy, MapPin } from "lucide-react";
 import { Onboarding, ChoiceGroup, useOnboarding, StepIndicator } from "@/components/ui/onboarding";
 import { Instagram as InstagramIcon } from "@/components/ui/BrandIcons";
 import { Avatar } from "@/components/minerva/PersonAvatar";
@@ -15,7 +14,6 @@ import { GooglePlacesSearch } from "@/components/places/GooglePlacesSearch";
 import type { RestaurantInput } from "@/lib/data/restaurants";
 import { toast } from "sonner";
 import { ImportMenuPdfModal } from "@/components/menu/ImportMenuPdfModal";
-import { roleLabels } from "@/lib/app-context";
 import { useAvatarUpload } from "@/hooks/use-avatar-upload";
 import { updateProfileNameAction } from "@/app/[locale]/(app)/profil/actions";
 import { updateRestaurantAction, createRestaurantAction } from "@/app/[locale]/(app)/settings/actions";
@@ -26,19 +24,6 @@ import {
   prepareLoyaltyOnboardingAction,
 } from "@/app/[locale]/onboarding/actions";
 import type { Role } from "@/lib/types";
-
-const ROLE_OPTIONS: Role[] = ["owner", "manager", "staff", "consultant"];
-
-// A one-line description per role — addresses two friction points from the
-// onboarding UX simulation: personas confused by what "role" even meant for
-// them (Denis, Rania), and one who didn't understand "Consultant" as an
-// option (Marc-André). All four kept short enough to fit under a grid item.
-const ROLE_DESCRIPTIONS: Record<Role, string> = {
-  owner: "C'est vous ? Choisissez ceci — c'est le bon choix pour la personne qui configure son établissement.",
-  manager: "Gère les opérations au quotidien, sans les réglages de facturation.",
-  staff: "Accès aux tâches du jour — horaires, commandes, service.",
-  consultant: "Accès en lecture pour un conseiller externe (comptable, agence).",
-};
 
 type ServiceModel = "restaurant" | "cafe";
 
@@ -83,7 +68,10 @@ export function OnboardingWizard({
   // email as a "prefilled" name reads as broken, so start blank instead and
   // let the placeholder guide the first real name entry.
   const [fullName, setFullName] = useState(initialFullName.includes("@") ? "" : initialFullName);
-  const [role, setRole] = useState<Role>(initialRole);
+  // The person finishing onboarding created the account, so they keep the role
+  // they already have (owner). Other roles come from invitations, not from here:
+  // asking "what is your role?" only added a decision to the first screen.
+  const role: Role = initialRole;
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const [restaurantNameInput, setRestaurantNameInput] = useState(
     restaurantName === "Mon restaurant" ? "" : restaurantName
@@ -110,6 +98,7 @@ export function OnboardingWizard({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
+  const [done, setDone] = useState(false);
 
   const { preview, loading: uploadLoading, error: uploadError, pickAndUpload } = useAvatarUpload({
     userId,
@@ -178,10 +167,11 @@ export function OnboardingWizard({
       await sendInviteIfFilled();
       const finished = await finishOnboardingAction();
       if (!finished) throw new Error("Impossible de terminer la configuration. Réessayez.");
-      // The onboarding completion action updates the profile through Supabase;
-      // reload the app shell so its server session snapshot sees that write.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign(`/${locale}/workspace`);
+      // Finish on a clear "what next" screen rather than dropping the user
+      // straight onto an empty dashboard. Its links do full page loads, so the
+      // app shell sees the profile write that just completed onboarding.
+      setDone(true);
+      setSubmitting(false);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Une erreur est survenue.");
       setSubmitting(false);
@@ -238,6 +228,45 @@ export function OnboardingWizard({
     toast.success("Lien d’inscription copié.");
   }
 
+  if (done) {
+    const base = locale === "fr" ? "" : `/${locale}`;
+    return (
+      <div className="flex flex-col gap-5" role="status" aria-live="polite">
+        <div>
+          <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-mv-green-dark">Configuration terminée</p>
+          <h2 className="mt-1 font-display text-[28px] font-medium leading-tight text-mv-ink">
+            {restaurantNameInput.trim() || "Votre établissement"} est prêt.
+          </h2>
+          <p className="mt-2 text-[14px] leading-relaxed text-mv-ink-soft">
+            {menuImportedCount !== null
+              ? `${menuImportedCount} plat${menuImportedCount > 1 ? "s" : ""} importé${menuImportedCount > 1 ? "s" : ""}. `
+              : "Votre menu n'est pas encore en ligne. "}
+            {loyaltyJoinUrl
+              ? "Votre QR d'inscription fidélité est prêt."
+              : "Vous pourrez créer votre QR d'inscription fidélité depuis Fidélisation."}
+          </p>
+        </div>
+        <ol className="flex flex-col gap-2 text-[14px] text-mv-ink">
+          <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mv-green text-[12px] font-bold text-white">1</span><span>{menuImportedCount !== null ? "Vérifiez votre menu et publiez-le." : "Ajoutez vos premiers plats."}</span></li>
+          <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mv-green text-[12px] font-bold text-white">2</span><span>Affichez votre QR au comptoir.</span></li>
+          <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mv-green text-[12px] font-bold text-white">3</span><span>Vos premiers clients s&apos;inscrivent en 30 secondes.</span></li>
+        </ol>
+        <a
+          href={`${base}/menu`}
+          className="inline-flex h-12 items-center justify-center rounded-lg bg-mv-green px-4 text-[14px] font-semibold text-mv-cream-soft hover:bg-mv-green-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mv-green"
+        >
+          {menuImportedCount !== null ? "Voir mon menu" : "Ajouter mon menu"}
+        </a>
+        <a
+          href={`${base}/overview`}
+          className="inline-flex min-h-12 items-center justify-center rounded-lg text-[14px] font-medium text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink focus-visible:outline-2 focus-visible:outline-mv-green"
+        >
+          Aller à mon tableau de bord
+        </a>
+      </div>
+    );
+  }
+
   return (
     <Onboarding
       defaultValue={1}
@@ -279,15 +308,17 @@ export function OnboardingWizard({
           <div className="w-full space-y-4">
             <Field label="Votre nom">
               <Input
+                className="h-12 text-[16px]"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Alex Tremblay"
+                autoComplete="name"
                 required
               />
             </Field>
 
             <div>
-              <p className="mb-2 text-[13px] font-semibold text-mv-ink-soft">Type d&apos;établissement</p>
+              <p className="mb-2 text-[14px] font-semibold text-mv-ink-soft">Type d&apos;établissement</p>
               <ChoiceGroup
                 name="serviceModel"
                 value={serviceModel}
@@ -301,6 +332,7 @@ export function OnboardingWizard({
 
             <Field label={`Nom de votre ${establishmentWord}`}>
               <Input
+                className="h-12 text-[16px]"
                 value={restaurantNameInput}
                 onChange={(e) => setRestaurantNameInput(e.target.value)}
                 placeholder={serviceModel === "cafe" ? "Ex : Café Lucide" : "Ex : Bistro du Coin"}
@@ -308,150 +340,69 @@ export function OnboardingWizard({
               />
             </Field>
 
-            <div>
-              <p className="mb-2 text-[13px] font-semibold text-mv-ink-soft">Votre rôle</p>
-              <ChoiceGroup name="role" value={role} onValueChange={(v) => setRole(v as Role)} orientation="grid">
-                {ROLE_OPTIONS.map((r) => (
-                  <ChoiceGroup.Item key={r} value={r} className="flex-col items-start gap-1 text-left">
-                    <span>{roleLabels[r]}</span>
-                    <span className="text-[11px] font-normal leading-snug text-mv-ink-faint">
-                      {ROLE_DESCRIPTIONS[r]}
-                    </span>
-                  </ChoiceGroup.Item>
-                ))}
-              </ChoiceGroup>
-            </div>
           </div>
 
-          {submitError && <p className="text-[12.5px] text-mv-red">{submitError}</p>}
+          {submitError && <p className="text-[14px] text-mv-red">{submitError}</p>}
         </div>
       </Onboarding.Step>
 
       <Onboarding.Step step={2}>
         <div className="flex flex-col gap-4">
-          <div className="text-center">
-            <Wrench className="mx-auto mb-2 text-mv-green-dark" size={22} />
-            <h3 className="font-display text-[18px] font-medium text-mv-ink">Connectez vos outils</h3>
-            <p className="mt-1 text-[13px] text-mv-ink-soft">
-              Facultatif — vous pouvez faire ceci maintenant ou depuis Paramètres à tout moment.
+          <div>
+            <h3 className="font-display text-[20px] font-medium text-mv-ink">Mettez votre menu en ligne</h3>
+            <p className="mt-1 text-[14px] leading-relaxed text-mv-ink-soft">
+              C&apos;est ce que vos clients verront en premier. Importez votre carte en PDF : l&apos;IA remplit le menu pour vous. Facultatif, vous pouvez aussi le faire plus tard.
             </p>
           </div>
-
-          <a
-            href="/api/oauth/instagram?mode=direct"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-between rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3.5 transition-colors hover:bg-mv-surface"
-          >
-            <div className="flex items-center gap-3">
-              <InstagramIcon size={20} className="text-mv-ink-soft" />
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-[13.5px] font-semibold text-mv-ink">Instagram Business</p>
-                  <span className="rounded-md bg-mv-green-tint px-1.5 py-0.5 text-[10.5px] font-bold text-mv-green-dark">
-                    Direct · Sans Facebook
-                  </span>
-                </div>
-                <p className="text-[12px] text-mv-ink-faint">
-                  Publiez vos visuels Marketing Studio et relances en 1 clic.
-                </p>
-              </div>
-            </div>
-            <ArrowRight size={16} className="text-mv-ink-faint" />
-          </a>
-
-          <div className="rounded-xl border border-mv-border bg-mv-surface p-4">
-            <div className="flex items-start gap-3">
-              <MapPin size={20} className="mt-0.5 text-mv-green-dark" />
-              <div className="min-w-0 flex-1">
-                <p className="text-[13.5px] font-semibold text-mv-ink">Fiche Google Maps et visibilité locale</p>
-                <p className="mt-0.5 text-[12px] text-mv-ink-faint">Importez l’adresse publique pour suivre vos avis et votre présence locale.</p>
-                {googlePlaceLinked && <p className="mt-2 text-[12px] font-semibold text-mv-green-dark">✓ Fiche associée</p>}
-                <div className="mt-3"><GooglePlacesSearch enabled={googlePlacesEnabled} onSelect={handleGooglePlaceSelect} /></div>
-                <div className="mt-3 flex items-start gap-2 rounded-lg bg-mv-cream-soft p-3 text-[11.5px] leading-relaxed text-mv-ink-soft">
-                  <TrendingUp size={15} className="mt-0.5 shrink-0 text-mv-green-dark" />
-                  <span><strong>Estimation indicative :</strong> Flow s’appuie uniquement sur les signaux publics de Google (avis, note et présence locale). Nous ne pouvons pas connaître vos dépenses ni vos efforts marketing actuels; aucun chiffre n’est présenté comme une prévision garantie.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-mv-green/25 bg-mv-green/[0.05] p-4">
-            <p className="text-[13.5px] font-semibold text-mv-ink">Besoin de trafic, pas seulement d’outils ?</p>
-            <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">
-              Flow amplifie les clients que votre restaurant attire déjà (bouche-à-oreille, passage) — il n’en crée pas de nouveaux à lui seul.
-              Notre équipe peut mettre en place et gérer vos campagnes publicitaires payantes pour vous, à des frais déterminés selon vos besoins.
-            </p>
-            <Link href="/campaigns" className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-bold text-mv-green-dark hover:underline">Demander de l’aide pour la publicité <ArrowRight size={14} /></Link>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <a href="/api/oauth/instagram?mode=direct" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3 hover:bg-mv-surface">
-              <InstagramIcon size={20} className="text-[#E1306C]" /><span className="text-[12.5px] font-semibold text-mv-ink">Instagram Business</span><ArrowRight size={14} className="ml-auto text-mv-ink-faint" />
-            </a>
-            <a href="/api/oauth/meta" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3 hover:bg-mv-surface">
-              <span className="text-lg font-bold text-[#1877F2]">f</span><span className="text-[12.5px] font-semibold text-mv-ink">Facebook Page</span><ArrowRight size={14} className="ml-auto text-mv-ink-faint" />
-            </a>
-          </div>
-          <p className="text-center text-[11.5px] text-mv-ink-faint">Instagram, Facebook et Google Business Profile sont nos premières intégrations. D’autres canaux pourront être ajoutés ensuite.</p>
-
-          <p className="rounded-lg bg-mv-cream-soft px-3 py-2.5 text-center text-[11.5px] text-mv-ink-faint">
-            Votre programme de fidélité et votre QR d’inscription se préparent à l’étape suivante.
-          </p>
-
-          <a
-            href="/settings"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-between rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3.5 transition-colors hover:bg-mv-surface"
-          >
-            <div>
-              <p className="text-[13.5px] font-semibold text-mv-ink">Caisse enregistreuse et outils connectés</p>
-              <p className="text-[12px] text-mv-ink-faint">Square, Stripe, Google Calendar…</p>
-            </div>
-            <ArrowRight size={16} className="text-mv-ink-faint" />
-          </a>
 
           {currentRestaurantId && (
             <button
               type="button"
               onClick={() => setMenuImportOpen(true)}
-              className="flex items-center justify-between rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3.5 text-left transition-colors hover:bg-mv-surface"
+              className="flex min-h-14 items-center justify-between gap-3 rounded-xl border border-mv-green/30 bg-mv-green/[0.06] px-4 py-3.5 text-left transition-colors hover:bg-mv-green/[0.1] focus-visible:outline-2 focus-visible:outline-mv-green"
             >
-              <div className="flex items-center gap-3">
-                <FileText size={20} className="text-mv-ink-soft" />
-                <div>
-                  <p className="text-[13.5px] font-semibold text-mv-ink">Importer mon menu (PDF)</p>
-                  <p className="text-[12px] text-mv-ink-faint">
+              <div className="flex min-w-0 items-center gap-3">
+                <FileText size={20} className="shrink-0 text-mv-green-dark" />
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-mv-ink">Importer mon menu (PDF)</p>
+                  <p className="text-[12px] text-mv-ink-soft">
                     {menuImportedCount !== null
                       ? `${menuImportedCount} plat${menuImportedCount > 1 ? "s" : ""} importé${menuImportedCount > 1 ? "s" : ""} ✓`
-                      : "L'IA lit votre carte et remplit votre menu en quelques secondes."}
+                      : "Votre menu est prêt en quelques secondes."}
                   </p>
                 </div>
               </div>
-              <ArrowRight size={16} className="text-mv-ink-faint" />
+              <ArrowRight size={16} className="shrink-0 text-mv-green-dark" />
             </button>
           )}
 
-          <a
-            href="/api/oauth/quickbooks"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-between rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3.5 transition-colors hover:bg-mv-surface"
-          >
-            <div className="flex items-center gap-3">
-              <Landmark size={20} className="text-mv-ink-soft" />
-              <div>
-                <p className="text-[13.5px] font-semibold text-mv-ink">QuickBooks</p>
-                <p className="text-[12px] text-mv-ink-faint">Connectez vos dépenses depuis QuickBooks Online.</p>
+          <details className="group rounded-xl border border-mv-border bg-mv-cream-soft">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[14px] font-semibold text-mv-ink focus-visible:outline-2 focus-visible:outline-mv-green">
+              Connecter d&apos;autres outils
+              <span className="text-[12px] font-normal text-mv-ink-soft group-open:hidden">Facultatif</span>
+            </summary>
+            <div className="flex flex-col gap-3 border-t border-mv-border p-4">
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 text-[14px] font-semibold text-mv-ink"><MapPin size={18} className="shrink-0 text-mv-green-dark" /> Fiche Google Maps</p>
+                <p className="mt-1 text-[12px] text-mv-ink-soft">Importe l&apos;adresse, le téléphone et les horaires publics de votre établissement.</p>
+                {googlePlaceLinked && <p className="mt-2 text-[12px] font-semibold text-mv-green-dark">✓ Fiche associée</p>}
+                <div className="mt-3 min-w-0"><GooglePlacesSearch enabled={googlePlacesEnabled} onSelect={handleGooglePlaceSelect} /></div>
               </div>
+              <a href="/api/oauth/instagram?mode=direct" target="_blank" rel="noreferrer" className="flex min-h-12 items-center gap-3 rounded-lg border border-mv-border bg-mv-surface px-3 text-[14px] font-medium text-mv-ink hover:bg-mv-cream-soft">
+                <InstagramIcon size={18} className="shrink-0 text-mv-ink-soft" /> Instagram Business <ArrowRight size={14} className="ml-auto text-mv-ink-faint" />
+              </a>
+              <a href="/api/oauth/meta" target="_blank" rel="noreferrer" className="flex min-h-12 items-center gap-3 rounded-lg border border-mv-border bg-mv-surface px-3 text-[14px] font-medium text-mv-ink hover:bg-mv-cream-soft">
+                <span className="w-[18px] shrink-0 text-center font-bold text-[#1877F2]">f</span> Facebook Page <ArrowRight size={14} className="ml-auto text-mv-ink-faint" />
+              </a>
+              <a href="/settings" target="_blank" rel="noreferrer" className="flex min-h-12 items-center gap-3 rounded-lg border border-mv-border bg-mv-surface px-3 text-[14px] font-medium text-mv-ink hover:bg-mv-cream-soft">
+                <Wrench size={18} className="shrink-0 text-mv-ink-soft" /> Caisse et autres outils <ArrowRight size={14} className="ml-auto text-mv-ink-faint" />
+              </a>
+              <a href="/api/oauth/quickbooks" target="_blank" rel="noreferrer" className="flex min-h-12 items-center gap-3 rounded-lg border border-mv-border bg-mv-surface px-3 text-[14px] font-medium text-mv-ink hover:bg-mv-cream-soft">
+                <Landmark size={18} className="shrink-0 text-mv-ink-soft" /> QuickBooks <ArrowRight size={14} className="ml-auto text-mv-ink-faint" />
+              </a>
+              <p className="text-[12px] text-mv-ink-soft">Une connexion faite ici est enregistrée tout de suite : revenez ensuite à cet onglet.</p>
             </div>
-            <ArrowRight size={16} className="text-mv-ink-faint" />
-          </a>
-
-          <p className="text-center text-[11.5px] text-mv-ink-faint">
-            Une connexion faite ici est enregistrée immédiatement — revenez simplement à cet onglet et continuez.
-          </p>
+          </details>
         </div>
 
         {currentRestaurantId && (
@@ -471,33 +422,33 @@ export function OnboardingWizard({
               <Gift size={19} />
             </div>
             <div>
-              <h3 className="font-display text-[18px] font-medium text-mv-ink">Préparez les inscriptions fidélité</h3>
-              <p className="mt-1 text-[13px] leading-relaxed text-mv-ink-soft">Choisissez les points gagnés par dollar, puis créez un lien et un QR que vos clients peuvent scanner pour s’inscrire.</p>
+              <h3 className="font-display text-[20px] font-medium text-mv-ink">Préparez les inscriptions fidélité</h3>
+              <p className="mt-1 text-[14px] leading-relaxed text-mv-ink-soft">Choisissez les points gagnés par dollar, puis créez un lien et un QR que vos clients peuvent scanner pour s’inscrire.</p>
             </div>
           </div>
 
           <div className="rounded-xl border border-mv-border bg-mv-surface p-4">
             <Field label="Points gagnés par dollar" hint="Vous pourrez ajouter vos récompenses et modifier ce taux dans Fidélisation.">
-              <Input type="number" min="0.1" max="10" step="0.1" value={pointsPerDollar} onChange={(event) => setPointsPerDollar(event.target.value)} />
+              <Input className="h-12 text-[16px]" type="number" inputMode="decimal" min="0.1" max="10" step="0.1" value={pointsPerDollar} onChange={(event) => setPointsPerDollar(event.target.value)} />
             </Field>
-            <Button className="mt-4 w-full" onClick={prepareLoyaltyJoin} loading={preparingLoyalty} disabled={!currentRestaurantId || preparingLoyalty}>
+            <Button className="mt-4 h-12 w-full text-[14px]" onClick={prepareLoyaltyJoin} loading={preparingLoyalty} disabled={!currentRestaurantId || preparingLoyalty}>
               {loyaltyJoinUrl ? "Actualiser le QR" : "Créer mon lien et mon QR"}
             </Button>
           </div>
 
-          {loyaltyError && <p className="text-[12.5px] text-mv-red" role="alert">{loyaltyError}</p>}
+          {loyaltyError && <p className="text-[14px] text-mv-red" role="alert">{loyaltyError}</p>}
 
           {loyaltyJoinUrl && loyaltyQrDataUrl && (
             <div className="flex flex-col items-center gap-3 rounded-xl border border-mv-green/20 bg-mv-green/[0.04] p-4 text-center">
               <Image src={loyaltyQrDataUrl} alt={`QR d’inscription au programme de fidélité de ${restaurantNameInput}`} width={168} height={168} unoptimized className="rounded-lg bg-white p-2" />
               <div className="w-full rounded-lg border border-mv-border-soft bg-mv-surface px-3 py-2">
-                <p className="truncate font-mono text-[11px] text-mv-ink-soft">{loyaltyJoinUrl}</p>
+                <p className="truncate font-mono text-[12px] text-mv-ink-soft">{loyaltyJoinUrl}</p>
               </div>
               <div className="flex flex-wrap justify-center gap-2">
                 <Button type="button" size="sm" variant="secondary" onClick={copyLoyaltyLink}><Copy size={13} /> {copiedLoyalty ? "Copié" : "Copier le lien"}</Button>
                 <a href={loyaltyJoinUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center rounded-lg px-3 text-[12px] font-semibold text-mv-green-dark underline underline-offset-4">Tester l’inscription client</a>
               </div>
-              <p className="max-w-md text-[11.5px] leading-relaxed text-mv-ink-faint">Aucun faux membre ni récompense n’est créé. Scannez le code ou ouvrez le lien pour tester l’inscription; le consentement aux courriels reste facultatif.</p>
+              <p className="max-w-md text-[12px] leading-relaxed text-mv-ink-faint">Aucun faux membre ni récompense n’est créé. Scannez le code ou ouvrez le lien pour tester l’inscription; le consentement aux courriels reste facultatif.</p>
             </div>
           )}
         </div>
@@ -507,20 +458,20 @@ export function OnboardingWizard({
         <div className="flex flex-col gap-4">
           <div className="text-center">
             <Users className="mx-auto mb-2 text-mv-green-dark" size={22} />
-            <h3 className="font-display text-[18px] font-medium text-mv-ink">Invitez votre équipe</h3>
-            <p className="mt-1 text-[13px] text-mv-ink-soft">
+            <h3 className="font-display text-[20px] font-medium text-mv-ink">Invitez votre équipe</h3>
+            <p className="mt-1 text-[14px] text-mv-ink-soft">
               Facultatif — famille, employés, associé·e. Vous pourrez en ajouter d&apos;autres à tout moment depuis
               Collaborateurs.
             </p>
           </div>
 
           {inviteSent ? (
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-mv-green/25 bg-mv-green/[0.06] px-4 py-3.5 text-[13px] font-semibold text-mv-green-dark">
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-mv-green/25 bg-mv-green/[0.06] px-4 py-3.5 text-[14px] font-semibold text-mv-green-dark">
               <Check size={16} /> Invitation envoyée à {inviteEmail.trim()}
             </div>
           ) : (
             <Field label="Courriel de la personne à inviter">
-              <Input
+              <Input className="h-12 text-[16px]"
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
@@ -529,7 +480,7 @@ export function OnboardingWizard({
             </Field>
           )}
 
-          {submitError && <p className="text-[12.5px] text-mv-red">{submitError}</p>}
+          {submitError && <p className="text-[14px] text-mv-red">{submitError}</p>}
         </div>
       </Onboarding.Step>
 
@@ -546,7 +497,7 @@ export function OnboardingWizard({
   );
 }
 
-const STEP_LABELS: Record<number, string> = { 1: "Profil", 2: "Outils", 3: "Fidélité", 4: "Équipe" };
+const STEP_LABELS: Record<number, string> = { 1: "Profil", 2: "Menu", 3: "Fidélité", 4: "Équipe" };
 
 /**
  * The single source of onboarding progress shown to the user — replaces a
@@ -564,17 +515,17 @@ function OnboardingProgressHeader() {
     <div className="mb-6">
       <div className="flex items-center gap-3">
         <StepIndicator currentStep={currentStep} totalSteps={totalSteps} variant="pills" className="max-w-[88px] flex-1 justify-start" />
-        <span className="font-mono text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+        <span className="font-mono text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
           Étape {currentStep} / {totalSteps} · {STEP_LABELS[currentStep] ?? ""}
         </span>
       </div>
 
       {currentStep === 1 && (
         <div className="mt-4">
-          <h1 className="font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[32px]">
+          <h1 className="font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[28px]">
             Faites connaissance
           </h1>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
+          <p className="mt-2 text-[14px] leading-relaxed text-mv-ink-soft">
             Personnalisez votre profil et le nom de votre établissement.
           </p>
         </div>
@@ -608,7 +559,7 @@ function WizardFooter({
         <Button
           type="button"
           variant="outline"
-          className={canGoBack ? "flex-1" : "invisible flex-1"}
+          className={canGoBack ? "h-12 flex-1 text-[14px]" : "hidden"}
           disabled={!canGoBack || submitting}
           onClick={handleBack}
         >
@@ -618,12 +569,12 @@ function WizardFooter({
         {currentStep === 1 ? (
           <StepOneContinueButton onContinue={onStepOneContinue} onAdvance={() => setStep(2)} />
         ) : isLastStep ? (
-          <Button type="button" className="flex-1" disabled={submitting} onClick={handleComplete}>
+          <Button type="button" className="h-12 flex-1 text-[14px]" disabled={submitting} onClick={handleComplete}>
             {submitting ? <Loader2 size={15} className="animate-spin" /> : null}
             {submitting ? "Un instant…" : inviting ? "Envoi…" : "Terminer"}
           </Button>
         ) : (
-          <Button type="button" className="flex-1" disabled={submitting} onClick={() => setStep((s) => s + 1)}>
+          <Button type="button" className="h-12 flex-1 text-[14px]" disabled={submitting} onClick={() => setStep((s) => s + 1)}>
             Continuer
           </Button>
         )}
@@ -633,7 +584,7 @@ function WizardFooter({
         <button
           type="button"
           onClick={() => setStep((s) => s + 1)}
-          className="text-center text-[12.5px] font-semibold text-mv-ink-faint hover:text-mv-ink-soft"
+          className="min-h-12 rounded-lg text-center text-[14px] font-medium text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink focus-visible:outline-2 focus-visible:outline-mv-green"
         >
           Plus tard
         </button>
@@ -643,7 +594,7 @@ function WizardFooter({
           type="button"
           onClick={handleComplete}
           disabled={submitting}
-          className="text-center text-[12.5px] font-semibold text-mv-ink-faint hover:text-mv-ink-soft"
+          className="min-h-12 rounded-lg text-center text-[14px] font-medium text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink focus-visible:outline-2 focus-visible:outline-mv-green"
         >
           Plus tard, terminer sans inviter
         </button>
@@ -671,7 +622,7 @@ function StepOneContinueButton({
   return (
     <Button
       type="button"
-      className="flex-1"
+      className="h-12 flex-1 text-[14px]"
       disabled={!canGoNext || pending}
       onClick={async () => {
         setPending(true);

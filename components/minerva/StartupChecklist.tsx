@@ -3,7 +3,7 @@
 import { useCurrentRestaurant } from "@/lib/app-context";
 import { getStartupProgressAction } from "@/app/[locale]/(app)/overview/actions";
 import { cn } from "@/lib/utils";
-import { Check, ChevronDown, Building2, MapPin, Plug, CalendarPlus, UserPlus, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Building2, MapPin, Plug, CalendarPlus, UserPlus, Sparkles, UtensilsCrossed, QrCode } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -26,6 +26,8 @@ export function StartupChecklist() {
     memberCount: number;
     hasAddress: boolean;
     toolsConnectedCount: number;
+    liveMenuCount: number;
+    customerCount: number;
   } | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [dismissedForGood, setDismissedForGood] = useState(true);
@@ -46,6 +48,22 @@ export function StartupChecklist() {
       href: "/etablissement",
       icon: Building2,
       done: restaurant.name !== "Mon restaurant",
+    },
+    {
+      key: "menu",
+      label: "Publier votre menu",
+      description: "C'est ce que vos clients voient en premier.",
+      href: "/menu",
+      icon: UtensilsCrossed,
+      done: progress.liveMenuCount > 0,
+    },
+    {
+      key: "first-customer",
+      label: "Inscrire votre premier client",
+      description: "Affichez votre QR au comptoir : l'inscription prend 30 secondes.",
+      href: "/fidelisation",
+      icon: QrCode,
+      done: progress.customerCount > 0,
     },
     {
       key: "day",
