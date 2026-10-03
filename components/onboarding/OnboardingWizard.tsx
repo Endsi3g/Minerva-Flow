@@ -400,7 +400,7 @@ export function OnboardingWizard({
           </p>
 
           <a
-            href="/settings?tab=integrations"
+            href="/settings"
             target="_blank"
             rel="noreferrer"
             className="flex items-center justify-between rounded-xl border border-mv-border bg-mv-cream-soft px-4 py-3.5 transition-colors hover:bg-mv-surface"

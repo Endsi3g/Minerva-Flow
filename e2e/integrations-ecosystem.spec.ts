@@ -35,8 +35,8 @@ test.describe("Integrations Ecosystem (Google Workspace & Accounting)", () => {
     test.setTimeout(90_000);
     await loginAs(page, user);
 
-    // Navigate to Settings Integrations tab
-    await page.goto("/settings?tab=integrations");
+    // Navigate to Settings Integrations (its own dedicated subpage)
+    await page.goto("/settings");
 
     // 1. Google Workspace Card & Pills
     await expect(page.getByText("Google Workspace")).toBeVisible();

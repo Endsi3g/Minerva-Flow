@@ -676,7 +676,7 @@ ${itemDesc}
                   </Button>
                 ) : (
                   <Link
-                    href="/settings?tab=integrations"
+                    href="/settings"
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-mv-border px-4 py-2.5 text-[12.5px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-cream-soft"
                   >
                     <Instagram size={15} /> Connecter Instagram
