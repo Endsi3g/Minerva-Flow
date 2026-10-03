@@ -3,6 +3,15 @@
 > **Base historique** : 2.36.0 — clôture de sprint du 15 septembre 2026.
 > **État produit actualisé** : 26 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
 
+## Reprise — 2026-10-03 (branche `feat/team-portal-and-native-account-uplift`)
+
+- **Contenu** : portail `/equipe` (web + iOS), refonte du Compte client iOS, sous-pages Réglages web, NFC (lecture + programmation), carte Mains Magique, journalisation `AppLog`. Rien n’est publié; aucun commit n’avait été fait avant cette reprise.
+- **Vérifié** : `tsc` 0 erreur; 5 tests `NFCTagURLTests` passent; build iOS simulateur. **Non vérifié** : rendu visuel au simulateur de ces phases, parcours `/equipe` de bout en bout (les clés locales Supabase renvoient 401, voir mémoire), NFC sur appareil réel.
+- **Bloquant avant archive/installation** : aucun profil de signature installé n’inclut `com.apple.developer.nfc.readersession.formats`. Procédure : `docs/NFC_AND_SIGNING.md`.
+- **Audit App Store** (`app-store-compliance-guard.sh native/ios`, 2026-10-03) : 0 critique, 0 élevé, 3 moyens (polices à taille fixe, Réduire les animations, questionnaire d’âge 2026). Les trois alertes précédentes étaient des détections textuelles; corrigées en retirant le mot « Stripe » de l’UI native (paiement et versements ouvrent le web), en nommant `Config.privacyPolicyURL` et en centralisant le contact support (`SupportContact`, plus de `mailto:` en dur). La suppression de compte native existait déjà (`DeleteAccountSheet`). Cet audit n’est pas une soumission : les 3 avertissements moyens restent à traiter.
+- **Base de données** : migrations `0168`–`0171` consignées (renumérotées), `is_demo` posé sur « Minerva Flow » et le « Mon restaurant » du fondateur, compte démo `dev-test@minervaflow.app` rattaché à 11 restaurants démo. Voir `supabase/migrations/README.md`.
+- **À décider** : offres Mains Magique (conseils fournis, rien créé), clés PostHog et GitHub optionnelles, contenu du GTM (chiffres non mesurés), commission « récurrente » vs première facture.
+
 ## Vérification de reprise — 2026-09-26
 
 ### Mise à jour native — build TestFlight 13

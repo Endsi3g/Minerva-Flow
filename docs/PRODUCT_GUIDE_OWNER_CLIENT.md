@@ -56,7 +56,7 @@ Depuis l’application iOS ou le menu partagé, les clients peuvent suggérer un
 
 ### 3. Consulter ses points et utiliser son code
 
-Les vues Accueil, Offres, Cartes et Profil permettent de retrouver les informations de fidélité et les mouvements associés. Dans l’onglet Scanner, le client peut afficher un QR code ou un code temporaire à six chiffres. Au comptoir, il peut donner ce code au membre du personnel ou confirmer ce même code après une recherche par téléphone. Le personnel ne voit le solde qu’après confirmation.
+Les vues Accueil (statistiques et graphique des points récents), Offres, Cartes et Compte permettent de retrouver les informations de fidélité et les mouvements associés. L’onglet Compte ouvre des sous-pages dédiées : mes commandes, historique des points, paramètres du compte, confidentialité et suppression du compte, et aide. Dans l’onglet Scanner, le client peut aussi lire le tag NFC d’un restaurant (iPhone réel seulement) et afficher un QR code ou un code temporaire à six chiffres. Au comptoir, il peut donner ce code au membre du personnel ou confirmer ce même code après une recherche par téléphone. Le personnel ne voit le solde qu’après confirmation.
 
 ### 4. Parrainer un proche
 

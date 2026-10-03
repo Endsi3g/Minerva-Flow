@@ -22,6 +22,17 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Les notifications hors app utilisent l’envoi APNs existant en plus de Web Push. Le jeton iOS est réassocié à la session à la connexion et retiré du compte lors de la déconnexion; un tap ouvre l’onglet natif lié.
 - La migration `0166_app_realtime_publication.sql` a été appliquée en production : 25 tables métier avec RLS sont publiées pour Realtime; les tables de jetons d’appareil et d’authentification restent exclues de cette migration.
 
+## [À venir] — Portail équipe, Compte client, tags NFC
+
+- Nouveau portail `/equipe` (web et iOS) pour l’équipe et les ambassadeurs : indicateurs internes réservés à l’équipe, entonnoir GTM, objectifs du mois, Académie, profils de membres. Les ambassadeurs ne voient jamais les revenus. Voir `docs/TEAM_PORTAL.md`.
+- Application iOS client : onglet Compte réorganisé en sous-pages (mes commandes, historique des points, paramètres, aide), Accueil avec statistiques et graphique, correctifs d’interface (cœur des favoris, sélecteur de langue, champs de suggestion).
+- Lecture des tags NFC des restaurants (client) et programmation de tags (propriétaire); seuls les liens `minervaflow.app/t/…` et `/p/…` sont suivis. L’activation exige la capacité NFC sur l’identifiant d’app (`docs/NFC_AND_SIGNING.md`).
+- Réglages web répartis en sous-pages (`/settings`, `/settings/alertes`, `/settings/parrainage`, `/settings/securite`, `/settings/apparence`) au lieu d’onglets.
+- Paiement en ligne et versements des ambassadeurs : l’application iOS ouvre le web; plus aucun flux de paiement natif.
+- Journalisation iOS via `os.Logger` (détails masqués en production); l’adresse du destinataire n’est plus écrite dans les logs d’alerte critique.
+- Mains Magique : fiche et position Google Maps renseignées (Repentigny), forfait Marque blanche.
+- Statut : en cours de développement sur la branche `feat/team-portal-and-native-account-uplift`; rien n’est publié ni disponible tant que le build et le déploiement correspondants n’ont pas été vérifiés.
+
 ## [À venir] — Espace Owner iPad/macOS, Google Business Profile et campagnes
 
 - L’application SwiftUI cible iPad et Mac Catalyst avec un espace Owner à navigation latérale, raccourcis clavier et changement de restaurant; l’expérience client reste distincte dans le même binaire.
