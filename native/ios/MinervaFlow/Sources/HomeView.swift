@@ -1,5 +1,4 @@
 import SwiftUI
-import Charts
 
 /// The greeting + tier banner scrolls with the rest of the feed (by
 /// explicit request) rather than staying pinned — it's still the first
@@ -17,7 +16,6 @@ struct HomeView: View {
     @State private var birthdayOffer: Offer?
     @State private var showBirthdayOfferAlert = false
     @State private var selectedReward: LoyaltyReward?
-    @State private var showFavoritesSheet = false
 
     private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
     private var restaurantCalendar: Calendar {
@@ -45,8 +43,6 @@ struct HomeView: View {
                             tenantBrandHeader(branding)
                         }
                         pinnedHeader(for: customer)
-                        statsGrid(for: customer)
-                        pointsChart
                         HStack { NativeRealtimeStatusPill(isFrench: isFrench); Spacer() }
 
                         if !supabase.announcements.isEmpty {
@@ -120,9 +116,6 @@ struct HomeView: View {
         }
         .sheet(item: $selectedReward) { reward in
             RewardDetailView(reward: reward)
-        }
-        .sheet(isPresented: $showFavoritesSheet) {
-            FavoritesView()
         }
         .alert("Notifications désactivées", isPresented: $notificationDeniedAlert) {
             Button("Ouvrir Réglages") {
@@ -359,125 +352,6 @@ struct HomeView: View {
         formatter.currencyCode = "CAD"
         formatter.locale = Locale(identifier: "fr_CA")
         return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.2f $", value)
-    }
-
-    // MARK: - Dense stats grid
-    //
-    // Four facts the wallet banner above doesn't already say (points,
-    // tier, visits and total spent live there) — surfaced here as its own
-    // dashboard-style row, matching the web Overview's density rather
-    // than burying them one tap deeper.
-
-    private var activeOffersCount: Int {
-        supabase.offers.filter(\.isLive).count
-    }
-
-    private var redeemableRewardsCount: Int {
-        guard let points = supabase.customer?.loyaltyPoints else { return 0 }
-        return supabase.rewards.filter { $0.pointsCost <= points }.count
-    }
-
-    private var favoritesCount: Int {
-        (supabase.customer?.favoriteMenuItemIds.count ?? 0) + (supabase.customer?.favoriteOfferIds.count ?? 0)
-    }
-
-    private var lastActivityLabel: String {
-        guard let last = supabase.transactions.first?.createdAt else { return "—" }
-        let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: last), to: Calendar.current.startOfDay(for: Date())).day ?? 0
-        switch days {
-        case ..<1: return isFrench ? "Aujourd'hui" : "Today"
-        case 1: return isFrench ? "Hier" : "Yesterday"
-        default: return isFrench ? "Il y a \(days) j" : "\(days)d ago"
-        }
-    }
-
-    private func statsGrid(for customer: Customer) -> some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-            statTile(icon: "tag.fill", value: "\(activeOffersCount)", label: isFrench ? "offres actives" : "active offers") {
-                router.pendingTab = .rewards
-            }
-            statTile(icon: "gift.fill", value: "\(redeemableRewardsCount)", label: isFrench ? "récompenses prêtes" : "rewards ready") {
-                router.pendingTab = .rewards
-            }
-            statTile(icon: "heart.fill", value: "\(favoritesCount)", label: isFrench ? "mes favoris" : "my favorites") {
-                showFavoritesSheet = true
-            }
-            statTile(icon: "clock.fill", value: lastActivityLabel, label: isFrench ? "dernière activité" : "last activity")
-        }
-    }
-
-    private func statTile(icon: String, value: String, label: String, action: (() -> Void)? = nil) -> some View {
-        let content = VStack(alignment: .leading, spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.emeraldDark)
-            Text(value)
-                .font(.system(size: 19, weight: .bold, design: .rounded))
-                .foregroundStyle(MinervaColor.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Text(label)
-                .font(.system(size: 11))
-                .foregroundStyle(MinervaColor.inkFaint)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MinervaColor.creamSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-
-        return Group {
-            if let action {
-                Button(action: action) { content }
-                    .buttonStyle(.plain)
-            } else {
-                content
-            }
-        }
-    }
-
-    // MARK: - Points chart
-    //
-    // The owner's web Overview leans on charts throughout; Home had none.
-    // A small bar chart of the most recent point movements gives the same
-    // "graphique" read without inventing a metric that doesn't already
-    // exist in supabase.transactions.
-
-    private var recentPointsSeries: [LoyaltyTransaction] {
-        Array(supabase.transactions.sorted { $0.createdAt < $1.createdAt }.suffix(6))
-    }
-
-    private var pointsChart: some View {
-        let series = recentPointsSeries
-        return VStack(alignment: .leading, spacing: 10) {
-            Text(isFrench ? "Vos points récents" : "Your recent points")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
-
-            if series.isEmpty {
-                Text(isFrench ? "Vos mouvements de points apparaîtront ici." : "Your points activity will show up here.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(MinervaColor.inkFaint)
-            } else {
-                Chart(series) { entry in
-                    BarMark(
-                        x: .value(isFrench ? "Date" : "Date", entry.createdAt, unit: .day),
-                        y: .value(isFrench ? "Points" : "Points", entry.pointsDelta)
-                    )
-                    .foregroundStyle(entry.pointsDelta >= 0 ? MinervaColor.emeraldDark : Color.red)
-                    .cornerRadius(4)
-                }
-                .frame(height: 120)
-                .chartYAxis { AxisMarks(position: .leading) }
-                .chartXAxis {
-                    AxisMarks(values: .automatic(desiredCount: series.count)) { _ in
-                        AxisValueLabel(format: .dateTime.day().month(.abbreviated))
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .background(MinervaColor.creamSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Next reward (feed item)
