@@ -75,7 +75,7 @@ export function StartupChecklist() {
       key: "integrations",
       label: "Connecter vos outils",
       description: "Square, Stripe, Google Calendar, Meta, Instagram — synchronisez vos données.",
-      href: "/settings?tab=integrations",
+      href: "/settings",
       icon: Plug,
       done: progress.toolsConnectedCount > 0,
     },
