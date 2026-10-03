@@ -17,14 +17,18 @@ extension XCTestCase {
             dismissSurvey.tap()
         }
 
-        // The customer tab is labelled “Plus” in French and “More” in
-        // English; “Profil” was the old label and is kept as a fallback for
-        // older localized builds.
-        let profileTab = app.tabBars.buttons["Profil"].exists
-            ? app.tabBars.buttons["Profil"]
-            : app.tabBars.buttons["Plus"].exists
-                ? app.tabBars.buttons["Plus"]
-                : app.tabBars.buttons["More"]
+        // The customer tab is labelled “Compte” in French and “Account” in
+        // English; “Plus”/“More” and “Profil” were earlier labels, kept as
+        // fallbacks for older localized builds.
+        let profileTab = app.tabBars.buttons["Compte"].exists
+            ? app.tabBars.buttons["Compte"]
+            : app.tabBars.buttons["Account"].exists
+                ? app.tabBars.buttons["Account"]
+                : app.tabBars.buttons["Profil"].exists
+                    ? app.tabBars.buttons["Profil"]
+                    : app.tabBars.buttons["Plus"].exists
+                        ? app.tabBars.buttons["Plus"]
+                        : app.tabBars.buttons["More"]
         guard profileTab.waitForExistence(timeout: 3) else { return }
         profileTab.tap()
 

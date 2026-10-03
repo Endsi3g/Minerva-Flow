@@ -46,6 +46,7 @@ targets:
         NSFaceIDUsageDescription: "Utilisez Face ID pour déverrouiller rapidement votre compte de fidélité Minerva Flow."
         NSLocationWhenInUseUsageDescription: "Minerva Flow utilise votre position pour trouver les restaurants et cafés participants les plus proches de vous."
         NSCameraUsageDescription: "Minerva Flow utilise l'appareil photo pour scanner le code du restaurant et accéder directement à son menu."
+        NFCReaderUsageDescription: "Minerva Flow lit les tags NFC des restaurants pour vous ouvrir leur carte de fidélité, et permet aux propriétaires de programmer leurs propres tags."
         ITSAppUsesNonExemptEncryption: false
     entitlements:
       path: MinervaFlow/Resources/MinervaFlow.entitlements
@@ -59,6 +60,8 @@ targets:
           - applinks:minervaflow.app
         com.apple.developer.pass-type-identifiers:
           - $(TeamIdentifierPrefix)pass.com.minervaflow.loyalty
+        com.apple.developer.nfc.readersession.formats:
+          - NDEF
     dependencies:
       - package: Supabase
         product: Supabase

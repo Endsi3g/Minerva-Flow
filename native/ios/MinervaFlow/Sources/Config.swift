@@ -25,7 +25,27 @@ enum Config {
     /// domain's real-world TLS status. Don't repeat that mistake — an
     /// agent's own tool-execution environment is not "outside the network"
     /// just because the request looks like it left the machine.
-    static let apiBaseURL = URL(string: "https://minervaflow.app")!
+    /// Must be the `www` host. The apex (minervaflow.app) answers every request
+    /// with a 308 redirect to www, and URLSession drops the Authorization
+    /// header when a redirect changes host, so every authenticated bridge call
+    /// (menu, restaurant name, referrals, discovery) arrived unauthenticated
+    /// and failed with 401. Pointing straight at www avoids the redirect.
+    static let apiBaseURL = URL(string: "https://www.minervaflow.app")!
+
+    /// The address printed on QR codes, programmed on NFC tags and shared as
+    /// referral links. It stays on the apex because that is the host declared
+    /// in the app's associated domains (applinks:minervaflow.app), so a tap can
+    /// open the app, and it matches the QR codes the web already prints. It is
+    /// for links only: never send authenticated API requests through it.
+    static let publicLinkBaseURL = URL(string: "https://minervaflow.app")!
+
+    /// Published privacy policy (app/[locale]/legal/privacy) — the same URL
+    /// declared in App Store Connect; reachable in-app from sign-up and Aide.
+    static let privacyPolicyURL = apiBaseURL.appending(path: "/legal/privacy")
+    static let termsURL = apiBaseURL.appending(path: "/legal/terms")
+
+    /// Customer support address, shown in Aide and the owner Support section.
+    static let supportEmail = "support@minervaflow.app"
 
     /// Matches the CFBundleURLSchemes entry in project.yml — where
     /// ASWebAuthenticationSession hands control back to this app once
@@ -48,4 +68,15 @@ enum Config {
     static let devTestEmail = "dev-test@minervaflow.app"
     static let devTestPassword = "MinervaDevTest2026!"
     #endif
+}
+
+enum SupportContact {
+    /// Opens the user's mail app addressed to support (contact only — account
+    /// deletion is done in-app from Compte › Sécurité, never by email).
+    static var emailURL: URL {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = Config.supportEmail
+        return components.url ?? Config.apiBaseURL
+    }
 }

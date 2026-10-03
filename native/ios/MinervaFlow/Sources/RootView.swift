@@ -2,7 +2,7 @@ import SwiftUI
 
 private let hasSeenOnboardingKey = "hasSeenTierOnboarding"
 
-private enum RootScreen { case intro, auth, resolvingSession, resolutionError, onboarding, ownerOnboarding, main, ownerMain }
+private enum RootScreen { case intro, auth, resolvingSession, resolutionError, onboarding, ownerOnboarding, main, ownerMain, teamMain }
 
 /// Full flow: Intro (brand-new visitor hero) -> AuthView (real login,
 /// matches the web portal exactly) -> OnboardingWelcomeView (tier-status
@@ -75,6 +75,10 @@ struct RootView: View {
                 OwnerMainTabView()
                     .id(RootScreen.ownerMain)
                     .transition(.opacity)
+            case .teamMain:
+                TeamMainView()
+                    .id(RootScreen.teamMain)
+                    .transition(.opacity)
             case .ownerOnboarding:
                 NativeOwnerOnboardingView {
                     UserDefaults.standard.set(true, forKey: ownerSetupKey)
@@ -96,6 +100,7 @@ struct RootView: View {
         }
         .onChange(of: supabase.isAuthenticated) { syncScreen(); applyPendingNotificationIfReady() }
         .onChange(of: supabase.isOwnerExperience) { syncScreen() }
+        .onChange(of: supabase.isTeamExperience) { syncScreen() }
         .onChange(of: supabase.isResolvingExperience) { syncScreen(); applyPendingNotificationIfReady() }
         .onChange(of: supabase.experienceResolutionError) { syncScreen() }
         // Only ever covers .main — the lock protects the loyalty account's
@@ -165,7 +170,7 @@ struct RootView: View {
             }
         } catch {
             universalLinkError = isFrench ? "Ce lien n'est plus valide." : "This link is no longer valid."
-            print("resolveUniversalLink error: \(error)")
+            AppLog.failure("resolveUniversalLink", error)
         }
     }
 
@@ -180,7 +185,7 @@ struct RootView: View {
             UserDefaults.standard.set(true, forKey: ownerSetupKey)
         }
         let target: RootScreen = supabase.isAuthenticated
-            ? (supabase.isResolvingExperience ? .resolvingSession : (supabase.experienceResolutionError != nil ? .resolutionError : (supabase.isOwnerExperience ? ((hasCompletedOwnerSetup || ownerHasRealName) ? .ownerMain : .ownerOnboarding) : (hasSeenOnboarding ? .main : .onboarding))))
+            ? (supabase.isResolvingExperience ? .resolvingSession : (supabase.experienceResolutionError != nil ? .resolutionError : (supabase.isTeamExperience ? .teamMain : (supabase.isOwnerExperience ? ((hasCompletedOwnerSetup || ownerHasRealName) ? .ownerMain : .ownerOnboarding) : (hasSeenOnboarding ? .main : .onboarding)))))
             : (screen == .auth ? .auth : .intro)
         transition(to: target)
     }

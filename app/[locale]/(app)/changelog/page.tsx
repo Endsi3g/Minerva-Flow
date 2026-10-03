@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ChangelogPage() {
-  const entries = await getChangelogEntries();
+  const entries = await getChangelogEntries("owner");
 
   return <ChangelogView initialEntries={entries} referenceTime={new Date().toISOString()} />;
 }

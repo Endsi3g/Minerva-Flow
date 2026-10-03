@@ -56,8 +56,8 @@ export async function startStripeConnectOnboardingAction(): Promise<string | nul
   if (!membership) return null;
 
   const origin = await originUrl();
-  const returnUrl = `${origin}/settings?tab=integrations&stripe_connect=return`;
-  const refreshUrl = `${origin}/settings?tab=integrations&stripe_connect=refresh`;
+  const returnUrl = `${origin}/settings?stripe_connect=return`;
+  const refreshUrl = `${origin}/settings?stripe_connect=refresh`;
 
   const existing = await getRestaurantConnectStatus(membership.restaurantId);
   let accountId = existing?.accountId ?? null;

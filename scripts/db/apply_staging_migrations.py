@@ -21,7 +21,7 @@ if not ACCESS_TOKEN:
     print("  1. Go to: https://supabase.com/dashboard/account/tokens")
     print("  2. Click 'Generate new token', name it 'Flow Migration'")
     print("  3. Run:")
-    print(f"     SUPABASE_ACCESS_TOKEN='sbp_...' python3 scripts/apply_staging_migrations.py\n")
+    print(f"     SUPABASE_ACCESS_TOKEN='sbp_...' python3 scripts/db/apply_staging_migrations.py\n")
     sys.exit(1)
 
 API_URL = f"https://api.supabase.com/v1/projects/{PROJECT_REF}/database/query"
@@ -72,7 +72,7 @@ def main():
         print(f"⚠️  Could not read schema_migrations: {e}")
 
     # 3. Load migration files
-    mig_dir = os.path.join(os.path.dirname(__file__), "..", "supabase", "migrations")
+    mig_dir = os.path.join(os.path.dirname(__file__), "..", "..", "supabase", "migrations")
     files = sorted([f for f in os.listdir(mig_dir) if f.endswith(".sql")])
     print(f"📂 Found {len(files)} migration files ({len(applied)} already applied).")
 

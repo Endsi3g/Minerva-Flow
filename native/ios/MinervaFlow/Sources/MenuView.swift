@@ -4,7 +4,7 @@ import SwiftUI
 /// category, build a cart with quantity steppers, then a real checkout
 /// sheet (tip selection, tax breakdown, payment method note, submission).
 /// Mirrors the web portal's MenuBrowserCard + CheckoutModal pair exactly —
-/// including hosted Stripe checkout where the restaurant has Connect enabled,
+/// including hosted web checkout where the restaurant has Connect enabled,
 /// with payment state finalized only by the signed webhook.
 /// as a normal `soumise` order. The only structural difference from web:
 /// this talks to app/api/portal/menu and /orders instead of a Server
@@ -569,12 +569,16 @@ struct MenuView: View {
         var body: some View {
             VStack(spacing: 8) {
                 TextField(isFrench ? "Nom du plat" : "Dish name", text: $title)
-                    .textFieldStyle(.roundedBorder)
                     .textInputAutocapitalization(.words)
                     .accessibilityLabel(isFrench ? "Nom du plat suggéré" : "Suggested dish name")
+                    .padding(10)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 TextField(isFrench ? "Détails facultatifs" : "Optional details", text: $description, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
                     .lineLimit(2...4)
+                    .padding(10)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 if let message {
                     Text(message).font(.caption).foregroundStyle(MinervaColor.emeraldDark)
                 }
@@ -1047,22 +1051,6 @@ struct CategoryItemListView: View {
                                 .font(.system(size: 18))
                                 .foregroundStyle(MinervaColor.inkFaint)
                         }
-
-                        Button {
-                            let generator = UIImpactFeedbackGenerator(style: .light)
-                            generator.impactOccurred()
-                            Task { await supabase.toggleFavoriteMenuItem(item.id, favorite: !isFavorite) }
-                        } label: {
-                            Image(systemName: isFavorite ? "heart.fill" : "heart")
-                                .font(.system(size: 10))
-                                .foregroundStyle(isFavorite ? .red : .white)
-                                .padding(4)
-                                .background(.black.opacity(0.35))
-                                .clipShape(Circle())
-                        }
-                        .padding(3)
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(isFavorite ? "Retirer des favoris" : "Ajouter aux favoris")
                     }
                     .frame(width: 56, height: 56)
                     .clipped()
@@ -1088,18 +1076,45 @@ struct CategoryItemListView: View {
                 }
             }
             .buttonStyle(.plain)
+            // A Button nested inside a NavigationLink's own label breaks hit
+            // testing (the link swallows the tap, or the two race) — this
+            // .overlay instead makes the heart a sibling drawn on top, so
+            // each gets its own independent tap area.
 
             Spacer(minLength: 8)
 
             stepper(quantity: quantity, item: item)
         }
         .padding(12)
+        // The heart sits at the card's top-right corner, clear of the photo
+        // and the text on the left (it used to overlap the dish icon).
+        .overlay(alignment: .topTrailing) {
+            favoriteButton(isFavorite: isFavorite, item: item)
+                .padding(8)
+        }
         .background(quantity > 0 ? MinervaColor.emerald.opacity(0.06) : MinervaColor.creamSoft)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(quantity > 0 ? MinervaColor.emerald.opacity(0.3) : .clear, lineWidth: 1.5)
         )
+    }
+
+    private func favoriteButton(isFavorite: Bool, item: NativeMenuItem) -> some View {
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            Task { await supabase.toggleFavoriteMenuItem(item.id, favorite: !isFavorite) }
+        } label: {
+            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                .font(.system(size: 10))
+                .foregroundStyle(isFavorite ? .red : .white)
+                .padding(4)
+                .background(.black.opacity(0.35))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isFavorite ? "Retirer des favoris" : "Ajouter aux favoris")
     }
 
     @ViewBuilder
@@ -1410,7 +1425,7 @@ struct CheckoutSheet: View {
                                 paymentChoice(isFrench ? "En ligne" : "Online", selected: payOnline) { payOnline = true }
                             }
                         } else if canPayOnline {
-                            Text(isFrench ? "Paiement en ligne sécurisé par Stripe" : "Secure online payment by Stripe")
+                            Text(isFrench ? "Paiement en ligne sécurisé" : "Secure online payment")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                         } else {
@@ -1555,7 +1570,7 @@ struct CheckoutSheet: View {
 
             if let paymentURL {
                 Button { openURL(paymentURL) } label: {
-                    Label(isFrench ? "Payer en ligne avec Stripe" : "Pay online with Stripe", systemImage: "lock.fill")
+                    Label(isFrench ? "Payer en ligne" : "Pay online", systemImage: "lock.fill")
                         .font(.system(size: 13.5, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)

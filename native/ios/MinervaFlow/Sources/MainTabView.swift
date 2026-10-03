@@ -22,7 +22,7 @@ struct MainTabView: View {
                     tabletTab(.scan, title: isFrench ? "Scanner" : "Scan", icon: "qrcode.viewfinder")
                     tabletTab(.rewards, title: isFrench ? "Offres" : "Offers", icon: "gift.fill")
                     tabletTab(.cards, title: isFrench ? "Mes cartes" : "My cards", icon: "creditcard.fill")
-                    tabletTab(.profile, title: isFrench ? "Plus" : "More", icon: "ellipsis.circle.fill")
+                    tabletTab(.profile, title: isFrench ? "Compte" : "Account", icon: "person.crop.circle.fill")
                 }
                 .listStyle(.sidebar)
                 .navigationTitle("Minerva Flow")
@@ -51,12 +51,8 @@ struct MainTabView: View {
                 .tabItem { Label(isFrench ? "Offres" : "Offers", systemImage: "gift.fill") }
                 .tag(AppTab.rewards)
 
-            MembershipCardsView()
-                .tabItem { Label(isFrench ? "Mes cartes" : "My cards", systemImage: "creditcard.fill") }
-                .tag(AppTab.cards)
-
             ProfileView()
-                .tabItem { Label(isFrench ? "Plus" : "More", systemImage: "ellipsis.circle.fill") }
+                .tabItem { Label(isFrench ? "Compte" : "Account", systemImage: "person.crop.circle.fill") }
                 .tag(AppTab.profile)
             }
           }
@@ -104,7 +100,14 @@ struct MainTabView: View {
 
     private func applyPendingTabIfNeeded() {
         guard let pending = router.pendingTab else { return }
-        selection = pending
+        // On phones "Mes cartes" lives inside Compte (five tabs fit the bar;
+        // a sixth made iOS hide two of them behind a plain "Autre" list).
+        if pending == .cards && horizontalSizeClass != .regular {
+            router.pendingCompteRoute = .cards
+            selection = .profile
+        } else {
+            selection = pending
+        }
         router.pendingTab = nil
     }
 

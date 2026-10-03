@@ -63,7 +63,7 @@ struct AuthView: View {
         /// indistinguishable from "the page doesn't exist" to whoever's
         /// looking at it.
         var url: URL {
-            Config.apiBaseURL.appending(path: self == .terms ? "/legal/terms" : "/legal/privacy")
+            self == .terms ? Config.termsURL : Config.privacyPolicyURL
         }
     }
 
@@ -83,9 +83,8 @@ struct AuthView: View {
                             + Text("Flow").foregroundStyle(MinervaColor.emeraldDark))
                             .font(.system(size: 16, weight: .bold))
                         Spacer()
-                        LanguageMenu(language: Binding(get: { language }, set: { storedLanguage = $0.rawValue }))
+                        LanguageMenu(language: Binding(get: { language }, set: { storedLanguage = $0.rawValue }), tint: MinervaColor.emeraldDark)
                             .environment(\.colorScheme, .light)
-                            .foregroundStyle(MinervaColor.emeraldDark)
                     }
 
                     card

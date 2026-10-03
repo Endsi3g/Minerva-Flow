@@ -70,7 +70,7 @@ export async function updateMyProfileAction(
     name?: string;
     phone?: string | null;
     avatarUrl?: string | null;
-    notificationFrequency?: "all" | "important_only";
+    notificationFrequency?: "all" | "important_only" | "frequent";
   }
 ): Promise<boolean> {
   const supabase = await createClient();

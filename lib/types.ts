@@ -699,7 +699,7 @@ export type Customer = {
   avatarUrl: string | null;
   favoriteOfferIds: string[];
   favoriteMenuItemIds: string[];
-  notificationFrequency: "all" | "important_only";
+  notificationFrequency: "all" | "important_only" | "frequent";
   posCustomerId?: string | null;
 };
 

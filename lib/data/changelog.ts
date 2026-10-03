@@ -3,8 +3,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type ChangelogCategory = "fonctionnalite" | "amelioration" | "correctif";
 
+export type ChangelogAudience = "owner" | "client" | "all";
+
 export type ChangelogEntry = {
   id: string;
+  audience: ChangelogAudience;
   title: string;
   description: string;
   category: ChangelogCategory;
@@ -14,6 +17,7 @@ export type ChangelogEntry = {
 
 type ChangelogEntryRow = {
   id: string;
+  audience: ChangelogAudience | null;
   title: string;
   description: string;
   category: ChangelogCategory;
@@ -24,6 +28,7 @@ type ChangelogEntryRow = {
 function mapEntry(row: ChangelogEntryRow): ChangelogEntry {
   return {
     id: row.id,
+    audience: row.audience ?? "owner",
     title: row.title,
     description: row.description,
     category: row.category,
@@ -47,7 +52,9 @@ function normalizeTitle(title: string): string {
     .toLowerCase();
 }
 
-const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
+type DefaultEntry = Omit<ChangelogEntry, "audience">;
+
+const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = ([
   {
     id: "ch-2026-09-27-flow-direct-menu-orders-stock",
     title: "Flow Direct — menu partageable, commandes suivies et stock",
@@ -226,9 +233,19 @@ const DEFAULT_CHANGELOG_ENTRIES: ChangelogEntry[] = [
     category: "fonctionnalite",
     publishedAt: "2026-07-23T08:15:00.000Z",
   },
-];
+] satisfies DefaultEntry[]).map((entry) => ({ ...entry, audience: "owner" as const }));
 
-export async function getChangelogEntries(): Promise<ChangelogEntry[]> {
+/**
+ * `audience` narrows to what one reader should see: "owner" returns owner and
+ * shared entries, "client" returns client and shared entries. Omit it for the
+ * platform-admin view, which needs everything. The hardcoded fallback entries
+ * are all owner-facing, so they never appear in the client list.
+ */
+export async function getChangelogEntries(audience?: Exclude<ChangelogAudience, "all">): Promise<ChangelogEntry[]> {
+  const visible = (entry: ChangelogEntry) =>
+    !audience || entry.audience === "all" || entry.audience === audience;
+  const fallback = DEFAULT_CHANGELOG_ENTRIES.filter(visible);
+
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -236,19 +253,19 @@ export async function getChangelogEntries(): Promise<ChangelogEntry[]> {
       .select("*")
       .order("published_at", { ascending: false });
 
-    if (error || !data || data.length === 0) return DEFAULT_CHANGELOG_ENTRIES;
-    const dbEntries = (data as ChangelogEntryRow[]).map(mapEntry);
+    if (error || !data || data.length === 0) return fallback;
+    const dbEntries = (data as ChangelogEntryRow[]).map(mapEntry).filter(visible);
 
     const existingIds = new Set(dbEntries.map((e) => e.id));
     const existingTitles = new Set(dbEntries.map((e) => normalizeTitle(e.title)));
-    const missingDefaults = DEFAULT_CHANGELOG_ENTRIES.filter(
+    const missingDefaults = fallback.filter(
       (e) => !existingIds.has(e.id) && !existingTitles.has(normalizeTitle(e.title))
     );
     return [...missingDefaults, ...dbEntries].sort(
       (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
     );
   } catch {
-    return DEFAULT_CHANGELOG_ENTRIES;
+    return fallback;
   }
 }
 
@@ -257,6 +274,8 @@ export type CreateChangelogEntryInput = {
   description: string;
   category: ChangelogCategory;
   imageUrl?: string | null;
+  /** Defaults to "owner": customer-facing entries must be opted into. */
+  audience?: ChangelogAudience;
 };
 
 export async function createChangelogEntry(input: CreateChangelogEntryInput): Promise<ChangelogEntry | null> {
@@ -271,6 +290,7 @@ export async function createChangelogEntry(input: CreateChangelogEntryInput): Pr
       title: input.title,
       description: input.description,
       category: input.category,
+      audience: input.audience ?? "owner",
       image_url: input.imageUrl ?? null,
       created_by: user?.id,
     })
@@ -289,6 +309,7 @@ export async function createChangelogEntryAsSystem(input: CreateChangelogEntryIn
       title: input.title,
       description: input.description,
       category: input.category,
+      audience: input.audience ?? "owner",
       image_url: input.imageUrl ?? null,
       created_by: null,
     })

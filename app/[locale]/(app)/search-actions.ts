@@ -117,7 +117,7 @@ const SETTINGS_DEEP_LINKS: SearchResult[] = [
     type: "setting",
     title: "Intégrations & Caisse POS (Square, Lightspeed, Stripe)",
     subtitle: "Connexions caisses enregistreuses, paiements et plateformes",
-    href: "/settings?tab=integrations",
+    href: "/settings",
     badge: "Paramètres",
   },
   {
@@ -125,7 +125,7 @@ const SETTINGS_DEEP_LINKS: SearchResult[] = [
     type: "setting",
     title: "Équipe & Gestion des Rôles",
     subtitle: "Permissions d'accès (Owner, Manager, Staff, Consultant)",
-    href: "/settings?tab=equipe",
+    href: "/collaborateurs",
     badge: "Paramètres",
   },
   {
@@ -133,7 +133,7 @@ const SETTINGS_DEEP_LINKS: SearchResult[] = [
     type: "setting",
     title: "Alertes & Règles Opérationnelles",
     subtitle: "Règles automatiques de détection des marges et stocks",
-    href: "/settings?tab=alertes",
+    href: "/settings/alertes",
     badge: "Paramètres",
   },
   {
@@ -141,7 +141,7 @@ const SETTINGS_DEEP_LINKS: SearchResult[] = [
     type: "setting",
     title: "Établissement & Coordonnées",
     subtitle: "Nom, adresse, numéro de téléphone et logo de l'établissement",
-    href: "/settings?tab=general",
+    href: "/etablissement",
     badge: "Paramètres",
   },
   {

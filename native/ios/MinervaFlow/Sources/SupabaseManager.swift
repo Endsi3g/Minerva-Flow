@@ -26,6 +26,7 @@ final class SupabaseManager: ObservableObject {
     @Published var restaurantTimezone: TimeZone = .current
     @Published var restaurantGoogleMapsUrl: String?
     @Published var restaurantGooglePlaceId: String?
+    @Published var restaurantPhone: String?
     /// Manual "on est débordés" toggle OR live en_preparation count over the owner's threshold — same signal as the web menu's delay banner (see computeIsBusy).
     @Published var restaurantIsBusy: Bool = false
     /// The rotating card-pairing code (MyCardView) and its lifecycle state.
@@ -62,8 +63,12 @@ final class SupabaseManager: ObservableObject {
     /// above are scoped to (which stays as-is: Home/Commander/Rewards are
     /// inherently one-restaurant-at-a-time screens, this is additive).
     @Published var allMemberships: [RestaurantMembership] = []
+    /// Every customer row of the account (one per establishment), oldest first.
+    @Published var allCustomers: [Customer] = []
     @Published var allTransactions: [LoyaltyTransaction] = []
     @Published var allRedemptions: [RewardRedemption] = []
+    @Published var myOrders: [CustomerOrder] = []
+    @Published var isLoadingOrders = false
     @Published var isLoadingData = false
     @Published var isLoadingMenu = false
     @Published private(set) var isUsingDemoMenuFallback = false
@@ -88,6 +93,21 @@ final class SupabaseManager: ObservableObject {
     /// Native owner/manager mode is resolved from the authenticated user's
     /// restaurant membership, never from a client-side flag.
     @Published var isOwnerExperience = false
+    /// Mirrors the web /equipe gate (lib/data/team-portal.ts): a distinct
+    /// account type from owner/customer, checked first in loadPortalData so
+    /// a team/ambassador account never falls into restaurant resolution.
+    @Published var isTeamExperience = false
+    @Published var isTeamMember = false
+    @Published var teamMetrics: NativeTeamMetrics?
+    @Published var isLoadingTeamMetrics = false
+    @Published var teamMetricsError: String?
+    @Published var academyPages: [NativeAcademyPage] = []
+    @Published var teamGoals: NativeTeamGoals?
+    @Published var isLoadingAcademy = false
+    @Published var isLoadingTeamGoals = false
+    @Published var memberDirectory: [NativeMemberSummary] = []
+    @Published var memberDirectoryUserId: String?
+    @Published var isLoadingMembers = false
     /// Prevents a freshly authenticated owner from briefly seeing the
     /// customer onboarding while memberships are still being resolved.
     @Published var isResolvingExperience = false
@@ -270,7 +290,7 @@ final class SupabaseManager: ObservableObject {
             realtimeLastUpdate = Date()
         } catch {
             realtimeStatus = "reconnecting"
-            print("Realtime subscribe error: \(error)")
+            AppLog.failure("Realtime subscribe", error)
         }
     }
 
@@ -396,11 +416,160 @@ final class SupabaseManager: ObservableObject {
     /// relationship rather than offering the multi-restaurant chooser the
     /// web portal has (fine for Phase 1 — most loyalty customers belong to
     /// exactly one restaurant).
+    /// Cross-tenant, so it goes through /api/team/metrics (verifies
+    /// is_team_member server-side) rather than a direct RLS-scoped query.
+    func loadTeamMetrics() async {
+        guard isTeamMember else { return }
+        isLoadingTeamMetrics = true
+        teamMetricsError = nil
+        defer { isLoadingTeamMetrics = false }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/team/metrics"))
+            teamMetrics = try JSONDecoder().decode(NativeTeamMetrics.self, from: data)
+        } catch {
+            teamMetricsError = "Impossible de charger les indicateurs. Réessayez."
+            AppLog.failure("loadTeamMetrics", error)
+        }
+    }
+
+    /// Same content as web /equipe/academie; the server strips team-only
+    /// sections for ambassadors, so nothing is filtered client-side.
+    func loadTeamAcademy() async {
+        isLoadingAcademy = true
+        defer { isLoadingAcademy = false }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/team/academy"))
+            academyPages = try JSONDecoder().decode(NativeAcademyResponse.self, from: data).pages
+        } catch {
+            AppLog.failure("loadTeamAcademy", error)
+        }
+    }
+
+    /// Active touchpoints of the selected restaurant, via the owner's own RLS
+    /// session (physical_touchpoints_manage_select: owner/manager only).
+    func loadOwnerTouchpoints() async -> [NativeOwnerTouchpoint] {
+        guard let restaurantId = selectedOwnerRestaurantId else { return [] }
+        do {
+            return try await client
+                .from("physical_touchpoints")
+                .select("id, label, type, code, destination_kind")
+                .eq("restaurant_id", value: restaurantId)
+                .eq("is_active", value: true)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+        } catch {
+            AppLog.failure("loadOwnerTouchpoints", error)
+            return []
+        }
+    }
+
+    func loadMemberDirectory() async {
+        guard isTeamMember else { return }
+        isLoadingMembers = true
+        defer { isLoadingMembers = false }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/team/members"))
+            let decoded = try JSONDecoder().decode(NativeMemberDirectory.self, from: data)
+            memberDirectory = decoded.members
+            memberDirectoryUserId = decoded.currentUserId
+        } catch {
+            AppLog.failure("loadMemberDirectory", error)
+        }
+    }
+
+    /// `id` may be "me". Employees can open any employee; ambassadors only themselves.
+    func loadMemberProfile(id: String) async -> NativeMemberProfile? {
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/team/members/\(id)"))
+            return try JSONDecoder().decode(NativeMemberProfile.self, from: data)
+        } catch {
+            AppLog.failure("loadMemberProfile", error)
+            return nil
+        }
+    }
+
+    /// Writes to the caller's own profile. Returns nil on success, otherwise a
+    /// message safe to show (the server's own validation text when it sent one).
+    func updateTeamProfile(_ payload: [String: String]) async -> String? {
+        guard let token = await bearerToken(),
+              let body = try? JSONSerialization.data(withJSONObject: payload) else {
+            return "Session expirée. Reconnectez-vous."
+        }
+        var request = URLRequest(url: Config.apiBaseURL.appending(path: "/api/team/profile"), timeoutInterval: 15)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else { return "Échec de l'enregistrement." }
+            if (200..<300).contains(http.statusCode) { return nil }
+            struct ErrorBody: Decodable { let error: String }
+            return (try? JSONDecoder().decode(ErrorBody.self, from: data))?.error ?? "Échec de l'enregistrement."
+        } catch {
+            AppLog.failure("updateTeamProfile", error)
+            return "Connexion impossible. Réessayez."
+        }
+    }
+
+    func loadTeamGoals() async {
+        guard isTeamMember else { return }
+        isLoadingTeamGoals = true
+        defer { isLoadingTeamGoals = false }
+        do {
+            let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/team/goals"))
+            teamGoals = try JSONDecoder().decode(NativeTeamGoals.self, from: data)
+        } catch {
+            AppLog.failure("loadTeamGoals", error)
+        }
+    }
+
+    func saveTeamGoal(metric: String, target: Double) async -> Bool {
+        guard isTeamMember else { return false }
+        struct Payload: Encodable { let metric: String; let target: Double }
+        do {
+            let body = try JSONEncoder().encode(Payload(metric: metric, target: target))
+            _ = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/team/goals"), method: "POST", body: body)
+            await loadTeamGoals()
+            return true
+        } catch {
+            AppLog.failure("saveTeamGoal", error)
+            return false
+        }
+    }
+
+    /// Checked before loadOwnerContext — team/ambassador is a distinct
+    /// account type, never a restaurant membership. Mirrors
+    /// lib/data/team-portal.ts's getTeamPortalAccess exactly (team member
+    /// OR active flow_ambassadors row).
+    private func loadTeamPortalContext() async {
+        guard let userId = authUserID else { isTeamExperience = false; return }
+        struct ProfileFlag: Decodable { let isTeamMember: Bool
+            enum CodingKeys: String, CodingKey { case isTeamMember = "is_team_member" }
+        }
+        do {
+            async let profile: [ProfileFlag] = client.from("profiles").select("is_team_member").eq("id", value: userId.uuidString).execute().value
+            async let ambassador: [NativeFlowAmbassadorFlag] = client.from("flow_ambassadors").select("id").eq("user_id", value: userId.uuidString).eq("status", value: "active").execute().value
+            let isTeam = try await profile.first?.isTeamMember ?? false
+            let isAmbassador = try await !ambassador.isEmpty
+            isTeamMember = isTeam
+            isTeamExperience = isTeam || isAmbassador
+        } catch {
+            isTeamExperience = false
+            AppLog.failure("loadTeamPortalContext", error)
+        }
+    }
+
     func loadPortalData() async {
         isLoadingData = true
         birthdayOffer = nil
         defer { isLoadingData = false }
         do {
+            await loadTeamPortalContext()
+            if isTeamExperience {
+                return
+            }
             await loadOwnerContext()
             if isOwnerExperience {
                 return
@@ -419,6 +588,7 @@ final class SupabaseManager: ObservableObject {
                 .order("created_at", ascending: true)
                 .execute()
                 .value
+            allCustomers = customers
             guard let mine = customers.first else {
                 customer = nil
                 activateTenantBranding(nil)
@@ -490,7 +660,7 @@ final class SupabaseManager: ObservableObject {
             // instead of blanking out), but it's still surfaced so the user
             // knows a refresh silently failed rather than assuming it's current.
             lastError = "La mise à jour a échoué. Vérifiez votre connexion et réessayez."
-            print("loadPortalData error: \(error)")
+            AppLog.failure("loadPortalData", error)
         }
     }
 
@@ -512,10 +682,12 @@ final class SupabaseManager: ObservableObject {
     /// Reads the platform-wide release history. The changelog table's
     /// authenticated SELECT policy is the access boundary; no restaurant
     /// data or privileged client is involved.
-    func fetchNativeChangelog() async throws -> [NativeChangelogEntry] {
+    /// `audience` is "owner" or "client"; entries marked "all" are always included.
+    func fetchNativeChangelog(audience: String) async throws -> [NativeChangelogEntry] {
         try await client
             .from("changelog_entries")
             .select("id, title, description, category, published_at")
+            .in("audience", values: [audience, "all"])
             .order("published_at", ascending: false)
             .limit(100)
             .execute()
@@ -564,7 +736,7 @@ final class SupabaseManager: ObservableObject {
             ownerRestaurants = []
             ownerBranding = nil
             ownerMetrics = NativeOwnerMetrics()
-            print("loadOwnerContext error: \(error)")
+            AppLog.failure("loadOwnerContext", error)
         }
     }
 
@@ -581,7 +753,7 @@ final class SupabaseManager: ObservableObject {
                 let orders: [OrderRow] = try await client.from("orders").select("id").eq("restaurant_id", value: restaurant.id).gte("created_at", value: iso).neq("status", value: "annulee").execute().value
                 metrics.monthOrders += orders.count
             } catch {
-                print("loadOwnerMetrics error: \(error)")
+                AppLog.failure("loadOwnerMetrics", error)
             }
         }
         ownerMetrics = metrics
@@ -594,7 +766,7 @@ final class SupabaseManager: ObservableObject {
             do {
                 let rows: [NativeOwnerOrder] = try await client.from("orders").select("id, restaurant_id, status, guest_name, total, created_at, requested_ready_at, order_kind").eq("restaurant_id", value: restaurant.id).order("created_at", ascending: false).limit(50).execute().value
                 result.append(contentsOf: rows)
-            } catch { print("loadOwnerOrders error: \(error)") }
+            } catch { AppLog.failure("loadOwnerOrders", error) }
         }
         ownerOrders = result.sorted { $0.createdAt > $1.createdAt }
     }
@@ -623,7 +795,7 @@ final class SupabaseManager: ObservableObject {
             ownerTransactions = result.6
             ownerReviews = result.7
         } catch {
-            print("loadOwnerOperations error: \(error)")
+            AppLog.failure("loadOwnerOperations", error)
         }
     }
 
@@ -667,7 +839,7 @@ final class SupabaseManager: ObservableObject {
             }
         } catch {
             ownerBranding = nil
-            print("loadSelectedOwnerBranding error: \(error)")
+            AppLog.failure("loadSelectedOwnerBranding", error)
         }
     }
 
@@ -685,7 +857,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "Impossible d’enregistrer le nom de l’établissement."
-            print("updateOwnerRestaurantName error: \(error)")
+            AppLog.failure("updateOwnerRestaurantName", error)
             return false
         }
     }
@@ -718,7 +890,7 @@ final class SupabaseManager: ObservableObject {
             ).execute().value
         } catch {
             lastError = "La recherche client a échoué. Vérifiez le numéro et réessayez."
-            print("lookupOwnerCustomersByPhone error: \(error)")
+            AppLog.failure("lookupOwnerCustomersByPhone", error)
             return []
         }
     }
@@ -754,7 +926,7 @@ final class SupabaseManager: ObservableObject {
             )
         } catch {
             lastError = "La confirmation d’identité a échoué. Demandez un nouveau code au client."
-            print("confirmOwnerCustomerIdentity error: \(error)")
+            AppLog.failure("confirmOwnerCustomerIdentity", error)
             return nil
         }
     }
@@ -809,7 +981,7 @@ final class SupabaseManager: ObservableObject {
             return updated
         } catch {
             lastError = "La visite et les points n’ont pas pu être enregistrés. Réessayez."
-            print("recordOwnerCustomerVisit error: \(error)")
+            AppLog.failure("recordOwnerCustomerVisit", error)
             return nil
         }
     }
@@ -829,7 +1001,7 @@ final class SupabaseManager: ObservableObject {
         } catch {
             customerMealSuggestions = []
             customerMealSuggestionsError = "Les suggestions ne sont pas disponibles. Vérifiez votre connexion, puis réessayez."
-            print("fetchMealSuggestions error: \(error)")
+            AppLog.failure("fetchMealSuggestions", error)
         }
     }
 
@@ -849,7 +1021,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "Votre suggestion n’a pas pu être envoyée. Réessayez."
-            print("submitMealSuggestion error: \(error)")
+            AppLog.failure("submitMealSuggestion", error)
             return false
         }
     }
@@ -874,7 +1046,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "Votre vote n’a pas pu être enregistré. Réessayez."
-            print("voteForMealSuggestion error: \(error)")
+            AppLog.failure("voteForMealSuggestion", error)
             return false
         }
     }
@@ -886,7 +1058,7 @@ final class SupabaseManager: ObservableObject {
             ownerMealSuggestions = try await client.rpc("get_meal_suggestions", params: Params(p_restaurant_id: restaurantId)).execute().value
         } catch {
             ownerMealSuggestions = []
-            print("fetchOwnerMealSuggestions error: \(error)")
+            AppLog.failure("fetchOwnerMealSuggestions", error)
         }
     }
 
@@ -910,7 +1082,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "Le brouillon n’a pas pu être créé. Réessayez."
-            print("addMealSuggestionAsDraft error: \(error)")
+            AppLog.failure("addMealSuggestionAsDraft", error)
             return false
         }
     }
@@ -954,7 +1126,7 @@ final class SupabaseManager: ObservableObject {
             )).eq("restaurant_id", value: restaurantId).eq("id", value: item.id).execute()
             await refreshOwnerOperations()
             return true
-        } catch { print("updateOwnerMenuItem error: \(error)"); return false }
+        } catch { AppLog.failure("updateOwnerMenuItem", error); return false }
     }
 
     func updateOwnerOrderStatus(_ orderId: String, restaurantId: String, status: String) async -> Bool {
@@ -973,7 +1145,7 @@ final class SupabaseManager: ObservableObject {
             )
             await refreshOwnerOperations()
             return true
-        } catch { print("updateOwnerOrderStatus error: \(error)"); return false }
+        } catch { AppLog.failure("updateOwnerOrderStatus", error); return false }
     }
 
     /// The native owner shell uses the same server-side delivery path as the
@@ -993,7 +1165,7 @@ final class SupabaseManager: ObservableObject {
             return try JSONDecoder().decode(Response.self, from: data).ok
         } catch {
             lastError = "La notification n'a pas pu être envoyée. Réessayez."
-            print("notifyOwnerOrder error: \(error)")
+            AppLog.failure("notifyOwnerOrder", error)
             return false
         }
     }
@@ -1007,7 +1179,7 @@ final class SupabaseManager: ObservableObject {
             let _: NativeOwnerRestaurantReview = try await client.rpc("respond_to_review", params: Params(p_review_id: reviewId, p_response: trimmed)).single().execute().value
             await refreshOwnerOperations()
             return true
-        } catch { print("updateOwnerReviewResponse error: \(error)"); return false }
+        } catch { AppLog.failure("updateOwnerReviewResponse", error); return false }
     }
 
     func updateOwnerEmployee(_ employee: NativeOwnerEmployee, fullName: String, roleTitle: String, hourlyWage: Double?, active: Bool) async -> Bool {
@@ -1019,7 +1191,7 @@ final class SupabaseManager: ObservableObject {
             try await client.from("employees").update(Patch(fullName: fullName.trimmingCharacters(in: .whitespacesAndNewlines), roleTitle: roleTitle.trimmingCharacters(in: .whitespacesAndNewlines), hourlyWage: hourlyWage, active: active)).eq("restaurant_id", value: restaurantId).eq("id", value: employee.id).execute()
             await refreshOwnerOperations()
             return true
-        } catch { print("updateOwnerEmployee error: \(error)"); return false }
+        } catch { AppLog.failure("updateOwnerEmployee", error); return false }
     }
 
     func updateOwnerInventoryItem(_ item: NativeOwnerInventoryItem, quantity: Double, parLevel: Double?, unitCost: Double) async -> Bool {
@@ -1031,7 +1203,7 @@ final class SupabaseManager: ObservableObject {
             try await client.from("inventory_items").update(Patch(quantityOnHand: quantity, parLevel: parLevel, unitCost: unitCost)).eq("restaurant_id", value: restaurantId).eq("id", value: item.id).execute()
             await refreshOwnerOperations()
             return true
-        } catch { print("updateOwnerInventoryItem error: \(error)"); return false }
+        } catch { AppLog.failure("updateOwnerInventoryItem", error); return false }
     }
 
     /// Writes the home-screen widget's entire data diet to the shared App
@@ -1088,7 +1260,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "La mise à jour de votre nom a échoué. Réessayez."
-            print("updateName error: \(error)")
+            AppLog.failure("updateName", error)
             return false
         }
     }
@@ -1111,7 +1283,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "La mise à jour de votre numéro a échoué. Réessayez."
-            print("updatePhone error: \(error)")
+            AppLog.failure("updatePhone", error)
             return false
         }
     }
@@ -1142,7 +1314,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "L'envoi de la photo a échoué. Réessayez."
-            print("uploadAvatar error: \(error)")
+            AppLog.failure("uploadAvatar", error)
             return false
         }
     }
@@ -1181,7 +1353,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "La mise à jour de vos préférences a échoué. Réessayez."
-            print("updateNotificationFrequency error: \(error)")
+            AppLog.failure("updateNotificationFrequency", error)
             return false
         }
     }
@@ -1208,7 +1380,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "La mise à jour de vos préférences a échoué. Réessayez."
-            print("updateMarketingConsent error: \(error)")
+            AppLog.failure("updateMarketingConsent", error)
             return false
         }
     }
@@ -1241,7 +1413,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "La mise à jour de vos favoris a échoué. Réessayez."
-            print("toggleFavoriteMenuItem error: \(error)")
+            AppLog.failure("toggleFavoriteMenuItem", error)
             return false
         }
     }
@@ -1266,7 +1438,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "La mise à jour de vos favoris a échoué. Réessayez."
-            print("toggleFavoriteOffer error: \(error)")
+            AppLog.failure("toggleFavoriteOffer", error)
             return false
         }
     }
@@ -1291,7 +1463,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "L'échange a échoué. Vos points n'ont pas été déduits, réessayez."
-            print("redeem error: \(error)")
+            AppLog.failure("redeem", error)
             return false
         }
     }
@@ -1323,7 +1495,7 @@ final class SupabaseManager: ObservableObject {
             pairingCode = nil
             pairingCodeExpiresAt = nil
             pairingCodeError = "Impossible de générer votre code. Réessayez."
-            print("mintPairingCode error: \(error)")
+            AppLog.failure("mintPairingCode", error)
         }
     }
 
@@ -1347,7 +1519,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "Impossible de devenir client pour l'instant. Réessayez."
-            print("joinRestaurant error: \(error)")
+            AppLog.failure("joinRestaurant", error)
             return false
         }
     }
@@ -1396,17 +1568,6 @@ final class SupabaseManager: ObservableObject {
         await ambassadorRequest(["action": "join"])
     }
 
-    func connectFlowAmbassadorPayouts(locale: String) async -> URL? {
-        guard let data = await ambassadorRequestData(["action": "connectStripe", "locale": locale]),
-              let value = try? JSONDecoder().decode([String: String].self, from: data),
-              let rawURL = value["url"] else { return nil }
-        return URL(string: rawURL)
-    }
-
-    func requestFlowAmbassadorPayout(commissionId: String) async -> FlowAmbassadorDashboard? {
-        await ambassadorRequest(["action": "payout", "commissionId": commissionId])
-    }
-
     func submitFlowAmbassadorUgc(restaurantProfileId: String, platform: String, postUrl: String, caption: String, referralLinkId: String?) async -> FlowAmbassadorDashboard? {
         var body: [String: Any] = [
             "action": "submitUgc", "restaurantProfileId": restaurantProfileId,
@@ -1450,7 +1611,7 @@ final class SupabaseManager: ObservableObject {
             return fileURL
         } catch {
             lastError = "L'export de vos données a échoué. Réessayez."
-            print("exportMyData error: \(error)")
+            AppLog.failure("exportMyData", error)
             return nil
         }
     }
@@ -1471,7 +1632,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "La suppression du compte a échoué. Réessayez."
-            print("deleteAccount error: \(error)")
+            AppLog.failure("deleteAccount", error)
             return false
         }
     }
@@ -1493,6 +1654,7 @@ final class SupabaseManager: ObservableObject {
             let loyaltyTier3Threshold: Double
             let googleMapsUrl: String?
             let googlePlaceId: String?
+            let phone: String?
             let isBusy: Bool?
         }
         do {
@@ -1507,9 +1669,36 @@ final class SupabaseManager: ObservableObject {
             loyaltyTier3Threshold = decoded.loyaltyTier3Threshold
             restaurantGoogleMapsUrl = decoded.googleMapsUrl
             restaurantGooglePlaceId = decoded.googlePlaceId
+            restaurantPhone = decoded.phone
             restaurantIsBusy = decoded.isBusy ?? false
         } catch {
-            print("fetchRestaurantInfo error: \(error)")
+            AppLog.failure("fetchRestaurantInfo", error)
+        }
+    }
+
+    /// Fetched lazily by the "Mes commandes" subpage only (not folded into
+    /// loadPortalData) since order history, unlike points/rewards, is
+    /// something a customer checks occasionally rather than on every app
+    /// open — `orders_customer_select` already scopes this to the caller's
+    /// own rows, no bridge endpoint needed.
+    func loadMyOrders() async {
+        guard let customerId = customer?.id, let restaurantId = customer?.restaurantId else { return }
+        isLoadingOrders = true
+        defer { isLoadingOrders = false }
+        do {
+            let orders: [CustomerOrder] = try await client
+                .from("orders")
+                .select("id, status, total, created_at, order_items(id, item_name, unit_price, quantity)")
+                .eq("customer_id", value: customerId)
+                .eq("restaurant_id", value: restaurantId)
+                .order("created_at", ascending: false)
+                .limit(100)
+                .execute()
+                .value
+            myOrders = orders
+        } catch {
+            AppLog.failure("loadMyOrders", error)
+            lastError = "Impossible de charger vos commandes. Réessayez."
         }
     }
 
@@ -1533,13 +1722,81 @@ final class SupabaseManager: ObservableObject {
     /// fetched with no restaurant filter at all — RLS
     /// (loyalty_transactions_select_own) already scopes to every customer
     /// row this auth.uid() owns, across any restaurant, for free.
+    /// One entry per establishment the account belongs to, with the favourite
+    /// dishes and offers saved there. The home establishment reuses what is
+    /// already loaded; the others are fetched (menu through the bridge, which
+    /// only answers for establishments the caller is a customer of).
+    func loadFavoritesByEstablishment() async -> [EstablishmentFavorites] {
+        var result: [EstablishmentFavorites] = []
+        for membership in allMemberships {
+            let row = allCustomers.first { $0.restaurantId == membership.restaurantId }
+            let itemIds = Set(row?.favoriteMenuItemIds ?? [])
+            let offerIds = Set(row?.favoriteOfferIds ?? [])
+            let isHome = membership.restaurantId == customer?.restaurantId
+            var items: [NativeMenuItem] = []
+            var offersFound: [Offer] = []
+            var failed = false
+
+            if isHome {
+                items = menuItems.filter { itemIds.contains($0.id) }
+                offersFound = offers.filter { offerIds.contains($0.id) }
+            } else {
+                if !itemIds.isEmpty {
+                    if let fetched = await fetchMenuItems(forRestaurant: membership.restaurantId) {
+                        items = fetched.filter { itemIds.contains($0.id) }
+                    } else { failed = true }
+                }
+                if !offerIds.isEmpty {
+                    do {
+                        offersFound = try await client
+                            .from("offers")
+                            .select()
+                            .in("id", values: Array(offerIds))
+                            .execute()
+                            .value
+                    } catch {
+                        AppLog.failure("loadFavoritesByEstablishment (offers)", error)
+                        failed = true
+                    }
+                }
+            }
+            result.append(EstablishmentFavorites(
+                id: membership.restaurantId,
+                name: membership.restaurantName,
+                items: items,
+                offers: offersFound,
+                savedCount: itemIds.count + offerIds.count,
+                isHome: isHome,
+                loadFailed: failed
+            ))
+        }
+        // The home establishment first, then those that actually have favourites.
+        return result.sorted { lhs, rhs in
+            if lhs.isHome != rhs.isHome { return lhs.isHome }
+            if (lhs.savedCount > 0) != (rhs.savedCount > 0) { return lhs.savedCount > 0 }
+            return lhs.name < rhs.name
+        }
+    }
+
+    private func fetchMenuItems(forRestaurant restaurantId: String) async -> [NativeMenuItem]? {
+        do {
+            let url = Config.apiBaseURL.appending(path: "/api/portal/menu")
+                .appending(queryItems: [URLQueryItem(name: "restaurantId", value: restaurantId)])
+            let data = try await authorizedRequest(url)
+            return try JSONDecoder().decode(MenuResponse.self, from: data).items.filter(\.active)
+        } catch {
+            AppLog.failure("fetchMenuItems(forRestaurant:)", error)
+            return nil
+        }
+    }
+
     func fetchAllMemberships() async {
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurants"))
             let decoded = try JSONDecoder().decode(RestaurantMembershipsResponse.self, from: data)
             allMemberships = decoded.memberships
         } catch {
-            print("fetchAllMemberships error: \(error)")
+            AppLog.failure("fetchAllMemberships", error)
         }
 
         do {
@@ -1561,7 +1818,7 @@ final class SupabaseManager: ObservableObject {
 
             (allTransactions, allRedemptions) = try await (txsFetch, redemptionsFetch)
         } catch {
-            print("fetchAllMemberships (history) error: \(error)")
+            AppLog.failure("fetchAllMemberships (history)", error)
         }
     }
 
@@ -1633,7 +1890,7 @@ final class SupabaseManager: ObservableObject {
             applyDemoMenuFallback(message: "Connexion indisponible : le menu démo reste accessible hors ligne.")
         } catch {
             applyDemoMenuFallback(message: "Le menu en ligne n’a pas pu être chargé. Le menu démo est affiché pour continuer le test.")
-            print("fetchMenu error: \(error)")
+            AppLog.failure("fetchMenu", error)
         }
     }
 
@@ -1666,7 +1923,7 @@ final class SupabaseManager: ObservableObject {
             )
         } catch {
             lastError = "La carte Apple Wallet n’a pas pu être téléchargée. Réessayez."
-            print("downloadAppleWalletPass error: \(error)")
+            AppLog.failure("downloadAppleWalletPass", error)
             return nil
         }
     }
@@ -1694,7 +1951,7 @@ final class SupabaseManager: ObservableObject {
             referralPrograms = programs
         } catch {
             lastError = "Les programmes de parrainage n'ont pas pu être chargés."
-            print("fetchReferrals error: \(error)")
+            AppLog.failure("fetchReferrals", error)
         }
     }
 
@@ -1718,7 +1975,7 @@ final class SupabaseManager: ObservableObject {
             return link
         } catch {
             lastError = "Impossible de créer votre lien de parrainage. Réessayez."
-            print("createReferralLink error: \(error)")
+            AppLog.failure("createReferralLink", error)
             return nil
         }
     }
@@ -1742,7 +1999,7 @@ final class SupabaseManager: ObservableObject {
             return response.quote
         } catch {
             lastError = "Le tarif de livraison n’a pas pu être calculé. Vérifiez l’adresse et réessayez."
-            print("quoteDelivery error: \(error)")
+            AppLog.failure("quoteDelivery", error)
             return nil
         }
     }
@@ -1809,7 +2066,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "La demande de devis n’a pas pu être envoyée. Vérifiez votre connexion et réessayez."
-            print("submitServiceQuote error: \(error)")
+            AppLog.failure("submitServiceQuote", error)
             return false
         }
     }
@@ -1829,7 +2086,7 @@ final class SupabaseManager: ObservableObject {
             customerServiceQuotes = try JSONDecoder().decode(Response.self, from: data).quotes
         } catch {
             customerServiceQuotesError = "Les demandes de devis n’ont pas pu être chargées. Vérifiez votre connexion, puis réessayez."
-            print("fetchCustomerServiceQuotes error: \(error)")
+            AppLog.failure("fetchCustomerServiceQuotes", error)
         }
     }
 
@@ -1878,12 +2135,12 @@ final class SupabaseManager: ObservableObject {
             return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false)
         } catch {
             lastError = "La commande a échoué. Réessayez."
-            print("submitOrder error: \(error)")
+            AppLog.failure("submitOrder", error)
             return OrderResult(ok: false, orderId: nil, estimatedReadyAt: nil, paymentURL: nil, paymentConfirmed: false)
         }
     }
 
-    /// Recovers the durable order/Stripe checkout after a lost response or
+    /// Recovers the durable order/online checkout after a lost response or
     /// app restart. The server scopes the key to the authenticated customer.
     func resumeOrder(idempotencyKey: String) async -> OrderResult {
         struct ResumeBody: Encodable { let idempotencyKey: String; let resumeOnly = true }
@@ -1919,7 +2176,7 @@ final class SupabaseManager: ObservableObject {
             )
             return try JSONDecoder().decode(Response.self, from: data).ok
         } catch {
-            print("submitSurvey error: \(error)")
+            AppLog.failure("submitSurvey", error)
             return false
         }
     }
@@ -1943,7 +2200,7 @@ final class SupabaseManager: ObservableObject {
             lastError = nil
         } catch {
             lastError = "Impossible de charger les restaurants à proximité."
-            print("fetchNearbyRestaurants error: \(error)")
+            AppLog.failure("fetchNearbyRestaurants", error)
         }
     }
 
@@ -1952,7 +2209,7 @@ final class SupabaseManager: ObservableObject {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/popular"))
             popularNearby = try JSONDecoder().decode(PopularMenuItemsResponse.self, from: data).items
         } catch {
-            print("fetchPopularNearby error: \(error)")
+            AppLog.failure("fetchPopularNearby", error)
         }
     }
 
@@ -1962,7 +2219,7 @@ final class SupabaseManager: ObservableObject {
             return try JSONDecoder().decode(DiscoverRestaurantResponse.self, from: data)
         } catch {
             lastError = "Impossible de charger ce restaurant."
-            print("fetchRestaurantDetail error: \(error)")
+            AppLog.failure("fetchRestaurantDetail", error)
             return nil
         }
     }
@@ -1983,7 +2240,7 @@ final class SupabaseManager: ObservableObject {
             let decoded = try JSONDecoder().decode(ScanResponse.self, from: data)
             return .success(restaurant: (id: decoded.restaurantId, name: decoded.restaurantName), branding: decoded.branding)
         } catch {
-            print("resolveScanToken error: \(error)")
+            AppLog.failure("resolveScanToken", error)
             return .failure("Ce code ne correspond à aucun restaurant Minerva Flow.")
         }
     }
@@ -1995,7 +2252,7 @@ final class SupabaseManager: ObservableObject {
             let response = try JSONDecoder().decode(BrandingResponse.self, from: data)
             activateTenantBranding(response.branding)
         } catch {
-            print("fetchTenantBranding error: \(error)")
+            AppLog.failure("fetchTenantBranding", error)
         }
     }
 
@@ -2030,7 +2287,7 @@ final class SupabaseManager: ObservableObject {
                 .value
             return reviews
         } catch {
-            print("fetchReviews error: \(error)")
+            AppLog.failure("fetchReviews", error)
             return []
         }
     }
@@ -2060,7 +2317,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "L'envoi de votre avis a échoué. Réessayez."
-            print("submitReview error: \(error)")
+            AppLog.failure("submitReview", error)
             return false
         }
     }
@@ -2078,7 +2335,7 @@ final class SupabaseManager: ObservableObject {
                 .value
             return reviews
         } catch {
-            print("fetchRestaurantReviews error: \(error)")
+            AppLog.failure("fetchRestaurantReviews", error)
             return []
         }
     }
@@ -2098,7 +2355,7 @@ final class SupabaseManager: ObservableObject {
             )
             return try client.storage.from("review-images").getPublicURL(path: path).absoluteString
         } catch {
-            print("uploadReviewImage error: \(error)")
+            AppLog.failure("uploadReviewImage", error)
             return nil
         }
     }
@@ -2126,7 +2383,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "L'envoi de votre avis a échoué. Réessayez."
-            print("submitRestaurantReview error: \(error)")
+            AppLog.failure("submitRestaurantReview", error)
             return false
         }
     }
@@ -2144,7 +2401,7 @@ final class SupabaseManager: ObservableObject {
                 .value
             return reviews
         } catch {
-            print("fetchOfferReviews error: \(error)")
+            AppLog.failure("fetchOfferReviews", error)
             return []
         }
     }
@@ -2173,7 +2430,7 @@ final class SupabaseManager: ObservableObject {
             return true
         } catch {
             lastError = "L'envoi de votre avis a échoué. Réessayez."
-            print("submitOfferReview error: \(error)")
+            AppLog.failure("submitOfferReview", error)
             return false
         }
     }
@@ -2183,7 +2440,7 @@ final class SupabaseManager: ObservableObject {
     /// device_push_tokens_owner_all (auth.uid() = user_id) makes this a
     /// direct, RLS-scoped upsert — no bridge needed. Actually delivering a
     /// push still requires a real APNs auth key configured server-side
-    /// (see native/ios/build-status.html); this half of the pipeline
+    /// (see docs/native-build-status.html); this half of the pipeline
     /// (permission, registration, token storage) works regardless of that.
     func registerPushToken(_ tokenData: Data) async {
         let token = tokenData.map { String(format: "%02.2hhx", $0) }.joined()
@@ -2209,7 +2466,7 @@ final class SupabaseManager: ObservableObject {
                 .upsert(TokenRow(user_id: userId, token: token, platform: "ios"), onConflict: "user_id,token")
                 .execute()
         } catch {
-            print("registerPushToken error: \(error)")
+            AppLog.failure("registerPushToken", error)
         }
     }
 
@@ -2236,7 +2493,7 @@ final class SupabaseManager: ObservableObject {
                 .insert(payload)
                 .execute()
         } catch {
-            print("submitAnnouncementVote error: \(error)")
+            AppLog.failure("submitAnnouncementVote", error)
         }
     }
 }

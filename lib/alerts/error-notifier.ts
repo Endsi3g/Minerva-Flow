@@ -266,7 +266,7 @@ export async function notifyCriticalError(details: CriticalErrorDetails): Promis
     }
 
     recentDispatches.push(now);
-    console.info(`[ErrorNotifier] 🚨 Alerte critique expédiée avec succès à ${recipient} (fingerprint: ${fingerprint})`);
+    console.info(`[ErrorNotifier] Alerte critique expédiée (fingerprint: ${fingerprint})`);
     return { sent: true };
   } catch (notifierErr) {
     // Ultimate defensive catch: never crash the calling application

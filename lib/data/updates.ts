@@ -10,9 +10,15 @@ import { sendChangelogCampaignEmail } from "@/lib/email/resend";
  * no-op until a verified Resend domain is set — see
  * sendChangelogCampaignEmail's doc comment). Shared by the manual admin
  * publish action and the automatic GitHub release webhook so both paths
- * behave identically.
+ * behave identically. Entries with audience "client" are not announced here.
  */
 export async function announceChangelogEntry(entry: ChangelogEntry): Promise<void> {
+  // A client-only entry is for customers: it must never push or email
+  // restaurant owners/staff (this fan-out only reaches restaurant members and
+  // the owner product-updates segment). Customers see it on their "Nouveautés"
+  // page; there is no customer push channel here.
+  if (entry.audience === "client") return;
+
   await notifyAllUsers({
     type: "changelog.published",
     title: "Mise à jour disponible",

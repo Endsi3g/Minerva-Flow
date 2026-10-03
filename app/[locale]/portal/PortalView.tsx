@@ -438,7 +438,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
 
         <div>
           <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Fréquence des messages</p>
-          <RadioGroup value={notificationFrequency} onValueChange={(value) => setNotificationFrequency(value as "all" | "important_only")} className="space-y-1.5">
+          <RadioGroup value={notificationFrequency} onValueChange={(value) => setNotificationFrequency(value as "all" | "important_only" | "frequent")} className="space-y-1.5">
             <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
               <RadioGroupItem value="all" className="mt-0.5" />
               <span>Tous les messages — rappels, récompenses et anniversaire.</span>
@@ -446,6 +446,10 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
             <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
               <RadioGroupItem value="important_only" className="mt-0.5" />
               <span>Seulement l&apos;essentiel — récompenses et anniversaire, sans les rappels.</span>
+            </label>
+            <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
+              <RadioGroupItem value="frequent" className="mt-0.5" />
+              <span>Fréquent — jusqu&apos;à 2 notifications par jour, entre 9 h et 20 h, avec des messages variés. Vous pouvez changer à tout moment.</span>
             </label>
           </RadioGroup>
         </div>

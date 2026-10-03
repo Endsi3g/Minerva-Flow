@@ -41,43 +41,38 @@ struct MenuItemDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                carousel
+        ZStack(alignment: .top) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    carousel
 
-                VStack(alignment: .leading, spacing: 20) {
-                    titleBlock
+                    VStack(alignment: .leading, spacing: 20) {
+                        titleBlock
 
-            actionButtons
+                        actionButtons
 
-                    if let description = item.description {
-                        descriptionSection(description)
+                        if let description = item.description {
+                            descriptionSection(description)
+                        }
+
+                        reviewsSection
+
+                        if !relatedItems.isEmpty {
+                            relatedSection
+                        }
                     }
-
-                    reviewsSection
-
-                    if !relatedItems.isEmpty {
-                        relatedSection
-                    }
+                    .padding(18)
                 }
-                .padding(18)
             }
+            .ignoresSafeArea(edges: .top)
+
+            floatingControls
         }
         .background(MinervaColor.cream.ignoresSafeArea())
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text(item.name)
-                    .font(.system(size: 15, weight: .semibold))
-                    .lineLimit(1)
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                ShareLink(item: shareText) {
-                    Image(systemName: "square.and.arrow.up")
-                }
-                .accessibilityLabel("Partager")
-            }
-        }
+        // Same edge-to-edge hero + floating controls as OfferDetailView, so
+        // the two item pages read as one design. Swipe-back still works:
+        // see the UINavigationController extension in Theme.swift.
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showReviewSheet) {
             WriteReviewSheet(item: item, restaurantId: restaurantId) { newAverage in
                 Task { await loadReviews() }
@@ -96,6 +91,38 @@ struct MenuItemDetailView: View {
         }
     }
 
+    // MARK: - Floating controls
+
+    private var floatingControls: some View {
+        HStack {
+            floatingCircleButton(systemName: "chevron.left", label: "Retour") { dismiss() }
+            Spacer()
+            ShareLink(item: shareText) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 32, height: 32)
+                    .background(.black.opacity(0.35))
+                    .clipShape(Circle())
+            }
+            .accessibilityLabel("Partager")
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+    }
+
+    private func floatingCircleButton(systemName: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(.black.opacity(0.35))
+                .clipShape(Circle())
+        }
+        .accessibilityLabel(label)
+    }
+
     // MARK: - Carousel
 
     private var carousel: some View {
@@ -108,7 +135,7 @@ struct MenuItemDetailView: View {
                         .font(.system(size: 40))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
-                .frame(height: 260)
+                .frame(height: 340)
             } else {
                 TabView(selection: $carouselIndex) {
                     ForEach(Array(images.enumerated()), id: \.offset) { index, urlString in
@@ -124,7 +151,7 @@ struct MenuItemDetailView: View {
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: images.count > 1 ? .always : .never))
-                .frame(height: 260)
+                .frame(height: 340)
             }
         }
     }
@@ -132,7 +159,17 @@ struct MenuItemDetailView: View {
     // MARK: - Title / rating / price
 
     private var titleBlock: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
+            if let category = item.category, !category.isEmpty {
+                Text(category.uppercased())
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(0.5)
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(MinervaColor.emerald.opacity(0.12))
+                    .clipShape(Capsule())
+            }
             Text(item.name)
                 .font(MinervaFont.display(24))
                 .foregroundStyle(MinervaColor.ink)

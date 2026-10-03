@@ -38,6 +38,7 @@ export async function publishChangelogEntryAction(input: CreateChangelogEntryInp
   if (!input.title.trim() || input.title.length > 200 || !input.description.trim() || input.description.length > 2000) return false;
   if (!(input.category === "fonctionnalite" || input.category === "amelioration" || input.category === "correctif")) return false;
   if (!isTrustedChangelogScreenshot(input.imageUrl)) return false;
+  if (input.audience !== undefined && !["owner", "client", "all"].includes(input.audience)) return false;
 
   const entry = await createChangelogEntry(input);
   if (!entry) return false;

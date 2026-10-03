@@ -68,7 +68,7 @@ test.describe("Onboarding", () => {
     }
     await expect(profileContinue).toBeEnabled({ timeout: 15_000 });
     await profileContinue.click();
-    await expect(page.getByRole("heading", { name: "Connectez vos outils" })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("heading", { name: "Mettez votre menu en ligne" })).toBeVisible({ timeout: 60_000 });
 
     // Connections are optional; loyalty setup is required before completing.
     await page.getByRole("button", { name: /plus tard/i }).click();
@@ -103,7 +103,10 @@ test.describe("Onboarding", () => {
     await expect(page.getByRole("heading", { name: "Invitez votre équipe" })).toBeVisible();
 
     await page.getByRole("button", { name: /plus tard, terminer sans inviter/i }).click();
-    await page.waitForURL(/workspace/, { timeout: 60_000, waitUntil: "commit" });
-    await expect(page.getByRole("heading", { name: "Mon workspace" })).toBeVisible({ timeout: 60_000 });
+    // Onboarding now ends on a "what next" screen instead of an immediate redirect.
+    await expect(page.getByRole("heading", { name: /est prêt/i })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("link", { name: /ajouter mon menu|voir mon menu/i })).toBeVisible();
+    await page.getByRole("link", { name: /aller à mon tableau de bord/i }).click();
+    await page.waitForURL(/overview|workspace/, { timeout: 60_000, waitUntil: "commit" });
   });
 });

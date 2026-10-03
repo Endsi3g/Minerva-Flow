@@ -28,10 +28,6 @@ struct IntroView: View {
                         get: { AppLanguage(rawValue: storedLanguage) ?? .fr },
                         set: { storedLanguage = $0.rawValue }
                     ))
-                    Image("LogoMark")
-                        .resizable()
-                        .frame(width: 64, height: 64)
-                        .shadow(color: .black.opacity(0.15), radius: 16, x: 0, y: 8)
                 }
                 .padding(.top, 18)
                 .padding(.horizontal, 24)

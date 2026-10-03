@@ -140,7 +140,7 @@ export function computeAlerts({
           detail: c.detail ?? "La synchronisation a échoué — reconnectez ce compte.",
           severity: "critique",
           date: new Date().toISOString().slice(0, 10),
-          href: "/settings?tab=integrations",
+          href: "/settings",
         });
       }
     }
