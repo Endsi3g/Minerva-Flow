@@ -27,7 +27,7 @@ enum NFCTagURL {
     /// tag and a sticker for one touchpoint share the same attribution.
     static func touchpointURL(code: String) -> URL? {
         guard code.range(of: codePattern, options: .regularExpression) != nil else { return nil }
-        return Config.apiBaseURL.appending(path: "/t/\(code)")
+        return Config.publicLinkBaseURL.appending(path: "/t/\(code)")
     }
 }
 

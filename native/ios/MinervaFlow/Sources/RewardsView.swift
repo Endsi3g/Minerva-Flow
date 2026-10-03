@@ -102,29 +102,43 @@ struct RewardsView: View {
     }
 
     private var statsRow: some View {
-        HStack(spacing: 10) {
-            statChip(value: "\(supabase.customer?.loyaltyPoints ?? 0)", label: isFrench ? "points" : "points")
-            statChip(value: "\(redeemableRewardsCount)", label: isFrench ? "prêtes" : "ready")
-            statChip(value: "\(activeOffersCount)", label: isFrench ? "actives" : "active")
+        HStack(spacing: 0) {
+            statColumn(icon: "star.fill", value: "\(supabase.customer?.loyaltyPoints ?? 0)", label: isFrench ? "points" : "points")
+            statDivider
+            statColumn(icon: "gift.fill", value: "\(redeemableRewardsCount)", label: isFrench ? "prêtes" : "ready")
+            statDivider
+            statColumn(icon: "tag.fill", value: "\(activeOffersCount)", label: isFrench ? "actives" : "active")
         }
+        .padding(.vertical, 16)
+        .background(MinervaColor.creamSoft)
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(MinervaColor.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
     }
 
-    private func statChip(value: String, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+    private var statDivider: some View {
+        Rectangle().fill(MinervaColor.border).frame(width: 1, height: 44)
+    }
+
+    private func statColumn(icon: String, value: String, label: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(MinervaColor.emerald)
             Text(value)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .font(.system(size: 28, weight: .bold, design: .rounded))
                 .foregroundStyle(MinervaColor.ink)
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.6)
             Text(label)
-                .font(.system(size: 10.5))
-                .foregroundStyle(MinervaColor.inkFaint)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(MinervaColor.inkSoft)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MinervaColor.creamSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 6)
+        .accessibilityElement(children: .combine)
     }
 
     private var pendingRedemptions: [RewardRedemption]? {
@@ -257,12 +271,14 @@ struct RewardsView: View {
                 }
                 Spacer(minLength: 8)
 
-                VStack(spacing: 6) {
+                // Points and chevron share one row, chevron on the far right,
+                // instead of the chevron hanging under the points badge.
+                HStack(spacing: 8) {
                     Text("\(reward.pointsCost) pts")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(affordable ? MinervaColor.emeraldDark : MinervaColor.inkFaint)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
                         .background(affordable ? MinervaColor.emerald.opacity(0.12) : MinervaColor.ink.opacity(0.06))
                         .clipShape(Capsule())
 
@@ -418,9 +434,9 @@ struct RewardsView: View {
     }
 
     private func referralShareURL(code: String, channel: String = "direct") -> URL {
-        var components = URLComponents(url: Config.apiBaseURL.appending(path: "/p/\(code)"), resolvingAgainstBaseURL: false)
+        var components = URLComponents(url: Config.publicLinkBaseURL.appending(path: "/p/\(code)"), resolvingAgainstBaseURL: false)
         components?.queryItems = [URLQueryItem(name: "via", value: channel)]
-        return components?.url ?? Config.apiBaseURL.appending(path: "/p/\(code)")
+        return components?.url ?? Config.publicLinkBaseURL.appending(path: "/p/\(code)")
     }
 
     private func referralShareText(program: ProgramLike, code: String) -> String {
@@ -442,9 +458,9 @@ struct ReferralQRSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private var shareURL: URL {
-        var components = URLComponents(url: Config.apiBaseURL.appending(path: "/p/\(progress.link?.code ?? "")"), resolvingAgainstBaseURL: false)
+        var components = URLComponents(url: Config.publicLinkBaseURL.appending(path: "/p/\(progress.link?.code ?? "")"), resolvingAgainstBaseURL: false)
         components?.queryItems = [URLQueryItem(name: "via", value: "qr")]
-        return components?.url ?? Config.apiBaseURL.appending(path: "/p/\(progress.link?.code ?? "")")
+        return components?.url ?? Config.publicLinkBaseURL.appending(path: "/p/\(progress.link?.code ?? "")")
     }
 
     private var qrImage: UIImage? { QRCodeGenerator.image(for: shareURL) }

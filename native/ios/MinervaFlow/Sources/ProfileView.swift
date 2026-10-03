@@ -1,27 +1,23 @@
 import SwiftUI
 
-/// Real settings, matching the web portal's ProfileSettingsCard depth
-/// (notification frequency, sign out) rather than a bare name-and-signout
-/// stub — the account-management surface a production app actually needs,
-/// not a placeholder.
-///
-/// Each former inline section (points history, appearance, notifications,
-/// confidentiality, security, about) is now its own pushed subpage —
-/// matching Menu Studio's "real subpages, not tabs" pattern — rather than
-/// one long scrolling page of stacked sections.
+/// The customer account tab. A dense home for the account: identity, a shortcut
+/// to the loyalty cards, recent points activity, direct links to the settings
+/// people reach for most, and one "Autre" entry for everything else.
+/// Every destination is a pushed page (NavigationStack path), never a tab or an
+/// inline section; deep links such as "cards" open the right page through
+/// `DeepLinkRouter.pendingCompteRoute`.
 struct ProfileView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @EnvironmentObject var router: DeepLinkRouter
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
+    @State private var path: [CompteRoute] = []
     @State private var showSignOutConfirm = false
     @State private var showEditProfile = false
     @State private var showSurvey = false
-    @State private var showFavorites = false
-    @State private var showCards = false
-    @State private var showAmbassador = false
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if supabase.isLoadingData && supabase.customer == nil {
                     ScrollView {
@@ -35,41 +31,18 @@ struct ProfileView: View {
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 18) {
-                            moreHeader
+                            header
                             if let error = supabase.lastError {
-                                feedbackBanner(icon: "exclamationmark.triangle.fill", title: "Action impossible", message: error, color: .red)
+                                feedbackBanner(icon: "exclamationmark.triangle.fill", title: isFrench ? "Action impossible" : "Action failed", message: error, color: .red)
                             }
                             if let customer = supabase.customer {
                                 identityCard(for: customer)
-                                favoritesRow
-                                cardsRow
-                                ambassadorRow
-                                destinationRow(icon: "bag.fill", title: "Mes commandes", subtitle: "Votre historique d'achats") {
-                                    OrderHistoryView()
-                                }
-                                destinationRow(icon: "clock.arrow.circlepath", title: "Historique de points", subtitle: "Vos cartes, points gagnés et échangés") {
-                                    PointsHistoryView()
-                                }
-                                destinationRow(icon: "paintbrush.fill", title: isFrench ? "Apparence" : "Appearance", subtitle: isFrench ? "Thème clair, sombre ou système" : "Light, dark or system theme") {
-                                    AppearanceSettingsView()
-                                }
-                                destinationRow(icon: "bell.fill", title: "Notifications", subtitle: "Fréquence des messages reçus") {
-                                    NotificationSettingsView()
-                                }
-                                destinationRow(icon: "hand.raised.fill", title: "Confidentialité", subtitle: "Consentement et export de vos données") {
-                                    PrivacyConsentView()
-                                }
-                                destinationRow(icon: "lock.shield.fill", title: "Sécurité", subtitle: "Verrouillage biométrique, suppression du compte") {
-                                    SecuritySettingsView()
-                                }
-                                destinationRow(icon: "sparkles", title: isFrench ? "Nouveautés" : "What’s new", subtitle: isFrench ? "Ce qui change pour vous" : "What changes for you") {
-                                    ClientUpdatesView()
-                                }
-                                destinationRow(icon: "questionmark.circle.fill", title: isFrench ? "Aide" : "Help", subtitle: isFrench ? "Contacter le restaurant ou le support" : "Contact the restaurant or support") {
-                                    SupportView()
-                                }
-                                destinationRow(icon: "info.circle.fill", title: "À propos", subtitle: "Conditions, confidentialité, mises à jour") {
-                                    AboutView()
+                                cardsShortcut
+                                recentActivity
+                                shortcuts
+                                CompteGroup {
+                                    CompteLink(route: .other, icon: "square.grid.2x2.fill", title: isFrench ? "Autre" : "More",
+                                               subtitle: isFrench ? "Favoris, commandes, ambassadeur, nouveautés" : "Favourites, orders, ambassador, what's new")
                                 }
                                 signOutButton
                                 brandFooter
@@ -84,16 +57,19 @@ struct ProfileView: View {
             }
             .background(MinervaColor.cream.ignoresSafeArea())
             .navigationBarHidden(true)
+            .navigationDestination(for: CompteRoute.self) { destination(for: $0) }
         }
+        .onAppear(perform: applyPendingRoute)
+        .onChange(of: router.pendingCompteRoute) { _, _ in applyPendingRoute() }
         .confirmationDialog(
-            "Se déconnecter ?",
+            isFrench ? "Se déconnecter ?" : "Sign out?",
             isPresented: $showSignOutConfirm,
             titleVisibility: .visible
         ) {
-            Button("Se déconnecter", role: .destructive) {
+            Button(isFrench ? "Se déconnecter" : "Sign out", role: .destructive) {
                 Task { await supabase.signOut() }
             }
-            Button("Annuler", role: .cancel) {}
+            Button(isFrench ? "Annuler" : "Cancel", role: .cancel) {}
         }
         .sheet(isPresented: $showEditProfile) {
             if let customer = supabase.customer {
@@ -103,47 +79,69 @@ struct ProfileView: View {
         .sheet(isPresented: $showSurvey) {
             SurveyView()
         }
-        .sheet(isPresented: $showFavorites) {
-            FavoritesView()
-        }
-        .sheet(isPresented: $showCards) {
-            MembershipCardsView()
-        }
-        .sheet(isPresented: $showAmbassador) {
-            FlowAmbassadorMobileView()
-                .environmentObject(supabase)
+    }
+
+    private func applyPendingRoute() {
+        guard let route = router.pendingCompteRoute else { return }
+        path = [route]
+        router.pendingCompteRoute = nil
+    }
+
+    @ViewBuilder
+    private func destination(for route: CompteRoute) -> some View {
+        switch route {
+        case .cards: MembershipCardsView(embedded: true)
+        case .favorites: FavoritesView()
+        case .orders: OrderHistoryView()
+        case .pointsHistory: PointsHistoryView()
+        case .updates: ClientUpdatesView()
+        case .appearance: AppearanceSettingsView()
+        case .notifications: NotificationSettingsView()
+        case .privacy: PrivacyConsentView()
+        case .security: SecuritySettingsView()
+        case .help: SupportView()
+        case .about: AboutView()
+        case .ambassador: AmbassadorHubView()
+        case .other: OtherView()
         }
     }
 
-    private var moreHeader: some View {
-            HStack(alignment: .center, spacing: 12) {
-            Image("LogoMark")
-                .resizable()
-                .frame(width: 34, height: 34)
-            VStack(alignment: .leading, spacing: 3) {
+    // MARK: - Header
+
+    /// Logo and title share one row so they sit on the same line; the
+    /// description goes underneath instead of stretching the title block.
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .center, spacing: 10) {
+                Image("LogoMark")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 30, height: 30)
+                    .accessibilityHidden(true)
                 Text(isFrench ? "Compte" : "Account")
                     .font(MinervaFont.display(28, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
-                Text(isFrench ? "Votre compte, vos cartes, vos offres et vos préférences au même endroit" : "Your account, cards, offers and preferences in one place")
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(MinervaColor.inkSoft)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                LanguageMenu(language: Binding(
+                    get: { AppLanguage(rawValue: storedLanguage) ?? .fr },
+                    set: { storedLanguage = $0.rawValue }
+                ), tint: MinervaColor.emeraldDark)
+                Menu {
+                    Button(isFrench ? "Modifier le profil" : "Edit profile") { showEditProfile = true }
+                    Button(isFrench ? "Donner un avis" : "Give feedback") { showSurvey = true }
+                    Divider()
+                    Button(isFrench ? "Se déconnecter" : "Sign out", role: .destructive) { showSignOutConfirm = true }
+                } label: {
+                    Image(systemName: "ellipsis.circle.fill")
+                        .font(.system(size: 26))
+                        .foregroundStyle(MinervaColor.emerald)
+                }
+                .accessibilityLabel(isFrench ? "Actions du compte" : "Account actions")
             }
-            Spacer()
-            LanguageMenu(language: Binding(
-                get: { AppLanguage(rawValue: storedLanguage) ?? .fr },
-                set: { storedLanguage = $0.rawValue }
-            ), tint: MinervaColor.emeraldDark)
-            Menu {
-                Button("Modifier le profil") { showEditProfile = true }
-                Button("Donner un avis") { showSurvey = true }
-                Divider()
-                Button("Se déconnecter", role: .destructive) { showSignOutConfirm = true }
-            } label: {
-                Image(systemName: "ellipsis.circle.fill")
-                    .font(.system(size: 26))
-                    .foregroundStyle(MinervaColor.emerald)
-            }
-            .accessibilityLabel("Actions du compte")
+            Text(isFrench ? "Votre compte, vos cartes et vos préférences" : "Your account, cards and preferences")
+                .font(.system(size: 13))
+                .foregroundStyle(MinervaColor.inkSoft)
         }
     }
 
@@ -151,50 +149,160 @@ struct ProfileView: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon).foregroundStyle(color)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(MinervaColor.ink)
-                Text(message).font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
+                Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                Text(message).font(.system(size: 12)).foregroundStyle(MinervaColor.inkSoft).fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
-        .padding(13)
-        .background(color.opacity(0.09))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .padding(12)
+        .background(color.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    // MARK: - Favorites
+    // MARK: - Cards shortcut
 
-    /// Entry point to FavoritesView — same aboutRow-style tappable row as
-    /// the destination rows below, but pulled up next to the identity card
-    /// since favorites are a browsing shortcut a customer would reach for
-    /// often, not a one-off settings toggle.
-    private var favoritesRow: some View {
-        Button {
-            showFavorites = true
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.red)
-                    .frame(width: 20)
-                Text("Mes favoris")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(MinervaColor.ink)
-                Spacer(minLength: 8)
-                let count = (supabase.customer?.favoriteMenuItemIds.count ?? 0) + (supabase.customer?.favoriteOfferIds.count ?? 0)
-                if count > 0 {
-                    Text("\(count)")
-                        .font(.system(size: 12))
-                        .foregroundStyle(MinervaColor.inkFaint)
-                }
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(MinervaColor.inkFaint)
-            }
-            .padding(14)
+    private var cardsShortcut: some View {
+        let count = supabase.allMemberships.count
+        let totalPoints = supabase.allMemberships.reduce(0) { $0 + $1.loyaltyPoints }
+        return CompteGroup {
+            CompteLink(
+                route: .cards,
+                icon: "wallet.pass.fill",
+                title: isFrench ? "Mes cartes fidélité" : "My loyalty cards",
+                subtitle: count > 1
+                    ? (isFrench ? "\(count) établissements · \(totalPoints) pts au total" : "\(count) venues · \(totalPoints) pts in total")
+                    : (isFrench ? "Votre carte et Apple Wallet" : "Your card and Apple Wallet")
+            )
         }
-        .buttonStyle(.plain)
-        .background(MinervaColor.creamSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    // MARK: - Recent activity
+
+    /// Same source as Home's "Historique récent": the home establishment's own
+    /// movements, including points spent on rewards and manual adjustments.
+    private struct ActivityRow: Identifiable {
+        let id: String
+        let title: String
+        let date: Date
+        let delta: Int
+    }
+
+    private func activityTitle(_ type: String) -> String {
+        switch type {
+        case "visite": return isFrench ? "Visite" : "Visit"
+        case "ajustement": return isFrench ? "Ajustement" : "Adjustment"
+        case "echange": return isFrench ? "Récompense échangée" : "Reward redeemed"
+        default: return type
+        }
+    }
+
+    private var recentActivity: some View {
+        let rows = supabase.transactions.prefix(4).map {
+            ActivityRow(id: $0.id, title: activityTitle($0.type), date: $0.createdAt, delta: $0.pointsDelta)
+        }
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(isFrench ? "HISTORIQUE RÉCENT" : "RECENT ACTIVITY")
+                    .font(.system(size: 12, weight: .semibold))
+                    .tracking(0.6)
+                    .foregroundStyle(MinervaColor.inkFaint)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                NavigationLink(value: CompteRoute.pointsHistory) {
+                    Text(isFrench ? "Voir tout" : "See all")
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                }
+            }
+            .padding(.horizontal, 4)
+            VStack(spacing: 0) {
+                if rows.isEmpty {
+                    Text(isFrench ? "Vos mouvements de points apparaîtront ici." : "Your points activity will show up here.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                }
+                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                    HStack(spacing: 12) {
+                        Image(systemName: row.delta >= 0 ? "arrow.down.left" : "arrow.up.right")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(row.delta >= 0 ? MinervaColor.emeraldDark : Color.red)
+                            .frame(width: 30, height: 30)
+                            .background((row.delta >= 0 ? MinervaColor.emerald : Color.red).opacity(0.12))
+                            .clipShape(Circle())
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(row.title)
+                                .font(.system(size: 13.5, weight: .medium))
+                                .foregroundStyle(MinervaColor.ink)
+                                .lineLimit(1)
+                            Text(row.date.formatted(.dateTime.locale(Locale(identifier: isFrench ? "fr_CA" : "en_CA")).day().month(.abbreviated).year()))
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(MinervaColor.inkFaint)
+                        }
+                        Spacer(minLength: 8)
+                        Text("\(row.delta >= 0 ? "+" : "")\(row.delta) pts")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(row.delta >= 0 ? MinervaColor.emeraldDark : Color.red)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .accessibilityElement(children: .combine)
+                    if index < rows.count - 1 { CompteSeparator() }
+                }
+            }
+            .background(MinervaColor.creamSoft)
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.border, lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+    }
+
+    // MARK: - Direct shortcuts
+
+    private var shortcuts: some View {
+        let items: [(CompteRoute, String, String)] = [
+            (.help, "questionmark.circle.fill", isFrench ? "Aide" : "Help"),
+            (.about, "info.circle.fill", isFrench ? "À propos" : "About"),
+            (.security, "lock.shield.fill", isFrench ? "Sécurité" : "Security"),
+            (.privacy, "hand.raised.fill", isFrench ? "Confidentialité" : "Privacy"),
+            (.notifications, "bell.fill", "Notifications"),
+            (.appearance, "paintbrush.fill", isFrench ? "Apparence" : "Appearance"),
+        ]
+        return VStack(alignment: .leading, spacing: 8) {
+            Text(isFrench ? "RACCOURCIS" : "SHORTCUTS")
+                .font(.system(size: 12, weight: .semibold))
+                .tracking(0.6)
+                .foregroundStyle(MinervaColor.inkFaint)
+                .padding(.horizontal, 4)
+                .accessibilityAddTraits(.isHeader)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(items, id: \.0) { route, icon, title in
+                    NavigationLink(value: route) {
+                        HStack(spacing: 10) {
+                            Image(systemName: icon)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(MinervaColor.emeraldDark)
+                                .frame(width: 30, height: 30)
+                                .background(MinervaColor.emerald.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 9))
+                                .accessibilityHidden(true)
+                            Text(title)
+                                .font(.system(size: 13.5, weight: .semibold))
+                                .foregroundStyle(MinervaColor.ink)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(12)
+                        .background(MinervaColor.creamSoft)
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MinervaColor.border, lineWidth: 1))
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 
     private var brandFooter: some View {
@@ -209,92 +317,6 @@ struct ProfileView: View {
         .frame(maxWidth: .infinity)
         .padding(.top, 8)
         .padding(.bottom, 16)
-    }
-
-    private var cardsRow: some View {
-        Button { showCards = true } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "wallet.pass.fill")
-                    .foregroundStyle(MinervaColor.emeraldDark)
-                    .frame(width: 20)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Mes cartes fidélité")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(MinervaColor.ink)
-                    Text("Consulter vos soldes et ajouter une carte à Apple Wallet")
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(MinervaColor.inkSoft)
-                }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(MinervaColor.inkFaint)
-            }
-            .padding(14)
-        }
-        .buttonStyle(.plain)
-        .background(MinervaColor.creamSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private var ambassadorRow: some View {
-        Button { showAmbassador = true } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "megaphone.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(MinervaColor.emeraldDark)
-                    .frame(width: 22)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(isFrench ? "Devenir ambassadeur" : "Become an ambassador")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(MinervaColor.ink)
-                    Text(isFrench ? "Recommandez Minerva Flow et suivez vos récompenses" : "Recommend Minerva Flow and track your rewards")
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(MinervaColor.inkSoft)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 6)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(MinervaColor.inkFaint)
-            }
-            .padding(14)
-        }
-        .buttonStyle(.plain)
-        .background(MinervaColor.creamSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    /// A single NavigationLink-pushed row, styled consistently for every
-    /// former inline section now living on its own subpage.
-    private func destinationRow<Destination: View>(icon: String, title: String, subtitle: String, @ViewBuilder destination: () -> Destination) -> some View {
-        NavigationLink {
-            destination()
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .foregroundStyle(MinervaColor.emeraldDark)
-                    .frame(width: 20)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(MinervaColor.ink)
-                    Text(subtitle)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(MinervaColor.inkSoft)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(MinervaColor.inkFaint)
-            }
-            .padding(14)
-        }
-        .buttonStyle(.plain)
-        .background(MinervaColor.creamSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     // MARK: - Identity
@@ -400,7 +422,7 @@ struct ProfileView: View {
         Button {
             showSignOutConfirm = true
         } label: {
-            Text("Se déconnecter")
+            Text(isFrench ? "Se déconnecter" : "Sign out")
                 .font(.system(size: 14, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
@@ -409,6 +431,7 @@ struct ProfileView: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(.red.opacity(0.3)))
     }
 }
+
 
 struct FlowAmbassadorMobileView: View {
     @EnvironmentObject private var supabase: SupabaseManager

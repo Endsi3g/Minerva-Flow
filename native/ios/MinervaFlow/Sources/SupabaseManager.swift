@@ -63,6 +63,8 @@ final class SupabaseManager: ObservableObject {
     /// above are scoped to (which stays as-is: Home/Commander/Rewards are
     /// inherently one-restaurant-at-a-time screens, this is additive).
     @Published var allMemberships: [RestaurantMembership] = []
+    /// Every customer row of the account (one per establishment), oldest first.
+    @Published var allCustomers: [Customer] = []
     @Published var allTransactions: [LoyaltyTransaction] = []
     @Published var allRedemptions: [RewardRedemption] = []
     @Published var myOrders: [CustomerOrder] = []
@@ -586,6 +588,7 @@ final class SupabaseManager: ObservableObject {
                 .order("created_at", ascending: true)
                 .execute()
                 .value
+            allCustomers = customers
             guard let mine = customers.first else {
                 customer = nil
                 activateTenantBranding(nil)
@@ -1719,6 +1722,74 @@ final class SupabaseManager: ObservableObject {
     /// fetched with no restaurant filter at all — RLS
     /// (loyalty_transactions_select_own) already scopes to every customer
     /// row this auth.uid() owns, across any restaurant, for free.
+    /// One entry per establishment the account belongs to, with the favourite
+    /// dishes and offers saved there. The home establishment reuses what is
+    /// already loaded; the others are fetched (menu through the bridge, which
+    /// only answers for establishments the caller is a customer of).
+    func loadFavoritesByEstablishment() async -> [EstablishmentFavorites] {
+        var result: [EstablishmentFavorites] = []
+        for membership in allMemberships {
+            let row = allCustomers.first { $0.restaurantId == membership.restaurantId }
+            let itemIds = Set(row?.favoriteMenuItemIds ?? [])
+            let offerIds = Set(row?.favoriteOfferIds ?? [])
+            let isHome = membership.restaurantId == customer?.restaurantId
+            var items: [NativeMenuItem] = []
+            var offersFound: [Offer] = []
+            var failed = false
+
+            if isHome {
+                items = menuItems.filter { itemIds.contains($0.id) }
+                offersFound = offers.filter { offerIds.contains($0.id) }
+            } else {
+                if !itemIds.isEmpty {
+                    if let fetched = await fetchMenuItems(forRestaurant: membership.restaurantId) {
+                        items = fetched.filter { itemIds.contains($0.id) }
+                    } else { failed = true }
+                }
+                if !offerIds.isEmpty {
+                    do {
+                        offersFound = try await client
+                            .from("offers")
+                            .select()
+                            .in("id", values: Array(offerIds))
+                            .execute()
+                            .value
+                    } catch {
+                        AppLog.failure("loadFavoritesByEstablishment (offers)", error)
+                        failed = true
+                    }
+                }
+            }
+            result.append(EstablishmentFavorites(
+                id: membership.restaurantId,
+                name: membership.restaurantName,
+                items: items,
+                offers: offersFound,
+                savedCount: itemIds.count + offerIds.count,
+                isHome: isHome,
+                loadFailed: failed
+            ))
+        }
+        // The home establishment first, then those that actually have favourites.
+        return result.sorted { lhs, rhs in
+            if lhs.isHome != rhs.isHome { return lhs.isHome }
+            if (lhs.savedCount > 0) != (rhs.savedCount > 0) { return lhs.savedCount > 0 }
+            return lhs.name < rhs.name
+        }
+    }
+
+    private func fetchMenuItems(forRestaurant restaurantId: String) async -> [NativeMenuItem]? {
+        do {
+            let url = Config.apiBaseURL.appending(path: "/api/portal/menu")
+                .appending(queryItems: [URLQueryItem(name: "restaurantId", value: restaurantId)])
+            let data = try await authorizedRequest(url)
+            return try JSONDecoder().decode(MenuResponse.self, from: data).items.filter(\.active)
+        } catch {
+            AppLog.failure("fetchMenuItems(forRestaurant:)", error)
+            return nil
+        }
+    }
+
     func fetchAllMemberships() async {
         do {
             let data = try await authorizedRequest(Config.apiBaseURL.appending(path: "/api/portal/restaurants"))

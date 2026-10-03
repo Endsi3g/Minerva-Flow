@@ -1109,3 +1109,16 @@ struct PlatformAnnouncement: Codable, Identifiable {
         case createdAt = "created_at"
     }
 }
+
+/// The favourites a customer saved at one establishment ("Mes favoris" shows
+/// one card per establishment).
+struct EstablishmentFavorites: Identifiable {
+    let id: String
+    let name: String
+    let items: [NativeMenuItem]
+    let offers: [Offer]
+    /// How many favourites are saved there, even if their details could not be loaded.
+    let savedCount: Int
+    let isHome: Bool
+    let loadFailed: Bool
+}

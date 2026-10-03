@@ -16,6 +16,9 @@
 		18918555C1D1F51C5DB40AA8 /* XCUIApplication+TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */; };
 		1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8113A301B23FEECDBE8EDE /* MainTabView.swift */; };
 		1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBD59C80CE3B06A999142A6E /* Config.swift */; };
+		E2EC6A18CF3A4366A0D24105 /* AmbassadorHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 813F77814EC74A0B981D1646 /* AmbassadorHubView.swift */; };
+		56A7F48B9C2D4CB8A1B985E1 /* OtherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD74D6C507474763BEE9A9E4 /* OtherView.swift */; };
+		63F66184D3B2416BAC711178 /* CompteComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA132793087A467DBFD02FFA /* CompteComponents.swift */; };
 		B6AFB5F3AEC642F4A9D2BEE7 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1DAAA268814AFC95D6F690 /* AppLog.swift */; };
 		2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471F651B424DBE91D0FC0A0E /* MyCardView.swift */; };
 		2C9E95355FE610913FB5ED0B /* MenuItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */; };
@@ -31,6 +34,7 @@
 		5C881A86FC3F7D67D6725336 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D70223A1891BFC32372F3C5 /* Models.swift */; };
 		5F9EF1186433358348AA47D6 /* OwnerOperationsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B92BADD5DDB759E9F1CDAC0 /* OwnerOperationsViews.swift */; };
 		739BE0134385DA87FC3DAD99 /* HomeDataUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF75FB3EE42DD210F4A6BB8D /* HomeDataUITests.swift */; };
+		4AAA33FC2DC94A969B83C58D /* ScreenshotTourUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E99CD07C57034B358D34906D /* ScreenshotTourUITests.swift */; };
 		783C46E5E8524E4302BCDFC8 /* MembershipCardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0AD0408180A325B61D0A65 /* MembershipCardsView.swift */; };
 		7AC0CC956D20D425A13A9080 /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C8363EF1968DD67739320E /* OnboardingWelcomeView.swift */; };
 		7D3D0D3F93D2E688166D0236 /* PointsSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */; };
@@ -62,6 +66,7 @@
 		D8CE2BE3E4EDB81DAEEAFA1A /* AppLanguagePreferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188BEA08FC8C7C1C007C557 /* AppLanguagePreferenceTests.swift */; };
 		FC9795E8643641568B38C856 /* NFCTagURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222554F7FCCB4674A35B20C1 /* NFCTagURLTests.swift */; };
 		2490EA176B6040A28210BFAF /* ClientUpdatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C02FC482788E4E589264EBF5 /* ClientUpdatesTests.swift */; };
+		62AD9E4C0D2F4ABCAB288439 /* ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CF59BEFA6F9478BAA829006 /* ConfigTests.swift */; };
 		DDBC2F899C12158BE7C35344 /* SurveyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6362E11D22E6E7743BBE74 /* SurveyView.swift */; };
 		DEDC40321085D36EBF1F9A8E /* OwnerMainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D714D4A2A584A4ED14C478B8 /* OwnerMainTabView.swift */; };
 		E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442686E96CEA070F53FB728F /* EditProfileSheet.swift */; };
@@ -172,6 +177,7 @@
 		D188BEA08FC8C7C1C007C557 /* AppLanguagePreferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguagePreferenceTests.swift; sourceTree = "<group>"; };
 		222554F7FCCB4674A35B20C1 /* NFCTagURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFCTagURLTests.swift; sourceTree = "<group>"; };
 		C02FC482788E4E589264EBF5 /* ClientUpdatesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientUpdatesTests.swift; sourceTree = "<group>"; };
+		6CF59BEFA6F9478BAA829006 /* ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigTests.swift; sourceTree = "<group>"; };
 		D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		035494880ABF437A844B8AAC /* TeamMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamMainView.swift; sourceTree = "<group>"; };
 		E7FF6998CFD44ECEB8D015E2 /* NFCTags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFCTags.swift; sourceTree = "<group>"; };
@@ -188,10 +194,14 @@
 		DDBB4AF1C78A26877459630D /* MinervaFlowTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MinervaFlowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE1BA36D6BD964EC57A0DE85 /* MinervaFlowWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinervaFlowWidget.swift; sourceTree = "<group>"; };
 		DF75FB3EE42DD210F4A6BB8D /* HomeDataUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeDataUITests.swift; sourceTree = "<group>"; };
+		E99CD07C57034B358D34906D /* ScreenshotTourUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTourUITests.swift; sourceTree = "<group>"; };
 		E001F62368824618EE0ACB49 /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantDetailView.swift; sourceTree = "<group>"; };
 		EA427B759305A43BF018AB62 /* OrderTotals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTotals.swift; sourceTree = "<group>"; };
 		EBD59C80CE3B06A999142A6E /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		813F77814EC74A0B981D1646 /* AmbassadorHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbassadorHubView.swift; sourceTree = "<group>"; };
+		BD74D6C507474763BEE9A9E4 /* OtherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherView.swift; sourceTree = "<group>"; };
+		CA132793087A467DBFD02FFA /* CompteComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompteComponents.swift; sourceTree = "<group>"; };
 		8B1DAAA268814AFC95D6F690 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		ECE934F2A5846A120417A19B /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointsSnapshot.swift; sourceTree = "<group>"; };
@@ -218,6 +228,7 @@
 			children = (
 				6A056028E3985EC3F9993283 /* AuthFlowUITests.swift */,
 				DF75FB3EE42DD210F4A6BB8D /* HomeDataUITests.swift */,
+				E99CD07C57034B358D34906D /* ScreenshotTourUITests.swift */,
 				D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */,
 			);
 			path = MinervaFlowUITests;
@@ -229,6 +240,7 @@
 				D188BEA08FC8C7C1C007C557 /* AppLanguagePreferenceTests.swift */,
 				222554F7FCCB4674A35B20C1 /* NFCTagURLTests.swift */,
 				C02FC482788E4E589264EBF5 /* ClientUpdatesTests.swift */,
+				6CF59BEFA6F9478BAA829006 /* ConfigTests.swift */,
 				F480C8ECD03E91B3910DDA61 /* BirthdayOfferEligibilityTests.swift */,
 				B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */,
 				01453807D2DD68F51BD78756 /* NativeOwnerAPIURLTests.swift */,
@@ -275,6 +287,9 @@
 				48489698C6B750A6E75FEFEE /* BiometricLock.swift */,
 				5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */,
 				EBD59C80CE3B06A999142A6E /* Config.swift */,
+				813F77814EC74A0B981D1646 /* AmbassadorHubView.swift */,
+				BD74D6C507474763BEE9A9E4 /* OtherView.swift */,
+				CA132793087A467DBFD02FFA /* CompteComponents.swift */,
 				8B1DAAA268814AFC95D6F690 /* AppLog.swift */,
 				D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */,
 				442686E96CEA070F53FB728F /* EditProfileSheet.swift */,
@@ -575,6 +590,7 @@
 			files = (
 				E895E770CDE5B84ADABAE566 /* AuthFlowUITests.swift in Sources */,
 				739BE0134385DA87FC3DAD99 /* HomeDataUITests.swift in Sources */,
+				4AAA33FC2DC94A969B83C58D /* ScreenshotTourUITests.swift in Sources */,
 				18918555C1D1F51C5DB40AA8 /* XCUIApplication+TestHelpers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -586,6 +602,7 @@
 				D8CE2BE3E4EDB81DAEEAFA1A /* AppLanguagePreferenceTests.swift in Sources */,
 				FC9795E8643641568B38C856 /* NFCTagURLTests.swift in Sources */,
 				2490EA176B6040A28210BFAF /* ClientUpdatesTests.swift in Sources */,
+				62AD9E4C0D2F4ABCAB288439 /* ConfigTests.swift in Sources */,
 				EA3498505926E803A90287BF /* BirthdayOfferEligibilityTests.swift in Sources */,
 				3AD6882CB5ED4D4A5A3880A6 /* LoyaltyTierTests.swift in Sources */,
 				F7D0726195C7A67EC3E51CDB /* NativeOwnerAPIURLTests.swift in Sources */,
@@ -612,6 +629,9 @@
 				9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */,
 				8E9FA68C879A95D98AA5BF22 /* BrandMarks.swift in Sources */,
 				1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */,
+				E2EC6A18CF3A4366A0D24105 /* AmbassadorHubView.swift in Sources */,
+				56A7F48B9C2D4CB8A1B985E1 /* OtherView.swift in Sources */,
+				63F66184D3B2416BAC711178 /* CompteComponents.swift in Sources */,
 				B6AFB5F3AEC642F4A9D2BEE7 /* AppLog.swift in Sources */,
 				334B756E8CFD91AFED64561A /* DeepLinkRouter.swift in Sources */,
 				E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */,

@@ -1080,17 +1080,18 @@ struct CategoryItemListView: View {
             // testing (the link swallows the tap, or the two race) — this
             // .overlay instead makes the heart a sibling drawn on top, so
             // each gets its own independent tap area.
-            .overlay(alignment: .topLeading) {
-                favoriteButton(isFavorite: isFavorite, item: item)
-                    .padding(.leading, 36)
-                    .padding(.top, 2)
-            }
 
             Spacer(minLength: 8)
 
             stepper(quantity: quantity, item: item)
         }
         .padding(12)
+        // The heart sits at the card's top-right corner, clear of the photo
+        // and the text on the left (it used to overlap the dish icon).
+        .overlay(alignment: .topTrailing) {
+            favoriteButton(isFavorite: isFavorite, item: item)
+                .padding(8)
+        }
         .background(quantity > 0 ? MinervaColor.emerald.opacity(0.06) : MinervaColor.creamSoft)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(

@@ -5,14 +5,21 @@ import PassKit
 /// restaurant. Each card is deliberately independent: points and visits are
 /// never merged across establishments.
 struct MembershipCardsView: View {
+    /// True when pushed inside another NavigationStack (Compte): skip our own.
+    var embedded = false
     @EnvironmentObject private var supabase: SupabaseManager
     @State private var selectedRestaurantID: String?
     @State private var walletPass: PKPass?
     @State private var isAddingWalletPass = false
     @State private var walletError: String?
 
+    @ViewBuilder
+    private func container<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        if embedded { content() } else { NavigationStack { content() } }
+    }
+
     var body: some View {
-        NavigationStack {
+        container {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
