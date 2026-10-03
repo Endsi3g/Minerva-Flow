@@ -40,6 +40,11 @@ export function TeamPortalShell({
               </Link>
             )}
             {access.isTeamMember && (
+              <Link href="/equipe/partager" className="whitespace-nowrap hover:text-mv-ink">
+                Partager
+              </Link>
+            )}
+            {access.isTeamMember && (
               <Link href="/equipe/membres" className="whitespace-nowrap hover:text-mv-ink">
                 Membres
               </Link>

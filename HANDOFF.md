@@ -13,6 +13,7 @@
 - **Changelog par audience** : migration `0172` appliquée (colonne `audience`, défaut `owner`). Aucune entrée client n’est publiée : la rédiger et la publier fait partie de l’étape de sortie, après vérification du build déployé. Les écrans iOS (client : `ClientUpdatesView`; propriétaire : `NativeChangelogView(audience: "owner")`) affichent un état vide propre en attendant.
 - **Installation sur téléphone** : build de test installé sur l’iPhone « YourBel » sans l’entitlement NFC (le profil de développement ne l’inclut pas), le fichier du dépôt est inchangé. Le NFC ne fonctionne pas dans cette installation.
 - **Hors commit, à revoir** (autre session, SEO/blog) : titres des 15 pages `(app)` remplacés par du français en dur (perte de la traduction `breadcrumb` en EN/TR) sur des pages `noindex`; `0167_blog_posts.sql` non appliquée; `lib/blog`, `feed.xml`, `robots`, `sitemap`, `llms*.txt` non commités.
+- **Partage de résultats (phase 18)** : `/campaigns/resultats` (propriétaires) et `/equipe/partager` (équipe). Rendu et vidéo vérifiés dans Chromium; pages non testées avec un compte réel. Détails : `docs/SHARE_RESULTS.md`.
 - **À décider** : offres Mains Magique (conseils fournis, rien créé), clés PostHog et GitHub optionnelles, contenu du GTM (chiffres non mesurés), commission « récurrente » vs première facture.
 
 ## Vérification de reprise — 2026-09-26

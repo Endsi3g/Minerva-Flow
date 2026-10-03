@@ -30,6 +30,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Réglages web répartis en sous-pages (`/settings`, `/settings/alertes`, `/settings/parrainage`, `/settings/securite`, `/settings/apparence`) au lieu d’onglets.
 - Paiement en ligne et versements des ambassadeurs : l’application iOS ouvre le web; plus aucun flux de paiement natif.
 - Nouvelle page client « Nouveautés » (Compte › Nouveautés) : une liste courte des changements qui concernent les clients seulement. Le journal des mises à jour porte désormais une audience (`owner`, `client`, `all`) : les entrées existantes restent réservées aux propriétaires, une entrée client se publie volontairement. Les propriétaires retrouvent l’historique complet dans Gestion › Mises à jour.
+- Nouveau « Partager mes résultats » : visuel (story ou publication) ou courte vidéo animée avec les vrais chiffres du restaurant, à publier sur les réseaux; l’équipe a la même chose pour Minerva Flow. Aucun zéro n’est présenté comme un succès, rien de financier n’est proposé. Voir `docs/SHARE_RESULTS.md`.
 - La carte de fidélité du niveau Ambassadeur redevient verte (vert forêt) au lieu du lime.
 - Journalisation iOS via `os.Logger` (détails masqués en production); l’adresse du destinataire n’est plus écrite dans les logs d’alerte critique.
 - Mains Magique : fiche et position Google Maps renseignées (Repentigny), forfait Marque blanche.

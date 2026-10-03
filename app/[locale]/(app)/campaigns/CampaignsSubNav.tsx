@@ -2,12 +2,13 @@
 
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { Megaphone, Palette, ShieldCheck } from "lucide-react";
+import { Megaphone, Palette, Share2, ShieldCheck } from "lucide-react";
 
 const sections = [
   { href: "/campaigns", label: "Historique", icon: Megaphone },
   { href: "/campaigns/modeles", label: "Automatisations", icon: ShieldCheck },
   { href: "/campaigns/studio", label: "Studio visuel", icon: Palette },
+  { href: "/campaigns/resultats", label: "Mes résultats", icon: Share2 },
 ] as const;
 
 export function CampaignsSubNav() {
