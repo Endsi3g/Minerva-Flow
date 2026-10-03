@@ -7,7 +7,7 @@ export type BillingInterval = "monthly" | "yearly";
  * establishment limits and feature copy shown across the pricing table,
  * the billing dashboard, and the establishment-limit upsell paths.
  *
- * Prices (99/250/500 CAD monthly) are confirmed final. They still run
+ * Prices (150/290/590 CAD monthly) are the current catalog (they replaced an earlier 99/250/500 draft). They still run
  * through Stripe TEST-MODE price IDs (see scripts/create-stripe-billing-catalog.ts)
  * until the switch to live keys — that's a separate operational step, not
  * a pricing question.

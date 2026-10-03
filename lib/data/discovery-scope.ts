@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /**
  * Phase 3 of the pricing-tier pivot (via /grill-me): the open,
  * cross-restaurant marketplace discovery built earlier is gated to
- * 'croissance'/'marque_blanche' — 'essentiel' ($99/mo) customers only ever
+ * 'croissance'/'marque_blanche' — 'essentiel' (150 CAD/mo) customers only ever
  * see their own franchise's other locations (same workspace_id, which
  * already models "same owner/company" in this schema — see
  * getWorkspaceRestaurants). Nothing gets deleted: the open-marketplace
