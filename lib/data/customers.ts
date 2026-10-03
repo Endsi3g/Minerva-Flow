@@ -36,7 +36,7 @@ export type CustomerRow = {
   avatar_url: string | null;
   favorite_offer_ids: string[] | null;
   favorite_menu_item_ids: string[] | null;
-  notification_frequency: "all" | "important_only" | null;
+  notification_frequency: "all" | "important_only" | "frequent" | null;
   pos_customer_id?: string | null;
 };
 
@@ -161,7 +161,7 @@ export type CustomerInput = {
   city?: string | null;
   neighborhood?: string | null;
   avatarUrl?: string | null;
-  notificationFrequency?: "all" | "important_only";
+  notificationFrequency?: "all" | "important_only" | "frequent";
 };
 
 export async function createCustomer(restaurantId: string, input: CustomerInput): Promise<Customer | null> {

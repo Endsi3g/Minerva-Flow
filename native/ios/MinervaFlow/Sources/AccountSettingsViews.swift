@@ -35,25 +35,56 @@ struct AppearanceSettingsView: View {
 
 struct NotificationSettingsView: View {
     @EnvironmentObject var supabase: SupabaseManager
+    @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
     @State private var frequency = "all"
     @State private var isSaving = false
-    @State private var savedTick = false
+    @State private var message: String?
+    private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                if savedTick {
-                    Text("Préférences enregistrées.")
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(MinervaColor.emeraldDark)
-                }
+            VStack(alignment: .leading, spacing: 16) {
+                Text(isFrench ? "Choisissez à quelle fréquence les restaurants où vous avez une carte vous écrivent. Vous pouvez changer à tout moment." : "Choose how often the restaurants where you have a card contact you. You can change this at any time.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+
                 VStack(spacing: 0) {
-                    frequencyRow(value: "all", title: "Tout", subtitle: "Offres, rappels de visite, anniversaire")
-                    Divider().padding(.leading, 16)
-                    frequencyRow(value: "important_only", title: "L'essentiel seulement", subtitle: "Anniversaire et récompenses prêtes")
+                    frequencyRow(value: "important_only",
+                                 title: isFrench ? "L'essentiel seulement" : "Essentials only",
+                                 subtitle: isFrench ? "Anniversaire et récompenses prêtes" : "Birthday and rewards ready")
+                    CompteSeparator()
+                    frequencyRow(value: "all",
+                                 title: isFrench ? "Normal (recommandé)" : "Normal (recommended)",
+                                 subtitle: isFrench ? "Offres, rappels de visite, anniversaire" : "Offers, visit reminders, birthday")
+                    CompteSeparator()
+                    frequencyRow(value: "frequent",
+                                 title: isFrench ? "Fréquent" : "Frequent",
+                                 subtitle: isFrench ? "Jusqu'à 2 notifications par jour, entre 9 h et 20 h, avec des messages variés" : "Up to 2 notifications a day, between 9 am and 8 pm, with varied messages")
                 }
                 .background(MinervaColor.creamSoft)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.border, lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                // Immediate, polite feedback after every change (saved or failed).
+                if isSaving {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text(isFrench ? "Enregistrement…" : "Saving…")
+                    }
+                    .font(.system(size: 13))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                } else if let message {
+                    Text(message)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                        .accessibilityAddTraits(.updatesFrequently)
+                }
+
+                Text(isFrench ? "Ces messages ne sont envoyés qu'aux personnes qui ont accepté de recevoir des offres, et uniquement par notification dans l'app au niveau Fréquent." : "These messages are only sent to people who agreed to receive offers, and only as in-app notifications at the Frequent level.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(MinervaColor.inkFaint)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(18)
         }
@@ -67,39 +98,48 @@ struct NotificationSettingsView: View {
 
     private func frequencyRow(value: String, title: String, subtitle: String) -> some View {
         Button {
-            guard frequency != value else { return }
+            guard frequency != value, !isSaving else { return }
+            let previous = frequency
             frequency = value
             Task {
                 isSaving = true
+                message = nil
                 let ok = await supabase.updateNotificationFrequency(value)
                 isSaving = false
                 if ok {
-                    savedTick = true
-                    try? await Task.sleep(nanoseconds: 1_500_000_000)
-                    savedTick = false
+                    message = isFrench ? "Préférence enregistrée." : "Preference saved."
+                } else {
+                    // Keep the screen truthful: go back to what is actually saved.
+                    frequency = previous
+                    message = isFrench ? "Impossible d'enregistrer pour l'instant. Réessayez." : "Couldn't save right now. Try again."
                 }
             }
         } label: {
             HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(subtitle)
-                        .font(.system(size: 11))
-                        .foregroundStyle(MinervaColor.inkFaint)
+                        .font(.system(size: 12))
+                        .foregroundStyle(MinervaColor.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
-                if frequency == value {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(MinervaColor.emeraldDark)
-                }
+                Image(systemName: frequency == value ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(frequency == value ? MinervaColor.emeraldDark : MinervaColor.inkFaint)
+                    .accessibilityHidden(true)
             }
-            .padding(14)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(frequency == value ? [.isSelected] : [])
     }
 }
 
