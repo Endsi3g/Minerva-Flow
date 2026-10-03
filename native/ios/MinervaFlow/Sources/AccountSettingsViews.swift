@@ -320,7 +320,12 @@ struct AboutView: View {
         }
         .sheet(isPresented: $showChangelog) {
             NavigationStack {
-                NativeChangelogView()
+                ClientUpdatesView()
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Fermer") { showChangelog = false }.foregroundStyle(MinervaColor.emeraldDark)
+                        }
+                    }
             }
         }
     }

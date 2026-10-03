@@ -62,6 +62,9 @@ struct ProfileView: View {
                                 destinationRow(icon: "lock.shield.fill", title: "Sécurité", subtitle: "Verrouillage biométrique, suppression du compte") {
                                     SecuritySettingsView()
                                 }
+                                destinationRow(icon: "sparkles", title: isFrench ? "Nouveautés" : "What’s new", subtitle: isFrench ? "Ce qui change pour vous" : "What changes for you") {
+                                    ClientUpdatesView()
+                                }
                                 destinationRow(icon: "questionmark.circle.fill", title: isFrench ? "Aide" : "Help", subtitle: isFrench ? "Contacter le restaurant ou le support" : "Contact the restaurant or support") {
                                     SupportView()
                                 }

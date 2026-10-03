@@ -1069,16 +1069,11 @@ enum LoyaltyTier: String {
         switch self {
         case .habitue: return MinervaColor.emerald
         case .privilegie: return MinervaColor.emeraldDark
-        case .ambassadeur: return MinervaColor.limeAccent
+        case .ambassadeur: return MinervaColor.emeraldDeep
         }
     }
 
-    var bannerForeground: Color {
-        switch self {
-        case .ambassadeur: return MinervaColor.emeraldDark
-        default: return .white
-        }
-    }
+    var bannerForeground: Color { .white }
 
     static func resolve(totalSpent: Double, tier2: Double = 150, tier3: Double = 400) -> LoyaltyTier {
         if totalSpent >= tier3 { return .ambassadeur }

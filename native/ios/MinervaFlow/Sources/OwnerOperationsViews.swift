@@ -483,6 +483,7 @@ struct OwnerManagementView: View {
                 }
                 Section(isFrench ? "Compte" : "Account") {
                     NavigationLink(isFrench ? "Paramètres" : "Settings", destination: OwnerSettingsView())
+                    NavigationLink(isFrench ? "Mises à jour" : "Updates", destination: NativeChangelogView(audience: "owner"))
                 }
             }
             .navigationTitle(isFrench ? "Gestion" : "Manage")

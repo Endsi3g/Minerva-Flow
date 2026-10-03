@@ -126,6 +126,9 @@ enum MinervaColor {
     static let inkFaint = adaptive(light: 0x687367, dark: 0xA0A794)
     static var emerald: Color { tenantAware(primaryKey: "activeTenantPrimaryColor", fallbackLight: 0x167F5B, fallbackDark: 0x1C9A6F) }
     static var emeraldDark: Color { tenantAware(primaryKey: "activeTenantSecondaryColor", fallbackLight: 0x0E5A40, fallbackDark: 0x4ADE9B) }
+    /// Deepest brand green — the Ambassadeur tier's banner. Fixed (not tenant-
+    /// tinted) so white copy stays legible on it in light and dark appearance.
+    static let emeraldDeep = adaptive(light: 0x063B2B, dark: 0x0B5A40)
     /// Web's --mv-lime — the Ambassadeur tier's banner color, matching
     /// Starbucks' Gold-status treatment.
     static var limeAccent: Color { tenantAware(primaryKey: "activeTenantAccentColor", fallbackLight: 0xDFFF5F, fallbackDark: 0xDFFF5F) }

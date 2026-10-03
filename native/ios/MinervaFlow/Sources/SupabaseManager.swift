@@ -679,10 +679,12 @@ final class SupabaseManager: ObservableObject {
     /// Reads the platform-wide release history. The changelog table's
     /// authenticated SELECT policy is the access boundary; no restaurant
     /// data or privileged client is involved.
-    func fetchNativeChangelog() async throws -> [NativeChangelogEntry] {
+    /// `audience` is "owner" or "client"; entries marked "all" are always included.
+    func fetchNativeChangelog(audience: String) async throws -> [NativeChangelogEntry] {
         try await client
             .from("changelog_entries")
             .select("id, title, description, category, published_at")
+            .in("audience", values: [audience, "all"])
             .order("published_at", ascending: false)
             .limit(100)
             .execute()

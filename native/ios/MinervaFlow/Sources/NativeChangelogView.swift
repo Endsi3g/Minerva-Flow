@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct NativeChangelogView: View {
+    /// "owner" (default) or "client"; see `fetchNativeChangelog(audience:)`.
+    var audience = "owner"
     @EnvironmentObject private var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
@@ -217,7 +219,7 @@ struct NativeChangelogView: View {
         defer { isLoading = false }
 
         do {
-            entries = try await supabase.fetchNativeChangelog()
+            entries = try await supabase.fetchNativeChangelog(audience: audience)
         } catch {
             errorMessage = isFrench
                 ? "Vérifiez votre connexion, puis réessayez. Votre compte reste intact."
