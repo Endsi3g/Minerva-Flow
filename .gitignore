@@ -69,3 +69,6 @@ next-env.d.ts
 /.design-sync/node_modules
 /.design-sync/fonts/
 /The-Trequartista-from-Minerva/
+
+# private working documents (security findings, internal audits) — never committed
+docs/private/
