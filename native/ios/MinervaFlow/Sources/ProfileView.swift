@@ -4,88 +4,83 @@ import SwiftUI
 /// (notification frequency, sign out) rather than a bare name-and-signout
 /// stub — the account-management surface a production app actually needs,
 /// not a placeholder.
+///
+/// Each former inline section (points history, appearance, notifications,
+/// confidentiality, security, about) is now its own pushed subpage —
+/// matching Menu Studio's "real subpages, not tabs" pattern — rather than
+/// one long scrolling page of stacked sections.
 struct ProfileView: View {
     @EnvironmentObject var supabase: SupabaseManager
-    @EnvironmentObject var biometricLock: BiometricLock
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
-    @AppStorage("appAppearance") private var storedAppearance = AppAppearance.light.rawValue
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
-    @State private var frequency = "all"
-    @State private var isSavingFrequency = false
-    @State private var savedTick = false
     @State private var showSignOutConfirm = false
-    @State private var legalSheet: AuthView.LegalDocument?
-    @State private var showDeleteAccountSheet = false
     @State private var showEditProfile = false
-    @State private var isExportingData = false
-    @State private var exportedDataFileURL: URL?
-    @State private var historyFilter: HistoryFilter = .all
-    @State private var showAllHistory = false
     @State private var showSurvey = false
     @State private var showFavorites = false
     @State private var showCards = false
-    @State private var showDiscovery = false
     @State private var showAmbassador = false
-    @State private var showChangelog = false
-
-    private enum HistoryFilter: String, CaseIterable {
-        case all, earned, redeemed
-        var label: String {
-            switch self {
-            case .all: return "Tous"
-            case .earned: return "Gagnés"
-            case .redeemed: return "Échangés"
-            }
-        }
-    }
 
     var body: some View {
-        Group {
-            if supabase.isLoadingData && supabase.customer == nil {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        Skeletons.card(height: 220)
-                        Skeletons.card(height: 100)
-                        Skeletons.list(count: 3)
-                    }
-                    .padding(18)
-                }
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        moreHeader
-                        if let error = supabase.lastError {
-                            feedbackBanner(icon: "exclamationmark.triangle.fill", title: "Action impossible", message: error, color: .red)
-                        } else if savedTick {
-                            feedbackBanner(icon: "checkmark.circle.fill", title: "Préférences enregistrées", message: "Vos notifications sont à jour.", color: MinervaColor.emerald)
+        NavigationStack {
+            Group {
+                if supabase.isLoadingData && supabase.customer == nil {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            Skeletons.card(height: 220)
+                            Skeletons.card(height: 100)
+                            Skeletons.list(count: 3)
                         }
-                        if let customer = supabase.customer {
-                            identityCard(for: customer)
-                            favoritesRow
-                            cardsRow
-                            membershipsSection
-                            ambassadorRow
-                            pointsHistorySection
-                            appearanceSection
-                            notificationSection
-                            consentSection(for: customer)
-                            securitySection
-                            aboutSection
-                            signOutButton
-                            dangerZone
-                            brandFooter
-                        } else {
-                            NoProfileFoundView()
-                                .padding(.top, 40)
-                        }
+                        .padding(18)
                     }
-                    .padding(18)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            moreHeader
+                            if let error = supabase.lastError {
+                                feedbackBanner(icon: "exclamationmark.triangle.fill", title: "Action impossible", message: error, color: .red)
+                            }
+                            if let customer = supabase.customer {
+                                identityCard(for: customer)
+                                favoritesRow
+                                cardsRow
+                                ambassadorRow
+                                destinationRow(icon: "bag.fill", title: "Mes commandes", subtitle: "Votre historique d'achats") {
+                                    OrderHistoryView()
+                                }
+                                destinationRow(icon: "clock.arrow.circlepath", title: "Historique de points", subtitle: "Vos cartes, points gagnés et échangés") {
+                                    PointsHistoryView()
+                                }
+                                destinationRow(icon: "paintbrush.fill", title: isFrench ? "Apparence" : "Appearance", subtitle: isFrench ? "Thème clair, sombre ou système" : "Light, dark or system theme") {
+                                    AppearanceSettingsView()
+                                }
+                                destinationRow(icon: "bell.fill", title: "Notifications", subtitle: "Fréquence des messages reçus") {
+                                    NotificationSettingsView()
+                                }
+                                destinationRow(icon: "hand.raised.fill", title: "Confidentialité", subtitle: "Consentement et export de vos données") {
+                                    PrivacyConsentView()
+                                }
+                                destinationRow(icon: "lock.shield.fill", title: "Sécurité", subtitle: "Verrouillage biométrique, suppression du compte") {
+                                    SecuritySettingsView()
+                                }
+                                destinationRow(icon: "questionmark.circle.fill", title: isFrench ? "Aide" : "Help", subtitle: isFrench ? "Contacter le restaurant ou le support" : "Contact the restaurant or support") {
+                                    SupportView()
+                                }
+                                destinationRow(icon: "info.circle.fill", title: "À propos", subtitle: "Conditions, confidentialité, mises à jour") {
+                                    AboutView()
+                                }
+                                signOutButton
+                                brandFooter
+                            } else {
+                                NoProfileFoundView()
+                                    .padding(.top, 40)
+                            }
+                        }
+                        .padding(18)
+                    }
                 }
             }
-        }
-        .background(MinervaColor.cream.ignoresSafeArea())
-        .onAppear {
-            if let f = supabase.customer?.notificationFrequency { frequency = f }
+            .background(MinervaColor.cream.ignoresSafeArea())
+            .navigationBarHidden(true)
         }
         .confirmationDialog(
             "Se déconnecter ?",
@@ -96,12 +91,6 @@ struct ProfileView: View {
                 Task { await supabase.signOut() }
             }
             Button("Annuler", role: .cancel) {}
-        }
-        .sheet(item: $legalSheet) { doc in
-            LegalDocumentSheet(document: doc)
-        }
-        .sheet(isPresented: $showDeleteAccountSheet) {
-            DeleteAccountSheet()
         }
         .sheet(isPresented: $showEditProfile) {
             if let customer = supabase.customer {
@@ -117,17 +106,9 @@ struct ProfileView: View {
         .sheet(isPresented: $showCards) {
             MembershipCardsView()
         }
-        .sheet(isPresented: $showDiscovery) {
-            RestaurantMapView()
-        }
         .sheet(isPresented: $showAmbassador) {
             FlowAmbassadorMobileView()
                 .environmentObject(supabase)
-        }
-        .sheet(isPresented: $showChangelog) {
-            NavigationStack {
-                NativeChangelogView()
-            }
         }
     }
 
@@ -137,7 +118,7 @@ struct ProfileView: View {
                 .resizable()
                 .frame(width: 34, height: 34)
             VStack(alignment: .leading, spacing: 3) {
-                Text(isFrench ? "Plus" : "More")
+                Text(isFrench ? "Compte" : "Account")
                     .font(MinervaFont.display(28, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 Text(isFrench ? "Votre compte, vos cartes, vos offres et vos préférences au même endroit" : "Your account, cards, offers and preferences in one place")
@@ -148,8 +129,7 @@ struct ProfileView: View {
             LanguageMenu(language: Binding(
                 get: { AppLanguage(rawValue: storedLanguage) ?? .fr },
                 set: { storedLanguage = $0.rawValue }
-            ))
-            .foregroundStyle(MinervaColor.emeraldDark)
+            ), tint: MinervaColor.emeraldDark)
             Menu {
                 Button("Modifier le profil") { showEditProfile = true }
                 Button("Donner un avis") { showSurvey = true }
@@ -181,7 +161,7 @@ struct ProfileView: View {
     // MARK: - Favorites
 
     /// Entry point to FavoritesView — same aboutRow-style tappable row as
-    /// the "À propos" section, but pulled up next to the identity card
+    /// the destination rows below, but pulled up next to the identity card
     /// since favorites are a browsing shortcut a customer would reach for
     /// often, not a one-off settings toggle.
     private var favoritesRow: some View {
@@ -282,6 +262,38 @@ struct ProfileView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
+    /// A single NavigationLink-pushed row, styled consistently for every
+    /// former inline section now living on its own subpage.
+    private func destinationRow<Destination: View>(icon: String, title: String, subtitle: String, @ViewBuilder destination: () -> Destination) -> some View {
+        NavigationLink {
+            destination()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(MinervaColor.emeraldDark)
+                    .frame(width: 20)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(MinervaColor.ink)
+                    Text(subtitle)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(MinervaColor.inkFaint)
+            }
+            .padding(14)
+        }
+        .buttonStyle(.plain)
+        .background(MinervaColor.creamSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
     // MARK: - Identity
 
     private func identityCard(for customer: Customer) -> some View {
@@ -350,145 +362,6 @@ struct ProfileView: View {
         .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
-    // MARK: - Points & rewards history
-
-    private var membershipsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Mes cartes et mes points")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
-            if supabase.allMemberships.isEmpty {
-            Text("Votre solde apparaîtra ici dès votre première adhésion.")
-                .font(.system(size: 12.5)).foregroundStyle(MinervaColor.inkSoft)
-            Button {
-                showDiscovery = true
-            } label: {
-                Label("Découvrir les restaurants près de vous", systemImage: "map.fill")
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(MinervaColor.emeraldDark)
-            }
-            .buttonStyle(.plain)
-            } else {
-                ForEach(supabase.allMemberships) { membership in
-                    HStack(spacing: 12) {
-                        Image(systemName: "storefront.fill")
-                            .foregroundStyle(MinervaColor.emeraldDark)
-                            .frame(width: 22)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(membership.restaurantName).font(.system(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
-                            Text("\(membership.visitCount) visite\(membership.visitCount == 1 ? "" : "s") · \(currencyString(membership.totalSpent)) dépensés")
-                                .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
-                        }
-                        Spacer()
-                        Text("\(membership.loyaltyPoints) pts")
-                            .font(.system(size: 13, weight: .bold)).foregroundStyle(MinervaColor.emeraldDark)
-                    }
-                    .padding(12)
-                    .background(MinervaColor.creamSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-            }
-        }
-    }
-
-    private func currencyString(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "CAD"
-        formatter.locale = Locale(identifier: "fr_CA")
-        return formatter.string(from: NSNumber(value: value)) ?? "0,00 $"
-    }
-
-    /// Every points event (earned or spent) plus every reward redemption
-    /// in one place — Home only ever shows a trimmed preview of this same
-    /// data (5 most recent transactions); Profile is where the full record
-    /// lives, matching the web portal's own Profile tab.
-    private var filteredHistory: [LoyaltyHistoryEntry] {
-        switch historyFilter {
-        case .all: return supabase.combinedHistory
-        case .earned: return supabase.combinedHistory.filter { $0.pointsDelta >= 0 }
-        case .redeemed: return supabase.combinedHistory.filter { $0.pointsDelta < 0 }
-        }
-    }
-
-    private static let historyPageSize = 6
-
-    private var visibleHistory: [LoyaltyHistoryEntry] {
-        showAllHistory ? filteredHistory : Array(filteredHistory.prefix(Self.historyPageSize))
-    }
-
-    private var pointsHistorySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Points et récompenses")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
-
-            // Its own row, not squeezed beside the title — a segmented
-            // control still reads as compact even at full label width,
-            // and cramming it into the title's trailing space is what
-            // truncated "Échangés" into "Échang…".
-            Picker("Filtrer", selection: $historyFilter) {
-                ForEach(HistoryFilter.allCases, id: \.self) { filter in
-                    Text(filter.label).tag(filter)
-                }
-            }
-            .pickerStyle(.segmented)
-            .onChange(of: historyFilter) { _, _ in showAllHistory = false }
-
-            if supabase.combinedHistory.isEmpty {
-                Text("Aucun mouvement de points pour l'instant.")
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(MinervaColor.inkSoft)
-                    .padding(.vertical, 4)
-            } else if filteredHistory.isEmpty {
-                Text("Aucun résultat pour ce filtre.")
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(MinervaColor.inkSoft)
-                    .padding(.vertical, 4)
-            } else {
-                VStack(spacing: 6) {
-                    ForEach(visibleHistory) { entry in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(entry.title)
-                                    .font(.system(size: 12.5, weight: .medium))
-                                    .foregroundStyle(MinervaColor.ink)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                HStack(spacing: 4) {
-                                    Text(entry.date.formatted(date: .abbreviated, time: .omitted))
-                                    if let restaurantName = entry.restaurantName {
-                                        Text("· \(restaurantName)")
-                                    }
-                                }
-                                .font(.system(size: 10.5))
-                                .foregroundStyle(MinervaColor.inkFaint)
-                            }
-                            Spacer(minLength: 8)
-                            Text("\(entry.pointsDelta >= 0 ? "+" : "")\(entry.pointsDelta) pts")
-                                .font(.system(size: 12.5, weight: .semibold))
-                                .foregroundStyle(entry.pointsDelta >= 0 ? MinervaColor.emeraldDark : .red)
-                        }
-                        .padding(12)
-                        .background(MinervaColor.creamSoft)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                }
-
-                if filteredHistory.count > Self.historyPageSize {
-                    Button {
-                        showAllHistory.toggle()
-                    } label: {
-                        Text(showAllHistory ? "Voir moins" : "Voir plus (\(filteredHistory.count - Self.historyPageSize))")
-                            .font(.system(size: 12, weight: .semibold))
-                            .frame(maxWidth: .infinity)
-                    }
-                    .padding(.vertical, 8)
-                    .foregroundStyle(MinervaColor.emeraldDark)
-                }
-            }
-        }
-    }
-
     private func avatarPlaceholder(tier: LoyaltyTier, customer: Customer) -> some View {
         ZStack {
             Circle().fill(tier.bannerColor)
@@ -518,246 +391,6 @@ struct ProfileView: View {
         return String(letters).uppercased()
     }
 
-    // MARK: - Notifications
-
-    private var appearanceSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(isFrench ? "Apparence" : "Appearance")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
-            Picker(isFrench ? "Thème" : "Theme", selection: $storedAppearance) {
-                ForEach(AppAppearance.allCases) { option in
-                    Text(option.label(isFrench: isFrench)).tag(option.rawValue)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityLabel(isFrench ? "Choisir le thème de l’application" : "Choose app theme")
-        }
-    }
-
-    private var notificationSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Notifications")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
-
-            VStack(spacing: 0) {
-                frequencyRow(value: "all", title: "Tout", subtitle: "Offres, rappels de visite, anniversaire")
-                Divider().padding(.leading, 16)
-                frequencyRow(value: "important_only", title: "L'essentiel seulement", subtitle: "Anniversaire et récompenses prêtes")
-            }
-            .background(MinervaColor.creamSoft)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-        }
-    }
-
-    private func frequencyRow(value: String, title: String, subtitle: String) -> some View {
-        Button {
-            guard frequency != value else { return }
-            frequency = value
-            Task {
-                isSavingFrequency = true
-                let ok = await supabase.updateNotificationFrequency(value)
-                isSavingFrequency = false
-                if ok {
-                    savedTick = true
-                    try? await Task.sleep(nanoseconds: 1_500_000_000)
-                    savedTick = false
-                }
-            }
-        } label: {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(MinervaColor.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(subtitle)
-                        .font(.system(size: 11))
-                        .foregroundStyle(MinervaColor.inkFaint)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 8)
-                if frequency == value {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(MinervaColor.emeraldDark)
-                }
-            }
-            .padding(14)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Consent
-
-    /// A customer's marketing consent was, until now, only ever set once
-    /// (or missed entirely) at signup with no way to revisit it — this is
-    /// the missing "change your mind later" surface, mirroring the web
-    /// portal's own consent toggle in ProfileSettingsCard.
-    private func consentSection(for customer: Customer) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Communications")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
-
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Offres et nouvelles par courriel")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(MinervaColor.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("Vous pouvez retirer votre consentement à tout moment.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(MinervaColor.inkFaint)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 8)
-                Toggle("", isOn: Binding(
-                    get: { customer.marketingConsent },
-                    set: { newValue in
-                        Task { await supabase.updateMarketingConsent(newValue) }
-                    }
-                ))
-                .labelsHidden()
-                .tint(MinervaColor.emerald)
-            }
-            .padding(14)
-            .background(MinervaColor.creamSoft)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-        }
-    }
-
-    // MARK: - Security
-
-    private var securitySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Sécurité")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
-
-            Toggle(isOn: Binding(
-                get: { biometricLock.isEnabled },
-                set: { newValue in
-                    withAnimation { biometricLock.isEnabled = newValue }
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                }
-            )) {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Verrouiller avec \(biometricLock.biometryLabel)")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(MinervaColor.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("Demande une vérification à chaque retour dans l'application.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(MinervaColor.inkFaint)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .tint(MinervaColor.emerald)
-            .padding(14)
-            .background(MinervaColor.creamSoft)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-        }
-    }
-
-    // MARK: - About / legal
-
-    private var aboutSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("À propos")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
-
-            VStack(spacing: 0) {
-                aboutRow(icon: "doc.text", title: "Conditions d'utilisation") {
-                    legalSheet = .terms
-                }
-                Divider().padding(.leading, 44)
-                aboutRow(icon: "lock", title: "Politique de confidentialité") {
-                    legalSheet = .privacy
-                }
-                Divider().padding(.leading, 44)
-                aboutRow(icon: "text.bubble", title: "Donner votre avis") {
-                    showSurvey = true
-                }
-                Divider().padding(.leading, 44)
-                aboutRow(icon: "sparkles", title: isFrench ? "Mises à jour" : "Updates") {
-                    showChangelog = true
-                }
-                Divider().padding(.leading, 44)
-                exportDataRow
-                Divider().padding(.leading, 44)
-                aboutRow(icon: "info.circle", title: "Version", value: "1.0.0")
-            }
-            .background(MinervaColor.creamSoft)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-        }
-    }
-
-    private func aboutRow(icon: String, title: String, value: String? = nil, action: (() -> Void)? = nil) -> some View {
-        Button {
-            action?()
-        } label: {
-            aboutRowLabel(icon: icon, title: title, value: value)
-        }
-        .buttonStyle(.plain)
-        .disabled(action == nil)
-    }
-
-    private func aboutRowLabel(icon: String, title: String, value: String? = nil) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundStyle(MinervaColor.inkSoft)
-                .frame(width: 20)
-            Text(title)
-                .font(.system(size: 13))
-                .foregroundStyle(MinervaColor.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 8)
-            if let value {
-                Text(value)
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(MinervaColor.inkFaint)
-            } else {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(MinervaColor.inkFaint)
-            }
-        }
-        .padding(14)
-    }
-
-    /// Loi 25 self-serve portability, matching the web portal's own export
-    /// button. Fetches the JSON export on tap (rather than eagerly on
-    /// screen load, since it's a network call the person may never use)
-    /// and hands it to a real ShareLink the instant it's ready — the same
-    /// save/share mechanism already used for referral links and reviews,
-    /// so saving to Files or AirDropping it works exactly the way someone
-    /// already expects from the rest of the app.
-    private var exportDataRow: some View {
-        Group {
-            if let exportedDataFileURL {
-                ShareLink(item: exportedDataFileURL) {
-                    aboutRowLabel(icon: "square.and.arrow.down", title: "Exporter mes données")
-                }
-            } else {
-                Button {
-                    Task {
-                        isExportingData = true
-                        exportedDataFileURL = await supabase.exportMyData()
-                        isExportingData = false
-                    }
-                } label: {
-                    aboutRowLabel(icon: "square.and.arrow.down", title: isExportingData ? "Préparation…" : "Exporter mes données")
-                }
-                .buttonStyle(.plain)
-                .disabled(isExportingData)
-            }
-        }
-    }
-
     // MARK: - Sign out
 
     private var signOutButton: some View {
@@ -771,46 +404,6 @@ struct ProfileView: View {
         }
         .foregroundStyle(.red)
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(.red.opacity(0.3)))
-    }
-
-    // MARK: - Danger zone
-
-    private var dangerZone: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Zone de danger")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(MinervaColor.ink)
-
-            Button {
-                showDeleteAccountSheet = true
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.red)
-                        .frame(width: 20)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Supprimer mon compte")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.red)
-                            .fixedSize(horizontal: false, vertical: true)
-                        HStack(spacing: 4) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.system(size: 9))
-                            Text("Action irréversible")
-                        }
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(MinervaColor.inkFaint)
-                    }
-                    Spacer(minLength: 8)
-                }
-                .padding(14)
-            }
-            .buttonStyle(.plain)
-            .background(Color.red.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.red.opacity(0.2)))
-        }
     }
 }
 
@@ -888,8 +481,8 @@ struct FlowAmbassadorMobileView: View {
                         Text(message).font(.system(size: 12)).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
                     }
                     Text(isFrench
-                        ? "La commission correspond à 10 % de la première facture payée d’un client admissible. Elle devient payable après 30 jours. Les versements passent par Stripe et dépendent de la vérification de votre compte."
-                        : "Earn 10% of an eligible customer's first paid invoice. It becomes payable after 30 days. Payouts use Stripe and depend on account verification.")
+                        ? "La commission correspond à 10 % de la première facture payée d’un client admissible. Elle devient payable après 30 jours. Les versements se gèrent sur le web et dépendent de la vérification de votre compte."
+                        : "Earn 10% of an eligible customer's first paid invoice. It becomes payable after 30 days. Payouts are managed on the web and depend on account verification.")
                         .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(18)
@@ -991,16 +584,15 @@ struct FlowAmbassadorMobileView: View {
     private func payoutSection(dashboard: FlowAmbassadorDashboard, summary: FlowAmbassadorSummary) -> some View {
         VStack(alignment: .leading, spacing: 11) {
             Text(isFrench ? "Versements" : "Payouts").font(.system(size: 14, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+            // Payout onboarding and transfers live on the web app: identity
+            // verification and bank details stay off the native binary.
             Button {
-                Task {
-                    if let url = await supabase.connectFlowAmbassadorPayouts(locale: isFrench ? "fr" : "en") { openURL(url) }
-                    else { message = isFrench ? "Impossible d’ouvrir la configuration Stripe." : "Couldn't open Stripe setup." }
-                }
+                openURL(Config.apiBaseURL.appending(path: "/workspace"))
             } label: {
                 Label(dashboard.payoutsEnabled
-                    ? (isFrench ? "Compte de versement vérifié · Gérer" : "Payout account verified · Manage")
-                    : (isFrench ? "Configurer mon compte de versement Stripe" : "Set up my Stripe payout account"),
-                    systemImage: dashboard.payoutsEnabled ? "checkmark.circle.fill" : "creditcard")
+                    ? (isFrench ? "Compte de versement vérifié · Gérer sur le web" : "Payout account verified · Manage on the web")
+                    : (isFrench ? "Configurer mes versements sur le web" : "Set up my payouts on the web"),
+                    systemImage: dashboard.payoutsEnabled ? "checkmark.circle.fill" : "arrow.up.right.square")
                     .font(.system(size: 12.5, weight: .medium)).foregroundStyle(MinervaColor.emeraldDark)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(13)
             }.buttonStyle(.plain).background(MinervaColor.creamSoft).clipShape(RoundedRectangle(cornerRadius: 12))
@@ -1009,12 +601,12 @@ struct FlowAmbassadorMobileView: View {
                     .font(.system(size: 12)).foregroundStyle(MinervaColor.inkSoft).fixedSize(horizontal: false, vertical: true)
             }
             ForEach(summary.commissions) { commission in
-                commissionRow(commission, payoutsEnabled: dashboard.payoutsEnabled)
+                commissionRow(commission)
             }
         }
     }
 
-    private func commissionRow(_ commission: FlowAmbassadorCommission, payoutsEnabled: Bool) -> some View {
+    private func commissionRow(_ commission: FlowAmbassadorCommission) -> some View {
         let formatted = commission.amount.formatted(.currency(code: commission.currency).locale(Locale(identifier: isFrench ? "fr_CA" : "en_CA")))
         return HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
@@ -1023,16 +615,6 @@ struct FlowAmbassadorMobileView: View {
                     .font(.system(size: 11)).foregroundStyle(MinervaColor.inkFaint)
             }
             Spacer()
-            if commission.status == "payable" && payoutsEnabled {
-                Button(isFrench ? "Verser" : "Pay") {
-                    Task {
-                        isBusy = true
-                        dashboard = await supabase.requestFlowAmbassadorPayout(commissionId: commission.id)
-                        if dashboard == nil { message = isFrench ? "Impossible d’effectuer le versement. Vérifiez Stripe et réessayez." : "Couldn't send the payout. Check Stripe and try again." }
-                        isBusy = false
-                    }
-                }.font(.system(size: 11, weight: .semibold)).disabled(isBusy)
-            }
         }.padding(13).background(MinervaColor.creamSoft).clipShape(RoundedRectangle(cornerRadius: 12))
     }
 

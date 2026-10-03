@@ -478,6 +478,7 @@ struct OwnerManagementView: View {
                     Button { showAmbassadorProgram = true } label: {
                         Label(isFrench ? "Programme ambassadeur" : "Ambassador program", systemImage: "megaphone.fill")
                     }
+                    NavigationLink(isFrench ? "Tags NFC" : "NFC tags", destination: OwnerNFCView())
                     NavigationLink("Google Business Profile", destination: OwnerGoogleBusinessProfileView())
                 }
                 Section(isFrench ? "Compte" : "Account") {
@@ -635,37 +636,148 @@ private struct InventoryEditor: View {
 
 struct OwnerFinanceView: View {
     @EnvironmentObject private var supabase: SupabaseManager
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+
     private var revenue: Double { supabase.ownerTransactions.filter { $0.direction == "in" }.reduce(0) { $0 + $1.amount } }
     private var expenses: Double { supabase.ownerTransactions.filter { $0.direction == "out" }.reduce(0) { $0 + $1.amount } }
+
+    private struct FlowPoint: Identifiable { let id = UUID(); let label: String; let value: Double }
+    private var revenueVsExpenses: [FlowPoint] {
+        [
+            FlowPoint(label: isFrench ? "Revenus" : "Revenue", value: revenue),
+            FlowPoint(label: isFrench ? "Dépenses" : "Expenses", value: expenses),
+        ]
+    }
+
     var body: some View {
-        List {
-            Section("Summary") { HStack { OwnerSummaryMetric(title: "Revenue", value: revenue.cad); Spacer(); OwnerSummaryMetric(title: "Expenses", value: expenses.cad); Spacer(); OwnerSummaryMetric(title: "Net", value: (revenue - expenses).cad) } }
-            Section("Transactions") { ForEach(supabase.ownerTransactions) { transaction in HStack { VStack(alignment: .leading, spacing: 3) { Text(transaction.description); Text("\(transaction.category) · \(transaction.date)").font(.caption).foregroundStyle(.secondary) }; Spacer(); Text(transaction.amount.cad).foregroundStyle(transaction.direction == "in" ? MinervaColor.emeraldDark : .red) } } }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Text(isFrench ? "Finances" : "Finance")
+                    .font(MinervaFont.display(30, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+
+                HStack(spacing: 12) {
+                    OwnerMetric(title: isFrench ? "Revenus" : "Revenue", value: revenue.cad, icon: "arrow.down.circle.fill")
+                    OwnerMetric(title: isFrench ? "Dépenses" : "Expenses", value: expenses.cad, icon: "arrow.up.circle.fill")
+                    OwnerMetric(title: isFrench ? "Net" : "Net", value: (revenue - expenses).cad, icon: "equal.circle.fill")
+                }
+
+                if !supabase.ownerTransactions.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(isFrench ? "Revenus contre dépenses" : "Revenue vs expenses")
+                            .font(MinervaFont.display(22, weight: .semibold))
+                        Chart(revenueVsExpenses) { point in
+                            BarMark(x: .value(isFrench ? "Catégorie" : "Category", point.label), y: .value(isFrench ? "Montant" : "Amount", point.value))
+                                .foregroundStyle(point.label == (isFrench ? "Revenus" : "Revenue") ? MinervaColor.emeraldDark : .red)
+                        }
+                        .frame(height: 180)
+                        .chartYAxis { AxisMarks(position: .leading) }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(18)
+                    .background(MinervaColor.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(isFrench ? "Transactions" : "Transactions")
+                        .font(MinervaFont.display(22, weight: .semibold))
+                    if supabase.ownerTransactions.isEmpty {
+                        ContentUnavailableView(
+                            isFrench ? "Aucune transaction" : "No transactions",
+                            systemImage: "dollarsign.circle",
+                            description: Text(isFrench ? "Les transactions de ce lieu apparaîtront ici." : "Transactions from this location will appear here.")
+                        )
+                    } else {
+                        ForEach(supabase.ownerTransactions) { transaction in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(transaction.description).font(.subheadline.weight(.medium)).foregroundStyle(MinervaColor.ink)
+                                    Text("\(transaction.category) · \(transaction.date)").font(.caption).foregroundStyle(MinervaColor.inkFaint)
+                                }
+                                Spacer()
+                                Text(transaction.amount.cad)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(transaction.direction == "in" ? MinervaColor.emeraldDark : .red)
+                            }
+                            .padding(14)
+                            .background(MinervaColor.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(18)
+                .background(MinervaColor.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+            }
+            .padding(20)
         }
-        .navigationTitle("Finance")
+        .background(MinervaColor.cream.ignoresSafeArea())
+        .navigationTitle(isFrench ? "Finances" : "Finance")
         .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
     }
 }
 
 struct OwnerReportsView: View {
     @EnvironmentObject private var supabase: SupabaseManager
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+
     private var netByCategory: [(name: String, total: Double)] {
         Dictionary(grouping: supabase.ownerTransactions, by: \.category).map { key, values in (key, values.reduce(0) { total, tx in total + (tx.direction == "in" ? tx.amount : -tx.amount) }) }.sorted { $0.total > $1.total }
     }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Business performance").font(MinervaFont.display(30, weight: .semibold))
-                Text("Live data for the selected location. Every section expands to use the full page instead of leaving an empty report canvas.").font(.subheadline).foregroundStyle(.secondary)
-                HStack(spacing: 12) { OwnerMetric(title: "Monthly sales", value: supabase.ownerMetrics.monthRevenue.cad, icon: "chart.line.uptrend.xyaxis"); OwnerMetric(title: "Orders", value: "\(supabase.ownerMetrics.monthOrders)", icon: "list.clipboard") }
+                Text(isFrench ? "Performance de l'entreprise" : "Business performance").font(MinervaFont.display(30, weight: .semibold))
+                Text(isFrench
+                     ? "Données en direct pour l'emplacement sélectionné. Chaque section occupe toute la page plutôt que de laisser un canevas de rapport vide."
+                     : "Live data for the selected location. Every section expands to use the full page instead of leaving an empty report canvas.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    OwnerMetric(title: isFrench ? "Ventes mensuelles" : "Monthly sales", value: supabase.ownerMetrics.monthRevenue.cad, icon: "chart.line.uptrend.xyaxis")
+                    OwnerMetric(title: isFrench ? "Commandes" : "Orders", value: "\(supabase.ownerMetrics.monthOrders)", icon: "list.clipboard")
+                }
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Net by category").font(MinervaFont.display(22, weight: .semibold))
-                    if netByCategory.isEmpty { ContentUnavailableView("No finance data", systemImage: "chart.bar", description: Text("Transactions will appear here as they are recorded.")) }
-                    else { Chart(netByCategory, id: \.name) { entry in BarMark(x: .value("Category", entry.name), y: .value("Net", entry.total)).foregroundStyle(entry.total >= 0 ? MinervaColor.emeraldDark : .red) }.frame(height: 280).chartYAxis { AxisMarks(position: .leading) } }
+                    Text(isFrench ? "Net par catégorie" : "Net by category").font(MinervaFont.display(22, weight: .semibold))
+                    if netByCategory.isEmpty {
+                        ContentUnavailableView(
+                            isFrench ? "Aucune donnée financière" : "No finance data",
+                            systemImage: "chart.bar",
+                            description: Text(isFrench ? "Les transactions apparaîtront ici au fur et à mesure." : "Transactions will appear here as they are recorded.")
+                        )
+                    } else {
+                        Chart(netByCategory, id: \.name) { entry in
+                            BarMark(x: .value(isFrench ? "Catégorie" : "Category", entry.name), y: .value("Net", entry.total))
+                                .foregroundStyle(entry.total >= 0 ? MinervaColor.emeraldDark : .red)
+                        }
+                        .frame(height: 280)
+                        .chartYAxis { AxisMarks(position: .leading) }
+                    }
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(18).background(MinervaColor.surface).clipShape(RoundedRectangle(cornerRadius: 18))
-                VStack(alignment: .leading, spacing: 10) { Text("Recent activity").font(MinervaFont.display(22, weight: .semibold)); ForEach(supabase.ownerTransactions.prefix(12)) { tx in HStack { Text(tx.date).font(.caption.monospacedDigit()).foregroundStyle(.secondary); Text(tx.description); Spacer(); Text(tx.amount.cad).font(.subheadline.weight(.semibold)) }.padding(.vertical, 4) } }.frame(maxWidth: .infinity, alignment: .leading).padding(18).background(MinervaColor.surface).clipShape(RoundedRectangle(cornerRadius: 18))
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(isFrench ? "Activité récente" : "Recent activity").font(MinervaFont.display(22, weight: .semibold))
+                    if supabase.ownerTransactions.isEmpty {
+                        ContentUnavailableView(
+                            isFrench ? "Aucune activité" : "No activity",
+                            systemImage: "clock",
+                            description: Text(isFrench ? "L'activité récente apparaîtra ici." : "Recent activity will appear here.")
+                        )
+                    } else {
+                        ForEach(supabase.ownerTransactions.prefix(12)) { tx in
+                            HStack {
+                                Text(tx.date).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                                Text(tx.description)
+                                Spacer()
+                                Text(tx.amount.cad).font(.subheadline.weight(.semibold))
+                            }.padding(.vertical, 4)
+                        }
+                    }
+                }.frame(maxWidth: .infinity, alignment: .leading).padding(18).background(MinervaColor.surface).clipShape(RoundedRectangle(cornerRadius: 18))
             }.padding(20)
-        }.background(MinervaColor.cream.ignoresSafeArea()).navigationTitle("Reports").toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
+        }.background(MinervaColor.cream.ignoresSafeArea()).navigationTitle(isFrench ? "Rapports" : "Reports").toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
     }
 }
 
@@ -688,10 +800,8 @@ struct OwnerSettingsView: View {
                 Link("Open iOS notification settings", destination: URL(string: UIApplication.openSettingsURLString)!)
             }
             Section("Subscription") { Text("Software subscriptions are managed on a computer. No in-app purchase is offered in this iOS app.").font(.footnote).foregroundStyle(.secondary) }
-            Section("Support") { Link("theminervabrand@gmail.com", destination: URL(string: "mailto:theminervabrand@gmail.com")!) }
+            Section("Support") { Link(Config.supportEmail, destination: SupportContact.emailURL) }
         }
         .navigationTitle("Settings")
     }
 }
-
-private struct OwnerSummaryMetric: View { let title: String; let value: String; var body: some View { VStack(alignment: .leading, spacing: 4) { Text(value).font(.headline).foregroundStyle(MinervaColor.ink); Text(title).font(.caption).foregroundStyle(.secondary) } } }

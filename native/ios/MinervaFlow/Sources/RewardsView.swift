@@ -84,16 +84,47 @@ struct RewardsView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(isFrench ? "Offres" : "Offers")
                 .font(MinervaFont.display(24))
                 .foregroundStyle(MinervaColor.ink)
-            if let points = supabase.customer?.loyaltyPoints {
-                Text(isFrench ? "\(points) points disponibles pour vos offres" : "\(points) points available for your offers")
-                    .font(.system(size: 13))
-                    .foregroundStyle(MinervaColor.inkSoft)
-            }
+            statsRow
         }
+    }
+
+    private var redeemableRewardsCount: Int {
+        guard let points = supabase.customer?.loyaltyPoints else { return 0 }
+        return supabase.rewards.filter { $0.pointsCost <= points }.count
+    }
+
+    private var activeOffersCount: Int {
+        supabase.offers.filter(\.isLive).count
+    }
+
+    private var statsRow: some View {
+        HStack(spacing: 10) {
+            statChip(value: "\(supabase.customer?.loyaltyPoints ?? 0)", label: isFrench ? "points" : "points")
+            statChip(value: "\(redeemableRewardsCount)", label: isFrench ? "prêtes" : "ready")
+            statChip(value: "\(activeOffersCount)", label: isFrench ? "actives" : "active")
+        }
+    }
+
+    private func statChip(value: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundStyle(MinervaColor.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(label)
+                .font(.system(size: 10.5))
+                .foregroundStyle(MinervaColor.inkFaint)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MinervaColor.creamSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var pendingRedemptions: [RewardRedemption]? {

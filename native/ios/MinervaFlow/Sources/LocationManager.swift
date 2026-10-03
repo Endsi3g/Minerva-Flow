@@ -47,6 +47,6 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("LocationManager error: \(error)")
+        AppLog.failure("LocationManager", error)
     }
 }

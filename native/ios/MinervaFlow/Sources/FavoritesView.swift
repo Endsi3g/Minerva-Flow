@@ -39,6 +39,7 @@ struct FavoritesView: View {
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 22) {
+                            summaryRow
                             if !favoriteItems.isEmpty {
                                 itemsSection
                             }
@@ -91,6 +92,18 @@ struct FavoritesView: View {
                 .padding(.horizontal, 40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var summaryRow: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "heart.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(.red)
+            Text("\(favoriteItems.count) plat\(favoriteItems.count == 1 ? "" : "s") · \(favoriteOffers.count) offre\(favoriteOffers.count == 1 ? "" : "s")")
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(MinervaColor.inkSoft)
+            Spacer()
+        }
     }
 
     private var itemsSection: some View {

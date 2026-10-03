@@ -27,6 +27,14 @@ enum Config {
     /// just because the request looks like it left the machine.
     static let apiBaseURL = URL(string: "https://minervaflow.app")!
 
+    /// Published privacy policy (app/[locale]/legal/privacy) — the same URL
+    /// declared in App Store Connect; reachable in-app from sign-up and Aide.
+    static let privacyPolicyURL = apiBaseURL.appending(path: "/legal/privacy")
+    static let termsURL = apiBaseURL.appending(path: "/legal/terms")
+
+    /// Customer support address, shown in Aide and the owner Support section.
+    static let supportEmail = "support@minervaflow.app"
+
     /// Matches the CFBundleURLSchemes entry in project.yml — where
     /// ASWebAuthenticationSession hands control back to this app once
     /// Google/Facebook redirect the OAuth flow to Supabase and Supabase
@@ -48,4 +56,15 @@ enum Config {
     static let devTestEmail = "dev-test@minervaflow.app"
     static let devTestPassword = "MinervaDevTest2026!"
     #endif
+}
+
+enum SupportContact {
+    /// Opens the user's mail app addressed to support (contact only — account
+    /// deletion is done in-app from Compte › Sécurité, never by email).
+    static var emailURL: URL {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = Config.supportEmail
+        return components.url ?? Config.apiBaseURL
+    }
 }

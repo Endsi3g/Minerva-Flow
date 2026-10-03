@@ -43,6 +43,15 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 
 struct LanguageMenu: View {
     @Binding var language: AppLanguage
+    /// Defaults to white because the original (and still valid) call site —
+    /// IntroView's full-bleed emerald hero — needs a light pill on a dark
+    /// background. AuthView and ProfileView sit on light cream instead and
+    /// pass their own tint; previously they tried to override this via an
+    /// external `.foregroundStyle()`, which a view's own internal
+    /// `.foregroundStyle()` always wins over, so the switcher rendered
+    /// white-on-white there and was effectively invisible.
+    var tint: Color = .white
+
     @State private var isChoosingLanguage = false
 
     var body: some View {
@@ -56,12 +65,12 @@ struct LanguageMenu: View {
             .font(.system(size: 12, weight: .bold))
             .padding(.horizontal, 11)
             .padding(.vertical, 8)
-            .background(.white.opacity(0.16))
+            .background(tint.opacity(0.16))
             .clipShape(Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.white)
+        .foregroundStyle(tint)
         .confirmationDialog(
             language == .fr ? "Choisir une langue" : "Choose a language",
             isPresented: $isChoosingLanguage,
@@ -382,5 +391,19 @@ enum MenuCategoryIcon {
             return "flame"
         }
         return "fork.knife"
+    }
+}
+
+/// Hiding the navigation bar (MenuItemDetailView's edge-to-edge hero) also
+/// disables the interactive swipe-back gesture; this restores it for every
+/// pushed screen in the app.
+extension UINavigationController: UIGestureRecognizerDelegate {
+    override open func viewDidLoad() {
+        super.viewDidLoad()
+        interactivePopGestureRecognizer?.delegate = self
+    }
+
+    public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        viewControllers.count > 1
     }
 }

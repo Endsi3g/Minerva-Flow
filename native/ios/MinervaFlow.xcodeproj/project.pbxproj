@@ -16,6 +16,7 @@
 		18918555C1D1F51C5DB40AA8 /* XCUIApplication+TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */; };
 		1BC6CB02639037C7094B57D0 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8113A301B23FEECDBE8EDE /* MainTabView.swift */; };
 		1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBD59C80CE3B06A999142A6E /* Config.swift */; };
+		B6AFB5F3AEC642F4A9D2BEE7 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B1DAAA268814AFC95D6F690 /* AppLog.swift */; };
 		2AA811991516F447AC05EDCE /* MyCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 471F651B424DBE91D0FC0A0E /* MyCardView.swift */; };
 		2C9E95355FE610913FB5ED0B /* MenuItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C857BD14AB0F83F20027A314 /* MenuItemDetailView.swift */; };
 		2FC0E0AFAAD0BCFE6BA92E0B /* RewardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9CD9B5E79E9FE474707739 /* RewardsView.swift */; };
@@ -45,12 +46,21 @@
 		9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48489698C6B750A6E75FEFEE /* BiometricLock.swift */; };
 		A046D3E2BA39E0B6F5839CF3 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = D76530360EDCB9FEAD965814 /* Sentry */; };
 		A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */; };
+		07CE923348F24A2B86E2A22C /* TeamMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035494880ABF437A844B8AAC /* TeamMainView.swift */; };
+		9B3F1D670FAE45A2A8E97831 /* NFCTags.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7FF6998CFD44ECEB8D015E2 /* NFCTags.swift */; };
+		CF6B8AEE096442AEAF36295C /* OwnerNFCView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B15A1825FE44E2A2F339B5 /* OwnerNFCView.swift */; };
+		C9D666197AF8401EBC550CC5 /* TeamMembersViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEC1864086974D348C892A36 /* TeamMembersViews.swift */; };
+		B91460675F8F4FB1AEFC3957 /* OrderHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC6DEB03C4AE40FD9E0B0043 /* OrderHistoryView.swift */; };
+		7FA1DF8E73CF499CAED375DE /* PointsHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C9C21C33504CFF914CF2D1 /* PointsHistoryView.swift */; };
+		FD2E59EC54D24597911D9471 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CE44127363D4358ADC80AE7 /* SupportView.swift */; };
+		83FEC9E1ACAD4AD0A2C4F04E /* AccountSettingsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED2D3AE4592149478DFDDF84 /* AccountSettingsViews.swift */; };
 		A4FF9ABA69E8115D0845A981 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 33E9C17D0D39AFF0D025E0F2 /* Supabase */; };
 		B452FFE84A4A20AE63CF45BA /* RestaurantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */; };
 		C276CD959221FB7F19087810 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4B0852605EFE3B8B30F88D /* LocationManager.swift */; };
 		CAFBB02D7DDD8E9207AF10E1 /* WebPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 574318127126383937A04DB7 /* WebPageView.swift */; };
 		CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D58EE17A9A62B1893F865891 /* RadialGauge.swift */; };
 		D8CE2BE3E4EDB81DAEEAFA1A /* AppLanguagePreferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D188BEA08FC8C7C1C007C557 /* AppLanguagePreferenceTests.swift */; };
+		FC9795E8643641568B38C856 /* NFCTagURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222554F7FCCB4674A35B20C1 /* NFCTagURLTests.swift */; };
 		DDBC2F899C12158BE7C35344 /* SurveyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6362E11D22E6E7743BBE74 /* SurveyView.swift */; };
 		DEDC40321085D36EBF1F9A8E /* OwnerMainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D714D4A2A584A4ED14C478B8 /* OwnerMainTabView.swift */; };
 		E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442686E96CEA070F53FB728F /* EditProfileSheet.swift */; };
@@ -157,7 +167,16 @@
 		D01728C618E5A24A0F98155E /* XCUIApplication+TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "XCUIApplication+TestHelpers.swift"; sourceTree = "<group>"; };
 		D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		D188BEA08FC8C7C1C007C557 /* AppLanguagePreferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguagePreferenceTests.swift; sourceTree = "<group>"; };
+		222554F7FCCB4674A35B20C1 /* NFCTagURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFCTagURLTests.swift; sourceTree = "<group>"; };
 		D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		035494880ABF437A844B8AAC /* TeamMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamMainView.swift; sourceTree = "<group>"; };
+		E7FF6998CFD44ECEB8D015E2 /* NFCTags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NFCTags.swift; sourceTree = "<group>"; };
+		B3B15A1825FE44E2A2F339B5 /* OwnerNFCView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerNFCView.swift; sourceTree = "<group>"; };
+		AEC1864086974D348C892A36 /* TeamMembersViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamMembersViews.swift; sourceTree = "<group>"; };
+		FC6DEB03C4AE40FD9E0B0043 /* OrderHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderHistoryView.swift; sourceTree = "<group>"; };
+		85C9C21C33504CFF914CF2D1 /* PointsHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointsHistoryView.swift; sourceTree = "<group>"; };
+		1CE44127363D4358ADC80AE7 /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
+		ED2D3AE4592149478DFDDF84 /* AccountSettingsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsViews.swift; sourceTree = "<group>"; };
 		D58EE17A9A62B1893F865891 /* RadialGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadialGauge.swift; sourceTree = "<group>"; };
 		D6E6F6E76663DF4A6F2A5309 /* MinervaFlow.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MinervaFlow.entitlements; sourceTree = "<group>"; };
 		D714D4A2A584A4ED14C478B8 /* OwnerMainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerMainTabView.swift; sourceTree = "<group>"; };
@@ -169,6 +188,7 @@
 		E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantDetailView.swift; sourceTree = "<group>"; };
 		EA427B759305A43BF018AB62 /* OrderTotals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderTotals.swift; sourceTree = "<group>"; };
 		EBD59C80CE3B06A999142A6E /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
+		8B1DAAA268814AFC95D6F690 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		ECE934F2A5846A120417A19B /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		F1DE6CE7FE7E96E37C224D72 /* PointsSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointsSnapshot.swift; sourceTree = "<group>"; };
 		F480C8ECD03E91B3910DDA61 /* BirthdayOfferEligibilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirthdayOfferEligibilityTests.swift; sourceTree = "<group>"; };
@@ -203,6 +223,7 @@
 			isa = PBXGroup;
 			children = (
 				D188BEA08FC8C7C1C007C557 /* AppLanguagePreferenceTests.swift */,
+				222554F7FCCB4674A35B20C1 /* NFCTagURLTests.swift */,
 				F480C8ECD03E91B3910DDA61 /* BirthdayOfferEligibilityTests.swift */,
 				B10D96F1B04EFD925EF4B774 /* LoyaltyTierTests.swift */,
 				01453807D2DD68F51BD78756 /* NativeOwnerAPIURLTests.swift */,
@@ -249,6 +270,7 @@
 				48489698C6B750A6E75FEFEE /* BiometricLock.swift */,
 				5766C5F89F16B99B1A8DBB05 /* BrandMarks.swift */,
 				EBD59C80CE3B06A999142A6E /* Config.swift */,
+				8B1DAAA268814AFC95D6F690 /* AppLog.swift */,
 				D052AA3F0EA6C0BE5ADFD0DC /* DeepLinkRouter.swift */,
 				442686E96CEA070F53FB728F /* EditProfileSheet.swift */,
 				DC74D7EFE8F6B593AB50D654 /* FavoritesView.swift */,
@@ -272,6 +294,14 @@
 				D714D4A2A584A4ED14C478B8 /* OwnerMainTabView.swift */,
 				5B92BADD5DDB759E9F1CDAC0 /* OwnerOperationsViews.swift */,
 				D1CDE637A52B2F3A6E8D73B3 /* ProfileView.swift */,
+				035494880ABF437A844B8AAC /* TeamMainView.swift */,
+				E7FF6998CFD44ECEB8D015E2 /* NFCTags.swift */,
+				B3B15A1825FE44E2A2F339B5 /* OwnerNFCView.swift */,
+				AEC1864086974D348C892A36 /* TeamMembersViews.swift */,
+				FC6DEB03C4AE40FD9E0B0043 /* OrderHistoryView.swift */,
+				85C9C21C33504CFF914CF2D1 /* PointsHistoryView.swift */,
+				1CE44127363D4358ADC80AE7 /* SupportView.swift */,
+				ED2D3AE4592149478DFDDF84 /* AccountSettingsViews.swift */,
 				CA484AE32471A39B3214052F /* QRScannerView.swift */,
 				D58EE17A9A62B1893F865891 /* RadialGauge.swift */,
 				E5EC6D8EA5F91B9F8F63F72E /* RestaurantDetailView.swift */,
@@ -548,6 +578,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D8CE2BE3E4EDB81DAEEAFA1A /* AppLanguagePreferenceTests.swift in Sources */,
+				FC9795E8643641568B38C856 /* NFCTagURLTests.swift in Sources */,
 				EA3498505926E803A90287BF /* BirthdayOfferEligibilityTests.swift in Sources */,
 				3AD6882CB5ED4D4A5A3880A6 /* LoyaltyTierTests.swift in Sources */,
 				F7D0726195C7A67EC3E51CDB /* NativeOwnerAPIURLTests.swift in Sources */,
@@ -574,6 +605,7 @@
 				9D5FC1E08CA3123848B1BCE3 /* BiometricLock.swift in Sources */,
 				8E9FA68C879A95D98AA5BF22 /* BrandMarks.swift in Sources */,
 				1ED6C3F3E9DB4FC71C201DB7 /* Config.swift in Sources */,
+				B6AFB5F3AEC642F4A9D2BEE7 /* AppLog.swift in Sources */,
 				334B756E8CFD91AFED64561A /* DeepLinkRouter.swift in Sources */,
 				E0DBDB8E44AD5CC09F528D1A /* EditProfileSheet.swift in Sources */,
 				31C2B1DC693A37CD2CCA402A /* FavoritesView.swift in Sources */,
@@ -598,6 +630,14 @@
 				5F9EF1186433358348AA47D6 /* OwnerOperationsViews.swift in Sources */,
 				068DD03953A5F45E4FDDA8F8 /* PointsSnapshot.swift in Sources */,
 				A45FF2A3F74D468BFFF89952 /* ProfileView.swift in Sources */,
+				07CE923348F24A2B86E2A22C /* TeamMainView.swift in Sources */,
+				9B3F1D670FAE45A2A8E97831 /* NFCTags.swift in Sources */,
+				CF6B8AEE096442AEAF36295C /* OwnerNFCView.swift in Sources */,
+				C9D666197AF8401EBC550CC5 /* TeamMembersViews.swift in Sources */,
+				B91460675F8F4FB1AEFC3957 /* OrderHistoryView.swift in Sources */,
+				7FA1DF8E73CF499CAED375DE /* PointsHistoryView.swift in Sources */,
+				FD2E59EC54D24597911D9471 /* SupportView.swift in Sources */,
+				83FEC9E1ACAD4AD0A2C4F04E /* AccountSettingsViews.swift in Sources */,
 				111FB36D15A3D9DEEBA9060B /* QRScannerView.swift in Sources */,
 				CE962434F1EB162FCD8BBA87 /* RadialGauge.swift in Sources */,
 				B452FFE84A4A20AE63CF45BA /* RestaurantDetailView.swift in Sources */,

@@ -9,7 +9,10 @@ import SwiftUI
 struct ScannerTabView: View {
     @EnvironmentObject var supabase: SupabaseManager
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    @EnvironmentObject var router: DeepLinkRouter
     @State private var showCameraScan = false
+    @State private var nfcReader = NFCTagReader()
+    @State private var nfcMessage: String?
 
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
@@ -44,6 +47,26 @@ struct ScannerTabView: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(MinervaColor.emeraldDark)
+
+                    if NFCTagReader.isAvailable {
+                        Button {
+                            readNFCTag()
+                        } label: {
+                            Label(isFrench ? "Toucher un tag NFC" : "Tap an NFC tag", systemImage: "wave.3.right")
+                                .font(.system(size: 15, weight: .semibold))
+                                .frame(maxWidth: .infinity, minHeight: 48)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(MinervaColor.emeraldDark)
+                    }
+
+                    if let nfcMessage {
+                        Text(nfcMessage)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(MinervaColor.inkSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityAddTraits(.updatesFrequently)
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 24)
@@ -69,6 +92,27 @@ struct ScannerTabView: View {
             }
             .fullScreenCover(isPresented: $showCameraScan) {
                 ScanToOrderView(showsCloseButton: true)
+            }
+        }
+    }
+
+    /// A tag only ever reaches the app's normal /t/{code} flow after NFCTagURL
+    /// proves it is a first-party link — the same flow as a QR scan or a tap
+    /// on the printed URL, so attribution and restaurant joining are shared.
+    private func readNFCTag() {
+        nfcMessage = nil
+        nfcReader.begin(
+            prompt: isFrench ? "Approchez le haut de votre iPhone du tag du restaurant." : "Hold the top of your iPhone near the restaurant's tag."
+        ) { result in
+            switch result {
+            case .success(let url):
+                router.handleUniversalLink(url)
+            case .failure(.notMinervaTag):
+                nfcMessage = isFrench ? "Ce tag n'est pas un tag Minerva Flow." : "This isn't a Minerva Flow tag."
+            case .failure(.unavailable):
+                nfcMessage = isFrench ? "Le NFC n'est pas disponible sur cet appareil." : "NFC isn't available on this device."
+            case .failure:
+                nfcMessage = isFrench ? "Lecture impossible. Réessayez." : "Couldn't read the tag. Try again."
             }
         }
     }

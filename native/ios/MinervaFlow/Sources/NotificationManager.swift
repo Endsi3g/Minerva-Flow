@@ -4,7 +4,7 @@ import UserNotifications
 /// Handles the permission prompt, remote-notification registration, and
 /// device token capture. Actually delivering a push to this token still
 /// requires a real APNs auth key configured server-side (see
-/// native/ios/build-status.html) — this half of the pipeline works
+/// docs/native-build-status.html) — this half of the pipeline works
 /// regardless of that, and a local confirmation notification fires
 /// immediately on grant so the person sees proof the toggle did something
 /// instead of a silent permission dialog and nothing else.
@@ -40,7 +40,7 @@ final class NotificationManager: NSObject, ObservableObject, UNUserNotificationC
             }
             return granted
         } catch {
-            print("Notification permission error: \(error)")
+            AppLog.failure("Notification permission", error)
             return false
         }
     }
@@ -118,6 +118,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("Remote notification registration failed: \(error)")
+        AppLog.failure("Remote notification registration", error)
     }
 }

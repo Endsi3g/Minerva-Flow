@@ -22,7 +22,7 @@ struct MainTabView: View {
                     tabletTab(.scan, title: isFrench ? "Scanner" : "Scan", icon: "qrcode.viewfinder")
                     tabletTab(.rewards, title: isFrench ? "Offres" : "Offers", icon: "gift.fill")
                     tabletTab(.cards, title: isFrench ? "Mes cartes" : "My cards", icon: "creditcard.fill")
-                    tabletTab(.profile, title: isFrench ? "Plus" : "More", icon: "ellipsis.circle.fill")
+                    tabletTab(.profile, title: isFrench ? "Compte" : "Account", icon: "ellipsis.circle.fill")
                 }
                 .listStyle(.sidebar)
                 .navigationTitle("Minerva Flow")
@@ -56,7 +56,7 @@ struct MainTabView: View {
                 .tag(AppTab.cards)
 
             ProfileView()
-                .tabItem { Label(isFrench ? "Plus" : "More", systemImage: "ellipsis.circle.fill") }
+                .tabItem { Label(isFrench ? "Compte" : "Account", systemImage: "ellipsis.circle.fill") }
                 .tag(AppTab.profile)
             }
           }
