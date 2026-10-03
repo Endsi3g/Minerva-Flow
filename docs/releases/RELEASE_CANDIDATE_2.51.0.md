@@ -45,6 +45,8 @@ Les captures d'écran du journal sont **à produire** à partir de l'application
 | --- | --- |
 | TypeScript (`npx tsc --noEmit`) | PASS |
 | Tests web (`npx vitest run`, délai de test 60 s) | PASS — 396 tests dans 72 fichiers (avec le délai par défaut, un test Stripe est instable à l'import à froid) |
+| CI GitHub de la PR #167 (typage, lint non bloquant, tests, build) | PASS — deux exécutions |
+| Déploiement de prévisualisation Vercel | PASS — déployé; non testé depuis cette session (accès réseau et session indisponibles) |
 | Tests natifs ciblés (NFC, Nouveautés) | PASS — 7 tests |
 | Build iOS simulateur et appareil | PASS |
 | Audit App Store (`native/ios`) | 0 critique, 0 élevé, 3 moyens |
