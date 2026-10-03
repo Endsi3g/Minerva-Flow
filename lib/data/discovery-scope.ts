@@ -30,6 +30,11 @@ export async function resolveDiscoveryScope(userId: string): Promise<DiscoverySc
     .from("customers")
     .select("restaurant_id")
     .eq("user_id", userId)
+    // Oldest membership = the "home" restaurant (same rule the native app's
+    // loadPortalData uses). Without an ORDER BY, a customer with several
+    // memberships got whichever row Postgres returned first, so their map
+    // scope could flip between the open marketplace and a single location.
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
 
