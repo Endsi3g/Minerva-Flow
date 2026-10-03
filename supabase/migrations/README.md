@@ -7,7 +7,7 @@ Numérotation séquentielle `NNNN_description.sql`, une migration par changement
 - Le registre `supabase_migrations.schema_migrations` de la base utilise des versions horodatées pour les migrations appliquées via l'outil Supabase; les fichiers de ce dossier utilisent la numérotation séquentielle. Les noms correspondent, pas les versions : ne pas supposer qu'un fichier est appliqué parce que son numéro est absent du registre.
 - **Doublon historique** : `0102_menu_and_offer_review_photos.sql` et `0102_pos_item_mappings_and_orders_idempotency.sql` (déjà appliquées toutes deux). Ne pas les renommer.
 - **`0167_blog_posts.sql` n'est pas appliquée** à la base de production (état au 2026-10-03). Elle appartient au chantier blog/SEO.
-- Les migrations `0168` à `0171` (portail équipe, drapeau `is_demo`) ont été appliquées directement en base puis consignées ici. Elles ont été renumérotées pour lever un doublon `0167`.
+- Les migrations `0168` à `0173` (portail équipe, drapeau `is_demo`, audience du changelog, droits des fonctions internes) ont été appliquées directement en base puis consignées ici. Elles ont été renumérotées pour lever un doublon `0167`.
 - Un seul prochain numéro à la fois : vérifier `ls supabase/migrations | tail` avant d'en créer une, pour ne pas dupliquer un numéro.
 
 ## Autres fichiers SQL
