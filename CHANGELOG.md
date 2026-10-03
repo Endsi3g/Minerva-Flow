@@ -29,6 +29,8 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Lecture des tags NFC des restaurants (client) et programmation de tags (propriétaire); seuls les liens `minervaflow.app/t/…` et `/p/…` sont suivis. L’activation exige la capacité NFC sur l’identifiant d’app (`docs/NFC_AND_SIGNING.md`).
 - Réglages web répartis en sous-pages (`/settings`, `/settings/alertes`, `/settings/parrainage`, `/settings/securite`, `/settings/apparence`) au lieu d’onglets.
 - Paiement en ligne et versements des ambassadeurs : l’application iOS ouvre le web; plus aucun flux de paiement natif.
+- Nouvelle page client « Nouveautés » (Compte › Nouveautés) : une liste courte des changements qui concernent les clients seulement. Le journal des mises à jour porte désormais une audience (`owner`, `client`, `all`) : les entrées existantes restent réservées aux propriétaires, une entrée client se publie volontairement. Les propriétaires retrouvent l’historique complet dans Gestion › Mises à jour.
+- La carte de fidélité du niveau Ambassadeur redevient verte (vert forêt) au lieu du lime.
 - Journalisation iOS via `os.Logger` (détails masqués en production); l’adresse du destinataire n’est plus écrite dans les logs d’alerte critique.
 - Mains Magique : fiche et position Google Maps renseignées (Repentigny), forfait Marque blanche.
 - Statut : en cours de développement sur la branche `feat/team-portal-and-native-account-uplift`; rien n’est publié ni disponible tant que le build et le déploiement correspondants n’ont pas été vérifiés.
