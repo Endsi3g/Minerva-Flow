@@ -550,3 +550,24 @@ body {
     @apply hidden!;
   }
 }
+
+/* Touch targets: on coarse pointers every control gets at least a 44x44px hit
+   area centred on it, without changing layout. :where() keeps specificity at 0
+   so utility classes (absolute, fixed, after:*) still win. */
+@media (pointer: coarse) {
+  :where(button, [role="button"], a[href], summary) {
+    position: relative;
+  }
+  :where(button, [role="button"], a[href], summary)::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+  :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"]), select, textarea) {
+    min-height: 44px;
+  }
+}

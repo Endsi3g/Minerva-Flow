@@ -105,7 +105,7 @@ function UserMenu() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-mv-ink/5"
+        className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 pointer-coarse:min-h-11 transition-colors hover:bg-mv-ink/5"
       >
         <CurrentUserAvatar size={30} />
         <span className="hidden text-left leading-tight md:block">
@@ -283,7 +283,7 @@ function NotificationBell() {
         render={
           <button
             title={t("notifications")}
-            className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-mv-border bg-mv-surface text-mv-ink-soft transition-colors hover:bg-mv-cream-soft"
+            className="relative flex h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 items-center justify-center rounded-lg border border-mv-border bg-mv-surface text-mv-ink-soft transition-colors hover:bg-mv-cream-soft"
           >
             <Bell size={16} />
             {unreadCount > 0 && (
