@@ -23,7 +23,7 @@ L’application est native en SwiftUI et utilise Supabase Auth et les données d
 - Données filtrées par workspace/restaurant et permissions.
 - Sur iPad, présentation à colonnes; l’application déclare les orientations portrait, portrait inversé et paysage.
 
-L’application web reste l’espace d’administration le plus complet. La documentation fonctionnelle commune est dans [le guide propriétaire et client](PRODUCT_GUIDE_OWNER_CLIENT.md).
+L’application web reste l’espace d’administration le plus complet. La documentation fonctionnelle commune est dans [le guide propriétaire et client](../product/PRODUCT_GUIDE_OWNER_CLIENT.md).
 
 ## 2. État du build et de TestFlight
 

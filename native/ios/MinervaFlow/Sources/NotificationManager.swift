@@ -4,7 +4,7 @@ import UserNotifications
 /// Handles the permission prompt, remote-notification registration, and
 /// device token capture. Actually delivering a push to this token still
 /// requires a real APNs auth key configured server-side (see
-/// docs/native-build-status.html) — this half of the pipeline works
+/// docs/mobile/native-build-status.html) — this half of the pipeline works
 /// regardless of that, and a local confirmation notification fires
 /// immediately on grant so the person sees proof the toggle did something
 /// instead of a silent permission dialog and nothing else.

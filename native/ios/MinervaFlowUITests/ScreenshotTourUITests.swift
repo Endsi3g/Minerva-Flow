@@ -110,4 +110,50 @@ final class ScreenshotTourUITests: XCTestCase {
             }
         }
     }
+
+    /// Owner side. Credentials come from TEST_RUNNER_MV_OWNER_EMAIL and
+    /// TEST_RUNNER_MV_OWNER_PASSWORD, never from the repository.
+    func testCaptureOwnerTabs() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let email = env["MV_OWNER_EMAIL"], let password = env["MV_OWNER_PASSWORD"] else {
+            throw XCTSkip("MV_OWNER_EMAIL / MV_OWNER_PASSWORD not set")
+        }
+        app.launch()
+
+        // Start from a signed-out app: sign out if a previous session is still there.
+        if app.tabBars.firstMatch.waitForExistence(timeout: 12) { ensureSignedOut(app) }
+        for _ in 0..<6 {
+            if app.buttons["Commencer"].exists { app.buttons["Commencer"].tap() }
+            if app.buttons["Fermer l'introduction"].exists { app.buttons["Fermer l'introduction"].tap() }
+            if app.secureTextFields.firstMatch.exists || app.buttons["Mot de passe"].exists { break }
+            Thread.sleep(forTimeInterval: 1.5)
+        }
+        let passwordMode = app.buttons["Mot de passe"]
+        if passwordMode.waitForExistence(timeout: 5) { passwordMode.tap() }
+
+        let emailField = app.textFields.firstMatch
+        XCTAssertTrue(emailField.waitForExistence(timeout: 10), "no email field")
+        emailField.tap(); emailField.typeText(email + "\n")
+        let passwordField = app.secureTextFields.firstMatch
+        XCTAssertTrue(passwordField.waitForExistence(timeout: 5), "no password field")
+        Thread.sleep(forTimeInterval: 1)
+        passwordField.typeText(password + "\n")
+        shot("owner-0-auth-filled")
+        let submit = app.buttons.matching(NSPredicate(format: "label == %@", "Se connecter"))
+        if submit.count > 0 { submit.element(boundBy: submit.count - 1).tap() }
+
+        // Owner space: wait for a tab bar or sidebar, then visit every tab by position.
+        let bar = app.tabBars.firstMatch
+        XCTAssertTrue(bar.waitForExistence(timeout: 40), "owner space never appeared")
+        Thread.sleep(forTimeInterval: 4)
+        dismissSurveyIfPresent()
+        let count = bar.buttons.count
+        for index in 0..<count {
+            let button = bar.buttons.element(boundBy: index)
+            if button.exists { button.tap() }
+            shot("owner-\(index + 1)")
+        }
+        ensureSignedOut(app)
+    }
 }
+

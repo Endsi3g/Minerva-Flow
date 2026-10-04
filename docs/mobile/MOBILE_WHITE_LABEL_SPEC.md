@@ -9,7 +9,7 @@
 - L’espace web prend en charge la gestion par workspace, une identité de marque, plusieurs restaurants, les commandes, la fidélisation et des intégrations selon leur configuration.
 - Ce document décrit le niveau cible d’une application autonome white-label. Il ne faut pas présenter les fonctions ci-dessous — notamment Android, livraison dynamique, tarification par distance/temps et déploiement automatisé — comme déjà actives chez chaque restaurant.
 
-Pour comprendre les parcours existants, consulter le [guide produit propriétaire et client](PRODUCT_GUIDE_OWNER_CLIENT.md). Pour le statut TestFlight et les conditions de validation, consulter [l’audit mobile](MOBILE_APP_AUDIT_AND_ROADMAP.md).
+Pour comprendre les parcours existants, consulter le [guide produit propriétaire et client](../product/PRODUCT_GUIDE_OWNER_CLIENT.md). Pour le statut TestFlight et les conditions de validation, consulter [l’audit mobile](MOBILE_APP_AUDIT_AND_ROADMAP.md).
 
 ## Objectif
 

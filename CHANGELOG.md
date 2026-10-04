@@ -24,13 +24,13 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 
 ## [À venir] — Portail équipe, Compte client, tags NFC
 
-- Nouveau portail `/equipe` (web et iOS) pour l’équipe et les ambassadeurs : indicateurs internes réservés à l’équipe, entonnoir GTM, objectifs du mois, Académie, profils de membres. Les ambassadeurs ne voient jamais les revenus. Voir `docs/TEAM_PORTAL.md`.
+- Nouveau portail `/equipe` (web et iOS) pour l’équipe et les ambassadeurs : indicateurs internes réservés à l’équipe, entonnoir GTM, objectifs du mois, Académie, profils de membres. Les ambassadeurs ne voient jamais les revenus. Voir `docs/engineering/TEAM_PORTAL.md`.
 - Application iOS client : onglet Compte réorganisé en sous-pages (mes commandes, historique des points, paramètres, aide), Accueil avec statistiques et graphique, correctifs d’interface (cœur des favoris, sélecteur de langue, champs de suggestion).
-- Lecture des tags NFC des restaurants (client) et programmation de tags (propriétaire); seuls les liens `minervaflow.app/t/…` et `/p/…` sont suivis. L’activation exige la capacité NFC sur l’identifiant d’app (`docs/NFC_AND_SIGNING.md`).
+- Lecture des tags NFC des restaurants (client) et programmation de tags (propriétaire); seuls les liens `minervaflow.app/t/…` et `/p/…` sont suivis. L’activation exige la capacité NFC sur l’identifiant d’app (`docs/mobile/NFC_AND_SIGNING.md`).
 - Réglages web répartis en sous-pages (`/settings`, `/settings/alertes`, `/settings/parrainage`, `/settings/securite`, `/settings/apparence`) au lieu d’onglets.
 - Paiement en ligne et versements des ambassadeurs : l’application iOS ouvre le web; plus aucun flux de paiement natif.
 - Nouvelle page client « Nouveautés » (Compte › Nouveautés) : une liste courte des changements qui concernent les clients seulement. Le journal des mises à jour porte désormais une audience (`owner`, `client`, `all`) : les entrées existantes restent réservées aux propriétaires, une entrée client se publie volontairement. Les propriétaires retrouvent l’historique complet dans Gestion › Mises à jour.
-- Nouveau « Partager mes résultats » : visuel (story ou publication) ou courte vidéo animée avec les vrais chiffres du restaurant, à publier sur les réseaux; l’équipe a la même chose pour Minerva Flow. Aucun zéro n’est présenté comme un succès, rien de financier n’est proposé. Voir `docs/SHARE_RESULTS.md`.
+- Nouveau « Partager mes résultats » : visuel (story ou publication) ou courte vidéo animée avec les vrais chiffres du restaurant, à publier sur les réseaux; l’équipe a la même chose pour Minerva Flow. Aucun zéro n’est présenté comme un succès, rien de financier n’est proposé. Voir `docs/engineering/SHARE_RESULTS.md`.
 - La carte de fidélité du niveau Ambassadeur redevient verte (vert forêt) au lieu du lime.
 - Journalisation iOS via `os.Logger` (détails masqués en production); l’adresse du destinataire n’est plus écrite dans les logs d’alerte critique.
 - Mains Magique : fiche et position Google Maps renseignées (Repentigny), forfait Marque blanche.
@@ -203,7 +203,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 ### Statut de publication
 - Le web correspondant au commit `2b8c4cc` est déployé en production Vercel.
 - Le build iOS `1.0 (11)` est archivé et exporté, mais **n’est pas téléversé sur TestFlight**; une authentification App Store Connect reste nécessaire. Ne pas annoncer sa disponibilité TestFlight avant vérification du traitement Apple.
-- Détails : [`docs/PRODUCT_GUIDE_OWNER_CLIENT.md`](docs/PRODUCT_GUIDE_OWNER_CLIENT.md) et [`docs/MOBILE_APP_AUDIT_AND_ROADMAP.md`](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md).
+- Détails : [`docs/product/PRODUCT_GUIDE_OWNER_CLIENT.md`](docs/product/PRODUCT_GUIDE_OWNER_CLIENT.md) et [`docs/mobile/MOBILE_APP_AUDIT_AND_ROADMAP.md`](docs/mobile/MOBILE_APP_AUDIT_AND_ROADMAP.md).
 
 ## [v2.46.0] - 2026-09-20
 

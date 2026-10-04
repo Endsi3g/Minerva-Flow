@@ -9,9 +9,9 @@
 
 ## Team portal, data and logging boundaries
 
-- `/equipe` (web) and `TeamMainView` (iOS) serve employees (`profiles.is_team_member`) and active ambassadors (`flow_ambassadors.status='active'`). Ambassadors must never see revenue, MRR, churn, targets or the funnel: keep that gate in all three layers (page, data function, API route). Details: `docs/TEAM_PORTAL.md`.
+- `/equipe` (web) and `TeamMainView` (iOS) serve employees (`profiles.is_team_member`) and active ambassadors (`flow_ambassadors.status='active'`). Ambassadors must never see revenue, MRR, churn, targets or the funnel: keep that gate in all three layers (page, data function, API route). Details: `docs/engineering/TEAM_PORTAL.md`.
 - Funnel and MRR figures exclude `restaurants.is_demo`. Flag seed, test and founder-owned restaurants there; never flag real sign-ups.
 - Migrations live in `supabase/migrations` with one unique `NNNN_` number each; read `supabase/migrations/README.md` first (known duplicate `0102`, unapplied `0167_blog_posts`). Do not run `supabase db push --linked` blindly: it applies every pending file.
 - Native diagnostics go through `AppLog.failure(_:_:)` (os.Logger, private payload), never `print`. Server code must not log customer emails or tokens.
 - Native payments and payouts are not handled in-app: online checkout and ambassador payouts open the web app. Do not add a payment SDK or the word “Stripe” to native sources (App Store review heuristics, 3.1.1).
-- Native NFC needs the App ID capability and regenerated manual-signing profiles before archive: see `docs/NFC_AND_SIGNING.md`.
+- Native NFC needs the App ID capability and regenerated manual-signing profiles before archive: see `docs/mobile/NFC_AND_SIGNING.md`.

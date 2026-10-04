@@ -1,19 +1,19 @@
 # HANDOFF & DOSSIER DE VÉRIFICATION — MINERVA FLOW
 
 > **Base historique** : 2.36.0 — clôture de sprint du 15 septembre 2026.
-> **État produit actualisé** : 26 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
+> **État produit actualisé** : 26 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/product/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
 
 ## Reprise — 2026-10-03 (branche `feat/team-portal-and-native-account-uplift`)
 
 - **Contenu** : portail `/equipe` (web + iOS), refonte du Compte client iOS, sous-pages Réglages web, NFC (lecture + programmation), carte Mains Magique, journalisation `AppLog`. Rien n’est publié; aucun commit n’avait été fait avant cette reprise.
 - **Vérifié** : `tsc` 0 erreur; 5 tests `NFCTagURLTests` passent; build iOS simulateur. **Non vérifié** : rendu visuel au simulateur de ces phases, parcours `/equipe` de bout en bout (les clés locales Supabase renvoient 401, voir mémoire), NFC sur appareil réel.
-- **Bloquant avant archive/installation** : aucun profil de signature installé n’inclut `com.apple.developer.nfc.readersession.formats`. Procédure : `docs/NFC_AND_SIGNING.md`.
+- **Bloquant avant archive/installation** : aucun profil de signature installé n’inclut `com.apple.developer.nfc.readersession.formats`. Procédure : `docs/mobile/NFC_AND_SIGNING.md`.
 - **Audit App Store** (`app-store-compliance-guard.sh native/ios`, 2026-10-03) : 0 critique, 0 élevé, 3 moyens (polices à taille fixe, Réduire les animations, questionnaire d’âge 2026). Les trois alertes précédentes étaient des détections textuelles; corrigées en retirant le mot « Stripe » de l’UI native (paiement et versements ouvrent le web), en nommant `Config.privacyPolicyURL` et en centralisant le contact support (`SupportContact`, plus de `mailto:` en dur). La suppression de compte native existait déjà (`DeleteAccountSheet`). Cet audit n’est pas une soumission : les 3 avertissements moyens restent à traiter.
 - **Base de données** : migrations `0168`–`0171` consignées (renumérotées), `is_demo` posé sur « Minerva Flow » et le « Mon restaurant » du fondateur, compte démo `dev-test@minervaflow.app` rattaché à 11 restaurants démo. Voir `supabase/migrations/README.md`.
 - **Changelog par audience** : migration `0172` appliquée (colonne `audience`, défaut `owner`). Aucune entrée client n’est publiée : la rédiger et la publier fait partie de l’étape de sortie, après vérification du build déployé. Les écrans iOS (client : `ClientUpdatesView`; propriétaire : `NativeChangelogView(audience: "owner")`) affichent un état vide propre en attendant.
 - **Installation sur téléphone** : build de test installé sur l’iPhone « YourBel » sans l’entitlement NFC (le profil de développement ne l’inclut pas), le fichier du dépôt est inchangé. Le NFC ne fonctionne pas dans cette installation.
 - **Hors commit, à revoir** (autre session, SEO/blog) : titres des 15 pages `(app)` remplacés par du français en dur (perte de la traduction `breadcrumb` en EN/TR) sur des pages `noindex`; `0167_blog_posts.sql` non appliquée; `lib/blog`, `feed.xml`, `robots`, `sitemap`, `llms*.txt` non commités.
-- **Partage de résultats (phase 18)** : `/campaigns/resultats` (propriétaires) et `/equipe/partager` (équipe). Rendu et vidéo vérifiés dans Chromium; pages non testées avec un compte réel. Détails : `docs/SHARE_RESULTS.md`.
+- **Partage de résultats (phase 18)** : `/campaigns/resultats` (propriétaires) et `/equipe/partager` (équipe). Rendu et vidéo vérifiés dans Chromium; pages non testées avec un compte réel. Détails : `docs/engineering/SHARE_RESULTS.md`.
 - **À décider** : offres Mains Magique (conseils fournis, rien créé), clés PostHog et GitHub optionnelles, contenu du GTM (chiffres non mesurés), commission « récurrente » vs première facture.
 
 ## Vérification de reprise — 2026-09-26
@@ -440,7 +440,7 @@ L’application SwiftUI utilise un seul bundle et dirige chaque compte vers une 
 - Le compte propriétaire natif est livré comme une tranche opérationnelle; ne pas lui attribuer les écrans/alertes de la roadmap non implémentés.
 - La livraison dynamique au tarif par distance/temps, Android white-label et l’automatisation d’une app par restaurant restent à traiter comme objectifs, sauf validation d’un déploiement spécifique.
 
-Voir [`docs/MOBILE_APP_AUDIT_AND_ROADMAP.md`](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md) pour les contrôles requis avant diffusion.
+Voir [`docs/mobile/MOBILE_APP_AUDIT_AND_ROADMAP.md`](docs/mobile/MOBILE_APP_AUDIT_AND_ROADMAP.md) pour les contrôles requis avant diffusion.
 
 ---
 

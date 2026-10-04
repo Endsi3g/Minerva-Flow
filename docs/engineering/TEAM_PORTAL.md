@@ -37,4 +37,4 @@ La restriction des ambassadeurs est appliquée à trois endroits, à ne pas rel�
 
 ## Réserves sur le contenu
 
-`docs/GTM_GOOGLE_MAPS_STRATEGY.md` contient des « constats terrain » non mesurés (adoption, conversion, CAC, rétention) : ne pas les citer comme résultats. Il décrit aussi une commission « récurrente », alors que le code et la page publique prévoient 10 % de la **première** facture payée seulement.
+`docs/gtm/GTM_GOOGLE_MAPS_STRATEGY.md` contient des « constats terrain » non mesurés (adoption, conversion, CAC, rétention) : ne pas les citer comme résultats. Il décrit aussi une commission « récurrente », alors que le code et la page publique prévoient 10 % de la **première** facture payée seulement.

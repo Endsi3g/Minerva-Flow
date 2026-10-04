@@ -72,7 +72,7 @@ scaffolds techniques, pas des fonctionnalités activées :
   qui nécessite un nouveau build iOS avant d’être annoncée aux testeurs.
 
 Pour les formulations exactes et les parcours détaillés, consulter
-[`docs/PRODUCT_GUIDE_OWNER_CLIENT.md`](PRODUCT_GUIDE_OWNER_CLIENT.md).
+[`docs/product/PRODUCT_GUIDE_OWNER_CLIENT.md`](PRODUCT_GUIDE_OWNER_CLIENT.md).
 
 ## 6. Structure de page recommandée
 

@@ -14,7 +14,7 @@
 
 <br />
 
-[Accéder à l'application](https://minerva-flow.vercel.app) • [Sitemap XML](https://minerva-flow.vercel.app/sitemap.xml) • [Guide des intégrations](docs/integrations.md) • [Politique de confidentialité](app/[locale]/legal/privacy/page.tsx) • [Conditions d'utilisation](app/[locale]/legal/terms/page.tsx)
+[Accéder à l'application](https://minerva-flow.vercel.app) • [Sitemap XML](https://minerva-flow.vercel.app/sitemap.xml) • [Guide des intégrations](docs/engineering/integrations.md) • [Politique de confidentialité](app/[locale]/legal/privacy/page.tsx) • [Conditions d'utilisation](app/[locale]/legal/terms/page.tsx)
 
 <br /><br />
 
@@ -32,11 +32,11 @@ Elle comprend trois surfaces complémentaires :
 - **Application native iPhone, iPad et Mac** : le même client SwiftUI oriente les comptes vers une expérience client ou propriétaire après authentification. Le parcours client couvre l’accueil, le menu/la commande, le code de jumelage, les offres, les cartes et le profil. Le parcours Owner donne accès à l’aperçu, aux commandes, au menu, à la fidélisation et aux outils de gestion; iPad et Mac Catalyst utilisent une navigation latérale adaptée au grand écran. Google Business Profile donne accès à la fiche, aux horaires et aux avis après autorisation du propriétaire.
 - **Pages web publiques** : menu partagé, lien de parrainage, demandes de réservation et parcours de commande activés par restaurant.
 
-Le modèle complet — qui fait quoi, comment les parcours s'enchaînent et ce qui dépend d'une intégration — est décrit dans le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md). L'état de TestFlight est suivi dans [l'audit mobile](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md).
+Le modèle complet — qui fait quoi, comment les parcours s'enchaînent et ce qui dépend d'une intégration — est décrit dans le [guide produit propriétaire et client](docs/product/PRODUCT_GUIDE_OWNER_CLIENT.md). L'état de TestFlight est suivi dans [l'audit mobile](docs/mobile/MOBILE_APP_AUDIT_AND_ROADMAP.md).
 
 La route `/app` présente les captures, les étapes TestFlight et l’inscription client. Le bonus de première visite est désactivé à zéro point; la sélection « À découvrir » du menu est gérée par le propriétaire.
 
-Le menu partageable, son éditeur QR, les commandes suivies, les règles de stock et les indicateurs LTV/CAC sont décrits dans l’[architecture Flow Direct](docs/FLOW_DIRECT_MENU_AND_VALUE.md). Les migrations `0156` à `0164` sont présentes en staging et en production. Les principaux flux menu, commande et déduction de stock ont été vérifiés sur le staging. La version web `2.50.0` ajoute des recommandations explicables, des indicateurs de fraîcheur des données et le calcul séparé des composantes LTV et CAC. L’app iOS `1.0.0 (15)` est approuvée pour la bêta TestFlight externe.
+Le menu partageable, son éditeur QR, les commandes suivies, les règles de stock et les indicateurs LTV/CAC sont décrits dans l’[architecture Flow Direct](docs/product/FLOW_DIRECT_MENU_AND_VALUE.md). Les migrations `0156` à `0164` sont présentes en staging et en production. Les principaux flux menu, commande et déduction de stock ont été vérifiés sur le staging. La version web `2.50.0` ajoute des recommandations explicables, des indicateurs de fraîcheur des données et le calcul séparé des composantes LTV et CAC. L’app iOS `1.0.0 (15)` est approuvée pour la bêta TestFlight externe.
 
 Les preuves de validation, les limites restantes et les recommandations de communication sont consignées dans le [dossier de release 2.48.0](docs/releases/RELEASE_CANDIDATE_2.48.0.md). Le build TestFlight `1.0.0 (15)` demeure la version distribuée. La nouvelle candidate native `1.0.1 (16)` ajoute l’espace Owner iPad/Mac Catalyst et Google Business Profile; elle attend encore la validation complète et le téléversement. La fiche Google doit être reliée par un propriétaire après l’installation. Les recettes, quantités de départ et cibles de réapprovisionnement doivent être configurées par chaque restaurant avant que les alertes de stock reflètent son inventaire réel.
 

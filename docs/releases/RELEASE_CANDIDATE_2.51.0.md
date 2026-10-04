@@ -6,13 +6,13 @@ Date : 2026-10-03 · Branche : `feat/team-portal-and-native-account-uplift` (non
 
 ## Contenu
 
-- **Portail équipe et ambassadeurs** (`/equipe`, web et iOS) : indicateurs internes réservés à l'équipe, entonnoir, objectifs du mois, Académie, profils de membres. Les ambassadeurs ne voient jamais les revenus. Voir `docs/TEAM_PORTAL.md`.
+- **Portail équipe et ambassadeurs** (`/equipe`, web et iOS) : indicateurs internes réservés à l'équipe, entonnoir, objectifs du mois, Académie, profils de membres. Les ambassadeurs ne voient jamais les revenus. Voir `docs/engineering/TEAM_PORTAL.md`.
 - **Application iOS client** : Compte en sous-pages (commandes, points, paramètres, aide), Accueil avec statistiques et graphique, carte de fidélité du niveau supérieur en vert, page « Nouveautés » réservée aux changements qui concernent les clients.
 - **Journal des mises à jour par audience** : une même source, deux lecteurs (propriétaires, clients). Les entrées existantes restent réservées aux propriétaires.
-- **Partager mes résultats** (web) : visuel ou courte vidéo avec les vrais chiffres du restaurant; l'équipe a la même chose pour Minerva Flow. Voir `docs/SHARE_RESULTS.md`.
+- **Partager mes résultats** (web) : visuel ou courte vidéo avec les vrais chiffres du restaurant; l'équipe a la même chose pour Minerva Flow. Voir `docs/engineering/SHARE_RESULTS.md`.
 - **Réglages web** en sous-pages au lieu d'onglets.
 - **Paiement en ligne et versements des ambassadeurs** : l'app iOS ouvre le web.
-- **Tags NFC** (lecture client, programmation propriétaire) : **exclus de l'annonce** tant que la capacité n'est pas activée sur l'identifiant d'app (`docs/NFC_AND_SIGNING.md`).
+- **Tags NFC** (lecture client, programmation propriétaire) : **exclus de l'annonce** tant que la capacité n'est pas activée sur l'identifiant d'app (`docs/mobile/NFC_AND_SIGNING.md`).
 - Base de données : migrations `0168` à `0173`, déjà appliquées en production.
 
 ## Brouillons d'annonce (non publiés)
@@ -50,7 +50,7 @@ Les captures d'écran du journal sont **à produire** à partir de l'application
 | Tests natifs ciblés (NFC, Nouveautés) | PASS — 7 tests |
 | Build iOS simulateur et appareil | PASS |
 | Audit App Store (`native/ios`) | 0 critique, 0 élevé, 3 moyens |
-| Rendu visuel et vidéo du partage (navigateur sans interface) | PASS — voir `docs/SHARE_RESULTS.md` |
+| Rendu visuel et vidéo du partage (navigateur sans interface) | PASS — voir `docs/engineering/SHARE_RESULTS.md` |
 | Parcours authentifiés (propriétaire, `/equipe`, partage) sur le build déployé | **NON VÉRIFIÉ** — aucune session accessible |
 | Rendu visuel des écrans iOS | **NON VÉRIFIÉ** — à contrôler à la main sur l'appareil |
 | NFC sur appareil | **NON VÉRIFIÉ** — profil de signature sans la capacité |

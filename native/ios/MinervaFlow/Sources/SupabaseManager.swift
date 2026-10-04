@@ -2461,7 +2461,7 @@ final class SupabaseManager: ObservableObject {
     /// device_push_tokens_owner_all (auth.uid() = user_id) makes this a
     /// direct, RLS-scoped upsert — no bridge needed. Actually delivering a
     /// push still requires a real APNs auth key configured server-side
-    /// (see docs/native-build-status.html); this half of the pipeline
+    /// (see docs/mobile/native-build-status.html); this half of the pipeline
     /// (permission, registration, token storage) works regardless of that.
     func registerPushToken(_ tokenData: Data) async {
         let token = tokenData.map { String(format: "%02.2hhx", $0) }.joined()

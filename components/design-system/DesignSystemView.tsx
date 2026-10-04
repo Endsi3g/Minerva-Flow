@@ -167,7 +167,7 @@ export function DesignSystemView() {
               variant="secondary"
               size="sm"
               onClick={() => {
-                toast.info("Documentation disponible dans docs/DESIGN_SYSTEM.md");
+                toast.info("Documentation disponible dans docs/design/DESIGN_SYSTEM.md");
               }}
             >
               <FileText size={15} /> Guide Complet (.md)

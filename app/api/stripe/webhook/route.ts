@@ -540,7 +540,7 @@ export async function POST(req: Request) {
 
     // Connected-account event — requires "Listen to events on connected
     // accounts" enabled on this webhook endpoint in the Stripe dashboard
-    // (see docs/integrations.md). payment_intent.* above need no such
+    // (see docs/engineering/integrations.md). payment_intent.* above need no such
     // change since destination charges stay on the platform account.
     case "account.updated": {
       const account = event.data.object as Stripe.Account;
