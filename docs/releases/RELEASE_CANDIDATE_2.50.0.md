@@ -11,7 +11,7 @@ Branche : `main`
 - La page Valeur client affiche séparément la LTV revenu, la LTV marge estimée et leur somme, ainsi que le CAC sur les catégories publicité, commissions, agence, promotions et équipement. Les résultats incomplets restent signalés comme à confirmer.
 - Les courriels du journal de versions utilisent le segment Resend des contacts actifs ayant explicitement accepté les annonces produit, avec désabonnement et adresse postale. L’annonce dans l’application reste indépendante du consentement marketing.
 
-Captures illustratives construites avec des données synthétiques : [recommandations ordinateur](../../docs/screenshots/recommendations-menu-desktop-2026-09-28.png) · [recommandations mobile](../../docs/screenshots/recommendations-menu-mobile-2026-09-28.png).
+Captures illustratives construites avec des données synthétiques : [recommandations ordinateur](../../docs/screenshots/menu-recommendations/recommendations-menu-desktop-2026-09-28.png) · [recommandations mobile](../../docs/screenshots/menu-recommendations/recommendations-menu-mobile-2026-09-28.png).
 
 ## Vérifications avant livraison
 

@@ -9,5 +9,5 @@
 | `gtm/` | Stratégie de mise en marché publique (Google Maps) |
 | `releases/` | Notes de version candidates |
 | `contrats/` | Entente de projet pilote |
-| `screenshots/` | Captures utilisées par la documentation |
-| `private/` | **Ignoré par git.** Audits, offre, stratégie de mise en marché détaillée. Le dépôt est public : rien de sensible ailleurs |
+| `screenshots/` | Captures de la documentation, par thème : `web-app/`, `native-app/`, `auth/`, `changelog/`, `menu-recommendations/` |
+| `private/` | **Ignoré par git.** Audits, offre, stratégie de mise en marché détaillée. Le dépôt est public : rien de sensible ailleurs. `private/design-references/` garde vos captures de référence du tableau de bord d'avant la refonte |

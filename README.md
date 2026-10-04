@@ -50,12 +50,12 @@ Les preuves de validation, les limites restantes et les recommandations de commu
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/web-overview.png" alt="Vue globale" /><br /><sub><b>Vue globale</b> — marge, ventes de fidélité, santé du menu, en un coup d'œil</sub></td>
-<td width="50%"><img src="docs/screenshots/web-reputation.png" alt="Réputation" /><br /><sub><b>Réputation</b> — avis privés (&lt;4★) à traiter avant qu'ils n'atteignent Google Maps</sub></td>
+<td width="50%"><img src="docs/screenshots/web-app/web-overview.png" alt="Vue globale" /><br /><sub><b>Vue globale</b> — marge, ventes de fidélité, santé du menu, en un coup d'œil</sub></td>
+<td width="50%"><img src="docs/screenshots/web-app/web-reputation.png" alt="Réputation" /><br /><sub><b>Réputation</b> — avis privés (&lt;4★) à traiter avant qu'ils n'atteignent Google Maps</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/screenshots/web-fidelisation.png" alt="Fidélisation" /><br /><sub><b>Fidélisation</b> — identification au comptoir par code de jumelage, récompenses, anniversaires</sub></td>
-<td width="50%"><img src="docs/screenshots/web-menu-engineering.png" alt="Ingénierie de menu" /><br /><sub><b>Ingénierie de menu</b> — offres, QR code du menu, catégories</sub></td>
+<td width="50%"><img src="docs/screenshots/web-app/web-fidelisation.png" alt="Fidélisation" /><br /><sub><b>Fidélisation</b> — identification au comptoir par code de jumelage, récompenses, anniversaires</sub></td>
+<td width="50%"><img src="docs/screenshots/web-app/web-menu-engineering.png" alt="Ingénierie de menu" /><br /><sub><b>Ingénierie de menu</b> — offres, QR code du menu, catégories</sub></td>
 </tr>
 </table>
 
@@ -63,10 +63,10 @@ Les preuves de validation, les limites restantes et les recommandations de commu
 
 <table>
 <tr>
-<td width="25%"><img src="docs/screenshots/native-home.png" alt="Accueil" /><br /><sub><b>Accueil</b></sub></td>
-<td width="25%"><img src="docs/screenshots/native-scanner.png" alt="Scanner / Jumelage" /><br /><sub><b>Jumelage</b></sub></td>
-<td width="25%"><img src="docs/screenshots/native-rewards.png" alt="Récompenses" /><br /><sub><b>Récompenses</b></sub></td>
-<td width="25%"><img src="docs/screenshots/native-commander.png" alt="Commander" /><br /><sub><b>Commander</b></sub></td>
+<td width="25%"><img src="docs/screenshots/native-app/native-home.png" alt="Accueil" /><br /><sub><b>Accueil</b></sub></td>
+<td width="25%"><img src="docs/screenshots/native-app/native-scanner.png" alt="Scanner / Jumelage" /><br /><sub><b>Jumelage</b></sub></td>
+<td width="25%"><img src="docs/screenshots/native-app/native-rewards.png" alt="Récompenses" /><br /><sub><b>Récompenses</b></sub></td>
+<td width="25%"><img src="docs/screenshots/native-app/native-commander.png" alt="Commander" /><br /><sub><b>Commander</b></sub></td>
 </tr>
 </table>
 
