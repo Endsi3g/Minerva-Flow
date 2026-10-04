@@ -80,9 +80,31 @@ export const allRoles: Role[] = ["owner", "manager", "staff", "consultant"];
 export const ltvCoreNavItems: NavItem[] = [
   { key: "overview", href: "/overview", icon: Home, roles: allRoles },
   { key: "assistant", href: "/assistant", icon: MessageSquare, roles: allRoles },
-  { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
   { key: "fidelisation", href: "/fidelisation", icon: Heart, roles: allRoles },
+  { key: "reputation", href: "/reputation", icon: Star, roles: allRoles },
+  { key: "menu", href: "/menu", icon: UtensilsCrossed, roles: allRoles },
 ];
+
+/**
+ * Navigation is limited to the loyalty ecosystem: loyalty, reputation (reviews),
+ * the customer-facing menu and orders, loyalty analytics, and the setup pages
+ * that feed it (integrations, settings, billing, help). Everything below is an
+ * operations or back-office page. Those pages still work, and stay reachable
+ * from search and by address; they just no longer take sidebar and tab-bar space.
+ */
+export const NON_LOYALTY_NAV_KEYS: ReadonlySet<string> = new Set([
+  "finance",
+  "collaborateurs",
+  "inventaire",
+  "fournisseurs",
+  "horaire",
+  "monEspace",
+  "employees",
+  "days",
+  "reports",
+  "programs",
+  "library",
+]);
 
 // 1b. Day-to-day operational tools — still top-level for staff/consultant,
 // collapsed under "Gestion quotidienne" for owner/manager (see AppSidebar()).
@@ -524,15 +546,19 @@ export function AppSidebar() {
 
   const ownerManager = role === "owner" || role === "manager";
   const workspaceLinks = workspaceItem.roles.includes(role) ? [workspaceItem] : [];
+  const ordersItem = dailyManagementItems.find((item) => item.key === "commandes");
+  const inLoyaltyEcosystem = (item: NavItem) => !NON_LOYALTY_NAV_KEYS.has(item.key);
   const visiblePrimaryItems = [
     ...workspaceLinks,
-    ...(ownerManager
-      ? ltvCoreNavItems.filter(allowedByRole)
-      : [...ltvCoreNavItems, ...dailyManagementItems].filter(allowedByRole)),
+    ...[...ltvCoreNavItems, ...(ordersItem ? [ordersItem] : [])].filter(allowedByRole),
   ];
-  const visibleDailyItems = dailyManagementItems.filter(allowedByRole);
-  const visibleOperationsItems = operationsItems.filter(allowedByRole);
-  const visibleAnalyticsItems = [...ltvAnalyticsItems, ...operationalAnalyticsItems].filter(allowedByRole);
+  // The "Gestion quotidienne" group only held back-office pages now left out of
+  // the sidebar, so it no longer renders.
+  const visibleDailyItems: NavItem[] = [];
+  const visibleOperationsItems = operationsItems.filter(inLoyaltyEcosystem).filter(allowedByRole);
+  const visibleAnalyticsItems = [...ltvAnalyticsItems, ...operationalAnalyticsItems]
+    .filter(inLoyaltyEcosystem)
+    .filter(allowedByRole);
   const visibleSettingsItems = settingsGroupItems.filter(
     (item) => item.key !== "settings" && allowedByRole(item)
   );

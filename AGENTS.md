@@ -16,10 +16,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Bundle & Asset Optimization**: Keep client components light, use dynamic imports for heavy modals/charts, and optimize images using Next.js WebP/AVIF output.
 
 ## 2. Navigation & UX Conventions
-- **Top-Level Core Tools (role-conditional)**: The sidebar navigation (`AppSidebar.tsx`) is LTV-first for `owner`/`manager` and full-operational for `staff`/`consultant`:
-  - **Owner/Manager** — condensed core list, LTV ecosystem only: `Overview`, `Flow AI`, `Menu`, `Fidélisation`. `Finance`, `Commandes`, `Collaborateurs`, `Inventaire` are one click away in the collapsible "Gestion quotidienne" section, not removed.
-  - **Staff/Consultant** — full flat list at the top level (unchanged from before): `Overview`, `Flow AI`, `Menu`, `Fidélisation`, `Finance` (role-gated), `Commandes`, `Collaborateurs`, `Inventaire` (role-gated) — this role needs daily operational access without an extra click.
-- Secondary items are organized into collapsible, non-intrusive groups (`Gestion quotidienne` [owner/manager only], `Opérations`, `Performance & Analytics`, `Paramètres et plus`).
+- **Loyalty-ecosystem navigation only** (`components/shell/AppSidebar.tsx`, `MobileTabBar.tsx`): the sidebar lists `Overview`, `Flow AI`, `Fidélisation`, `Réputation` (reviews), `Menu` and `Commandes`, then collapsible groups limited to loyalty analytics (`Impact`, `Franchise`, retention funnel, `Maps`), customer reservations, and setup/help (`Paramètres`, `Intégrations`, `Facturation`, guide, support, changelog). The mobile tab bar shows Overview, Fidélisation, Menu and Commandes plus the restaurant switcher.
+- Back-office pages (`finance`, `collaborateurs`, `inventaire`, `fournisseurs`, `horaire`, `mon-espace`, `employees`, `days`, `reports`, `programs`, `library`) are deliberately **not** in the sidebar (`NON_LOYALTY_NAV_KEYS`). They still work, are reachable from search and by address, and keep their per-member permissions. To bring one back, remove its key from that set.
 
 ## 3. Typographic System & Brand Design
 - **Title & Heading Font**: `"New York"`, `-apple-system-serif`, with fallback to `Playfair Display`.

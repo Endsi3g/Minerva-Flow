@@ -3,10 +3,11 @@
 import { cn } from "@/lib/utils";
 import {
   MoreHorizontal,
-  Truck,
-  ClipboardList,
   Building2,
-  PackageSearch,
+  ClipboardList,
+  Heart,
+  Home,
+  UtensilsCrossed,
   Check,
 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -34,16 +35,13 @@ type TabItem = {
 export function MobileTabBar() {
   const t = useTranslations("nav");
   const pathname = usePathname();
-  const { role, restaurants, workspaces, restaurantId, setRestaurantId } = useApp();
+  const { restaurants, workspaces, restaurantId, setRestaurantId } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
+  // The four loyalty-ecosystem destinations: overview, loyalty, menu, orders.
   const tabs: TabItem[] = [
-    { href: "/workspace", translationKey: "workspace", icon: Building2 },
-    ...(role === "owner" || role === "manager"
-      ? [
-          { href: "/fournisseurs", translationKey: "fournisseurs", icon: Truck },
-          { href: "/inventaire", translationKey: "inventaire", icon: PackageSearch },
-        ]
-      : []),
+    { href: "/overview", translationKey: "overview", icon: Home },
+    { href: "/fidelisation", translationKey: "fidelisation", icon: Heart },
+    { href: "/menu", translationKey: "menu", icon: UtensilsCrossed },
     { href: "/commandes", translationKey: "commandes", icon: ClipboardList },
   ];
 
