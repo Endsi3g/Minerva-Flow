@@ -24,6 +24,7 @@ import {
   deleteReferralProgram,
   type ReferralProgramInput,
 } from "@/lib/data/referral-programs";
+import { saveCustomerStaffNote } from "@/lib/data/customer-staff-notes";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
@@ -493,4 +494,17 @@ export async function recordQrCodeDisplayedAction(
   } catch {
     // Non-blocking
   }
+}
+
+/** Staff-only guest note (allergies, preferred table, wine). Never shown to the guest. */
+export async function saveCustomerStaffNoteAction(
+  restaurantId: string,
+  customerId: string,
+  body: string
+): Promise<boolean> {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager", "staff"].includes(membership.role)) return false;
+  const ok = await saveCustomerStaffNote(restaurantId, customerId, body);
+  if (ok) revalidatePath(`/fidelisation/${customerId}`);
+  return ok;
 }
