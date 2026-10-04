@@ -58,12 +58,12 @@ function TrafficTrendChart({ data }: { data: { date: string; value: number }[] }
         <XAxis
           dataKey="date"
           tickFormatter={(v) => formatDate(v)}
-          tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
           minTickGap={28}
         />
-        <YAxis tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
+        <YAxis tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
         <Tooltip content={<TrendTooltip />} cursor={{ stroke: "var(--mv-green)", strokeWidth: 1 }} />
         <Area
           type="monotone"

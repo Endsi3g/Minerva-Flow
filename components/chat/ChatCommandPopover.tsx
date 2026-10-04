@@ -244,7 +244,7 @@ export function ChatCommandPopover({
                     </span>
                     <span
                       className={cn(
-                        "rounded-full px-1.5 py-0.2 text-[9.5px] font-semibold",
+                        "rounded-full px-1.5 py-0.2 text-[12px] font-semibold",
                         item.badgeTone === "green" && "bg-emerald-50 text-emerald-700 border border-emerald-200",
                         item.badgeTone === "amber" && "bg-amber-50 text-amber-800 border border-amber-200",
                         item.badgeTone === "blue" && "bg-blue-50 text-blue-700 border border-blue-200",

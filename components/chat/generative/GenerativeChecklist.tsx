@@ -112,7 +112,7 @@ export function GenerativeChecklist({
 
                   <span
                     className={cn(
-                      "px-1.5 py-0.2 text-[9.5px] font-bold rounded border uppercase tracking-wider",
+                      "px-1.5 py-0.2 text-[12px] font-bold rounded border uppercase tracking-wider",
                       priorityInfo.tone
                     )}
                   >

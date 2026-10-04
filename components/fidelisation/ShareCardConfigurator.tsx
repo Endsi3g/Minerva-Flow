@@ -496,7 +496,7 @@ export function ShareCardConfigurator({
                   />
                   <p className="text-[12px] font-bold text-mv-ink">{c.label}</p>
                 </div>
-                <p className="text-[9.5px] text-mv-ink-faint leading-tight mt-1">{c.hint}</p>
+                <p className="text-[12px] text-mv-ink-faint leading-tight mt-1">{c.hint}</p>
               </button>
             ))}
           </div>

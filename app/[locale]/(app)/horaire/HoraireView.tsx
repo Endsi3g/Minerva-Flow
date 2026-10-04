@@ -787,7 +787,7 @@ export function HoraireView({
                     </span>
 
                     {dayShifts.length > 0 && (
-                      <span className="text-[9.5px] sm:text-[12px] font-semibold text-mv-green-dark bg-mv-green/10 px-1 sm:px-1.5 py-0.5 rounded-full">
+                      <span className="text-[12px] sm:text-[12px] font-semibold text-mv-green-dark bg-mv-green/10 px-1 sm:px-1.5 py-0.5 rounded-full">
                         {dayShifts.length} <span className="hidden sm:inline">quart{dayShifts.length > 1 ? "s" : ""}</span>
                       </span>
                     )}
@@ -818,7 +818,7 @@ export function HoraireView({
                               <span className="text-[12px] opacity-75 shrink-0">{formatTime(s.startTime)}</span>
                             </div>
                             {s.positionLabel && (
-                              <span className="text-[9.5px] font-normal opacity-70 truncate hidden xl:inline">
+                              <span className="text-[12px] font-normal opacity-70 truncate hidden xl:inline">
                                 {s.positionLabel}
                               </span>
                             )}

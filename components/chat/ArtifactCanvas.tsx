@@ -307,7 +307,7 @@ export function ArtifactCanvas({
                     onChange={(e) => setPriceAdjustmentPct(Number(e.target.value))}
                     className="w-full accent-[#0E7C5A] cursor-pointer h-1.5 bg-[#E2E0D8] rounded-lg"
                   />
-                  <div className="flex justify-between text-[9.5px] text-[#8A887F] font-mono">
+                  <div className="flex justify-between text-[12px] text-[#8A887F] font-mono">
                     <span>Actuel (0%)</span>
                     <span>+10%</span>
                     <span>+20%</span>
@@ -331,7 +331,7 @@ export function ArtifactCanvas({
                     onChange={(e) => setVolumeAdjustmentPct(Number(e.target.value))}
                     className="w-full accent-[#0E7C5A] cursor-pointer h-1.5 bg-[#E2E0D8] rounded-lg"
                   />
-                  <div className="flex justify-between text-[9.5px] text-[#8A887F] font-mono">
+                  <div className="flex justify-between text-[12px] text-[#8A887F] font-mono">
                     <span>-30%</span>
                     <span>Stable (0%)</span>
                     <span>+30%</span>
@@ -348,7 +348,7 @@ export function ArtifactCanvas({
                   <span className="font-sans font-bold text-sm sm:text-base text-emerald-900">
                     +{formatCurrency(simulation.netMonthlyGain)}
                   </span>
-                  <span className="block text-[9.5px] text-emerald-700 font-medium">
+                  <span className="block text-[12px] text-emerald-700 font-medium">
                     / mois
                   </span>
                 </div>
@@ -360,7 +360,7 @@ export function ArtifactCanvas({
                   <span className="font-sans font-bold text-sm sm:text-base text-[#1F1E1D]">
                     {simulation.simulatedMarginPct.toFixed(1)} %
                   </span>
-                  <span className="block text-[9.5px] text-emerald-700 font-semibold">
+                  <span className="block text-[12px] text-emerald-700 font-semibold">
                     +{((priceAdjustmentPct * 0.45)).toFixed(1)} pts
                   </span>
                 </div>
@@ -372,7 +372,7 @@ export function ArtifactCanvas({
                   <span className="font-sans font-bold text-sm sm:text-base text-[#1F1E1D]">
                     {formatCurrency(simulation.simulatedTicket)}
                   </span>
-                  <span className="block text-[9.5px] text-[#8A887F]">
+                  <span className="block text-[12px] text-[#8A887F]">
                     par couvert
                   </span>
                 </div>
@@ -393,11 +393,11 @@ export function ArtifactCanvas({
                       <CartesianGrid strokeDasharray="3 3" stroke="#F0EFEA" />
                       <XAxis
                         dataKey={artifact.data.chartData.xAxisKey}
-                        tick={{ fontSize: 10, fill: "#8A887F" }}
+                        tick={{ fontSize: 12, fill: "#8A887F" }}
                         axisLine={{ stroke: "#E8E5DF" }}
                       />
                       <YAxis
-                        tick={{ fontSize: 10, fill: "#8A887F" }}
+                        tick={{ fontSize: 12, fill: "#8A887F" }}
                         axisLine={{ stroke: "#E8E5DF" }}
                       />
                       <Tooltip

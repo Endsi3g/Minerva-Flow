@@ -24,7 +24,7 @@ export function CampaignsSubNav() {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex shrink-0 items-center gap-2 pb-3 text-[13px] font-medium transition-colors",
+              "relative flex shrink-0 items-center gap-2 pb-3 pointer-coarse:min-h-11 text-[13px] font-medium transition-colors",
               active ? "text-mv-ink" : "text-mv-ink-faint hover:text-mv-ink-soft"
             )}
           >

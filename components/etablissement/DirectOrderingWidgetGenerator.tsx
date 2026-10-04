@@ -523,7 +523,7 @@ export function DirectOrderingWidgetGenerator({
                   <QrCode size={52} className="text-mv-ink opacity-80" />
                 </div>
                 <div className={cn(
-                  "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9.5px] font-bold text-white",
+                  "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-bold text-white",
                   orderMode === "table" ? "bg-mv-green" : "bg-mv-green-dark"
                 )}>
                   {orderMode === "table" ? `📍 TABLE N° ${tableNumber || "1"}` : "🛍 CLICK & COLLECT"}
@@ -532,7 +532,7 @@ export function DirectOrderingWidgetGenerator({
                   {orderMode === "table" ? "Scannez pour commander depuis votre table" : "Scannez pour commander à emporter"}
                 </p>
                 <div className="border-t border-mv-border pt-2">
-                  <p className="text-[8.5px] text-mv-green-dark font-bold">0% Commission · Paiement sécurisé</p>
+                  <p className="text-[12px] text-mv-green-dark font-bold">0% Commission · Paiement sécurisé</p>
                 </div>
               </div>
             </div>

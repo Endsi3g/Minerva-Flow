@@ -78,7 +78,7 @@ export function CanvasDefaultContext({
             <p className="font-display text-[15px] font-bold text-mv-ink mt-0.5">
               {formatCurrency(totalRevenue)}
             </p>
-            <span className="text-[9.5px] font-medium text-emerald-600 flex items-center gap-0.5 mt-0.5">
+            <span className="text-[12px] font-medium text-emerald-600 flex items-center gap-0.5 mt-0.5">
               +12.4% vs N-1
             </span>
           </div>
@@ -104,7 +104,7 @@ export function CanvasDefaultContext({
             <p className="font-display text-[15px] font-bold text-mv-ink mt-0.5">
               {formatCurrency(estimatedMargin)}
             </p>
-            <span className="text-[9.5px] font-medium text-mv-ink-soft mt-0.5 block">
+            <span className="text-[12px] font-medium text-mv-ink-soft mt-0.5 block">
               Taux : <strong className="text-mv-ink">{marginRate}%</strong>
             </span>
           </div>

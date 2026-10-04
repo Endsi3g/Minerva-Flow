@@ -329,7 +329,7 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
           <YAxis
             type="category"
             dataKey="label"
-            tick={{ fill: "var(--mv-ink-soft)", fontSize: 11 }}
+            tick={{ fill: "var(--mv-ink-soft)", fontSize: 12 }}
             axisLine={false}
             tickLine={false}
             width={100}
@@ -369,7 +369,7 @@ function DualLineChart({
           <XAxis
             dataKey="date"
             tickFormatter={(v) => formatDate(v)}
-            tick={{ fill: "var(--mv-ink-faint)", fontSize: 10 }}
+            tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
             axisLine={{ stroke: "var(--mv-border)" }}
             tickLine={false}
             minTickGap={24}
@@ -408,7 +408,7 @@ function MiniLineChart({ data, color = "var(--mv-green)" }: { data: TrendPoint[]
         <XAxis
           dataKey="date"
           tickFormatter={(v) => formatDate(v)}
-          tick={{ fill: "var(--mv-ink-faint)", fontSize: 10 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
           minTickGap={24}

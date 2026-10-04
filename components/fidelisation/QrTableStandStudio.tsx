@@ -291,7 +291,7 @@ export function QrTableStandStudio({
             )}
           </div>
 
-          <p className={`text-[9.5px] font-semibold tracking-wider ${activeTheme.accent}`}>{footerText}</p>
+          <p className={`text-[12px] font-semibold tracking-wider ${activeTheme.accent}`}>{footerText}</p>
         </div>
       </div>
     </div>

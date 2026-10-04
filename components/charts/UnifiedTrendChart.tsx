@@ -98,14 +98,14 @@ export function UnifiedTrendChart({ series }: { series: TrendSeries[] }) {
           <XAxis
             dataKey="date"
             tickFormatter={(v) => formatDate(v)}
-            tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+            tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
             axisLine={{ stroke: "var(--mv-border)" }}
             tickLine={false}
             minTickGap={28}
           />
           <YAxis
             tickFormatter={(v) => `${v / 1000}k`}
-            tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+            tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
             axisLine={false}
             tickLine={false}
             width={36}

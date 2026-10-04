@@ -1430,7 +1430,7 @@ function BottomTabBar({
               <span className="relative flex h-6 w-6 items-center justify-center">
                 <Icon size={21} strokeWidth={isActive ? 2.3 : 1.9} />
                 {tab === "order" && cartCount > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-mv-red px-1 text-[9.5px] font-bold text-white">
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-mv-red px-1 text-[12px] font-bold text-white">
                     {cartCount}
                   </span>
                 )}

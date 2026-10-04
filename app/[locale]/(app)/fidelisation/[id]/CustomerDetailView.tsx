@@ -226,12 +226,12 @@ export function CustomerDetailView({
                     <XAxis
                       dataKey="date"
                       tickFormatter={(d) => formatDate(d)}
-                      tick={{ fontSize: 11, fill: "var(--mv-ink-faint)" }}
+                      tick={{ fontSize: 12, fill: "var(--mv-ink-faint)" }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fill: "var(--mv-ink-faint)" }}
+                      tick={{ fontSize: 12, fill: "var(--mv-ink-faint)" }}
                       axisLine={false}
                       tickLine={false}
                       width={40}

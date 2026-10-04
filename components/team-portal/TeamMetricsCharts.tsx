@@ -66,13 +66,13 @@ export function RestaurantsJoinedChart({ data, height = 220 }: { data: { date: s
         <XAxis
           dataKey="date"
           tickFormatter={shortMonth}
-          tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
         />
         <YAxis
           allowDecimals={false}
-          tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={false}
           tickLine={false}
           width={28}
@@ -98,13 +98,13 @@ export function MrrChart({ data, height = 220 }: { data: { date: string; revenue
         <XAxis
           dataKey="date"
           tickFormatter={shortMonth}
-          tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
         />
         <YAxis
           tickFormatter={(v) => `$${v}`}
-          tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={false}
           tickLine={false}
           width={44}
