@@ -41,6 +41,10 @@ struct RootView: View {
         router.handleNotificationLink(link, isOwner: supabase.isOwnerExperience)
     }
 
+    /// Re-reading this when the user changes Settings › Display › Text Size
+    /// makes the whole tree rebuild with the new scaled fonts (see Font.mv).
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         ZStack {
             switch screen {
@@ -87,6 +91,11 @@ struct RootView: View {
                 .id(RootScreen.ownerOnboarding)
                 .transition(.opacity)
             }
+        }
+        .id(dynamicTypeSize)
+        // Settings › Accessibility › Reduce Motion: no animated transitions anywhere.
+        .transaction { transaction in
+            if UIAccessibility.isReduceMotionEnabled { transaction.animation = nil }
         }
         // The selected app language is independent of the device language.
         // Feed it to SwiftUI's LocalizedStringKey resolver too, so static
@@ -214,14 +223,14 @@ struct RootView: View {
         VStack(spacing: 16) {
             if isError {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 30))
+                    .font(.mv(size: 30))
                     .foregroundStyle(.orange)
                 Text(isFrench ? "Impossible de préparer votre espace" : "We couldn't prepare your workspace")
                     .font(MinervaFont.display(24))
                     .foregroundStyle(MinervaColor.ink)
                     .multilineTextAlignment(.center)
                 Text(supabase.experienceResolutionError ?? (isFrench ? "Réessayez dans un instant." : "Try again in a moment."))
-                    .font(.system(size: 14))
+                    .font(.mv(size: 14))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
                 Button(isFrench ? "Réessayer" : "Try again") {
@@ -233,7 +242,7 @@ struct RootView: View {
                 ProgressView()
                     .tint(MinervaColor.emerald)
                 Text(isFrench ? "Préparation de votre espace…" : "Preparing your workspace…")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.mv(size: 15, weight: .medium))
                     .foregroundStyle(MinervaColor.inkSoft)
             }
         }
@@ -267,7 +276,7 @@ struct NativeRealtimeStatusPill: View {
     var body: some View {
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 6, height: 6)
-            Text(title).font(.system(size: 10, weight: .medium))
+            Text(title).font(.mv(size: 10, weight: .medium))
         }
         .foregroundStyle(color)
         .padding(.horizontal, 8)

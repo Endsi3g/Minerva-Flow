@@ -22,7 +22,7 @@ struct ClientUpdatesView: View {
                         .foregroundStyle(MinervaColor.ink)
                         .accessibilityAddTraits(.isHeader)
                     Text(isFrench ? "Ce qui change pour vous." : "What changes for you.")
-                        .font(.system(size: 16))
+                        .font(.mv(size: 16))
                         .foregroundStyle(MinervaColor.inkSoft)
                 }
 
@@ -52,14 +52,14 @@ struct ClientUpdatesView: View {
             HStack(spacing: 8) {
                 if isRecent(entry.publishedAt) {
                     Text(isFrench ? "Nouveau" : "New")
-                        .font(.system(size: 11.5, weight: .semibold))
+                        .font(.mv(size: 11.5, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8).padding(.vertical, 4)
                         .background(MinervaColor.emerald)
                         .clipShape(Capsule())
                 }
                 Text(formattedDate(entry.publishedAt))
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.mv(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(MinervaColor.inkFaint)
             }
             Text(entry.title)
@@ -74,7 +74,7 @@ struct ClientUpdatesView: View {
                             Circle().fill(MinervaColor.emerald).frame(width: 5, height: 5).offset(y: -2)
                         }
                         Text(line.text)
-                            .font(.system(size: 15.5))
+                            .font(.mv(size: 15.5))
                             .lineSpacing(4)
                             .foregroundStyle(MinervaColor.inkSoft)
                             .fixedSize(horizontal: false, vertical: true)

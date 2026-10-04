@@ -125,7 +125,7 @@ struct ScanToOrderView: View {
                             .multilineTextAlignment(.center)
                             .padding(.top, 30)
                         Text("Placez le code dans le cadre")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.mv(size: 14, weight: .medium))
                             .foregroundStyle(.white.opacity(0.8))
                         Spacer(minLength: 24)
                         scanFrame
@@ -194,14 +194,14 @@ struct ScanToOrderView: View {
                 .frame(width: min(UIScreen.main.bounds.width - 42, 340), height: min(UIScreen.main.bounds.width - 42, 340))
                 .overlay(RoundedRectangle(cornerRadius: 30).stroke(.white.opacity(0.25), lineWidth: 1))
             Image(systemName: "viewfinder")
-                .font(.system(size: min(UIScreen.main.bounds.width - 42, 340), weight: .ultraLight))
+                .font(.mv(size: min(UIScreen.main.bounds.width - 42, 340), weight: .ultraLight))
                 .foregroundStyle(MinervaColor.limeAccent)
         }
     }
 
     private var instructions: some View {
         Text("Pointez la caméra vers le code affiché par le restaurant.")
-            .font(.system(size: 13, weight: .medium))
+            .font(.mv(size: 13, weight: .medium))
             .foregroundStyle(.white)
             .padding(14)
             .background(.black.opacity(0.55))
@@ -212,13 +212,13 @@ struct ScanToOrderView: View {
     private var deniedState: some View {
         VStack(spacing: 16) {
             Image(systemName: "camera.fill")
-                .font(.system(size: 36))
+                .font(.mv(size: 36))
                 .foregroundStyle(.white.opacity(0.6))
             Text("Accès à l'appareil photo refusé")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.mv(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
             Text("Activez l'accès dans Réglages pour scanner un code de restaurant.")
-                .font(.system(size: 12.5))
+                .font(.mv(size: 12.5))
                 .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
@@ -227,7 +227,7 @@ struct ScanToOrderView: View {
                     UIApplication.shared.open(url)
                 }
             }
-            .font(.system(size: 13.5, weight: .semibold))
+            .font(.mv(size: 13.5, weight: .semibold))
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             .background(MinervaColor.surface)

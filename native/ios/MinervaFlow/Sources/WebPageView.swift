@@ -29,13 +29,13 @@ struct WebPageView: View {
             if let errorMessage = loadError {
                 VStack(spacing: 12) {
                     Image(systemName: "wifi.exclamationmark")
-                        .font(.system(size: 28))
+                        .font(.mv(size: 28))
                         .foregroundStyle(MinervaColor.inkFaint)
                     Text("Impossible de charger cette page")
-                        .font(.system(size: 13.5, weight: .semibold))
+                        .font(.mv(size: 13.5, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                     Text(errorMessage)
-                        .font(.system(size: 11.5))
+                        .font(.mv(size: 11.5))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
@@ -46,7 +46,7 @@ struct WebPageView: View {
                         reloadToken = UUID()
                     } label: {
                         Text("Réessayer")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.mv(size: 13, weight: .semibold))
                             .padding(.horizontal, 18)
                             .padding(.vertical, 9)
                     }

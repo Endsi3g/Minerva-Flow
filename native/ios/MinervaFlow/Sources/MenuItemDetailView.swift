@@ -99,7 +99,7 @@ struct MenuItemDetailView: View {
             Spacer()
             ShareLink(item: shareText) {
                 Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.mv(size: 13, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(width: 32, height: 32)
                     .background(.black.opacity(0.35))
@@ -114,7 +114,7 @@ struct MenuItemDetailView: View {
     private func floatingCircleButton(systemName: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 13, weight: .bold))
+                .font(.mv(size: 13, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 32, height: 32)
                 .background(.black.opacity(0.35))
@@ -132,7 +132,7 @@ struct MenuItemDetailView: View {
                 ZStack {
                     Rectangle().fill(MinervaColor.ink.opacity(0.06))
                     Image(systemName: "fork.knife")
-                        .font(.system(size: 40))
+                        .font(.mv(size: 40))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
                 .frame(height: 340)
@@ -162,7 +162,7 @@ struct MenuItemDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             if let category = item.category, !category.isEmpty {
                 Text(category.uppercased())
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.mv(size: 10, weight: .bold))
                     .tracking(0.5)
                     .foregroundStyle(MinervaColor.emeraldDark)
                     .padding(.horizontal, 8)
@@ -179,24 +179,24 @@ struct MenuItemDetailView: View {
                 if !reviews.isEmpty {
                     HStack(spacing: 4) {
                         Image(systemName: "star.fill")
-                            .font(.system(size: 12))
+                            .font(.mv(size: 12))
                             .foregroundStyle(MinervaColor.emerald)
                         Text(String(format: "%.1f", averageRating))
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.mv(size: 13, weight: .bold))
                         Text("(\(reviews.count) avis)")
-                            .font(.system(size: 12))
+                            .font(.mv(size: 12))
                             .foregroundStyle(MinervaColor.inkFaint)
                     }
                 } else if !isLoadingReviews {
                     Text("Aucun avis pour l'instant")
-                        .font(.system(size: 12))
+                        .font(.mv(size: 12))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
                 Spacer()
                 Text(item.priceOptions?.isEmpty == false
                      ? "Dès \(String(format: "%.2f $", (item.priceOptions ?? []).map(\.price).min() ?? 0))"
                      : String(format: "%.2f $", item.price))
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.mv(size: 17, weight: .bold))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
         }
@@ -213,7 +213,7 @@ struct MenuItemDetailView: View {
             Task { await supabase.toggleFavoriteMenuItem(item.id, favorite: !isFavorite) }
         } label: {
             Image(systemName: isFavorite ? "heart.fill" : "heart")
-                .font(.system(size: 15))
+                .font(.mv(size: 15))
                 .frame(width: 46, height: 44)
         }
         .foregroundStyle(isFavorite ? .red : MinervaColor.emeraldDark)
@@ -257,7 +257,7 @@ struct MenuItemDetailView: View {
                     Text("Devenez client de ce restaurant pour commander")
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .font(.system(size: 12, weight: .medium))
+                .font(.mv(size: 12, weight: .medium))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
@@ -270,7 +270,7 @@ struct MenuItemDetailView: View {
                 showReviewSheet = true
             } label: {
                 Image(systemName: "star.bubble")
-                    .font(.system(size: 15))
+                    .font(.mv(size: 15))
                     .frame(width: 46, height: 44)
             }
             .foregroundStyle(MinervaColor.emeraldDark)
@@ -283,7 +283,7 @@ struct MenuItemDetailView: View {
     private var priceOptionsPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Choisissez un format")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.mv(size: 12, weight: .semibold))
                 .foregroundStyle(MinervaColor.inkSoft)
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(item.priceOptions ?? []) { option in
@@ -298,10 +298,10 @@ struct MenuItemDetailView: View {
                     } label: {
                         VStack(spacing: 5) {
                             Text(option.label)
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .font(.mv(size: 15, weight: .semibold, design: .rounded))
                                 .foregroundStyle(MinervaColor.ink)
                             Text(String(format: "%.2f $", option.price))
-                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .font(.mv(size: 12, weight: .medium, design: .rounded))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                         }
                         .frame(maxWidth: .infinity, minHeight: 56)
@@ -316,7 +316,7 @@ struct MenuItemDetailView: View {
             }
             if cart == nil {
                 Text("Devenez client de ce restaurant pour commander")
-                    .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
+                    .font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
             }
         }
     }
@@ -340,14 +340,14 @@ struct MenuItemDetailView: View {
                     generator.impactOccurred()
                     cart.wrappedValue[item.id] = max(0, quantity - 1)
                 } label: {
-                    Image(systemName: "minus.circle.fill").font(.system(size: 24))
+                    Image(systemName: "minus.circle.fill").font(.mv(size: 24))
                 }
                 .foregroundStyle(MinervaColor.inkSoft)
                 .buttonStyle(PressableButtonStyle())
                 .accessibilityLabel("Retirer un \(item.name)")
 
                 Text("\(quantity)")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.mv(size: 15, weight: .semibold, design: .rounded))
                     .foregroundStyle(MinervaColor.ink)
                     .frame(minWidth: 18)
             }
@@ -366,7 +366,7 @@ struct MenuItemDetailView: View {
                     Image(systemName: "cart.fill")
                     Text(quantity > 0 ? "Ajouté" : "Ajouter au panier")
                 }
-                .font(.system(size: 13.5, weight: .semibold))
+                .font(.mv(size: 13.5, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
             }
@@ -380,10 +380,10 @@ struct MenuItemDetailView: View {
     private func descriptionSection(_ description: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Description")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             Text(description)
-                .font(.system(size: 13))
+                .font(.mv(size: 13))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -395,11 +395,11 @@ struct MenuItemDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Avis clients")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.mv(size: 13, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 Spacer()
                 Button("Laisser un avis") { showReviewSheet = true }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.mv(size: 12, weight: .semibold))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
 
@@ -407,7 +407,7 @@ struct MenuItemDetailView: View {
                 Skeletons.list(count: 2)
             } else if reviews.isEmpty {
                 Text("Soyez le premier à donner votre avis sur ce plat.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
             } else {
                 ForEach(reviews.prefix(5)) { review in
@@ -415,17 +415,17 @@ struct MenuItemDetailView: View {
                         HStack(spacing: 2) {
                             ForEach(0..<5, id: \.self) { i in
                                 Image(systemName: i < review.rating ? "star.fill" : "star")
-                                    .font(.system(size: 10))
+                                    .font(.mv(size: 10))
                                     .foregroundStyle(MinervaColor.emerald)
                             }
                             Spacer()
                             Text(review.createdAt.formatted(date: .abbreviated, time: .omitted))
-                                .font(.system(size: 10.5))
+                                .font(.mv(size: 10.5))
                                 .foregroundStyle(MinervaColor.inkFaint)
                         }
                         if let comment = review.comment, !comment.isEmpty {
                             Text(comment)
-                                .font(.system(size: 12.5))
+                                .font(.mv(size: 12.5))
                                 .foregroundStyle(MinervaColor.inkSoft)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -466,7 +466,7 @@ struct MenuItemDetailView: View {
     private var relatedSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Vous aimerez aussi")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -484,11 +484,11 @@ struct MenuItemDetailView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
                                 Text(related.name)
-                                    .font(.system(size: 12.5, weight: .medium))
+                                    .font(.mv(size: 12.5, weight: .medium))
                                     .foregroundStyle(MinervaColor.ink)
                                     .lineLimit(1)
                                 Text(String(format: "%.2f $", related.price))
-                                    .font(.system(size: 11.5, weight: .semibold))
+                                    .font(.mv(size: 11.5, weight: .semibold))
                                     .foregroundStyle(MinervaColor.emeraldDark)
                             }
                             .frame(width: 140, alignment: .leading)
@@ -539,7 +539,7 @@ private struct WriteReviewSheet: View {
                                 rating = star
                             } label: {
                                 Image(systemName: star <= rating ? "star.fill" : "star")
-                                    .font(.system(size: 28))
+                                    .font(.mv(size: 28))
                                     .foregroundStyle(MinervaColor.emerald)
                             }
                         }
@@ -556,7 +556,7 @@ private struct WriteReviewSheet: View {
 
                     if let submitError {
                         Text(submitError)
-                            .font(.system(size: 12.5))
+                            .font(.mv(size: 12.5))
                             .foregroundStyle(.red)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -567,7 +567,7 @@ private struct WriteReviewSheet: View {
                         HStack {
                             if isSubmitting { ProgressView().tint(.white) }
                             Text(isSubmitting ? "Envoi…" : "Publier mon avis")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.mv(size: 14, weight: .semibold))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
@@ -595,13 +595,13 @@ private struct WriteReviewSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Photos (\(photoPreviews.count)/\(maxPhotos))")
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .font(.mv(size: 11.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkSoft)
                 Spacer()
                 if photoPreviews.count < maxPhotos {
                     PhotosPicker(selection: $photoItems, maxSelectionCount: maxPhotos - photoPreviews.count, matching: .images) {
                         Label("Ajouter", systemImage: "photo.badge.plus")
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.mv(size: 11.5, weight: .semibold))
                     }
                     .foregroundStyle(MinervaColor.emeraldDark)
                 }
@@ -621,7 +621,7 @@ private struct WriteReviewSheet: View {
                                     photoPreviews.remove(at: index)
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 15))
+                                        .font(.mv(size: 15))
                                         .foregroundStyle(.white, .black.opacity(0.6))
                                 }
                                 .padding(3)

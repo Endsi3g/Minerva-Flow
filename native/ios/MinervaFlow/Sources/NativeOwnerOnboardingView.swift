@@ -16,7 +16,7 @@ struct NativeOwnerOnboardingView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     Image(systemName: "storefront.fill")
-                        .font(.system(size: 28, weight: .semibold))
+                        .font(.mv(size: 28, weight: .semibold))
                         .foregroundStyle(Color(red: 0.09, green: 0.50, blue: 0.36))
                         .padding(.top, 30)
                     Text("Configurez votre établissement")

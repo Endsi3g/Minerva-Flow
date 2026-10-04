@@ -21,8 +21,13 @@ struct RadialGauge: View {
                 .stroke(color, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             VStack(spacing: 0) {
+                // The ring is a fixed 56 pt shape, so the value inside stays a fixed
+                // size (it is announced in full by the accessibility label below)
+                // instead of growing past the circle at large Dynamic Type sizes.
                 Text(centerValue)
                     .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(MinervaColor.ink)
                 // An empty label string still reserves its own line height,
                 // which pushes the value above true center — only lay out
@@ -30,10 +35,14 @@ struct RadialGauge: View {
                 if !centerLabel.isEmpty {
                     Text(centerLabel)
                         .font(.system(size: 8.5, weight: .medium))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
             }
         }
         .frame(width: 56, height: 56)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(centerLabel.isEmpty ? centerValue : "\(centerValue) \(centerLabel)")
     }
 }

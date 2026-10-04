@@ -15,7 +15,7 @@ struct AppearanceSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 Text(isFrench ? "Thème" : "Theme")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.mv(size: 13, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 Picker(isFrench ? "Thème" : "Theme", selection: $storedAppearance) {
                     ForEach(AppAppearance.allCases) { option in
@@ -45,7 +45,7 @@ struct NotificationSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text(isFrench ? "Choisissez à quelle fréquence les restaurants où vous avez une carte vous écrivent. Vous pouvez changer à tout moment." : "Choose how often the restaurants where you have a card contact you. You can change this at any time.")
-                    .font(.system(size: 14))
+                    .font(.mv(size: 14))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -72,17 +72,17 @@ struct NotificationSettingsView: View {
                         ProgressView()
                         Text(isFrench ? "Enregistrement…" : "Saving…")
                     }
-                    .font(.system(size: 13))
+                    .font(.mv(size: 13))
                     .foregroundStyle(MinervaColor.inkSoft)
                 } else if let message {
                     Text(message)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.mv(size: 13, weight: .medium))
                         .foregroundStyle(MinervaColor.emeraldDark)
                         .accessibilityAddTraits(.updatesFrequently)
                 }
 
                 Text(isFrench ? "Ces messages ne sont envoyés qu'aux personnes qui ont accepté de recevoir des offres, et uniquement par notification dans l'app au niveau Fréquent." : "These messages are only sent to people who agreed to receive offers, and only as in-app notifications at the Frequent level.")
-                    .font(.system(size: 12))
+                    .font(.mv(size: 12))
                     .foregroundStyle(MinervaColor.inkFaint)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -118,17 +118,17 @@ struct NotificationSettingsView: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.mv(size: 14, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(subtitle)
-                        .font(.system(size: 12))
+                        .font(.mv(size: 12))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
                 Image(systemName: frequency == value ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
+                    .font(.mv(size: 20))
                     .foregroundStyle(frequency == value ? MinervaColor.emeraldDark : MinervaColor.inkFaint)
                     .accessibilityHidden(true)
             }
@@ -166,16 +166,16 @@ struct PrivacyConsentView: View {
     private func consentSection(for customer: Customer) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Communications")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Offres et nouvelles par courriel")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.mv(size: 13, weight: .medium))
                         .foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("Vous pouvez retirer votre consentement à tout moment.")
-                        .font(.system(size: 11))
+                        .font(.mv(size: 11))
                         .foregroundStyle(MinervaColor.inkFaint)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -201,7 +201,7 @@ struct PrivacyConsentView: View {
     private var exportSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Vos données")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             Group {
                 if let exportedDataFileURL {
@@ -230,11 +230,11 @@ struct PrivacyConsentView: View {
     private func exportRowLabel(title: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "square.and.arrow.down")
-                .font(.system(size: 14))
+                .font(.mv(size: 14))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .frame(width: 20)
             Text(title)
-                .font(.system(size: 13))
+                .font(.mv(size: 13))
                 .foregroundStyle(MinervaColor.ink)
             Spacer(minLength: 8)
         }
@@ -252,7 +252,7 @@ struct SecuritySettingsView: View {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Sécurité")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.mv(size: 13, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                     Toggle(isOn: Binding(
                         get: { biometricLock.isEnabled },
@@ -264,11 +264,11 @@ struct SecuritySettingsView: View {
                     )) {
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Verrouiller avec \(biometricLock.biometryLabel)")
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.mv(size: 13, weight: .medium))
                                 .foregroundStyle(MinervaColor.ink)
                                 .fixedSize(horizontal: false, vertical: true)
                             Text("Demande une vérification à chaque retour dans l'application.")
-                                .font(.system(size: 11))
+                                .font(.mv(size: 11))
                                 .foregroundStyle(MinervaColor.inkFaint)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -281,27 +281,27 @@ struct SecuritySettingsView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Zone de danger")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.mv(size: 13, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                     Button {
                         showDeleteAccountSheet = true
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "trash")
-                                .font(.system(size: 14))
+                                .font(.mv(size: 14))
                                 .foregroundStyle(.red)
                                 .frame(width: 20)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text("Supprimer mon compte")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.mv(size: 13, weight: .medium))
                                     .foregroundStyle(.red)
                                     .fixedSize(horizontal: false, vertical: true)
                                 HStack(spacing: 4) {
                                     Image(systemName: "exclamationmark.triangle.fill")
-                                        .font(.system(size: 9))
+                                        .font(.mv(size: 9))
                                     Text("Action irréversible")
                                 }
-                                .font(.system(size: 10.5))
+                                .font(.mv(size: 10.5))
                                 .foregroundStyle(MinervaColor.inkFaint)
                             }
                             Spacer(minLength: 8)
@@ -380,21 +380,21 @@ struct AboutView: View {
     private func aboutRowLabel(icon: String, title: String, value: String? = nil) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(.mv(size: 14))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .frame(width: 20)
             Text(title)
-                .font(.system(size: 13))
+                .font(.mv(size: 13))
                 .foregroundStyle(MinervaColor.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
             if let value {
                 Text(value)
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkFaint)
             } else {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.mv(size: 11, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkFaint)
             }
         }

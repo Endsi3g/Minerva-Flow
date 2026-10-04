@@ -24,7 +24,7 @@ struct FavoritesView: View {
                         .foregroundStyle(MinervaColor.ink)
                         .accessibilityAddTraits(.isHeader)
                     Text(isFrench ? "Une carte par établissement." : "One card per establishment.")
-                        .font(.system(size: 14))
+                        .font(.mv(size: 14))
                         .foregroundStyle(MinervaColor.inkSoft)
                 }
 
@@ -57,18 +57,18 @@ struct FavoritesView: View {
 
     private var emptyState: some View {
         VStack(spacing: 10) {
-            Image(systemName: "heart").font(.system(size: 36)).foregroundStyle(MinervaColor.inkFaint)
+            Image(systemName: "heart").font(.mv(size: 36)).foregroundStyle(MinervaColor.inkFaint)
             Text(isFrench ? "Aucun établissement" : "No establishment yet")
                 .font(MinervaFont.display(18)).foregroundStyle(MinervaColor.ink)
             Text(isFrench ? "Rejoignez un restaurant pour y enregistrer vos plats et offres préférés." : "Join a restaurant to save your favourite dishes and offers.")
-                .font(.system(size: 12.5)).foregroundStyle(MinervaColor.inkSoft).multilineTextAlignment(.center)
+                .font(.mv(size: 12.5)).foregroundStyle(MinervaColor.inkSoft).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity).padding(.top, 40)
     }
 
     private var emptyHint: some View {
         Text(isFrench ? "Appuyez sur le cœur d'un plat ou d'une offre pour le retrouver ici." : "Tap the heart on a dish or offer to find it here.")
-            .font(.system(size: 12.5))
+            .font(.mv(size: 12.5))
             .foregroundStyle(MinervaColor.inkSoft)
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -80,7 +80,7 @@ struct FavoritesView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
                 Image(systemName: "storefront.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.mv(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 34, height: 34)
                     .background(MinervaColor.emerald)
@@ -88,17 +88,17 @@ struct FavoritesView: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(establishment.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.mv(size: 15, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                         .lineLimit(2)
                     Text(summary(establishment))
-                        .font(.system(size: 12))
+                        .font(.mv(size: 12))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
                 Spacer(minLength: 8)
                 if establishment.savedCount > 0 {
                     Text("\(establishment.savedCount)")
-                        .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                        .font(.mv(size: 12.5, weight: .bold, design: .rounded))
                         .foregroundStyle(.red)
                         .padding(.horizontal, 9).padding(.vertical, 4)
                         .background(Color.red.opacity(0.1))
@@ -111,13 +111,13 @@ struct FavoritesView: View {
             if establishment.savedCount == 0 {
                 CompteSeparator()
                 Text(isFrench ? "Aucun favori ici pour l'instant." : "No favourites here yet.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .padding(14)
             } else if establishment.loadFailed && establishment.items.isEmpty && establishment.offers.isEmpty {
                 CompteSeparator()
                 Text(isFrench ? "Détails indisponibles pour le moment. Tirez pour réessayer." : "Details unavailable right now. Pull to retry.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .padding(14)
             } else {
@@ -155,7 +155,7 @@ struct FavoritesView: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             } else {
-                Image(systemName: symbol).font(.system(size: 16)).foregroundStyle(tint)
+                Image(systemName: symbol).font(.mv(size: 16)).foregroundStyle(tint)
             }
         }
         .frame(width: 48, height: 48)
@@ -167,10 +167,10 @@ struct FavoritesView: View {
         HStack(spacing: 12) {
             thumbnail(url: item.galleryImageURLs.first, symbol: "fork.knife", tint: MinervaColor.inkFaint)
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.name).font(.system(size: 14, weight: .medium)).foregroundStyle(MinervaColor.ink)
+                Text(item.name).font(.mv(size: 14, weight: .medium)).foregroundStyle(MinervaColor.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(String(format: "%.2f $", item.price))
-                    .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(MinervaColor.emeraldDark)
+                    .font(.mv(size: 12.5, weight: .semibold)).foregroundStyle(MinervaColor.emeraldDark)
             }
             Spacer(minLength: 8)
             if editable {
@@ -186,11 +186,11 @@ struct FavoritesView: View {
             HStack(spacing: 12) {
                 thumbnail(url: offer.imageUrl, symbol: "tag.fill", tint: MinervaColor.emerald)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(offer.title).font(.system(size: 14, weight: .medium)).foregroundStyle(MinervaColor.ink)
+                    Text(offer.title).font(.mv(size: 14, weight: .medium)).foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     if let price = offer.price {
                         Text(String(format: "%.2f $", price))
-                            .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(MinervaColor.emeraldDark)
+                            .font(.mv(size: 12.5, weight: .semibold)).foregroundStyle(MinervaColor.emeraldDark)
                     }
                 }
                 Spacer(minLength: 8)
@@ -209,7 +209,7 @@ struct FavoritesView: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             Task { await action() }
         } label: {
-            Image(systemName: "heart.fill").font(.system(size: 16)).foregroundStyle(.red).frame(width: 36, height: 36)
+            Image(systemName: "heart.fill").font(.mv(size: 16)).foregroundStyle(.red).frame(width: 36, height: 36)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(isFrench ? "Retirer des favoris" : "Remove from favourites")

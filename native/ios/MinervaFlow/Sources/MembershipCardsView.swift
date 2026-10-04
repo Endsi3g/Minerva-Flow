@@ -43,7 +43,7 @@ struct MembershipCardsView: View {
 
                         if supabase.allMemberships.count > 1 {
                             Text("Toutes vos cartes")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.mv(size: 13, weight: .semibold))
                                 .foregroundStyle(MinervaColor.ink)
                             ForEach(supabase.allMemberships.filter { $0.restaurantId != selectedMembership?.restaurantId }) { membership in
                                 membershipCard(membership, emphasized: false)
@@ -84,7 +84,7 @@ struct MembershipCardsView: View {
                 .font(MinervaFont.display(24))
                 .foregroundStyle(MinervaColor.ink)
             Text("Vos points, visites et récompenses restent séparés pour chaque restaurant ou café.")
-                .font(.system(size: 13))
+                .font(.mv(size: 13))
                 .foregroundStyle(MinervaColor.inkSoft)
         }
     }
@@ -93,22 +93,22 @@ struct MembershipCardsView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 Image(systemName: "storefront.fill")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.mv(size: 15, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
                     .background(MinervaColor.emerald)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(membership.restaurantName)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.mv(size: 15, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                     Text("Carte fidélité active")
-                        .font(.system(size: 11.5))
+                        .font(.mv(size: 11.5))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
                 Spacer()
                 Text("\(membership.loyaltyPoints) pts")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.mv(size: 16, weight: .bold, design: .rounded))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
             HStack(spacing: 0) {
@@ -144,7 +144,7 @@ struct MembershipCardsView: View {
                 Image(systemName: "wallet.pass.fill")
                 Text(isAddingWalletPass ? "Préparation…" : "Ajouter à Apple Wallet")
             }
-            .font(.system(size: 13, weight: .semibold))
+            .font(.mv(size: 13, weight: .semibold))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 13)
         }
@@ -162,8 +162,8 @@ struct MembershipCardsView: View {
 
     private func metric(value: String, label: String) -> some View {
         VStack(spacing: 3) {
-            Text(value).font(.system(size: 14, weight: .semibold)).foregroundStyle(MinervaColor.ink)
-            Text(label).font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
+            Text(value).font(.mv(size: 14, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+            Text(label).font(.mv(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
         }
         .frame(maxWidth: .infinity)
     }
@@ -179,13 +179,13 @@ struct MembershipCardsView: View {
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "creditcard")
-                .font(.system(size: 30))
+                .font(.mv(size: 30))
                 .foregroundStyle(MinervaColor.emeraldDark)
             Text("Aucune carte pour le moment")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.mv(size: 15, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             Text("Rejoignez un restaurant depuis la découverte pour commencer à accumuler des points.")
-                .font(.system(size: 12.5))
+                .font(.mv(size: 12.5))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(MinervaColor.inkSoft)
         }

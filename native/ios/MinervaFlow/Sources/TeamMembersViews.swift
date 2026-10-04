@@ -65,7 +65,7 @@ struct TeamDirectoryView: View {
                 Text(isFrench
                      ? "Visible par les membres de l'équipe seulement. Ordre alphabétique : ce n'est pas un classement de performance."
                      : "Visible to team members only. Alphabetical order: this is not a performance ranking.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
 
                 if supabase.memberDirectory.isEmpty && supabase.isLoadingMembers {
@@ -79,24 +79,24 @@ struct TeamDirectoryView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 12) {
                                 Text(member.initials)
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.mv(size: 13, weight: .semibold))
                                     .foregroundStyle(MinervaColor.emeraldDark)
                                     .frame(width: 38, height: 38)
                                     .background(MinervaColor.emerald.opacity(0.12))
                                     .clipShape(Circle())
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(member.id == supabase.memberDirectoryUserId ? "\(member.name) (\(isFrench ? "vous" : "you"))" : member.name)
-                                        .font(.system(size: 15, weight: .semibold))
+                                        .font(.mv(size: 15, weight: .semibold))
                                         .foregroundStyle(MinervaColor.ink)
                                     Text(isFrench
                                          ? "\(member.heatmap.total) contribution\(member.heatmap.total == 1 ? "" : "s") · 26 semaines"
                                          : "\(member.heatmap.total) contribution\(member.heatmap.total == 1 ? "" : "s") · 26 weeks")
-                                        .font(.system(size: 11.5))
+                                        .font(.mv(size: 11.5))
                                         .foregroundStyle(MinervaColor.inkFaint)
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.mv(size: 11, weight: .semibold))
                                     .foregroundStyle(MinervaColor.inkFaint)
                             }
                             ContributionHeatmapView(heatmap: member.heatmap, cell: 6, isFrench: isFrench)
@@ -149,7 +149,7 @@ struct TeamMemberDetailView: View {
                     Skeletons.card(height: 160)
                 } else {
                     Text(isFrench ? "Profil introuvable." : "Profile not found.")
-                        .font(.system(size: 13))
+                        .font(.mv(size: 13))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
             }
@@ -181,7 +181,7 @@ struct TeamMemberDetailView: View {
                     .foregroundStyle(MinervaColor.ink)
                 HStack(spacing: 8) {
                     Text(profile.isTeamMember ? (isFrench ? "ÉQUIPE" : "TEAM") : (isFrench ? "AMBASSADEUR" : "AMBASSADOR"))
-                        .font(.system(size: 9.5, weight: .bold))
+                        .font(.mv(size: 9.5, weight: .bold))
                         .tracking(0.4)
                         .foregroundStyle(profile.isTeamMember ? MinervaColor.emeraldDark : Color.purple)
                         .padding(.horizontal, 7)
@@ -190,11 +190,11 @@ struct TeamMemberDetailView: View {
                         .clipShape(Capsule())
                     if let login = profile.githubLogin {
                         Label(login, systemImage: "chevron.left.forwardslash.chevron.right")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.mv(size: 12, weight: .medium))
                             .foregroundStyle(MinervaColor.inkSoft)
                     } else if profile.isTeamMember {
                         Text(isFrench ? "GitHub non lié" : "GitHub not linked")
-                            .font(.system(size: 12))
+                            .font(.mv(size: 12))
                             .foregroundStyle(MinervaColor.inkFaint)
                     }
                 }
@@ -213,7 +213,7 @@ struct TeamMemberDetailView: View {
     private func notice(_ text: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-            Text(text).font(.system(size: 12)).foregroundStyle(MinervaColor.ink).fixedSize(horizontal: false, vertical: true)
+            Text(text).font(.mv(size: 12)).foregroundStyle(MinervaColor.ink).fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
         .background(Color.orange.opacity(0.1))
@@ -225,18 +225,18 @@ struct TeamMemberDetailView: View {
             Text(isFrench
                  ? "\(profile.heatmap.total) contribution\(profile.heatmap.total == 1 ? "" : "s") · 26 semaines"
                  : "\(profile.heatmap.total) contribution\(profile.heatmap.total == 1 ? "" : "s") · 26 weeks")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             ContributionHeatmapView(heatmap: profile.heatmap, cell: 11, isFrench: isFrench)
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(contributionSources, id: \.key) { source in
                     HStack {
                         Text(isFrench ? source.fr : source.en)
-                            .font(.system(size: 11.5))
+                            .font(.mv(size: 11.5))
                             .foregroundStyle(MinervaColor.inkSoft)
                         Spacer()
                         Text("\(profile.heatmap.bySource[source.key] ?? 0)")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .font(.mv(size: 14, weight: .bold, design: .rounded))
                             .foregroundStyle(MinervaColor.ink)
                     }
                     .padding(10)
@@ -250,18 +250,18 @@ struct TeamMemberDetailView: View {
     private var transparencyCard: some View {
         card {
             Text(isFrench ? "Ce qui est mesuré, et ce qui ne l'est pas" : "What is measured, and what is not")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             Text(isFrench
                  ? "Compté : commits GitHub liés à votre identifiant, recommandations et contenus UGC du programme ambassadeur, contenus que vous déclarez, bilan hebdomadaire."
                  : "Counted: GitHub commits linked to your handle, referrals and UGC from the ambassador program, content you declare, your weekly check-in.")
-                .font(.system(size: 12))
+                .font(.mv(size: 12))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
             Text(isFrench
                  ? "Jamais compté : connexions, temps passé dans l'app, horaires, contenu de vos messages. Aucun score caché : ce que vous voyez ici est ce que voient les autres membres de l'équipe."
                  : "Never counted: logins, time in the app, hours, message content. No hidden score: what you see here is what other team members see.")
-                .font(.system(size: 12))
+                .font(.mv(size: 12))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -270,23 +270,23 @@ struct TeamMemberDetailView: View {
     private func contentCard(_ profile: NativeMemberProfile) -> some View {
         card {
             Text(isFrench ? "Contenus déclarés" : "Declared content")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             if profile.contentLinks.isEmpty {
                 Text(isFrench ? "Aucun contenu déclaré pour l'instant." : "No declared content yet.")
-                    .font(.system(size: 12.5)).foregroundStyle(MinervaColor.inkFaint)
+                    .font(.mv(size: 12.5)).foregroundStyle(MinervaColor.inkFaint)
             }
             ForEach(profile.contentLinks) { link in
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
                         if let url = URL(string: link.url) {
                             Link(link.title.isEmpty ? link.url : link.title, destination: url)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.mv(size: 13, weight: .medium))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                                 .lineLimit(2)
                         }
                         Text("\(link.platform) · \(link.publishedOn)")
-                            .font(.system(size: 11)).foregroundStyle(MinervaColor.inkFaint)
+                            .font(.mv(size: 11)).foregroundStyle(MinervaColor.inkFaint)
                     }
                     Spacer()
                     if profile.isSelf {
@@ -296,7 +296,7 @@ struct TeamMemberDetailView: View {
                                 await reload()
                             }
                         }
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.mv(size: 12, weight: .medium))
                         .foregroundStyle(MinervaColor.inkFaint)
                     }
                 }
@@ -307,24 +307,24 @@ struct TeamMemberDetailView: View {
     private func checkinsCard(_ profile: NativeMemberProfile) -> some View {
         card {
             Text(isFrench ? "Derniers bilans hebdomadaires" : "Latest weekly check-ins")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             if profile.checkins.isEmpty {
                 Text(isFrench ? "Aucun bilan pour l'instant." : "No check-in yet.")
-                    .font(.system(size: 12.5)).foregroundStyle(MinervaColor.inkFaint)
+                    .font(.mv(size: 12.5)).foregroundStyle(MinervaColor.inkFaint)
             }
             ForEach(profile.checkins) { checkin in
                 VStack(alignment: .leading, spacing: 3) {
                     Text((isFrench ? "SEMAINE DU " : "WEEK OF ") + checkin.weekStart)
-                        .font(.system(size: 10.5, weight: .semibold)).tracking(0.3)
+                        .font(.mv(size: 10.5, weight: .semibold)).tracking(0.3)
                         .foregroundStyle(MinervaColor.inkFaint)
                     if !checkin.commitments.isEmpty {
                         Text((isFrench ? "Engagements : " : "Commitments: ") + checkin.commitments)
-                            .font(.system(size: 12.5)).foregroundStyle(MinervaColor.ink)
+                            .font(.mv(size: 12.5)).foregroundStyle(MinervaColor.ink)
                     }
                     if !checkin.delivered.isEmpty {
                         Text((isFrench ? "Livré : " : "Delivered: ") + checkin.delivered)
-                            .font(.system(size: 12.5)).foregroundStyle(MinervaColor.ink)
+                            .font(.mv(size: 12.5)).foregroundStyle(MinervaColor.ink)
                     }
                 }
             }
@@ -386,10 +386,10 @@ private struct TeamProfileForms: View {
 
     private func form<Content: View>(title: String, status: String?, @ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+            Text(title).font(.mv(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
             content()
             if let status {
-                Text(status).font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
+                Text(status).font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
             }
         }
         .padding(16)
@@ -414,7 +414,7 @@ private struct TeamProfileForms: View {
             Task { await action() }
         } label: {
             Text(title)
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(.mv(size: 12.5, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)

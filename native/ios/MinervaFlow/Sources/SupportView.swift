@@ -55,7 +55,7 @@ struct SupportView: View {
     private func section<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             VStack(spacing: 0) {
                 content()
@@ -68,19 +68,19 @@ struct SupportView: View {
     private func row(icon: String, title: String, value: String?) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(.mv(size: 14))
                 .foregroundStyle(MinervaColor.emeraldDark)
                 .frame(width: 20)
             Text(title)
-                .font(.system(size: 13))
+                .font(.mv(size: 13))
                 .foregroundStyle(MinervaColor.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
             if let value {
-                Text(value).font(.system(size: 12.5)).foregroundStyle(MinervaColor.inkFaint)
+                Text(value).font(.mv(size: 12.5)).foregroundStyle(MinervaColor.inkFaint)
             } else {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.mv(size: 11, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkFaint)
             }
         }

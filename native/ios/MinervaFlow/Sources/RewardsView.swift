@@ -123,15 +123,15 @@ struct RewardsView: View {
     private func statColumn(icon: String, value: String, label: String) -> some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.mv(size: 14, weight: .semibold))
                 .foregroundStyle(MinervaColor.emerald)
             Text(value)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.mv(size: 28, weight: .bold, design: .rounded))
                 .foregroundStyle(MinervaColor.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text(label)
-                .font(.system(size: 12, weight: .medium))
+                .font(.mv(size: 12, weight: .medium))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -148,22 +148,22 @@ struct RewardsView: View {
     private func pendingSection(_ pending: [RewardRedemption]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("À montrer en salle")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ForEach(pending) { redemption in
                 HStack {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 13))
+                            .font(.mv(size: 13))
                         Text(redemption.rewardName)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.mv(size: 13, weight: .medium))
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .foregroundStyle(MinervaColor.emeraldDark)
                     Spacer(minLength: 8)
                     Text(redemption.code)
-                        .font(.system(size: 17, weight: .bold, design: .monospaced))
+                        .font(.mv(size: 17, weight: .bold, design: .monospaced))
                         .tracking(2)
                         .foregroundStyle(MinervaColor.emeraldDark)
                 }
@@ -180,7 +180,7 @@ struct RewardsView: View {
     private var offersCatalogSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Offres")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ForEach(supabase.offers) { offer in
@@ -191,26 +191,26 @@ struct RewardsView: View {
                         ZStack {
                             Circle().fill(MinervaColor.emerald.opacity(0.12))
                             Image(systemName: "tag.fill")
-                                .font(.system(size: 14))
+                                .font(.mv(size: 14))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                         }
                         .frame(width: 38, height: 38)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(offer.title)
-                                .font(.system(size: 13.5, weight: .semibold))
+                                .font(.mv(size: 13.5, weight: .semibold))
                                 .foregroundStyle(MinervaColor.ink)
                                 .fixedSize(horizontal: false, vertical: true)
                             if let description = offer.description {
                                 Text(description)
-                                    .font(.system(size: 11.5))
+                                    .font(.mv(size: 11.5))
                                     .foregroundStyle(MinervaColor.inkFaint)
                                     .lineLimit(1)
                             }
                         }
                         Spacer(minLength: 8)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.mv(size: 11, weight: .semibold))
                             .foregroundStyle(MinervaColor.inkFaint)
                     }
                     .padding(12)
@@ -225,12 +225,12 @@ struct RewardsView: View {
     private var catalogSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Catalogue")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             if supabase.rewards.isEmpty {
                 Text("Aucune récompense disponible pour l'instant. Revenez plus tard.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.vertical, 8)
@@ -252,21 +252,21 @@ struct RewardsView: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(reward.name)
-                        .font(.system(size: 13.5, weight: .semibold))
+                        .font(.mv(size: 13.5, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     if let description = reward.description {
                         Text(description)
-                            .font(.system(size: 11.5))
+                            .font(.mv(size: 11.5))
                             .foregroundStyle(MinervaColor.inkFaint)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     HStack(spacing: 4) {
                         Image(systemName: "storefront.fill")
-                            .font(.system(size: 9))
+                            .font(.mv(size: 9))
                         Text("Échangeable chez \(supabase.restaurantIdentityLabel)")
                     }
-                    .font(.system(size: 10.5, weight: .medium))
+                    .font(.mv(size: 10.5, weight: .medium))
                     .foregroundStyle(MinervaColor.emerald)
                 }
                 Spacer(minLength: 8)
@@ -275,7 +275,7 @@ struct RewardsView: View {
                 // instead of the chevron hanging under the points badge.
                 HStack(spacing: 8) {
                     Text("\(reward.pointsCost) pts")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.mv(size: 12, weight: .bold))
                         .foregroundStyle(affordable ? MinervaColor.emeraldDark : MinervaColor.inkFaint)
                         .padding(.horizontal, 9)
                         .padding(.vertical, 4)
@@ -283,7 +283,7 @@ struct RewardsView: View {
                         .clipShape(Capsule())
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.mv(size: 11, weight: .semibold))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
             }
@@ -300,7 +300,7 @@ struct RewardsView: View {
     private var referralSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Programmes de parrainage")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ForEach(supabase.referralPrograms) { progress in
@@ -318,12 +318,12 @@ struct RewardsView: View {
         return VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(program.name)
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .font(.mv(size: 13.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                     .fixedSize(horizontal: false, vertical: true)
                 if let description = program.description {
                     Text(description)
-                        .font(.system(size: 11.5))
+                        .font(.mv(size: 11.5))
                         .foregroundStyle(MinervaColor.inkFaint)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -333,12 +333,12 @@ struct RewardsView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("\(convertedCount) / \(program.goalCount) amis parrainés")
-                            .font(.system(size: 11.5))
+                            .font(.mv(size: 11.5))
                             .foregroundStyle(MinervaColor.inkSoft)
                         Spacer()
                         if rewardUnlocked {
                             Text("Débloqué")
-                                .font(.system(size: 10.5, weight: .bold))
+                                .font(.mv(size: 10.5, weight: .bold))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
@@ -358,9 +358,9 @@ struct RewardsView: View {
                     if let rewardDescription = program.rewardDescription {
                         HStack(spacing: 6) {
                             Image(systemName: "gift.fill")
-                                .font(.system(size: 11))
+                                .font(.mv(size: 11))
                             Text("Récompense : \(rewardDescription)")
-                                .font(.system(size: 11.5))
+                                .font(.mv(size: 11.5))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         .foregroundStyle(MinervaColor.emerald)
@@ -400,7 +400,7 @@ struct RewardsView: View {
                             Image(systemName: "square.and.arrow.up")
                             Text("Partager mon lien")
                         }
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.mv(size: 12, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                     }
@@ -418,7 +418,7 @@ struct RewardsView: View {
                     Task { _ = await supabase.createReferralLink(for: program.id) }
                 } label: {
                     Text("Réessayer")
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                 }
@@ -469,7 +469,7 @@ struct ReferralQRSheet: View {
         NavigationStack {
             VStack(spacing: 18) {
                 Text(progress.program.name)
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .font(.mv(size: 13.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
 
                 if let qrImage {
@@ -487,7 +487,7 @@ struct ReferralQRSheet: View {
                 }
 
                 Text("Votre ami peut scanner ce code directement depuis l'appareil photo de son téléphone.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)

@@ -35,11 +35,11 @@ struct IntroView: View {
                 Spacer(minLength: 24)
 
                 Text("MINERVA FLOW")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.mv(size: 15, weight: .bold))
                     .tracking(3)
                     .foregroundStyle(.white)
                 Text("RÉCOMPENSES")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.mv(size: 15, weight: .bold))
                     .tracking(3)
                     .foregroundStyle(.white)
                     .padding(.bottom, 28)
@@ -57,7 +57,7 @@ struct IntroView: View {
                     .padding(.bottom, 12)
 
                 Text(verbatim: language == .fr ? "Cumulez des points à chaque visite et échangez-les contre de vraies récompenses." : "Earn points with every visit and exchange them for real rewards.")
-                    .font(.system(size: 14.5))
+                    .font(.mv(size: 14.5))
                     .foregroundStyle(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -68,7 +68,7 @@ struct IntroView: View {
                 VStack(spacing: 12) {
                     Button(action: onContinue) {
                         Text(verbatim: language == .fr ? "Commencer" : "Get started")
-                            .font(.system(size: 15.5, weight: .semibold))
+                            .font(.mv(size: 15.5, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 15)
                     }
@@ -79,7 +79,7 @@ struct IntroView: View {
 
                     Button(action: onContinue) {
                         Text(verbatim: language == .fr ? "Se connecter" : "Sign in")
-                            .font(.system(size: 15.5, weight: .semibold))
+                            .font(.mv(size: 15.5, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 15)
                     }

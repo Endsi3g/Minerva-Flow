@@ -106,7 +106,7 @@ struct EditProfileSheet: View {
                         ProgressView().tint(.white).scaleEffect(0.7)
                     } else {
                         Image(systemName: "camera.fill")
-                            .font(.system(size: 12))
+                            .font(.mv(size: 12))
                             .foregroundStyle(.white)
                     }
                 }
@@ -124,7 +124,7 @@ struct EditProfileSheet: View {
         ZStack {
             Circle().fill(MinervaColor.emerald.opacity(0.15))
             Text(initials(for: name))
-                .font(.system(size: 26, weight: .bold))
+                .font(.mv(size: 26, weight: .bold))
                 .foregroundStyle(MinervaColor.emeraldDark)
         }
     }
@@ -166,7 +166,7 @@ struct EditProfileSheet: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(.mv(size: 11.5, weight: .semibold))
                 .foregroundStyle(MinervaColor.inkSoft)
             HStack(spacing: 10) {
                 TextField("", text: text, prompt: Text(placeholder).foregroundStyle(MinervaColor.inkFaint))
@@ -183,7 +183,7 @@ struct EditProfileSheet: View {
                     } else if isSaved {
                         Image(systemName: "checkmark").foregroundStyle(MinervaColor.emeraldDark)
                     } else {
-                        Text("OK").font(.system(size: 13, weight: .semibold))
+                        Text("OK").font(.mv(size: 13, weight: .semibold))
                     }
                 }
                 .frame(width: 44, height: 44)
@@ -223,16 +223,16 @@ struct EditProfileSheet: View {
     private var emailSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Courriel")
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(.mv(size: 11.5, weight: .semibold))
                 .foregroundStyle(MinervaColor.inkSoft)
 
             if emailStatus == .sent {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "envelope.badge.fill")
-                        .font(.system(size: 13))
+                        .font(.mv(size: 13))
                         .padding(.top, 1)
                     Text("Vérifiez \(newEmail) pour confirmer le changement — votre courriel actuel reste actif jusque-là.")
-                        .font(.system(size: 12.5))
+                        .font(.mv(size: 12.5))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .foregroundStyle(MinervaColor.emeraldDark)
@@ -254,7 +254,7 @@ struct EditProfileSheet: View {
 
                     if emailStatus == .error, let emailError {
                         Text(emailError)
-                            .font(.system(size: 11.5))
+                            .font(.mv(size: 11.5))
                             .foregroundStyle(.red)
                     }
 
@@ -265,7 +265,7 @@ struct EditProfileSheet: View {
                             HStack {
                                 if emailStatus == .sending { ProgressView().tint(.white) }
                                 Text(emailStatus == .sending ? "Envoi…" : "Confirmer le changement")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.mv(size: 13, weight: .semibold))
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 11)
@@ -281,7 +281,7 @@ struct EditProfileSheet: View {
                             newEmail = supabase.customer?.email ?? ""
                             emailStatus = .idle
                         }
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.mv(size: 13, weight: .semibold))
                         .foregroundStyle(MinervaColor.inkSoft)
                     }
                 }
@@ -291,11 +291,11 @@ struct EditProfileSheet: View {
                 } label: {
                     HStack {
                         Text(supabase.customer?.email ?? "Aucun courriel")
-                            .font(.system(size: 13.5))
+                            .font(.mv(size: 13.5))
                             .foregroundStyle(MinervaColor.ink)
                         Spacer()
                         Image(systemName: "pencil")
-                            .font(.system(size: 12))
+                            .font(.mv(size: 12))
                             .foregroundStyle(MinervaColor.inkFaint)
                     }
                     .padding(12)

@@ -63,12 +63,12 @@ struct OrderHistoryView: View {
     private func statTile(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(value)
-                .font(.system(size: 19, weight: .bold, design: .rounded))
+                .font(.mv(size: 19, weight: .bold, design: .rounded))
                 .foregroundStyle(MinervaColor.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(label)
-                .font(.system(size: 11))
+                .font(.mv(size: 11))
                 .foregroundStyle(MinervaColor.inkFaint)
         }
         .padding(14)
@@ -81,21 +81,21 @@ struct OrderHistoryView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(order.createdAt.formatted(date: .abbreviated, time: .shortened))
-                    .font(.system(size: 12))
+                    .font(.mv(size: 12))
                     .foregroundStyle(MinervaColor.inkFaint)
                 Spacer()
                 statusBadge(order.status)
             }
             if !order.items.isEmpty {
                 Text(itemsSummary(order.items))
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.mv(size: 13, weight: .medium))
                     .foregroundStyle(MinervaColor.ink)
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack {
                 Spacer()
                 Text(currencyString(order.total))
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.mv(size: 14, weight: .bold))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
         }
@@ -113,7 +113,7 @@ struct OrderHistoryView: View {
     private func statusBadge(_ status: String) -> some View {
         let (label, color) = statusInfo(status)
         return Text(label)
-            .font(.system(size: 10.5, weight: .semibold))
+            .font(.mv(size: 10.5, weight: .semibold))
             .foregroundStyle(color)
             .padding(.horizontal, 9)
             .padding(.vertical, 4)

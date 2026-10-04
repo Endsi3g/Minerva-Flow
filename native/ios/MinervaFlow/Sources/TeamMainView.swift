@@ -54,7 +54,7 @@ struct TeamMainView: View {
                                     Text(supabase.isTeamMember
                                          ? (isFrench ? "Les indicateurs fondamentaux de Minerva Flow, en direct." : "Minerva Flow's core metrics, live.")
                                          : (isFrench ? "Découvrez le produit et notre façon de vendre dans l'onglet Académie." : "Learn the product and how we sell in the Academy tab."))
-                                        .font(.system(size: 13.5))
+                                        .font(.mv(size: 13.5))
                                         .foregroundStyle(MinervaColor.inkSoft)
                                 }
                                 if supabase.isTeamMember {
@@ -145,7 +145,7 @@ private struct TeamOnboardingIntroView: View {
                 HStack {
                     Spacer()
                     Button("Passer") { onDone() }
-                        .font(.system(size: 12.5, weight: .medium))
+                        .font(.mv(size: 12.5, weight: .medium))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
                 Spacer()
@@ -163,7 +163,7 @@ private struct TeamOnboardingIntroView: View {
                         onDone()
                     } label: {
                         Text("Entrer dans l’espace")
-                            .font(.system(size: 13.5, weight: .semibold))
+                            .font(.mv(size: 13.5, weight: .semibold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 12)
@@ -244,7 +244,7 @@ private struct TeamMetricsDashboardView: View {
                         Text(isFrench
                              ? "Aucun abonnement payant pour l'instant — la facturation n'est pas encore activée, donc le MRR reste à zéro. La courbe se remplira dès le premier abonné."
                              : "No paying subscriptions yet — billing isn't enabled, so MRR stays at zero. The curve fills in with the first subscriber.")
-                            .font(.system(size: 11.5))
+                            .font(.mv(size: 11.5))
                             .foregroundStyle(MinervaColor.inkFaint)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -258,9 +258,9 @@ private struct TeamMetricsDashboardView: View {
             }
         } else if let error = supabase.teamMetricsError {
             VStack(alignment: .leading, spacing: 10) {
-                Text(error).font(.system(size: 12.5)).foregroundStyle(.red)
+                Text(error).font(.mv(size: 12.5)).foregroundStyle(.red)
                 Button(isFrench ? "Réessayer" : "Retry") { Task { await supabase.loadTeamMetrics() } }
-                    .font(.system(size: 12.5, weight: .semibold))
+                    .font(.mv(size: 12.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
         }
@@ -272,10 +272,10 @@ private struct TeamMetricsDashboardView: View {
         return chartCard(title: isFrench ? "Le chiffre du mois · \(focus.label)" : "This month's number · \(focus.label)") {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(format(focus.actual))
-                    .font(.system(size: 38, weight: .bold, design: .rounded))
+                    .font(.mv(size: 38, weight: .bold, design: .rounded))
                     .foregroundStyle(MinervaColor.ink)
                 Text(focus.target.map { "/ \(format($0))" } ?? (isFrench ? "cible à définir" : "target not set"))
-                    .font(.system(size: 14))
+                    .font(.mv(size: 14))
                     .foregroundStyle(MinervaColor.inkFaint)
             }
             if let progress {
@@ -291,24 +291,24 @@ private struct TeamMetricsDashboardView: View {
                 .accessibilityValue("\(Int(progress)) %")
             }
             Text(isFrench ? "TROIS PROCHAINES ACTIONS" : "NEXT THREE ACTIONS")
-                .font(.system(size: 10.5, weight: .semibold)).tracking(0.4)
+                .font(.mv(size: 10.5, weight: .semibold)).tracking(0.4)
                 .foregroundStyle(MinervaColor.inkFaint)
                 .padding(.top, 4)
             if focus.actions.isEmpty {
                 Text(isFrench ? "Rien de bloquant détecté dans les chiffres : gardez le rythme." : "Nothing blocking in the numbers: keep the pace.")
-                    .font(.system(size: 12.5)).foregroundStyle(MinervaColor.inkSoft)
+                    .font(.mv(size: 12.5)).foregroundStyle(MinervaColor.inkSoft)
             }
             ForEach(Array(focus.actions.enumerated()), id: \.element.id) { index, action in
                 HStack(alignment: .top, spacing: 10) {
                     Text("\(index + 1)")
-                        .font(.system(size: 11.5, weight: .bold))
+                        .font(.mv(size: 11.5, weight: .bold))
                         .foregroundStyle(MinervaColor.emeraldDark)
                         .frame(width: 22, height: 22)
                         .background(MinervaColor.emerald.opacity(0.14))
                         .clipShape(Circle())
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(action.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
-                        Text(action.reason).font(.system(size: 12)).foregroundStyle(MinervaColor.inkSoft)
+                        Text(action.title).font(.mv(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                        Text(action.reason).font(.mv(size: 12)).foregroundStyle(MinervaColor.inkSoft)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -322,9 +322,9 @@ private struct TeamMetricsDashboardView: View {
             ForEach(funnel.stages) { stage in
                 VStack(alignment: .leading, spacing: 5) {
                     HStack {
-                        Text(stage.label).font(.system(size: 12.5, weight: .medium)).foregroundStyle(MinervaColor.ink)
+                        Text(stage.label).font(.mv(size: 12.5, weight: .medium)).foregroundStyle(MinervaColor.ink)
                         Spacer()
-                        Text("\(stage.count)").font(.system(size: 18, weight: .bold, design: .rounded)).foregroundStyle(MinervaColor.ink)
+                        Text("\(stage.count)").font(.mv(size: 18, weight: .bold, design: .rounded)).foregroundStyle(MinervaColor.ink)
                     }
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
@@ -340,14 +340,14 @@ private struct TeamMetricsDashboardView: View {
                         Text(isFrench
                              ? "\(stage.conversionFromPrevious.map { String(format: "%.0f %%", $0) } ?? "—") de l'étape précédente"
                              : "\(stage.conversionFromPrevious.map { String(format: "%.0f%%", $0) } ?? "—") of the previous stage")
-                            .font(.system(size: 11)).foregroundStyle(MinervaColor.inkFaint)
+                            .font(.mv(size: 11)).foregroundStyle(MinervaColor.inkFaint)
                     }
                 }
             }
             Text(isFrench
                  ? "Trafic 30 j : \(visitors.map { "\($0.total) visiteurs uniques" } ?? "non branché"). Affiché à part : aucun taux visiteurs → inscrits n'est calculé (fenêtre de 30 jours contre cumul). Activé = 1 article publié + 1 client inscrit ; un compte interne non marqué démo compte comme un restaurant."
                  : "30-day traffic: \(visitors.map { "\($0.total) unique visitors" } ?? "not connected"). Shown separately: no visitors → signups rate is computed (30-day window vs. cumulative). Activated = 1 published item + 1 enrolled customer; an internal account not flagged as demo counts as a restaurant.")
-                .font(.system(size: 11)).foregroundStyle(MinervaColor.inkFaint)
+                .font(.mv(size: 11)).foregroundStyle(MinervaColor.inkFaint)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -368,7 +368,7 @@ private struct TeamMetricsDashboardView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.mv(size: 13, weight: .semibold))
                     .foregroundStyle(MinervaColor.emeraldDark)
                 Spacer()
                 if let delta {
@@ -376,17 +376,17 @@ private struct TeamMetricsDashboardView: View {
                         Image(systemName: delta >= 0 ? "arrow.up.right" : "arrow.down.right")
                         Text(String(format: "%.1f %%", abs(delta)))
                     }
-                    .font(.system(size: 10.5, weight: .semibold))
+                    .font(.mv(size: 10.5, weight: .semibold))
                     .foregroundStyle(delta >= 0 ? MinervaColor.emeraldDark : .red)
                 }
             }
             Text(value)
-                .font(.system(size: 21, weight: .bold, design: .rounded))
+                .font(.mv(size: 21, weight: .bold, design: .rounded))
                 .foregroundStyle(MinervaColor.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text(label)
-                .font(.system(size: 11))
+                .font(.mv(size: 11))
                 .foregroundStyle(MinervaColor.inkFaint)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -399,7 +399,7 @@ private struct TeamMetricsDashboardView: View {
     private func chartCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             content()
         }
@@ -434,7 +434,7 @@ private struct TeamAcademyListView: View {
                     Skeletons.card(height: 84)
                 } else if supabase.academyPages.isEmpty {
                     Text(isFrench ? "Impossible de charger l'Académie. Tirez pour réessayer." : "Couldn't load the Academy. Pull to retry.")
-                        .font(.system(size: 12.5))
+                        .font(.mv(size: 12.5))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
                 ForEach(supabase.academyPages) { page in
@@ -444,15 +444,15 @@ private struct TeamAcademyListView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text(page.title)
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.mv(size: 15, weight: .semibold))
                                     .foregroundStyle(MinervaColor.ink)
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.mv(size: 11, weight: .semibold))
                                     .foregroundStyle(MinervaColor.inkFaint)
                             }
                             Text(page.description)
-                                .font(.system(size: 12.5))
+                                .font(.mv(size: 12.5))
                                 .foregroundStyle(MinervaColor.inkSoft)
                                 .multilineTextAlignment(.leading)
                         }
@@ -480,7 +480,7 @@ private struct TeamAcademyPageView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Text(page.description)
-                    .font(.system(size: 13))
+                    .font(.mv(size: 13))
                     .foregroundStyle(MinervaColor.inkSoft)
                 ForEach(page.sections) { section in
                     VStack(alignment: .leading, spacing: 10) {
@@ -490,7 +490,7 @@ private struct TeamAcademyPageView: View {
                                 .foregroundStyle(MinervaColor.ink)
                             if section.teamOnly == true {
                                 Text(isFrench ? "ÉQUIPE SEULEMENT" : "TEAM ONLY")
-                                    .font(.system(size: 9, weight: .bold))
+                                    .font(.mv(size: 9, weight: .bold))
                                     .tracking(0.4)
                                     .foregroundStyle(MinervaColor.inkSoft)
                                     .padding(.horizontal, 7)
@@ -501,7 +501,7 @@ private struct TeamAcademyPageView: View {
                         }
                         if let intro = section.intro {
                             Text(intro)
-                                .font(.system(size: 13))
+                                .font(.mv(size: 13))
                                 .foregroundStyle(MinervaColor.inkSoft)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -509,7 +509,7 @@ private struct TeamAcademyPageView: View {
                             HStack(alignment: .top, spacing: 8) {
                                 if let tag = item.tag {
                                     Text(tag)
-                                        .font(.system(size: 10, weight: .bold))
+                                        .font(.mv(size: 10, weight: .bold))
                                         .foregroundStyle(academyTagColor(tag))
                                         .padding(.horizontal, 7)
                                         .padding(.vertical, 3)
@@ -518,7 +518,7 @@ private struct TeamAcademyPageView: View {
                                         .fixedSize()
                                 }
                                 Text(item.text)
-                                    .font(.system(size: 13))
+                                    .font(.mv(size: 13))
                                     .foregroundStyle(MinervaColor.ink)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -529,7 +529,7 @@ private struct TeamAcademyPageView: View {
                                 Image(systemName: isWarn ? "exclamationmark.triangle.fill" : "info.circle.fill")
                                     .foregroundStyle(isWarn ? Color.orange : Color.blue)
                                 Text(note.text)
-                                    .font(.system(size: 12))
+                                    .font(.mv(size: 12))
                                     .foregroundStyle(MinervaColor.ink)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -565,7 +565,7 @@ private struct TeamGoalsView: View {
                     Text(isFrench
                          ? "\(Int(goals.elapsedPct)) % du mois écoulé. Les chiffres réels se mettent à jour tout seuls ; seules les cibles se saisissent."
                          : "\(Int(goals.elapsedPct))% of the month elapsed. Actuals update on their own; only targets are entered.")
-                        .font(.system(size: 12.5))
+                        .font(.mv(size: 12.5))
                         .foregroundStyle(MinervaColor.inkSoft)
                     ForEach(goals.rows) { row in
                         TeamGoalCard(row: row, elapsedPct: goals.elapsedPct, isFrench: isFrench)
@@ -575,7 +575,7 @@ private struct TeamGoalsView: View {
                     Skeletons.card(height: 150)
                 } else {
                     Text(isFrench ? "Impossible de charger les objectifs. Tirez pour réessayer." : "Couldn't load goals. Pull to retry.")
-                        .font(.system(size: 12.5))
+                        .font(.mv(size: 12.5))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
             }
@@ -610,21 +610,21 @@ private struct TeamGoalCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(row.label.uppercased())
-                .font(.system(size: 10.5, weight: .semibold))
+                .font(.mv(size: 10.5, weight: .semibold))
                 .tracking(0.4)
                 .foregroundStyle(MinervaColor.inkFaint)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(format(row.actual))
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .font(.mv(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(MinervaColor.ink)
                 Text("/ \(format(row.target))")
-                    .font(.system(size: 13))
+                    .font(.mv(size: 13))
                     .foregroundStyle(MinervaColor.inkFaint)
                 Spacer()
                 if let progress {
                     let onPace = progress >= elapsedPct
                     Text(onPace ? (isFrench ? "dans le rythme" : "on pace") : (isFrench ? "en retard" : "behind"))
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.mv(size: 10, weight: .bold))
                         .foregroundStyle(onPace ? MinervaColor.emeraldDark : Color.orange)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
@@ -663,7 +663,7 @@ private struct TeamGoalCard: View {
                     }
                 } label: {
                     Text(saving ? "…" : (isFrench ? "Enregistrer" : "Save"))
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
@@ -673,7 +673,7 @@ private struct TeamGoalCard: View {
                 .disabled(saving || draft.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             if let status {
-                Text(status).font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
+                Text(status).font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
             }
         }
         .padding(16)

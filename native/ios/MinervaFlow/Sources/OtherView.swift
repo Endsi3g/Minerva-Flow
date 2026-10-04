@@ -21,7 +21,7 @@ struct OtherView: View {
                         .foregroundStyle(MinervaColor.ink)
                         .accessibilityAddTraits(.isHeader)
                     Text(isFrench ? "Vos favoris, vos commandes, votre statut ambassadeur et les nouveautés." : "Your favourites, orders, ambassador status and what's new.")
-                        .font(.system(size: 14))
+                        .font(.mv(size: 14))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }

@@ -125,7 +125,7 @@ struct FacebookMarkIcon: View {
 struct AppleMarkIcon: View {
     var body: some View {
         Image(systemName: "apple.logo")
-            .font(.system(size: 17, weight: .medium))
+            .font(.mv(size: 17, weight: .medium))
             .foregroundStyle(MinervaColor.ink)
     }
 }

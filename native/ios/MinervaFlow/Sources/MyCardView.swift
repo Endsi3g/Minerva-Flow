@@ -80,33 +80,33 @@ struct MyCardView: View {
                 RadialGauge(value: progress, centerValue: "\(Int(progress))%", centerLabel: "")
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Prochaine récompense")
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("\(cheapestReward.name) · \(cheapestReward.pointsCost) pts")
-                        .font(.system(size: 11))
+                        .font(.mv(size: 11))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 4) {
                         Image(systemName: "storefront.fill")
-                            .font(.system(size: 8.5))
+                            .font(.mv(size: 8.5))
                         Text(supabase.restaurantIdentityLabel)
                     }
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.mv(size: 10, weight: .medium))
                     .foregroundStyle(MinervaColor.emerald)
                 }
             } else {
                 Image(systemName: "gift")
-                    .font(.system(size: 22))
+                    .font(.mv(size: 22))
                     .foregroundStyle(MinervaColor.inkFaint)
                     .frame(width: 56, height: 56)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Aucune récompense pour l'instant")
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("Revenez plus tard, votre restaurant en ajoutera bientôt.")
-                        .font(.system(size: 11))
+                        .font(.mv(size: 11))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -116,7 +116,7 @@ struct MyCardView: View {
                 ZStack {
                     Circle().fill(MinervaColor.emerald)
                     Image(systemName: "arrow.right")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.mv(size: 12, weight: .bold))
                         .foregroundStyle(.white)
                 }
                 .frame(width: 30, height: 30)
@@ -143,7 +143,7 @@ struct MyCardView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(supabase.restaurantName ?? "Minerva Flow")
-                        .font(.system(size: 11.5, weight: .semibold))
+                        .font(.mv(size: 11.5, weight: .semibold))
                         .opacity(0.75)
                     Text(customer.name)
                         .font(MinervaFont.display(20))
@@ -153,7 +153,7 @@ struct MyCardView: View {
                 HStack(spacing: 5) {
                     Image(systemName: tier.systemImage)
                     Text(tier.label.uppercased())
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.mv(size: 11, weight: .bold))
                         .tracking(0.4)
                 }
                 .padding(.horizontal, 10)
@@ -164,7 +164,7 @@ struct MyCardView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("SOLDE DE POINTS")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.mv(size: 10, weight: .bold))
                     .tracking(0.6)
                     .opacity(0.7)
                 Text("\(customer.loyaltyPoints)")
@@ -181,12 +181,12 @@ struct MyCardView: View {
                     }
                     .frame(height: 7)
                     Text("\(currencyString(max(0, nextTarget - customer.totalSpent))) avant le palier suivant")
-                        .font(.system(size: 11.5))
+                        .font(.mv(size: 11.5))
                         .opacity(0.85)
                 }
             } else {
                 Text("Palier maximum atteint — merci pour votre fidélité !")
-                    .font(.system(size: 11.5))
+                    .font(.mv(size: 11.5))
                     .opacity(0.85)
             }
         }
@@ -209,15 +209,15 @@ struct MyCardView: View {
     private func statTile(icon: String, value: String, label: String) -> some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 15))
+                .font(.mv(size: 15))
                 .foregroundStyle(MinervaColor.emerald)
             Text(value)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(.mv(size: 15, weight: .bold, design: .rounded))
                 .foregroundStyle(MinervaColor.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(label)
-                .font(.system(size: 10.5))
+                .font(.mv(size: 10.5))
                 .foregroundStyle(MinervaColor.inkFaint)
         }
         .frame(maxWidth: .infinity)
@@ -229,7 +229,7 @@ struct MyCardView: View {
     private var offersSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Vos offres")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ForEach(supabase.offers) { offer in
@@ -238,21 +238,21 @@ struct MyCardView: View {
                 } label: {
                     HStack(alignment: .top, spacing: 10) {
                         Image(systemName: "tag.fill")
-                            .font(.system(size: 12))
+                            .font(.mv(size: 12))
                             .padding(.top, 2)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(offer.title)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.mv(size: 13, weight: .semibold))
                                 .fixedSize(horizontal: false, vertical: true)
                             if let description = offer.description {
                                 Text(description)
-                                    .font(.system(size: 11.5))
+                                    .font(.mv(size: 11.5))
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                         Spacer(minLength: 8)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.mv(size: 11, weight: .semibold))
                             .opacity(0.6)
                     }
                     .foregroundStyle(MinervaColor.emeraldDark)
@@ -276,7 +276,7 @@ struct MyCardView: View {
             Image(systemName: "sparkles")
             Text("Membre fidèle chez \(mostVisitedName)")
         }
-        .font(.system(size: 11.5))
+        .font(.mv(size: 11.5))
         .foregroundStyle(MinervaColor.inkFaint)
         .padding(.top, 4)
         .padding(.bottom, 12)
@@ -287,18 +287,18 @@ struct MyCardView: View {
     private func tierBenefitsSection(for tier: LoyaltyTier) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Avantages \(tier.label.lowercased())")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             VStack(spacing: 0) {
                 ForEach(Array(benefits(for: tier).enumerated()), id: \.offset) { index, benefit in
                     HStack(alignment: .top, spacing: 10) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 13))
+                            .font(.mv(size: 13))
                             .foregroundStyle(MinervaColor.emeraldDark)
                             .padding(.top, 1)
                         Text(benefit)
-                            .font(.system(size: 12.5))
+                            .font(.mv(size: 12.5))
                             .foregroundStyle(MinervaColor.ink)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -351,7 +351,7 @@ struct MyCardView: View {
     private func checkoutCodeSection(for customer: Customer) -> some View {
         VStack(spacing: 10) {
             Text("Mon code fidélité")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -368,7 +368,7 @@ struct MyCardView: View {
             }
 
             Text("Montrez ce code au personnel à la caisse.")
-                .font(.system(size: 11))
+                .font(.mv(size: 11))
                 .foregroundStyle(MinervaColor.inkFaint)
         }
         .frame(maxWidth: .infinity)
@@ -380,7 +380,7 @@ struct MyCardView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Historique récent")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.mv(size: 13, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 Spacer()
                 if supabase.combinedHistory.count > 5 {
@@ -388,7 +388,7 @@ struct MyCardView: View {
                         router.pendingTab = .profile
                         dismiss()
                     }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.mv(size: 12, weight: .semibold))
                     .foregroundStyle(MinervaColor.emeraldDark)
                 }
             }
@@ -398,7 +398,7 @@ struct MyCardView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 1) {
                             Text(entry.title)
-                                .font(.system(size: 12.5, weight: .medium))
+                                .font(.mv(size: 12.5, weight: .medium))
                                 .foregroundStyle(MinervaColor.ink)
                                 .fixedSize(horizontal: false, vertical: true)
                             HStack(spacing: 4) {
@@ -407,12 +407,12 @@ struct MyCardView: View {
                                     Text("· \(restaurantName)")
                                 }
                             }
-                            .font(.system(size: 10.5))
+                            .font(.mv(size: 10.5))
                             .foregroundStyle(MinervaColor.inkFaint)
                         }
                         Spacer(minLength: 8)
                         Text("\(entry.pointsDelta >= 0 ? "+" : "")\(entry.pointsDelta) pts")
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(.mv(size: 12.5, weight: .semibold))
                             .foregroundStyle(entry.pointsDelta >= 0 ? MinervaColor.emeraldDark : .red)
                     }
                     .padding(12)

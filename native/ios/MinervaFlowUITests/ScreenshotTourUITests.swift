@@ -13,6 +13,10 @@ final class ScreenshotTourUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = true
         app = XCUIApplication()
+        // MV_LANG=en (via TEST_RUNNER_MV_LANG) reviews the English interface.
+        if let language = ProcessInfo.processInfo.environment["MV_LANG"] {
+            app.launchArguments += ["-appLanguage", language]
+        }
         try FileManager.default.createDirectory(atPath: shotDir, withIntermediateDirectories: true)
     }
 
@@ -48,8 +52,10 @@ final class ScreenshotTourUITests: XCTestCase {
         }
     }
 
+    /// Tabs are addressed by position so the tour works in French and English.
     private func openTab(_ title: String) {
-        let button = app.tabBars.buttons[title]
+        let positions = ["Accueil": 0, "Commander": 1, "Scanner": 2, "Offres": 3, "Compte": 4]
+        let button = app.tabBars.buttons.element(boundBy: positions[title] ?? 0)
         if button.waitForExistence(timeout: 8) { button.tap() }
     }
 

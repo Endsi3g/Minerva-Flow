@@ -46,7 +46,7 @@ struct OnboardingWelcomeView: View {
                     page -= 1
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.mv(size: 15, weight: .semibold))
                         .frame(width: 36, height: 36)
                         .background(topBarButtonBackground)
                         .clipShape(Circle())
@@ -74,7 +74,7 @@ struct OnboardingWelcomeView: View {
 
             Button(action: onFinish) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.mv(size: 14, weight: .semibold))
                     .frame(width: 36, height: 36)
                     .background(topBarButtonBackground)
                     .clipShape(Circle())
@@ -101,23 +101,23 @@ struct OnboardingWelcomeView: View {
                     .overlay(RoundedRectangle(cornerRadius: 22).stroke(.white.opacity(0.28), lineWidth: 2))
                 VStack(spacing: 8) {
                     Image(systemName: "cup.and.saucer.fill")
-                        .font(.system(size: 58, weight: .medium))
+                        .font(.mv(size: 58, weight: .medium))
                         .foregroundStyle(.white)
                     Image("LogoMark")
                         .resizable()
                         .frame(width: 32, height: 32)
                 }
                 Image(systemName: "sparkle")
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.mv(size: 24, weight: .bold))
                     .foregroundStyle(MinervaColor.limeAccent)
                     .offset(x: -92, y: -58)
                 Image(systemName: "sparkle")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.mv(size: 15, weight: .bold))
                     .foregroundStyle(MinervaColor.limeAccent)
                     .offset(x: 92, y: 60)
             }
             Text("MINERVA FLOW\nRÉCOMPENSES")
-                .font(.system(size: 14, weight: .bold))
+                .font(.mv(size: 14, weight: .bold))
                 .tracking(2)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white)
@@ -145,7 +145,7 @@ struct OnboardingWelcomeView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             Text("Découvrez vos avantages et ce qui vous attend au prochain palier.")
-                .font(.system(size: 13.5))
+                .font(.mv(size: 13.5))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -159,9 +159,9 @@ struct OnboardingWelcomeView: View {
             .padding(.vertical, 12)
 
             HStack(spacing: 22) {
-                Text("Habitué").font(.system(size: 12, weight: .semibold))
-                Text("Privilégié").font(.system(size: 12, weight: .semibold))
-                Text("Ambassadeur").font(.system(size: 12, weight: .semibold))
+                Text("Habitué").font(.mv(size: 12, weight: .semibold))
+                Text("Privilégié").font(.mv(size: 12, weight: .semibold))
+                Text("Ambassadeur").font(.mv(size: 12, weight: .semibold))
             }
             .foregroundStyle(MinervaColor.inkSoft)
 
@@ -177,7 +177,7 @@ struct OnboardingWelcomeView: View {
                 .fill(tier.bannerColor)
                 .frame(width: isActive ? 96 : 76, height: isActive ? 96 : 76)
             Image(systemName: tier.systemImage)
-                .font(.system(size: isActive ? 30 : 22))
+                .font(.mv(size: isActive ? 30 : 22))
                 .foregroundStyle(tier.bannerForeground)
         }
         .zIndex(isActive ? 1 : 0)
@@ -205,7 +205,7 @@ struct OnboardingWelcomeView: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("Débloquez encore plus d'avantages en continuant à visiter vos restaurants favoris.")
-                    .font(.system(size: 13.5))
+                    .font(.mv(size: 13.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -219,14 +219,14 @@ struct OnboardingWelcomeView: View {
                         .frame(width: 170, height: 170)
                         .rotationEffect(.degrees(-90))
                     Image(systemName: nextTier.systemImage)
-                        .font(.system(size: 40))
+                        .font(.mv(size: 40))
                         .foregroundStyle(nextTier.bannerColor)
                 }
                 .padding(.vertical, 8)
 
                 HStack(spacing: 40) {
-                    Text(tier.label).font(.system(size: 12.5, weight: .semibold))
-                    Text(nextTier.label).font(.system(size: 12.5, weight: .semibold))
+                    Text(tier.label).font(.mv(size: 12.5, weight: .semibold))
+                    Text(nextTier.label).font(.mv(size: 12.5, weight: .semibold))
                 }
                 .foregroundStyle(MinervaColor.inkSoft)
             } else {
@@ -236,7 +236,7 @@ struct OnboardingWelcomeView: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("Le plus haut palier de fidélité, merci pour votre confiance.")
-                    .font(.system(size: 13.5))
+                    .font(.mv(size: 13.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -245,7 +245,7 @@ struct OnboardingWelcomeView: View {
                     page = 1
                 } label: {
                     Image(systemName: "crown.fill")
-                        .font(.system(size: 50))
+                        .font(.mv(size: 50))
                         .foregroundStyle(MinervaColor.limeAccent)
                         .padding(.vertical, 20)
                         .frame(width: 110, height: 100)
@@ -271,7 +271,7 @@ struct OnboardingWelcomeView: View {
             ZStack {
                 Circle().fill(MinervaColor.emerald.opacity(0.12)).frame(width: 110, height: 110)
                 Image(systemName: "location.fill")
-                    .font(.system(size: 42))
+                    .font(.mv(size: 42))
                     .foregroundStyle(MinervaColor.emerald)
             }
             Text("Trouvez les restaurants\nautour de vous")
@@ -280,7 +280,7 @@ struct OnboardingWelcomeView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             Text("Votre position sert uniquement à trouver et trier les restaurants et cafés participants les plus proches de vous sur la carte de découverte. Elle n'est jamais partagée ni utilisée à d'autres fins.")
-                .font(.system(size: 13.5))
+                .font(.mv(size: 13.5))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -294,7 +294,7 @@ struct OnboardingWelcomeView: View {
                     page = 4
                 }
                 Button("Plus tard") { page = 4 }
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .font(.mv(size: 13.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkSoft)
             }
         }
@@ -317,7 +317,7 @@ struct OnboardingWelcomeView: View {
             ZStack {
                 Circle().fill(MinervaColor.emerald.opacity(0.12)).frame(width: 110, height: 110)
                 Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 42))
+                    .font(.mv(size: 42))
                     .foregroundStyle(MinervaColor.emerald)
             }
             Text("Ne manquez\naucune offre")
@@ -326,7 +326,7 @@ struct OnboardingWelcomeView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             Text("Recevez une notification dès qu'une nouvelle offre est publiée par votre restaurant, et un rappel discret pour vos récompenses prêtes à échanger. Vous pouvez changer d'avis à tout moment dans Réglages.")
-                .font(.system(size: 13.5))
+                .font(.mv(size: 13.5))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -340,7 +340,7 @@ struct OnboardingWelcomeView: View {
                     onFinish()
                 }
                 Button("Plus tard", action: onFinish)
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .font(.mv(size: 13.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkSoft)
             }
         }
@@ -362,7 +362,7 @@ struct OnboardingWelcomeView: View {
     private func pageButton(title: String, style: ButtonStyle, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.mv(size: 15, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
         }

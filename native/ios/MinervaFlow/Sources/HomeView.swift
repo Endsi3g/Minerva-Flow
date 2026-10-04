@@ -145,17 +145,17 @@ struct HomeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             } else {
                 Image(systemName: "fork.knife")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.mv(size: 15, weight: .semibold))
                     .foregroundStyle(MinervaColor.emeraldDark)
                     .frame(width: 38, height: 38)
                     .background(MinervaColor.emerald.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(branding.brandName)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.mv(size: 14, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 Text(isFrench ? "Votre espace restaurant" : "Your restaurant space")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.mv(size: 11, weight: .medium))
                     .foregroundStyle(MinervaColor.inkSoft)
             }
             Spacer()
@@ -189,22 +189,22 @@ struct HomeView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: "birthday.cake.fill")
-                    .font(.system(size: 19))
+                    .font(.mv(size: 19))
                     .foregroundStyle(MinervaColor.emeraldDark)
                     .frame(width: 42, height: 42)
                     .background(MinervaColor.emerald.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
                 VStack(alignment: .leading, spacing: 3) {
                     Text(isFrench ? "Votre offre d’anniversaire" : "Your birthday offer")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.mv(size: 12, weight: .semibold))
                         .foregroundStyle(MinervaColor.inkSoft)
                     Text(offer.title)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.mv(size: 15, weight: .bold))
                         .foregroundStyle(MinervaColor.ink)
                         .lineLimit(2)
                 }
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.mv(size: 12, weight: .bold))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
             .padding(13)
@@ -268,7 +268,7 @@ struct HomeView: View {
                     }
                     .accessibilityLabel("Découvrir des restaurants à proximité")
                 }
-                .font(.system(size: 17))
+                .font(.mv(size: 17))
                 .foregroundStyle(MinervaColor.inkSoft)
             }
 
@@ -279,7 +279,7 @@ struct HomeView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Solde de points")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.mv(size: 11, weight: .medium))
                             Text("\(customer.loyaltyPoints) pts")
                                 .font(MinervaFont.display(26))
                                 .fixedSize(horizontal: false, vertical: true)
@@ -287,11 +287,11 @@ struct HomeView: View {
                         Spacer()
                         HStack(spacing: 4) {
                             Text(tier.label.uppercased())
-                                .font(.system(size: 11.5, weight: .bold))
+                                .font(.mv(size: 11.5, weight: .bold))
                                 .tracking(0.4)
                                 .fixedSize(horizontal: false, vertical: true)
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.mv(size: 11, weight: .bold))
                         }
                     }
 
@@ -307,7 +307,7 @@ struct HomeView: View {
                             .frame(height: 6)
 
                             Text("\(currencyString(progress.remaining)) avant le palier suivant")
-                                .font(.system(size: 11))
+                                .font(.mv(size: 11))
                                 .opacity(0.85)
                         }
                         .padding(.top, 18)
@@ -317,7 +317,7 @@ struct HomeView: View {
                         Text("\(customer.visitCount) visites")
                         Text(currencyString(customer.totalSpent))
                     }
-                    .font(.system(size: 11.5))
+                    .font(.mv(size: 11.5))
                     .opacity(0.9)
                     .padding(.top, 14)
                 }
@@ -382,33 +382,33 @@ struct HomeView: View {
                 RadialGauge(value: progress, centerValue: "\(Int(progress))%", centerLabel: "")
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Prochaine récompense")
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("\(cheapestReward.name) · \(cheapestReward.pointsCost) pts")
-                        .font(.system(size: 11))
+                        .font(.mv(size: 11))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 4) {
                         Image(systemName: "storefront.fill")
-                            .font(.system(size: 8.5))
+                            .font(.mv(size: 8.5))
                         Text(supabase.restaurantIdentityLabel)
                     }
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.mv(size: 10, weight: .medium))
                     .foregroundStyle(MinervaColor.emerald)
                 }
             } else {
                 Image(systemName: "gift")
-                    .font(.system(size: 22))
+                    .font(.mv(size: 22))
                     .foregroundStyle(MinervaColor.inkFaint)
                     .frame(width: 56, height: 56)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Aucune récompense pour l'instant")
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("Revenez plus tard, votre restaurant en ajoutera bientôt.")
-                        .font(.system(size: 11))
+                        .font(.mv(size: 11))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -418,7 +418,7 @@ struct HomeView: View {
                 ZStack {
                     Circle().fill(MinervaColor.emerald)
                     Image(systemName: "arrow.right")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.mv(size: 12, weight: .bold))
                         .foregroundStyle(.white)
                 }
                 .frame(width: 30, height: 30)
@@ -454,7 +454,7 @@ struct HomeView: View {
     private var offersFeed: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("En ce moment")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ForEach(topOffers) { offer in
@@ -464,20 +464,20 @@ struct HomeView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(alignment: .top, spacing: 6) {
                             Image(systemName: "tag.fill")
-                                .font(.system(size: 12))
+                                .font(.mv(size: 12))
                                 .padding(.top, 2)
                             Text(offer.title)
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.mv(size: 14, weight: .semibold))
                                 .fixedSize(horizontal: false, vertical: true)
                             Spacer(minLength: 6)
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.mv(size: 11, weight: .semibold))
                         }
                         .foregroundStyle(MinervaColor.emeraldDark)
 
                         if let description = offer.description {
                             Text(description)
-                                .font(.system(size: 12))
+                                .font(.mv(size: 12))
                                 .foregroundStyle(MinervaColor.emerald)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -496,7 +496,7 @@ struct HomeView: View {
                     router.pendingTab = .rewards
                 } label: {
                     Text("Voir plus")
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .frame(maxWidth: .infinity)
                 }
                 .padding(.vertical, 8)
@@ -511,12 +511,12 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Historique récent")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.mv(size: 13, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 Spacer()
                 if supabase.transactions.count > 5 {
                     Button("Voir tout") { router.pendingTab = .profile }
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.mv(size: 12, weight: .semibold))
                         .foregroundStyle(MinervaColor.emeraldDark)
                 }
             }
@@ -526,16 +526,16 @@ struct HomeView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 1) {
                             Text(label(for: tx.type))
-                                .font(.system(size: 12.5))
+                                .font(.mv(size: 12.5))
                                 .foregroundStyle(MinervaColor.ink)
                                 .fixedSize(horizontal: false, vertical: true)
                             Text(tx.createdAt.formatted(date: .abbreviated, time: .omitted))
-                                .font(.system(size: 10))
+                                .font(.mv(size: 10))
                                 .foregroundStyle(MinervaColor.inkFaint)
                         }
                         Spacer()
                         Text("\(tx.pointsDelta >= 0 ? "+" : "")\(tx.pointsDelta) pts")
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(.mv(size: 12.5, weight: .semibold))
                             .foregroundStyle(tx.pointsDelta >= 0 ? MinervaColor.emeraldDark : .red)
                             .fixedSize(horizontal: false, vertical: true)
                     }

@@ -14,7 +14,7 @@ struct CompteRowLabel: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.mv(size: 15, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: 34, height: 34)
                 .background(tint.opacity(0.12))
@@ -22,25 +22,24 @@ struct CompteRowLabel: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.mv(size: 14, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 12))
+                        .font(.mv(size: 12))
                         .foregroundStyle(MinervaColor.inkSoft)
-                        .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
             Spacer(minLength: 8)
             if let trailing {
                 Text(trailing)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.mv(size: 13, weight: .semibold, design: .rounded))
                     .foregroundStyle(MinervaColor.inkSoft)
             }
             if showsChevron {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.mv(size: 11, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkFaint)
                     .accessibilityHidden(true)
             }
@@ -61,7 +60,7 @@ struct CompteGroup<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             if let title {
                 Text(title)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.mv(size: 12, weight: .semibold))
                     .tracking(0.6)
                     .foregroundStyle(MinervaColor.inkFaint)
                     .padding(.horizontal, 4)

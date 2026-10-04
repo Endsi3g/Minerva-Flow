@@ -64,12 +64,12 @@ struct PointsHistoryView: View {
     private func statTile(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(value)
-                .font(.system(size: 19, weight: .bold, design: .rounded))
+                .font(.mv(size: 19, weight: .bold, design: .rounded))
                 .foregroundStyle(MinervaColor.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(label)
-                .font(.system(size: 11))
+                .font(.mv(size: 11))
                 .foregroundStyle(MinervaColor.inkFaint)
         }
         .padding(14)
@@ -81,16 +81,16 @@ struct PointsHistoryView: View {
     private var membershipsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Mes cartes et mes points")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             if supabase.allMemberships.isEmpty {
                 Text("Votre solde apparaîtra ici dès votre première adhésion.")
-                    .font(.system(size: 12.5)).foregroundStyle(MinervaColor.inkSoft)
+                    .font(.mv(size: 12.5)).foregroundStyle(MinervaColor.inkSoft)
                 Button {
                     showDiscovery = true
                 } label: {
                     Label("Découvrir les restaurants près de vous", systemImage: "map.fill")
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .foregroundStyle(MinervaColor.emeraldDark)
                 }
                 .buttonStyle(.plain)
@@ -101,13 +101,13 @@ struct PointsHistoryView: View {
                             .foregroundStyle(MinervaColor.emeraldDark)
                             .frame(width: 22)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(membership.restaurantName).font(.system(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                            Text(membership.restaurantName).font(.mv(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
                             Text("\(membership.visitCount) visite\(membership.visitCount == 1 ? "" : "s") · \(currencyString(membership.totalSpent)) dépensés")
-                                .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
+                                .font(.mv(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
                         }
                         Spacer()
                         Text("\(membership.loyaltyPoints) pts")
-                            .font(.system(size: 13, weight: .bold)).foregroundStyle(MinervaColor.emeraldDark)
+                            .font(.mv(size: 13, weight: .bold)).foregroundStyle(MinervaColor.emeraldDark)
                     }
                     .padding(12)
                     .background(MinervaColor.creamSoft)
@@ -128,7 +128,7 @@ struct PointsHistoryView: View {
     private var historySection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Points et récompenses")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             Picker("Filtrer", selection: $historyFilter) {
@@ -141,12 +141,12 @@ struct PointsHistoryView: View {
 
             if supabase.combinedHistory.isEmpty {
                 Text("Aucun mouvement de points pour l'instant.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .padding(.vertical, 4)
             } else if filteredHistory.isEmpty {
                 Text("Aucun résultat pour ce filtre.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .padding(.vertical, 4)
             } else {
@@ -155,7 +155,7 @@ struct PointsHistoryView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(entry.title)
-                                    .font(.system(size: 12.5, weight: .medium))
+                                    .font(.mv(size: 12.5, weight: .medium))
                                     .foregroundStyle(MinervaColor.ink)
                                     .fixedSize(horizontal: false, vertical: true)
                                 HStack(spacing: 4) {
@@ -164,12 +164,12 @@ struct PointsHistoryView: View {
                                         Text("· \(restaurantName)")
                                     }
                                 }
-                                .font(.system(size: 10.5))
+                                .font(.mv(size: 10.5))
                                 .foregroundStyle(MinervaColor.inkFaint)
                             }
                             Spacer(minLength: 8)
                             Text("\(entry.pointsDelta >= 0 ? "+" : "")\(entry.pointsDelta) pts")
-                                .font(.system(size: 12.5, weight: .semibold))
+                                .font(.mv(size: 12.5, weight: .semibold))
                                 .foregroundStyle(entry.pointsDelta >= 0 ? MinervaColor.emeraldDark : .red)
                         }
                         .padding(12)
@@ -183,7 +183,7 @@ struct PointsHistoryView: View {
                         showAllHistory.toggle()
                     } label: {
                         Text(showAllHistory ? "Voir moins" : "Voir plus (\(filteredHistory.count - Self.historyPageSize))")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.mv(size: 12, weight: .semibold))
                             .frame(maxWidth: .infinity)
                     }
                     .padding(.vertical, 8)

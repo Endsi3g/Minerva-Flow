@@ -25,7 +25,7 @@ struct AmbassadorHubView: View {
                         .foregroundStyle(MinervaColor.ink)
                         .accessibilityAddTraits(.isHeader)
                     Text(isFrench ? "Votre statut de fidélité et le programme pour recommander Minerva Flow." : "Your loyalty status and the programme for recommending Minerva Flow.")
-                        .font(.system(size: 14))
+                        .font(.mv(size: 14))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -53,14 +53,14 @@ struct AmbassadorHubView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {
                     Image(systemName: tier.systemImage)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.mv(size: 16, weight: .semibold))
                         .foregroundStyle(tier.bannerForeground)
                         .frame(width: 38, height: 38)
                         .background(tier.bannerColor)
                         .clipShape(Circle())
                     VStack(alignment: .leading, spacing: 2) {
                         Text(isFrench ? "Votre statut" : "Your status")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.mv(size: 12, weight: .medium))
                             .foregroundStyle(MinervaColor.inkFaint)
                         Text(tier.label)
                             .font(MinervaFont.display(21, weight: .semibold))
@@ -83,12 +83,12 @@ struct AmbassadorHubView: View {
                         Text(isFrench
                              ? "Encore \(currency(remaining)) pour devenir \(next.label)."
                              : "\(currency(remaining)) more to reach \(next.label).")
-                            .font(.system(size: 12.5))
+                            .font(.mv(size: 12.5))
                             .foregroundStyle(MinervaColor.inkSoft)
                     }
                 } else {
                     Text(isFrench ? "Vous avez atteint le plus haut statut de ce restaurant." : "You have reached this restaurant's top status.")
-                        .font(.system(size: 12.5))
+                        .font(.mv(size: 12.5))
                         .foregroundStyle(MinervaColor.inkSoft)
                 }
             }
@@ -110,12 +110,12 @@ struct AmbassadorHubView: View {
     private func stat(value: String, label: String) -> some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.mv(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(MinervaColor.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(label)
-                .font(.system(size: 11.5))
+                .font(.mv(size: 11.5))
                 .foregroundStyle(MinervaColor.inkFaint)
         }
         .frame(maxWidth: .infinity)
@@ -130,7 +130,7 @@ struct AmbassadorHubView: View {
     private var howItWorks: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(isFrench ? "COMMENT ÇA MARCHE" : "HOW IT WORKS")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.mv(size: 12, weight: .semibold))
                 .tracking(0.6)
                 .foregroundStyle(MinervaColor.inkFaint)
             step(1, isFrench ? "Partagez votre lien" : "Share your link",
@@ -150,16 +150,16 @@ struct AmbassadorHubView: View {
     private func step(_ number: Int, _ title: String, _ detail: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text("\(number)")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .font(.mv(size: 13, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(width: 26, height: 26)
                 .background(MinervaColor.emerald)
                 .clipShape(Circle())
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                Text(title).font(.mv(size: 14, weight: .semibold)).foregroundStyle(MinervaColor.ink)
                 Text(detail)
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -170,17 +170,17 @@ struct AmbassadorHubView: View {
     private var programmeCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(isFrench ? "Votre espace ambassadeur" : "Your ambassador workspace")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.mv(size: 15, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             Text(isFrench
                  ? "Retrouvez vos liens de suivi, vos commissions et vos contenus. Les versements se gèrent sur le web."
                  : "Find your tracking links, commissions and content. Payouts are managed on the web.")
-                .font(.system(size: 12.5))
+                .font(.mv(size: 12.5))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
             Button { showWorkspace = true } label: {
                 Text(isFrench ? "Ouvrir mon espace" : "Open my workspace")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.mv(size: 14, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
             }
