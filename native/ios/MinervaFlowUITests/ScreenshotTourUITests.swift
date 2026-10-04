@@ -121,12 +121,24 @@ final class ScreenshotTourUITests: XCTestCase {
         app.launch()
 
         // Start from a signed-out app: sign out if a previous session is still there.
-        if app.tabBars.firstMatch.waitForExistence(timeout: 12) { ensureSignedOut(app) }
-        for _ in 0..<6 {
-            if app.buttons["Commencer"].exists { app.buttons["Commencer"].tap() }
+        if app.tabBars.firstMatch.waitForExistence(timeout: 12) {
+            // Team layout (ambassador/staff): sign out from the account menu.
+            let more = app.buttons["Plus"]
+            if more.exists && !app.tabBars.buttons["Scanner"].exists {
+                more.tap()
+                let out = app.buttons["Se déconnecter"]
+                if out.waitForExistence(timeout: 3) { out.tap() }
+                Thread.sleep(forTimeInterval: 2)
+            } else {
+                ensureSignedOut(app)
+            }
+        }
+        for _ in 0..<14 {
+            if app.textFields.firstMatch.exists { break }
             if app.buttons["Fermer l'introduction"].exists { app.buttons["Fermer l'introduction"].tap() }
-            if app.secureTextFields.firstMatch.exists || app.buttons["Mot de passe"].exists { break }
-            Thread.sleep(forTimeInterval: 1.5)
+            else if app.buttons["Se connecter"].exists { app.buttons["Se connecter"].tap() }
+            else { _ = app.textFields.firstMatch.waitForExistence(timeout: 2) }
+            Thread.sleep(forTimeInterval: 1)
         }
         let passwordMode = app.buttons["Mot de passe"]
         if passwordMode.waitForExistence(timeout: 5) { passwordMode.tap() }
