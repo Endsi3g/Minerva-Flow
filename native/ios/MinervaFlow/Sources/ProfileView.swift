@@ -747,6 +747,8 @@ struct FlowAmbassadorMobileView: View {
 /// friction) since this is the one action in the app that cannot be undone.
 struct DeleteAccountSheet: View {
     @EnvironmentObject var supabase: SupabaseManager
+    /// Owner and manager accounts use their own server route, which protects sole owners.
+    var isOwner = false
     @Environment(\.dismiss) private var dismiss
     @State private var confirmText = ""
     @State private var isDeleting = false
@@ -761,7 +763,9 @@ struct DeleteAccountSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Votre accès sera immédiatement révoqué et vos informations personnelles (nom, courriel, date de naissance, ville) seront effacées de tous les restaurants où vous êtes membre. Vos points, visites et récompenses restent dans les registres du restaurant, mais ne pourront plus être réclamés.")
+                    Text(isOwner
+                         ? "Votre accès sera immédiatement révoqué et vos informations personnelles (nom, courriel) seront effacées. Si vous êtes le seul propriétaire d'un établissement, transférez-le d'abord à un autre collaborateur : la suppression sera refusée tant que ce n'est pas fait."
+                         : "Votre accès sera immédiatement révoqué et vos informations personnelles (nom, courriel, date de naissance, ville) seront effacées de tous les restaurants où vous êtes membre. Vos points, visites et récompenses restent dans les registres du restaurant, mais ne pourront plus être réclamés.")
                         .font(.mv(size: 13))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
@@ -793,12 +797,18 @@ struct DeleteAccountSheet: View {
                         Task {
                             isDeleting = true
                             errorMessage = nil
-                            let ok = await supabase.deleteAccount()
-                            isDeleting = false
-                            if ok {
-                                dismiss()
+                            if isOwner {
+                                let failure = await supabase.deleteOwnerAccount()
+                                isDeleting = false
+                                if let failure { errorMessage = failure } else { dismiss() }
                             } else {
-                                errorMessage = "La suppression a échoué. Réessayez ou contactez le restaurant."
+                                let ok = await supabase.deleteAccount()
+                                isDeleting = false
+                                if ok {
+                                    dismiss()
+                                } else {
+                                    errorMessage = "La suppression a échoué. Réessayez ou contactez le restaurant."
+                                }
                             }
                         }
                     } label: {

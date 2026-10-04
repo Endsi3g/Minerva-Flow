@@ -17,11 +17,33 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Vous devez être connecté." };
+  return deleteAccountForUser(user.id, user.email ?? null);
+}
 
-  const { data: ownedMemberships } = await supabase
+/** Restaurants for which this user is an active owner and nobody else is. */
+export function soleOwnedRestaurantIds(
+  ownedRestaurantIds: string[],
+  otherOwnerRestaurantIds: string[]
+): string[] {
+  const covered = new Set(otherOwnerRestaurantIds);
+  return ownedRestaurantIds.filter((id) => !covered.has(id));
+}
+
+/**
+ * Same erasure for a caller already identified by id: the cookie-based web
+ * action above and the Bearer-token route the native owner app uses both end
+ * here, so the sole-owner protection can never differ between the two.
+ */
+export async function deleteAccountForUser(
+  userId: string,
+  knownEmail: string | null
+): Promise<DeleteAccountResult> {
+  const admin = createAdminClient();
+
+  const { data: ownedMemberships } = await admin
     .from("restaurant_members")
     .select("restaurant_id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("role", "owner")
     .eq("status", "active");
 
@@ -30,19 +52,18 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
   );
 
   if (ownedRestaurantIds.length > 0) {
-    const admin = createAdminClient();
     const { data: otherOwners } = await admin
       .from("restaurant_members")
       .select("restaurant_id")
       .in("restaurant_id", ownedRestaurantIds)
       .eq("role", "owner")
       .eq("status", "active")
-      .neq("user_id", user.id);
+      .neq("user_id", userId);
 
-    const restaurantsWithOtherOwner = new Set(
+    const soleOwnerOf = soleOwnedRestaurantIds(
+      ownedRestaurantIds,
       ((otherOwners as { restaurant_id: string }[]) ?? []).map((m) => m.restaurant_id)
     );
-    const soleOwnerOf = ownedRestaurantIds.filter((id) => !restaurantsWithOtherOwner.has(id));
 
     if (soleOwnerOf.length > 0) {
       return {
@@ -53,13 +74,17 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
     }
   }
 
-  const admin = createAdminClient();
+  let email = knownEmail;
+  if (!email) {
+    const { data } = await admin.auth.admin.getUserById(userId);
+    email = data?.user?.email ?? null;
+  }
   await admin.from("account_deletion_log").insert({
-    user_email: user.email ?? "—",
+    user_email: email ?? "—",
     reason: "self_serve",
   });
 
-  const { error } = await admin.auth.admin.deleteUser(user.id);
+  const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) return { ok: false, error: "La suppression a échoué. Réessayez ou contactez le support." };
 
   return { ok: true };

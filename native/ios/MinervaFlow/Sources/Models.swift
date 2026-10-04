@@ -17,7 +17,7 @@ struct NativeOwnerRestaurant: Codable, Identifiable {
     let id: String
     let name: String
     let city: String?
-    let workspaceId: String
+    let workspaceId: String?
 
     enum CodingKeys: String, CodingKey {
         case id, name, city, workspaceId = "workspace_id"

@@ -852,6 +852,7 @@ struct OwnerSettingsView: View {
     @AppStorage("appAppearance") private var storedAppearance = AppAppearance.light.rawValue
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     @State private var showSignOutConfirm = false
+    @State private var showDeleteAccount = false
     private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
     var body: some View {
         Form {
@@ -873,11 +874,13 @@ struct OwnerSettingsView: View {
             Section(isFrench ? "Compte" : "Account") {
                 Button(isFrench ? "Se déconnecter" : "Sign out", role: .destructive) { showSignOutConfirm = true }
                     .frame(minHeight: 44, alignment: .leading)
-                // Owner accounts own restaurants and team data, so deletion runs through the web
-                // profile page, which applies the owner-specific checks.
-                Link(isFrench ? "Supprimer mon compte (sur le web)" : "Delete my account (on the web)",
+                // Deletion in the app and on the web share one server rule: a sole owner of a
+                // restaurant must transfer it first.
+                Button(isFrench ? "Supprimer mon compte" : "Delete my account", role: .destructive) { showDeleteAccount = true }
+                    .frame(minHeight: 44, alignment: .leading)
+                Link(isFrench ? "Supprimer mon compte sur le web" : "Delete my account on the web",
                      destination: Config.publicLinkBaseURL.appending(path: "/profil"))
-                    .foregroundStyle(.red)
+                    .font(.footnote)
                     .frame(minHeight: 44, alignment: .leading)
             }
         }
@@ -885,6 +888,7 @@ struct OwnerSettingsView: View {
             Button(isFrench ? "Se déconnecter" : "Sign out", role: .destructive) { Task { await supabase.signOut() } }
             Button(isFrench ? "Annuler" : "Cancel", role: .cancel) {}
         }
+        .sheet(isPresented: $showDeleteAccount) { DeleteAccountSheet(isOwner: true).environmentObject(supabase) }
         .navigationTitle(isFrench ? "Paramètres" : "Settings")
     }
 }

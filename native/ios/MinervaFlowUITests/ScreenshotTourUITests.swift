@@ -261,9 +261,16 @@ final class ScreenshotTourUITests: XCTestCase {
         let loyalty = bar.buttons["Fidélité"]
         if !loyalty.waitForExistence(timeout: 5) { shot("owner-staff-note-layout") }
         try XCTSkipUnless(loyalty.exists, "not the owner layout")
-        loyalty.tap()
+        for _ in 0..<3 {
+            loyalty.tap()
+            Thread.sleep(forTimeInterval: 2)
+            if loyalty.isSelected { break }
+        }
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'points ·'")).firstMatch
-        if !row.waitForExistence(timeout: 6) { app.swipeUp(); _ = row.waitForExistence(timeout: 4) }
+        if !row.waitForExistence(timeout: 8) {
+            for _ in 0..<6 where !row.exists { app.swipeUp(); Thread.sleep(forTimeInterval: 0.8) }
+        }
+        if !row.exists { shot("owner-loyalty-tab") }
         try XCTSkipUnless(row.exists, "this restaurant has no customers")
         row.tap()
         XCTAssertTrue(app.staticTexts["Notes de l'équipe"].waitForExistence(timeout: 8), "note sheet never opened")
@@ -288,6 +295,19 @@ final class ScreenshotTourUITests: XCTestCase {
             reopened.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
         }
         app.buttons["Enregistrer"].tap()
+
+        // Account deletion is reachable in the app (Gestion > Paramètres > Compte).
+        app.tabBars.buttons["Gestion"].tap()
+        if app.buttons["Paramètres"].waitForExistence(timeout: 5) { app.buttons["Paramètres"].tap() }
+        let deleteRow = app.buttons["Supprimer mon compte"]
+        for _ in 0..<6 where !deleteRow.exists { app.swipeUp(); Thread.sleep(forTimeInterval: 0.6) }
+        XCTAssertTrue(deleteRow.waitForExistence(timeout: 5), "in-app account deletion is missing")
+        XCTAssertTrue(app.buttons["Supprimer mon compte sur le web"].exists || app.links["Supprimer mon compte sur le web"].exists, "web deletion link is missing")
+        deleteRow.tap()
+        XCTAssertTrue(app.buttons["Supprimer définitivement mon compte"].waitForExistence(timeout: 5), "confirmation sheet never opened")
+        XCTAssertFalse(app.buttons["Supprimer définitivement mon compte"].isEnabled, "deletion must stay disabled until SUPPRIMER is typed")
+        shot("owner-delete-account-sheet")
+        app.swipeDown(velocity: .fast)
         leavePersistedSession()
     }
 }

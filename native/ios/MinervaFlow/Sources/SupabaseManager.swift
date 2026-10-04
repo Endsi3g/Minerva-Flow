@@ -1663,6 +1663,28 @@ final class SupabaseManager: ObservableObject {
         }
     }
 
+    /// Owner/manager account deletion over the Bearer bridge. Returns nil on success, otherwise the
+    /// reason to show (for example a sole owner must transfer the restaurant first).
+    func deleteOwnerAccount() async -> String? {
+        struct Reply: Decodable { let error: String? }
+        guard let token = await bearerToken() else { return "Votre session a expiré. Reconnectez-vous." }
+        var request = URLRequest(url: Config.apiBaseURL.appending(path: "/api/owner/account"), timeoutInterval: 20)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else { return "La suppression a échoué. Réessayez." }
+            if (200..<300).contains(http.statusCode) {
+                await signOut()
+                return nil
+            }
+            return (try? JSONDecoder().decode(Reply.self, from: data))?.error ?? "La suppression a échoué. Réessayez."
+        } catch {
+            AppLog.failure("deleteOwnerAccount", error)
+            return "La suppression a échoué. Vérifiez votre connexion et réessayez."
+        }
+    }
+
     /// Irreversible: same deleteMyAccount the web portal's
     /// deleteMyAccountAction calls (app/api/portal/account/route.ts), over
     /// the Bearer-token bridge instead of a session cookie. Signs the local
