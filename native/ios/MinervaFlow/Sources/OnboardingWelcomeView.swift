@@ -15,7 +15,9 @@ struct OnboardingWelcomeView: View {
     @EnvironmentObject var notifications: NotificationManager
     let onFinish: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var page = 0
+    @State private var goingForward = true
     private let pageCount = 5
 
     var body: some View {
@@ -27,27 +29,42 @@ struct OnboardingWelcomeView: View {
             VStack(spacing: 0) {
                 topBar
 
-                TabView(selection: $page) {
-                    welcomePage.tag(0)
-                    currentTierPage.tag(1)
-                    nextTierPage.tag(2)
-                    locationPermissionPage.tag(3)
-                    notificationPermissionPage.tag(4)
+                // One step at a time, moved only by the visible buttons: a paged
+                // TabView ignored un-animated `page` changes and also reacted to
+                // swipes, which made "next" look broken.
+                Group {
+                    switch page {
+                    case 0: welcomePage
+                    case 1: currentTierPage
+                    case 2: nextTierPage
+                    case 3: locationPermissionPage
+                    default: notificationPermissionPage
+                    }
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
+                .id(page)
+                .transition(reduceMotion ? .opacity : .asymmetric(
+                    insertion: .move(edge: goingForward ? .trailing : .leading).combined(with: .opacity),
+                    removal: .move(edge: goingForward ? .leading : .trailing).combined(with: .opacity)
+                ))
             }
         }
+    }
+
+    private func go(to next: Int) {
+        guard next >= 0, next < pageCount else { return }
+        goingForward = next > page
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { page = next }
     }
 
     private var topBar: some View {
         HStack {
             if page > 0 {
                 Button {
-                    page -= 1
+                    go(to: page - 1)
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.mv(size: 15, weight: .semibold))
-                        .frame(width: 36, height: 36)
+                        .frame(width: 44, height: 44)
                         .background(topBarButtonBackground)
                         .clipShape(Circle())
                 }
@@ -61,21 +78,27 @@ struct OnboardingWelcomeView: View {
 
             Spacer()
 
-            HStack(spacing: 5) {
-                ForEach(0..<pageCount, id: \.self) { i in
-                    Capsule()
-                        .fill(i == page ? topBarForeground : topBarForeground.opacity(0.25))
-                        .frame(width: i == page ? 18 : 6, height: 4)
-                        .animation(.easeInOut(duration: 0.25), value: page)
-                }
+            VStack(spacing: 5) {
+                Text("Étape \(page + 1) sur \(pageCount)")
+                    .font(.mv(size: 12, weight: .semibold))
+                Capsule()
+                    .fill(topBarForeground.opacity(0.2))
+                    .frame(width: 96, height: 4)
+                    .overlay(alignment: .leading) {
+                        Capsule()
+                            .fill(topBarForeground)
+                            .frame(width: 96 * CGFloat(page + 1) / CGFloat(pageCount), height: 4)
+                    }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Étape \(page + 1) sur \(pageCount)")
 
             Spacer()
 
             Button(action: onFinish) {
                 Image(systemName: "xmark")
                     .font(.mv(size: 14, weight: .semibold))
-                    .frame(width: 36, height: 36)
+                    .frame(width: 44, height: 44)
                     .background(topBarButtonBackground)
                     .clipShape(Circle())
             }
@@ -127,7 +150,7 @@ struct OnboardingWelcomeView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
-            pageButton(title: "Voir mon statut", style: .light) { page = 1 }
+            pageButton(title: "Voir mon statut", style: .light) { go(to: 1) }
         }
         .padding(28)
     }
@@ -166,7 +189,7 @@ struct OnboardingWelcomeView: View {
             .foregroundStyle(MinervaColor.inkSoft)
 
             Spacer()
-            pageButton(title: "Voir mes avantages", style: .dark) { page = 2 }
+            pageButton(title: "Voir mes avantages", style: .dark) { go(to: 2) }
         }
         .padding(28)
     }
@@ -242,7 +265,7 @@ struct OnboardingWelcomeView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Button {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    page = 1
+                    go(to: 1)
                 } label: {
                     Image(systemName: "crown.fill")
                         .font(.mv(size: 50))
@@ -258,7 +281,7 @@ struct OnboardingWelcomeView: View {
 
             Spacer()
 
-            pageButton(title: "Continuer", style: .dark) { page = 3 }
+            pageButton(title: "Continuer", style: .dark) { go(to: 3) }
         }
         .padding(28)
     }
@@ -291,9 +314,9 @@ struct OnboardingWelcomeView: View {
                     if location.authorizationStatus == .notDetermined {
                         location.requestPermission()
                     }
-                    page = 4
+                    go(to: 4)
                 }
-                Button("Plus tard") { page = 4 }
+                Button("Plus tard") { go(to: 4) }
                     .font(.mv(size: 13.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkSoft)
             }

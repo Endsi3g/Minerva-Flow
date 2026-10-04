@@ -193,3 +193,6 @@
 "Échangeable chez %@" = "Échangeable chez %@";
 "%lld / %lld amis parrainés" = "%lld / %lld amis parrainés";
 "Récompense : %@" = "Récompense : %@";
+"Étape %lld sur %lld" = "Étape %lld sur %lld";
+"Suivant" = "Suivant";
+"Entrer dans l’espace" = "Entrer dans l’espace";

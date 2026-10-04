@@ -196,3 +196,6 @@
 "Échangeable chez %@" = "Redeemable at %@";
 "%lld / %lld amis parrainés" = "%lld / %lld friends referred";
 "Récompense : %@" = "Reward: %@";
+"Étape %lld sur %lld" = "Step %lld of %lld";
+"Suivant" = "Next";
+"Entrer dans l’espace" = "Enter";

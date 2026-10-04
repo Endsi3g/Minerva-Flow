@@ -167,5 +167,45 @@ final class ScreenshotTourUITests: XCTestCase {
         }
         ensureSignedOut(app)
     }
+
+    /// The first-run explainer must move forward with its visible buttons.
+    /// Needs a fresh install (xcrun simctl uninstall) so the intro is shown.
+    func testOnboardingNextButtonsAdvance() throws {
+        app.launch()
+        // The keychain outlives an uninstall: leave a persisted team session first.
+        let teamNext = app.buttons["Suivant"]
+        if teamNext.waitForExistence(timeout: 15) {
+            for _ in 0..<3 { if teamNext.exists { teamNext.tap(); Thread.sleep(forTimeInterval: 0.6) } }
+            XCTAssertTrue(app.buttons["Entrer dans l’espace"].waitForExistence(timeout: 3), "team intro: last step never reached")
+            app.buttons["Entrer dans l’espace"].tap()
+        }
+        let more = app.buttons["Plus"]
+        if more.waitForExistence(timeout: 8) && !app.tabBars.buttons["Scanner"].exists {
+            more.tap()
+            let out = app.buttons["Se déconnecter"]
+            if out.waitForExistence(timeout: 3) { out.tap() }
+            Thread.sleep(forTimeInterval: 2)
+        }
+        let devBypass = app.buttons["Sauter la connexion (dev, OTP désactivé)"]
+        for _ in 0..<10 where !app.buttons["Voir mon statut"].exists {
+            if devBypass.waitForExistence(timeout: 1), devBypass.isHittable { devBypass.tap() }
+            else if app.buttons["Se connecter"].exists { app.buttons["Se connecter"].tap() }
+            Thread.sleep(forTimeInterval: 1.5)
+        }
+        let first = app.buttons["Voir mon statut"]
+        if !first.waitForExistence(timeout: 20) { shot("onboarding-diag") }
+        try XCTSkipUnless(first.exists, "intro not shown (not a fresh install)")
+        XCTAssertTrue(app.staticTexts["Étape 1 sur 5"].exists || app.otherElements["Étape 1 sur 5"].exists)
+        first.tap()
+        XCTAssertTrue(app.buttons["Voir mes avantages"].waitForExistence(timeout: 5), "step 2 never appeared")
+        shot("onboarding-2")
+        app.buttons["Voir mes avantages"].tap()
+        XCTAssertTrue(app.buttons["Continuer"].waitForExistence(timeout: 5), "step 3 never appeared")
+        app.buttons["Continuer"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == 'Plus tard'")).firstMatch.waitForExistence(timeout: 5), "step 4 never appeared")
+        shot("onboarding-4")
+        app.buttons["Retour"].tap()
+        XCTAssertTrue(app.buttons["Continuer"].waitForExistence(timeout: 5), "back never returned to step 3")
+    }
 }
 

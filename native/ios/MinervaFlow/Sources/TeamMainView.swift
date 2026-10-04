@@ -113,78 +113,100 @@ struct TeamMainView: View {
     }
 }
 
-/// Text only, one line at a time — explicitly asked for no images, icons or
-/// other components. Mirrors the web TeamOnboardingIntro's copy exactly.
+/// Four short steps moved only by the visible buttons. It used to advance on a
+/// timer with no "next" control, so the entry button appeared after ~24 s.
+/// Mirrors the web TeamOnboardingIntro's copy.
 private struct TeamOnboardingIntroView: View {
     let isTeamMember: Bool
     let onDone: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var index = 0
+    @State private var goingForward = true
 
-    private var lines: [String] {
+    private var steps: [(title: String, body: String)] {
         [
-            "Bienvenue chez Minerva Flow.",
-            "Que vous soyez ambassadeur ou membre de l’équipe —",
-            "nous construisons l’outil que les restaurants méritent.",
-            "Nos valeurs : la rigueur avant la vitesse, l’honnêteté dans les chiffres, le respect du temps des restaurateurs.",
-            "Ce qu’on attend de vous : représenter la marque avec justesse, et protéger la confiance qu’on nous donne.",
-            isTeamMember
-                ? "Ici, le tableau de bord suit nos restaurants, nos revenus et notre rétention — en temps réel."
-                : "Ici, votre espace suit vos recommandations et vos commissions — en temps réel.",
-            "Bienvenue à bord.",
+            ("Bienvenue chez Minerva Flow.",
+             "Que vous soyez ambassadeur ou membre de l’équipe, nous construisons l’outil que les restaurants méritent."),
+            ("Nos valeurs",
+             "La rigueur avant la vitesse, l’honnêteté dans les chiffres, le respect du temps des restaurateurs."),
+            ("Ce qu’on attend de vous",
+             "Représenter la marque avec justesse, et protéger la confiance qu’on nous donne."),
+            ("Votre espace",
+             isTeamMember
+                ? "Le tableau de bord suit nos restaurants, nos revenus et notre rétention, en temps réel."
+                : "Votre espace suit vos recommandations et vos commissions, en temps réel."),
         ]
     }
 
-    private var isLast: Bool { index == lines.count - 1 }
+    private var isLast: Bool { index == steps.count - 1 }
+
+    private func go(_ next: Int) {
+        guard next >= 0, next < steps.count else { return }
+        goingForward = next > index
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { index = next }
+    }
 
     var body: some View {
         ZStack {
             MinervaColor.cream.ignoresSafeArea()
 
-            VStack {
+            VStack(spacing: 0) {
                 HStack {
+                    Text("Étape \(index + 1) sur \(steps.count)")
+                        .font(.mv(size: 12, weight: .semibold))
+                        .foregroundStyle(MinervaColor.inkFaint)
                     Spacer()
                     Button("Passer") { onDone() }
-                        .font(.mv(size: 12.5, weight: .medium))
-                        .foregroundStyle(MinervaColor.inkFaint)
+                        .font(.mv(size: 14, weight: .medium))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                        .frame(minWidth: 44, minHeight: 44)
                 }
+
                 Spacer()
-                Text(lines[index])
-                    .id(index)
-                    .font(MinervaFont.display(26, weight: .medium))
-                    .foregroundStyle(MinervaColor.ink)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-                    .frame(maxWidth: 420)
+                VStack(spacing: 14) {
+                    Text(steps[index].title)
+                        .font(MinervaFont.display(28, weight: .medium))
+                        .foregroundStyle(MinervaColor.ink)
+                    Text(steps[index].body)
+                        .font(.mv(size: 16))
+                        .foregroundStyle(MinervaColor.inkSoft)
+                }
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 420)
+                .id(index)
+                .transition(reduceMotion ? .opacity : .asymmetric(
+                    insertion: .move(edge: goingForward ? .trailing : .leading).combined(with: .opacity),
+                    removal: .move(edge: goingForward ? .leading : .trailing).combined(with: .opacity)
+                ))
                 Spacer()
-                if isLast {
+
+                HStack(spacing: 12) {
+                    if index > 0 {
+                        Button { go(index - 1) } label: {
+                            Text("Retour")
+                                .font(.mv(size: 15, weight: .semibold))
+                                .foregroundStyle(MinervaColor.ink)
+                                .frame(maxWidth: .infinity, minHeight: 50)
+                                .overlay(Capsule().stroke(MinervaColor.border, lineWidth: 1.5))
+                        }
+                    }
                     Button {
-                        onDone()
+                        if isLast { onDone() } else { go(index + 1) }
                     } label: {
-                        Text("Entrer dans l’espace")
-                            .font(.mv(size: 13.5, weight: .semibold))
+                        Text(isLast ? "Entrer dans l’espace" : "Suivant")
+                            .font(.mv(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity, minHeight: 50)
                             .background(MinervaColor.emerald)
                             .clipShape(Capsule())
                     }
-                    .padding(.bottom, 40)
-                } else {
-                    Color.clear.frame(height: 52).padding(.bottom, 40)
                 }
+                .padding(.bottom, 24)
             }
-            .padding(24)
-        }
-        .onAppear { advance() }
-    }
-
-    private func advance() {
-        guard !isLast else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.4) {
-            withAnimation(.easeOut(duration: 0.4)) { index += 1 }
-            advance()
+            .padding(.horizontal, 24)
+            .padding(.top, 8)
         }
     }
 }
