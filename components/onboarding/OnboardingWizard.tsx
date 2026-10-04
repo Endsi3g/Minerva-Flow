@@ -249,7 +249,7 @@ export function OnboardingWizard({
         <ol className="flex flex-col gap-2 text-[14px] text-mv-ink">
           <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mv-green text-[12px] font-bold text-white">1</span><span>{menuImportedCount !== null ? "Vérifiez votre menu et publiez-le." : "Ajoutez vos premiers plats."}</span></li>
           <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mv-green text-[12px] font-bold text-white">2</span><span>Affichez votre QR au comptoir.</span></li>
-          <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mv-green text-[12px] font-bold text-white">3</span><span>Vos premiers clients s&apos;inscrivent en 30 secondes.</span></li>
+          <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-mv-green text-[12px] font-bold text-white">3</span><span>Vos premiers clients s&apos;inscrivent en 30 secondes. Sans caisse connectée, votre employé scanne le code du client au comptoir pour créditer ses points.</span></li>
         </ol>
         <a
           href={`${base}/menu`}
@@ -263,6 +263,9 @@ export function OnboardingWizard({
         >
           Aller à mon tableau de bord
         </a>
+        <p className="text-center text-[14px] text-mv-ink-soft">
+          Besoin d&apos;un coup de main ? <a className="font-medium text-mv-green-dark underline underline-offset-4" href="mailto:support@minervaflow.app?subject=Aide%20pour%20ma%20configuration">Écrivez-nous</a>, on s&apos;en occupe avec vous.
+        </p>
       </div>
     );
   }
@@ -423,15 +426,23 @@ export function OnboardingWizard({
             </div>
             <div>
               <h3 className="font-display text-[20px] font-medium text-mv-ink">Préparez les inscriptions fidélité</h3>
-              <p className="mt-1 text-[14px] leading-relaxed text-mv-ink-soft">Choisissez les points gagnés par dollar, puis créez un lien et un QR que vos clients peuvent scanner pour s’inscrire.</p>
+              <p className="mt-1 text-[14px] leading-relaxed text-mv-ink-soft">Un seul bouton crée le lien et le QR que vos clients scannent pour s’inscrire. Vos clients gagnent 1 point par dollar dépensé, vous pourrez le modifier à tout moment.</p>
             </div>
           </div>
 
           <div className="rounded-xl border border-mv-border bg-mv-surface p-4">
-            <Field label="Points gagnés par dollar" hint="Vous pourrez ajouter vos récompenses et modifier ce taux dans Fidélisation.">
-              <Input className="h-12 text-[16px]" type="number" inputMode="decimal" min="0.1" max="10" step="0.1" value={pointsPerDollar} onChange={(event) => setPointsPerDollar(event.target.value)} />
-            </Field>
-            <Button className="mt-4 h-12 w-full text-[14px]" onClick={prepareLoyaltyJoin} loading={preparingLoyalty} disabled={!currentRestaurantId || preparingLoyalty}>
+            <details className="group mb-4 rounded-lg border border-mv-border bg-mv-cream-soft">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 text-[14px] text-mv-ink focus-visible:outline-2 focus-visible:outline-mv-green">
+                <span>Points par dollar : <strong>{pointsPerDollar || "1"}</strong></span>
+                <span className="text-[14px] font-medium text-mv-green-dark">Modifier</span>
+              </summary>
+              <div className="border-t border-mv-border p-3">
+                <Field label="Points gagnés par dollar" hint="Vous pourrez ajouter vos récompenses et modifier ce taux dans Fidélisation.">
+                  <Input className="h-12 text-[16px]" type="number" inputMode="decimal" min="0.1" max="10" step="0.1" value={pointsPerDollar} onChange={(event) => setPointsPerDollar(event.target.value)} />
+                </Field>
+              </div>
+            </details>
+            <Button className="h-12 w-full text-[14px]" onClick={prepareLoyaltyJoin} loading={preparingLoyalty} disabled={!currentRestaurantId || preparingLoyalty}>
               {loyaltyJoinUrl ? "Actualiser le QR" : "Créer mon lien et mon QR"}
             </Button>
           </div>
