@@ -31,6 +31,7 @@ struct AmbassadorHubView: View {
                 }
 
                 statusCard
+                friendsSection
                 howItWorks
                 programmeCard
             }
@@ -42,6 +43,77 @@ struct AmbassadorHubView: View {
         .sheet(isPresented: $showWorkspace) {
             FlowAmbassadorMobileView().environmentObject(supabase)
         }
+        .task { if supabase.referralPrograms.isEmpty { await supabase.fetchReferrals() } }
+    }
+
+    // MARK: - Friends (customer referral at the home restaurant)
+
+    /// The same programs and links as the Offres tab, here as the main ambassador
+    /// action: how many friends joined, what the reward is, and one tap to share.
+    @ViewBuilder
+    private var friendsSection: some View {
+        if !supabase.referralPrograms.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(isFrench ? "VOS AMIS" : "YOUR FRIENDS")
+                    .font(.mv(size: 12, weight: .semibold))
+                    .tracking(0.6)
+                    .foregroundStyle(MinervaColor.inkFaint)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(supabase.referralPrograms) { progress in
+                    friendCard(progress)
+                }
+            }
+        }
+    }
+
+    private func friendCard(_ progress: ReferralProgress) -> some View {
+        let program = progress.program
+        let converted = progress.link?.convertedCount ?? 0
+        let goal = max(1, program.goalCount)
+        return VStack(alignment: .leading, spacing: 10) {
+            Text(program.name)
+                .font(.mv(size: 16, weight: .semibold))
+                .foregroundStyle(MinervaColor.ink)
+            if let link = progress.link {
+                Text(isFrench ? "\(converted) / \(goal) amis ont rejoint" : "\(converted) / \(goal) friends joined")
+                    .font(.mv(size: 14))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                ProgressView(value: min(1, Double(converted) / Double(goal)))
+                    .tint(MinervaColor.emerald)
+                if let reward = program.rewardDescription {
+                    Label(isFrench ? "Récompense : \(reward)" : "Reward: \(reward)", systemImage: "gift.fill")
+                        .font(.mv(size: 14))
+                        .foregroundStyle(MinervaColor.emeraldDark)
+                }
+                ShareLink(item: shareURL(code: link.code), message: Text(shareMessage())) {
+                    Label(isFrench ? "Partager mon lien" : "Share my link", systemImage: "square.and.arrow.up")
+                        .font(.mv(size: 14, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                }
+                .foregroundStyle(.white)
+                .background(MinervaColor.emerald)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MinervaColor.creamSoft)
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(MinervaColor.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func shareURL(code: String) -> URL {
+        var components = URLComponents(url: Config.publicLinkBaseURL.appending(path: "/p/\(code)"), resolvingAgainstBaseURL: false)
+        components?.queryItems = [URLQueryItem(name: "via", value: "ambassador")]
+        return components?.url ?? Config.publicLinkBaseURL.appending(path: "/p/\(code)")
+    }
+
+    private func shareMessage() -> String {
+        let name = supabase.restaurantName ?? (isFrench ? "notre restaurant" : "our restaurant")
+        return isFrench
+            ? "Je t'invite chez \(name) : installe l'app avec mon lien pour recevoir ton cadeau de bienvenue."
+            : "I'm inviting you to \(name): install the app with my link to get your welcome gift."
     }
 
     // MARK: - Loyalty status (real numbers from the customer's own account)
