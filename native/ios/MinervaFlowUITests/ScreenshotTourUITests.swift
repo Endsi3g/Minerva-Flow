@@ -111,6 +111,38 @@ final class ScreenshotTourUITests: XCTestCase {
         }
     }
 
+    /// The keychain outlives an uninstall, so a previous (team or customer) session can still be
+    /// open. Walk the team intro if it shows, then sign out through whichever layout is present.
+    private func leavePersistedSession() {
+        let teamNext = app.buttons["Suivant"]
+        if teamNext.waitForExistence(timeout: 6) {
+            for _ in 0..<3 { if teamNext.exists { teamNext.tap(); Thread.sleep(forTimeInterval: 0.6) } }
+            if app.buttons["Entrer dans l’espace"].waitForExistence(timeout: 3) { app.buttons["Entrer dans l’espace"].tap() }
+        }
+        guard app.tabBars.firstMatch.waitForExistence(timeout: 12) else { return }
+        let more = app.buttons["Plus"]
+        if more.exists && !app.tabBars.buttons["Scanner"].exists {
+            more.tap()
+            let out = app.buttons["Se déconnecter"]
+            if out.waitForExistence(timeout: 3) { out.tap() }
+            Thread.sleep(forTimeInterval: 2)
+        } else if app.tabBars.buttons["Gestion"].exists {
+            // Owner layout: Gestion > Paramètres > Se déconnecter.
+            app.tabBars.buttons["Gestion"].tap()
+            let settings = app.buttons["Paramètres"]
+            if settings.waitForExistence(timeout: 5) { settings.tap() }
+            let out = app.buttons["Se déconnecter"]
+            if out.waitForExistence(timeout: 5) {
+                out.tap()
+                let confirm = app.sheets.buttons["Se déconnecter"].exists ? app.sheets.buttons["Se déconnecter"] : app.buttons.matching(NSPredicate(format: "label == 'Se déconnecter'")).element(boundBy: 1)
+                if confirm.waitForExistence(timeout: 3) { confirm.tap() }
+            }
+            Thread.sleep(forTimeInterval: 2)
+        } else {
+            ensureSignedOut(app)
+        }
+    }
+
     /// Owner side. Credentials come from TEST_RUNNER_MV_OWNER_EMAIL and
     /// TEST_RUNNER_MV_OWNER_PASSWORD, never from the repository.
     func testCaptureOwnerTabs() throws {
@@ -121,18 +153,7 @@ final class ScreenshotTourUITests: XCTestCase {
         app.launch()
 
         // Start from a signed-out app: sign out if a previous session is still there.
-        if app.tabBars.firstMatch.waitForExistence(timeout: 12) {
-            // Team layout (ambassador/staff): sign out from the account menu.
-            let more = app.buttons["Plus"]
-            if more.exists && !app.tabBars.buttons["Scanner"].exists {
-                more.tap()
-                let out = app.buttons["Se déconnecter"]
-                if out.waitForExistence(timeout: 3) { out.tap() }
-                Thread.sleep(forTimeInterval: 2)
-            } else {
-                ensureSignedOut(app)
-            }
-        }
+        leavePersistedSession()
         for _ in 0..<14 {
             if app.textFields.firstMatch.exists { break }
             if app.buttons["Fermer l'introduction"].exists { app.buttons["Fermer l'introduction"].tap() }
@@ -165,7 +186,7 @@ final class ScreenshotTourUITests: XCTestCase {
             if button.exists { button.tap() }
             shot("owner-\(index + 1)")
         }
-        ensureSignedOut(app)
+        leavePersistedSession()
     }
 
     /// The first-run explainer must move forward with its visible buttons.
@@ -206,6 +227,68 @@ final class ScreenshotTourUITests: XCTestCase {
         shot("onboarding-4")
         app.buttons["Retour"].tap()
         XCTAssertTrue(app.buttons["Continuer"].waitForExistence(timeout: 5), "back never returned to step 3")
+    }
+
+    /// Owner side: open a customer from the Loyalty tab, write a staff-only note, reopen it.
+    /// Credentials come from MV_OWNER_EMAIL / MV_OWNER_PASSWORD (TEST_RUNNER_ prefix).
+    func testOwnerStaffNoteRoundTrip() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let email = env["MV_OWNER_EMAIL"], let password = env["MV_OWNER_PASSWORD"] else {
+            throw XCTSkip("MV_OWNER_EMAIL / MV_OWNER_PASSWORD not set")
+        }
+        app.launch()
+        leavePersistedSession()
+        for _ in 0..<14 {
+            if app.textFields.firstMatch.exists { break }
+            if app.buttons["Fermer l'introduction"].exists { app.buttons["Fermer l'introduction"].tap() }
+            else if app.buttons["Se connecter"].exists { app.buttons["Se connecter"].tap() }
+            else { _ = app.textFields.firstMatch.waitForExistence(timeout: 2) }
+            Thread.sleep(forTimeInterval: 1)
+        }
+        if app.buttons["Mot de passe"].waitForExistence(timeout: 5) { app.buttons["Mot de passe"].tap() }
+        let emailField = app.textFields.firstMatch
+        XCTAssertTrue(emailField.waitForExistence(timeout: 10), "no email field")
+        emailField.tap(); emailField.typeText(email + "\n")
+        let passwordField = app.secureTextFields.firstMatch
+        XCTAssertTrue(passwordField.waitForExistence(timeout: 5), "no password field")
+        Thread.sleep(forTimeInterval: 1)
+        passwordField.typeText(password + "\n")
+
+        let bar = app.tabBars.firstMatch
+        XCTAssertTrue(bar.waitForExistence(timeout: 40), "owner space never appeared")
+        Thread.sleep(forTimeInterval: 3)
+        dismissSurveyIfPresent()
+        let loyalty = bar.buttons["Fidélité"]
+        if !loyalty.waitForExistence(timeout: 5) { shot("owner-staff-note-layout") }
+        try XCTSkipUnless(loyalty.exists, "not the owner layout")
+        loyalty.tap()
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'points ·'")).firstMatch
+        if !row.waitForExistence(timeout: 6) { app.swipeUp(); _ = row.waitForExistence(timeout: 4) }
+        try XCTSkipUnless(row.exists, "this restaurant has no customers")
+        row.tap()
+        XCTAssertTrue(app.staticTexts["Notes de l'équipe"].waitForExistence(timeout: 8), "note sheet never opened")
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap(); field.typeText("Allergie aux noix, table 4")
+        shot("owner-staff-note-filled")
+        app.buttons["Enregistrer"].tap()
+        XCTAssertFalse(app.staticTexts["Notes de l'équipe"].waitForExistence(timeout: 3), "sheet should close after saving")
+        // Reopen: the note is read back from the database.
+        row.tap()
+        XCTAssertTrue(app.staticTexts["Notes de l'équipe"].waitForExistence(timeout: 8))
+        let reopened = app.textFields.firstMatch
+        XCTAssertTrue(reopened.waitForExistence(timeout: 5))
+        let readBack = NSPredicate(format: "value CONTAINS 'Allergie aux noix'")
+        expectation(for: readBack, evaluatedWith: reopened)
+        waitForExpectations(timeout: 8)
+        shot("owner-staff-note-reopened")
+        // Clean up: clear the note so the test leaves no data behind.
+        reopened.tap()
+        if let value = reopened.value as? String {
+            reopened.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        }
+        app.buttons["Enregistrer"].tap()
+        leavePersistedSession()
     }
 }
 

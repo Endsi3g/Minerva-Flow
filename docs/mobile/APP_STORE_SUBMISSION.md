@@ -22,6 +22,12 @@ Pourquoi : aujourd'hui l'app n'existe que par TestFlight (lien public, builds de
 7. **Serveur de production sain** avant l'examen : sans la clé serveur de production, le menu, les noms de restaurants et la carte sont vides, et l'examinateur le verra.
 8. Choisir la version et le numéro de build, téléverser, puis « Soumettre pour examen ».
 
+## Espace propriétaire de l'app : suppression de compte
+
+- La déconnexion existe désormais dans Gestion > Paramètres > Compte, avec confirmation.
+- La **suppression de compte** y renvoie vers la page de profil web, car un compte propriétaire possède des restaurants et des données d'équipe, et la suppression côté client (`/api/portal/account`) n'applique pas ces règles. Apple (5.1.1(v)) accepte un lien vers le web seulement s'il mène directement au flux de suppression. **Décision à prendre avant la soumission** : soit vérifier que `/profil` répond à cette exigence, soit ajouter une suppression dans l'app qui réutilise `lib/data/account-deletion.ts`.
+- Le compte `testeur-owner` s'ouvre aujourd'hui dans la mise en page client : à vérifier avant de le remettre à un examinateur.
+
 ## Points moyens restants de l'audit automatique
 
 - Polices à taille fixe : corrigé par le texte dynamique (à relancer pour confirmer).

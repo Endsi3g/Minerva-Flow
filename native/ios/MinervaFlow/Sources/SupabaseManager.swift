@@ -938,6 +938,49 @@ final class SupabaseManager: ObservableObject {
     /// Records a counter visit through the existing atomic loyalty RPC. The
     /// database recalculates points from restaurant settings; the submitted
     /// points value is intentionally zero and ignored for authenticated users.
+    /// Staff-only guest note (allergies, preferred table, wine). Lives in its own table so a
+    /// guest, who can read their own customers row, never sees it.
+    func fetchOwnerStaffNote(customerId: String) async -> String {
+        struct Row: Decodable { let body: String }
+        do {
+            let rows: [Row] = try await client.from("customer_staff_notes")
+                .select("body")
+                .eq("customer_id", value: customerId)
+                .limit(1)
+                .execute().value
+            return rows.first?.body ?? ""
+        } catch {
+            AppLog.failure("fetchOwnerStaffNote", error)
+            return ""
+        }
+    }
+
+    func saveOwnerStaffNote(customerId: String, body: String) async -> Bool {
+        guard isOwnerExperience, let restaurantId = selectedOwnerRestaurantId,
+              ownerRestaurants.contains(where: { $0.id == restaurantId }) else { return false }
+        let trimmed = String(body.replacingOccurrences(of: "\r\n", with: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines).prefix(2000))
+        struct Row: Encodable {
+            let customer_id: String
+            let restaurant_id: String
+            let body: String
+            let updated_by: String?
+        }
+        do {
+            if trimmed.isEmpty {
+                try await client.from("customer_staff_notes").delete().eq("customer_id", value: customerId).execute()
+            } else {
+                try await client.from("customer_staff_notes")
+                    .upsert(Row(customer_id: customerId, restaurant_id: restaurantId, body: trimmed, updated_by: authUserID?.uuidString), onConflict: "customer_id")
+                    .execute()
+            }
+            return true
+        } catch {
+            AppLog.failure("saveOwnerStaffNote", error)
+            return false
+        }
+    }
+
     func recordOwnerCustomerVisit(customer: NativeCounterCustomer, amountSpent: Double) async -> NativeOwnerCustomer? {
         guard isOwnerExperience,
               let restaurantId = selectedOwnerRestaurantId,

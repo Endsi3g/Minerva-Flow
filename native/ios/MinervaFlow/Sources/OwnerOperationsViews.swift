@@ -236,6 +236,7 @@ struct OwnerLoyaltyView: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
     @State private var respondingTo: NativeOwnerRestaurantReview?
+    @State private var notingCustomer: NativeOwnerCustomer?
     @State private var counterPhone = ""
     @State private var counterMatches: [NativeOwnerCustomerLookup] = []
     @State private var selectedCounterMatch: NativeOwnerCustomerLookup?
@@ -386,14 +387,23 @@ struct OwnerLoyaltyView: View {
                         Text(isFrench ? "Aucun client pour le moment." : "No customers yet.").foregroundStyle(.secondary)
                     }
                     ForEach(supabase.ownerCustomers) { customer in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(customer.name).font(.headline)
-                            Text(isFrench
-                                 ? "\(customer.loyaltyPoints) points · \(customer.visitCount) visites · \(customer.totalSpent.cad)"
-                                 : "\(customer.loyaltyPoints) points · \(customer.visitCount) visits · \(customer.totalSpent.cad)")
-                                .font(.caption).foregroundStyle(.secondary)
-                            if let email = customer.email { Text(email).font(.caption2).foregroundStyle(.secondary) }
+                        Button { notingCustomer = customer } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(customer.name).font(.headline).foregroundStyle(MinervaColor.ink)
+                                    Text(isFrench
+                                         ? "\(customer.loyaltyPoints) points · \(customer.visitCount) visites · \(customer.totalSpent.cad)"
+                                         : "\(customer.loyaltyPoints) points · \(customer.visitCount) visits · \(customer.totalSpent.cad)")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                    if let email = customer.email { Text(email).font(.caption2).foregroundStyle(.secondary) }
+                                }
+                                Spacer()
+                                Image(systemName: "note.text").foregroundStyle(MinervaColor.emeraldDark)
+                                    .accessibilityLabel(isFrench ? "Notes de l'équipe" : "Team notes")
+                            }
+                            .frame(minHeight: 44)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 Section(isFrench ? "Récompenses" : "Rewards") {
@@ -434,6 +444,61 @@ struct OwnerLoyaltyView: View {
             .toolbar { ToolbarItem(placement: .topBarTrailing) { OwnerRestaurantPicker() } }
             .refreshable { await supabase.refreshOwnerOperations() }
             .sheet(item: $respondingTo) { ReviewReplyEditor(review: $0) }
+            .sheet(item: $notingCustomer) { OwnerStaffNoteEditor(customer: $0) }
+        }
+    }
+}
+
+/// Staff-only guest note, never shown to the guest. Same text as the web customer page.
+private struct OwnerStaffNoteEditor: View {
+    @EnvironmentObject private var supabase: SupabaseManager
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    let customer: NativeOwnerCustomer
+    @State private var note = ""
+    @State private var loaded = false
+    @State private var saving = false
+    @State private var failed = false
+    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(isFrench ? "Ex. Allergie aux noix. Table 4. Aime le Chablis." : "e.g. Nut allergy. Table 4. Likes Chablis.",
+                              text: $note, axis: .vertical)
+                        .lineLimit(5...12)
+                        .disabled(!loaded)
+                } header: {
+                    Text(isFrench ? "Notes de l'équipe" : "Team notes")
+                } footer: {
+                    Text(isFrench ? "Visible par l'équipe seulement, jamais par le client." : "Visible to your team only, never to the guest.")
+                }
+                if failed {
+                    Text(isFrench ? "La note n'a pas pu être enregistrée. Réessayez." : "The note could not be saved. Try again.")
+                        .font(.footnote).foregroundStyle(.red)
+                }
+            }
+            .navigationTitle(customer.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button(isFrench ? "Fermer" : "Close") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(saving ? (isFrench ? "Enregistrement…" : "Saving…") : (isFrench ? "Enregistrer" : "Save")) {
+                        saving = true; failed = false
+                        Task {
+                            let ok = await supabase.saveOwnerStaffNote(customerId: customer.id, body: note)
+                            saving = false
+                            if ok { dismiss() } else { failed = true }
+                        }
+                    }
+                    .disabled(saving || !loaded)
+                }
+            }
+            .task {
+                note = await supabase.fetchOwnerStaffNote(customerId: customer.id)
+                loaded = true
+            }
         }
     }
 }
@@ -785,6 +850,9 @@ struct OwnerReportsView: View {
 struct OwnerSettingsView: View {
     @EnvironmentObject private var supabase: SupabaseManager
     @AppStorage("appAppearance") private var storedAppearance = AppAppearance.light.rawValue
+    @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    @State private var showSignOutConfirm = false
+    private var isFrench: Bool { storedLanguage == AppLanguage.fr.rawValue }
     var body: some View {
         Form {
             Section("Appearance") {
@@ -802,7 +870,21 @@ struct OwnerSettingsView: View {
             }
             Section("Subscription") { Text("Software subscriptions are managed on a computer. No in-app purchase is offered in this iOS app.").font(.footnote).foregroundStyle(.secondary) }
             Section("Support") { Link(Config.supportEmail, destination: SupportContact.emailURL) }
+            Section(isFrench ? "Compte" : "Account") {
+                Button(isFrench ? "Se déconnecter" : "Sign out", role: .destructive) { showSignOutConfirm = true }
+                    .frame(minHeight: 44, alignment: .leading)
+                // Owner accounts own restaurants and team data, so deletion runs through the web
+                // profile page, which applies the owner-specific checks.
+                Link(isFrench ? "Supprimer mon compte (sur le web)" : "Delete my account (on the web)",
+                     destination: Config.publicLinkBaseURL.appending(path: "/profil"))
+                    .foregroundStyle(.red)
+                    .frame(minHeight: 44, alignment: .leading)
+            }
         }
-        .navigationTitle("Settings")
+        .confirmationDialog(isFrench ? "Se déconnecter ?" : "Sign out?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
+            Button(isFrench ? "Se déconnecter" : "Sign out", role: .destructive) { Task { await supabase.signOut() } }
+            Button(isFrench ? "Annuler" : "Cancel", role: .cancel) {}
+        }
+        .navigationTitle(isFrench ? "Paramètres" : "Settings")
     }
 }
