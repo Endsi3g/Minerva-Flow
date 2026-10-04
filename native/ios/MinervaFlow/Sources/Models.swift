@@ -1122,3 +1122,16 @@ struct EstablishmentFavorites: Identifiable {
     let isHome: Bool
     let loadFailed: Bool
 }
+
+/// Points credited by `claim_app_install_bonus()` the first time the app is
+/// opened at a restaurant that enabled the install bonus.
+struct AppBonusAward: Decodable, Identifiable {
+    let restaurantId: String
+    let restaurantName: String
+    let points: Int
+    var id: String { restaurantId }
+
+    enum CodingKeys: String, CodingKey {
+        case restaurantId = "restaurant_id", restaurantName = "restaurant_name", points
+    }
+}

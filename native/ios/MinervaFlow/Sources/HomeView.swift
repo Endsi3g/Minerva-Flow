@@ -43,6 +43,9 @@ struct HomeView: View {
                             tenantBrandHeader(branding)
                         }
                         pinnedHeader(for: customer)
+                        if !supabase.appBonusAwards.isEmpty {
+                            appBonusBanner
+                        }
                         HStack { NativeRealtimeStatusPill(isFrench: isFrench); Spacer() }
 
                         if !supabase.announcements.isEmpty {
@@ -545,6 +548,47 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    /// Shown once after the first app opening that earned an install bonus.
+    private var appBonusBanner: some View {
+        let total = supabase.appBonusAwards.reduce(0) { $0 + $1.points }
+        let name = supabase.appBonusAwards.count == 1 ? supabase.appBonusAwards[0].restaurantName : nil
+        return HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "gift.fill")
+                .font(.mv(size: 16, weight: .semibold))
+                .foregroundStyle(MinervaColor.emeraldDark)
+                .frame(width: 36, height: 36)
+                .background(MinervaColor.emerald.opacity(0.14))
+                .clipShape(Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(isFrench ? "+\(total) points offerts" : "+\(total) points on us")
+                    .font(.mv(size: 16, weight: .semibold))
+                    .foregroundStyle(MinervaColor.ink)
+                Text(isFrench
+                     ? "Merci d'avoir installé l'app\(name.map { " de \($0)" } ?? "") : vos points sont déjà sur votre carte."
+                     : "Thanks for installing the app\(name.map { " for \($0)" } ?? ""): the points are already on your card.")
+                    .font(.mv(size: 14))
+                    .foregroundStyle(MinervaColor.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 4)
+            Button {
+                supabase.appBonusAwards = []
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.mv(size: 13, weight: .semibold))
+                    .foregroundStyle(MinervaColor.inkFaint)
+                    .frame(width: 44, height: 44)
+            }
+            .accessibilityLabel(isFrench ? "Fermer" : "Dismiss")
+        }
+        .padding(14)
+        .background(MinervaColor.emerald.opacity(0.1))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(MinervaColor.emerald.opacity(0.25), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .accessibilityElement(children: .contain)
     }
 
     private func label(for type: String) -> String {

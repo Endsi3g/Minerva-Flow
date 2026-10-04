@@ -65,6 +65,9 @@ final class SupabaseManager: ObservableObject {
     @Published var allMemberships: [RestaurantMembership] = []
     /// Every customer row of the account (one per establishment), oldest first.
     @Published var allCustomers: [Customer] = []
+    /// One-time install-bonus credits received this session (shown once on Home).
+    @Published var appBonusAwards: [AppBonusAward] = []
+    private var hasClaimedAppBonusThisSession = false
     @Published var allTransactions: [LoyaltyTransaction] = []
     @Published var allRedemptions: [RewardRedemption] = []
     @Published var myOrders: [CustomerOrder] = []
@@ -596,6 +599,7 @@ final class SupabaseManager: ObservableObject {
             }
             customer = mine
             await fetchTenantBranding(for: mine.restaurantId)
+            await claimAppInstallBonusIfNeeded()
 
             async let txsFetch: [LoyaltyTransaction] = client
                 .from("loyalty_transactions")
@@ -1787,6 +1791,23 @@ final class SupabaseManager: ObservableObject {
         } catch {
             AppLog.failure("fetchMenuItems(forRestaurant:)", error)
             return nil
+        }
+    }
+
+    /// Credits the owner-configured "app install" bonus, once per card, the first
+    /// time this account opens the app. The database function is idempotent and
+    /// only touches the caller's own cards, so calling it again is harmless.
+    func claimAppInstallBonusIfNeeded() async {
+        guard !hasClaimedAppBonusThisSession else { return }
+        hasClaimedAppBonusThisSession = true
+        do {
+            let awards: [AppBonusAward] = try await client.rpc("claim_app_install_bonus").execute().value
+            guard !awards.isEmpty else { return }
+            appBonusAwards = awards
+            // The balance changed on the server: refresh so Home shows it.
+            await loadPortalData()
+        } catch {
+            AppLog.failure("claimAppInstallBonus", error)
         }
     }
 

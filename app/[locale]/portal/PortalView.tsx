@@ -38,6 +38,7 @@ import {
   exportMyDataAction,
   toggleFavoriteAction,
 } from "./actions";
+import { AppInstallPrompt } from "./AppInstallPrompt";
 import {
   Copy,
   Check,
@@ -1589,6 +1590,8 @@ export function PortalView({
             )}
           </div>
         </div>
+
+        <AppInstallPrompt restaurantId={customer.restaurantId} restaurantName={restaurantName ?? null} />
 
         {checkoutReturn && (
           <div

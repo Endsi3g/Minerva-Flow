@@ -9,7 +9,7 @@ import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav
 import { loyaltyTierOrder, loyaltyTierLabel, loyaltyTierDescription, loyaltyTierBadge, type LoyaltyTierThresholds } from "@/lib/loyalty-tiers";
 import { Zap, Coins, Gift, Save } from "lucide-react";
 import { useState } from "react";
-import { updateRetentionSettingsAction, updateLoyaltyTierThresholdsAction, updateLoyaltyRateAction, updateWelcomeBonusPointsAction } from "../actions";
+import { updateRetentionSettingsAction, updateLoyaltyTierThresholdsAction, updateLoyaltyRateAction, updateWelcomeBonusPointsAction, updateAppInstallBonusPointsAction } from "../actions";
 import { notifyError } from "@/lib/notify-error";
 
 function LoyaltyRateCard({ restaurantId, initialRate }: { restaurantId: string; initialRate: number }) {
@@ -177,6 +177,7 @@ export function ParametresView({
   restaurantId,
   loyaltyPointsPerDollar,
   welcomeBonusPoints,
+  appInstallBonusPoints,
   loyaltyTierThresholds,
   retentionEngineEnabled,
   retentionInactivityDays,
@@ -184,6 +185,7 @@ export function ParametresView({
   restaurantId: string | null;
   loyaltyPointsPerDollar: number;
   welcomeBonusPoints: number;
+  appInstallBonusPoints: number;
   loyaltyTierThresholds: LoyaltyTierThresholds;
   retentionEngineEnabled: boolean;
   retentionInactivityDays: number;
@@ -200,6 +202,7 @@ export function ParametresView({
         <div className="space-y-6">
           <LoyaltyRateCard restaurantId={restaurantId} initialRate={loyaltyPointsPerDollar} />
           <WelcomeBonusCard restaurantId={restaurantId} initialPoints={welcomeBonusPoints} />
+          <AppInstallBonusCard restaurantId={restaurantId} initialPoints={appInstallBonusPoints} />
           <LoyaltyTierSettingsCard restaurantId={restaurantId} initialThresholds={loyaltyTierThresholds} />
           <RetentionSettingsCard
             restaurantId={restaurantId}
@@ -210,6 +213,32 @@ export function ParametresView({
       )}
     </div>
   );
+}
+
+function AppInstallBonusCard({ restaurantId, initialPoints }: { restaurantId: string; initialPoints: number }) {
+  const [points, setPoints] = useState(initialPoints);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  async function save() {
+    setSaving(true);
+    setSaved(false);
+    const ok = await updateAppInstallBonusPointsAction(restaurantId, points);
+    setSaving(false);
+    if (!ok) { notifyError("Le bonus n’a pas pu être enregistré."); return; }
+    setSaved(true);
+  }
+  return <Card>
+    <CardHeader eyebrow="Application mobile" title="Bonus d’installation de l’app" description="Optionnel. Vos clients reçoivent ces points une seule fois, la première fois qu’ils ouvrent l’application. C’est la façon la plus simple de les amener à l’installer : leurs récompenses s’y trouvent." />
+    <div className="flex flex-wrap items-center gap-3 text-[14px] text-mv-ink-soft">
+      <Gift size={16} className="text-mv-green-dark" aria-hidden="true" />
+      <label className="flex items-center gap-2">Points offerts
+        <input type="number" min="0" max="500" step="1" value={points} onChange={(event) => { setPoints(Math.min(500, Math.max(0, Math.round(Number(event.target.value) || 0)))); setSaved(false); }} className="h-12 w-28 rounded-lg border border-mv-border bg-mv-surface px-3 text-[16px] text-mv-ink" />
+      </label>
+      <button type="button" onClick={save} disabled={saving} className="inline-flex h-12 items-center gap-2 rounded-lg bg-mv-green px-4 text-[14px] font-semibold text-white hover:bg-mv-green-dark disabled:opacity-60">{saving ? "Enregistrement…" : "Enregistrer"}</button>
+      {saved && <span role="status" className="text-[14px] font-medium text-mv-green-dark">Enregistré</span>}
+      <p className="basis-full text-[12px] leading-5 text-mv-ink-faint">À 0 point, le bonus est désactivé. Maximum 500 points. Chaque carte ne le reçoit qu’une fois.</p>
+    </div>
+  </Card>;
 }
 
 function WelcomeBonusCard({ restaurantId, initialPoints }: { restaurantId: string; initialPoints: number }) {
