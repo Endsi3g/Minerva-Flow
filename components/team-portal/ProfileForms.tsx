@@ -62,11 +62,11 @@ function CheckinForm() {
         }}
       >
         <div>
-          <label htmlFor="checkin-commitments" className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Mes engagements</label>
+          <label htmlFor="checkin-commitments" className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Mes engagements</label>
           <textarea id="checkin-commitments" rows={3} maxLength={2000} value={commitments} onChange={(e) => { setCommitments(e.target.value); setResult(null); }} className={TEXTAREA} />
         </div>
         <div>
-          <label htmlFor="checkin-delivered" className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Ce que j’ai livré</label>
+          <label htmlFor="checkin-delivered" className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Ce que j’ai livré</label>
           <textarea id="checkin-delivered" rows={3} maxLength={2000} value={delivered} onChange={(e) => { setDelivered(e.target.value); setResult(null); }} className={TEXTAREA} />
         </div>
         <div className="flex items-center gap-3">
@@ -102,11 +102,11 @@ function ContentForm() {
         }}
       >
         <div>
-          <label htmlFor="content-url" className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Lien</label>
+          <label htmlFor="content-url" className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Lien</label>
           <Input id="content-url" type="url" required placeholder="https://" value={url} onChange={(e) => { setUrl(e.target.value); setResult(null); }} />
         </div>
         <div>
-          <label htmlFor="content-title" className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Titre (facultatif)</label>
+          <label htmlFor="content-title" className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Titre (facultatif)</label>
           <Input id="content-title" maxLength={160} value={title} onChange={(e) => { setTitle(e.target.value); setResult(null); }} />
         </div>
         <div className="flex items-center gap-3">

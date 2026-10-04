@@ -63,7 +63,7 @@ export function GoogleCalendarCard() {
             <Badge tone="green" dot>
               {email ?? "Connecté"}
             </Badge>
-            <button onClick={handleDisconnect} className="text-[11.5px] font-medium text-mv-ink-faint hover:text-mv-red hover:underline">
+            <button onClick={handleDisconnect} className="text-[12px] font-medium text-mv-ink-faint hover:text-mv-red hover:underline">
               Déconnecter
             </button>
           </div>
@@ -74,7 +74,7 @@ export function GoogleCalendarCard() {
               {events.map((e) => (
                 <div key={e.id} className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2">
                   <span className="truncate text-[12.5px] font-medium text-mv-ink">{e.title}</span>
-                  <span className="shrink-0 text-[11.5px] text-mv-ink-faint">{formatEventTime(e)}</span>
+                  <span className="shrink-0 text-[12px] text-mv-ink-faint">{formatEventTime(e)}</span>
                 </div>
               ))}
             </div>

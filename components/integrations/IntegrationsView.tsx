@@ -236,10 +236,10 @@ export function IntegrationsView({
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-mv-green-tint px-2.5 py-0.5 text-[11px] font-bold text-mv-green-dark uppercase tracking-wider">
+            <span className="rounded-full bg-mv-green-tint px-2.5 py-0.5 text-[12px] font-bold text-mv-green-dark uppercase tracking-wider">
               {restaurantName}
             </span>
-            <span className="flex items-center gap-1 text-[11.5px] font-medium text-mv-ink-faint">
+            <span className="flex items-center gap-1 text-[12px] font-medium text-mv-ink-faint">
               <Lock size={12} className="text-mv-green-dark" /> Écosystème Chiffré & Sécurisé
             </span>
           </div>
@@ -274,7 +274,7 @@ export function IntegrationsView({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11.5px] font-bold uppercase tracking-wider text-mv-ink-faint">
+            <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
               Services connectés
             </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-green-tint text-mv-green-dark">
@@ -285,12 +285,12 @@ export function IntegrationsView({
             <span className="font-display text-[24px] font-bold text-mv-ink">{connectedCount}</span>
             <span className="text-[12.5px] text-mv-ink-soft">sur {integrations.length} disponibles</span>
           </div>
-          <p className="mt-1 text-[11.5px] text-mv-ink-faint">Flux actifs et opérationnels sans interruption</p>
+          <p className="mt-1 text-[12px] text-mv-ink-faint">Flux actifs et opérationnels sans interruption</p>
         </div>
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11.5px] font-bold uppercase tracking-wider text-mv-ink-faint">
+            <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
               Mode de synchronisation
             </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-cream-soft text-mv-green-dark">
@@ -300,12 +300,12 @@ export function IntegrationsView({
           <div className="mt-2">
               <span className="font-display text-[17px] font-semibold text-mv-ink">Selon le service connecté</span>
           </div>
-          <p className="mt-1 text-[11.5px] text-mv-ink-faint">Les caisses connectées se synchronisent selon leur cycle; une synchronisation manuelle est aussi possible.</p>
+          <p className="mt-1 text-[12px] text-mv-ink-faint">Les caisses connectées se synchronisent selon leur cycle; une synchronisation manuelle est aussi possible.</p>
         </div>
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11.5px] font-bold uppercase tracking-wider text-mv-ink-faint">
+            <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
               Protection des données
             </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-cream-soft text-mv-green-dark">
@@ -315,7 +315,7 @@ export function IntegrationsView({
           <div className="mt-2">
             <span className="font-display text-[17px] font-semibold text-mv-ink">Standard Bancaire Sécurisé</span>
           </div>
-          <p className="mt-1 text-[11.5px] text-mv-ink-faint">Chiffrement certifié et aucune donnée sensible exposée</p>
+          <p className="mt-1 text-[12px] text-mv-ink-faint">Chiffrement certifié et aucune donnée sensible exposée</p>
         </div>
       </div>
 
@@ -362,7 +362,7 @@ export function IntegrationsView({
               <Icon size={14} />
               <span>{pillar.label}</span>
               <span
-                className={`rounded-full px-1.5 py-0.2 text-[10.5px] font-bold ${
+                className={`rounded-full px-1.5 py-0.2 text-[12px] font-bold ${
                   isActive ? "bg-white/20 text-white" : "bg-mv-cream-soft text-mv-ink-faint"
                 }`}
               >
@@ -411,7 +411,7 @@ export function IntegrationsView({
                           <XCircle size={12} className="mr-1 inline" /> À reconnecter
                         </Badge>
                       ) : item.status === "coming_soon" ? (
-                        <span className="flex items-center gap-1 rounded-full bg-mv-lime/30 px-2.5 py-0.5 text-[11px] font-bold text-mv-green-dark">
+                        <span className="flex items-center gap-1 rounded-full bg-mv-lime/30 px-2.5 py-0.5 text-[12px] font-bold text-mv-green-dark">
                           <Clock size={11} /> Prochainement
                         </span>
                       ) : item.status === "on_request" ? (
@@ -419,7 +419,7 @@ export function IntegrationsView({
                           <Sparkles size={11} className="mr-1 inline" /> Sur demande
                         </Badge>
                       ) : (
-                        <span className="flex items-center gap-1 rounded-full bg-mv-cream-soft px-2.5 py-0.5 text-[11px] font-semibold text-mv-ink-faint">
+                        <span className="flex items-center gap-1 rounded-full bg-mv-cream-soft px-2.5 py-0.5 text-[12px] font-semibold text-mv-ink-faint">
                           Non connecté
                         </span>
                       )}
@@ -433,7 +433,7 @@ export function IntegrationsView({
                     </p>
                   </div>
 
-                  <div className="mt-5 flex items-center justify-between border-t border-mv-border-soft pt-3 text-[11.5px]">
+                  <div className="mt-5 flex items-center justify-between border-t border-mv-border-soft pt-3 text-[12px]">
                     <span className="text-mv-ink-faint font-medium capitalize">
                       {pillar === "caisse"
                         ? "Caisse enregistreuse"
@@ -465,7 +465,7 @@ export function IntegrationsView({
                   </div>
                   <div>
                     <h3 className="font-display text-[15px] font-bold text-mv-ink">{selectedIntegration.name}</h3>
-                    <p className="text-[11.5px] text-mv-ink-soft">
+                    <p className="text-[12px] text-mv-ink-soft">
                       {selectedIntegration.status === "connected"
                         ? "Actif et synchronisé"
                         : selectedIntegration.status === "coming_soon"
@@ -490,7 +490,7 @@ export function IntegrationsView({
               <div className="p-5 space-y-5">
                 {/* Value Proposition Description */}
                 <div>
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+                  <h4 className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
                     Utilité pour votre établissement
                   </h4>
                   <p className="mt-1.5 text-[13px] leading-relaxed text-mv-ink">
@@ -556,7 +556,7 @@ export function IntegrationsView({
                       <h5 className="text-[12px] font-bold text-mv-green-dark">
                         Sécurité & Confidentialité
                       </h5>
-                      <p className="mt-0.5 text-[11.5px] leading-relaxed text-mv-ink-soft">
+                      <p className="mt-0.5 text-[12px] leading-relaxed text-mv-ink-soft">
                         Connexion directe chiffrée selon les standards bancaires les plus stricts. Vos données
                         financières et vos tickets restent strictement confidentiels et protégés.
                       </p>

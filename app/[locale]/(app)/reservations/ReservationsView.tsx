@@ -265,7 +265,7 @@ function PlatformsCard({ connections }: { connections: ReservationPlatformConnec
             >
               <div>
                 <p className="text-[13px] font-semibold text-mv-ink">{platformLabel[platform]}</p>
-                <p className="text-[11.5px] text-mv-ink-faint">
+                <p className="text-[12px] text-mv-ink-faint">
                   {connected ? "Connecté" : "Nécessite un compte partenaire"}
                 </p>
               </div>
@@ -437,7 +437,7 @@ export function ReservationsView({
                     <Td className="font-medium text-mv-ink">{formatTime(r.reservationTime)}</Td>
                     <Td>
                       <p className="font-semibold text-mv-ink">{r.guestName}</p>
-                      {r.guestPhone && <p className="text-[11.5px] text-mv-ink-faint">{r.guestPhone}</p>}
+                      {r.guestPhone && <p className="text-[12px] text-mv-ink-faint">{r.guestPhone}</p>}
                     </Td>
                     <Td>
                       <span className="inline-flex items-center gap-1.5 text-mv-ink-soft">

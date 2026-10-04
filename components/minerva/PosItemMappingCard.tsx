@@ -38,7 +38,7 @@ interface PosItemMappingCardProps {
 function ProviderBadge({ provider }: { provider: PosProvider }) {
   if (provider === "square") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[11px] font-medium text-mv-ink">
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[12px] font-medium text-mv-ink">
         <Square width={13} height={13} />
         Square
       </span>
@@ -46,7 +46,7 @@ function ProviderBadge({ provider }: { provider: PosProvider }) {
   }
   if (provider === "clover") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[11px] font-medium text-mv-ink">
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[12px] font-medium text-mv-ink">
         <Clover width={13} height={13} />
         Clover
       </span>
@@ -54,14 +54,14 @@ function ProviderBadge({ provider }: { provider: PosProvider }) {
   }
   if (provider === "toast") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[11px] font-medium text-mv-ink">
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[12px] font-medium text-mv-ink">
         <Toast width={13} height={13} />
         Toast POS
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[11px] font-medium text-mv-ink">
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[12px] font-medium text-mv-ink">
       <Store size={13} />
       {provider}
     </span>
@@ -267,7 +267,7 @@ export function PosItemMappingCard({
                 {mappedCount} associé{mappedCount > 1 ? "s" : ""}
               </Badge>
             )}
-            <Button size="sm" variant="secondary" onClick={handleResync} disabled={resyncing} className="text-[11.5px]">
+            <Button size="sm" variant="secondary" onClick={handleResync} disabled={resyncing} className="text-[12px]">
               <RefreshCw size={13} className={cn(resyncing && "animate-spin")} />
               Resynchroniser tout
             </Button>
@@ -368,12 +368,12 @@ export function PosItemMappingCard({
                       {m.externalItemName}
                     </span>
                     {m.autoMatched && m.menuItemId && (
-                      <span className="inline-flex items-center gap-1 rounded bg-mv-green-tint px-1.5 py-0.5 text-[10px] font-semibold text-mv-green-dark">
+                      <span className="inline-flex items-center gap-1 rounded bg-mv-green-tint px-1.5 py-0.5 text-[12px] font-semibold text-mv-green-dark">
                         <Sparkles size={10} /> Auto
                       </span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-[11px] font-mono text-mv-ink-faint">
+                  <p className="mt-0.5 text-[12px] font-mono text-mv-ink-faint">
                     ID: {m.externalItemId}
                   </p>
                 </div>
@@ -387,11 +387,11 @@ export function PosItemMappingCard({
                           {m.menuItem.name}
                         </span>
                         {m.menuItem.category && (
-                          <span className="ml-1.5 text-[11px] text-mv-ink-faint">
+                          <span className="ml-1.5 text-[12px] text-mv-ink-faint">
                             ({m.menuItem.category})
                           </span>
                         )}
-                        <span className="ml-2 font-mono text-[11.5px] font-semibold text-mv-green-dark">
+                        <span className="ml-2 font-mono text-[12px] font-semibold text-mv-green-dark">
                           {formatCurrency(m.menuItem.price)}
                         </span>
                       </div>
@@ -430,7 +430,7 @@ export function PosItemMappingCard({
                         variant="secondary"
                         onClick={() => handleCreateDishFromPos(m)}
                         disabled={isProcessing}
-                        className="flex items-center gap-1 text-[11.5px]"
+                        className="flex items-center gap-1 text-[12px]"
                       >
                         <Plus size={12} />
                         Créer le plat

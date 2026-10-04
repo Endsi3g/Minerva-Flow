@@ -12,7 +12,7 @@ export function AssistantUnavailable() {
         </div>
       </div>
 
-      <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-mv-green/30 bg-mv-green-tint px-3 py-1 text-[11.5px] font-bold text-mv-green-dark">
+      <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-mv-green/30 bg-mv-green-tint px-3 py-1 text-[12px] font-bold text-mv-green-dark">
         <Sparkles size={13} />
         <span>En construction</span>
       </div>

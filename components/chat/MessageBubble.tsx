@@ -72,7 +72,7 @@ function CopyButton({ text }: { text: string }) {
       type="button"
       onClick={handleCopy}
       title="Copier la réponse"
-      className="mt-1 flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
+      className="mt-1 flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
     >
       {copied ? <Check size={12} className="text-mv-green-dark" /> : <Copy size={12} />}
       <span>{copied ? "Copié !" : "Copier"}</span>

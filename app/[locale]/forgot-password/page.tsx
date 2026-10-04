@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Adresse courriel</label>
+              <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Adresse courriel</label>
               <input
                 type="email"
                 placeholder="nom@restaurant.com"

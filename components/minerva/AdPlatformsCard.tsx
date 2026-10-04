@@ -162,7 +162,7 @@ export function InstagramCard() {
           <div className="pt-1 text-center sm:text-right">
             <a
               href="/api/oauth/instagram?mode=facebook"
-              className="text-[11.5px] text-mv-ink-faint transition-colors hover:text-mv-green-dark hover:underline"
+              className="text-[12px] text-mv-ink-faint transition-colors hover:text-mv-green-dark hover:underline"
             >
               Vous gérez aussi des publicités Meta Ads ? Connecter via Facebook →
             </a>

@@ -100,7 +100,7 @@ export function GoogleWorkspaceCard() {
               <GoogleMonochrome size={22} className="text-mv-ink" />
             </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
                 Google Workspace
               </span>
               <h3 className="font-display text-[18px] font-medium text-mv-ink">Google</h3>
@@ -108,11 +108,11 @@ export function GoogleWorkspaceCard() {
           </div>
 
           {isConnected ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2.5 py-1 text-[11px] font-bold text-mv-green-dark">
+            <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2.5 py-1 text-[12px] font-bold text-mv-green-dark">
               <Check size={13} /> Connecté
             </span>
           ) : (
-            <span className="inline-flex items-center rounded-full border border-mv-border-soft bg-mv-cream-soft px-2.5 py-1 text-[11px] font-medium text-mv-ink-faint">
+            <span className="inline-flex items-center rounded-full border border-mv-border-soft bg-mv-cream-soft px-2.5 py-1 text-[12px] font-medium text-mv-ink-faint">
               Non connecté
             </span>
           )}
@@ -138,7 +138,7 @@ export function GoogleWorkspaceCard() {
                   </div>
                   <div className="min-w-0">
                     <span className="block text-[13px] font-semibold text-mv-ink truncate">{s.label}</span>
-                    <p className="text-[11.5px] text-mv-ink-faint truncate leading-tight">{s.description}</p>
+                    <p className="text-[12px] text-mv-ink-faint truncate leading-tight">{s.description}</p>
                   </div>
                 </div>
 
@@ -148,9 +148,9 @@ export function GoogleWorkspaceCard() {
                       Connecté
                     </Badge>
                   ) : isConnected ? (
-                    <span className="text-[11px] font-medium text-mv-ink-faint">Non accordé</span>
+                    <span className="text-[12px] font-medium text-mv-ink-faint">Non accordé</span>
                   ) : (
-                    <span className="text-[11px] font-medium text-mv-ink-faint">Prêt</span>
+                    <span className="text-[12px] font-medium text-mv-ink-faint">Prêt</span>
                   )}
                 </div>
               </div>
@@ -161,7 +161,7 @@ export function GoogleWorkspaceCard() {
         {isConnected && connection?.connectedEmail && (
           <div className="mb-4 rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 px-3 py-2 text-[12px] text-mv-ink-soft flex items-center justify-between">
             <span className="font-medium truncate">{connection.connectedEmail}</span>
-            <span className="text-[11px] text-mv-ink-faint">Compte actif</span>
+            <span className="text-[12px] text-mv-ink-faint">Compte actif</span>
           </div>
         )}
       </div>

@@ -359,14 +359,14 @@ export function InventaireView({
                 {lowStockItems.slice(0, 4).map((i) => (
                   <span
                     key={i.id}
-                    className="inline-flex items-center gap-1 rounded-lg bg-mv-cream px-2 py-1 text-[11.5px] font-medium text-mv-ink-soft"
+                    className="inline-flex items-center gap-1 rounded-lg bg-mv-cream px-2 py-1 text-[12px] font-medium text-mv-ink-soft"
                   >
                     <span className="font-semibold text-mv-ink">{i.name}</span>
                     <span className="text-mv-red">({i.quantityOnHand} / {i.parLevel} {i.unit})</span>
                   </span>
                 ))}
                 {lowStockItems.length > 4 && (
-                  <span className="inline-flex items-center px-1.5 py-1 text-[11px] text-mv-ink-faint">
+                  <span className="inline-flex items-center px-1.5 py-1 text-[12px] text-mv-ink-faint">
                     +{lowStockItems.length - 4} autres
                   </span>
                 )}
@@ -427,7 +427,7 @@ export function InventaireView({
                 <Tr key={item.id}>
                   <Td className="font-semibold text-mv-ink">
                     {item.name}
-                    {item.category && <span className="ml-1.5 text-[11.5px] font-normal text-mv-ink-faint">— {item.category}</span>}
+                    {item.category && <span className="ml-1.5 text-[12px] font-normal text-mv-ink-faint">— {item.category}</span>}
                   </Td>
                   <Td className="text-mv-ink-soft">{item.supplierId ? suppliersById.get(item.supplierId)?.name ?? "—" : "—"}</Td>
                   <Td>
@@ -442,7 +442,7 @@ export function InventaireView({
                       {canCreate && (
                         <button
                           onClick={() => setMovementItem(item)}
-                          className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
+                          className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/10"
                         >
                           Mouvement
                         </button>

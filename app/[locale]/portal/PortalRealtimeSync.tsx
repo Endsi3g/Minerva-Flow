@@ -63,7 +63,7 @@ export function PortalRealtimeSync({ customerId, restaurantId }: { customerId: s
   };
   const tone = state === "live" ? "bg-emerald-600" : state === "offline" ? "bg-red-500" : "bg-amber-500 animate-pulse";
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-mv-border-soft bg-mv-surface px-2 py-1 text-[10px] font-medium text-mv-ink-soft" role="status" aria-live="polite" title={labels[state]}>
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-mv-border-soft bg-mv-surface px-2 py-1 text-[12px] font-medium text-mv-ink-soft" role="status" aria-live="polite" title={labels[state]}>
       <span className={cn("h-1.5 w-1.5 rounded-full", tone)} />
       <Radio size={11} aria-hidden="true" />
       <span className="hidden xs:inline">{state === "live" ? "En direct" : labels[state]}</span>

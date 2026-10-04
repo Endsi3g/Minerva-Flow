@@ -30,7 +30,7 @@ export function MenuStudioNav({ active }: { active: StudioPage }) {
           )}
         >
           <span className="block text-[12.5px] font-semibold">{t(`${page}Label`)}</span>
-          <span className="mt-1 block text-[11px] leading-relaxed text-mv-ink-faint">{t(`${page}Description`)}</span>
+          <span className="mt-1 block text-[12px] leading-relaxed text-mv-ink-faint">{t(`${page}Description`)}</span>
         </Link>
       ))}
     </nav>

@@ -123,7 +123,7 @@ export function FlowAiActionCard({
           </span>
         </div>
 
-        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-mv-lime/30 text-mv-lime-dark">
+        <span className="text-[12px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-mv-lime/30 text-mv-lime-dark">
           Action 1-Clic
         </span>
       </div>
@@ -185,7 +185,7 @@ export function FlowAiActionCard({
             <span>{resultMessage ?? "Erreur d'application"}</span>
           </div>
         ) : (
-          <div className="text-[11px] text-mv-ink-faint flex items-center gap-1">
+          <div className="text-[12px] text-mv-ink-faint flex items-center gap-1">
             <Sparkles size={11} className="text-mv-amber" />
             Validation en 1 clic
           </div>

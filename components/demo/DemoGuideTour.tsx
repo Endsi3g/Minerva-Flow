@@ -62,7 +62,7 @@ const STEPS: Step[] = [
           </li>
         </ul>
         <p>
-          Un outil ou un rapport en particulier ? Cherchez-le avec <kbd className="rounded border border-mv-border bg-mv-cream-soft px-1.5 py-0.5 text-[11px]">⌘K</kbd> depuis n&apos;importe quelle page.
+          Un outil ou un rapport en particulier ? Cherchez-le avec <kbd className="rounded border border-mv-border bg-mv-cream-soft px-1.5 py-0.5 text-[12px]">⌘K</kbd> depuis n&apos;importe quelle page.
         </p>
       </div>
     ),
@@ -163,7 +163,7 @@ const STEPS: Step[] = [
         </p>
         <p>
           Vous pouvez rouvrir ce guide à tout moment depuis la bulle en bas à droite de l&apos;écran — et repérer
-          les petites icônes <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-mv-ink/10 text-[9px]">i</span> qui expliquent les éléments moins évidents partout dans l&apos;application.
+          les petites icônes <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-mv-ink/10 text-[12px]">i</span> qui expliquent les éléments moins évidents partout dans l&apos;application.
         </p>
       </div>
     ),

@@ -261,7 +261,7 @@ export default function BillingPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <p className="text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">Inclus dans votre accès</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Inclus dans votre accès</p>
                 {INCLUDED_FEATURES.map((feature) => (
                   <div key={feature} className="flex items-center gap-2">
                     <CheckCircle2 size={15} className="shrink-0 text-mv-green-dark" />
@@ -357,7 +357,7 @@ export default function BillingPage() {
             </div>
 
             <div className="pt-2 border-t border-mv-border space-y-2">
-              <p className="text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+              <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                 Quotas IA inclus par plan
               </p>
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
@@ -367,7 +367,7 @@ export default function BillingPage() {
                     className={`p-2 rounded-xl border ${planTier === tier ? "border-mv-green bg-mv-green-tint/30 font-bold" : "border-mv-border bg-mv-surface"}`}
                   >
                     <p className="text-mv-ink">{PLAN_NAMES[tier]}</p>
-                    <p className="text-mv-ink-soft text-[11px]">
+                    <p className="text-mv-ink-soft text-[12px]">
                       {(PLAN_AI_QUOTAS[tier] / 1000).toLocaleString("fr-FR")}k / mois
                     </p>
                   </div>

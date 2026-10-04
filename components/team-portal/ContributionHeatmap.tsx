@@ -43,7 +43,7 @@ export function ContributionHeatmap({
         className="overflow-x-auto"
       >
         {size === "md" && (
-          <div className={cn("mb-1 grid text-[10px] text-mv-ink-faint", gap)} style={{ gridTemplateColumns: `repeat(${heatmap.weeks}, 12px)` }} aria-hidden="true">
+          <div className={cn("mb-1 grid text-[12px] text-mv-ink-faint", gap)} style={{ gridTemplateColumns: `repeat(${heatmap.weeks}, 12px)` }} aria-hidden="true">
             {monthLabels.map((label, i) => (
               <span key={i} className="overflow-visible whitespace-nowrap">
                 {label}
@@ -66,7 +66,7 @@ export function ContributionHeatmap({
         </div>
       </div>
       {showLegend && (
-        <div className="mt-2 flex items-center justify-end gap-1.5 text-[10.5px] text-mv-ink-faint" aria-hidden="true">
+        <div className="mt-2 flex items-center justify-end gap-1.5 text-[12px] text-mv-ink-faint" aria-hidden="true">
           Moins
           {([0, 1, 2, 3, 4] as HeatmapLevel[]).map((level) => (
             <span key={level} className={cn("size-3 rounded-[3px]", LEVEL_CLASS[level])} />

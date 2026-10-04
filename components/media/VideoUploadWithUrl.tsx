@@ -137,13 +137,13 @@ export function VideoUploadWithUrl({
             </div>
             <div className="min-w-0">
               <p className="text-[12.5px] font-semibold text-mv-ink truncate">Vidéo configurée</p>
-              <p className="text-[11px] text-mv-ink-faint truncate max-w-sm sm:max-w-md">{videoUrl}</p>
+              <p className="text-[12px] text-mv-ink-faint truncate max-w-sm sm:max-w-md">{videoUrl}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setIsPreviewOpen(true)}
-            className="rounded-md bg-mv-green px-2.5 py-1 text-[11.5px] font-semibold text-white hover:bg-mv-green-dark transition-colors shrink-0"
+            className="rounded-md bg-mv-green px-2.5 py-1 text-[12px] font-semibold text-white hover:bg-mv-green-dark transition-colors shrink-0"
           >
             Visionner
           </button>

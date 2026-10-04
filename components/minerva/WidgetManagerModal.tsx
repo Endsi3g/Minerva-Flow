@@ -168,7 +168,7 @@ export function WidgetManagerModal({
           </span>
           <button
             onClick={onReset}
-            className="flex items-center gap-1 text-[11.5px] font-medium text-mv-green-dark hover:underline"
+            className="flex items-center gap-1 text-[12px] font-medium text-mv-green-dark hover:underline"
           >
             <RotateCcw size={12} /> Tout réinitialiser
           </button>
@@ -185,12 +185,12 @@ export function WidgetManagerModal({
               >
                 <div>
                   <p className="text-[13px] font-semibold text-mv-ink">{widget.title}</p>
-                  <p className="text-[11.5px] text-mv-ink-soft">{widget.description}</p>
+                  <p className="text-[12px] text-mv-ink-soft">{widget.description}</p>
                 </div>
 
                 <div className="shrink-0 ml-3">
                   <button
-                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[11.5px] font-semibold rounded-lg transition-all ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold rounded-lg transition-all ${
                       active
                         ? "bg-mv-green/10 text-mv-green-dark border border-mv-green/30"
                         : "bg-mv-cream text-mv-ink-faint border border-mv-border"

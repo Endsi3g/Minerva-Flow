@@ -364,7 +364,7 @@ function IdentificationAuComptoirCard({
             </div>
 
             {needsClientConfirmation ? (
-              <p className="max-w-xs text-right text-[11.5px] text-mv-ink-soft">Demandez au client de confirmer son compte avec le code temporaire affiché dans son application. Le solde reste masqué d’ici là.</p>
+              <p className="max-w-xs text-right text-[12px] text-mv-ink-soft">Demandez au client de confirmer son compte avec le code temporaire affiché dans son application. Le solde reste masqué d’ici là.</p>
             ) : <div className="flex items-center gap-3 text-right text-xs text-mv-ink-soft">
               <div>
                 <span className="block font-serif text-sm font-bold text-mv-green">
@@ -516,16 +516,16 @@ function DigitalLoyaltyPassModal({
               <Sparkles size={16} className={tierInfo.accent} />
               <span className="font-display text-[15px] font-bold tracking-wide text-white">{restaurantName}</span>
             </div>
-            <span className={`text-[11px] font-bold uppercase tracking-wider ${tierInfo.accent}`}>
+            <span className={`text-[12px] font-bold uppercase tracking-wider ${tierInfo.accent}`}>
               {tierInfo.label}
             </span>
           </div>
 
           <div className="mt-4 flex items-end justify-between">
             <div>
-              <p className="text-[10.5px] uppercase font-semibold tracking-wider text-white/60">Titulaire</p>
+              <p className="text-[12px] uppercase font-semibold tracking-wider text-white/60">Titulaire</p>
               <p className="font-display text-[18px] font-bold text-white mt-0.5">{customer.name}</p>
-              <p className="font-mono text-[11.5px] text-white/70 mt-0.5">{memberCode}</p>
+              <p className="font-mono text-[12px] text-white/70 mt-0.5">{memberCode}</p>
             </div>
 
             {qrDataUrl && (
@@ -538,13 +538,13 @@ function DigitalLoyaltyPassModal({
 
           <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
             <div>
-              <span className="text-[10.5px] uppercase font-medium text-white/60">Solde de Points</span>
+              <span className="text-[12px] uppercase font-medium text-white/60">Solde de Points</span>
               <p className="font-display text-[20px] font-bold text-white leading-tight">
                 {customer.loyaltyPoints} <span className="text-[13px] font-normal text-white/70">pts</span>
               </p>
             </div>
             <div className="text-right">
-              <span className="text-[10.5px] uppercase font-medium text-white/60">Valeur récompense</span>
+              <span className="text-[12px] uppercase font-medium text-white/60">Valeur récompense</span>
               <p className={`font-mono text-[15px] font-bold ${tierInfo.accent}`}>
                 ~{formatCurrency(dollarValuation)}
               </p>
@@ -615,7 +615,7 @@ function BirthdayPerksCard({
           </div>
           <div>
             <h3 className="font-display text-[15px] font-bold text-mv-ink">Anniversaires à Venir</h3>
-            <p className="text-[11.5px] text-mv-ink-soft">Attribution de bonus & surprises clients</p>
+            <p className="text-[12px] text-mv-ink-soft">Attribution de bonus & surprises clients</p>
           </div>
         </div>
         <Badge tone={upcomingBirthdays.length > 0 ? "amber" : "neutral"}>
@@ -636,7 +636,7 @@ function BirthdayPerksCard({
             >
               <div>
                 <p className="font-semibold text-[13px] text-mv-ink">{customer.name}</p>
-                <p className="text-[11px] text-mv-ink-faint">
+                <p className="text-[12px] text-mv-ink-faint">
                   {daysUntil === 0 ? (
                     <span className="font-bold text-mv-amber-dark">🎂 C&apos;est son anniversaire aujourd&apos;hui !</span>
                   ) : (
@@ -649,7 +649,7 @@ function BirthdayPerksCard({
                 variant="secondary"
                 onClick={() => handleGrantBonus(customer)}
                 disabled={grantingId === customer.id}
-                className="text-[11.5px] h-7 px-2.5 bg-mv-amber-tint hover:bg-mv-amber hover:text-white text-mv-amber-dark border-mv-amber/30"
+                className="text-[12px] h-7 px-2.5 bg-mv-amber-tint hover:bg-mv-amber hover:text-white text-mv-amber-dark border-mv-amber/30"
               >
                 <Gift size={12} /> {grantingId === customer.id ? "Offert…" : "Offrir +50 pts"}
               </Button>
@@ -882,7 +882,7 @@ export function FidelisationView({
                         <span>{c.name}</span>
                         <LoyaltyTierBadge totalSpent={c.totalSpent} thresholds={loyaltyTierThresholds} size="xs" />
                         {daysUntilBday !== null && daysUntilBday <= 14 && (
-                          <Badge tone="amber" className="text-[10.5px] px-1.5 py-0">
+                          <Badge tone="amber" className="text-[12px] px-1.5 py-0">
                             🎂 {daysUntilBday === 0 ? "Anniv. aujourd'hui" : `Anniv. dans ${daysUntilBday}j`}
                           </Badge>
                         )}
@@ -902,7 +902,7 @@ export function FidelisationView({
                           e.stopPropagation();
                           setPassCustomer(c);
                         }}
-                        className="h-7 px-2 text-[11.5px] gap-1 border-mv-border text-mv-ink-soft hover:text-mv-ink"
+                        className="h-7 px-2 text-[12px] gap-1 border-mv-border text-mv-ink-soft hover:text-mv-ink"
                       >
                         <CreditCard size={12} /> Pass Numérique
                       </Button>

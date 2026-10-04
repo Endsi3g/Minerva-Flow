@@ -397,7 +397,7 @@ function TeamSwitcher() {
               />
               <span className="flex-1">
                 <span className="block text-[13px] font-semibold text-mv-ink">{r.name}</span>
-                <span className="block text-[11.5px] text-mv-ink-faint">{r.city}</span>
+                <span className="block text-[12px] text-mv-ink-faint">{r.city}</span>
               </span>
               {r.id === restaurantId && <Check size={15} className="text-mv-green-dark" />}
             </DropdownMenuItem>
@@ -447,7 +447,7 @@ function TeamRestaurantsGroup({ onNavigate }: { onNavigate: () => void }) {
                 type="button"
                 aria-expanded={expanded}
                 onClick={() => setWorkspaceDisclosure({ restaurantId, openId: expanded ? null : group.id })}
-                className="flex min-h-9 w-full items-center gap-2 rounded px-2 text-left text-[11.5px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/[0.04]"
+                className="flex min-h-9 w-full items-center gap-2 rounded px-2 text-left text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/[0.04]"
               >
                 <Building2 size={13} className="shrink-0 text-mv-green-dark" aria-hidden="true" />
                 <span className="min-w-0 flex-1 truncate">{group.name}</span>
@@ -471,7 +471,7 @@ function TeamRestaurantsGroup({ onNavigate }: { onNavigate: () => void }) {
                   >
                     <div className="space-y-0.5 pb-1 pt-1">
                       {group.locations.length === 0 ? (
-                        <p className="px-2 py-1.5 text-[11px] text-mv-ink-faint">Aucun restaurant dans ce workspace.</p>
+                        <p className="px-2 py-1.5 text-[12px] text-mv-ink-faint">Aucun restaurant dans ce workspace.</p>
                       ) : group.locations.map((restaurant) => {
                         const selected = restaurant.id === restaurantId;
                         const favicon = getRestaurantFaviconUrl(restaurant.website);
@@ -502,7 +502,7 @@ function TeamRestaurantsGroup({ onNavigate }: { onNavigate: () => void }) {
                             />
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-[12px] font-medium">{restaurant.name.replace("Minerva — ", "")}</span>
-                              {restaurant.city && <span className="block truncate text-[10.5px] text-mv-ink-faint">{restaurant.city}</span>}
+                              {restaurant.city && <span className="block truncate text-[12px] text-mv-ink-faint">{restaurant.city}</span>}
                             </span>
                             {selected && <Check size={14} className="shrink-0" aria-hidden="true" />}
                           </button>
@@ -689,7 +689,7 @@ export function AppSidebar() {
             <div className="pt-1">
               <LocaleSwitcher />
             </div>
-            <p className="px-2.5 pt-1 text-center text-[10px] font-medium tracking-wide text-mv-ink-faint">
+            <p className="px-2.5 pt-1 text-center text-[12px] font-medium tracking-wide text-mv-ink-faint">
               {MINERVA_FLOW_ATTRIBUTION}
             </p>
           </div>
@@ -732,7 +732,7 @@ function SidebarNavGroup({
         aria-controls={id}
         onClick={() => setManualOpen(!open)}
         className={cn(
-          "flex min-h-9 w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors hover:bg-mv-ink/[0.04] hover:text-mv-ink-soft",
+          "flex min-h-9 w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors hover:bg-mv-ink/[0.04] hover:text-mv-ink-soft",
           active ? "text-mv-green-dark" : "text-mv-ink-faint"
         )}
       >

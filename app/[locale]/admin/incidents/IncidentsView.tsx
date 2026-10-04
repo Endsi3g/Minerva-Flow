@@ -99,7 +99,7 @@ export function IncidentsView({ initialIncidents }: { initialIncidents: Incident
                 action={<Badge tone={severityTone[i.severity]}>{t(severityTranslationKey[i.severity])}</Badge>}
               />
               <p className="text-[13px] text-mv-ink-soft">{i.description}</p>
-              <p className="mt-2 text-[11.5px] text-mv-ink-faint">
+              <p className="mt-2 text-[12px] text-mv-ink-faint">
                 {t("affectedUsersCount", { count: i.affectedUserCount })}
                 {i.resolution ? t("resolvedSuffix", { resolution: i.resolution }) : t("unresolvedSuffix")}
               </p>

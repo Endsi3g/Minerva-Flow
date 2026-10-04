@@ -110,7 +110,7 @@ function UserMenu() {
         <CurrentUserAvatar size={30} />
         <span className="hidden text-left leading-tight md:block">
           <span className="block text-[13px] font-semibold text-mv-ink">{name}</span>
-          <span className="block text-[11.5px] text-mv-ink-faint">{roleLabels[role]}</span>
+          <span className="block text-[12px] text-mv-ink-faint">{roleLabels[role]}</span>
         </span>
         <ChevronDown size={14} className="text-mv-ink-faint" />
       </button>
@@ -121,7 +121,7 @@ function UserMenu() {
             <p className="text-[12px] text-mv-ink-faint">{email}</p>
           </div>
           <div className="border-t border-mv-border-soft px-2.5 py-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {t("role")}
             </p>
             <p className="mt-1 text-[12.5px] font-medium text-mv-ink-soft">{roleLabels[role]}</p>
@@ -287,7 +287,7 @@ function NotificationBell() {
           >
             <Bell size={16} />
             {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-mv-red px-1 text-[10px] font-semibold leading-none text-white">
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-mv-red px-1 text-[12px] font-semibold leading-none text-white">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
@@ -300,7 +300,7 @@ function NotificationBell() {
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
-              className="text-[11.5px] font-medium text-mv-green-dark hover:underline"
+              className="text-[12px] font-medium text-mv-green-dark hover:underline"
             >
               {t("markAllRead")}
             </button>
@@ -316,7 +316,7 @@ function NotificationBell() {
             <>
               {alerts.length > 0 && (
                 <div>
-                  <p className="px-3 pt-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                  <p className="px-3 pt-2.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                     {t("alerts")}
                   </p>
                   {alerts.map((a) => (
@@ -351,7 +351,7 @@ function NotificationBell() {
                 >
                   <p className="text-[12.5px] font-semibold text-mv-ink">{n.title}</p>
                   {n.body && <p className="text-[12px] text-mv-ink-soft">{n.body}</p>}
-                  <p className="text-[10.5px] text-mv-ink-faint">{formatRelativeTime(n.createdAt)}</p>
+                  <p className="text-[12px] text-mv-ink-faint">{formatRelativeTime(n.createdAt)}</p>
                 </button>
               ))}
             </>
@@ -376,8 +376,8 @@ function TopbarSearchTrigger() {
         <Search size={14} className="text-mv-ink-faint" />
         <span className="hidden sm:inline font-normal">Rechercher un outil, rapport...</span>
         <span className="sm:hidden font-normal">Rechercher</span>
-        <kbd className="hidden sm:inline-flex h-5 items-center gap-0.5 rounded border border-mv-border-soft bg-mv-cream px-1.5 text-[10px] font-medium text-mv-ink-faint">
-          <span className="text-[11px]">⌘</span>K
+        <kbd className="hidden sm:inline-flex h-5 items-center gap-0.5 rounded border border-mv-border-soft bg-mv-cream px-1.5 text-[12px] font-medium text-mv-ink-faint">
+          <span className="text-[12px]">⌘</span>K
         </kbd>
       </button>
       <SearchDialog open={open} onOpenChange={setOpen} restaurantId={restaurantId} enableGlobalShortcut />

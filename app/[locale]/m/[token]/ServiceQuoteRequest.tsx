@@ -54,7 +54,7 @@ export function ServiceQuoteRequest({ token, restaurantTimezone, deliveryEnabled
         <span className="rounded-xl bg-mv-green/10 p-2.5 text-mv-green-dark"><ClipboardList size={18} /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-[13.5px] font-semibold text-mv-ink">{t("cta")}</span>
-          <span className="mt-0.5 block text-[11.5px] text-mv-ink-soft">{t("ctaDescription")}</span>
+          <span className="mt-0.5 block text-[12px] text-mv-ink-soft">{t("ctaDescription")}</span>
         </span>
         <CalendarDays size={16} className="text-mv-green-dark" />
       </button>

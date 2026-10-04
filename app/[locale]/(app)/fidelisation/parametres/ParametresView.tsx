@@ -146,7 +146,7 @@ function LoyaltyTierSettingsCard({
                 <Icon size={12} strokeWidth={2.4} />
                 {loyaltyTierLabel[tier]}
               </Badge>
-              <p className="mt-2 text-[11.5px] leading-snug text-mv-ink-faint">{loyaltyTierDescription[tier]}</p>
+              <p className="mt-2 text-[12px] leading-snug text-mv-ink-faint">{loyaltyTierDescription[tier]}</p>
               <p className="mt-2 text-[12px] text-mv-ink-soft">
                 {i === 0 ? (
                   "Dès l'inscription"
@@ -262,7 +262,7 @@ function WelcomeBonusCard({ restaurantId, initialPoints }: { restaurantId: strin
       </label>
       <button type="button" onClick={save} disabled={saving} className="inline-flex h-9 items-center gap-2 rounded-lg bg-mv-green px-3 text-xs font-semibold text-white disabled:opacity-60"><Save size={13} />{saving ? "Enregistrement…" : "Enregistrer"}</button>
       {saved && <span role="status" className="text-xs font-medium text-mv-green-dark">Enregistré</span>}
-      <p className="basis-full text-[11.5px] leading-5 text-mv-ink-faint">À 0 point, le bonus est désactivé. Après attribution, un message chaleureux confirme les points reçus.</p>
+      <p className="basis-full text-[12px] leading-5 text-mv-ink-faint">À 0 point, le bonus est désactivé. Après attribution, un message chaleureux confirme les points reçus.</p>
     </div>
   </Card>;
 }

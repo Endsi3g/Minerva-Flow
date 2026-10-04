@@ -33,7 +33,7 @@ export function MonthCalendar({
         {weekdays.map((w, i) => (
           <div
             key={i}
-            className="pb-1 text-center text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint"
+            className="pb-1 text-center text-[12px] sm:text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint"
           >
             {w}
           </div>
@@ -58,7 +58,7 @@ export function MonthCalendar({
             >
               <span
                 className={cn(
-                  "text-[10.5px] sm:text-[11.5px] font-bold leading-none",
+                  "text-[12px] sm:text-[12px] font-bold leading-none",
                   isLight ? "text-mv-ink" : "text-white drop-shadow-sm"
                 )}
               >
@@ -72,20 +72,20 @@ export function MonthCalendar({
                   )}
                 />
               )}
-              <span className="pointer-events-none absolute -top-9 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-mv-ink px-2 py-1 text-[11px] font-medium text-mv-cream-soft opacity-0 shadow-mv-md transition-opacity group-hover:opacity-100 flex items-center gap-1.5">
+              <span className="pointer-events-none absolute -top-9 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-mv-ink px-2 py-1 text-[12px] font-medium text-mv-cream-soft opacity-0 shadow-mv-md transition-opacity group-hover:opacity-100 flex items-center gap-1.5">
                 <span>{formatCurrency(d.revenue)}</span>
-                <span className="text-[10px] text-mv-lime">· Ouvrir ↗</span>
+                <span className="text-[12px] text-mv-lime">· Ouvrir ↗</span>
               </span>
             </button>
           );
         })}
       </div>
       <div className="mt-4 flex items-center justify-end gap-1.5">
-        <span className="text-[11px] text-mv-ink-faint">Faible</span>
+        <span className="text-[12px] text-mv-ink-faint">Faible</span>
         {heatmapBuckets.map((c) => (
           <div key={c} className="h-3 w-3 rounded-[3px]" style={{ background: c }} />
         ))}
-        <span className="text-[11px] text-mv-ink-faint">Fort</span>
+        <span className="text-[12px] text-mv-ink-faint">Fort</span>
       </div>
     </div>
   );

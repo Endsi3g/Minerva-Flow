@@ -279,16 +279,16 @@ function GenerativeActionCard() {
     <div className="pt-2 border-t border-[#F0EFEA]">
       <div className="rounded-2xl bg-[#FAF8F5] border border-[#E8E5DF] p-3.5 space-y-2.5">
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-[11.5px] font-bold text-[#0A3F2F]">
+          <span className="flex items-center gap-1.5 text-[12px] font-bold text-[#0A3F2F]">
             <Sparkles size={12} className="text-[#0E7C5A]" />
             Recommandations d&apos;action immédiate
           </span>
-          <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 text-[10px] font-bold">
+          <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 text-[12px] font-bold">
             +3 400 $ marge est.
           </span>
         </div>
 
-        <div className="space-y-1.5 text-[11.5px] text-[#5A5851]">
+        <div className="space-y-1.5 text-[12px] text-[#5A5851]">
           {[
             "Réajuster la tarification des cocktails du programme '5 à 7' (+8% marge brute).",
             "Vérifier les réapprovisionnements critiques pour sécuriser le service de ce week-end.",
@@ -320,14 +320,14 @@ function GenerativeActionCard() {
         <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-[#E8E5DF]">
           <Link
             href="/menu"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0E7C5A] bg-white border border-[#E2E0D8] px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0E7C5A] bg-white border border-[#E2E0D8] px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors shadow-2xs"
           >
             <span>Menu Engineering</span>
             <ExternalLink size={10} />
           </Link>
           <Link
             href="/inventaire"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#5A5851] bg-white border border-[#E2E0D8] px-2.5 py-1 rounded-lg hover:bg-gray-50 hover:text-[#1F1E1D] transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#5A5851] bg-white border border-[#E2E0D8] px-2.5 py-1 rounded-lg hover:bg-gray-50 hover:text-[#1F1E1D] transition-colors shadow-2xs"
           >
             <span>Gestion des Stocks</span>
             <ExternalLink size={10} />
@@ -350,7 +350,7 @@ function BranchPicker() {
         </button>
       </BranchPickerPrimitive.Previous>
 
-      <span className="text-[11px] font-mono font-medium">
+      <span className="text-[12px] font-mono font-medium">
         <BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count />
       </span>
 
@@ -502,7 +502,7 @@ function MultifunctionComposer({
 
               {modelMenuOpen && (
                 <div className="absolute right-0 bottom-10 z-50 bg-white border border-[#e6e5e0] rounded-xl py-1 shadow-lg w-48 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="px-3 py-1 text-[8px] font-bold text-[#7a7a76] uppercase tracking-wider">
+                  <div className="px-3 py-1 text-[12px] font-bold text-[#7a7a76] uppercase tracking-wider">
                     Modèle d'Intelligence
                   </div>
                   {["Gemini 3.7", "Gemini 3.5 Pro"].map((m) => (
@@ -514,7 +514,7 @@ function MultifunctionComposer({
                         setModelMenuOpen(false);
                       }}
                       className={cn(
-                        "w-full text-left px-3 py-1.5 text-[11px] font-bold flex items-center justify-between hover:bg-neutral-50 transition-colors cursor-pointer",
+                        "w-full text-left px-3 py-1.5 text-[12px] font-bold flex items-center justify-between hover:bg-neutral-50 transition-colors cursor-pointer",
                         selectedModel === m ? "text-[#059669]" : "text-[#26251e]"
                       )}
                     >

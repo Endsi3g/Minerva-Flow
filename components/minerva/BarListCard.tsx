@@ -41,7 +41,7 @@ export function BarListCard({
     <div className={`absolute ${position} z-10 w-64 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm`}>
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-mv-ink-faint">{eyebrow}</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{eyebrow}</p>
           <p className="text-[13px] font-semibold text-mv-ink">{title}</p>
         </div>
         <button

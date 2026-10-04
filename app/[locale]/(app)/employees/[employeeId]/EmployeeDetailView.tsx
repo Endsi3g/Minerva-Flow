@@ -186,7 +186,7 @@ export function EmployeeDetailView({
                 <div className="flex items-center gap-2.5 text-mv-ink-soft">
                   <DollarSign size={16} className="text-mv-green-dark" />
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("hourlyRate")}</p>
+                    <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("hourlyRate")}</p>
                     <p className="font-medium text-mv-ink">{formatCurrency(employee.hourlyWage)}/h</p>
                     <PaySummaryInline restaurantId={restaurantId} employeeId={employee.id} />
                   </div>
@@ -197,7 +197,7 @@ export function EmployeeDetailView({
                 <div className="flex items-center gap-2.5 text-mv-ink-soft">
                   <Phone size={16} className="text-mv-ink-faint" />
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("phone")}</p>
+                    <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("phone")}</p>
                     <p className="font-medium text-mv-ink">{employee.contactPhone}</p>
                   </div>
                 </div>
@@ -207,7 +207,7 @@ export function EmployeeDetailView({
                 <div className="flex items-center gap-2.5 text-mv-ink-soft">
                   <Mail size={16} className="text-mv-ink-faint" />
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("email")}</p>
+                    <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("email")}</p>
                     <p className="font-medium text-mv-ink">{employee.contactEmail}</p>
                   </div>
                 </div>
@@ -216,14 +216,14 @@ export function EmployeeDetailView({
               <div className="flex items-center gap-2.5 text-mv-ink-soft">
                 <Calendar size={16} className="text-mv-ink-faint" />
                 <div>
-                  <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("memberSince")}</p>
+                  <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("memberSince")}</p>
                   <p className="font-medium text-mv-ink">{formatDate(employee.createdAt.slice(0, 10))}</p>
                 </div>
               </div>
 
               {employee.description && (
                 <div className="border-t border-mv-border-soft pt-3">
-                  <p className="text-[11px] font-semibold uppercase text-mv-ink-faint mb-1">{t("notesBio")}</p>
+                  <p className="text-[12px] font-semibold uppercase text-mv-ink-faint mb-1">{t("notesBio")}</p>
                   <p className="leading-relaxed text-mv-ink-soft">{employee.description}</p>
                 </div>
               )}
@@ -252,7 +252,7 @@ export function EmployeeDetailView({
                         <KeyRound size={14} /> Inviter à se connecter
                       </Button>
                     ) : (
-                      <p className="text-center text-[11.5px] text-mv-ink-faint">
+                      <p className="text-center text-[12px] text-mv-ink-faint">
                         Ajoutez un courriel à cette fiche pour permettre la connexion.
                       </p>
                     )}
@@ -298,14 +298,14 @@ export function EmployeeDetailView({
             <div className="grid grid-cols-2 gap-3 mt-2">
               <div className="rounded-xl bg-mv-cream-soft p-3.5 text-center">
                 <Clock size={20} className="mx-auto mb-1 text-mv-ink-soft" />
-                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{td("hoursTotal")}</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{td("hoursTotal")}</p>
                 <p className="mt-0.5 font-display text-[20px] font-medium text-mv-ink">
                   {totalHours.toFixed(1)}h
                 </p>
               </div>
               <div className="rounded-xl bg-mv-cream-soft p-3.5 text-center">
                 <Award size={20} className="mx-auto mb-1 text-mv-green-dark" />
-                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{td("punctuality")}</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{td("punctuality")}</p>
                 <p className="mt-0.5 font-display text-[20px] font-medium text-mv-ink">
                   {punctuality === null ? "—" : `${punctuality}%`}
                 </p>
@@ -484,10 +484,10 @@ export function EmployeeDetailView({
                         </p>
                       )}
                       <div className="flex items-center justify-between border-t border-mv-border-soft pt-2 mt-2">
-                        <span className="text-[11px] text-mv-ink-faint">{t("byReviewer", { name: r.reviewerName })}</span>
+                        <span className="text-[12px] text-mv-ink-faint">{t("byReviewer", { name: r.reviewerName })}</span>
                         <Link
                           href={`/employees/${employee.id}/reviews/${r.id}`}
-                          className="flex items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                          className="flex items-center gap-1.5 text-[12px] font-semibold text-mv-green-dark hover:underline"
                         >
                           <Printer size={12} /> {td("viewPrint")}
                         </Link>

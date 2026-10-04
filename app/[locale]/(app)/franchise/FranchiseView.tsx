@@ -103,10 +103,10 @@ export function FranchiseView({
             centerLabel="du mois"
           />
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               <DollarSign size={13} /> Ventes grâce à la fidélisation
             </p>
-            <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+            <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
               Achats en plus générés par vos relances automatiques, ce mois-ci.
             </p>
             <p className="mt-1 font-display text-[17px] font-medium text-mv-ink">
@@ -124,10 +124,10 @@ export function FranchiseView({
             centerLabel="marge"
           />
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               <TrendingUp size={13} /> Marge du menu actif
             </p>
-            <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+            <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
               Marge de ce qui est au menu aujourd&apos;hui, vs le menu complet (plats retirés inclus).
             </p>
             <p className="mt-1 text-[12px] text-mv-ink-soft">
@@ -145,10 +145,10 @@ export function FranchiseView({
             centerLabel="plus souvent"
           />
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               <Repeat size={13} /> Reviennent plus souvent
             </p>
-            <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+            <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
               Clients touchés par une relance, comparés à ceux qui n&apos;en ont pas reçu.
             </p>
             <p className="mt-1 text-[12px] text-mv-ink-soft">Moyenne pondérée sur tous les établissements</p>

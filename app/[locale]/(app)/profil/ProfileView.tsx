@@ -83,7 +83,7 @@ function AvatarUploader({ profile }: { profile: MyProfile }) {
         className="hidden"
         onChange={handleChange}
       />
-      {error && <p className="max-w-[200px] text-center text-[11.5px] text-mv-red">{error}</p>}
+      {error && <p className="max-w-[200px] text-center text-[12px] text-mv-red">{error}</p>}
     </div>
   );
 }
@@ -210,12 +210,12 @@ function ProductUpdatesPreference({ initialValue }: { initialValue: boolean }) {
           <span className="mt-1 block text-[12px] leading-relaxed text-mv-ink-soft">
             {t("emailUpdatesHelp")}
           </span>
-          <span className="mt-2 block text-[11px] leading-relaxed text-mv-ink-faint">
+          <span className="mt-2 block text-[12px] leading-relaxed text-mv-ink-faint">
             {t("emailUpdatesOptional")}
           </span>
         </span>
       </label>
-      <p className="mt-3 text-[11.5px] text-mv-ink-faint" aria-live="polite">
+      <p className="mt-3 text-[12px] text-mv-ink-faint" aria-live="polite">
         {saving ? t("emailUpdatesSaving") : enabled ? t("emailUpdatesStatusOn") : t("emailUpdatesStatusOff")}
       </p>
     </Card>
@@ -316,7 +316,7 @@ export function ProfileView({
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] text-mv-ink">{entry.description}</p>
-                      <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">
+                      <p className="mt-0.5 text-[12px] text-mv-ink-faint">
                         {formatRelativeTime(entry.createdAt)}
                       </p>
                     </div>

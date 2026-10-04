@@ -61,7 +61,7 @@ function ClockInOutCard({ shifts, onShiftsChange }: { shifts: EmployeeShift[]; o
   return (
     <Card className="mb-6 flex items-center justify-between gap-3">
       <div>
-        <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Pointage</p>
+        <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Pointage</p>
         <p className="mt-0.5 font-display text-[16px] font-medium text-mv-ink">
           {openShift
             ? `En quart depuis ${new Date(openShift.clockIn!).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}`
@@ -101,7 +101,7 @@ function PaySummaryCard({ initialSummary }: { initialSummary: EmployeePaySummary
         <Select
           value={period}
           onChange={(e) => handlePeriodChange(e.target.value as PayPeriod)}
-          className="h-7 w-auto border-0 bg-transparent px-1 text-[11px] font-semibold uppercase text-mv-ink-faint"
+          className="h-7 w-auto border-0 bg-transparent px-1 text-[12px] font-semibold uppercase text-mv-ink-faint"
         >
           {(Object.keys(PERIOD_LABELS) as PayPeriod[]).map((p) => (
             <option key={p} value={p}>
@@ -185,7 +185,7 @@ export function MonEspaceView({
         <PaySummaryCard initialSummary={initialPaySummary} />
         <Card className="text-center">
           <Award size={20} className="mx-auto mb-1 text-mv-green-dark" />
-          <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Ponctualité</p>
+          <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Ponctualité</p>
           <p className="mt-0.5 font-display text-[20px] font-medium text-mv-ink">
             {punctuality === null ? "—" : `${punctuality}%`}
           </p>
@@ -305,10 +305,10 @@ export function MonEspaceView({
                     </p>
                   )}
                   <div className="flex items-center justify-between border-t border-mv-border-soft pt-2 mt-2">
-                    <span className="text-[11px] text-mv-ink-faint">Par {r.reviewerName}</span>
+                    <span className="text-[12px] text-mv-ink-faint">Par {r.reviewerName}</span>
                     <Link
                       href={`/employees/${employee.id}/reviews/${r.id}`}
-                      className="flex items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                      className="flex items-center gap-1.5 text-[12px] font-semibold text-mv-green-dark hover:underline"
                     >
                       <Printer size={12} /> Voir / imprimer
                     </Link>

@@ -34,7 +34,7 @@ export function GtmFunnelCard({ metrics }: { metrics: TeamMetricsSnapshot }) {
               <div className="h-full rounded-full bg-mv-green transition-all" style={{ width: `${(stage.count / top) * 100}%` }} />
             </div>
             {stage.key !== "registered" && (
-              <p className="mt-1 text-[11.5px] text-mv-ink-faint">
+              <p className="mt-1 text-[12px] text-mv-ink-faint">
                 {pct(stage.conversionFromPrevious)} de l’étape précédente
               </p>
             )}

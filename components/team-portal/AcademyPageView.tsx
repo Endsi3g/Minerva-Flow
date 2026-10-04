@@ -16,7 +16,7 @@ export function AcademyPageView({ page }: { page: AcademyPage }) {
       <div>
         <h1 className="font-display text-2xl text-mv-ink">{page.title}</h1>
         <p className="mt-1 text-[13.5px] text-mv-ink-soft">{page.description}</p>
-        <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[11.5px] text-mv-ink-faint">
+        <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[12px] text-mv-ink-faint">
           Étiquettes :
           {(Object.keys(TAG_TONE) as AcademyTag[]).map((tag) => (
             <Badge key={tag} tone={TAG_TONE[tag]} variant="subtle" size="sm">

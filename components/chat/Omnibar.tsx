@@ -269,7 +269,7 @@ export function Omnibar({
           ref={popoverRef}
           className="absolute bottom-full left-0 mb-2 w-80 bg-white border border-[#E2E0D8] rounded-2xl shadow-xl z-40 p-1.5 text-left animate-in fade-in zoom-in-95"
         >
-          <div className="px-2.5 py-1 text-[10.5px] font-mono font-bold text-[#8A887F] uppercase tracking-wider border-b border-[#F0EFEA] mb-1">
+          <div className="px-2.5 py-1 text-[12px] font-mono font-bold text-[#8A887F] uppercase tracking-wider border-b border-[#F0EFEA] mb-1">
             {triggerType === "/" ? "Commandes d'audit disponibles" : "Sources de données connectées"}
           </div>
 
@@ -288,12 +288,12 @@ export function Omnibar({
                         : "hover:bg-black/[0.04] text-[#1F1E1D]"
                     )}
                   >
-                    <span className="font-mono font-bold px-1.5 py-0.5 rounded bg-gray-100 border border-[#E8E5DF] text-[10.5px]">
+                    <span className="font-mono font-bold px-1.5 py-0.5 rounded bg-gray-100 border border-[#E8E5DF] text-[12px]">
                       {cmd.command}
                     </span>
                     <div className="min-w-0">
                       <p className="font-semibold truncate">{cmd.label}</p>
-                      <p className="text-[10px] text-[#8A887F] truncate">{cmd.description}</p>
+                      <p className="text-[12px] text-[#8A887F] truncate">{cmd.description}</p>
                     </div>
                   </button>
                 ))
@@ -314,12 +314,12 @@ export function Omnibar({
                         : "hover:bg-black/[0.04] text-[#1F1E1D]"
                     )}
                   >
-                    <span className="font-mono font-bold px-1.5 py-0.5 rounded bg-gray-100 border border-[#E8E5DF] text-[10.5px]">
+                    <span className="font-mono font-bold px-1.5 py-0.5 rounded bg-gray-100 border border-[#E8E5DF] text-[12px]">
                       {m.mention}
                     </span>
                     <div className="min-w-0">
                       <p className="font-semibold truncate">{m.label}</p>
-                      <p className="text-[10px] text-[#8A887F] truncate">{m.description}</p>
+                      <p className="text-[12px] text-[#8A887F] truncate">{m.description}</p>
                     </div>
                   </button>
                 ))
@@ -387,7 +387,7 @@ export function Omnibar({
             </button>
 
             {/* Chat / Cowork Mode Pills */}
-            <div className="flex items-center bg-white border border-[#E2E0D8] rounded-lg p-0.5 text-[11px] font-semibold shadow-2xs">
+            <div className="flex items-center bg-white border border-[#E2E0D8] rounded-lg p-0.5 text-[12px] font-semibold shadow-2xs">
               <button
                 type="button"
                 onClick={() => setActiveMode("chat")}
@@ -421,7 +421,7 @@ export function Omnibar({
               <button
                 type="button"
                 onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
-                className="flex h-7 items-center gap-1 rounded-lg px-2 text-[11px] font-semibold text-[#5A5851] hover:text-[#1F1E1D] hover:bg-black/[0.05] transition-colors bg-white border border-[#E2E0D8] shadow-2xs"
+                className="flex h-7 items-center gap-1 rounded-lg px-2 text-[12px] font-semibold text-[#5A5851] hover:text-[#1F1E1D] hover:bg-black/[0.05] transition-colors bg-white border border-[#E2E0D8] shadow-2xs"
               >
                 <span className="truncate max-w-[110px]">
                   {selectedModel === "gemini-3.7-flash" ? "Gemini 3.7 Flash" : "Claude 3.5 Sonnet"}
@@ -440,8 +440,8 @@ export function Omnibar({
                     )}
                   >
                     <div>
-                      <p className="font-semibold text-[11.5px]">Gemini 3.7 Flash</p>
-                      <p className="text-[10px] text-[#8A887F]">Recommandé · Haute vitesse</p>
+                      <p className="font-semibold text-[12px]">Gemini 3.7 Flash</p>
+                      <p className="text-[12px] text-[#8A887F]">Recommandé · Haute vitesse</p>
                     </div>
                     {selectedModel === "gemini-3.7-flash" && <Check size={13} className="text-[#0E7C5A]" />}
                   </button>
@@ -454,8 +454,8 @@ export function Omnibar({
                     )}
                   >
                     <div>
-                      <p className="font-semibold text-[11.5px]">Claude 3.5 Sonnet</p>
-                      <p className="text-[10px] text-[#8A887F]">Raisonnement analytique</p>
+                      <p className="font-semibold text-[12px]">Claude 3.5 Sonnet</p>
+                      <p className="text-[12px] text-[#8A887F]">Raisonnement analytique</p>
                     </div>
                     {selectedModel === "claude-3.5-sonnet" && <Check size={13} className="text-[#0E7C5A]" />}
                   </button>
@@ -491,7 +491,7 @@ export function Omnibar({
       </div>
 
       {/* Helper Shortcut Pills below Omnibar */}
-      <div className="flex flex-wrap items-center justify-center gap-2 mt-2.5 text-[10.5px] text-[#8A887F]">
+      <div className="flex flex-wrap items-center justify-center gap-2 mt-2.5 text-[12px] text-[#8A887F]">
         <button
           type="button"
           onClick={() => {

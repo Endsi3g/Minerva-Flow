@@ -99,11 +99,11 @@ export function LifetimeValueView({
           </div>
         )}
       </Card>
-      <p className="text-[11.5px] leading-relaxed text-mv-ink-faint">La LTV de marge est une estimation à partir des coûts actuels des articles et des ventes cumulées. Les coûts historiques par commande ne sont pas encore conservés; la marge peut donc différer si vos coûts ont changé.</p>
+      <p className="text-[12px] leading-relaxed text-mv-ink-faint">La LTV de marge est une estimation à partir des coûts actuels des articles et des ventes cumulées. Les coûts historiques par commande ne sont pas encore conservés; la marge peut donc différer si vos coûts ont changé.</p>
     </div>
   );
 }
 
 function MetricCard({ icon, label, value, detail }: { icon: ReactNode; label: string; value: string; detail: string }) {
-  return <Card className="p-4"><div className="mb-3 flex items-center gap-2 text-mv-green-dark">{icon}<span className="text-[11px] font-semibold uppercase tracking-wide">{label}</span></div><p className="font-display text-[26px] text-mv-ink">{value}</p><p className="mt-1 text-[11.5px] leading-relaxed text-mv-ink-faint">{detail}</p></Card>;
+  return <Card className="p-4"><div className="mb-3 flex items-center gap-2 text-mv-green-dark">{icon}<span className="text-[12px] font-semibold uppercase tracking-wide">{label}</span></div><p className="font-display text-[26px] text-mv-ink">{value}</p><p className="mt-1 text-[12px] leading-relaxed text-mv-ink-faint">{detail}</p></Card>;
 }

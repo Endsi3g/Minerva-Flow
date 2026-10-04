@@ -95,10 +95,10 @@ export function ImpactView({
             centerLabel="du mois"
           />
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               <DollarSign size={13} /> Ventes grâce à la fidélisation
             </p>
-            <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+            <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
               Achats en plus générés par vos relances automatiques, ce mois-ci.
             </p>
             <p className="mt-1 font-display text-[17px] font-medium text-mv-ink">
@@ -122,10 +122,10 @@ export function ImpactView({
             </span>
           )}
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               <TrendingUp size={13} /> Marge du menu actif
             </p>
-            <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+            <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
               Marge de ce qui est au menu aujourd&apos;hui — retirez un plat à faible marge pour voir ce chiffre bouger.
             </p>
             {impact.hasMenuMarginData ? (
@@ -150,10 +150,10 @@ export function ImpactView({
             centerLabel="plus souvent"
           />
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               <Repeat size={13} /> Reviennent plus souvent
             </p>
-            <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+            <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
               Clients touchés par une relance, comparés à ceux qui n&apos;en ont pas reçu.
             </p>
           </div>
@@ -170,7 +170,7 @@ export function ImpactView({
           {hasEnoughData ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="rounded-xl border border-mv-green/20 bg-mv-green-tint p-4">
-                <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-green-dark">
+                <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">
                   <Users size={13} /> Ont reçu une relance
                 </p>
                 <p className="mt-1 font-display text-[24px] font-medium text-mv-green-darker">
@@ -179,7 +179,7 @@ export function ImpactView({
                 <p className="mt-1 text-[12px] text-mv-ink-soft">{visitFrequency.touchedCount} client(s)</p>
               </div>
               <div className="rounded-xl border border-mv-border bg-mv-cream-soft p-4">
-                <p className="flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                   <Users size={13} /> N&apos;en ont jamais reçu
                 </p>
                 <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
@@ -315,7 +315,7 @@ function ActionableCustomersCard({
                   <Link href={`/fidelisation/${customer.id}`} className="text-[13px] font-semibold text-mv-ink hover:underline">
                     {customer.name}
                   </Link>
-                  <p className="flex items-center gap-1.5 text-[11.5px] text-mv-ink-faint">
+                  <p className="flex items-center gap-1.5 text-[12px] text-mv-ink-faint">
                     <Icon size={12} /> {triggerLabel[trigger]}
                   </p>
                 </div>

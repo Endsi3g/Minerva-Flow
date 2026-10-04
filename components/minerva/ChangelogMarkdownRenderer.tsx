@@ -19,7 +19,7 @@ export function formatInlineText(text: string) {
       return (
         <code
           key={idx}
-          className="mx-1 rounded-md bg-mv-ink/5 dark:bg-mv-ink/20 px-1.5 py-0.5 text-[11.5px] font-mono font-medium text-mv-green-dark border border-mv-border/40"
+          className="mx-1 rounded-md bg-mv-ink/5 dark:bg-mv-ink/20 px-1.5 py-0.5 text-[12px] font-mono font-medium text-mv-green-dark border border-mv-border/40"
         >
           {codeText}
         </code>

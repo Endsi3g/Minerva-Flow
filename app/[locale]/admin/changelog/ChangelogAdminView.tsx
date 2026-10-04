@@ -108,7 +108,7 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
                   decoding="async"
                   className="block aspect-video w-full object-cover"
                 />
-                <figcaption className="px-3 py-2 text-[11px] text-mv-ink-faint">
+                <figcaption className="px-3 py-2 text-[12px] text-mv-ink-faint">
                   Capture ajoutée à la mise à jour
                 </figcaption>
               </figure>
@@ -128,7 +128,7 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
                 <Badge tone={categoryTone[entry.category]}>{t(`category.${entry.category}`)}</Badge>
                 <Badge tone="neutral">{entry.audience === "client" ? "Clients" : entry.audience === "all" ? "Tous" : "Propriétaires"}</Badge>
               </span>
-              <span className="text-[11px] text-mv-ink-faint">
+              <span className="text-[12px] text-mv-ink-faint">
                 {formatDateFull(entry.publishedAt.slice(0, 10))} · {formatTime(entry.publishedAt)}
               </span>
             </div>

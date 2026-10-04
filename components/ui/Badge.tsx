@@ -59,8 +59,8 @@ const dotColors: Record<BadgeTone, string> = {
 };
 
 const sizeClasses: Record<BadgeSize, string> = {
-  xs: "px-1.5 py-0.5 text-[10px] gap-1",
-  sm: "px-2 py-0.5 text-[11px] gap-1",
+  xs: "px-1.5 py-0.5 text-[12px] gap-1",
+  sm: "px-2 py-0.5 text-[12px] gap-1",
   default: "px-2.5 py-1 text-[12px] gap-1.5",
   lg: "px-3 py-1.5 text-[13px] gap-2",
 };

@@ -108,27 +108,27 @@ function cleanNotes(notes?: string | null): string | null {
 function SourceBadge({ source }: { source?: OrderSource }) {
   if (source === "mobile") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-purple-700 border border-purple-200">
+      <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-1.5 py-0.5 text-[12px] font-semibold text-purple-700 border border-purple-200">
         <Smartphone size={10.5} /> App Mobile
       </span>
     );
   }
   if (source === "web") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-emerald-700 border border-emerald-200">
+      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[12px] font-semibold text-emerald-700 border border-emerald-200">
         <Globe size={10.5} /> Web
       </span>
     );
   }
   if (source === "pos") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10.5px] font-semibold text-slate-700 border border-slate-200">
+      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[12px] font-semibold text-slate-700 border border-slate-200">
         Caisse
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-amber-800 border border-amber-200">
+    <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[12px] font-semibold text-amber-800 border border-amber-200">
       <PhoneCall size={10.5} /> Manuel
     </span>
   );
@@ -137,10 +137,10 @@ function SourceBadge({ source }: { source?: OrderSource }) {
 function DeliveryMeta({ order }: { order: Order }) {
   if (order.fulfillmentMode !== "livraison") return null;
   return (
-    <div className="mt-1.5 rounded-lg border border-blue-200 bg-blue-50/70 px-2 py-1.5 text-[11px] text-blue-900">
+    <div className="mt-1.5 rounded-lg border border-blue-200 bg-blue-50/70 px-2 py-1.5 text-[12px] text-blue-900">
       <div className="font-semibold">Livraison{order.deliveryEtaMinutes ? ` · ~${order.deliveryEtaMinutes} min` : ""}</div>
       {order.deliveryAddress && <div className="truncate" title={order.deliveryAddress}>{order.deliveryAddress}</div>}
-      {order.deliveryFee > 0 && <div className="font-mono text-[10px]">Frais : {formatCurrency(order.deliveryFee)}</div>}
+      {order.deliveryFee > 0 && <div className="font-mono text-[12px]">Frais : {formatCurrency(order.deliveryFee)}</div>}
     </div>
   );
 }
@@ -148,7 +148,7 @@ function DeliveryMeta({ order }: { order: Order }) {
 function ScheduledOrderBadge({ order, timeZone }: { order: Order; timeZone: string }) {
   if (!order.requestedReadyAt) return null;
   return (
-    <span className="inline-flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10.5px] font-semibold text-violet-800">
+    <span className="inline-flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[12px] font-semibold text-violet-800">
       <Clock size={10.5} /> Précommande · {formatRestaurantTime(order.requestedReadyAt, timeZone)}
     </span>
   );
@@ -202,17 +202,17 @@ function OrderEtaEditor({
           value={minutes}
           onChange={(e) => setMinutes(e.target.value)}
           placeholder="min"
-          className="w-14 rounded-md border border-mv-border px-1.5 py-0.5 text-[11px]"
+          className="w-14 rounded-md border border-mv-border px-1.5 py-0.5 text-[12px]"
         />
         <button
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="text-[11px] font-semibold text-mv-green-dark"
+          className="text-[12px] font-semibold text-mv-green-dark"
         >
           {saving ? "…" : "OK"}
         </button>
-        <button type="button" onClick={() => setEditing(false)} className="text-[11px] text-mv-ink-faint">
+        <button type="button" onClick={() => setEditing(false)} className="text-[12px] text-mv-ink-faint">
           Annuler
         </button>
       </div>
@@ -226,7 +226,7 @@ function OrderEtaEditor({
       type="button"
       onClick={() => canManage && setEditing(true)}
       disabled={!canManage}
-      className="mt-1 flex items-center gap-1 text-[11px] font-medium text-mv-ink-faint transition-colors hover:text-mv-ink-soft disabled:cursor-default"
+      className="mt-1 flex items-center gap-1 text-[12px] font-medium text-mv-ink-faint transition-colors hover:text-mv-ink-soft disabled:cursor-default"
     >
       <Clock size={11} />
       {order.estimatedReadyAt ? `Prêt vers ${formatRestaurantTime(order.estimatedReadyAt, timeZone)}` : "Ajouter un délai"}
@@ -302,7 +302,7 @@ function ElapsedTimer({ createdAt }: { createdAt: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 font-mono text-[11px] font-bold px-2 py-0.5 rounded-md",
+        "inline-flex items-center gap-1 font-mono text-[12px] font-bold px-2 py-0.5 rounded-md",
         isUrgent
           ? "bg-mv-red/15 text-mv-red border border-mv-red/30 animate-pulse"
           : isWarning
@@ -312,7 +312,7 @@ function ElapsedTimer({ createdAt }: { createdAt: string }) {
     >
       <Clock size={11} className={cn(isUrgent && "text-mv-red")} />
       {formatted}
-      {isUrgent && <span className="text-[10px] uppercase font-bold ml-0.5">Retard</span>}
+      {isUrgent && <span className="text-[12px] uppercase font-bold ml-0.5">Retard</span>}
     </span>
   );
 }
@@ -420,7 +420,7 @@ function NewManualOrderModal({
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13px] font-medium text-mv-ink">{m.name}</p>
-                      <p className="text-[11.5px] text-mv-ink-faint">{formatCurrency(m.price)}</p>
+                      <p className="text-[12px] text-mv-ink-faint">{formatCurrency(m.price)}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
                       <button
@@ -854,7 +854,7 @@ export function CommandesView({
             </div>
             <p className="font-display text-[26px] font-bold text-mv-ink">{formatCurrency(totalVolume)}</p>
           </div>
-          <div className="mt-2 pt-2 border-t border-mv-border-soft flex flex-wrap items-center gap-1.5 text-[11.5px] text-mv-ink-soft">
+          <div className="mt-2 pt-2 border-t border-mv-border-soft flex flex-wrap items-center gap-1.5 text-[12px] text-mv-ink-soft">
             <span className="font-semibold text-mv-ink">{orderCount}</span> commande{orderCount > 1 ? "s" : ""} :
             <span className="inline-flex items-center gap-1 text-mv-ink-soft font-medium bg-mv-cream-soft px-1.5 py-0.5 rounded">
               <Smartphone size={11} aria-hidden="true" /> {mobileOrderCount}
@@ -883,7 +883,7 @@ export function CommandesView({
               {averageDelayMinutes !== null ? `~${averageDelayMinutes} min` : "—"}
             </p>
           </div>
-          <div className="mt-2 pt-2 border-t border-mv-border-soft text-[11.5px] text-mv-ink-soft">
+          <div className="mt-2 pt-2 border-t border-mv-border-soft text-[12px] text-mv-ink-soft">
             {minutesSinceLatestOrder !== null ? (
               <p>
                 Dernière commande : <span className="font-semibold text-mv-ink font-mono">{minutesSinceLatestOrder === 0 ? "À l'instant" : `Il y a ${minutesSinceLatestOrder} min`}</span>
@@ -909,13 +909,13 @@ export function CommandesView({
               <p className="font-display text-[26px] font-bold text-mv-ink">{menuViews}</p>
               <span className="text-[12px] text-mv-ink-faint">visites</span>
               {conversionRate !== null && (
-                <Badge tone="green" className="ml-auto font-mono text-[11px]">
+                <Badge tone="green" className="ml-auto font-mono text-[12px]">
                   {conversionRate}% conv.
                 </Badge>
               )}
             </div>
           </div>
-          <div className="mt-2 pt-2 border-t border-mv-border-soft text-[11.5px] text-mv-ink-soft">
+          <div className="mt-2 pt-2 border-t border-mv-border-soft text-[12px] text-mv-ink-soft">
             {menuViews > 0 ? (
               <p>
                 <span className="font-semibold text-mv-ink">{directOrderCount}</span> commande{directOrderCount > 1 ? "s" : ""} directe{directOrderCount > 1 ? "s" : ""} issue{directOrderCount > 1 ? "s" : ""} du menu
@@ -942,7 +942,7 @@ export function CommandesView({
                 {formatCurrency(estimatedPlatformCommission)}
               </p>
             </div>
-            <div className="mt-2 pt-2 border-t border-mv-border-soft text-[11.5px] text-mv-ink-soft">
+            <div className="mt-2 pt-2 border-t border-mv-border-soft text-[12px] text-mv-ink-soft">
               Préservés vs. frais 25% Uber Eats / DoorDash
             </div>
           </Card>
@@ -998,7 +998,7 @@ export function CommandesView({
                           <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
-                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[10px] font-mono text-mv-ink-soft border border-mv-border/80"
+                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
                               title="Délai après la commande précédente"
                             >
                               +{orderIntervals.get(o.id)}m
@@ -1019,7 +1019,7 @@ export function CommandesView({
                       ))}
                     </ul>
                     {cleanNotes(o.notes) && (
-                      <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[11.5px] italic text-mv-ink-soft">
+                      <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[12px] italic text-mv-ink-soft">
                         « {cleanNotes(o.notes)} »
                       </p>
                     )}
@@ -1067,7 +1067,7 @@ export function CommandesView({
                           <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
-                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[10px] font-mono text-mv-ink-soft border border-mv-border/80"
+                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
                               title="Délai après la commande précédente"
                             >
                               +{orderIntervals.get(o.id)}m
@@ -1097,7 +1097,7 @@ export function CommandesView({
                       ))}
                     </ul>
                     {cleanNotes(o.notes) && (
-                      <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[11.5px] italic text-mv-ink-soft">
+                      <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[12px] italic text-mv-ink-soft">
                         « {cleanNotes(o.notes)} »
                       </p>
                     )}
@@ -1108,7 +1108,7 @@ export function CommandesView({
                           size="sm"
                           variant="primary"
                           onClick={() => handleStatusChange(o.id, "en_preparation")}
-                          className="text-[11.5px] h-7 px-2.5 bg-mv-amber-dark hover:bg-mv-amber text-white"
+                          className="text-[12px] h-7 px-2.5 bg-mv-amber-dark hover:bg-mv-amber text-white"
                         >
                           <Flame size={12} /> Lancer la prépa
                         </Button>
@@ -1150,7 +1150,7 @@ export function CommandesView({
                           <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
-                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[10px] font-mono text-mv-ink-soft border border-mv-border/80"
+                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
                               title="Délai après la commande précédente"
                             >
                               +{orderIntervals.get(o.id)}m
@@ -1180,7 +1180,7 @@ export function CommandesView({
                       ))}
                     </ul>
                     {cleanNotes(o.notes) && (
-                      <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[11.5px] italic text-mv-ink-soft">
+                      <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[12px] italic text-mv-ink-soft">
                         « {cleanNotes(o.notes)} »
                       </p>
                     )}
@@ -1191,7 +1191,7 @@ export function CommandesView({
                           size="sm"
                           variant="primary"
                           onClick={() => handleStatusChange(o.id, "prete")}
-                          className="text-[11.5px] h-7 px-2.5 bg-mv-green-dark hover:bg-mv-green text-white"
+                          className="text-[12px] h-7 px-2.5 bg-mv-green-dark hover:bg-mv-green text-white"
                         >
                           <CheckCircle2 size={12} /> Prête
                         </Button>
@@ -1233,7 +1233,7 @@ export function CommandesView({
                           <DeliveryMeta order={o} />
                           {orderIntervals.has(o.id) && (
                             <span
-                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[10px] font-mono text-mv-ink-soft border border-mv-border/80"
+                              className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
                               title="Délai après la commande précédente"
                             >
                               +{orderIntervals.get(o.id)}m
@@ -1254,7 +1254,7 @@ export function CommandesView({
                       ))}
                     </ul>
                     {cleanNotes(o.notes) && (
-                      <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[11.5px] italic text-mv-ink-soft">
+                      <p className="mt-2 rounded-lg bg-mv-cream px-2 py-1 text-[12px] italic text-mv-ink-soft">
                         « {cleanNotes(o.notes)} »
                       </p>
                     )}
@@ -1267,7 +1267,7 @@ export function CommandesView({
                             variant="ghost"
                             onClick={() => handleNotifyReady(o.id)}
                             disabled={notifyingId === o.id}
-                            className="text-[11.5px] h-7 px-2 text-mv-ink-soft hover:text-mv-ink"
+                            className="text-[12px] h-7 px-2 text-mv-ink-soft hover:text-mv-ink"
                             title={o.readyNotifiedAt ? `Notifié à ${formatRestaurantTime(o.readyNotifiedAt, restaurantTimezone)}` : "Notifier le client par courriel/push/SMS"}
                           >
                             {o.readyNotifiedAt ? <BellRing size={12} /> : <Bell size={12} />}
@@ -1277,7 +1277,7 @@ export function CommandesView({
                             size="sm"
                             variant="secondary"
                             onClick={() => handleStatusChange(o.id, "servie")}
-                            className="text-[11.5px] h-7 px-2.5 border-mv-green text-mv-green-dark hover:bg-mv-green hover:text-white"
+                            className="text-[12px] h-7 px-2.5 border-mv-green text-mv-green-dark hover:bg-mv-green hover:text-white"
                           >
                             <CheckCircle2 size={12} /> Servir
                           </Button>
@@ -1310,13 +1310,13 @@ export function CommandesView({
                         <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
                         <DeliveryMeta order={o} />
                         {orderIntervals.has(o.id) && (
-                          <span className="text-[10px] font-mono text-mv-ink-faint">+{orderIntervals.get(o.id)}m</span>
+                          <span className="text-[12px] font-mono text-mv-ink-faint">+{orderIntervals.get(o.id)}m</span>
                         )}
                       </div>
                     </div>
                     <span className="font-mono">{formatCurrency(o.total)}</span>
                   </div>
-                  <p className="text-[11px] text-mv-ink-faint mt-0.5">
+                  <p className="text-[12px] text-mv-ink-faint mt-0.5">
                     {o.items.map((i) => `${i.quantity}× ${i.itemName}`).join(", ")}
                   </p>
                 </div>
@@ -1349,7 +1349,7 @@ export function CommandesView({
                       <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
                       <DeliveryMeta order={o} />
                       {orderIntervals.has(o.id) && (
-                        <span className="text-[10px] font-mono text-mv-ink-faint" title="Délai par rapport à la commande précédente">
+                        <span className="text-[12px] font-mono text-mv-ink-faint" title="Délai par rapport à la commande précédente">
                           +{orderIntervals.get(o.id)}m
                         </span>
                       )}
@@ -1357,9 +1357,9 @@ export function CommandesView({
                   </Td>
                   <Td>
                     <p className="font-semibold text-mv-ink">{o.guestName}</p>
-                    {o.guestPhone && <p className="text-[11.5px] text-mv-ink-faint">{o.guestPhone}</p>}
+                    {o.guestPhone && <p className="text-[12px] text-mv-ink-faint">{o.guestPhone}</p>}
                     {cleanNotes(o.notes) && (
-                      <p className="text-[11px] text-mv-ink-soft italic">« {cleanNotes(o.notes)} »</p>
+                      <p className="text-[12px] text-mv-ink-soft italic">« {cleanNotes(o.notes)} »</p>
                     )}
                   </Td>
                   <Td className="text-mv-ink-soft">
@@ -1382,14 +1382,14 @@ export function CommandesView({
                     {canManage && (
                       <div className="flex justify-end gap-1.5">
                         {next && nextBlockedByPayment ? (
-                          <span className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-red" title="En attente de confirmation du paiement">
+                          <span className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-red" title="En attente de confirmation du paiement">
                             Attente paiement
                           </span>
                         ) : (
                           next && (
                             <button
                               onClick={() => handleStatusChange(o.id, next.status)}
-                              className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
+                              className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/10"
                             >
                               {next.label}
                             </button>
@@ -1398,7 +1398,7 @@ export function CommandesView({
                         {o.status !== "servie" && o.status !== "annulee" && (
                           <button
                             onClick={() => handleStatusChange(o.id, "annulee")}
-                            className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-red hover:bg-mv-red/10"
+                            className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-red hover:bg-mv-red/10"
                           >
                             Annuler
                           </button>

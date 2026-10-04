@@ -150,21 +150,21 @@ export function PrioritizedCampaignsStudio({
               <p className="font-mono text-[20px] font-bold text-mv-green-dark">
                 {consentStats?.marketingOptInCount ?? "—"}
               </p>
-              <p className="text-[11px] font-medium text-mv-ink-soft">Marketing validé</p>
+              <p className="text-[12px] font-medium text-mv-ink-soft">Marketing validé</p>
             </div>
             <div className="h-8 w-px bg-mv-border-soft" />
             <div className="text-center">
               <p className="font-mono text-[20px] font-bold text-mv-ink">
                 {consentStats?.serviceOnlyCount ?? "—"}
               </p>
-              <p className="text-[11px] font-medium text-mv-ink-soft">Service seul</p>
+              <p className="text-[12px] font-medium text-mv-ink-soft">Service seul</p>
             </div>
             <div className="h-8 w-px bg-mv-border-soft" />
             <div className="text-center">
               <p className="font-mono text-[20px] font-bold text-mv-amber-dark">
                 {optInPercent}%
               </p>
-              <p className="text-[11px] font-medium text-mv-ink-soft">Taux d&apos;opt-in</p>
+              <p className="text-[12px] font-medium text-mv-ink-soft">Taux d&apos;opt-in</p>
             </div>
           </div>
         </div>
@@ -197,7 +197,7 @@ export function PrioritizedCampaignsStudio({
                     <h3 className="font-display text-[16px] font-semibold text-mv-ink">
                       1. Bienvenue
                     </h3>
-                    <p className="text-[11.5px] text-mv-ink-faint">
+                    <p className="text-[12px] text-mv-ink-faint">
                       Automation · Dès l&apos;inscription
                     </p>
                   </div>
@@ -212,7 +212,7 @@ export function PrioritizedCampaignsStudio({
               </p>
 
               <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
                   Aperçu du message (SMS & Courriel)
                 </p>
                 <p className="font-serif text-[13.5px] italic text-mv-ink leading-relaxed">
@@ -248,7 +248,7 @@ export function PrioritizedCampaignsStudio({
                     <h3 className="font-display text-[16px] font-semibold text-mv-ink">
                       2. Deuxième visite
                     </h3>
-                    <p className="text-[11.5px] text-mv-ink-faint">
+                    <p className="text-[12px] text-mv-ink-faint">
                       Automation · 3 à 5 jours après la 1ère visite
                     </p>
                   </div>
@@ -263,7 +263,7 @@ export function PrioritizedCampaignsStudio({
               </p>
 
               <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
                   Aperçu du message (SMS & Courriel)
                 </p>
                 <p className="font-serif text-[13.5px] italic text-mv-ink leading-relaxed">
@@ -299,7 +299,7 @@ export function PrioritizedCampaignsStudio({
                     <h3 className="font-display text-[16px] font-semibold text-mv-ink">
                       3. Réactivation (21 jours)
                     </h3>
-                    <p className="text-[11.5px] text-mv-ink-faint">
+                    <p className="text-[12px] text-mv-ink-faint">
                       Automation · Seuil d&apos;attrition critique
                     </p>
                   </div>
@@ -314,7 +314,7 @@ export function PrioritizedCampaignsStudio({
               </p>
 
               <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
                   Aperçu du message (SMS & Courriel)
                 </p>
                 <p className="font-serif text-[13.5px] italic text-mv-ink leading-relaxed">
@@ -350,7 +350,7 @@ export function PrioritizedCampaignsStudio({
                     <h3 className="font-display text-[16px] font-semibold text-mv-ink">
                       4. Période creuse
                     </h3>
-                    <p className="text-[11.5px] text-mv-ink-faint">
+                    <p className="text-[12px] text-mv-ink-faint">
                       Diffusion ciblée · Segment & plage horaire précise
                     </p>
                   </div>
@@ -364,7 +364,7 @@ export function PrioritizedCampaignsStudio({
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="text-[11px] font-medium text-mv-ink-faint">Plage horaire</label>
+                  <label className="text-[12px] font-medium text-mv-ink-faint">Plage horaire</label>
                   <Select
                     value={timeSlot}
                     onChange={(e) => setTimeSlot(e.target.value)}
@@ -377,7 +377,7 @@ export function PrioritizedCampaignsStudio({
                   </Select>
                 </div>
                 <div>
-                  <label className="text-[11px] font-medium text-mv-ink-faint">Offre exclusive</label>
+                  <label className="text-[12px] font-medium text-mv-ink-faint">Offre exclusive</label>
                   <Input
                     value={customOffer}
                     onChange={(e) => setCustomOffer(e.target.value)}
@@ -388,7 +388,7 @@ export function PrioritizedCampaignsStudio({
               </div>
 
               <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
                   Aperçu du message
                 </p>
                 <p className="font-serif text-[13px] italic text-mv-ink leading-relaxed">
@@ -425,7 +425,7 @@ export function PrioritizedCampaignsStudio({
                     <h3 className="font-display text-[16px] font-semibold text-mv-ink">
                       5. Récompense disponible
                     </h3>
-                    <p className="text-[11.5px] text-mv-ink-faint">
+                    <p className="text-[12px] text-mv-ink-faint">
                       Automation · Dès qu&apos;une offre est débloquée
                     </p>
                   </div>
@@ -440,7 +440,7 @@ export function PrioritizedCampaignsStudio({
               </p>
 
               <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
                   Aperçu du message (SMS & Courriel)
                 </p>
                 <p className="font-serif text-[13.5px] italic text-mv-ink leading-relaxed">
@@ -476,7 +476,7 @@ export function PrioritizedCampaignsStudio({
                     <h3 className="font-display text-[16px] font-semibold text-mv-ink">
                       6. Statut Privilégié / Ambassadeur
                     </h3>
-                    <p className="text-[11.5px] text-mv-ink-faint">
+                    <p className="text-[12px] text-mv-ink-faint">
                       Automation · Célébration de palier supérieur
                     </p>
                   </div>
@@ -491,7 +491,7 @@ export function PrioritizedCampaignsStudio({
               </p>
 
               <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
                   Aperçu du message (SMS & Courriel)
                 </p>
                 <p className="font-serif text-[13.5px] italic text-mv-ink leading-relaxed">
@@ -527,7 +527,7 @@ export function PrioritizedCampaignsStudio({
                     <h3 className="font-display text-[16px] font-semibold text-mv-ink">
                       7. Partage & Parrainage
                     </h3>
-                    <p className="text-[11.5px] text-mv-ink-faint">
+                    <p className="text-[12px] text-mv-ink-faint">
                       Automation / Ciblé · Habitués réguliers (≥ 2 visites)
                     </p>
                   </div>
@@ -542,7 +542,7 @@ export function PrioritizedCampaignsStudio({
               </p>
 
               <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
                   Aperçu du message (SMS & Courriel)
                 </p>
                 <p className="font-serif text-[13.5px] italic text-mv-ink leading-relaxed">
@@ -578,7 +578,7 @@ export function PrioritizedCampaignsStudio({
                     <h3 className="font-display text-[16px] font-semibold text-mv-ink">
                       8. Dernière chance (60 jours)
                     </h3>
-                    <p className="text-[11.5px] text-mv-ink-faint">
+                    <p className="text-[12px] text-mv-ink-faint">
                       Automation · Réactivation prolongée
                     </p>
                   </div>
@@ -593,7 +593,7 @@ export function PrioritizedCampaignsStudio({
               </p>
 
               <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1">
                   Aperçu du message (SMS & Courriel)
                 </p>
                 <p className="font-serif text-[13.5px] italic text-mv-ink leading-relaxed">
@@ -630,7 +630,7 @@ export function PrioritizedCampaignsStudio({
               <h4 className="font-display text-[15px] font-medium text-mv-ink">
                 9. Anniversaire (À ajouter après le MVP)
               </h4>
-              <Badge tone="neutral" className="text-[10.5px]">Post-MVP</Badge>
+              <Badge tone="neutral" className="text-[12px]">Post-MVP</Badge>
             </div>
             <p className="text-[12.5px] text-mv-ink-soft">
               Cette fonctionnalité est délibérément planifiée après le MVP car elle requiert la collecte d’une donnée personnelle supplémentaire (date de naissance) et une gestion plus précise des préférences clients en conformité LCAP.

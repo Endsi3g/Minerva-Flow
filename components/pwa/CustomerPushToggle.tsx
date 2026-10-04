@@ -136,7 +136,7 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
 
   if (state === "denied") {
     return (
-      <p className="mb-5 text-[11.5px] text-mv-ink-faint">
+      <p className="mb-5 text-[12px] text-mv-ink-faint">
         Notifications bloquées — activez-les dans les réglages de votre navigateur pour recevoir les offres.
       </p>
     );
@@ -147,7 +147,7 @@ export function CustomerPushToggle({ restaurantId }: { restaurantId: string }) {
       <button
         type="button"
         onClick={refreshState}
-        className="mb-5 text-[11.5px] text-mv-ink-faint underline decoration-dotted hover:text-mv-ink"
+        className="mb-5 text-[12px] text-mv-ink-faint underline decoration-dotted hover:text-mv-ink"
       >
         Une erreur est survenue — touchez pour réessayer.
       </button>

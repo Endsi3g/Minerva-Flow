@@ -26,7 +26,7 @@ export function LiveConnectionStatus({ compact = false }: { compact?: boolean })
       role="status"
       aria-live="polite"
       title={title}
-      className="inline-flex h-8 items-center gap-2 rounded-full border border-mv-border-soft bg-mv-surface px-2.5 text-[11px] font-medium text-mv-ink-soft"
+      className="inline-flex h-8 items-center gap-2 rounded-full border border-mv-border-soft bg-mv-surface px-2.5 text-[12px] font-medium text-mv-ink-soft"
     >
       <span className={cn("h-2 w-2 shrink-0 rounded-full", dotTone)} />
       {!compact && <><Radio size={13} aria-hidden="true" /><span>{label}</span></>}

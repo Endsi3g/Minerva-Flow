@@ -78,7 +78,7 @@ export function SkillsRegistryView({
         {/* ── En-tête Héroïque ──────────────────────────────────────────────────── */}
         <div className="pb-8 border-b border-mv-border">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-mv-lime/40 text-mv-lime-dark border border-mv-lime-dark/20">
+            <span className="text-[12px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-mv-lime/40 text-mv-lime-dark border border-mv-lime-dark/20">
               Moteur Agentique Autonome
             </span>
           </div>
@@ -121,7 +121,7 @@ export function SkillsRegistryView({
                   <div className="p-2.5 rounded-xl bg-mv-cream border border-mv-border-soft">
                     {SKILL_ICONS[skill.icon]}
                   </div>
-                  <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md bg-[#FAF7F0] border border-mv-border-soft text-mv-ink-soft">
+                  <span className="text-[12px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md bg-[#FAF7F0] border border-mv-border-soft text-mv-ink-soft">
                     {skill.badge}
                   </span>
                 </div>
@@ -129,7 +129,7 @@ export function SkillsRegistryView({
                 <h3 className="font-serif font-bold text-base text-mv-ink mt-3 group-hover:text-mv-green-dark transition-colors">
                   {skill.name}
                 </h3>
-                <span className="text-[11px] text-mv-green-dark font-medium block mt-0.5">
+                <span className="text-[12px] text-mv-green-dark font-medium block mt-0.5">
                   {skill.categoryLabel}
                 </span>
 
@@ -137,14 +137,14 @@ export function SkillsRegistryView({
               </div>
 
               <div className="mt-6 pt-4 border-t border-mv-border-soft flex items-center justify-between">
-                <span className="text-[11px] text-mv-ink-faint font-mono">
+                <span className="text-[12px] text-mv-ink-faint font-mono">
                   {skill.inputs.length} paramètre{skill.inputs.length > 1 ? "s" : ""}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleOpenTester(skill)}
-                  className="border-mv-border hover:bg-mv-cream text-mv-ink text-[11.5px] font-medium rounded-lg h-7 px-2.5 flex items-center gap-1.5"
+                  className="border-mv-border hover:bg-mv-cream text-mv-ink text-[12px] font-medium rounded-lg h-7 px-2.5 flex items-center gap-1.5"
                 >
                   <Play size={11} className="text-mv-green fill-mv-green" /> Tester
                 </Button>
@@ -171,13 +171,13 @@ export function SkillsRegistryView({
                   <p className="text-[13px] text-mv-ink-soft">{selectedSkill.description}</p>
 
                   <div className="bg-[#FAF8F2] p-3 rounded-xl border border-mv-border-soft">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint block mb-2">
+                    <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint block mb-2">
                       Paramètres d&apos;entrée requis
                     </span>
                     <div className="space-y-2">
                       {selectedSkill.inputs.map((inp, idx) => (
                         <div key={idx}>
-                          <label className="text-[11.5px] text-mv-ink font-medium block">
+                          <label className="text-[12px] text-mv-ink font-medium block">
                             {inp.name} {inp.required && <span className="text-red-500">*</span>}
                           </label>
                           <input

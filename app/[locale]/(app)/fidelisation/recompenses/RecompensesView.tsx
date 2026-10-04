@@ -74,13 +74,13 @@ function RewardsCatalogCard({
             <div key={r.id} className="flex items-start justify-between gap-3 rounded-lg border border-mv-border-soft px-3 py-2">
               <div className="min-w-0">
                 <span className="text-[13px] font-medium text-mv-ink">{r.name}</span>
-                {r.description && <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">{r.description}</p>}
+                {r.description && <p className="mt-0.5 text-[12px] text-mv-ink-faint">{r.description}</p>}
                 {linkedItem ? (
-                  <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-mv-green-dark">
+                  <p className="mt-0.5 flex items-center gap-1 text-[12px] text-mv-green-dark">
                     <UtensilsCrossed size={11} /> {linkedItem.name} — coût réel {formatCurrency(linkedItem.foodCost)}
                   </p>
                 ) : r.menuItemId ? (
-                  <p className="mt-0.5 text-[11.5px] text-mv-amber">Plat lié introuvable (retiré du menu ?)</p>
+                  <p className="mt-0.5 text-[12px] text-mv-amber">Plat lié introuvable (retiré du menu ?)</p>
                 ) : null}
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -246,7 +246,7 @@ export function RecompensesView({
 
       {sortedTiers.length > 0 && (
         <Card className="mb-5">
-          <p className="mb-5 text-[11px] font-bold uppercase tracking-wide text-mv-ink-faint">
+          <p className="mb-5 text-[12px] font-bold uppercase tracking-wide text-mv-ink-faint">
             Échelle des paliers — visite n° → récompense
           </p>
           <div className="relative mx-3 pb-7 pt-1">
@@ -264,10 +264,10 @@ export function RecompensesView({
                   <Badge tone={tone} size="xs" className="mb-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full p-0">
                     <Icon size={13} strokeWidth={2.2} className="block shrink-0" />
                   </Badge>
-                  <span className="whitespace-nowrap text-[11px] font-semibold text-mv-ink">
+                  <span className="whitespace-nowrap text-[12px] font-semibold text-mv-ink">
                     {tier.visits} visite{tier.visits > 1 ? "s" : ""}
                   </span>
-                  <span className="mt-0.5 max-w-[110px] truncate text-[10.5px] text-mv-ink-faint" title={tier.reward || tier.label}>
+                  <span className="mt-0.5 max-w-[110px] truncate text-[12px] text-mv-ink-faint" title={tier.reward || tier.label}>
                     {tier.reward || tier.label}
                   </span>
                 </div>
@@ -297,7 +297,7 @@ export function RecompensesView({
                         className="min-w-0 max-w-[220px] flex-1 bg-transparent font-display text-[16px] font-medium text-mv-ink outline-none"
                       />
                       <div className="flex shrink-0 items-center gap-2">
-                        <span className="text-[11.5px] font-semibold text-mv-ink-faint">Actif</span>
+                        <span className="text-[12px] font-semibold text-mv-ink-faint">Actif</span>
                         <Switch
                           checked={tier.active !== false}
                           onCheckedChange={(next) => handleTierActiveToggle(tier.id, next)}
@@ -324,7 +324,7 @@ export function RecompensesView({
                           )}
                         />
                         {duplicateVisitIds.has(tier.id) && (
-                          <p className="mt-1 text-[11px] text-mv-red">Ce seuil est déjà utilisé par un autre palier.</p>
+                          <p className="mt-1 text-[12px] text-mv-red">Ce seuil est déjà utilisé par un autre palier.</p>
                         )}
                       </div>
                       <div>
@@ -339,7 +339,7 @@ export function RecompensesView({
                           )}
                         />
                         {emptyRewardIds.has(tier.id) && (
-                          <p className="mt-1 text-[11px] text-mv-red">Requis — ce texte est envoyé au client.</p>
+                          <p className="mt-1 text-[12px] text-mv-red">Requis — ce texte est envoyé au client.</p>
                         )}
                       </div>
                     </div>
@@ -351,7 +351,7 @@ export function RecompensesView({
         </div>
 
         <Card className="h-fit lg:sticky lg:top-4">
-          <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-mv-ink-faint">Aperçu client</p>
+          <p className="mb-1 text-[12px] font-bold uppercase tracking-wide text-mv-ink-faint">Aperçu client</p>
           <p className="mb-4 text-[13px] text-mv-ink-soft">
             Simulez la progression d&apos;un client fictif pour prévisualiser la notification.
           </p>
@@ -359,7 +359,7 @@ export function RecompensesView({
           <div className="mb-4 rounded-xl border border-mv-green/15 bg-mv-green-tint p-3.5">
             <div className="mb-1.5 flex items-center gap-1.5">
               <Bell size={13} className="text-mv-green-dark" />
-              <span className="text-[11px] font-bold uppercase tracking-wide text-mv-green-dark">Palier atteint</span>
+              <span className="text-[12px] font-bold uppercase tracking-wide text-mv-green-dark">Palier atteint</span>
             </div>
             <p className="font-display text-[15px] font-medium text-mv-ink">
               {currentTier ? currentTier.label : "Aucun palier atteint"}

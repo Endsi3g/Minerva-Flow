@@ -445,7 +445,7 @@ export function ShareCardConfigurator({
                 )}
               >
                 <p className="text-[12px] font-bold text-mv-ink">{f.label}</p>
-                <p className="text-[10px] text-mv-ink-faint leading-tight mt-0.5">{f.hint}</p>
+                <p className="text-[12px] text-mv-ink-faint leading-tight mt-0.5">{f.hint}</p>
               </button>
             ))}
           </div>
@@ -460,7 +460,7 @@ export function ShareCardConfigurator({
                 type="button"
                 onClick={() => setBackground(b.id)}
                 className={cn(
-                  "rounded-lg border py-2 text-[11px] font-semibold transition-colors text-center",
+                  "rounded-lg border py-2 text-[12px] font-semibold transition-colors text-center",
                   background === b.id ? "border-mv-green bg-mv-green-tint text-mv-ink" : "border-mv-border-soft text-mv-ink-soft hover:bg-mv-cream-soft"
                 )}
               >

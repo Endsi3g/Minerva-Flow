@@ -82,7 +82,7 @@ export function CustomerOriginMap({ cities, maxGeocode = 12 }: { cities: CityOri
             <MapMarker key={c.label} longitude={c.coords.lng} latitude={c.coords.lat}>
               <MarkerContent>
                 <span
-                  className="flex items-center justify-center rounded-full border-2 border-white bg-mv-green text-[10px] font-bold text-white shadow-lg"
+                  className="flex items-center justify-center rounded-full border-2 border-white bg-mv-green text-[12px] font-bold text-white shadow-lg"
                   style={{ width: `${scale * 32}px`, height: `${scale * 32}px` }}
                 >
                   {c.customerCount}
@@ -110,7 +110,7 @@ export function CustomerOriginMap({ cities, maxGeocode = 12 }: { cities: CityOri
           );
         })}
       </Map>
-      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="absolute bottom-2 left-2 rounded bg-white/90 px-1.5 py-1 text-[9px] text-mv-ink-soft shadow-sm">
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="absolute bottom-2 left-2 rounded bg-white/90 px-1.5 py-1 text-[12px] text-mv-ink-soft shadow-sm">
         © OpenStreetMap contributors · points approximatifs
       </a>
     </div>

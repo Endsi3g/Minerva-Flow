@@ -31,14 +31,14 @@ export default async function AiReviewDetailPage({ params }: { params: Promise<{
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {review.metrics.map((m) => (
             <div key={m.slug} className="rounded-lg bg-mv-cream-soft p-3">
-              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">
+              <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">
                 {tReports(`labels.${m.slug}`)}
               </p>
               <p className="font-display text-[16px] font-medium text-mv-ink">
                 {m.unit === "currency" ? formatCurrency(m.value) : m.value}
               </p>
               {m.delta !== undefined && (
-                <Badge tone={m.delta >= 0 ? "green" : "red"} className="mt-1 px-1.5 py-0.5 text-[10px]">
+                <Badge tone={m.delta >= 0 ? "green" : "red"} className="mt-1 px-1.5 py-0.5 text-[12px]">
                   {m.delta >= 0 ? "↑" : "↓"} {Math.abs(m.delta).toFixed(1)}%
                 </Badge>
               )}
@@ -83,7 +83,7 @@ export default async function AiReviewDetailPage({ params }: { params: Promise<{
         </ul>
       </Card>
 
-      <p className="mt-6 text-center text-[11.5px] text-mv-ink-faint">
+      <p className="mt-6 text-center text-[12px] text-mv-ink-faint">
         {t("generatedOn", { date: formatDate(review.createdAt.slice(0, 10)) })}
       </p>
     </div>

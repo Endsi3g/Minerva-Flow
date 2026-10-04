@@ -36,7 +36,7 @@ function CountTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-mv-border bg-mv-surface px-3 py-2 shadow-mv-md">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+      <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
         {label && new Date(label).toLocaleDateString("fr-CA", { month: "long", year: "numeric" })}
       </p>
       <p className="mt-0.5 font-display text-[15px] font-medium text-mv-ink">
@@ -50,7 +50,7 @@ function MoneyTooltip({ active, payload, label }: { active?: boolean; payload?: 
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-mv-border bg-mv-surface px-3 py-2 shadow-mv-md">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+      <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
         {label && new Date(label).toLocaleDateString("fr-CA", { month: "long", year: "numeric" })}
       </p>
       <p className="mt-0.5 font-display text-[15px] font-medium text-mv-ink">{formatCurrency(payload[0].value)}</p>

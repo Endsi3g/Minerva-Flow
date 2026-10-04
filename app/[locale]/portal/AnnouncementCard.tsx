@@ -98,7 +98,7 @@ export function AnnouncementCard({
         <X size={15} />
       </button>
 
-      <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-mv-green-dark">
+      <div className="flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-wider text-mv-green-dark">
         <Sparkles size={12} />
         <span>{announcement.badgeLabel || t("badgeDefault")}</span>
       </div>

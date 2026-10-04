@@ -165,7 +165,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
           <div className="flex items-center gap-1 rounded-full border border-mv-border bg-mv-cream-soft p-1">
             <button
               onClick={() => setMetric("all")}
-              className={`rounded-full px-3 py-1 text-[11.5px] font-semibold transition-all ${
+              className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-all ${
                 metric === "all"
                   ? "bg-mv-surface text-mv-ink shadow-mv-sm"
                   : "text-mv-ink-soft hover:text-mv-ink"
@@ -175,7 +175,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             </button>
             <button
               onClick={() => setMetric("clicks")}
-              className={`rounded-full px-3 py-1 text-[11.5px] font-semibold transition-all ${
+              className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-all ${
                 metric === "clicks"
                   ? "bg-mv-surface text-mv-ink shadow-mv-sm"
                   : "text-mv-ink-soft hover:text-mv-ink"
@@ -185,7 +185,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             </button>
             <button
               onClick={() => setMetric("conversions")}
-              className={`rounded-full px-3 py-1 text-[11.5px] font-semibold transition-all ${
+              className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-all ${
                 metric === "conversions"
                   ? "bg-mv-surface text-mv-ink shadow-mv-sm"
                   : "text-mv-ink-soft hover:text-mv-ink"
@@ -204,7 +204,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             <MousePointerClick size={16} />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Clics enregistrés</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Clics enregistrés</p>
             <p className="font-display text-[17px] font-bold text-mv-ink">{totalClicks}</p>
           </div>
         </div>
@@ -214,7 +214,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             <UserPlus size={16} />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Filleuls convertis</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Filleuls convertis</p>
             <p className="font-display text-[17px] font-bold text-mv-green-dark">{totalConversions}</p>
           </div>
         </div>
@@ -224,7 +224,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             <Calendar size={16} />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Période suivie</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Période suivie</p>
             <p className="font-display text-[17px] font-bold text-mv-ink">{activity.length} jours</p>
           </div>
         </div>
@@ -234,7 +234,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             <Flame size={16} />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Pic d&apos;activité</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Pic d&apos;activité</p>
             <p className="font-display text-[17px] font-bold text-mv-ink">
               {maxActivityDay
                 ? `${maxActivityDay.clicks + maxActivityDay.conversions} act.`
@@ -248,7 +248,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
       <div className="w-full min-w-0 overflow-x-auto pb-2">
         <div className="min-w-[620px] sm:min-w-0">
           {/* Month Header row */}
-          <div className="relative mb-1.5 ml-7 h-4 text-[11px] font-semibold text-mv-ink-faint">
+          <div className="relative mb-1.5 ml-7 h-4 text-[12px] font-semibold text-mv-ink-faint">
             {monthHeaders.map((m, idx) => (
               <span
                 key={`${m.month}-${idx}`}
@@ -264,7 +264,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
 
           <div className="flex min-w-0 items-start gap-2">
             {/* Day of week labels (Y axis) */}
-            <div className="flex flex-col justify-between text-[10px] font-medium text-mv-ink-faint h-[105px] pr-1 select-none">
+            <div className="flex flex-col justify-between text-[12px] font-medium text-mv-ink-faint h-[105px] pr-1 select-none">
               <span>Lun</span>
               <span>Mer</span>
               <span>Ven</span>
@@ -306,7 +306,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
           </div>
 
           {/* Footer Legend Bar */}
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11.5px] text-mv-ink-faint pt-3 border-t border-mv-border-soft">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[12px] text-mv-ink-faint pt-3 border-t border-mv-border-soft">
             <div className="flex items-center gap-1.5">
               <Info size={13} className="text-mv-ink-soft" />
               <span>
@@ -342,7 +342,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
           <p className="font-semibold capitalize text-mv-ink mb-1.5">
             {formatDateDisplay(hoveredDay.date)}
           </p>
-          <div className="space-y-1 text-mv-ink-soft text-[11.5px]">
+          <div className="space-y-1 text-mv-ink-soft text-[12px]">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1">
                 <MousePointerClick size={12} className="text-mv-ink-faint" />
@@ -357,7 +357,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
               </span>
               <span className="font-bold text-mv-green-dark">{hoveredDay.conversions}</span>
             </div>
-            <div className="flex items-center justify-between border-t border-mv-border-soft pt-1 mt-1 text-[10.5px]">
+            <div className="flex items-center justify-between border-t border-mv-border-soft pt-1 mt-1 text-[12px]">
               <span className="text-mv-ink-faint">Taux de conversion :</span>
               <span className="font-mono font-bold text-mv-ink">
                 {hoveredDay.clicks > 0

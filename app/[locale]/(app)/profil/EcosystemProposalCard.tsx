@@ -77,7 +77,7 @@ export function EcosystemProposalCard() {
     <Card className="space-y-6">
       <CardHeader
         eyebrow={
-          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-mv-green-dark">
+          <span className="inline-flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-wider text-mv-green-dark">
             <Sparkles size={12} />
             Minerva Ecosystem
           </span>
@@ -175,20 +175,20 @@ export function EcosystemProposalCard() {
                       <span className="font-sans text-[14px] font-semibold text-mv-ink">
                         {prop.appName}
                       </span>
-                      <span className="rounded-md bg-mv-surface px-2 py-0.5 text-[11px] font-medium text-mv-ink-soft border border-mv-border">
+                      <span className="rounded-md bg-mv-surface px-2 py-0.5 text-[12px] font-medium text-mv-ink-soft border border-mv-border">
                         {t(`categories.${prop.category}` as Parameters<typeof t>[0]) || prop.category}
                       </span>
                     </div>
                     <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
                       {prop.description}
                     </p>
-                    <span className="block text-[11px] text-mv-ink-faint">
+                    <span className="block text-[12px] text-mv-ink-faint">
                       {formatRelativeTime(prop.createdAt)}
                     </span>
                   </div>
 
                   <span
-                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11.5px] font-medium ${statusCfg.className}`}
+                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[12px] font-medium ${statusCfg.className}`}
                   >
                     {t(statusCfg.labelKey as Parameters<typeof t>[0])}
                   </span>

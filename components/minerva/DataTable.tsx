@@ -40,7 +40,7 @@ export function Th({
   return (
     <TableHead
       className={cn(
-        "h-auto px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint",
+        "h-auto px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint",
         className
       )}
       {...rest}

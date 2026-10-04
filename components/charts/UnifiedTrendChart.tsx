@@ -49,7 +49,7 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-mv-border bg-mv-surface px-3 py-2 shadow-mv-md">
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+      <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
         {label && formatDate(label)}
       </p>
       {payload.map((p) => {

@@ -240,7 +240,7 @@ export function DesignSystemView() {
                     >
                       <div className="flex items-center justify-between w-full">
                         <span
-                          className="font-mono text-[11px] font-bold"
+                          className="font-mono text-[12px] font-bold"
                           style={{ color: item.text }}
                         >
                           {item.label}
@@ -577,7 +577,7 @@ export function DesignSystemView() {
                     Nom du plat ou de la formule
                   </label>
                   <Input placeholder="Ex: Menu Dégustation 5 Temps" />
-                  <p className="mt-1 text-[11.5px] text-mv-ink-faint">Visible sur le menu client</p>
+                  <p className="mt-1 text-[12px] text-mv-ink-faint">Visible sur le menu client</p>
                 </div>
 
                 <div>
@@ -609,7 +609,7 @@ export function DesignSystemView() {
                 <div className="flex items-center justify-between p-3 rounded-xl border border-mv-border bg-mv-cream-soft/50">
                   <div>
                     <p className="text-xs font-semibold text-mv-ink">Disponible en ligne</p>
-                    <p className="text-[11px] text-mv-ink-faint">Afficher sur le menu</p>
+                    <p className="text-[12px] text-mv-ink-faint">Afficher sur le menu</p>
                   </div>
                   <Switch
                     checked={switchChecked}

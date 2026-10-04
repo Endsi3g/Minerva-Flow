@@ -47,7 +47,7 @@ export function AmbassadorInstagramTracker({ connection }: { connection: { usern
       <Link className={buttonVariants({ size: "sm" })} href="/api/oauth/instagram?mode=ambassador" prefetch={false}><Camera size={14} /> Connecter Instagram <ExternalLink size={13} /></Link>
     </div> : <>
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-mv-cream-soft p-3">
-        <div><p className="text-[12px] font-semibold text-mv-ink">Compte connecté · @{connection?.username ?? "Instagram"}</p><p className="mt-0.5 text-[11px] text-mv-ink-faint">Les statistiques sont chargées uniquement à votre demande. Reconnectez si Meta indique que l’autorisation a expiré.</p></div>
+        <div><p className="text-[12px] font-semibold text-mv-ink">Compte connecté · @{connection?.username ?? "Instagram"}</p><p className="mt-0.5 text-[12px] text-mv-ink-faint">Les statistiques sont chargées uniquement à votre demande. Reconnectez si Meta indique que l’autorisation a expiré.</p></div>
         <div className="flex flex-wrap gap-2"><Link className={buttonVariants({ size: "sm", variant: "ghost" })} href="/api/oauth/instagram?mode=ambassador" prefetch={false}>Reconnecter</Link><Button size="sm" variant="ghost" onClick={async () => { const ok = await disconnectAmbassadorInstagramAction(); if (ok) { setDisconnected(true); setData(null); router.refresh(); } else setError("Impossible de supprimer la connexion. Réessayez."); }}>Déconnecter</Button><Button size="sm" variant="secondary" onClick={loadInsights} loading={busy}><RefreshCw size={13} /> {data ? "Actualiser les statistiques" : "Charger les statistiques"}</Button></div>
       </div>
       {error && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[12px] text-red-700">{error}</p>}
@@ -58,15 +58,15 @@ export function AmbassadorInstagramTracker({ connection }: { connection: { usern
           <Metric label="Vidéos repérées" value={data.videos.length} />
         </div>
         {data.videos.length ? <div className="divide-y divide-mv-border-soft">{data.videos.map((video) => <div key={video.id} className="py-3">
-          <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[12px] font-medium text-mv-ink">{video.caption || "Vidéo sans légende"}</p><p className="mt-1 text-[10.5px] text-mv-ink-faint">{video.timestamp ? new Date(video.timestamp).toLocaleDateString() : ""}</p></div>{video.permalink && <a className="shrink-0 text-[11px] text-mv-green-dark underline" href={video.permalink} target="_blank" rel="noreferrer">Ouvrir <ExternalLink size={11} className="inline" /></a>}</div>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10.5px] text-mv-ink-soft">{Object.entries(video.metrics).map(([key, value]) => <span key={key}><strong className="text-mv-ink">{value.toLocaleString()}</strong> {metricLabels[key] ?? key}</span>)}{!Object.keys(video.metrics).length && <span>Meta n’a pas fourni les statistiques pour cette vidéo.</span>}</div>
+          <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[12px] font-medium text-mv-ink">{video.caption || "Vidéo sans légende"}</p><p className="mt-1 text-[12px] text-mv-ink-faint">{video.timestamp ? new Date(video.timestamp).toLocaleDateString() : ""}</p></div>{video.permalink && <a className="shrink-0 text-[12px] text-mv-green-dark underline" href={video.permalink} target="_blank" rel="noreferrer">Ouvrir <ExternalLink size={11} className="inline" /></a>}</div>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-mv-ink-soft">{Object.entries(video.metrics).map(([key, value]) => <span key={key}><strong className="text-mv-ink">{value.toLocaleString()}</strong> {metricLabels[key] ?? key}</span>)}{!Object.keys(video.metrics).length && <span>Meta n’a pas fourni les statistiques pour cette vidéo.</span>}</div>
         </div>)}</div> : <p className="text-[12px] text-mv-ink-faint">Aucune vidéo récente repérée sur le compte.</p>}
-        <p className="text-[10.5px] text-mv-ink-faint">Données récupérées {new Date(data.metricsUpdatedAt).toLocaleString()} · Le suivi des clics et des inscriptions vient des liens Minerva Flow associés à chaque vidéo.</p>
+        <p className="text-[12px] text-mv-ink-faint">Données récupérées {new Date(data.metricsUpdatedAt).toLocaleString()} · Le suivi des clics et des inscriptions vient des liens Minerva Flow associés à chaque vidéo.</p>
       </div>}
     </>}
   </Card>;
 }
 
 function Metric({ label, value }: { label: string; value: number | null }) {
-  return <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3"><p className="text-[11px] text-mv-ink-faint">{label}</p><p className="mt-1 text-xl font-semibold tabular-nums text-mv-ink">{value?.toLocaleString() ?? "—"}</p></div>;
+  return <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3"><p className="text-[12px] text-mv-ink-faint">{label}</p><p className="mt-1 text-xl font-semibold tabular-nums text-mv-ink">{value?.toLocaleString() ?? "—"}</p></div>;
 }

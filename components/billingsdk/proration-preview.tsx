@@ -227,11 +227,11 @@ export function ProrationPreview({
               )}
             >
               <div className="mb-2 flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px] sm:text-xs">
+                <Badge variant="outline" className="text-[12px] sm:text-xs">
                   Actuel
                 </Badge>
                 {isDowngrade && (
-                  <Badge tone="amber" variant="subtle" className="text-[10px] sm:text-xs">
+                  <Badge tone="amber" variant="subtle" className="text-[12px] sm:text-xs">
                     Rétrogradation
                   </Badge>
                 )}
@@ -280,11 +280,11 @@ export function ProrationPreview({
               )}
             >
               <div className="mb-2 flex items-center gap-2">
-                <Badge variant="solid" tone="green" className="text-[10px] sm:text-xs">
+                <Badge variant="solid" tone="green" className="text-[12px] sm:text-xs">
                   Nouveau forfait
                 </Badge>
                 {isUpgrade && (
-                  <Badge tone="green" variant="subtle" className="text-[10px] sm:text-xs">
+                  <Badge tone="green" variant="subtle" className="text-[12px] sm:text-xs">
                     Mise à niveau
                   </Badge>
                 )}

@@ -68,7 +68,7 @@ export function MobileTabBar() {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition-colors",
+                "relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-medium transition-colors",
                 active ? "text-mv-green-dark" : "text-mv-ink-faint"
               )}
             >
@@ -79,7 +79,7 @@ export function MobileTabBar() {
         })}
         <button
           onClick={() => setMoreOpen(true)}
-          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium text-mv-ink-faint transition-colors"
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-medium text-mv-ink-faint transition-colors"
         >
           <MoreHorizontal size={19} strokeWidth={1.8} />
           <span>{t("more")}</span>
@@ -95,7 +95,7 @@ export function MobileTabBar() {
           <div className="overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             {restaurantGroups.length > 0 && (
               <section className="mb-4" aria-label={t("sectionTeams")}>
-                <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-mv-ink-faint">
+                <h2 className="mb-2 px-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-mv-ink-faint">
                   {t("sectionTeams")}
                 </h2>
                 <div className="space-y-3">

@@ -27,7 +27,7 @@ export function RapportsView({ metrics }: { metrics: ErpMoneyMetrics | null }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-mv-green px-2 py-0.5 text-[11px] font-semibold text-white">
+              <span className="inline-flex items-center rounded-full bg-mv-green px-2 py-0.5 text-[12px] font-semibold text-white">
                 Nouveau
               </span>
               <h3 className="font-serif text-base font-semibold text-mv-ink">

@@ -259,7 +259,7 @@ export function ApiKeysMcpTab() {
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-mv-green text-white text-[12px] font-bold">
                 1
               </span>
-              <span className="text-[11.5px] font-semibold text-mv-green-dark">Identifiant & Clé</span>
+              <span className="text-[12px] font-semibold text-mv-green-dark">Identifiant & Clé</span>
             </div>
             <h4 className="font-semibold text-[14px] text-mv-ink">Copiez votre Clé d&apos;Accès</h4>
             <p className="text-[12px] text-mv-ink-soft">
@@ -281,7 +281,7 @@ export function ApiKeysMcpTab() {
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-mv-green text-white text-[12px] font-bold">
                 2
               </span>
-              <span className="text-[11.5px] font-semibold text-mv-green-dark">Lien OpenAPI (Composio)</span>
+              <span className="text-[12px] font-semibold text-mv-green-dark">Lien OpenAPI (Composio)</span>
             </div>
             <h4 className="font-semibold text-[14px] text-mv-ink">URL OpenAPI Spécification</h4>
             <p className="text-[12px] text-mv-ink-soft">
@@ -303,7 +303,7 @@ export function ApiKeysMcpTab() {
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-mv-green text-white text-[12px] font-bold">
                 3
               </span>
-              <span className="text-[11.5px] font-semibold text-mv-green-dark">Endpoint MCP Remote</span>
+              <span className="text-[12px] font-semibold text-mv-green-dark">Endpoint MCP Remote</span>
             </div>
             <h4 className="font-semibold text-[14px] text-mv-ink">URL Serveur MCP (Claude)</h4>
             <p className="text-[12px] text-mv-ink-soft">
@@ -471,10 +471,10 @@ export function ApiKeysMcpTab() {
                       <Badge tone="green" size="xs">Active</Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 font-mono text-[11.5px] text-mv-ink-soft">
+                  <div className="flex items-center gap-2 font-mono text-[12px] text-mv-ink-soft">
                     <span>{k.keyPrefix}</span>
                     {k.lastUsedAt && (
-                      <span className="text-[11px] text-mv-ink-faint font-sans">
+                      <span className="text-[12px] text-mv-ink-faint font-sans">
                         · Utilisée {formatRelativeTime(k.lastUsedAt)}
                       </span>
                     )}
@@ -486,7 +486,7 @@ export function ApiKeysMcpTab() {
                     <button
                       type="button"
                       onClick={() => handleRevokeKey(k.id)}
-                      className="rounded-lg border border-mv-border px-2.5 py-1 text-[11.5px] font-semibold text-mv-ink-soft hover:text-mv-amber hover:border-mv-amber/40 transition-colors"
+                      className="rounded-lg border border-mv-border px-2.5 py-1 text-[12px] font-semibold text-mv-ink-soft hover:text-mv-amber hover:border-mv-amber/40 transition-colors"
                     >
                       Révoquer
                     </button>
@@ -554,7 +554,7 @@ export function ApiKeysMcpTab() {
                   </Badge>
                 )}
               </div>
-              <div className="rounded-lg bg-white p-3 font-mono text-[11.5px] text-mv-ink overflow-x-auto border border-mv-border-soft max-h-60">
+              <div className="rounded-lg bg-white p-3 font-mono text-[12px] text-mv-ink overflow-x-auto border border-mv-border-soft max-h-60">
                 <pre>{testResult.result}</pre>
               </div>
             </div>

@@ -99,7 +99,7 @@ function SuppliersCard({
             <div>
               <p className="text-[13px] font-medium text-mv-ink">{s.name}</p>
               {(s.contactName || s.phone) && (
-                <p className="text-[11.5px] text-mv-ink-faint">
+                <p className="text-[12px] text-mv-ink-faint">
                   {[s.contactName, s.phone].filter(Boolean).join(" — ")}
                 </p>
               )}
@@ -221,7 +221,7 @@ function NewOrderModal({
           <div className="mb-1.5 flex items-center justify-between">
             <p className="text-[12px] font-semibold text-mv-ink-soft">Articles</p>
             {inventoryItems.length > 0 && (
-              <span className="text-[11px] text-mv-ink-faint">Sélectionnez un ingrédient en stock ou saisissez librement</span>
+              <span className="text-[12px] text-mv-ink-faint">Sélectionnez un ingrédient en stock ou saisissez librement</span>
             )}
           </div>
           <div className="space-y-2">
@@ -382,7 +382,7 @@ function ReceiveOrderModal({
       <div className="space-y-4">
         <div className="overflow-hidden rounded-lg border border-mv-border-soft">
           <table className="w-full text-left text-[12.5px]">
-            <thead className="bg-mv-cream-soft text-[11px] font-semibold uppercase text-mv-ink-faint">
+            <thead className="bg-mv-cream-soft text-[12px] font-semibold uppercase text-mv-ink-faint">
               <tr>
                 <th className="py-2.5 px-3">Article</th>
                 <th className="py-2.5 px-2 text-right">Commandé</th>
@@ -398,7 +398,7 @@ function ReceiveOrderModal({
                   <tr key={item.id} className="hover:bg-mv-cream-soft/40">
                     <td className="py-2.5 px-3 font-medium text-mv-ink">
                       <div>{item.itemName}</div>
-                      <div className="text-[11px] text-mv-ink-faint">
+                      <div className="text-[12px] text-mv-ink-faint">
                         {formatCurrency(item.unitCost)} / {item.unit}
                       </div>
                     </td>
@@ -420,7 +420,7 @@ function ReceiveOrderModal({
                           }
                           className="h-7 w-20 rounded border border-mv-border bg-mv-surface px-2 text-right font-mono text-[12px] text-mv-ink focus:border-mv-green focus:outline-none"
                         />
-                        <span className="text-[11px] text-mv-ink-faint">{item.unit}</span>
+                        <span className="text-[12px] text-mv-ink-faint">{item.unit}</span>
                       </div>
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono font-medium text-mv-ink">
@@ -544,7 +544,7 @@ function SuggestedReordersModal({
                         )}
                       </div>
                       {(group.supplierEmail || group.supplierPhone) && (
-                        <p className="text-[11px] text-mv-ink-faint">
+                        <p className="text-[12px] text-mv-ink-faint">
                           {[group.supplierEmail, group.supplierPhone].filter(Boolean).join(" · ")}
                         </p>
                       )}
@@ -562,7 +562,7 @@ function SuggestedReordersModal({
                       >
                         <div className="min-w-0 flex-1">
                           <span className="font-medium text-mv-ink">{item.itemName}</span>
-                          <span className="ml-2 text-[11px] text-mv-ink-faint">
+                          <span className="ml-2 text-[12px] text-mv-ink-faint">
                             (Stock : {item.quantityOnHand} / Seuil : {item.parLevel} {item.unit})
                           </span>
                         </div>
@@ -578,7 +578,7 @@ function SuggestedReordersModal({
                               }
                               className="h-7 w-16 rounded border border-mv-border bg-mv-surface px-1.5 text-right font-mono text-[12px] text-mv-ink focus:border-mv-green focus:outline-none"
                             />
-                            <span className="w-10 text-[11px] text-mv-ink-faint">{item.unit}</span>
+                            <span className="w-10 text-[12px] text-mv-ink-faint">{item.unit}</span>
                           </div>
                           <span className="w-16 text-right font-mono text-[12px] font-medium text-mv-ink">
                             {formatCurrency(item.estimatedCost)}
@@ -596,7 +596,7 @@ function SuggestedReordersModal({
                 <p className="text-[12.5px] font-medium text-mv-ink">
                   Total estimé pour {localSuggestions.filter((g) => g.supplierId).length} commande(s) :
                 </p>
-                <p className="text-[11px] text-mv-ink-faint">{totalItemsCount} article(s) à réapprovisionner</p>
+                <p className="text-[12px] text-mv-ink-faint">{totalItemsCount} article(s) à réapprovisionner</p>
               </div>
               <span className="font-mono text-[16px] font-bold text-mv-green-dark">
                 {formatCurrency(grandTotal)}
@@ -790,7 +790,7 @@ export function FournisseursView({
                           {o.status === "brouillon" && (
                             <button
                               onClick={() => handleStatusChange(o.id, "envoyee")}
-                              className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
+                              className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/10"
                             >
                               Envoyer
                             </button>
@@ -800,14 +800,14 @@ export function FournisseursView({
                               {suppliersById.get(o.supplierId)?.lng != null && currentRestaurant?.lng != null && (
                                 <button
                                   onClick={() => setTrackingOrder(o)}
-                                  className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-ink-soft hover:bg-mv-ink/5"
+                                  className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-ink-soft hover:bg-mv-ink/5"
                                 >
                                   Voir le trajet
                                 </button>
                               )}
                               <button
                                 onClick={() => setReceivingOrder(o)}
-                                className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10"
+                                className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/10"
                               >
                                 <CheckCircle2 size={12} /> Réceptionner
                               </button>

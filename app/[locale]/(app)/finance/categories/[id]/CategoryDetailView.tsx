@@ -150,7 +150,7 @@ function AssignTransactionsModal({
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[12.5px] font-medium text-mv-ink">{t.description}</p>
-                  <p className="text-[11px] text-mv-ink-faint">
+                  <p className="text-[12px] text-mv-ink-faint">
                     {formatDate(t.date)} — {t.category}
                   </p>
                 </div>

@@ -173,15 +173,15 @@ export function CustomerDetailView({
           <Card>
             <div className="grid grid-cols-3 gap-3 rounded-xl bg-mv-cream-soft p-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Visites</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Visites</p>
                 <p className="font-display text-[16px] font-medium text-mv-ink">{customer.visitCount}</p>
               </div>
               <div>
-                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Total dépensé</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Total dépensé</p>
                 <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(customer.totalSpent)}</p>
               </div>
               <div>
-                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Points</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Points</p>
                 <p className="font-display text-[16px] font-medium text-mv-green-dark">{customer.loyaltyPoints}</p>
               </div>
             </div>
@@ -307,7 +307,7 @@ export function CustomerDetailView({
                       <div className="min-w-0 flex-1 rounded-lg bg-mv-cream-soft p-3">
                         <div className="mb-1 flex items-center justify-between">
                           <span className="text-[12px] font-semibold text-mv-ink">{txLabel[t.type]}</span>
-                          <span className="text-[11px] text-mv-ink-faint">{formatDate(t.createdAt)}</span>
+                          <span className="text-[12px] text-mv-ink-faint">{formatDate(t.createdAt)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[12.5px]">
                           <span className="text-mv-ink-soft">

@@ -39,7 +39,7 @@ export function SettingsNav({ active }: { active: SettingsPage }) {
           )}
         >
           <span className="block text-[12.5px] font-semibold">{labelByPage[page].label}</span>
-          <span className="mt-1 block text-[11px] leading-relaxed text-mv-ink-faint">{labelByPage[page].description}</span>
+          <span className="mt-1 block text-[12px] leading-relaxed text-mv-ink-faint">{labelByPage[page].description}</span>
         </Link>
       ))}
     </nav>

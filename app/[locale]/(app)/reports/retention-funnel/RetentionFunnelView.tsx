@@ -148,14 +148,14 @@ export function RetentionFunnelView({ data }: Props) {
                 <h2 className="font-serif text-lg font-semibold text-mv-ink">
                   Conversion par étape du cycle de vie
                 </h2>
-                <Badge variant="outline" className="border-mv-green/30 text-mv-green-dark bg-mv-green-tint/50 text-[11px]">
+                <Badge variant="outline" className="border-mv-green/30 text-mv-green-dark bg-mv-green-tint/50 text-[12px]">
                   Rétention 2e visite : {kpis.secondVisitRate.formattedValue}
                 </Badge>
               </div>
               <p className="text-xs text-mv-ink-soft">
                 De l&apos;exposition du QR code jusqu&apos;à la confirmation de l&apos;habitude au comptoir.
               </p>
-              <p className="mt-2 text-[11px] text-mv-ink-faint">
+              <p className="mt-2 text-[12px] text-mv-ink-faint">
                 La période choisie filtre les événements; les indicateurs calculés depuis les profils clients (visites, fréquence, cohortes) sont cumulatifs.
               </p>
             </div>
@@ -170,12 +170,12 @@ export function RetentionFunnelView({ data }: Props) {
                   >
                     <div>
                       <div className="flex items-center justify-between text-xs text-mv-ink-faint mb-2">
-                        <span className="font-mono text-[11px] font-semibold text-mv-ink-soft">
+                        <span className="font-mono text-[12px] font-semibold text-mv-ink-soft">
                           Étape {idx + 1}
                         </span>
                         {step.conversionFromPrev !== null && (
                           <span
-                            className={`font-mono text-[11px] font-medium ${
+                            className={`font-mono text-[12px] font-medium ${
                               step.conversionFromPrev >= 70
                                 ? "text-emerald-700"
                                 : step.conversionFromPrev >= 40
@@ -208,7 +208,7 @@ export function RetentionFunnelView({ data }: Props) {
                           }}
                         />
                       </div>
-                      <div className="mt-1.5 flex items-center justify-between text-[10.5px] text-mv-ink-faint font-mono">
+                      <div className="mt-1.5 flex items-center justify-between text-[12px] text-mv-ink-faint font-mono">
                         <span>{step.conversionFromTotal} % du total</span>
                         {step.dropoffFromPrev !== null && step.dropoffFromPrev > 0 && (
                           <span className="text-rose-600">-{step.dropoffFromPrev} % perte</span>
@@ -371,7 +371,7 @@ export function RetentionFunnelView({ data }: Props) {
                 ))}
               </div>
             )}
-            <p className="mt-4 text-[11px] text-mv-ink-faint">Les visites et dépenses reflètent les valeurs cumulées dans les profils clients; leur disponibilité dépend des connexions caisse et des mises à jour manuelles.</p>
+            <p className="mt-4 text-[12px] text-mv-ink-faint">Les visites et dépenses reflètent les valeurs cumulées dans les profils clients; leur disponibilité dépend des connexions caisse et des mises à jour manuelles.</p>
           </Card>
         </div>
       )}
@@ -434,11 +434,11 @@ export function RetentionFunnelView({ data }: Props) {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-mv-ink">{ev.label}</span>
-                          <span className="rounded-full bg-mv-cream px-2 py-0.2 text-[10px] font-mono text-mv-ink-soft capitalize">
+                          <span className="rounded-full bg-mv-cream px-2 py-0.2 text-[12px] font-mono text-mv-ink-soft capitalize">
                             {ev.stage}
                           </span>
                         </div>
-                        <div className="text-[11px] text-mv-ink-faint mt-0.5">
+                        <div className="text-[12px] text-mv-ink-faint mt-0.5">
                           {ev.customerName ? (
                             <span>Client : <strong className="text-mv-ink-soft">{ev.customerName}</strong></span>
                           ) : (
@@ -458,7 +458,7 @@ export function RetentionFunnelView({ data }: Props) {
                       </div>
                     </div>
 
-                    <div className="shrink-0 text-right font-mono text-[11px] text-mv-ink-faint">
+                    <div className="shrink-0 text-right font-mono text-[12px] text-mv-ink-faint">
                       {ev.formattedDate}
                     </div>
                   </div>
@@ -503,7 +503,7 @@ function KpiCard({
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-cream text-mv-ink-soft">
             <Icon size={14} />
           </div>
-          <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium font-mono ${statusColor}`}>
+          <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[12px] font-medium font-mono ${statusColor}`}>
             {kpi.target}
           </span>
         </div>
@@ -518,7 +518,7 @@ function KpiCard({
       </div>
 
       <div className="border-t border-mv-border-soft pt-2 mt-1">
-        <p className="text-[10.5px] leading-tight text-mv-ink-faint line-clamp-2" title={kpi.benchmarkNote}>
+        <p className="text-[12px] leading-tight text-mv-ink-faint line-clamp-2" title={kpi.benchmarkNote}>
           {kpi.benchmarkNote}
         </p>
       </div>

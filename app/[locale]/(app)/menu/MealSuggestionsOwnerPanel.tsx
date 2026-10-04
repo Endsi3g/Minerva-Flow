@@ -55,7 +55,7 @@ export function MealSuggestionsOwnerPanel({
           <span className="rounded-xl bg-mv-green/10 p-2 text-mv-green-dark"><Lightbulb size={17} /></span>
           <div>
             <h2 className="font-serif text-[17px] text-mv-ink">{t("title")}</h2>
-            <p className="mt-0.5 text-[11.5px] text-mv-ink-soft">{t("description")}</p>
+            <p className="mt-0.5 text-[12px] text-mv-ink-soft">{t("description")}</p>
           </div>
         </div>
         <Badge tone={initialLoadFailed ? "red" : suggestions.some((item) => item.status !== "draft_added") ? "amber" : "neutral"}>
@@ -75,7 +75,7 @@ export function MealSuggestionsOwnerPanel({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-[13px] font-semibold text-mv-ink">{suggestion.title}</h3>
-                <span className="inline-flex items-center gap-1 rounded-full bg-mv-cream-soft px-2 py-0.5 text-[11px] font-medium text-mv-ink-soft">
+                <span className="inline-flex items-center gap-1 rounded-full bg-mv-cream-soft px-2 py-0.5 text-[12px] font-medium text-mv-ink-soft">
                   <ThumbsUp size={12} /> {t("votes", { count: suggestion.vote_count })}
                 </span>
                 {suggestion.status === "draft_added" && <Badge tone="green">{t("draftStatus")}</Badge>}
@@ -83,7 +83,7 @@ export function MealSuggestionsOwnerPanel({
               {suggestion.description && <p className="mt-1 whitespace-pre-wrap text-[12px] leading-relaxed text-mv-ink-soft">{suggestion.description}</p>}
             </div>
             {suggestion.status === "draft_added" ? (
-              <span className="text-[11.5px] text-mv-ink-faint">{t("draftStatus")}</span>
+              <span className="text-[12px] text-mv-ink-faint">{t("draftStatus")}</span>
             ) : (
               <Button size="sm" variant="secondary" disabled={busyId !== null} onClick={() => void createDraft(suggestion)}>
                 <Plus size={14} /> {busyId === suggestion.id ? t("creating") : t("createDraft")}

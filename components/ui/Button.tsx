@@ -9,7 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark shadow-mv-sm",
+        default: "pointer-coarse:min-h-11 bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark shadow-mv-sm",
         primary: "bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark shadow-mv-sm",
         outline:
           "border-mv-border bg-mv-surface hover:bg-mv-cream-soft aria-expanded:bg-mv-cream-soft",
@@ -22,14 +22,14 @@ const buttonVariants = cva(
         link: "text-mv-green-dark underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-3.5 text-[13.5px] has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
-        md: "h-9 px-3.5 text-[13.5px] has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 gap-1 px-2.5 text-[12.5px] [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-10 gap-1.5 px-4 text-sm",
-        icon: "size-9",
-        "icon-xs": "size-6 rounded-[min(var(--radius-md),10px)] [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm": "size-7 rounded-[min(var(--radius-md),12px)]",
+        default: "pointer-coarse:min-h-11 h-9 px-3.5 text-[13.5px] has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+        md: "pointer-coarse:min-h-11 h-9 px-3.5 text-[13.5px] has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+        xs: "pointer-coarse:min-h-11 h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs [&_svg:not([class*='size-'])]:size-3",
+        sm: "pointer-coarse:min-h-11 h-8 gap-1 px-2.5 text-[12.5px] [&_svg:not([class*='size-'])]:size-3.5",
+        lg: "pointer-coarse:min-h-11 h-10 gap-1.5 px-4 text-sm",
+        icon: "pointer-coarse:min-h-11 pointer-coarse:min-w-11 size-9",
+        "icon-xs": "pointer-coarse:min-h-11 pointer-coarse:min-w-11 size-6 rounded-[min(var(--radius-md),10px)] [&_svg:not([class*='size-'])]:size-3",
+        "icon-sm": "pointer-coarse:min-h-11 pointer-coarse:min-w-11 size-7 rounded-[min(var(--radius-md),12px)]",
         "icon-lg": "size-10",
       },
     },

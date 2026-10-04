@@ -71,7 +71,7 @@ export function GenerativeDataTable({
             {data.title}
           </h4>
           {data.description && (
-            <p className="text-[11.5px] text-[#6A6860] mt-0.5">
+            <p className="text-[12px] text-[#6A6860] mt-0.5">
               {data.description}
             </p>
           )}
@@ -99,7 +99,7 @@ export function GenerativeDataTable({
                   key={col.key}
                   onClick={() => handleSort(col.key)}
                   className={cn(
-                    "py-2 px-3 font-semibold text-[11px] uppercase tracking-wider cursor-pointer select-none hover:text-[#1F1E1D]",
+                    "py-2 px-3 font-semibold text-[12px] uppercase tracking-wider cursor-pointer select-none hover:text-[#1F1E1D]",
                     col.align === "right" || col.isNumeric ? "text-right" : "text-left"
                   )}
                 >
@@ -110,7 +110,7 @@ export function GenerativeDataTable({
                 </th>
               ))}
               {data.rows.some((r) => r.statusBadge || r.actionPrompt) && (
-                <th className="py-2 px-3 text-right font-semibold text-[11px] uppercase tracking-wider">
+                <th className="py-2 px-3 text-right font-semibold text-[12px] uppercase tracking-wider">
                   Action / Statut
                 </th>
               )}
@@ -151,7 +151,7 @@ export function GenerativeDataTable({
                       {row.statusBadge && (
                         <span
                           className={cn(
-                            "px-2 py-0.5 text-[10px] font-bold rounded-full border",
+                            "px-2 py-0.5 text-[12px] font-bold rounded-full border",
                             BADGE_TONES[row.statusBadge.tone] || BADGE_TONES.neutral
                           )}
                         >

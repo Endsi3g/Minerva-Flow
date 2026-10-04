@@ -40,7 +40,7 @@ export function PayoutApprovalQueue({ items }: { items: PayoutApprovalItem[] }) 
       <div>
         <p className="text-sm font-semibold text-mv-ink">{new Intl.NumberFormat("fr-CA", { style: "currency", currency: item.currency }).format(item.amount)} · {item.email ?? "Ambassadeur"}</p>
         <p className="mt-1 text-xs text-mv-ink-faint">Code {item.code} · Facture réglée le {new Date(item.createdAt).toLocaleDateString("fr-CA")} · Admissible depuis le {new Date(item.payableAt).toLocaleDateString("fr-CA")}</p>
-        <p className="mt-1 font-mono text-[10px] text-mv-ink-faint">{item.invoiceId}</p>
+        <p className="mt-1 font-mono text-[12px] text-mv-ink-faint">{item.invoiceId}</p>
       </div>
       <Button size="sm" onClick={() => approve(item)} loading={busy === item.id} disabled={Boolean(busy)}>Approuver le versement</Button>
     </article>)}

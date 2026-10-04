@@ -298,7 +298,7 @@ export function LibraryView({
             <>
               {yourFiles.length > 0 && (
                 <div className="space-y-2.5">
-                  <p className="text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                  <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                     Vos fichiers
                   </p>
                   {yourFiles.map((asset) => (
@@ -314,7 +314,7 @@ export function LibraryView({
 
               {shortcuts.length > 0 && (
                 <div className="space-y-2.5">
-                  <p className="text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                  <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                     Raccourcis vers vos données
                   </p>
                   {shortcuts.map((asset) => (

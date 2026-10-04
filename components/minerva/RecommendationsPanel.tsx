@@ -97,24 +97,24 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-mv-green/10 text-mv-green-dark">
                       <Sparkles size={12} />
                     </span>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+                    <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
                       {r.source === "ia" ? "Analyse Flow AI" : "Diagnostic vérifiable"}
                     </span>
                   </div>
 
                   <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                     {r.impactEstimate && (
-                      <span className="inline-flex max-w-full basis-full items-center gap-1 rounded-md bg-mv-lime/30 px-2 py-0.5 text-[11px] font-semibold text-mv-lime-dark sm:basis-auto">
+                      <span className="inline-flex max-w-full basis-full items-center gap-1 rounded-md bg-mv-lime/30 px-2 py-0.5 text-[12px] font-semibold text-mv-lime-dark sm:basis-auto">
                         <TrendingUp size={11} />
                         {r.impactKind === "scenario" ? "Scénario · " : r.impactKind === "qualitative" ? "Impact · " : ""}
                         {r.impactEstimate}
                       </span>
                     )}
-                    <span className="inline-flex items-center gap-1 rounded-md bg-mv-green-tint px-2 py-0.5 text-[11px] font-semibold text-mv-green-dark">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-mv-green-tint px-2 py-0.5 text-[12px] font-semibold text-mv-green-dark">
                       <ShieldCheck size={11} />
                       {confidenceLabel}
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[11px] font-medium text-mv-ink-soft" title="Récente ≤ 14 jours · à actualiser 15–45 jours · ancienne > 45 jours">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[12px] font-medium text-mv-ink-soft" title="Récente ≤ 14 jours · à actualiser 15–45 jours · ancienne > 45 jours">
                       <Clock3 size={11} />
                       {freshnessLabel}{freshness?.asOf ? ` · ${freshness.asOf}` : ""}
                     </span>
@@ -126,7 +126,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
                   <h4 className="font-display text-[15px] font-semibold leading-snug text-mv-ink">
                     {r.diagnosis}
                   </h4>
-                  {r.category && <span className="mt-1 inline-flex rounded-full bg-mv-cream-soft px-2 py-0.5 text-[10px] font-semibold text-mv-ink-soft">{categoryLabel[r.category]}</span>}
+                  {r.category && <span className="mt-1 inline-flex rounded-full bg-mv-cream-soft px-2 py-0.5 text-[12px] font-semibold text-mv-ink-soft">{categoryLabel[r.category]}</span>}
                   <p className="mt-1 text-[13px] leading-relaxed text-mv-ink-soft">
                     {r.suggestedAction}
                   </p>
@@ -142,7 +142,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
 
                 {/* Footer: Data Sources + Direct CTA */}
                 <div className="mt-3 flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between border-t border-mv-border-soft/60">
-                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-mv-ink-faint">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-mv-ink-faint">
                     <Database size={12} className="shrink-0 text-mv-ink-faint" />
                     <span>Données utilisées : </span>
                     {r.dataSources && r.dataSources.length > 0 ? (

@@ -28,7 +28,7 @@ export function HelperTooltip({
           }
         />
       )}
-      <TooltipContent className="bg-mv-ink text-mv-cream text-[11.5px] max-w-xs px-2.5 py-1.5 shadow-mv-md rounded-md border border-mv-ink">
+      <TooltipContent className="bg-mv-ink text-mv-cream text-[12px] max-w-xs px-2.5 py-1.5 shadow-mv-md rounded-md border border-mv-ink">
         {content}
       </TooltipContent>
     </Tooltip>

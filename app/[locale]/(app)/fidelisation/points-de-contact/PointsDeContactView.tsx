@@ -90,7 +90,7 @@ function TouchpointRow({
           <p className="truncate text-[12.5px] font-medium text-mv-ink">
             {touchpoint.label} <span className="text-mv-ink-faint font-normal">· {TYPE_LABELS[touchpoint.type]}</span>
           </p>
-          <p className="truncate text-[11.5px] text-mv-ink-faint">
+          <p className="truncate text-[12px] text-mv-ink-faint">
             /t/{touchpoint.code} · {DESTINATION_LABELS[touchpoint.destinationKind]} · {scans} scan{scans === 1 ? "" : "s"}
             {secondary ? ` · ${secondary.value} ${secondary.label}` : ""}
           </p>
@@ -287,7 +287,7 @@ function NfcCardOrderPanel({
         </Button>
       </div>
       {funnels.length === 0 && (
-        <p className="mt-2.5 text-[11.5px] text-mv-ink-faint">
+        <p className="mt-2.5 text-[12px] text-mv-ink-faint">
           Vous n&apos;avez pas encore de point de contact — créez-en un ci-dessous si vous voulez que votre commande
           soit liée à un lien précis.
         </p>
@@ -316,10 +316,10 @@ function NfcCardOrderHistory({ orders, funnels }: { orders: NfcCardOrder[]; funn
                     {order.quantity} carte{order.quantity > 1 ? "s" : ""} · {order.totalAmountCad} $ CAD
                     {linkedLabel && <span className="text-mv-ink-faint"> · {linkedLabel}</span>}
                   </p>
-                  <p className="text-[11.5px] text-mv-ink-faint">{new Date(order.createdAt).toLocaleDateString("fr-CA")}</p>
+                  <p className="text-[12px] text-mv-ink-faint">{new Date(order.createdAt).toLocaleDateString("fr-CA")}</p>
                 </div>
               </div>
-              <span className="text-[11.5px] font-medium text-mv-ink-faint">{NFC_CARD_ORDER_STATUS_LABELS[order.status]}</span>
+              <span className="text-[12px] font-medium text-mv-ink-faint">{NFC_CARD_ORDER_STATUS_LABELS[order.status]}</span>
             </div>
           );
         })}

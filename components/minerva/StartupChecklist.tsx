@@ -188,7 +188,7 @@ export function StartupChecklist() {
                   </span>
                   <span>
                     <span className="block text-[13px] font-semibold text-mv-ink">{item.label}</span>
-                    <span className="block text-[11.5px] text-mv-ink-faint">{item.description}</span>
+                    <span className="block text-[12px] text-mv-ink-faint">{item.description}</span>
                   </span>
                 </Link>
               ))}

@@ -40,7 +40,7 @@ export function DemoRoleSwitcher({ currentRole }: { currentRole: Role }) {
 
   return (
     <div className="border-t border-mv-border-soft px-2.5 py-2">
-      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+      <p className="mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
         Démo — vérifier les deux côtés
       </p>
       <button

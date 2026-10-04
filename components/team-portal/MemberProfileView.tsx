@@ -53,7 +53,7 @@ export function MemberProfileView({ profile }: { profile: MemberProfile }) {
           {CONTRIBUTION_SOURCES.map((source) => (
             <div key={source.key} className="rounded-xl bg-mv-cream-soft p-3">
               <dd className="font-display text-[22px] font-medium leading-none text-mv-ink">{profile.heatmap.bySource[source.key]}</dd>
-              <dt className="mt-1.5 text-[11.5px] text-mv-ink-faint">{source.label}</dt>
+              <dt className="mt-1.5 text-[12px] text-mv-ink-faint">{source.label}</dt>
             </div>
           ))}
         </dl>
@@ -96,7 +96,7 @@ export function MemberProfileView({ profile }: { profile: MemberProfile }) {
                       <span className="truncate">{link.title || link.url}</span>
                       <ExternalLink size={11} className="shrink-0" />
                     </a>
-                    <p className="text-[11.5px] text-mv-ink-faint">
+                    <p className="text-[12px] text-mv-ink-faint">
                       {link.platform} · {weekLabel(link.publishedOn)}
                     </p>
                   </div>
@@ -116,7 +116,7 @@ export function MemberProfileView({ profile }: { profile: MemberProfile }) {
               <ul className="space-y-4">
                 {profile.checkins.map((checkin) => (
                   <li key={checkin.weekStart} className="text-[13px] leading-relaxed">
-                    <p className="text-[11.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">Semaine du {weekLabel(checkin.weekStart)}</p>
+                    <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Semaine du {weekLabel(checkin.weekStart)}</p>
                     {checkin.commitments && (
                       <p className="mt-1 text-mv-ink">
                         <span className="font-semibold">Engagements : </span>

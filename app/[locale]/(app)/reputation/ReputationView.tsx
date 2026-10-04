@@ -113,7 +113,7 @@ function GoogleRespondCard({ review, onResponded }: { review: GoogleReviewRow; o
           <span className="text-[12.5px] font-medium text-mv-ink">{review.authorName}</span>
         </div>
         {review.publishedAt && (
-          <span className="text-[11.5px] text-mv-ink-faint">
+          <span className="text-[12px] text-mv-ink-faint">
             {new Date(review.publishedAt).toLocaleDateString("fr-CA", { year: "numeric", month: "short", day: "numeric" })}
           </span>
         )}
@@ -127,7 +127,7 @@ function GoogleRespondCard({ review, onResponded }: { review: GoogleReviewRow; o
       />
       <div className="flex items-center justify-end gap-2">
         {review.ownerRespondedAt && (
-          <span className="mr-auto text-[11.5px] text-mv-ink-faint">
+          <span className="mr-auto text-[12px] text-mv-ink-faint">
             Répondu le {new Date(review.ownerRespondedAt).toLocaleDateString("fr-CA")}
           </span>
         )}
@@ -179,10 +179,10 @@ function RespondCard({
             <span className="text-[12.5px] font-semibold text-mv-ink">{review.customerName}</span>
           </div>
           {review.customerEmail && (
-            <span className="text-[11px] text-mv-ink-faint font-mono">{review.customerEmail}</span>
+            <span className="text-[12px] text-mv-ink-faint font-mono">{review.customerEmail}</span>
           )}
         </div>
-        <span className="text-[11.5px] text-mv-ink-faint shrink-0">
+        <span className="text-[12px] text-mv-ink-faint shrink-0">
           {new Date(review.createdAt).toLocaleDateString("fr-CA", { year: "numeric", month: "short", day: "numeric" })}
         </span>
       </div>
@@ -213,7 +213,7 @@ function RespondCard({
       />
       <div className="flex items-center justify-end gap-2">
         {review.ownerRespondedAt && (
-          <span className="mr-auto text-[11.5px] text-mv-ink-faint">
+          <span className="mr-auto text-[12px] text-mv-ink-faint">
             Répondu le {new Date(review.ownerRespondedAt).toLocaleDateString("fr-CA")}
           </span>
         )}
@@ -354,10 +354,10 @@ export function ReputationView({
                           <span className="text-[12.5px] font-semibold text-mv-ink">{review.customerName}</span>
                         </div>
                         {review.customerEmail && (
-                          <span className="text-[11px] text-mv-ink-faint font-mono">{review.customerEmail}</span>
+                          <span className="text-[12px] text-mv-ink-faint font-mono">{review.customerEmail}</span>
                         )}
                       </div>
-                      <span className="text-[11.5px] text-mv-ink-faint shrink-0">
+                      <span className="text-[12px] text-mv-ink-faint shrink-0">
                         {new Date(review.createdAt).toLocaleDateString("fr-CA", { year: "numeric", month: "short", day: "numeric" })}
                       </span>
                     </div>
@@ -390,7 +390,7 @@ export function ReputationView({
                     className="gap-1.5"
                   >
                     <span>Voir les 6 suivants</span>
-                    <span className="text-mv-ink-faint text-[11px]">
+                    <span className="text-mv-ink-faint text-[12px]">
                       ({allPrivateList.length - visibleCount} restant{allPrivateList.length - visibleCount > 1 ? "s" : ""})
                     </span>
                   </Button>

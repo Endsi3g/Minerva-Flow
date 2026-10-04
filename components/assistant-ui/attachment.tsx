@@ -33,7 +33,7 @@ export function UserMessageAttachment() {
       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-mv-green-tint text-mv-green-dark">
         <FileText size={13} />
       </div>
-      <span className="truncate font-medium text-mv-ink text-[11.5px]">
+      <span className="truncate font-medium text-mv-ink text-[12px]">
         <AttachmentPrimitive.Name />
       </span>
     </AttachmentPrimitive.Root>

@@ -173,35 +173,35 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
       {/* KPI Cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Moyenne / jour</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Moyenne / jour</p>
           <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">{formatCurrency(kpis.avgRevenue)}</p>
-          <p className="mt-0.5 text-[11px] text-mv-ink-faint">{rangeFilteredDays.length} journées analysées</p>
+          <p className="mt-0.5 text-[12px] text-mv-ink-faint">{rangeFilteredDays.length} journées analysées</p>
         </Card>
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Taux de rush</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Taux de rush</p>
           <p className="mt-1 font-display text-[22px] font-medium text-mv-green-dark">{kpis.rushRate}%</p>
-          <p className="mt-0.5 text-[11px] text-mv-ink-faint">Haute affluence</p>
+          <p className="mt-0.5 text-[12px] text-mv-ink-faint">Haute affluence</p>
         </Card>
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Meilleur service</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Meilleur service</p>
           <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">
             {kpis.bestDay ? formatCurrency(kpis.bestDay.revenue) : "—"}
           </p>
           {kpis.bestDay ? (
             <a
               href={`/days/${kpis.bestDay.id}`}
-              className="mt-0.5 truncate text-left text-[11px] text-mv-ink-faint hover:text-mv-green-dark hover:underline"
+              className="mt-0.5 truncate text-left text-[12px] text-mv-ink-faint hover:text-mv-green-dark hover:underline"
             >
               {formatDateWeekday(kpis.bestDay.date)}
             </a>
           ) : (
-            <p className="mt-0.5 truncate text-[11px] text-mv-ink-faint">—</p>
+            <p className="mt-0.5 truncate text-[12px] text-mv-ink-faint">—</p>
           )}
         </Card>
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Réservations</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Réservations</p>
           <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">{kpis.totalReservations}</p>
-          <p className="mt-0.5 text-[11px] text-mv-ink-faint">Couverts réservés</p>
+          <p className="mt-0.5 text-[12px] text-mv-ink-faint">Couverts réservés</p>
         </Card>
       </div>
 

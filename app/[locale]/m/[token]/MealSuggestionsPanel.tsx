@@ -125,14 +125,14 @@ export function MealSuggestionsPanel({ restaurantId }: { restaurantId: string })
             <li key={item.id} className="flex items-center gap-3 rounded-lg border border-mv-border-soft px-3 py-2.5">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium text-mv-ink">{item.title}</p>
-                {item.description && <p className="line-clamp-1 text-[11.5px] text-mv-ink-soft">{item.description}</p>}
+                {item.description && <p className="line-clamp-1 text-[12px] text-mv-ink-soft">{item.description}</p>}
               </div>
               {item.status === "open" ? (
                 <button type="button" onClick={() => void vote(item.id)} aria-pressed={item.has_voted}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-mv-border px-2.5 py-1.5 text-[11px] font-semibold text-mv-ink-soft hover:border-mv-green hover:text-mv-green-dark aria-pressed:border-mv-green aria-pressed:bg-mv-green/10 aria-pressed:text-mv-green-dark">
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft hover:border-mv-green hover:text-mv-green-dark aria-pressed:border-mv-green aria-pressed:bg-mv-green/10 aria-pressed:text-mv-green-dark">
                   <ThumbsUp size={13} /> {item.vote_count}
                 </button>
-              ) : <span className="shrink-0 rounded-full bg-mv-cream-soft px-2.5 py-1.5 text-[10px] font-medium text-mv-ink-soft">{t("inReview")}</span>}
+              ) : <span className="shrink-0 rounded-full bg-mv-cream-soft px-2.5 py-1.5 text-[12px] font-medium text-mv-ink-soft">{t("inReview")}</span>}
             </li>
           ))}
         </ul>

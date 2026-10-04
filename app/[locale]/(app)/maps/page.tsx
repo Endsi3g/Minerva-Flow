@@ -52,7 +52,7 @@ function RestaurantMarker({
       <MarkerContent>
         <button
           onClick={onSelect}
-          className="flex size-7 cursor-pointer items-center justify-center rounded-full border-2 border-white text-[10px] font-bold text-white shadow-lg transition-transform hover:scale-110"
+          className="flex size-7 cursor-pointer items-center justify-center rounded-full border-2 border-white text-[12px] font-bold text-white shadow-lg transition-transform hover:scale-110"
           style={{
             background: restaurant.color || "var(--mv-green)",
             outline: active ? "3px solid var(--mv-lime)" : "none",
@@ -71,7 +71,7 @@ function RestaurantMarker({
         </p>
         <div className="mt-3 flex items-center justify-between rounded-lg bg-mv-cream-soft p-2.5">
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Revenu (mois)</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Revenu (mois)</p>
             <p className="font-display text-[16px] font-medium text-mv-green-dark">
               {formatCurrency(stats.revenue)}
             </p>
@@ -128,7 +128,7 @@ function GlobalStatsCard({
   return (
     <div className="absolute bottom-4 left-4 z-10 w-64 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+        <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
           Statistiques globales
         </p>
         <button
@@ -152,7 +152,7 @@ function GlobalStatsCard({
           <span className="flex items-center gap-1 text-[12px] text-mv-ink-soft">
             <TrendingUp size={12} /> Delta moyen
           </span>
-          <Badge tone={avgDelta >= 0 ? "green" : "red"} className="px-1.5 py-0.5 text-[10px]">
+          <Badge tone={avgDelta >= 0 ? "green" : "red"} className="px-1.5 py-0.5 text-[12px]">
             {avgDelta >= 0 ? "↑" : "↓"} {Math.abs(avgDelta).toFixed(1)}%
           </Badge>
         </div>
@@ -277,7 +277,7 @@ function EstablishmentsMode() {
       </Map>
 
       <div className="md:absolute static mb-4 md:mb-0 md:left-4 md:top-4 z-10 w-full md:w-80 rounded-2xl border border-mv-border bg-mv-surface/95 p-4 shadow-mv-lg backdrop-blur-sm">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+        <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
           Établissements & Localisations
         </p>
         <div className="space-y-2">
@@ -301,7 +301,7 @@ function EstablishmentsMode() {
                   />
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-semibold text-mv-ink">{r.name}</p>
-                    <p className="truncate text-[11px] text-mv-ink-faint">
+                    <p className="truncate text-[12px] text-mv-ink-faint">
                       {r.city ? `${r.city}` : "Emplacement"}
                       {r.address ? ` · ${r.address}` : ""}
                     </p>
@@ -311,7 +311,7 @@ function EstablishmentsMode() {
                   <span className="text-[12px] font-semibold text-mv-ink-soft">
                     {formatCurrency(stats.revenue)}
                   </span>
-                  <Badge tone={stats.delta >= 0 ? "green" : "red"} className="px-1.5 py-0.5 text-[10px]">
+                  <Badge tone={stats.delta >= 0 ? "green" : "red"} className="px-1.5 py-0.5 text-[12px]">
                     {stats.delta >= 0 ? "↑" : "↓"}
                     {Math.abs(stats.delta).toFixed(1)}%
                   </Badge>

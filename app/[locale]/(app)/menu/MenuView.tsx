@@ -235,7 +235,7 @@ function SaleQuickAdd({
       <button
         onClick={handleAdd}
         disabled={isSubmitting}
-        className="flex items-center gap-1 rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-green-dark hover:bg-mv-green/10 disabled:opacity-50"
+        className="flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/10 disabled:opacity-50"
       >
         <TrendingUp size={12} /> {t("sales")}
       </button>
@@ -280,7 +280,7 @@ function RecipeEditor({
         <ChefHat size={14} className="text-mv-green-dark" />
         Recette (optionnel)
       </div>
-      <p className="text-[11.5px] leading-snug text-mv-ink-faint">
+      <p className="text-[12px] leading-snug text-mv-ink-faint">
         Ingrédients d&apos;inventaire consommés par unité vendue — une fois définis, servir une commande de ce
         plat retire automatiquement le stock correspondant.
       </p>
@@ -328,7 +328,7 @@ function RecipeEditor({
         <Plus size={12} /> Ajouter un ingrédient
       </button>
       {inventoryItems.length === 0 && (
-        <p className="text-[11.5px] text-mv-ink-faint">Ajoutez d&apos;abord des articles dans Inventaire.</p>
+        <p className="text-[12px] text-mv-ink-faint">Ajoutez d&apos;abord des articles dans Inventaire.</p>
       )}
     </div>
   );
@@ -507,7 +507,7 @@ function MenuItemRow({
               <button
                 type="button"
                 onClick={() => onPlayVideo({ url: item.videoUrl!, title: item.name })}
-                className="inline-flex items-center gap-1 rounded-full bg-mv-green/10 px-2 py-0.5 text-[10.5px] font-medium text-mv-green-dark hover:bg-mv-green/20 transition-colors shrink-0"
+                className="inline-flex items-center gap-1 rounded-full bg-mv-green/10 px-2 py-0.5 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/20 transition-colors shrink-0"
                 title="Voir la vidéo de présentation"
               >
                 <Play size={10} className="fill-current" />
@@ -540,7 +540,7 @@ function MenuItemRow({
               </span>
             )}
           </p>
-          {item.category && <p className="text-[11.5px] text-mv-ink-faint">{item.category}</p>}
+          {item.category && <p className="text-[12px] text-mv-ink-faint">{item.category}</p>}
         </div>
         {canManage && (
           <div className="flex items-center gap-1.5 shrink-0">
@@ -739,7 +739,7 @@ function ShareLinkRow({ share, onDeleted }: { share: MenuShare; onDeleted: (id: 
         )}
         <div className="min-w-0">
           <p className="truncate text-[12.5px] font-medium text-mv-ink">{share.title}</p>
-          <p className="truncate text-[11.5px] text-mv-ink-faint">/m/{share.token}</p>
+          <p className="truncate text-[12px] text-mv-ink-faint">/m/{share.token}</p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
@@ -919,7 +919,7 @@ function OfferModal({
               <span>·</span>
               <span className="font-bold">{marginPct}% marge</span>
             </div>
-            <span className="text-[11px] opacity-80">Food cost : {foodCostPct}%</span>
+            <span className="text-[12px] opacity-80">Food cost : {foodCostPct}%</span>
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
@@ -1071,7 +1071,7 @@ function OfferRow({
               <button
                 type="button"
                 onClick={() => onPlayVideo({ url: offer.videoUrl!, title: offer.title })}
-                className="inline-flex items-center gap-1 rounded-full bg-mv-green/10 px-2 py-0.5 text-[10.5px] font-medium text-mv-green-dark hover:bg-mv-green/20 transition-colors shrink-0"
+                className="inline-flex items-center gap-1 rounded-full bg-mv-green/10 px-2 py-0.5 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/20 transition-colors shrink-0"
                 title="Voir la vidéo de l'offre"
               >
                 <Play size={10} className="fill-current" />
@@ -1079,7 +1079,7 @@ function OfferRow({
               </button>
             )}
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11.5px]">
+          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px]">
             {offer.price != null && (
               <span className="font-semibold text-mv-ink font-mono">{formatCurrency(offer.price)}</span>
             )}
@@ -1186,7 +1186,7 @@ function MarginDriftPanel({
                 <button
                   onClick={() => handleDisable(item.id)}
                   disabled={togglingId === item.id}
-                  className="shrink-0 whitespace-nowrap rounded-md border border-mv-amber/30 px-2 py-1 text-[11.5px] font-semibold text-mv-amber transition-colors hover:bg-mv-amber-bg disabled:opacity-50"
+                  className="shrink-0 whitespace-nowrap rounded-md border border-mv-amber/30 px-2 py-1 text-[12px] font-semibold text-mv-amber transition-colors hover:bg-mv-amber-bg disabled:opacity-50"
                 >
                   {togglingId === item.id ? "…" : "Retirer du menu"}
                 </button>
@@ -1307,14 +1307,14 @@ function MenuAiInsightsPanel({
               <p className="text-[13px] font-semibold leading-snug text-mv-ink">{idea.title}</p>
               <p className="mt-1 text-[12.5px] leading-snug text-mv-ink-soft">{idea.action}</p>
               {launchedIndexes.has(i) ? (
-                <p className="mv-check-pop mt-2.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark">
+                <p className="mv-check-pop mt-2.5 flex items-center gap-1.5 text-[12px] font-semibold text-mv-green-dark">
                   <Check size={13} /> Campagne créée
                 </p>
               ) : (
                 <button
                   onClick={() => handleLaunch(idea, i)}
                   disabled={launchingIndex === i}
-                  className="mt-2.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark hover:underline disabled:opacity-50"
+                  className="mt-2.5 flex items-center gap-1.5 text-[12px] font-semibold text-mv-green-dark hover:underline disabled:opacity-50"
                 >
                   <Megaphone size={13} /> {launchingIndex === i ? "Création…" : "Lancer cette campagne"}
                 </button>
@@ -1593,7 +1593,7 @@ export function MenuView({
           <div className="flex items-start justify-between gap-3 border-b border-mv-border-soft bg-mv-cream-soft/60 px-4 py-3.5 sm:px-5">
             <div>
               <h2 className="font-serif text-[17px] text-mv-ink">{t("draftsTitle")}</h2>
-              <p className="mt-0.5 text-[11.5px] text-mv-ink-soft">{t("draftsDescription")}</p>
+              <p className="mt-0.5 text-[12px] text-mv-ink-soft">{t("draftsDescription")}</p>
             </div>
             <Badge tone="amber">{draftItems.length}</Badge>
           </div>
@@ -1602,7 +1602,7 @@ export function MenuView({
               <div key={draft.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-semibold text-mv-ink">{draft.name}</p>
-                  <p className="mt-0.5 text-[11.5px] text-mv-ink-soft">
+                  <p className="mt-0.5 text-[12px] text-mv-ink-soft">
                     {draft.price > 0 ? t("draftPriceReady") : t("draftPriceMissing")}
                     {" · "}
                     {draft.allergensConfirmed ? t("draftAllergensReady") : t("draftAllergensMissing")}
@@ -1673,7 +1673,7 @@ export function MenuView({
                   <p className="text-[13px] font-semibold text-mv-ink">
                     Vigilance stocks cuisine & préparation
                   </p>
-                  <p className="text-[11.5px] text-mv-ink-soft">
+                  <p className="text-[12px] text-mv-ink-soft">
                     {stockoutCount > 0 && (
                       <span className="font-semibold text-mv-red">
                         {stockoutCount} plat{stockoutCount > 1 ? "s" : ""} en rupture totale

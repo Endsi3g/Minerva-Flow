@@ -93,7 +93,7 @@ export function AppInstallGuide({
               {order?.estimatedReadyAt && <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#0e5a40]"><Clock3 size={14} /> Heure estimée : {new Date(order.estimatedReadyAt).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}</p>}
               {order?.status === "annulee" && <p className="mt-2 text-sm text-[#5c685f]">Aucun frais ne sera demandé. {order.cancellationReason || "Le restaurant vous contactera si nécessaire."}</p>}
               {order && order.welcomeBonusPoints > 0 && <p className="mt-3 rounded-xl bg-[#e7f2e9] px-3.5 py-3 text-sm font-medium text-[#0e5a40]">Hey, merci d’avoir rejoint {order.restaurantName} ! Voici {order.welcomeBonusPoints} points bonus pour votre première visite. 💚</p>}
-              <p className="mt-2 text-[11px] text-[#778078]">Mise à jour automatique · Réf. {orderId.slice(0, 8).toUpperCase()}</p>
+              <p className="mt-2 text-[12px] text-[#778078]">Mise à jour automatique · Réf. {orderId.slice(0, 8).toUpperCase()}</p>
             </div>
           </div>
         </section>}

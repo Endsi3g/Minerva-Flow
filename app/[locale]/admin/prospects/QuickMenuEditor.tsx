@@ -99,7 +99,7 @@ export function QuickMenuEditor({
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13px] font-medium text-mv-ink">{item.name}</p>
                         {item.description && (
-                          <p className="truncate text-[11.5px] text-mv-ink-faint">{item.description}</p>
+                          <p className="truncate text-[12px] text-mv-ink-faint">{item.description}</p>
                         )}
                       </div>
                       <div className="flex shrink-0 items-center gap-1">

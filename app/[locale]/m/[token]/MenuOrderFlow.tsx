@@ -349,12 +349,12 @@ function CheckoutModal({
           )}
           {trackedOrderId && (
             <div className="mx-auto mt-4 max-w-sm rounded-xl border border-mv-border-soft bg-mv-cream-soft/70 p-3 text-left" aria-live="polite">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Suivi de la commande</p>
+              <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Suivi de la commande</p>
               <p className="mt-1 text-[13px] font-semibold text-mv-green-dark">
                 {trackedOrderStatus ? orderStatusFriendlyCopy(trackedOrderStatus.status) : "Le restaurant prépare la confirmation…"}
               </p>
               {trackedOrderStatus?.status === "annulee" && <p className="mt-1 text-[12px] text-mv-ink-soft">La commande est annulée sans frais. {trackedOrderStatus.reason ?? "Aucun paiement ne vous sera demandé."}</p>}
-              <p className="mt-1 text-[10.5px] text-mv-ink-faint">Réf. {trackedOrderId.slice(0, 8).toUpperCase()} · actualisation automatique</p>
+              <p className="mt-1 text-[12px] text-mv-ink-faint">Réf. {trackedOrderId.slice(0, 8).toUpperCase()} · actualisation automatique</p>
             </div>
           )}
           {shareProgramId && (
@@ -506,7 +506,7 @@ function CheckoutModal({
                     ))}
                   </div>
                   {fulfillmentMode === "prep_apres_paiement" && (
-                    <p className="mt-1.5 text-[11.5px] text-mv-ink-faint">
+                    <p className="mt-1.5 text-[12px] text-mv-ink-faint">
                       Le restaurant commence la préparation dès que votre paiement est confirmé.
                     </p>
                   )}
@@ -519,12 +519,12 @@ function CheckoutModal({
                       setDeliveryAddress(e.target.value);
                     }} required autoComplete="street-address" />
                   </Field>
-                  {deliveryQuoteLoading && <p className="text-[11.5px] text-mv-ink-faint">Calcul des frais…</p>}
+                  {deliveryQuoteLoading && <p className="text-[12px] text-mv-ink-faint">Calcul des frais…</p>}
                   {!deliveryQuoteLoading && !deliveryQuote.available && (
                     <p className="text-[12px] text-mv-red">{deliveryQuote.reason === "outside_radius" ? "Cette adresse est hors du rayon de livraison configuré." : "Entrez une adresse complète pour calculer les frais."}</p>
                   )}
                   {deliveryQuote.available && deliveryQuote.etaMinutes != null && (
-                    <p className="text-[11.5px] text-mv-ink-faint">Frais : {formatCurrency(deliveryQuote.fee)} · Temps estimé : {deliveryQuote.etaMinutes} min</p>
+                    <p className="text-[12px] text-mv-ink-faint">Frais : {formatCurrency(deliveryQuote.fee)} · Temps estimé : {deliveryQuote.etaMinutes} min</p>
                   )}
                 </div>
               )}
@@ -554,7 +554,7 @@ function CheckoutModal({
                   <Input name="paymentMethod" aria-label="Mode de paiement sur place" placeholder="Ex : Carte, comptant" />
                 </Field>
               )}
-              <p className="rounded-lg bg-mv-green-tint/45 px-3 py-2.5 text-[11.5px] leading-relaxed text-mv-ink-soft">
+              <p className="rounded-lg bg-mv-green-tint/45 px-3 py-2.5 text-[12px] leading-relaxed text-mv-ink-soft">
                 Hey ! Le restaurant vous confirme la commande bientôt. Si un article n’est pas disponible ou qu’un imprévu survient, son équipe vous contactera ou annulera la commande sans frais.
               </p>
               <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
@@ -665,9 +665,9 @@ function MenuItemGridCard({
           className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft shadow-mv-md transition-transform hover:scale-110"
         >
           <Plus size={15} />
-        </span> : <span className="absolute bottom-2 right-2 rounded-full bg-white/90 px-2.5 py-1 text-[10.5px] font-medium text-mv-ink-soft">Présentation seulement</span>}
+        </span> : <span className="absolute bottom-2 right-2 rounded-full bg-white/90 px-2.5 py-1 text-[12px] font-medium text-mv-ink-soft">Présentation seulement</span>}
         {quantity > 0 && (
-          <span className="absolute left-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-mv-ink px-1.5 text-[11px] font-bold text-white shadow-mv-md">
+          <span className="absolute left-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-mv-ink px-1.5 text-[12px] font-bold text-white shadow-mv-md">
             {quantity}
           </span>
         )}
@@ -696,7 +696,7 @@ function MenuItemGridCard({
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="line-clamp-1 text-[13.5px] font-medium text-mv-ink">{item.name}</p>
         {item.description && (
-          <p className="line-clamp-2 text-[11.5px] leading-snug text-mv-ink-faint">{item.description}</p>
+          <p className="line-clamp-2 text-[12px] leading-snug text-mv-ink-faint">{item.description}</p>
         )}
         <p className="mt-auto pt-1 text-[13px] font-semibold text-mv-green-dark">{isOrderable ? formatCurrency(item.price) : "À découvrir"}</p>
       </div>
@@ -836,7 +836,7 @@ function LocationPickerModal({
                 </MarkerContent>
                 <MarkerPopup className="w-56 p-3">
                   <p className="text-[13px] font-medium text-mv-ink">{loc.name}</p>
-                  <p className="text-[11.5px] text-mv-ink-faint">{loc.address}</p>
+                  <p className="text-[12px] text-mv-ink-faint">{loc.address}</p>
                 </MarkerPopup>
               </MapMarker>
             ))}
@@ -851,7 +851,7 @@ function LocationPickerModal({
             >
               <div className="min-w-0">
                 <p className="text-[13.5px] font-medium text-mv-ink">{loc.name}</p>
-                <p className="truncate text-[11.5px] text-mv-ink-faint">
+                <p className="truncate text-[12px] text-mv-ink-faint">
                   {loc.address}
                   {loc.city ? `, ${loc.city}` : ""}
                 </p>
@@ -1069,7 +1069,7 @@ export function MenuOrderFlow({
               : kind === "whatsapp" && !/^https?:/i.test(value) ? `https://wa.me/${value.replace(/[^\d]/g, "")}`
               : /^https?:/i.test(value) ? value : `https://${kind === "instagram" ? "instagram.com/" : kind === "tiktok" ? "tiktok.com/@" : kind === "facebook" ? "facebook.com/" : ""}${value.replace(/^@/, "")}`;
             const labels: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", whatsapp: "WhatsApp", email: "Courriel", phone: "Téléphone", website: "Site web" };
-            return <a key={kind} href={href} target={kind === "email" || kind === "phone" ? undefined : "_blank"} rel="noreferrer" className="rounded-full border px-3 py-1.5 text-[11.5px] font-medium" style={{ borderColor: `${landing.presentation.accentColor}55`, color: landing.presentation.accentColor }}>{labels[kind]}</a>;
+            return <a key={kind} href={href} target={kind === "email" || kind === "phone" ? undefined : "_blank"} rel="noreferrer" className="rounded-full border px-3 py-1.5 text-[12px] font-medium" style={{ borderColor: `${landing.presentation.accentColor}55`, color: landing.presentation.accentColor }}>{labels[kind]}</a>;
           })}
         </div>
 

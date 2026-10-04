@@ -49,7 +49,7 @@ function UpdatePasswordForm() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Nouveau mot de passe</label>
+          <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Nouveau mot de passe</label>
           <input
             type="password"
             placeholder="••••••••"

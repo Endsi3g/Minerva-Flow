@@ -145,7 +145,7 @@ function PortalLoginPageInner() {
 
               <div className="flex items-center gap-3 py-1">
                 <div className="h-px flex-1 bg-mv-border-soft" />
-                <span className="text-[11px] font-medium uppercase tracking-wide text-mv-ink-faint">ou</span>
+                <span className="text-[12px] font-medium uppercase tracking-wide text-mv-ink-faint">ou</span>
                 <div className="h-px flex-1 bg-mv-border-soft" />
               </div>
 

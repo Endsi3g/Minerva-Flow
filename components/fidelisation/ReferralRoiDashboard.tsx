@@ -22,7 +22,7 @@ export function ReferralRoiDashboard({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Revenu Filleuls</span>
+            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Revenu Filleuls</span>
             <span className="rounded-lg bg-mv-green-tint p-1.5 text-mv-green-dark">
               <DollarSign size={14} />
             </span>
@@ -51,7 +51,7 @@ export function ReferralRoiDashboard({
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Multiplicateur ROI</span>
+            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Multiplicateur ROI</span>
             <span className="rounded-lg bg-mv-lime-tint p-1.5 text-mv-green-darker">
               <TrendingUp size={14} />
             </span>
@@ -78,10 +78,10 @@ export function ReferralRoiDashboard({
               <p
                 className={
                   metrics.roiMultiplier > 0
-                    ? "mt-1.5 text-[11.5px] leading-snug text-mv-ink-soft"
+                    ? "mt-1.5 text-[12px] leading-snug text-mv-ink-soft"
                     : metrics.totalRevenueGenerated > 0
                       ? "text-[12.5px] font-medium leading-snug text-mv-ink"
-                      : "mt-1.5 text-[11.5px] leading-snug text-mv-ink-soft"
+                      : "mt-1.5 text-[12px] leading-snug text-mv-ink-soft"
                 }
               >
                 {metrics.roiMultiplier > 0
@@ -96,7 +96,7 @@ export function ReferralRoiDashboard({
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Taux de Conversion</span>
+            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Taux de Conversion</span>
             <span className="rounded-lg bg-blue-500/10 p-1.5 text-blue-600">
               <MousePointerClick size={14} />
             </span>
@@ -112,12 +112,12 @@ export function ReferralRoiDashboard({
               },
             ]}
           />
-          <p className="mt-2 text-[11.5px] text-mv-ink-soft">{metrics.conversionRatePct}% de taux de conversion</p>
+          <p className="mt-2 text-[12px] text-mv-ink-soft">{metrics.conversionRatePct}% de taux de conversion</p>
         </div>
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Ambassadeurs Actifs</span>
+            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Ambassadeurs Actifs</span>
             <span className="rounded-lg bg-purple-500/10 p-1.5 text-purple-600">
               <Users size={14} />
             </span>
@@ -136,7 +136,7 @@ export function ReferralRoiDashboard({
               }))}
             />
           ) : (
-            <p className="text-[11.5px] text-mv-ink-soft">Clients qui partagent activement</p>
+            <p className="text-[12px] text-mv-ink-soft">Clients qui partagent activement</p>
           )}
         </div>
       </div>
@@ -162,7 +162,7 @@ export function ReferralRoiDashboard({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[12.5px]">
               <thead>
-                <tr className="border-b border-mv-border-soft bg-mv-cream-soft text-[11px] font-semibold uppercase text-mv-ink-faint">
+                <tr className="border-b border-mv-border-soft bg-mv-cream-soft text-[12px] font-semibold uppercase text-mv-ink-faint">
                   <th className="py-2.5 px-3">Rang</th>
                   <th className="py-2.5 px-3">Ambassadeur</th>
                   <th className="py-2.5 px-3 text-center">Clics</th>
@@ -175,15 +175,15 @@ export function ReferralRoiDashboard({
                   <tr key={a.customerId} className="hover:bg-mv-cream-soft/50 transition-colors">
                     <td className="py-2.5 px-3">
                       {idx === 0 ? (
-                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[11px] font-bold text-white shadow-sm">
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[12px] font-bold text-white shadow-sm">
                           1
                         </span>
                       ) : idx === 1 ? (
-                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-[11px] font-bold text-gray-700 shadow-sm">
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-[12px] font-bold text-gray-700 shadow-sm">
                           2
                         </span>
                       ) : idx === 2 ? (
-                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-700/60 text-[11px] font-bold text-white shadow-sm">
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-700/60 text-[12px] font-bold text-white shadow-sm">
                           3
                         </span>
                       ) : (
@@ -192,7 +192,7 @@ export function ReferralRoiDashboard({
                     </td>
                     <td className="py-2.5 px-3">
                       <p className="font-semibold text-mv-ink">{a.customerName}</p>
-                      {a.customerEmail && <p className="text-[11px] text-mv-ink-faint truncate max-w-[180px]">{a.customerEmail}</p>}
+                      {a.customerEmail && <p className="text-[12px] text-mv-ink-faint truncate max-w-[180px]">{a.customerEmail}</p>}
                     </td>
                     <td className="py-2.5 px-3 text-center text-mv-ink-soft">{a.referralClicks}</td>
                     <td className="py-2.5 px-3 text-center font-semibold text-mv-green-dark">{a.referralConversions}</td>

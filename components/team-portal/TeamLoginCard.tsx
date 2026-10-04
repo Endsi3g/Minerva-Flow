@@ -88,7 +88,7 @@ function TeamLoginCardInner() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Courriel</label>
+          <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Courriel</label>
           <input
             type="email"
             required
@@ -99,7 +99,7 @@ function TeamLoginCardInner() {
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">Mot de passe</label>
+          <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Mot de passe</label>
           <input
             type="password"
             required
@@ -132,7 +132,7 @@ function TeamLoginCardInner() {
         </button>
       </form>
 
-      <div className="mt-6 flex items-center justify-center gap-2 border-t border-mv-border-soft pt-5 text-[11px] text-mv-ink-faint">
+      <div className="mt-6 flex items-center justify-center gap-2 border-t border-mv-border-soft pt-5 text-[12px] text-mv-ink-faint">
         <ShieldCheck size={13} className="text-mv-green-dark" />
         <span>Espace isolé du compte client/restaurant.</span>
       </div>

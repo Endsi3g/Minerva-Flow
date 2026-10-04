@@ -158,7 +158,7 @@ export default function SupportPage() {
 
         {myTickets.length > 0 && (
           <div>
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+            <p className="mb-3 text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
               Vos demandes précédentes
             </p>
             <div className="space-y-2">
@@ -169,13 +169,13 @@ export default function SupportPage() {
                       <Badge tone="neutral">{categoryLabel[t.category]}</Badge>
                       <Badge tone={statusTone[t.status]}>{statusLabel[t.status]}</Badge>
                     </div>
-                    <span className="text-[11px] text-mv-ink-faint">{formatDate(t.createdAt.slice(0, 10))}</span>
+                    <span className="text-[12px] text-mv-ink-faint">{formatDate(t.createdAt.slice(0, 10))}</span>
                   </div>
                   <p className="text-[13px] font-semibold text-mv-ink">{t.subject}</p>
                   <p className="mt-1 text-[12.5px] text-mv-ink-soft">{t.message}</p>
                   {t.adminReply && (
                     <div className="mt-3 rounded-lg bg-mv-green-tint p-3">
-                      <p className="mb-1 text-[10.5px] font-semibold uppercase text-mv-green-dark">
+                      <p className="mb-1 text-[12px] font-semibold uppercase text-mv-green-dark">
                         Réponse de l&apos;équipe
                       </p>
                       <p className="text-[12.5px] text-mv-ink">{t.adminReply}</p>
@@ -187,7 +187,7 @@ export default function SupportPage() {
           </div>
         )}
 
-        <p className="text-center text-[11.5px] text-mv-ink-faint">
+        <p className="text-center text-[12px] text-mv-ink-faint">
           <Link href="/legal/terms" className="underline underline-offset-2 hover:text-mv-ink">
             Conditions d&apos;utilisation
           </Link>{" "}

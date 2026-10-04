@@ -135,13 +135,13 @@ export function AccountingConnectionsCard() {
                           <Badge tone="neutral">Bientôt disponible</Badge>
                         )}
                       </div>
-                      <p className="text-[11.5px] text-mv-ink-faint">{service.description}</p>
+                      <p className="text-[12px] text-mv-ink-faint">{service.description}</p>
                     </div>
                   </div>
 
                   <div className="self-end sm:self-auto">
                     {isConnected ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2.5 py-1 text-[11px] font-bold text-mv-green-dark">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2.5 py-1 text-[12px] font-bold text-mv-green-dark">
                         <Check size={12} /> Actif
                       </span>
                     ) : hasError ? (
@@ -181,17 +181,17 @@ export function AccountingConnectionsCard() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-[13px] font-semibold text-mv-ink">{service.name}</p>
-                      <span className="rounded-md bg-mv-cream px-1.5 py-0.5 text-[10px] font-medium text-mv-ink-faint border border-mv-border-soft">
+                      <span className="rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-medium text-mv-ink-faint border border-mv-border-soft">
                         Bientôt
                       </span>
                     </div>
-                    <p className="text-[11.5px] text-mv-ink-faint">{service.description}</p>
+                    <p className="text-[12px] text-mv-ink-faint">{service.description}</p>
                   </div>
                 </div>
 
                 <div>
                   {isRequested ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2.5 py-1 text-[11px] font-semibold text-mv-green-dark">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2.5 py-1 text-[12px] font-semibold text-mv-green-dark">
                       <Check size={12} /> Demandé
                     </span>
                   ) : (
@@ -199,7 +199,7 @@ export function AccountingConnectionsCard() {
                       size="sm"
                       variant="outline"
                       onClick={() => handleRequestAccess(service)}
-                      className="text-[11.5px] h-7.5 px-2.5"
+                      className="text-[12px] h-7.5 px-2.5"
                     >
                       <Sparkles size={12} className="text-mv-green-dark" /> Demander l&apos;accès
                     </Button>

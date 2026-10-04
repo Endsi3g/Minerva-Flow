@@ -125,7 +125,7 @@ function AlertRulesList() {
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-5 pt-2 border-t border-mv-border-soft">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">Seuil déclencheur :</span>
+                    <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Seuil déclencheur :</span>
                     <div className="relative flex items-center">
                       <Input
                         type="number"
@@ -135,7 +135,7 @@ function AlertRulesList() {
                         onBlur={(e) => persist(rule, { threshold: Number(e.target.value) })}
                         className="h-8.5 w-24 pr-8 text-[13px] font-mono font-medium"
                       />
-                      <span className="pointer-events-none absolute right-2.5 text-[11.5px] font-semibold text-mv-ink-faint">
+                      <span className="pointer-events-none absolute right-2.5 text-[12px] font-semibold text-mv-ink-faint">
                         {rule.unit}
                       </span>
                     </div>

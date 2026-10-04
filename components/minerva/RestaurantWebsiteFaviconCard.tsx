@@ -88,7 +88,7 @@ export function RestaurantWebsiteFaviconCard({
               )}
               <div>
                 <span className="block text-[13px] font-bold text-mv-ink">{domain}</span>
-                <span className="text-[11.5px] text-mv-ink-faint">
+                <span className="text-[12px] text-mv-ink-faint">
                   Favicon extrait en haute résolution (128x128px)
                 </span>
               </div>

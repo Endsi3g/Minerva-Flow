@@ -173,7 +173,7 @@ export function DynamicReportView({
           <span className="flex items-center gap-1.5">
             <Clock size={13} /> {t("createdOn", { date: new Date(createdAt).toLocaleDateString("fr-CA", { dateStyle: "long" }) })}
           </span>
-          <span className="bg-mv-green-tint text-mv-green-dark border border-mv-green/10 px-2 py-0.5 rounded-full text-[11px] font-semibold">
+          <span className="bg-mv-green-tint text-mv-green-dark border border-mv-green/10 px-2 py-0.5 rounded-full text-[12px] font-semibold">
             {t("aiDynamicReportBadge")}
           </span>
         </div>
@@ -266,7 +266,7 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
 
         {data.metrics.length > 0 && (
           <Card className="p-5">
-            <p className="mb-3.5 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+            <p className="mb-3.5 text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
               {t("keyMetrics")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -304,7 +304,7 @@ function DynamicArtifactBody({ type, data }: { type: string; data: any }) {
 
         {data.summary.length > 0 && (
           <Card className="p-5">
-            <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+            <p className="mb-3 text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
               {t("analysisSynthesis")}
             </p>
             <ul className="space-y-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
@@ -388,7 +388,7 @@ function DualLineChart({
           <Line type="monotone" dataKey="b" name={seriesB.label} stroke="var(--mv-amber)" strokeWidth={2} dot={false} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
-      <div className="mt-2 flex gap-3 text-[11px]">
+      <div className="mt-2 flex gap-3 text-[12px]">
         <span className="flex items-center gap-1.5 text-mv-ink-soft">
           <span className="h-2.5 w-2.5 rounded-full bg-mv-green" /> {seriesA.label}
         </span>
@@ -482,7 +482,7 @@ function DynamicArtifactRawData({ type, data }: { type: string; data: any }) {
                   {unitFormat[m.unit](m.value)}
                 </td>
                 <td
-                  className={`px-3 py-2 text-right font-semibold text-[11.5px] ${
+                  className={`px-3 py-2 text-right font-semibold text-[12px] ${
                     m.momDelta >= 0 ? "text-mv-green-dark" : "text-mv-red"
                   }`}
                 >

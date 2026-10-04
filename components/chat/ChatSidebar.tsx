@@ -177,7 +177,7 @@ export function ChatSidebar({
                     <span className="text-[12px] font-semibold text-mv-ink block truncate leading-tight">
                       {activeSpecialist.name}
                     </span>
-                    <span className="text-[10px] text-mv-ink-faint block truncate">
+                    <span className="text-[12px] text-mv-ink-faint block truncate">
                       {activeSpecialist.badge}
                     </span>
                   </div>
@@ -185,7 +185,7 @@ export function ChatSidebar({
                 <ChevronDown size={13} className="text-mv-ink-faint shrink-0 ml-1" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[275px] bg-mv-surface border-mv-border">
-                <DropdownMenuLabel className="text-[11px] font-bold text-mv-ink-faint uppercase tracking-wider">
+                <DropdownMenuLabel className="text-[12px] font-bold text-mv-ink-faint uppercase tracking-wider">
                   Changer de Spécialiste
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-mv-border-soft" />
@@ -202,11 +202,11 @@ export function ChatSidebar({
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[12px] font-semibold text-mv-ink truncate">{s.name}</span>
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-mv-cream border border-mv-border-soft text-mv-ink-soft">
+                        <span className="text-[12px] px-1.5 py-0.2 rounded bg-mv-cream border border-mv-border-soft text-mv-ink-soft">
                           {s.badge}
                         </span>
                       </div>
-                      <span className="text-[10.5px] text-mv-ink-faint line-clamp-1 leading-tight mt-0.5">
+                      <span className="text-[12px] text-mv-ink-faint line-clamp-1 leading-tight mt-0.5">
                         {s.description}
                       </span>
                     </div>
@@ -225,7 +225,7 @@ export function ChatSidebar({
                 placeholder="Rechercher une analyse..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-mv-border/80 bg-mv-surface py-1.5 pl-8 pr-2.5 text-[11.5px] text-mv-ink placeholder-mv-ink-faint focus:border-mv-green focus:outline-none transition-colors"
+                className="w-full rounded-lg border border-mv-border/80 bg-mv-surface py-1.5 pl-8 pr-2.5 text-[12px] text-mv-ink placeholder-mv-ink-faint focus:border-mv-green focus:outline-none transition-colors"
               />
             </div>
           </div>
@@ -245,7 +245,7 @@ export function ChatSidebar({
           {/* Conversations Épinglées */}
           {pinnedConversations.length > 0 && (
             <div className="px-3 pt-3 shrink-0 space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-mv-ink-faint flex items-center gap-1 px-1">
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint flex items-center gap-1 px-1">
                 <Pin size={10} className="text-mv-amber" /> Épinglés ({pinnedConversations.length})
               </span>
               {pinnedConversations.map((c) => {
@@ -285,13 +285,13 @@ export function ChatSidebar({
           {/* Historique Récent */}
           <div className="px-3 py-3 space-y-1">
             <div className="flex items-center justify-between mb-1 px-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-mv-ink-faint flex items-center gap-1">
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint flex items-center gap-1">
                 <History size={10} /> Récents ({recentConversations.length})
               </span>
             </div>
 
             {recentConversations.length === 0 && pinnedConversations.length === 0 ? (
-              <p className="px-1 py-2 text-[11.5px] text-mv-ink-faint text-center">
+              <p className="px-1 py-2 text-[12px] text-mv-ink-faint text-center">
                 Aucune conversation
               </p>
             ) : (
@@ -332,10 +332,10 @@ export function ChatSidebar({
 
         {/* Pied de page : Statut & Partage */}
         <div className="p-3 border-t border-mv-border/80 bg-mv-surface shrink-0">
-          <div className="flex items-center justify-between text-[11px] text-mv-ink-soft">
+          <div className="flex items-center justify-between text-[12px] text-mv-ink-soft">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-              <span className="text-[11px] font-medium">Flow AI Prêt</span>
+              <span className="text-[12px] font-medium">Flow AI Prêt</span>
             </div>
             <button
               onClick={onShare}
