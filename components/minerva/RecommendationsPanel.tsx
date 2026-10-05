@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import type { Recommendation } from "@/lib/types";
@@ -7,6 +9,7 @@ import { Sparkles, ArrowRight, ShieldCheck, Database, TrendingUp, CheckCircle2, 
 import { useState } from "react";
 
 export function RecommendationsPanel({ initial }: { initial: Recommendation[] }) {
+  const t = useTranslations("recommendationsPanel");
   const [recommendations, setRecommendations] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -21,7 +24,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
       const data = await res.json();
       setRecommendations(data.recommendations ?? initial);
     } catch {
-      setRefreshError("L’actualisation a échoué. Les conseils déjà affichés sont conservés.");
+      setRefreshError(t("theRefreshFailedThe"));
     } finally {
       setLoading(false);
     }
@@ -43,12 +46,12 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
         title="Recommandations & Actions"
         description={
           recommendations.length === 0
-            ? "Indicateurs sous contrôle"
-            : `${recommendations.length} recommandation${recommendations.length > 1 ? "s" : ""} argumentée${recommendations.length > 1 ? "s" : ""}${hiddenCount > 0 && !showAll ? ` · 3 affichées` : ""}`
+            ? t("indicatorsUnderControl")
+            : t("reasonedCount", { count: recommendations.length, suffix: hiddenCount > 0 && !showAll ? t("threeShown") : "" })
         }
         action={
           <Button size="sm" variant="secondary" onClick={refreshAnalysis} disabled={loading} className="text-[12px]">
-            <Sparkles size={13} /> {loading ? "Analyse…" : "Actualiser l’analyse"}
+            <Sparkles size={13} /> {loading ? t("analyzing") : "Actualiser l’analyse"}
           </Button>
         }
       />
@@ -58,32 +61,32 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
       {recommendations.length === 0 ? (
         <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-4 text-center">
           <CheckCircle2 size={24} className="mx-auto text-mv-green" />
-          <p className="mt-2 text-[13px] font-semibold text-mv-ink">Aucun signal à traiter pour le moment</p>
+          <p className="mt-2 text-[13px] font-semibold text-mv-ink">{t("noSignalToHandle")}</p>
           <p className="mt-1 text-[12px] text-mv-ink-soft">
-            Cela reflète les données actuellement disponibles. Actualisez l’analyse après avoir ajouté des ventes, des coûts ou des stocks.
+            {t("thisReflectsTheData")}
           </p>
         </div>
       ) : (
         <div className="space-y-3.5">
           {visibleRecs.map((r) => {
             const targetUrl = r.actionUrl ?? (r.relatedProgramId ? `/programs?id=${r.relatedProgramId}` : r.relatedCampaignId ? "/campaigns" : "/overview");
-            const targetLabel = r.actionLabel ?? "Voir le détail";
+            const targetLabel = r.actionLabel ?? t("seeDetails");
             const freshness = r.evidenceFreshness;
             const freshnessLabel = freshness?.status === "recent"
-              ? "Donnée récente"
+              ? t("recentData")
               : freshness?.status === "aging"
-                ? "À actualiser"
+                ? t("toRefresh")
                 : freshness?.status === "stale"
-                  ? "Donnée ancienne"
-                  : "Date de donnée inconnue";
+                  ? t("oldData")
+                  : t("dataDateUnknown");
             const confidenceLabel = r.confidenceLevel === "elevee"
               ? "Signal fort"
               : r.confidenceLevel === "moyenne"
-                ? "Signal à confirmer"
+                ? t("signalToConfirm")
                 : "Signal indicatif";
             const categoryLabel: Record<string, string> = {
-              menu: "Menu", marge: "Marge", stock: "Stock", fidelite: "Fidélité",
-              operations: "Opérations", finances: "Finances", campagnes: "Campagnes",
+              menu: "Menu", marge: "Marge", stock: "Stock", fidelite: t("loyalty"),
+              operations: t("operations"), finances: "Finances", campagnes: "Campagnes",
             };
 
             return (
@@ -98,7 +101,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
                       <Sparkles size={12} />
                     </span>
                     <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                      {r.source === "ia" ? "Analyse Flow AI" : "Diagnostic vérifiable"}
+                      {r.source === "ia" ? "Analyse Flow AI" : t("verifiableDiagnosis")}
                     </span>
                   </div>
 
@@ -106,7 +109,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
                     {r.impactEstimate && (
                       <span className="inline-flex max-w-full basis-full items-center gap-1 rounded-md bg-mv-lime/30 px-2 py-0.5 text-[12px] font-semibold text-mv-lime-dark sm:basis-auto">
                         <TrendingUp size={11} />
-                        {r.impactKind === "scenario" ? "Scénario · " : r.impactKind === "qualitative" ? "Impact · " : ""}
+                        {r.impactKind === "scenario" ? t("scenario") : r.impactKind === "qualitative" ? "Impact · " : ""}
                         {r.impactEstimate}
                       </span>
                     )}
@@ -114,7 +117,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
                       <ShieldCheck size={11} />
                       {confidenceLabel}
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[12px] font-medium text-mv-ink-soft" title="Récente ≤ 14 jours · à actualiser 15–45 jours · ancienne > 45 jours">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[12px] font-medium text-mv-ink-soft" title={t("freshnessLegend")}>
                       <Clock3 size={11} />
                       {freshnessLabel}{freshness?.asOf ? ` · ${freshness.asOf}` : ""}
                     </span>
@@ -135,7 +138,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
                 {/* Explanation ("Pourquoi ?") */}
                 {r.explanation && (
                   <div className="mt-2 rounded-lg bg-mv-cream-soft px-3 py-2 text-[12px] text-mv-ink-soft">
-                    <span className="font-semibold text-mv-ink">Pourquoi cette action ? </span>
+                    <span className="font-semibold text-mv-ink">{t("whyThisAction")} </span>
                     {r.explanation}
                   </div>
                 )}
@@ -144,7 +147,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
                 <div className="mt-3 flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between border-t border-mv-border-soft/60">
                   <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-mv-ink-faint">
                     <Database size={12} className="shrink-0 text-mv-ink-faint" />
-                    <span>Données utilisées : </span>
+                    <span>{t("dataUsed")} </span>
                     {r.dataSources && r.dataSources.length > 0 ? (
                       r.dataSources.map((src, i) => (
                         <span key={i} className="rounded bg-mv-ink/[0.04] px-1.5 py-0.5 text-mv-ink-soft">
@@ -152,7 +155,7 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
                         </span>
                       ))
                     ) : (
-                      <span className="text-mv-ink-soft">Sources détaillées indisponibles</span>
+                      <span className="text-mv-ink-soft">{t("detailedSourcesUnavailable")}</span>
                     )}
                   </div>
 
@@ -179,8 +182,8 @@ export function RecommendationsPanel({ initial }: { initial: Recommendation[] })
                 className="text-[12.5px] font-medium text-mv-green-dark hover:underline py-1.5 transition-colors"
               >
                 {showAll
-                  ? "Réduire aux 3 recommandations majeures"
-                  : `Voir les ${hiddenCount} autre${hiddenCount > 1 ? "s" : ""} recommandation${hiddenCount > 1 ? "s" : ""}`}
+                  ? t("reduceToThe3")
+                  : t("seeOthers", { count: hiddenCount })}
               </button>
             </div>
           )}

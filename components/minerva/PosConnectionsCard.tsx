@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { useApp } from "@/lib/app-context";
@@ -26,12 +28,14 @@ const providerLabel: Record<PosProvider, string> = {
   quickbooks: "QuickBooks",
 };
 
-const providerCapabilities: Partial<Record<PosProvider, string>> = {
-  square: "Connexion OAuth · ventes et commandes quotidiennes",
-  lightspeed: "Connexion API · ventes quotidiennes (selon votre édition Lightspeed)",
-  clover: "Connexion API · ventes et commandes; import du catalogue en brouillons",
-  toast: "API partenaire · ventes et commandes (accès Toast requis)",
+function buildProviderCapabilities(t: (key: string) => string): Partial<Record<PosProvider, string>> {
+  return {
+  square: t("oauthConnectionDailySales"),
+  lightspeed: t("apiConnectionDailySales"),
+  clover: t("apiConnectionSalesAnd"),
+  toast: t("partnerApiSalesAnd"),
 };
+}
 
 // Square, QuickBooks, Clover, and Toast have official brand icons in BrandIcons.tsx.
 // Lightspeed only ships a full horizontal partner-badge lockup (icon +
@@ -69,6 +73,7 @@ function ConnectRow({
   connection?: PosConnection;
   onSynced: () => void;
 }) {
+  const t = useTranslations("posConnections");
   const [isPending, startTransition] = useTransition();
   const [showManualGuid, setShowManualGuid] = useState(false);
   const [guidInput, setGuidInput] = useState("");
@@ -79,13 +84,13 @@ function ConnectRow({
 
   function statusLine() {
     if (provider === "clover" && !configured) {
-      return "En attente de l’activation de l’application Clover de production par Minerva Flow.";
+      return t("waitingForMinervaFlow");
     }
-    if (!configured && provider !== "clover") return "Identifiants d’application à configurer";
-    if (!connection) return "Non connecté";
-    if (hasError) return "La connexion a été interrompue — reconnectez pour reprendre la synchronisation.";
-    if (connection.lastSyncedAt) return `Dernière synchronisation — ${formatDate(connection.lastSyncedAt)}`;
-    return "Connecté — première synchronisation en cours.";
+    if (!configured && provider !== "clover") return t("applicationCredentialsToConfigure");
+    if (!connection) return t("notConnected");
+    if (hasError) return t("theConnectionWasInterrupted");
+    if (connection.lastSyncedAt) return t("lastSyncDate", { date: formatDate(connection.lastSyncedAt) });
+    return t("connectedFirstSyncIn");
   }
 
   async function handleManualGuidSubmit(e: React.FormEvent) {
@@ -94,12 +99,12 @@ function ConnectRow({
     startTransition(async () => {
       const res = await connectToastWithGuidAction(guidInput.trim());
       if (res.success) {
-        sonnerToast.success("Toast POS connecté avec succès !");
+        sonnerToast.success(t("toastPosConnectedSuccessfully"));
         setShowManualGuid(false);
         setGuidInput("");
         onSynced();
       } else {
-        sonnerToast.error("Échec de connexion Toast", { description: res.error });
+        sonnerToast.error(t("toastConnectionFailed"), { description: res.error });
       }
     });
   }
@@ -110,13 +115,13 @@ function ConnectRow({
     startTransition(async () => {
       const res = await connectCloverWithTokenAction(cloverMid.trim(), cloverToken.trim());
       if (res.success) {
-        sonnerToast.success(res.merchantName ? `Clover connecté (${res.merchantName}) !` : "Clover connecté avec succès !");
+        sonnerToast.success(res.merchantName ? t("cloverConnectedMerchantname", { merchantName: res.merchantName }) : t("cloverConnectedSuccessfully"));
         setShowManualClover(false);
         setCloverMid("");
         setCloverToken("");
         onSynced();
       } else {
-        sonnerToast.error("Échec de connexion Clover", { description: res.error });
+        sonnerToast.error(t("cloverConnectionFailed"), { description: res.error });
       }
     });
   }
@@ -134,7 +139,7 @@ function ConnectRow({
             {provider !== "lightspeed" && (
               <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
             )}
-            <p className="text-[12px] leading-relaxed text-mv-ink-soft">{providerCapabilities[provider]}</p>
+            <p className="text-[12px] leading-relaxed text-mv-ink-soft">{buildProviderCapabilities(t)[provider]}</p>
             <p className="text-[12px] text-mv-ink-faint">{statusLine()}</p>
           </div>
         </div>
@@ -149,32 +154,32 @@ function ConnectRow({
                     const result = await importCloverCatalogAction();
                     if (result.ok) {
                       const messages = [
-                        `${result.createdDrafts} brouillon${result.createdDrafts === 1 ? "" : "s"} créé${result.createdDrafts === 1 ? "" : "s"}`,
-                        `${result.linkedExisting} article${result.linkedExisting === 1 ? "" : "s"} associé${result.linkedExisting === 1 ? "" : "s"}`,
-                        `${result.alreadyMapped} déjà associé${result.alreadyMapped === 1 ? "" : "s"}`,
+                        t("draftsCreated", { count: result.createdDrafts }),
+                        t("itemsLinked", { count: result.linkedExisting }),
+                        t("alreadyLinked", { count: result.alreadyMapped }),
                       ];
-                      sonnerToast.success("Catalogue Clover importé", { description: messages.join(" · ") });
+                      sonnerToast.success(t("cloverCatalogImported"), { description: messages.join(" · ") });
                     } else {
                       const description = result.reason === "not_authorized"
-                        ? "Seul un propriétaire ou gestionnaire peut importer le catalogue."
+                        ? t("onlyAnOwnerOr")
                         : result.reason === "not_connected"
                           ? "Reconnectez Clover avant d’importer son catalogue."
                           : result.reason === "empty_catalog"
-                            ? "Aucun article reçu de Clover. Vérifiez les autorisations du compte."
-                            : "Le catalogue n’a pas pu être importé. Réessayez après avoir vérifié la connexion.";
-                      sonnerToast.error("Import du catalogue impossible", { description });
+                            ? t("noItemsReceivedFrom")
+                            : t("theCatalogCouldNot");
+                      sonnerToast.error(t("catalogImportFailed"), { description });
                     }
                   })}
-                  aria-label="Importer le catalogue Clover en brouillons inactifs"
+                  aria-label={t("importCloverAria")}
                   className="flex min-h-10 items-center gap-1.5 rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink disabled:opacity-50"
-                  title="Importe le catalogue en brouillons inactifs, à vérifier avant publication."
+                  title={t("importsTheCatalogAs")}
                 >
                   <Download size={13} className={isPending ? "animate-bounce" : ""} />
-                  <span className="hidden sm:inline">{isPending ? "Import…" : "Importer le catalogue"}</span>
+                  <span className="hidden sm:inline">{isPending ? t("importing") : t("importTheCatalog")}</span>
                 </button>
               )}
               <Badge tone="green" dot>
-                Connecté
+                {t("connectedBadge")}
               </Badge>
               <button
                 type="button"
@@ -186,7 +191,7 @@ function ConnectRow({
                 className="flex items-center gap-1.5 rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink disabled:opacity-50"
               >
                 <RefreshCw size={12} className={isPending ? "animate-spin" : ""} />
-                {isPending ? "Synchronisation…" : "Synchroniser"}
+                {isPending ? t("syncing") : "Synchroniser"}
               </button>
             </>
           )}
@@ -205,7 +210,7 @@ function ConnectRow({
                   type="button"
                   onClick={() => setShowManualClover(!showManualClover)}
                   className="rounded-lg border border-mv-border px-2.5 py-1.5 text-[12px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-ink/5"
-                  title="Saisir l'identifiant commerçant et la clé de connexion Clover"
+                  title={t("enterTheCloverMerchant")}
                 >
                   <KeyRound size={13} className="inline mr-1" />
                   Saisie manuelle
@@ -234,7 +239,7 @@ function ConnectRow({
                   aria-disabled="true"
                   className="cursor-not-allowed rounded-lg bg-mv-ink/[0.06] px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink-faint"
                 >
-                  En préparation
+                  {t("inPreparation")}
                 </span>
               )}
             </div>
@@ -244,14 +249,14 @@ function ConnectRow({
 
       {connection && provider === "clover" && (
         <p className="mt-2 text-[12px] leading-relaxed text-mv-ink-faint">
-          Les articles importés arrivent en brouillons inactifs. Vérifiez les prix, variantes et allergènes avant de les publier.
+          {t("importedItemsArriveAs")}
         </p>
       )}
 
       {showManualClover && !connection && (
         <form onSubmit={handleManualCloverSubmit} className="mt-2.5 space-y-2 border-t border-mv-border-soft pt-2.5">
           <p className="text-[12px] text-mv-ink-faint">
-            Entrez votre identifiant commerçant et votre clé de connexion générée depuis votre espace Clover (Paramètres &gt; Clés de connexion).
+            {t("enterYourMerchantId")}
           </p>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <input
@@ -263,7 +268,7 @@ function ConnectRow({
             />
             <input
               type="password"
-              placeholder="Clé de connexion Clover"
+              placeholder={t("cloverConnectionKey")}
               value={cloverToken}
               onChange={(e) => setCloverToken(e.target.value)}
               className="flex-1 rounded-md border border-mv-border bg-white px-2.5 py-1.5 text-[12px] text-mv-ink font-mono focus:border-mv-green focus:outline-none"
@@ -273,7 +278,7 @@ function ConnectRow({
               disabled={isPending || !cloverMid.trim() || !cloverToken.trim()}
               className="rounded-md bg-mv-green px-3.5 py-1.5 text-[12px] font-semibold text-white transition-opacity disabled:opacity-50 shrink-0"
             >
-              {isPending ? "Validation…" : "Lier Clover"}
+              {isPending ? t("validating") : "Lier Clover"}
             </button>
           </div>
         </form>
@@ -293,7 +298,7 @@ function ConnectRow({
             disabled={isPending || !guidInput.trim()}
             className="rounded-md bg-mv-green px-3 py-1 text-[12px] font-medium text-white transition-opacity disabled:opacity-50"
           >
-            {isPending ? "Connexion…" : "Lier Toast"}
+            {isPending ? t("connecting") : "Lier Toast"}
           </button>
         </form>
       )}
@@ -302,6 +307,7 @@ function ConnectRow({
 }
 
 export function PosConnectionsCard() {
+  const t = useTranslations("posConnections");
   const { restaurantId } = useApp();
   const [status, setStatus] = useState<{ configured: PosProviderConfigured; connections: PosConnection[] } | null>(
     null
@@ -322,8 +328,8 @@ export function PosConnectionsCard() {
     <Card>
       <CardHeader
         eyebrow="Point de vente"
-        title="Systèmes de caisse"
-        description="Square, Lightspeed, Clover et Toast peuvent transmettre les ventes quand l’accès API du fournisseur est activé. Seul Clover importe aussi un catalogue dans Minerva Flow; les articles importés restent des brouillons à valider."
+        title={t("registerSystems")}
+        description={t("squareLightspeedCloverAnd")}
       />
       <div className="space-y-2">
         <ConnectRow
