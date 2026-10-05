@@ -262,6 +262,10 @@ fun OffersScreen(data: HomeData) {
                 }
             }
         }
+        if (data.referrals.isNotEmpty()) {
+            item { SectionTitle(stringResource(R.string.ref_title)) }
+            items(data.referrals, key = { it.program.id }) { ReferralCard(it, restaurant) }
+        }
         item { SectionTitle(stringResource(R.string.offers_promos)) }
         if (data.offers.isEmpty()) item { Text(stringResource(R.string.offers_no_promos), style = MvType.small, color = c.inkSoft) }
         items(data.offers, key = { it.id }) { OfferRow(it) }
@@ -350,4 +354,37 @@ private fun RewardDialog(reward: LoyaltyReward, points: Int, onDismiss: () -> Un
             }
         },
     )
+}
+
+@Composable
+private fun ReferralCard(progress: com.minervaflow.loyalty.data.ReferralProgress, restaurant: String) {
+    val c = Mv.colors
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val program = progress.program
+    val link = progress.link
+    val converted = link?.convertedCount ?: 0
+    val message = stringResource(R.string.ref_message, restaurant)
+    val chooser = stringResource(R.string.ref_share_chooser)
+    MvCard {
+        Text(program.name, style = MvType.section, color = c.ink)
+        program.description?.takeIf { it.isNotBlank() }?.let { Text(it, style = MvType.small, color = c.inkSoft) }
+        if (link != null) {
+            Text(stringResource(R.string.ref_progress, converted, program.goalCount), style = MvType.small, color = c.inkSoft)
+            ProgressBar(com.minervaflow.loyalty.domain.Referral.fraction(converted, program.goalCount))
+            program.rewardDescription?.takeIf { it.isNotBlank() }?.let {
+                Text(stringResource(R.string.ref_reward, it), style = MvType.small.copy(fontWeight = FontWeight.SemiBold), color = c.emeraldDark)
+            }
+            if (link.rewardClaimedAt != null) Pill(stringResource(R.string.ref_unlocked))
+            PrimaryButton(
+                stringResource(R.string.ref_share),
+                {
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_TEXT, "$message ${com.minervaflow.loyalty.domain.Referral.shareUrl(link.code)}")
+                    }
+                    runCatching { context.startActivity(android.content.Intent.createChooser(send, chooser).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                },
+            )
+        }
+    }
 }

@@ -193,4 +193,11 @@
     <string name="owner_delete_body">Your access will be revoked and your personal information erased. If you are the only owner of a location, transfer it to another team member first: deletion is refused until you do.</string>
     <string name="owner_delete_sole">You are the only owner of at least one location. Transfer it to another team member first, or contact support.</string>
     <string name="owner_delete_web">Delete my account on the web</string>
+    <string name="ref_title">Invite friends</string>
+    <string name="ref_progress">%1$d / %2$d friends joined</string>
+    <string name="ref_reward">Reward: %1$s</string>
+    <string name="ref_share">Share my link</string>
+    <string name="ref_message">I\'m inviting you to %1$s: install the app with my link to get your welcome gift.</string>
+    <string name="ref_unlocked">Reward unlocked</string>
+    <string name="ref_share_chooser">Share via</string>
 </resources>

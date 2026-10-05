@@ -193,4 +193,11 @@
     <string name="owner_delete_body">Votre accès sera révoqué et vos informations personnelles effacées. Si vous êtes le seul propriétaire d\'un établissement, transférez-le d\'abord à un autre collaborateur : la suppression est refusée tant que ce n\'est pas fait.</string>
     <string name="owner_delete_sole">Vous êtes le seul propriétaire d\'au moins un établissement. Transférez-le d\'abord à un autre collaborateur ou contactez le support.</string>
     <string name="owner_delete_web">Supprimer mon compte sur le web</string>
+    <string name="ref_title">Inviter des amis</string>
+    <string name="ref_progress">%1$d / %2$d amis ont rejoint</string>
+    <string name="ref_reward">Récompense : %1$s</string>
+    <string name="ref_share">Partager mon lien</string>
+    <string name="ref_message">Je t\'invite chez %1$s : installe l\'app avec mon lien pour recevoir ton cadeau de bienvenue.</string>
+    <string name="ref_unlocked">Récompense débloquée</string>
+    <string name="ref_share_chooser">Partager via</string>
 </resources>

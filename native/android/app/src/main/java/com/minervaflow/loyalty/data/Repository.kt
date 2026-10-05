@@ -60,6 +60,7 @@ class Repository(private val api: ApiClient, private val store: SessionStore) {
                     ListSerializer(Offer.serializer()),
                 )
             }
+            val referrals = async { runCatching { referrals() }.getOrDefault(emptyList()) }
             val restaurant = bridge.await()
             HomeData(
                 customer = mine,
@@ -70,7 +71,25 @@ class Repository(private val api: ApiClient, private val store: SessionStore) {
                 offers = offers.await(),
                 transactions = transactions.await(),
                 memberships = memberships.await(),
+                referrals = referrals.await(),
             )
+        }
+    }
+
+    /** Referral programs with the guest's own link; a missing link is created so sharing is one tap. */
+    suspend fun referrals(): List<ReferralProgress> {
+        val programs = api.bridge("/api/portal/referrals", ReferralsResponse.serializer()).programs
+        return programs.map { progress ->
+            if (progress.link != null) progress
+            else {
+                val res = api.authorized(
+                    "${Config.API_BASE}/api/portal/referrals",
+                    method = "POST",
+                    body = buildJsonObject { put("programId", progress.program.id) }.toString(),
+                )
+                val created = if (res.ok) runCatching { api.json.decodeFromString(ReferralLinkResponse.serializer(), res.body).link }.getOrNull() else null
+                progress.copy(link = created)
+            }
         }
     }
 

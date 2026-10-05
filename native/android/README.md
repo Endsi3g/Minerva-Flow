@@ -7,7 +7,7 @@ Kotlin et Jetpack Compose. Même base de données (règles d'accès par ligne) e
 **Client**
 - Introduction, connexion par code courriel ou mot de passe, création de compte (case marketing décochée par défaut), accueil guidé en 3 étapes (Suivant, Retour, progression visible).
 - Accueil : solde, statut et progression, prochaine récompense, commande (ouvre le portail web), promotions, activité récente, bonus d'installation.
-- Offres : promotions, récompenses avec « Prête à échanger » ou « Encore X pts », échange (code à montrer au personnel).
+- Offres : parrainage (progression « X / N amis », récompense, partage par la feuille de partage d'Android), promotions, récompenses avec « Prête à échanger » ou « Encore X pts », échange (code à montrer au personnel).
 - Ma carte : QR (téléphone ou lien), numéro de téléphone modifiable, code de confirmation à 6 chiffres (5 minutes), ajout à Google Wallet.
 - Compte : cartes, liens légaux, support, déconnexion, suppression du compte.
 
@@ -22,7 +22,7 @@ Français par défaut, anglais selon la langue de l'appareil (test de parité de
 
 ## Pas encore construit (présent sur iOS ou le web)
 
-Équipe/ambassadeur, commande native avec panier, découverte et carte des restaurants, parrainage, scanner QR et NFC, notifications (FCM), connexion Google, inventaire, finances, rapports, horaires, Google Business Profile, avis, widgets.
+Équipe/ambassadeur, commande native avec panier, découverte et carte des restaurants, scanner QR et NFC, notifications (FCM), connexion Google, inventaire, finances, rapports, horaires, Google Business Profile, avis, widgets.
 
 ## Compiler et tester
 

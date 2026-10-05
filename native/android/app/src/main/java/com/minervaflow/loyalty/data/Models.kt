@@ -114,6 +114,33 @@ data class RedemptionCode(val code: String = "")
 @Serializable
 data class WalletLink(val url: String)
 
+@Serializable
+data class ReferralProgram(
+    val id: String,
+    val name: String = "",
+    val description: String? = null,
+    val goalCount: Int = 1,
+    val rewardDescription: String? = null,
+)
+
+@Serializable
+data class ReferralLink(
+    val id: String,
+    val referralProgramId: String,
+    val code: String,
+    val convertedCount: Int = 0,
+    val rewardClaimedAt: String? = null,
+)
+
+@Serializable
+data class ReferralProgress(val program: ReferralProgram, val link: ReferralLink? = null)
+
+@Serializable
+data class ReferralsResponse(val programs: List<ReferralProgress> = emptyList())
+
+@Serializable
+data class ReferralLinkResponse(val link: ReferralLink? = null)
+
 data class HomeData(
     val customer: Customer,
     val restaurantName: String?,
@@ -123,4 +150,5 @@ data class HomeData(
     val offers: List<Offer>,
     val transactions: List<LoyaltyTransaction>,
     val memberships: List<Membership>,
+    val referrals: List<ReferralProgress> = emptyList(),
 )

@@ -120,4 +120,18 @@ class DataTest {
         assertEquals("https://minervaflow.app/c/c1", qrPayload(null, "c1"))
         assertEquals("https://minervaflow.app/c/c1", qrPayload("123", "c1"))
     }
+
+    @Test fun referralsDecodeAndShareLinkIsBuilt() {
+        val json = """{"programs":[{"program":{"id":"p1","name":"Invitez un ami","description":null,"goalCount":3,"rewardDescription":"Un café offert"},
+            "link":{"id":"l1","referralProgramId":"p1","code":"ABC123","convertedCount":1,"rewardClaimedAt":null}},
+            {"program":{"id":"p2","name":"Autre","goalCount":5},"link":null}]}"""
+        val parsed = AppJson.decodeFromString(com.minervaflow.loyalty.data.ReferralsResponse.serializer(), json)
+        assertEquals(2, parsed.programs.size)
+        assertEquals(1, parsed.programs[0].link?.convertedCount)
+        assertNull(parsed.programs[1].link)
+        assertEquals("https://minervaflow.app/p/ABC123?via=android", com.minervaflow.loyalty.domain.Referral.shareUrl("ABC123"))
+        assertEquals(0.5f, com.minervaflow.loyalty.domain.Referral.fraction(2, 4), 0.001f)
+        assertEquals(1f, com.minervaflow.loyalty.domain.Referral.fraction(9, 3), 0f)
+        assertEquals(0f, com.minervaflow.loyalty.domain.Referral.fraction(-1, 0), 0f)
+    }
 }
