@@ -53,6 +53,7 @@ export function EmployeeDetailView({
   initialTasks: EmployeeTask[];
   restaurantId: string;
 }) {
+  const tv = useTranslations("employeeDetailView");
   const locale = useLocale();
   const t = useTranslations("employeeDetail");
   const te = useTranslations("employees");
@@ -81,9 +82,9 @@ export function EmployeeDetailView({
     setClockPending(false);
     if (shift) {
       setShifts((prev) => [shift, ...prev]);
-      toast.success(`${employee.fullName} a été pointé·e.`);
+      toast.success(tv("fullnameClockedIn", { fullName: employee.fullName }));
     } else {
-      toast.error("Impossible de pointer.");
+      toast.error(tv("couldNotClockIn"));
     }
   }
 
@@ -95,27 +96,27 @@ export function EmployeeDetailView({
   async function saveEditShift(shiftId: string) {
     const hoursWorked = Number(editHours);
     if (!Number.isFinite(hoursWorked) || hoursWorked < 0) {
-      toast.error("Le nombre d'heures doit être un nombre positif.");
+      toast.error(tv("theNumberOfHours"));
       return;
     }
     const updated = await updateEmployeeShiftAction(restaurantId, shiftId, { hoursWorked });
     if (updated) {
       setShifts((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
       setEditingShiftId(null);
-      toast.success("Quart corrigé.");
+      toast.success(tv("shiftCorrected"));
     } else {
-      toast.error("La modification a échoué.");
+      toast.error(tv("theEditFailed"));
     }
   }
 
   async function handleDeleteShift(s: EmployeeShift) {
-    if (!window.confirm(`Supprimer le quart du ${formatDate(s.shiftDate, locale)} (${s.hoursWorked.toFixed(2)} h) ?`)) return;
+    if (!window.confirm(tv("deleteTheShiftOf", { date: formatDate(s.shiftDate, locale), value: s.hoursWorked.toFixed(2) }))) return;
     const ok = await deleteEmployeeShiftAction(restaurantId, s.id);
     if (ok) {
       setShifts((prev) => prev.filter((row) => row.id !== s.id));
-      toast.success("Quart supprimé.");
+      toast.success(tv("shiftDeleted"));
     } else {
-      toast.error("La suppression a échoué.");
+      toast.error(tv("deletionFailed"));
     }
   }
 
@@ -126,9 +127,9 @@ export function EmployeeDetailView({
     setClockPending(false);
     if (updated) {
       setShifts((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-      toast.success(`Quart de ${employee.fullName} terminé — ${updated.hoursWorked.toFixed(2)} heures.`);
+      toast.success(tv("fullnameSShiftEnded", { fullName: employee.fullName, value: updated.hoursWorked.toFixed(2) }));
     } else {
-      toast.error("Impossible de dépointer.");
+      toast.error(tv("couldNotClockOut"));
     }
   }
 
@@ -154,7 +155,7 @@ export function EmployeeDetailView({
     const ok = await setEmployeeTaskStatusAction(restaurantId, task.id, nextStatus);
     if (!ok) {
       setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: task.status } : t)));
-      toast.error("Impossible de mettre à jour la tâche.");
+      toast.error(tv("couldNotUpdateThe"));
     }
   }
 
@@ -254,7 +255,7 @@ export function EmployeeDetailView({
                       </Button>
                     ) : (
                       <p className="text-center text-[12px] text-mv-ink-faint">
-                        Ajoutez un courriel à cette fiche pour permettre la connexion.
+                        {tv("addAnEmailTo")}
                       </p>
                     )}
                     {/* Pas de compte de connexion — le gérant pointe pour l'employé. */}
@@ -407,11 +408,11 @@ export function EmployeeDetailView({
 
           {/* Tasks Section */}
           <Card>
-            <CardHeader eyebrow="Suivi" title="Tâches assignées" />
+            <CardHeader eyebrow="Suivi" title={tv("assignedTasks")} />
             <div className="space-y-4">
               <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                 {tasks.length === 0 ? (
-                  <p className="text-[13px] text-mv-ink-faint py-2">Aucune tâche assignée pour l'instant.</p>
+                  <p className="text-[13px] text-mv-ink-faint py-2">{tv("noTasksAssignedYet")}</p>
                 ) : (
                   tasks.map((tk) => (
                     <label
@@ -436,7 +437,7 @@ export function EmployeeDetailView({
 
               {canManage && (
                 <div className="border-t border-mv-border-soft pt-4">
-                  <h3 className="mb-3 text-[13px] font-bold text-mv-ink">Assigner une nouvelle tâche</h3>
+                  <h3 className="mb-3 text-[13px] font-bold text-mv-ink">{tv("assignANewTask")}</h3>
                   <NewTaskForm
                     employeeId={employee.id}
                     restaurantId={restaurantId}

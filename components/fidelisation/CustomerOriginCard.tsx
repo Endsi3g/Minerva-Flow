@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { CustomerOriginMap } from "@/components/fidelisation/CustomerOriginMap";
 import type { CityOrigin } from "@/lib/customer-origin";
@@ -7,24 +9,27 @@ import { MapPin, Share2 } from "lucide-react";
 
 export type AcquisitionSourceCount = { channel: string; count: number };
 
-const SOURCE_LABELS: Record<string, string> = {
+function buildSOURCE_LABELS(t: (key: string) => string): Record<string, string> {
+  return {
   meta: "Meta / Facebook",
   instagram: "Instagram",
   google: "Google",
   organic: "Naturel / direct",
-  qr: "QR de parrainage",
+  qr: t("referralQr"),
   share: "Partage social",
-  copy: "Lien copié",
-  code: "Code de parrainage",
+  copy: t("linkCopied"),
+  code: t("referralCode"),
   direct: "Parrainage direct",
 };
+}
 
 function getSourceLabel(channel: string): string {
+  const t = useTranslations("customerOrigin");
   const [kind, value] = channel.split(":", 2);
   if (kind === "signup") {
     const signupLabels: Record<string, string> = {
-      qr_landing: "Inscription · QR / lien fidélité",
-      staff: "Inscription · équipe",
+      qr_landing: t("signUpLoyaltyQr"),
+      staff: t("signUpTeam"),
       qr_join: "Inscription · QR code",
       pos_cashier_auto_create: "Inscription · caisse",
       portal: "Inscription · portail client",
@@ -32,9 +37,9 @@ function getSourceLabel(channel: string): string {
     };
     return signupLabels[value] ?? `Inscription · ${value}`;
   }
-  if (kind === "ad") return `Conversion publicitaire · ${SOURCE_LABELS[value] ?? value}`;
-  if (kind === "referral") return `Conversion de parrainage · ${SOURCE_LABELS[value] ?? value}`;
-  return SOURCE_LABELS[channel] ?? channel;
+  if (kind === "ad") return `Conversion publicitaire · ${buildSOURCE_LABELS(t)[value] ?? value}`;
+  if (kind === "referral") return t("referralConversionValue", { value: buildSOURCE_LABELS(t)[value] ?? value });
+  return buildSOURCE_LABELS(t)[channel] ?? channel;
 }
 
 export function CustomerOriginCard({
@@ -46,18 +51,19 @@ export function CustomerOriginCard({
   profileCount: number;
   sources?: AcquisitionSourceCount[];
 }) {
+  const t = useTranslations("customerOrigin");
   const maxVisits = Math.max(1, ...cities.map((city) => city.visits));
   const sortedSources = [...sources].sort((a, b) => b.count - a.count);
 
   return (
     <Card>
       <CardHeader
-        eyebrow="Géographie et acquisition"
-        title="D’où viennent vos clients ?"
+        eyebrow={t("geographyAndAcquisition")}
+        title={t("whereDoYourCustomers")}
         description={
           profileCount > 0
             ? `${profileCount} profil${profileCount > 1 ? "s indiquent" : " indique"} une ville ou un quartier. Les localités sont déclarées par les clients et placées de façon approximative; aucune position GPS n’est collectée.`
-            : "La carte se remplit à partir des villes et quartiers indiqués par les clients. Les sources reposent sur les conversions publicitaires et les parrainages attribués."
+            : t("theMapFillsIn")
         }
       />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(220px,0.8fr)]">
@@ -89,7 +95,7 @@ export function CustomerOriginCard({
           <div className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-mv-border bg-mv-cream-soft/50 p-6 text-center">
             <MapPin size={20} className="text-mv-ink-faint" />
             <p className="max-w-sm text-[12.5px] text-mv-ink-soft">
-              Aucune ville n’est encore indiquée dans les profils clients. La carte affiche des villes, jamais une position précise.
+              {t("noCityIsShown")}
             </p>
           </div>
         )}
@@ -109,11 +115,11 @@ export function CustomerOriginCard({
             </div>
           ) : (
             <p className="text-[12px] leading-relaxed text-mv-ink-soft">
-              Pas encore de conversion attribuée. Les visites sans source mesurée ne sont pas estimées ni classées.
+              {t("noAttributedConversionYet")}
             </p>
           )}
           <p className="mt-3 border-t border-mv-border-soft pt-2.5 text-[12px] leading-relaxed text-mv-ink-faint">
-            Villes et quartiers déclarés par les clients; emplacement cartographique approximatif. Canaux issus des connexions marketing et du suivi de parrainage.
+            {t("citiesAndNeighborhoodsDeclared")}
           </p>
         </div>
       </div>

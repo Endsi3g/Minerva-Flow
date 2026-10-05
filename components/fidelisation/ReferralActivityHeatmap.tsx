@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { MousePointerClick, UserPlus, Flame, Calendar, Info } from "lucide-react";
@@ -11,12 +13,15 @@ interface ReferralActivityHeatmapProps {
   activity: ReferralDailyActivity[];
 }
 
-const MONTH_NAMES = [
-  "Jan", "Fév", "Mar", "Avr", "Mai", "Juin",
-  "Juil", "Août", "Sep", "Oct", "Nov", "Déc"
+function buildMONTH_NAMES(t: (key: string) => string) {
+  return [
+  t("jan"), t("feb"), t("mar"), t("apr"), t("may"), t("jun"),
+  t("jul"), t("aug"), t("sep"), t("oct"), t("nov"), t("dec")
 ];
+}
 
 export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapProps) {
+  const t = useTranslations("referralHeatmap");
   const [metric, setMetric] = useState<HeatmapMetric>("all");
   const [hoveredDay, setHoveredDay] = useState<ReferralDailyActivity | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
@@ -80,7 +85,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
       if (firstValidDay) {
         const m = new Date(firstValidDay.date + "T00:00:00").getMonth();
         if (m !== lastMonth) {
-          headers.push({ month: MONTH_NAMES[m], colIndex: colIdx });
+          headers.push({ month: buildMONTH_NAMES(t)[m], colIndex: colIdx });
           lastMonth = m;
         }
       }
@@ -159,8 +164,8 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
     <Card className="relative w-full min-w-0 overflow-visible">
       <CardHeader
         eyebrow="Chronologie"
-        title="Activité de parrainage"
-        description="Fréquence et intensité journalière des clics et conversions sur vos liens de recommandation."
+        title={t("referralActivity")}
+        description={t("dailyFrequencyAndIntensity")}
         action={
           <div className="flex items-center gap-1 rounded-full border border-mv-border bg-mv-cream-soft p-1">
             <button
@@ -204,7 +209,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             <MousePointerClick size={16} />
           </div>
           <div>
-            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Clics enregistrés</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("clicksRecorded")}</p>
             <p className="font-display text-[17px] font-bold text-mv-ink">{totalClicks}</p>
           </div>
         </div>
@@ -214,7 +219,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             <UserPlus size={16} />
           </div>
           <div>
-            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Filleuls convertis</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("convertedReferrals")}</p>
             <p className="font-display text-[17px] font-bold text-mv-green-dark">{totalConversions}</p>
           </div>
         </div>
@@ -224,7 +229,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             <Calendar size={16} />
           </div>
           <div>
-            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Période suivie</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("periodTracked")}</p>
             <p className="font-display text-[17px] font-bold text-mv-ink">{activity.length} jours</p>
           </div>
         </div>
@@ -234,7 +239,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             <Flame size={16} />
           </div>
           <div>
-            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Pic d&apos;activité</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("peakActivity")}</p>
             <p className="font-display text-[17px] font-bold text-mv-ink">
               {maxActivityDay
                 ? `${maxActivityDay.clicks + maxActivityDay.conversions} act.`
@@ -265,9 +270,9 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
           <div className="flex min-w-0 items-start gap-2">
             {/* Day of week labels (Y axis) */}
             <div className="flex flex-col justify-between text-[12px] font-medium text-mv-ink-faint h-[105px] pr-1 select-none">
-              <span>Lun</span>
-              <span>Mer</span>
-              <span>Ven</span>
+              <span>{t("mon")}</span>
+              <span>{t("wed")}</span>
+              <span>{t("fri")}</span>
             </div>
 
             {/* Weeks Columns Grid */}
@@ -311,15 +316,15 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
               <Info size={13} className="text-mv-ink-soft" />
               <span>
                 {metric === "all"
-                  ? "Affichage combiné : clics + conversions (pondérées x2)"
+                  ? t("combinedViewClicksConversions")
                   : metric === "clicks"
-                    ? "Affichage du volume de clics par jour"
-                    : "Affichage des nouveaux filleuls devenus clients par jour"}
+                    ? t("viewOfClickVolume")
+                    : t("viewOfNewReferrals")}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span>Moins</span>
+              <span>{t("less")}</span>
               <div className="flex items-center gap-1">
                 <span className="h-3 w-3 rounded-[2px] border bg-mv-cream-soft/80 border-mv-border/60" />
                 <span className="h-3 w-3 rounded-[2px] border bg-mv-green-tint/90 border-mv-green/30" />
@@ -327,7 +332,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
                 <span className="h-3 w-3 rounded-[2px] border bg-mv-green border-mv-green-dark" />
                 <span className="h-3 w-3 rounded-[2px] border bg-mv-green-dark border-[#063b29]" />
               </div>
-              <span>Plus</span>
+              <span>{t("more")}</span>
             </div>
           </div>
         </div>
@@ -346,7 +351,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1">
                 <MousePointerClick size={12} className="text-mv-ink-faint" />
-                Clics sur le lien :
+                {t("clicksOnTheLink")}
               </span>
               <span className="font-bold text-mv-ink">{hoveredDay.clicks}</span>
             </div>
@@ -358,7 +363,7 @@ export function ReferralActivityHeatmap({ activity }: ReferralActivityHeatmapPro
               <span className="font-bold text-mv-green-dark">{hoveredDay.conversions}</span>
             </div>
             <div className="flex items-center justify-between border-t border-mv-border-soft pt-1 mt-1 text-[12px]">
-              <span className="text-mv-ink-faint">Taux de conversion :</span>
+              <span className="text-mv-ink-faint">{t("conversionRate")}</span>
               <span className="font-mono font-bold text-mv-ink">
                 {hoveredDay.clicks > 0
                   ? `${Math.round((hoveredDay.conversions / hoveredDay.clicks) * 100)}%`

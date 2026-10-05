@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -32,12 +32,14 @@ import { updateProgramStatusAction, createProgramNoteAction } from "../actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-const typeLabel: Record<ProgramType, string> = {
-  brunch: "Brunch récurrent",
-  soiree: "Soirée thématique",
-  saison: "Période saisonnière",
-  evenement: "Événement spécial",
+function buildTypeLabel(t: (key: string) => string): Record<ProgramType, string> {
+  return {
+  brunch: t("recurringBrunch"),
+  soiree: t("themedEvening"),
+  saison: t("seasonalPeriod"),
+  evenement: t("specialEvent"),
 };
+}
 
 const typeTone: Record<ProgramType, "green" | "lime" | "amber" | "neutral"> = {
   brunch: "amber",
@@ -52,11 +54,13 @@ const statusTone: Record<ProgramStatus, "green" | "amber" | "neutral"> = {
   termine: "neutral",
 };
 
-const statusLabel: Record<ProgramStatus, string> = {
-  actif: "Actif",
-  planifie: "Planifié",
-  termine: "Terminé",
+function buildStatusLabel(t: (key: string) => string): Record<ProgramStatus, string> {
+  return {
+  actif: t("active"),
+  planifie: t("planned"),
+  termine: t("finished"),
 };
+}
 
 export function ProgramDetailView({
   restaurantId,
@@ -73,6 +77,7 @@ export function ProgramDetailView({
   serviceDays: ServiceDay[];
   regularCustomers: Customer[];
 }) {
+  const tv = useTranslations("programDetail");
   const locale = useLocale();
   const { role } = useApp();
   const router = useRouter();
@@ -91,10 +96,10 @@ export function ProgramDetailView({
     startTransition(async () => {
       const updated = await updateProgramStatusAction(restaurantId, program.id, status);
       if (updated) {
-        toast.success(`Statut mis à jour : ${statusLabel[status]}`);
+        toast.success(tv("statusUpdatedStatus", { status: buildStatusLabel(tv)[status] }));
         router.refresh();
       } else {
-        toast.error("La mise à jour du statut a échoué.");
+        toast.error(tv("couldNotUpdateThe"));
       }
     });
   }
@@ -107,10 +112,10 @@ export function ProgramDetailView({
       const note = await createProgramNoteAction(restaurantId, program.id, noteText.trim());
       if (note) {
         setNoteText("");
-        toast.success("Note ajoutée");
+        toast.success(tv("noteAdded"));
         router.refresh();
       } else {
-        toast.error("Impossible d'ajouter la note.");
+        toast.error(tv("couldNotAddThe"));
       }
     } finally {
       setIsSubmittingNote(false);
@@ -122,19 +127,19 @@ export function ProgramDetailView({
       {/* Back button */}
       <div className="mb-4">
         <Button href="/programs" variant="ghost" size="sm" className="gap-1.5 text-mv-ink-soft">
-          <ArrowLeft size={14} /> Tous les revenus récurrents
+          <ArrowLeft size={14} /> {tv("allRecurring")}
         </Button>
       </div>
 
       {/* Header */}
       <PageHeader
-        eyebrow="Programme de revenu récurrent"
+        eyebrow={tv("recurringRevenueProgram")}
         title={program.name}
-        description={`${typeLabel[program.type]} · Du ${formatDate(program.startDate, locale)} au ${formatDate(program.endDate, locale)}`}
+        description={`${buildTypeLabel(tv)[program.type]} · Du ${formatDate(program.startDate, locale)} au ${formatDate(program.endDate, locale)}`}
         action={
           <div className="flex items-center gap-2">
             <Badge tone={typeTone[program.type]} className="text-[12px] px-2.5 py-0.5">
-              {typeLabel[program.type]}
+              {buildTypeLabel(tv)[program.type]}
             </Badge>
             {canManage ? (
               <select
@@ -143,13 +148,13 @@ export function ProgramDetailView({
                 onChange={(e) => handleStatusChange(e.target.value as ProgramStatus)}
                 className="h-8 rounded-lg border border-mv-border bg-mv-surface px-2.5 text-[12px] font-semibold text-mv-ink focus:outline-none focus:ring-1 focus:ring-mv-green"
               >
-                <option value="actif">Actif</option>
-                <option value="planifie">Planifié</option>
-                <option value="termine">Terminé</option>
+                <option value="actif">{tv("active")}</option>
+                <option value="planifie">{tv("planned")}</option>
+                <option value="termine">{tv("finished")}</option>
               </select>
             ) : (
               <Badge tone={statusTone[program.status]} className="text-[12px] px-2.5 py-0.5">
-                {statusLabel[program.status]}
+                {buildStatusLabel(tv)[program.status]}
               </Badge>
             )}
           </div>
@@ -159,7 +164,7 @@ export function ProgramDetailView({
       {/* Objective callout if available */}
       {program.objective && (
         <div className="mb-6 rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-xs">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Objectif stratégique</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{tv("strategicGoal")}</p>
           <p className="mt-1 text-[13.5px] leading-relaxed text-mv-ink-soft">{program.objective}</p>
         </div>
       )}
@@ -167,7 +172,7 @@ export function ProgramDetailView({
       {/* Financial & Performance KPI Cards */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Revenu récurrent</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">{tv("recurringRevenue")}</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-green-dark">
             {formatCurrency(program.revenue, locale)}
           </p>
@@ -181,39 +186,39 @@ export function ProgramDetailView({
               </p>
             </div>
           ) : (
-            <p className="mt-1 text-[12px] text-mv-ink-faint">Ventes cumulées</p>
+            <p className="mt-1 text-[12px] text-mv-ink-faint">{tv("cumulativeSales")}</p>
           )}
         </Card>
 
         <Card className="p-4">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Coûts directs</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">{tv("directCosts")}</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
             {formatCurrency(program.cost, locale)}
           </p>
           <p className="mt-1 text-[12px] text-mv-ink-faint">
-            {program.expectedCost ? `Budget prévu : ${formatCurrency(program.expectedCost, locale)}` : "Dépenses engagées"}
+            {program.expectedCost ? tv("plannedBudgetAmount", { amount: formatCurrency(program.expectedCost, locale) }) : tv("expensesIncurred")}
           </p>
         </Card>
 
         <Card className="p-4">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Marge brute</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">{tv("grossMargin")}</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
             {formatCurrency(margin, locale)}
           </p>
           <p className="mt-1 text-[12px] text-mv-ink-soft">
             <span className={marginPct >= 40 ? "text-mv-green-dark font-medium" : "text-mv-ink"}>
-              {marginPct}% de rentabilité
+              {tv("profitabilityPct", { pct: marginPct })}
             </span>
           </p>
         </Card>
 
         <Card className="p-4">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Services associés</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">{tv("linkedServices")}</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
             {serviceDays.length}
           </p>
           <p className="mt-1 text-[12px] text-mv-ink-faint">
-            Journées d&apos;activité
+            {tv("daysOfActivity")}
           </p>
         </Card>
       </div>
@@ -221,7 +226,7 @@ export function ProgramDetailView({
       {/* 4 Connected Systems Grid */}
       <div className="space-y-6">
         <h2 className="font-display text-[20px] font-medium text-mv-ink">
-          Systèmes connectés à ce programme
+          {tv("systemsConnectedToThis")}
         </h2>
 
         {/* System 1: Finance */}
@@ -232,18 +237,18 @@ export function ProgramDetailView({
                 <Receipt size={16} />
               </div>
               <div>
-                <p className="text-[14px] font-semibold text-mv-ink">Système 1 — Finance & Comptabilité</p>
-                <p className="text-[12px] text-mv-ink-faint">Transactions financières et écritures taguées</p>
+                <p className="text-[14px] font-semibold text-mv-ink">{tv("system1FinanceAccounting")}</p>
+                <p className="text-[12px] text-mv-ink-faint">{tv("financialTransactionsAndTagged")}</p>
               </div>
             </div>
             <Button href="/finance" variant="secondary" size="sm" className="text-[12px] gap-1">
-              Ouvrir la Finance <ArrowUpRight size={12} />
+              {tv("openFinance")} <ArrowUpRight size={12} />
             </Button>
           </div>
 
           {transactions.length === 0 ? (
             <div className="rounded-xl border border-dashed border-mv-border p-4 text-center text-mv-ink-soft text-[12.5px]">
-              Aucune transaction financière n&apos;est actuellement rattachée à ce programme.
+              {tv("noFinancialTransactionIs")}
               <p className="mt-1 text-[12px] text-mv-ink-faint">
                 Dans la section Finance, associez des écritures à « {program.name} » pour suivre les flux précis.
               </p>
@@ -253,10 +258,10 @@ export function ProgramDetailView({
               <table className="w-full text-left text-[12.5px]">
                 <thead>
                   <tr className="border-b border-mv-border text-[12px] font-semibold uppercase text-mv-ink-faint">
-                    <th className="py-2">Date</th>
-                    <th className="py-2">Description</th>
-                    <th className="py-2">Catégorie</th>
-                    <th className="py-2 text-right">Montant</th>
+                    <th className="py-2">{tv("date")}</th>
+                    <th className="py-2">{tv("description")}</th>
+                    <th className="py-2">{tv("category")}</th>
+                    <th className="py-2 text-right">{tv("amount")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-mv-border-soft">
@@ -293,20 +298,20 @@ export function ProgramDetailView({
                 <Megaphone size={16} />
               </div>
               <div>
-                <p className="text-[14px] font-semibold text-mv-ink">Système 2 — Marketing & Acquisition</p>
-                <p className="text-[12px] text-mv-ink-faint">Campagnes actives et acquisition d&apos;abonnés</p>
+                <p className="text-[14px] font-semibold text-mv-ink">{tv("system2MarketingAcquisition")}</p>
+                <p className="text-[12px] text-mv-ink-faint">{tv("activeCampaignsAndSubscriber")}</p>
               </div>
             </div>
             <Button href="/campaigns" variant="secondary" size="sm" className="text-[12px] gap-1">
-              Toutes les campagnes <ArrowUpRight size={12} />
+              {tv("allCampaigns")} <ArrowUpRight size={12} />
             </Button>
           </div>
 
           {campaigns.length === 0 ? (
             <div className="rounded-xl border border-dashed border-mv-border p-4 text-center text-mv-ink-soft text-[12.5px]">
-              Aucune campagne publicitaire n&apos;est liée à ce programme récurrent.
+              {tv("noAdCampaignIs")}
               <p className="mt-1 text-[12px] text-mv-ink-faint">
-                Créez une campagne de relance ou d&apos;acquisition ciblée sur ce programme.
+                {tv("createANudgeOr")}
               </p>
             </div>
           ) : (
@@ -339,8 +344,8 @@ export function ProgramDetailView({
                 <CalendarCheck size={16} />
               </div>
               <div>
-                <p className="text-[14px] font-semibold text-mv-ink">Système 3 — Opérations & Performance Quotidienne</p>
-                <p className="text-[12px] text-mv-ink-faint">Services exécutés durant la période de ce programme</p>
+                <p className="text-[14px] font-semibold text-mv-ink">{tv("system3OperationsDaily")}</p>
+                <p className="text-[12px] text-mv-ink-faint">{tv("servicesRunDuringThis")}</p>
               </div>
             </div>
             <Button href="/days" variant="secondary" size="sm" className="text-[12px] gap-1">
@@ -370,7 +375,7 @@ export function ProgramDetailView({
                     {formatCurrency(sd.revenue, locale)}
                   </p>
                   <p className="mt-0.5 text-[12px] text-mv-ink-faint group-hover:text-mv-green-dark">
-                    Voir le service &rarr;
+                    {tv("viewService")}
                   </p>
                 </Link>
               ))}
@@ -386,8 +391,8 @@ export function ProgramDetailView({
                 <Users size={16} />
               </div>
               <div>
-                <p className="text-[14px] font-semibold text-mv-ink">Système 4 — Fidélisation & Abonnés Récurents</p>
-                <p className="text-[12px] text-mv-ink-faint">Clientèle régulière générant le chiffre d&apos;affaires de récurrence</p>
+                <p className="text-[14px] font-semibold text-mv-ink">{tv("system4LoyaltyRecurring")}</p>
+                <p className="text-[12px] text-mv-ink-faint">{tv("regularCustomersGeneratingThe")}</p>
               </div>
             </div>
             <Button href="/fidelisation" variant="secondary" size="sm" className="text-[12px] gap-1">
@@ -397,7 +402,7 @@ export function ProgramDetailView({
 
           {regularCustomers.length === 0 ? (
             <div className="rounded-xl border border-dashed border-mv-border p-4 text-center text-mv-ink-soft text-[12.5px]">
-              Aucun client récurrent répertorié pour le moment.
+              {tv("noRecurringCustomerListed")}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
@@ -407,7 +412,7 @@ export function ProgramDetailView({
                   className="rounded-xl border border-mv-border bg-mv-surface p-3 text-[12.5px]"
                 >
                   <p className="truncate font-semibold text-mv-ink">{c.name}</p>
-                  <p className="text-[12px] text-mv-ink-faint">{c.visitCount} visites cumulées</p>
+                  <p className="text-[12px] text-mv-ink-faint">{tv("cumulativeVisits", { count: c.visitCount })}</p>
                   <p className="mt-1 font-semibold text-mv-green-dark">{formatCurrency(c.totalSpent, locale)}</p>
                 </div>
               ))}
@@ -419,8 +424,8 @@ export function ProgramDetailView({
         <Card className="p-5">
           <CardHeader
             eyebrow="Journal d'exploitation"
-            title="Notes & Retours de l'équipe"
-            description="Observations opérationnelles laissées par le personnel"
+            title={tv("teamNotesFeedback")}
+            description={tv("operationalObservationsLeftBy")}
           />
 
           {canManage && (
@@ -430,18 +435,18 @@ export function ProgramDetailView({
                   type="text"
                   value={noteText}
                   onChange={(e) => setNoteText(e.target.value)}
-                  placeholder="Ajouter une note sur ce programme..."
+                  placeholder={tv("addNotePlaceholder")}
                   className="flex-1 rounded-xl border border-mv-border bg-mv-surface px-3 py-2 text-[13px] text-mv-ink placeholder:text-mv-ink-faint focus:outline-none focus:ring-1 focus:ring-mv-green"
                 />
                 <Button type="submit" size="sm" disabled={isSubmittingNote || !noteText.trim()}>
-                  {isSubmittingNote ? "Enregistrement..." : "Ajouter"}
+                  {isSubmittingNote ? "Enregistrement..." : tv("add")}
                 </Button>
               </div>
             </form>
           )}
 
           {program.consultantNotes.length === 0 ? (
-            <p className="text-[12.5px] text-mv-ink-faint">Aucune note enregistrée sur ce programme.</p>
+            <p className="text-[12.5px] text-mv-ink-faint">{tv("noNotesRecordedOn")}</p>
           ) : (
             <div className="space-y-2">
               {program.consultantNotes.map((n, i) => (

@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -27,11 +27,13 @@ import { Plus, Upload, ShoppingBag, Truck, CalendarCheck, CalendarCheck2, Pencil
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-const sourceLabel: Record<ServiceSource, string> = {
-  salle: "Sur place",
+function buildSourceLabel(t: (key: string) => string): Record<ServiceSource, string> {
+  return {
+  salle: t("onSite"),
   livraison: "Livraison",
-  reservation: "Réservation",
+  reservation: t("reservation"),
 };
+}
 
 const sourceIcon: Record<ServiceSource, typeof ShoppingBag> = {
   salle: ShoppingBag,
@@ -39,11 +41,13 @@ const sourceIcon: Record<ServiceSource, typeof ShoppingBag> = {
   reservation: CalendarCheck,
 };
 
-const anomalyBadge: Record<NonNullable<Anomaly>, { label: string; tone: "amber" | "red" | "green" }> = {
+function buildAnomalyBadge(t: (key: string) => string): Record<NonNullable<Anomaly>, { label: string; tone: "amber" | "red" | "green" }> {
+  return {
   rush: { label: "Rush", tone: "green" },
   creux: { label: "Creux", tone: "amber" },
-  probleme: { label: "Problème", tone: "red" },
+  probleme: { label: t("problem"), tone: "red" },
 };
+}
 
 /**
  * Builds a full-month calendar grid from actual service_days rows: every
@@ -62,6 +66,7 @@ function buildHeatmap(days: ServiceDay[], year: number, month: number) {
 }
 
 export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDay[] }) {
+  const t = useTranslations("daysView");
   const locale = useLocale();
   const { role } = useApp();
   const router = useRouter();
@@ -114,10 +119,10 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
   }
 
   async function handleDelete(day: ServiceDay) {
-    if (!window.confirm(`Supprimer la journée du ${formatDateWeekday(day.date, locale)} ?`)) return;
+    if (!window.confirm(t("deleteTheDayOf", { formatDateWeekday: formatDateWeekday(day.date, locale) }))) return;
     const ok = await deleteServiceDayAction(day.id);
     if (ok) setDays((prev) => prev.filter((d) => d.id !== day.id));
-    else toast.error("La suppression a échoué.");
+    else toast.error(t("deletionFailed"));
   }
 
   const [timeRange, setTimeRange] = useState<"7d" | "14d" | "30d" | "all">("14d");
@@ -156,9 +161,9 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
   return (
     <div>
       <PageHeader
-        eyebrow="Journées de service"
+        eyebrow={t("serviceDays")}
         title="Performance quotidienne"
-        description="Le calendrier de vos services : niveau de revenu, source principale et notes remontées par l'équipe."
+        description={t("theCalendarOfYour")}
         action={
           canEdit && (
             <div className="flex items-center gap-2">
@@ -166,7 +171,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
                 <Upload size={15} /> Importer un historique
               </Button>
               <Button size="sm" onClick={() => setOpen(true)}>
-                <Plus size={15} /> Ajouter une journée
+                <Plus size={15} /> {t("addDay")}
               </Button>
             </div>
           )
@@ -176,17 +181,17 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
       {/* KPI Cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Moyenne / jour</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">{t("averageDay")}</p>
           <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">{formatCurrency(kpis.avgRevenue, locale)}</p>
-          <p className="mt-0.5 text-[12px] text-mv-ink-faint">{rangeFilteredDays.length} journées analysées</p>
+          <p className="mt-0.5 text-[12px] text-mv-ink-faint">{t("daysAnalyzed", { count: rangeFilteredDays.length })}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Taux de rush</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">{t("rushRate")}</p>
           <p className="mt-1 font-display text-[22px] font-medium text-mv-green-dark">{kpis.rushRate}%</p>
-          <p className="mt-0.5 text-[12px] text-mv-ink-faint">Haute affluence</p>
+          <p className="mt-0.5 text-[12px] text-mv-ink-faint">{t("highTraffic")}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Meilleur service</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">{t("bestService")}</p>
           <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">
             {kpis.bestDay ? formatCurrency(kpis.bestDay.revenue, locale) : "—"}
           </p>
@@ -202,17 +207,17 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
           )}
         </Card>
         <Card className="p-4">
-          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Réservations</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">{t("reservations")}</p>
           <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">{kpis.totalReservations}</p>
-          <p className="mt-0.5 text-[12px] text-mv-ink-faint">Couverts réservés</p>
+          <p className="mt-0.5 text-[12px] text-mv-ink-faint">{t("coversBooked")}</p>
         </Card>
       </div>
 
       <Card className="mb-6">
         <CardHeader
           eyebrow={monthLabel}
-          title="Calendrier des revenus"
-          description="Cliquez sur une journée pour accéder immédiatement à sa fiche de service dédiée."
+          title={t("revenueCalendar")}
+          description={t("clickADayTo")}
         />
         <MonthCalendar
           data={heat}
@@ -235,12 +240,12 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
           <CardHeader
             eyebrow="Revenus"
             title="Revenu vs marge"
-            description="Toutes journées de la période — survolez une légende pour l'isoler"
+            description={t("allDaysOfThe")}
           />
           <UnifiedTrendChart
             series={[
               { key: "revenu", slug: "revenu", label: "Revenu total", color: "var(--mv-green)", data: revTrend },
-              { key: "marge", slug: "marge", label: "Marge estimée", color: "var(--mv-lime-dark)", data: margTrend },
+              { key: "marge", slug: "marge", label: t("estimatedMargin"), color: "var(--mv-lime-dark)", data: margTrend },
             ]}
           />
         </Card>
@@ -249,8 +254,8 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
       {days.length === 0 ? (
         <EmptyState
           icon={CalendarCheck2}
-          title="Aucune journée enregistrée"
-          description="Ajoutez votre première journée de service pour commencer à suivre vos revenus."
+          title={t("noDaysRecorded")}
+          description={t("addYourFirstService")}
           action={
             canEdit && (
               <Button size="sm" onClick={() => setOpen(true)}>
@@ -274,7 +279,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
                   }}
                   className="font-medium text-mv-green-dark hover:underline"
                 >
-                  Voir toute la période
+                  {t("seeTheWholePeriod")}
                 </button>
               </div>
             ) : (
@@ -305,18 +310,18 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
             )}
 
             <div className="text-[12px] text-mv-ink-faint">
-              {rangeFilteredDays.length} journée{rangeFilteredDays.length > 1 ? "s" : ""}
+              {t("daysCount", { count: rangeFilteredDays.length })}
             </div>
           </div>
 
           <Table>
             <THead>
-              <Th>Date</Th>
-              <Th className="text-right">Revenu</Th>
-              <Th>Source principale</Th>
-              <Th>Événements</Th>
-              <Th>Notes</Th>
-              <Th>Statut</Th>
+              <Th>{t("date")}</Th>
+              <Th className="text-right">{t("revenue")}</Th>
+              <Th>{t("mainSource")}</Th>
+              <Th>{t("events")}</Th>
+              <Th>{t("notes")}</Th>
+              <Th>{t("status")}</Th>
               {canEdit && <Th className="text-right"></Th>}
             </THead>
             <tbody>
@@ -333,7 +338,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
                     <Td className="text-right font-semibold">{formatCurrency(d.revenue, locale)}</Td>
                     <Td>
                       <span className="inline-flex items-center gap-1.5 text-mv-ink-soft">
-                        <SourceIcon size={14} /> {sourceLabel[d.mainSource]}
+                        <SourceIcon size={14} /> {buildSourceLabel(t)[d.mainSource]}
                       </span>
                     </Td>
                     <Td>
@@ -354,9 +359,9 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
                     </Td>
                     <Td>
                       {d.anomaly ? (
-                        <Badge tone={anomalyBadge[d.anomaly].tone}>{anomalyBadge[d.anomaly].label}</Badge>
+                        <Badge tone={buildAnomalyBadge(t)[d.anomaly].tone}>{buildAnomalyBadge(t)[d.anomaly].label}</Badge>
                       ) : (
-                        <Badge tone="neutral">Normal</Badge>
+                        <Badge tone="neutral">{t("normal")}</Badge>
                       )}
                     </Td>
                     {canEdit && (
@@ -367,8 +372,8 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
                               e.stopPropagation();
                               router.push(`/days/${d.id}`);
                             }}
-                            title="Ouvrir la fiche dédiée"
-                            aria-label="Ouvrir la fiche dédiée"
+                            title={t("openTheDedicatedSheet")}
+                            aria-label={t("openTheDedicatedSheet")}
                             className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-green/10 hover:text-mv-green-dark"
                           >
                             <ArrowUpRight size={14} />

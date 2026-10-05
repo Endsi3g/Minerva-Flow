@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -28,6 +30,7 @@ type Status = {
 };
 
 export function StripeConnectCard() {
+  const t = useTranslations("stripeConnect");
   const { role } = useApp();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<Status | null>(null);
@@ -93,14 +96,14 @@ export function StripeConnectCard() {
 
   function statusLine() {
     if (!status) return "";
-    if (!status.configured) return "Non configuré — bientôt disponible";
-    if (!status.accountId) return "Non connecté";
-    if (isReady) return "Connecté — paiements actifs";
+    if (!status.configured) return t("notSetUpComing");
+    if (!status.accountId) return t("notConnected");
+    if (isReady) return t("connectedPaymentsActive");
     if (status.apiVersion === "v2" && status.requirementsDueCount > 0) return `${status.requirementsDueCount} information${status.requirementsDueCount > 1 ? "s" : ""} requise${status.requirementsDueCount > 1 ? "s" : ""} par Stripe`;
-    if (status.apiVersion === "v2" && (status.transfersStatus === "restricted" || status.recipientPayoutsStatus === "restricted")) return "Compte restreint — vérifiez les informations demandées par Stripe";
-    if (status.apiVersion === "v2") return "Activation ou vérification en cours chez Stripe";
-    if (status.detailsSubmitted) return "Configuration en cours de vérification par Stripe";
-    return "Configuration Stripe incomplète — reprenez l'inscription";
+    if (status.apiVersion === "v2" && (status.transfersStatus === "restricted" || status.recipientPayoutsStatus === "restricted")) return t("restrictedAccountCheckThe");
+    if (status.apiVersion === "v2") return t("activationOrVerificationIn");
+    if (status.detailsSubmitted) return t("setupUnderReviewBy");
+    return t("stripeSetupIncompleteResume");
   }
 
   const isReady = status ? isRestaurantConnectReady({
@@ -115,12 +118,12 @@ export function StripeConnectCard() {
       <CardHeader
         eyebrow="Paiements"
         title="Paiements en ligne des clients"
-        description="Connectez le compte Stripe de votre restaurant pour recevoir les transferts associés aux commandes web — séparément de votre abonnement Minerva Flow (voir Facturation)."
+        description={t("connectYourRestaurantS")}
       />
       {status && !status.configured && (
         <div className="mb-3 rounded-lg border border-mv-border-soft bg-mv-cream-soft px-3.5 py-3" role="status">
           <p className="text-[13px] leading-relaxed text-mv-ink-soft">
-            Stripe Connect n’est pas configuré sur cet environnement. Les paiements en ligne seront bientôt disponibles.
+            {t("stripeConnectIsNot")}
           </p>
         </div>
       )}
@@ -131,20 +134,20 @@ export function StripeConnectCard() {
         </div>
       ) : statusLoadFailed && !status ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-mv-border-soft px-3.5 py-3" role="alert">
-          <p className="text-sm text-mv-ink-soft">Le statut Stripe Connect n’a pas pu être chargé.</p>
+          <p className="text-sm text-mv-ink-soft">{t("theStripeConnectStatus")}</p>
           <Button size="sm" variant="outline" disabled={isLoadingStatus} onClick={() => void refresh()}>
-            {isLoadingStatus ? "Réessai…" : "Réessayer"}
+            {isLoadingStatus ? t("retrying") : t("retry")}
           </Button>
         </div>
       ) : !status ? (
         <div className="rounded-lg border border-mv-border-soft px-3.5 py-3" role="status">
-          <p className="text-sm text-mv-ink-soft">Le statut Stripe Connect est indisponible.</p>
+          <p className="text-sm text-mv-ink-soft">{t("theStripeConnectStatus2")}</p>
         </div>
       ) : <div className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3.5 py-3">
         <div className="flex items-center gap-3">
           <StripeIcon width={22} height={22} className="shrink-0" />
           <div>
-            <p className="text-[13.5px] font-semibold text-mv-ink">Stripe Connect</p>
+            <p className="text-[13.5px] font-semibold text-mv-ink">{t("stripeConnect")}</p>
             <p className="text-[12px] text-mv-ink-faint">{statusLine()}</p>
           </div>
         </div>
@@ -181,7 +184,7 @@ export function StripeConnectCard() {
                 })
               }
             >
-              {!status.configured ? "Bientôt disponible" : status.accountId ? "Continuer l'inscription" : "Connecter Stripe"}
+              {!status.configured ? t("comingSoon") : status.accountId ? "Continuer l'inscription" : "Connecter Stripe"}
             </Button>
           )}
         </div>

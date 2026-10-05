@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -20,6 +22,7 @@ export function ImportMenuPdfModal({
   onClose: () => void;
   onImported: (items: MenuItem[]) => void;
 }) {
+  const t = useTranslations("importMenuPdf");
   const [done, setDone] = useState<number | null>(null);
   const scan = usePdfMenuScan({
     restaurantId,
@@ -32,7 +35,7 @@ export function ImportMenuPdfModal({
   const grouped = useMemo(() => {
     const byCategory = new Map<string, ScannedMenuItem[]>();
     for (const item of scan.items) {
-      const key = item.category?.trim() || "Sans catégorie";
+      const key = item.category?.trim() || t("uncategorized");
       if (!byCategory.has(key)) byCategory.set(key, []);
       byCategory.get(key)!.push(item);
     }
@@ -70,8 +73,8 @@ export function ImportMenuPdfModal({
         done !== null
           ? undefined
           : showReview
-            ? "Vérifiez et corrigez les plats détectés avant l'import — rien n'est encore ajouté à votre menu."
-            : "L’IA lit un PDF ou une photo du menu, puis propose les plats, prix et catégories à vérifier avant l’ajout. Sans prix affiché, l’article sera présenté sans pouvoir être commandé."
+            ? t("checkAndFixThe")
+            : t("theAiReadsA")
       }
       width={showReview ? 640 : 480}
     >
@@ -82,7 +85,7 @@ export function ImportMenuPdfModal({
             <p className="text-[13.5px] font-semibold text-mv-ink">
               {done} plat{done > 1 ? "s" : ""} importé{done > 1 ? "s" : ""}
             </p>
-            <p className="text-[12px] text-mv-ink-faint">Modifiez prix, food cost ou photo directement depuis le menu.</p>
+            <p className="text-[12px] text-mv-ink-faint">{t("editPriceFoodCost")}</p>
           </div>
         ) : showReview ? (
           <div className="max-h-[55vh] space-y-5 overflow-y-auto pr-1">
@@ -133,7 +136,7 @@ export function ImportMenuPdfModal({
                           onChange={(e) => updateItem(item.key, { isOrderable: e.target.checked })}
                           className="size-3.5 accent-mv-green"
                         />
-                        À commander
+                        {t("toOrder")}
                       </label>
                       <button
                         type="button"
@@ -158,11 +161,11 @@ export function ImportMenuPdfModal({
 
         {!showReview && done === null && scan.files.length > 0 && !scan.loading && (
           <Button className="w-full" onClick={scan.onUpload}>
-            Analyser le menu
+            {t("analyzeTheMenu")}
           </Button>
         )}
         {scan.loading && (
-          <p className="text-center text-[12.5px] text-mv-ink-faint">Analyse du menu en cours…</p>
+          <p className="text-center text-[12.5px] text-mv-ink-faint">{t("analyzingTheMenu")}</p>
         )}
 
         <div className="flex items-center justify-between border-t border-mv-border-soft pt-4">
@@ -179,11 +182,11 @@ export function ImportMenuPdfModal({
           )}
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" onClick={handleClose}>
-              {done !== null ? "Fermer" : "Annuler"}
+              {done !== null ? "Fermer" : t("cancel")}
             </Button>
             {showReview && (
               <Button type="button" onClick={handleConfirm} disabled={includedCount === 0 || scan.importing}>
-                {scan.importing ? "Import…" : `Importer ${includedCount} plat${includedCount > 1 ? "s" : ""}`}
+                {scan.importing ? t("importing") : `Importer ${includedCount} plat${includedCount > 1 ? "s" : ""}`}
               </Button>
             )}
           </div>

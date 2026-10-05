@@ -2,7 +2,7 @@
 
 
 import { intlLocale } from "@/lib/format-locale";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
@@ -56,11 +56,13 @@ const statusTone: Record<ShiftScheduleStatus, "green" | "amber" | "neutral"> = {
   annule: "neutral",
 };
 
-const statusLabel: Record<ShiftScheduleStatus, string> = {
-  planifie: "Planifié",
-  confirme: "Confirmé",
-  annule: "Annulé",
+function buildStatusLabel(t: (key: string) => string): Record<ShiftScheduleStatus, string> {
+  return {
+  planifie: t("scheduled"),
+  confirme: t("confirmed"),
+  annule: t("cancelled"),
 };
+}
 
 const DAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
@@ -114,6 +116,7 @@ function NewShiftModal({
   onCreated: (s: ShiftSchedule) => void;
   onUpdated?: (s: ShiftSchedule) => void;
 }) {
+  const t = useTranslations("scheduleView");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditing = Boolean(editingShift);
 
@@ -133,19 +136,19 @@ function NewShiftModal({
         const shift = await updateShiftScheduleAction(restaurantId, editingShift.id, input);
         if (shift) {
           onUpdated?.(shift);
-          toast.success("Quart modifié avec succès.");
+          toast.success(t("shiftUpdatedSuccessfully"));
           onClose();
         } else {
-          toast.error("La modification du quart a échoué.");
+          toast.error(t("couldNotUpdateThe"));
         }
       } else {
         const shift = await createShiftScheduleAction(restaurantId, input);
         if (shift) {
           onCreated(shift);
-          toast.success("Quart planifié avec succès.");
+          toast.success(t("shiftScheduledSuccessfully"));
           onClose();
         } else {
-          toast.error("La planification du quart a échoué.");
+          toast.error(t("couldNotScheduleThe"));
         }
       }
     } finally {
@@ -157,11 +160,11 @@ function NewShiftModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={isEditing ? "Modifier le quart" : "Planifier un quart"}
-      description="Employé, date et plage horaire."
+      title={isEditing ? t("editTheShift") : t("scheduleAShift")}
+      description={t("employeeDateAndTime")}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Employé">
+        <Field label={t("employee")}>
           <Select name="employeeId" defaultValue={editingShift?.employeeId ?? defaultEmployeeId} required>
             {employees.map((e) => (
               <option key={e.id} value={e.id}>
@@ -174,7 +177,7 @@ function NewShiftModal({
           <Input name="shiftDate" type="date" defaultValue={editingShift?.shiftDate ?? defaultDate} required />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Début">
+          <Field label={t("start")}>
             <Input name="startTime" type="time" defaultValue={editingShift?.startTime.slice(0, 5) ?? "09:00"} required />
           </Field>
           <Field label="Fin">
@@ -189,7 +192,7 @@ function NewShiftModal({
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Enregistrement…" : isEditing ? "Enregistrer" : "Planifier"}
+            {isSubmitting ? t("saving") : isEditing ? t("save") : "Planifier"}
           </Button>
         </div>
       </form>
@@ -208,6 +211,7 @@ function EmployeeScheduleModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations("scheduleView");
   const locale = useLocale();
   const [shifts, setShifts] = useState<ShiftSchedule[] | null>(null);
   const [sending, setSending] = useState(false);
@@ -226,8 +230,8 @@ function EmployeeScheduleModal({
     setSending(true);
     try {
       const result = await sendScheduleEmailAction(restaurantId, employee.id);
-      if (result.ok) toast.success(`Horaire envoyé à ${employee.contactEmail}.`);
-      else toast.error(result.error ?? "L'envoi a échoué.");
+      if (result.ok) toast.success(t("scheduleSentToContactemail", { contactEmail: employee.contactEmail ?? "" }));
+      else toast.error(result.error ?? t("sendingFailed"));
     } finally {
       setSending(false);
     }
@@ -239,9 +243,9 @@ function EmployeeScheduleModal({
       const token = await createScheduleShareLinkAction(restaurantId, employee.id);
       if (token) {
         setLink(`${window.location.origin}/h/${token}`);
-        toast.success("Lien de partage généré avec succès.");
+        toast.success(t("shareLinkGeneratedSuccessfully"));
       } else {
-        toast.error("La création du lien a échoué.");
+        toast.error(t("couldNotCreateThe"));
       }
     } finally {
       setLinking(false);
@@ -252,17 +256,17 @@ function EmployeeScheduleModal({
     if (!link) return;
     await navigator.clipboard.writeText(link);
     setCopied(true);
-    toast.success("Lien copié dans le presse-papier !");
+    toast.success(t("linkCopiedToThe"));
     setTimeout(() => setCopied(false), 2000);
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={employee.fullName} description="Prochains quarts de l'employé.">
+    <Modal open={open} onClose={onClose} title={employee.fullName} description={t("theEmployeeSUpcoming")}>
       <div className="space-y-4">
         {shifts === null ? (
-          <p className="text-[12.5px] text-mv-ink-faint">Chargement…</p>
+          <p className="text-[12.5px] text-mv-ink-faint">{t("loading")}</p>
         ) : shifts.length === 0 ? (
-          <p className="text-[12.5px] text-mv-ink-faint">Aucun quart à venir pour cet employé.</p>
+          <p className="text-[12.5px] text-mv-ink-faint">{t("noUpcomingShiftsFor")}</p>
         ) : (
           <div className="max-h-64 space-y-1.5 overflow-y-auto">
             {shifts.map((s) => (
@@ -284,12 +288,12 @@ function EmployeeScheduleModal({
             onClick={handleSendEmail}
             disabled={sending || !employee.contactEmail}
           >
-            <Mail size={14} /> {sending ? "Envoi…" : `Envoyer par courriel${employee.contactEmail ? "" : " (aucun courriel)"}`}
+            <Mail size={14} /> {sending ? t("sending") : t("sendByEmailContactemail", { contactEmail: employee.contactEmail ? "" : " (aucun courriel)" })}
           </Button>
 
           {!link ? (
             <Button variant="secondary" size="sm" onClick={handleCreateLink} disabled={linking}>
-              <Link2 size={14} /> {linking ? "Génération…" : "Générer un lien à partager"}
+              <Link2 size={14} /> {linking ? t("generating") : t("generateALinkTo")}
             </Button>
           ) : (
             <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-3 py-2">
@@ -299,16 +303,16 @@ function EmployeeScheduleModal({
                 target="_blank"
                 rel="noreferrer"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
-                title="Ouvrir le lien"
-                aria-label="Ouvrir le lien"
+                title={t("openLink")}
+                aria-label={t("openLinkAria")}
               >
                 <ExternalLink size={14} />
               </a>
               <button
                 onClick={handleCopy}
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
-                title="Copier le lien"
-                aria-label="Copier le lien"
+                title={t("copyLink")}
+                aria-label={t("copyLinkAria")}
               >
                 {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
               </button>
@@ -348,6 +352,7 @@ function DayDetailModal({
   onToggleStatus: (s: ShiftSchedule) => void;
   onDeleteShift: (id: string) => void;
 }) {
+  const t = useTranslations("scheduleView");
   const locale = useLocale();
   const formatted = new Date(dateIso + "T00:00:00").toLocaleDateString(intlLocale(locale), {
     weekday: "long",
@@ -361,12 +366,12 @@ function DayDetailModal({
       open={open}
       onClose={onClose}
       title={formatted.charAt(0).toUpperCase() + formatted.slice(1)}
-      description={`${shifts.length} quart(s) planifié(s) ce jour-là.`}
+      description={t("shiftslengthShiftSScheduled", { shiftsLength: shifts.length })}
     >
       <div className="space-y-4">
         {shifts.length === 0 ? (
           <p className="text-[13px] text-mv-ink-faint py-4 text-center">
-            Aucun quart de travail planifié pour cette journée.
+            {t("noWorkShiftsScheduled")}
           </p>
         ) : (
           <div className="divide-y divide-mv-border-soft max-h-72 overflow-y-auto">
@@ -375,9 +380,9 @@ function DayDetailModal({
               return (
                 <div key={s.id} className="flex items-center justify-between py-2.5 px-1">
                   <div className="flex items-center gap-3">
-                    <Avatar name={emp?.fullName ?? "Employé"} size={32} />
+                    <Avatar name={emp?.fullName ?? t("employee")} size={32} />
                     <div>
-                      <p className="text-[13.5px] font-semibold text-mv-ink">{emp?.fullName ?? "Employé"}</p>
+                      <p className="text-[13.5px] font-semibold text-mv-ink">{emp?.fullName ?? t("employee")}</p>
                       <div className="flex items-center gap-2 text-[12px] text-mv-ink-soft">
                         <span>{formatTime(s.startTime)} – {formatTime(s.endTime)}</span>
                         {s.positionLabel && (
@@ -390,7 +395,7 @@ function DayDetailModal({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Badge tone={statusTone[s.status]}>{statusLabel[s.status]}</Badge>
+                    <Badge tone={statusTone[s.status]}>{buildStatusLabel(t)[s.status]}</Badge>
                     {canManage && (
                       <div className="flex items-center gap-1">
                         <button
@@ -449,6 +454,7 @@ export function HoraireView({
   initialShifts: ShiftSchedule[];
   initialWeekStart: string;
 }) {
+  const t = useTranslations("scheduleView");
   const locale = useLocale();
   const { role } = useApp();
   const [employees] = useState(initialEmployees);
@@ -608,9 +614,9 @@ export function HoraireView({
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Opérations"
-        title="Horaire d'Équipe"
-        description="Le calendrier interactif de planification des quarts de votre restaurant."
+        eyebrow={t("operations")}
+        title={t("teamSchedule")}
+        description={t("calendarDescription")}
         action={
           <div className="flex items-center gap-2">
             {/* View Mode Switcher */}
@@ -663,10 +669,10 @@ export function HoraireView({
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-xs flex items-center justify-between">
           <div>
             <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-              Heures Planifiées
+              {t("scheduledHours")}
             </span>
             <p className="font-display text-[22px] font-bold text-mv-ink mt-0.5">
-              {totalPlannedHours.toFixed(1)} <span className="text-[14px] font-normal text-mv-ink-soft">heures</span>
+              {totalPlannedHours.toFixed(1)} <span className="text-[14px] font-normal text-mv-ink-soft">{t("hours")}</span>
             </p>
           </div>
           <div className="h-9 w-9 rounded-xl bg-mv-cream flex items-center justify-center text-mv-ink-soft">
@@ -677,7 +683,7 @@ export function HoraireView({
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-xs flex items-center justify-between">
           <div>
             <span className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-              Masse Salariale Estimée
+              {t("estimatedPayroll")}
               {shiftsMissingWage > 0 && (
                 <Tooltip>
                   <TooltipTrigger className="cursor-help normal-case tracking-normal text-mv-amber">
@@ -686,7 +692,7 @@ export function HoraireView({
                   <TooltipContent>
                     {shiftsMissingWage} quart{shiftsMissingWage > 1 ? "s" : ""} exclu
                     {shiftsMissingWage > 1 ? "s" : ""} de ce total — salaire horaire non configuré pour l&apos;employé.
-                    Ajoutez son taux horaire dans sa fiche pour un chiffre exact.
+                    {t("addTheirHourlyRate")}
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -706,7 +712,7 @@ export function HoraireView({
               Quarts en Registre
             </span>
             <p className="font-display text-[22px] font-bold text-mv-ink mt-0.5">
-              {shifts.length} <span className="text-[14px] font-normal text-mv-ink-soft">quarts</span>
+              {shifts.length} <span className="text-[14px] font-normal text-mv-ink-soft">{t("shifts")}</span>
             </p>
           </div>
           <div className="h-9 w-9 rounded-xl bg-mv-cream flex items-center justify-center text-mv-ink-soft">
@@ -738,7 +744,7 @@ export function HoraireView({
                 >
                   <ChevronLeft size={16} />
                 </TooltipTrigger>
-                <TooltipContent side="bottom">Mois précédent</TooltipContent>
+                <TooltipContent side="bottom">{t("previousMonth")}</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -748,7 +754,7 @@ export function HoraireView({
                 >
                   <ChevronRight size={16} />
                 </TooltipTrigger>
-                <TooltipContent side="bottom">Mois suivant</TooltipContent>
+                <TooltipContent side="bottom">{t("nextMonth")}</TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -888,11 +894,11 @@ export function HoraireView({
                 >
                   <ChevronLeft size={15} />
                 </TooltipTrigger>
-                <TooltipContent side="bottom">Semaine précédente</TooltipContent>
+                <TooltipContent side="bottom">{t("previousWeek")}</TooltipContent>
               </Tooltip>
 
               <span className="min-w-44 text-center text-[13.5px] font-semibold text-mv-ink">
-                Semaine du {formatShortDate(weekDays[0])} au {formatShortDate(weekDays[6])}
+                {t("weekOf", { start: formatShortDate(weekDays[0]), end: formatShortDate(weekDays[6]) })}
               </span>
 
               <Tooltip>
@@ -902,7 +908,7 @@ export function HoraireView({
                 >
                   <ChevronRight size={15} />
                 </TooltipTrigger>
-                <TooltipContent side="bottom">Semaine suivante</TooltipContent>
+                <TooltipContent side="bottom">{t("nextWeek")}</TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -910,8 +916,8 @@ export function HoraireView({
           {employees.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
-              title="Aucun employé actif"
-              description="Ajoutez des employés dans la section Employés pour pouvoir planifier des quarts."
+              title={t("noActiveEmployees")}
+              description={t("addEmployeesInThe")}
             />
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-mv-border bg-white shadow-mv-sm">
@@ -977,7 +983,7 @@ export function HoraireView({
                                           e.stopPropagation();
                                           setEditingShift(s);
                                         }}
-                                        aria-label="Modifier le quart"
+                                        aria-label={t("editShiftAria")}
                                         className="text-mv-ink-faint hover:text-mv-green-dark"
                                       >
                                         <Pencil size={12} />
@@ -987,7 +993,7 @@ export function HoraireView({
                                           e.stopPropagation();
                                           handleDelete(s.id);
                                         }}
-                                        aria-label="Retirer le quart"
+                                        aria-label={t("removeShiftAria")}
                                         className="text-mv-ink-faint hover:text-mv-red"
                                       >
                                         <X size={12} />

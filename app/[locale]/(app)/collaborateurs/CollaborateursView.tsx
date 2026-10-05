@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -45,6 +47,7 @@ export function CollaborateursView({
   workspaceId: string | null;
   restaurants: Restaurant[];
 }) {
+  const t = useTranslations("collaboratorsView");
   const { role, authUser } = useApp();
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -90,7 +93,7 @@ export function CollaborateursView({
 
   function handleRemove(member: TeamMember) {
     if (!restaurantId || !member.membershipId) return;
-    if (!window.confirm(`Retirer ${member.name} des collaborateurs ?`)) return;
+    if (!window.confirm(t("removeMembernameFromThe", { memberName: member.name }))) return;
     setPendingId(member.id);
     startTransition(async () => {
       await removeMemberAction(restaurantId, member.membershipId!);
@@ -103,9 +106,9 @@ export function CollaborateursView({
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Collaborateurs &amp; Équipe"
-        title="Chat d'Équipe"
-        description="Discutez en direct avec vos collaborateurs et mentionnez @FlowAI pour obtenir de l'aide métier instantanée."
+        eyebrow={t("collaboratorsTeam")}
+        title={t("teamChat")}
+        description={t("chatLiveWithYour")}
         action={
           <div className="flex items-center gap-2">
             {/* View toggle */}
@@ -159,8 +162,8 @@ export function CollaborateursView({
       {view === "chat" && !restaurantId && (
         <EmptyState
           icon={MessageSquare}
-          title="Aucun établissement sélectionné"
-          description="Veuillez sélectionner un établissement pour accéder au chat d'équipe."
+          title={t("noRestaurantSelected")}
+          description={t("selectARestaurantTo")}
         />
       )}
 
@@ -171,7 +174,7 @@ export function CollaborateursView({
             <EmptyState
               icon={Users}
               title="Aucun collaborateur pour le moment"
-              description="Invitez des collègues pour qu'ils accèdent à cet établissement."
+              description={t("inviteColleaguesSoThey")}
               action={
                 canManage && (
                   <Button size="sm" onClick={() => setInviteOpen(true)}>

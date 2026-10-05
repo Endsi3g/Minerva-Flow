@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState, useTransition, type FormEvent } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +20,7 @@ export function CreateProgramModal({
   onClose: () => void;
   onCreated?: (program: Program) => void;
 }) {
+  const t = useTranslations("createProgram");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +34,7 @@ export function CreateProgramModal({
     const endDate = String(form.get("endDate") ?? "");
 
     if (!name || !startDate || !endDate) {
-      setError("Le nom et les dates sont requis.");
+      setError(t("theNameAndDates"));
       return;
     }
 
@@ -52,7 +55,7 @@ export function CreateProgramModal({
 
       if (!program) {
         setError(
-          "Impossible de créer le programme. Vérifiez vos droits d'accès et réessayez."
+          t("couldNotCreateThe")
         );
         return;
       }
@@ -66,8 +69,8 @@ export function CreateProgramModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Créer un programme"
-      description="Une source de revenu récurrente ou saisonnière — brunch, soirée, saison, événement."
+      title={t("createAProgram")}
+      description={t("aRecurringOrSeasonal")}
       width={620}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -82,10 +85,10 @@ export function CreateProgramModal({
         <div className="grid grid-cols-2 gap-4">
           <Field label="Type">
             <Select name="type" defaultValue="saison">
-              <option value="brunch">Brunch</option>
-              <option value="soiree">Soirée</option>
-              <option value="saison">Saison</option>
-              <option value="evenement">Événement</option>
+              <option value="brunch">{t("brunch")}</option>
+              <option value="soiree">{t("evening")}</option>
+              <option value="saison">{t("season")}</option>
+              <option value="evenement">{t("event")}</option>
             </Select>
           </Field>
           <Field label="Objectif">
@@ -94,7 +97,7 @@ export function CreateProgramModal({
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Date de début">
+          <Field label={t("startDate")}>
             <Input type="date" name="startDate" required />
           </Field>
           <Field label="Date de fin">
@@ -106,7 +109,7 @@ export function CreateProgramModal({
           <Field label="Objectif de revenu">
             <Input type="number" name="revenueGoal" min="0" step="0.01" placeholder="0,00 $" />
           </Field>
-          <Field label="Coût attendu">
+          <Field label={t("expectedCost")}>
             <Input type="number" name="expectedCost" min="0" step="0.01" placeholder="0,00 $" />
           </Field>
         </div>
@@ -118,7 +121,7 @@ export function CreateProgramModal({
             Annuler
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending ? "Création…" : "Créer le programme"}
+            {isPending ? t("creating") : t("createTheProgram")}
           </Button>
         </div>
       </form>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { useApp } from "@/lib/app-context";
@@ -22,6 +24,7 @@ function ConnectRow({
   configured: boolean;
   connection?: AdPlatformConnection;
 }) {
+  const t = useTranslations("adPlatforms");
   const Icon = providerIcon[provider];
   return (
     <div className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3.5 py-3">
@@ -31,10 +34,10 @@ function ConnectRow({
           <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
           <p className="text-[12px] text-mv-ink-faint">
             {!configured
-              ? "Clés API non configurées"
+              ? t("apiKeysNotSet")
               : connection
                 ? `Connecté${connection.externalAccountId ? ` — ${connection.externalAccountId}` : ""}`
-                : "Non connecté"}
+                : t("notConnected")}
           </p>
         </div>
       </div>
@@ -78,6 +81,7 @@ function useAdPlatformStatus(restaurantId: string | null | undefined) {
 }
 
 export function AdPlatformsCard() {
+  const t = useTranslations("adPlatforms");
   const { restaurantId } = useApp();
   const status = useAdPlatformStatus(restaurantId);
 
@@ -90,8 +94,8 @@ export function AdPlatformsCard() {
     <Card>
       <CardHeader
         eyebrow="Attribution publicitaire"
-        title="Publicité"
-        description="Connectez vos comptes pour voir d'où viennent vos clients sur la carte."
+        title={t("advertising")}
+        description={t("connectYourAccountsTo")}
       />
       <div className="space-y-2.5">
         <ConnectRow provider="meta" configured={status.metaConfigured} connection={metaConnection} />
@@ -109,6 +113,7 @@ export function AdPlatformsCard() {
  * than being folded into "Publicité".
  */
 export function InstagramCard() {
+  const t = useTranslations("adPlatforms");
   const { restaurantId } = useApp();
   const status = useAdPlatformStatus(restaurantId);
 
@@ -119,22 +124,22 @@ export function InstagramCard() {
   return (
     <Card>
       <CardHeader
-        eyebrow="Réseaux sociaux"
+        eyebrow={t("socialNetworks")}
         title="Instagram"
-        description="Publiez vos visuels Marketing Studio, modérez les commentaires et activez les réponses IA sur votre compte Instagram professionnel."
+        description={t("publishYourMarketingStudio")}
       />
       <div className="space-y-3">
         <div className="flex flex-col gap-3 rounded-xl border border-mv-border-soft p-3.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Instagram width={24} height={24} className="shrink-0" />
             <div>
-              <p className="text-[13.5px] font-semibold text-mv-ink">Instagram Business</p>
+              <p className="text-[13.5px] font-semibold text-mv-ink">{t("instagramBusiness")}</p>
               <p className="text-[12px] text-mv-ink-faint">
                 {!status.instagramConfigured
-                  ? "Clés API non configurées"
+                  ? t("apiKeysNotSet")
                   : instagramConnection
                     ? `Connecté${instagramConnection.externalAccountId ? ` (ID: ${instagramConnection.externalAccountId})` : ""}`
-                    : "Direct via Instagram Login (aucun compte Facebook requis)"}
+                    : t("directViaInstagramLogin")}
               </p>
             </div>
           </div>
@@ -153,7 +158,7 @@ export function InstagramCard() {
                   : "cursor-not-allowed rounded-lg bg-mv-ink/[0.06] px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink-faint"
               }
             >
-              Connecter avec Instagram
+              {t("connectWithInstagram")}
             </a>
           )}
         </div>
@@ -171,8 +176,7 @@ export function InstagramCard() {
 
         {instagramConnection && !instagramConnection.externalAccountId && (
           <p className="text-[12px] text-mv-ink-faint">
-            Connecté en mode Facebook, mais aucun compte Instagram professionnel n&apos;est lié à votre Page — liez-en un
-            depuis Meta Business Suite, ou reconnectez via le bouton direct Instagram.
+            {t("connectedInFacebookMode")}
           </p>
         )}
       </div>

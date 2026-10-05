@@ -2,7 +2,7 @@
 
 
 import { intlLocale } from "@/lib/format-locale";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
@@ -33,6 +33,7 @@ export function DirectOrderingWidgetGenerator({
   restaurantName: string;
   menuToken: string;
 }) {
+  const t = useTranslations("directOrderingWidget");
   const locale = useLocale();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedIframe, setCopiedIframe] = useState(false);
@@ -79,7 +80,7 @@ export function DirectOrderingWidgetGenerator({
       setCopiedButton(true);
       setTimeout(() => setCopiedButton(false), 2000);
     }
-    toast.success("Copié dans le presse-papier !");
+    toast.success(t("copiedToTheClipboard"));
   }
 
   function handlePrintQr() {
@@ -95,12 +96,12 @@ export function DirectOrderingWidgetGenerator({
 
     const modeSubLabel =
       orderMode === "table"
-        ? "Scannez pour commander depuis votre table"
-        : "Scannez pour commander à emporter";
+        ? t("scanToOrderFrom")
+        : t("scanToOrderTakeout");
 
     const printWindow = window.open("", "_blank", "width=600,height=800");
     if (!printWindow) {
-      toast.error("Veuillez autoriser les pop-ups pour imprimer.");
+      toast.error(t("pleaseAllowPopUps"));
       return;
     }
 
@@ -245,7 +246,7 @@ export function DirectOrderingWidgetGenerator({
 <body>
   <div class="card">
     <div class="restaurant-name">${restaurantName}</div>
-    <div class="powered-by">Propulsé par Flow · Minerva</div>
+    <div class="powered-by">{t("poweredByFlowMinerva")}</div>
     
     <div class="qr-frame">
       <div class="qr-placeholder">
@@ -286,8 +287,8 @@ export function DirectOrderingWidgetGenerator({
     <div class="divider"></div>
     
     <div class="zero-commission">
-      0% Commission · Paiement sécurisé
-      <br/><span>Commandez directement, sans intermédiaire</span>
+      {t("0CommissionSecurePayment")}
+      <br/><span>{t("orderDirectlyNoMiddleman")}</span>
     </div>
   </div>
   <script>
@@ -320,10 +321,10 @@ export function DirectOrderingWidgetGenerator({
               </span>
             </div>
             <h3 className="font-display text-[19px] font-semibold text-mv-ink leading-tight">
-              Canal de Commande Directe & Click & Collect
+              {t("directOrderingChannelClick")}
             </h3>
             <p className="text-[12.5px] text-mv-ink-soft mt-1 max-w-xl">
-              Remplacez Uber Eats et DoorDash par votre propre canal de commande. Intégrez le widget sur votre site, imprimez vos QR codes et encaissez 100% de chaque commande.
+              {t("replaceUberEatsAnd")}
             </p>
           </div>
           <a href={publicMenuUrl} target="_blank" rel="noreferrer" className="shrink-0">
@@ -340,12 +341,12 @@ export function DirectOrderingWidgetGenerator({
           <div className="h-7 w-7 rounded-lg bg-mv-green/15 flex items-center justify-center">
             <DollarSign size={15} className="text-mv-green-dark" />
           </div>
-          <h4 className="font-semibold text-[14px] text-mv-ink">Simulateur d&apos;Économies</h4>
+          <h4 className="font-semibold text-[14px] text-mv-ink">{t("savingsSimulator")}</h4>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
           <div className="flex-1">
             <label className="text-[12px] font-semibold text-mv-ink-soft mb-1.5 block">
-              Ventes mensuelles estimées
+              {t("estimatedMonthlySales")}
             </label>
             <Input
               type="number"
@@ -357,15 +358,15 @@ export function DirectOrderingWidgetGenerator({
           </div>
           <div className="flex gap-3 w-full sm:w-auto">
             <div className="flex-1 sm:w-36 rounded-xl bg-mv-red/8 border border-mv-red/15 p-3 text-center">
-              <p className="text-[12px] text-mv-red font-semibold uppercase tracking-wider">Uber Eats (27%)</p>
-              <p className="font-display text-[18px] font-bold text-mv-red mt-0.5">{formatCurrency(uberEatsFees)}<span className="text-[12px] font-normal">/mois</span></p>
+              <p className="text-[12px] text-mv-red font-semibold uppercase tracking-wider">{t("uberEats27")}</p>
+              <p className="font-display text-[18px] font-bold text-mv-red mt-0.5">{formatCurrency(uberEatsFees)}<span className="text-[12px] font-normal">{t("month")}</span></p>
             </div>
             <div className="flex items-center text-mv-ink-faint shrink-0">
               <ArrowRight size={16} />
             </div>
             <div className="flex-1 sm:w-36 rounded-xl bg-mv-green/10 border border-mv-green/20 p-3 text-center">
-              <p className="text-[12px] text-mv-green-dark font-semibold uppercase tracking-wider">Flow Minerva (0%)</p>
-              <p className="font-display text-[18px] font-bold text-mv-green-dark mt-0.5">{formatCurrency(0)}<span className="text-[12px] font-normal">/mois</span></p>
+              <p className="text-[12px] text-mv-green-dark font-semibold uppercase tracking-wider">{t("flowMinerva0")}</p>
+              <p className="font-display text-[18px] font-bold text-mv-green-dark mt-0.5">{formatCurrency(0)}<span className="text-[12px] font-normal">{t("month")}</span></p>
             </div>
           </div>
         </div>
@@ -373,7 +374,7 @@ export function DirectOrderingWidgetGenerator({
           <div className="mt-3 rounded-xl bg-mv-green/10 border border-mv-green/20 p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Zap size={14} className="text-mv-green-dark fill-mv-green-dark" />
-              <span className="text-[13px] font-semibold text-mv-ink">Économies annuelles estimées</span>
+              <span className="text-[13px] font-semibold text-mv-ink">{t("estimatedAnnualSavings")}</span>
             </div>
             <span className="font-display text-[20px] font-bold text-mv-green-dark">{formatCurrency(annualSavings)}</span>
           </div>
@@ -382,7 +383,7 @@ export function DirectOrderingWidgetGenerator({
 
       {/* Mode Selector */}
       <div>
-        <p className="text-[12px] font-semibold text-mv-ink-soft mb-2 uppercase tracking-wider">Mode de commande à configurer</p>
+        <p className="text-[12px] font-semibold text-mv-ink-soft mb-2 uppercase tracking-wider">{t("orderModeToSet")}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             onClick={() => setOrderMode("clickcollect")}
@@ -397,8 +398,8 @@ export function DirectOrderingWidgetGenerator({
               <Truck size={17} />
             </div>
             <div>
-              <p className="text-[13.5px] font-semibold text-mv-ink">Click & Collect / À emporter</p>
-              <p className="text-[12px] text-mv-ink-soft">Widget site web & bouton de partage</p>
+              <p className="text-[13.5px] font-semibold text-mv-ink">{t("clickCollectTakeout")}</p>
+              <p className="text-[12px] text-mv-ink-soft">{t("websiteWidgetShareButton")}</p>
             </div>
           </button>
           <button
@@ -414,8 +415,8 @@ export function DirectOrderingWidgetGenerator({
               <Store size={17} />
             </div>
             <div>
-              <p className="text-[13.5px] font-semibold text-mv-ink">Sur Place / QR Code de Table</p>
-              <p className="text-[12px] text-mv-ink-soft">Chevalet de table à imprimer</p>
+              <p className="text-[13.5px] font-semibold text-mv-ink">{t("onSiteTableQr")}</p>
+              <p className="text-[12px] text-mv-ink-soft">{t("tableTentToPrint")}</p>
             </div>
           </button>
         </div>
@@ -429,22 +430,22 @@ export function DirectOrderingWidgetGenerator({
               <div className="h-7 w-7 rounded-lg bg-mv-ink/8 flex items-center justify-center">
                 <Code size={15} className="text-mv-green-dark" />
               </div>
-              <h4 className="font-semibold text-[14px]">Widget Web Embarquable</h4>
+              <h4 className="font-semibold text-[14px]">{t("embeddableWebWidget")}</h4>
             </div>
             <p className="text-[12px] text-mv-ink-soft">
-              Collez ce code dans votre site Wix, WordPress, Squarespace ou Shopify pour intégrer la commande directe.
+              {t("pasteThisCodeInto")}
             </p>
 
             <div className="space-y-3">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[12px] font-semibold text-mv-ink-soft">Option A : Widget iFrame complet</span>
+                  <span className="text-[12px] font-semibold text-mv-ink-soft">{t("optionAFullIframe")}</span>
                   <button
                     onClick={() => handleCopy(iframeSnippet, "iframe")}
                     className="flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
                   >
                     {copiedIframe ? <Check size={12} /> : <Copy size={12} />}
-                    {copiedIframe ? "Copié !" : "Copier"}
+                    {copiedIframe ? t("copied") : "Copier"}
                   </button>
                 </div>
                 <pre className="p-3 bg-mv-ink text-mv-cream-soft rounded-xl text-[12px] font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">
@@ -453,13 +454,13 @@ export function DirectOrderingWidgetGenerator({
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[12px] font-semibold text-mv-ink-soft">Option B : Bouton « Commander »</span>
+                  <span className="text-[12px] font-semibold text-mv-ink-soft">{t("optionBOrderButton")}</span>
                   <button
                     onClick={() => handleCopy(buttonSnippet, "button")}
                     className="flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
                   >
                     {copiedButton ? <Check size={12} /> : <Copy size={12} />}
-                    {copiedButton ? "Copié !" : "Copier HTML"}
+                    {copiedButton ? t("copied") : "Copier HTML"}
                   </button>
                 </div>
                 <pre className="p-3 bg-mv-ink text-mv-cream-soft rounded-xl text-[12px] font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">
@@ -474,13 +475,13 @@ export function DirectOrderingWidgetGenerator({
               <div className="h-7 w-7 rounded-lg bg-mv-ink/8 flex items-center justify-center">
                 <QrCode size={15} className="text-mv-green-dark" />
               </div>
-              <h4 className="font-semibold text-[14px]">Générateur de QR Code de Table</h4>
+              <h4 className="font-semibold text-[14px]">{t("tableQrCodeGenerator")}</h4>
             </div>
             <p className="text-[12px] text-mv-ink-soft">
-              Imprimez des chevalets de table pour que vos clients commandent directement depuis leur smartphone, sans commission.
+              {t("printTableTentsSo")}
             </p>
 
-            <Field label="Numéro de Table">
+            <Field label={t("tableNumber")}>
               <Input
                 type="number"
                 min="1"
@@ -511,7 +512,7 @@ export function DirectOrderingWidgetGenerator({
             <div className="h-7 w-7 rounded-lg bg-mv-ink/8 flex items-center justify-center">
               <Globe size={15} className="text-mv-green-dark" />
             </div>
-            <h4 className="font-semibold text-[14px]">Aperçu du Chevalet / Badge</h4>
+            <h4 className="font-semibold text-[14px]">{t("tableTentBadgePreview")}</h4>
           </div>
 
           {/* Badge preview */}
@@ -520,8 +521,8 @@ export function DirectOrderingWidgetGenerator({
               {/* Top green stripe */}
               <div className="h-1.5 bg-gradient-to-r from-mv-green to-mv-green-dark w-full" />
               <div className="p-4 space-y-2.5">
-                <p className="font-display text-[13px] font-bold text-mv-ink leading-tight">{restaurantName || "Votre Restaurant"}</p>
-                <p className="text-[12px] font-semibold text-mv-green-dark uppercase tracking-wider">Flow · Minerva</p>
+                <p className="font-display text-[13px] font-bold text-mv-ink leading-tight">{restaurantName || t("yourRestaurant")}</p>
+                <p className="text-[12px] font-semibold text-mv-green-dark uppercase tracking-wider">{t("flowMinerva")}</p>
                 {/* QR placeholder */}
                 <div className="mx-auto w-24 h-24 rounded-xl bg-mv-cream border border-mv-border flex items-center justify-center">
                   <QrCode size={52} className="text-mv-ink opacity-80" />
@@ -533,10 +534,10 @@ export function DirectOrderingWidgetGenerator({
                   {orderMode === "table" ? `📍 TABLE N° ${tableNumber || "1"}` : "🛍 CLICK & COLLECT"}
                 </div>
                 <p className="text-[12px] text-mv-ink-faint leading-tight">
-                  {orderMode === "table" ? "Scannez pour commander depuis votre table" : "Scannez pour commander à emporter"}
+                  {orderMode === "table" ? t("scanToOrderFrom") : t("scanToOrderTakeout")}
                 </p>
                 <div className="border-t border-mv-border pt-2">
-                  <p className="text-[12px] text-mv-green-dark font-bold">0% Commission · Paiement sécurisé</p>
+                  <p className="text-[12px] text-mv-green-dark font-bold">{t("0CommissionSecurePayment")}</p>
                 </div>
               </div>
             </div>
@@ -544,7 +545,7 @@ export function DirectOrderingWidgetGenerator({
 
           {/* Share link */}
           <div className="rounded-xl border border-mv-border bg-mv-cream/30 p-3">
-            <p className="text-[12px] font-semibold text-mv-ink-soft mb-1.5">Lien du portail public</p>
+            <p className="text-[12px] font-semibold text-mv-ink-soft mb-1.5">{t("publicPortalLink")}</p>
             <div className="flex items-center gap-2">
               <p className="flex-1 text-[12px] text-mv-ink font-mono truncate">{publicMenuUrl}</p>
               <button
@@ -552,7 +553,7 @@ export function DirectOrderingWidgetGenerator({
                 className="shrink-0 flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
               >
                 {copiedLink ? <Check size={12} /> : <Copy size={12} />}
-                {copiedLink ? "Copié" : "Copier"}
+                {copiedLink ? t("copied2") : "Copier"}
               </button>
             </div>
           </div>

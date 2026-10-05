@@ -42,6 +42,7 @@ export function MemberDetailPage({
   restaurantId: string;
   member: TeamMember;
 }) {
+  const t = useTranslations("memberDetailPage");
   const locale = useLocale();
   const tNav = useTranslations("nav");
   const { role: myRole, authUser } = useApp();
@@ -107,7 +108,7 @@ export function MemberDetailPage({
 
   function handleRemove() {
     if (!member.membershipId) return;
-    if (!window.confirm(`Retirer ${member.name} des collaborateurs ?`)) return;
+    if (!window.confirm(t("removeMembernameFromThe", { memberName: member.name }))) return;
     setPending(true);
     startTransition(async () => {
       await removeMemberAction(restaurantId, member.membershipId!);
@@ -134,12 +135,12 @@ export function MemberDetailPage({
               <p className="truncate text-[12.5px] text-mv-ink-faint">{member.email}</p>
             </div>
             <Badge tone={member.status === "actif" ? "green" : "amber"} dot>
-              {member.status === "actif" ? "Actif" : "Invitation envoyée"}
+              {member.status === "actif" ? "Actif" : t("invitationSent")}
             </Badge>
           </div>
 
           <div className="mt-4 flex items-center justify-between gap-2 border-t border-mv-border-soft pt-4">
-            <span className="text-[12.5px] font-medium text-mv-ink-soft">Rôle</span>
+            <span className="text-[12.5px] font-medium text-mv-ink-soft">{t("role")}</span>
             {canManage ? (
               <Select
                 value={member.role}
@@ -174,19 +175,19 @@ export function MemberDetailPage({
         {canManage && (
           <div className="rounded-2xl border border-mv-border bg-mv-surface p-5">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-[13px] font-semibold text-mv-ink">Accès au menu</p>
+              <p className="text-[13px] font-semibold text-mv-ink">{t("menuAccess")}</p>
               {sidebarPermissions !== null && (
                 <button
                   onClick={resetAccess}
                   disabled={accessPending}
                   className="text-[12px] font-medium text-mv-ink-soft hover:underline disabled:opacity-50"
                 >
-                  Réinitialiser (accès complet)
+                  {t("resetFullAccess")}
                 </button>
               )}
             </div>
             <p className="mb-3 text-[12px] text-mv-ink-faint">
-              Par défaut, ce collaborateur voit tout ce que son rôle autorise. Décochez une section pour
+              {t("byDefaultThisCollaborator")}
               la lui masquer — cela ne peut que restreindre son accès, jamais l&apos;élargir.
             </p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
@@ -210,14 +211,14 @@ export function MemberDetailPage({
         )}
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-5">
-          <p className="mb-3 text-[13px] font-semibold text-mv-ink">Activité récente</p>
+          <p className="mb-3 text-[13px] font-semibold text-mv-ink">{t("recentActivity")}</p>
           <div className="max-h-96 space-y-3 overflow-y-auto">
             {loading ? (
-              <p className="text-[12.5px] text-mv-ink-faint">Chargement…</p>
+              <p className="text-[12.5px] text-mv-ink-faint">{t("loading")}</p>
             ) : activity.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-center">
                 <History size={20} className="text-mv-ink-faint" />
-                <p className="text-[12.5px] text-mv-ink-faint">Aucune activité enregistrée pour ce collaborateur.</p>
+                <p className="text-[12.5px] text-mv-ink-faint">{t("noActivityRecordedFor")}</p>
               </div>
             ) : (
               activity.map((entry) => (

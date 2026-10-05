@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import { NextIntlClientProvider } from "next-intl";
+import messages from "../../messages/fr.json";
 
 const mocks = vi.hoisted(() => ({
   getStatus: vi.fn(),
@@ -36,7 +38,11 @@ describe("StripeConnectCard", () => {
       requirementsDueCount: 0,
     });
 
-    render(<StripeConnectCard />);
+    render(
+      <NextIntlClientProvider locale="fr" messages={messages}>
+        <StripeConnectCard />
+      </NextIntlClientProvider>,
+    );
 
     expect(await screen.findByText(/Stripe Connect n’est pas configuré sur cet environnement/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Bientôt disponible" }).hasAttribute("disabled")).toBe(true);

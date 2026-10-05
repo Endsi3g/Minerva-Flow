@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
 import { Input } from "@/components/minerva/FormField";
@@ -37,9 +39,10 @@ const ruleIcon: Record<AlertRule["type"], typeof TrendingDown> = {
 };
 
 export default function SettingsAlertesPage() {
+  const t = useTranslations("alertRulesPage");
   return (
     <div>
-      <PageHeader eyebrow="Configuration" title="Règles d'alertes" />
+      <PageHeader eyebrow="Configuration" title={t("alertRules")} />
       <SettingsNav active="alertes" />
       <AlertRulesList />
     </div>
@@ -47,6 +50,7 @@ export default function SettingsAlertesPage() {
 }
 
 function AlertRulesList() {
+  const t = useTranslations("alertRulesPage");
   const { restaurantId } = useApp();
   const [rules, setRules] = useState<AlertRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,15 +78,15 @@ function AlertRulesList() {
     if (updated) {
       setRules((prev) => prev.map((r) => (r.type === rule.type ? updated : r)));
     } else {
-      toast.error("La mise à jour de la règle a échoué.");
+      toast.error(t("theRuleUpdateFailed"));
     }
   }
 
   if (loading) {
     return (
       <EditorialLoadingState
-        title="Chargement des règles d'alertes…"
-        subtitle="Synchronisation des seuils critiques et des déclencheurs automatiques."
+        title={t("loadingAlertRules")}
+        subtitle={t("syncingCriticalThresholdsAnd")}
         rows={4}
       />
     );
@@ -108,7 +112,7 @@ function AlertRulesList() {
                   <div className="flex flex-wrap items-center gap-2.5">
                     <p className="font-display text-[15.5px] font-medium text-mv-ink">{rule.label}</p>
                     <Badge tone={rule.enabled ? "green" : "neutral"} variant="subtle" size="sm">
-                      {rule.enabled ? "Surveillance active" : "Désactivée"}
+                      {rule.enabled ? "Surveillance active" : t("disabled")}
                     </Badge>
                   </div>
                   <Switch
@@ -125,7 +129,7 @@ function AlertRulesList() {
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-5 pt-2 border-t border-mv-border-soft">
                   <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Seuil déclencheur :</span>
+                    <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">{t("triggerThreshold")}</span>
                     <div className="relative flex items-center">
                       <Input
                         type="number"

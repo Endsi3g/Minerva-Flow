@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -28,6 +28,7 @@ function NewExpenseModal({
   onClose: () => void;
   onCreated: (t: FinancialTransaction) => void;
 }) {
+  const tv = useTranslations("expensesView");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -48,7 +49,7 @@ function NewExpenseModal({
         onClose();
         (e.target as HTMLFormElement).reset();
       } else {
-        notifyError("L'ajout de la dépense a échoué.");
+        notifyError(tv("couldNotAddThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -56,7 +57,7 @@ function NewExpenseModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Ajouter une dépense" description="Saisissez une dépense manuellement, sans passer par l'import CSV.">
+    <Modal open={open} onClose={onClose} title={tv("addAnExpense")} description={tv("enterAnExpenseManually")}>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Date">
@@ -70,9 +71,9 @@ function NewExpenseModal({
           <Input name="description" placeholder="Ex : Achat de farine chez Colabor" required autoFocus />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Catégorie" hint="Optionnel">
+          <Field label={tv("category")} hint="Optionnel">
             <Select name="category" defaultValue="">
-              <option value="">Non catégorisé</option>
+              <option value="">{tv("uncategorized")}</option>
               {expenseCategories.map((c) => (
                 <option key={c.id} value={c.name}>
                   {c.name}
@@ -80,8 +81,8 @@ function NewExpenseModal({
               ))}
             </Select>
           </Field>
-          <Field label="Compte / méthode" hint="Optionnel">
-            <Input name="sourceAccount" placeholder="Ex : Carte de crédit, comptant…" />
+          <Field label={tv("accountMethod")} hint="Optionnel">
+            <Input name="sourceAccount" placeholder={tv("eGCreditCard")} />
           </Field>
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
@@ -89,7 +90,7 @@ function NewExpenseModal({
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Ajout…" : "Ajouter"}
+            {isSubmitting ? tv("adding") : tv("add")}
           </Button>
         </div>
       </form>
@@ -104,6 +105,7 @@ export function DepensesView({
   initialTransactions: FinancialTransaction[];
   expenseCategories: ExpenseCategory[];
 }) {
+  const tv = useTranslations("expensesView");
   const locale = useLocale();
   const { role } = useApp();
   const [transactions, setTransactions] = useState(initialTransactions);
@@ -120,11 +122,11 @@ export function DepensesView({
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-[12.5px] text-mv-ink-faint">
-          {transactions.length} dépense{transactions.length > 1 ? "s" : ""} — total {formatCurrency(total, locale)}
+          {tv("expensesTotal", { count: transactions.length, total: formatCurrency(total, locale) })}
         </p>
         {canCreate && (
           <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus size={15} /> Ajouter une dépense
+            <Plus size={15} /> {tv("addExpenseBtn")}
           </Button>
         )}
       </div>
@@ -132,8 +134,8 @@ export function DepensesView({
       {transactions.length === 0 ? (
         <EmptyState
           icon={ReceiptText}
-          title="Aucune dépense enregistrée"
-          description="Ajoutez votre première dépense pour commencer à suivre vos sorties d'argent."
+          title={tv("noExpensesRecorded")}
+          description={tv("addYourFirstExpense")}
           action={
             canCreate && (
               <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -145,11 +147,11 @@ export function DepensesView({
       ) : (
         <Table>
           <THead>
-            <Th>Date</Th>
-            <Th>Description</Th>
-            <Th>Catégorie</Th>
-            <Th className="text-right">Montant</Th>
-            <Th>Statut</Th>
+            <Th>{tv("date")}</Th>
+            <Th>{tv("description")}</Th>
+            <Th>{tv("category")}</Th>
+            <Th className="text-right">{tv("amount")}</Th>
+            <Th>{tv("status")}</Th>
             <Th></Th>
           </THead>
           <tbody>
@@ -161,11 +163,11 @@ export function DepensesView({
                   <Badge tone="neutral">{t.category}</Badge>
                 </Td>
                 <Td className="text-right font-semibold text-mv-ink">{formatCurrency(t.amount, locale)}</Td>
-                <Td>{t.reviewed ? <Badge tone="green">Revue</Badge> : <Badge tone="amber">À revoir</Badge>}</Td>
+                <Td>{t.reviewed ? <Badge tone="green">{tv("reviewed")}</Badge> : <Badge tone="amber">{tv("toReview")}</Badge>}</Td>
                 <Td className="text-right">
                   <Link
                     href={`/depenses/${t.id}`}
-                    aria-label="Voir le détail"
+                    aria-label={tv("viewDetails")}
                     className="inline-flex rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
                   >
                     <ChevronRight size={15} />

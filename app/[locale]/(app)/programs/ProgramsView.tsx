@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -22,12 +22,14 @@ import { useMemo, useState, useTransition } from "react";
 import { updateProgramStatusAction, deleteProgramAction, createProgramNoteAction } from "./actions";
 import { toast } from "sonner";
 
-const typeLabel: Record<ProgramType, string> = {
+function buildTypeLabel(t: (key: string) => string): Record<ProgramType, string> {
+  return {
   brunch: "Brunch",
-  soiree: "Soirée",
+  soiree: t("evening"),
   saison: "Saison",
-  evenement: "Événement",
+  evenement: t("event"),
 };
+}
 
 const typeTone: Record<ProgramType, "green" | "lime" | "amber" | "neutral"> = {
   brunch: "amber",
@@ -42,11 +44,13 @@ const statusTone: Record<ProgramStatus, "green" | "amber" | "neutral"> = {
   termine: "neutral",
 };
 
-const statusLabel: Record<ProgramStatus, string> = {
+function buildStatusLabel(t: (key: string) => string): Record<ProgramStatus, string> {
+  return {
   actif: "Actif",
-  planifie: "Planifié",
-  termine: "Terminé",
+  planifie: t("planned"),
+  termine: t("finished"),
 };
+}
 
 export function ProgramsView({
   restaurantId,
@@ -57,6 +61,7 @@ export function ProgramsView({
   programs: Program[];
   campaigns: Campaign[];
 }) {
+  const tv = useTranslations("programsView");
   const locale = useLocale();
   const { role } = useApp();
   const router = useRouter();
@@ -86,7 +91,7 @@ export function ProgramsView({
     if (!restaurantId || !selectedId) return;
     startTransition(async () => {
       const updated = await updateProgramStatusAction(restaurantId, selectedId, status);
-      if (!updated) toast.error("La mise à jour du statut a échoué.");
+      if (!updated) toast.error(tv("couldNotUpdateThe"));
       router.refresh();
     });
   }
@@ -101,7 +106,7 @@ export function ProgramsView({
         setAddingNote(false);
         router.refresh();
       } else {
-        toast.error("L'ajout de la note a échoué.");
+        toast.error(tv("couldNotAddThe"));
       }
     } finally {
       setIsSubmittingNote(false);
@@ -113,7 +118,7 @@ export function ProgramsView({
     startTransition(async () => {
       const ok = await deleteProgramAction(restaurantId, selectedId);
       if (!ok) {
-        toast.error("La suppression a échoué.");
+        toast.error(tv("deletionFailed"));
         return;
       }
       setSelectedId(null);
@@ -151,9 +156,9 @@ export function ProgramsView({
   return (
     <div>
       <PageHeader
-        eyebrow="Revenus récurrents"
-        title="Revenus récurrents"
-        description="Chaque source de revenu récurrente ou saisonnière — brunchs, soirées, périodes spéciales — avec sa performance."
+        eyebrow={tv("recurringRevenue")}
+        title={tv("recurringRevenue")}
+        description={tv("everyRecurringOrSeasonal")}
         action={
           canCreate && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -166,7 +171,7 @@ export function ProgramsView({
       <div className="mb-6 flex flex-col gap-4 sm:flex-row">
         <StatCard label="Programmes actifs" value={activeCount} icon={Sparkles} sublabel={`${programs.length} au total`} accent="green" />
         <StatCard label="Revenu total" value={formatCurrency(totalRevenue, locale)} icon={TrendingUp} sublabel="Tous programmes confondus" accent="lime" />
-        <StatCard label="Marge moyenne" value={avgMargin !== null ? `${avgMargin}%` : "—"} icon={Percent} sublabel="Sur les programmes rentables" accent="ink" />
+        <StatCard label={tv("avgMargin")} value={avgMargin !== null ? `${avgMargin}%` : "—"} icon={Percent} sublabel={tv("onProfitable")} accent="ink" />
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
@@ -175,10 +180,10 @@ export function ProgramsView({
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value as "all" | ProgramType)}
         >
-          <option value="all">Tous les types</option>
-          {(Object.keys(typeLabel) as ProgramType[]).map((t) => (
+          <option value="all">{tv("allTypes")}</option>
+          {(Object.keys(buildTypeLabel(tv)) as ProgramType[]).map((t) => (
             <option key={t} value={t}>
-              {typeLabel[t]}
+              {buildTypeLabel(tv)[t]}
             </option>
           ))}
         </Select>
@@ -187,10 +192,10 @@ export function ProgramsView({
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as "all" | ProgramStatus)}
         >
-          <option value="all">Tous les statuts</option>
-          {(Object.keys(statusLabel) as ProgramStatus[]).map((s) => (
+          <option value="all">{tv("allStatuses")}</option>
+          {(Object.keys(buildStatusLabel(tv)) as ProgramStatus[]).map((s) => (
             <option key={s} value={s}>
-              {statusLabel[s]}
+              {buildStatusLabel(tv)[s]}
             </option>
           ))}
         </Select>
@@ -205,18 +210,18 @@ export function ProgramsView({
             <EmptyState
               icon={LineChart}
               title="Aucun programme ne correspond"
-              description="Essayez d'élargir les filtres de type ou de statut."
+              description={tv("tryWideningTheType")}
             />
           ) : (
             <Table>
               <THead>
-                <Th>Programme</Th>
-                <Th>Type</Th>
-                <Th>Dates</Th>
+                <Th>{tv("program")}</Th>
+                <Th>{tv("type")}</Th>
+                <Th>{tv("dates")}</Th>
                 <Th className="text-right">Revenu</Th>
-                <Th className="text-right">Coût</Th>
-                <Th className="text-right">Marge</Th>
-                <Th>Statut</Th>
+                <Th className="text-right">{tv("cost")}</Th>
+                <Th className="text-right">{tv("margin")}</Th>
+                <Th>{tv("status")}</Th>
                 <Th className="text-right"></Th>
               </THead>
               <tbody>
@@ -227,7 +232,7 @@ export function ProgramsView({
                     <Tr key={p.id} onClick={() => handleSelect(p.id)} active={p.id === selectedId}>
                       <Td className="font-semibold">{p.name}</Td>
                       <Td>
-                        <Badge tone={typeTone[p.type]}>{typeLabel[p.type]}</Badge>
+                        <Badge tone={typeTone[p.type]}>{buildTypeLabel(tv)[p.type]}</Badge>
                       </Td>
                       <Td className="text-mv-ink-soft">
                         {formatDate(p.startDate, locale)} — {formatDate(p.endDate, locale)}
@@ -246,7 +251,7 @@ export function ProgramsView({
                         )}
                       </Td>
                       <Td>
-                        <Badge tone={statusTone[p.status]}>{statusLabel[p.status]}</Badge>
+                        <Badge tone={statusTone[p.status]}>{buildStatusLabel(tv)[p.status]}</Badge>
                       </Td>
                       <Td className="text-right">
                         <Link
@@ -254,7 +259,7 @@ export function ProgramsView({
                           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold text-mv-green-dark hover:bg-mv-green-tint transition-colors"
                           onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         >
-                          Détails <ArrowUpRight size={12} />
+                          {tv("details")} <ArrowUpRight size={12} />
                         </Link>
                       </Td>
                     </Tr>
@@ -270,7 +275,7 @@ export function ProgramsView({
             <div className="space-y-4 xl:sticky xl:top-6">
               <Card>
                 <div className="mb-1 flex items-center justify-between gap-2">
-                  <Badge tone={typeTone[selected.type]}>{typeLabel[selected.type]}</Badge>
+                  <Badge tone={typeTone[selected.type]}>{buildTypeLabel(tv)[selected.type]}</Badge>
                   {canManage ? (
                     <div className="flex items-center gap-1.5">
                       <Select
@@ -279,23 +284,23 @@ export function ProgramsView({
                         disabled={isPending}
                         onChange={(e) => handleStatusChange(e.target.value as ProgramStatus)}
                       >
-                        {(Object.keys(statusLabel) as ProgramStatus[]).map((s) => (
+                        {(Object.keys(buildStatusLabel(tv)) as ProgramStatus[]).map((s) => (
                           <option key={s} value={s}>
-                            {statusLabel[s]}
+                            {buildStatusLabel(tv)[s]}
                           </option>
                         ))}
                       </Select>
                       <button
                         onClick={handleDelete}
                         disabled={isPending}
-                        aria-label="Supprimer le programme"
+                        aria-label={tv("deleteProgram")}
                         className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-red/10 hover:text-mv-red disabled:opacity-50"
                       >
                         <Trash2 size={14} />
                       </button>
                     </div>
                   ) : (
-                    <Badge tone={statusTone[selected.status]}>{statusLabel[selected.status]}</Badge>
+                    <Badge tone={statusTone[selected.status]}>{buildStatusLabel(tv)[selected.status]}</Badge>
                   )}
                 </div>
                 <h2 className="font-display text-[19px] font-medium text-mv-ink">
@@ -312,13 +317,13 @@ export function ProgramsView({
                     </p>
                   </div>
                   <div>
-                    <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Coût</p>
+                    <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{tv("cost")}</p>
                     <p className="font-display text-[16px] font-medium text-mv-ink">
                       {formatCurrency(selected.cost, locale)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Marge</p>
+                    <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{tv("margin")}</p>
                     <p className="font-display text-[16px] font-medium text-mv-green-dark">
                       {selected.revenue > 0
                         ? `${Math.round(((selected.revenue - selected.cost) / selected.revenue) * 100)}%`
@@ -331,22 +336,22 @@ export function ProgramsView({
                     <RevenueChart data={selected.dailyRevenue} height={160} />
                   ) : (
                     <p className="rounded-lg bg-mv-cream-soft px-3 py-6 text-center text-[12.5px] text-mv-ink-faint">
-                      Ce programme n&apos;a pas encore démarré.
+                      {tv("thisProgramHasNot")}
                     </p>
                   )}
                 </div>
 
                 <div className="mt-4 border-t border-mv-border-soft pt-3">
                   <Button href={`/programs/${selected.id}`} className="w-full justify-center gap-1.5 text-[12.5px]">
-                    Ouvrir la page dédiée du programme <ArrowUpRight size={13} />
+                    {tv("openProgramPage")} <ArrowUpRight size={13} />
                   </Button>
                 </div>
               </Card>
 
               <Card>
-                <CardHeader title="Campagnes associées" description={`${selectedCampaigns.length} campagne(s)`} />
+                <CardHeader title={tv("linkedCampaigns")} description={`${selectedCampaigns.length} campagne(s)`} />
                 {selectedCampaigns.length === 0 ? (
-                  <p className="text-[12.5px] text-mv-ink-faint">Aucune campagne liée pour l&apos;instant.</p>
+                  <p className="text-[12.5px] text-mv-ink-faint">{tv("noLinkedCampaignsYet")}</p>
                 ) : (
                   <div className="space-y-2">
                     {selectedCampaigns.map((c) => (
@@ -367,7 +372,7 @@ export function ProgramsView({
 
               <Card>
                 <CardHeader
-                  title="Notes du consultant"
+                  title={tv("consultantNotes")}
                   description={`${selected.consultantNotes.length} note(s)`}
                   action={
                     role === "consultant" &&
@@ -383,7 +388,7 @@ export function ProgramsView({
                     <Textarea
                       value={noteText}
                       onChange={(e) => setNoteText(e.target.value)}
-                      placeholder="Votre observation sur ce programme…"
+                      placeholder={tv("yourObservationAboutThis")}
                       rows={3}
                       autoFocus
                     />
@@ -400,14 +405,14 @@ export function ProgramsView({
                         Annuler
                       </Button>
                       <Button size="sm" onClick={handleAddNote} disabled={isSubmittingNote || !noteText.trim()}>
-                        {isSubmittingNote ? "Ajout…" : "Ajouter"}
+                        {isSubmittingNote ? tv("adding") : tv("add")}
                       </Button>
                     </div>
                   </div>
                 )}
                 {selected.consultantNotes.length === 0 ? (
                   <p className="text-[12.5px] text-mv-ink-faint">
-                    Aucune note pour ce programme pour le moment.
+                    {tv("noNotesForThis")}
                   </p>
                 ) : (
                   <div className="space-y-3">

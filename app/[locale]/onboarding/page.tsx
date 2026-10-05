@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/data/profile";
@@ -7,13 +8,16 @@ import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { isGooglePlacesConfigured } from "@/lib/google/config";
 
-const ONBOARDING_PANEL_POINTS = [
-  { title: "Aucune carte requise", description: "Vous entrez dans l'application dès cette étape — aucun engagement, aucun paiement." },
-  { title: "Rien n'est figé", description: "Nom, adresse, équipe, outils connectés : tout se modifie à tout moment depuis vos paramètres." },
-  { title: "Vos données restent les vôtres", description: "Hébergées au Canada, jamais revendues, exportables en un clic si vous partez un jour." },
+function buildONBOARDING_PANEL_POINTS(t: (key: string) => string) {
+  return [
+  { title: t("noCardRequired"), description: t("youEnterTheApp") },
+  { title: t("nothingIsSetIn"), description: t("nameAddressTeamConnected") },
+  { title: t("yourDataStaysYours"), description: "Hébergées au Canada, jamais revendues, exportables en un clic si vous partez un jour." },
 ];
+}
 
 export default async function OnboardingPage() {
+  const t = await getTranslations("onboardingPage");
   const supabase = await createClient();
   const {
     data: { user },
@@ -45,12 +49,12 @@ export default async function OnboardingPage() {
 
   return (
     <AuthShell
-      panelHeadline="Presque prêt. Configurons votre établissement."
-      panelSubline="Le reste — adresse, chiffres clés, outils — se complète en tout temps depuis l'application, sans bloquer votre accès."
-      panelPoints={ONBOARDING_PANEL_POINTS}
+      panelHeadline={t("almostReadyLetS")}
+      panelSubline={t("theRestAddressKey")}
+      panelPoints={buildONBOARDING_PANEL_POINTS(t)}
       footer={
         <p className="text-center text-[12px] text-mv-ink-faint">
-          Besoin d&apos;aide ? L&apos;équipe Minerva reste disponible à tout moment.
+          {t("needHelpTheMinerva")}
         </p>
       }
     >
