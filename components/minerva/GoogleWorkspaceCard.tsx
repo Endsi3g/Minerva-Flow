@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -46,6 +48,7 @@ const ALL_GOOGLE_SERVICES: {
 ];
 
 export function GoogleWorkspaceCard() {
+  const t = useTranslations("googleWorkspace");
   const { restaurantId } = useApp();
   const [status, setStatus] = useState<{ configured: boolean; connection: GoogleConnection | null } | null>(
     null
@@ -67,11 +70,11 @@ export function GoogleWorkspaceCard() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("google_connected")) {
-      toast.success("Google connecté avec succès.");
+      toast.success(t("googleConnectedSuccessfully"));
       refresh();
       window.history.replaceState({}, "", window.location.pathname);
     } else if (params.get("google_error")) {
-      toast.error("La connexion Google a échoué — réessayez.");
+      toast.error(t("theGoogleConnectionFailed"));
       window.history.replaceState({}, "", window.location.pathname);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -80,7 +83,7 @@ export function GoogleWorkspaceCard() {
   async function handleSaveGa4() {
     if (!restaurantId || !ga4Input.trim()) return;
     await saveGa4PropertyIdAction(restaurantId, ga4Input);
-    toast.success("ID de propriété GA4 enregistré.");
+    toast.success(t("ga4PropertyIdSaved"));
     refresh();
   }
 
@@ -103,7 +106,7 @@ export function GoogleWorkspaceCard() {
               <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
                 Google Workspace
               </span>
-              <h3 className="font-display text-[18px] font-medium text-mv-ink">Google</h3>
+              <h3 className="font-display text-[18px] font-medium text-mv-ink">{t("google")}</h3>
             </div>
           </div>
 
@@ -113,13 +116,13 @@ export function GoogleWorkspaceCard() {
             </span>
           ) : (
             <span className="inline-flex items-center rounded-full border border-mv-border-soft bg-mv-cream-soft px-2.5 py-1 text-[12px] font-medium text-mv-ink-faint">
-              Non connecté
+              {t("notConnected")}
             </span>
           )}
         </div>
 
         <p className="text-[12.5px] leading-relaxed text-mv-ink-soft mb-3.5">
-          Gmail, Sheets, Drive, Calendar, Analytics et Ads — une seule connexion pour automatiser vos réservations, rapports et campagnes.
+          {t("gmailSheetsDriveCalendar")}
         </p>
 
         {/* Feature Rows structured like AdPlatformsCard */}
@@ -148,9 +151,9 @@ export function GoogleWorkspaceCard() {
                       Connecté
                     </Badge>
                   ) : isConnected ? (
-                    <span className="text-[12px] font-medium text-mv-ink-faint">Non accordé</span>
+                    <span className="text-[12px] font-medium text-mv-ink-faint">{t("notGranted")}</span>
                   ) : (
-                    <span className="text-[12px] font-medium text-mv-ink-faint">Prêt</span>
+                    <span className="text-[12px] font-medium text-mv-ink-faint">{t("ready")}</span>
                   )}
                 </div>
               </div>
@@ -161,14 +164,14 @@ export function GoogleWorkspaceCard() {
         {isConnected && connection?.connectedEmail && (
           <div className="mb-4 rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 px-3 py-2 text-[12px] text-mv-ink-soft flex items-center justify-between">
             <span className="font-medium truncate">{connection.connectedEmail}</span>
-            <span className="text-[12px] text-mv-ink-faint">Compte actif</span>
+            <span className="text-[12px] text-mv-ink-faint">{t("activeAccount")}</span>
           </div>
         )}
       </div>
 
       <div>
         {!status.configured ? (
-          <p className="text-[13px] text-mv-ink-faint">Clés API non configurées.</p>
+          <p className="text-[13px] text-mv-ink-faint">{t("apiKeysNotSet")}</p>
         ) : !isConnected ? (
           <Button size="sm" onClick={() => setModalOpen(true)} className="w-full flex items-center justify-center gap-2">
             <GoogleMonochrome size={16} className="text-white fill-current shrink-0" /> Connecter Google
@@ -176,12 +179,12 @@ export function GoogleWorkspaceCard() {
         ) : (
           <div className="space-y-3">
             <Button size="sm" variant="secondary" onClick={() => setModalOpen(true)} className="w-full">
-              Gérer les accès Google
+              {t("manageGoogleAccess")}
             </Button>
 
             {grantedFeatures.includes("analytics") && (
               <Field>
-                <FieldLabel htmlFor="ga4-property-id">ID de propriété GA4</FieldLabel>
+                <FieldLabel htmlFor="ga4-property-id">{t("ga4PropertyId")}</FieldLabel>
                 <div className="flex gap-2">
                   <Input
                     id="ga4-property-id"

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
@@ -8,14 +10,18 @@ import type { RushLevel, ServiceSource, ServiceDay } from "@/lib/types";
 import type { CreateServiceDayResult } from "@/app/[locale]/(app)/days/actions";
 import { useEffect, useState } from "react";
 
-const eventOptions = ["Promo", "Changement de menu", "Soirée spéciale", "Événement privé"];
+function buildEventOptions(t: (key: string) => string) {
+  return ["Promo", t("menuChange"), t("specialEvening"), t("privateEvent")];
+}
 
-const rushLevelOptions: { id: RushLevel; label: string }[] = [
+function buildRushLevelOptions(t: (key: string) => string): { id: RushLevel; label: string }[] {
+  return [
   { id: "calme", label: "Calme" },
   { id: "normal", label: "Normal" },
   { id: "rush", label: "Rush" },
-  { id: "debordement", label: "Débordement" },
+  { id: "debordement", label: t("overflow") },
 ];
+}
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -41,6 +47,7 @@ export function AddServiceDayModal({
   onSubmit: (input: AddServiceDayInput) => Promise<CreateServiceDayResult>;
   editingDay?: ServiceDay | null;
 }) {
+  const t = useTranslations("addServiceDay");
   const [date, setDate] = useState(todayIso());
   const [revenue, setRevenue] = useState("");
   const [mainSource, setMainSource] = useState<ServiceSource>("salle");
@@ -93,7 +100,7 @@ export function AddServiceDayModal({
 
     const parsedRevenue = Number(revenue);
     if (!date || !Number.isFinite(parsedRevenue)) {
-      setError("La date et le revenu sont requis.");
+      setError(t("theDateAndRevenue"));
       return;
     }
 
@@ -122,8 +129,8 @@ export function AddServiceDayModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title={editingDay ? "Modifier la journée de service" : "Ajouter une journée de service"}
-      description="Encodez le revenu, les événements et les observations du service."
+      title={editingDay ? t("editTheServiceDay") : t("addAServiceDay")}
+      description={t("enterTheRevenueEvents")}
       width={620}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -153,15 +160,15 @@ export function AddServiceDayModal({
             value={mainSource}
             onChange={(e) => setMainSource(e.target.value as ServiceSource)}
           >
-            <option value="salle">Sur place</option>
-            <option value="livraison">Livraison</option>
-            <option value="reservation">Réservation en ligne</option>
+            <option value="salle">{t("onSite")}</option>
+            <option value="livraison">{t("delivery")}</option>
+            <option value="reservation">{t("onlineReservation")}</option>
           </Select>
         </Field>
 
-        <Field label="Événements du jour" hint="Sélectionnez ce qui s'applique">
+        <Field label={t("eventsOfTheDay")} hint={t("selectWhatApplies")}>
           <div className="flex flex-wrap gap-2">
-            {eventOptions.map((e) => (
+            {buildEventOptions(t).map((e) => (
               <button
                 type="button"
                 key={e}
@@ -179,12 +186,12 @@ export function AddServiceDayModal({
           </div>
         </Field>
 
-        <Field label="Niveau d'activité">
+        <Field label={t("activityLevel")}>
           <Select
             value={rushLevel}
             onChange={(e) => setRushLevel(e.target.value as RushLevel)}
           >
-            {rushLevelOptions.map((r) => (
+            {buildRushLevelOptions(t).map((r) => (
               <option key={r.id} value={r.id}>
                 {r.label}
               </option>
@@ -192,9 +199,9 @@ export function AddServiceDayModal({
           </Select>
         </Field>
 
-        <Field label="Notes libres" hint="Ambiance, incidents, ruptures de stock…">
+        <Field label="Notes libres" hint={t("atmosphereIncidentsStockouts")}>
           <Textarea
-            placeholder="Ex : terrasse pleine dès 19h, rupture sur le tartare…"
+            placeholder={t("eGPatioFull")}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
@@ -207,7 +214,7 @@ export function AddServiceDayModal({
             Annuler
           </Button>
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Enregistrement…" : editingDay ? "Enregistrer les modifications" : "Enregistrer la journée"}
+            {submitting ? t("saving") : editingDay ? t("saveChanges") : t("saveTheDay")}
           </Button>
         </div>
       </form>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -26,52 +28,55 @@ type AccountingService = {
   isLive: boolean;
 };
 
-const ACCOUNTING_SERVICES: AccountingService[] = [
+function buildACCOUNTING_SERVICES(t: (key: string) => string): AccountingService[] {
+  return [
   {
     id: "quickbooks",
     name: "QuickBooks Online",
-    description: "Export direct des clôtures journalières et ventilation de TVA.",
+    description: t("directExportOfDaily"),
     Icon: QuickBooks,
     isLive: true,
   },
   {
     id: "xero",
     name: "Xero",
-    description: "Synchronisation bancaire et comptabilité automatisée.",
+    description: t("bankSyncAndAutomated"),
     Icon: Xero,
     isLive: false,
   },
   {
     id: "sage",
     name: "Sage Business Cloud",
-    description: "Grand livre et rapprochement des flux de caisse restauration.",
+    description: t("generalLedgerAndReconciliation"),
     Icon: Sage,
     isLive: false,
   },
   {
     id: "freshbooks",
     name: "FreshBooks",
-    description: "Facturation, gestion des pourboires et notes de frais.",
+    description: t("invoicingTipManagementAnd"),
     Icon: FreshBooks,
     isLive: false,
   },
   {
     id: "dext",
     name: "Dext (Receipt Bank)",
-    description: "Extraction automatique par IA des factures fournisseurs et reçus.",
+    description: t("automaticAiExtractionOf"),
     Icon: Dext,
     isLive: false,
   },
   {
     id: "pennylane",
     name: "Pennylane",
-    description: "Pilotage financier en temps réel et pré-comptabilité intégrée.",
+    description: t("realTimeFinancialManagement"),
     Icon: Pennylane,
     isLive: false,
   },
 ];
+}
 
 export function AccountingConnectionsCard() {
+  const t = useTranslations("accountingConnections");
   const { restaurantId } = useApp();
   const [status, setStatus] = useState<{ configured: PosProviderConfigured; connections: PosConnection[] } | null>(
     null
@@ -90,8 +95,8 @@ export function AccountingConnectionsCard() {
 
   function handleRequestAccess(service: AccountingService) {
     setRequestedServices((prev) => ({ ...prev, [service.id]: true }));
-    toast.success(`Demande enregistrée pour ${service.name} !`, {
-      description: "Notre équipe vous notifiera dès l'ouverture des accès bêta pour cet établissement.",
+    toast.success(t("requestSavedForServicename", { serviceName: service.name }), {
+      description: t("ourTeamWillNotify"),
     });
   }
 
@@ -99,13 +104,13 @@ export function AccountingConnectionsCard() {
     <Card className="flex flex-col justify-between">
       <div>
         <CardHeader
-          eyebrow="Comptabilité & Facturation"
+          eyebrow={t("accountingBilling")}
           title="Logiciels Comptables"
-          description="Synchronisez vos clôtures de caisse, TVA et factures fournisseurs avec vos outils comptables."
+          description={t("syncYourRegisterClosings")}
         />
 
         <div className="space-y-2.5">
-          {ACCOUNTING_SERVICES.map((service) => {
+          {buildACCOUNTING_SERVICES(t).map((service) => {
             const Icon = service.Icon;
             const isRequested = Boolean(requestedServices[service.id]);
 
@@ -130,9 +135,9 @@ export function AccountingConnectionsCard() {
                             Connecté
                           </Badge>
                         ) : qbConfigured ? (
-                          <Badge tone="neutral">Prêt</Badge>
+                          <Badge tone="neutral">{t("ready")}</Badge>
                         ) : (
-                          <Badge tone="neutral">Bientôt disponible</Badge>
+                          <Badge tone="neutral">{t("comingSoon")}</Badge>
                         )}
                       </div>
                       <p className="text-[12px] text-mv-ink-faint">{service.description}</p>

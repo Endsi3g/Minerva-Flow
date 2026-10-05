@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -57,6 +59,7 @@ export function PosInventoryMappingCard({
   inventoryItems: InventoryItem[];
   connectedProviders: CatalogPosProvider[];
 }) {
+  const t = useTranslations("posInventoryMapping");
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -161,9 +164,9 @@ export function PosInventoryMappingCard({
               : r
           )
         );
-        toast.success(`« ${row.name} » associé à « ${found?.name ?? "un article"} »`);
+        toast.success(t("rownameLinkedToArticle", { rowName: row.name, article: found?.name ?? t("anItem") }));
       } else {
-        toast.error("Échec de l'association");
+        toast.error(t("linkingFailed"));
       }
       setActionInProgressId(null);
     });
@@ -176,9 +179,9 @@ export function PosInventoryMappingCard({
       const ok = await upsertPosInventoryMappingAction(restaurantId, row.provider, row.externalId, row.name, null, row.externalVariationId);
       if (ok) {
         setRows((prev) => prev.map((r) => (r === row ? { ...r, mapping: r.mapping ? { ...r.mapping, inventoryItemId: null, inventoryItem: null } : null } : r)));
-        toast.info(`« ${row.name} » dissocié`);
+        toast.info(t("rownameUnlinked", { rowName: row.name }));
       } else {
-        toast.error("Échec de la dissociation");
+        toast.error(t("unlinkingFailed"));
       }
       setActionInProgressId(null);
     });
@@ -189,9 +192,9 @@ export function PosInventoryMappingCard({
     const result = await resyncInventoryToPosAction(restaurantId);
     setResyncing(false);
     if (result.providers === 0) {
-      toast.info("Aucun compte Clover/Square connecté.");
+      toast.info(t("noCloverSquareAccount"));
     } else {
-      toast.success(`Synchronisé : ${result.pushed} envoyé(s), ${result.pulled} reçu(s) depuis votre caisse enregistreuse.`);
+      toast.success(t("syncedPushedSentPulled", { pushed: result.pushed, pulled: result.pulled }));
       load();
     }
   }
@@ -204,7 +207,7 @@ export function PosInventoryMappingCard({
       <CardHeader
         eyebrow="Gestion des stocks"
         title="Correspondance des articles de caisse & stocks"
-        description="Associez chaque article du catalogue Clover/Square à un article d'inventaire pour synchroniser les quantités en stock dans les deux sens."
+        description={t("linkEachCloverSquare")}
         action={
           <div className="flex items-center gap-2">
             {unlinkedCount > 0 ? (
@@ -261,7 +264,7 @@ export function PosInventoryMappingCard({
           <Search size={13} className="absolute left-2.5 top-2.5 text-mv-ink-faint" />
           <input
             type="text"
-            placeholder="Rechercher un article…"
+            placeholder={t("searchAnItem")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 w-48 rounded-lg border border-mv-border bg-mv-surface pl-8 pr-3 text-[12px] text-mv-ink placeholder:text-mv-ink-faint focus:border-mv-green focus:outline-none"
@@ -270,7 +273,7 @@ export function PosInventoryMappingCard({
       </div>
 
       {filteredRows.length === 0 ? (
-        <div className="py-8 text-center text-[13px] text-mv-ink-faint">Aucun article ne correspond à ces critères.</div>
+        <div className="py-8 text-center text-[13px] text-mv-ink-faint">{t("noItemsMatchThese")}</div>
       ) : (
         <div className="divide-y divide-mv-border-soft">
           {filteredRows.map((row) => {
@@ -314,7 +317,7 @@ export function PosInventoryMappingCard({
                       className="h-8 max-w-[220px] truncate rounded-lg border border-mv-border bg-mv-surface px-2 text-[12px] text-mv-ink focus:border-mv-green focus:outline-none"
                     >
                       <option value="" disabled>
-                        Associer à un article d&apos;inventaire…
+                        {t("linkToAnInventory")}
                       </option>
                       {inventoryItems.map((item) => (
                         <option key={item.id} value={item.id}>

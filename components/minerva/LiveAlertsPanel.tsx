@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/utils";
@@ -19,11 +19,13 @@ const severityTone: Record<AlertSeverity, "red" | "amber" | "neutral"> = {
   info: "neutral",
 };
 
-const severityLabel: Record<AlertSeverity, string> = {
-  critique: "Priorité haute",
-  important: "À surveiller",
+function buildSeverityLabel(t: (key: string) => string): Record<AlertSeverity, string> {
+  return {
+  critique: t("highPriority"),
+  important: t("toWatch"),
   info: "Info",
 };
+}
 
 type AlertRow = {
   id: string;
@@ -85,6 +87,7 @@ export function LiveAlertsPanel({
   initial: Alert[];
   className?: string;
 }) {
+  const t = useTranslations("liveAlerts");
   const locale = useLocale();
   const [alerts, setAlerts] = useState(initial);
   const [showAll, setShowAll] = useState(false);
@@ -117,18 +120,18 @@ export function LiveAlertsPanel({
         title="Alertes"
         description={
           alerts.length === 0
-            ? "Aucune alerte"
+            ? t("noAlerts")
             : `${alerts.length} à examiner${hiddenCount > 0 && !showAll ? ` · 3 affichées` : ""}`
         }
         action={
-          <Link href="/settings/alertes" className="text-mv-green-dark hover:text-mv-green transition-colors" title="Paramètres des alertes">
+          <Link href="/settings/alertes" className="text-mv-green-dark hover:text-mv-green transition-colors" title={t("alertSettings")}>
             <ArrowRight size={16} />
           </Link>
         }
       />
       <div className="flex-1 overflow-y-auto min-h-0">
         {alerts.length === 0 ? (
-          <p className="text-[12.5px] text-mv-ink-faint">Rien à signaler pour l&apos;instant.</p>
+          <p className="text-[12.5px] text-mv-ink-faint">{t("nothingToReportFor")}</p>
         ) : (
           <div className="space-y-3">
             {visibleAlerts.map((a, i) => {
@@ -136,7 +139,7 @@ export function LiveAlertsPanel({
                 <>
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <Badge tone={severityTone[a.severity]} dot>
-                      {severityLabel[a.severity]}
+                      {buildSeverityLabel(t)[a.severity]}
                     </Badge>
                     <span className="text-[12px] text-mv-ink-faint">{formatDate(a.date, locale)}</span>
                   </div>
@@ -170,7 +173,7 @@ export function LiveAlertsPanel({
                   onClick={() => setShowAll((prev) => !prev)}
                   className="w-full text-center text-[12px] font-medium text-mv-green-dark hover:underline py-1.5 transition-colors"
                 >
-                  {showAll ? "Réduire aux 3 alertes prioritaires" : `Voir les ${hiddenCount} autre${hiddenCount > 1 ? "s" : ""} alerte${hiddenCount > 1 ? "s" : ""}`}
+                  {showAll ? t("reduceToThe3") : `Voir les ${hiddenCount} autre${hiddenCount > 1 ? "s" : ""} alerte${hiddenCount > 1 ? "s" : ""}`}
                 </button>
               </div>
             )}

@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -13,6 +13,7 @@ import { Camera, History, ImageOff, Search, Sparkles, X } from "lucide-react";
 const RECENT_ENTRY_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
 function ChangelogScreenshot({ entry, isFirst }: { entry: ChangelogEntry; isFirst: boolean }) {
+  const t = useTranslations("changelogView");
   const [failed, setFailed] = useState(false);
   if (!entry.imageUrl) return null;
 
@@ -21,17 +22,17 @@ function ChangelogScreenshot({ entry, isFirst }: { entry: ChangelogEntry; isFirs
       {failed ? (
         <div
           role="img"
-          aria-label={`La capture d’écran de « ${entry.title} » est indisponible.`}
+          aria-label={t("theScreenshotOfTitle", { title: entry.title })}
           className="flex aspect-video flex-col items-center justify-center gap-2 bg-mv-cream-soft text-mv-ink-faint"
         >
           <ImageOff size={22} aria-hidden="true" />
-          <span className="text-xs">Capture d’écran indisponible</span>
+          <span className="text-xs">{t("screenshotUnavailable")}</span>
         </div>
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={entry.imageUrl}
-          alt={`Capture d’écran : ${entry.title}`}
+          alt={t("screenshotTitle", { title: entry.title })}
           width={1200}
           height={675}
           loading={isFirst ? "eager" : "lazy"}
@@ -48,18 +49,22 @@ function ChangelogScreenshot({ entry, isFirst }: { entry: ChangelogEntry; isFirs
   );
 }
 
-const categoryLabel: Record<ChangelogCategory, string> = {
-  fonctionnalite: "Nouveauté",
-  amelioration: "Amélioration",
+function buildCategoryLabel(t: (key: string) => string): Record<ChangelogCategory, string> {
+  return {
+  fonctionnalite: t("new"),
+  amelioration: t("improvement"),
   correctif: "Correctif",
 };
+}
 
-const FILTERS: { value: ChangelogCategory | "all"; label: string }[] = [
+function buildFILTERS(t: (key: string) => string): { value: ChangelogCategory | "all"; label: string }[] {
+  return [
   { value: "all", label: "Tout" },
-  { value: "fonctionnalite", label: "Nouveautés" },
-  { value: "amelioration", label: "Améliorations" },
+  { value: "fonctionnalite", label: t("newFeatures") },
+  { value: "amelioration", label: t("improvements") },
   { value: "correctif", label: "Correctifs" },
 ];
+}
 
 export function ChangelogView({
   initialEntries,
@@ -68,6 +73,7 @@ export function ChangelogView({
   initialEntries: ChangelogEntry[];
   referenceTime: string;
 }) {
+  const t = useTranslations("changelogView");
   const locale = useLocale();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ChangelogCategory | "all">("all");
@@ -86,14 +92,14 @@ export function ChangelogView({
   return (
     <div className="mx-auto w-full max-w-xl space-y-10">
       <PageHeader
-        eyebrow="Système & Mises à Jour"
-        title="Journal des évolutions"
-        description="Nouveautés, améliorations et correctifs apportés à Minerva Flow."
+        eyebrow={t("systemUpdates")}
+        title={t("changeLog")}
+        description={t("newFeaturesImprovementsAnd")}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4 text-[13px]">
-          {FILTERS.map((f) => (
+          {buildFILTERS(t).map((f) => (
             <button
               key={f.value}
               onClick={() => setSelectedCategory(f.value)}
@@ -114,7 +120,7 @@ export function ChangelogView({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher…"
+            placeholder={t("search")}
             className="w-40 rounded-lg border border-transparent bg-transparent py-1 pl-7 pr-6 text-[12.5px] text-mv-ink placeholder:text-mv-ink-faint transition-colors focus:border-mv-border focus:bg-mv-surface focus:outline-none"
           />
           {search && (
@@ -131,8 +137,8 @@ export function ChangelogView({
       {filteredEntries.length === 0 ? (
         <EmptyState
           icon={History}
-          title="Aucune mise à jour ne correspond à vos critères"
-          description="Essayez un autre mot-clé ou réinitialisez les filtres."
+          title={t("noUpdateMatchesYour")}
+          description={t("tryAnotherKeywordOr")}
         />
       ) : (
         <div className="divide-y divide-mv-border-soft">
@@ -153,10 +159,10 @@ export function ChangelogView({
                 <div className="mb-2 flex items-center gap-2 text-[12px] text-mv-ink-faint">
                   <time>{formatDateFull(entry.publishedAt.slice(0, 10), locale)}</time>
                   <span aria-hidden>·</span>
-                  <span>{categoryLabel[entry.category]}</span>
+                  <span>{buildCategoryLabel(t)[entry.category]}</span>
                   {isNew && (
                     <span
-                      aria-label="Mise à jour récente"
+                      aria-label={t("recentUpdate")}
                       className="inline-flex items-center gap-1 rounded-full border border-mv-green/15 bg-mv-green/8 px-2 py-0.5 font-semibold text-mv-green-dark"
                     >
                       <Sparkles size={11} aria-hidden="true" /> Nouveau

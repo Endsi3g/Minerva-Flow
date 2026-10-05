@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -63,6 +63,7 @@ function CredentialsModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations("reservationDelivery");
   const [externalAccountId, setExternalAccountId] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -75,13 +76,13 @@ function CredentialsModal({
         { externalAccountId, apiKey }
       );
       if (ok) {
-        toast.success(`${PROVIDER_LABEL[provider]} connecté.`);
+        toast.success(t("providerConnected", { provider: PROVIDER_LABEL[provider] }));
         setExternalAccountId("");
         setApiKey("");
         onSaved();
         onClose();
       } else {
-        toast.error("La connexion a échoué — vérifiez les identifiants.");
+        toast.error(t("theConnectionFailedCheck"));
       }
     });
   }
@@ -98,7 +99,7 @@ function CredentialsModal({
             rel="noreferrer"
             className="text-mv-green underline"
           >
-            faire la demande
+            {t("applyHere")}
           </a>
           .
         </p>
@@ -109,7 +110,7 @@ function CredentialsModal({
             placeholder="Ex : Restaurant ID"
           />
         </Field>
-        <Field label="Clé de connexion sécurisée">
+        <Field label={t("secureConnectionKey")}>
           <Input
             type="password"
             value={apiKey}
@@ -122,7 +123,7 @@ function CredentialsModal({
           disabled={!externalAccountId.trim() || !apiKey.trim() || isPending}
           onClick={handleSave}
         >
-          {isPending ? "Connexion…" : "Connecter"}
+          {isPending ? t("connecting") : "Connecter"}
         </Button>
       </div>
     </Modal>
@@ -138,14 +139,15 @@ function ConnectRow({
   connection?: ReservationDeliveryConnection;
   onChanged: () => void;
 }) {
+  const t = useTranslations("reservationDelivery");
   const locale = useLocale();
   const [modalOpen, setModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function statusLine() {
-    if (!connection) return "Nécessite un partenariat approuvé par le fournisseur";
-    if (connection.lastSyncedAt) return `Dernière synchronisation — ${formatDate(connection.lastSyncedAt, locale)}`;
-    return "Identifiants enregistrés";
+    if (!connection) return t("requiresAPartnershipApproved");
+    if (connection.lastSyncedAt) return t("lastSyncDate", { date: formatDate(connection.lastSyncedAt, locale) });
+    return t("credentialsSaved");
   }
 
   return (
@@ -196,6 +198,7 @@ function ConnectRow({
 }
 
 export function ReservationDeliveryConnectionsCard() {
+  const t = useTranslations("reservationDelivery");
   const { restaurantId } = useApp();
   const [connections, setConnections] = useState<ReservationDeliveryConnection[] | null>(null);
 
@@ -214,9 +217,9 @@ export function ReservationDeliveryConnectionsCard() {
   return (
     <Card>
       <CardHeader
-        eyebrow="Réservations & livraison tierces"
+        eyebrow={t("thirdPartyReservationsDelivery")}
         title="OpenTable, Resy, Uber Direct"
-        description="Ces plateformes exigent un partenariat d'affaires approuvé avant de fournir un accès API — connectez-les ici une fois vos identifiants reçus."
+        description={t("thesePlatformsRequireAn")}
       />
       <div className="space-y-2">
         <ConnectRow provider="opentable" connection={byProvider("opentable")} onChanged={refresh} />

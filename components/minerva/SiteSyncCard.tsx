@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -17,6 +19,7 @@ export function SiteSyncCard({
   initialShowcase: PublicSiteShowcase;
   restaurantId: string;
 }) {
+  const t = useTranslations("siteSync");
   const [isPending, startTransition] = useTransition();
   const [isOpenNow, setIsOpenNow] = useState(initialShowcase.isOpenNow);
   const [hoursNotice, setHoursNotice] = useState(initialShowcase.hoursNotice);
@@ -26,7 +29,7 @@ export function SiteSyncCard({
   function handlePublish() {
     startTransition(async () => {
       // Perform client update simulation & toast
-      toast.success("Publication réussie ! Le site web public a été mis à jour en direct.");
+      toast.success(t("publishedThePublicWebsite"));
     });
   }
 
@@ -42,7 +45,7 @@ export function SiteSyncCard({
               Site Web Vitrine ↔ Dashboard
             </h3>
             <p className="text-[12.5px] text-mv-ink-soft">
-              Publiez vos annonces, vos heures d&apos;ouverture et votre menu du jour en temps réel sur le site web public.
+              {t("publishYourAnnouncementsOpening")}
             </p>
           </div>
         </div>
@@ -70,9 +73,9 @@ export function SiteSyncCard({
 
           <div className="flex items-center justify-between rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3.5">
             <div>
-              <span className="block text-[13px] font-bold text-mv-ink">Statut d&apos;ouverture en direct</span>
+              <span className="block text-[13px] font-bold text-mv-ink">{t("liveOpeningStatus")}</span>
               <span className="text-[12px] text-mv-ink-faint">
-                {isOpenNow ? "Affiché comme Ouvert sur le site" : "Affiché comme Fermé actuellement"}
+                {isOpenNow ? t("shownAsOpenOn") : t("currentlyShownAsClosed")}
               </span>
             </div>
             <button
@@ -94,7 +97,7 @@ export function SiteSyncCard({
             <Input
               value={hoursNotice}
               onChange={(e) => setHoursNotice(e.target.value)}
-              placeholder="Ex: Ouvert aujourd'hui de 08:00 à 22:00"
+              placeholder={t("eGOpenToday")}
             />
           </Field>
         </div>
@@ -110,7 +113,7 @@ export function SiteSyncCard({
             <Input
               value={promoTitle}
               onChange={(e) => setPromoTitle(e.target.value)}
-              placeholder="Ex: Spécial Brunch du Dimanche"
+              placeholder={t("eGSundayBrunch")}
             />
           </Field>
 
@@ -118,7 +121,7 @@ export function SiteSyncCard({
             <Input
               value={promoText}
               onChange={(e) => setPromoText(e.target.value)}
-              placeholder="Ex: 15% de réduction sur les cocktails d'été !"
+              placeholder={t("eG15Off")}
             />
           </Field>
         </div>
