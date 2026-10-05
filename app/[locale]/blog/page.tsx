@@ -71,7 +71,7 @@ export default async function BlogIndexPage() {
               Connexion
             </Link>
             <Button href="/sign-up" size="sm" className="shadow-mv-sm">
-              Essai Gratuit <ArrowRight size={13} className="ml-1" />
+              Créer mon compte <ArrowRight size={13} className="ml-1" />
             </Button>
           </nav>
         </div>
