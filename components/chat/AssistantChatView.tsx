@@ -556,7 +556,6 @@ export function AssistantChatView({
             <div className="absolute inset-x-0 top-0 z-30 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[12.5px] font-medium text-amber-900">
               <Bell size={14} className="shrink-0 text-amber-600" />
               {t("flowAiIsTemporarily")}
-              {t("text")}
             </div>
           )}
           <AssistantRuntimeProvider runtime={runtime}>
