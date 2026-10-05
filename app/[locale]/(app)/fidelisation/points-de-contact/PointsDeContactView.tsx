@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useEffect, useState, type FormEvent } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
@@ -19,22 +21,22 @@ import type {
 import { MapPin, Plus, Download, ExternalLink, Copy, Check, Trash2, Wand2, CreditCard, Truck } from "lucide-react";
 import QRCode from "qrcode";
 
-const TYPE_LABELS: Record<PhysicalTouchpointType, string> = {
-  caisse: "Caisse",
-  comptoir: "Comptoir",
-  table: "Table",
-  vitrine: "Vitrine",
-  sortie: "Sortie",
-  sac_recu: "Sac / Reçu",
-  carte_client: "Carte client",
-  autre: "Autre",
+const TYPE_LABELS_KEYS: Record<PhysicalTouchpointType, string> = {
+  caisse: "typelabelsCaisse",
+  comptoir: "typelabelsComptoir",
+  table: "typelabelsTable",
+  vitrine: "typelabelsVitrine",
+  sortie: "typelabelsSortie",
+  sac_recu: "typelabelsSacRecu",
+  carte_client: "typelabelsCarteClient",
+  autre: "typelabelsAutre",
 };
 
-const DESTINATION_LABELS: Record<PhysicalTouchpointDestinationKind, string> = {
-  loyalty_join: "Rejoindre la fidélité",
-  menu: "Voir le menu",
-  review: "Avis Google",
-  custom_url: "Lien personnalisé",
+const DESTINATION_LABELS_KEYS: Record<PhysicalTouchpointDestinationKind, string> = {
+  loyalty_join: "destinationlLoyaltyJoin",
+  menu: "destinationlMenu",
+  review: "destinationlReview",
+  custom_url: "destinationlCustomUrl",
 };
 
 function touchpointUrl(code: string): string {
@@ -48,6 +50,7 @@ function TouchpointRow({
   funnel: PhysicalTouchpointFunnel;
   onDeleted: (id: string) => void;
 }) {
+  const t = useTranslations("touchpoints");
   const { touchpoint, counts } = funnel;
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -74,9 +77,9 @@ function TouchpointRow({
   const scans = counts.touchpoint_opened ?? 0;
   const secondary =
     touchpoint.destinationKind === "loyalty_join"
-      ? { label: "inscriptions", value: counts.loyalty_activated ?? 0 }
+      ? { label: t("signUpsLabel"), value: counts.loyalty_activated ?? 0 }
       : touchpoint.destinationKind === "review"
-        ? { label: "avis démarrés", value: counts.review_flow_started ?? 0 }
+        ? { label: t("reviewsStarted"), value: counts.review_flow_started ?? 0 }
         : null;
 
   return (
@@ -88,10 +91,10 @@ function TouchpointRow({
         )}
         <div className="min-w-0">
           <p className="truncate text-[12.5px] font-medium text-mv-ink">
-            {touchpoint.label} <span className="text-mv-ink-faint font-normal">· {TYPE_LABELS[touchpoint.type]}</span>
+            {touchpoint.label} <span className="text-mv-ink-faint font-normal">· {t(TYPE_LABELS_KEYS[touchpoint.type])}</span>
           </p>
           <p className="truncate text-[12px] text-mv-ink-faint">
-            /t/{touchpoint.code} · {DESTINATION_LABELS[touchpoint.destinationKind]} · {scans} scan{scans === 1 ? "" : "s"}
+            /t/{touchpoint.code} · {t(DESTINATION_LABELS_KEYS[touchpoint.destinationKind])} · {t("scanCount", { count: scans })}
             {secondary ? ` · ${secondary.value} ${secondary.label}` : ""}
           </p>
         </div>
@@ -100,8 +103,8 @@ function TouchpointRow({
         <a
           href={`/fidelisation/partage/studio-qr?url=${encodeURIComponent(url)}`}
           className="text-mv-ink-faint hover:text-mv-ink"
-          aria-label="Ouvrir dans le Studio QR"
-          title="Ouvrir dans le Studio QR"
+          aria-label={t("openInTheQr")}
+          title={t("openInTheQr")}
         >
           <Wand2 size={14} />
         </a>
@@ -109,24 +112,24 @@ function TouchpointRow({
           onClick={handleDownload}
           disabled={!qrDataUrl}
           className="text-mv-ink-faint hover:text-mv-ink disabled:opacity-40"
-          aria-label="Télécharger le code QR"
+          aria-label={t("downloadTheQrCode")}
         >
           <Download size={14} />
         </button>
         <button
           onClick={() => window.open(url, "_blank")}
           className="text-mv-ink-faint hover:text-mv-ink"
-          aria-label="Ouvrir le lien"
+          aria-label={t("openTheLink")}
         >
           <ExternalLink size={14} />
         </button>
-        <button onClick={handleCopy} className="text-mv-ink-faint hover:text-mv-ink" aria-label="Copier le lien">
+        <button onClick={handleCopy} className="text-mv-ink-faint hover:text-mv-ink" aria-label={t("copyTheLink")}>
           {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
         </button>
         <button
           onClick={() => onDeleted(touchpoint.id)}
           className="text-mv-ink-faint hover:text-mv-red"
-          aria-label="Supprimer le point de contact"
+          aria-label={t("deleteTheTouchpoint")}
         >
           <Trash2 size={13} />
         </button>
@@ -146,6 +149,7 @@ function NewTouchpointModal({
   onClose: () => void;
   onCreated: (funnel: PhysicalTouchpointFunnel) => void;
 }) {
+  const t = useTranslations("touchpoints");
   const [destinationKind, setDestinationKind] = useState<PhysicalTouchpointDestinationKind>("loyalty_join");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const needsUrl = destinationKind === "review" || destinationKind === "custom_url";
@@ -165,7 +169,7 @@ function NewTouchpointModal({
         onCreated({ touchpoint, counts: {} });
         onClose();
       } else {
-        notifyError("La création a échoué. Vérifiez le lien fourni.");
+        notifyError(t("creationFailedCheckThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -176,36 +180,36 @@ function NewTouchpointModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Nouveau point de contact"
-      description="Un support physique (autocollant NFC, chevalet, sous-verre…) qui redirige vers votre app, avec ses propres statistiques."
+      title={t("newTouchpoint")}
+      description={t("aPhysicalItemNfc")}
     >
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Nom du support" hint="Pour vous repérer dans la liste">
-          <Input name="label" placeholder="Ex : Comptoir - Caisse" required autoFocus />
+        <Field label={t("itemName")} hint={t("toFindItIn")}>
+          <Input name="label" placeholder={t("eGCounterRegister")} required autoFocus />
         </Field>
-        <Field label="Emplacement">
+        <Field label={t("location")}>
           <Select name="type" defaultValue="comptoir">
-            {Object.entries(TYPE_LABELS).map(([value, label]) => (
+            {Object.entries(TYPE_LABELS_KEYS).map(([value, label]) => (
               <option key={value} value={value}>
-                {label}
+                {t(label)}
               </option>
             ))}
           </Select>
         </Field>
-        <Field label="Destination" hint="Où le client atterrit après avoir tapé/scanné">
+        <Field label={t("destination")} hint={t("whereTheCustomerLands")}>
           <Select
             value={destinationKind}
             onChange={(e) => setDestinationKind(e.target.value as PhysicalTouchpointDestinationKind)}
           >
-            {Object.entries(DESTINATION_LABELS).map(([value, label]) => (
+            {Object.entries(DESTINATION_LABELS_KEYS).map(([value, label]) => (
               <option key={value} value={value}>
-                {label}
+                {t(label)}
               </option>
             ))}
           </Select>
         </Field>
         {needsUrl && (
-          <Field label="Lien" hint={destinationKind === "review" ? "Votre lien d'avis Google" : "N'importe quelle URL"}>
+          <Field label={t("link")} hint={destinationKind === "review" ? t("yourGoogleReviewLink") : "N'importe quelle URL"}>
             <Input name="destinationValue" type="url" placeholder="https://…" required />
           </Field>
         )}
@@ -214,7 +218,7 @@ function NewTouchpointModal({
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Créer"}
+            {isSubmitting ? t("creating") : t("create")}
           </Button>
         </div>
       </form>
@@ -222,11 +226,11 @@ function NewTouchpointModal({
   );
 }
 
-const NFC_CARD_ORDER_STATUS_LABELS: Record<NfcCardOrder["status"], string> = {
-  paid: "Payée",
-  shipped: "Expédiée",
-  fulfilled: "Livrée",
-  cancelled: "Annulée",
+const NFC_CARD_ORDER_STATUS_LABELS_KEYS: Record<NfcCardOrder["status"], string> = {
+  paid: "nfccardorderPaid",
+  shipped: "nfccardorderShipped",
+  fulfilled: "nfccardorderFulfilled",
+  cancelled: "nfccardorderCancelled",
 };
 
 function NfcCardOrderPanel({
@@ -236,6 +240,7 @@ function NfcCardOrderPanel({
   restaurantId: string;
   funnels: PhysicalTouchpointFunnel[];
 }) {
+  const t = useTranslations("touchpoints");
   const [quantity, setQuantity] = useState(1);
   const [touchpointId, setTouchpointId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -245,7 +250,7 @@ function NfcCardOrderPanel({
     try {
       const url = await createNfcCardOrderCheckoutAction(restaurantId, quantity, touchpointId || null);
       if (url) window.location.href = url;
-      else notifyError("La commande a échoué. Réessayez dans un instant.");
+      else notifyError(t("theOrderFailedTry"));
     } finally {
       setIsSubmitting(false);
     }
@@ -254,13 +259,13 @@ function NfcCardOrderPanel({
   return (
     <Card>
       <CardHeader
-        eyebrow="Matériel"
-        title="Cartes NFC personnalisées"
-        description="Une carte NFC brandée, prête à poser au comptoir ou à donner à un client VIP — 75 $ CAD/carte, livrée chez vous."
+        eyebrow={t("hardware")}
+        title={t("customNfcCards")}
+        description={t("aBrandedNfcCard")}
       />
       <div className="flex flex-wrap items-end gap-3">
         <div className="w-24">
-          <Field label="Quantité">
+          <Field label={t("quantity")}>
             <Input
               type="number"
               min={1}
@@ -271,9 +276,9 @@ function NfcCardOrderPanel({
           </Field>
         </div>
         <div className="w-64">
-          <Field label="Lien à encoder sur la carte">
+          <Field label={t("linkToEncodeOn")}>
             <Select value={touchpointId} onChange={(e) => setTouchpointId(e.target.value)}>
-              <option value="">Je m&apos;en occupe moi-même plus tard</option>
+              <option value="">{t("iLlTakeCare")}</option>
               {funnels.map((f) => (
                 <option key={f.touchpoint.id} value={f.touchpoint.id}>
                   {f.touchpoint.label}
@@ -283,13 +288,12 @@ function NfcCardOrderPanel({
           </Field>
         </div>
         <Button onClick={handleOrder} disabled={isSubmitting}>
-          <CreditCard size={14} /> {isSubmitting ? "Redirection…" : `Commander (${quantity * 75} $ CAD)`}
+          <CreditCard size={14} /> {isSubmitting ? t("redirecting") : t("orderWithPrice", { price: quantity * 75 })}
         </Button>
       </div>
       {funnels.length === 0 && (
         <p className="mt-2.5 text-[12px] text-mv-ink-faint">
-          Vous n&apos;avez pas encore de point de contact — créez-en un ci-dessous si vous voulez que votre commande
-          soit liée à un lien précis.
+          {t("youDoNotHave")}
         </p>
       )}
     </Card>
@@ -297,13 +301,14 @@ function NfcCardOrderPanel({
 }
 
 function NfcCardOrderHistory({ orders, funnels }: { orders: NfcCardOrder[]; funnels: PhysicalTouchpointFunnel[] }) {
+  const t = useTranslations("touchpoints");
   if (orders.length === 0) return null;
   const labelFor = (touchpointId: string | null) =>
     touchpointId ? funnels.find((f) => f.touchpoint.id === touchpointId)?.touchpoint.label : null;
 
   return (
     <Card>
-      <CardHeader eyebrow="Matériel" title="Vos commandes de cartes NFC" />
+      <CardHeader eyebrow={t("hardware")} title={t("yourNfcCardOrders")} />
       <div className="space-y-2">
         {orders.map((order) => {
           const linkedLabel = labelFor(order.touchpointId);
@@ -319,7 +324,7 @@ function NfcCardOrderHistory({ orders, funnels }: { orders: NfcCardOrder[]; funn
                   <p className="text-[12px] text-mv-ink-faint">{new Date(order.createdAt).toLocaleDateString("fr-CA")}</p>
                 </div>
               </div>
-              <span className="text-[12px] font-medium text-mv-ink-faint">{NFC_CARD_ORDER_STATUS_LABELS[order.status]}</span>
+              <span className="text-[12px] font-medium text-mv-ink-faint">{t(NFC_CARD_ORDER_STATUS_LABELS_KEYS[order.status])}</span>
             </div>
           );
         })}
@@ -339,6 +344,7 @@ export function PointsDeContactView({
   nfcCardOrders: NfcCardOrder[];
   nfcCardPurchaseEnabled: boolean;
 }) {
+  const t = useTranslations("touchpoints");
   const [funnels, setFunnels] = useState(initialFunnels);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -346,7 +352,7 @@ export function PointsDeContactView({
     if (!restaurantId) return;
     deleteTouchpointAction(restaurantId, id).then((ok) => {
       if (ok) setFunnels((prev) => prev.filter((f) => f.touchpoint.id !== id));
-      else notifyError("La suppression a échoué.");
+      else notifyError(t("deletionFailed"));
     });
   }
 
@@ -354,8 +360,8 @@ export function PointsDeContactView({
     <div>
       <FidelisationSubNav />
       <PageHeader
-        title="Points de contact"
-        description="Chaque autocollant NFC, chevalet ou sous-verre pointe vers un lien unique — vous voyez exactement quel support amène des inscriptions."
+        title={t("touchpoints")}
+        description={t("everyNfcStickerTable")}
       />
       {nfcCardPurchaseEnabled && restaurantId && (
         <div className="mb-6 space-y-4">
@@ -365,9 +371,9 @@ export function PointsDeContactView({
       )}
       <Card>
         <CardHeader
-          eyebrow="Supports physiques"
-          title="Vos points de contact"
-          description="Comptoir, table, vitrine, sortie… chacun avec son propre lien et ses propres statistiques."
+          eyebrow={t("physicalItems")}
+          title={t("yourTouchpoints")}
+          description={t("counterTableWindowExit")}
           action={
             restaurantId && (
               <Button size="sm" variant="secondary" onClick={() => setCreateOpen(true)}>
@@ -378,7 +384,7 @@ export function PointsDeContactView({
         />
         {funnels.length === 0 ? (
           <p className="flex items-center gap-2 text-[12.5px] text-mv-ink-faint">
-            <MapPin size={14} /> Aucun point de contact créé pour l&apos;instant.
+            <MapPin size={14} /> {t("noTouchpointYet")}
           </p>
         ) : (
           <div className="space-y-2">

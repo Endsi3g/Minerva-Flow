@@ -90,6 +90,7 @@ function NewMenuItemModal({
   onClose: () => void;
   onCreated: (item: MenuItem) => void;
 }) {
+  const tv = useTranslations("menuView");
   const t = useTranslations("menu.newItem");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scopeId, setScopeId] = useState(() => crypto.randomUUID());
@@ -145,7 +146,7 @@ function NewMenuItemModal({
           <Input name="category" placeholder={t("categoryPlaceholder")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={priceOptions.length ? "Prix de départ (minimum des formats)" : t("priceLabel")}>
+          <Field label={priceOptions.length ? tv("startingPriceLowestSize") : t("priceLabel")}>
             <Input name="price" type="number" min="0" step="0.01" required />
           </Field>
           <Field label={t("foodCostLabel")}>
@@ -155,7 +156,7 @@ function NewMenuItemModal({
         <MenuPriceOptionsEditor options={priceOptions} onChange={setPriceOptions} />
         <label className="flex items-start gap-2 rounded-lg border border-mv-border-soft bg-mv-cream-soft/60 p-3 text-[12px] text-mv-ink-soft">
           <input type="checkbox" name="isOrderable" defaultChecked className="mt-0.5 accent-mv-green" />
-          <span><strong className="text-mv-ink">Proposé à la commande</strong><br />Décochez pour présenter cet article dans le menu sans permettre de le commander.</span>
+          <span><strong className="text-mv-ink">{tv("availableToOrder")}</strong><br />{tv("uncheckToShowThis")}</span>
         </label>
         <Field label={t("descriptionLabel")} hint={t("optional")}>
           <Input name="description" />
@@ -170,7 +171,7 @@ function NewMenuItemModal({
         <Field label={t("imageLabel")} hint={t("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} onUploaded={setImageUrl} />
         </Field>
-        <Field label="Vidéo (MP4, WebM ou YouTube/Vimeo)" hint="Optionnel">
+        <Field label={tv("videoMp4WebmOr")} hint={tv("optional")}>
           <VideoUploadWithUrl
             restaurantId={restaurantId}
             scopeId={scopeId}
@@ -262,6 +263,7 @@ function RecipeEditor({
   rows: RecipeRow[];
   onChange: (rows: RecipeRow[]) => void;
 }) {
+  const t = useTranslations("menuView");
   function updateRow(index: number, patch: Partial<RecipeRow>) {
     onChange(rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   }
@@ -281,8 +283,7 @@ function RecipeEditor({
         Recette (optionnel)
       </div>
       <p className="text-[12px] leading-snug text-mv-ink-faint">
-        Ingrédients d&apos;inventaire consommés par unité vendue — une fois définis, servir une commande de ce
-        plat retire automatiquement le stock correspondant.
+        {t("inventoryHint")}
       </p>
       {rows.map((row, i) => (
         <div key={i} className="flex items-center gap-2">
@@ -292,7 +293,7 @@ function RecipeEditor({
             className="h-8 flex-1 rounded-md border border-mv-border bg-mv-surface px-2 text-[12.5px]"
           >
             <option value="" disabled>
-              Choisir un article
+              {t("chooseAnItem")}
             </option>
             {inventoryItems.map((inv) => (
               <option key={inv.id} value={inv.id}>
@@ -304,7 +305,7 @@ function RecipeEditor({
             type="number"
             min="0"
             step="0.01"
-            placeholder="Qté"
+            placeholder={t("qty")}
             value={row.quantityPerUnit}
             onChange={(e) => updateRow(i, { quantityPerUnit: e.target.value })}
             className="h-8 w-20 rounded-md border border-mv-border bg-mv-surface px-2 text-[12.5px]"
@@ -313,7 +314,7 @@ function RecipeEditor({
             type="button"
             onClick={() => removeRow(i)}
             className="text-mv-ink-faint hover:text-mv-red"
-            aria-label="Retirer cet ingrédient"
+            aria-label={t("removeThisIngredient")}
           >
             <Trash2 size={13} />
           </button>
@@ -325,10 +326,10 @@ function RecipeEditor({
         disabled={inventoryItems.length === 0 || rows.length >= inventoryItems.length}
         className="flex items-center gap-1 text-[12px] font-medium text-mv-green-dark hover:underline disabled:opacity-40"
       >
-        <Plus size={12} /> Ajouter un ingrédient
+        <Plus size={12} /> {t("addIngredient")}
       </button>
       {inventoryItems.length === 0 && (
-        <p className="text-[12px] text-mv-ink-faint">Ajoutez d&apos;abord des articles dans Inventaire.</p>
+        <p className="text-[12px] text-mv-ink-faint">{t("addItemsToInventory")}</p>
       )}
     </div>
   );
@@ -351,6 +352,7 @@ function EditMenuItemModal({
   onClose: () => void;
   onUpdated: (item: MenuItem) => void;
 }) {
+  const tv = useTranslations("menuView");
   const t = useTranslations("menu.editItem");
   const tn = useTranslations("menu.newItem");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -408,7 +410,7 @@ function EditMenuItemModal({
           <Input name="category" defaultValue={item.category ?? ""} placeholder={tn("categoryPlaceholder")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label={priceOptions.length ? "Prix de départ (minimum des formats)" : tn("priceLabel")}>
+          <Field label={priceOptions.length ? tv("startingPriceLowestSize") : tn("priceLabel")}>
             <Input name="price" type="number" min="0" step="0.01" defaultValue={item.price} required />
           </Field>
           <Field label={tn("foodCostLabel")}>
@@ -418,7 +420,7 @@ function EditMenuItemModal({
         <MenuPriceOptionsEditor options={priceOptions} onChange={setPriceOptions} />
         <label className="flex items-start gap-2 rounded-lg border border-mv-border-soft bg-mv-cream-soft/60 p-3 text-[12px] text-mv-ink-soft">
           <input type="checkbox" name="isOrderable" defaultChecked={item.isOrderable !== false} className="mt-0.5 accent-mv-green" />
-          <span><strong className="text-mv-ink">Proposé à la commande</strong><br />Décochez pour présenter cet article dans le menu sans permettre de le commander.</span>
+          <span><strong className="text-mv-ink">{tv("availableToOrder")}</strong><br />{tv("uncheckToShowThis")}</span>
         </label>
         <Field label={tn("descriptionLabel")} hint={tn("optional")}>
           <Input name="description" defaultValue={item.description ?? ""} />
@@ -433,7 +435,7 @@ function EditMenuItemModal({
         <Field label={tn("imageLabel")} hint={tn("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={item.id} currentUrl={item.imageUrl} onUploaded={setImageUrl} />
         </Field>
-        <Field label="Vidéo (MP4, WebM ou YouTube/Vimeo)" hint="Optionnel">
+        <Field label={tv("videoMp4WebmOr")} hint={tv("optional")}>
           <VideoUploadWithUrl
             restaurantId={restaurantId}
             scopeId={item.id}
@@ -477,19 +479,20 @@ function MenuItemRow({
   onEdit: (item: MenuItem) => void;
   onPlayVideo?: (video: { url: string; title: string }) => void;
 }) {
+  const tv = useTranslations("menuView");
   const t = useTranslations("menu.itemRow");
   const [isToggling, setIsToggling] = useState(false);
 
   async function handleToggleActive() {
     if (!item.active && item.isDraft && (!hasValidMenuPricing(item) || !item.allergensConfirmed)) {
-      notifyError("Ajoutez un prix ou des formats tarifés, puis confirmez les allergènes avant de publier ce brouillon.");
+      notifyError(tv("addAPriceOr"));
       return;
     }
     setIsToggling(true);
     try {
       const updated = await updateMenuItemAction(restaurantId, item.id, { active: !item.active });
       if (updated) onUpdated(updated);
-      else notifyError("La mise à jour a échoué.");
+      else notifyError(tv("theUpdateFailed"));
     } finally {
       setIsToggling(false);
     }
@@ -508,35 +511,35 @@ function MenuItemRow({
                 type="button"
                 onClick={() => onPlayVideo({ url: item.videoUrl!, title: item.name })}
                 className="inline-flex items-center gap-1 rounded-full bg-mv-green/10 px-2 py-0.5 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/20 transition-colors shrink-0"
-                title="Voir la vidéo de présentation"
+                title={tv("watchThePresentationVideo")}
               >
                 <Play size={10} className="fill-current" />
-                Vidéo
+                {tv("videoShort")}
               </button>
             )}
-            {item.isDraft && <Badge tone="amber">Brouillon à compléter</Badge>}
-            {item.isOrderable === false && <Badge tone="neutral">Présentation seulement</Badge>}
-            {!item.active && !item.isDraft && <Badge tone="neutral">Retiré du menu</Badge>}
+            {item.isDraft && <Badge tone="amber">{tv("draftToComplete")}</Badge>}
+            {item.isOrderable === false && <Badge tone="neutral">{tv("displayOnly")}</Badge>}
+            {!item.active && !item.isDraft && <Badge tone="neutral">{tv("removedFromTheMenu")}</Badge>}
             {stockStatus?.status === "rupture" && (
               <span
                 title={
                   stockStatus.limitingIngredientName
-                    ? `Rupture : ${stockStatus.limitingIngredientName} épuisé`
-                    : "Rupture de stock"
+                    ? tv("outOfStockIngredient", { name: stockStatus.limitingIngredientName })
+                    : tv("outOfStock2")
                 }
               >
-                <Badge tone="red">Rupture</Badge>
+                <Badge tone="red">{tv("outOfStock")}</Badge>
               </span>
             )}
             {stockStatus?.status === "critique" && (
               <span
                 title={
                   stockStatus.limitingIngredientName
-                    ? `Stock critique limité par ${stockStatus.limitingIngredientName}`
+                    ? tv("criticalStockLimitedBy", { name: stockStatus.limitingIngredientName })
                     : undefined
                 }
               >
-                <Badge tone="amber">Critique ({stockStatus.portionsAvailable})</Badge>
+                <Badge tone="amber">{tv("criticalBadge", { count: stockStatus.portionsAvailable ?? 0 })}</Badge>
               </span>
             )}
           </p>
@@ -547,8 +550,8 @@ function MenuItemRow({
             <button
               onClick={handleToggleActive}
               disabled={isToggling}
-              aria-label={item.active ? "Retirer du menu" : "Remettre au menu"}
-              title={item.active ? "Retirer du menu" : "Remettre au menu"}
+              aria-label={item.active ? tv("removeFromTheMenu") : "Remettre au menu"}
+              title={item.active ? tv("removeFromTheMenu") : "Remettre au menu"}
               className="text-mv-ink-faint transition-colors hover:text-mv-amber disabled:opacity-50"
             >
               <EyeOff size={13} />
@@ -573,7 +576,7 @@ function MenuItemRow({
       <div className="mt-2 grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-4">
         <div>
           <p className="text-mv-ink-faint">{t("price")}</p>
-          <p className="font-medium text-mv-ink">{item.priceOptions?.length ? `À partir de ${formatCurrency(menuStartingPrice(item))}` : formatCurrency(item.price)}</p>
+          <p className="font-medium text-mv-ink">{item.priceOptions?.length ? tv("startingFrom", { price: formatCurrency(menuStartingPrice(item)) }) : formatCurrency(item.price)}</p>
         </div>
         <div>
           <p className="text-mv-ink-faint">{t("margin")}</p>
@@ -587,7 +590,7 @@ function MenuItemRow({
         </div>
         {stockStatus?.portionsAvailable != null && (
           <div>
-            <p className="text-mv-ink-faint">Portions dispo</p>
+            <p className="text-mv-ink-faint">{tv("portionsAvailable")}</p>
             <p
               className={cn(
                 "font-medium",
@@ -792,6 +795,7 @@ function OfferModal({
   onClose: () => void;
   onSaved: (offer: Offer) => void;
 }) {
+  const tv = useTranslations("menuView");
   const t = useTranslations("menu.offer");
   const tn = useTranslations("menu.newItem");
   const isEditing = Boolean(offer);
@@ -875,7 +879,7 @@ function OfferModal({
           <Input name="description" defaultValue={offer?.description ?? undefined} placeholder={t("descriptionPlaceholder")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Prix de vente ($)" hint="Affiché aux clients">
+          <Field label={tv("sellingPrice")} hint={tv("shownToCustomers")}>
             <Input
               name="price"
               type="number"
@@ -886,7 +890,7 @@ function OfferModal({
               placeholder="12.95"
             />
           </Field>
-          <Field label="Coût de revient ($)" hint="Usage interne propriétaire">
+          <Field label={tv("costPrice")} hint={tv("internalUseOwnerOnly")}>
             <Input
               name="cost"
               type="number"
@@ -911,7 +915,7 @@ function OfferModal({
             )}
           >
             <div className="flex items-center gap-1.5">
-              <span>Marge brute estimée :</span>
+              <span>{tv("estimatedGrossMargin")}</span>
               <span className="font-mono font-bold">
                 {marginDollars >= 0 ? "+" : ""}
                 {formatCurrency(marginDollars)}
@@ -923,22 +927,22 @@ function OfferModal({
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Ce qui est inclus" hint="Un élément par ligne, optionnel">
+          <Field label={tv("whatIsIncluded")} hint={tv("oneItemPerLine")}>
             <textarea
               name="includedItems"
               defaultValue={offer?.includedItems?.join("\n")}
               rows={3}
               className="w-full rounded-lg border border-mv-border bg-mv-surface px-3 py-2 text-[13px] text-mv-ink placeholder:text-mv-ink-faint focus:border-mv-green focus:outline-none"
-              placeholder={"Entrée\nPlat principal\nCafé"}
+              placeholder={tv("includedPlaceholder")}
             />
           </Field>
-          <Field label="Ce qui n'est pas inclus" hint="Un élément par ligne, optionnel">
+          <Field label={tv("whatIsNotIncluded")} hint={tv("oneItemPerLine")}>
             <textarea
               name="excludedItems"
               defaultValue={offer?.excludedItems?.join("\n")}
               rows={3}
               className="w-full rounded-lg border border-mv-border bg-mv-surface px-3 py-2 text-[13px] text-mv-ink placeholder:text-mv-ink-faint focus:border-mv-green focus:outline-none"
-              placeholder={"Boissons alcoolisées\nDessert"}
+              placeholder={tv("excludedPlaceholder")}
             />
           </Field>
         </div>
@@ -965,7 +969,7 @@ function OfferModal({
         <Field label={tn("imageLabel")} hint={tn("imageHint")}>
           <MenuImageUpload restaurantId={restaurantId} scopeId={scopeId} currentUrl={imageUrl} bucket="offer-images" onUploaded={setImageUrl} />
         </Field>
-        <Field label="Vidéo de l'offre (MP4, WebM ou YouTube/Vimeo)" hint="Optionnel">
+        <Field label={tv("offerVideoMp4Webm")} hint={tv("optional")}>
           <VideoUploadWithUrl
             restaurantId={restaurantId}
             scopeId={scopeId}
@@ -1016,6 +1020,7 @@ function OfferRow({
   onEdit: (offer: Offer) => void;
   onPlayVideo?: (video: { url: string; title: string }) => void;
 }) {
+  const tv = useTranslations("menuView");
   const t = useTranslations("menu.offerRow");
   const tStatus = useTranslations("menu.offerStatus");
   const [pending, setPending] = useState(false);
@@ -1066,16 +1071,16 @@ function OfferRow({
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-[13px] font-semibold text-mv-ink">{offer.title}</span>
-            {offer.isBirthdaySpecial && <Badge tone="amber" size="xs">Anniversaire</Badge>}
+            {offer.isBirthdaySpecial && <Badge tone="amber" size="xs">{tv("birthday")}</Badge>}
             {offer.videoUrl && onPlayVideo && (
               <button
                 type="button"
                 onClick={() => onPlayVideo({ url: offer.videoUrl!, title: offer.title })}
                 className="inline-flex items-center gap-1 rounded-full bg-mv-green/10 px-2 py-0.5 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/20 transition-colors shrink-0"
-                title="Voir la vidéo de l'offre"
+                title={tv("watchTheOfferVideo")}
               >
                 <Play size={10} className="fill-current" />
-                Vidéo
+                {tv("videoShort")}
               </button>
             )}
           </div>
@@ -1142,6 +1147,7 @@ function MarginDriftPanel({
   canManage: boolean;
   onUpdated: (item: MenuItem) => void;
 }) {
+  const t = useTranslations("menuView");
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   if (items.length === 0) return null;
@@ -1154,7 +1160,7 @@ function MarginDriftPanel({
     try {
       const updated = await updateMenuItemAction(restaurantId, itemId, { active: false });
       if (updated) onUpdated(updated);
-      else notifyError("La mise à jour a échoué.");
+      else notifyError(t("theUpdateFailed"));
     } finally {
       setTogglingId(null);
     }
@@ -1165,9 +1171,9 @@ function MarginDriftPanel({
       tone="warning"
       title={
         <span className="flex items-center gap-1.5">
-          Dérive de marge
+          {t("marginDrift")}
           <HelperTooltip
-            content={`Plats dont le coût matière dépasse ${Math.round(MARGIN_DRIFT_FOOD_COST_PCT * 100)}% du prix de vente — la marge de ces plats s'est dégradée, sans qu'il soit question d'en changer le prix.`}
+            content={t("marginDriftTooltip", { pct: Math.round(MARGIN_DRIFT_FOOD_COST_PCT * 100) })}
           />
         </span>
       }
@@ -1179,8 +1185,7 @@ function MarginDriftPanel({
             <span className="font-medium text-mv-ink">{item.name}</span>
             <div className="flex items-center gap-2.5">
               <span className="text-mv-ink-faint">
-                coût matière {formatCurrency(item.foodCost)} ({Math.round((item.foodCostPct ?? 0) * 100)}% du prix{" "}
-                {formatCurrency(item.price)})
+                {t("foodCostLine", { cost: formatCurrency(item.foodCost), pct: Math.round((item.foodCostPct ?? 0) * 100), price: formatCurrency(item.price) })}
               </span>
               {canManage && (
                 <button
@@ -1188,7 +1193,7 @@ function MarginDriftPanel({
                   disabled={togglingId === item.id}
                   className="shrink-0 whitespace-nowrap rounded-md border border-mv-amber/30 px-2 py-1 text-[12px] font-semibold text-mv-amber transition-colors hover:bg-mv-amber-bg disabled:opacity-50"
                 >
-                  {togglingId === item.id ? "…" : "Retirer du menu"}
+                  {togglingId === item.id ? "…" : t("removeFromMenuShort")}
                 </button>
               )}
             </div>
@@ -1200,7 +1205,7 @@ function MarginDriftPanel({
           onClick={() => setShowAll((v) => !v)}
           className="mt-2.5 text-[12px] font-semibold text-mv-amber hover:underline"
         >
-          {showAll ? "Afficher moins" : `Voir les ${items.length - 3} autre(s)`}
+          {showAll ? t("showLess") : t("seeOthers", { count: items.length - 3 })}
         </button>
       )}
     </AlertBanner>
@@ -1216,6 +1221,7 @@ function MenuAiInsightsPanel({
   restaurantId: string | null;
   isPlatformAdminUser: boolean;
 }) {
+  const t = useTranslations("menuView");
   const [ideas, setIdeas] = useState<MenuInsightIdea[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -1232,7 +1238,7 @@ function MenuAiInsightsPanel({
       setLaunchedIndexes(new Set());
       if (data.message) setMessage(data.message);
     } catch {
-      setMessage("La génération IA a échoué — réessayez plus tard.");
+      setMessage(t("aiGenerationFailedTry"));
     } finally {
       setLoading(false);
     }
@@ -1255,9 +1261,9 @@ function MenuAiInsightsPanel({
       });
       if (campaign) {
         setLaunchedIndexes((prev) => new Set(prev).add(index));
-        toast.success("Campagne créée — à retrouver et ajuster dans Campagnes.");
+        toast.success(t("campaignCreatedFindAnd"));
       } else {
-        notifyError("La création de la campagne a échoué.");
+        notifyError(t("couldNotCreateThe"));
       }
     } finally {
       setLaunchingIndex(null);
@@ -1269,12 +1275,12 @@ function MenuAiInsightsPanel({
       <div className="mb-6 rounded-xl bg-mv-cream-soft px-4 py-3">
         <div className="mb-2 flex items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-mv-ink">
-            <Sparkles size={14} className="text-mv-green-dark" /> Idées de campagnes Flow AI
+            <Sparkles size={14} className="text-mv-green-dark" /> {t("flowAiIdeas")}
           </p>
-          <Badge tone="neutral">Bientôt disponible</Badge>
+          <Badge tone="neutral">{t("comingSoon")}</Badge>
         </div>
         <p className="text-[12px] text-mv-ink-faint">
-          Nous peaufinons votre copilote IA — cette carte sera bientôt fonctionnelle, en même temps que Flow AI.
+          {t("weArePolishingYour")}
         </p>
       </div>
     );
@@ -1284,19 +1290,18 @@ function MenuAiInsightsPanel({
     <div className="mb-6 rounded-xl bg-mv-cream-soft px-4 py-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-mv-ink">
-          <Sparkles size={14} className="text-mv-green-dark" /> Idées de campagnes Flow AI
+          <Sparkles size={14} className="text-mv-green-dark" /> {t("flowAiIdeas")}
         </p>
         <Button size="sm" variant="secondary" onClick={generate} disabled={loading}>
-          <Sparkles size={14} /> {loading ? "Analyse…" : "Générer des idées"}
+          <Sparkles size={14} /> {loading ? t("analyzing") : t("generateIdeas")}
         </Button>
       </div>
       {ideas === null ? (
         <p className="text-[12px] text-mv-ink-faint">
-          Analyse la rentabilité de vos plats et vos clients inactifs pour suggérer des campagnes de fidélisation —
-          jamais un changement de prix.
+          {t("ideasHint")}
         </p>
       ) : ideas.length === 0 ? (
-        <p className="text-[12px] text-mv-ink-faint">{message ?? "Rien à suggérer pour l'instant."}</p>
+        <p className="text-[12px] text-mv-ink-faint">{message ?? t("nothingToSuggestYet")}</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {ideas.map((idea, i) => (
@@ -1308,7 +1313,7 @@ function MenuAiInsightsPanel({
               <p className="mt-1 text-[12.5px] leading-snug text-mv-ink-soft">{idea.action}</p>
               {launchedIndexes.has(i) ? (
                 <p className="mv-check-pop mt-2.5 flex items-center gap-1.5 text-[12px] font-semibold text-mv-green-dark">
-                  <Check size={13} /> Campagne créée
+                  <Check size={13} /> {t("campaignCreated")}
                 </p>
               ) : (
                 <button
@@ -1316,7 +1321,7 @@ function MenuAiInsightsPanel({
                   disabled={launchingIndex === i}
                   className="mt-2.5 flex items-center gap-1.5 text-[12px] font-semibold text-mv-green-dark hover:underline disabled:opacity-50"
                 >
-                  <Megaphone size={13} /> {launchingIndex === i ? "Création…" : "Lancer cette campagne"}
+                  <Megaphone size={13} /> {launchingIndex === i ? t("creating") : t("launchCampaign")}
                 </button>
               )}
             </div>
@@ -1352,6 +1357,7 @@ export function MenuView({
   initialMealSuggestionsError?: boolean;
   isPlatformAdminUser?: boolean;
 }) {
+  const tv = useTranslations("menuView");
   const t = useTranslations("menu.page");
   const tq = useTranslations("menu.quadrant");
   const { role } = useApp();
@@ -1671,7 +1677,7 @@ export function MenuView({
                 </span>
                 <div>
                   <p className="text-[13px] font-semibold text-mv-ink">
-                    Vigilance stocks cuisine & préparation
+                    {tv("kitchenPrepStockWatch")}
                   </p>
                   <p className="text-[12px] text-mv-ink-soft">
                     {stockoutCount > 0 && (
@@ -1698,7 +1704,7 @@ export function MenuView({
                     : "border border-mv-border bg-mv-surface text-mv-ink hover:bg-mv-ink/5"
                 )}
               >
-                {stockFilter === "at_risk" ? "Afficher tous les plats" : "Filtrer les plats à risque"}
+                {stockFilter === "at_risk" ? tv("showAllDishes") : tv("filterAtRiskDishes")}
               </button>
             </div>
           )}
