@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -15,7 +17,8 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/Button";
 
-const NAV_TABS = [
+function buildNAV_TABS(t: (key: string) => string) {
+  return [
   {
     href: "/assistant",
     label: "Assistant",
@@ -26,21 +29,22 @@ const NAV_TABS = [
     href: "/assistant/agents",
     label: "Agents Store",
     icon: Store,
-    description: "Spécialistes métier & Création d'agents",
+    description: t("businessSpecialistsAgentCreation"),
   },
   {
     href: "/assistant/skills",
-    label: "Capacités (Skills)",
+    label: t("capabilitiesSkills"),
     icon: Zap,
-    description: "Registre des outils et actions automatisées",
+    description: t("registryOfToolsAnd"),
   },
   {
     href: "/assistant/intelligence",
-    label: "Intelligence Opérationnelle",
+    label: t("operationalIntelligence"),
     icon: BarChart3,
-    description: "Briefing du jour, alertes Prime Cost & audit",
+    description: t("dailyBriefingPrimeCost"),
   },
 ];
+}
 
 export function FlowAiHeaderNav({
   restaurantName,
@@ -53,6 +57,7 @@ export function FlowAiHeaderNav({
   activeSpecialistAvatar?: string;
   onToggleSidebar?: () => void;
 }) {
+  const t = useTranslations("flowAiHeader");
   const pathname = usePathname();
 
   return (
@@ -67,11 +72,11 @@ export function FlowAiHeaderNav({
                 className="flex items-center gap-1.5 text-[12px] font-medium text-mv-ink-soft hover:text-mv-ink px-2 py-1 rounded-lg hover:bg-mv-cream transition-colors"
               >
                 <ArrowLeft size={14} />
-                <span className="hidden sm:inline">Aperçu</span>
+                <span className="hidden sm:inline">{t("overview")}</span>
               </Link>
             }
           />
-          <TooltipContent>Retour au tableau de bord</TooltipContent>
+          <TooltipContent>{t("backToTheDashboard")}</TooltipContent>
         </Tooltip>
 
         <div className="h-4 w-px bg-mv-border" />
@@ -90,7 +95,7 @@ export function FlowAiHeaderNav({
                 </Button>
               }
             />
-            <TooltipContent>Masquer/Afficher le volet sessions (Cmd+B)</TooltipContent>
+            <TooltipContent>{t("hideShowTheSessions")}</TooltipContent>
           </Tooltip>
         )}
 
@@ -109,7 +114,7 @@ export function FlowAiHeaderNav({
 
       {/* ── Centre : Onglets de Navigation Flow AI ────────────────────────────── */}
       <nav className="flex items-center gap-1 bg-[#FAF7F0] p-1 rounded-xl border border-mv-border-soft">
-        {NAV_TABS.map((tab) => {
+        {buildNAV_TABS(t).map((tab) => {
           const Icon = tab.icon;
           const isExact = pathname.endsWith(tab.href);
           const isAssistantRoot =

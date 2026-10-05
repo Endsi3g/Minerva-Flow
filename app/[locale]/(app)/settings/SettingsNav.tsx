@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
@@ -13,19 +15,22 @@ const hrefByPage: Record<SettingsPage, string> = {
   apparence: "/settings/apparence",
 };
 
-const labelByPage: Record<SettingsPage, { label: string; description: string }> = {
-  integrations: { label: "Intégrations", description: "Caisses, paiements et plateformes connectées." },
-  alertes: { label: "Règles d'alertes", description: "Seuils automatiques de détection et notifications." },
-  parrainage: { label: "Parrainage", description: "Programmes de recommandation clients." },
-  securite: { label: "Sécurité", description: "Appareils connectés et sessions actives." },
-  apparence: { label: "Apparence", description: "Thème clair, sombre ou système." },
+function buildLabelByPage(t: (key: string) => string): Record<SettingsPage, { label: string; description: string }> {
+  return {
+  integrations: { label: t("integrations"), description: t("connectedRegistersPaymentsAnd") },
+  alertes: { label: t("alertRules"), description: t("automaticDetectionThresholdsAnd") },
+  parrainage: { label: t("referral"), description: t("customerReferralPrograms") },
+  securite: { label: t("security"), description: t("connectedDevicesAndActive") },
+  apparence: { label: t("appearance"), description: t("lightDarkOrSystem") },
 };
+}
 
 export function SettingsNav({ active }: { active: SettingsPage }) {
+  const t = useTranslations("settingsNav");
   const pages: SettingsPage[] = ["integrations", "alertes", "parrainage", "securite", "apparence"];
 
   return (
-    <nav aria-label="Sections des paramètres" className="mb-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+    <nav aria-label={t("settingsSections")} className="mb-6 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
       {pages.map((page) => (
         <Link
           key={page}
@@ -38,8 +43,8 @@ export function SettingsNav({ active }: { active: SettingsPage }) {
               : "border-mv-border-soft bg-mv-surface text-mv-ink-soft hover:bg-mv-cream-soft hover:text-mv-ink"
           )}
         >
-          <span className="block text-[12.5px] font-semibold">{labelByPage[page].label}</span>
-          <span className="mt-1 block text-[12px] leading-relaxed text-mv-ink-faint">{labelByPage[page].description}</span>
+          <span className="block text-[12.5px] font-semibold">{buildLabelByPage(t)[page].label}</span>
+          <span className="mt-1 block text-[12px] leading-relaxed text-mv-ink-faint">{buildLabelByPage(t)[page].description}</span>
         </Link>
       ))}
     </nav>

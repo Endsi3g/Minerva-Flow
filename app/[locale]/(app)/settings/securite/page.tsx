@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
 import { EditorialLoadingState } from "@/components/ui/EditorialLoadingState";
@@ -24,9 +24,10 @@ const deviceIcon: Record<string, typeof Monitor> = {
 };
 
 export default function SettingsSecuritePage() {
+  const t = useTranslations("securityPage");
   return (
     <div>
-      <PageHeader eyebrow="Configuration" title="Sécurité" />
+      <PageHeader eyebrow="Configuration" title={t("security")} />
       <SettingsNav active="securite" />
       <SecuritySessions />
     </div>
@@ -34,6 +35,7 @@ export default function SettingsSecuritePage() {
 }
 
 function SecuritySessions() {
+  const t = useTranslations("securityPage");
   const locale = useLocale();
   const [sessions, setSessions] = useState<DeviceSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,18 +58,18 @@ function SecuritySessions() {
     if (!toRevoke) return;
     const ok = await revokeSessionAction(toRevoke.id);
     if (ok) {
-      toast.success("Appareil déconnecté.");
+      toast.success(t("deviceSignedOut"));
       setSessions((prev) => prev.filter((s) => s.id !== toRevoke.id));
     } else {
-      toast.error("La déconnexion de cet appareil a échoué.");
+      toast.error(t("couldNotSignOut"));
     }
   }
 
   if (loading) {
     return (
       <EditorialLoadingState
-        title="Détection des appareils connectés…"
-        subtitle="Recherche des sessions actives et des autorisations de sécurité."
+        title={t("detectingConnectedDevices")}
+        subtitle={t("lookingForActiveSessions")}
         rows={2}
       />
     );
@@ -75,10 +77,8 @@ function SecuritySessions() {
 
   return (
     <div className="space-y-4">
-      <AlertBanner tone="info" title="Vos appareils connectés">
-        Plusieurs appareils connectés en même temps, c&apos;est normal (téléphone, ordinateur du resto, etc.) — ceci
-        sert surtout à repérer une connexion qui ne vous appartient pas et à la déconnecter. La déconnexion prend
-        effet dans les minutes qui suivent, pas instantanément.
+      <AlertBanner tone="info" title={t("yourConnectedDevices")}>
+        {t("severalDevicesSignedIn")}
       </AlertBanner>
       <div className="space-y-3">
         {sessions.map((s) => {
@@ -127,9 +127,9 @@ function SecuritySessions() {
       <ConfirmDestructiveModal
         open={Boolean(toRevoke)}
         onOpenChange={(open) => !open && setToRevoke(null)}
-        title="Déconnecter cet appareil ?"
+        title={t("signOutThisDevice")}
         description={`${toRevoke?.device ?? "Cet appareil"}${toRevoke?.browser ? ` — ${toRevoke.browser}` : ""} sera déconnecté de votre compte. Si c'est bien vous, il vous suffira de vous reconnecter.`}
-        actionLabel="Déconnecter"
+        actionLabel={t("signOut")}
         onConfirm={handleRevoke}
       />
     </div>

@@ -38,6 +38,7 @@ function toActivityLogEntry(row: ActivityLogRow, actorName: string): ActivityLog
 }
 
 function AvatarUploader({ profile }: { profile: MyProfile }) {
+  const t = useTranslations("profileView");
   const { updateAuthUser } = useApp();
   const inputRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
@@ -47,7 +48,7 @@ function AvatarUploader({ profile }: { profile: MyProfile }) {
     onUploaded: (url) => {
       setAvatarUrl(url);
       updateAuthUser({ avatarUrl: url });
-      toast.success("Photo de profil mise à jour.");
+      toast.success(t("profilePhotoUpdated"));
     },
   });
 
@@ -89,6 +90,7 @@ function AvatarUploader({ profile }: { profile: MyProfile }) {
 }
 
 function NameEditor({ profile }: { profile: MyProfile }) {
+  const t = useTranslations("profileView");
   const { updateAuthUser } = useApp();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(profile.fullName);
@@ -111,7 +113,7 @@ function NameEditor({ profile }: { profile: MyProfile }) {
     if (result.ok) {
       updateAuthUser({ fullName: trimmed });
       setEditing(false);
-      toast.success("Nom mis à jour.");
+      toast.success(t("nameUpdated"));
     } else {
       toast.error(result.error);
     }
@@ -231,6 +233,7 @@ export function ProfileView({
   role: Role | null;
   activity: ActivityLogEntry[];
 }) {
+  const tv = useTranslations("profileView");
   const locale = useLocale();
   const t = useTranslations("profile");
   const [activity, setActivity] = useState<ActivityLogEntry[]>(initialActivity);
@@ -261,7 +264,7 @@ export function ProfileView({
         <PageHeader eyebrow="Minerva Flow" title={t("title")} />
         <Card>
           <p className="text-[13px] text-mv-ink-soft">
-            Vous devez être connecté pour voir votre profil.
+            {tv("youMustBeSigned")}
           </p>
         </Card>
       </div>
@@ -297,12 +300,12 @@ export function ProfileView({
         <Card>
           <CardHeader
             eyebrow="Historique"
-            title="Activité"
-            description="Vos dernières actions dans Minerva Flow."
+            title={tv("activity")}
+            description={tv("yourLatestActionsIn")}
           />
           {activity.length === 0 ? (
             <p className="text-[12.5px] text-mv-ink-faint">
-              Aucune activité enregistrée pour l&apos;instant.
+              {tv("noActivityRecordedYet")}
             </p>
           ) : (
             <div>
@@ -331,7 +334,7 @@ export function ProfileView({
                     size="sm"
                     onClick={() => setShowAllActivities(!showAllActivities)}
                   >
-                    {showAllActivities ? "Réduire l'historique" : `Afficher tout (${activity.length})`}
+                    {showAllActivities ? tv("collapseTheHistory") : `Afficher tout (${activity.length})`}
                   </Button>
                 </div>
               )}
@@ -339,7 +342,7 @@ export function ProfileView({
           )}
         </Card>
 
-        {role && <RolePermissionsCard eyebrow="Capacités" highlightRole={role} />}
+        {role && <RolePermissionsCard eyebrow={tv("capabilities")} highlightRole={role} />}
 
         <DeleteAccountCard />
       </div>
