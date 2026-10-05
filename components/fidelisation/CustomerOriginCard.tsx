@@ -23,8 +23,7 @@ function buildSOURCE_LABELS(t: (key: string) => string): Record<string, string> 
 };
 }
 
-function getSourceLabel(channel: string): string {
-  const t = useTranslations("customerOrigin");
+function getSourceLabel(channel: string, t: (key: string, values?: Record<string, string | number>) => string): string {
   const [kind, value] = channel.split(":", 2);
   if (kind === "signup") {
     const signupLabels: Record<string, string> = {
@@ -108,7 +107,7 @@ export function CustomerOriginCard({
             <div className="space-y-2">
               {sortedSources.map((source) => (
                 <div key={source.channel} className="flex items-center justify-between gap-3 text-[12.5px]">
-                  <span className="truncate text-mv-ink-soft">{getSourceLabel(source.channel)}</span>
+                  <span className="truncate text-mv-ink-soft">{getSourceLabel(source.channel, t)}</span>
                   <span className="font-semibold tabular-nums text-mv-ink">{source.count}</span>
                 </div>
               ))}
