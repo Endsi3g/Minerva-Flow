@@ -1,3 +1,5 @@
+import { getLocalPhoneDigits } from "@/lib/phone";
+
 /**
  * Pure payload shaping for a Google Wallet "save" JWT — no env reads, no
  * secrets, so it's directly unit-testable. google-wallet.ts (server-only)
@@ -39,8 +41,9 @@ export function buildGoogleLoyaltyPayload(input: {
     reviewStatus: "UNDER_REVIEW",
   };
 
+  // Local digits (10 for North America): what the counter types to find a guest.
   const barcodeValue = input.customerPhone
-    ? input.customerPhone.replace(/\D/g, "")
+    ? getLocalPhoneDigits(input.customerPhone)
     : (input.pairingCode || input.portalUrl);
 
   const barcodeAltText = input.customerPhone

@@ -51,7 +51,7 @@ describe("buildAppleLoyaltyPass", () => {
     const { buildAppleLoyaltyPass } = await import("../apple-wallet");
     const files = readZip(
       await buildAppleLoyaltyPass({
-        customerId: "c1", customerName: "Client Test", customerPhone: "(514) 555-0100",
+        customerId: "c1", customerName: "Client Test", customerPhone: "+15145550100",
         restaurantName: "Minerva Flow — Démo", points: 255, tierLabel: "Privilégié", portalUrl: "https://www.minervaflow.app/portal",
       })
     );

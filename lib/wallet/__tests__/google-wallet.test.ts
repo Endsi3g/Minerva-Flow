@@ -111,4 +111,13 @@ describe("buildGoogleLoyaltyPayload", () => {
     expect(barcode.value).toBe("5145550100");
     expect(barcode.alternateText).toBe("(514) 555-0100");
   });
+
+  it("drops the country code so the QR matches what staff type (stored as +1…)", () => {
+    const payload = buildGoogleLoyaltyPayload({
+      issuerId: "1", serviceAccountEmail: "a@b.iam.gserviceaccount.com", appUrl: "https://www.minervaflow.app",
+      customerId: "c1", customerName: "N", customerPhone: "+15145550100", restaurantId: "r1", restaurantName: "R",
+      points: 1, tierLabel: "T", portalUrl: "https://www.minervaflow.app/portal", brandColorHex: "#167f5b",
+    });
+    expect(payload.payload.loyaltyObjects[0].barcode.value).toBe("5145550100");
+  });
 });

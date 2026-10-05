@@ -1,6 +1,7 @@
 import "server-only";
 import { PKPass } from "passkit-generator";
 import { applePassImageBuffers } from "./apple-pass-images";
+import { getLocalPhoneDigits } from "@/lib/phone";
 
 function certificate(value: string): string {
   const normalized = value.replace(/\\n/g, "\n").trim();
@@ -46,7 +47,7 @@ export function buildAppleLoyaltyPass(input: {
   pass.backFields.push({ key: "restaurant", label: "ÉTABLISSEMENT", value: input.restaurantName });
   pass.backFields.push({ key: "portal", label: "VOTRE ESPACE", value: input.portalUrl });
   // The counter identifies a guest by phone number; fall back to the customer id.
-  const phoneDigits = input.customerPhone ? input.customerPhone.replace(/\D/g, "") : "";
+  const phoneDigits = getLocalPhoneDigits(input.customerPhone);
   pass.setBarcodes({ format: "PKBarcodeFormatQR", message: phoneDigits || input.customerId, messageEncoding: "iso-8859-1" });
   return pass.getAsBuffer();
 }
