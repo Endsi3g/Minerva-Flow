@@ -29,11 +29,12 @@ export async function notifyOrderReadyById(
   if (!restaurantRow || !orderRow) return { channels: [] };
 
   const order = orderRow as { guest_name: string; guest_phone: string | null; customer_id: string | null };
-  let customer: { email: string | null; userId: string | null; phone: string | null; name: string } = {
+  let customer: { email: string | null; userId: string | null; phone: string | null; name: string; customerId?: string | null } = {
     email: null,
     userId: null,
     phone: order.guest_phone,
     name: order.guest_name,
+    customerId: order.customer_id,
   };
   if (order.customer_id) {
     const { data: customerRow } = await admin
@@ -43,7 +44,7 @@ export async function notifyOrderReadyById(
       .maybeSingle();
     if (customerRow) {
       const row = customerRow as { email: string | null; user_id: string | null; phone: string | null; name: string };
-      customer = { email: row.email, userId: row.user_id, phone: row.phone ?? order.guest_phone, name: row.name };
+      customer = { email: row.email, userId: row.user_id, phone: row.phone ?? order.guest_phone, name: row.name, customerId: order.customer_id };
     }
   }
 

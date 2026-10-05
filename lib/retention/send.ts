@@ -4,6 +4,7 @@ import { sendPushToUsers } from "@/lib/push/send";
 import { sendSms, isSmsConfigured } from "@/lib/sms/send";
 import type { Customer } from "@/lib/types";
 import { pickVariant } from "@/lib/retention/frequent";
+import { getCustomerLanguage, type CustomerLanguage } from "@/lib/i18n/customer-language";
 
 export type RetentionTrigger =
   | "inactivity"
@@ -33,9 +34,38 @@ export function frequentPushCopy(
   firstName: string,
   seed: string,
   now: Date,
-  extra?: { points: number; rewardName: string }
+  extra?: { points: number; rewardName: string },
+  language: CustomerLanguage = "fr"
 ): { title: string; body: string } | null {
   const points = extra?.points ?? 0;
+  if (language === "en") {
+    const rewardEn = extra?.rewardName ?? "a reward";
+    switch (trigger) {
+      case "reward_available":
+        return pickVariant(
+          [
+            { title: `${points} points to redeem`, body: `${firstName}, “${rewardEn}” is waiting for you at ${restaurantName}.` },
+            { title: `Your reward is ready`, body: `With ${points} pts, you can get “${rewardEn}”.` },
+            { title: `${restaurantName} thought of you`, body: `“${rewardEn}” is within reach: ${points} points available.` },
+          ],
+          seed,
+          now
+        );
+      case "inactivity":
+      case "value_drift":
+        return pickVariant(
+          [
+            { title: `${restaurantName} is waiting for you`, body: `${firstName}, come by: your loyalty card is ready.` },
+            { title: `We saved your spot`, body: `A visit to ${restaurantName} moves your points forward, ${firstName}.` },
+            { title: `In the mood for a good time?`, body: `${restaurantName} would love to see you again.` },
+          ],
+          seed,
+          now
+        );
+      default:
+        return null;
+    }
+  }
   const reward = extra?.rewardName ?? "une récompense";
   switch (trigger) {
     case "reward_available":
@@ -68,10 +98,12 @@ export function buildRetentionMessage(
   trigger: RetentionTrigger,
   restaurantName: string,
   customerName: string,
-  extra?: { points: number; rewardName: string }
+  extra?: { points: number; rewardName: string },
+  language: CustomerLanguage = "fr"
 ) {
   const firstName = customerName.trim().split(/\s+/)[0] || customerName;
   const p = (text: string) => `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">${text}</p>`;
+  if (language === "en") return buildRetentionMessageEn(trigger, restaurantName, firstName, p, extra);
 
   switch (trigger) {
     case "inactivity":
@@ -155,6 +187,77 @@ export function buildRetentionMessage(
   }
 }
 
+function buildRetentionMessageEn(
+  trigger: RetentionTrigger,
+  restaurantName: string,
+  firstName: string,
+  p: (text: string) => string,
+  extra?: { points: number; rewardName: string }
+) {
+  const points = extra?.points ?? 0;
+  const rewardName = extra?.rewardName ?? "a reward";
+  switch (trigger) {
+    case "inactivity":
+      return {
+        subject: `${firstName}, your table is waiting at ${restaurantName}`,
+        bodyHtml: p(`Hello ${firstName},`) + p(`It has been a while since we saw you at ${restaurantName}. Your favorite dish is waiting. Come see us soon!`),
+        smsBody: `${restaurantName}: ${firstName}, it has been a while! Come see us soon.`,
+        pushTitle: `${restaurantName} is waiting for you`,
+        pushBody: `It has been a while, ${firstName}. Come see us!`,
+      };
+    case "birthday":
+      return {
+        subject: `Happy birthday ${firstName}: a gift is waiting at ${restaurantName}`,
+        bodyHtml: p(`Happy birthday, ${firstName}!`) + p(`The whole ${restaurantName} team wishes you a lovely day. Come by, we have a surprise for you.`),
+        smsBody: `${restaurantName}: Happy birthday ${firstName}! A surprise is waiting for you in the dining room.`,
+        pushTitle: `Happy birthday ${firstName}`,
+        pushBody: `${restaurantName} has a surprise for you.`,
+      };
+    case "value_drift":
+      return {
+        subject: `${firstName}, we miss you at ${restaurantName}`,
+        bodyHtml: p(`Hello ${firstName},`) + p(`You are one of our most loyal customers and we noticed your visits have become less frequent. We would love to see you again soon.`),
+        smsBody: `${restaurantName}: ${firstName}, we miss you! Come see us soon.`,
+        pushTitle: `We miss you, ${firstName}`,
+        pushBody: `${restaurantName} would love to see you again soon.`,
+      };
+    case "reward_available":
+      return {
+        subject: `${firstName}, you have ${points} points to redeem at ${restaurantName}`,
+        bodyHtml: p(`Hello ${firstName},`) + p(`You have ${points} loyalty points at ${restaurantName}, enough to redeem “${rewardName}”. Come and claim it!`),
+        smsBody: `${restaurantName}: ${firstName}, you have ${points} pts, enough for “${rewardName}”. Come redeem them!`,
+        pushTitle: `${points} points to redeem!`,
+        pushBody: `You have enough for “${rewardName}” at ${restaurantName}.`,
+      };
+    case "onboarding_j1":
+      return {
+        subject: `Thank you for your first order at ${restaurantName}!`,
+        bodyHtml: p(`Hello ${firstName},`) + p(`Thank you for ordering at ${restaurantName}. We hope you enjoyed it! See you at your next visit.`),
+        smsBody: `${restaurantName}: Thank you for your first order, ${firstName}! See you soon.`,
+        pushTitle: `Thank you, ${firstName}!`,
+        pushBody: `${restaurantName} hopes to see you again soon.`,
+      };
+    case "onboarding_j3":
+      return {
+        subject: `${firstName}, we hope to see you again soon at ${restaurantName}`,
+        bodyHtml: p(`Hello ${firstName},`) + p(`It has been a few days since your first order at ${restaurantName}. We would love to see you again!`),
+        smsBody: `${restaurantName}: ${firstName}, we hope to see you again soon!`,
+        pushTitle: `${restaurantName} is thinking of you`,
+        pushBody: `Tempted by a second visit, ${firstName}?`,
+      };
+    case "onboarding_final":
+      return {
+        subject: `${firstName}, one last offer from ${restaurantName} before we say goodbye`,
+        bodyHtml:
+          p(`Hello ${firstName},`) +
+          p(`We have not seen you since your first order at ${restaurantName}. No worries! Know that from ${points} loyalty points, you could get “${rewardName}”. We hope to see you again someday.`),
+        smsBody: `${restaurantName}: ${firstName}, from ${points} pts you could get “${rewardName}”. We hope to see you again!`,
+        pushTitle: `One last offer from ${restaurantName}`,
+        pushBody: `From ${points} pts, get “${rewardName}”.`,
+      };
+  }
+}
+
 /**
  * Tries email, then push, then SMS — first one that succeeds wins, same
  * one-channel-per-nudge rule the cron uses. Logs the send to
@@ -170,14 +273,15 @@ export async function sendRetentionNudge(
   extra?: { points: number; rewardName: string },
   options?: { frequent?: boolean; now?: Date }
 ): Promise<RetentionChannel | null> {
-  const msg = buildRetentionMessage(trigger, restaurantName, customer.name, extra);
+  const language = await getCustomerLanguage(admin, customer.id);
+  const msg = buildRetentionMessage(trigger, restaurantName, customer.name, extra, language);
   let channel: RetentionChannel | null = null;
 
   // "Fréquent" is a push-only level: never email or text someone daily.
   if (options?.frequent) {
     if (!customer.userId) return null;
     const firstName = customer.name.trim().split(/\s+/)[0] || customer.name;
-    const copy = frequentPushCopy(trigger, restaurantName, firstName, customer.id, options.now ?? new Date(), extra);
+    const copy = frequentPushCopy(trigger, restaurantName, firstName, customer.id, options.now ?? new Date(), extra, language);
     await sendPushToUsers(
       [customer.userId],
       { title: copy?.title ?? msg.pushTitle, body: copy?.body ?? msg.pushBody, link: "/portal" },
@@ -190,7 +294,7 @@ export async function sendRetentionNudge(
   }
 
   if (customer.email) {
-    const result = await sendRetentionEmail({ to: customer.email, subject: msg.subject, bodyHtml: msg.bodyHtml });
+    const result = await sendRetentionEmail({ to: customer.email, subject: msg.subject, bodyHtml: msg.bodyHtml, language });
     if (result.ok) channel = "email";
   }
   if (!channel && customer.userId) {

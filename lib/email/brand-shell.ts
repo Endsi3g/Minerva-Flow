@@ -7,6 +7,8 @@ export function renderMinervaEmail(input: {
   eyebrow?: string;
   title?: string;
   footer?: string;
+  /** Language of the email; French by default. */
+  language?: "fr" | "en";
 }): string {
   const brandTitle = input.title
     ? `<h1 style="margin:0 0 14px;color:#173d2d;font-family:'New York',Georgia,serif;font-size:28px;font-weight:500;line-height:1.2">${input.title}</h1>`
@@ -17,9 +19,14 @@ export function renderMinervaEmail(input: {
   const cta = input.ctaLabel && input.ctaUrl
     ? `<tr><td align="center" style="padding:5px 32px 30px"><a href="${input.ctaUrl}" style="display:inline-block;padding:13px 24px;border-radius:999px;background-color:#167f5b;color:#fffefa;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:700">${input.ctaLabel} &rarr;</a></td></tr>`
     : "";
-  const footer = input.footer ?? "Minerva Flow · Minerva Technologies Inc. · Montréal (Québec), Canada";
+  const language = input.language === "en" ? "en" : "fr";
+  const footer =
+    input.footer ??
+    (language === "en"
+      ? "Minerva Flow · Minerva Technologies Inc. · Montréal, Québec, Canada"
+      : "Minerva Flow · Minerva Technologies Inc. · Montréal (Québec), Canada");
   return `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:28px 14px;background-color:#f5f1e6;color:#25342b;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;margin:0 auto;background-color:#fffefa;border:1px solid #e6e0d0;border-radius:18px;border-collapse:separate;overflow:hidden">
     <tr><td align="center" style="padding:30px 24px 15px"><img src="${LOGO_URL}" width="48" height="48" alt="Minerva Flow" border="0" style="display:block;width:48px;height:48px;border:0;border-radius:14px"></td></tr>

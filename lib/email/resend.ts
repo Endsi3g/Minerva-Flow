@@ -19,8 +19,8 @@ export {
 
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
 
-function emailShell(bodyHtml: string, ctaLabel: string, ctaUrl: string): string {
-  return renderMinervaEmail({ bodyHtml, ctaLabel, ctaUrl });
+function emailShell(bodyHtml: string, ctaLabel: string, ctaUrl: string, language: "fr" | "en" = "fr"): string {
+  return renderMinervaEmail({ bodyHtml, ctaLabel, ctaUrl, language });
 }
 
 const AUTH_ACTION_COPY: Record<string, { subject: string; body: string; cta: string }> = {
@@ -132,8 +132,18 @@ export async function sendOrderStatusEmail(input: {
   status: "soumise" | "confirmee" | "en_preparation" | "prete" | "servie" | "annulee";
   total: number;
   cancellationReason?: string | null;
+  language?: "fr" | "en";
 }): Promise<{ ok: boolean }> {
   if (!resend) return { ok: false };
+  const en = input.language === "en";
+  const statusCopyEn: Record<typeof input.status, { label: string; explanation: string }> = {
+    soumise: { label: "Received", explanation: "Thank you! The restaurant is looking at your order and will confirm the next step shortly. If an item is unavailable, the team will write to you or cancel the order at no charge." },
+    confirmee: { label: "Confirmed!", explanation: "Your meal will be ready soon. Come at the planned time; payment is made on site. If something comes up, the restaurant will contact you or cancel the order at no charge." },
+    en_preparation: { label: "Being prepared", explanation: "The team is preparing your meal with care. We will let you know as soon as it is ready." },
+    prete: { label: "Ready for you", explanation: "Your order is waiting for you at the restaurant. You can pick it up at the planned time and pay on site." },
+    servie: { label: "Enjoy your meal!", explanation: "Your order is complete. Thank you for choosing this restaurant!" },
+    annulee: { label: "Order cancelled at no charge", explanation: `A small hiccup: the restaurant will not be able to prepare this order. You will not be asked to pay.${input.cancellationReason ? ` Reason: ${input.cancellationReason}` : ""} You can contact the team if you would like to discuss it.` },
+  };
   const statusCopy: Record<typeof input.status, { label: string; explanation: string }> = {
     soumise: { label: "Bien reçue", explanation: "Merci ! Le restaurant regarde votre commande et vous confirme la suite bientôt. Si un article n’est pas disponible, l’équipe vous écrira ou annulera la commande sans frais." },
     confirmee: { label: "C’est confirmé !", explanation: "Votre repas sera bientôt prêt. Venez à l’heure prévue; le paiement se fera sur place. En cas d’imprévu, le restaurant vous contactera ou annulera la commande sans frais." },
@@ -142,15 +152,18 @@ export async function sendOrderStatusEmail(input: {
     servie: { label: "Bon appétit !", explanation: "Votre commande est terminée. Merci d’avoir choisi ce restaurant !" },
     annulee: { label: "Commande annulée sans frais", explanation: `Petit imprévu : le restaurant ne pourra pas préparer cette commande. Aucun paiement ne vous sera demandé.${input.cancellationReason ? ` Motif : ${input.cancellationReason}` : ""} Vous pouvez contacter l’équipe si vous souhaitez en discuter.` },
   };
-  const content = statusCopy[input.status];
+  const content = (en ? statusCopyEn : statusCopy)[input.status];
   const orderReference = input.orderId.slice(0, 8).toUpperCase();
-  const body = `<p>Hey ! Voici une petite nouvelle au sujet de votre commande chez <strong>${escapeHtml(input.restaurantName)}</strong>.</p><div style="padding:18px;border-radius:16px;background:#f5f1e6;margin:18px 0"><p style="margin:0;color:#167f5b;font-weight:700">${content.label}</p><p style="margin:8px 0 0">${escapeHtml(content.explanation)}</p><p style="margin:10px 0 0;color:#667">Commande #${orderReference} · ${new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(input.total)}</p></div><p>Vous pouvez retrouver les nouvelles de votre commande dans Flow Direct. À bientôt !</p>`;
+  const money = new Intl.NumberFormat(en ? "en-CA" : "fr-CA", { style: "currency", currency: "CAD" }).format(input.total);
+  const body = en
+    ? `<p>Hey! Here is a quick update about your order at <strong>${escapeHtml(input.restaurantName)}</strong>.</p><div style="padding:18px;border-radius:16px;background:#f5f1e6;margin:18px 0"><p style="margin:0;color:#167f5b;font-weight:700">${content.label}</p><p style="margin:8px 0 0">${escapeHtml(content.explanation)}</p><p style="margin:10px 0 0;color:#667">Order #${orderReference} · ${money}</p></div><p>You can follow your order in Flow Direct. See you soon!</p>`
+    : `<p>Hey ! Voici une petite nouvelle au sujet de votre commande chez <strong>${escapeHtml(input.restaurantName)}</strong>.</p><div style="padding:18px;border-radius:16px;background:#f5f1e6;margin:18px 0"><p style="margin:0;color:#167f5b;font-weight:700">${content.label}</p><p style="margin:8px 0 0">${escapeHtml(content.explanation)}</p><p style="margin:10px 0 0;color:#667">Commande #${orderReference} · ${money}</p></div><p>Vous pouvez retrouver les nouvelles de votre commande dans Flow Direct. À bientôt !</p>`;
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: input.to,
     replyTo: REPLY_TO,
-    subject: `Commande ${orderReference} — ${content.label} · Minerva Flow`,
-    html: emailShell(body, "Consulter Flow Direct", APP_ORIGIN),
+    subject: `${en ? "Order" : "Commande"} ${orderReference} — ${content.label} · Minerva Flow`,
+    html: emailShell(body, en ? "Open Flow Direct" : "Consulter Flow Direct", APP_ORIGIN, en ? "en" : "fr"),
   });
   return { ok: !error };
 }
@@ -277,10 +290,12 @@ export async function sendRetentionEmail({
   to,
   subject,
   bodyHtml,
+  language = "fr",
 }: {
   to: string;
   subject: string;
   bodyHtml: string;
+  language?: "fr" | "en";
 }): Promise<{ ok: boolean }> {
   if (!resend) return { ok: false };
 
@@ -288,7 +303,7 @@ export async function sendRetentionEmail({
     from: FROM_EMAIL,
     to,
     subject,
-    html: emailShell(bodyHtml, "Voir mes points", `${APP_ORIGIN}/portal`),
+    html: emailShell(bodyHtml, language === "en" ? "View my points" : "Voir mes points", `${APP_ORIGIN}${language === "en" ? "/en" : ""}/portal`, language),
   });
   return { ok: !error };
 }
@@ -304,12 +319,14 @@ export async function sendTransactionalEmail({
   bodyHtml,
   ctaLabel,
   ctaUrl,
+  language = "fr",
 }: {
   to: string;
   subject: string;
   bodyHtml: string;
   ctaLabel: string;
   ctaUrl: string;
+  language?: "fr" | "en";
 }): Promise<{ ok: boolean }> {
   if (!resend) return { ok: false };
 
@@ -317,7 +334,7 @@ export async function sendTransactionalEmail({
     from: FROM_EMAIL,
     to,
     subject,
-    html: emailShell(bodyHtml, ctaLabel, ctaUrl),
+    html: emailShell(bodyHtml, ctaLabel, ctaUrl, language),
   });
   return { ok: !error };
 }

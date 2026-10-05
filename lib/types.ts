@@ -702,6 +702,8 @@ export type Customer = {
   favoriteOfferIds: string[];
   favoriteMenuItemIds: string[];
   notificationFrequency: "all" | "important_only" | "frequent";
+  /** Language of emails and notifications sent to this customer. */
+  preferredLanguage: "fr" | "en";
   posCustomerId?: string | null;
 };
 

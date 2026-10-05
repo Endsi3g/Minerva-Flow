@@ -148,7 +148,7 @@ export async function getLoyaltyShareByToken(token: string): Promise<PublicLoyal
  */
 export async function joinLoyaltyProgram(
   restaurantId: string,
-  input: { name: string; email: string; marketingConsent: boolean; birthday?: string | null }
+  input: { name: string; email: string; marketingConsent: boolean; birthday?: string | null; language?: "fr" | "en" }
 ): Promise<{ ok: boolean; alreadyMember: boolean }> {
   const admin = createAdminClient();
   const email = input.email.trim().toLowerCase();
@@ -170,6 +170,7 @@ export async function joinLoyaltyProgram(
       consent_source: input.marketingConsent ? "qr_join" : null,
       consent_at: input.marketingConsent ? new Date().toISOString() : null,
       birthday: input.birthday ?? null,
+      preferred_language: input.language === "en" ? "en" : "fr",
     })
     .select("id")
     .single();

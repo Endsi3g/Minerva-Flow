@@ -2,6 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendOrderStatusEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
+import { parseCustomerLanguage, type CustomerLanguage } from "@/lib/i18n/customer-language";
 import type { OrderStatus } from "@/lib/types";
 
 const COPY: Record<OrderStatus, { title: string; body: string }> = {
@@ -13,6 +14,15 @@ const COPY: Record<OrderStatus, { title: string; body: string }> = {
   annulee: { title: "Commande annulée sans frais", body: "Petit imprévu : le restaurant ne pourra pas préparer cette commande. Aucun paiement ne vous sera demandé." },
 };
 
+const COPY_EN: Record<OrderStatus, { title: string; body: string }> = {
+  soumise: { title: "Order received", body: "Hey! The restaurant is looking at your order and will confirm the next step shortly." },
+  confirmee: { title: "It's confirmed!", body: "Your meal will be ready soon. You will pay on site at the planned time." },
+  en_preparation: { title: "Your meal is being prepared", body: "The team is cooking your order and will let you know as soon as it is ready." },
+  prete: { title: "Good news, it's ready!", body: "Your meal is waiting for you at the restaurant at the planned time." },
+  servie: { title: "Enjoy your meal!", body: "Thank you for choosing this restaurant. See you again soon!" },
+  annulee: { title: "Order cancelled at no charge", body: "A small hiccup: the restaurant will not be able to prepare this order. You will not be asked to pay." },
+};
+
 export async function notifyOrderStatusCustomer(restaurantId: string, orderId: string, status: OrderStatus, cancellationReason?: string) {
   const admin = createAdminClient();
   const [{ data: order }, { data: restaurant }] = await Promise.all([
@@ -20,17 +30,18 @@ export async function notifyOrderStatusCustomer(restaurantId: string, orderId: s
     admin.from("restaurants").select("name").eq("id", restaurantId).maybeSingle(),
   ]);
   if (!order || !restaurant) return;
-  let customer: { email: string | null; userId: string | null } = { email: null, userId: null };
+  let customer: { email: string | null; userId: string | null; language: CustomerLanguage } = { email: null, userId: null, language: "fr" };
   if (order.customer_id) {
-    const { data } = await admin.from("customers").select("email, user_id").eq("id", order.customer_id).maybeSingle();
-    if (data) customer = { email: data.email, userId: data.user_id };
+    const { data } = await admin.from("customers").select("email, user_id, preferred_language").eq("id", order.customer_id).maybeSingle();
+    if (data) customer = { email: data.email, userId: data.user_id, language: parseCustomerLanguage(data.preferred_language) };
   }
-  const base = COPY[status];
+  const en = customer.language === "en";
+  const base = (en ? COPY_EN : COPY)[status];
   const message = status === "annulee" && cancellationReason
-    ? { ...base, body: `${base.body.replace(" Aucun paiement", ` ${cancellationReason}. Aucun paiement`)}` }
+    ? { ...base, body: en ? base.body.replace(" You will not", ` ${cancellationReason}. You will not`) : base.body.replace(" Aucun paiement", ` ${cancellationReason}. Aucun paiement`) }
     : base;
   if (customer.email) {
-    await sendOrderStatusEmail({ to: customer.email, restaurantName: restaurant.name, orderId, status, total: Number(order.total), cancellationReason }).catch(() => ({ ok: false }));
+    await sendOrderStatusEmail({ to: customer.email, restaurantName: restaurant.name, orderId, status, total: Number(order.total), cancellationReason, language: customer.language }).catch(() => ({ ok: false }));
   }
   if (!customer.userId) return;
   const { error } = await admin.from("notifications").insert({

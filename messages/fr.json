@@ -1424,7 +1424,10 @@
       "rewardLabel": "Récompense : {reward}",
       "readyAround": "Prêt vers {time}",
       "notifyOnConfirmation": "Vous recevrez une notification dès la confirmation.",
-      "rewardsAvailable": "{count, plural, one {# récompense disponible avec vos {points} pts} other {# récompenses disponibles avec vos {points} pts}}"
+      "rewardsAvailable": "{count, plural, one {# récompense disponible avec vos {points} pts} other {# récompenses disponibles avec vos {points} pts}}",
+      "messageLanguage": "Langue des courriels et notifications",
+      "languageFrench": "Français",
+      "languageEnglish": "English"
     }
   },
   "profile": {

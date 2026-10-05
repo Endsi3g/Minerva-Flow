@@ -80,8 +80,8 @@ export async function GET(req: Request) {
       if (!restaurant) return;
       const customerRow = order.customer_id ? customerById.get(order.customer_id) : undefined;
       const contact = customerRow
-        ? { email: customerRow.email, userId: customerRow.user_id, phone: customerRow.phone, name: customerRow.name }
-        : { email: null, userId: null, phone: order.guest_phone, name: order.guest_name };
+        ? { email: customerRow.email, userId: customerRow.user_id, phone: customerRow.phone, name: customerRow.name, customerId: order.customer_id }
+        : { email: null, userId: null, phone: order.guest_phone, name: order.guest_name, customerId: null };
 
       const channel = await sendOrderReadyNotification(
         admin,

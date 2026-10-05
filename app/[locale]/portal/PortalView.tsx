@@ -261,6 +261,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
   const [neighborhood, setNeighborhood] = useState(customer.neighborhood ?? "");
   const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
   const [notificationFrequency, setNotificationFrequency] = useState(customer.notificationFrequency);
+  const [preferredLanguage, setPreferredLanguage] = useState<"fr" | "en">(customer.preferredLanguage);
   const [isSaving, setIsSaving] = useState(false);
   const [savedTick, setSavedTick] = useState(false);
 
@@ -281,6 +282,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         phone: phone.trim() || null,
         avatarUrl,
         notificationFrequency,
+        preferredLanguage,
       });
       if (ok) {
         toast.success(t("profileUpdated"));
@@ -418,6 +420,20 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
             <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
               <RadioGroupItem value="frequent" className="mt-0.5" />
               <span>{t("frequentUpTo2")}</span>
+            </label>
+          </RadioGroup>
+        </div>
+
+        <div>
+          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("messageLanguage")}</p>
+          <RadioGroup value={preferredLanguage} onValueChange={(value) => setPreferredLanguage(value === "en" ? "en" : "fr")} className="space-y-1.5">
+            <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
+              <RadioGroupItem value="fr" className="mt-0.5" />
+              <span>{t("languageFrench")}</span>
+            </label>
+            <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
+              <RadioGroupItem value="en" className="mt-0.5" />
+              <span>{t("languageEnglish")}</span>
             </label>
           </RadioGroup>
         </div>

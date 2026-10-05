@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendTransactionalEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
 import { sendSms, isSmsConfigured } from "@/lib/sms/send";
+import { parseCustomerLanguage } from "@/lib/i18n/customer-language";
 
 const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app";
 
@@ -34,7 +35,7 @@ export async function broadcastAnnouncement(
 
   const { data: customerRows } = await admin
     .from("customers")
-    .select("id, email, user_id, phone, name")
+    .select("id, email, user_id, phone, name, preferred_language")
     .eq("restaurant_id", restaurantId)
     .eq("marketing_consent", true);
   const customers = (customerRows ?? []) as {
@@ -43,6 +44,7 @@ export async function broadcastAnnouncement(
     user_id: string | null;
     phone: string | null;
     name: string;
+    preferred_language?: string | null;
   }[];
   if (customers.length === 0) return { sent: 0, total: 0 };
 
@@ -56,8 +58,9 @@ export async function broadcastAnnouncement(
           to: c.email,
           subject: payload.title,
           bodyHtml: `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">${payload.body}</p>`,
-          ctaLabel: "Voir",
+          ctaLabel: parseCustomerLanguage(c.preferred_language) === "en" ? "View" : "Voir",
           ctaUrl: absoluteLink,
+          language: parseCustomerLanguage(c.preferred_language),
         });
         delivered = result.ok;
       }

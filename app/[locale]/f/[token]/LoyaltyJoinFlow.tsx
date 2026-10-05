@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
@@ -22,6 +22,7 @@ export function LoyaltyJoinFlow({
   touchpointCode: string | null;
 }) {
   const t = useTranslations("joinFlow");
+  const locale = useLocale();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [birthday, setBirthday] = useState("");
@@ -48,6 +49,7 @@ export function LoyaltyJoinFlow({
         email,
         marketingConsent,
         birthday: birthday || null,
+        language: locale === "en" ? "en" : "fr",
       },
       touchpointCode
     );
