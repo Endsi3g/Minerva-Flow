@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -31,12 +33,14 @@ import { useState, useEffect, useMemo, type FormEvent } from "react";
 import { toast } from "sonner";
 import { notifyError } from "@/lib/notify-error";
 
-const statusLabel: Record<PurchaseOrderStatus, string> = {
+function buildStatusLabel(t: (key: string) => string): Record<PurchaseOrderStatus, string> {
+  return {
   brouillon: "Brouillon",
-  envoyee: "Envoyée",
-  recue: "Reçue",
-  annulee: "Annulée",
+  envoyee: t("sent"),
+  recue: t("received2"),
+  annulee: t("cancelled"),
 };
+}
 
 const statusTone: Record<PurchaseOrderStatus, "neutral" | "amber" | "green" | "red"> = {
   brouillon: "neutral",
@@ -58,6 +62,7 @@ function SuppliersCard({
   suppliers: Supplier[];
   onChange: (suppliers: Supplier[]) => void;
 }) {
+  const t = useTranslations("suppliersView");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleAdd(e: FormEvent<HTMLFormElement>) {
@@ -77,7 +82,7 @@ function SuppliersCard({
         onChange([...suppliers, supplier].sort((a, b) => a.name.localeCompare(b.name)));
         (e.target as HTMLFormElement).reset();
       } else {
-        notifyError("L'ajout du fournisseur a échoué.");
+        notifyError(t("couldNotAddThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -91,9 +96,9 @@ function SuppliersCard({
 
   return (
     <Card>
-      <CardHeader eyebrow="Répertoire" title="Fournisseurs" description="Vos fournisseurs, pour créer des commandes rapidement." />
+      <CardHeader eyebrow={t("directory")} title="Fournisseurs" description={t("yourSuppliersToCreate")} />
       <div className="mb-3 space-y-1.5">
-        {suppliers.length === 0 && <p className="text-[12.5px] text-mv-ink-faint">Aucun fournisseur ajouté.</p>}
+        {suppliers.length === 0 && <p className="text-[12.5px] text-mv-ink-faint">{t("noSuppliersAdded")}</p>}
         {suppliers.map((s) => (
           <div key={s.id} className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2">
             <div>
@@ -106,7 +111,7 @@ function SuppliersCard({
             </div>
             <button
               onClick={() => handleDelete(s.id)}
-              aria-label="Retirer le fournisseur"
+              aria-label={t("removeSupplier")}
               className="text-mv-ink-faint transition-colors hover:text-mv-red"
             >
               <Trash2 size={13} />
@@ -122,15 +127,15 @@ function SuppliersCard({
           <Field label="Contact" hint="Optionnel">
             <Input name="contactName" placeholder="Ex : Marie" />
           </Field>
-          <Field label="Téléphone" hint="Optionnel">
+          <Field label={t("phone")} hint="Optionnel">
             <Input name="phone" type="tel" />
           </Field>
         </div>
         <Field label="Courriel" hint="Optionnel">
           <Input name="email" type="email" />
         </Field>
-        <Field label="Adresse" hint="Optionnel — active le suivi de livraison sur une commande">
-          <Input name="address" placeholder="Ex : 850 rue Ontario Est, Montréal" />
+        <Field label={t("addressField")} hint={t("addressHint")}>
+          <Input name="address" placeholder={t("eG850Ontario")} />
         </Field>
         <Button type="submit" size="sm" disabled={isSubmitting} className="w-full">
           <Plus size={14} /> Ajouter
@@ -155,6 +160,7 @@ function NewOrderModal({
   onClose: () => void;
   onCreated: (o: PurchaseOrder) => void;
 }) {
+  const t = useTranslations("suppliersView");
   const [items, setItems] = useState<PurchaseOrderItemInput[]>([
     { itemName: "", quantity: 1, unit: "unité", unitCost: 0 },
   ]);
@@ -182,7 +188,7 @@ function NewOrderModal({
         onClose();
         setItems([{ itemName: "", quantity: 1, unit: "unité", unitCost: 0 }]);
       } else {
-        notifyError("La création de la commande a échoué.");
+        notifyError(t("couldNotCreateThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -193,14 +199,14 @@ function NewOrderModal({
     return (
       <Modal open={open} onClose={onClose} title="Nouvelle commande" description="Ajoutez d'abord un fournisseur.">
         <p className="text-[13px] text-mv-ink-soft">
-          Ajoutez au moins un fournisseur dans le panneau de droite avant de créer une commande.
+          {t("addAtLeastOne")}
         </p>
       </Modal>
     );
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Nouvelle commande" description="Fournisseur, articles et quantités." width={680}>
+    <Modal open={open} onClose={onClose} title="Nouvelle commande" description={t("supplierItemsAndQuantities")} width={680}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Fournisseur">
@@ -219,9 +225,9 @@ function NewOrderModal({
 
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <p className="text-[12px] font-semibold text-mv-ink-soft">Articles</p>
+            <p className="text-[12px] font-semibold text-mv-ink-soft">{t("items")}</p>
             {inventoryItems.length > 0 && (
-              <span className="text-[12px] text-mv-ink-faint">Sélectionnez un ingrédient en stock ou saisissez librement</span>
+              <span className="text-[12px] text-mv-ink-faint">{t("selectAnIngredientIn")}</span>
             )}
           </div>
           <div className="space-y-2">
@@ -247,9 +253,9 @@ function NewOrderModal({
                       }
                     }}
                     className="h-9 max-w-[140px] truncate rounded-md border border-mv-border bg-mv-cream-soft px-2 text-[12px] text-mv-ink focus:border-mv-green focus:outline-none"
-                    title="Associer à un article en inventaire"
+                    title={t("linkToAnInventory")}
                   >
-                    <option value="">(Saisie libre)</option>
+                    <option value="">{t("freeEntry")}</option>
                     {inventoryItems.map((inv) => (
                       <option key={inv.id} value={inv.id}>
                         {inv.name}
@@ -270,14 +276,14 @@ function NewOrderModal({
                   value={item.quantity}
                   onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })}
                   className="w-16"
-                  aria-label="Quantité"
+                  aria-label={t("quantity")}
                 />
                 <Input
-                  placeholder="unité"
+                  placeholder={t("unit")}
                   value={item.unit}
                   onChange={(e) => updateItem(i, { unit: e.target.value })}
                   className="w-20"
-                  aria-label="Unité"
+                  aria-label={t("unit2")}
                 />
                 <Input
                   type="number"
@@ -286,7 +292,7 @@ function NewOrderModal({
                   value={item.unitCost}
                   onChange={(e) => updateItem(i, { unitCost: Number(e.target.value) })}
                   className="w-24"
-                  aria-label="Coût unitaire"
+                  aria-label={t("unitCost")}
                 />
                 <button
                   type="button"
@@ -317,7 +323,7 @@ function NewOrderModal({
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Créer la commande"}
+            {isSubmitting ? t("creating") : t("createTheOrder")}
           </Button>
         </div>
       </form>
@@ -340,6 +346,7 @@ function ReceiveOrderModal({
   onClose: () => void;
   onReceived: (orderId: string, receivedTotalCost: number, unmatchedItems: string[]) => void;
 }) {
+  const t = useTranslations("suppliersView");
   const [receipts, setReceipts] = useState<Record<string, number>>(() =>
     Object.fromEntries(order.items.map((i) => [i.id, i.quantity]))
   );
@@ -364,7 +371,7 @@ function ReceiveOrderModal({
         onReceived(order.id, res.receivedTotalCost ?? totalReceivedCost, res.unmatchedItemNames ?? []);
         onClose();
       } else {
-        notifyError("La validation de la réception a échoué.");
+        notifyError(t("couldNotValidateThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -375,8 +382,8 @@ function ReceiveOrderModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Réceptionner la commande"
-      description={`Fournisseur : ${supplierName} · Vérifiez les quantités livrées pour mise à jour immédiate du stock.`}
+      title={t("receiveTheOrder")}
+      description={t("supplierSuppliernameCheckThe", { supplierName })}
       width={680}
     >
       <div className="space-y-4">
@@ -384,10 +391,10 @@ function ReceiveOrderModal({
           <table className="w-full text-left text-[12.5px]">
             <thead className="bg-mv-cream-soft text-[12px] font-semibold uppercase text-mv-ink-faint">
               <tr>
-                <th className="py-2.5 px-3">Article</th>
-                <th className="py-2.5 px-2 text-right">Commandé</th>
-                <th className="py-2.5 px-2 text-right">Reçu</th>
-                <th className="py-2.5 px-3 text-right">Total reçu</th>
+                <th className="py-2.5 px-3">{t("item")}</th>
+                <th className="py-2.5 px-2 text-right">{t("ordered")}</th>
+                <th className="py-2.5 px-2 text-right">{t("received")}</th>
+                <th className="py-2.5 px-3 text-right">{t("totalReceived")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-mv-border-soft">
@@ -434,7 +441,7 @@ function ReceiveOrderModal({
         </div>
 
         <div className="flex items-center justify-between rounded-xl bg-mv-cream-soft p-3">
-          <span className="text-[12.5px] font-medium text-mv-ink-soft">Valeur totale réceptionnée :</span>
+          <span className="text-[12.5px] font-medium text-mv-ink-soft">{t("totalValueReceived")}</span>
           <span className="font-mono text-[15px] font-semibold text-mv-green-dark">
             {formatCurrency(totalReceivedCost)}
           </span>
@@ -446,7 +453,7 @@ function ReceiveOrderModal({
           </Button>
           <Button type="button" onClick={handleConfirm} disabled={isSubmitting}>
             <CheckCircle2 size={14} />
-            {isSubmitting ? "Validation…" : "Confirmer la réception et entrer en stock"}
+            {isSubmitting ? t("validating") : t("confirmReceptionAndAdd")}
           </Button>
         </div>
       </div>
@@ -467,6 +474,7 @@ function SuggestedReordersModal({
   onClose: () => void;
   onOrdersCreated: () => void;
 }) {
+  const t = useTranslations("suppliersView");
   const [localSuggestions, setLocalSuggestions] = useState(suggestions);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -494,16 +502,16 @@ function SuggestedReordersModal({
     try {
       const res = await generateSuggestedPurchaseOrdersAction(restaurantId, localSuggestions);
       if (res.count > 0) {
-        toast.success(`${res.count} commande(s) fournisseur(s) brouillon(s) créée(s) !`);
+        toast.success(t("countDraftSupplierOrder", { count: res.count }));
         if (res.skippedNoSupplierCount > 0) {
           toast.warning(
-            `${res.skippedNoSupplierCount} article(s) n'ont pas été commandés car aucun fournisseur ne leur est assigné dans l'inventaire.`
+            t("skippednosuppliercountItemSWere", { skippedNoSupplierCount: res.skippedNoSupplierCount })
           );
         }
         onOrdersCreated();
         onClose();
       } else {
-        toast.info("Aucune commande n'a été créée.");
+        toast.info(t("noOrdersWereCreated"));
       }
     } finally {
       setIsCreating(false);
@@ -517,16 +525,16 @@ function SuggestedReordersModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Suggestions de réapprovisionnement"
-      description="Commandes automatiques calculées à partir de vos stocks et seuils minimaux."
+      title={t("restockingSuggestions")}
+      description={t("automaticOrdersCalculatedFrom")}
       width={720}
     >
       <div className="space-y-4">
         {localSuggestions.length === 0 ? (
           <div className="py-8 text-center text-mv-ink-faint">
             <Sparkles className="mx-auto mb-2 text-mv-green" size={24} />
-            <p className="text-[13px] font-medium text-mv-ink">Vos stocks sont au niveau optimal !</p>
-            <p className="text-[12px]">Aucun ingrédient n&apos;est actuellement sous son seuil de réapprovisionnement.</p>
+            <p className="text-[13px] font-medium text-mv-ink">{t("yourStockIsAt")}</p>
+            <p className="text-[12px]">{t("noIngredientIsCurrently")}</p>
           </div>
         ) : (
           <>
@@ -540,7 +548,7 @@ function SuggestedReordersModal({
                           {group.supplierName}
                         </h4>
                         {!group.supplierId && (
-                          <Badge tone="amber">Sans fournisseur</Badge>
+                          <Badge tone="amber">{t("noSupplier")}</Badge>
                         )}
                       </div>
                       {(group.supplierEmail || group.supplierPhone) && (
@@ -594,9 +602,9 @@ function SuggestedReordersModal({
             <div className="flex items-center justify-between rounded-xl bg-mv-cream-soft p-3">
               <div>
                 <p className="text-[12.5px] font-medium text-mv-ink">
-                  Total estimé pour {localSuggestions.filter((g) => g.supplierId).length} commande(s) :
+                  {t("estimatedTotalFor", { count: localSuggestions.filter((g) => g.supplierId).length })}
                 </p>
-                <p className="text-[12px] text-mv-ink-faint">{totalItemsCount} article(s) à réapprovisionner</p>
+                <p className="text-[12px] text-mv-ink-faint">{t("itemsToRestock", { count: totalItemsCount })}</p>
               </div>
               <span className="font-mono text-[16px] font-bold text-mv-green-dark">
                 {formatCurrency(grandTotal)}
@@ -613,7 +621,7 @@ function SuggestedReordersModal({
                 disabled={isCreating || localSuggestions.filter((g) => g.supplierId).length === 0}
               >
                 <Sparkles size={14} />
-                {isCreating ? "Génération…" : "Créer les commandes brouillons"}
+                {isCreating ? t("generating") : t("createDraftOrders")}
               </Button>
             </div>
           </>
@@ -634,6 +642,7 @@ export function FournisseursView({
   initialOrders: PurchaseOrder[];
   inventoryItems?: InventoryItem[];
 }) {
+  const t = useTranslations("suppliersView");
   const { role, restaurants, restaurantId: currentRestaurantId } = useApp();
   const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [orders, setOrders] = useState(initialOrders);
@@ -661,7 +670,7 @@ export function FournisseursView({
       setSuggestions(groups);
       setSuggestedReordersOpen(true);
     } catch {
-      notifyError("Impossible de charger les suggestions de réapprovisionnement.");
+      notifyError(t("couldNotLoadThe"));
     } finally {
       setIsLoadingSuggestions(false);
     }
@@ -671,18 +680,18 @@ export function FournisseursView({
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: "recue" } : o)));
     if (unmatchedNames.length > 0) {
       toast.warning(
-        `Commande reçue, mais le stock n'a pas été mis à jour pour : ${unmatchedNames.join(", ")} — ces noms d'article ne correspondent à aucun article d'inventaire existant.`
+        t("receivedButStockNotUpdated", { names: unmatchedNames.join(", ") })
       );
     }
     if (receivedTotalCost > 0 && restaurantId) {
-      toast(`Commande reçue — ${formatCurrency(receivedTotalCost)} d'inventaire.`, {
-        description: "L'enregistrer aussi comme dépense dans Finance ?",
+      toast(t("orderReceivedAmountOf", { amount: formatCurrency(receivedTotalCost) }), {
+        description: t("alsoRecordItAs"),
         action: {
-          label: "Enregistrer",
+          label: t("save"),
           onClick: async () => {
             const ok = await logPurchaseOrderExpenseAction(restaurantId, orderId);
-            if (ok) toast.success("Dépense enregistrée dans Finance.");
-            else notifyError("L'enregistrement de la dépense a échoué.");
+            if (ok) toast.success(t("expenseRecordedInFinance"));
+            else notifyError(t("couldNotRecordThe"));
           },
         },
       });
@@ -693,7 +702,7 @@ export function FournisseursView({
     if (!restaurantId) return;
     const result = await updatePurchaseOrderStatusAction(restaurantId, id, status);
     if (!result.ok) {
-      notifyError("La mise à jour du statut a échoué.");
+      notifyError(t("couldNotUpdateThe"));
       return;
     }
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
@@ -708,9 +717,9 @@ export function FournisseursView({
   return (
     <div>
       <PageHeader
-        eyebrow="Opérations"
+        eyebrow={t("operations")}
         title="Fournisseurs"
-        description="Créez et suivez vos commandes auprès de vos fournisseurs."
+        description={t("createAndTrackYour")}
         action={
           canManage &&
           restaurantId && (
@@ -722,7 +731,7 @@ export function FournisseursView({
                 disabled={isLoadingSuggestions}
               >
                 <Sparkles size={14} className="text-mv-green" />
-                {isLoadingSuggestions ? "Analyse…" : "Suggérer réappro"}
+                {isLoadingSuggestions ? t("analyzing") : t("suggestRestock")}
               </Button>
               <Button size="sm" onClick={() => setCreateOpen(true)}>
                 <Plus size={15} /> Nouvelle commande
@@ -738,7 +747,7 @@ export function FournisseursView({
             <EmptyState
               icon={Truck}
               title="Aucune commande"
-              description="Créez votre première commande fournisseur ou générez des suggestions de réassort."
+              description={t("createYourFirstSupplier")}
               action={
                 canManage &&
                 restaurantId && (
@@ -749,7 +758,7 @@ export function FournisseursView({
                       onClick={handleOpenSuggestedReorders}
                       disabled={isLoadingSuggestions}
                     >
-                      <Sparkles size={14} className="text-mv-green" /> Suggérer réappro
+                      <Sparkles size={14} className="text-mv-green" /> {t("suggestRestock")}
                     </Button>
                     <Button size="sm" onClick={() => setCreateOpen(true)}>
                       <Plus size={15} /> Nouvelle commande
@@ -761,12 +770,12 @@ export function FournisseursView({
           ) : (
             <Table>
               <THead>
-                <Th>Fournisseur</Th>
-                <Th>Date</Th>
-                <Th>Articles</Th>
-                <Th>Total estimé</Th>
-                <Th>Statut</Th>
-                <Th className="text-right">Actions</Th>
+                <Th>{t("supplier")}</Th>
+                <Th>{t("date")}</Th>
+                <Th>{t("items")}</Th>
+                <Th>{t("estimatedTotal")}</Th>
+                <Th>{t("status")}</Th>
+                <Th className="text-right">{t("actions")}</Th>
               </THead>
               <tbody>
                 {orders.map((o) => (
@@ -782,7 +791,7 @@ export function FournisseursView({
                     </Td>
                     <Td className="font-medium text-mv-ink">{formatCurrency(orderTotal(o))}</Td>
                     <Td>
-                      <Badge tone={statusTone[o.status]}>{statusLabel[o.status]}</Badge>
+                      <Badge tone={statusTone[o.status]}>{buildStatusLabel(t)[o.status]}</Badge>
                     </Td>
                     <Td className="text-right">
                       {canManage && (
@@ -802,14 +811,14 @@ export function FournisseursView({
                                   onClick={() => setTrackingOrder(o)}
                                   className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-ink-soft hover:bg-mv-ink/5"
                                 >
-                                  Voir le trajet
+                                  {t("viewRoute")}
                                 </button>
                               )}
                               <button
                                 onClick={() => setReceivingOrder(o)}
                                 className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/10"
                               >
-                                <CheckCircle2 size={12} /> Réceptionner
+                                <CheckCircle2 size={12} /> {t("receive")}
                               </button>
                             </>
                           )}

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
@@ -80,11 +82,13 @@ function restaurantToForm(r: Restaurant): RestaurantFormValues {
   };
 }
 
-const SERVICE_MODEL_LABEL: Record<"restaurant" | "cafe" | "hybrid", string> = {
+function buildSERVICE_MODEL_LABEL(t: (key: string) => string): Record<"restaurant" | "cafe" | "hybrid", string> {
+  return {
   restaurant: "Restaurant",
-  cafe: "Café",
-  hybrid: "Hybride (café-resto)",
+  cafe: t("caf"),
+  hybrid: t("hybridCafRestaurant"),
 };
+}
 
 const DAY_LABELS: Record<number, string> = {
   1: "Lundi",
@@ -98,6 +102,7 @@ const DAY_LABELS: Record<number, string> = {
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 function OpeningHoursFields({ value, onChange }: { value: OpeningHours; onChange: (hours: OpeningHours) => void }) {
+  const t = useTranslations("establishmentPage");
   function setDay(day: number, hours: DayHours | null) {
     const next = { ...value };
     if (hours) {
@@ -109,7 +114,7 @@ function OpeningHoursFields({ value, onChange }: { value: OpeningHours; onChange
   }
 
   return (
-    <Field label="Horaires d'ouverture" hint="Se pré-remplissent automatiquement via la recherche Google ou le site web">
+    <Field label="Horaires d'ouverture" hint={t("prefilledAutomaticallyFromGoogle")}>
       <div className="space-y-1.5 rounded-lg border border-mv-border p-3">
         {DAY_ORDER.map((day) => {
           const hours = value[day as keyof OpeningHours];
@@ -142,7 +147,7 @@ function OpeningHoursFields({ value, onChange }: { value: OpeningHours; onChange
                   />
                 </>
               ) : (
-                <span className="text-[12px] text-mv-ink-faint">Fermé</span>
+                <span className="text-[12px] text-mv-ink-faint">{t("closed")}</span>
               )}
             </div>
           );
@@ -164,6 +169,7 @@ function RestaurantFormFields({
    * appears once one exists (edit mode). */
   restaurantId?: string;
 }) {
+  const t = useTranslations("establishmentPage");
   // GooglePlacesSearch takes `enabled` as a prop now (no more internal
   // self-check) — this is the one remaining fully client-rendered caller,
   // so it still has to ask at runtime rather than compute it server-side.
@@ -192,7 +198,7 @@ function RestaurantFormFields({
 
       <div className="flex items-end gap-3">
         <div className="flex-1">
-          <Field label="Nom de l'établissement">
+          <Field label={t("restaurantName")}>
             <Input
               value={values.name}
               onChange={(e) => onChange({ name: e.target.value })}
@@ -210,22 +216,22 @@ function RestaurantFormFields({
         </Field>
       </div>
       <Field
-        label="Type d'établissement"
-        hint="Ajuste automatiquement les seuils par défaut (panier moyen, rentabilité, fenêtre d'inactivité fidélité) à votre modèle d'affaires."
+        label={t("restaurantType")}
+        hint={t("automaticallyAdjustsTheDefault")}
       >
         <Select
           value={values.serviceModel}
           onValueChange={(v) => onChange({ serviceModel: v as "restaurant" | "cafe" | "hybrid" })}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Sélectionner un type">
-              {(v: string | null) => (v ? SERVICE_MODEL_LABEL[v as "restaurant" | "cafe" | "hybrid"] : null)}
+            <SelectValue placeholder={t("selectAType")}>
+              {(v: string | null) => (v ? buildSERVICE_MODEL_LABEL(t)[v as "restaurant" | "cafe" | "hybrid"] : null)}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="restaurant">{SERVICE_MODEL_LABEL.restaurant}</SelectItem>
-            <SelectItem value="cafe">{SERVICE_MODEL_LABEL.cafe}</SelectItem>
-            <SelectItem value="hybrid">{SERVICE_MODEL_LABEL.hybrid}</SelectItem>
+            <SelectItem value="restaurant">{buildSERVICE_MODEL_LABEL(t).restaurant}</SelectItem>
+            <SelectItem value="cafe">{buildSERVICE_MODEL_LABEL(t).cafe}</SelectItem>
+            <SelectItem value="hybrid">{buildSERVICE_MODEL_LABEL(t).hybrid}</SelectItem>
           </SelectContent>
         </Select>
       </Field>
@@ -246,7 +252,7 @@ function RestaurantFormFields({
         </Field>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Téléphone">
+        <Field label={t("phone")}>
           <Input name="phone" value={values.phone} onChange={(e) => onChange({ phone: e.target.value })} placeholder="Ex : 514-555-1234" />
         </Field>
         <Field label="Fuseau horaire">
@@ -257,26 +263,26 @@ function RestaurantFormFields({
           />
         </Field>
       </div>
-      <Field label="Site web" hint="La description et les coordonnées ci-dessous se pré-remplissent automatiquement depuis ce site quand vous enregistrez.">
+      <Field label="Site web" hint={t("theDescriptionAndContact")}>
         <Input
           value={values.website}
           onChange={(e) => onChange({ website: e.target.value })}
           placeholder="Ex : minerva-restaurant.com"
         />
       </Field>
-      <Field label="Lien Google Maps" hint="Optionnel — affiché dans l'application cliente pour permettre aux clients de laisser un vrai avis Google.">
+      <Field label="Lien Google Maps" hint={t("optionalShownInThe")}>
         <Input
           value={values.googleMapsUrl}
           onChange={(e) => onChange({ googleMapsUrl: e.target.value })}
           placeholder="Ex : https://maps.app.goo.gl/..."
         />
       </Field>
-      <Field label="Description" hint="Optionnel — modifiable même après la pré-remplissage automatique">
+      <Field label="Description" hint={t("optionalEditableEvenAfter")}>
         <Textarea
           value={values.description}
           onChange={(e) => onChange({ description: e.target.value })}
           rows={3}
-          placeholder="Ex : Cuisine bistro de quartier, produits locaux, terrasse l'été."
+          placeholder={t("eGNeighborhoodBistro")}
         />
       </Field>
       <OpeningHoursFields value={values.openingHours} onChange={(openingHours) => onChange({ openingHours })} />
@@ -284,8 +290,8 @@ function RestaurantFormFields({
         label="Photos"
         hint={
           restaurantId
-            ? "Jusqu'à 8 photos — visibles dans la carte de découverte de l'application cliente."
-            : "Enregistrez d'abord l'établissement, puis revenez ici pour ajouter des photos."
+            ? t("photosHint")
+            : t("saveTheRestaurantFirst")
         }
       >
         {restaurantId ? (
@@ -301,6 +307,7 @@ function RestaurantFormFields({
 }
 
 function EstablishmentIdentityCard() {
+  const t = useTranslations("establishmentPage");
   const restaurant = useCurrentRestaurant();
   const [form, setForm] = useState<RestaurantFormValues>(() => restaurant ? restaurantToForm(restaurant) : emptyForm);
   const [saving, setSaving] = useState(false);
@@ -315,9 +322,9 @@ function EstablishmentIdentityCard() {
       // phone/address may have just been auto-filled from the website,
       // which the submitted form itself wouldn't know about.
       setForm(restaurantToForm(updated));
-      toast.success("Établissement mis à jour.");
+      toast.success(t("restaurantUpdated"));
     } else {
-      toast.error("La mise à jour a échoué.");
+      toast.error(t("theUpdateFailed"));
     }
   }
 
@@ -326,9 +333,9 @@ function EstablishmentIdentityCard() {
   return (
     <Card>
       <CardHeader
-        eyebrow="Identité"
-        title="Votre établissement"
-        description="Ces informations apparaissent dans le switcher, les rapports et la carte."
+        eyebrow={t("identity")}
+        title={t("yourRestaurant")}
+        description={t("identityDescription")}
       />
       <div className="space-y-4">
         <RestaurantFormFields
@@ -337,31 +344,33 @@ function EstablishmentIdentityCard() {
           restaurantId={restaurant.id}
         />
         <Button onClick={handleSave} disabled={!form.name.trim() || saving}>
-          {saving ? "Enregistrement…" : "Enregistrer"}
+          {saving ? t("saving") : t("save")}
         </Button>
       </div>
     </Card>
   );
 }
 
-const ORDER_MODE_OPTIONS: { value: OrderFulfillmentMode; label: string; hint: string }[] = [
-  { value: "sur_place", label: "Payer sur place", hint: "Le client paie à la cueillette — le mode par défaut." },
+function buildORDER_MODE_OPTIONS(t: (key: string) => string): { value: OrderFulfillmentMode; label: string; hint: string }[] {
+  return [
+  { value: "sur_place", label: t("payOnSite"), hint: t("theCustomerPaysAt") },
   {
     value: "immediat",
     label: "Payer en ligne maintenant",
-    hint: "Le client paie par carte au moment de la commande. Nécessite Stripe Connect (onglet Intégrations).",
+    hint: t("theCustomerPaysBy"),
   },
   {
     value: "prep_apres_paiement",
-    label: "Payer en ligne, préparé après confirmation",
-    hint: "Comme ci-dessus, mais la cuisine ne commence qu'une fois le paiement confirmé — utile pour les grosses commandes prépayées.",
+    label: t("payOnlinePreparedAfter"),
+    hint: t("sameAsAboveBut"),
   },
   {
     value: "livraison",
     label: "Livrer au client",
-    hint: "Ajoute l’adresse, estime les frais selon la distance et le temps; le client choisit paiement en ligne ou à la réception.",
+    hint: t("addsTheAddressAnd"),
   },
 ];
+}
 
 /**
  * Governs which order modes appear on the public checkout (MenuOrderFlow's
@@ -370,6 +379,7 @@ const ORDER_MODE_OPTIONS: { value: OrderFulfillmentMode; label: string; hint: st
  * to ["sur_place"] server-side if this ever sends an empty array.
  */
 function OrderModesCard() {
+  const t = useTranslations("establishmentPage");
   const restaurant = useCurrentRestaurant();
   const [modes, setModes] = useState<OrderFulfillmentMode[]>(() => restaurant?.orderModesEnabled ?? []);
   const [saving, setSaving] = useState(false);
@@ -378,7 +388,7 @@ function OrderModesCard() {
     if (!restaurant) return;
     const next = checked ? [...modes, mode] : modes.filter((m) => m !== mode);
     if (next.length === 0) {
-      toast.error("Gardez au moins un mode de commande actif.");
+      toast.error(t("keepAtLeastOne"));
       return;
     }
     const previous = modes;
@@ -387,9 +397,9 @@ function OrderModesCard() {
     const updated = await updateRestaurantAction(restaurant.id, { orderModesEnabled: next });
     setSaving(false);
     if (updated) {
-      toast.success("Modes de commande mis à jour.");
+      toast.success(t("orderModesUpdated"));
     } else {
-      toast.error("La mise à jour a échoué.");
+      toast.error(t("theUpdateFailed"));
       setModes(previous);
     }
   }
@@ -401,10 +411,10 @@ function OrderModesCard() {
       <CardHeader
         eyebrow="Commande en ligne"
         title="Modes de commande"
-        description="Choisissez comment vos clients peuvent payer quand ils commandent via votre lien de commande directe."
+        description={t("paymentModesDescription")}
       />
       <div className="space-y-2.5">
-        {ORDER_MODE_OPTIONS.map((opt) => (
+        {buildORDER_MODE_OPTIONS(t).map((opt) => (
           <label
             key={opt.value}
             className="flex items-start gap-3 rounded-lg border border-mv-border p-3 hover:bg-mv-cream-soft/50"
@@ -428,6 +438,7 @@ function OrderModesCard() {
 }
 
 function DeliveryPricingCard() {
+  const t = useTranslations("establishmentPage");
   const restaurant = useCurrentRestaurant();
   const [values, setValues] = useState(() => ({
     enabled: restaurant?.deliveryEnabled ?? false,
@@ -453,24 +464,24 @@ function DeliveryPricingCard() {
       deliveryPerMinuteFee: Number(values.perMinute),
     });
     setSaving(false);
-    if (updated) toast.success("Tarification de livraison mise à jour.");
-    else toast.error("La mise à jour a échoué.");
+    if (updated) toast.success(t("deliveryPricingUpdated"));
+    else toast.error(t("theUpdateFailed"));
   }
 
   if (!restaurant) return null;
   return (
     <Card>
-      <CardHeader eyebrow="Commande en ligne" title="Livraison directe" description="Configurez le rayon, les frais de base, la distance et le temps de trajet estimé. Le serveur recalcule toujours le tarif avant Stripe; le tarif par minute est facultatif et à zéro par défaut." />
+      <CardHeader eyebrow="Commande en ligne" title="Livraison directe" description={t("setTheRadiusBase")} />
       <div className="space-y-3">
-        <label className="flex items-center gap-2 text-[13px] font-medium text-mv-ink"><input type="checkbox" checked={values.enabled} onChange={(e) => setValues((v) => ({ ...v, enabled: e.target.checked }))} /> Activer la livraison</label>
+        <label className="flex items-center gap-2 text-[13px] font-medium text-mv-ink"><input type="checkbox" checked={values.enabled} onChange={(e) => setValues((v) => ({ ...v, enabled: e.target.checked }))} /> {t("turnOnDelivery")}</label>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {[["base", "Frais de base"], ["perKm", "$/km supplémentaire"], ["freeKm", "Km inclus"], ["maxKm", "Rayon max (km)"], ["speed", "Vitesse moyenne (km/h)"], ["perMinute", "$/minute estimée"]].map(([key, label]) => (
+          {[["base", t("baseFee")], ["perKm", t("extraKm")], ["freeKm", "Km inclus"], ["maxKm", "Rayon max (km)"], ["speed", "Vitesse moyenne (km/h)"], ["perMinute", t("estimatedMinute")]].map(([key, label]) => (
             <Field key={key} label={label}>
               <Input type="number" min={0} step="0.01" value={values[key as keyof typeof values] as string} onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))} />
             </Field>
           ))}
         </div>
-        <Button onClick={save} disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer la livraison"}</Button>
+        <Button onClick={save} disabled={saving}>{saving ? t("saving") : t("saveDelivery")}</Button>
       </div>
     </Card>
   );
@@ -483,6 +494,7 @@ function DeliveryPricingCard() {
  * alongside the rest of the order-related settings.
  */
 function BusyThresholdCard() {
+  const t = useTranslations("establishmentPage");
   const restaurant = useCurrentRestaurant();
   const [threshold, setThreshold] = useState(() => restaurant?.busyThreshold ? String(restaurant.busyThreshold) : "");
   const [saving, setSaving] = useState(false);
@@ -491,14 +503,14 @@ function BusyThresholdCard() {
     if (!restaurant) return;
     const parsed = threshold.trim() === "" ? null : Number(threshold);
     if (parsed !== null && (!Number.isFinite(parsed) || parsed <= 0)) {
-      toast.error("Entrez un nombre de commandes valide, ou laissez vide pour désactiver.");
+      toast.error(t("enterAValidNumber"));
       return;
     }
     setSaving(true);
     const updated = await updateRestaurantAction(restaurant.id, { busyThreshold: parsed });
     setSaving(false);
-    if (updated) toast.success("Seuil mis à jour.");
-    else toast.error("La mise à jour a échoué.");
+    if (updated) toast.success(t("thresholdUpdated"));
+    else toast.error(t("theUpdateFailed"));
   }
 
   if (!restaurant) return null;
@@ -508,10 +520,10 @@ function BusyThresholdCard() {
       <CardHeader
         eyebrow="Commande en ligne"
         title="Message d'attente automatique"
-        description="Quand le nombre de commandes « en préparation » atteint ce seuil, le menu en ligne affiche automatiquement un avertissement de délai — en plus du toggle manuel « On est débordés » sur la page Commandes."
+        description={t("whenTheNumberOf")}
       />
       <div className="flex items-end gap-3">
-        <Field label="Seuil (commandes en préparation)" hint="Laissez vide pour désactiver l'automatique">
+        <Field label={t("thresholdOrdersInPreparation")} hint={t("leaveEmptyToTurn")}>
           <Input
             type="number"
             min={1}
@@ -522,7 +534,7 @@ function BusyThresholdCard() {
           />
         </Field>
         <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Enregistrement…" : "Enregistrer"}
+          {saving ? t("saving") : t("save")}
         </Button>
       </div>
     </Card>
@@ -538,6 +550,7 @@ function BusyThresholdCard() {
  * the whole feature off — no order gets an estimate until it's set.
  */
 function PrepTimeCard() {
+  const t = useTranslations("establishmentPage");
   const restaurant = useCurrentRestaurant();
   const [minutes, setMinutes] = useState(() => restaurant?.defaultPrepMinutes ? String(restaurant.defaultPrepMinutes) : "");
   const [saving, setSaving] = useState(false);
@@ -546,14 +559,14 @@ function PrepTimeCard() {
     if (!restaurant) return;
     const parsed = minutes.trim() === "" ? null : Number(minutes);
     if (parsed !== null && (!Number.isFinite(parsed) || parsed <= 0)) {
-      toast.error("Entrez un nombre de minutes valide, ou laissez vide pour désactiver.");
+      toast.error(t("enterAValidNumber2"));
       return;
     }
     setSaving(true);
     const updated = await updateRestaurantAction(restaurant.id, { defaultPrepMinutes: parsed });
     setSaving(false);
-    if (updated) toast.success("Délai mis à jour.");
-    else toast.error("La mise à jour a échoué.");
+    if (updated) toast.success(t("delayUpdated"));
+    else toast.error(t("theUpdateFailed"));
   }
 
   if (!restaurant) return null;
@@ -562,11 +575,11 @@ function PrepTimeCard() {
     <Card>
       <CardHeader
         eyebrow="Commande en ligne"
-        title="Délai de préparation par défaut"
-        description="Affiché au client au moment de commander (« prêt vers HH:MM »), automatiquement allongé quand le restaurant est occupé. Le staff peut toujours ajuster le délai d'une commande précise sur la page Commandes. Une notification « commande prête » part automatiquement au client une fois ce délai écoulé."
+        title={t("defaultPreparationTime")}
+        description={t("shownToTheCustomer")}
       />
       <div className="flex items-end gap-3">
-        <Field label="Minutes" hint="Laissez vide pour désactiver le délai estimé">
+        <Field label="Minutes" hint={t("leaveEmptyToTurn2")}>
           <Input
             type="number"
             min={1}
@@ -577,7 +590,7 @@ function PrepTimeCard() {
           />
         </Field>
         <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Enregistrement…" : "Enregistrer"}
+          {saving ? t("saving") : t("save")}
         </Button>
       </div>
     </Card>
@@ -585,6 +598,7 @@ function PrepTimeCard() {
 }
 
 function OtherEstablishments() {
+  const t = useTranslations("establishmentPage");
   const { restaurants, restaurantId, setRestaurantId } = useApp();
   const [createOpen, setCreateOpen] = useState(false);
   const [limitOpen, setLimitOpen] = useState(false);
@@ -616,11 +630,11 @@ function OtherEstablishments() {
     const created = await createRestaurantAction(form);
     setSaving(false);
     if (created) {
-      toast.success("Établissement ajouté.");
+      toast.success(t("restaurantAdded"));
       setCreateOpen(false);
       setRestaurantId(created.id);
     } else {
-      toast.error("L'ajout de l'établissement a échoué.");
+      toast.error(t("couldNotAddThe"));
     }
   }
 
@@ -630,10 +644,10 @@ function OtherEstablishments() {
     const updated = await updateRestaurantAction(editing.id, form);
     setSaving(false);
     if (updated) {
-      toast.success("Établissement modifié.");
+      toast.success(t("restaurantUpdated2"));
       setEditing(null);
     } else {
-      toast.error("La modification a échoué.");
+      toast.error(t("theEditFailed"));
     }
   }
 
@@ -642,15 +656,15 @@ function OtherEstablishments() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-[16px] font-medium text-mv-ink">Autres établissements</h2>
+        <h2 className="font-display text-[16px] font-medium text-mv-ink">{t("otherRestaurants")}</h2>
         <Button size="sm" variant="secondary" onClick={openCreate} disabled={checkingLimit}>
-          <Plus size={15} /> Ajouter un établissement
+          <Plus size={15} /> {t("addRestaurant")}
         </Button>
       </div>
 
       {others.length === 0 ? (
         <p className="text-[13px] text-mv-ink-faint">
-          Vous ne gérez qu&apos;un seul établissement pour l&apos;instant.
+          {t("youOnlyManageOne")}
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -671,7 +685,7 @@ function OtherEstablishments() {
               </div>
               <div className="mt-4 flex gap-2">
                 <Button size="sm" variant="secondary" className="flex-1" onClick={() => setRestaurantId(r.id)}>
-                  Passer à celui-ci
+                  {t("switchToThisOne")}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => openEdit(r)}>
                   Modifier
@@ -687,13 +701,13 @@ function OtherEstablishments() {
       <Modal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        title="Ajouter un établissement"
-        description="Créez un nouveau restaurant à gérer dans Minerva Flow."
+        title={t("addARestaurant")}
+        description={t("createANewRestaurant")}
       >
         <div className="space-y-4">
           <RestaurantFormFields values={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
           <Button className="w-full" onClick={handleCreate} disabled={!form.name.trim() || saving}>
-            {saving ? "Création…" : "Créer l'établissement"}
+            {saving ? t("creating") : t("createTheRestaurant")}
           </Button>
         </div>
       </Modal>
@@ -701,7 +715,7 @@ function OtherEstablishments() {
       <Modal
         open={Boolean(editing)}
         onClose={() => setEditing(null)}
-        title="Modifier l'établissement"
+        title={t("editTheRestaurant")}
         description={editing?.name}
       >
         <div className="space-y-4">
@@ -711,7 +725,7 @@ function OtherEstablishments() {
             restaurantId={editing?.id}
           />
           <Button className="w-full" onClick={handleUpdate} disabled={!form.name.trim() || saving}>
-            {saving ? "Enregistrement…" : "Enregistrer"}
+            {saving ? t("saving") : t("save")}
           </Button>
         </div>
       </Modal>
@@ -720,6 +734,7 @@ function OtherEstablishments() {
 }
 
 function DirectOrderingWidgetSection({ restaurant }: { restaurant: Restaurant }) {
+  const tv = useTranslations("establishmentPage");
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -735,7 +750,7 @@ function DirectOrderingWidgetSection({ restaurant }: { restaurant: Restaurant })
   if (!token) {
     return (
       <Card className="p-8 text-center text-[13px] text-mv-ink-faint">
-        Préparation du lien de commande directe…
+        {tv("preparingTheDirectOrdering")}
       </Card>
     );
   }
@@ -744,14 +759,15 @@ function DirectOrderingWidgetSection({ restaurant }: { restaurant: Restaurant })
 }
 
 export default function EtablissementPage() {
+  const t = useTranslations("establishmentPage");
   const restaurant = useCurrentRestaurant();
 
   return (
     <div>
       <PageHeader
-        eyebrow="Établissements"
-        title="Gérer mes établissements"
-        description="Configurez l'identité de votre établissement et gérez vos autres emplacements."
+        eyebrow={t("restaurants")}
+        title={t("manageMyRestaurants")}
+        description={t("setUpYourRestaurant")}
       />
       <div className="space-y-8">
         <EstablishmentIdentityCard key={restaurant?.id ?? "loading"} />

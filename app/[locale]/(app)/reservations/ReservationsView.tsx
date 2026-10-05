@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -58,6 +60,7 @@ function NewReservationModal({
   onClose: () => void;
   onCreated: (r: Reservation) => void;
 }) {
+  const tv = useTranslations("reservationsView");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const defaultDate = dayStart.slice(0, 10);
 
@@ -82,9 +85,9 @@ function NewReservationModal({
         onCreated(reservation);
         onClose();
       } else if (reservation === RESERVATION_CONFLICT) {
-        notifyError("Cette table est déjà réservée à cette heure — choisissez une autre table ou un autre horaire.");
+        notifyError(tv("thisTableIsAlready"));
       } else {
-        notifyError("La création de la réservation a échoué.");
+        notifyError(tv("couldNotCreateThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -92,16 +95,16 @@ function NewReservationModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Nouvelle réservation" description="Nom du client, date, heure et taille du groupe.">
+    <Modal open={open} onClose={onClose} title={tv("newReservation")} description="Nom du client, date, heure et taille du groupe.">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Nom du client">
+        <Field label={tv("customerName")}>
           <Input name="guestName" placeholder="Ex : Famille Tremblay" required />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Téléphone" hint="Optionnel">
+          <Field label={tv("phone")} hint="Optionnel">
             <Input name="guestPhone" type="tel" placeholder="Ex : 514-555-1234" />
           </Field>
-          <Field label="Taille du groupe">
+          <Field label={tv("partySize")}>
             <Input name="partySize" type="number" min="1" defaultValue={2} required />
           </Field>
         </div>
@@ -115,7 +118,7 @@ function NewReservationModal({
         </div>
         <Field label="Table" hint="Optionnel — assignable plus tard">
           <Select name="tableId" defaultValue="">
-            <option value="">Aucune table assignée</option>
+            <option value="">{tv("noTableAssigned")}</option>
             {tables.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.label} ({t.capacity} places)
@@ -124,14 +127,14 @@ function NewReservationModal({
           </Select>
         </Field>
         <Field label="Notes" hint="Optionnel">
-          <Textarea name="notes" placeholder="Ex : allergie aux arachides, poussette…" rows={2} />
+          <Textarea name="notes" placeholder={tv("eGPeanutAllergy")} rows={2} />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Créer la réservation"}
+            {isSubmitting ? tv("creating") : tv("createTheReservation")}
           </Button>
         </div>
       </form>
@@ -148,6 +151,7 @@ function TablesCard({
   tables: RestaurantTable[];
   onChange: (tables: RestaurantTable[]) => void;
 }) {
+  const tv = useTranslations("reservationsView");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleAdd(e: FormEvent<HTMLFormElement>) {
@@ -170,7 +174,7 @@ function TablesCard({
         onChange([...tables, table].sort((a, b) => a.label.localeCompare(b.label)));
         (e.target as HTMLFormElement).reset();
       } else {
-        notifyError("L'ajout de la table a échoué.");
+        notifyError(tv("couldNotAddThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -184,9 +188,9 @@ function TablesCard({
 
   return (
     <Card>
-      <CardHeader eyebrow="Plan de salle" title="Tables" description="Vos tables, pour assigner les réservations." />
+      <CardHeader eyebrow="Plan de salle" title="Tables" description={tv("yourTablesToAssign")} />
       <div className="mb-3 space-y-1.5">
-        {tables.length === 0 && <p className="text-[12.5px] text-mv-ink-faint">Aucune table ajoutée.</p>}
+        {tables.length === 0 && <p className="text-[12.5px] text-mv-ink-faint">{tv("noTablesAdded")}</p>}
         {tables.map((t) => (
           <div
             key={t.id}
@@ -197,7 +201,7 @@ function TablesCard({
             </span>
             <button
               onClick={() => handleDelete(t.id)}
-              aria-label="Retirer la table"
+              aria-label={tv("removeTable")}
               className="text-mv-ink-faint transition-colors hover:text-mv-red"
             >
               <Trash2 size={13} />
@@ -214,9 +218,9 @@ function TablesCard({
         <div className="flex-1">
           <Field label="Type">
             <Select name="type" defaultValue="table">
-              <option value="table">Table standard</option>
-              <option value="bar">Comptoir / Bar</option>
-              <option value="terrasse">Terrasse / Extérieur</option>
+              <option value="table">{tv("standardTable")}</option>
+              <option value="bar">{tv("counterBar")}</option>
+              <option value="terrasse">{tv("terraceOutdoor")}</option>
             </Select>
           </Field>
         </div>
@@ -246,14 +250,15 @@ const platformLabel: Record<ReservationPlatformConnection["platform"], string> =
  * reservation_platform_connections.
  */
 function PlatformsCard({ connections }: { connections: ReservationPlatformConnection[] }) {
+  const t = useTranslations("reservationsView");
   const byPlatform = new Map(connections.map((c) => [c.platform, c]));
 
   return (
     <Card>
       <CardHeader
-        eyebrow="Intégrations"
-        title="Services de réservation"
-        description="Connectez un service externe pour centraliser vos réservations ici."
+        eyebrow={t("integrations")}
+        title={t("reservationServices")}
+        description={t("connectAnExternalService")}
       />
       <div className="space-y-2">
         {(Object.keys(platformLabel) as ReservationPlatformConnection["platform"][]).map((platform) => {
@@ -266,12 +271,12 @@ function PlatformsCard({ connections }: { connections: ReservationPlatformConnec
               <div>
                 <p className="text-[13px] font-semibold text-mv-ink">{platformLabel[platform]}</p>
                 <p className="text-[12px] text-mv-ink-faint">
-                  {connected ? "Connecté" : "Nécessite un compte partenaire"}
+                  {connected ? t("connected") : t("requiresAPartnerAccount")}
                 </p>
               </div>
               {connected ? (
                 <Badge tone="green" dot>
-                  Connecté
+                  {t("connected")}
                 </Badge>
               ) : (
                 <span className="flex items-center gap-1.5 rounded-lg bg-mv-ink/[0.06] px-3 py-1.5 text-[12px] font-semibold text-mv-ink-faint">
@@ -299,6 +304,7 @@ export function ReservationsView({
   initialDayStart: string;
   initialPlatformConnections: ReservationPlatformConnection[];
 }) {
+  const tv = useTranslations("reservationsView");
   const { role } = useApp();
   const [tables, setTables] = useState(initialTables);
   const [reservations, setReservations] = useState(initialReservations);
@@ -332,9 +338,9 @@ export function ReservationsView({
     if (!restaurantId) return;
     let cancellationReason: string | undefined;
     if (status === "annulee") {
-      const entered = window.prompt("Un petit mot pour expliquer au client pourquoi la réservation ne pourra pas être honorée.");
+      const entered = window.prompt(tv("aShortNoteExplaining"));
       if (entered === null) return;
-      cancellationReason = entered.trim() || "Un imprévu empêche le restaurant d’honorer cette réservation.";
+      cancellationReason = entered.trim() || tv("somethingUnexpectedPreventsThe");
     }
     const ok = await updateReservationStatusAction(restaurantId, id, status, cancellationReason);
     if (ok) setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
@@ -346,9 +352,9 @@ export function ReservationsView({
     if (result === true) {
       setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, tableId: tableId || null } : r)));
     } else if (result === RESERVATION_CONFLICT) {
-      notifyError("Cette table est déjà réservée à cette heure — choisissez une autre table.");
+      notifyError(tv("thisTableIsAlready2"));
     } else {
-      notifyError("La mise à jour de la table a échoué.");
+      notifyError(tv("couldNotUpdateThe"));
     }
   }
 
@@ -361,22 +367,22 @@ export function ReservationsView({
   return (
     <div>
       <PageHeader
-        eyebrow="Opérations"
-        title="Réservations"
-        description="Les réservations du jour, la taille des groupes et l'assignation des tables."
+        eyebrow={tv("operations")}
+        title={tv("reservations")}
+        description={tv("todaySReservationsParty")}
         action={
           restaurantId && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>
-              <Plus size={15} /> Nouvelle réservation
+              <Plus size={15} /> {tv("newReservation")}
             </Button>
           )
         }
       />
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row">
-        <StatCard label="Réservations du jour" value={reservations.length} icon={CalendarClock} sublabel={formatDayLabel(dayStart)} accent="green" />
-        <StatCard label="Confirmées" value={confirmedCount} icon={CheckCircle2} sublabel={`Sur ${reservations.length} réservation${reservations.length > 1 ? "s" : ""}`} accent="lime" />
-        <StatCard label="Couverts attendus" value={totalCovers} icon={UsersRound} sublabel="Total des tailles de groupe" accent="ink" />
+        <StatCard label={tv("todaySReservations")} value={reservations.length} icon={CalendarClock} sublabel={formatDayLabel(dayStart)} accent="green" />
+        <StatCard label={tv("confirmed")} value={confirmedCount} icon={CheckCircle2} sublabel={`Sur ${reservations.length} réservation${reservations.length > 1 ? "s" : ""}`} accent="lime" />
+        <StatCard label={tv("coversExpected")} value={totalCovers} icon={UsersRound} sublabel={tv("totalPartySizes")} accent="ink" />
       </div>
 
       <div className="mb-4 flex items-center gap-2">
@@ -411,12 +417,12 @@ export function ReservationsView({
           {reservations.length === 0 ? (
             <EmptyState
               icon={CalendarClock}
-              title="Aucune réservation ce jour"
-              description="Ajoutez-en une, ou changez de journée avec les flèches ci-dessus."
+              title={tv("noReservationsThisDay")}
+              description={tv("addOneOrChange")}
               action={
                 restaurantId && (
                   <Button size="sm" onClick={() => setCreateOpen(true)}>
-                    <Plus size={15} /> Nouvelle réservation
+                    <Plus size={15} /> {tv("newReservation")}
                   </Button>
                 )
               }
@@ -424,12 +430,12 @@ export function ReservationsView({
           ) : (
             <Table>
               <THead>
-                <Th>Heure</Th>
-                <Th>Client</Th>
-                <Th>Groupe</Th>
-                <Th>Table</Th>
-                <Th>Statut</Th>
-                <Th className="text-right">Actions</Th>
+                <Th>{tv("time")}</Th>
+                <Th>{tv("customer")}</Th>
+                <Th>{tv("party")}</Th>
+                <Th>{tv("table")}</Th>
+                <Th>{tv("status")}</Th>
+                <Th className="text-right">{tv("actions")}</Th>
               </THead>
               <tbody>
                 {reservations.map((r) => (
@@ -466,11 +472,11 @@ export function ReservationsView({
                         className="w-36 h-8 text-[12px]"
                         disabled={!canManage}
                       >
-                        <option value="demandee">En attente</option>
-                        <option value="confirmee">Confirmée</option>
-                        <option value="annulee">Annulée</option>
-                        <option value="honoree">Honorée</option>
-                        <option value="no_show">Non présentée</option>
+                        <option value="demandee">{tv("pending")}</option>
+                        <option value="confirmee">{tv("confirmed2")}</option>
+                        <option value="annulee">{tv("cancelled")}</option>
+                        <option value="honoree">{tv("honored")}</option>
+                        <option value="no_show">{tv("noShow")}</option>
                       </Select>
                     </Td>
                     <Td className="text-right">
