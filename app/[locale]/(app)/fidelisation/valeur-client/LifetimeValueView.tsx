@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, ChartNoAxesCombined, CircleDollarSign, Plus } from "lucide-react";
@@ -12,12 +14,12 @@ import { addAcquisitionCostAction, type AcquisitionCostCategory } from "./action
 
 export type AcquisitionCostRow = { id: string; category: AcquisitionCostCategory; amount: number; spentOn: string; note: string | null };
 
-const CATEGORY_LABELS: Record<AcquisitionCostCategory, string> = {
-  publicite: "Publicité",
-  commissions: "Commissions",
-  agence: "Agence",
-  promotions: "Promotions",
-  equipement: "Équipement",
+const CATEGORY_LABELS_KEYS: Record<AcquisitionCostCategory, string> = {
+  publicite: "categorylabePublicite",
+  commissions: "categorylabeCommissions",
+  agence: "categorylabeAgence",
+  promotions: "categorylabePromotions",
+  equipement: "categorylabeEquipement",
 };
 
 export function LifetimeValueView({
@@ -33,6 +35,7 @@ export function LifetimeValueView({
   newCustomers: number;
   canEdit: boolean;
 }) {
+  const t = useTranslations("ltvView");
   const [busy, startTransition] = useTransition();
   const [notice, setNotice] = useState<string | null>(null);
   const [category, setCategory] = useState<AcquisitionCostCategory>("publicite");
@@ -48,7 +51,7 @@ export function LifetimeValueView({
         spentOn: String(formData.get("spentOn") ?? ""),
         note: String(formData.get("note") ?? ""),
       });
-      setNotice(ok ? "Dépense ajoutée. Les indicateurs sont à jour." : "La dépense n’a pas pu être enregistrée.");
+      setNotice(ok ? t("expenseAddedTheIndicators") : t("theExpenseCouldNot"));
       if (ok) (document.getElementById("acquisition-cost-form") as HTMLFormElement | null)?.reset();
     });
   }
@@ -56,50 +59,50 @@ export function LifetimeValueView({
   return (
     <div className="space-y-6">
       <Link href="/fidelisation" className="inline-flex items-center gap-2 text-sm text-mv-ink-faint hover:text-mv-green-dark">
-        <ArrowLeft size={15} /> Fidélisation
+        <ArrowLeft size={15} /> {t("loyaltyBack")}
       </Link>
-      <PageHeader eyebrow="Fidélisation · Analyse client" title="Valeur client & acquisition" description="Suivez le revenu généré par client, la marge estimée et le coût d’acquisition sur les 12 derniers mois." />
+      <PageHeader eyebrow={t("loyaltyCustomerAnalysis")} title={t("customerValueAcquisition")} description={t("trackRevenuePerCustomer")} />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={<CircleDollarSign size={17} />} label="LTV combinée" value={metrics.combinedLtv === null ? "À confirmer" : formatCurrency(metrics.combinedLtv)} detail="LTV revenu + LTV marge estimée, selon votre méthode" />
-        <MetricCard icon={<CircleDollarSign size={17} />} label="LTV revenu moyen" value={formatCurrency(metrics.revenueLtv)} detail="Revenu cumulé moyen par client avec achat" />
-        <MetricCard icon={<ChartNoAxesCombined size={17} />} label="LTV marge estimée" value={metrics.marginLtv === null ? "À confirmer" : formatCurrency(metrics.marginLtv)} detail={metrics.grossMarginPct === null ? `${metrics.missingCostItemCount} coût(s) à confirmer; ${metrics.hasSalesWeights ? "marge" : "volumes vendus"} incomplets` : `Marge pondérée du menu : ${Math.round(metrics.grossMarginPct * 100)} %`} />
-        <MetricCard icon={<ChartNoAxesCombined size={17} />} label="CAC moyen · 12 mois" value={cac === null ? "—" : formatCurrency(cac)} detail={`${formatCurrency(periodSpend)} de dépenses ÷ ${newCustomers} nouveaux clients`} />
+        <MetricCard icon={<CircleDollarSign size={17} />} label={t("combinedLtv")} value={metrics.combinedLtv === null ? t("toConfirm") : formatCurrency(metrics.combinedLtv)} detail={t("ltvCombinedDetail")} />
+        <MetricCard icon={<CircleDollarSign size={17} />} label={t("averageRevenueLtv")} value={formatCurrency(metrics.revenueLtv)} detail={t("ltvRevenueDetail")} />
+        <MetricCard icon={<ChartNoAxesCombined size={17} />} label={t("estimatedMarginLtv")} value={metrics.marginLtv === null ? t("toConfirm") : formatCurrency(metrics.marginLtv)} detail={metrics.grossMarginPct === null ? t("itemsToConfirm", { count: metrics.missingCostItemCount, what: metrics.hasSalesWeights ? t("marginWordShort") : t("soldVolumes") }) : t("weightedMenuMargin", { pct: Math.round(metrics.grossMarginPct * 100) })} />
+        <MetricCard icon={<ChartNoAxesCombined size={17} />} label={t("averageCac12Months")} value={cac === null ? "—" : formatCurrency(cac)} detail={t("spendOverNew", { amount: formatCurrency(periodSpend), count: newCustomers })} />
       </div>
 
       <Card className="p-5">
         <div className="mb-4">
-          <h2 className="font-display text-lg text-mv-ink">Dépenses d’acquisition</h2>
-          <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-faint">Le CAC inclut publicité, commissions, agence, promotions et équipement. Ajoutez les dépenses des 12 derniers mois; le calcul les divise par les nouveaux profils clients créés sur la même période.</p>
+          <h2 className="font-display text-lg text-mv-ink">{t("acquisitionSpend")}</h2>
+          <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-faint">{t("cacIncludesAdvertisingCommissions")}</p>
         </div>
         {canEdit ? (
           <form id="acquisition-cost-form" action={submit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
-            <Field label="Catégorie">
+            <Field label={t("category")}>
               <select value={category} onChange={(event) => setCategory(event.target.value as AcquisitionCostCategory)} className="h-10 w-full rounded-lg border border-mv-border bg-mv-surface px-3 text-sm text-mv-ink">
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+                {Object.entries(CATEGORY_LABELS_KEYS).map(([key, label]) => <option key={key} value={key}>{t(label)}</option>)}
               </select>
             </Field>
-            <Field label="Montant · $"><Input name="amount" type="number" min="0.01" step="0.01" required /></Field>
-            <Field label="Date"><Input name="spentOn" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
-            <Field label="Note · facultatif"><Input name="note" maxLength={400} /></Field>
-            <Button type="submit" disabled={busy}><Plus size={14} /> Ajouter</Button>
+            <Field label={t("amount")}><Input name="amount" type="number" min="0.01" step="0.01" required /></Field>
+            <Field label={t("date")}><Input name="spentOn" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required /></Field>
+            <Field label={t("noteOptional")}><Input name="note" maxLength={400} /></Field>
+            <Button type="submit" disabled={busy}><Plus size={14} /> {t("add")}</Button>
           </form>
-        ) : <p className="rounded-lg bg-mv-cream-soft p-3 text-sm text-mv-ink-soft">La saisie des coûts d’acquisition est réservée aux propriétaires et gestionnaires.</p>}
+        ) : <p className="rounded-lg bg-mv-cream-soft p-3 text-sm text-mv-ink-soft">{t("enteringAcquisitionCostsIs")}</p>}
         {notice && <p className="mt-3 text-sm text-mv-green-dark" role="status">{notice}</p>}
       </Card>
 
       <Card className="overflow-hidden">
         <div className="border-b border-mv-border-soft px-5 py-4">
-          <h2 className="font-display text-lg text-mv-ink">Dépenses saisies · 12 mois</h2>
-          <p className="mt-1 text-[12px] text-mv-ink-faint">{costs.length} dépense{costs.length === 1 ? "" : "s"}</p>
+          <h2 className="font-display text-lg text-mv-ink">{t("spendEntered12Months")}</h2>
+          <p className="mt-1 text-[12px] text-mv-ink-faint">{t("expenseCount", { count: costs.length })}</p>
         </div>
-        {costs.length === 0 ? <p className="px-5 py-8 text-center text-sm text-mv-ink-faint">Ajoutez vos dépenses pour obtenir un CAC fiable.</p> : (
+        {costs.length === 0 ? <p className="px-5 py-8 text-center text-sm text-mv-ink-faint">{t("addYourSpendTo")}</p> : (
           <div className="divide-y divide-mv-border-soft">
-            {costs.map((row) => <div key={row.id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm"><div><p className="font-medium text-mv-ink">{CATEGORY_LABELS[row.category]}</p><p className="text-xs text-mv-ink-faint">{row.spentOn}{row.note ? ` · ${row.note}` : ""}</p></div><span className="font-semibold text-mv-ink">{formatCurrency(row.amount)}</span></div>)}
+            {costs.map((row) => <div key={row.id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm"><div><p className="font-medium text-mv-ink">{t(CATEGORY_LABELS_KEYS[row.category])}</p><p className="text-xs text-mv-ink-faint">{row.spentOn}{row.note ? ` · ${row.note}` : ""}</p></div><span className="font-semibold text-mv-ink">{formatCurrency(row.amount)}</span></div>)}
           </div>
         )}
       </Card>
-      <p className="text-[12px] leading-relaxed text-mv-ink-faint">La LTV de marge est une estimation à partir des coûts actuels des articles et des ventes cumulées. Les coûts historiques par commande ne sont pas encore conservés; la marge peut donc différer si vos coûts ont changé.</p>
+      <p className="text-[12px] leading-relaxed text-mv-ink-faint">{t("marginLtvIsAn")}</p>
     </div>
   );
 }

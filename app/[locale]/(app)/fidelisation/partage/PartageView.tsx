@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
@@ -15,6 +17,7 @@ import { createLoyaltyShareAction, deleteLoyaltyShareAction } from "../actions";
 import { notifyError } from "@/lib/notify-error";
 
 function LoyaltyShareRow({ share, onDeleted }: { share: LoyaltyShare; onDeleted: (id: string) => void }) {
+  const t = useTranslations("sharingView");
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const url = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://minervaflow.app"}/f/${share.token}`;
@@ -54,25 +57,25 @@ function LoyaltyShareRow({ share, onDeleted }: { share: LoyaltyShare; onDeleted:
           onClick={handleDownload}
           disabled={!qrDataUrl}
           className="text-mv-ink-faint hover:text-mv-ink disabled:opacity-40"
-          aria-label="Télécharger le code QR"
+          aria-label={t("downloadTheQrCode")}
         >
           <Download size={14} />
         </button>
         <button
           onClick={() => window.open(url, "_blank")}
           className="text-mv-ink-faint hover:text-mv-ink"
-          aria-label="Ouvrir le lien"
-          title="Ouvrir le lien"
+          aria-label={t("openTheLink")}
+          title={t("openTheLink")}
         >
           <ExternalLink size={14} />
         </button>
-        <button onClick={handleCopy} className="text-mv-ink-faint hover:text-mv-ink" aria-label="Copier le lien">
+        <button onClick={handleCopy} className="text-mv-ink-faint hover:text-mv-ink" aria-label={t("copyTheLink")}>
           {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
         </button>
         <button
           onClick={() => onDeleted(share.id)}
           className="text-mv-ink-faint hover:text-mv-red"
-          aria-label="Supprimer le lien"
+          aria-label={t("deleteTheLink")}
         >
           <Trash2 size={13} />
         </button>
@@ -92,6 +95,7 @@ function ShareLoyaltyModal({
   onClose: () => void;
   onCreated: (share: LoyaltyShare) => void;
 }) {
+  const t = useTranslations("sharingView");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -104,7 +108,7 @@ function ShareLoyaltyModal({
         onCreated(share);
         onClose();
       } else {
-        notifyError("La création du lien a échoué.");
+        notifyError(t("couldNotCreateThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -115,19 +119,19 @@ function ShareLoyaltyModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Partager la fidélité"
-      description="Génère un lien public — un nouveau client peut rejoindre le programme sans avoir de fiche existante."
+      title={t("shareLoyalty")}
+      description={t("generatesAPublicLink")}
     >
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Titre" hint="Affiché sur la page publique">
-          <Input name="title" placeholder="Fidélité" defaultValue="Fidélité" required autoFocus />
+        <Field label={t("title")} hint={t("shownOnThePublic")}>
+          <Input name="title" placeholder={t("loyalty")} defaultValue="Fidélité" required autoFocus />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Générer le lien"}
+            {isSubmitting ? t("creating") : t("generateLink")}
           </Button>
         </div>
       </form>
@@ -142,6 +146,7 @@ export function PartageView({
   restaurantId: string | null;
   initialLoyaltyShares: LoyaltyShare[];
 }) {
+  const t = useTranslations("sharingView");
   const [shares, setShares] = useState(initialLoyaltyShares);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -149,7 +154,7 @@ export function PartageView({
     if (!restaurantId) return;
     deleteLoyaltyShareAction(restaurantId, id).then((ok) => {
       if (ok) setShares((prev) => prev.filter((s) => s.id !== id));
-      else notifyError("La suppression a échoué.");
+      else notifyError(t("deletionFailed"));
     });
   }
 
@@ -157,9 +162,9 @@ export function PartageView({
     <div>
       <FidelisationSubNav />
       <PageHeader
-        eyebrow="Croissance"
-        title="Partage"
-        description="Liens et codes QR pour que de nouveaux clients rejoignent votre programme de fidélité eux-mêmes."
+        eyebrow={t("growth")}
+        title={t("sharing")}
+        description={t("linksAndQrCodes")}
         action={
           <Button size="sm" variant="secondary" nativeButton={false} render={<Link href="/fidelisation/partage/studio-qr" />}>
             <QrCode size={14} /> Studio QR & Affiches
@@ -168,9 +173,9 @@ export function PartageView({
       />
       <Card>
         <CardHeader
-          eyebrow="Liens de partage"
-          title="Partager la fidélité"
-          description="Un lien ou un code QR pour qu'un nouveau client rejoigne le programme lui-même."
+          eyebrow={t("shareLinks")}
+          title={t("shareLoyalty")}
+          description={t("aLinkOrQr")}
           action={
             restaurantId && (
               <Button size="sm" variant="secondary" onClick={() => setShareOpen(true)}>
@@ -181,7 +186,7 @@ export function PartageView({
         />
         {shares.length === 0 ? (
           <p className="flex items-center gap-2 text-[12.5px] text-mv-ink-faint">
-            <QrCode size={14} /> Aucun lien généré pour l&apos;instant.
+            <QrCode size={14} /> {t("noLinkYet")}
           </p>
         ) : (
           <div className="space-y-2">

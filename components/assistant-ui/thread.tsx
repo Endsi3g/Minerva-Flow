@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import {
   ThreadPrimitive,
   MessagePrimitive,
@@ -45,48 +47,50 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const PROMPT_CHIPS = [
+function buildPROMPT_CHIPS(t: (key: string) => string) {
+  return [
   {
     label: "Daily Standup & Briefing",
     icon: Zap,
-    prompt: "Génère le briefing du service de ce soir avec les objectifs de vente, les tables VIP et les consignes de suggestive selling.",
+    prompt: t("generateTonightSService"),
   },
   {
-    label: "Analyser le Prime Cost",
+    label: t("analyzeThePrimeCost"),
     icon: TrendingUp,
-    prompt: "Audite le Prime Cost actuel du restaurant en comparant le Food Cost et le Labor Cost au seuil de 60 %.",
+    prompt: t("auditTheRestaurantS"),
   },
   {
-    label: "Rédiger une relance client",
+    label: t("writeACustomerNudge"),
     icon: Mail,
-    prompt: "Rédige une relance personnalisée pour nos clients Habitués inactifs depuis plus de 14 jours avec une offre incitative.",
+    prompt: t("writeAPersonalizedNudge"),
   },
   {
     label: "Plats Stars & BCG",
     icon: Star,
-    prompt: "Analyse la carte actuelle selon la matrice BCG (Stars, Plowhorses, Puzzles, Dogs) et identifie les plats prioritaires.",
+    prompt: t("analyzeTheCurrentMenu"),
   },
   {
     label: "Fiche technique & Recette",
     icon: FileText,
-    prompt: "Rédige la fiche technique complète d'un plat signature avec grammages, coûts portions et ratio Food Cost cible.",
+    prompt: t("writeTheCompleteRecipe"),
   },
   {
-    label: "Recherche dans les SOPs",
+    label: t("searchTheSops"),
     icon: Globe,
-    prompt: "Recherche dans nos SOPs et protocoles d'exploitation les consignes d'ouverture et de fermeture de salle.",
+    prompt: t("searchOurSopsAnd"),
   },
   {
-    label: "Priorités du service",
+    label: t("servicePriorities"),
     icon: Target,
-    prompt: "Quelles sont les 3 actions opérationnelles prioritaires à mener aujourd'hui pour maximiser notre rentabilité ?",
+    prompt: t("whatAreThe3"),
   },
   {
-    label: "Rapport de clôture caisse",
+    label: t("registerClosingReport"),
     icon: BarChart3,
-    prompt: "Génère un rapport de clôture de service synthétique avec le ticket moyen, les couverts et le contrôle des encaissements.",
+    prompt: t("generateAConciseService"),
   },
 ];
+}
 
 export function Thread({
   userName = "Directeur d'exploitation",
@@ -97,8 +101,9 @@ export function Thread({
   selectedModel?: string;
   onSelectModel?: (model: string) => void;
 }) {
+  const t = useTranslations("assistantThread");
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Bonjour" : hour < 17 ? "Bon après-midi" : "Bonsoir";
+  const greeting = hour < 12 ? "Bonjour" : hour < 17 ? t("goodAfternoon") : "Bonsoir";
 
   return (
     <ThreadPrimitive.Root className="flex h-full w-full flex-col bg-white overflow-hidden relative font-sans text-[#1F1E1D]">
@@ -119,7 +124,7 @@ export function Thread({
                 {greeting}
               </h1>
               <p className="text-sm text-[#7a7a76] font-medium mt-1 mb-8">
-                Votre espace restaurant est prêt.
+                {t("yourRestaurantSpaceIs")}
               </p>
 
               {/* Claude-style composer centered */}
@@ -132,7 +137,7 @@ export function Thread({
 
               {/* 8 Prompt Chips below composer */}
               <div className="flex flex-wrap items-center justify-center gap-2 max-w-[720px]">
-                {PROMPT_CHIPS.map((chip, idx) => {
+                {buildPROMPT_CHIPS(t).map((chip, idx) => {
                   const ChipIcon = chip.icon;
                   return (
                     <ThreadPrimitive.Suggestion
@@ -170,7 +175,7 @@ export function Thread({
       <ThreadPrimitive.ScrollToBottom asChild>
         <button
           type="button"
-          aria-label="Faire défiler vers le bas"
+          aria-label={t("scrollDown")}
           className="absolute bottom-24 right-6 flex h-8 w-8 items-center justify-center rounded-full border border-[#E2E0D8] bg-white text-[#1F1E1D] shadow-sm hover:bg-gray-50 transition-all"
         >
           <ArrowDown size={14} />
@@ -215,6 +220,7 @@ function UserMessage() {
 }
 
 function AssistantMessage() {
+  const t = useTranslations("assistantThread");
   return (
     <MessagePrimitive.Root className="flex gap-3.5 group">
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white border border-[#E2E0D8] text-[#0E7C5A] shadow-xs mt-0.5">
@@ -240,7 +246,7 @@ function AssistantMessage() {
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white hover:text-[#1F1E1D] transition-colors"
-              title="Copier la réponse"
+              title={t("copyTheReply")}
             >
               <MessagePrimitive.If copied>
                 <Check size={13} className="text-[#0E7C5A]" />
@@ -255,7 +261,7 @@ function AssistantMessage() {
             <button
               type="button"
               className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white hover:text-[#1F1E1D] transition-colors"
-              title="Régénérer"
+              title={t("regenerate")}
             >
               <RotateCcw size={13} />
             </button>
@@ -269,6 +275,7 @@ function AssistantMessage() {
 }
 
 function GenerativeActionCard() {
+  const t = useTranslations("assistantThread");
   const [completedItems, setCompletedItems] = useState<Record<number, boolean>>({});
 
   const toggleItem = (idx: number) => {
@@ -281,7 +288,7 @@ function GenerativeActionCard() {
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-[12px] font-bold text-[#0A3F2F]">
             <Sparkles size={12} className="text-[#0E7C5A]" />
-            Recommandations d&apos;action immédiate
+            {t("immediateActionRecommendations")}
           </span>
           <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 text-[12px] font-bold">
             +3 400 $ marge est.
@@ -290,9 +297,9 @@ function GenerativeActionCard() {
 
         <div className="space-y-1.5 text-[12px] text-[#5A5851]">
           {[
-            "Réajuster la tarification des cocktails du programme '5 à 7' (+8% marge brute).",
-            "Vérifier les réapprovisionnements critiques pour sécuriser le service de ce week-end.",
-            "Régulariser les écritures de clôture de caisse en attente.",
+            t("readjustThePricingOf"),
+            t("checkCriticalRestocksTo"),
+            t("settleThePendingRegister"),
           ].map((action, i) => (
             <label
               key={i}
@@ -322,14 +329,14 @@ function GenerativeActionCard() {
             href="/menu"
             className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0E7C5A] bg-white border border-[#E2E0D8] px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors shadow-2xs"
           >
-            <span>Menu Engineering</span>
+            <span>{t("menuEngineering")}</span>
             <ExternalLink size={10} />
           </Link>
           <Link
             href="/inventaire"
             className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#5A5851] bg-white border border-[#E2E0D8] px-2.5 py-1 rounded-lg hover:bg-gray-50 hover:text-[#1F1E1D] transition-colors shadow-2xs"
           >
-            <span>Gestion des Stocks</span>
+            <span>{t("stockManagement")}</span>
             <ExternalLink size={10} />
           </Link>
         </div>
@@ -373,6 +380,7 @@ function MultifunctionComposer({
   selectedModel?: string;
   onSelectModel?: (model: string) => void;
 }) {
+  const t = useTranslations("assistantThread");
   const [popoverTrigger, setPopoverTrigger] = useState<"/" | "@" | null>(null);
   const [popoverQuery, setPopoverQuery] = useState("");
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
@@ -413,7 +421,7 @@ function MultifunctionComposer({
       (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      toast.error("La reconnaissance vocale n'est pas supportée par ce navigateur.");
+      toast.error(t("voiceRecognitionIsNot"));
       return;
     }
 
@@ -503,7 +511,7 @@ function MultifunctionComposer({
               {modelMenuOpen && (
                 <div className="absolute right-0 bottom-10 z-50 bg-white border border-[#e6e5e0] rounded-xl py-1 shadow-lg w-48 animate-in fade-in zoom-in-95 duration-150">
                   <div className="px-3 py-1 text-[12px] font-bold text-[#7a7a76] uppercase tracking-wider">
-                    Modèle d'Intelligence
+                    {t("intelligenceModel")}
                   </div>
                   {["Gemini 3.7", "Gemini 3.5 Pro"].map((m) => (
                     <button
@@ -536,7 +544,7 @@ function MultifunctionComposer({
                   ? "bg-red-50 text-red-600 border-red-300 animate-pulse"
                   : "border-[#e0e0dc] bg-white text-[#7a7a76] hover:bg-[#f4f4f3] hover:text-[#26251e]"
               )}
-              title={isListening ? "Arrêter la dictée" : "Dictée vocale"}
+              title={isListening ? t("stopDictation") : t("voiceDictation")}
             >
               {isListening ? <MicOff size={14} /> : <Mic size={14} />}
             </button>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -79,6 +81,7 @@ export function AssistantChatView({
   /** Flow AI kill switch (lib/ai/config.ts) — page stays reachable, sending is blocked. */
   onHold?: boolean;
 }) {
+  const t = useTranslations("assistantChat");
   const router = useRouter();
   const { authUser } = useApp();
   const userName = authUser?.fullName || "Directeur d'exploitation";
@@ -180,9 +183,9 @@ export function AssistantChatView({
       setShowNewFolderModal(false);
       setNewFolderName("");
       setNewFolderDesc("");
-      toast.success("Dossier de projet créé.");
+      toast.success(t("projectFolderCreated"));
     } else {
-      toast.error(res.error || "Erreur lors de la création du dossier.");
+      toast.error(res.error || t("errorWhileCreatingThe"));
     }
   };
 
@@ -220,7 +223,7 @@ export function AssistantChatView({
             className="flex items-center gap-2.5 text-xs font-semibold px-2.5 py-2 rounded-md bg-white text-[#26251e] shadow-xs border border-[#e5e5e0] transition-colors"
           >
             <Brain className="h-4 w-4 text-[#059669] shrink-0" strokeWidth={2} />
-            <span>Assistant</span>
+            <span>{t("assistant")}</span>
           </Link>
 
           <Link
@@ -228,7 +231,7 @@ export function AssistantChatView({
             className="flex items-center gap-2.5 text-xs font-semibold px-2.5 py-2 rounded-md text-[#555552] hover:text-[#26251e] hover:bg-[#e5e5e2]/60 transition-colors"
           >
             <Bot className="h-4 w-4 text-[#555552] opacity-70 shrink-0" strokeWidth={1.5} />
-            <span>Agents Store</span>
+            <span>{t("agentsStore")}</span>
           </Link>
 
           <Link
@@ -236,7 +239,7 @@ export function AssistantChatView({
             className="flex items-center gap-2.5 text-xs font-semibold px-2.5 py-2 rounded-md text-[#555552] hover:text-[#26251e] hover:bg-[#e5e5e2]/60 transition-colors"
           >
             <BookOpen className="h-4 w-4 text-[#555552] opacity-70 shrink-0" strokeWidth={1.5} />
-            <span>Capacités (Skills)</span>
+            <span>{t("capabilitiesSkills")}</span>
           </Link>
 
           <Link
@@ -244,7 +247,7 @@ export function AssistantChatView({
             className="flex items-center gap-2.5 text-xs font-semibold px-2.5 py-2 rounded-md text-[#555552] hover:text-[#26251e] hover:bg-[#e5e5e2]/60 transition-colors"
           >
             <BarChart2 className="h-4 w-4 text-[#555552] opacity-70 shrink-0" strokeWidth={1.5} />
-            <span>Intelligence</span>
+            <span>{t("intelligence")}</span>
           </Link>
 
           {/* Section Historique des Discussions Réelles */}
@@ -258,13 +261,13 @@ export function AssistantChatView({
               className="flex items-center justify-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-[#059669] bg-[#059669]/10 border border-[#059669]/20 rounded-md hover:bg-[#059669]/15 transition-all w-full mb-2"
             >
               <Plus className="w-3.5 h-3.5 shrink-0" />
-              <span>Nouvelle conversation</span>
+              <span>{t("newConversation")}</span>
             </Link>
 
             <div className="max-h-56 overflow-y-auto space-y-0.5 pr-0.5">
               {conversations.length === 0 ? (
                 <div className="px-2 py-1 text-[12px] text-[#807d72] italic">
-                  Aucune discussion
+                  {t("noConversations")}
                 </div>
               ) : (
                 conversations.map((sess) => {
@@ -281,14 +284,14 @@ export function AssistantChatView({
                     >
                       {sess.isPinned && <Pin className="h-2.5 w-2.5 text-amber-500 shrink-0" />}
                       <Link href={`/assistant/${sess.id}`} className="flex-1 truncate">
-                        {sess.title || "Nouvel échange Flow AI"}
+                        {sess.title || t("newFlowAiChat")}
                       </Link>
 
                       <button
                         type="button"
                         onClick={(e) => handleTogglePin(e, sess.id, !!sess.isPinned)}
                         className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[#e5e5e2] text-neutral-400 hover:text-amber-500 transition-all cursor-pointer"
-                        title={sess.isPinned ? "Détacher" : "Épingler"}
+                        title={sess.isPinned ? t("unpin") : t("pin")}
                       >
                         {sess.isPinned ? <PinOff className="h-2.5 w-2.5" /> : <Pin className="h-2.5 w-2.5" />}
                       </button>
@@ -316,7 +319,7 @@ export function AssistantChatView({
             className="flex items-center gap-2.5 text-xs font-semibold px-2 py-1.5 rounded-md text-[#555552] hover:text-[#26251e] hover:bg-[#e5e5e2]/60 transition-colors"
           >
             <Settings className="h-4 w-4 text-[#7a7a76]" />
-            <span>Paramètres</span>
+            <span>{t("settings")}</span>
           </Link>
         </div>
       </aside>
@@ -380,7 +383,7 @@ export function AssistantChatView({
                 )}
               >
                 <Layers className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
-                <span className="flex-1 truncate">Tous les projets</span>
+                <span className="flex-1 truncate">{t("allProjects")}</span>
                 <span className="text-[12px] text-[#7a7a76] font-mono">
                   {conversations.length}
                 </span>
@@ -415,7 +418,7 @@ export function AssistantChatView({
                     />
                     <span className="flex-1 truncate">{dos.name}</span>
                     <span className="text-[12px] text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {isActive ? "RAG actif" : "Désactivé"}
+                      {isActive ? "RAG actif" : t("disabled")}
                     </span>
                   </div>
                 );
@@ -456,7 +459,7 @@ export function AssistantChatView({
 
               {filteredSessions.length === 0 ? (
                 <div className="px-2 py-1 text-[12px] text-[#807d72] italic">
-                  Aucune discussion
+                  {t("noConversations")}
                 </div>
               ) : (
                 filteredSessions.slice(0, 8).map((sess) => {
@@ -472,7 +475,7 @@ export function AssistantChatView({
                           : "text-[#555552] hover:bg-neutral-100 hover:text-[#26251e]"
                       )}
                     >
-                      {sess.title || "Nouvel échange Flow AI"}
+                      {sess.title || t("newFlowAiChat")}
                     </Link>
                   );
                 })
@@ -494,11 +497,11 @@ export function AssistantChatView({
                 "h-7 w-7 rounded-md flex items-center justify-center text-[#7a7a76] hover:text-[#059669] hover:bg-[#f4f4f3] transition-colors cursor-pointer border border-transparent",
                 isWorkspaceOpen && "text-[#059669]"
               )}
-              title={isWorkspaceOpen ? "Masquer le workspace" : "Afficher le workspace"}
+              title={isWorkspaceOpen ? t("hideTheWorkspace") : t("showTheWorkspace")}
             >
               {isWorkspaceOpen ? <PanelLeftClose size={15} /> : <PanelLeft size={15} />}
             </button>
-            <span className="text-xs font-bold text-[#26251e]">Assistant</span>
+            <span className="text-xs font-bold text-[#26251e]">{t("assistant")}</span>
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -543,7 +546,7 @@ export function AssistantChatView({
             className="flex items-center gap-1 text-[12px] font-semibold text-[#7a7a76] hover:text-[#059669] px-2 py-1 rounded-md hover:bg-[#f4f4f3] transition-colors"
           >
             <Plus size={13} />
-            <span>Nouveau</span>
+            <span>{t("new")}</span>
           </Link>
         </div>
 
@@ -552,8 +555,8 @@ export function AssistantChatView({
           {onHold && (
             <div className="absolute inset-x-0 top-0 z-30 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[12.5px] font-medium text-amber-900">
               <Bell size={14} className="shrink-0 text-amber-600" />
-              Flow AI est temporairement en pause — l&apos;historique reste consultable, mais l&apos;envoi de
-              messages est désactivé pour le moment.
+              {t("flowAiIsTemporarily")}
+              {t("text")}
             </div>
           )}
           <AssistantRuntimeProvider runtime={runtime}>
@@ -569,7 +572,7 @@ export function AssistantChatView({
               onClickCapture={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                toast.info("Flow AI est en pause pour le moment — revenez bientôt.");
+                toast.info(t("flowAiIsPaused"));
               }}
             />
           )}
@@ -581,19 +584,19 @@ export function AssistantChatView({
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="text-sm font-bold text-[#26251e]">
-              Nouveau Dossier / Projet
+              {t("newFolderProject")}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateFolder} className="space-y-3 pt-2">
             <div>
               <label className="text-[12px] font-bold text-[#7a7a76] uppercase tracking-wider block mb-1">
-                Nom du Dossier
+                {t("folderName")}
               </label>
               <input
                 type="text"
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
-                placeholder="Ex: Rénovation Carte Printemps"
+                placeholder={t("eGSpringMenu")}
                 required
                 className="w-full text-xs px-3 py-2 rounded-lg border border-[#e0e0dc] focus:outline-none focus:ring-1 focus:ring-[#059669] bg-white text-[#26251e]"
               />
@@ -605,7 +608,7 @@ export function AssistantChatView({
               <textarea
                 value={newFolderDesc}
                 onChange={(e) => setNewFolderDesc(e.target.value)}
-                placeholder="Objectifs et périmètre du dossier..."
+                placeholder={t("goalsAndScopeOf")}
                 rows={2}
                 className="w-full text-xs px-3 py-2 rounded-lg border border-[#e0e0dc] focus:outline-none focus:ring-1 focus:ring-[#059669] bg-white text-[#26251e] resize-none"
               />
@@ -624,7 +627,7 @@ export function AssistantChatView({
                 size="sm"
                 className="bg-[#059669] hover:bg-[#047857] text-white"
               >
-                Créer le dossier
+                {t("createTheFolder")}
               </Button>
             </div>
           </form>

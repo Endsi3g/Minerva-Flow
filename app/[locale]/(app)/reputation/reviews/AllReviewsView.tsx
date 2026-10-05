@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
@@ -58,6 +60,7 @@ export function AllReviewsView({
   itemReviews: ItemOrOfferReview[];
   googleReviews: GoogleReviewRow[];
 }) {
+  const t = useTranslations("allReviews");
   const [filterType, setFilterType] = useState<"all" | "private" | "google" | "menu_item" | "offer">("all");
   const [ratingFilter, setRatingFilter] = useState<number | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -101,7 +104,7 @@ export function AllReviewsView({
         id: `item-${item.kind}-${item.id}`,
         source: item.kind,
         rating: item.rating,
-        authorName: "Client vérifié",
+        authorName: t("verifiedCustomer"),
         targetName: item.name,
         comment: item.comment,
         createdAt: item.createdAt,
@@ -132,8 +135,8 @@ export function AllReviewsView({
   if (!restaurantId || !restaurant) {
     return (
       <div className="p-6">
-        <PageHeader eyebrow="Réputation" title="Toutes les revues" />
-        <EmptyState icon={MessageSquare} title="Aucun restaurant sélectionné" description="Sélectionnez un établissement pour voir ses revues." />
+        <PageHeader eyebrow={t("reputation")} title={t("allReviews")} />
+        <EmptyState icon={MessageSquare} title={t("noRestaurantSelected")} description={t("selectARestaurantTo")} />
       </div>
     );
   }
@@ -156,13 +159,13 @@ export function AllReviewsView({
             className="inline-flex items-center gap-1.5 text-[12px] font-medium text-mv-ink-soft hover:text-mv-green transition-colors"
           >
             <ArrowLeft size={13} />
-            <span>Retour à la gestion de Réputation</span>
+            <span>{t("backToReputationManagement")}</span>
           </Link>
         </div>
         <PageHeader
-          eyebrow="Réputation · Vue haute densité"
-          title={`Toutes les revues (${unifiedReviews.length})`}
-          description="Registre exhaustif condensé de tous les avis enregistrés : avis privés restaurant, fiches Google Maps, plats et offres promotionnelles."
+          eyebrow={t("reputationHighDensityView")}
+          title={t("allReviewsUnifiedreviewslength", { unifiedReviewsLength: unifiedReviews.length })}
+          description={t("condensedFullRegisterOf")}
         />
       </div>
 
@@ -187,7 +190,7 @@ export function AllReviewsView({
                 filterType === "private" ? "bg-mv-green text-white shadow-2xs" : "bg-mv-cream-soft text-mv-ink-soft hover:text-mv-ink"
               }`}
             >
-              Avis privés (<span className="text-[12px]">4★</span>) ({counts.private})
+              {t("privateReviews")} (<span className="text-[12px]">4★</span>) ({counts.private})
             </button>
             <button
               type="button"
@@ -220,7 +223,7 @@ export function AllReviewsView({
 
           {/* Rating filter */}
           <div className="flex items-center gap-1">
-            <span className="text-[12px] text-mv-ink-faint mr-1">Note :</span>
+            <span className="text-[12px] text-mv-ink-faint mr-1">{t("rating")}</span>
             {(["all", 5, 4, 3, 2, 1] as const).map((r) => (
               <button
                 key={r}
@@ -230,7 +233,7 @@ export function AllReviewsView({
                   ratingFilter === r ? "bg-mv-ink text-white" : "border border-mv-border text-mv-ink-soft hover:bg-mv-cream-soft"
                 }`}
               >
-                {r === "all" ? "Toutes" : `${r}★`}
+                {r === "all" ? t("all") : `${r}★`}
               </button>
             ))}
           </div>
@@ -241,7 +244,7 @@ export function AllReviewsView({
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-mv-ink-faint" />
           <input
             type="text"
-            placeholder="Rechercher par auteur, email, plat ou contenu du commentaire…"
+            placeholder={t("searchByAuthorEmail")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-lg border border-mv-border bg-white pl-8 pr-3 py-1.5 text-[12.5px] text-mv-ink placeholder:text-mv-ink-faint focus:border-mv-green focus:outline-none"
@@ -255,26 +258,26 @@ export function AllReviewsView({
           <table className="w-full text-left text-[12.5px] border-collapse">
             <thead>
               <tr className="border-b border-mv-border bg-mv-cream-soft/70 text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                <th className="py-2.5 px-3">Type</th>
-                <th className="py-2.5 px-3">Note</th>
-                <th className="py-2.5 px-3">Auteur &amp; Compte</th>
-                <th className="py-2.5 px-3">Cible</th>
-                <th className="py-2.5 px-3">Photos</th>
-                <th className="py-2.5 px-3 w-2/5 min-w-64">Commentaire &amp; Réponse</th>
-                <th className="py-2.5 px-3 text-right">Date &amp; Statut</th>
+                <th className="py-2.5 px-3">{t("type")}</th>
+                <th className="py-2.5 px-3">{t("rating2")}</th>
+                <th className="py-2.5 px-3">{t("authorAccount")}</th>
+                <th className="py-2.5 px-3">{t("target")}</th>
+                <th className="py-2.5 px-3">{t("photos")}</th>
+                <th className="py-2.5 px-3 w-2/5 min-w-64">{t("commentReply")}</th>
+                <th className="py-2.5 px-3 text-right">{t("dateStatus")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-mv-border-soft">
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-mv-ink-faint">
-                    Aucun avis ne correspond aux critères sélectionnés.
+                    {t("noReviewsMatchThe")}
                   </td>
                 </tr>
               ) : (
                 filtered.map((review) => {
                   const sourceConfig = {
-                    private: { label: "Avis Privé", tone: "amber" as const, icon: MessageSquare },
+                    private: { label: t("privateReview"), tone: "amber" as const, icon: MessageSquare },
                     google: { label: "Google Maps", tone: "blue" as const, icon: MapPin },
                     menu_item: { label: "Plat", tone: "neutral" as const, icon: UtensilsCrossed },
                     offer: { label: "Offre", tone: "green" as const, icon: Tag },
@@ -312,7 +315,7 @@ export function AllReviewsView({
                         {review.targetName ? (
                           <span className="font-medium text-mv-ink">{review.targetName}</span>
                         ) : (
-                          <span className="text-mv-ink-faint italic text-[12px]">Établissement</span>
+                          <span className="text-mv-ink-faint italic text-[12px]">{t("restaurant")}</span>
                         )}
                       </td>
 
@@ -324,12 +327,12 @@ export function AllReviewsView({
                               <button
                                 key={idx}
                                 type="button"
-                                onClick={() => setLightbox({ url, title: `Photo de ${review.authorName}` })}
+                                onClick={() => setLightbox({ url, title: t("photoByAuthorname", { authorName: review.authorName }) })}
                                 className="h-8 w-8 overflow-hidden rounded border border-mv-border hover:opacity-80 transition-opacity"
-                                title="Voir en grand"
+                                title={t("viewLarger")}
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={url} alt="Aperçu" className="h-full w-full object-cover" />
+                                <img src={url} alt={t("preview")} className="h-full w-full object-cover" />
                               </button>
                             ))}
                             {review.imageUrls.length > 2 && (
@@ -348,11 +351,11 @@ export function AllReviewsView({
                         {review.comment ? (
                           <p className="text-mv-ink leading-relaxed">{review.comment}</p>
                         ) : (
-                          <span className="text-mv-ink-faint italic text-[12px]">Sans commentaire</span>
+                          <span className="text-mv-ink-faint italic text-[12px]">{t("noComment")}</span>
                         )}
                         {review.ownerResponse && (
                           <div className="mt-1.5 rounded-md border border-mv-green/20 bg-mv-green-tint/50 p-2 text-[12px] text-mv-green-darker">
-                            <span className="font-semibold block mb-0.5">Votre réponse :</span>
+                            <span className="font-semibold block mb-0.5">{t("yourReply")}</span>
                             <span>{review.ownerResponse}</span>
                           </div>
                         )}
@@ -367,12 +370,12 @@ export function AllReviewsView({
                           {review.ownerResponse ? (
                             <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green">
                               <CheckCircle2 size={11} />
-                              Répondu
+                              {t("replied")}
                             </span>
                           ) : review.source === "private" || review.source === "google" ? (
                             <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-amber">
                               <Clock size={11} />
-                              À traiter
+                              {t("toHandle")}
                             </span>
                           ) : null}
                         </div>
