@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -28,10 +30,10 @@ import { logVisitAction, redeemRewardAction, sendPortalLinkAction, deleteCustome
 import type { Customer, LoyaltyReward, LoyaltyTransactionType } from "@/lib/types";
 import { ArrowLeft, Gift, Plus, Send, Trash2 } from "lucide-react";
 
-const txLabel: Record<LoyaltyTransactionType, string> = {
-  visite: "Visite",
-  echange: "Échange",
-  ajustement: "Ajustement",
+const txLabelKey: Record<LoyaltyTransactionType, string> = {
+  visite: "txVisit",
+  echange: "txRedemption",
+  ajustement: "txAdjustment",
 };
 
 export function CustomerDetailView({
@@ -49,6 +51,7 @@ export function CustomerDetailView({
   loyaltyPointsPerDollar: number;
   loyaltyTierThresholds: LoyaltyTierThresholds;
 }) {
+  const tv = useTranslations("customerDetail");
   const router = useRouter();
   const { role } = useApp();
   const canManage = role === "owner" || role === "manager";
@@ -71,11 +74,11 @@ export function CustomerDetailView({
     const ok = await saveCustomerStaffNoteAction(restaurantId, customer.id, staffNote);
     setSavingNote(false);
     if (!ok) {
-      notifyError("Impossible d'enregistrer la note. Réessayez.");
+      notifyError(tv("couldNotSaveThe"));
       return;
     }
     setSavedStaffNote(staffNote);
-    toast.success("Note enregistrée");
+    toast.success(tv("noteSaved"));
   }
 
   const rate = loyaltyPointsPerDollar;
@@ -111,7 +114,7 @@ export function CustomerDetailView({
         toast.success(`${updated.name} passe au palier ${loyaltyTierLabel[tierAfter]} !`, { icon: "🎉", duration: 5000 });
       }
     } else {
-      notifyError("L'enregistrement de la visite a échoué.");
+      notifyError(tv("couldNotRecordThe"));
     }
   }
 
@@ -119,9 +122,9 @@ export function CustomerDetailView({
     const updated = await redeemRewardAction(restaurantId, customer.id, rewardId);
     if (updated) {
       setCustomer(updated);
-      toast.success("Récompense échangée.");
+      toast.success(tv("rewardRedeemed"));
     } else {
-      notifyError("L'échange a échoué — solde de points insuffisant ?");
+      notifyError(tv("theRedemptionFailedNot"));
     }
   }
 
@@ -131,9 +134,9 @@ export function CustomerDetailView({
     try {
       const result = await sendPortalLinkAction(restaurantId, customer.id);
       if (result.ok) {
-        toast.success(`Lien envoyé à ${customer.email}.`);
+        toast.success(tv("linkSentTo", { email: customer.email }));
       } else {
-        notifyError(result.error ?? "L'envoi du lien a échoué.");
+        notifyError(result.error ?? tv("couldNotSendThe"));
       }
     } finally {
       setSendingPortalLink(false);
@@ -141,7 +144,7 @@ export function CustomerDetailView({
   }
 
   async function handleDelete() {
-    if (!window.confirm(`Supprimer la fiche client "${customer.name}" ? Son historique de points et de visites sera perdu.`)) {
+    if (!window.confirm(tv("confirmDeleteCustomer", { name: customer.name }))) {
       return;
     }
     setDeleting(true);
@@ -150,7 +153,7 @@ export function CustomerDetailView({
       router.push("/fidelisation");
     } else {
       setDeleting(false);
-      notifyError("La suppression a échoué.");
+      notifyError(tv("deletionFailed"));
     }
   }
 
@@ -160,13 +163,13 @@ export function CustomerDetailView({
         onClick={() => router.push("/fidelisation")}
         className="mb-3 flex items-center gap-1.5 text-[12.5px] font-semibold text-mv-ink-soft hover:text-mv-ink"
       >
-        <ArrowLeft size={14} /> Tous les clients
+        <ArrowLeft size={14} /> {tv("allCustomers")}
       </button>
 
       <PageHeader
-        eyebrow="Fidélisation"
+        eyebrow={tv("loyalty")}
         title={customer.name}
-        description={[customer.email, customer.phone].filter(Boolean).join(" — ") || "Aucune coordonnée"}
+        description={[customer.email, customer.phone].filter(Boolean).join(" — ") || tv("noContactDetails")}
         action={
           <div className="flex items-center gap-1.5">
             <Badge tone="green">{customer.loyaltyPoints} points</Badge>
@@ -175,7 +178,7 @@ export function CustomerDetailView({
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                aria-label="Supprimer le client"
+                aria-label={tv("deleteTheCustomer")}
                 className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-red/10 hover:text-mv-red disabled:opacity-50"
               >
                 <Trash2 size={15} />
@@ -190,18 +193,18 @@ export function CustomerDetailView({
           {canCreate && (
             <Card>
               <CardHeader
-                eyebrow="Service"
-                title="Notes de l'équipe"
-                description="Allergies, table et vin préférés, occasions. Visible par l'équipe seulement, jamais par le client."
+                eyebrow={tv("service")}
+                title={tv("teamNotes")}
+                description={tv("allergiesPreferredTableAnd")}
               />
-              <Field label="Note sur ce convive">
+              <Field label={tv("noteAboutThisGuest")}>
                 <Textarea
                   id="customer-staff-note"
                   rows={4}
                   maxLength={2000}
                   value={staffNote}
                   onChange={(event) => setStaffNote(event.target.value)}
-                  placeholder="Ex. Allergie aux noix. Préfère la table 4. Aime le Chablis."
+                  placeholder={tv("eGNutAllergy")}
                 />
               </Field>
               <div className="mt-3 flex items-center justify-between gap-3">
@@ -212,7 +215,7 @@ export function CustomerDetailView({
                   loading={savingNote}
                   disabled={savingNote || staffNote === savedStaffNote}
                 >
-                  Enregistrer la note
+                  {tv("saveTheNote")}
                 </Button>
               </div>
             </Card>
@@ -220,15 +223,15 @@ export function CustomerDetailView({
           <Card>
             <div className="grid grid-cols-3 gap-3 rounded-xl bg-mv-cream-soft p-3">
               <div>
-                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Visites</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{tv("visits")}</p>
                 <p className="font-display text-[16px] font-medium text-mv-ink">{customer.visitCount}</p>
               </div>
               <div>
-                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Total dépensé</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{tv("totalSpent")}</p>
                 <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(customer.totalSpent)}</p>
               </div>
               <div>
-                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Points</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{tv("points")}</p>
                 <p className="font-display text-[16px] font-medium text-mv-green-dark">{customer.loyaltyPoints}</p>
               </div>
             </div>
@@ -236,7 +239,7 @@ export function CustomerDetailView({
             <div className="mt-3 flex gap-2">
               {canCreate && (
                 <Button size="sm" onClick={() => setVisitOpen(true)} className="flex-1">
-                  <Plus size={14} /> Enregistrer une visite
+                  <Plus size={14} /> {tv("recordAVisit")}
                 </Button>
               )}
               {canCreate && customer.email && (
@@ -246,19 +249,19 @@ export function CustomerDetailView({
                   onClick={handleSendPortalLink}
                   disabled={sendingPortalLink}
                   className="flex-1"
-                  title="Envoie un lien de connexion sans mot de passe directement au courriel du client"
+                  title={tv("sendsAPasswordlessSign")}
                 >
                   <Send size={14} />
-                  {sendingPortalLink ? "Envoi…" : "Lien du portail"}
+                  {sendingPortalLink ? tv("sending") : tv("portalLink")}
                 </Button>
               )}
             </div>
           </Card>
 
           <Card>
-            <CardHeader eyebrow="Évolution" title="Solde de points dans le temps" />
+            <CardHeader eyebrow={tv("trend")} title={tv("pointsBalanceOverTime")} />
             {pointsHistory.length < 2 ? (
-              <p className="text-[12.5px] text-mv-ink-faint">Pas encore assez de transactions pour un graphique.</p>
+              <p className="text-[12.5px] text-mv-ink-faint">{tv("notEnoughTransactionsYet")}</p>
             ) : (
               <div className="h-[180px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -303,9 +306,9 @@ export function CustomerDetailView({
           </Card>
 
           <Card>
-            <CardHeader title="Récompenses" description={`${rewards.filter((r) => r.active).length} disponible(s)`} />
+            <CardHeader title={tv("rewards")} description={`${rewards.filter((r) => r.active).length} disponible(s)`} />
             {rewards.filter((r) => r.active).length === 0 ? (
-              <p className="text-[12.5px] text-mv-ink-faint">Aucune récompense configurée.</p>
+              <p className="text-[12.5px] text-mv-ink-faint">{tv("noRewardsSetUp")}</p>
             ) : (
               <div className="space-y-2">
                 {rewards
@@ -325,7 +328,7 @@ export function CustomerDetailView({
                             disabled={customer.loyaltyPoints < r.pointsCost}
                             onClick={() => handleRedeem(r.id)}
                           >
-                            Échanger
+                            {tv("redeem")}
                           </Button>
                         )}
                       </div>
@@ -338,9 +341,9 @@ export function CustomerDetailView({
 
         <div className="xl:col-span-5">
           <Card>
-            <CardHeader title="Historique" description={`${customer.transactions.length} transaction(s)`} />
+            <CardHeader title={tv("history")} description={`${customer.transactions.length} transaction(s)`} />
             {customer.transactions.length === 0 ? (
-              <p className="text-[12.5px] text-mv-ink-faint">Aucune transaction pour ce client.</p>
+              <p className="text-[12.5px] text-mv-ink-faint">{tv("noTransactionsForThis")}</p>
             ) : (
               <div className="space-y-0">
                 {customer.transactions.map((t, i) => {
@@ -353,7 +356,7 @@ export function CustomerDetailView({
                       <span className={`relative mt-1.5 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-mv-surface shadow-sm ${dotTone}`} />
                       <div className="min-w-0 flex-1 rounded-lg bg-mv-cream-soft p-3">
                         <div className="mb-1 flex items-center justify-between">
-                          <span className="text-[12px] font-semibold text-mv-ink">{txLabel[t.type]}</span>
+                          <span className="text-[12px] font-semibold text-mv-ink">{tv(txLabelKey[t.type])}</span>
                           <span className="text-[12px] text-mv-ink-faint">{formatDate(t.createdAt)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[12.5px]">
@@ -382,11 +385,11 @@ export function CustomerDetailView({
             setVisitOpen(false);
             setVisitAmount("");
           }}
-          title="Enregistrer une visite"
+          title={tv("recordAVisit")}
           description={`Pour ${customer.name}`}
         >
           <form onSubmit={handleVisitSubmit} className="space-y-3">
-            <Field label="Montant dépensé">
+            <Field label={tv("amountSpent")}>
               <Input
                 name="amount"
                 type="number"
@@ -409,8 +412,8 @@ export function CustomerDetailView({
                 </p>
               );
             })()}
-            <Field label="Note" hint="Optionnel">
-              <Input name="note" placeholder="Ex : anniversaire, groupe de 6" />
+            <Field label={tv("note")} hint={tv("optional")}>
+              <Input name="note" placeholder={tv("eGBirthdayGroup")} />
             </Field>
             <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
               <Button
@@ -423,7 +426,7 @@ export function CustomerDetailView({
               >
                 Annuler
               </Button>
-              <Button type="submit">Enregistrer</Button>
+              <Button type="submit">{tv("save")}</Button>
             </div>
           </form>
         </Modal>

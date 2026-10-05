@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { Globe } from "lucide-react";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { COMING_SOON_LOCALES, routing } from "@/i18n/routing";
 
 const localeLabelKeys: Record<string, "french" | "english" | "turkish"> = {
   fr: "french",
@@ -38,6 +38,11 @@ export function LocaleSwitcher() {
         {routing.locales.map((loc) => (
           <option key={loc} value={loc}>
             {t(localeLabelKeys[loc])}
+          </option>
+        ))}
+        {COMING_SOON_LOCALES.map((loc) => (
+          <option key={loc} value={loc} disabled>
+            {t(localeLabelKeys[loc])} · {t("comingSoon")}
           </option>
         ))}
       </select>

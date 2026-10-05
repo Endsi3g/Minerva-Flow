@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -35,6 +37,7 @@ function NewReferralProgramModal({
   onClose: () => void;
   onCreated: (program: ReferralProgram) => void;
 }) {
+  const t = useTranslations("referralView");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -56,7 +59,7 @@ function NewReferralProgramModal({
         onClose();
         (e.target as HTMLFormElement).reset();
       } else {
-        notifyError("La création du programme a échoué.");
+        notifyError(t("couldNotCreateThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -67,21 +70,21 @@ function NewReferralProgramModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Nouveau programme de parrainage"
-      description="Vos clients partagent un lien ; une fois l'objectif atteint, ils débloquent la récompense."
+      title={t("newReferralProgram")}
+      description={t("yourCustomersShareA")}
     >
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Nom">
-          <Input name="name" placeholder="Ex : Amenez un ami" required autoFocus />
+        <Field label={t("name")}>
+          <Input name="name" placeholder={t("eGBringA")} required autoFocus />
         </Field>
-        <Field label="Description" hint="Optionnel">
-          <Input name="description" placeholder="Ex : valable jusqu'à la fin de l'été" />
+        <Field label={t("description")} hint={t("optional")}>
+          <Input name="description" placeholder={t("eGValidUntil")} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Objectif" hint="Nombre de parrainages réussis requis">
+          <Field label={t("goal")} hint={t("numberOfSuccessfulReferrals")}>
             <Input name="goalCount" type="number" min="1" step="1" defaultValue="1" required />
           </Field>
-          <Field label="Récompense du catalogue" hint="Optionnel">
+          <Field label={t("catalogReward")} hint={t("optional")}>
             <Select name="rewardId" defaultValue="">
               <option value="">—</option>
               {rewards.map((r) => (
@@ -92,19 +95,19 @@ function NewReferralProgramModal({
             </Select>
           </Field>
         </div>
-        <Field label="Ou décrivez la récompense librement" hint="Optionnel — affiché au client">
-          <Input name="rewardDescription" placeholder="Ex : dessert offert" />
+        <Field label={t("orDescribeTheReward")} hint={t("optionalShownToThe")}>
+          <Input name="rewardDescription" placeholder={t("eGFreeDessert")} />
         </Field>
         <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 p-3">
-          <p className="mb-2 text-[12px] font-semibold text-mv-ink">Bonus immédiat à la conversion</p>
+          <p className="mb-2 text-[12px] font-semibold text-mv-ink">{t("instantBonusOnConversion")}</p>
           <p className="mb-3 text-[12px] leading-snug text-mv-ink-faint">
-            Crédité en points dès qu&apos;un ami parrainé devient client — en plus de la récompense d&apos;objectif ci-dessus, qui reste remise à la main.
+            {t("instantBonusHint")}
           </p>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Pour le parrain" hint="Points">
+            <Field label={t("forTheReferrer")} hint={t("points")}>
               <Input name="referrerBonusPoints" type="number" min="0" step="1" defaultValue="0" />
             </Field>
-            <Field label="Pour le nouveau client" hint="Points">
+            <Field label={t("forTheNewCustomer")} hint={t("points")}>
               <Input name="newCustomerBonusPoints" type="number" min="0" step="1" defaultValue="0" />
             </Field>
           </div>
@@ -114,7 +117,7 @@ function NewReferralProgramModal({
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Créer"}
+            {isSubmitting ? t("creating") : t("create")}
           </Button>
         </div>
       </form>
@@ -123,6 +126,7 @@ function NewReferralProgramModal({
 }
 
 function ReferralLinkRow({ tracking }: { tracking: ReferralLinkTracking }) {
+  const t = useTranslations("referralView");
   const [copied, setCopied] = useState(false);
   const url = `${typeof window !== "undefined" ? window.location.origin : ""}/p/${tracking.link.code}?via=copy`;
 
@@ -139,29 +143,29 @@ function ReferralLinkRow({ tracking }: { tracking: ReferralLinkTracking }) {
         <span className="text-mv-ink-faint"> — {tracking.programName}</span>
       </div>
       <div className="flex shrink-0 items-center gap-3 text-mv-ink-soft">
-        <HelperTooltip content="Nombre de fois où quelqu'un a cliqué sur ce lien de parrainage.">
+        <HelperTooltip content={t("numberOfTimesSomeone")}>
           <span className="flex items-center gap-1 cursor-help">
             <MousePointerClick size={12} /> {tracking.link.clicks}
           </span>
         </HelperTooltip>
-        <HelperTooltip content="Nombre de filleuls qui sont devenus clients grâce à ce lien.">
+        <HelperTooltip content={t("numberOfReferredFriends")}>
           <span className="flex items-center gap-1 cursor-help">
             <Link2 size={12} /> {tracking.link.convertedCount}
           </span>
         </HelperTooltip>
-        {tracking.link.rewardClaimedAt && <Badge tone="green">Débloquée</Badge>}
+        {tracking.link.rewardClaimedAt && <Badge tone="green">{t("unlocked")}</Badge>}
         <button
           onClick={() => window.open(url, "_blank")}
-          aria-label="Ouvrir le lien de parrainage"
-          title="Ouvrir le lien"
+          aria-label={t("openTheReferralLink")}
+          title={t("openTheLink")}
           className="text-mv-ink-faint transition-colors hover:text-mv-ink"
         >
           <ExternalLink size={13} />
         </button>
         <button
           onClick={handleCopy}
-          aria-label="Copier le lien de parrainage"
-          title="Copier le lien de parrainage"
+          aria-label={t("copyTheReferralLink")}
+          title={t("copyTheReferralLink")}
           className="text-mv-ink-faint transition-colors hover:text-mv-ink"
         >
           {copied ? <Check size={13} className="text-mv-green-dark" /> : <Copy size={13} />}
@@ -184,6 +188,7 @@ function ReferralProgramsCard({
   links: ReferralLinkTracking[];
   onChange: (programs: ReferralProgram[]) => void;
 }) {
+  const t = useTranslations("referralView");
   const [createOpen, setCreateOpen] = useState(false);
   const [showAllLinks, setShowAllLinks] = useState(false);
   const visibleLinks = showAllLinks ? links : links.slice(0, 5);
@@ -193,14 +198,14 @@ function ReferralProgramsCard({
     if (ok) {
       onChange(programs.map((p) => (p.id === program.id ? { ...p, active: !p.active } : p)));
     } else {
-      notifyError("La mise à jour a échoué.");
+      notifyError(t("theUpdateFailed"));
     }
   }
 
   async function handleDelete(id: string, name: string) {
     if (
       !window.confirm(
-        `Supprimer le programme "${name}" ? Tous les liens de parrainage et l'historique des filleuls de ce programme seront définitivement supprimés.`
+        t("confirmDeleteProgram", { name })
       )
     ) {
       return;
@@ -213,9 +218,9 @@ function ReferralProgramsCard({
     <>
       <Card>
         <CardHeader
-          eyebrow="Parrainage"
-          title="Programmes de parrainage"
-          description="Vos clients partagent un lien depuis leur espace client — suivez qui génère quoi."
+          eyebrow={t("referral")}
+          title={t("referralPrograms")}
+          description={t("yourCustomersShareA2")}
           action={
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus size={14} /> Nouveau programme
@@ -224,7 +229,7 @@ function ReferralProgramsCard({
         />
 
         {programs.length === 0 ? (
-          <p className="text-[12.5px] text-mv-ink-faint">Aucun programme de parrainage pour l&apos;instant.</p>
+          <p className="text-[12.5px] text-mv-ink-faint">{t("noReferralProgramsYet")}</p>
         ) : (
           <div className="mb-4 space-y-1.5">
             {programs.map((p) => (
@@ -237,7 +242,7 @@ function ReferralProgramsCard({
                   </p>
                   {(p.referrerBonusPoints > 0 || p.newCustomerBonusPoints > 0) && (
                     <p className="mt-0.5 text-[12px] text-mv-green-dark">
-                      Bonus immédiat : +{p.referrerBonusPoints} pts parrain / +{p.newCustomerBonusPoints} pts filleul
+                      {t("instantBonusLine", { referrer: p.referrerBonusPoints, referee: p.newCustomerBonusPoints })}
                     </p>
                   )}
                 </div>
@@ -247,11 +252,11 @@ function ReferralProgramsCard({
                     onClick={() => handleToggleActive(p)}
                     className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-ink-soft hover:bg-mv-ink/5"
                   >
-                    {p.active ? "Désactiver" : "Activer"}
+                    {p.active ? t("turnOff") : "Activer"}
                   </button>
                   <button
                     onClick={() => handleDelete(p.id, p.name)}
-                    aria-label="Supprimer le programme"
+                    aria-label={t("deleteTheProgram")}
                     className="text-mv-ink-faint transition-colors hover:text-mv-red"
                   >
                     <Trash2 size={13} />
@@ -265,7 +270,7 @@ function ReferralProgramsCard({
         {links.length > 0 && (
           <div className="border-t border-mv-border-soft pt-3">
             <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              Suivi des liens
+              {t("linkTracking")}
             </p>
             <div className="space-y-1.5">
               {visibleLinks.map((t) => (
@@ -277,7 +282,7 @@ function ReferralProgramsCard({
                 onClick={() => setShowAllLinks((v) => !v)}
                 className="mt-2 text-[12px] font-semibold text-mv-green-dark hover:underline"
               >
-                {showAllLinks ? "Afficher moins" : `Afficher les ${links.length - 5} autre(s)`}
+                {showAllLinks ? t("showLess") : t("showOthers", { count: links.length - 5 })}
               </button>
             )}
           </div>
@@ -314,15 +319,16 @@ export function ParrainageView({
   dailyActivity?: ReferralDailyActivity[];
   invitations?: ReferralInvitationActivity[];
 }) {
+  const t = useTranslations("referralView");
   const [referralPrograms, setReferralPrograms] = useState(initialReferralPrograms);
 
   return (
     <div>
       <FidelisationSubNav />
       <PageHeader
-        eyebrow="Croissance"
-        title="Parrainage"
-        description="Performance du programme de parrainage et suivi des liens partagés par vos clients."
+        eyebrow={t("growth")}
+        title={t("referral")}
+        description={t("referralProgramPerformanceAnd")}
       />
       <div className="space-y-6">
         <ReferralRoiDashboard metrics={referralRoi} ambassadors={topAmbassadors} />
@@ -343,23 +349,24 @@ export function ParrainageView({
 }
 
 function ReferralInvitationsTable({ invitations }: { invitations: ReferralInvitationActivity[] }) {
-  const channelLabels = { qr: "Code QR", share: "Partage", copy: "Lien copié", code: "Code", direct: "Lien direct" };
+  const t = useTranslations("referralView");
+  const channelLabels = { qr: "Code QR", share: "Partage", copy: t("linkCopied"), code: "Code", direct: "Lien direct" };
   return (
     <Card className="w-full min-w-0">
-      <CardHeader eyebrow="Traçabilité" title="Invitations converties" description="Qui a invité chaque nouveau client, par quel canal et à quelle date." />
+      <CardHeader eyebrow={t("traceability")} title={t("convertedInvitations")} description={t("whoInvitedEachNew")} />
       {invitations.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-mv-border-soft p-5 text-center text-[12.5px] text-mv-ink-faint">Les invitations apparaîtront dès qu’un nouveau client aura réservé ou commandé avec un lien de parrainage.</p>
+        <p className="rounded-xl border border-dashed border-mv-border-soft p-5 text-center text-[12.5px] text-mv-ink-faint">{t("invitationsWillAppearAs")}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[520px] text-left text-[12.5px]">
-            <thead><tr className="border-b border-mv-border-soft text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint"><th className="py-2 pr-3">Invitant</th><th className="py-2 pr-3">Nouveau client</th><th className="py-2 pr-3">Canal</th><th className="py-2 pr-3">Action</th><th className="py-2 text-right">Date</th></tr></thead>
+            <thead><tr className="border-b border-mv-border-soft text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint"><th className="py-2 pr-3">{t("referrer")}</th><th className="py-2 pr-3">{t("newCustomer")}</th><th className="py-2 pr-3">{t("channel")}</th><th className="py-2 pr-3">{t("action")}</th><th className="py-2 text-right">{t("date")}</th></tr></thead>
             <tbody className="divide-y divide-mv-border-soft">
               {invitations.map((invitation) => (
                 <tr key={invitation.id}>
                   <td className="py-2.5 pr-3 font-medium text-mv-ink">{invitation.inviterName}</td>
                   <td className="py-2.5 pr-3 text-mv-ink-soft">{invitation.inviteeName}</td>
                   <td className="py-2.5 pr-3"><Badge tone="green" variant="subtle" size="sm">{channelLabels[invitation.channel]}</Badge></td>
-                  <td className="py-2.5 pr-3 text-mv-ink-soft">{invitation.conversionType === "reservation" ? "Réservation" : "Commande"}</td>
+                  <td className="py-2.5 pr-3 text-mv-ink-soft">{invitation.conversionType === "reservation" ? t("booking") : "Commande"}</td>
                   <td className="py-2.5 text-right text-mv-ink-faint">{new Date(invitation.createdAt).toLocaleDateString("fr-CA")}</td>
                 </tr>
               ))}

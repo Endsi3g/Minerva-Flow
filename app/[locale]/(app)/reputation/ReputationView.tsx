@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useTranslations, useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -37,6 +40,7 @@ function StarRow({ rating }: { rating: number }) {
  * returns.
  */
 function GoogleConnectCard({ restaurantId, currentPlaceId, googlePlacesEnabled }: { restaurantId: string; currentPlaceId: string | null; googlePlacesEnabled: boolean }) {
+  const t = useTranslations("reputationView");
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(Boolean(currentPlaceId));
 
@@ -47,9 +51,9 @@ function GoogleConnectCard({ restaurantId, currentPlaceId, googlePlacesEnabled }
       const ok = await connectGooglePlaceAction(restaurantId, patch.googlePlaceId);
       if (ok) {
         setConnected(true);
-        toast.success("Fiche Google Maps connectée.");
+        toast.success(t("googleMapsListingConnected"));
       } else {
-        notifyError("La connexion a échoué.");
+        notifyError(t("theConnectionFailed"));
       }
     } finally {
       setConnecting(false);
@@ -59,36 +63,38 @@ function GoogleConnectCard({ restaurantId, currentPlaceId, googlePlacesEnabled }
   return (
     <Card className="mb-4">
       <CardHeader
-        eyebrow="Google Maps"
-        title="Votre fiche Google Maps"
-        description="Aucune connexion de compte requise — recherchez et sélectionnez votre établissement pour activer la détection automatique des nouveaux avis."
+        eyebrow={t("googleMaps")}
+        title={t("yourGoogleMapsListing")}
+        description={t("noAccountConnectionRequired")}
       />
       {connected ? (
         <div className="flex items-center gap-2 rounded-lg border border-mv-green/20 bg-mv-green-tint px-3 py-2.5 text-[12.5px] text-mv-green-darker">
           <CheckCircle2 size={15} className="shrink-0" />
-          Fiche connectée. Vous pouvez la changer ci-dessous si nécessaire.
+          {t("listingConnectedYouCan")}
         </div>
       ) : (
         <div className="flex items-center gap-2 rounded-lg border border-mv-border bg-mv-cream-soft px-3 py-2.5 text-[12.5px] text-mv-ink-soft">
           <MapPin size={15} className="shrink-0" />
-          Aucune fiche connectée pour l&apos;instant.
+          {t("noListingConnectedYet")}
         </div>
       )}
       <div className="mt-3">
         <GooglePlacesSearch onSelect={handleSelect} enabled={googlePlacesEnabled} />
       </div>
-      {connecting && <p className="mt-2 text-[12px] text-mv-ink-faint">Connexion…</p>}
+      {connecting && <p className="mt-2 text-[12px] text-mv-ink-faint">{t("connecting")}</p>}
     </Card>
   );
 }
 
 function GoogleRespondCard({ review, onResponded }: { review: GoogleReviewRow; onResponded: (id: string, response: string) => void }) {
+  const t = useTranslations("reputationView");
+  const locale = useLocale();
   const [response, setResponse] = useState(review.ownerResponse ?? "");
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSave() {
     if (!response.trim()) {
-      notifyError("La réponse ne peut pas être vide.");
+      notifyError(t("theReplyCannotBe"));
       return;
     }
     setIsSaving(true);
@@ -96,9 +102,9 @@ function GoogleRespondCard({ review, onResponded }: { review: GoogleReviewRow; o
       const ok = await respondToGoogleReviewAction(review.id, response);
       if (ok) {
         onResponded(review.id, response);
-        toast.success("Réponse enregistrée.");
+        toast.success(t("replySaved"));
       } else {
-        notifyError("L'envoi de la réponse a échoué.");
+        notifyError(t("couldNotSendThe"));
       }
     } finally {
       setIsSaving(false);
@@ -114,7 +120,7 @@ function GoogleRespondCard({ review, onResponded }: { review: GoogleReviewRow; o
         </div>
         {review.publishedAt && (
           <span className="text-[12px] text-mv-ink-faint">
-            {new Date(review.publishedAt).toLocaleDateString("fr-CA", { year: "numeric", month: "short", day: "numeric" })}
+            {new Date(review.publishedAt).toLocaleDateString(intlLocale(locale), { year: "numeric", month: "short", day: "numeric" })}
           </span>
         )}
       </div>
@@ -122,17 +128,17 @@ function GoogleRespondCard({ review, onResponded }: { review: GoogleReviewRow; o
       <Textarea
         value={response}
         onChange={(e) => setResponse(e.target.value)}
-        placeholder="Notez votre réponse ou l'action prise (ceci ne publie pas automatiquement sur Google Maps)…"
+        placeholder={t("noteYourReplyOr")}
         className="mb-2 min-h-20"
       />
       <div className="flex items-center justify-end gap-2">
         {review.ownerRespondedAt && (
           <span className="mr-auto text-[12px] text-mv-ink-faint">
-            Répondu le {new Date(review.ownerRespondedAt).toLocaleDateString("fr-CA")}
+            {t("repliedOn", { date: new Date(review.ownerRespondedAt).toLocaleDateString(intlLocale(locale)) })}
           </span>
         )}
         <Button size="sm" onClick={handleSave} disabled={isSaving}>
-          {review.ownerResponse ? "Mettre à jour la réponse" : "Répondre"}
+          {review.ownerResponse ? t("updateTheReply") : t("reply")}
         </Button>
       </div>
     </div>
@@ -148,12 +154,14 @@ function RespondCard({
   onResponded: (id: string, response: string) => void;
   onOpenImage: (url: string, title?: string) => void;
 }) {
+  const t = useTranslations("reputationView");
+  const locale = useLocale();
   const [response, setResponse] = useState(review.ownerResponse ?? "");
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSave() {
     if (!response.trim()) {
-      notifyError("La réponse ne peut pas être vide.");
+      notifyError(t("theReplyCannotBe"));
       return;
     }
     setIsSaving(true);
@@ -161,9 +169,9 @@ function RespondCard({
       const ok = await respondToReviewAction(review.id, response);
       if (ok) {
         onResponded(review.id, response);
-        toast.success("Réponse envoyée — visible par le client dans l'application.");
+        toast.success(t("replySentItIs"));
       } else {
-        notifyError("L'envoi de la réponse a échoué.");
+        notifyError(t("couldNotSendThe"));
       }
     } finally {
       setIsSaving(false);
@@ -183,7 +191,7 @@ function RespondCard({
           )}
         </div>
         <span className="text-[12px] text-mv-ink-faint shrink-0">
-          {new Date(review.createdAt).toLocaleDateString("fr-CA", { year: "numeric", month: "short", day: "numeric" })}
+          {new Date(review.createdAt).toLocaleDateString(intlLocale(locale), { year: "numeric", month: "short", day: "numeric" })}
         </span>
       </div>
       {review.comment && <p className="mb-3 text-[13px] leading-relaxed text-mv-ink-soft">{review.comment}</p>}
@@ -196,7 +204,7 @@ function RespondCard({
               type="button"
               onClick={() => onOpenImage(url, `Photo de ${review.customerName}`)}
               className="group relative h-14 w-14 overflow-hidden rounded-lg border border-mv-border bg-mv-cream-soft shadow-xs transition-all hover:ring-2 hover:ring-mv-green"
-              title="Agrandir la photo"
+              title={t("enlargeThePhoto")}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={url} alt={`Avis ${idx + 1}`} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
@@ -208,17 +216,17 @@ function RespondCard({
       <Textarea
         value={response}
         onChange={(e) => setResponse(e.target.value)}
-        placeholder="Votre réponse (visible par ce client dans l'application)…"
+        placeholder={t("yourReplyVisibleTo")}
         className="mb-2 min-h-20"
       />
       <div className="flex items-center justify-end gap-2">
         {review.ownerRespondedAt && (
           <span className="mr-auto text-[12px] text-mv-ink-faint">
-            Répondu le {new Date(review.ownerRespondedAt).toLocaleDateString("fr-CA")}
+            {t("repliedOn", { date: new Date(review.ownerRespondedAt).toLocaleDateString(intlLocale(locale)) })}
           </span>
         )}
         <Button size="sm" onClick={handleSave} disabled={isSaving}>
-          {review.ownerResponse ? "Mettre à jour la réponse" : "Répondre"}
+          {review.ownerResponse ? t("updateTheReply") : t("reply")}
         </Button>
       </div>
     </div>
@@ -240,6 +248,8 @@ export function ReputationView({
   googleReviews: GoogleReviewRow[];
   googlePlacesEnabled: boolean;
 }) {
+  const t = useTranslations("reputationView");
+  const locale = useLocale();
   const { role } = useApp();
   const [reviews, setReviews] = useState(privateReviews);
   const [gReviews, setGReviews] = useState(googleReviews);
@@ -258,8 +268,8 @@ export function ReputationView({
   if (!restaurantId || !restaurant) {
     return (
       <div>
-        <PageHeader eyebrow="Réputation" title="Réputation" />
-        <EmptyState icon={MessageSquareWarning} title="Aucun restaurant" description="Créez ou sélectionnez un établissement pour gérer sa réputation." />
+        <PageHeader eyebrow={t("reputation")} title={t("reputation")} />
+        <EmptyState icon={MessageSquareWarning} title={t("noRestaurant")} description={t("createOrSelectA")} />
       </div>
     );
   }
@@ -275,15 +285,15 @@ export function ReputationView({
   return (
     <div>
       <PageHeader
-        eyebrow="Réputation"
-        title="Réputation"
-        description="Avis en dessous de 4★ restent privés ici — jamais publics — pour que vous puissiez répondre directement au client avant qu'il n'ait à passer par Google Maps."
+        eyebrow={t("reputation")}
+        title={t("reputation")}
+        description={t("reviewsBelow4Stay")}
         action={
           <Link
             href="/reputation/reviews"
             className="inline-flex items-center gap-1.5 rounded-lg border border-mv-border bg-mv-surface px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink hover:bg-mv-cream-soft transition-colors shadow-xs shrink-0"
           >
-            <span>Toutes les revues (Vue dense)</span>
+            <span>{t("allReviewsDenseView")}</span>
             <ArrowRight size={13} />
           </Link>
         }
@@ -295,16 +305,16 @@ export function ReputationView({
         <div className="mb-4">
           <Card>
             <CardHeader
-              eyebrow="Google Maps"
-              title="Avis Google Maps"
+              eyebrow={t("googleMaps")}
+              title={t("googleMapsReviews")}
               description={
                 gReviews.length > 0
-                  ? `${gReviews.length} avis synchronisé${gReviews.length > 1 ? "s" : ""} (les 5 plus récents, limite de l'API Google).`
-                  : "Aucun avis synchronisé pour l'instant — la synchronisation se fait une fois par jour."
+                  ? t("syncedReviewsCount", { count: gReviews.length })
+                  : t("noReviewsSyncedYet")
               }
             />
             {gReviews.length === 0 ? (
-              <EmptyState icon={MapPin} title="Rien à afficher pour l'instant" description="Revenez après la prochaine synchronisation quotidienne." />
+              <EmptyState icon={MapPin} title={t("nothingToShowYet")} description={t("comeBackAfterThe")} />
             ) : (
               <div className="space-y-3">
                 {[...googleUnanswered, ...googleAnswered].map((review) =>
@@ -329,12 +339,12 @@ export function ReputationView({
       <div className="mb-4">
         <Card>
           <CardHeader
-            eyebrow="À traiter"
-            title="Avis à traiter"
-            description={unanswered.length > 0 ? `${unanswered.length} avis en attente de réponse.` : "Rien en attente — tout est répondu."}
+            eyebrow={t("toHandle")}
+            title={t("reviewsToHandle")}
+            description={unanswered.length > 0 ? `${unanswered.length} avis en attente de réponse.` : t("nothingPendingEverythingHas")}
           />
           {reviews.length === 0 ? (
-            <EmptyState icon={CheckCircle2} title="Aucun avis privé" description="Les avis en dessous de 4★ apparaîtront ici automatiquement." />
+            <EmptyState icon={CheckCircle2} title={t("noPrivateReviews")} description={t("reviewsBelow4Will")} />
           ) : (
             <div className="space-y-3">
               {paginatedPrivateList.map((review) =>
@@ -358,7 +368,7 @@ export function ReputationView({
                         )}
                       </div>
                       <span className="text-[12px] text-mv-ink-faint shrink-0">
-                        {new Date(review.createdAt).toLocaleDateString("fr-CA", { year: "numeric", month: "short", day: "numeric" })}
+                        {new Date(review.createdAt).toLocaleDateString(intlLocale(locale), { year: "numeric", month: "short", day: "numeric" })}
                       </span>
                     </div>
                     {review.comment && <p className="text-[13px] text-mv-ink-soft mb-2">{review.comment}</p>}
@@ -389,7 +399,7 @@ export function ReputationView({
                     onClick={() => setVisibleCount((c) => c + 6)}
                     className="gap-1.5"
                   >
-                    <span>Voir les 6 suivants</span>
+                    <span>{t("seeTheNext6")}</span>
                     <span className="text-mv-ink-faint text-[12px]">
                       ({allPrivateList.length - visibleCount} restant{allPrivateList.length - visibleCount > 1 ? "s" : ""})
                     </span>
@@ -403,12 +413,12 @@ export function ReputationView({
 
       <Card>
         <CardHeader
-          eyebrow="Visibilité"
-          title="Avis sur les plats et les offres"
-          description="Les avis natifs sur vos plats et offres individuels, jusqu'ici visibles uniquement dans l'application cliente."
+          eyebrow={t("visibility")}
+          title={t("reviewsOnDishesAnd")}
+          description={t("nativeReviewsOnYour")}
         />
         {itemReviews.length === 0 ? (
-          <EmptyState icon={Star} title="Aucun avis pour l'instant" description="Les avis sur vos plats et offres apparaîtront ici." />
+          <EmptyState icon={Star} title={t("noReviewsYet")} description={t("reviewsOnYourDishes")} />
         ) : (
           <div className="space-y-2">
             {itemReviews.map((review) => (
@@ -426,7 +436,7 @@ export function ReputationView({
                         <button
                           key={idx}
                           type="button"
-                          onClick={() => setLightbox({ url, title: `Photo pour ${review.name}` })}
+                          onClick={() => setLightbox({ url, title: t("photoFor", { name: review.name }) })}
                           className="h-10 w-10 overflow-hidden rounded-md border border-mv-border bg-white shadow-2xs hover:opacity-90 transition-opacity"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}

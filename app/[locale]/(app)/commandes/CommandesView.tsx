@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -54,13 +56,13 @@ import { useRealtimeBus } from "@/lib/realtime/RealtimeProvider";
 import { ServiceQuotesPanel } from "./ServiceQuotesPanel";
 import type { ServiceQuoteRow } from "@/lib/data/service-quotes";
 
-const statusLabel: Record<OrderStatus, string> = {
-  soumise: "Soumise",
-  confirmee: "Confirmée",
-  en_preparation: "En préparation",
-  prete: "Prête",
-  servie: "Servie",
-  annulee: "Annulée",
+const statusLabel_KEYS: Record<OrderStatus, string> = {
+  soumise: "statuslabelSoumise",
+  confirmee: "statuslabelConfirmee",
+  en_preparation: "statuslabelEnPreparation",
+  prete: "statuslabelPrete",
+  servie: "statuslabelServie",
+  annulee: "statuslabelAnnulee",
 };
 
 const statusTone: Record<OrderStatus, "green" | "amber" | "red" | "neutral"> = {
@@ -72,10 +74,10 @@ const statusTone: Record<OrderStatus, "green" | "amber" | "red" | "neutral"> = {
   annulee: "neutral",
 };
 
-const paymentStatusLabel: Partial<Record<OrderPaymentStatus, string>> = {
-  en_attente: "Paiement en attente",
-  paye: "Payé en ligne",
-  echoue: "Paiement échoué",
+const paymentStatusLabel_KEYS: Partial<Record<OrderPaymentStatus, string>> = {
+  en_attente: "paymentstatuEnAttente",
+  paye: "paymentstatuPaye",
+  echoue: "paymentstatuEchoue",
 };
 
 const paymentStatusTone: Partial<Record<OrderPaymentStatus, "green" | "amber" | "red" | "neutral">> = {
@@ -84,11 +86,11 @@ const paymentStatusTone: Partial<Record<OrderPaymentStatus, "green" | "amber" | 
   echoue: "red",
 };
 
-const nextStatus: Partial<Record<OrderStatus, { status: OrderStatus; label: string }>> = {
-  soumise: { status: "confirmee", label: "Confirmer" },
-  confirmee: { status: "en_preparation", label: "En préparation" },
-  en_preparation: { status: "prete", label: "Prête" },
-  prete: { status: "servie", label: "Servie" },
+const nextStatus: Partial<Record<OrderStatus, { status: OrderStatus; labelKey: string }>> = {
+  soumise: { status: "confirmee", labelKey: "nextConfirm" },
+  confirmee: { status: "en_preparation", labelKey: "nextPreparing" },
+  en_preparation: { status: "prete", labelKey: "nextReady" },
+  prete: { status: "servie", labelKey: "nextServed" },
 };
 
 /**
@@ -146,10 +148,11 @@ function DeliveryMeta({ order }: { order: Order }) {
 }
 
 function ScheduledOrderBadge({ order, timeZone }: { order: Order; timeZone: string }) {
+  const t = useTranslations("ordersView");
   if (!order.requestedReadyAt) return null;
   return (
     <span className="inline-flex items-center gap-1 rounded-md border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[12px] font-semibold text-violet-800">
-      <Clock size={10.5} /> Précommande · {formatRestaurantTime(order.requestedReadyAt, timeZone)}
+      <Clock size={10.5} /> {t("preOrder", { time: formatRestaurantTime(order.requestedReadyAt, timeZone) })}
     </span>
   );
 }
@@ -173,6 +176,7 @@ function OrderEtaEditor({
   timeZone: string;
   onSaved: (estimatedReadyAt: string | null) => void;
 }) {
+  const t = useTranslations("ordersView");
   const [editing, setEditing] = useState(false);
   const [minutes, setMinutes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -188,7 +192,7 @@ function OrderEtaEditor({
       setEditing(false);
       setMinutes("");
     } else {
-      notifyError("La mise à jour du délai a échoué.");
+      notifyError(t("couldNotUpdateThe"));
     }
   }
 
@@ -201,7 +205,7 @@ function OrderEtaEditor({
           autoFocus
           value={minutes}
           onChange={(e) => setMinutes(e.target.value)}
-          placeholder="min"
+          placeholder={t("min")}
           className="w-14 rounded-md border border-mv-border px-1.5 py-0.5 text-[12px]"
         />
         <button
@@ -229,7 +233,7 @@ function OrderEtaEditor({
       className="mt-1 flex items-center gap-1 text-[12px] font-medium text-mv-ink-faint transition-colors hover:text-mv-ink-soft disabled:cursor-default"
     >
       <Clock size={11} />
-      {order.estimatedReadyAt ? `Prêt vers ${formatRestaurantTime(order.estimatedReadyAt, timeZone)}` : "Ajouter un délai"}
+      {order.estimatedReadyAt ? t("readyAroundTime", { time: formatRestaurantTime(order.estimatedReadyAt, timeZone) }) : t("addADelay")}
     </button>
   );
 }
@@ -281,6 +285,7 @@ function playKdsChime() {
  * later via the effect below, which only ever runs client-side.
  */
 function ElapsedTimer({ createdAt }: { createdAt: string }) {
+  const t = useTranslations("ordersView");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
@@ -312,7 +317,7 @@ function ElapsedTimer({ createdAt }: { createdAt: string }) {
     >
       <Clock size={11} className={cn(isUrgent && "text-mv-red")} />
       {formatted}
-      {isUrgent && <span className="text-[12px] uppercase font-bold ml-0.5">Retard</span>}
+      {isUrgent && <span className="text-[12px] uppercase font-bold ml-0.5">{t("late")}</span>}
     </span>
   );
 }
@@ -338,6 +343,7 @@ function NewManualOrderModal({
   onClose: () => void;
   onCreated: (order: Order) => void;
 }) {
+  const t = useTranslations("ordersView");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -357,7 +363,7 @@ function NewManualOrderModal({
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (cartItems.length === 0) {
-      notifyError("Ajoutez au moins un article.");
+      notifyError(t("addAtLeastOne"));
       return;
     }
     const form = new FormData(e.currentTarget);
@@ -375,7 +381,7 @@ function NewManualOrderModal({
         reset();
         (e.target as HTMLFormElement).reset();
       } else {
-        notifyError("La création de la commande a échoué.");
+        notifyError(t("couldNotCreateThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -389,23 +395,23 @@ function NewManualOrderModal({
         onClose();
         reset();
       }}
-      title="Nouvelle commande"
-      description="Téléphone, comptoir ou walk-in — envoyée directement en cuisine."
+      title={t("newOrder")}
+      description={t("phoneCounterOrWalk")}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Nom du client">
-            <Input name="guestName" placeholder="Ex : Famille Tremblay" required />
+          <Field label={t("customerName")}>
+            <Input name="guestName" placeholder={t("eGTremblayFamily")} required />
           </Field>
-          <Field label="Téléphone" hint="Optionnel">
+          <Field label={t("phone")} hint={t("optional")}>
             <Input name="guestPhone" type="tel" placeholder="Ex : 514-555-1234" />
           </Field>
         </div>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Articles</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("items")}</p>
           {menuItems.length === 0 ? (
-            <p className="text-[12.5px] text-mv-ink-faint">Aucun plat actif au menu.</p>
+            <p className="text-[12.5px] text-mv-ink-faint">{t("noActiveDishesOn")}</p>
           ) : (
             <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-mv-border">
               {menuItems.map((m) => {
@@ -447,20 +453,20 @@ function NewManualOrderModal({
           )}
         </div>
 
-        <Field label="Notes" hint="Optionnel">
-          <Textarea name="notes" placeholder="Ex : allergie aux arachides" rows={2} />
+        <Field label={t("notes")} hint={t("optional")}>
+          <Textarea name="notes" placeholder={t("eGPeanutAllergy")} rows={2} />
         </Field>
 
         <div className="flex items-center justify-between border-t border-mv-border-soft pt-4">
           <p className="text-[12.5px] text-mv-ink-soft">
-            Sous-total estimé : <span className="font-semibold text-mv-ink">{formatCurrency(estimatedSubtotal)}</span>
+            {t("estimatedSubtotal")} <span className="font-semibold text-mv-ink">{formatCurrency(estimatedSubtotal)}</span>
           </p>
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
               Annuler
             </Button>
             <Button type="submit" disabled={isSubmitting || cartItems.length === 0}>
-              {isSubmitting ? "Création…" : "Envoyer en cuisine"}
+              {isSubmitting ? t("creating") : "Envoyer en cuisine"}
             </Button>
           </div>
         </div>
@@ -498,6 +504,7 @@ export function CommandesView({
   restaurantTimezone: string;
   initialNowMs: number;
 }) {
+  const t = useTranslations("ordersView");
   const { role } = useApp();
   const restaurant = useCurrentRestaurant();
   // Local + optimistic: the AppContext's `restaurants` array is seeded once
@@ -534,7 +541,7 @@ export function CommandesView({
     return subscribeOrders(() => {
       if (soundEnabledRef.current) {
         playKdsChime();
-        toast.info("Nouvelle commande reçue en cuisine !", { icon: "🔔" });
+        toast.info(t("newOrderReceivedIn"), { icon: "🔔" });
       }
       if (restaurantId) {
         getOrdersForDayAction(restaurantId, dayStart, dayEnd).then((rows) => {
@@ -542,7 +549,7 @@ export function CommandesView({
         });
       }
     });
-  }, [subscribeOrders, restaurantId, dayStart, dayEnd]);
+  }, [subscribeOrders, restaurantId, dayStart, dayEnd, t]);
 
   // Calculate channel-specific counts across all non-cancelled orders today
   const webOrderCount = orders.filter((o) => o.status !== "annulee" && o.source === "web").length;
@@ -622,15 +629,15 @@ export function CommandesView({
     if (!restaurantId) return;
     let cancellationReason: string | undefined;
     if (status === "annulee") {
-      const entered = window.prompt("Un petit mot pour expliquer l’annulation au client. Aucun paiement ne sera demandé.");
+      const entered = window.prompt(t("aShortNoteExplaining"));
       if (entered === null) return;
-      cancellationReason = entered.trim() || "Un imprévu empêche le restaurant de préparer cette commande.";
+      cancellationReason = entered.trim() || t("somethingUnexpectedPreventsThe");
     }
     // Optimistic UI update
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
     const ok = await updateOrderStatusAction(restaurantId, id, status, cancellationReason);
     if (!ok) {
-      notifyError("La mise à jour du statut a échoué.");
+      notifyError(t("couldNotUpdateThe2"));
       handleRefresh();
     }
   }
@@ -642,9 +649,9 @@ export function CommandesView({
     setNotifyingId(null);
     if (ok) {
       setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, readyNotifiedAt: new Date().toISOString() } : o)));
-      toast.success("Client notifié.");
+      toast.success(t("customerNotified"));
     } else {
-      notifyError("Impossible de joindre ce client (aucun courriel, notification ou téléphone valide).");
+      notifyError(t("couldNotReachThis"));
     }
   }
 
@@ -661,22 +668,22 @@ export function CommandesView({
     setBusyPending(false);
     if (!ok) {
       setBusyModeLocal(!next);
-      notifyError("La mise à jour du mode occupé a échoué.");
+      notifyError(t("couldNotUpdateBusy"));
     }
   }
 
   function handleDelete(id: string, guestName: string) {
     if (!restaurantId) return;
-    if (!window.confirm(`Supprimer la commande de "${guestName}" ?`)) return;
+    if (!window.confirm(t("deleteTheOrderFor", { guestName }))) return;
     deleteOrderAction(restaurantId, id).then((ok) => {
       if (ok) setOrders((prev) => prev.filter((o) => o.id !== id));
-      else notifyError("La suppression a échoué.");
+      else notifyError(t("deletionFailed"));
     });
   }
 
   function handleOrderCreated(order: Order) {
     setOrders((prev) => [order, ...prev]);
-    toast.success(`Commande créée pour ${order.guestName}.`);
+    toast.success(t("orderCreatedForGuestname", { guestName: order.guestName }));
   }
 
   return (
@@ -691,9 +698,9 @@ export function CommandesView({
         />
       )}
       <PageHeader
-        eyebrow="Opérations"
-        title="Commandes en direct"
-        description="Suivez la file de préparation, les paiements et les commandes du restaurant depuis une vue de cuisine ou une liste détaillée."
+        eyebrow={t("operations")}
+        title={t("liveOrders")}
+        description={t("followThePrepQueue")}
         action={
           <div className="flex flex-wrap items-center gap-2">
             {canManage && (
@@ -707,7 +714,7 @@ export function CommandesView({
                 type="button"
                 onClick={handleToggleBusy}
                 disabled={busyPending}
-                title="Affiche un message d'attente aux clients sur le menu en ligne"
+                title={t("showsAWaitingMessage")}
                 className={cn(
                   "flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[12.5px] font-medium transition-all disabled:opacity-60",
                   busyModeLocal
@@ -715,7 +722,7 @@ export function CommandesView({
                     : "border-mv-border bg-mv-surface text-mv-ink-soft hover:bg-mv-cream-soft"
                 )}
               >
-                <Clock size={14} /> {busyModeLocal ? "On est débordés (actif)" : "On est débordés"}
+                <Clock size={14} /> {busyModeLocal ? t("weReSwampedOn") : t("weReSwamped")}
               </button>
             )}
 
@@ -731,7 +738,7 @@ export function CommandesView({
                 )}
               >
                 <ChefHat size={14} />
-                Écran Cuisine (KDS)
+                {t("kitchenScreenKds")}
               </button>
               <button
                 onClick={() => setViewMode("table")}
@@ -768,7 +775,7 @@ export function CommandesView({
                     ? "bg-mv-ink text-white shadow-sm"
                     : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
                 )}
-                title="Toutes commandes directes sans intermédiaire (Web & Mobile)"
+                title={t("allDirectOrdersWith")}
               >
                 <Globe size={12} /> Directes ({directOrderCount})
               </button>
@@ -780,7 +787,7 @@ export function CommandesView({
                     ? "bg-mv-green-dark text-white shadow-sm"
                     : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
                 )}
-                title="Commandes via le menu web / QR code"
+                title={t("ordersViaTheWeb")}
               >
                 <Globe size={12} /> Web ({webOrderCount})
               </button>
@@ -792,7 +799,7 @@ export function CommandesView({
                     ? "bg-mv-ink text-white shadow-sm"
                     : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
                 )}
-                title="Commandes issues de l'application mobile iOS"
+                title={t("ordersFromTheIos")}
               >
                 <Smartphone size={12} /> Mobile ({mobileOrderCount})
               </button>
@@ -804,7 +811,7 @@ export function CommandesView({
                     ? "bg-amber-800 text-white shadow-sm"
                     : "text-mv-ink-soft hover:text-mv-ink hover:bg-mv-cream-soft"
                 )}
-                title="Commandes manuelles au comptoir ou par téléphone"
+                title={t("manualOrdersAtThe")}
               >
                 <PhoneCall size={12} /> Manuel ({manualOrderCount})
               </button>
@@ -821,15 +828,15 @@ export function CommandesView({
                   return next;
                 });
               }}
-              title={soundEnabled ? "Son KDS activé" : "Son KDS coupé"}
+              title={soundEnabled ? t("kdsSoundOn") : t("kdsSoundOff")}
               className="text-[12px]"
             >
               {soundEnabled ? <Volume2 size={14} className="text-mv-green-dark" /> : <VolumeX size={14} className="text-mv-ink-faint" />}
-              <span className="hidden sm:inline">{soundEnabled ? "Son activé" : "Son muet"}</span>
+              <span className="hidden sm:inline">{soundEnabled ? t("soundOn") : "Son muet"}</span>
             </Button>
 
             <Button size="sm" variant="secondary" onClick={handleRefresh} disabled={loading}>
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Rafraîchir
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> {t("refresh")}
             </Button>
           </div>
         }
@@ -873,7 +880,7 @@ export function CommandesView({
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                Rythme & Délai
+                {t("paceDelay")}
               </span>
               <div className="h-8 w-8 rounded-full bg-mv-cream flex items-center justify-center text-mv-ink-soft">
                 <Timer size={16} />
@@ -886,10 +893,10 @@ export function CommandesView({
           <div className="mt-2 pt-2 border-t border-mv-border-soft text-[12px] text-mv-ink-soft">
             {minutesSinceLatestOrder !== null ? (
               <p>
-                Dernière commande : <span className="font-semibold text-mv-ink font-mono">{minutesSinceLatestOrder === 0 ? "À l'instant" : `Il y a ${minutesSinceLatestOrder} min`}</span>
+                {t("lastOrder")} <span className="font-semibold text-mv-ink font-mono">{minutesSinceLatestOrder === 0 ? t("justNow") : t("minutesAgo", { count: minutesSinceLatestOrder })}</span>
               </p>
             ) : (
-            <p className="text-mv-ink-faint italic">Aucune commande pour le moment aujourd’hui</p>
+            <p className="text-mv-ink-faint italic">{t("noOrdersYetToday")}</p>
             )}
           </div>
         </Card>
@@ -907,7 +914,7 @@ export function CommandesView({
             </div>
             <div className="flex items-baseline gap-2">
               <p className="font-display text-[26px] font-bold text-mv-ink">{menuViews}</p>
-              <span className="text-[12px] text-mv-ink-faint">visites</span>
+              <span className="text-[12px] text-mv-ink-faint">{t("visits")}</span>
               {conversionRate !== null && (
                 <Badge tone="green" className="ml-auto font-mono text-[12px]">
                   {conversionRate}% conv.
@@ -918,10 +925,10 @@ export function CommandesView({
           <div className="mt-2 pt-2 border-t border-mv-border-soft text-[12px] text-mv-ink-soft">
             {menuViews > 0 ? (
               <p>
-                <span className="font-semibold text-mv-ink">{directOrderCount}</span> commande{directOrderCount > 1 ? "s" : ""} directe{directOrderCount > 1 ? "s" : ""} issue{directOrderCount > 1 ? "s" : ""} du menu
+                {t("directOrdersFromMenu", { count: directOrderCount })}
               </p>
             ) : (
-              <p className="text-mv-ink-faint">Suivi en direct actif</p>
+              <p className="text-mv-ink-faint">{t("liveTrackingOn")}</p>
             )}
           </div>
         </Card>
@@ -932,7 +939,7 @@ export function CommandesView({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-green-dark">
-                  Économies Commission 0%
+                  {t("0CommissionSavings")}
                 </span>
                 <div className="h-8 w-8 rounded-full bg-mv-green/15 flex items-center justify-center text-mv-green-dark">
                   <DollarSign size={16} />
@@ -943,14 +950,14 @@ export function CommandesView({
               </p>
             </div>
             <div className="mt-2 pt-2 border-t border-mv-border-soft text-[12px] text-mv-ink-soft">
-              Préservés vs. frais 25% Uber Eats / DoorDash
+              {t("savedVs25Uber")}
             </div>
           </Card>
         ) : (
           <PlanTierLockedState
             minimumTier="croissance"
-            featureName="Suivi des économies de commission"
-            description="Filtrez vos commandes par canal et suivez vos économies vs. Uber Eats/DoorDash."
+            featureName={t("commissionSavingsFeature")}
+            description={t("filterYourOrdersBy")}
             size="sm"
           />
         )}
@@ -960,12 +967,12 @@ export function CommandesView({
       {orders.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title="Aucune commande aujourd'hui"
-          description="Les nouvelles commandes reçues apparaîtront ici."
+          title={t("noOrdersToday")}
+          description={t("newOrdersWillAppear")}
           secondaryAction={
             canManage && (
               <Button size="sm" variant="ghost" className="text-[12px]" onClick={() => setNewOrderOpen(true)}>
-                <PhoneCall size={13} /> Ou entrez une commande par téléphone
+                <PhoneCall size={13} /> {t("orBySphone")}
               </Button>
             )
           }
@@ -979,7 +986,7 @@ export function CommandesView({
               <div className="flex items-center justify-between pb-2 border-b border-mv-border">
                 <div className="flex items-center gap-2">
                   <span className="flex h-2.5 w-2.5 rounded-full bg-mv-red" />
-                  <h3 className="font-display text-[15px] font-bold text-mv-ink">Attente paiement</h3>
+                  <h3 className="font-display text-[15px] font-bold text-mv-ink">{t("awaitingPayment")}</h3>
                 </div>
                 <Badge tone="red">{awaitingPaymentOrders.length}</Badge>
               </div>
@@ -999,7 +1006,7 @@ export function CommandesView({
                           {orderIntervals.has(o.id) && (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
-                              title="Délai après la commande précédente"
+                              title={t("delayAfterThePrevious")}
                             >
                               +{orderIntervals.get(o.id)}m
                             </span>
@@ -1027,8 +1034,8 @@ export function CommandesView({
                       <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total)}</span>
                       <Badge tone={paymentStatusTone[o.paymentStatus] ?? "red"}>
                         {o.depositPaidAmount && o.depositPaidAmount > 0 && o.paymentStatus !== "paye"
-                          ? `Acompte reçu · solde ${formatCurrency(Math.max(0, o.total - o.depositPaidAmount))}`
-                          : paymentStatusLabel[o.paymentStatus] ?? "Paiement en attente"}
+                          ? t("depositReceivedBalanceAmount", { amount: formatCurrency(Math.max(0, o.total - o.depositPaidAmount)) })
+                          : t(paymentStatusLabel_KEYS[o.paymentStatus] ?? "paymentstatuEnAttente")}
                       </Badge>
                     </div>
                   </div>
@@ -1042,7 +1049,7 @@ export function CommandesView({
             <div className="flex items-center justify-between pb-2 border-b border-mv-border">
               <div className="flex items-center gap-2">
                 <span className="flex h-2.5 w-2.5 rounded-full bg-mv-amber" />
-                <h3 className="font-display text-[15px] font-bold text-mv-ink">À Préparer</h3>
+                <h3 className="font-display text-[15px] font-bold text-mv-ink">{t("toPrepare")}</h3>
               </div>
               <Badge tone="amber">{pendingOrders.length}</Badge>
             </div>
@@ -1050,7 +1057,7 @@ export function CommandesView({
               {pendingOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center text-mv-ink-faint text-[12.5px]">
                   <CheckCircle2 size={24} className="mb-2 text-mv-ink-faint/60" />
-                  Aucun ticket en attente
+                  {t("noTicketsWaiting")}
                 </div>
               ) : (
                 pendingOrders.map((o) => (
@@ -1068,7 +1075,7 @@ export function CommandesView({
                           {orderIntervals.has(o.id) && (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
-                              title="Délai après la commande précédente"
+                              title={t("delayAfterThePrevious")}
                             >
                               +{orderIntervals.get(o.id)}m
                             </span>
@@ -1110,7 +1117,7 @@ export function CommandesView({
                           onClick={() => handleStatusChange(o.id, "en_preparation")}
                           className="text-[12px] h-7 px-2.5 bg-mv-amber-dark hover:bg-mv-amber text-white"
                         >
-                          <Flame size={12} /> Lancer la prépa
+                          <Flame size={12} /> {t("startPrep")}
                         </Button>
                       )}
                     </div>
@@ -1125,7 +1132,7 @@ export function CommandesView({
             <div className="flex items-center justify-between pb-2 border-b border-mv-border">
               <div className="flex items-center gap-2">
                 <span className="flex h-2.5 w-2.5 rounded-full bg-mv-amber-dark" />
-                <h3 className="font-display text-[15px] font-bold text-mv-ink">En Cuisine</h3>
+                <h3 className="font-display text-[15px] font-bold text-mv-ink">{t("inTheKitchen")}</h3>
               </div>
               <Badge tone="amber">{preparingOrders.length}</Badge>
             </div>
@@ -1151,7 +1158,7 @@ export function CommandesView({
                           {orderIntervals.has(o.id) && (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
-                              title="Délai après la commande précédente"
+                              title={t("delayAfterThePrevious")}
                             >
                               +{orderIntervals.get(o.id)}m
                             </span>
@@ -1193,7 +1200,7 @@ export function CommandesView({
                           onClick={() => handleStatusChange(o.id, "prete")}
                           className="text-[12px] h-7 px-2.5 bg-mv-green-dark hover:bg-mv-green text-white"
                         >
-                          <CheckCircle2 size={12} /> Prête
+                          <CheckCircle2 size={12} /> {t("readyShort")}
                         </Button>
                       )}
                     </div>
@@ -1208,7 +1215,7 @@ export function CommandesView({
             <div className="flex items-center justify-between pb-2 border-b border-mv-border">
               <div className="flex items-center gap-2">
                 <span className="flex h-2.5 w-2.5 rounded-full bg-mv-green" />
-                <h3 className="font-display text-[15px] font-bold text-mv-ink">Prête au Service</h3>
+                <h3 className="font-display text-[15px] font-bold text-mv-ink">{t("readyToServe")}</h3>
               </div>
               <Badge tone="green">{readyOrders.length}</Badge>
             </div>
@@ -1216,7 +1223,7 @@ export function CommandesView({
               {readyOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center text-mv-ink-faint text-[12.5px]">
                   <CheckCircle2 size={24} className="mb-2 text-mv-ink-faint/60" />
-                  Aucun plat en attente de service
+                  {t("noDishesWaitingTo")}
                 </div>
               ) : (
                 readyOrders.map((o) => (
@@ -1234,7 +1241,7 @@ export function CommandesView({
                           {orderIntervals.has(o.id) && (
                             <span
                               className="inline-flex items-center gap-0.5 rounded-md bg-mv-cream px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-soft border border-mv-border/80"
-                              title="Délai après la commande précédente"
+                              title={t("delayAfterThePrevious")}
                             >
                               +{orderIntervals.get(o.id)}m
                             </span>
@@ -1268,7 +1275,7 @@ export function CommandesView({
                             onClick={() => handleNotifyReady(o.id)}
                             disabled={notifyingId === o.id}
                             className="text-[12px] h-7 px-2 text-mv-ink-soft hover:text-mv-ink"
-                            title={o.readyNotifiedAt ? `Notifié à ${formatRestaurantTime(o.readyNotifiedAt, restaurantTimezone)}` : "Notifier le client par courriel/push/SMS"}
+                            title={o.readyNotifiedAt ? t("notifiedAtTime", { time: formatRestaurantTime(o.readyNotifiedAt, restaurantTimezone) }) : t("notifyTheCustomerBy")}
                           >
                             {o.readyNotifiedAt ? <BellRing size={12} /> : <Bell size={12} />}
                             {o.readyNotifiedAt ? "Renvoyer" : "Notifier"}
@@ -1295,7 +1302,7 @@ export function CommandesView({
             <div className="flex items-center justify-between pb-2 border-b border-mv-border">
               <div className="flex items-center gap-2">
                 <span className="flex h-2.5 w-2.5 rounded-full bg-mv-ink-faint" />
-                <h3 className="font-display text-[15px] font-bold text-mv-ink-soft">Servies</h3>
+                <h3 className="font-display text-[15px] font-bold text-mv-ink-soft">{t("served")}</h3>
               </div>
               <Badge tone="neutral">{servedOrders.length}</Badge>
             </div>
@@ -1328,13 +1335,13 @@ export function CommandesView({
         /* ── TABLE VIEW ── */
         <Table>
           <THead>
-            <Th>Heure</Th>
-            <Th>Canal</Th>
-            <Th>Client</Th>
-            <Th>Articles</Th>
-            <Th className="text-right">Total</Th>
-            <Th>Statut</Th>
-            <Th className="text-right">Actions</Th>
+            <Th>{t("time")}</Th>
+            <Th>{t("channel")}</Th>
+            <Th>{t("customer")}</Th>
+            <Th>{t("items")}</Th>
+            <Th className="text-right">{t("total")}</Th>
+            <Th>{t("status")}</Th>
+            <Th className="text-right">{t("actions")}</Th>
           </THead>
           <tbody>
             {filteredOrders.map((o) => {
@@ -1349,7 +1356,7 @@ export function CommandesView({
                       <ScheduledOrderBadge order={o} timeZone={restaurantTimezone} />
                       <DeliveryMeta order={o} />
                       {orderIntervals.has(o.id) && (
-                        <span className="text-[12px] font-mono text-mv-ink-faint" title="Délai par rapport à la commande précédente">
+                        <span className="text-[12px] font-mono text-mv-ink-faint" title={t("delayComparedWithThe")}>
                           +{orderIntervals.get(o.id)}m
                         </span>
                       )}
@@ -1368,12 +1375,12 @@ export function CommandesView({
                   <Td className="text-right font-semibold text-mv-ink">{formatCurrency(o.total)}</Td>
                   <Td>
                     <div className="flex flex-wrap gap-1">
-                      <Badge tone={statusTone[o.status]}>{statusLabel[o.status]}</Badge>
+                      <Badge tone={statusTone[o.status]}>{t(statusLabel_KEYS[o.status])}</Badge>
                       {o.paymentStatus !== "non_requis" && (
                         <Badge tone={paymentStatusTone[o.paymentStatus]}>
                           {o.depositPaidAmount && o.depositPaidAmount > 0 && o.paymentStatus !== "paye"
                             ? `Acompte ${formatCurrency(o.depositPaidAmount)} · solde ${formatCurrency(Math.max(0, o.total - o.depositPaidAmount))}`
-                            : paymentStatusLabel[o.paymentStatus]}
+                            : t(paymentStatusLabel_KEYS[o.paymentStatus] ?? "paymentstatuEnAttente")}
                         </Badge>
                       )}
                     </div>
@@ -1382,7 +1389,7 @@ export function CommandesView({
                     {canManage && (
                       <div className="flex justify-end gap-1.5">
                         {next && nextBlockedByPayment ? (
-                          <span className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-red" title="En attente de confirmation du paiement">
+                          <span className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-red" title={t("awaitingPaymentConfirmation")}>
                             Attente paiement
                           </span>
                         ) : (
@@ -1391,7 +1398,7 @@ export function CommandesView({
                               onClick={() => handleStatusChange(o.id, next.status)}
                               className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-green-dark hover:bg-mv-green/10"
                             >
-                              {next.label}
+                              {t(next.labelKey)}
                             </button>
                           )
                         )}
@@ -1405,7 +1412,7 @@ export function CommandesView({
                         )}
                         <button
                           onClick={() => handleDelete(o.id, o.guestName)}
-                          aria-label="Supprimer"
+                          aria-label={t("delete")}
                           className="rounded-md p-1.5 text-mv-ink-faint hover:bg-mv-ink/5 hover:text-mv-red"
                         >
                           <Trash2 size={13} />

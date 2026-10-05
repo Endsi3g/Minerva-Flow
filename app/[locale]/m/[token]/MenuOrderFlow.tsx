@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { startTransition, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
@@ -85,6 +87,7 @@ function CheckoutModal({
   mentionedOfferTitle: string | null;
   delivery: { config: DeliveryPricingConfig; restaurantLat: number | null; restaurantLng: number | null };
 }) {
+  const t = useTranslations("menuOrder");
   const { subtotal, taxAmount, tipAmount, total } = totals;
   const [email, setEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -209,20 +212,20 @@ function CheckoutModal({
     try {
       const link = await getOrCreateReferralLinkAction(shareProgramId);
       if (!link) {
-        toast.error("Impossible de créer votre lien pour l'instant.");
+        toast.error(t("couldNotCreateYour"));
         return;
       }
       const url = `${window.location.origin}/m/${token}?ref=${link.code}`;
       setShareLink(url);
       const dishName = cartLines[0]?.item.name;
       const shareText = dishName
-        ? `Je viens de commander ${dishName} chez ${restaurantName} — passe voir le menu !`
-        : `Je viens de commander chez ${restaurantName} — passe voir le menu !`;
+        ? t("shareWithDish", { dish: dishName, restaurant: restaurantName })
+        : t("shareNoDish", { restaurant: restaurantName });
       if (navigator.share) {
         await navigator.share({ title: restaurantName, text: shareText, url }).catch(() => {});
       } else if (navigator.clipboard) {
         navigator.clipboard.writeText(url);
-        toast.success("Lien copié — partagez-le pour gagner une récompense.");
+        toast.success(t("linkCopiedShareIt"));
       }
     } finally {
       setShareLoading(false);
@@ -242,11 +245,11 @@ function CheckoutModal({
         setEmailStatus("sent");
       } else {
         setEmailStatus("error");
-        setEmailError(result.error ?? "Une erreur est survenue.");
+        setEmailError(result.error ?? t("somethingWentWrong"));
       }
     } catch {
       setEmailStatus("error");
-      setEmailError("Impossible d’envoyer le lien maintenant. Vérifiez votre connexion et réessayez.");
+      setEmailError(t("couldNotSendThe"));
     }
   }
 
@@ -318,11 +321,11 @@ function CheckoutModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Votre commande" width={480}>
+    <Modal open={open} onClose={onClose} title={t("yourOrder")} width={480}>
       {submitStatus === "paying" && clientSecret ? (
         <div className="py-2">
           <p className="mb-3 text-[13px] text-mv-ink-soft">
-            Votre commande a été transmise au restaurant. Complétez le paiement pour confirmer.
+            {t("orderSentCompletePayment")}
           </p>
           <OnlinePaymentForm
             clientSecret={clientSecret}
@@ -338,32 +341,32 @@ function CheckoutModal({
           <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
             <CheckCircle2 size={18} />
           </div>
-          <p className="font-display text-[17px] font-medium text-mv-ink">Paiement envoyé</p>
+          <p className="font-display text-[17px] font-medium text-mv-ink">{t("paymentSent")}</p>
           <p className="mt-1.5 text-[13px] text-mv-ink-soft">
-            Nous confirmons avec votre banque. Votre commande est déjà transmise au restaurant.
+            {t("confirmingWithBank")}
           </p>
           {estimatedReadyAt && (
             <p className="mt-2 text-[12.5px] font-medium text-mv-green-dark">
-              Prêt vers {formatRestaurantTime(estimatedReadyAt, restaurantTimezone)}
+              {t("readyAround", { time: formatRestaurantTime(estimatedReadyAt, restaurantTimezone) })}
             </p>
           )}
           {trackedOrderId && (
             <div className="mx-auto mt-4 max-w-sm rounded-xl border border-mv-border-soft bg-mv-cream-soft/70 p-3 text-left" aria-live="polite">
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Suivi de la commande</p>
+              <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{t("orderTracking")}</p>
               <p className="mt-1 text-[13px] font-semibold text-mv-green-dark">
-                {trackedOrderStatus ? orderStatusFriendlyCopy(trackedOrderStatus.status) : "Le restaurant prépare la confirmation…"}
+                {trackedOrderStatus ? orderStatusFriendlyCopy(trackedOrderStatus.status, t) : t("theRestaurantIsPreparing")}
               </p>
-              {trackedOrderStatus?.status === "annulee" && <p className="mt-1 text-[12px] text-mv-ink-soft">La commande est annulée sans frais. {trackedOrderStatus.reason ?? "Aucun paiement ne vous sera demandé."}</p>}
-              <p className="mt-1 text-[12px] text-mv-ink-faint">Réf. {trackedOrderId.slice(0, 8).toUpperCase()} · actualisation automatique</p>
+              {trackedOrderStatus?.status === "annulee" && <p className="mt-1 text-[12px] text-mv-ink-soft">{t("cancelledNoCharge", { reason: trackedOrderStatus.reason ?? t("noPaymentWillBeAsked") })}</p>}
+              <p className="mt-1 text-[12px] text-mv-ink-faint">{t("refAutoRefresh", { ref: trackedOrderId.slice(0, 8).toUpperCase() })}</p>
             </div>
           )}
           {shareProgramId && (
             <div className="mt-4 border-t border-mv-border-soft pt-4">
               {shareLink ? (
-                <p className="mv-check-pop text-[12.5px] text-mv-green-dark">Merci d&apos;avoir partagé !</p>
+                <p className="mv-check-pop text-[12.5px] text-mv-green-dark">{t("thanksForSharing")}</p>
               ) : (
                 <Button variant="secondary" size="sm" onClick={handleShareOrder} disabled={shareLoading}>
-                  <Sparkles size={14} /> Partager ce plat et gagner une récompense
+                  <Sparkles size={14} /> {t("shareDishEarnReward")}
                 </Button>
               )}
             </div>
@@ -374,22 +377,22 @@ function CheckoutModal({
           <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
             <CheckCircle2 size={18} />
           </div>
-          <p className="font-display text-[17px] font-medium text-mv-ink">Commande envoyée</p>
+          <p className="font-display text-[17px] font-medium text-mv-ink">{t("orderSent")}</p>
           <p className="mt-1.5 text-[13px] text-mv-ink-soft">
-            Vous paierez sur place. Le restaurant confirmera sous peu.
+            {t("payOnSite")}
           </p>
           {estimatedReadyAt && (
             <p className="mt-2 text-[12.5px] font-medium text-mv-green-dark">
-              Prêt vers {formatRestaurantTime(estimatedReadyAt, restaurantTimezone)}
+              {t("readyAround", { time: formatRestaurantTime(estimatedReadyAt, restaurantTimezone) })}
             </p>
           )}
           {shareProgramId && (
             <div className="mt-4 border-t border-mv-border-soft pt-4">
               {shareLink ? (
-                <p className="mv-check-pop text-[12.5px] text-mv-green-dark">Merci d&apos;avoir partagé !</p>
+                <p className="mv-check-pop text-[12.5px] text-mv-green-dark">{t("thanksForSharing")}</p>
               ) : (
                 <Button variant="secondary" size="sm" onClick={handleShareOrder} disabled={shareLoading}>
-                  <Sparkles size={14} /> Partager ce plat et gagner une récompense
+                  <Sparkles size={14} /> {t("shareDishEarnReward")}
                 </Button>
               )}
             </div>
@@ -400,7 +403,7 @@ function CheckoutModal({
           {authenticated && checkoutAttemptId && submitStatus !== "submitting" && (
             <div className="rounded-xl border border-mv-green/20 bg-mv-green-tint/40 p-3">
               <p className="mb-2 text-[12px] text-mv-ink-soft">
-                Une tentative précédente a peut-être déjà été reçue. Reprenez-la pour retrouver la même commande et le même paiement, sans en créer une autre.
+                {t("previousAttemptNotice")}
               </p>
               <Button type="button" variant="secondary" size="sm" onClick={handleResumeOrder} className="w-full">
                 Reprendre ma commande
@@ -409,7 +412,7 @@ function CheckoutModal({
           )}
           {mentionedOfferTitle && (
             <div className="flex items-center gap-1.5 rounded-lg bg-mv-lime-tint px-3 py-2 text-[12px] font-medium text-mv-green-darker">
-              <Sparkles size={13} /> Offre mentionnée : {mentionedOfferTitle}
+              <Sparkles size={13} /> {t("offerMentioned", { title: mentionedOfferTitle })}
             </div>
           )}
           <div className="space-y-1.5">
@@ -425,7 +428,7 @@ function CheckoutModal({
 
           {acceptsTips && (
             <div>
-              <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Pourboire</p>
+              <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("tip")}</p>
               <div className="flex gap-1.5">
                 {TIP_PRESETS.map((pct) => (
                   <button
@@ -439,7 +442,7 @@ function CheckoutModal({
                         : "border-mv-border text-mv-ink-soft"
                     )}
                   >
-                    {pct === 0 ? "Aucun" : `${Math.round(pct * 100)}%`}
+                    {pct === 0 ? t("none") : `${Math.round(pct * 100)}%`}
                   </button>
                 ))}
               </div>
@@ -448,16 +451,16 @@ function CheckoutModal({
 
           <div className="space-y-1 border-t border-mv-border-soft pt-3 text-[12.5px]">
             <div className="flex justify-between text-mv-ink-soft">
-              <span>Sous-total</span>
+              <span>{t("subtotal")}</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex justify-between text-mv-ink-soft">
-              <span>Taxes</span>
+              <span>{t("taxes")}</span>
               <span>{formatCurrency(taxAmount)}</span>
             </div>
             {acceptsTips && (
               <div className="flex justify-between text-mv-ink-soft">
-                <span>Pourboire</span>
+                <span>{t("tip")}</span>
                 <span>{formatCurrency(tipAmount)}</span>
               </div>
             )}
@@ -468,25 +471,25 @@ function CheckoutModal({
               </div>
             )}
             <div className="flex justify-between text-[14px] font-semibold text-mv-ink">
-              <span>Total</span>
+              <span>{t("total")}</span>
               <span>{formatCurrency(displayTotal)}</span>
             </div>
           </div>
 
           {authenticated ? (
             <form onSubmit={handleOrderSubmit} className="space-y-3 border-t border-mv-border-soft pt-3">
-              <Field label="Nom">
+              <Field label={t("name")}>
                 <Input name="guestName" required autoFocus />
               </Field>
-              <Field label="Téléphone" hint="Optionnel">
+              <Field label={t("phone")} hint={t("optional")}>
                 <Input name="guestPhone" type="tel" />
               </Field>
-              <Field label="Heure souhaitée (facultatif)" hint={`Heure locale du restaurant (${restaurantTimezone}) · créneaux de 15 min · jusqu’à 30 jours`}>
+              <Field label={t("preferredTimeOptional")} hint={`Heure locale du restaurant (${restaurantTimezone}) · créneaux de 15 min · jusqu’à 30 jours`}>
                 <Input name="requestedReadyAtLocal" type="datetime-local" step={900} />
               </Field>
               {checkoutOptions.fulfillmentModes.length > 1 && (
                 <div>
-                  <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Mode de réception</p>
+                  <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("orderType")}</p>
                   <div className="flex gap-1.5">
                     {checkoutOptions.fulfillmentModes.map((mode) => (
                       <button
@@ -507,33 +510,33 @@ function CheckoutModal({
                   </div>
                   {fulfillmentMode === "prep_apres_paiement" && (
                     <p className="mt-1.5 text-[12px] text-mv-ink-faint">
-                      Le restaurant commence la préparation dès que votre paiement est confirmé.
+                      {t("prepStartsAfterPayment")}
                     </p>
                   )}
                 </div>
               )}
               {fulfillmentMode === "livraison" && (
                 <div className="space-y-2 rounded-xl border border-mv-green/20 bg-mv-green-tint/40 p-3">
-                  <Field label="Adresse de livraison" hint="Rue, ville et code postal — le tarif est calculé par le restaurant">
+                  <Field label={t("deliveryAddress")} hint={t("streetCityAndPostal")}>
                     <Input value={deliveryAddress} onChange={(e) => {
                       setDeliveryAddress(e.target.value);
                     }} required autoComplete="street-address" />
                   </Field>
-                  {deliveryQuoteLoading && <p className="text-[12px] text-mv-ink-faint">Calcul des frais…</p>}
+                  {deliveryQuoteLoading && <p className="text-[12px] text-mv-ink-faint">{t("calculatingTheFee")}</p>}
                   {!deliveryQuoteLoading && !deliveryQuote.available && (
-                    <p className="text-[12px] text-mv-red">{deliveryQuote.reason === "outside_radius" ? "Cette adresse est hors du rayon de livraison configuré." : "Entrez une adresse complète pour calculer les frais."}</p>
+                    <p className="text-[12px] text-mv-red">{deliveryQuote.reason === "outside_radius" ? t("outsideDeliveryRadius") : t("enterFullAddress")}</p>
                   )}
                   {deliveryQuote.available && deliveryQuote.etaMinutes != null && (
-                    <p className="text-[12px] text-mv-ink-faint">Frais : {formatCurrency(deliveryQuote.fee)} · Temps estimé : {deliveryQuote.etaMinutes} min</p>
+                    <p className="text-[12px] text-mv-ink-faint">{t("feeAndEta", { fee: formatCurrency(deliveryQuote.fee), minutes: deliveryQuote.etaMinutes })}</p>
                   )}
                 </div>
               )}
               {checkoutOptions.canPayOnline && checkoutOptions.canPayAtReceipt && (
                 <div>
-                  <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Paiement</p>
+                  <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("payment")}</p>
                   <div className="flex gap-1.5">
                     {[
-                      { value: false, label: fulfillmentMode === "livraison" ? "À la livraison" : "À la cueillette" },
+                      { value: false, label: fulfillmentMode === "livraison" ? t("delivery") : t("pickup") },
                       { value: true, label: "En ligne" },
                     ].map((choice) => (
                       <button
@@ -550,12 +553,12 @@ function CheckoutModal({
                 </div>
               )}
               {!payOnline && (
-                <Field label="Mode de paiement sur place" hint="Optionnel">
-                  <Input name="paymentMethod" aria-label="Mode de paiement sur place" placeholder="Ex : Carte, comptant" />
+                <Field label={t("paymentMethodOnSite")} hint={t("optional")}>
+                  <Input name="paymentMethod" aria-label={t("paymentMethodOnSite")} placeholder={t("eGCardCash")} />
                 </Field>
               )}
               <p className="rounded-lg bg-mv-green-tint/45 px-3 py-2.5 text-[12px] leading-relaxed text-mv-ink-soft">
-                Hey ! Le restaurant vous confirme la commande bientôt. Si un article n’est pas disponible ou qu’un imprévu survient, son équipe vous contactera ou annulera la commande sans frais.
+                {t("orderConfirmNotice")}
               </p>
               <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
                 <Checkbox
@@ -563,30 +566,30 @@ function CheckoutModal({
                   onCheckedChange={(checked) => setMarketingConsent(Boolean(checked))}
                   className="mt-0.5"
                 />
-                <span>J&apos;accepte de recevoir des offres et rappels par courriel ou SMS de {restaurantName}.</span>
+                <span>{t("marketingConsent", { restaurant: restaurantName })}</span>
               </label>
               {submitStatus === "error" && (
-                <p className="text-[12.5px] text-mv-red">Oups, l’envoi n’a pas abouti. Vous pouvez réessayer dans un instant.</p>
+                <p className="text-[12.5px] text-mv-red">{t("oopsTheOrderDid")}</p>
               )}
               <Button type="submit" disabled={submitStatus === "submitting" || (fulfillmentMode === "livraison" && (deliveryQuoteLoading || !deliveryQuote.available))} className="w-full">
-                {submitStatus === "submitting" ? "Envoi…" : `Envoyer la commande — ${formatCurrency(displayTotal)}`}
+                {submitStatus === "submitting" ? t("sending") : `Envoyer la commande — ${formatCurrency(displayTotal)}`}
               </Button>
             </form>
           ) : emailStatus === "sent" ? (
             <div className="border-t border-mv-border-soft pt-3 text-center">
               <Mail size={18} className="mx-auto mb-2 text-mv-green-dark" />
               <p className="text-[13px] text-mv-ink-soft">
-                Cliquez le lien reçu à {email} pour confirmer votre commande.
+                {t("clickLinkToConfirm", { email })}
               </p>
             </div>
           ) : (
             <form onSubmit={handleEmailSubmit} className="space-y-3 border-t border-mv-border-soft pt-3">
-              <Field label="Courriel" hint="Pour confirmer votre commande">
+              <Field label={t("email")} hint={t("toConfirmYourOrder")}>
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
               </Field>
               {emailStatus === "error" && <p className="text-[12.5px] text-mv-red">{emailError}</p>}
               <Button type="submit" disabled={emailStatus === "sending"} className="w-full">
-                {emailStatus === "sending" ? "Envoi…" : "Continuer"}
+                {emailStatus === "sending" ? t("sending") : "Continuer"}
               </Button>
             </form>
           )}
@@ -596,14 +599,14 @@ function CheckoutModal({
   );
 }
 
-function orderStatusFriendlyCopy(status: OrderStatus): string {
+function orderStatusFriendlyCopy(status: OrderStatus, t: (key: string) => string): string {
   const copy: Record<OrderStatus, string> = {
-    soumise: "Bien reçue — le restaurant vous confirme bientôt la suite.",
-    confirmee: "C’est confirmé ! Votre repas sera bientôt prêt.",
-    en_preparation: "Votre repas se prépare avec soin.",
-    prete: "Bonne nouvelle, votre repas vous attend au restaurant !",
-    servie: "Bon appétit ! Merci d’avoir choisi ce restaurant.",
-    annulee: "Petit imprévu — votre commande est annulée sans frais.",
+    soumise: t("receivedTheRestaurantWill"),
+    confirmee: t("confirmedYourMealWill"),
+    en_preparation: t("yourMealIsBeing"),
+    prete: t("goodNewsYourMeal"),
+    servie: t("enjoyYourMealThank"),
+    annulee: t("aSmallHiccupYour"),
   };
   return copy[status];
 }
@@ -628,6 +631,7 @@ function MenuItemGridCard({
   isOrderable: boolean;
   onToggleFavorite?: () => void;
 }) {
+  const t = useTranslations("menuOrder");
   return (
     <button
       type="button"
@@ -665,7 +669,7 @@ function MenuItemGridCard({
           className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft shadow-mv-md transition-transform hover:scale-110"
         >
           <Plus size={15} />
-        </span> : <span className="absolute bottom-2 right-2 rounded-full bg-white/90 px-2.5 py-1 text-[12px] font-medium text-mv-ink-soft">Présentation seulement</span>}
+        </span> : <span className="absolute bottom-2 right-2 rounded-full bg-white/90 px-2.5 py-1 text-[12px] font-medium text-mv-ink-soft">{t("previewOnly")}</span>}
         {quantity > 0 && (
           <span className="absolute left-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-mv-ink px-1.5 text-[12px] font-bold text-white shadow-mv-md">
             {quantity}
@@ -675,7 +679,7 @@ function MenuItemGridCard({
           <span
             role="button"
             tabIndex={0}
-            aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+            aria-label={isFavorite ? t("removeFromFavorites") : t("addToFavorites")}
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite();
@@ -698,7 +702,7 @@ function MenuItemGridCard({
         {item.description && (
           <p className="line-clamp-2 text-[12px] leading-snug text-mv-ink-faint">{item.description}</p>
         )}
-        <p className="mt-auto pt-1 text-[13px] font-semibold text-mv-green-dark">{isOrderable ? formatCurrency(item.price) : "À découvrir"}</p>
+        <p className="mt-auto pt-1 text-[13px] font-semibold text-mv-green-dark">{isOrderable ? formatCurrency(item.price) : t("toDiscover")}</p>
       </div>
     </button>
   );
@@ -719,6 +723,7 @@ function MenuItemDetailModal({
   onQtyChange: (delta: number) => void;
   onConfirm: () => void;
 }) {
+  const t = useTranslations("menuOrder");
   if (!item) return null;
   const displayQty = Math.max(1, quantity);
 
@@ -740,7 +745,7 @@ function MenuItemDetailModal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={t("close")}
             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-mv-surface/90 text-mv-ink shadow-mv-md backdrop-blur-sm"
           >
             <X size={16} />
@@ -759,7 +764,7 @@ function MenuItemDetailModal({
               type="button"
               onClick={() => onQtyChange(-1)}
               disabled={displayQty <= 1}
-              aria-label="Retirer un"
+              aria-label={t("removeOne")}
               className="flex h-7 w-7 items-center justify-center rounded-full text-mv-ink-soft disabled:opacity-30"
             >
               <Minus size={14} />
@@ -768,7 +773,7 @@ function MenuItemDetailModal({
             <button
               type="button"
               onClick={() => onQtyChange(1)}
-              aria-label="Ajouter un"
+              aria-label={t("addOne")}
               className="flex h-7 w-7 items-center justify-center rounded-full text-mv-ink-soft"
             >
               <Plus size={14} />
@@ -797,6 +802,7 @@ function LocationPickerModal({
   currentRestaurantName: string;
   locations: SiblingLocation[];
 }) {
+  const t = useTranslations("menuOrder");
   if (!open) return null;
   const center: [number, number] = [
     locations.reduce((sum, l) => sum + l.lng, 0) / locations.length,
@@ -811,13 +817,13 @@ function LocationPickerModal({
       >
         <div className="flex items-center justify-between border-b border-mv-border-soft p-4">
           <div>
-            <p className="font-display text-[16px] font-medium text-mv-ink">Choisir un établissement</p>
+            <p className="font-display text-[16px] font-medium text-mv-ink">{t("chooseARestaurant")}</p>
             <p className="text-[12px] text-mv-ink-faint">Vous consultez actuellement {currentRestaurantName}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={t("close")}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-mv-ink-faint hover:bg-mv-cream-soft"
           >
             <X size={16} />
@@ -888,6 +894,7 @@ export function MenuOrderFlow({
   favoriteMenuItemIds: string[];
   favoriteOfferIds: string[];
 }) {
+  const t = useTranslations("menuOrder");
   const router = useRouter();
   const { restaurantName, restaurantTimezone, items, taxRate, acceptsTips, onlinePaymentEnabled, orderModesEnabled, delivery } = landing;
   const [favMenuItems, setFavMenuItems] = useState(new Set(favoriteMenuItemIds));
@@ -941,7 +948,7 @@ export function MenuOrderFlow({
   function handleClaimOffer(title: string) {
     setActiveOffer(title);
     menuSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    toast.success("Mentionnez cette offre à la commande — ajoutée à votre commande.");
+    toast.success(t("mentionThisOfferWhen"));
   }
 
   useEffect(() => {
@@ -1035,7 +1042,7 @@ export function MenuOrderFlow({
                 onClick={() => setLocationPickerOpen(true)}
                 className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3.5 py-2 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-cream-soft hover:text-mv-ink"
               >
-                <MapPin size={14} className="text-mv-green-dark" /> Autres établissements
+                <MapPin size={14} className="text-mv-green-dark" /> {t("otherRestaurants")}
               </button>
             )}
             <button
@@ -1046,7 +1053,7 @@ export function MenuOrderFlow({
                   navigator.share({ title: `Le menu de ${restaurantName}`, url }).catch(() => {});
                 } else if (navigator.clipboard) {
                   navigator.clipboard.writeText(url);
-                  toast.success("Lien du menu copié.");
+                  toast.success(t("menuLinkCopied"));
                 }
               }}
               className="flex items-center gap-1.5 rounded-full border border-mv-border bg-mv-surface px-3.5 py-2 text-[12.5px] font-medium text-mv-ink-soft transition-colors hover:bg-mv-cream-soft hover:text-mv-ink"
@@ -1068,7 +1075,7 @@ export function MenuOrderFlow({
             const href = kind === "email" ? `mailto:${value}` : kind === "phone" ? `tel:${value.replace(/[^+\d]/g, "")}`
               : kind === "whatsapp" && !/^https?:/i.test(value) ? `https://wa.me/${value.replace(/[^\d]/g, "")}`
               : /^https?:/i.test(value) ? value : `https://${kind === "instagram" ? "instagram.com/" : kind === "tiktok" ? "tiktok.com/@" : kind === "facebook" ? "facebook.com/" : ""}${value.replace(/^@/, "")}`;
-            const labels: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", whatsapp: "WhatsApp", email: "Courriel", phone: "Téléphone", website: "Site web" };
+            const labels: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", whatsapp: "WhatsApp", email: "Courriel", phone: t("phone"), website: "Site web" };
             return <a key={kind} href={href} target={kind === "email" || kind === "phone" ? undefined : "_blank"} rel="noreferrer" className="rounded-full border px-3 py-1.5 text-[12px] font-medium" style={{ borderColor: `${landing.presentation.accentColor}55`, color: landing.presentation.accentColor }}>{labels[kind]}</a>;
           })}
         </div>
@@ -1078,7 +1085,7 @@ export function MenuOrderFlow({
           href={`/app?restaurant=${encodeURIComponent(landing.restaurantId)}&name=${encodeURIComponent(restaurantName)}&menu=${encodeURIComponent(token)}`}
           className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-mv-green/20 bg-mv-green-tint/35 px-4 py-3 text-[12.5px] text-mv-ink-soft transition hover:bg-mv-green-tint/60"
         >
-          <span><span className="block font-semibold text-mv-green-dark">Installez Minerva Flow</span><span>Vos commandes et vos points, réunis au même endroit.</span></span>
+          <span><span className="block font-semibold text-mv-green-dark">{t("installMinervaFlow")}</span><span>{t("yourOrdersAndYour")}</span></span>
           <ArrowRight size={16} className="shrink-0 text-mv-green-dark" />
         </Link>
         {authenticated && <CustomerPushToggle restaurantId={landing.restaurantId} />}
@@ -1087,15 +1094,14 @@ export function MenuOrderFlow({
           <div className="mb-6 flex items-start gap-2 rounded-xl border border-mv-amber/40 bg-mv-amber-tint px-3.5 py-3 text-[12.5px] text-mv-amber-dark">
             <Clock size={15} className="mt-0.5 shrink-0" />
             <span>
-              {restaurantName} est présentement très occupé — les délais de préparation peuvent être plus longs que
-              d&apos;habitude.
+              {t("busyNotice", { restaurant: restaurantName })}
             </span>
           </div>
         )}
 
         {offers.length > 0 && (
           <div className="mb-8">
-            <p className="mb-2 text-[13px] font-semibold text-mv-ink">Offres en ce moment</p>
+            <p className="mb-2 text-[13px] font-semibold text-mv-ink">{t("offersRightNow")}</p>
             <div className="space-y-2">
               {offers.map((offer) => (
                 <Card key={offer.id} className="flex items-center gap-3 border-mv-lime-dark/30 bg-mv-lime-tint">
@@ -1113,7 +1119,7 @@ export function MenuOrderFlow({
                     <button
                       type="button"
                       onClick={() => handleToggleFavorite("offer", offer.id)}
-                      aria-label={favOffers.has(offer.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                      aria-label={favOffers.has(offer.id) ? t("removeFromFavorites") : t("addToFavorites")}
                       className="shrink-0 text-mv-ink-faint transition-colors hover:text-mv-red"
                     >
                       <Heart size={16} className={favOffers.has(offer.id) ? "fill-mv-red text-mv-red" : undefined} />
@@ -1129,7 +1135,7 @@ export function MenuOrderFlow({
                         : "bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark"
                     )}
                   >
-                    {activeOffer === offer.title ? "Ajoutée ✓" : "J'en profite"}
+                    {activeOffer === offer.title ? t("added") : "J'en profite"}
                   </button>
                 </Card>
               ))}
@@ -1141,12 +1147,12 @@ export function MenuOrderFlow({
         <ServiceQuoteRequest token={token} restaurantTimezone={restaurantTimezone} deliveryEnabled={delivery.config.enabled} />
 
         {items.length === 0 ? (
-          <p className="text-[13px] text-mv-ink-faint">Aucun plat disponible pour l&apos;instant.</p>
+          <p className="text-[13px] text-mv-ink-faint">{t("noDishesAvailableRight")}</p>
         ) : (
           <div ref={menuSectionRef}>
             {items.some((item) => item.isFeatured) && (
               <section className="mb-8" aria-labelledby="menu-featured-title">
-                <p className="mb-3 text-[13px] font-semibold" style={{ color: landing.presentation.accentColor }} id="menu-featured-title">À découvrir</p>
+                <p className="mb-3 text-[13px] font-semibold" style={{ color: landing.presentation.accentColor }} id="menu-featured-title">{t("toDiscover")}</p>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {items.filter((item) => item.isFeatured).map((item) => (
                     <MenuItemGridCard
@@ -1163,7 +1169,7 @@ export function MenuOrderFlow({
                 </div>
               </section>
             )}
-            <p className="mb-4 font-display text-xl text-mv-ink">Tout le menu</p>
+            <p className="mb-4 font-display text-xl text-mv-ink">{t("fullMenu")}</p>
             {categories.length > 1 && (
               <div className="sticky top-0 z-10 -mx-6 mb-6 flex gap-2 overflow-x-auto px-6 py-2.5 backdrop-blur-sm" style={{ backgroundColor: `${landing.presentation.backgroundColor}f2` }}>
                 {categories.map(([category], i) => (
@@ -1208,7 +1214,7 @@ export function MenuOrderFlow({
               {itemCount} article{itemCount > 1 ? "s" : ""} — {formatCurrency(subtotal)}
             </div>
             <Button size="sm" onClick={() => setCheckoutOpen(true)}>
-              <ShoppingCart size={14} /> Voir la commande
+              <ShoppingCart size={14} /> {t("viewOrder")}
             </Button>
           </div>
         </div>

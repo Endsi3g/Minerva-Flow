@@ -140,7 +140,7 @@ function LoyaltyWalletCard({
             <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.max(4, progress * 100)}%` }} />
           </div>
           <p className="mt-1.5 text-[12px] opacity-80">
-            {formatCurrency(Math.max(0, nextTarget - totalSpent))} avant le palier suivant
+            {t("untilNextTier", { amount: formatCurrency(Math.max(0, nextTarget - totalSpent)) })}
           </p>
         </div>
       )}
@@ -189,6 +189,7 @@ function AvatarEditor({
   avatarUrl: string | null;
   onUploaded: (url: string) => void;
 }) {
+  const t = useTranslations("portal.view");
   const [isUploading, setIsUploading] = useState(false);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -196,11 +197,11 @@ function AvatarEditor({
     e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Choisissez une image (JPG, PNG…).");
+      toast.error(t("chooseAnImageJpg"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("L'image doit faire moins de 5 Mo.");
+      toast.error(t("theImageMustBe"));
       return;
     }
     setIsUploading(true);
@@ -217,7 +218,7 @@ function AvatarEditor({
         upsert: true,
       });
       if (uploadError) {
-        toast.error("L'envoi de la photo a échoué. Réessayez.");
+        toast.error(t("thePhotoUploadFailed"));
         return;
       }
       const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
@@ -250,6 +251,7 @@ function AvatarEditor({
 }
 
 function ProfileSettingsCard({ customer }: { customer: Customer }) {
+  const t = useTranslations("portal.view");
   const [name, setName] = useState(customer.name);
   const [avatarUrl, setAvatarUrl] = useState(customer.avatarUrl);
   const [phone, setPhone] = useState(customer.phone ?? "");
@@ -280,11 +282,11 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         notificationFrequency,
       });
       if (ok) {
-        toast.success("Profil mis à jour.");
+        toast.success(t("profileUpdated"));
         setSavedTick(true);
         setTimeout(() => setSavedTick(false), 1800);
       } else {
-        toast.error("La mise à jour a échoué. Vos changements sont toujours dans le formulaire — réessayez.");
+        toast.error(t("theUpdateFailedYour"));
       }
     } finally {
       setIsSaving(false);
@@ -300,8 +302,8 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         neighborhood: neighborhood.trim() || null,
       avatarUrl: url,
     });
-    if (ok) toast.success("Photo de profil mise à jour.");
-    else toast.error("La photo a été envoyée, mais l'enregistrement a échoué. Réessayez.");
+    if (ok) toast.success(t("profilePhotoUpdated"));
+    else toast.error(t("thePhotoWasUploaded"));
   }
 
   async function handleRequestEmailChange() {
@@ -316,29 +318,29 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
       setEmailStatus("sent");
     } else {
       setEmailStatus("error");
-      setEmailError(result.error ?? "La demande a échoué. Réessayez.");
+      setEmailError(result.error ?? t("theRequestFailedTry"));
     }
   }
 
   return (
     <Card>
-      <CardHeader title="Mon profil" description="Reçois des offres personnalisées et un cadeau le jour de ton anniversaire." />
+      <CardHeader title={t("myProfile")} description={t("getPersonalizedOffersAnd")} />
       <div className="space-y-4">
         <div className="flex items-center gap-4">
           <AvatarEditor name={name} avatarUrl={avatarUrl} onUploaded={handleAvatarUploaded} />
           <div className="min-w-0 flex-1">
-            <Field label="Nom">
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Votre nom" />
+            <Field label={t("name")}>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("yourName")} />
             </Field>
           </div>
         </div>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Courriel</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("email")}</p>
           {emailStatus === "sent" ? (
             <div className="flex items-start gap-2 rounded-lg bg-mv-green-tint px-3 py-2.5 text-[12.5px] text-mv-green-darker">
               <Mail size={14} className="mt-0.5 shrink-0" />
-              <span>Vérifiez {newEmail} pour confirmer le changement — votre courriel actuel reste actif jusque-là.</span>
+              <span>{t("checkNewEmail", { email: newEmail })}</span>
             </div>
           ) : isEditingEmail ? (
             <div className="space-y-2">
@@ -346,13 +348,13 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="nouveau@exemple.com"
+                placeholder={t("newExampleCom")}
                 autoFocus
               />
               {emailStatus === "error" && <p className="text-[12px] text-mv-red">{emailError}</p>}
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleRequestEmailChange} disabled={emailStatus === "sending"}>
-                  {emailStatus === "sending" ? "Envoi…" : "Confirmer le changement"}
+                  {emailStatus === "sending" ? t("sending") : t("confirmTheChange")}
                 </Button>
                 <Button
                   size="sm"
@@ -379,18 +381,18 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
           )}
         </div>
 
-        <Field label="Téléphone" hint="Optionnel — permet au restaurant de vous joindre">
+        <Field label={t("phone")} hint={t("optionalLetsTheRestaurant")}>
           <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="514 555-0123" />
         </Field>
 
-        <Field label="Date de naissance" hint="Optionnel">
+        <Field label={t("dateOfBirth")} hint={t("optional")}>
           <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
         </Field>
-        <Field label="Ville" hint="Optionnel — aide le restaurant à savoir d'où viennent ses clients">
-          <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ex : Montréal" />
+        <Field label={t("city")} hint={t("optionalHelpsTheRestaurant")}>
+          <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("eGMontreal")} />
         </Field>
-        <Field label="Quartier" hint="Optionnel — indiquez une zone générale, sans adresse ni position GPS">
-          <Input value={neighborhood} onChange={(e) => setNeighborhood(e.target.value.slice(0, 80))} placeholder="Ex : Plateau-Mont-Royal" maxLength={80} />
+        <Field label={t("neighborhood")} hint={t("optionalGiveAGeneral")}>
+          <Input value={neighborhood} onChange={(e) => setNeighborhood(e.target.value.slice(0, 80))} placeholder={t("eGPlateauMont")} maxLength={80} />
         </Field>
         <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
           <Checkbox
@@ -398,34 +400,34 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
             onCheckedChange={(checked) => setMarketingConsent(Boolean(checked))}
             className="mt-0.5"
           />
-          <span>J&apos;accepte de recevoir des offres et rappels par courriel ou SMS.</span>
+          <span>{t("iAgreeToReceive")}</span>
         </label>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Fréquence des messages</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("messageFrequency")}</p>
           <RadioGroup value={notificationFrequency} onValueChange={(value) => setNotificationFrequency(value as "all" | "important_only" | "frequent")} className="space-y-1.5">
             <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
               <RadioGroupItem value="all" className="mt-0.5" />
-              <span>Tous les messages — rappels, récompenses et anniversaire.</span>
+              <span>{t("allMessagesRemindersRewards")}</span>
             </label>
             <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
               <RadioGroupItem value="important_only" className="mt-0.5" />
-              <span>Seulement l&apos;essentiel — récompenses et anniversaire, sans les rappels.</span>
+              <span>{t("essentialsOnlyRewardsAnd")}</span>
             </label>
             <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
               <RadioGroupItem value="frequent" className="mt-0.5" />
-              <span>Fréquent — jusqu&apos;à 2 notifications par jour, entre 9 h et 20 h, avec des messages variés. Vous pouvez changer à tout moment.</span>
+              <span>{t("frequentUpTo2")}</span>
             </label>
           </RadioGroup>
         </div>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Notifications sur cet appareil</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("notificationsOnThisDevice")}</p>
           <CustomerPushToggle restaurantId={customer.restaurantId} />
         </div>
 
         <Button size="sm" onClick={handleSave} disabled={isSaving}>
-          {isSaving ? "Enregistrement…" : savedTick ? "Enregistré ✓" : "Enregistrer"}
+          {isSaving ? t("saving") : savedTick ? t("saved") : t("save")}
         </Button>
         <ExportDataButton customerId={customer.id} />
       </div>
@@ -440,6 +442,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
  * works the same whether the browser previews or saves JSON by default.
  */
 function ExportDataButton({ customerId }: { customerId: string }) {
+  const t = useTranslations("portal.view");
   const [isExporting, setIsExporting] = useState(false);
 
   async function handleExport() {
@@ -466,7 +469,7 @@ function ExportDataButton({ customerId }: { customerId: string }) {
       disabled={isExporting}
       className="text-left text-[12px] font-medium text-mv-ink-soft underline decoration-mv-border underline-offset-2 hover:text-mv-ink"
     >
-      {isExporting ? "Préparation…" : "Exporter mes données (JSON)"}
+      {isExporting ? t("preparing") : t("exportMyDataJson")}
     </button>
   );
 }
@@ -478,11 +481,12 @@ function ExportDataButton({ customerId }: { customerId: string }) {
  * confirmation pattern in the app instead of the usual one-click confirm.
  */
 function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useTranslations("portal.view");
   const router = useRouter();
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const canConfirm = confirmText.trim().toUpperCase() === "SUPPRIMER";
+  const canConfirm = ["SUPPRIMER", "DELETE"].includes(confirmText.trim().toUpperCase());
 
   async function handleDelete() {
     if (!canConfirm) return;
@@ -491,7 +495,7 @@ function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => v
     try {
       const ok = await deleteMyAccountAction();
       if (!ok) {
-        setError("La suppression a échoué. Réessayez ou contactez le restaurant.");
+        setError(t("deletionFailedTryAgain"));
         setIsDeleting(false);
         return;
       }
@@ -500,7 +504,7 @@ function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => v
       router.push("/portal/login");
       router.refresh();
     } catch {
-      setError("La suppression a échoué. Réessayez ou contactez le restaurant.");
+      setError(t("deletionFailedTryAgain"));
       setIsDeleting(false);
     }
   }
@@ -515,26 +519,24 @@ function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => v
           onClose();
         }
       }}
-      title="Supprimer mon compte"
-      description="Cette action est irréversible."
+      title={t("deleteMyAccount")}
+      description={t("thisActionCannotBe")}
     >
       <div className="space-y-4">
         <p className="text-[13px] text-mv-ink-soft">
-          Votre accès sera immédiatement révoqué et vos informations personnelles (nom, courriel, date de
-          naissance, ville) seront effacées de tous les restaurants où vous êtes membre. Vos points, visites et
-          récompenses restent dans les registres du ou des restaurants, mais ne pourront plus être réclamés.
+          {t("deleteAccountWarning")}
         </p>
-        <Field label='Tapez "SUPPRIMER" pour confirmer'>
+        <Field label={t("typeDeleteToConfirm")}>
           <Input
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
-            placeholder="SUPPRIMER"
+            placeholder={t("delete")}
             autoComplete="off"
           />
         </Field>
         {error && <p className="text-[12.5px] text-mv-red">{error}</p>}
         <Button onClick={handleDelete} disabled={!canConfirm || isDeleting} variant="destructive" className="w-full">
-          {isDeleting ? "Suppression…" : "Supprimer définitivement mon compte"}
+          {isDeleting ? t("deleting") : t("permanentlyDeleteMyAccount")}
         </Button>
       </div>
     </Modal>
@@ -542,11 +544,12 @@ function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => v
 }
 
 function DangerZoneCard() {
+  const t = useTranslations("portal.view");
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
     <Card>
-      <CardHeader title="Zone de danger" description="Supprimer définitivement votre compte." />
+      <CardHeader title={t("dangerZone")} description={t("permanentlyDeleteYourAccount")} />
       <button
         type="button"
         onClick={() => setModalOpen(true)}
@@ -556,9 +559,9 @@ function DangerZoneCard() {
           <Trash2 size={16} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold text-mv-red">Supprimer mon compte</p>
+          <p className="text-[13px] font-semibold text-mv-red">{t("deleteMyAccount")}</p>
           <p className="flex items-center gap-1 text-[12px] text-mv-ink-faint">
-            <AlertTriangle size={11} /> Action irréversible
+            <AlertTriangle size={11} /> {t("irreversibleAction")}
           </p>
         </div>
       </button>
@@ -578,6 +581,7 @@ function PeerQrModal({
   shareUrl: string;
   programName: string;
 }) {
+  const t = useTranslations("portal.view");
   const [qrUrl, setQrUrl] = useState<string>("");
 
   useEffect(() => {
@@ -594,15 +598,15 @@ function PeerQrModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Faire scanner à table"
-      description="Votre ami peut scanner ce QR Code directement depuis l'appareil photo de son smartphone."
+      title={t("scanAtTheTable")}
+      description={t("yourFriendCanScan")}
     >
       <div className="flex flex-col items-center justify-center p-4 text-center space-y-4">
         <p className="text-[13px] font-semibold text-mv-ink">{programName}</p>
         <div className="rounded-2xl border-4 border-mv-green/30 bg-white p-4 shadow-xl">
           {qrUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={qrUrl} alt="QR Code Parrainage" className="h-60 w-60 object-contain" />
+            <img src={qrUrl} alt={t("referralQrCode")} className="h-60 w-60 object-contain" />
           ) : (
             <div className="h-60 w-60 flex items-center justify-center">
               <QrCode size={32} className="animate-spin text-mv-ink-faint" />
@@ -610,7 +614,7 @@ function PeerQrModal({
           )}
         </div>
         <p className="text-[12px] text-mv-ink-soft max-w-xs">
-          ✦ Les points et récompenses seront automatiquement crédités dès sa première visite ✦
+          {t("pointsCreditedOnFirstVisit")}
         </p>
         <Button variant="secondary" onClick={onClose} className="w-full">
           Fermer
@@ -651,13 +655,13 @@ function ReferralProgramCard({
     ? `${window.location.origin}/p/${link?.code}`
     : `https://minervaflow.app/p/${link?.code}`;
 
-  const shareText = `Je t'invite chez ${restaurantName || "notre restaurant"} ! Utilise mon lien pour découvrir la carte et recevoir ton cadeau de bienvenue : ${shareUrl}`;
+  const shareText = t("shareInviteText", { restaurant: restaurantName || t("ourRestaurant"), url: shareUrl });
 
   function handleCopy() {
     if (!link) return;
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    toast.success("Lien copié dans le presse-papier !");
+    toast.success(t("linkCopiedToThe"));
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -737,7 +741,7 @@ function ReferralProgramCard({
           <div>
             <div className="mb-1 flex items-center justify-between text-[12px] text-mv-ink-soft">
               <span>
-                {link.convertedCount} / {program.goalCount} amis parrainés
+                {t("friendsReferred", { done: link.convertedCount, goal: program.goalCount })}
               </span>
               {link.rewardClaimedAt && <Badge tone="green">{t("rewardUnlocked")}</Badge>}
             </div>
@@ -748,7 +752,7 @@ function ReferralProgramCard({
 
           {program.rewardDescription && (
             <p className="flex items-center gap-1.5 text-[12px] text-mv-ink-faint">
-              <Gift size={13} className="text-mv-green" /> Récompense : {program.rewardDescription}
+              <Gift size={13} className="text-mv-green" /> {t("rewardLabel", { reward: program.rewardDescription })}
             </p>
           )}
 
@@ -940,7 +944,7 @@ function OffersFeed({
                 onClick={() => toggleFavorite(offer.id, !isFavorite)}
                 disabled={pendingId === offer.id}
                 aria-pressed={isFavorite}
-                aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                aria-label={isFavorite ? t("removeFromFavorites") : t("addToFavorites")}
                 className="shrink-0 rounded-full p-1.5 text-mv-green-dark transition-colors hover:bg-white/60 disabled:opacity-50"
               >
                 <Star size={16} className={isFavorite ? "fill-mv-green-dark" : ""} />
@@ -985,7 +989,7 @@ function MenuBrowserCard({
   }, [menuItems, t]);
 
   if (menuItems.filter((i) => i.active).length === 0) {
-    return <p className="text-[12.5px] text-mv-ink-faint">{t("menuUncategorized")}</p>;
+    return <p className="text-[12.5px] text-mv-ink-faint">{t("noDishesAvailableRight")}</p>;
   }
 
   return (
@@ -1024,7 +1028,7 @@ function MenuBrowserCard({
                       <>
                         <button
                           onClick={() => onQtyChange(item.id, -1)}
-                          aria-label="Retirer un"
+                          aria-label={t("removeOne")}
                           className="flex h-8 w-8 items-center justify-center rounded-full border border-mv-border text-mv-ink-soft"
                         >
                           <Minus size={14} />
@@ -1034,7 +1038,7 @@ function MenuBrowserCard({
                     )}
                     <button
                       onClick={() => onQtyChange(item.id, 1)}
-                      aria-label="Ajouter un"
+                      aria-label={t("addOne")}
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft"
                     >
                       <Plus size={14} />
@@ -1221,11 +1225,11 @@ function CheckoutModal({
           <p className="mx-auto mt-1.5 max-w-xs text-[13px] text-mv-ink-soft">{payOnline ? t("orderPaymentRedirectDescription") : t("orderSuccessDescription")}</p>
           {estimatedReadyAt && (
             <p className="mt-2 text-[12.5px] font-medium text-mv-green-dark">
-              Prêt vers {formatRestaurantTime(estimatedReadyAt, restaurantTimezone)}
+              {t("readyAround", { time: formatRestaurantTime(estimatedReadyAt, restaurantTimezone) })}
             </p>
           )}
           <div className="mx-auto mt-4 flex items-center justify-center gap-1.5 text-[12px] text-mv-ink-faint">
-            <Clock size={13} /> Vous recevrez une notification dès la confirmation.
+            <Clock size={13} /> {t("notifyOnConfirmation")}
           </div>
           <Button size="sm" variant="secondary" className="mt-5" onClick={handleClose}>
             {t("orderClose")}
@@ -1365,6 +1369,7 @@ function BottomTabBar({
   cartCount: number;
   labels: Record<PortalTab, string>;
 }) {
+  const t = useTranslations("portal.view");
   const icons: Record<PortalTab, typeof Home> = {
     home: Home,
     order: UtensilsCrossed,
@@ -1376,7 +1381,7 @@ function BottomTabBar({
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-mv-border bg-mv-surface/95 backdrop-blur-sm"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-      aria-label="Navigation principale"
+      aria-label={t("mainNavigation")}
     >
       <div className="mx-auto flex max-w-2xl">
         {TAB_ORDER.map((tab) => {
@@ -1650,8 +1655,7 @@ export function PortalView({
                   <div>
                     <p className="text-[13px] font-semibold text-mv-ink">{t("rewardsTitle")}</p>
                     <p className="text-[12px] text-mv-ink-faint">
-                      {data.rewards.length} récompense{data.rewards.length > 1 ? "s" : ""} disponible
-                      {data.rewards.length > 1 ? "s" : ""} avec vos {points} pts
+                      {t("rewardsAvailable", { count: data.rewards.length, points })}
                     </p>
                   </div>
                 </div>
@@ -1705,7 +1709,7 @@ export function PortalView({
                 <MenuBrowserCard menuItems={menuItems} cart={cart} onQtyChange={handleQtyChange} />
               </Card>
             ) : (
-              <p className="text-[12.5px] text-mv-ink-faint">Aucun plat disponible pour l&apos;instant.</p>
+              <p className="text-[12.5px] text-mv-ink-faint">{t("noDishesAvailableRight")}</p>
             )}
           </div>
         )}

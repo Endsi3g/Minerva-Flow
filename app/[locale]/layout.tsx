@@ -97,7 +97,6 @@ export async function generateMetadata({
         languages: {
           "fr-CA": baseUrl,
           "en-CA": `${baseUrl}/en`,
-          "tr-TR": `${baseUrl}/tr`,
         },
       },
       icons: {

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -13,6 +15,7 @@ import { updateRetentionSettingsAction, updateLoyaltyTierThresholdsAction, updat
 import { notifyError } from "@/lib/notify-error";
 
 function LoyaltyRateCard({ restaurantId, initialRate }: { restaurantId: string; initialRate: number }) {
+  const t = useTranslations("loyaltySettings");
   const [rate, setRate] = useState(initialRate);
 
   async function handleBlur() {
@@ -23,13 +26,13 @@ function LoyaltyRateCard({ restaurantId, initialRate }: { restaurantId: string; 
   return (
     <Card>
       <CardHeader
-        eyebrow="Points"
-        title="Taux d'accumulation"
-        description="Points attribués par dollar dépensé — s'applique aux prochaines visites."
+        eyebrow={t("points")}
+        title={t("earningRate")}
+        description={t("pointsAwardedPerDollar")}
       />
       <div className="flex items-center gap-2 text-[12.5px] text-mv-ink-soft">
         <Coins size={13} className="text-mv-green-dark" />
-        Un client gagne
+        {t("aCustomerEarns")}
         <input
           type="number"
           min="0"
@@ -39,7 +42,7 @@ function LoyaltyRateCard({ restaurantId, initialRate }: { restaurantId: string; 
           onBlur={handleBlur}
           className="h-7 w-16 rounded-md border border-mv-border bg-mv-surface px-2 text-center text-[12.5px]"
         />
-        point{rate !== 1 ? "s" : ""} par dollar dépensé.
+        {t("pointsPerDollar", { count: rate })}
       </div>
     </Card>
   );
@@ -54,6 +57,7 @@ function RetentionSettingsCard({
   initialEnabled: boolean;
   initialInactivityDays: number;
 }) {
+  const t = useTranslations("loyaltySettings");
   const [enabled, setEnabled] = useState(initialEnabled);
   const [inactivityDays, setInactivityDays] = useState(initialInactivityDays);
   const [isSaving, setIsSaving] = useState(false);
@@ -65,7 +69,7 @@ function RetentionSettingsCard({
       const ok = await updateRetentionSettingsAction(restaurantId, { enabled: next });
       if (!ok) {
         setEnabled(!next);
-        notifyError("La mise à jour a échoué.");
+        notifyError(t("theUpdateFailed"));
       }
     } finally {
       setIsSaving(false);
@@ -80,22 +84,22 @@ function RetentionSettingsCard({
   return (
     <Card>
       <CardHeader
-        eyebrow="Automatisation"
-        title="Rétention automatique"
-        description="Relance par courriel/SMS/notification les clients inactifs, ceux qui décrochent, et pour leur anniversaire — sans intervention."
+        eyebrow={t("automation")}
+        title={t("automaticRetention")}
+        description={t("reEngagesInactiveCustomers")}
         action={
           <Switch
             checked={enabled}
             onCheckedChange={handleToggle}
             disabled={isSaving}
             className="data-checked:bg-mv-green"
-            aria-label={enabled ? "Désactiver la rétention automatique" : "Activer la rétention automatique"}
+            aria-label={enabled ? t("turnOffAutomaticRetention") : t("turnOnAutomaticRetention")}
           />
         }
       />
       <div className="flex items-center gap-2 text-[12.5px] text-mv-ink-soft">
         <Zap size={13} className="text-mv-green-dark" />
-        Considérer un client inactif après
+        {t("considerACustomerInactive")}
         <input
           type="number"
           min="1"
@@ -104,8 +108,8 @@ function RetentionSettingsCard({
           onBlur={handleInactivityBlur}
           className="h-7 w-16 rounded-md border border-mv-border bg-mv-surface px-2 text-center text-[12.5px]"
         />
-        jours sans visite. Seuls les clients ayant consenti à recevoir des offres sont ciblés.
-        <HelperTooltip content="Un même client n'est jamais relancé deux fois pour la même chose : anniversaire, décrochage et inactivité sont priorisés dans cet ordre, et un délai minimal (30 jours par défaut) s'applique toujours entre deux relances." />
+        {t("daysWithoutAVisit")}
+        <HelperTooltip content={t("aCustomerIsNever")} />
       </div>
     </Card>
   );
@@ -118,6 +122,7 @@ function LoyaltyTierSettingsCard({
   restaurantId: string;
   initialThresholds: LoyaltyTierThresholds;
 }) {
+  const t = useTranslations("loyaltySettings");
   const [tier2, setTier2] = useState(initialThresholds.tier2);
   const [tier3, setTier3] = useState(initialThresholds.tier3);
 
@@ -128,14 +133,14 @@ function LoyaltyTierSettingsCard({
   return (
     <Card>
       <CardHeader
-        eyebrow="Statut client"
+        eyebrow={t("customerStatus")}
         title={
           <span className="flex items-center gap-1.5">
-            Paliers de fidélité
-            <HelperTooltip content="Le seuil correspond à la dépense cumulée à vie du client (total_spent), recalculée automatiquement à chaque visite — aucune attribution manuelle n'est nécessaire." />
+            {t("loyaltyTiers")}
+            <HelperTooltip content={t("theThresholdIsThe")} />
           </span>
         }
-        description="Une progression premium plutôt que des paliers génériques — le palier le plus élevé est le meilleur candidat pour parrainer."
+        description={t("aPremiumProgressionInstead")}
       />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {loyaltyTierOrder.map((tier, i) => {
@@ -149,10 +154,10 @@ function LoyaltyTierSettingsCard({
               <p className="mt-2 text-[12px] leading-snug text-mv-ink-faint">{loyaltyTierDescription[tier]}</p>
               <p className="mt-2 text-[12px] text-mv-ink-soft">
                 {i === 0 ? (
-                  "Dès l'inscription"
+                  t("fromSignUp")
                 ) : (
                   <>
-                    Dès{" "}
+                    {t("fromAmount")}{" "}
                     <input
                       type="number"
                       min="0"
@@ -161,7 +166,7 @@ function LoyaltyTierSettingsCard({
                       onBlur={() => handleBlur(i === 1 ? { tier2 } : { tier3 })}
                       className="h-7 w-20 rounded-md border border-mv-border bg-mv-surface px-2 text-center text-[12px]"
                     />{" "}
-                    $ dépensés
+                    {t("dollarsSpent")}
                   </>
                 )}
               </p>
@@ -190,13 +195,14 @@ export function ParametresView({
   retentionEngineEnabled: boolean;
   retentionInactivityDays: number;
 }) {
+  const t = useTranslations("loyaltySettings");
   return (
     <div>
       <FidelisationSubNav />
       <PageHeader
-        eyebrow="Configuration"
-        title="Paramètres"
-        description="Taux de points, paliers de fidélité et automatisation de la rétention."
+        eyebrow={t("setup")}
+        title={t("settings")}
+        description={t("pointRateLoyaltyTiers")}
       />
       {restaurantId && (
         <div className="space-y-6">
@@ -216,6 +222,7 @@ export function ParametresView({
 }
 
 function AppInstallBonusCard({ restaurantId, initialPoints }: { restaurantId: string; initialPoints: number }) {
+  const t = useTranslations("loyaltySettings");
   const [points, setPoints] = useState(initialPoints);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -224,24 +231,25 @@ function AppInstallBonusCard({ restaurantId, initialPoints }: { restaurantId: st
     setSaved(false);
     const ok = await updateAppInstallBonusPointsAction(restaurantId, points);
     setSaving(false);
-    if (!ok) { notifyError("Le bonus n’a pas pu être enregistré."); return; }
+    if (!ok) { notifyError(t("theBonusCouldNot")); return; }
     setSaved(true);
   }
   return <Card>
-    <CardHeader eyebrow="Application mobile" title="Bonus d’installation de l’app" description="Optionnel. Vos clients reçoivent ces points une seule fois, la première fois qu’ils ouvrent l’application. C’est la façon la plus simple de les amener à l’installer : leurs récompenses s’y trouvent." />
+    <CardHeader eyebrow={t("mobileApp")} title={t("appInstallBonus")} description={t("optionalYourCustomersReceive")} />
     <div className="flex flex-wrap items-center gap-3 text-[14px] text-mv-ink-soft">
       <Gift size={16} className="text-mv-green-dark" aria-hidden="true" />
       <label className="flex items-center gap-2">Points offerts
         <input type="number" min="0" max="500" step="1" value={points} onChange={(event) => { setPoints(Math.min(500, Math.max(0, Math.round(Number(event.target.value) || 0)))); setSaved(false); }} className="h-12 w-28 rounded-lg border border-mv-border bg-mv-surface px-3 text-[16px] text-mv-ink" />
       </label>
-      <button type="button" onClick={save} disabled={saving} className="inline-flex h-12 items-center gap-2 rounded-lg bg-mv-green px-4 text-[14px] font-semibold text-white hover:bg-mv-green-dark disabled:opacity-60">{saving ? "Enregistrement…" : "Enregistrer"}</button>
-      {saved && <span role="status" className="text-[14px] font-medium text-mv-green-dark">Enregistré</span>}
-      <p className="basis-full text-[12px] leading-5 text-mv-ink-faint">À 0 point, le bonus est désactivé. Maximum 500 points. Chaque carte ne le reçoit qu’une fois.</p>
+      <button type="button" onClick={save} disabled={saving} className="inline-flex h-12 items-center gap-2 rounded-lg bg-mv-green px-4 text-[14px] font-semibold text-white hover:bg-mv-green-dark disabled:opacity-60">{saving ? t("saving") : t("save")}</button>
+      {saved && <span role="status" className="text-[14px] font-medium text-mv-green-dark">{t("saved")}</span>}
+      <p className="basis-full text-[12px] leading-5 text-mv-ink-faint">{t("at0PointsThe")}</p>
     </div>
   </Card>;
 }
 
 function WelcomeBonusCard({ restaurantId, initialPoints }: { restaurantId: string; initialPoints: number }) {
+  const t = useTranslations("loyaltySettings");
   const [points, setPoints] = useState(initialPoints);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -250,19 +258,19 @@ function WelcomeBonusCard({ restaurantId, initialPoints }: { restaurantId: strin
     setSaved(false);
     const ok = await updateWelcomeBonusPointsAction(restaurantId, points);
     setSaving(false);
-    if (!ok) { notifyError("Le bonus n’a pas pu être enregistré."); return; }
+    if (!ok) { notifyError(t("theBonusCouldNot")); return; }
     setSaved(true);
   }
   return <Card>
-    <CardHeader eyebrow="Accueil client" title="Bonus de première visite" description="Optionnel. Il est crédité une seule fois lorsque la première commande admissible est marquée « Servie »." />
+    <CardHeader eyebrow={t("customerWelcome")} title={t("firstVisitBonus")} description={t("optionalItIsCredited")} />
     <div className="flex flex-wrap items-center gap-3 text-[13px] text-mv-ink-soft">
       <Gift size={16} className="text-mv-green-dark" />
       <label className="flex items-center gap-2">Points offerts
         <input type="number" min="0" max="100000" step="1" value={points} onChange={(event) => { setPoints(Math.max(0, Number(event.target.value) || 0)); setSaved(false); }} className="h-9 w-28 rounded-lg border border-mv-border bg-mv-surface px-3 text-center" />
       </label>
-      <button type="button" onClick={save} disabled={saving} className="inline-flex h-9 items-center gap-2 rounded-lg bg-mv-green px-3 text-xs font-semibold text-white disabled:opacity-60"><Save size={13} />{saving ? "Enregistrement…" : "Enregistrer"}</button>
-      {saved && <span role="status" className="text-xs font-medium text-mv-green-dark">Enregistré</span>}
-      <p className="basis-full text-[12px] leading-5 text-mv-ink-faint">À 0 point, le bonus est désactivé. Après attribution, un message chaleureux confirme les points reçus.</p>
+      <button type="button" onClick={save} disabled={saving} className="inline-flex h-9 items-center gap-2 rounded-lg bg-mv-green px-3 text-xs font-semibold text-white disabled:opacity-60"><Save size={13} />{saving ? t("saving") : t("save")}</button>
+      {saved && <span role="status" className="text-xs font-medium text-mv-green-dark">{t("saved")}</span>}
+      <p className="basis-full text-[12px] leading-5 text-mv-ink-faint">{t("at0PointsThe2")}</p>
     </div>
   </Card>;
 }

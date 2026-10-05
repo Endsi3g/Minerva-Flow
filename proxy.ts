@@ -22,6 +22,13 @@ export async function proxy(request: NextRequest) {
   // rewrite to /api/apple-app-site-association untouched.
   const isWellKnownRoute = pathname === "/.well-known/apple-app-site-association";
 
+  // Turkish is switched off: send old /tr links to the French (default) page.
+  if (!isApiRoute && /^\/tr(?=\/|$)/.test(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace(/^\/tr/, "") || "/";
+    return NextResponse.redirect(url, 308);
+  }
+
   // Locale detection/redirect/rewrite only applies to localized page routes.
   const response =
     isApiRoute || isAuthCallbackRoute || isWellKnownRoute ? NextResponse.next({ request }) : handleI18nRouting(request);
