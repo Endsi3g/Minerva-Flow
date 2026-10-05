@@ -58,6 +58,7 @@ function NewEmployeeModal({
   onClose: () => void;
   onCreated: (e: Employee) => void;
 }) {
+  const tv = useTranslations("employeesView2");
   const t = useTranslations("employees.newEmployee");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -94,7 +95,7 @@ function NewEmployeeModal({
           <Input name="fullName" placeholder={t("fullNamePlaceholder")} required />
         </Field>
         <Field label={t("roleLabel")}>
-          <Input name="roleTitle" placeholder={t("rolePlaceholder")} defaultValue="Employé" />
+          <Input name="roleTitle" placeholder={t("rolePlaceholder")} defaultValue={tv("employee")} />
         </Field>
         <Field label={t("wageLabel")} hint={t("optional")}>
           <Input name="hourlyWage" type="number" step="0.01" min="0" placeholder={t("wagePlaceholder")} />
@@ -197,6 +198,7 @@ export function NewTaskForm({
   employeeName: string;
   onCreated: (t: EmployeeTask) => void;
 }) {
+  const tv = useTranslations("employeesView2");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -217,7 +219,7 @@ export function NewTaskForm({
         onCreated(task);
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error("L'assignation de la tâche a échoué.");
+        toast.error(tv("couldNotAssignThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -227,13 +229,13 @@ export function NewTaskForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <Field label="Titre">
-        <Input name="title" placeholder="Ex : Nettoyer la machine à espresso" required />
+        <Input name="title" placeholder={tv("eGCleanThe")} required />
       </Field>
       <Field label="Description" hint="Optionnel">
         <Textarea name="description" rows={2} />
       </Field>
       <Button size="sm" type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Assignation…" : "Assigner la tâche"}
+        {isSubmitting ? tv("assigning") : tv("assignTheTask")}
       </Button>
     </form>
   );
@@ -252,6 +254,7 @@ export function InviteEmployeeModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations("employeesView2");
   const [role, setRole] = useState<Role>("staff");
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -263,7 +266,7 @@ export function InviteEmployeeModal({
     startTransition(async () => {
       const invite = await createEmployeeInviteLinkAction(restaurantId, employee.id, role);
       if (!invite) {
-        setError("Impossible de générer le lien. Réessayez.");
+        setError(t("couldNotGenerateThe"));
         return;
       }
       setLink(`${window.location.origin}/invite/w/${invite.token}`);
@@ -288,11 +291,11 @@ export function InviteEmployeeModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title="Inviter à se connecter"
-      description={`Générez un lien pour que ${employee.fullName} crée son compte et accède à son espace personnel — valide 7 jours.`}
+      title={t("inviteToSignIn")}
+      description={t("generateALinkSo", { fullName: employee.fullName })}
     >
       <div className="space-y-4">
-        <Field label="Rôle">
+        <Field label={t("role")}>
           <Select value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={Boolean(link)}>
             {INVITABLE_EMPLOYEE_ROLES.map((r) => (
               <option key={r} value={r}>
@@ -329,7 +332,7 @@ export function InviteEmployeeModal({
           </Button>
           {!link && (
             <Button onClick={handleGenerate} disabled={isPending}>
-              {isPending ? "Génération…" : "Générer le lien"}
+              {isPending ? t("generating") : t("generateTheLink")}
             </Button>
           )}
         </div>
@@ -434,13 +437,16 @@ export function NewReviewForm({
   );
 }
 
-export const PAY_PERIOD_LABELS: Record<PayPeriod, string> = {
+export function buildPAY_PERIOD_LABELS(t: (key: string) => string): Record<PayPeriod, string> {
+  return {
   week: "Cette semaine",
-  biweekly: "2 dernières semaines",
+  biweekly: t("last2Weeks"),
   month: "Ce mois-ci",
 };
+}
 
 export function PaySummaryInline({ restaurantId, employeeId }: { restaurantId: string; employeeId: string }) {
+  const t = useTranslations("employeesView2");
   const locale = useLocale();
   const [period, setPeriod] = useState<PayPeriod>("week");
   const [hours, setHours] = useState<number | null>(null);
@@ -460,9 +466,9 @@ export function PaySummaryInline({ restaurantId, employeeId }: { restaurantId: s
         onChange={(e) => setPeriod(e.target.value as PayPeriod)}
         className="h-7 w-auto border-0 bg-transparent px-1 text-[12px]"
       >
-        {(Object.keys(PAY_PERIOD_LABELS) as PayPeriod[]).map((p) => (
+        {(Object.keys(buildPAY_PERIOD_LABELS(t)) as PayPeriod[]).map((p) => (
           <option key={p} value={p}>
-            {PAY_PERIOD_LABELS[p]}
+            {buildPAY_PERIOD_LABELS(t)[p]}
           </option>
         ))}
       </Select>
@@ -485,6 +491,7 @@ export function EmployeeDetail({
   restaurantId: string;
   onToggleActive: (id: string, active: boolean) => void;
 }) {
+  const tv = useTranslations("employeesView2");
   const locale = useLocale();
   const t = useTranslations("employees");
   const td = useTranslations("employees.detail");
@@ -517,9 +524,9 @@ export function EmployeeDetail({
     setClockPending(false);
     if (shift) {
       setShifts((prev) => [shift, ...prev]);
-      toast.success(`${employee.fullName} a été pointé·e.`);
+      toast.success(tv("fullnameClockedIn", { fullName: employee.fullName }));
     } else {
-      toast.error("Impossible de pointer.");
+      toast.error(tv("couldNotClockIn"));
     }
   }
 
@@ -530,9 +537,9 @@ export function EmployeeDetail({
     setClockPending(false);
     if (updated) {
       setShifts((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-      toast.success(`Quart de ${employee.fullName} terminé — ${updated.hoursWorked.toFixed(2)} heures.`);
+      toast.success(tv("fullnameSShiftEnded", { fullName: employee.fullName, value: updated.hoursWorked.toFixed(2) }));
     } else {
-      toast.error("Impossible de dépointer.");
+      toast.error(tv("couldNotClockOut"));
     }
   }
 

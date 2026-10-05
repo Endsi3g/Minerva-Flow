@@ -2,7 +2,7 @@
 
 
 import { intlLocale } from "@/lib/format-locale";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -26,13 +26,16 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
-const PERIOD_LABELS: Record<PayPeriod, string> = {
+function buildPERIOD_LABELS(t: (key: string) => string): Record<PayPeriod, string> {
+  return {
   week: "Cette semaine",
-  biweekly: "2 dernières semaines",
+  biweekly: t("last2Weeks"),
   month: "Ce mois-ci",
 };
+}
 
 function ClockInOutCard({ shifts, onShiftsChange }: { shifts: EmployeeShift[]; onShiftsChange: (s: EmployeeShift[]) => void }) {
+  const t = useTranslations("mySpaceView");
   const locale = useLocale();
   const openShift = shifts.find((s) => s.clockIn && !s.clockOut) ?? null;
   const [pending, setPending] = useState(false);
@@ -43,9 +46,9 @@ function ClockInOutCard({ shifts, onShiftsChange }: { shifts: EmployeeShift[]; o
     setPending(false);
     if (shift) {
       onShiftsChange([shift, ...shifts]);
-      toast.success("Quart commencé.");
+      toast.success(t("shiftStarted"));
     } else {
-      toast.error("Impossible de pointer. Vous avez peut-être déjà un quart en cours.");
+      toast.error(t("couldNotClockIn"));
     }
   }
 
@@ -56,20 +59,20 @@ function ClockInOutCard({ shifts, onShiftsChange }: { shifts: EmployeeShift[]; o
     setPending(false);
     if (updated) {
       onShiftsChange(shifts.map((s) => (s.id === updated.id ? updated : s)));
-      toast.success(`Quart terminé — ${updated.hoursWorked.toFixed(2)} heures.`);
+      toast.success(t("shiftEndedValueHours", { value: updated.hoursWorked.toFixed(2) }));
     } else {
-      toast.error("Impossible de terminer le quart.");
+      toast.error(t("couldNotEndThe"));
     }
   }
 
   return (
     <Card className="mb-6 flex items-center justify-between gap-3">
       <div>
-        <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Pointage</p>
+        <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("clockIn")}</p>
         <p className="mt-0.5 font-display text-[16px] font-medium text-mv-ink">
           {openShift
             ? `En quart depuis ${new Date(openShift.clockIn!).toLocaleTimeString(intlLocale(locale), { hour: "2-digit", minute: "2-digit" })}`
-            : "Aucun quart en cours"}
+            : t("noShiftInProgress")}
         </p>
       </div>
       {openShift ? (
@@ -86,6 +89,7 @@ function ClockInOutCard({ shifts, onShiftsChange }: { shifts: EmployeeShift[]; o
 }
 
 function PaySummaryCard({ initialSummary }: { initialSummary: EmployeePaySummary | null }) {
+  const t = useTranslations("mySpaceView");
   const locale = useLocale();
   const [period, setPeriod] = useState<PayPeriod>("week");
   const [summary, setSummary] = useState<EmployeePaySummary | null>(initialSummary);
@@ -108,9 +112,9 @@ function PaySummaryCard({ initialSummary }: { initialSummary: EmployeePaySummary
           onChange={(e) => handlePeriodChange(e.target.value as PayPeriod)}
           className="h-7 w-auto border-0 bg-transparent px-1 text-[12px] font-semibold uppercase text-mv-ink-faint"
         >
-          {(Object.keys(PERIOD_LABELS) as PayPeriod[]).map((p) => (
+          {(Object.keys(buildPERIOD_LABELS(t)) as PayPeriod[]).map((p) => (
             <option key={p} value={p}>
-              {PERIOD_LABELS[p]}
+              {buildPERIOD_LABELS(t)[p]}
             </option>
           ))}
         </Select>
@@ -142,6 +146,7 @@ export function MonEspaceView({
   paySummary: EmployeePaySummary | null;
   restaurantId: string;
 }) {
+  const tv = useTranslations("mySpaceView");
   const locale = useLocale();
   const [tasks, setTasks] = useState(initialTasks);
   const [shifts, setShifts] = useState(initialShifts);
@@ -152,7 +157,7 @@ export function MonEspaceView({
     const ok = await setEmployeeTaskStatusAction(restaurantId, task.id, nextStatus);
     if (!ok) {
       setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: task.status } : t)));
-      toast.error("Impossible de mettre à jour la tâche.");
+      toast.error(tv("couldNotUpdateThe"));
     }
   }
 
@@ -166,8 +171,7 @@ export function MonEspaceView({
         />
         <Card>
           <p className="text-[13px] text-mv-ink-soft">
-            Aucune fiche employé n&apos;est associée à votre compte pour l&apos;instant. Demandez à votre
-            gestionnaire de vous lier depuis la fiche employé correspondante.
+            {tv("noEmployeeRecordIs")}
           </p>
         </Card>
       </div>
@@ -182,7 +186,7 @@ export function MonEspaceView({
       <PageHeader
         eyebrow="Mon espace"
         title={`Bonjour, ${employee.fullName.split(" ")[0]}`}
-        description={`${employee.roleTitle} · Vos quarts de travail et vos revues de performance`}
+        description={tv("roletitleYourWorkShifts", { roleTitle: employee.roleTitle })}
       />
 
       <ClockInOutCard shifts={shifts} onShiftsChange={setShifts} />
@@ -191,7 +195,7 @@ export function MonEspaceView({
         <PaySummaryCard initialSummary={initialPaySummary} />
         <Card className="text-center">
           <Award size={20} className="mx-auto mb-1 text-mv-green-dark" />
-          <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Ponctualité</p>
+          <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{tv("punctuality")}</p>
           <p className="mt-0.5 font-display text-[20px] font-medium text-mv-ink">
             {punctuality === null ? "—" : `${punctuality}%`}
           </p>
@@ -223,10 +227,10 @@ export function MonEspaceView({
         )}
 
         <Card>
-          <CardHeader eyebrow="Suivi" title="Mes tâches" />
+          <CardHeader eyebrow="Suivi" title={tv("myTasks")} />
           <div className="space-y-2">
             {tasks.length === 0 ? (
-              <p className="text-[13px] text-mv-ink-faint py-2">Aucune tâche assignée pour l&apos;instant.</p>
+              <p className="text-[13px] text-mv-ink-faint py-2">{tv("noTasksAssignedYet")}</p>
             ) : (
               tasks.map((tk) => (
                 <label
@@ -258,7 +262,7 @@ export function MonEspaceView({
           <CardHeader eyebrow="Journal" title="Mes quarts de travail" />
           <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
             {shifts.length === 0 ? (
-              <p className="text-[13px] text-mv-ink-faint py-2">Aucun quart enregistré pour l&apos;instant.</p>
+              <p className="text-[13px] text-mv-ink-faint py-2">{tv("noShiftsRecordedYet")}</p>
             ) : (
               shifts.map((s) => (
                 <div
@@ -268,7 +272,7 @@ export function MonEspaceView({
                   <span className="font-medium text-mv-ink">{formatDate(s.shiftDate, locale)}</span>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-mv-green-dark">{s.hoursWorked} heures</span>
-                    {s.wasLate && <Badge tone="red">En retard</Badge>}
+                    {s.wasLate && <Badge tone="red">{tv("late")}</Badge>}
                   </div>
                 </div>
               ))
@@ -280,7 +284,7 @@ export function MonEspaceView({
           <CardHeader eyebrow="Revues" title="Mes revues de performance" />
           <div className="space-y-3">
             {reviews.length === 0 ? (
-              <p className="text-[13px] text-mv-ink-faint py-2">Aucune revue de performance publiée.</p>
+              <p className="text-[13px] text-mv-ink-faint py-2">{tv("noPerformanceReviewPublished")}</p>
             ) : (
               reviews.map((r) => (
                 <div key={r.id} className="rounded-xl border border-mv-border p-4 space-y-2">
@@ -292,17 +296,17 @@ export function MonEspaceView({
                   </div>
                   {r.raiseRecommended && (
                     <Badge tone="green" className="mt-1">
-                      Augmentation recommandée
+                      {tv("raiseRecommended")}
                     </Badge>
                   )}
                   {r.strengths && (
                     <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
-                      <strong className="text-mv-ink">Forces :</strong> {r.strengths}
+                      <strong className="text-mv-ink">{tv("strengths")}</strong> {r.strengths}
                     </p>
                   )}
                   {r.improvements && (
                     <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
-                      <strong className="text-mv-ink">Axes d&apos;amélioration :</strong> {r.improvements}
+                      <strong className="text-mv-ink">{tv("areasForImprovement")}</strong> {r.improvements}
                     </p>
                   )}
                   {r.attributedRevenue !== null && (

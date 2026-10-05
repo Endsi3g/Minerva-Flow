@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { toast } from "sonner";
@@ -33,6 +33,7 @@ function EditCategoryModal({
   onClose: () => void;
   onSaved: (patch: { name: string; description: string | null }) => void;
 }) {
+  const t = useTranslations("categoryDetail");
   const [name, setName] = useState(category.name);
   const [description, setDescription] = useState(category.description ?? "");
   const [saving, setSaving] = useState(false);
@@ -46,7 +47,7 @@ function EditCategoryModal({
         onSaved({ name: name.trim(), description: description.trim() || null });
         onClose();
       } else {
-        notifyError("La mise à jour a échoué.");
+        notifyError(t("theUpdateFailed"));
       }
     } finally {
       setSaving(false);
@@ -54,16 +55,16 @@ function EditCategoryModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Modifier la catégorie">
+    <Modal open={open} onClose={onClose} title={t("editTheCategory")}>
       <div className="space-y-4">
         <Field label="Nom">
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
-        <Field label="Description" hint="Optionnel — à quoi sert cette catégorie">
+        <Field label="Description" hint={t("optionalWhatThisCategory")}>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ex. : Frais liés aux fournisseurs de nourriture et boissons"
+            placeholder={t("eGCostsTied")}
           />
         </Field>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
@@ -71,7 +72,7 @@ function EditCategoryModal({
             Annuler
           </Button>
           <Button onClick={handleSave} disabled={saving || !name.trim()}>
-            {saving ? "Enregistrement…" : "Enregistrer"}
+            {saving ? t("saving") : t("save")}
           </Button>
         </div>
       </div>
@@ -92,6 +93,7 @@ function AssignTransactionsModal({
   onClose: () => void;
   onAssigned: (moved: FinancialTransaction[]) => void;
 }) {
+  const tv = useTranslations("categoryDetail");
   const locale = useLocale();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
@@ -121,7 +123,7 @@ function AssignTransactionsModal({
         setSelected(new Set());
         onClose();
       } else {
-        notifyError("L'assignation a échoué.");
+        notifyError(tv("theAssignmentFailed"));
       }
     } finally {
       setAssigning(false);
@@ -134,11 +136,11 @@ function AssignTransactionsModal({
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher une transaction…"
+          placeholder={tv("searchATransaction")}
         />
         <div className="max-h-[45vh] space-y-1.5 overflow-y-auto">
           {filtered.length === 0 ? (
-            <p className="py-6 text-center text-[12.5px] text-mv-ink-faint">Aucune transaction à assigner.</p>
+            <p className="py-6 text-center text-[12.5px] text-mv-ink-faint">{tv("noTransactionsToAssign")}</p>
           ) : (
             filtered.map((t) => (
               <label
@@ -167,7 +169,7 @@ function AssignTransactionsModal({
             Annuler
           </Button>
           <Button onClick={handleAssign} disabled={assigning || selected.size === 0}>
-            {assigning ? "Assignation…" : `Assigner ${selected.size || ""}`.trim()}
+            {assigning ? tv("assigning") : `Assigner ${selected.size || ""}`.trim()}
           </Button>
         </div>
       </div>
@@ -185,6 +187,7 @@ export function CategoryDetailView({
   assignableTransactions: FinancialTransaction[];
   otherCategoryNames: string[];
 }) {
+  const tv = useTranslations("categoryDetail");
   const locale = useLocale();
   const router = useRouter();
   const [category, setCategory] = useState(initialCategory);
@@ -201,16 +204,16 @@ export function CategoryDetailView({
 
   async function handleDelete() {
     if (category.isDefault) return;
-    if (!confirm(`Supprimer la catégorie « ${category.name} » ? Ses transactions seront marquées « Non catégorisé ».`))
+    if (!confirm(tv("deleteTheCategoryCategoryname", { categoryName: category.name })))
       return;
     setDeleting(true);
     try {
       const ok = await deleteCategoryAction(category.id);
       if (ok) {
-        toast.success("Catégorie supprimée.");
+        toast.success(tv("categoryDeleted"));
         router.push("/finance");
       } else {
-        notifyError("La suppression a échoué.");
+        notifyError(tv("deletionFailed"));
         setDeleting(false);
       }
     } catch {
@@ -221,9 +224,9 @@ export function CategoryDetailView({
   return (
     <div>
       <PageHeader
-        eyebrow="Catégorie de dépense"
+        eyebrow={tv("expenseCategory")}
         title={category.name}
-        description={category.description || "Aucune description — cliquez sur Modifier pour en ajouter une."}
+        description={category.description || tv("noDescriptionClickEdit")}
         action={
           <div className="flex items-center gap-2">
             <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
@@ -232,7 +235,7 @@ export function CategoryDetailView({
             {!category.isDefault && (
               <Button size="sm" variant="secondary" onClick={handleDelete} disabled={deleting}>
                 <Trash2 size={14} className="text-mv-red" />
-                {deleting ? "Suppression…" : "Supprimer"}
+                {deleting ? tv("deleting") : tv("delete")}
               </Button>
             )}
           </div>
@@ -240,7 +243,7 @@ export function CategoryDetailView({
       />
 
       <div className="mb-6 flex items-center gap-3">
-        <Badge tone={category.isDefault ? "neutral" : "lime"}>{category.isDefault ? "Défaut" : "Personnalisée"}</Badge>
+        <Badge tone={category.isDefault ? "neutral" : "lime"}>{category.isDefault ? tv("default") : tv("custom")}</Badge>
         <span className="text-[12.5px] text-mv-ink-faint">
           {transactions.length} transaction{transactions.length > 1 ? "s" : ""}
         </span>
@@ -249,7 +252,7 @@ export function CategoryDetailView({
       <Card>
         <CardHeader
           eyebrow="Transactions"
-          title="Dépenses assignées à cette catégorie"
+          title={tv("expensesAssignedToThis")}
           action={
             <Button size="sm" variant="secondary" onClick={() => setAssignOpen(true)}>
               <Plus size={14} /> Assigner des transactions
@@ -260,16 +263,16 @@ export function CategoryDetailView({
           <EmptyState
             icon={ReceiptText}
             title="Aucune transaction"
-            description="Assignez des transactions existantes à cette catégorie, ou catégorisez-les depuis l'onglet Transactions."
+            description={tv("assignExistingTransactionsTo")}
           />
         ) : (
           <>
             <Table>
               <THead>
-                <Th>Date</Th>
-                <Th>Description</Th>
-                <Th className="text-right">Montant</Th>
-                <Th>Statut</Th>
+                <Th>{tv("date")}</Th>
+                <Th>{tv("description")}</Th>
+                <Th className="text-right">{tv("amount")}</Th>
+                <Th>{tv("status")}</Th>
               </THead>
               <tbody>
                 {paginated.map((t) => (
@@ -286,7 +289,7 @@ export function CategoryDetailView({
                           <Check size={11} /> Revue
                         </Badge>
                       ) : (
-                        <Badge tone="amber">À revoir</Badge>
+                        <Badge tone="amber">{tv("toReview")}</Badge>
                       )}
                     </Td>
                   </Tr>

@@ -41,6 +41,7 @@ function stockStatus(item: InventoryItem, t: (key: string) => string): { tone: "
 }
 
 function StockGauge({ item }: { item: InventoryItem }) {
+  const t = useTranslations("inventoryView");
   const status = stockStatus(item, t);
   const barColor =
     status.tone === "red" ? "bg-mv-red" : status.tone === "amber" ? "bg-mv-amber" : "bg-mv-green";
