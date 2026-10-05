@@ -1,6 +1,6 @@
 # Minerva Flow 2.51.0 — Portail équipe, Compte client, partage de résultats
 
-**Statut au 2026-10-05 : code web intégré à `main` et déployé en Production; release produit non publiée.** Le déploiement Vercel associé à `www.minervaflow.app` est `READY` (`dpl_9pnm1NhxshWXv7gfobeMayeVdbqZ`). `main` et `origin/main` sont au commit `81c1ec8`; le merge de la branche du portail équipe est `590ac6c`. La version de `package.json` demeure `2.50.0`; aucune entrée 2.51 du journal n'est publiée et aucune annonce de cette candidate n'est partie.
+**Statut au 2026-10-05 : code web intégré à `main` et déployé en Production; release produit non publiée.** Le déploiement Vercel associé aux domaines de production est `READY`. La branche du portail équipe a été fusionnée à `main` dans `590ac6c`; les changements de préparation GTM et de diagnostic sont également poussés à `main`. La version de `package.json` demeure `2.50.0`; aucune entrée 2.51 du journal n'est publiée et aucune annonce de cette candidate n'est partie.
 
 Les parcours authentifiés et les écrans iOS restent non vérifiés. Le déploiement web ne vaut pas validation de ces parcours ni disponibilité d'un nouveau build TestFlight. Conserver le statut de lancement sous conditions jusqu'à la clôture des étapes manuelles ci-dessous.
 

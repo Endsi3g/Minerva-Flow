@@ -39,7 +39,7 @@ Ce texte reste un brouillon : vérifier les parcours, captures et libellés fina
 
 | Étape | Responsable de l'action | État |
 | --- | --- | --- |
-| Code 2.51 intégré à `main` | Dépôt | Fait; `main` et `origin/main` pointent sur `81c1ec8` |
+| Code 2.51 intégré à `main` | Dépôt | Fait; merge de la branche du portail équipe `590ac6c` présent dans `main` |
 | Déploiement web Production | Vercel | Fait; état `READY`, domaines de production affectés |
 | Parcours authentifiés owner, équipe et partage en Preview | Accès de test | À faire; aucun compte/session accessible dans cette session |
 | Captures réelles des deux entrées de journal | Accès à l'application | À faire; les captures synthétiques ne conviennent pas |
