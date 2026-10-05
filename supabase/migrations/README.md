@@ -10,6 +10,7 @@ Numérotation séquentielle `NNNN_description.sql`, une migration par changement
 - Les migrations `0168` à `0173` (portail équipe, drapeau `is_demo`, audience du changelog, droits des fonctions internes) ont été appliquées directement en base puis consignées ici. Elles ont été renumérotées pour lever un doublon `0167`.
 - `0174` à `0177` (coordonnées de démonstration, fréquence « Fréquent », bonus d'installation de l'app, notes de convives réservées à l'équipe) ont aussi été appliquées directement en base.
 - `0178` (protection des colonnes de solde d'une fiche client) a été appliquée directement en base.
+- `0179` (colonne `customers.preferred_language`, `fr` par défaut, `fr|en`) a été appliquée directement en base le 2026-10-05. Les courriels et notifications destinés aux clients doivent la lire; aucune route ne l'alimente encore.
 - Un seul prochain numéro à la fois : vérifier `ls supabase/migrations | tail` avant d'en créer une, pour ne pas dupliquer un numéro.
 
 ## Autres fichiers SQL
