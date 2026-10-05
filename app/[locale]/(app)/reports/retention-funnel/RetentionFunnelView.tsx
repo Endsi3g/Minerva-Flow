@@ -1,7 +1,8 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { intlLocale } from "@/lib/format-locale";
+import { useTranslations, useLocale } from "next-intl";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/minerva/PageCard";
@@ -37,6 +38,7 @@ type Props = {
 
 export function RetentionFunnelView({ data }: Props) {
   const t = useTranslations("retentionFunnel");
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<"funnel" | "matrix" | "events">("funnel");
@@ -192,7 +194,7 @@ export function RetentionFunnelView({ data }: Props) {
                       </div>
 
                       <div className="font-serif text-2xl font-bold tracking-tight text-mv-ink mb-1 font-mono">
-                        {step.count.toLocaleString("fr-CA")}
+                        {step.count.toLocaleString(intlLocale(locale))}
                       </div>
 
                       <div className="text-xs font-medium text-mv-ink-soft mb-3">
@@ -368,7 +370,7 @@ export function RetentionFunnelView({ data }: Props) {
                     <p className="text-xs text-mv-ink-faint">{t("members")}</p>
                     <dl className="mt-4 space-y-2 border-t border-mv-border-soft pt-3 text-xs">
                       <div className="flex justify-between gap-3"><dt className="text-mv-ink-faint">{t("averageVisits")}</dt><dd className="font-semibold text-mv-ink">{cohort.averageVisits.toFixed(1)}</dd></div>
-                      <div className="flex justify-between gap-3"><dt className="text-mv-ink-faint">{t("averageCumulativeSpend")}</dt><dd className="font-semibold text-mv-ink">{new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(cohort.averageSpend)}</dd></div>
+                      <div className="flex justify-between gap-3"><dt className="text-mv-ink-faint">{t("averageCumulativeSpend")}</dt><dd className="font-semibold text-mv-ink">{new Intl.NumberFormat(intlLocale(locale), { style: "currency", currency: "CAD" }).format(cohort.averageSpend)}</dd></div>
                     </dl>
                   </section>
                 ))}

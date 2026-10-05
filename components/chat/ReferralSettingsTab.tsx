@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/Badge";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { useApp } from "@/lib/app-context";
@@ -27,6 +29,7 @@ const statusLabel: Record<ReferralStatus, string> = {
 };
 
 export function ReferralSettingsTab() {
+  const locale = useLocale();
   const { restaurantId } = useApp();
   const [code, setCode] = useState<string | null>(null);
   const [summary, setSummary] = useState<{
@@ -139,7 +142,7 @@ export function ReferralSettingsTab() {
                     {statusLabel[r.status]}
                   </Badge>
                 </Td>
-                <Td className="text-mv-ink-soft">{formatDate(r.createdAt)}</Td>
+                <Td className="text-mv-ink-soft">{formatDate(r.createdAt, locale)}</Td>
               </Tr>
             ))}
           </tbody>

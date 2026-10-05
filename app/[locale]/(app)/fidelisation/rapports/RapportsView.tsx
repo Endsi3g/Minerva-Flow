@@ -1,8 +1,9 @@
 "use client";
 
 
+import { intlLocale } from "@/lib/format-locale";
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { StatCard } from "@/components/ui/StatCard";
@@ -11,11 +12,12 @@ import { FidelisationSubNav } from "@/components/fidelisation/FidelisationSubNav
 import type { ErpMoneyMetrics } from "@/lib/data/erp-metrics";
 import { DollarSign, PiggyBank, QrCode, Gift } from "lucide-react";
 
-function formatMoney(value: number): string {
-  return value.toLocaleString("fr-CA", { style: "currency", currency: "CAD" });
+function formatMoney(value: number, locale?: string): string {
+  return value.toLocaleString(intlLocale(locale), { style: "currency", currency: "CAD" });
 }
 
 export function RapportsView({ metrics }: { metrics: ErpMoneyMetrics | null }) {
+  const locale = useLocale();
   const t = useTranslations("reportsView");
   return (
     <div>
@@ -62,17 +64,17 @@ export function RapportsView({ metrics }: { metrics: ErpMoneyMetrics | null }) {
           <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label={t("moneyHandedOut")}
-              value={formatMoney(metrics.moneyDistributed)}
+              value={formatMoney(metrics.moneyDistributed, locale)}
               icon={Gift}
               accent="amber"
               sublabel={t("pointsRedeemedSub", { count: metrics.pointsRedeemed })}
             />
             <StatCard
               label={t("moneyKept")}
-              value={formatMoney(metrics.moneyRetained)}
+              value={formatMoney(metrics.moneyRetained, locale)}
               icon={PiggyBank}
               accent="green"
-              sublabel={t("onLoyaltyRevenue", { amount: formatMoney(metrics.totalRevenue) })}
+              sublabel={t("onLoyaltyRevenue", { amount: formatMoney(metrics.totalRevenue, locale) })}
             />
             <StatCard
               label={t("pairingCodesResolved")}
@@ -86,7 +88,7 @@ export function RapportsView({ metrics }: { metrics: ErpMoneyMetrics | null }) {
               value={metrics.visitsViaPairingCode}
               icon={QrCode}
               accent="purple"
-              sublabel={`${metrics.pointsViaPairingCode} pts · ${formatMoney(metrics.revenueViaPairingCode)}`}
+              sublabel={`${metrics.pointsViaPairingCode} pts · ${formatMoney(metrics.revenueViaPairingCode, locale)}`}
             />
           </div>
 

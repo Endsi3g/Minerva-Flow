@@ -64,7 +64,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 const typeIcon: Record<ConnectionType, typeof Landmark> = {
   banque: Landmark,
@@ -136,6 +136,7 @@ function OverviewTab({
   onGoToAccounts: () => void;
   onGoToTransactions: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("finance");
   const monthTransactions = useMemo(
     () => transactions.filter((t) => isCurrentMonth(t.date)),
@@ -184,7 +185,7 @@ function OverviewTab({
             <ArrowRight size={14} className="shrink-0 text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
           </div>
           <p className="mt-2.5 font-display text-[24px] sm:text-[26px] font-medium leading-none text-mv-ink">
-            {formatCurrency(totalIn)}
+            {formatCurrency(totalIn, locale)}
           </p>
           <p className="mt-1.5 text-[12px] text-mv-ink-faint">{t("overview.thisMonth")}</p>
           {inflowSpark.length > 1 && (
@@ -205,7 +206,7 @@ function OverviewTab({
             <ArrowRight size={14} className="shrink-0 text-mv-ink-faint transition-transform group-hover:translate-x-0.5" />
           </div>
           <p className="mt-2.5 font-display text-[24px] sm:text-[26px] font-medium leading-none text-mv-ink">
-            {formatCurrency(totalOut)}
+            {formatCurrency(totalOut, locale)}
           </p>
           <p className="mt-1.5 text-[12px] text-mv-ink-faint">{t("overview.thisMonth")}</p>
           {outflowSpark.length > 1 && (
@@ -229,7 +230,7 @@ function OverviewTab({
             />
             <div className="min-w-0 flex-1">
               <p className="font-display text-[19px] font-medium leading-tight text-mv-ink">
-                {formatCurrency(net)}
+                {formatCurrency(net, locale)}
               </p>
               <p className="mt-0.5 text-[12px] text-mv-ink-faint">
                 {totalIn > 0 ? t("overview.netFlowPctOfInflows", { pct: netMarginPct }) : t("overview.thisMonth")}
@@ -294,7 +295,7 @@ function OverviewTab({
               description={
                 monthRevenue > 0 ? (
                   <>
-                    {t("overview.noInflowsButServiceDaysRevenue", { amount: formatCurrency(monthRevenue) })}
+                    {t("overview.noInflowsButServiceDaysRevenue", { amount: formatCurrency(monthRevenue, locale) })}
                     <br />
                     {t("overview.noInflowsButServiceDaysRevenueHint")}
                   </>
@@ -602,6 +603,7 @@ function TransactionsTab({
   transactions: FinancialTransaction[];
   expenseCategories: ExpenseCategory[];
 }) {
+  const locale = useLocale();
   const t = useTranslations("finance");
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -792,7 +794,7 @@ function TransactionsTab({
                     className="h-3.5 w-3.5 rounded accent-mv-green"
                   />
                 </Td>
-                <Td className="text-mv-ink-soft">{formatDate(row.date)}</Td>
+                <Td className="text-mv-ink-soft">{formatDate(row.date, locale)}</Td>
                 <Td className="font-medium">{row.description}</Td>
                 <Td>
                   <Badge tone="neutral">{row.category}</Badge>
@@ -800,7 +802,7 @@ function TransactionsTab({
                 <Td className="text-mv-ink-soft">{row.sourceAccount}</Td>
                 <Td className={row.direction === "in" ? "text-right font-semibold text-mv-green-dark" : "text-right font-semibold text-mv-ink"}>
                   {row.direction === "in" ? "+" : ""}
-                  {formatCurrency(row.amount)}
+                  {formatCurrency(row.amount, locale)}
                 </Td>
                 <Td>
                   {row.reviewed ? (

@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -346,6 +346,7 @@ function ReceiveOrderModal({
   onClose: () => void;
   onReceived: (orderId: string, receivedTotalCost: number, unmatchedItems: string[]) => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("suppliersView");
   const [receipts, setReceipts] = useState<Record<string, number>>(() =>
     Object.fromEntries(order.items.map((i) => [i.id, i.quantity]))
@@ -406,7 +407,7 @@ function ReceiveOrderModal({
                     <td className="py-2.5 px-3 font-medium text-mv-ink">
                       <div>{item.itemName}</div>
                       <div className="text-[12px] text-mv-ink-faint">
-                        {formatCurrency(item.unitCost)} / {item.unit}
+                        {formatCurrency(item.unitCost, locale)} / {item.unit}
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-right text-mv-ink-soft">
@@ -431,7 +432,7 @@ function ReceiveOrderModal({
                       </div>
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono font-medium text-mv-ink">
-                      {formatCurrency(lineCost)}
+                      {formatCurrency(lineCost, locale)}
                     </td>
                   </tr>
                 );
@@ -443,7 +444,7 @@ function ReceiveOrderModal({
         <div className="flex items-center justify-between rounded-xl bg-mv-cream-soft p-3">
           <span className="text-[12.5px] font-medium text-mv-ink-soft">{t("totalValueReceived")}</span>
           <span className="font-mono text-[15px] font-semibold text-mv-green-dark">
-            {formatCurrency(totalReceivedCost)}
+            {formatCurrency(totalReceivedCost, locale)}
           </span>
         </div>
 
@@ -474,6 +475,7 @@ function SuggestedReordersModal({
   onClose: () => void;
   onOrdersCreated: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("suppliersView");
   const [localSuggestions, setLocalSuggestions] = useState(suggestions);
   const [isCreating, setIsCreating] = useState(false);
@@ -558,7 +560,7 @@ function SuggestedReordersModal({
                       )}
                     </div>
                     <span className="font-mono text-[13px] font-semibold text-mv-ink">
-                      {formatCurrency(group.totalEstimatedCost)}
+                      {formatCurrency(group.totalEstimatedCost, locale)}
                     </span>
                   </div>
 
@@ -589,7 +591,7 @@ function SuggestedReordersModal({
                             <span className="w-10 text-[12px] text-mv-ink-faint">{item.unit}</span>
                           </div>
                           <span className="w-16 text-right font-mono text-[12px] font-medium text-mv-ink">
-                            {formatCurrency(item.estimatedCost)}
+                            {formatCurrency(item.estimatedCost, locale)}
                           </span>
                         </div>
                       </div>
@@ -607,7 +609,7 @@ function SuggestedReordersModal({
                 <p className="text-[12px] text-mv-ink-faint">{t("itemsToRestock", { count: totalItemsCount })}</p>
               </div>
               <span className="font-mono text-[16px] font-bold text-mv-green-dark">
-                {formatCurrency(grandTotal)}
+                {formatCurrency(grandTotal, locale)}
               </span>
             </div>
 
@@ -642,6 +644,7 @@ export function FournisseursView({
   initialOrders: PurchaseOrder[];
   inventoryItems?: InventoryItem[];
 }) {
+  const locale = useLocale();
   const t = useTranslations("suppliersView");
   const { role, restaurants, restaurantId: currentRestaurantId } = useApp();
   const [suppliers, setSuppliers] = useState(initialSuppliers);
@@ -684,7 +687,7 @@ export function FournisseursView({
       );
     }
     if (receivedTotalCost > 0 && restaurantId) {
-      toast(t("orderReceivedAmountOf", { amount: formatCurrency(receivedTotalCost) }), {
+      toast(t("orderReceivedAmountOf", { amount: formatCurrency(receivedTotalCost, locale) }), {
         description: t("alsoRecordItAs"),
         action: {
           label: t("save"),
@@ -783,13 +786,13 @@ export function FournisseursView({
                     <Td className="font-semibold text-mv-ink">
                       {suppliersById.get(o.supplierId)?.name ?? "—"}
                     </Td>
-                    <Td className="text-mv-ink-soft">{formatDate(o.orderDate)}</Td>
+                    <Td className="text-mv-ink-soft">{formatDate(o.orderDate, locale)}</Td>
                     <Td className="text-mv-ink-soft">
                       <span className="inline-flex items-center gap-1.5">
                         <Package size={13} /> {o.items.length}
                       </span>
                     </Td>
-                    <Td className="font-medium text-mv-ink">{formatCurrency(orderTotal(o))}</Td>
+                    <Td className="font-medium text-mv-ink">{formatCurrency(orderTotal(o), locale)}</Td>
                     <Td>
                       <Badge tone={statusTone[o.status]}>{buildStatusLabel(t)[o.status]}</Badge>
                     </Td>

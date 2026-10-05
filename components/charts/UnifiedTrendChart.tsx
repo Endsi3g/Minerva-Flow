@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { useState } from "react";
@@ -46,11 +48,12 @@ function ChartTooltip({
   label?: string;
   series: TrendSeries[];
 }) {
+  const locale = useLocale();
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-mv-border bg-mv-surface px-3 py-2 shadow-mv-md">
       <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-        {label && formatDate(label)}
+        {label && formatDate(label, locale)}
       </p>
       {payload.map((p) => {
         const s = series.find((x) => x.key === p.dataKey);
@@ -60,7 +63,7 @@ function ChartTooltip({
             <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
             <span className="text-mv-ink-soft">{s.label}</span>
             <span className="ml-auto font-semibold text-mv-ink">
-              {formatCurrency(p.value)}
+              {formatCurrency(p.value, locale)}
             </span>
           </div>
         );
@@ -70,6 +73,7 @@ function ChartTooltip({
 }
 
 export function UnifiedTrendChart({ series }: { series: TrendSeries[] }) {
+  const locale = useLocale();
   const [hovered, setHovered] = useState<string | null>(null);
   const data = mergeSeries(series);
 
@@ -97,7 +101,7 @@ export function UnifiedTrendChart({ series }: { series: TrendSeries[] }) {
           <CartesianGrid vertical={false} stroke="var(--mv-border)" strokeDasharray="3 4" />
           <XAxis
             dataKey="date"
-            tickFormatter={(v) => formatDate(v)}
+            tickFormatter={(v) => formatDate(v, locale)}
             tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
             axisLine={{ stroke: "var(--mv-border)" }}
             tickLine={false}

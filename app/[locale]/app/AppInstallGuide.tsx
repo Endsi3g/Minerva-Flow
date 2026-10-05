@@ -1,6 +1,7 @@
 "use client";
 
 
+import { intlLocale } from "@/lib/format-locale";
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
@@ -94,7 +95,7 @@ export function AppInstallGuide({
             <div className="min-w-0">
               <p className="font-display text-xl">{t("thankYouYourOrder")}</p>
               <p className="mt-1 text-sm text-[#5c685f]">{order ? (statusKeys[order.status] ? t(statusKeys[order.status]) : t("restaurantUpdating")) : t("fetchingStatus")}</p>
-              {order?.estimatedReadyAt && <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#0e5a40]"><Clock3 size={14} /> {t("estimatedTime", { time: new Date(order.estimatedReadyAt).toLocaleTimeString(locale === "en" ? "en-CA" : "fr-CA", { hour: "2-digit", minute: "2-digit" }) })}</p>}
+              {order?.estimatedReadyAt && <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#0e5a40]"><Clock3 size={14} /> {t("estimatedTime", { time: new Date(order.estimatedReadyAt).toLocaleTimeString(locale === "en" ? "en-CA" : intlLocale(locale), { hour: "2-digit", minute: "2-digit" }) })}</p>}
               {order?.status === "annulee" && <p className="mt-2 text-sm text-[#5c685f]">{t("noChargeNotice", { reason: order.cancellationReason || t("restaurantWillContact") })}</p>}
               {order && order.welcomeBonusPoints > 0 && <p className="mt-3 rounded-xl bg-[#e7f2e9] px-3.5 py-3 text-sm font-medium text-[#0e5a40]">{t("welcomeBonusMessage", { restaurant: order.restaurantName, points: order.welcomeBonusPoints })}</p>}
               <p className="mt-2 text-[12px] text-[#778078]">{t("autoUpdateRef", { ref: orderId.slice(0, 8).toUpperCase() })}</p>

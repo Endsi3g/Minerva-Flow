@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -60,6 +62,7 @@ function buildHeatmap(days: ServiceDay[], year: number, month: number) {
 }
 
 export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDay[] }) {
+  const locale = useLocale();
   const { role } = useApp();
   const router = useRouter();
   const [days, setDays] = useState<ServiceDay[]>(initialServiceDays);
@@ -75,7 +78,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
   );
   const monthLabel = useMemo(() => {
     const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-    const full = formatDateFull(iso);
+    const full = formatDateFull(iso, locale);
     return full.charAt(0).toUpperCase() + full.slice(full.indexOf(" ") + 1);
   }, [now]);
 
@@ -111,7 +114,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
   }
 
   async function handleDelete(day: ServiceDay) {
-    if (!window.confirm(`Supprimer la journée du ${formatDateWeekday(day.date)} ?`)) return;
+    if (!window.confirm(`Supprimer la journée du ${formatDateWeekday(day.date, locale)} ?`)) return;
     const ok = await deleteServiceDayAction(day.id);
     if (ok) setDays((prev) => prev.filter((d) => d.id !== day.id));
     else toast.error("La suppression a échoué.");
@@ -174,7 +177,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Moyenne / jour</p>
-          <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">{formatCurrency(kpis.avgRevenue)}</p>
+          <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">{formatCurrency(kpis.avgRevenue, locale)}</p>
           <p className="mt-0.5 text-[12px] text-mv-ink-faint">{rangeFilteredDays.length} journées analysées</p>
         </Card>
         <Card className="p-4">
@@ -185,14 +188,14 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
         <Card className="p-4">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Meilleur service</p>
           <p className="mt-1 font-display text-[22px] font-medium text-mv-ink">
-            {kpis.bestDay ? formatCurrency(kpis.bestDay.revenue) : "—"}
+            {kpis.bestDay ? formatCurrency(kpis.bestDay.revenue, locale) : "—"}
           </p>
           {kpis.bestDay ? (
             <a
               href={`/days/${kpis.bestDay.id}`}
               className="mt-0.5 truncate text-left text-[12px] text-mv-ink-faint hover:text-mv-green-dark hover:underline"
             >
-              {formatDateWeekday(kpis.bestDay.date)}
+              {formatDateWeekday(kpis.bestDay.date, locale)}
             </a>
           ) : (
             <p className="mt-0.5 truncate text-[12px] text-mv-ink-faint">—</p>
@@ -262,7 +265,7 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
             {selectedDate ? (
               <div className="flex items-center gap-2 text-[12.5px]">
                 <span className="text-mv-ink-soft">
-                  Filtré sur <strong className="text-mv-ink">{formatDateWeekday(selectedDate)}</strong>
+                  Filtré sur <strong className="text-mv-ink">{formatDateWeekday(selectedDate, locale)}</strong>
                 </span>
                 <button
                   onClick={() => {
@@ -326,8 +329,8 @@ export function DaysView({ initialServiceDays }: { initialServiceDays: ServiceDa
                     onClick={() => router.push(`/days/${d.id}`)}
                     className="cursor-pointer"
                   >
-                    <Td className="font-semibold">{formatDateWeekday(d.date)}</Td>
-                    <Td className="text-right font-semibold">{formatCurrency(d.revenue)}</Td>
+                    <Td className="font-semibold">{formatDateWeekday(d.date, locale)}</Td>
+                    <Td className="text-right font-semibold">{formatCurrency(d.revenue, locale)}</Td>
                     <Td>
                       <span className="inline-flex items-center gap-1.5 text-mv-ink-soft">
                         <SourceIcon size={14} /> {sourceLabel[d.mainSource]}

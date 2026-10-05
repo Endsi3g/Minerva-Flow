@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useState, useMemo, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -57,6 +57,7 @@ export function MenuItemDetailView({
   inventoryItems: InventoryItem[];
   recipeItems: RecipeItem[];
 }) {
+  const locale = useLocale();
   const t = useTranslations("menuItemDetail");
   const router = useRouter();
   const { role } = useApp();
@@ -358,7 +359,7 @@ export function MenuItemDetailView({
                   <p className="flex items-center gap-1 text-[12px] font-semibold uppercase text-mv-ink-faint">
                     <DollarSign size={11} /> Prix
                   </p>
-                  <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(item.price)}</p>
+                  <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(item.price, locale)}</p>
                 </div>
                 <div>
                   <p className="flex items-center gap-1 text-[12px] font-semibold uppercase text-mv-ink-faint">
@@ -448,7 +449,7 @@ export function MenuItemDetailView({
                             >
                               {inventoryItems.map((ing) => (
                                 <option key={ing.id} value={ing.id}>
-                                  {ing.name} ({formatCurrency(ing.unitCost)} / {ing.unit})
+                                  {ing.name} ({formatCurrency(ing.unitCost, locale)} / {ing.unit})
                                 </option>
                               ))}
                             </select>
@@ -468,7 +469,7 @@ export function MenuItemDetailView({
                               />
                               <span className="w-12 text-[12px] text-mv-ink-faint">{selectedIng?.unit ?? ""}</span>
                               <span className="w-16 text-right font-mono text-[12px] font-medium text-mv-ink">
-                                {formatCurrency(lineCost)}
+                                {formatCurrency(lineCost, locale)}
                               </span>
                               <button
                                 type="button"
@@ -497,13 +498,13 @@ export function MenuItemDetailView({
                       <div className="flex items-center justify-between text-[12.5px]">
                         <span className="text-mv-ink-soft">{t("calculatedFoodCost")}</span>
                         <span className="font-mono font-semibold text-mv-ink">
-                          {formatCurrency(theoreticalFoodCost)} ({theoreticalCostPct.toFixed(1)}%)
+                          {formatCurrency(theoreticalFoodCost, locale)} ({theoreticalCostPct.toFixed(1)}%)
                         </span>
                       </div>
                       <div className="mt-1 flex items-center justify-between text-[12.5px]">
                         <span className="text-mv-ink-soft">{t("estimatedGrossMargin")}</span>
                         <span className="font-mono font-semibold text-mv-green-dark">
-                          {formatCurrency(theoreticalMargin)} ({theoreticalMarginPct.toFixed(1)}%)
+                          {formatCurrency(theoreticalMargin, locale)} ({theoreticalMarginPct.toFixed(1)}%)
                         </span>
                       </div>
                       <div className="mt-2 flex items-center gap-1 text-[12px]">
@@ -572,7 +573,7 @@ export function MenuItemDetailView({
                             {r.quantityPerUnit} {ingredient?.unit ?? ""}
                           </span>
                           <span className="w-16 font-mono text-[12px] font-medium text-mv-ink">
-                            {formatCurrency(portionCost)}
+                            {formatCurrency(portionCost, locale)}
                           </span>
                         </div>
                       </div>
@@ -585,13 +586,13 @@ export function MenuItemDetailView({
                   <div className="flex items-center justify-between text-[12.5px]">
                     <span className="text-mv-ink-soft">{t("foodCostPerPortion")}</span>
                     <span className="font-mono font-semibold text-mv-ink">
-                      {formatCurrency(theoreticalFoodCost)} ({theoreticalCostPct.toFixed(1)}%)
+                      {formatCurrency(theoreticalFoodCost, locale)} ({theoreticalCostPct.toFixed(1)}%)
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between text-[12.5px]">
                     <span className="text-mv-ink-soft">{t("unitGrossMargin")}</span>
                     <span className="font-mono font-semibold text-mv-green-dark">
-                      {formatCurrency(theoreticalMargin)} ({theoreticalMarginPct.toFixed(1)}%)
+                      {formatCurrency(theoreticalMargin, locale)} ({theoreticalMarginPct.toFixed(1)}%)
                     </span>
                   </div>
                   <div className="mt-2.5 flex items-center justify-between">

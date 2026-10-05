@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/utils";
 import type { Alert, Program } from "@/lib/types";
@@ -27,6 +29,7 @@ export function CanvasDefaultContext({
   data: CanvasContextData;
   onSendPrompt?: (promptText: string) => void;
 }) {
+  const locale = useLocale();
   const { totalRevenue, estimatedMargin, alerts, activePrograms } = data;
   const marginRate = totalRevenue > 0 ? ((estimatedMargin / totalRevenue) * 100).toFixed(1) : "0.0";
 
@@ -61,7 +64,7 @@ export function CanvasDefaultContext({
               onSendPrompt?.(
                 `Fais une analyse détaillée du chiffre d'affaires actuel (${formatCurrency(
                   totalRevenue
-                )}) et identifie la dynamique des ventes et leviers de croissance.`
+                , locale)}) et identifie la dynamique des ventes et leviers de croissance.`
               )
             }
             className={cn(
@@ -76,7 +79,7 @@ export function CanvasDefaultContext({
               <TrendingUp size={12} className="text-mv-green-dark opacity-70 group-hover:opacity-100" />
             </div>
             <p className="font-display text-[15px] font-bold text-mv-ink mt-0.5">
-              {formatCurrency(totalRevenue)}
+              {formatCurrency(totalRevenue, locale)}
             </p>
             <span className="text-[12px] font-medium text-emerald-600 flex items-center gap-0.5 mt-0.5">
               +12.4% vs N-1
@@ -102,7 +105,7 @@ export function CanvasDefaultContext({
               <Percent size={12} className="text-mv-amber opacity-70 group-hover:opacity-100" />
             </div>
             <p className="font-display text-[15px] font-bold text-mv-ink mt-0.5">
-              {formatCurrency(estimatedMargin)}
+              {formatCurrency(estimatedMargin, locale)}
             </p>
             <span className="text-[12px] font-medium text-mv-ink-soft mt-0.5 block">
               Taux : <strong className="text-mv-ink">{marginRate}%</strong>
@@ -183,7 +186,7 @@ export function CanvasDefaultContext({
                     onSendPrompt?.(
                       `Audit de rentabilité spécifique pour le programme "${p.name}". Détaille le chiffre d'affaires généré (${formatCurrency(
                         p.revenue
-                      )}), le volume de commandes et propose 3 optimisations pour maximiser le panier moyen.`
+                      , locale)}), le volume de commandes et propose 3 optimisations pour maximiser le panier moyen.`
                     )
                   }
                   className={cn(
@@ -201,7 +204,7 @@ export function CanvasDefaultContext({
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="font-mono font-bold text-mv-ink text-[12px]">
-                      {formatCurrency(p.revenue)}
+                      {formatCurrency(p.revenue, locale)}
                     </span>
                     {onSendPrompt && (
                       <ChevronRight

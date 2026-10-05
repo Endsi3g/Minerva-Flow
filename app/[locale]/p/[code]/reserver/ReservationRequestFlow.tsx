@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
@@ -20,6 +22,7 @@ export function ReservationRequestFlow({
   authenticated: boolean;
   invitationChannel: string;
 }) {
+  const t = useTranslations("reservationRequest");
   const [email, setEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -34,7 +37,7 @@ export function ReservationRequestFlow({
       setEmailStatus("sent");
     } else {
       setEmailStatus("error");
-      setEmailError(result.error ?? "Une erreur est survenue.");
+      setEmailError(result.error ?? t("somethingWentWrong"));
     }
   }
 
@@ -52,7 +55,7 @@ export function ReservationRequestFlow({
       setSubmitStatus("done");
     } else {
       setSubmitStatus("error");
-      setSubmitError("La demande a échoué. Réessayez.");
+      setSubmitError(t("theRequestFailedTry"));
     }
   }
 
@@ -71,7 +74,7 @@ export function ReservationRequestFlow({
               <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
                 <CheckCircle2 size={18} />
               </div>
-              <p className="font-display text-[17px] font-medium text-mv-ink">Demande envoyée</p>
+              <p className="font-display text-[17px] font-medium text-mv-ink">{t("requestSent")}</p>
               <p className="mt-1.5 text-[13px] text-mv-ink-soft">
                 {restaurantName} confirmera votre réservation sous peu.
               </p>
@@ -84,7 +87,7 @@ export function ReservationRequestFlow({
               <Field label="Nom">
                 <Input name="guestName" required autoFocus />
               </Field>
-              <Field label="Téléphone" hint="Optionnel">
+              <Field label={t("phone")} hint="Optionnel">
                 <Input name="guestPhone" type="tel" />
               </Field>
               <div className="grid grid-cols-2 gap-3">
@@ -97,7 +100,7 @@ export function ReservationRequestFlow({
               </div>
               {submitStatus === "error" && <p className="text-[12.5px] text-mv-red">{submitError}</p>}
               <Button type="submit" disabled={submitStatus === "submitting"} className="w-full">
-                {submitStatus === "submitting" ? "Envoi…" : "Envoyer la demande"}
+                {submitStatus === "submitting" ? t("sending") : t("sendTheRequest")}
               </Button>
             </form>
           ) : emailStatus === "sent" ? (
@@ -105,7 +108,7 @@ export function ReservationRequestFlow({
               <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
                 <Mail size={18} />
               </div>
-              <p className="font-display text-[17px] font-medium text-mv-ink">Vérifiez vos courriels</p>
+              <p className="font-display text-[17px] font-medium text-mv-ink">{t("checkYourEmail")}</p>
               <p className="mt-1.5 text-[13px] text-mv-ink-soft">
                 Cliquez le lien reçu à {email} pour continuer votre réservation.
               </p>
@@ -114,7 +117,7 @@ export function ReservationRequestFlow({
             <form onSubmit={handleEmailSubmit} className="space-y-4">
               <div className="text-center">
                 <p className="font-display text-[17px] font-medium text-mv-ink">Réserver chez {restaurantName}</p>
-                <p className="mt-1 text-[13px] text-mv-ink-soft">Entrez votre courriel pour commencer.</p>
+                <p className="mt-1 text-[13px] text-mv-ink-soft">{t("enterYourEmailTo")}</p>
               </div>
               <Field label="Courriel">
                 <Input
@@ -127,7 +130,7 @@ export function ReservationRequestFlow({
               </Field>
               {emailStatus === "error" && <p className="text-[12.5px] text-mv-red">{emailError}</p>}
               <Button type="submit" disabled={emailStatus === "sending"} className="w-full">
-                {emailStatus === "sending" ? "Envoi…" : "Continuer"}
+                {emailStatus === "sending" ? t("sending") : "Continuer"}
               </Button>
             </form>
           )}

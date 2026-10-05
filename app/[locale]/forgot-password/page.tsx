@@ -8,6 +8,7 @@ import { useState, type FormEvent } from "react";
 import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function ForgotPasswordPage() {
+  const tv = useTranslations("forgotPassword");
   const t = useTranslations("auth");
   const locale = useLocale();
   const [email, setEmail] = useState("");
@@ -41,7 +42,7 @@ export default function ForgotPasswordPage() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-mv-green/10 text-mv-green-dark">
             <MailCheck size={24} />
           </div>
-          <h1 className="font-display text-[26px] font-medium text-mv-ink">Vérifiez vos courriels</h1>
+          <h1 className="font-display text-[26px] font-medium text-mv-ink">{tv("checkYourEmail")}</h1>
           <p className="text-[13.5px] leading-relaxed text-mv-ink-soft">
             Un lien de réinitialisation a été envoyé à l&apos;adresse <strong className="text-mv-ink">{email}</strong>.
           </p>
@@ -49,15 +50,15 @@ export default function ForgotPasswordPage() {
       ) : (
         <>
           <h1 className="font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[32px]">
-            Mot de passe oublié
+            {tv("forgotYourPassword")}
           </h1>
           <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
-            Saisissez votre courriel pour recevoir un lien de réinitialisation sécurisé.
+            {tv("enterYourEmailTo")}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Adresse courriel</label>
+              <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{tv("emailAddress")}</label>
               <input
                 type="email"
                 placeholder="nom@restaurant.com"
@@ -80,10 +81,10 @@ export default function ForgotPasswordPage() {
               {isLoading ? (
                 <>
                   <Loader2 size={15} className="animate-spin" />
-                  <span>Envoi en cours…</span>
+                  <span>{tv("sending")}</span>
                 </>
               ) : (
-                <span>Envoyer le lien</span>
+                <span>{tv("sendTheLink")}</span>
               )}
             </button>
           </form>
@@ -93,7 +94,7 @@ export default function ForgotPasswordPage() {
       <div className="mt-6 border-t border-mv-border-soft pt-5 text-center">
         <Link href="/login" className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-mv-green-dark hover:underline">
           <ArrowLeft size={13} />
-          <span>Retour à la connexion</span>
+          <span>{tv("backToSignIn")}</span>
         </Link>
       </div>
     </AuthShell>

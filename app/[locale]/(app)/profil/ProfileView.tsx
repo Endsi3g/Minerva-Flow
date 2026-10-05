@@ -20,7 +20,7 @@ import type { MyProfile } from "@/lib/data/profile";
 import type { ActivityLogEntry, Role } from "@/lib/types";
 import { Camera, Check, History, MailCheck, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { EcosystemProposalCard } from "./EcosystemProposalCard";
 
 function toActivityLogEntry(row: ActivityLogRow, actorName: string): ActivityLogEntry {
@@ -231,6 +231,7 @@ export function ProfileView({
   role: Role | null;
   activity: ActivityLogEntry[];
 }) {
+  const locale = useLocale();
   const t = useTranslations("profile");
   const [activity, setActivity] = useState<ActivityLogEntry[]>(initialActivity);
   const [showAllActivities, setShowAllActivities] = useState(false);
@@ -317,7 +318,7 @@ export function ProfileView({
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] text-mv-ink">{entry.description}</p>
                       <p className="mt-0.5 text-[12px] text-mv-ink-faint">
-                        {formatRelativeTime(entry.createdAt)}
+                        {formatRelativeTime(entry.createdAt, locale)}
                       </p>
                     </div>
                   </div>

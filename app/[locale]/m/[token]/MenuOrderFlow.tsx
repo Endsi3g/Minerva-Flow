@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { startTransition, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
@@ -87,6 +87,7 @@ function CheckoutModal({
   mentionedOfferTitle: string | null;
   delivery: { config: DeliveryPricingConfig; restaurantLat: number | null; restaurantLng: number | null };
 }) {
+  const locale = useLocale();
   const t = useTranslations("menuOrder");
   const { subtotal, taxAmount, tipAmount, total } = totals;
   const [email, setEmail] = useState("");
@@ -421,7 +422,7 @@ function CheckoutModal({
                 <span className="text-mv-ink-soft">
                   {l.quantity}× {l.item.name}
                 </span>
-                <span className="font-medium text-mv-ink">{formatCurrency(l.item.price * l.quantity)}</span>
+                <span className="font-medium text-mv-ink">{formatCurrency(l.item.price * l.quantity, locale)}</span>
               </div>
             ))}
           </div>
@@ -452,27 +453,27 @@ function CheckoutModal({
           <div className="space-y-1 border-t border-mv-border-soft pt-3 text-[12.5px]">
             <div className="flex justify-between text-mv-ink-soft">
               <span>{t("subtotal")}</span>
-              <span>{formatCurrency(subtotal)}</span>
+              <span>{formatCurrency(subtotal, locale)}</span>
             </div>
             <div className="flex justify-between text-mv-ink-soft">
               <span>{t("taxes")}</span>
-              <span>{formatCurrency(taxAmount)}</span>
+              <span>{formatCurrency(taxAmount, locale)}</span>
             </div>
             {acceptsTips && (
               <div className="flex justify-between text-mv-ink-soft">
                 <span>{t("tip")}</span>
-                <span>{formatCurrency(tipAmount)}</span>
+                <span>{formatCurrency(tipAmount, locale)}</span>
               </div>
             )}
             {fulfillmentMode === "livraison" && (
               <div className="flex justify-between text-mv-ink-soft">
                 <span>Livraison{deliveryQuote.distanceKm != null ? ` · ${deliveryQuote.distanceKm} km` : ""}</span>
-                <span>{formatCurrency(deliveryQuote.fee)}</span>
+                <span>{formatCurrency(deliveryQuote.fee, locale)}</span>
               </div>
             )}
             <div className="flex justify-between text-[14px] font-semibold text-mv-ink">
               <span>{t("total")}</span>
-              <span>{formatCurrency(displayTotal)}</span>
+              <span>{formatCurrency(displayTotal, locale)}</span>
             </div>
           </div>
 
@@ -527,7 +528,7 @@ function CheckoutModal({
                     <p className="text-[12px] text-mv-red">{deliveryQuote.reason === "outside_radius" ? t("outsideDeliveryRadius") : t("enterFullAddress")}</p>
                   )}
                   {deliveryQuote.available && deliveryQuote.etaMinutes != null && (
-                    <p className="text-[12px] text-mv-ink-faint">{t("feeAndEta", { fee: formatCurrency(deliveryQuote.fee), minutes: deliveryQuote.etaMinutes })}</p>
+                    <p className="text-[12px] text-mv-ink-faint">{t("feeAndEta", { fee: formatCurrency(deliveryQuote.fee, locale), minutes: deliveryQuote.etaMinutes })}</p>
                   )}
                 </div>
               )}
@@ -572,7 +573,7 @@ function CheckoutModal({
                 <p className="text-[12.5px] text-mv-red">{t("oopsTheOrderDid")}</p>
               )}
               <Button type="submit" disabled={submitStatus === "submitting" || (fulfillmentMode === "livraison" && (deliveryQuoteLoading || !deliveryQuote.available))} className="w-full">
-                {submitStatus === "submitting" ? t("sending") : `Envoyer la commande — ${formatCurrency(displayTotal)}`}
+                {submitStatus === "submitting" ? t("sending") : `Envoyer la commande — ${formatCurrency(displayTotal, locale)}`}
               </Button>
             </form>
           ) : emailStatus === "sent" ? (
@@ -631,6 +632,7 @@ function MenuItemGridCard({
   isOrderable: boolean;
   onToggleFavorite?: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("menuOrder");
   return (
     <button
@@ -702,7 +704,7 @@ function MenuItemGridCard({
         {item.description && (
           <p className="line-clamp-2 text-[12px] leading-snug text-mv-ink-faint">{item.description}</p>
         )}
-        <p className="mt-auto pt-1 text-[13px] font-semibold text-mv-green-dark">{isOrderable ? formatCurrency(item.price) : t("toDiscover")}</p>
+        <p className="mt-auto pt-1 text-[13px] font-semibold text-mv-green-dark">{isOrderable ? formatCurrency(item.price, locale) : t("toDiscover")}</p>
       </div>
     </button>
   );
@@ -723,6 +725,7 @@ function MenuItemDetailModal({
   onQtyChange: (delta: number) => void;
   onConfirm: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("menuOrder");
   if (!item) return null;
   const displayQty = Math.max(1, quantity);
@@ -753,7 +756,7 @@ function MenuItemDetailModal({
         </div>
         <div className="flex-1 overflow-y-auto p-5">
           <h3 className="font-display text-[20px] font-medium text-mv-ink">{item.name}</h3>
-          <p className="mt-1 text-[15px] font-semibold text-mv-green-dark">{formatCurrency(item.price)}</p>
+          <p className="mt-1 text-[15px] font-semibold text-mv-green-dark">{formatCurrency(item.price, locale)}</p>
           {item.description && (
             <p className="mt-3 text-[13.5px] leading-relaxed text-mv-ink-soft">{item.description}</p>
           )}
@@ -780,7 +783,7 @@ function MenuItemDetailModal({
             </button>
           </div>
           <Button onClick={onConfirm} className="flex-1">
-            Ajouter — {formatCurrency(item.price * displayQty)}
+            Ajouter — {formatCurrency(item.price * displayQty, locale)}
           </Button>
         </div>
       </div>
@@ -894,6 +897,7 @@ export function MenuOrderFlow({
   favoriteMenuItemIds: string[];
   favoriteOfferIds: string[];
 }) {
+  const locale = useLocale();
   const t = useTranslations("menuOrder");
   const router = useRouter();
   const { restaurantName, restaurantTimezone, items, taxRate, acceptsTips, onlinePaymentEnabled, orderModesEnabled, delivery } = landing;
@@ -1211,7 +1215,7 @@ export function MenuOrderFlow({
         <div className="fixed inset-x-0 bottom-0 border-t border-mv-border bg-mv-surface px-6 py-3 shadow-mv-lg">
           <div className="mx-auto flex max-w-2xl items-center justify-between">
             <div className="text-[12.5px] text-mv-ink-soft">
-              {itemCount} article{itemCount > 1 ? "s" : ""} — {formatCurrency(subtotal)}
+              {itemCount} article{itemCount > 1 ? "s" : ""} — {formatCurrency(subtotal, locale)}
             </div>
             <Button size="sm" onClick={() => setCheckoutOpen(true)}>
               <ShoppingCart size={14} /> {t("viewOrder")}

@@ -1,3 +1,4 @@
+import { useLocale } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 import type { FlowLine } from "@/lib/types";
 
@@ -8,6 +9,7 @@ export function FlowBars({
   lines: FlowLine[];
   tone?: "green" | "ink";
 }) {
+  const locale = useLocale();
   const barColor = tone === "green" ? "var(--mv-green)" : "var(--mv-ink-soft)";
   const trackColor = tone === "green" ? "var(--mv-green-tint)" : "var(--mv-cream-soft)";
 
@@ -18,7 +20,7 @@ export function FlowBars({
           <div className="mb-1 flex items-baseline justify-between gap-3">
             <span className="text-[13px] font-medium text-mv-ink">{l.label}</span>
             <span className="shrink-0 text-[13px] font-semibold text-mv-ink">
-              {formatCurrency(l.amount)}
+              {formatCurrency(l.amount, locale)}
             </span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full" style={{ background: trackColor }}>

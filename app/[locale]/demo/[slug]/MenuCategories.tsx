@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/Badge";
 import { MenuItemThumbnail } from "@/components/prospects/MenuItemThumbnail";
 import { UtensilsCrossed } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import type { ProspectMenuCategory } from "@/lib/prospects/types";
 
 /** All categories start open — collapsing is for scanning a long menu, not for hiding the pitch. */
 export function MenuCategories({ categories }: { categories: ProspectMenuCategory[] }) {
+  const locale = useLocale();
   const t = useTranslations("demo");
 
   return (
@@ -39,7 +40,7 @@ export function MenuCategories({ categories }: { categories: ProspectMenuCategor
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-[13.5px] font-semibold text-mv-ink">{item.name}</p>
                       <p className="shrink-0 font-display text-[13.5px] font-medium text-mv-green-dark">
-                        {formatCurrency(item.priceCents / 100)}
+                        {formatCurrency(item.priceCents / 100, locale)}
                       </p>
                     </div>
                     {item.description && (

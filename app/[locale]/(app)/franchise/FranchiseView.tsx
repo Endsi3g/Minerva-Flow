@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -68,6 +68,7 @@ export function FranchiseView({
   monthRevenue: number;
   workspace: Workspace | null;
 }) {
+  const locale = useLocale();
   const t = useTranslations("franchiseView");
   if (!rollup) {
     return (
@@ -114,7 +115,7 @@ export function FranchiseView({
               {t("extraPurchasesGeneratedBy")}
             </p>
             <p className="mt-1 font-display text-[17px] font-medium text-mv-ink">
-              {formatCurrency(rollup.totalIncrementalRevenue)}
+              {formatCurrency(rollup.totalIncrementalRevenue, locale)}
             </p>
             <p className="mt-0.5 text-[12px] text-mv-ink-soft">{t("allRestaurantsCombined")}</p>
           </div>
@@ -178,7 +179,7 @@ export function FranchiseView({
                 return (
                   <Tr key={impact.restaurantId}>
                     <Td className="font-medium text-mv-ink">{restaurant?.name ?? "—"}</Td>
-                    <Td>{formatCurrency(impact.incrementalRevenue)}</Td>
+                    <Td>{formatCurrency(impact.incrementalRevenue, locale)}</Td>
                     <Td>
                       {impact.marginGainPct >= 0 ? "+" : ""}
                       {impact.marginGainPct.toFixed(1)} pt

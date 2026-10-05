@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -20,6 +22,7 @@ export function ExpenseDetailView({
   createdByName: string | null;
   updatedByName: string | null;
 }) {
+  const locale = useLocale();
   const [linking, setLinking] = useState(false);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -53,7 +56,7 @@ export function ExpenseDetailView({
       <PageHeader
         eyebrow="Dépense"
         title={transaction.description}
-        description={formatDate(transaction.date)}
+        description={formatDate(transaction.date, locale)}
         action={
           <div className="no-print flex items-center gap-2">
             <Button size="sm" variant="secondary" onClick={() => window.print()}>
@@ -83,7 +86,7 @@ export function ExpenseDetailView({
 
       <Card className="max-w-xl">
         <div className="mb-4 flex items-center justify-between">
-          <p className="font-display text-[24px] font-medium text-mv-ink">{formatCurrency(transaction.amount)}</p>
+          <p className="font-display text-[24px] font-medium text-mv-ink">{formatCurrency(transaction.amount, locale)}</p>
           <Badge tone={transaction.reviewed ? "green" : "amber"}>
             {transaction.reviewed ? "Revue" : "À revoir"}
           </Badge>
@@ -105,7 +108,7 @@ export function ExpenseDetailView({
             <div className="flex justify-between">
               <span className="text-mv-ink-faint">Dernière modification</span>
               <span className="font-medium text-mv-ink">
-                {updatedByName ?? "—"} · {formatRelativeTime(transaction.updatedAt)}
+                {updatedByName ?? "—"} · {formatRelativeTime(transaction.updatedAt, locale)}
               </span>
             </div>
           )}

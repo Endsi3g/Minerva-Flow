@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { CanvasDefaultContext, type CanvasContextData } from "@/components/chat/CanvasDefaultContext";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { ChatArtifact } from "@/lib/types";
@@ -225,13 +227,14 @@ export function CanvasPanel({
 }
 
 function MiniLineChart({ data, color = "var(--mv-green)" }: { data: TrendPoint[]; color?: string }) {
+  const locale = useLocale();
   return (
     <ResponsiveContainer width="100%" height={140}>
       <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke="var(--mv-border)" strokeDasharray="3 4" />
         <XAxis
           dataKey="date"
-          tickFormatter={(v) => formatDate(v)}
+          tickFormatter={(v) => formatDate(v, locale)}
           tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
@@ -239,8 +242,8 @@ function MiniLineChart({ data, color = "var(--mv-green)" }: { data: TrendPoint[]
         />
         <YAxis hide />
         <Tooltip
-          formatter={(value) => formatCurrency(Number(value))}
-          labelFormatter={(v) => formatDate(String(v))}
+          formatter={(value) => formatCurrency(Number(value), locale)}
+          labelFormatter={(v) => formatDate(String(v), locale)}
           contentStyle={{
             background: "var(--mv-surface)",
             border: "1px solid var(--mv-border)",
@@ -269,6 +272,7 @@ function DualLineChart({
   seriesA: { label: string; points: TrendPoint[] };
   seriesB: { label: string; points: TrendPoint[] };
 }) {
+  const locale = useLocale();
   const map = new Map<string, { date: string; a?: number; b?: number }>();
   for (const p of seriesA.points) map.set(p.date, { ...map.get(p.date), date: p.date, a: p.value });
   for (const p of seriesB.points) map.set(p.date, { ...(map.get(p.date) ?? { date: p.date }), b: p.value });
@@ -281,7 +285,7 @@ function DualLineChart({
           <CartesianGrid vertical={false} stroke="var(--mv-border)" strokeDasharray="3 4" />
           <XAxis
             dataKey="date"
-            tickFormatter={(v) => formatDate(v)}
+            tickFormatter={(v) => formatDate(v, locale)}
             tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
             axisLine={{ stroke: "var(--mv-border)" }}
             tickLine={false}
@@ -295,7 +299,7 @@ function DualLineChart({
               borderRadius: 8,
               fontSize: 12,
             }}
-            labelFormatter={(v) => formatDate(String(v))}
+            labelFormatter={(v) => formatDate(String(v), locale)}
           />
           <Line type="monotone" dataKey="a" name={seriesA.label} stroke="var(--mv-green)" strokeWidth={2} dot={false} isAnimationActive={false} />
           <Line type="monotone" dataKey="b" name={seriesB.label} stroke="var(--mv-amber)" strokeWidth={2} dot={false} isAnimationActive={false} />

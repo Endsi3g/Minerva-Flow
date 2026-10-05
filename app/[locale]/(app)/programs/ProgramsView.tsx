@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -55,6 +57,7 @@ export function ProgramsView({
   programs: Program[];
   campaigns: Campaign[];
 }) {
+  const locale = useLocale();
   const { role } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -162,7 +165,7 @@ export function ProgramsView({
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row">
         <StatCard label="Programmes actifs" value={activeCount} icon={Sparkles} sublabel={`${programs.length} au total`} accent="green" />
-        <StatCard label="Revenu total" value={formatCurrency(totalRevenue)} icon={TrendingUp} sublabel="Tous programmes confondus" accent="lime" />
+        <StatCard label="Revenu total" value={formatCurrency(totalRevenue, locale)} icon={TrendingUp} sublabel="Tous programmes confondus" accent="lime" />
         <StatCard label="Marge moyenne" value={avgMargin !== null ? `${avgMargin}%` : "—"} icon={Percent} sublabel="Sur les programmes rentables" accent="ink" />
       </div>
 
@@ -227,10 +230,10 @@ export function ProgramsView({
                         <Badge tone={typeTone[p.type]}>{typeLabel[p.type]}</Badge>
                       </Td>
                       <Td className="text-mv-ink-soft">
-                        {formatDate(p.startDate)} — {formatDate(p.endDate)}
+                        {formatDate(p.startDate, locale)} — {formatDate(p.endDate, locale)}
                       </Td>
-                      <Td className="text-right font-semibold">{formatCurrency(p.revenue)}</Td>
-                      <Td className="text-right text-mv-ink-soft">{formatCurrency(p.cost)}</Td>
+                      <Td className="text-right font-semibold">{formatCurrency(p.revenue, locale)}</Td>
+                      <Td className="text-right text-mv-ink-soft">{formatCurrency(p.cost, locale)}</Td>
                       <Td className="text-right">
                         {margin !== null ? (
                           <span
@@ -299,19 +302,19 @@ export function ProgramsView({
                   {selected.name}
                 </h2>
                 <p className="text-[12.5px] text-mv-ink-faint">
-                  {formatDate(selected.startDate)} — {formatDate(selected.endDate)}
+                  {formatDate(selected.startDate, locale)} — {formatDate(selected.endDate, locale)}
                 </p>
                 <div className="mt-4 grid grid-cols-3 gap-3 rounded-xl bg-mv-cream-soft p-3">
                   <div>
                     <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Revenu</p>
                     <p className="font-display text-[16px] font-medium text-mv-ink">
-                      {formatCurrency(selected.revenue)}
+                      {formatCurrency(selected.revenue, locale)}
                     </p>
                   </div>
                   <div>
                     <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Coût</p>
                     <p className="font-display text-[16px] font-medium text-mv-ink">
-                      {formatCurrency(selected.cost)}
+                      {formatCurrency(selected.cost, locale)}
                     </p>
                   </div>
                   <div>
@@ -355,7 +358,7 @@ export function ProgramsView({
                           <p className="text-[13px] font-semibold text-mv-ink">{c.name}</p>
                           <p className="text-[12px] text-mv-ink-faint">{c.channel}</p>
                         </div>
-                        <Badge tone="neutral">{formatCurrency(c.estimatedRevenue)}</Badge>
+                        <Badge tone="neutral">{formatCurrency(c.estimatedRevenue, locale)}</Badge>
                       </div>
                     ))}
                   </div>
@@ -412,7 +415,7 @@ export function ProgramsView({
                       <div key={i} className="rounded-lg bg-mv-cream-soft p-3">
                         <div className="mb-1 flex items-center justify-between">
                           <span className="text-[12px] font-semibold text-mv-ink">{n.author}</span>
-                          <span className="text-[12px] text-mv-ink-faint">{formatDate(n.date)}</span>
+                          <span className="text-[12px] text-mv-ink-faint">{formatDate(n.date, locale)}</span>
                         </div>
                         <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">{n.text}</p>
                       </div>

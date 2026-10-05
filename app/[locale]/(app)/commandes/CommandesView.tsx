@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -137,12 +137,13 @@ function SourceBadge({ source }: { source?: OrderSource }) {
 }
 
 function DeliveryMeta({ order }: { order: Order }) {
+  const locale = useLocale();
   if (order.fulfillmentMode !== "livraison") return null;
   return (
     <div className="mt-1.5 rounded-lg border border-blue-200 bg-blue-50/70 px-2 py-1.5 text-[12px] text-blue-900">
       <div className="font-semibold">Livraison{order.deliveryEtaMinutes ? ` · ~${order.deliveryEtaMinutes} min` : ""}</div>
       {order.deliveryAddress && <div className="truncate" title={order.deliveryAddress}>{order.deliveryAddress}</div>}
-      {order.deliveryFee > 0 && <div className="font-mono text-[12px]">Frais : {formatCurrency(order.deliveryFee)}</div>}
+      {order.deliveryFee > 0 && <div className="font-mono text-[12px]">Frais : {formatCurrency(order.deliveryFee, locale)}</div>}
     </div>
   );
 }
@@ -343,6 +344,7 @@ function NewManualOrderModal({
   onClose: () => void;
   onCreated: (order: Order) => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("ordersView");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -426,7 +428,7 @@ function NewManualOrderModal({
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13px] font-medium text-mv-ink">{m.name}</p>
-                      <p className="text-[12px] text-mv-ink-faint">{formatCurrency(m.price)}</p>
+                      <p className="text-[12px] text-mv-ink-faint">{formatCurrency(m.price, locale)}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
                       <button
@@ -459,7 +461,7 @@ function NewManualOrderModal({
 
         <div className="flex items-center justify-between border-t border-mv-border-soft pt-4">
           <p className="text-[12.5px] text-mv-ink-soft">
-            {t("estimatedSubtotal")} <span className="font-semibold text-mv-ink">{formatCurrency(estimatedSubtotal)}</span>
+            {t("estimatedSubtotal")} <span className="font-semibold text-mv-ink">{formatCurrency(estimatedSubtotal, locale)}</span>
           </p>
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
@@ -504,6 +506,7 @@ export function CommandesView({
   restaurantTimezone: string;
   initialNowMs: number;
 }) {
+  const locale = useLocale();
   const t = useTranslations("ordersView");
   const { role } = useApp();
   const restaurant = useCurrentRestaurant();
@@ -859,7 +862,7 @@ export function CommandesView({
                 <TrendingUp size={16} />
               </div>
             </div>
-            <p className="font-display text-[26px] font-bold text-mv-ink">{formatCurrency(totalVolume)}</p>
+            <p className="font-display text-[26px] font-bold text-mv-ink">{formatCurrency(totalVolume, locale)}</p>
           </div>
           <div className="mt-2 pt-2 border-t border-mv-border-soft flex flex-wrap items-center gap-1.5 text-[12px] text-mv-ink-soft">
             <span className="font-semibold text-mv-ink">{orderCount}</span> commande{orderCount > 1 ? "s" : ""} :
@@ -946,7 +949,7 @@ export function CommandesView({
                 </div>
               </div>
               <p className="font-display text-[26px] font-bold text-mv-ink">
-                {formatCurrency(estimatedPlatformCommission)}
+                {formatCurrency(estimatedPlatformCommission, locale)}
               </p>
             </div>
             <div className="mt-2 pt-2 border-t border-mv-border-soft text-[12px] text-mv-ink-soft">
@@ -1031,10 +1034,10 @@ export function CommandesView({
                       </p>
                     )}
                     <div className="mt-3 flex items-center justify-between pt-2 border-t border-mv-border/60">
-                      <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total)}</span>
+                      <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total, locale)}</span>
                       <Badge tone={paymentStatusTone[o.paymentStatus] ?? "red"}>
                         {o.depositPaidAmount && o.depositPaidAmount > 0 && o.paymentStatus !== "paye"
-                          ? t("depositReceivedBalanceAmount", { amount: formatCurrency(Math.max(0, o.total - o.depositPaidAmount)) })
+                          ? t("depositReceivedBalanceAmount", { amount: formatCurrency(Math.max(0, o.total - o.depositPaidAmount), locale) })
                           : t(paymentStatusLabel_KEYS[o.paymentStatus] ?? "paymentstatuEnAttente")}
                       </Badge>
                     </div>
@@ -1109,7 +1112,7 @@ export function CommandesView({
                       </p>
                     )}
                     <div className="mt-3 flex items-center justify-between pt-2 border-t border-mv-border/60">
-                      <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total)}</span>
+                      <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total, locale)}</span>
                       {canManage && (
                         <Button
                           size="sm"
@@ -1192,7 +1195,7 @@ export function CommandesView({
                       </p>
                     )}
                     <div className="mt-3 flex items-center justify-between pt-2 border-t border-mv-border/60">
-                      <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total)}</span>
+                      <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total, locale)}</span>
                       {canManage && (
                         <Button
                           size="sm"
@@ -1266,7 +1269,7 @@ export function CommandesView({
                       </p>
                     )}
                     <div className="mt-3 flex items-center justify-between gap-1.5 pt-2 border-t border-mv-border/60">
-                      <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total)}</span>
+                      <span className="font-mono text-[12px] font-bold text-mv-ink">{formatCurrency(o.total, locale)}</span>
                       {canManage && (
                         <div className="flex items-center gap-1.5">
                           <Button
@@ -1321,7 +1324,7 @@ export function CommandesView({
                         )}
                       </div>
                     </div>
-                    <span className="font-mono">{formatCurrency(o.total)}</span>
+                    <span className="font-mono">{formatCurrency(o.total, locale)}</span>
                   </div>
                   <p className="text-[12px] text-mv-ink-faint mt-0.5">
                     {o.items.map((i) => `${i.quantity}× ${i.itemName}`).join(", ")}
@@ -1372,14 +1375,14 @@ export function CommandesView({
                   <Td className="text-mv-ink-soft">
                     {o.items.map((i) => `${i.quantity}× ${i.itemName}`).join(", ")}
                   </Td>
-                  <Td className="text-right font-semibold text-mv-ink">{formatCurrency(o.total)}</Td>
+                  <Td className="text-right font-semibold text-mv-ink">{formatCurrency(o.total, locale)}</Td>
                   <Td>
                     <div className="flex flex-wrap gap-1">
                       <Badge tone={statusTone[o.status]}>{t(statusLabel_KEYS[o.status])}</Badge>
                       {o.paymentStatus !== "non_requis" && (
                         <Badge tone={paymentStatusTone[o.paymentStatus]}>
                           {o.depositPaidAmount && o.depositPaidAmount > 0 && o.paymentStatus !== "paye"
-                            ? `Acompte ${formatCurrency(o.depositPaidAmount)} · solde ${formatCurrency(Math.max(0, o.total - o.depositPaidAmount))}`
+                            ? `Acompte ${formatCurrency(o.depositPaidAmount, locale)} · solde ${formatCurrency(Math.max(0, o.total - o.depositPaidAmount), locale)}`
                             : t(paymentStatusLabel_KEYS[o.paymentStatus] ?? "paymentstatuEnAttente")}
                         </Badge>
                       )}

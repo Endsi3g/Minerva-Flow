@@ -22,7 +22,7 @@ import {
   PackageSearch,
   type LucideIcon,
 } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 
 const ECOSYSTEM_ITEMS: { key: string; icon: LucideIcon }[] = [
   { key: "overview", icon: Home },
@@ -100,6 +100,7 @@ export async function generateMetadata({
 }
 
 export default async function ProspectDemoPage({ params }: { params: Promise<{ slug: string }> }) {
+  const locale = await getLocale();
   const { slug } = await params;
 
   const ip = await getClientIp();
@@ -151,7 +152,7 @@ export default async function ProspectDemoPage({ params }: { params: Promise<{ s
             <TrendingDown size={15} className="shrink-0 text-mv-lime" />
             <span>{t("savingsBannerPrefix")}</span>
             <span className="font-display text-[14px] font-semibold text-mv-lime sm:text-[15px]">
-              {formatCurrency(margin.monthlyLossCents / 100)}
+              {formatCurrency(margin.monthlyLossCents / 100, locale)}
             </span>
             <span>{t("savingsBannerSuffix")}</span>
           </p>

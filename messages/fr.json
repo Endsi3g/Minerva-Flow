@@ -3217,5 +3217,93 @@
     "alreadyLinked": "{count, plural, one {# déjà associé} other {# déjà associés}}",
     "importCloverAria": "Importer le catalogue Clover en brouillons inactifs",
     "connectedBadge": "Connecté"
+  },
+  "joinFlow": {
+    "checkYourEmail": "Vérifiez vos courriels",
+    "loyaltyProgram": "Programme de fidélité",
+    "somethingWentWrong": "Une erreur est survenue.",
+    "sending": "Envoi…",
+    "resendMySignIn": "Renvoyer mon lien de connexion",
+    "joinTheProgram": "Rejoindre le programme",
+    "yourSignUpIs": "Votre inscription est enregistrée. Le courriel de connexion n'a pas pu être envoyé pour le moment."
+  },
+  "sharedReport": {
+    "thisLinkHasExpired": "Ce lien a expiré.",
+    "askThePersonWho": "Demandez un nouveau lien à la personne qui vous l'a envoyé.",
+    "breakdown": "Répartition",
+    "expiresOnDate": " · expire le {date}",
+    "sharedReportReadOnly": "Rapport partagé · lecture seule",
+    "tooManyAttemptsTry": "Trop de tentatives. Réessayez dans quelques minutes."
+  },
+  "sharedExpense": {
+    "category": "Catégorie",
+    "accountMethod": "Compte / méthode",
+    "createdBy": "Créée par",
+    "linkGeneratedViaMinerva": "Lien généré via Minerva Flow — mis à jour au moment de sa création, pas en temps réel.",
+    "tooManyAttemptsTry": "Trop de tentatives. Réessayez dans quelques minutes."
+  },
+  "sharedSchedule": {
+    "noShiftsScheduledYet": "Aucun quart planifié pour l'instant.",
+    "linkGeneratedViaMinerva": "Lien généré via Minerva Flow — mis à jour au moment de sa création, pas en temps réel.",
+    "tooManyAttemptsTry": "Trop de tentatives. Réessayez dans quelques minutes."
+  },
+  "partnerInvite": {
+    "yourInvitation": "Votre invitation",
+    "tooManyAttemptsTry": "Trop de tentatives. Réessayez dans quelques minutes."
+  },
+  "reservationRequest": {
+    "requestSent": "Demande envoyée",
+    "phone": "Téléphone",
+    "checkYourEmail": "Vérifiez vos courriels",
+    "enterYourEmailTo": "Entrez votre courriel pour commencer.",
+    "somethingWentWrong": "Une erreur est survenue.",
+    "theRequestFailedTry": "La demande a échoué. Réessayez.",
+    "sending": "Envoi…",
+    "sendTheRequest": "Envoyer la demande"
+  },
+  "portalLogin": {
+    "redirecting": "Redirection…",
+    "continueWithApple": "Continuer avec Apple",
+    "continueWithGoogle": "Continuer avec Google",
+    "continueWithFacebook": "Continuer avec Facebook"
+  },
+  "forgotPassword": {
+    "checkYourEmail": "Vérifiez vos courriels",
+    "emailAddress": "Adresse courriel",
+    "sending": "Envoi en cours…",
+    "sendTheLink": "Envoyer le lien",
+    "backToSignIn": "Retour à la connexion",
+    "forgotYourPassword": "Mot de passe oublié",
+    "enterYourEmailTo": "Saisissez votre courriel pour recevoir un lien de réinitialisation sécurisé."
+  },
+  "updatePassword": {
+    "newPassword": "Nouveau mot de passe",
+    "saving": "Enregistrement…",
+    "updateThePassword": "Mettre à jour le mot de passe",
+    "setYourNewPassword": "Définissez votre nouveau mot de passe pour sécuriser votre compte."
+  },
+  "authError": {
+    "unspecifiedError": "Erreur non spécifiée.",
+    "somethingWentWrong": "Un problème est survenu",
+    "backToSignIn": "Retour à la connexion"
+  },
+  "portalSync": {
+    "connectingLive": "Connexion en direct…",
+    "dataUpToDate": "Données à jour",
+    "reconnecting": "Reconnexion…",
+    "offlineDataWillRefresh": "Hors ligne · les données seront actualisées au retour du réseau"
+  },
+  "walletButtons": {
+    "openThisPageOn": "Ouvrez cette page sur votre téléphone pour ajouter la carte à son portefeuille.",
+    "yourCardWillBe": "Votre carte sera dans votre portefeuille, même sans réseau. Au comptoir, donnez votre numéro de téléphone.",
+    "addToAppleWallet": "Ajouter à Apple Wallet",
+    "addToGoogleWallet": "Ajouter à Google Wallet"
+  },
+  "installPrompt": {
+    "installTheAppOn": "Installez l'app sur votre téléphone",
+    "share": "Partager",
+    "addToHomeScreen": "Sur l'écran d'accueil",
+    "toFindTheMenu": "pour retrouver le menu et vos points en un geste.",
+    "findTheMenuAnd": "Retrouvez le menu et vos points de fidélité en un geste, et recevez les nouvelles offres."
   }
 }

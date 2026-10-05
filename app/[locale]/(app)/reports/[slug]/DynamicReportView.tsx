@@ -1,5 +1,6 @@
 "use client";
 
+import { intlLocale } from "@/lib/format-locale";
 import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +10,7 @@ import { ChevronLeft, Trash2, Edit2, Share2, Clock, Check, BarChart2, Table as T
 import { Link } from "@/i18n/navigation";
 import { useState, useTransition, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { deleteReportAction, renameReportAction } from "@/app/[locale]/(app)/reports/actions";
 import { getGoogleWorkspaceStatusAction } from "@/app/[locale]/(app)/settings/google-workspace-actions";
@@ -50,6 +51,7 @@ export function DynamicReportView({
   createdAt: string;
 }) {
   const t = useTranslations("dynamicReport");
+  const locale = useLocale();
   const tr = useTranslations("reportDetail");
   const router = useRouter();
   const { restaurantId } = useApp();
@@ -171,7 +173,7 @@ export function DynamicReportView({
         </h1>
         <div className="flex flex-wrap items-center gap-4 text-[12.5px] text-mv-ink-faint">
           <span className="flex items-center gap-1.5">
-            <Clock size={13} /> {t("createdOn", { date: new Date(createdAt).toLocaleDateString("fr-CA", { dateStyle: "long" }) })}
+            <Clock size={13} /> {t("createdOn", { date: new Date(createdAt).toLocaleDateString(intlLocale(locale), { dateStyle: "long" }) })}
           </span>
           <span className="bg-mv-green-tint text-mv-green-dark border border-mv-green/10 px-2 py-0.5 rounded-full text-[12px] font-semibold">
             {t("aiDynamicReportBadge")}
@@ -356,6 +358,7 @@ function DualLineChart({
   seriesA: { label: string; points: TrendPoint[] };
   seriesB: { label: string; points: TrendPoint[] };
 }) {
+  const locale = useLocale();
   const map = new Map<string, { date: string; a?: number; b?: number }>();
   for (const p of seriesA.points) map.set(p.date, { ...map.get(p.date), date: p.date, a: p.value });
   for (const p of seriesB.points) map.set(p.date, { ...(map.get(p.date) ?? { date: p.date }), b: p.value });
@@ -368,7 +371,7 @@ function DualLineChart({
           <CartesianGrid vertical={false} stroke="var(--mv-border)" strokeDasharray="3 4" />
           <XAxis
             dataKey="date"
-            tickFormatter={(v) => formatDate(v)}
+            tickFormatter={(v) => formatDate(v, locale)}
             tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
             axisLine={{ stroke: "var(--mv-border)" }}
             tickLine={false}
@@ -382,7 +385,7 @@ function DualLineChart({
               borderRadius: 8,
               fontSize: 12,
             }}
-            labelFormatter={(v) => formatDate(String(v))}
+            labelFormatter={(v) => formatDate(String(v), locale)}
           />
           <Line type="monotone" dataKey="a" name={seriesA.label} stroke="var(--mv-green)" strokeWidth={2} dot={false} isAnimationActive={false} />
           <Line type="monotone" dataKey="b" name={seriesB.label} stroke="var(--mv-amber)" strokeWidth={2} dot={false} isAnimationActive={false} />
@@ -401,13 +404,14 @@ function DualLineChart({
 }
 
 function MiniLineChart({ data, color = "var(--mv-green)" }: { data: TrendPoint[]; color?: string }) {
+  const locale = useLocale();
   return (
     <ResponsiveContainer width="100%" height={140}>
       <LineChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke="var(--mv-border)" strokeDasharray="3 4" />
         <XAxis
           dataKey="date"
-          tickFormatter={(v) => formatDate(v)}
+          tickFormatter={(v) => formatDate(v, locale)}
           tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
@@ -415,8 +419,8 @@ function MiniLineChart({ data, color = "var(--mv-green)" }: { data: TrendPoint[]
         />
         <YAxis hide />
         <Tooltip
-          formatter={(value) => formatCurrency(Number(value))}
-          labelFormatter={(v) => formatDate(String(v))}
+          formatter={(value) => formatCurrency(Number(value), locale)}
+          labelFormatter={(v) => formatDate(String(v), locale)}
           contentStyle={{
             background: "var(--mv-surface)",
             border: "1px solid var(--mv-border)",

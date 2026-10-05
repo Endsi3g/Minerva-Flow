@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -42,6 +42,7 @@ export function MemberDetailPage({
   restaurantId: string;
   member: TeamMember;
 }) {
+  const locale = useLocale();
   const tNav = useTranslations("nav");
   const { role: myRole, authUser } = useApp();
   const router = useRouter();
@@ -224,7 +225,7 @@ export function MemberDetailPage({
                   <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-mv-green" />
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] text-mv-ink">{entry.description}</p>
-                    <p className="mt-0.5 text-[12px] text-mv-ink-faint">{formatRelativeTime(entry.createdAt)}</p>
+                    <p className="mt-0.5 text-[12px] text-mv-ink-faint">{formatRelativeTime(entry.createdAt, locale)}</p>
                   </div>
                 </div>
               ))

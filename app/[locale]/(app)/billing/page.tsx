@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -75,6 +75,7 @@ const statusTone: Record<string, "green" | "amber" | "red" | "neutral"> = {
 type BillingStatus = Awaited<ReturnType<typeof getBillingStatusAction>>;
 
 export default function BillingPage() {
+  const locale = useLocale();
   const t = useTranslations("billingPage");
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [loading, setLoading] = useState(false);
@@ -218,7 +219,7 @@ export default function BillingPage() {
             </Button>
           }
         >
-          {t("accessEndsOn", { date: formatDate(status.subscription.currentPeriodEnd.slice(0, 10)) })}
+          {t("accessEndsOn", { date: formatDate(status.subscription.currentPeriodEnd.slice(0, 10), locale) })}
         </AlertBanner>
       )}
 
@@ -289,13 +290,13 @@ export default function BillingPage() {
               </div>
               {status.trialEndsAt && (
                 <p className="text-[12.5px] text-mv-ink-faint">
-                  Essai gratuit jusqu&apos;au {formatDate(status.trialEndsAt.slice(0, 10))}
+                  Essai gratuit jusqu&apos;au {formatDate(status.trialEndsAt.slice(0, 10), locale)}
                 </p>
               )}
               {status.subscription.currentPeriodEnd && (
                 <p className="text-[12.5px] text-mv-ink-faint">
                   {status.cancelAtPeriodEnd ? t("accessUntil") : t("nextRenewalOn")}{" "}
-                  {formatDate(status.subscription.currentPeriodEnd.slice(0, 10))}
+                  {formatDate(status.subscription.currentPeriodEnd.slice(0, 10), locale)}
                 </p>
               )}
               <div className="flex flex-col gap-2">

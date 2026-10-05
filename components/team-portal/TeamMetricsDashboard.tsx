@@ -1,3 +1,4 @@
+import { useLocale } from "next-intl";
 import { CircleDollarSign, Eye, Store, TrendingUp, UserMinus } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
@@ -8,6 +9,7 @@ import { GtmFocusCard } from "./GtmFocusCard";
 import { GtmFunnelCard } from "./GtmFunnelCard";
 
 export function TeamMetricsDashboard({ metrics }: { metrics: TeamMetricsSnapshot }) {
+  const locale = useLocale();
   const hasSubscriptions = metrics.activeSubscriptions > 0 || metrics.mrr > 0;
 
   return (
@@ -35,7 +37,7 @@ export function TeamMetricsDashboard({ metrics }: { metrics: TeamMetricsSnapshot
         />
         <StatCard
           label="MRR"
-          value={formatCurrency(metrics.mrr)}
+          value={formatCurrency(metrics.mrr, locale)}
           delta={metrics.mrrDeltaPct ?? undefined}
           icon={CircleDollarSign}
           sublabel={hasSubscriptions ? `${metrics.activeSubscriptions} abonnement${metrics.activeSubscriptions === 1 ? "" : "s"} actif${metrics.activeSubscriptions === 1 ? "" : "s"}` : "aucun abonnement actif"}

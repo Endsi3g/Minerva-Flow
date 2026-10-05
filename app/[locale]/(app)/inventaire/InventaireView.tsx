@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -230,6 +232,7 @@ function MovementModal({
 }
 
 function WasteSummaryCard({ wasteSummary }: { wasteSummary: { itemId: string; itemName: string; cost: number }[] }) {
+  const locale = useLocale();
   const top = wasteSummary.slice(0, 5);
   const total = wasteSummary.reduce((sum, r) => sum + r.cost, 0);
   const max = top[0]?.cost ?? 1;
@@ -239,7 +242,7 @@ function WasteSummaryCard({ wasteSummary }: { wasteSummary: { itemId: string; it
       <CardHeader
         eyebrow="Ce mois-ci"
         title="Gaspillage"
-        description={total > 0 ? `${formatCurrency(total)} au total` : "Aucun gaspillage enregistré ce mois-ci"}
+        description={total > 0 ? `${formatCurrency(total, locale)} au total` : "Aucun gaspillage enregistré ce mois-ci"}
       />
       {top.length > 0 && (
         <div className="space-y-1.5">
@@ -251,7 +254,7 @@ function WasteSummaryCard({ wasteSummary }: { wasteSummary: { itemId: string; it
               />
               <div className="relative flex items-center justify-between px-2.5 py-1.5">
                 <span className="truncate text-[12.5px] font-medium text-mv-ink">{row.itemName}</span>
-                <span className="shrink-0 text-[12.5px] font-semibold text-mv-red">{formatCurrency(row.cost)}</span>
+                <span className="shrink-0 text-[12.5px] font-semibold text-mv-red">{formatCurrency(row.cost, locale)}</span>
               </div>
             </div>
           ))}
@@ -274,6 +277,7 @@ export function InventaireView({
   wasteSummary: { itemId: string; itemName: string; cost: number }[];
   connectedProviders: CatalogPosProvider[];
 }) {
+  const locale = useLocale();
   const { role } = useApp();
   const [items, setItems] = useState(initialItems);
   const [createOpen, setCreateOpen] = useState(false);
@@ -349,7 +353,7 @@ export function InventaireView({
                     </div>
                     <p className="text-[12.5px] text-mv-ink-soft mt-0.5">
                       Coût estimé pour atteindre les seuils par :{" "}
-                      <span className="font-semibold text-mv-ink font-mono">{formatCurrency(estimatedRestockCost)}</span>
+                      <span className="font-semibold text-mv-ink font-mono">{formatCurrency(estimatedRestockCost, locale)}</span>
                     </p>
                   </div>
                 </div>
@@ -436,7 +440,7 @@ export function InventaireView({
                   <Td>
                     <Badge tone={status.tone}>{status.label}</Badge>
                   </Td>
-                  <Td className="text-right text-mv-ink-soft">{formatCurrency(item.unitCost)}</Td>
+                  <Td className="text-right text-mv-ink-soft">{formatCurrency(item.unitCost, locale)}</Td>
                   <Td className="text-right">
                     <div className="flex justify-end gap-1.5">
                       {canCreate && (

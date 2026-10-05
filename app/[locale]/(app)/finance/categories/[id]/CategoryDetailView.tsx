@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { useMemo, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { toast } from "sonner";
@@ -90,6 +92,7 @@ function AssignTransactionsModal({
   onClose: () => void;
   onAssigned: (moved: FinancialTransaction[]) => void;
 }) {
+  const locale = useLocale();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [assigning, setAssigning] = useState(false);
@@ -151,10 +154,10 @@ function AssignTransactionsModal({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[12.5px] font-medium text-mv-ink">{t.description}</p>
                   <p className="text-[12px] text-mv-ink-faint">
-                    {formatDate(t.date)} — {t.category}
+                    {formatDate(t.date, locale)} — {t.category}
                   </p>
                 </div>
-                <span className="shrink-0 text-[12.5px] font-semibold text-mv-ink">{formatCurrency(t.amount)}</span>
+                <span className="shrink-0 text-[12.5px] font-semibold text-mv-ink">{formatCurrency(t.amount, locale)}</span>
               </label>
             ))
           )}
@@ -182,6 +185,7 @@ export function CategoryDetailView({
   assignableTransactions: FinancialTransaction[];
   otherCategoryNames: string[];
 }) {
+  const locale = useLocale();
   const router = useRouter();
   const [category, setCategory] = useState(initialCategory);
   const [transactions, setTransactions] = useState(initialTransactions);
@@ -270,11 +274,11 @@ export function CategoryDetailView({
               <tbody>
                 {paginated.map((t) => (
                   <Tr key={t.id}>
-                    <Td className="text-mv-ink-soft">{formatDate(t.date)}</Td>
+                    <Td className="text-mv-ink-soft">{formatDate(t.date, locale)}</Td>
                     <Td className="font-medium">{t.description}</Td>
                     <Td className={t.direction === "in" ? "text-right font-semibold text-mv-green-dark" : "text-right font-semibold text-mv-ink"}>
                       {t.direction === "in" ? "+" : ""}
-                      {formatCurrency(t.amount)}
+                      {formatCurrency(t.amount, locale)}
                     </Td>
                     <Td>
                       {t.reviewed ? (

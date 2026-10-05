@@ -3286,5 +3286,93 @@
     "alreadyLinked": "{count, plural, one {# already linked} other {# already linked}}",
     "importCloverAria": "Import the Clover catalog as inactive drafts",
     "connectedBadge": "Connected"
+  },
+  "joinFlow": {
+    "checkYourEmail": "Check your email",
+    "loyaltyProgram": "Loyalty program",
+    "somethingWentWrong": "Something went wrong.",
+    "sending": "Sending…",
+    "resendMySignIn": "Resend my sign-in link",
+    "joinTheProgram": "Join the program",
+    "yourSignUpIs": "Your sign-up is saved. The sign-in email could not be sent right now."
+  },
+  "sharedReport": {
+    "thisLinkHasExpired": "This link has expired.",
+    "askThePersonWho": "Ask the person who sent it for a new link.",
+    "breakdown": "Breakdown",
+    "expiresOnDate": " · expires on {date}",
+    "sharedReportReadOnly": "Shared report · read-only",
+    "tooManyAttemptsTry": "Too many attempts. Try again in a few minutes."
+  },
+  "sharedExpense": {
+    "category": "Category",
+    "accountMethod": "Account / method",
+    "createdBy": "Created by",
+    "linkGeneratedViaMinerva": "Link generated via Minerva Flow. Updated at the time it was created, not in real time.",
+    "tooManyAttemptsTry": "Too many attempts. Try again in a few minutes."
+  },
+  "sharedSchedule": {
+    "noShiftsScheduledYet": "No shifts scheduled yet.",
+    "linkGeneratedViaMinerva": "Link generated via Minerva Flow. Updated at the time it was created, not in real time.",
+    "tooManyAttemptsTry": "Too many attempts. Try again in a few minutes."
+  },
+  "partnerInvite": {
+    "yourInvitation": "Your invitation",
+    "tooManyAttemptsTry": "Too many attempts. Try again in a few minutes."
+  },
+  "reservationRequest": {
+    "requestSent": "Request sent",
+    "phone": "Phone",
+    "checkYourEmail": "Check your email",
+    "enterYourEmailTo": "Enter your email to get started.",
+    "somethingWentWrong": "Something went wrong.",
+    "theRequestFailedTry": "The request failed. Try again.",
+    "sending": "Sending…",
+    "sendTheRequest": "Send the request"
+  },
+  "portalLogin": {
+    "redirecting": "Redirecting…",
+    "continueWithApple": "Continue with Apple",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithFacebook": "Continue with Facebook"
+  },
+  "forgotPassword": {
+    "checkYourEmail": "Check your email",
+    "emailAddress": "Email address",
+    "sending": "Sending…",
+    "sendTheLink": "Send the link",
+    "backToSignIn": "Back to sign-in",
+    "forgotYourPassword": "Forgot your password",
+    "enterYourEmailTo": "Enter your email to receive a secure reset link."
+  },
+  "updatePassword": {
+    "newPassword": "New password",
+    "saving": "Saving…",
+    "updateThePassword": "Update the password",
+    "setYourNewPassword": "Set your new password to secure your account."
+  },
+  "authError": {
+    "unspecifiedError": "Unspecified error.",
+    "somethingWentWrong": "Something went wrong",
+    "backToSignIn": "Back to sign-in"
+  },
+  "portalSync": {
+    "connectingLive": "Connecting live…",
+    "dataUpToDate": "Data up to date",
+    "reconnecting": "Reconnecting…",
+    "offlineDataWillRefresh": "Offline · data will refresh when the network returns"
+  },
+  "walletButtons": {
+    "openThisPageOn": "Open this page on your phone to add the card to its wallet.",
+    "yourCardWillBe": "Your card will be in your wallet, even without a network. At the counter, give your phone number.",
+    "addToAppleWallet": "Add to Apple Wallet",
+    "addToGoogleWallet": "Add to Google Wallet"
+  },
+  "installPrompt": {
+    "installTheAppOn": "Install the app on your phone",
+    "share": "Share",
+    "addToHomeScreen": "Add to Home Screen",
+    "toFindTheMenu": "to find the menu and your points in one tap.",
+    "findTheMenuAnd": "Find the menu and your loyalty points in one tap, and get new offers."
   }
 }

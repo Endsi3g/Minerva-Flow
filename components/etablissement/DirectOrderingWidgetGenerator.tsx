@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { useState } from "react";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
@@ -30,6 +33,7 @@ export function DirectOrderingWidgetGenerator({
   restaurantName: string;
   menuToken: string;
 }) {
+  const locale = useLocale();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedIframe, setCopiedIframe] = useState(false);
   const [copiedButton, setCopiedButton] = useState(false);
@@ -298,7 +302,7 @@ export function DirectOrderingWidgetGenerator({
   }
 
   const formatCurrency = (n: number) =>
-    n.toLocaleString("fr-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 });
+    n.toLocaleString(intlLocale(locale), { style: "currency", currency: "CAD", maximumFractionDigits: 0 });
 
   return (
     <div className="space-y-6">

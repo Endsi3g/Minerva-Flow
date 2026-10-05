@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { RadialGauge } from "@/components/charts/RadialGauge";
@@ -16,6 +18,7 @@ export function ReferralRoiDashboard({
   metrics: ReferralRoiMetrics;
   ambassadors: TopAmbassador[];
 }) {
+  const locale = useLocale();
   return (
     <div className="space-y-6">
       {/* Top Level KPIs, each with a visual to show the effect, not just the number */}
@@ -28,7 +31,7 @@ export function ReferralRoiDashboard({
             </span>
           </div>
           <p className="mb-3 font-display text-[20px] font-semibold text-mv-ink">
-            {formatCurrency(metrics.totalRevenueGenerated)}
+            {formatCurrency(metrics.totalRevenueGenerated, locale)}
           </p>
           <FlowBars
             lines={[
@@ -72,7 +75,7 @@ export function ReferralRoiDashboard({
             <div className="min-w-0">
               {metrics.roiMultiplier > 0 && metrics.totalRevenueGenerated > 0 && (
                 <Badge tone="lime" size="xs">
-                  Net +{formatCurrency(metrics.netProfitGenerated)}
+                  Net +{formatCurrency(metrics.netProfitGenerated, locale)}
                 </Badge>
               )}
               <p
@@ -197,7 +200,7 @@ export function ReferralRoiDashboard({
                     <td className="py-2.5 px-3 text-center text-mv-ink-soft">{a.referralClicks}</td>
                     <td className="py-2.5 px-3 text-center font-semibold text-mv-green-dark">{a.referralConversions}</td>
                     <td className="py-2.5 px-3 text-right font-display font-semibold text-mv-ink">
-                      {formatCurrency(a.revenueGenerated)}
+                      {formatCurrency(a.revenueGenerated, locale)}
                     </td>
                   </tr>
                 ))}

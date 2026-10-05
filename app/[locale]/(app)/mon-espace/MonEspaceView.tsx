@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -30,6 +33,7 @@ const PERIOD_LABELS: Record<PayPeriod, string> = {
 };
 
 function ClockInOutCard({ shifts, onShiftsChange }: { shifts: EmployeeShift[]; onShiftsChange: (s: EmployeeShift[]) => void }) {
+  const locale = useLocale();
   const openShift = shifts.find((s) => s.clockIn && !s.clockOut) ?? null;
   const [pending, setPending] = useState(false);
 
@@ -64,7 +68,7 @@ function ClockInOutCard({ shifts, onShiftsChange }: { shifts: EmployeeShift[]; o
         <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Pointage</p>
         <p className="mt-0.5 font-display text-[16px] font-medium text-mv-ink">
           {openShift
-            ? `En quart depuis ${new Date(openShift.clockIn!).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}`
+            ? `En quart depuis ${new Date(openShift.clockIn!).toLocaleTimeString(intlLocale(locale), { hour: "2-digit", minute: "2-digit" })}`
             : "Aucun quart en cours"}
         </p>
       </div>
@@ -82,6 +86,7 @@ function ClockInOutCard({ shifts, onShiftsChange }: { shifts: EmployeeShift[]; o
 }
 
 function PaySummaryCard({ initialSummary }: { initialSummary: EmployeePaySummary | null }) {
+  const locale = useLocale();
   const [period, setPeriod] = useState<PayPeriod>("week");
   const [summary, setSummary] = useState<EmployeePaySummary | null>(initialSummary);
   const [loading, setLoading] = useState(false);
@@ -114,7 +119,7 @@ function PaySummaryCard({ initialSummary }: { initialSummary: EmployeePaySummary
         {loading ? "…" : summary ? `${summary.hours.toFixed(1)}h` : "—"}
       </p>
       {summary?.grossPay != null && (
-        <p className="mt-0.5 text-[12.5px] font-medium text-mv-green-dark">{formatCurrency(summary.grossPay)}</p>
+        <p className="mt-0.5 text-[12.5px] font-medium text-mv-green-dark">{formatCurrency(summary.grossPay, locale)}</p>
       )}
     </Card>
   );
@@ -137,6 +142,7 @@ export function MonEspaceView({
   paySummary: EmployeePaySummary | null;
   restaurantId: string;
 }) {
+  const locale = useLocale();
   const [tasks, setTasks] = useState(initialTasks);
   const [shifts, setShifts] = useState(initialShifts);
 
@@ -204,7 +210,7 @@ export function MonEspaceView({
                 >
                   <span className="flex items-center gap-2 font-medium text-mv-ink">
                     <CalendarClock size={14} className="text-mv-ink-faint" />
-                    {formatDate(s.shiftDate)}
+                    {formatDate(s.shiftDate, locale)}
                   </span>
                   <span className="text-mv-ink-soft">
                     {s.startTime.slice(0, 5)} – {s.endTime.slice(0, 5)}
@@ -259,7 +265,7 @@ export function MonEspaceView({
                   key={s.id}
                   className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2 text-[13px]"
                 >
-                  <span className="font-medium text-mv-ink">{formatDate(s.shiftDate)}</span>
+                  <span className="font-medium text-mv-ink">{formatDate(s.shiftDate, locale)}</span>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-mv-green-dark">{s.hoursWorked} heures</span>
                     {s.wasLate && <Badge tone="red">En retard</Badge>}
@@ -280,7 +286,7 @@ export function MonEspaceView({
                 <div key={r.id} className="rounded-xl border border-mv-border p-4 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-[13px] font-bold text-mv-ink">
-                      Période du {formatDate(r.periodStart)} au {formatDate(r.periodEnd)}
+                      Période du {formatDate(r.periodStart, locale)} au {formatDate(r.periodEnd, locale)}
                     </p>
                     <StarRating value={r.rating} />
                   </div>
@@ -301,7 +307,7 @@ export function MonEspaceView({
                   )}
                   {r.attributedRevenue !== null && (
                     <p className="text-[12.5px] font-medium text-mv-green-dark">
-                      Chiffre d&apos;affaires généré : {formatCurrency(r.attributedRevenue)}
+                      Chiffre d&apos;affaires généré : {formatCurrency(r.attributedRevenue, locale)}
                     </p>
                   )}
                   <div className="flex items-center justify-between border-t border-mv-border-soft pt-2 mt-2">

@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import {
   useState,
   useOptimistic,
@@ -77,7 +80,7 @@ const EMOJI_QUICK = ["❤️", "👍", "😄", "🙌", "🔥", "👀"];
 
 /* ──────────────────────── date separator ───────────────────────── */
 
-function dateSeparatorLabel(iso: string): string {
+function dateSeparatorLabel(iso: string, locale?: string): string {
   const d = new Date(iso);
   const now = new Date();
   const isToday = d.toDateString() === now.toDateString();
@@ -85,7 +88,7 @@ function dateSeparatorLabel(iso: string): string {
   yesterday.setDate(yesterday.getDate() - 1);
   if (isToday) return "Aujourd'hui";
   if (d.toDateString() === yesterday.toDateString()) return "Hier";
-  return d.toLocaleDateString("fr-CA", { weekday: "long", month: "long", day: "numeric" });
+  return d.toLocaleDateString(intlLocale(locale), { weekday: "long", month: "long", day: "numeric" });
 }
 
 function groupMessagesByDate(msgs: TeamChatMessage[]) {
@@ -180,6 +183,7 @@ function MessageRow({
   onEdit: (msgId: string, newContent: string) => Promise<void>;
   currentUserId: string;
 }) {
+  const locale = useLocale();
   const [hovered, setHovered] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -194,7 +198,7 @@ function MessageRow({
     }
   }, [editing]);
 
-  const time = new Date(msg.createdAt).toLocaleTimeString("fr-CA", {
+  const time = new Date(msg.createdAt).toLocaleTimeString(intlLocale(locale), {
     hour: "2-digit",
     minute: "2-digit",
   });

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import React, { useState, useMemo } from "react";
 import {
   X,
@@ -43,6 +45,7 @@ export function ArtifactCanvas({
   onApply?: (artifact: ActionableArtifactPayload) => Promise<void>;
   onSendPrompt?: (promptText: string) => void;
 }) {
+  const locale = useLocale();
   const [activeTab, setActiveTab] = useState<"visual" | "raw">("visual");
   const [copied, setCopied] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
@@ -125,7 +128,7 @@ export function ArtifactCanvas({
       if (onApply) {
         await onApply({
           ...artifact,
-          summary: `Appliqué avec ajustement prix +${priceAdjustmentPct}% (Gain est. ${formatCurrency(simulation.netMonthlyGain)}/mois)`,
+          summary: `Appliqué avec ajustement prix +${priceAdjustmentPct}% (Gain est. ${formatCurrency(simulation.netMonthlyGain, locale)}/mois)`,
         });
       }
       setApplied(true);
@@ -346,7 +349,7 @@ export function ArtifactCanvas({
                     Gain Net Estimé
                   </span>
                   <span className="font-sans font-bold text-sm sm:text-base text-emerald-900">
-                    +{formatCurrency(simulation.netMonthlyGain)}
+                    +{formatCurrency(simulation.netMonthlyGain, locale)}
                   </span>
                   <span className="block text-[12px] text-emerald-700 font-medium">
                     / mois
@@ -370,7 +373,7 @@ export function ArtifactCanvas({
                     Ticket Moyen
                   </span>
                   <span className="font-sans font-bold text-sm sm:text-base text-[#1F1E1D]">
-                    {formatCurrency(simulation.simulatedTicket)}
+                    {formatCurrency(simulation.simulatedTicket, locale)}
                   </span>
                   <span className="block text-[12px] text-[#8A887F]">
                     par couvert
@@ -477,7 +480,7 @@ export function ArtifactCanvas({
 
           <div className="space-y-1.5">
             {[
-              `Applique la simulation (+${priceAdjustmentPct}% prix, gain ${formatCurrency(simulation.netMonthlyGain)}) et génère le plan d'action.`,
+              `Applique la simulation (+${priceAdjustmentPct}% prix, gain ${formatCurrency(simulation.netMonthlyGain, locale)}) et génère le plan d'action.`,
               "Simule l'impact d'une hausse du coût du bœuf de 10% sur la marge du Burger Wagyu.",
               "Exporte le récapitulatif des ajustements tarifaires pour l'équipe en salle.",
             ].map((sug, i) => (

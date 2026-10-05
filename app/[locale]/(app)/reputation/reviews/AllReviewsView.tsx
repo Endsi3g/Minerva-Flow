@@ -1,7 +1,8 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { intlLocale } from "@/lib/format-locale";
+import { useTranslations, useLocale } from "next-intl";
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
@@ -61,6 +62,7 @@ export function AllReviewsView({
   googleReviews: GoogleReviewRow[];
 }) {
   const t = useTranslations("allReviews");
+  const locale = useLocale();
   const [filterType, setFilterType] = useState<"all" | "private" | "google" | "menu_item" | "offer">("all");
   const [ratingFilter, setRatingFilter] = useState<number | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -364,7 +366,7 @@ export function AllReviewsView({
                       {/* Date & Status */}
                       <td className="py-2.5 px-3 align-top text-right whitespace-nowrap">
                         <p className="text-[12px] text-mv-ink-faint font-mono">
-                          {new Date(review.createdAt).toLocaleDateString("fr-CA")}
+                          {new Date(review.createdAt).toLocaleDateString(intlLocale(locale))}
                         </p>
                         <div className="mt-1 flex items-center justify-end gap-1">
                           {review.ownerResponse ? (

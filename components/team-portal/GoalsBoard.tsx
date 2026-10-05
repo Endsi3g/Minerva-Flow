@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { useState, useTransition } from "react";
 import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -14,7 +17,8 @@ function formatValue(row: GoalRow, value: number | null): string {
 }
 
 export function GoalsBoard({ goals }: { goals: GoalsSnapshot }) {
-  const monthLabel = new Date(goals.month).toLocaleDateString("fr-CA", { month: "long", year: "numeric", timeZone: "UTC" });
+  const locale = useLocale();
+  const monthLabel = new Date(goals.month).toLocaleDateString(intlLocale(locale), { month: "long", year: "numeric", timeZone: "UTC" });
 
   return (
     <div className="space-y-5">

@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, ChartNoAxesCombined, CircleDollarSign, Plus } from "lucide-react";
@@ -35,6 +35,7 @@ export function LifetimeValueView({
   newCustomers: number;
   canEdit: boolean;
 }) {
+  const locale = useLocale();
   const t = useTranslations("ltvView");
   const [busy, startTransition] = useTransition();
   const [notice, setNotice] = useState<string | null>(null);
@@ -64,10 +65,10 @@ export function LifetimeValueView({
       <PageHeader eyebrow={t("loyaltyCustomerAnalysis")} title={t("customerValueAcquisition")} description={t("trackRevenuePerCustomer")} />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={<CircleDollarSign size={17} />} label={t("combinedLtv")} value={metrics.combinedLtv === null ? t("toConfirm") : formatCurrency(metrics.combinedLtv)} detail={t("ltvCombinedDetail")} />
-        <MetricCard icon={<CircleDollarSign size={17} />} label={t("averageRevenueLtv")} value={formatCurrency(metrics.revenueLtv)} detail={t("ltvRevenueDetail")} />
-        <MetricCard icon={<ChartNoAxesCombined size={17} />} label={t("estimatedMarginLtv")} value={metrics.marginLtv === null ? t("toConfirm") : formatCurrency(metrics.marginLtv)} detail={metrics.grossMarginPct === null ? t("itemsToConfirm", { count: metrics.missingCostItemCount, what: metrics.hasSalesWeights ? t("marginWordShort") : t("soldVolumes") }) : t("weightedMenuMargin", { pct: Math.round(metrics.grossMarginPct * 100) })} />
-        <MetricCard icon={<ChartNoAxesCombined size={17} />} label={t("averageCac12Months")} value={cac === null ? "—" : formatCurrency(cac)} detail={t("spendOverNew", { amount: formatCurrency(periodSpend), count: newCustomers })} />
+        <MetricCard icon={<CircleDollarSign size={17} />} label={t("combinedLtv")} value={metrics.combinedLtv === null ? t("toConfirm") : formatCurrency(metrics.combinedLtv, locale)} detail={t("ltvCombinedDetail")} />
+        <MetricCard icon={<CircleDollarSign size={17} />} label={t("averageRevenueLtv")} value={formatCurrency(metrics.revenueLtv, locale)} detail={t("ltvRevenueDetail")} />
+        <MetricCard icon={<ChartNoAxesCombined size={17} />} label={t("estimatedMarginLtv")} value={metrics.marginLtv === null ? t("toConfirm") : formatCurrency(metrics.marginLtv, locale)} detail={metrics.grossMarginPct === null ? t("itemsToConfirm", { count: metrics.missingCostItemCount, what: metrics.hasSalesWeights ? t("marginWordShort") : t("soldVolumes") }) : t("weightedMenuMargin", { pct: Math.round(metrics.grossMarginPct * 100) })} />
+        <MetricCard icon={<ChartNoAxesCombined size={17} />} label={t("averageCac12Months")} value={cac === null ? "—" : formatCurrency(cac, locale)} detail={t("spendOverNew", { amount: formatCurrency(periodSpend, locale), count: newCustomers })} />
       </div>
 
       <Card className="p-5">
@@ -98,7 +99,7 @@ export function LifetimeValueView({
         </div>
         {costs.length === 0 ? <p className="px-5 py-8 text-center text-sm text-mv-ink-faint">{t("addYourSpendTo")}</p> : (
           <div className="divide-y divide-mv-border-soft">
-            {costs.map((row) => <div key={row.id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm"><div><p className="font-medium text-mv-ink">{t(CATEGORY_LABELS_KEYS[row.category])}</p><p className="text-xs text-mv-ink-faint">{row.spentOn}{row.note ? ` · ${row.note}` : ""}</p></div><span className="font-semibold text-mv-ink">{formatCurrency(row.amount)}</span></div>)}
+            {costs.map((row) => <div key={row.id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm"><div><p className="font-medium text-mv-ink">{t(CATEGORY_LABELS_KEYS[row.category])}</p><p className="text-xs text-mv-ink-faint">{row.spentOn}{row.note ? ` · ${row.note}` : ""}</p></div><span className="font-semibold text-mv-ink">{formatCurrency(row.amount, locale)}</span></div>)}
           </div>
         )}
       </Card>

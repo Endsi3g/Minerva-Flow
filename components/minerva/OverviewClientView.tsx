@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -125,6 +125,7 @@ export function OverviewClientView({
   menuHealth?: MenuHealth | null;
   loyaltyHealth?: LoyaltyHealth | null;
 }) {
+  const locale = useLocale();
   const t = useTranslations("overviewView");
   const [managerOpen, setManagerOpen] = useState(false);
   const [reliabilityOpen, setReliabilityOpen] = useState(false);
@@ -137,7 +138,7 @@ export function OverviewClientView({
   const now = useMemo(() => new Date(), []);
   const monthLabel = useMemo(() => {
     const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-    const full = formatDateFull(iso);
+    const full = formatDateFull(iso, locale);
     return full.charAt(0).toUpperCase() + full.slice(full.indexOf(" ") + 1);
   }, [now]);
 
@@ -195,11 +196,11 @@ export function OverviewClientView({
           ) : (
             <div className="space-y-1">
               <span className="inline-flex flex-wrap items-center gap-1.5">
-                {t("monthRevenueLine", { amount: formatCurrency(monthRevenue ?? 0), date: todayLabel })}
+                {t("monthRevenueLine", { amount: formatCurrency(monthRevenue ?? 0, locale), date: todayLabel })}
                 <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2 py-0.5 text-[12px] font-semibold text-mv-green-dark">
                   <Heart size={11} />
                   {incrementalRetentionRevenue && incrementalRetentionRevenue > 0
-                    ? t("viaLoyalty", { amount: formatCurrency(incrementalRetentionRevenue) })
+                    ? t("viaLoyalty", { amount: formatCurrency(incrementalRetentionRevenue, locale) })
                     : t("loyaltyActive")}
                 </span>
               </span>
@@ -317,8 +318,8 @@ export function OverviewClientView({
             <div className="my-1.5">
               <p className="font-display text-[20px] font-semibold text-mv-ink leading-tight">
                 {isGroupMode && multiEstablishmentRollup
-                  ? formatCurrency(multiEstablishmentRollup.totalMonthRevenue)
-                  : formatCurrency(todayRevenue > 0 ? todayRevenue : (monthRevenue || 0))}
+                  ? formatCurrency(multiEstablishmentRollup.totalMonthRevenue, locale)
+                  : formatCurrency(todayRevenue > 0 ? todayRevenue : (monthRevenue || 0), locale)}
               </p>
               {isGroupMode ? (
                 <p className="text-[12px] text-mv-ink-soft mt-0.5">{t("groupTotalMonth")}</p>
@@ -334,11 +335,11 @@ export function OverviewClientView({
                       {kpiComparisons.revenue.today.changePct}%
                     </span>
                   )}
-                  <span>vs hier · Mois : {formatCurrency(monthRevenue || 0)}</span>
+                  <span>vs hier · Mois : {formatCurrency(monthRevenue || 0, locale)}</span>
                 </p>
               ) : (
                 <p className="text-[12px] text-mv-ink-soft mt-0.5">
-                  Mois : {formatCurrency(monthRevenue || 0)}
+                  Mois : {formatCurrency(monthRevenue || 0, locale)}
                 </p>
               )}
             </div>
@@ -435,8 +436,8 @@ export function OverviewClientView({
             <div className="my-1.5">
               <p className="font-display text-[20px] font-semibold text-mv-ink leading-tight">
                 {isGroupMode && multiEstablishmentRollup
-                  ? formatCurrency(multiEstablishmentRollup.totalRetentionRevenue)
-                  : formatCurrency(retentionSales)}
+                  ? formatCurrency(multiEstablishmentRollup.totalRetentionRevenue, locale)
+                  : formatCurrency(retentionSales, locale)}
               </p>
               <p className="text-[12px] text-mv-ink-soft mt-0.5">
                 Impact relances 14j
@@ -476,8 +477,8 @@ export function OverviewClientView({
                   </Button>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
-                  <div><span className="text-mv-ink-faint">{t("salesMonth")}</span><p className="font-semibold text-mv-ink">{formatCurrency(bench.monthRevenue)}</p></div>
-                  <div><span className="text-mv-ink-faint">{t("salesDay")}</span><p className="font-semibold text-mv-ink">{formatCurrency(bench.todayRevenue)}</p></div>
+                  <div><span className="text-mv-ink-faint">{t("salesMonth")}</span><p className="font-semibold text-mv-ink">{formatCurrency(bench.monthRevenue, locale)}</p></div>
+                  <div><span className="text-mv-ink-faint">{t("salesDay")}</span><p className="font-semibold text-mv-ink">{formatCurrency(bench.todayRevenue, locale)}</p></div>
                   <div><span className="text-mv-ink-faint">{t("foodCost")}</span><p className={bench.foodCostPct <= 32 ? "font-semibold text-mv-green-dark" : "font-semibold text-mv-amber"}>{bench.foodCostPct}%</p></div>
                   <div><span className="text-mv-ink-faint">{t("coversThreshold2")}</span><p className="font-semibold text-mv-ink">{bench.coversToday} / {bench.dailyTargetNeeded}</p></div>
                 </div>
@@ -507,8 +508,8 @@ export function OverviewClientView({
                       <div>{bench.name}</div>
                       <span className="text-[12px] font-normal text-mv-ink-faint">{bench.city}</span>
                     </td>
-                    <td className="py-3 font-medium text-mv-ink">{formatCurrency(bench.monthRevenue)}</td>
-                    <td className="py-3 text-mv-ink-soft">{formatCurrency(bench.todayRevenue)}</td>
+                    <td className="py-3 font-medium text-mv-ink">{formatCurrency(bench.monthRevenue, locale)}</td>
+                    <td className="py-3 text-mv-ink-soft">{formatCurrency(bench.todayRevenue, locale)}</td>
                     <td className="py-3">
                       <span
                         className={`inline-flex rounded-md px-2 py-0.5 text-[12px] font-semibold ${
@@ -527,7 +528,7 @@ export function OverviewClientView({
                       {bench.coversToday} / {bench.dailyTargetNeeded}
                     </td>
                     <td className="py-3 font-medium text-mv-green-dark">
-                      {formatCurrency(bench.retentionRevenue)}
+                      {formatCurrency(bench.retentionRevenue, locale)}
                     </td>
                     <td className="py-3 text-[12px] text-mv-ink-faint">
                       {bench.posProvider}

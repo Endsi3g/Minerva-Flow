@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 
 function UpdatePasswordForm() {
+  const tv = useTranslations("updatePassword");
   const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,15 +42,15 @@ function UpdatePasswordForm() {
   return (
     <AuthShell panelHeadline="Pilotez votre restaurant, sereinement.">
       <h1 className="font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[32px]">
-        Nouveau mot de passe
+        {tv("newPassword")}
       </h1>
       <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
-        Définissez votre nouveau mot de passe pour sécuriser votre compte.
+        {tv("setYourNewPassword")}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Nouveau mot de passe</label>
+          <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{tv("newPassword")}</label>
           <input
             type="password"
             placeholder="••••••••"
@@ -72,10 +73,10 @@ function UpdatePasswordForm() {
           {isLoading ? (
             <>
               <Loader2 size={15} className="animate-spin" />
-              <span>Enregistrement…</span>
+              <span>{tv("saving")}</span>
             </>
           ) : (
-            <span>Mettre à jour le mot de passe</span>
+            <span>{tv("updateThePassword")}</span>
           )}
         </button>
       </form>

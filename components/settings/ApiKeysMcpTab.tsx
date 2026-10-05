@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -31,6 +33,7 @@ import { toast } from "sonner";
 import { formatRelativeTime } from "@/lib/utils";
 
 export function ApiKeysMcpTab() {
+  const locale = useLocale();
   const { restaurantId } = useApp();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [toolsCatalog, setToolsCatalog] = useState<McpToolDefinition[]>([]);
@@ -475,7 +478,7 @@ export function ApiKeysMcpTab() {
                     <span>{k.keyPrefix}</span>
                     {k.lastUsedAt && (
                       <span className="text-[12px] text-mv-ink-faint font-sans">
-                        · Utilisée {formatRelativeTime(k.lastUsedAt)}
+                        · Utilisée {formatRelativeTime(k.lastUsedAt, locale)}
                       </span>
                     )}
                   </div>

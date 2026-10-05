@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { useApp } from "@/lib/app-context";
@@ -73,6 +73,7 @@ function ConnectRow({
   connection?: PosConnection;
   onSynced: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("posConnections");
   const [isPending, startTransition] = useTransition();
   const [showManualGuid, setShowManualGuid] = useState(false);
@@ -89,7 +90,7 @@ function ConnectRow({
     if (!configured && provider !== "clover") return t("applicationCredentialsToConfigure");
     if (!connection) return t("notConnected");
     if (hasError) return t("theConnectionWasInterrupted");
-    if (connection.lastSyncedAt) return t("lastSyncDate", { date: formatDate(connection.lastSyncedAt) });
+    if (connection.lastSyncedAt) return t("lastSyncDate", { date: formatDate(connection.lastSyncedAt, locale) });
     return t("connectedFirstSyncIn");
   }
 

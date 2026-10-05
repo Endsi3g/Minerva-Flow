@@ -1,3 +1,4 @@
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -68,6 +69,7 @@ export function ServiceDayDetailView({
   transactions?: FinancialTransaction[];
   prevWeekDay?: ServiceDay | null;
 }) {
+  const locale = useLocale();
   const SourceIcon = sourceIcon[day.mainSource];
 
   // Employee lookup map
@@ -109,7 +111,7 @@ export function ServiceDayDetailView({
 
       <PageHeader
         eyebrow="Journée de service détaillée"
-        title={formatDateWeekday(day.date)}
+        title={formatDateWeekday(day.date, locale)}
         description={`${sourceLabel[day.mainSource]} · Rush : ${rushLevelLabel[day.rushLevel ?? "normal"]}`}
         action={
           <div className="flex items-center gap-2">
@@ -136,13 +138,13 @@ export function ServiceDayDetailView({
         <Card className="p-4">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Revenu net</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-green-dark">
-            {formatCurrency(day.revenue)}
+            {formatCurrency(day.revenue, locale)}
           </p>
           {deltaVsPrevWeek !== null ? (
             <div className="mt-1 flex items-center gap-1 text-[12px]">
               <span className={deltaVsPrevWeek >= 0 ? "text-mv-green-dark font-medium" : "text-mv-red font-medium"}>
                 {deltaVsPrevWeek >= 0 ? "+" : ""}
-                {formatCurrency(deltaVsPrevWeek)} ({deltaVsPrevWeekPct}%)
+                {formatCurrency(deltaVsPrevWeek, locale)} ({deltaVsPrevWeekPct}%)
               </span>
               <span className="text-mv-ink-faint">vs J-7</span>
             </div>
@@ -154,7 +156,7 @@ export function ServiceDayDetailView({
         <Card className="p-4">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Food / Matières</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
-            {formatCurrency(rawFoodCost)}
+            {formatCurrency(rawFoodCost, locale)}
           </p>
           <p className="mt-1 text-[12px] text-mv-ink-soft">
             {foodCostRatio.toFixed(1)}% des ventes (cible 28-32%)
@@ -164,7 +166,7 @@ export function ServiceDayDetailView({
         <Card className="p-4">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Main-d&apos;œuvre (Labor)</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
-            {formatCurrency(totalLaborCost)}
+            {formatCurrency(totalLaborCost, locale)}
           </p>
           <p className="mt-1 text-[12px] text-mv-ink-soft">
             {laborCostRatio.toFixed(1)}% des ventes ({totalLaborHours.toFixed(1)} h)
@@ -174,7 +176,7 @@ export function ServiceDayDetailView({
         <Card className="p-4">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Marge brute op.</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
-            {formatCurrency(grossMargin)}
+            {formatCurrency(grossMargin, locale)}
           </p>
           <p className="mt-1 text-[12px] text-mv-ink-soft">
             {grossMarginPct}% de rentabilité brute
@@ -396,7 +398,7 @@ export function ServiceDayDetailView({
                       }`}
                     >
                       {t.direction === "in" ? "+" : "-"}
-                      {formatCurrency(t.amount)}
+                      {formatCurrency(t.amount, locale)}
                     </td>
                   </tr>
                 ))}

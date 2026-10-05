@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
@@ -77,7 +80,8 @@ function shiftWeek(weekStart: string, deltaWeeks: number): string {
 }
 
 function formatShortDate(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString("fr-CA", {
+  const locale = useLocale();
+  return new Date(iso + "T00:00:00").toLocaleDateString(intlLocale(locale), {
     day: "numeric",
     month: "short",
   });
@@ -204,6 +208,7 @@ function EmployeeScheduleModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const locale = useLocale();
   const [shifts, setShifts] = useState<ShiftSchedule[] | null>(null);
   const [sending, setSending] = useState(false);
   const [linking, setLinking] = useState(false);
@@ -262,7 +267,7 @@ function EmployeeScheduleModal({
           <div className="max-h-64 space-y-1.5 overflow-y-auto">
             {shifts.map((s) => (
               <div key={s.id} className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2">
-                <span className="text-[12.5px] font-medium text-mv-ink">{formatDate(s.shiftDate)}</span>
+                <span className="text-[12.5px] font-medium text-mv-ink">{formatDate(s.shiftDate, locale)}</span>
                 <span className="text-[12.5px] text-mv-ink-soft">
                   {formatTime(s.startTime)}–{formatTime(s.endTime)}
                   {s.positionLabel ? ` · ${s.positionLabel}` : ""}
@@ -343,7 +348,8 @@ function DayDetailModal({
   onToggleStatus: (s: ShiftSchedule) => void;
   onDeleteShift: (id: string) => void;
 }) {
-  const formatted = new Date(dateIso + "T00:00:00").toLocaleDateString("fr-CA", {
+  const locale = useLocale();
+  const formatted = new Date(dateIso + "T00:00:00").toLocaleDateString(intlLocale(locale), {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -443,6 +449,7 @@ export function HoraireView({
   initialShifts: ShiftSchedule[];
   initialWeekStart: string;
 }) {
+  const locale = useLocale();
   const { role } = useApp();
   const [employees] = useState(initialEmployees);
   const [shifts, setShifts] = useState(initialShifts);
@@ -466,7 +473,7 @@ export function HoraireView({
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  const monthLabel = currentDate.toLocaleDateString("fr-CA", {
+  const monthLabel = currentDate.toLocaleDateString(intlLocale(locale), {
     month: "long",
     year: "numeric",
   });
@@ -685,7 +692,7 @@ export function HoraireView({
               )}
             </span>
             <p className="font-display text-[22px] font-bold text-mv-ink mt-0.5">
-              {formatCurrency(totalLaborCost)}
+              {formatCurrency(totalLaborCost, locale)}
             </p>
           </div>
           <div className="h-9 w-9 rounded-xl bg-mv-green-tint/50 flex items-center justify-center text-mv-green-dark">

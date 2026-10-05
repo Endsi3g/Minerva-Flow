@@ -1,3 +1,5 @@
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { CONTRIBUTION_SOURCES, type Heatmap, type HeatmapDay, type HeatmapLevel } from "@/lib/team/contributions";
 
@@ -9,8 +11,8 @@ const LEVEL_CLASS: Record<HeatmapLevel, string> = {
   4: "bg-mv-green",
 };
 
-function dayTitle(day: HeatmapDay): string {
-  const date = new Date(`${day.date}T12:00:00Z`).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+function dayTitle(day: HeatmapDay, locale?: string): string {
+  const date = new Date(`${day.date}T12:00:00Z`).toLocaleDateString(intlLocale(locale), { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
   if (day.count === 0) return `${date} · aucune contribution`;
   const detail = CONTRIBUTION_SOURCES.filter((s) => day.bySource[s.key]).map((s) => `${day.bySource[s.key]} ${s.label.toLowerCase()}`);
   return `${date} · ${day.count} contribution${day.count > 1 ? "s" : ""} (${detail.join(", ")})`;
@@ -25,6 +27,7 @@ export function ContributionHeatmap({
   size?: "sm" | "md";
   showLegend?: boolean;
 }) {
+  const locale = useLocale();
   const cell = size === "sm" ? "size-[7px] rounded-[2px]" : "size-3 rounded-[3px]";
   const gap = size === "sm" ? "gap-[2px]" : "gap-[3px]";
 
@@ -32,7 +35,7 @@ export function ContributionHeatmap({
   const monthLabels = size === "md" ? heatmap.days.filter((_, i) => i % 7 === 0).map((day, week, all) => {
     const month = day.date.slice(0, 7);
     const previous = week > 0 ? all[week - 1].date.slice(0, 7) : null;
-    return month !== previous ? new Date(`${day.date}T12:00:00Z`).toLocaleDateString("fr-CA", { month: "short", timeZone: "UTC" }).replace(".", "") : "";
+    return month !== previous ? new Date(`${day.date}T12:00:00Z`).toLocaleDateString(intlLocale(locale), { month: "short", timeZone: "UTC" }).replace(".", "") : "";
   }) : [];
 
   return (
@@ -59,7 +62,7 @@ export function ContributionHeatmap({
           {heatmap.days.map((day) => (
             <span
               key={day.date}
-              title={dayTitle(day)}
+              title={dayTitle(day, locale)}
               className={cn(cell, day.future ? "bg-transparent" : LEVEL_CLASS[day.level])}
             />
           ))}

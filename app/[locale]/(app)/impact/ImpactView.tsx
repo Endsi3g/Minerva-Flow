@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -48,6 +48,7 @@ export function ImpactView({
   atRiskCustomers: AtRiskCustomer[];
   retentionEngineEnabled: boolean;
 }) {
+  const locale = useLocale();
   const t = useTranslations("impactView");
   if (!impact) {
     return (
@@ -103,7 +104,7 @@ export function ImpactView({
               {t("extraPurchasesGeneratedBy")}
             </p>
             <p className="mt-1 font-display text-[17px] font-medium text-mv-ink">
-              {formatCurrency(impact.incrementalRevenue)}
+              {formatCurrency(impact.incrementalRevenue, locale)}
             </p>
             <p className="mt-0.5 text-[12px] text-mv-ink-soft">{t("visitsWithin14Days")}</p>
           </div>
@@ -201,6 +202,7 @@ export function ImpactView({
 }
 
 function ShareResultsButton({ incrementalRevenue }: { incrementalRevenue: number }) {
+  const locale = useLocale();
   const t = useTranslations("impactView");
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
@@ -238,7 +240,7 @@ function ShareResultsButton({ incrementalRevenue }: { incrementalRevenue: number
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder={t("eGAmountGenerated", { amount: formatCurrency(incrementalRevenue) })}
+              placeholder={t("eGAmountGenerated", { amount: formatCurrency(incrementalRevenue, locale) })}
             />
           </Field>
           <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
@@ -262,6 +264,7 @@ function ActionableCustomersCard({
   retentionEngineEnabled: boolean;
   initialCustomers: AtRiskCustomer[];
 }) {
+  const locale = useLocale();
   const t = useTranslations("impactView");
   const [customers, setCustomers] = useState(initialCustomers);
   const [sendingId, setSendingId] = useState<string | null>(null);
@@ -326,7 +329,7 @@ function ActionableCustomersCard({
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <Badge tone="neutral">{t("amountSpent", { amount: formatCurrency(customer.totalSpent) })}</Badge>
+                  <Badge tone="neutral">{t("amountSpent", { amount: formatCurrency(customer.totalSpent, locale) })}</Badge>
                   <Button
                     size="xs"
                     onClick={() => handleSend(customer.id, trigger)}

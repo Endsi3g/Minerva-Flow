@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { ChatAttachments, type PreparedAttachment } from "@/components/chat/ChatAttachments";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { cn } from "@/lib/utils";
@@ -18,9 +21,10 @@ export function ChatInput({
   isLoading: boolean;
   onSubmit: (text: string, attachments: PreparedAttachment[]) => void;
 }) {
+  const locale = useLocale();
   const [input, setInput] = useState("");
   const [attachments, setAttachments] = useState<PreparedAttachment[]>([]);
-  const speech = useSpeechRecognition({ lang: "fr-CA" });
+  const speech = useSpeechRecognition({ lang: intlLocale(locale) });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-grow textarea height

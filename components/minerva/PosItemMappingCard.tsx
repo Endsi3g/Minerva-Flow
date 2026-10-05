@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -75,6 +75,7 @@ export function PosItemMappingCard({
   menuItems,
   onItemCreated,
 }: PosItemMappingCardProps) {
+  const locale = useLocale();
   const t = useTranslations("posItemMapping");
   const [mappings, setMappings] = useState<PosItemMapping[]>([]);
   const [loading, setLoading] = useState(true);
@@ -395,7 +396,7 @@ export function PosItemMappingCard({
                           </span>
                         )}
                         <span className="ml-2 font-mono text-[12px] font-semibold text-mv-green-dark">
-                          {formatCurrency(m.menuItem.price)}
+                          {formatCurrency(m.menuItem.price, locale)}
                         </span>
                       </div>
 
@@ -423,7 +424,7 @@ export function PosItemMappingCard({
                         </option>
                         {menuItems.map((item) => (
                           <option key={item.id} value={item.id}>
-                            {item.name} ({formatCurrency(item.price)})
+                            {item.name} ({formatCurrency(item.price, locale)})
                           </option>
                         ))}
                       </select>

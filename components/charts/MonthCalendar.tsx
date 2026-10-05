@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { bucketFor, heatmapBuckets } from "./heatmap-scale";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -16,6 +18,7 @@ export function MonthCalendar({
   onSelectDate?: (date: string) => void;
   eventsByDate?: Record<string, boolean>;
 }) {
+  const locale = useLocale();
   const revenues = data.map((d) => d.revenue);
   const min = Math.min(...revenues);
   const max = Math.max(...revenues);
@@ -73,7 +76,7 @@ export function MonthCalendar({
                 />
               )}
               <span className="pointer-events-none absolute -top-9 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-md bg-mv-ink px-2 py-1 text-[12px] font-medium text-mv-cream-soft opacity-0 shadow-mv-md transition-opacity group-hover:opacity-100 flex items-center gap-1.5">
-                <span>{formatCurrency(d.revenue)}</span>
+                <span>{formatCurrency(d.revenue, locale)}</span>
                 <span className="text-[12px] text-mv-lime">· Ouvrir ↗</span>
               </span>
             </button>

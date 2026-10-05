@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -47,6 +47,7 @@ function buildCategories(t: (key: string) => string): { value: SupportCategory; 
 }
 
 export default function SupportPage() {
+  const locale = useLocale();
   const t = useTranslations("supportPage");
   const { restaurantId } = useApp();
   const [category, setCategory] = useState<SupportCategory>("bug");
@@ -178,7 +179,7 @@ export default function SupportPage() {
                       <Badge tone="neutral">{buildCategoryLabel(t)[ticket.category]}</Badge>
                       <Badge tone={statusTone[ticket.status]}>{buildStatusLabel(t)[ticket.status]}</Badge>
                     </div>
-                    <span className="text-[12px] text-mv-ink-faint">{formatDate(ticket.createdAt.slice(0, 10))}</span>
+                    <span className="text-[12px] text-mv-ink-faint">{formatDate(ticket.createdAt.slice(0, 10), locale)}</span>
                   </div>
                   <p className="text-[13px] font-semibold text-mv-ink">{ticket.subject}</p>
                   <p className="mt-1 text-[12.5px] text-mv-ink-soft">{ticket.message}</p>

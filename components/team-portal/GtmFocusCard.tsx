@@ -1,11 +1,13 @@
+import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { formatCurrency } from "@/lib/utils";
 import type { TeamMetricsSnapshot } from "@/lib/data/team-metrics";
 
 export function GtmFocusCard({ metrics }: { metrics: TeamMetricsSnapshot }) {
+  const locale = useLocale();
   const { focus } = metrics;
-  const format = (value: number) => (focus.metric === "mrr" ? formatCurrency(value) : String(Math.round(value)));
+  const format = (value: number) => (focus.metric === "mrr" ? formatCurrency(value, locale) : String(Math.round(value)));
   const progress = focus.target && focus.target > 0 ? Math.min(100, (focus.actual / focus.target) * 100) : null;
 
   return (

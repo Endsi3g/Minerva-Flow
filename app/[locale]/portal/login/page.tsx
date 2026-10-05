@@ -34,6 +34,7 @@ function FacebookMark() {
 }
 
 function PortalLoginPageInner() {
+  const tv = useTranslations("portalLogin");
   const t = useTranslations("portal.login");
   const searchParams = useSearchParams();
   const restaurantToJoin = searchParams.get("next")?.match(/^\/customer-join\?restaurant=([0-9a-f-]{36})$/i)?.[1] ?? null;
@@ -123,7 +124,7 @@ function PortalLoginPageInner() {
                   disabled={oauthBusy !== null || status === "sending"}
                   className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-mv-border bg-white px-4 py-2.5 text-[13px] font-semibold text-mv-ink transition-colors hover:bg-mv-cream-soft disabled:opacity-60"
                 >
-                  <Apple size={16} /> {oauthBusy === "apple" ? "Redirection…" : "Continuer avec Apple"}
+                  <Apple size={16} /> {oauthBusy === "apple" ? tv("redirecting") : tv("continueWithApple")}
                 </button>
                 <button
                   type="button"
@@ -131,7 +132,7 @@ function PortalLoginPageInner() {
                   disabled={oauthBusy !== null || status === "sending"}
                   className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-mv-border bg-white px-4 py-2.5 text-[13px] font-semibold text-mv-ink transition-colors hover:bg-mv-cream-soft disabled:opacity-60"
                 >
-                  <GoogleMark /> {oauthBusy === "google" ? "Redirection…" : "Continuer avec Google"}
+                  <GoogleMark /> {oauthBusy === "google" ? tv("redirecting") : tv("continueWithGoogle")}
                 </button>
                 <button
                   type="button"
@@ -139,7 +140,7 @@ function PortalLoginPageInner() {
                   disabled={oauthBusy !== null || status === "sending"}
                   className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-mv-border bg-white px-4 py-2.5 text-[13px] font-semibold text-mv-ink transition-colors hover:bg-mv-cream-soft disabled:opacity-60"
                 >
-                  <FacebookMark /> {oauthBusy === "facebook" ? "Redirection…" : "Continuer avec Facebook"}
+                  <FacebookMark /> {oauthBusy === "facebook" ? tv("redirecting") : tv("continueWithFacebook")}
                 </button>
               </div>
 

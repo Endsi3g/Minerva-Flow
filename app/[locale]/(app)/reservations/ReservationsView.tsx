@@ -1,7 +1,8 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { intlLocale } from "@/lib/format-locale";
+import { useTranslations, useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -31,8 +32,8 @@ import { useState, type FormEvent } from "react";
 import { notifyError } from "@/lib/notify-error";
 import { formatTime } from "@/lib/utils";
 
-function formatDayLabel(dayStart: string) {
-  return new Date(dayStart).toLocaleDateString("fr-CA", {
+function formatDayLabel(dayStart: string, locale?: string) {
+  return new Date(dayStart).toLocaleDateString(intlLocale(locale), {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -304,6 +305,7 @@ export function ReservationsView({
   initialDayStart: string;
   initialPlatformConnections: ReservationPlatformConnection[];
 }) {
+  const locale = useLocale();
   const tv = useTranslations("reservationsView");
   const { role } = useApp();
   const [tables, setTables] = useState(initialTables);
@@ -380,7 +382,7 @@ export function ReservationsView({
       />
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row">
-        <StatCard label={tv("todaySReservations")} value={reservations.length} icon={CalendarClock} sublabel={formatDayLabel(dayStart)} accent="green" />
+        <StatCard label={tv("todaySReservations")} value={reservations.length} icon={CalendarClock} sublabel={formatDayLabel(dayStart, locale)} accent="green" />
         <StatCard label={tv("confirmed")} value={confirmedCount} icon={CheckCircle2} sublabel={`Sur ${reservations.length} réservation${reservations.length > 1 ? "s" : ""}`} accent="lime" />
         <StatCard label={tv("coversExpected")} value={totalCovers} icon={UsersRound} sublabel={tv("totalPartySizes")} accent="ink" />
       </div>
@@ -394,7 +396,7 @@ export function ReservationsView({
           <ChevronLeft size={15} />
         </button>
         <span className="min-w-48 text-center text-[13.5px] font-medium capitalize text-mv-ink">
-          {formatDayLabel(dayStart)}
+          {formatDayLabel(dayStart, locale)}
         </span>
         <button
           onClick={() => loadDay(shiftDay(dayStart, 1))}
@@ -440,7 +442,7 @@ export function ReservationsView({
               <tbody>
                 {reservations.map((r) => (
                   <Tr key={r.id}>
-                    <Td className="font-medium text-mv-ink">{formatTime(r.reservationTime)}</Td>
+                    <Td className="font-medium text-mv-ink">{formatTime(r.reservationTime, locale)}</Td>
                     <Td>
                       <p className="font-semibold text-mv-ink">{r.guestName}</p>
                       {r.guestPhone && <p className="text-[12px] text-mv-ink-faint">{r.guestPhone}</p>}

@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import React, { useState, useMemo } from "react";
 import { ArrowUpDown, Search, Sparkles } from "lucide-react";
 import type { GenerativeDataTableData } from "@/lib/types/generative-ui";
@@ -20,6 +23,7 @@ export function GenerativeDataTable({
   data: GenerativeDataTableData;
   onRowAction?: (promptText: string) => void;
 }) {
+  const locale = useLocale();
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -124,10 +128,10 @@ export function GenerativeDataTable({
                   const formatted =
                     typeof val === "number"
                       ? col.unit === "currency"
-                        ? formatCurrency(val)
+                        ? formatCurrency(val, locale)
                         : col.unit === "percent"
                         ? `${val.toFixed(1)} %`
-                        : val.toLocaleString("fr-CA")
+                        : val.toLocaleString(intlLocale(locale))
                       : val;
 
                   return (
