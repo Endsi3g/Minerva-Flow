@@ -69,6 +69,9 @@ export async function proxy(request: NextRequest) {
     pathWithoutLocale.startsWith("/h/") ||
     pathWithoutLocale.startsWith("/e/") ||
     pathWithoutLocale.startsWith("/legal/") ||
+    // Team and ambassador sign-in must be reachable before any session exists.
+    pathWithoutLocale === "/equipe/connexion" ||
+    pathWithoutLocale === "/equipe/connexion/" ||
     // Customer portal (magic-link login) and public referral links — never
     // restaurant_members, so they must be reachable before any session
     // exists; the pages themselves gate on their own auth state.
