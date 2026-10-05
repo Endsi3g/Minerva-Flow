@@ -2601,7 +2601,8 @@
     "onLoyaltyRevenue": "Out of {amount} of loyalty revenue",
     "distributedBody": "<strong>Money handed out</strong>: the dollar value of points redeemed for rewards this month (points ÷ points-per-dollar rate). It is an estimate based on your current rate, not an amount actually paid out.",
     "keptBody": "<strong>Money kept</strong>: the revenue recorded through loyalty visits, minus the estimated money handed out above.",
-    "pairingBody": "<strong>Account pairing</strong>: each time a staff member finds a customer with the code shown in the Scanner tab (native) and records their visit on the same card, that visit is counted here separately."
+    "pairingBody": "<strong>Account pairing</strong>: each time a staff member finds a customer with the code shown in the Scanner tab (native) and records their visit on the same card, that visit is counted here separately.",
+    "viewFunnel": "See the funnel →"
   },
   "resultsView": {
     "loyalty": "Loyalty",

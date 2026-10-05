@@ -2532,7 +2532,8 @@
     "onLoyaltyRevenue": "Sur {amount} de revenu fidélité",
     "distributedBody": "<strong>Argent distribué</strong> — la valeur en dollars des points échangés contre des récompenses ce mois-ci (points ÷ taux de points par dollar). C'est une estimation basée sur votre taux actuel, pas un montant réellement décaissé.",
     "keptBody": "<strong>Argent conservé</strong> — le revenu enregistré via des visites fidélité, moins l'argent distribué estimé ci-dessus.",
-    "pairingBody": "<strong>Jumelage de compte</strong> — chaque fois qu'un membre du personnel retrouve un client avec le code affiché dans l'onglet Scanner (natif) et enregistre sa visite dans la même carte, cette visite est comptée ici séparément."
+    "pairingBody": "<strong>Jumelage de compte</strong> — chaque fois qu'un membre du personnel retrouve un client avec le code affiché dans l'onglet Scanner (natif) et enregistre sa visite dans la même carte, cette visite est comptée ici séparément.",
+    "viewFunnel": "Consulter l'entonnoir →"
   },
   "resultsView": {
     "loyalty": "Fidélisation",
