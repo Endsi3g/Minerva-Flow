@@ -103,8 +103,7 @@ function SecuritySessions() {
                       )}
                     </div>
                     <p className="mt-1 text-[12.5px] text-mv-ink-soft">
-                      Dernière activité {formatRelativeTime(s.updatedAt, locale)} · Connecté depuis{" "}
-                      {formatRelativeTime(s.createdAt, locale)}
+                      {t("activityLine", { last: formatRelativeTime(s.updatedAt, locale), since: formatRelativeTime(s.createdAt, locale) })}
                       {s.ip ? ` · ${s.ip}` : ""}
                     </p>
                   </div>
@@ -115,7 +114,7 @@ function SecuritySessions() {
                     onClick={() => setToRevoke(s)}
                     className="shrink-0 rounded-lg border border-mv-border px-3 py-1.5 text-[12.5px] font-semibold text-mv-ink-soft transition-colors hover:border-mv-red/30 hover:text-mv-red"
                   >
-                    Déconnecter
+                    {t("signOutButton")}
                   </button>
                 )}
               </div>
@@ -128,7 +127,7 @@ function SecuritySessions() {
         open={Boolean(toRevoke)}
         onOpenChange={(open) => !open && setToRevoke(null)}
         title={t("signOutThisDevice")}
-        description={`${toRevoke?.device ?? "Cet appareil"}${toRevoke?.browser ? ` — ${toRevoke.browser}` : ""} sera déconnecté de votre compte. Si c'est bien vous, il vous suffira de vous reconnecter.`}
+        description={t("revokeDescription", { device: toRevoke?.device ?? t("thisDevice"), browser: toRevoke?.browser ? ` — ${toRevoke.browser}` : "" })}
         actionLabel={t("signOut")}
         onConfirm={handleRevoke}
       />

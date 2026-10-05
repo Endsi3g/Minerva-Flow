@@ -3328,7 +3328,11 @@
     "signOut": "Déconnecter",
     "deviceSignedOut": "Appareil déconnecté.",
     "couldNotSignOut": "La déconnexion de cet appareil a échoué.",
-    "severalDevicesSignedIn": "Plusieurs appareils connectés en même temps, c'est normal (téléphone, ordinateur du resto, etc.) — ceci sert surtout à repérer une connexion qui ne vous appartient pas et à la déconnecter. La déconnexion prend effet dans les minutes qui suivent, pas instantanément."
+    "severalDevicesSignedIn": "Plusieurs appareils connectés en même temps, c'est normal (téléphone, ordinateur du resto, etc.) — ceci sert surtout à repérer une connexion qui ne vous appartient pas et à la déconnecter. La déconnexion prend effet dans les minutes qui suivent, pas instantanément.",
+    "activityLine": "Dernière activité {last} · Connecté depuis {since}",
+    "signOutButton": "Déconnecter",
+    "revokeDescription": "{device}{browser} sera déconnecté de votre compte. Si c'est bien vous, il vous suffira de vous reconnecter.",
+    "thisDevice": "Cet appareil"
   },
   "appearancePage": {
     "appearance": "Apparence",
@@ -3422,7 +3426,11 @@
     "newChat": "Nouvel échange",
     "specialistTurnedOnSpecialistname": "Spécialiste activé : {specialistName}",
     "changeSpecialist": "Changer de Spécialiste",
-    "noConversations": "Aucune conversation"
+    "noConversations": "Aucune conversation",
+    "inviteCollaborators": "Inviter des collaborateurs",
+    "searchAnalysis": "Rechercher une analyse...",
+    "pinnedCount": "Épinglés ({count})",
+    "recentCount": "Récents ({count})"
   },
   "onboardingPage": {
     "almostReadyLetS": "Presque prêt. Configurons votre établissement.",

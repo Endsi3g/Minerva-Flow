@@ -225,7 +225,7 @@ export function ChatSidebar({
               <Search size={12} className="absolute left-2.5 text-mv-ink-faint" />
               <input
                 type="text"
-                placeholder="Rechercher une analyse..."
+                placeholder={t("searchAnalysis")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-lg border border-mv-border/80 bg-mv-surface py-1.5 pl-8 pr-2.5 text-[12px] text-mv-ink placeholder-mv-ink-faint focus:border-mv-green focus:outline-none transition-colors"
@@ -249,7 +249,7 @@ export function ChatSidebar({
           {pinnedConversations.length > 0 && (
             <div className="px-3 pt-3 shrink-0 space-y-1">
               <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint flex items-center gap-1 px-1">
-                <Pin size={10} className="text-mv-amber" /> Épinglés ({pinnedConversations.length})
+                <Pin size={10} className="text-mv-amber" /> {t("pinnedCount", { count: pinnedConversations.length })}
               </span>
               {pinnedConversations.map((c) => {
                 const active = c.id === activeConversationId;
@@ -289,7 +289,7 @@ export function ChatSidebar({
           <div className="px-3 py-3 space-y-1">
             <div className="flex items-center justify-between mb-1 px-1">
               <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint flex items-center gap-1">
-                <History size={10} /> Récents ({recentConversations.length})
+                <History size={10} /> {t("recentCount", { count: recentConversations.length })}
               </span>
             </div>
 
@@ -342,7 +342,7 @@ export function ChatSidebar({
             </div>
             <button
               onClick={onShare}
-              title="Inviter des collaborateurs"
+              title={t("inviteCollaborators")}
               className="flex h-6 w-6 items-center justify-center rounded-lg text-mv-ink-soft hover:bg-mv-cream hover:text-mv-ink transition-colors"
             >
               <Share2 size={13} />
