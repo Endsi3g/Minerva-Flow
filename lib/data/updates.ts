@@ -5,12 +5,12 @@ import { sendChangelogCampaignEmail } from "@/lib/email/resend";
 
 /**
  * Fans a published changelog entry out to every active platform user across
- * both channels: an in-app/push notification (immediate, works on mobile
- * and desktop today) and an email campaign (durable copy, currently a
- * no-op until a verified Resend domain is set — see
- * sendChangelogCampaignEmail's doc comment). Shared by the manual admin
- * publish action and the automatic GitHub release webhook so both paths
- * behave identically. Entries with audience "client" are not announced here.
+ * both channels: an in-app/push notification to active app users and a
+ * best-effort email campaign sent only to the curated, active product-update
+ * opt-in segment. If Resend is unavailable, no campaign is sent; this path
+ * never expands the audience to the full account roster. Shared by the
+ * manual admin publish action and the GitHub release webhook. Entries with
+ * audience "client" are not announced here.
  */
 export async function announceChangelogEntry(entry: ChangelogEntry): Promise<void> {
   // A client-only entry is for customers: it must never push or email

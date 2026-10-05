@@ -29,7 +29,13 @@ jobs:
           fi
           jq -n --arg title "$TITLE" --arg body "$RELEASE_BODY" --arg imageUrl "$RELEASE_IMAGE_URL" \
             '{title: $title, body: $body, imageUrl: $imageUrl}' > payload.json
-          curl -sf -X POST "https://minerva-flow.vercel.app/api/system/publish-release" \
+          HTTP_STATUS="$(curl -sS -o response.json -w '%{http_code}' -X POST "https://minerva-flow.vercel.app/api/system/publish-release" \
             -H "Authorization: Bearer $RELEASE_WEBHOOK_SECRET" \
             -H "Content-Type: application/json" \
-            --data @payload.json
+            --data @payload.json)"
+          if [[ "$HTTP_STATUS" != 2* ]]; then
+            echo "::error::Release webhook returned HTTP $HTTP_STATUS"
+            cat response.json
+            exit 1
+          fi
+          cat response.json

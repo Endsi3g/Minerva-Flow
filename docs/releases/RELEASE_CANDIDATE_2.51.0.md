@@ -1,8 +1,10 @@
 # Minerva Flow 2.51.0 — Portail équipe, Compte client, partage de résultats
 
-**Statut : candidat, non publié.** Rien ci-dessous n'est disponible aux utilisateurs tant que le build et le déploiement correspondants n'ont pas été vérifiés (voir « Conditions de sortie »). Aucune entrée du journal des mises à jour n'est publiée, aucun courriel n'est parti.
+**Statut au 2026-10-05 : code web intégré à `main` et déployé en Production; release produit non publiée.** Le déploiement Vercel associé à `www.minervaflow.app` est `READY` (`dpl_9pnm1NhxshWXv7gfobeMayeVdbqZ`). `main` et `origin/main` sont au commit `81c1ec8`; le merge de la branche du portail équipe est `590ac6c`. La version de `package.json` demeure `2.50.0`; aucune entrée 2.51 du journal n'est publiée et aucune annonce de cette candidate n'est partie.
 
-Date : 2026-10-03 · Branche : `feat/team-portal-and-native-account-uplift` (non poussée)
+Les parcours authentifiés et les écrans iOS restent non vérifiés. Le déploiement web ne vaut pas validation de ces parcours ni disponibilité d'un nouveau build TestFlight. Conserver le statut de lancement sous conditions jusqu'à la clôture des étapes manuelles ci-dessous.
+
+Date de préparation : 2026-10-03 · Branche source : `feat/team-portal-and-native-account-uplift` (fusionnée à `main`)
 
 ## Contenu
 
@@ -12,7 +14,7 @@ Date : 2026-10-03 · Branche : `feat/team-portal-and-native-account-uplift` (non
 - **Partager mes résultats** (web) : visuel ou courte vidéo avec les vrais chiffres du restaurant; l'équipe a la même chose pour Minerva Flow. Voir `docs/engineering/SHARE_RESULTS.md`.
 - **Réglages web** en sous-pages au lieu d'onglets.
 - **Paiement en ligne et versements des ambassadeurs** : l'app iOS ouvre le web.
-- **Tags NFC** (lecture client, programmation propriétaire) : **exclus de l'annonce** tant que la capacité n'est pas activée sur l'identifiant d'app (`docs/mobile/NFC_AND_SIGNING.md`).
+- **Tags NFC** (lecture client, programmation propriétaire) : exclus du périmètre de la release 2.51 et de toute annonce; la capacité n'est pas vérifiée sur un appareil (`docs/mobile/NFC_AND_SIGNING.md`).
 - Base de données : migrations `0168` à `0173`, déjà appliquées en production.
 
 ## Brouillons d'annonce (non publiés)
@@ -54,23 +56,26 @@ Les captures d'écran du journal sont **à produire** à partir de l'application
 | Parcours authentifiés (propriétaire, `/equipe`, partage) sur le build déployé | **NON VÉRIFIÉ** — aucune session accessible |
 | Rendu visuel des écrans iOS | **NON VÉRIFIÉ** — à contrôler à la main sur l'appareil |
 | NFC sur appareil | **NON VÉRIFIÉ** — profil de signature sans la capacité |
+| Automation de publication | **EN ÉCHEC** — le workflow v2.50.0 s'est terminé avec HTTP ≥400 avant l'écriture de l'entrée; la cause n'est pas confirmée. Les journaux Vercel n'ont pas fourni le détail. Le workflow capture maintenant le statut et la réponse lors d'un prochain appel; aucun nouveau webhook n'a été déclenché.
+| Cron Google Reviews | **EN ÉCHEC** — les exécutions planifiées des 1–5 octobre ont toutes échoué avec HTTP ≥400; l'ancien workflow masquait le statut et le corps. Le workflow capture maintenant la réponse d'erreur; le cron reste un incident d'exploitation séparé.
 | ESLint global | ÉCHEC préexistant, étape non bloquante en CI |
 
 ## Conditions de sortie
 
 1. Parcours authentifiés vérifiés sur un déploiement de prévisualisation (propriétaire, équipe, partage de résultats, Nouveautés vide).
 2. Contrôle visuel manuel des écrans iOS sur l'appareil, mode clair et sombre.
-3. Capacité NFC activée et profils régénérés, ou NFC explicitement hors de la version.
-4. Cron des avis Google réparé ou écarté de la décision.
+3. [x] NFC explicitement hors du périmètre de la version et de la communication.
+4. [x] Cron des avis Google explicitement exclu des promesses et de la communication de 2.51. L'incident d'exploitation reste à diagnostiquer séparément.
 5. Captures du journal produites; textes d'annonce relus.
 6. Courriel de test envoyé à une adresse interne avant tout envoi au segment.
 
 ## Ordre de sortie
 
-1. Pousser la branche et ouvrir une pull request en brouillon (CI + prévisualisation).
-2. Vérifier la prévisualisation (condition 1).
-3. Fusionner : le déploiement web de production suit.
-4. Construire et téléverser le build iOS; vérifier le traitement Apple.
-5. Vérifier le déploiement de production exact.
-6. Publier les entrées du journal (propriétaires, clients) par migration SQL.
-7. Envoyer le courriel de test, puis l'annonce au segment.
+1. [x] Pousser la branche, ouvrir la PR et fusionner dans `main` (déjà intégré).
+2. Vérifier les parcours authentifiés sur Preview; toujours requis.
+3. [x] Déployer le web en Production; déploiement actuel `READY`.
+4. Construire et téléverser le build iOS; vérifier le traitement Apple et les parcours sur appareil.
+5. [x] Vérifier le domaine et l'état du déploiement web de Production.
+6. Produire les captures, puis publier les entrées du journal par audience.
+7. Envoyer le courriel de contrôle interne, puis l'annonce au segment explicitement inscrit.
+8. Diagnostiquer l'échec HTTP du webhook de publication avant de créer la prochaine GitHub Release; ne pas le relancer tant que les contrôles ci-dessus ne sont pas prêts.

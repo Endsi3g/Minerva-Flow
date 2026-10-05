@@ -13,5 +13,11 @@ jobs:
     steps:
       - name: Call poll-google-reviews
         run: |
-          curl -sf -X GET "https://minerva-flow.vercel.app/api/cron/poll-google-reviews" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          HTTP_STATUS="$(curl -sS -o response.json -w '%{http_code}' -X GET "https://minerva-flow.vercel.app/api/cron/poll-google-reviews" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")"
+          if [[ "$HTTP_STATUS" != 2* ]]; then
+            echo "::error::Google reviews cron returned HTTP $HTTP_STATUS"
+            cat response.json
+            exit 1
+          fi
+          echo "Google reviews cron completed (HTTP $HTTP_STATUS)."

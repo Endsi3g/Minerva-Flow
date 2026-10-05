@@ -1,171 +1,87 @@
-# Minerva Flow — Stratégie Go-To-Market (GTM) & Domination Google Maps
+# Minerva Flow — stratégie go-to-market locale
 
-> **Document Stratégique & Opérationnel**  
-> Version : 2.5 — Montréal (Québec), Canada.  
-> Éditeur : Minerva Technologies Inc.  
-> Objectif : Déployer un moteur d'acquisition hyper-local pour conquérir 1 000 restaurants indépendants et maximiser la rentabilité de chaque établissement grâce à la synergie Google Maps & Apple/Google Wallet.
+> **Document de travail — Montréal, 5 octobre 2026.** Cette version remplace la stratégie précédente, qui contenait des résultats non mesurés et des fonctions qui ne sont pas confirmées comme disponibles. Les chiffres présentés ci-dessous sont des objectifs d'expérience internes, jamais des résultats à annoncer.
 
----
+## Positionnement
 
-## 1. Vision & Thèse Stratégique
+Minerva Flow aide les restaurants indépendants à faire revenir leurs clients avec des outils de fidélité, un menu en ligne et des parcours de commande directe lorsque le restaurant les a activés. Les équipes peuvent aussi suivre leur activité et gérer leur présence Google Business Profile selon les accès accordés.
 
-L'acquisition de clients en restauration souffre d'un paradoxe majeur :
-- **Google Maps est le premier canal de découverte au monde** : plus de 70 % des consommateurs choisissent un café, un bistrot ou un restaurant en consultant Google Maps (recherches géolocalisées : *« café près de moi »*, *« meilleur brunch montréal »*, *« restaurant terrasse »*).
-- **Mais Google Maps est un canal sans rétention native** : une fois que le client a mangé et payé son addition, le restaurant ne possède aucun moyen de le recontacter. Le client redevient un passant anonyme.
-- **Pire : les plateformes tierces pillent les marges** : beaucoup d'établissements dirigent les clients de leur fiche Google Maps vers UberEats, DoorDash ou SkipTheDishes, abandonnant 25 % à 30 % de commission sur chaque commande.
+La promesse à tester : **garder le lien avec les clients après leur première visite, dans un espace simple pour l'équipe du restaurant.** Ne pas promettre une hausse de revenus, de fréquentation, d'avis ou de classement Google sans mesure propre au restaurant et preuve vérifiable.
 
-### La Thèse Minerva Flow
-Minerva Flow crée le pont manquant entre **la découverte locale sur Google Maps** et **la fidélisation à vie dans le portefeuille mobile (Apple Wallet & Google Wallet)** :
-1. Google Maps attire le client.
-2. Minerva Flow capture le client en 10 secondes sur place via un chevalet NFC sans application mobile.
-3. Minerva Flow transforme l'expérience satisfaite en un avis 5 étoiles sur Google Maps.
-4. L'afflux d'avis 5 étoiles propulse l'établissement dans le **Top 3 du Local Pack Google Maps**, attirant encore plus de nouveaux clients sans dépenser un centime en publicité.
+## Client idéal initial
 
----
+- Restaurant indépendant ou petit groupe de restaurants à Montréal.
+- Propriétaire ou gestionnaire impliqué dans la fidélité, le menu ou les commandes directes.
+- Besoin concret identifié en entretien, par exemple retrouver les clients réguliers ou rendre le menu plus facile à partager.
+- Capacité à fournir un restaurant de démonstration et un membre d'équipe pour un pilote.
 
-## 2. Le Cercle Vertueux : La Roue d'Inertie Locale (Local Flywheel)
+Commencer dans un seul territoire permet de faire des démonstrations accompagnées, de comprendre l'onboarding et de documenter les objections avant d'élargir à Québec, Toronto ou Paris.
 
-```
-                       ┌────────────────────────────────────────┐
-                       │  1. DÉCOUVERTE GOOGLE MAPS             │
-                       │  Le client trouve le restaurant        │
-                       │  via le Local Pack (Top 3 géolocalisé) │
-                       └──────────────────┬─────────────────────┘
-                                          │ Arrivée au restaurant
-                                          ▼
-                       ┌────────────────────────────────────────┐
-                       │  2. CAPTURE INSTANTANÉE (NFC / QR)     │
-                       │  Chevalet sur table : la carte s'ajoute│
-                       │  dans Apple / Google Wallet en 10 sec  │
-                       └──────────────────┬─────────────────────┘
-                                          │ Encaissement en caisse
-                                          ▼
-                       ┌────────────────────────────────────────┐
-                       │  3. SYNCHRONISATION POS SQUARE/LIGHTSPEED
-                       │  Points cumulés en direct (< 2s)      │
-                       │  Reçu numérique et solde mis à jour    │
-                       └──────────────────┬─────────────────────┘
-                                          │ Fin de repas
-                                          ▼
-                       ┌────────────────────────────────────────┐
-                       │  4. FILTRE D'E-RÉPUTATION INTELLIGENT  │
-                       │  • 5 étoiles -> Avis direct Google Maps│
-                       │  • < 4 étoiles -> Feedback privé gérant│
-                       └──────────────────┬─────────────────────┘
-                                          │ Avis 5 étoiles accumulés
-                                          ▼
-                       ┌────────────────────────────────────────┐
-                       │  5. ASCENSION DANS LE LOCAL PACK       │
-                       │  Meilleure note, plus d'avis récents   │
-                       │  = 3x plus d'affluence naturelle       │
-                       └────────────────────────────────────────┘
-```
+## Offre et parcours de vente
 
----
+1. **Découverte** — entretien de 20 minutes sur le fonctionnement actuel du restaurant et son objectif prioritaire.
+2. **Démonstration** — parcours web avec données fictives clairement signalées; montrer uniquement les fonctions disponibles et les intégrations réellement activées pour le restaurant.
+3. **Pilote** — accompagner le restaurant jusqu'à une première valeur observable : menu publié, programme de fidélité configuré ou première commande directe, selon le besoin.
+4. **Revue** — à 14 et 30 jours, examiner avec le client les inscriptions, les visites répétées et l'utilisation des parcours activés. Ne pas attribuer à Minerva Flow des résultats qui ne sont pas mesurés.
+5. **Référence** — demander l'accord écrit du restaurant avant de publier son nom, ses chiffres ou son témoignage.
 
-## 3. Axe 1 — Comment les Restaurants Utilisent Google Maps + Minerva Flow
+Les cibles d'expérimentation initiales sont **10 entretiens, 5 démonstrations et 3 pilotes accompagnés**. Ce sont des quotas de travail à ajuster après le premier cycle; ils ne décrivent aucun résultat déjà obtenu.
 
-### 3.1 La Passerelle Google Maps → Apple Wallet
-Chaque visiteur qui entre dans l'établissement doit repartir avec la marque dans son téléphone :
-- **Chevalets de table en bois noble & acrylique avec puce NFC intégrée** : positionnés sur chaque table et au comptoir de caisse.
-- **Message d'accroche sans friction** : *« Touchez avec votre téléphone pour débloquer votre avantage de bienvenue sur votre prochaine visite. »*
-- **Conversion** : en touchant le chevalet, la carte Apple Wallet s'ouvre nativement. Un clic sur « Ajouter », et le client est lié à l'établissement. Taux d'adoption constaté : **89 %**.
+## Acquisition
 
-### 3.2 Le Bouclier d'E-Réputation (Reputation Shield)
-Google Maps pénalise lourdement les restaurants qui reçoivent des avis 1 ou 2 étoiles. Minerva Flow déploie un système de tri intelligent après chaque service :
-1. **Déclenchement contextuel** : 45 minutes après l'addition ou le lendemain midi, une notification discrète sur le pass Wallet demande : *« Comment s'est passé votre repas chez [Nom du Restaurant] ? »*
-2. **Note 5/5** : Le client est félicité et redirigé en un clic vers la fiche **Google Business Profile** de l'établissement avec un lien d'avis direct.
-3. **Note mitigée (1 à 3 étoiles)** : Le formulaire reste privé et s'enregistre directement dans le tableau de bord propriétaire (`/reputation`). Le propriétaire ou le gérant reçoit une alerte par courriel et peut immédiatement contacter le client pour lui offrir un café ou un dessert, désamorçant la frustration avant qu'un avis destructeur ne soit publié publiquement.
+- Prioriser les présentations par des restaurateurs, fournisseurs et associations locales, les visites en personne sur rendez-vous et les demandes entrantes.
+- Utiliser les fiches publiques pour préparer une conversation manuelle et pertinente. Ne pas automatiser le scraping de Google Maps ni envoyer une campagne froide en masse.
+- N'envoyer des courriels de prospection ou de mise à jour qu'aux destinataires pour lesquels le consentement ou une autre base applicable a été documenté. Pour les nouvelles produit, utiliser le segment Resend choisi à la main et explicitement inscrit; le dernier dossier indique 22 contacts, à recompter au moment de la campagne. Ne jamais reconstruire ce segment depuis les indicateurs en bloc de `profiles.product_updates_opt_in`.
+- Garder les liens ambassadeurs cohérents avec le code et l'offre publiés : le dossier produit indique une commission de 10 % sur la première facture payée seulement; ne pas promettre une commission récurrente.
 
-### 3.3 Le Géorepérage (Geofencing) pour Rattraper les Passants
-Dès qu'un client détenteur du pass passe à moins de 150 mètres du restaurant :
-- Son iPhone ou téléphone Android affiche une notification sur écran verrouillé.
-- Le client qui hésitait sur l'endroit où déjeuner voit la notification et entre dans l'établissement.
-- Résultat mesuré lors de l'audit : **fréquence de visite multipliée par 3,6** (de 2,5 à 9,1 visites par client actif).
+## Google Business Profile et avis
 
----
+Positionner Google Business Profile comme un outil de gestion de présence et de réponse aux avis, pas comme une promesse de classement ou d'acquisition garantie.
 
-## 4. Axe 2 — Stratégie d'Acquisition B2B pour Minerva Flow (0 à 1 000 Restaurants)
+Toute demande d'avis doit être identique et facultative pour tous les clients, sans demander une note précise. Ne pas filtrer les clients selon leur satisfaction avant de les diriger vers Google, décourager un avis négatif, ni offrir une récompense pour un avis. Google interdit explicitement la sollicitation sélective d'avis positifs et les incitatifs aux avis ([politique Google Business Profile](https://support.google.com/business/answer/7400114?hl=fr)).
 
-Comment Minerva Technologies Inc. acquiert des centaines de restaurants à Montréal, Québec, Toronto et Paris en exploitant Google Maps :
+Ne pas annoncer NFC, géorepérage, synchronisation POS en temps réel, délais d'activation, adoption, hausse de visites, classement Local Pack ou économies chiffrées sans validation de la capacité et des données concernées.
 
-### 4.1 Étape 1 : Le Scraping & Scoring Ciblé de Territoire
-Nous ciblons les restaurants sur Google Maps selon 4 critères précis :
-- **Note Google Maps** : Entre 4.0 et 4.8 étoiles (bonne cuisine, équipe dévouée, mais gestion souvent artisanale).
-- **Volume d'avis** : Plus de 80 avis (flux de clientèle prouvé).
-- **Critère de manque à gagner** : Présence d'un lien UberEats/DoorDash prédominant sur la fiche Google Maps (l'établissement perd 25-30% de commission par commande).
-- **Absence de fidélisation numérique** : Pas de programme Wallet visible sur leur site web.
+## Mesure du parcours
 
-### 4.2 Étape 2 : Le "1-Click Ingestor" & L'Audit de Rentabilité
-Grâce au moteur d'ingestion développé dans Minerva Flow (`lib/data/prospects.ts`) :
-1. L'équipe entre l'URL Google Maps du restaurant.
-2. Le système extrait automatiquement le nom, les horaires, les catégories de menu et les photos.
-3. Une page de démo personnalisée est générée instantanément (`minervaflow.app/fr/demo/[slug]`).
-4. Le système calcule le **Manque à Gagner Annuel** :
-   $$\text{Commissions Perdues} = \text{Commandes estimées} \times \text{Panier moyen} \times 28\%$$
-   *Exemple réel : « Poutine & Cie perd environ 3 200 $ de commissions chaque mois. En convertissant 20 % de ses clients Google Maps avec Apple Wallet, l'établissement conserve 18 400 $ de marge nette supplémentaire par an. »*
+Les événements PostHog existants comprennent notamment `user_signed_up`, `onboarding_completed`, `restaurant_created`, `campaign_created` et `campaign_status_changed`. Ils mesurent l'inscription et une partie de l'activation, pas encore toute la valeur produit.
 
-### 4.3 Étape 3 : La Tactique du "Gift Drop" Physique (Chevalet NFC de Démonstration)
-Au lieu d'envoyer des courriels froids génériques qui finissent dans les pourriels, l'équipe commerciale Minerva Flow utilise une méthode physique à conversion record :
-1. **La boîte cadeau personnalisée** : Un chevalet en bois gravé au laser avec le nom du restaurant et une puce NFC pré-configurée est préparé.
-2. **Le dépôt terrain (Drop)** : Un ambassadeur ou commercial passe au restaurant entre 14h30 et 16h30 (heures creuses entre le midi et le soir).
-3. **Le pitch de 60 secondes** :  
-   > *« Bonjour [Nom du gérant], votre cuisine est excellente et vos avis Google Maps le prouvent. Mais vous n'avez aucun moyen de garder vos clients dans leur téléphone. Approchez votre iPhone de ce chevalet. »*
-4. **La révélation** : Le gérant touche le chevalet. Sa propre carte de fidélité démo s'affiche sur son écran d'iPhone et s'ajoute à son Apple Wallet en 1 seconde.
-5. **Résultat** : Taux de conversion de démo en compte actif constaté supérieur à **42 %**.
+| Étape | Mesure à utiliser | État |
+| --- | --- | --- |
+| Acquisition | source du prospect, entretiens, démonstrations | À consigner dans le suivi commercial |
+| Activation | inscription, restaurant créé, onboarding terminé | Événements PostHog déjà documentés |
+| Première valeur | menu publié, fidélité configurée, première commande | Ajouter une instrumentation avant d'interpréter le taux d'activation |
+| Rétention | retour hebdomadaire et activité du restaurant à 30 jours | Définir avec des cohortes réelles; aucune valeur cible historique fiable |
+| Résultat restaurant | visites répétées, commandes directes, inscriptions fidélité | Mesurer par restaurant et période comparable; obtenir son accord avant publication |
 
-### 4.4 Étape 4 : L'Offre "No-Brainer"
-- **14 jours d'essai gratuit complet**.
-- **Aucune carte de crédit requise** à l'inscription.
-- **2 chevalets de table NFC offerts et livrés** dès que la caisse Square ou Lightspeed est connectée.
-- **Accompagnement de 15 minutes** pour configurer les 4 paliers d'habitués.
+Le CAC, la LTV, la conversion, la rétention et le gain de revenus restent à calculer à partir des données observées. Les ratios et pourcentages de l'ancienne version ne sont pas des preuves et ne doivent pas apparaître dans les campagnes ou les ventes.
 
----
+## Plan des 90 premiers jours
 
-## 5. Axe 3 — Le Réseau d'Ambassadeurs F&B (Bouches-à-Oreille Professionnel)
+### Jours 1 à 14 — apprendre
 
-Pour accélérer l'expansion sans recruter une armée de commerciaux :
-- **Cible des ambassadeurs** : Barmans réputés, chefs cuisiniers, consultants en restauration et fournisseurs d'équipements de cuisine.
-- **Rémunération** : **10 % de commission récurrente** sur chaque facture payée par les restaurants parrainés via leur lien personnel (`/ambassadeurs`).
-- **Paiements sécurisés** : Intégration Stripe Connect pour un virement bancaire automatique mensuel.
+- Réaliser 10 entretiens à Montréal et documenter les problèmes avec les mots des restaurateurs.
+- Faire 5 démonstrations accompagnées avec données d'exemple.
+- Valider le parcours de la demande à la première action utile et consigner chaque abandon.
 
----
+### Jours 15 à 45 — accompagner
 
-## 6. Plan de Déploiement Opérationnel sur 90 Jours
+- Lancer 3 pilotes avec un objectif choisi par chaque restaurant.
+- Suivre chaque semaine l'usage des fonctions réellement activées.
+- Corriger les points de friction prioritaires avant de lancer de la publicité payante.
 
-```
-MOIS 1 : MONTRÉAL ÉPICENTRE
-├── Quartiers cibles : Mile End, Plateau-Mont-Royal, Vieux-Montréal, Griffintown.
-├── Objectif : 300 restaurants cartographiés sur Google Maps.
-├── Actions : 60 audits personnalisés générés via le 1-Click Ingestor, 35 Gift Drops physiques.
-└── Cible de clôture : 20 restaurants actifs sous contrat.
+### Jours 46 à 90 — prouver puis élargir
 
-MOIS 2 : EXPANSION QUÉBEC & COURONNES
-├── Villes cibles : Québec (Nouvo St-Roch, Vieux-Québec), Laval, Brossard / Quartier DIX30.
-├── Actions : Recrutement de 10 ambassadeurs F&B locaux (chefs & barmans).
-├── Lancement de la campagne d'e-réputation Google Maps automatisée pour les 20 premiers clients.
-└── Cible de clôture : 55 restaurants actifs cumulés.
+- Comparer les pilotes aux objectifs convenus; publier uniquement les cas approuvés par les clients.
+- Décider si le positionnement, l'onboarding et le segment initial justifient un second territoire.
+- Recalculer CAC et rétention avec coûts et cohortes réels avant tout objectif de croissance.
 
-MOIS 3 : ACCÉLÉRATION & PREUVE PAR L'EXEMPLE
-├── Publication du rapport « Baromètre de la Rentabilité Restaurant au Québec » propulsé par Flow.
-├── Inbound marketing naturel : les restaurateurs voient les chevalets NFC chez leurs confrères.
-└── Cible de clôture : 120 restaurants actifs avec un MRR consolidé.
-```
+## Conditions avant campagne payante
 
----
+- Un parcours de démonstration et d'activation validé avec des comptes isolés.
+- Événements d'activation et de rétention fiables, avec les déclarations de confidentialité appropriées.
+- Liste de prospection documentée, mécanisme de consentement et désabonnement vérifiés.
+- Texte, captures et promesses limités au comportement effectivement disponible.
+- Aucun message ne garantit des résultats financiers ou un classement Google.
 
-## 7. Ratios Financiers & Économie de l'Unité (Unit Economics GTM)
-
-| Métrique GTM | Valeur Cible | Constat Terrain |
-| :--- | :--- | :--- |
-| **Coût d'Acquisition Client (CAC)** | < 120 $ CA | 78 $ CA (via méthode Gift Drop NFC) |
-| **Valeur Vie Client (LTV à 24 mois)** | > 2 400 $ CA | Taux de rétention logiciel de 98 % |
-| **Ratio LTV / CAC** | > 15 : 1 | Rentabilité immédiate dès le 2e mois |
-| **Délai de Conversion (Lead -> Client)** | < 7 jours | 3 à 5 jours en moyenne |
-| **Augmentation Moyenne du CA Restaurant** | + 18 % à 25 % | Grâce au retour client ×3,6 et à l'absence de commission de livraison |
-
----
-
-## 8. Synthèse pour l'Exécution
-
-La stratégie Google Maps de Minerva Flow ne repose pas sur de la publicité coûteuse : elle s'appuie sur la physique du terrain, la technologie native que chaque consommateur possède déjà dans sa poche (Apple & Google Wallet), et la valorisation sincère du travail des restaurateurs indépendants.
+Pour les envois électroniques, la loi canadienne anti-pourriel exige le consentement applicable avant l'envoi de messages électroniques commerciaux; conserver la preuve et offrir un mécanisme de désabonnement ([guide officiel sur le consentement](https://ised-isde.canada.ca/site/canada-anti-spam-legislation/en/getting-consent-send-email)).

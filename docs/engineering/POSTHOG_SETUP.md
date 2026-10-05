@@ -53,13 +53,14 @@ We've built some insights and a dashboard for you to keep an eye on user behavio
 - **Insight**: [AI reviews generated](https://us.posthog.com/project/341127/insights/ZBDkXGHU)
 - **Insight**: [Team member actions](https://us.posthog.com/project/341127/insights/bS81zUiX)
 
-## Verify before merging
+## Follow-up status — 2026-10-05
 
-- [ ] Run a full production build (the wizard only verified the files it touched) and fix any lint or type errors introduced by the generated code.
-- [ ] Run the test suite — call sites that were rewritten or instrumented may need updated mocks or fixtures.
-- [ ] Add `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` and `NEXT_PUBLIC_POSTHOG_HOST` to `.env.example` and any team bootstrap scripts so collaborators know what to set.
-- [ ] Wire source-map upload (`posthog-cli sourcemap` or your bundler's upload step) into CI so production stack traces de-minify.
-- [ ] Confirm the returning-visitor path also calls `identify` — the `PostHogIdentifier` component handles this on every authenticated page load, but verify it fires before testing in production.
+- [x] `.env.example` documents `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`, the US ingestion host and the optional server-only `POSTHOG_PERSONAL_API_KEY`. The linked Vercel Production project also has the public token and host configured.
+- [x] Source inspection confirms that both authenticated app layouts mount `PostHogIdentifier`, which calls `identify` with the authenticated user ID.
+- [x] Vercel's current Production deployment reached `READY`, confirming that the current app builds. This does not prove PostHog event delivery.
+- [ ] Confirm event delivery for returning users in PostHog with an authenticated production session.
+- [ ] Run the web test suite after the instrumentation changes; it was not run in this task.
+- [ ] Upload PostHog source maps from CI. The personal API key exists only in Vercel Production; no GitHub Actions secret is configured, so do not copy or expose that key in logs.
 
 ### Agent skill
 
