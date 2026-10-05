@@ -1,5 +1,6 @@
 import "server-only";
 import { PKPass } from "passkit-generator";
+import { applePassImageBuffers } from "./apple-pass-images";
 
 function certificate(value: string): string {
   const normalized = value.replace(/\\n/g, "\n").trim();
@@ -10,13 +11,14 @@ function certificate(value: string): string {
 export function buildAppleLoyaltyPass(input: {
   customerId: string;
   customerName: string;
+  customerPhone?: string | null;
   restaurantName: string;
   points: number;
   tierLabel: string;
   portalUrl: string;
   brandColor?: string;
 }) {
-  const pass = new PKPass({}, {
+  const pass = new PKPass(applePassImageBuffers(), {
     wwdr: certificate(process.env.APPLE_WALLET_WWDR_CERT!),
     signerCert: certificate(process.env.APPLE_WALLET_SIGNER_CERT!),
     signerKey: certificate(process.env.APPLE_WALLET_SIGNER_KEY!),
@@ -32,8 +34,9 @@ export function buildAppleLoyaltyPass(input: {
     backgroundColor: input.brandColor || "rgb(14, 90, 64)",
     foregroundColor: "rgb(255, 255, 255)",
     labelColor: "rgb(223, 255, 95)",
-    webServiceURL: `${process.env.NEXT_PUBLIC_APP_URL || "https://minervaflow.app"}/api/wallet/apple`,
-    authenticationToken: process.env.APPLE_WALLET_AUTH_TOKEN,
+    // No webServiceURL / authenticationToken: Apple requires both together and a live
+    // registration service behind them, which does not exist. A static pass is valid;
+    // adding live point updates means building that service first.
   });
 
   pass.type = "storeCard";
@@ -42,6 +45,8 @@ export function buildAppleLoyaltyPass(input: {
   pass.auxiliaryFields.push({ key: "member", label: "MEMBRE", value: input.customerName });
   pass.backFields.push({ key: "restaurant", label: "ÉTABLISSEMENT", value: input.restaurantName });
   pass.backFields.push({ key: "portal", label: "VOTRE ESPACE", value: input.portalUrl });
-  pass.setBarcodes({ format: "PKBarcodeFormatQR", message: input.customerId, messageEncoding: "iso-8859-1" });
+  // The counter identifies a guest by phone number; fall back to the customer id.
+  const phoneDigits = input.customerPhone ? input.customerPhone.replace(/\D/g, "") : "";
+  pass.setBarcodes({ format: "PKBarcodeFormatQR", message: phoneDigits || input.customerId, messageEncoding: "iso-8859-1" });
   return pass.getAsBuffer();
 }

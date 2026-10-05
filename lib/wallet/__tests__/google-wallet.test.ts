@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import crypto from "node:crypto";
+import fs from "node:fs";
 import { signJwtRS256 } from "../jwt";
 import { buildGoogleLoyaltyPayload } from "../google-loyalty-payload";
 
@@ -86,5 +87,28 @@ describe("buildGoogleLoyaltyPayload", () => {
 
     expect(payload.payload.loyaltyClasses[0].programName).toBe("Le Trèfle Doré");
     expect(payload.payload.loyaltyClasses[0].hexBackgroundColor).toBe("#167f5b");
+  });
+
+  it("uses a logo URL that is a real public PNG on the canonical host", async () => {
+    const { GOOGLE_WALLET_LOGO_URL } = await import("../google-loyalty-payload");
+    expect(GOOGLE_WALLET_LOGO_URL).toBe("https://www.minervaflow.app/icon-512.png");
+    expect(fs.existsSync("public/icon-512.png")).toBe(true);
+    const payload = buildGoogleLoyaltyPayload({
+      issuerId: "1", serviceAccountEmail: "a@b.iam.gserviceaccount.com", appUrl: "https://www.minervaflow.app",
+      customerId: "c1", customerName: "N", restaurantId: "r1", restaurantName: "R", points: 1, tierLabel: "T",
+      portalUrl: "https://www.minervaflow.app/portal", brandColorHex: "#167f5b",
+    });
+    expect(payload.payload.loyaltyClasses[0].programLogo.sourceUri.uri).toBe(GOOGLE_WALLET_LOGO_URL);
+  });
+
+  it("puts the customer's phone digits in the QR so the counter can find them", () => {
+    const payload = buildGoogleLoyaltyPayload({
+      issuerId: "1", serviceAccountEmail: "a@b.iam.gserviceaccount.com", appUrl: "https://www.minervaflow.app",
+      customerId: "c1", customerName: "N", customerPhone: "(514) 555-0100", restaurantId: "r1", restaurantName: "R",
+      points: 1, tierLabel: "T", portalUrl: "https://www.minervaflow.app/portal", brandColorHex: "#167f5b",
+    });
+    const barcode = payload.payload.loyaltyObjects[0].barcode;
+    expect(barcode.value).toBe("5145550100");
+    expect(barcode.alternateText).toBe("(514) 555-0100");
   });
 });

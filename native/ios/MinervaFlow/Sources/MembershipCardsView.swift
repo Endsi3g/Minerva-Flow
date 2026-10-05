@@ -199,9 +199,10 @@ struct MembershipCardsView: View {
 private struct WalletPassSheet: UIViewControllerRepresentable {
     let pass: PKPass
 
-    func makeUIViewController(context: Context) -> PKAddPassesViewController {
-        PKAddPassesViewController(pass: pass)!
+    func makeUIViewController(context: Context) -> UIViewController {
+        // nil when this device cannot add passes: show nothing instead of crashing.
+        PKAddPassesViewController(pass: pass) ?? UIViewController()
     }
 
-    func updateUIViewController(_ controller: PKAddPassesViewController, context: Context) {}
+    func updateUIViewController(_ controller: UIViewController, context: Context) {}
 }

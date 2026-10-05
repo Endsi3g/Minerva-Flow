@@ -48,6 +48,8 @@ export async function GET(req: Request) {
   const saveUrl = buildGoogleWalletSaveUrl({
     customerId: customer.id,
     customerName: customer.name,
+    // The counter identifies a guest by phone number, so the pass barcode carries it.
+    customerPhone: customer.phone,
     restaurantId: customer.restaurantId,
     restaurantName: restaurant?.name ?? "Minerva Flow",
     points: customer.loyaltyPoints,
