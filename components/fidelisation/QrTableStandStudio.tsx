@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/Button";
@@ -88,10 +90,11 @@ export function QrTableStandStudio({
   restaurantName: string;
   portalUrl: string;
 }) {
+  const t = useTranslations("qrTableStudio");
   const [format, setFormat] = useState<QrStudioFormat>("chevalet_a6");
   const [theme, setTheme] = useState<string>("emerald");
-  const [headline, setHeadline] = useState("Scannez pour rejoindre notre Club Privé");
-  const [subline, setSubline] = useState("Cumulez des points & débloquez vos récompenses exclusives");
+  const [headline, setHeadline] = useState(t("scanToJoinOur"));
+  const [subline, setSubline] = useState(t("earnPointsUnlockYour"));
   const [footerText, setFooterText] = useState(`✦ ${restaurantName.toUpperCase()} VIP ✦`);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
@@ -125,7 +128,7 @@ export function QrTableStandStudio({
   function handleCopy() {
     navigator.clipboard.writeText(portalUrl);
     setCopied(true);
-    toast.success("Lien copié dans le presse-papier !");
+    toast.success(t("linkCopiedToThe"));
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -203,10 +206,10 @@ export function QrTableStandStudio({
       a.href = dataUrl;
       a.download = `Affiche-Table-${restaurantName.replace(/\s+/g, "_")}-${format}.png`;
       a.click();
-      toast.success("Affiche haute définition téléchargée !");
+      toast.success(t("highDefinitionPosterDownloaded"));
     } catch (err) {
       console.error(err);
-      toast.error("Échec du téléchargement.");
+      toast.error(t("downloadFailed"));
     } finally {
       setIsExporting(false);
     }
@@ -219,18 +222,18 @@ export function QrTableStandStudio({
         <div className="grid grid-cols-2 gap-3">
           <Field label="Format du support">
             <Select value={format} onChange={(e) => setFormat(e.target.value as QrStudioFormat)}>
-              <option value="chevalet_a6">Chevalet de Table (A6)</option>
-              <option value="sticker_carre">Sticker Carré (Table / Comptoir)</option>
-              <option value="carton_addition">Carton Addition / Pochette</option>
+              <option value="chevalet_a6">{t("tableTentA6")}</option>
+              <option value="sticker_carre">{t("squareStickerTableCounter")}</option>
+              <option value="carton_addition">{t("checkCardSleeve")}</option>
             </Select>
           </Field>
-          <Field label="Thème visuel">
+          <Field label={t("visualTheme")}>
             <Select value={theme} onChange={(e) => setTheme(e.target.value)}>
-              <option value="emerald">Vert Émeraude & Lime (Minerva)</option>
-              <option value="ink">Noir Nuit & Titane</option>
-              <option value="cream">Crème & Minimaliste</option>
-              <option value="gold">Or & Noir Sombre</option>
-              <option value="terracotta">Terracotta & Sable</option>
+              <option value="emerald">{t("emeraldGreenLimeMinerva")}</option>
+              <option value="ink">{t("nightBlackTitanium")}</option>
+              <option value="cream">{t("creamMinimalist")}</option>
+              <option value="gold">{t("goldDarkBlack")}</option>
+              <option value="terracotta">{t("terracottaSand")}</option>
             </Select>
           </Field>
         </div>
@@ -240,7 +243,7 @@ export function QrTableStandStudio({
         </Field>
 
         <Field label="Sous-titre explicatif">
-          <Input value={subline} onChange={(e) => setSubline(e.target.value)} placeholder="Ex : 50 points offerts à votre première commande" />
+          <Input value={subline} onChange={(e) => setSubline(e.target.value)} placeholder={t("eG50Points")} />
         </Field>
 
         <Field label="Texte de bas de page">
@@ -249,10 +252,10 @@ export function QrTableStandStudio({
 
         <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 p-3.5 space-y-2 text-[12px] text-mv-ink-soft">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-mv-ink">Lien public scanné :</span>
+            <span className="font-semibold text-mv-ink">{t("publicLinkScanned")}</span>
             <button onClick={handleCopy} className="inline-flex items-center gap-1 text-mv-green-dark hover:underline font-medium">
               {copied ? <Check size={12} /> : <Copy size={12} />}
-              {copied ? "Copié" : "Copier le lien"}
+              {copied ? t("copied") : t("copyTheLink")}
             </button>
           </div>
           <p className="truncate font-mono text-[12px] bg-white p-2 rounded-lg border border-mv-border-soft">{portalUrl}</p>
@@ -261,14 +264,14 @@ export function QrTableStandStudio({
         <div className="pt-2 flex items-center gap-3">
           <Button onClick={handleDownload} disabled={isExporting || !qrDataUrl} className="w-full gap-2 py-2.5">
             <Download size={15} />
-            {isExporting ? "Génération 300 DPI…" : "Télécharger l'Affiche (PNG HD)"}
+            {isExporting ? t("generating300Dpi") : t("downloadThePosterHd")}
           </Button>
         </div>
       </div>
 
       {/* Live Preview Column */}
       <div className="lg:col-span-6 flex flex-col items-center justify-center">
-        <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-2">Aperçu en direct</p>
+        <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-2">{t("livePreview")}</p>
         <div
           className={`w-full max-w-[320px] rounded-2xl p-6 border shadow-xl transition-all ${activeTheme.bg} ${activeTheme.text} ${activeTheme.border} ${
             format === "chevalet_a6" ? "aspect-[1/1.4]" : format === "sticker_carre" ? "aspect-square" : "aspect-[1.5/1]"

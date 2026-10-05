@@ -2,7 +2,7 @@
 
 
 import { intlLocale } from "@/lib/format-locale";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Download, Film, Share2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ function fileFromBlob(blob: Blob, name: string): File {
 }
 
 export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, fileBase, emptyTitle, emptyHint }: Props) {
+  const tv = useTranslations("resultsShareStudio");
   const locale = useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [formatId, setFormatId] = useState(SHARE_FORMATS[0].id);
@@ -134,7 +135,7 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
       if (!blob) throw new Error("png");
       triggerDownload(blob, `${fileBase}-${format.id}.png`);
     } catch {
-      toast.error("Impossible de créer l'image. Réessayez.");
+      toast.error(tv("couldNotCreateThe"));
     } finally {
       setBusy(null);
     }
@@ -150,7 +151,7 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
       if (!video) throw new Error("unsupported");
       triggerDownload(video.blob, `${fileBase}-${format.id}.${video.extension}`);
     } catch {
-      toast.error("Votre navigateur ne permet pas de créer la vidéo. Téléchargez l'image à la place.");
+      toast.error(tv("yourBrowserCannotCreate"));
     } finally {
       setBusy(null);
     }
@@ -166,10 +167,10 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
         await navigator.share({ files: [file], title: spec.headline });
       } else {
         triggerDownload(blob, file.name);
-        toast.message("Partage direct indisponible ici : l'image a été téléchargée.");
+        toast.message(tv("directSharingIsUnavailable"));
       }
     } catch (error) {
-      if ((error as Error)?.name !== "AbortError") toast.error("Le partage a échoué. Réessayez.");
+      if ((error as Error)?.name !== "AbortError") toast.error(tv("sharingFailedTryAgain"));
     } finally {
       setBusy(null);
     }
@@ -193,9 +194,9 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
       <div className="space-y-4">
         <Card>
           <fieldset>
-            <legend className="mb-2 text-[13px] font-semibold text-mv-ink">Chiffres à montrer</legend>
+            <legend className="mb-2 text-[13px] font-semibold text-mv-ink">{tv("figuresToShow")}</legend>
             <p className="mb-3 text-[12px] text-mv-ink-faint">
-              Seuls des chiffres réels sont proposés. Décochez ce que vous ne voulez pas publier.
+              {tv("onlyRealFiguresAre")}
             </p>
             <div className="space-y-2">
               {metrics.map((metric) => (
@@ -228,7 +229,7 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="mb-2 text-[13px] font-semibold text-mv-ink">Format</p>
+              <p className="mb-2 text-[13px] font-semibold text-mv-ink">{tv("format")}</p>
               <div className="flex gap-2">
                 {SHARE_FORMATS.map((option) => (
                   <button
@@ -247,7 +248,7 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
               </div>
             </div>
             <div>
-              <p className="mb-2 text-[13px] font-semibold text-mv-ink">Couleurs</p>
+              <p className="mb-2 text-[13px] font-semibold text-mv-ink">{tv("colors")}</p>
               <div className="flex gap-2">
                 {SHARE_THEMES.map((option) => (
                   <button
@@ -255,7 +256,7 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
                     type="button"
                     onClick={() => setThemeId(option.id)}
                     aria-pressed={themeId === option.id}
-                    aria-label={`Thème ${option.name}`}
+                    aria-label={tv("optionnameTheme", { optionName: option.name })}
                     className={cn(
                       "flex items-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] font-medium transition-colors",
                       themeId === option.id ? "border-mv-green bg-mv-green/10 text-mv-green-dark" : "border-mv-border bg-mv-surface text-mv-ink-soft hover:bg-mv-cream-soft"
@@ -282,12 +283,12 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
             <canvas
               ref={canvasRef}
               role="img"
-              aria-label={`Aperçu du visuel : ${spec.headline}. ${chosen.map((m) => m.label).join(", ")}`}
+              aria-label={tv("visualPreviewHeadlineMap", { headline: spec.headline, map: chosen.map((m) => m.label).join(", ") })}
               style={{ width: previewWidth, height: previewHeight }}
               className="rounded-xl border border-mv-border shadow-mv-sm"
             />
           </div>
-          {nothingSelected && <p className="mt-3 text-center text-[12.5px] text-mv-ink-faint">Cochez au moins un chiffre pour l&rsquo;afficher.</p>}
+          {nothingSelected && <p className="mt-3 text-center text-[12.5px] text-mv-ink-faint">{tv("checkAtLeastOne")}</p>}
         </Card>
 
         <div className="grid grid-cols-2 gap-2">
@@ -297,7 +298,7 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
           </Button>
           <Button variant="secondary" onClick={downloadVideo} disabled={busy !== null || nothingSelected || !canRecord}>
             {busy === "video" ? <Loader2 className="animate-spin" size={15} aria-hidden="true" /> : <Film size={15} aria-hidden="true" />}
-            Vidéo animée
+            {tv("animatedVideo")}
           </Button>
         </div>
         <Button variant="outline" className="w-full" onClick={share} disabled={busy !== null || nothingSelected}>
@@ -306,10 +307,10 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
         </Button>
         <p aria-live="polite" className="text-[12px] leading-relaxed text-mv-ink-faint">
           {busy === "video"
-            ? "Création de la vidéo en cours (environ 6 secondes). Gardez cet onglet ouvert."
+            ? tv("creatingTheVideoAbout")
             : canRecord
-              ? "La vidéo dure environ 6 secondes et se crée dans votre navigateur : rien n'est envoyé à nos serveurs."
-              : "La vidéo animée n'est pas prise en charge par ce navigateur. Utilisez l'image PNG."}
+              ? tv("theVideoLastsAbout")
+              : tv("theAnimatedVideoIs")}
         </p>
       </div>
     </div>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
@@ -22,37 +24,43 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const FORMAT_OPTIONS: {
+function buildFORMAT_OPTIONS(t: (key: string) => string): {
   id: CardFormat;
   label: string;
   hint: string;
   aspectClass: string;
   width: number;
   height: number;
-}[] = [
-  { id: "post", label: "Publication", hint: "Feed standard (4:5)", aspectClass: "aspect-[4/5]", width: 320, height: 400 },
-  { id: "story", label: "Story / Reel", hint: "Plein écran (9:16)", aspectClass: "aspect-[9/16]", width: 280, height: 498 },
-  { id: "landscape", label: "Paysage 16:9", hint: "YouTube & Écrans", aspectClass: "aspect-[16/9]", width: 440, height: 248 },
-  { id: "lower-third", label: "Bandeau bas", hint: "Incrustation vidéo", aspectClass: "aspect-[540/110]", width: 480, height: 98 },
-  { id: "sticker", label: "Sticker", hint: "Cadrage serré vidéo", aspectClass: "aspect-[4/5]", width: 300, height: 375 },
-  { id: "square", label: "Carré 1:1", hint: "Feed & Vignette", aspectClass: "aspect-square", width: 320, height: 320 },
-  { id: "carousel", label: "Carrousel", hint: "Multi-slides (4:5)", aspectClass: "aspect-[4/5]", width: 280, height: 350 },
+}[] {
+  return [
+  { id: "post", label: t("post"), hint: t("standardFeed45"), aspectClass: "aspect-[4/5]", width: 320, height: 400 },
+  { id: "story", label: t("storyReel"), hint: t("fullScreen916"), aspectClass: "aspect-[9/16]", width: 280, height: 498 },
+  { id: "landscape", label: t("landscape169"), hint: t("youtubeScreens"), aspectClass: "aspect-[16/9]", width: 440, height: 248 },
+  { id: "lower-third", label: t("lowerThird"), hint: t("videoOverlay"), aspectClass: "aspect-[540/110]", width: 480, height: 98 },
+  { id: "sticker", label: t("sticker"), hint: t("tightVideoFraming"), aspectClass: "aspect-[4/5]", width: 300, height: 375 },
+  { id: "square", label: t("square11"), hint: t("feedThumbnail"), aspectClass: "aspect-square", width: 320, height: 320 },
+  { id: "carousel", label: t("carousel"), hint: t("multiSlide45"), aspectClass: "aspect-[4/5]", width: 280, height: 350 },
 ];
+}
 
-const BACKGROUND_OPTIONS: { id: CardBackground; label: string }[] = [
-  { id: "brand", label: "Marque" },
-  { id: "white", label: "Blanc" },
-  { id: "black", label: "Noir" },
-  { id: "glass-dark", label: "Verre sombre" },
-  { id: "glass-light", label: "Verre clair" },
-  { id: "transparent", label: "Transparent" },
+function buildBACKGROUND_OPTIONS(t: (key: string) => string): { id: CardBackground; label: string }[] {
+  return [
+  { id: "brand", label: t("brand") },
+  { id: "white", label: t("white") },
+  { id: "black", label: t("black") },
+  { id: "glass-dark", label: t("darkGlass") },
+  { id: "glass-light", label: t("lightGlass") },
+  { id: "transparent", label: t("transparent") },
 ];
+}
 
-const TEXT_COLOR_OPTIONS: { id: TextColor; label: string; hint: string }[] = [
-  { id: "auto", label: "Auto", hint: "Selon l'arrière-plan" },
-  { id: "white", label: "Blanc", hint: "Lumière (contraste vidéo)" },
+function buildTEXT_COLOR_OPTIONS(t: (key: string) => string): { id: TextColor; label: string; hint: string }[] {
+  return [
+  { id: "auto", label: "Auto", hint: t("dependsOnTheBackground") },
+  { id: "white", label: "Blanc", hint: t("lightVideoContrast") },
   { id: "dark", label: "Sombre", hint: "Encre signature" },
 ];
+}
 
 const THUMBNAIL_WIDTH = 92;
 
@@ -133,6 +141,7 @@ export function ShareCardConfigurator({
   filePrefix = "minerva-flow",
   allowValueOverride = false,
 }: ShareCardConfiguratorProps) {
+  const tv = useTranslations("shareCardConfigurator");
   const [heroId, setHeroId] = useState<string>(metrics[0]?.id ?? "");
   const [statIds, setStatIds] = useState<string[]>(metrics.slice(1, 4).map((m) => m.id));
   const [background, setBackground] = useState<CardBackground>("brand");
@@ -150,7 +159,7 @@ export function ShareCardConfigurator({
   const hero = byId.get(heroId) ?? metrics[0];
   const stats = statIds.map((id) => byId.get(id)).filter((m): m is ShareableMetric => Boolean(m));
   const statOptions = metrics.filter((m) => m.id !== heroId);
-  const formatDef = FORMAT_OPTIONS.find((f) => f.id === format)!;
+  const formatDef = buildFORMAT_OPTIONS(tv).find((f) => f.id === format)!;
 
   // Override applies only to what's rendered/exported — never to the
   // selection dropdowns, which must keep showing the real values.
@@ -180,7 +189,7 @@ export function ShareCardConfigurator({
   function addBadge(type: FooterBadge["type"]) {
     if (badges.some((b) => b.type === type)) return;
     if (type === "rating") setBadges((prev) => [...prev, { type: "rating", value: 4.8 }]);
-    if (type === "quote") setBadges((prev) => [...prev, { type: "quote", text: "Un vrai changement pour nous." }]);
+    if (type === "quote") setBadges((prev) => [...prev, { type: "quote", text: tv("aRealChangeFor") }]);
     if (type === "link") setBadges((prev) => [...prev, { type: "link", url: restaurantUrl }]);
   }
 
@@ -218,7 +227,7 @@ export function ShareCardConfigurator({
       if (format !== "carousel") {
         if (!mainCardRef.current) return;
         await downloadNode(mainCardRef.current, `${filePrefix}-resultats-${format}-${timestampSuffix()}.png`);
-        toast.success("Carte téléchargée.");
+        toast.success(tv("cardDownloaded"));
         return;
       }
 
@@ -238,9 +247,9 @@ export function ShareCardConfigurator({
         // bloque des téléchargements multiples déclenchés d'un coup.
         await new Promise((r) => setTimeout(r, 350));
       }
-      toast.success(`Carrousel téléchargé (${1 + statsDisplay.length} images).`);
+      toast.success(tv("carouselDownloadedStatsdisplaylengthImages", { statsDisplayLength: 1 + statsDisplay.length }));
     } catch {
-      toast.error("Le téléchargement a échoué. Réessayez.");
+      toast.error(tv("downloadFailedTryAgain"));
     } finally {
       setIsExporting(false);
     }
@@ -254,14 +263,14 @@ export function ShareCardConfigurator({
       const response = await fetch(dataUrl);
       const file = new File([await response.blob()], `${filePrefix}-resultats-${format}.png`, { type: "image/png" });
       if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-        await navigator.share({ title: `Résultats de fidélisation — ${restaurantName}`, files: [file] });
-        toast.success("Image partagée.");
+        await navigator.share({ title: tv("loyaltyResultsRestaurantname", { restaurantName }), files: [file] });
+        toast.success(tv("imageShared"));
       } else {
         const link = document.createElement("a");
         link.download = file.name;
         link.href = dataUrl;
         link.click();
-        toast.info("Le partage direct n’est pas offert dans ce navigateur. L’image a été téléchargée.");
+        toast.info(tv("directSharingIsNot"));
       }
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") return;
@@ -272,9 +281,9 @@ export function ShareCardConfigurator({
           link.download = `${filePrefix}-resultats-${format}.png`;
           link.href = dataUrl;
           link.click();
-          toast.info("Le partage n’a pas abouti dans ce navigateur. L’image a été téléchargée.");
+          toast.info(tv("sharingDidNotGo"));
         } catch {
-          toast.error("Le partage de l’image a échoué. Réessayez ou téléchargez-la.");
+          toast.error(tv("sharingTheImageFailed"));
         }
       }
     } finally {
@@ -289,8 +298,8 @@ export function ShareCardConfigurator({
       {/* Left: configuration */}
       <div className="lg:col-span-7 space-y-5">
         <Card>
-          <CardHeader eyebrow="Contenu" title="Métrique héro" description="Le grand chiffre affiché dans la bande verte." />
-          <Select aria-label="Métrique héro" value={heroId} onChange={(e) => setHeroId(e.target.value)}>
+          <CardHeader eyebrow="Contenu" title={tv("heroMetric")} description={tv("theBigNumberShown")} />
+          <Select aria-label={tv("heroMetric")} value={heroId} onChange={(e) => setHeroId(e.target.value)}>
             {metrics.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.label} — {m.formattedValue}
@@ -301,14 +310,14 @@ export function ShareCardConfigurator({
             <Input
               value={heroOverride}
               onChange={(e) => setHeroOverride(e.target.value)}
-              placeholder={`Valeur affichée (par défaut : ${hero?.formattedValue ?? ""})`}
+              placeholder={tv("displayedValueDefaultFormattedvalue", { formattedValue: hero?.formattedValue ?? "" })}
               className="mt-2 h-8 text-[12.5px]"
             />
           )}
         </Card>
 
         <Card>
-          <CardHeader eyebrow="Contenu" title="3 statistiques" description="Affichées sous la bande verte, dans cet ordre." />
+          <CardHeader eyebrow="Contenu" title="3 statistiques" description={tv("shownBelowTheGreen")} />
           <div className="space-y-2.5">
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex items-center gap-1.5">
@@ -316,7 +325,7 @@ export function ShareCardConfigurator({
                 <div className="flex-1 space-y-1.5">
                   <Select aria-label={`Statistique ${i + 1}`} value={statIds[i] ?? ""} onChange={(e) => updateStat(i, e.target.value)}>
                     <option value="" disabled>
-                      Choisir une statistique…
+                      {tv("chooseAStatistic")}
                     </option>
                     {statOptions.map((m) => (
                       <option key={m.id} value={m.id}>
@@ -334,7 +343,7 @@ export function ShareCardConfigurator({
                           return next;
                         })
                       }
-                      placeholder="Valeur affichée (optionnel)"
+                      placeholder={tv("displayedValueOptional")}
                       className="h-8 text-[12.5px]"
                     />
                   )}
@@ -423,7 +432,7 @@ export function ShareCardConfigurator({
               </div>
             ))}
             {badges.length === 0 && (
-              <p className="text-[12px] text-mv-ink-faint">Aucun badge — le pied de page restera vide.</p>
+              <p className="text-[12px] text-mv-ink-faint">{tv("noBadgeTheFooter")}</p>
             )}
           </div>
         </Card>
@@ -434,7 +443,7 @@ export function ShareCardConfigurator({
         <Card>
           <CardHeader eyebrow="Export" title="Format" />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {FORMAT_OPTIONS.map((f) => (
+            {buildFORMAT_OPTIONS(tv).map((f) => (
               <button
                 key={f.id}
                 type="button"
@@ -452,9 +461,9 @@ export function ShareCardConfigurator({
         </Card>
 
         <Card>
-          <CardHeader eyebrow="Export" title="Arrière-plan" />
+          <CardHeader eyebrow="Export" title={tv("background")} />
           <div className="grid grid-cols-3 gap-2">
-            {BACKGROUND_OPTIONS.map((b) => (
+            {buildBACKGROUND_OPTIONS(tv).map((b) => (
               <button
                 key={b.id}
                 type="button"
@@ -471,9 +480,9 @@ export function ShareCardConfigurator({
         </Card>
 
         <Card>
-          <CardHeader eyebrow="Export" title="Couleur du texte" description="Basculez en blanc pur pour un contraste maximal sur fond sombre ou vidéo." />
+          <CardHeader eyebrow="Export" title="Couleur du texte" description={tv("switchToPureWhite")} />
           <div className="grid grid-cols-3 gap-2">
-            {TEXT_COLOR_OPTIONS.map((c) => (
+            {buildTEXT_COLOR_OPTIONS(tv).map((c) => (
               <button
                 key={c.id}
                 type="button"
@@ -536,7 +545,7 @@ export function ShareCardConfigurator({
               </div>
             </div>
           ) : (
-            <p className="text-[13px] text-mv-ink-faint">Aucune métrique disponible.</p>
+            <p className="text-[13px] text-mv-ink-faint">{tv("noMetricAvailable")}</p>
           )}
 
           {format === "carousel" && statsDisplay.length > 0 && (
@@ -582,14 +591,14 @@ export function ShareCardConfigurator({
             <Button onClick={handleDownload} disabled={isExporting || !heroDisplay} className="w-full">
               {isExporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
               {isExporting
-                ? "Génération…"
+                ? tv("generating")
                 : format === "carousel"
-                  ? `Télécharger (${1 + statsDisplay.length} images)`
-                  : "Télécharger l’image"}
+                  ? tv("downloadStatsdisplaylengthImages", { statsDisplayLength: 1 + statsDisplay.length })
+                  : tv("downloadTheImage")}
             </Button>
-            <Button onClick={handleShare} variant="secondary" disabled={isExporting || !heroDisplay || format === "carousel"} className="w-full" title={format === "carousel" ? "Téléchargez les diapositives séparément pour les publier en carrousel." : undefined}>
+            <Button onClick={handleShare} variant="secondary" disabled={isExporting || !heroDisplay || format === "carousel"} className="w-full" title={format === "carousel" ? tv("downloadTheSlidesSeparately") : undefined}>
               <Share2 size={15} />
-              {format === "carousel" ? "Téléchargez le carrousel" : "Partager l’image"}
+              {format === "carousel" ? tv("downloadTheCarousel") : "Partager l’image"}
             </Button>
           </div>
         </Card>

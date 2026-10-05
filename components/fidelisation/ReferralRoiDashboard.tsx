@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { RadialGauge } from "@/components/charts/RadialGauge";
@@ -18,6 +18,7 @@ export function ReferralRoiDashboard({
   metrics: ReferralRoiMetrics;
   ambassadors: TopAmbassador[];
 }) {
+  const t = useTranslations("referralRoi");
   const locale = useLocale();
   return (
     <div className="space-y-6">
@@ -25,7 +26,7 @@ export function ReferralRoiDashboard({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Revenu Filleuls</span>
+            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{t("referredRevenue")}</span>
             <span className="rounded-lg bg-mv-green-tint p-1.5 text-mv-green-dark">
               <DollarSign size={14} />
             </span>
@@ -41,7 +42,7 @@ export function ReferralRoiDashboard({
                 pct: metrics.totalRevenueGenerated > 0 ? 100 : 0,
               },
               {
-                label: "Coût récompenses",
+                label: t("rewardCost"),
                 amount: metrics.estimatedRewardsCost,
                 pct:
                   metrics.totalRevenueGenerated > 0
@@ -54,7 +55,7 @@ export function ReferralRoiDashboard({
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Multiplicateur ROI</span>
+            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{t("roiMultiplier")}</span>
             <span className="rounded-lg bg-mv-lime-tint p-1.5 text-mv-green-darker">
               <TrendingUp size={14} />
             </span>
@@ -70,7 +71,7 @@ export function ReferralRoiDashboard({
               strokeWidth={8}
               color="var(--mv-green)"
               centerValue={metrics.roiMultiplier > 0 ? `${metrics.roiMultiplier}x` : "—"}
-              centerLabel={metrics.roiMultiplier > 0 ? "coût" : "bientôt"}
+              centerLabel={metrics.roiMultiplier > 0 ? t("cost") : t("soon")}
             />
             <div className="min-w-0">
               {metrics.roiMultiplier > 0 && metrics.totalRevenueGenerated > 0 && (
@@ -88,10 +89,10 @@ export function ReferralRoiDashboard({
                 }
               >
                 {metrics.roiMultiplier > 0
-                  ? "Rendement net par dollar investi"
+                  ? t("netReturnPerDollar")
                   : metrics.totalRevenueGenerated > 0
-                    ? "Récompenses pas encore réclamées — le multiplicateur s'affichera dès qu'un filleul en réclame une"
-                    : "Rendement net par dollar investi"}
+                    ? t("rewardsNotClaimedYet")
+                    : t("netReturnPerDollar")}
               </p>
             </div>
           </div>
@@ -99,7 +100,7 @@ export function ReferralRoiDashboard({
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Taux de Conversion</span>
+            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{t("conversionRate")}</span>
             <span className="rounded-lg bg-blue-500/10 p-1.5 text-blue-600">
               <MousePointerClick size={14} />
             </span>
@@ -109,7 +110,7 @@ export function ReferralRoiDashboard({
             data={[
               { label: "Convertis", value: metrics.totalConversions, color: "var(--mv-green)" },
               {
-                label: "Clics sans conversion",
+                label: t("clicksWithoutConversion"),
                 value: Math.max(0, metrics.totalClicks - metrics.totalConversions),
                 color: "var(--mv-border)",
               },
@@ -120,7 +121,7 @@ export function ReferralRoiDashboard({
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-sm">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Ambassadeurs Actifs</span>
+            <span className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{t("activeAmbassadors")}</span>
             <span className="rounded-lg bg-purple-500/10 p-1.5 text-purple-600">
               <Users size={14} />
             </span>
@@ -139,7 +140,7 @@ export function ReferralRoiDashboard({
               }))}
             />
           ) : (
-            <p className="text-[12px] text-mv-ink-soft">Clients qui partagent activement</p>
+            <p className="text-[12px] text-mv-ink-soft">{t("customersActivelySharing")}</p>
           )}
         </div>
       </div>
@@ -147,9 +148,9 @@ export function ReferralRoiDashboard({
       {/* Top Ambassadors Leaderboard */}
       <Card>
         <CardHeader
-          eyebrow="Bouche-à-Oreille"
+          eyebrow={t("wordOfMouth")}
           title="Classement des Meilleurs Ambassadeurs"
-          description="Vos clients les plus influents qui génèrent le plus de nouveaux clients et de chiffre d'affaires."
+          description={t("yourMostInfluentialCustomers")}
           action={
             <Badge tone="green" size="sm">
               <Trophy size={12} className="mr-1 inline" /> Top {ambassadors.length}
@@ -159,18 +160,18 @@ export function ReferralRoiDashboard({
 
         {ambassadors.length === 0 ? (
           <div className="rounded-xl border border-dashed border-mv-border-soft p-6 text-center text-[12.5px] text-mv-ink-faint">
-            Aucun parrainage actif enregistré pour le moment. Partagez les affiches de table QR Code pour lancer la viralité !
+            {t("noActiveReferralRecorded")}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[12.5px]">
               <thead>
                 <tr className="border-b border-mv-border-soft bg-mv-cream-soft text-[12px] font-semibold uppercase text-mv-ink-faint">
-                  <th className="py-2.5 px-3">Rang</th>
-                  <th className="py-2.5 px-3">Ambassadeur</th>
-                  <th className="py-2.5 px-3 text-center">Clics</th>
-                  <th className="py-2.5 px-3 text-center">Filleuls Convertis</th>
-                  <th className="py-2.5 px-3 text-right">CA Apporté</th>
+                  <th className="py-2.5 px-3">{t("rank")}</th>
+                  <th className="py-2.5 px-3">{t("ambassador")}</th>
+                  <th className="py-2.5 px-3 text-center">{t("clicks")}</th>
+                  <th className="py-2.5 px-3 text-center">{t("convertedReferrals")}</th>
+                  <th className="py-2.5 px-3 text-right">{t("revenueBrought")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-mv-border-soft">
