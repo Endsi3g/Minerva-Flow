@@ -251,7 +251,6 @@ function AvatarEditor({
 }
 
 function ProfileSettingsCard({ customer }: { customer: Customer }) {
-  const tv = useTranslations("portal.view");
   const t = useTranslations("portal.view");
   const [name, setName] = useState(customer.name);
   const [avatarUrl, setAvatarUrl] = useState(customer.avatarUrl);
@@ -283,11 +282,11 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         notificationFrequency,
       });
       if (ok) {
-        toast.success(tv("profileUpdated"));
+        toast.success(t("profileUpdated"));
         setSavedTick(true);
         setTimeout(() => setSavedTick(false), 1800);
       } else {
-        toast.error(tv("theUpdateFailedYour"));
+        toast.error(t("theUpdateFailedYour"));
       }
     } finally {
       setIsSaving(false);
@@ -303,8 +302,8 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         neighborhood: neighborhood.trim() || null,
       avatarUrl: url,
     });
-    if (ok) toast.success(tv("profilePhotoUpdated"));
-    else toast.error(tv("thePhotoWasUploaded"));
+    if (ok) toast.success(t("profilePhotoUpdated"));
+    else toast.error(t("thePhotoWasUploaded"));
   }
 
   async function handleRequestEmailChange() {
@@ -319,7 +318,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
       setEmailStatus("sent");
     } else {
       setEmailStatus("error");
-      setEmailError(result.error ?? tv("theRequestFailedTry"));
+      setEmailError(result.error ?? t("theRequestFailedTry"));
     }
   }
 
@@ -330,14 +329,14 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         <div className="flex items-center gap-4">
           <AvatarEditor name={name} avatarUrl={avatarUrl} onUploaded={handleAvatarUploaded} />
           <div className="min-w-0 flex-1">
-            <Field label={tv("name")}>
+            <Field label={t("name")}>
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("yourName")} />
             </Field>
           </div>
         </div>
 
         <div>
-          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{tv("email")}</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">{t("email")}</p>
           {emailStatus === "sent" ? (
             <div className="flex items-start gap-2 rounded-lg bg-mv-green-tint px-3 py-2.5 text-[12.5px] text-mv-green-darker">
               <Mail size={14} className="mt-0.5 shrink-0" />
@@ -355,7 +354,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
               {emailStatus === "error" && <p className="text-[12px] text-mv-red">{emailError}</p>}
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleRequestEmailChange} disabled={emailStatus === "sending"}>
-                  {emailStatus === "sending" ? tv("sending") : tv("confirmTheChange")}
+                  {emailStatus === "sending" ? t("sending") : t("confirmTheChange")}
                 </Button>
                 <Button
                   size="sm"
@@ -386,14 +385,14 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
           <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="514 555-0123" />
         </Field>
 
-        <Field label={t("dateOfBirth")} hint={tv("optional")}>
+        <Field label={t("dateOfBirth")} hint={t("optional")}>
           <Input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
         </Field>
-        <Field label={tv("city")} hint={t("optionalHelpsTheRestaurant")}>
+        <Field label={t("city")} hint={t("optionalHelpsTheRestaurant")}>
           <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("eGMontreal")} />
         </Field>
-        <Field label={tv("neighborhood")} hint={t("optionalGiveAGeneral")}>
-          <Input value={neighborhood} onChange={(e) => setNeighborhood(e.target.value.slice(0, 80))} placeholder={tv("eGPlateauMont")} maxLength={80} />
+        <Field label={t("neighborhood")} hint={t("optionalGiveAGeneral")}>
+          <Input value={neighborhood} onChange={(e) => setNeighborhood(e.target.value.slice(0, 80))} placeholder={t("eGPlateauMont")} maxLength={80} />
         </Field>
         <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
           <Checkbox
@@ -428,7 +427,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         </div>
 
         <Button size="sm" onClick={handleSave} disabled={isSaving}>
-          {isSaving ? tv("saving") : savedTick ? tv("saved") : tv("save")}
+          {isSaving ? t("saving") : savedTick ? t("saved") : t("save")}
         </Button>
         <ExportDataButton customerId={customer.id} />
       </div>
@@ -482,7 +481,6 @@ function ExportDataButton({ customerId }: { customerId: string }) {
  * confirmation pattern in the app instead of the usual one-click confirm.
  */
 function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const tv = useTranslations("portal.view");
   const t = useTranslations("portal.view");
   const router = useRouter();
   const [confirmText, setConfirmText] = useState("");
@@ -497,7 +495,7 @@ function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => v
     try {
       const ok = await deleteMyAccountAction();
       if (!ok) {
-        setError(tv("deletionFailedTryAgain"));
+        setError(t("deletionFailedTryAgain"));
         setIsDeleting(false);
         return;
       }
@@ -506,7 +504,7 @@ function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => v
       router.push("/portal/login");
       router.refresh();
     } catch {
-      setError(tv("deletionFailedTryAgain"));
+      setError(t("deletionFailedTryAgain"));
       setIsDeleting(false);
     }
   }
@@ -538,7 +536,7 @@ function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => v
         </Field>
         {error && <p className="text-[12.5px] text-mv-red">{error}</p>}
         <Button onClick={handleDelete} disabled={!canConfirm || isDeleting} variant="destructive" className="w-full">
-          {isDeleting ? tv("deleting") : tv("permanentlyDeleteMyAccount")}
+          {isDeleting ? t("deleting") : t("permanentlyDeleteMyAccount")}
         </Button>
       </div>
     </Modal>
@@ -583,7 +581,6 @@ function PeerQrModal({
   shareUrl: string;
   programName: string;
 }) {
-  const tv = useTranslations("portal.view");
   const t = useTranslations("portal.view");
   const [qrUrl, setQrUrl] = useState<string>("");
 
@@ -609,7 +606,7 @@ function PeerQrModal({
         <div className="rounded-2xl border-4 border-mv-green/30 bg-white p-4 shadow-xl">
           {qrUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={qrUrl} alt={tv("referralQrCode")} className="h-60 w-60 object-contain" />
+            <img src={qrUrl} alt={t("referralQrCode")} className="h-60 w-60 object-contain" />
           ) : (
             <div className="h-60 w-60 flex items-center justify-center">
               <QrCode size={32} className="animate-spin text-mv-ink-faint" />
@@ -638,7 +635,6 @@ function ReferralProgramCard({
   restaurantName?: string;
   onLinkCreated: (link: CustomerReferralLink) => void;
 }) {
-  const tv = useTranslations("portal.view");
   const t = useTranslations("portal.view");
   const [isCreating, setIsCreating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -665,7 +661,7 @@ function ReferralProgramCard({
     if (!link) return;
     navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    toast.success(tv("linkCopiedToThe"));
+    toast.success(t("linkCopiedToThe"));
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -886,7 +882,6 @@ function OffersFeed({
   favoriteOfferIds: string[];
   onOrderClick: () => void;
 }) {
-  const tv = useTranslations("portal.view");
   const t = useTranslations("portal.view");
   const [favorites, setFavorites] = useState(new Set(favoriteOfferIds));
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -949,7 +944,7 @@ function OffersFeed({
                 onClick={() => toggleFavorite(offer.id, !isFavorite)}
                 disabled={pendingId === offer.id}
                 aria-pressed={isFavorite}
-                aria-label={isFavorite ? tv("removeFromFavorites") : tv("addToFavorites")}
+                aria-label={isFavorite ? t("removeFromFavorites") : t("addToFavorites")}
                 className="shrink-0 rounded-full p-1.5 text-mv-green-dark transition-colors hover:bg-white/60 disabled:opacity-50"
               >
                 <Star size={16} className={isFavorite ? "fill-mv-green-dark" : ""} />
@@ -980,7 +975,6 @@ function MenuBrowserCard({
   cart: Record<string, number>;
   onQtyChange: (itemId: string, delta: number) => void;
 }) {
-  const tv = useTranslations("portal.view");
   const t = useTranslations("portal.view");
 
   const byCategory = useMemo(() => {
@@ -995,7 +989,7 @@ function MenuBrowserCard({
   }, [menuItems, t]);
 
   if (menuItems.filter((i) => i.active).length === 0) {
-    return <p className="text-[12.5px] text-mv-ink-faint">{t("menuUncategorized")}</p>;
+    return <p className="text-[12.5px] text-mv-ink-faint">{t("noDishesAvailableRight")}</p>;
   }
 
   return (
@@ -1034,7 +1028,7 @@ function MenuBrowserCard({
                       <>
                         <button
                           onClick={() => onQtyChange(item.id, -1)}
-                          aria-label={tv("removeOne")}
+                          aria-label={t("removeOne")}
                           className="flex h-8 w-8 items-center justify-center rounded-full border border-mv-border text-mv-ink-soft"
                         >
                           <Minus size={14} />
@@ -1044,7 +1038,7 @@ function MenuBrowserCard({
                     )}
                     <button
                       onClick={() => onQtyChange(item.id, 1)}
-                      aria-label={tv("addOne")}
+                      aria-label={t("addOne")}
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-green text-mv-cream-soft"
                     >
                       <Plus size={14} />
@@ -1454,7 +1448,6 @@ export function PortalView({
   announcements?: PlatformAnnouncement[];
   checkoutReturn?: PortalCheckoutReturn | null;
 }) {
-  const tv = useTranslations("portal.view");
   const t = useTranslations("portal.view");
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<PortalTab>("home");
@@ -1716,7 +1709,7 @@ export function PortalView({
                 <MenuBrowserCard menuItems={menuItems} cart={cart} onQtyChange={handleQtyChange} />
               </Card>
             ) : (
-              <p className="text-[12.5px] text-mv-ink-faint">{tv("noDishesAvailableRight")}</p>
+              <p className="text-[12.5px] text-mv-ink-faint">{t("noDishesAvailableRight")}</p>
             )}
           </div>
         )}
