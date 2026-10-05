@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -21,25 +21,27 @@ import Link from "next/link";
 import { PosInventoryMappingCard } from "@/components/minerva/PosInventoryMappingCard";
 import type { CatalogPosProvider } from "@/lib/pos/catalog-sync";
 
-const movementLabel: Record<InventoryMovementType, string> = {
-  reception: "Réception",
+function buildMovementLabel(t: (key: string) => string): Record<InventoryMovementType, string> {
+  return {
+  reception: t("receiving"),
   utilisation: "Utilisation",
   gaspillage: "Gaspillage",
   ajustement: "Ajustement",
 };
+}
 
-function stockStatus(item: InventoryItem): { tone: "green" | "amber" | "red" | "neutral"; label: string; fraction: number } {
+function stockStatus(item: InventoryItem, t: (key: string) => string): { tone: "green" | "amber" | "red" | "neutral"; label: string; fraction: number } {
   if (item.parLevel == null || item.parLevel <= 0) {
-    return { tone: "neutral", label: "Sans seuil", fraction: 1 };
+    return { tone: "neutral", label: t("noThreshold"), fraction: 1 };
   }
   const fraction = Math.min(1, item.quantityOnHand / item.parLevel);
-  if (item.quantityOnHand <= 0) return { tone: "red", label: "Épuisé", fraction: 0 };
-  if (item.quantityOnHand < item.parLevel) return { tone: "amber", label: "Stock bas", fraction };
-  return { tone: "green", label: "OK", fraction };
+  if (item.quantityOnHand <= 0) return { tone: "red", label: t("soldOutLabel"), fraction: 0 };
+  if (item.quantityOnHand < item.parLevel) return { tone: "amber", label: t("lowStockLabel"), fraction };
+  return { tone: "green", label: t("okLabel"), fraction };
 }
 
 function StockGauge({ item }: { item: InventoryItem }) {
-  const status = stockStatus(item);
+  const status = stockStatus(item, t);
   const barColor =
     status.tone === "red" ? "bg-mv-red" : status.tone === "amber" ? "bg-mv-amber" : "bg-mv-green";
   return (
@@ -67,6 +69,7 @@ function NewInventoryItemModal({
   onClose: () => void;
   onCreated: (item: InventoryItem) => void;
 }) {
+  const t = useTranslations("inventoryView");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -77,7 +80,7 @@ function NewInventoryItemModal({
       const item = await createInventoryItemAction(restaurantId, {
         name: String(form.get("name") ?? ""),
         category: String(form.get("category") ?? "") || null,
-        unit: String(form.get("unit") ?? "unité"),
+        unit: String(form.get("unit") ?? t("unit2")),
         quantityOnHand: Number(form.get("quantityOnHand") ?? 0),
         parLevel: String(form.get("parLevel") ?? "") ? Number(form.get("parLevel")) : null,
         unitCost: Number(form.get("unitCost") ?? 0),
@@ -88,7 +91,7 @@ function NewInventoryItemModal({
         onClose();
         (e.target as HTMLFormElement).reset();
       } else {
-        notifyError("L'ajout de l'article a échoué.");
+        notifyError(t("couldNotAddThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -96,29 +99,29 @@ function NewInventoryItemModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Nouvel article" description="Quantité initiale, seuil de réapprovisionnement et coût unitaire." width={600}>
+    <Modal open={open} onClose={onClose} title="Nouvel article" description={t("startingQuantityRestockingThreshold")} width={600}>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <Field label="Nom">
             <Input name="name" placeholder="Ex : Farine tout usage" required autoFocus />
           </Field>
-          <Field label="Catégorie" hint="Optionnel">
+          <Field label={t("category")} hint="Optionnel">
             <Input name="category" placeholder="Ex : Sec" />
           </Field>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Field label="Unité">
-            <Input name="unit" placeholder="kg, unité, L…" defaultValue="unité" required />
+          <Field label={t("unit")}>
+            <Input name="unit" placeholder={t("kgUnitL")} defaultValue={t("unit2")} required />
           </Field>
-          <Field label="Quantité initiale">
+          <Field label={t("startingQuantity")}>
             <Input name="quantityOnHand" type="number" min="0" step="0.5" defaultValue="0" />
           </Field>
-          <Field label="Cible de réappro" hint="L’alerte propriétaire se déclenche à 30 % ou moins de cette quantité.">
+          <Field label={t("restockTarget")} hint={t("theOwnerAlertTriggers")}>
             <Input name="parLevel" type="number" min="0" step="0.5" />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Coût unitaire">
+          <Field label={t("unitCost")}>
             <Input name="unitCost" type="number" min="0" step="0.01" required />
           </Field>
           <Field label="Fournisseur" hint="Optionnel">
@@ -137,7 +140,7 @@ function NewInventoryItemModal({
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Créer"}
+            {isSubmitting ? t("creating") : t("create")}
           </Button>
         </div>
       </form>
@@ -158,6 +161,7 @@ function MovementModal({
   onClose: () => void;
   onUpdated: (item: InventoryItem) => void;
 }) {
+  const tv = useTranslations("inventoryView");
   const [type, setType] = useState<InventoryMovementType>("reception");
   const [adjustDirection, setAdjustDirection] = useState<"add" | "remove">("add");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -181,7 +185,7 @@ function MovementModal({
         onClose();
         (e.target as HTMLFormElement).reset();
       } else {
-        notifyError("L'enregistrement du mouvement a échoué.");
+        notifyError(tv("couldNotRecordThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -195,27 +199,27 @@ function MovementModal({
       <form onSubmit={handleSubmit} className="space-y-3">
         <Field label="Type">
           <Select value={type} onChange={(e) => setType(e.target.value as InventoryMovementType)}>
-            {(Object.keys(movementLabel) as InventoryMovementType[]).map((t) => (
+            {(Object.keys(buildMovementLabel(tv)) as InventoryMovementType[]).map((t) => (
               <option key={t} value={t}>
-                {movementLabel[t]}
+                {buildMovementLabel(tv)[t]}
               </option>
             ))}
           </Select>
         </Field>
         {type === "ajustement" && (
-          <Field label="Sens de la correction" hint="Pour aligner le compte sur un inventaire physique, sans passer par le gaspillage.">
+          <Field label={tv("correctionDirection")} hint={tv("correctionHint")}>
             <Select value={adjustDirection} onChange={(e) => setAdjustDirection(e.target.value as "add" | "remove")}>
-              <option value="add">Ajouter au compte (ex : oubli de réception)</option>
-              <option value="remove">Retirer du compte (ex : compte physique plus bas)</option>
+              <option value="add">{tv("addToTheCount")}</option>
+              <option value="remove">{tv("removeFromTheCount")}</option>
             </Select>
           </Field>
         )}
-        <Field label={`Quantité (${item.unit})`}>
+        <Field label={tv("quantityUnit", { unit: item.unit })}>
           <Input name="quantity" type="number" min="0.01" step="0.01" required autoFocus />
         </Field>
         {type === "gaspillage" && (
-          <Field label="Raison" hint="Consigné comme dépense « Gaspillage »">
-            <Input name="reason" placeholder="Ex : périmé, endommagé, surproduction" />
+          <Field label="Raison" hint={tv("recordedAsAWaste")}>
+            <Input name="reason" placeholder={tv("eGExpiredDamaged")} />
           </Field>
         )}
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
@@ -223,7 +227,7 @@ function MovementModal({
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Enregistrement…" : "Enregistrer"}
+            {isSubmitting ? tv("saving") : tv("save")}
           </Button>
         </div>
       </form>
@@ -232,6 +236,7 @@ function MovementModal({
 }
 
 function WasteSummaryCard({ wasteSummary }: { wasteSummary: { itemId: string; itemName: string; cost: number }[] }) {
+  const t = useTranslations("inventoryView");
   const locale = useLocale();
   const top = wasteSummary.slice(0, 5);
   const total = wasteSummary.reduce((sum, r) => sum + r.cost, 0);
@@ -242,7 +247,7 @@ function WasteSummaryCard({ wasteSummary }: { wasteSummary: { itemId: string; it
       <CardHeader
         eyebrow="Ce mois-ci"
         title="Gaspillage"
-        description={total > 0 ? `${formatCurrency(total, locale)} au total` : "Aucun gaspillage enregistré ce mois-ci"}
+        description={total > 0 ? `${formatCurrency(total, locale)} au total` : t("noWasteRecordedThis")}
       />
       {top.length > 0 && (
         <div className="space-y-1.5">
@@ -277,6 +282,7 @@ export function InventaireView({
   wasteSummary: { itemId: string; itemName: string; cost: number }[];
   connectedProviders: CatalogPosProvider[];
 }) {
+  const t = useTranslations("inventoryView");
   const locale = useLocale();
   const { role } = useApp();
   const [items, setItems] = useState(initialItems);
@@ -293,15 +299,15 @@ export function InventaireView({
 
   function handleDeleted(id: string, name: string) {
     if (!restaurantId) return;
-    if (!window.confirm(`Retirer "${name}" de l'inventaire ?`)) return;
+    if (!window.confirm(t("removeNameFromThe", { name }))) return;
     deleteInventoryItemAction(restaurantId, id).then((ok) => {
       if (ok) setItems((prev) => prev.filter((i) => i.id !== id));
-      else notifyError("La suppression a échoué.");
+      else notifyError(t("deletionFailed"));
     });
   }
 
   const lowStockItems = useMemo(
-    () => items.filter((i) => stockStatus(i).tone === "amber" || stockStatus(i).tone === "red"),
+    () => items.filter((i) => stockStatus(i, t).tone === "amber" || stockStatus(i, t).tone === "red"),
     [items]
   );
 
@@ -317,9 +323,9 @@ export function InventaireView({
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Opérations"
-        title="Inventaire & Gestion des Stocks"
-        description="Quantités en main, seuils de réapprovisionnement et suivi des pertes et du gaspillage."
+        eyebrow={t("operations")}
+        title={t("inventoryTitle")}
+        description={t("quantitiesOnHandRestocking")}
         action={
           canCreate && (
             <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -347,12 +353,12 @@ export function InventaireView({
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-display text-[16px] font-bold text-mv-ink">
-                        {lowStockItems.length} article{lowStockItems.length > 1 ? "s" : ""} à réapprovisionner
+                        {t("itemsToRestock", { count: lowStockItems.length })}
                       </p>
-                      <Badge tone="amber">Priorité Stock</Badge>
+                      <Badge tone="amber">{t("stockPriority")}</Badge>
                     </div>
                     <p className="text-[12.5px] text-mv-ink-soft mt-0.5">
-                      Coût estimé pour atteindre les seuils par :{" "}
+                      {t("estimatedCostToReach")}{" "}
                       <span className="font-semibold text-mv-ink font-mono">{formatCurrency(estimatedRestockCost, locale)}</span>
                     </p>
                   </div>
@@ -379,7 +385,7 @@ export function InventaireView({
               <div className="mt-3 flex justify-end">
                 <Link href="/fournisseurs">
                   <Button size="sm" variant="secondary" className="text-[12px] h-7 px-3 gap-1.5 border-mv-amber/50 text-mv-amber-dark hover:bg-mv-amber hover:text-white">
-                    <ShoppingCart size={13} /> Passer commande fournisseur <ArrowRight size={12} />
+                    <ShoppingCart size={13} /> {t("placeASupplierOrder")} <ArrowRight size={12} />
                   </Button>
                 </Link>
               </div>
@@ -391,11 +397,11 @@ export function InventaireView({
                   <Sparkles size={18} />
                 </div>
                 <div>
-                  <p className="font-display text-[15px] font-bold text-mv-ink">Niveaux de stocks optimaux</p>
-                  <p className="text-[12px] text-mv-ink-soft">Tous les articles avec seuil sont au-dessus de leur par level.</p>
+                  <p className="font-display text-[15px] font-bold text-mv-ink">{t("optimalStockLevels")}</p>
+                  <p className="text-[12px] text-mv-ink-soft">{t("allItemsWithA")}</p>
                 </div>
               </div>
-              <Badge tone="green">Stocks Sains</Badge>
+              <Badge tone="green">{t("healthyStock")}</Badge>
             </Card>
           )}
         </div>
@@ -405,7 +411,7 @@ export function InventaireView({
         <EmptyState
           icon={PackageSearch}
           title="Aucun article"
-          description="Ajoutez vos articles pour suivre les quantités en main et le gaspillage."
+          description={t("addYourItemsTo")}
           action={
             canCreate && (
               <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -417,16 +423,16 @@ export function InventaireView({
       ) : (
         <Table>
           <THead>
-            <Th>Article</Th>
-            <Th>Fournisseur</Th>
-            <Th>Quantité</Th>
-            <Th>Statut</Th>
-            <Th className="text-right">Coût unitaire</Th>
-            <Th className="text-right">Actions</Th>
+            <Th>{t("item")}</Th>
+            <Th>{t("supplier")}</Th>
+            <Th>{t("quantity")}</Th>
+            <Th>{t("status")}</Th>
+            <Th className="text-right">{t("unitCost")}</Th>
+            <Th className="text-right">{t("actions")}</Th>
           </THead>
           <tbody>
             {items.map((item) => {
-              const status = stockStatus(item);
+              const status = stockStatus(item, t);
               return (
                 <Tr key={item.id}>
                   <Td className="font-semibold text-mv-ink">
