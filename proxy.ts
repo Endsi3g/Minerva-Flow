@@ -191,6 +191,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!monitoring|ingest|manifest\\.webmanifest|client-manifest\\.webmanifest|sw\\.js|offline\\.html|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!monitoring|ingest|manifest\\.webmanifest|client-manifest\\.webmanifest|sw\\.js|offline\\.html|sitemap\\.xml|robots\\.txt|llms\\.txt|llms-full\\.txt|feed\\.xml|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
