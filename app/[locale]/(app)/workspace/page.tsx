@@ -14,11 +14,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("workspace") };
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("breadcrumb");
-  return { title: t("workspace") };
-}
-
 export default async function WorkspacePage() {
   const [data, restaurantId] = await Promise.all([
     getWorkspaceHubDataAction(),
