@@ -43,6 +43,15 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 
 struct LanguageMenu: View {
     @Binding var language: AppLanguage
+    /// Defaults to white because the original (and still valid) call site —
+    /// IntroView's full-bleed emerald hero — needs a light pill on a dark
+    /// background. AuthView and ProfileView sit on light cream instead and
+    /// pass their own tint; previously they tried to override this via an
+    /// external `.foregroundStyle()`, which a view's own internal
+    /// `.foregroundStyle()` always wins over, so the switcher rendered
+    /// white-on-white there and was effectively invisible.
+    var tint: Color = .white
+
     @State private var isChoosingLanguage = false
 
     var body: some View {
@@ -53,15 +62,15 @@ struct LanguageMenu: View {
                 Image(systemName: "globe")
                 Text(language.label)
             }
-            .font(.system(size: 12, weight: .bold))
+            .font(.mv(size: 12, weight: .bold))
             .padding(.horizontal, 11)
             .padding(.vertical, 8)
-            .background(.white.opacity(0.16))
+            .background(tint.opacity(0.16))
             .clipShape(Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.white)
+        .foregroundStyle(tint)
         .confirmationDialog(
             language == .fr ? "Choisir une langue" : "Choose a language",
             isPresented: $isChoosingLanguage,
@@ -117,6 +126,9 @@ enum MinervaColor {
     static let inkFaint = adaptive(light: 0x687367, dark: 0xA0A794)
     static var emerald: Color { tenantAware(primaryKey: "activeTenantPrimaryColor", fallbackLight: 0x167F5B, fallbackDark: 0x1C9A6F) }
     static var emeraldDark: Color { tenantAware(primaryKey: "activeTenantSecondaryColor", fallbackLight: 0x0E5A40, fallbackDark: 0x4ADE9B) }
+    /// Deepest brand green — the Ambassadeur tier's banner. Fixed (not tenant-
+    /// tinted) so white copy stays legible on it in light and dark appearance.
+    static let emeraldDeep = adaptive(light: 0x063B2B, dark: 0x0B5A40)
     /// Web's --mv-lime — the Ambassadeur tier's banner color, matching
     /// Starbucks' Gold-status treatment.
     static var limeAccent: Color { tenantAware(primaryKey: "activeTenantAccentColor", fallbackLight: 0xDFFF5F, fallbackDark: 0xDFFF5F) }
@@ -144,8 +156,32 @@ struct PressableButtonStyle: ButtonStyle {
 enum MinervaFont {
     /// "New York" is the system serif on iOS 16+ — .serif design maps to it
     /// directly, matching the web's `"New York", "Playfair Display"` stack.
+    @MainActor
     static func display(_ size: CGFloat, weight: Font.Weight = .medium) -> Font {
-        .system(size: size, weight: weight, design: .serif)
+        .mv(size: size, weight: weight, design: .serif)
+    }
+
+    /// Largest text size the layout is designed for. Past this the system
+    /// "Larger Accessibility Sizes" would break fixed-width cards, so text stops
+    /// growing here; everything below it follows the user's setting.
+    static let largestSupportedCategory: UIContentSizeCategory = .accessibilityMedium
+
+    /// `size` scaled to the user's Dynamic Type setting (the curve of body text),
+    /// capped at `largestSupportedCategory`. At the default setting it returns
+    /// `size` unchanged, so nothing moves for people who never touched the setting.
+    @MainActor
+    static func scaled(_ size: CGFloat) -> CGFloat {
+        let current = UIApplication.shared.preferredContentSizeCategory
+        let capped = current > largestSupportedCategory ? largestSupportedCategory : current
+        return UIFontMetrics.default.scaledValue(for: size, compatibleWith: UITraitCollection(preferredContentSizeCategory: capped))
+    }
+}
+
+extension Font {
+    /// Drop-in for `.system(size:weight:design:)` that honours Dynamic Type.
+    @MainActor
+    static func mv(size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> Font {
+        .system(size: MinervaFont.scaled(size), weight: weight, design: design)
     }
 }
 
@@ -268,10 +304,10 @@ struct OutcomeBanner: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: kind == .success ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .font(.system(size: 13))
+                .font(.mv(size: 13))
                 .padding(.top, 1)
             Text(message)
-                .font(.system(size: 12.5))
+                .font(.mv(size: 12.5))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(kind == .success ? MinervaColor.emeraldDark : .red)
@@ -295,17 +331,17 @@ struct NoProfileFoundView: View {
     var body: some View {
         VStack(spacing: 14) {
             Image(systemName: "person.crop.circle.badge.questionmark")
-                .font(.system(size: 32))
+                .font(.mv(size: 32))
                 .foregroundStyle(MinervaColor.inkFaint)
 
             Text("Aucun profil de fidélité trouvé pour ce compte.")
-                .font(.system(size: 13.5, weight: .medium))
+                .font(.mv(size: 13.5, weight: .medium))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.center)
 
             if let lastError = supabase.lastError {
                 Text(lastError)
-                    .font(.system(size: 12))
+                    .font(.mv(size: 12))
                     .foregroundStyle(MinervaColor.inkFaint)
                     .multilineTextAlignment(.center)
             }
@@ -320,7 +356,7 @@ struct NoProfileFoundView: View {
                 HStack(spacing: 6) {
                     if isRetrying { ProgressView().tint(.white) }
                     Text(isRetrying ? "Nouvelle tentative…" : "Réessayer")
-                        .font(.system(size: 13.5, weight: .semibold))
+                        .font(.mv(size: 13.5, weight: .semibold))
                 }
                 .frame(maxWidth: 200)
                 .padding(.vertical, 11)
@@ -334,7 +370,7 @@ struct NoProfileFoundView: View {
             Button("Se déconnecter") {
                 Task { await supabase.signOut() }
             }
-            .font(.system(size: 12.5, weight: .semibold))
+            .font(.mv(size: 12.5, weight: .semibold))
             .foregroundStyle(MinervaColor.inkSoft)
         }
         .padding(28)
@@ -382,5 +418,19 @@ enum MenuCategoryIcon {
             return "flame"
         }
         return "fork.knife"
+    }
+}
+
+/// Hiding the navigation bar (MenuItemDetailView's edge-to-edge hero) also
+/// disables the interactive swipe-back gesture; this restores it for every
+/// pushed screen in the app.
+extension UINavigationController: UIGestureRecognizerDelegate {
+    override open func viewDidLoad() {
+        super.viewDidLoad()
+        interactivePopGestureRecognizer?.delegate = self
+    }
+
+    public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        viewControllers.count > 1
     }
 }

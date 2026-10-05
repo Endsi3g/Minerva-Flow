@@ -45,7 +45,7 @@ export default async function ReferralLandingPage({ params, searchParams }: { pa
 
         <div className="rounded-[22px] border border-mv-border bg-mv-surface px-6 py-7 text-center shadow-mv-lg">
           <div className="mb-4 flex items-center justify-center gap-2">
-            <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-[11px] font-bold text-mv-green-dark">
+            <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-[12px] font-bold text-mv-green-dark">
               {referrerInitial}
             </span>
             <p className="text-[12.5px] text-mv-ink-faint">{referrerName} vous invite chez</p>
@@ -64,7 +64,7 @@ export default async function ReferralLandingPage({ params, searchParams }: { pa
                 <Gift size={17} />
               </span>
               <div className="min-w-0">
-                <p className="text-[10.5px] font-bold uppercase tracking-wide text-mv-lime-dark">Votre invitation</p>
+                <p className="text-[12px] font-bold uppercase tracking-wide text-mv-lime-dark">Votre invitation</p>
                 <p className="mt-0.5 text-[14px] font-semibold leading-snug text-mv-green-dark">
                   {program.rewardDescription}
                 </p>

@@ -337,14 +337,14 @@ export function MenuItemDetailView({
 
             <div className="mt-4 rounded-xl bg-mv-cream-soft p-3">
               <div className="mb-2 flex items-center justify-between border-b border-mv-border-soft pb-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
                   Tarification & Performance
                 </span>
                 {canManage && (
                   <button
                     type="button"
                     onClick={() => setIsEditingInfo(true)}
-                    className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green transition-colors hover:text-mv-green-dark"
+                    className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green transition-colors hover:text-mv-green-dark"
                   >
                     <Pencil size={11} /> Modifier le tarif
                   </button>
@@ -352,19 +352,19 @@ export function MenuItemDetailView({
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <p className="flex items-center gap-1 text-[11px] font-semibold uppercase text-mv-ink-faint">
+                  <p className="flex items-center gap-1 text-[12px] font-semibold uppercase text-mv-ink-faint">
                     <DollarSign size={11} /> Prix
                   </p>
                   <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(item.price)}</p>
                 </div>
                 <div>
-                  <p className="flex items-center gap-1 text-[11px] font-semibold uppercase text-mv-ink-faint">
+                  <p className="flex items-center gap-1 text-[12px] font-semibold uppercase text-mv-ink-faint">
                     <TrendingUp size={11} /> Marge
                   </p>
                   <p className="font-display text-[16px] font-medium text-mv-ink">{Math.round(marginPct * 100)}%</p>
                 </div>
                 <div>
-                  <p className="flex items-center gap-1 text-[11px] font-semibold uppercase text-mv-ink-faint">
+                  <p className="flex items-center gap-1 text-[12px] font-semibold uppercase text-mv-ink-faint">
                     <ShoppingBag size={11} /> Vendus
                   </p>
                   <p className="font-display text-[16px] font-medium text-mv-ink">{item.unitsSold}</p>
@@ -374,14 +374,14 @@ export function MenuItemDetailView({
 
             <div className="mt-4 rounded-xl border border-mv-border-soft bg-mv-surface p-3.5">
               <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
                   Description du plat
                 </span>
                 {canManage && (
                   <button
                     type="button"
                     onClick={() => setIsEditingInfo(true)}
-                    className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green transition-colors hover:text-mv-green-dark"
+                    className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green transition-colors hover:text-mv-green-dark"
                   >
                     <Pencil size={11} /> {item.description ? "Modifier" : "Ajouter une description"}
                   </button>
@@ -402,7 +402,7 @@ export function MenuItemDetailView({
           <Card>
             <div className="flex items-start justify-between gap-2 border-b border-mv-border-soft pb-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Fiche technique</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Fiche technique</p>
                 <h3 className="font-display text-[16px] font-semibold text-mv-ink">Recette & Coût matière</h3>
                 <p className="text-[12px] text-mv-ink-soft">
                   {isEditingRecipe
@@ -463,7 +463,7 @@ export function MenuItemDetailView({
                                 className="h-8 w-20 rounded-md border border-mv-border bg-mv-cream-soft px-2 text-right font-mono text-[12.5px] text-mv-ink focus:border-mv-green focus:outline-none"
                                 aria-label="Quantité consommée par portion"
                               />
-                              <span className="w-12 text-[11.5px] text-mv-ink-faint">{selectedIng?.unit ?? ""}</span>
+                              <span className="w-12 text-[12px] text-mv-ink-faint">{selectedIng?.unit ?? ""}</span>
                               <span className="w-16 text-right font-mono text-[12px] font-medium text-mv-ink">
                                 {formatCurrency(lineCost)}
                               </span>
@@ -503,7 +503,7 @@ export function MenuItemDetailView({
                           {formatCurrency(theoreticalMargin)} ({theoreticalMarginPct.toFixed(1)}%)
                         </span>
                       </div>
-                      <div className="mt-2 flex items-center gap-1 text-[11.5px]">
+                      <div className="mt-2 flex items-center gap-1 text-[12px]">
                         {theoreticalCostPct >= 28 && theoreticalCostPct <= 32 ? (
                           <Badge tone="green">Cible restauration optimale (28–32%)</Badge>
                         ) : theoreticalCostPct < 28 ? (
@@ -560,7 +560,7 @@ export function MenuItemDetailView({
                             {ingredient?.name ?? "Ingrédient introuvable"}
                           </span>
                           {ingredient?.category && (
-                            <span className="rounded bg-mv-cream-soft px-1.5 py-0.5 text-[10px] text-mv-ink-faint">
+                            <span className="rounded bg-mv-cream-soft px-1.5 py-0.5 text-[12px] text-mv-ink-faint">
                               {ingredient.category}
                             </span>
                           )}
@@ -593,7 +593,7 @@ export function MenuItemDetailView({
                     </span>
                   </div>
                   <div className="mt-2.5 flex items-center justify-between">
-                    <span className="text-[11px] text-mv-ink-faint">Standard Minerva Flow :</span>
+                    <span className="text-[12px] text-mv-ink-faint">Standard Minerva Flow :</span>
                     {theoreticalCostPct >= 28 && theoreticalCostPct <= 32 ? (
                       <Badge tone="green">Cible optimale (28–32%)</Badge>
                     ) : theoreticalCostPct < 28 ? (

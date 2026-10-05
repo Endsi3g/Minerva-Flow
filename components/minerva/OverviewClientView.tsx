@@ -193,7 +193,7 @@ export function OverviewClientView({
             <div className="space-y-1">
               <span className="inline-flex flex-wrap items-center gap-1.5">
                 {`Chiffre d'affaires du mois : ${formatCurrency(monthRevenue ?? 0)} au ${todayLabel}.`}
-                <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2 py-0.5 text-[11px] font-semibold text-mv-green-dark">
+                <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2 py-0.5 text-[12px] font-semibold text-mv-green-dark">
                   <Heart size={11} />
                   {incrementalRetentionRevenue && incrementalRetentionRevenue > 0
                     ? `+${formatCurrency(incrementalRetentionRevenue)} via fidélisation`
@@ -201,7 +201,7 @@ export function OverviewClientView({
                 </span>
               </span>
               {(!syncTelemetry || syncTelemetry.sourceType === "pending") && (
-                <div className="flex items-center gap-1.5 text-[11.5px] text-mv-ink-faint">
+                <div className="flex items-center gap-1.5 text-[12px] text-mv-ink-faint">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-mv-amber" />
                   <span>Aucune caisse connectée —</span>
                   <Link
@@ -248,7 +248,7 @@ export function OverviewClientView({
                 <span className="text-[13px] font-semibold text-mv-ink">
                   Guide de configuration ({onboardingReadiness.scorePct}% complété)
                 </span>
-                <span className="ml-2 hidden text-[11.5px] text-mv-ink-faint sm:inline">
+                <span className="ml-2 hidden text-[12px] text-mv-ink-faint sm:inline">
                   — Finalisez vos fiches recettes et liaisons pour certifier vos ratios
                 </span>
               </div>
@@ -281,7 +281,7 @@ export function OverviewClientView({
                   >
                     <div>
                       <p className="text-[12.5px] font-semibold text-mv-ink">{act.title}</p>
-                      <p className="mt-0.5 text-[11.5px] leading-snug text-mv-ink-soft">{act.description}</p>
+                      <p className="mt-0.5 text-[12px] leading-snug text-mv-ink-soft">{act.description}</p>
                     </div>
                     <div className="mt-2.5 pt-2 border-t border-mv-border-soft/60">
                       <Link
@@ -308,7 +308,7 @@ export function OverviewClientView({
           {/* KPI 1 : Ventes nettes */}
           <div className="flex flex-col justify-between px-2 pt-2 first:pt-0 sm:pt-0 first:pl-0">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Ventes nettes</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Ventes nettes</span>
               <DollarSign size={13} className="text-mv-green-dark" />
             </div>
             <div className="my-1.5">
@@ -318,9 +318,9 @@ export function OverviewClientView({
                   : formatCurrency(todayRevenue > 0 ? todayRevenue : (monthRevenue || 0))}
               </p>
               {isGroupMode ? (
-                <p className="text-[11px] text-mv-ink-soft mt-0.5">Consolidé groupe (mois)</p>
+                <p className="text-[12px] text-mv-ink-soft mt-0.5">Consolidé groupe (mois)</p>
               ) : kpiComparisons?.revenue.today.changePct != null ? (
-                <p className="flex items-center gap-1 text-[11px] text-mv-ink-soft mt-0.5">
+                <p className="flex items-center gap-1 text-[12px] text-mv-ink-soft mt-0.5">
                   {kpiComparisons.revenue.today.direction === "up" ? (
                     <span className="flex items-center text-mv-green-dark font-semibold">
                       <ArrowUpRight size={12} />+{kpiComparisons.revenue.today.changePct}%
@@ -334,14 +334,14 @@ export function OverviewClientView({
                   <span>vs hier · Mois : {formatCurrency(monthRevenue || 0)}</span>
                 </p>
               ) : (
-                <p className="text-[11px] text-mv-ink-soft mt-0.5">
+                <p className="text-[12px] text-mv-ink-soft mt-0.5">
                   Mois : {formatCurrency(monthRevenue || 0)}
                 </p>
               )}
             </div>
             <Link
               href="/days"
-              className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
             >
               Ventes <ArrowRight size={11} />
             </Link>
@@ -350,7 +350,7 @@ export function OverviewClientView({
           {/* KPI 2 : Taux de retour (Fidélisation) */}
           <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Taux de retour</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Taux de retour</span>
               <Repeat size={13} className="text-mv-green-dark" />
             </div>
             <div className="my-1.5">
@@ -359,13 +359,13 @@ export function OverviewClientView({
                   ? `${Math.round(((loyaltyHealth.habitue + loyaltyHealth.privilegie + loyaltyHealth.ambassadeur) / Math.max(1, loyaltyHealth.habitue + loyaltyHealth.privilegie + loyaltyHealth.ambassadeur + loyaltyHealth.inactiveCount)) * 100)} %`
                   : "75 %"}
               </p>
-              <p className="text-[11px] text-mv-ink-soft mt-0.5">
+              <p className="text-[12px] text-mv-ink-soft mt-0.5">
                 Habitués actifs : <strong>{loyaltyHealth ? loyaltyHealth.habitue + loyaltyHealth.privilegie + loyaltyHealth.ambassadeur : 15}</strong>
               </p>
             </div>
             <Link
               href="/fidelisation"
-              className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
             >
               Fidélisation <ArrowRight size={11} />
             </Link>
@@ -374,7 +374,7 @@ export function OverviewClientView({
           {/* KPI 3 : Masse salariale */}
           <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Masse salariale</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Masse salariale</span>
               <Users size={13} className="text-mv-ink-soft" />
             </div>
             <div className="my-1.5">
@@ -387,13 +387,13 @@ export function OverviewClientView({
                   ? `${laborPct}%`
                   : "—"}
               </p>
-              <p className="text-[11px] text-mv-ink-soft mt-0.5">
+              <p className="text-[12px] text-mv-ink-soft mt-0.5">
                 Cible : <strong>≤ 30 % du CA</strong>
               </p>
             </div>
             <Link
               href="/horaire"
-              className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
             >
               Horaires <ArrowRight size={11} />
             </Link>
@@ -402,7 +402,7 @@ export function OverviewClientView({
           {/* KPI 4 : Couverts & Seuil */}
           <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Couverts / Seuil</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Couverts / Seuil</span>
               <Target size={13} className={dailyTarget?.reached ? "text-mv-green-dark" : "text-mv-amber"} />
             </div>
             <div className="my-1.5">
@@ -411,13 +411,13 @@ export function OverviewClientView({
                   ? `${multiEstablishmentRollup.totalCoversToday} / ${multiEstablishmentRollup.totalDailyTargetNeeded}`
                   : `${dailyTarget?.clientsSoFar ?? 0} / ${dailyTarget?.clientsNeeded ?? 0}`}
               </p>
-              <p className="text-[11px] text-mv-ink-soft mt-0.5">
+              <p className="text-[12px] text-mv-ink-soft mt-0.5">
                 {dailyTarget?.reached ? "Point mort atteint !" : "Requis pour rentabilité"}
               </p>
             </div>
             <Link
               href="/commandes"
-              className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
             >
               Commandes <ArrowRight size={11} />
             </Link>
@@ -426,7 +426,7 @@ export function OverviewClientView({
           {/* KPI 5 : Fidélisation (LTV) */}
           <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Ventes fidélité</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Ventes fidélité</span>
               <Heart size={13} className="text-mv-green-dark" />
             </div>
             <div className="my-1.5">
@@ -435,13 +435,13 @@ export function OverviewClientView({
                   ? formatCurrency(multiEstablishmentRollup.totalRetentionRevenue)
                   : formatCurrency(retentionSales)}
               </p>
-              <p className="text-[11px] text-mv-ink-soft mt-0.5">
+              <p className="text-[12px] text-mv-ink-soft mt-0.5">
                 Impact relances 14j
               </p>
             </div>
             <Link
               href="/fidelisation"
-              className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
             >
               Fidélisation <ArrowRight size={11} />
             </Link>
@@ -466,9 +466,9 @@ export function OverviewClientView({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-mv-ink">{bench.name}</p>
-                    <p className="text-[11px] text-mv-ink-faint">{bench.city} · {bench.posProvider}</p>
+                    <p className="text-[12px] text-mv-ink-faint">{bench.city} · {bench.posProvider}</p>
                   </div>
-                  <Button size="sm" variant="secondary" href={`/overview?scope=${bench.restaurantId}`} className="shrink-0 text-[11px]">
+                  <Button size="sm" variant="secondary" href={`/overview?scope=${bench.restaurantId}`} className="shrink-0 text-[12px]">
                     Ouvrir
                   </Button>
                 </div>
@@ -485,7 +485,7 @@ export function OverviewClientView({
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left text-[12.5px]">
               <thead>
-                <tr className="border-b border-mv-border text-[11px] uppercase tracking-wider text-mv-ink-faint">
+                <tr className="border-b border-mv-border text-[12px] uppercase tracking-wider text-mv-ink-faint">
                   <th className="pb-3 font-semibold">Établissement</th>
                   <th className="pb-3 font-semibold">Ventes mois</th>
                   <th className="pb-3 font-semibold">Ventes jour</th>
@@ -502,13 +502,13 @@ export function OverviewClientView({
                   <tr key={bench.restaurantId} className="hover:bg-mv-cream-soft/50">
                     <td className="py-3 font-semibold text-mv-ink">
                       <div>{bench.name}</div>
-                      <span className="text-[11px] font-normal text-mv-ink-faint">{bench.city}</span>
+                      <span className="text-[12px] font-normal text-mv-ink-faint">{bench.city}</span>
                     </td>
                     <td className="py-3 font-medium text-mv-ink">{formatCurrency(bench.monthRevenue)}</td>
                     <td className="py-3 text-mv-ink-soft">{formatCurrency(bench.todayRevenue)}</td>
                     <td className="py-3">
                       <span
-                        className={`inline-flex rounded-md px-2 py-0.5 text-[11.5px] font-semibold ${
+                        className={`inline-flex rounded-md px-2 py-0.5 text-[12px] font-semibold ${
                           bench.foodCostPct <= 32
                             ? "bg-mv-green-tint text-mv-green-dark"
                             : "bg-mv-amber-bg text-mv-amber"
@@ -526,7 +526,7 @@ export function OverviewClientView({
                     <td className="py-3 font-medium text-mv-green-dark">
                       {formatCurrency(bench.retentionRevenue)}
                     </td>
-                    <td className="py-3 text-[11.5px] text-mv-ink-faint">
+                    <td className="py-3 text-[12px] text-mv-ink-faint">
                       {bench.posProvider}
                     </td>
                     <td className="py-3 text-right">
@@ -534,7 +534,7 @@ export function OverviewClientView({
                         size="sm"
                         variant="secondary"
                         href={`/overview?scope=${bench.restaurantId}`}
-                        className="text-[11.5px]"
+                        className="text-[12px]"
                       >
                         Ouvrir
                       </Button>
@@ -573,7 +573,7 @@ export function OverviewClientView({
               className="group mv-animate-in flex-1 rounded-2xl border border-mv-border bg-mv-surface p-4 sm:p-5 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
             >
               <div className="flex items-start justify-between">
-                <p className="text-[11.5px] sm:text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <p className="text-[12px] sm:text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                   Journées de service
                 </p>
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-ink/[0.06] text-mv-ink-soft">
@@ -597,7 +597,7 @@ export function OverviewClientView({
               className="group mv-animate-in flex-1 rounded-2xl border border-mv-border bg-mv-surface p-4 sm:p-5 shadow-mv-sm transition-all hover:-translate-y-0.5 hover:shadow-mv-md"
             >
               <div className="flex items-start justify-between">
-                <p className="text-[11.5px] sm:text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <p className="text-[12px] sm:text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                   Campagnes & Activations
                 </p>
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-ink/[0.06] text-mv-ink-soft">
@@ -611,7 +611,7 @@ export function OverviewClientView({
                 <MiniSparkline id="campagnes" data={campagnesSparkData} color="var(--mv-green)" />
               </div>
               {activeCampaignsCount === 0 ? (
-                <p className="mt-1 text-[11.5px] leading-snug text-mv-ink-faint">
+                <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
                   Flow amplifie le trafic existant — sans campagne active, l’effet reste limité.{" "}
                   <span className="font-semibold text-mv-green-dark">Démarrer ou demander de l’aide</span>
                 </p>

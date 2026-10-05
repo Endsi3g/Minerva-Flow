@@ -41,26 +41,26 @@ export function EtablissementDetailView({
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Card>
-          <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Revenu (mois)</p>
+          <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Revenu (mois)</p>
           <p className="mt-1 font-display text-[20px] font-medium text-mv-ink">{formatCurrency(stats.revenue)}</p>
           <Badge tone={stats.delta >= 0 ? "green" : "red"} className="mt-1.5">
             {stats.delta >= 0 ? "↑" : "↓"} {Math.abs(stats.delta).toFixed(1)}%
           </Badge>
         </Card>
         <Card>
-          <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Employés actifs</p>
+          <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Employés actifs</p>
           <p className="mt-1 flex items-center gap-1.5 font-display text-[20px] font-medium text-mv-ink">
             <Users size={16} className="text-mv-ink-faint" /> {activeEmployeeCount}
           </p>
         </Card>
         <Card>
-          <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Programmes actifs</p>
+          <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Programmes actifs</p>
           <p className="mt-1 flex items-center gap-1.5 font-display text-[20px] font-medium text-mv-ink">
             <GitCommit size={16} className="text-mv-ink-faint" /> {activeProgramCount}
           </p>
         </Card>
         <Card>
-          <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Fuseau horaire</p>
+          <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Fuseau horaire</p>
           <p className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-mv-ink">
             <MapPin size={14} className="text-mv-ink-faint" /> {restaurant.timezone}
           </p>

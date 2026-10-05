@@ -114,7 +114,7 @@ const DropzoneContent = ({ className }: { className?: string }) => {
                 {file.name}
               </p>
               {file.errors.length > 0 ? (
-                <p className="text-[11.5px] text-mv-red">
+                <p className="text-[12px] text-mv-red">
                   {file.errors
                     .map((e) =>
                       e.message.startsWith("File is larger than")
@@ -124,13 +124,13 @@ const DropzoneContent = ({ className }: { className?: string }) => {
                     .join(", ")}
                 </p>
               ) : loading && !isSuccessfullyUploaded ? (
-                <p className="text-[11.5px] text-mv-ink-faint">Envoi…</p>
+                <p className="text-[12px] text-mv-ink-faint">Envoi…</p>
               ) : fileError ? (
-                <p className="text-[11.5px] text-mv-red">Échec : {fileError.message}</p>
+                <p className="text-[12px] text-mv-red">Échec : {fileError.message}</p>
               ) : isSuccessfullyUploaded ? (
-                <p className="text-[11.5px] text-mv-green-dark">Envoyé</p>
+                <p className="text-[12px] text-mv-green-dark">Envoyé</p>
               ) : (
-                <p className="text-[11.5px] text-mv-ink-faint">{formatBytes(file.size, 2)}</p>
+                <p className="text-[12px] text-mv-ink-faint">{formatBytes(file.size, 2)}</p>
               )}
             </div>
 
@@ -196,7 +196,7 @@ const DropzoneEmptyState = ({ className }: { className?: string }) => {
           </a>
         </p>
         {maxFileSize !== Number.POSITIVE_INFINITY && (
-          <p className="text-[11.5px] text-mv-ink-faint">
+          <p className="text-[12px] text-mv-ink-faint">
             Taille maximale : {formatBytes(maxFileSize, 2)}
           </p>
         )}

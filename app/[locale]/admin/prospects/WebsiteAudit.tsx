@@ -186,7 +186,7 @@ export function WebsiteAudit({
                   <CircleX size={15} className="shrink-0 text-mv-ink-faint" />
                 )}
                 <span className={check.passed ? "text-mv-ink" : "text-mv-ink-soft"}>{t(`checks.${id}`)}</span>
-                {check.detail && <span className="ml-auto text-[11px] text-mv-ink-faint">{check.detail}</span>}
+                {check.detail && <span className="ml-auto text-[12px] text-mv-ink-faint">{check.detail}</span>}
               </li>
             );
           })}

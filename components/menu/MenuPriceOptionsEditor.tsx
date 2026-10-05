@@ -17,12 +17,12 @@ export function MenuPriceOptionsEditor({
   return (
     <fieldset className="space-y-2 rounded-xl border border-mv-border-soft bg-mv-cream-soft/50 p-3">
       <legend className="px-1 text-[12.5px] font-semibold text-mv-ink">Formats et prix</legend>
-      <p className="text-[11.5px] leading-snug text-mv-ink-faint">
+      <p className="text-[12px] leading-snug text-mv-ink-faint">
         Facultatif. Ajoutez les choix fixes affichés dans l’app (par exemple 3, 6 et 9) et le prix total de chaque choix.
       </p>
       {options.map((option, index) => (
         <div key={option.id} className="grid grid-cols-[minmax(0,1fr)_5rem_6.5rem_2rem] items-end gap-2">
-          <label className="min-w-0 text-[10.5px] text-mv-ink-soft">
+          <label className="min-w-0 text-[12px] text-mv-ink-soft">
             Format
             <input
               value={option.label}
@@ -33,7 +33,7 @@ export function MenuPriceOptionsEditor({
               required
             />
           </label>
-          <label className="text-[10.5px] text-mv-ink-soft">
+          <label className="text-[12px] text-mv-ink-soft">
             Qté
             <input
               type="number"
@@ -47,7 +47,7 @@ export function MenuPriceOptionsEditor({
               required
             />
           </label>
-          <label className="text-[10.5px] text-mv-ink-soft">
+          <label className="text-[12px] text-mv-ink-soft">
             Prix total
             <input
               type="number"

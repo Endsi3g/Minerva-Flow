@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveNativeUserId } from "@/lib/auth/native-bearer";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveDiscoveryScope } from "@/lib/data/discovery-scope";
+import { discoveryFilter, resolveDiscoveryScope } from "@/lib/data/discovery-scope";
 
 /**
  * "Populaire près de vous" — the most-ordered menu items across every
@@ -32,11 +32,9 @@ export async function GET(req: Request) {
     .select("id, name")
     .not("lat", "is", null)
     .not("lng", "is", null);
-  if (scope.mode === "workspace") {
-    restaurantsQuery = restaurantsQuery.eq("workspace_id", scope.workspaceId);
-  } else if (scope.mode === "single") {
-    restaurantsQuery = restaurantsQuery.eq("id", scope.restaurantId);
-  }
+  const filter = discoveryFilter(scope);
+  if (filter.excludeDemo) restaurantsQuery = restaurantsQuery.eq("is_demo", false);
+  if (filter.or) restaurantsQuery = restaurantsQuery.or(filter.or);
   const { data: restaurants } = await restaurantsQuery;
 
   const restaurantIds = (restaurants ?? []).map((r) => r.id as string);

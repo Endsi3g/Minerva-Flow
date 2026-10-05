@@ -140,7 +140,7 @@ struct RestaurantMapView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "location.slash")
                     Text("Activez la localisation dans Réglages pour trier par distance.")
-                        .font(.system(size: 11.5))
+                        .font(.mv(size: 11.5))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .foregroundStyle(MinervaColor.inkSoft)
@@ -162,7 +162,7 @@ struct RestaurantMapView: View {
                 Text(supabase.nearbyRestaurants.isEmpty
                     ? "Aucun restaurant participant n'a encore ajouté son adresse."
                     : "Aucun résultat pour ce filtre.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .padding(20)
             } else {
@@ -189,19 +189,19 @@ struct RestaurantMapView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(restaurant.name)
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .font(.mv(size: 13.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                     .lineLimit(1)
                 Spacer(minLength: 6)
                 if let userLocation = location.currentLocation {
                     Text(distanceLabel(from: userLocation, to: restaurant))
-                        .font(.system(size: 10.5, weight: .bold))
+                        .font(.mv(size: 10.5, weight: .bold))
                         .foregroundStyle(MinervaColor.emeraldDark)
                 }
             }
             if let city = restaurant.city {
                 Text(city)
-                    .font(.system(size: 11))
+                    .font(.mv(size: 11))
                     .foregroundStyle(MinervaColor.inkFaint)
             }
         }

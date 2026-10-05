@@ -199,7 +199,7 @@ export function CollaborateursView({
                           {m.name}
                         </button>
                         {isSelf && (
-                          <span className="text-[10.5px] font-medium text-mv-ink-faint bg-mv-cream px-1.5 py-0.5 rounded border border-mv-border-soft">
+                          <span className="text-[12px] font-medium text-mv-ink-faint bg-mv-cream px-1.5 py-0.5 rounded border border-mv-border-soft">
                             Vous
                           </span>
                         )}

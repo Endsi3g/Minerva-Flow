@@ -77,7 +77,7 @@ export function PricingTableFive({
                     className="cursor-pointer px-4 py-1.5 text-xs font-semibold text-mv-ink-soft hover:text-mv-ink transition-colors inline-flex items-center gap-1.5"
                   >
                     <span>Annuel</span>
-                    <span className="rounded bg-mv-green-tint px-1.5 py-0.5 text-[10.5px] font-bold text-mv-green-dark">
+                    <span className="rounded bg-mv-green-tint px-1.5 py-0.5 text-[12px] font-bold text-mv-green-dark">
                       -25 % (3 mois offerts)
                     </span>
                   </Label>
@@ -119,7 +119,7 @@ export function PricingTableFive({
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                       <span
                         className={cn(
-                          "inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider shadow-mv-xs",
+                          "inline-flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-bold uppercase tracking-wider shadow-mv-xs",
                           isStarPlan
                             ? "bg-mv-green text-white ring-2 ring-mv-surface"
                             : "bg-mv-cream-soft text-mv-ink border border-mv-border"
@@ -182,7 +182,7 @@ export function PricingTableFive({
                       </div>
 
                       {isAnnually && !isNaN(rawYearly) && (
-                        <p className="mt-1 text-[11.5px] text-mv-green-dark font-medium">
+                        <p className="mt-1 text-[12px] text-mv-green-dark font-medium">
                           {`Facturé ${rawYearly} $ par an (économie de ${Math.round(rawMonthly * 12 - rawYearly)} $)`}
                         </p>
                       )}
@@ -190,7 +190,7 @@ export function PricingTableFive({
 
                     {/* Features List */}
                     <div className="py-5 space-y-3">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+                      <p className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
                         {isStarPlan
                           ? "Fonctionnalités vedettes incluses :"
                           : isEnterprise
@@ -245,7 +245,7 @@ export function PricingTableFive({
                     >
                       {plan.buttonText}
                     </Button>
-                    <p className="mt-2 text-center text-[11px] text-mv-ink-faint">
+                    <p className="mt-2 text-center text-[12px] text-mv-ink-faint">
                       {isEnterprise
                         ? "Déploiement et facturation centralisée"
                         : "Sans engagement — annulation en 1 clic"}

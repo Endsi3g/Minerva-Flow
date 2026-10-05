@@ -24,6 +24,7 @@ import {
   deleteReferralProgram,
   type ReferralProgramInput,
 } from "@/lib/data/referral-programs";
+import { saveCustomerStaffNote } from "@/lib/data/customer-staff-notes";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentMembership } from "@/lib/data/current-restaurant";
@@ -247,6 +248,18 @@ export async function updateWelcomeBonusPointsAction(restaurantId: string, point
   if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) return false;
   const supabase = await createClient();
   const { error } = await supabase.from("restaurants").update({ welcome_bonus_points: points }).eq("id", restaurantId);
+  if (error) return false;
+  revalidatePath("/fidelisation/parametres");
+  return true;
+}
+
+export async function updateAppInstallBonusPointsAction(restaurantId: string, points: number): Promise<boolean> {
+  // The database caps this at 500; refuse anything outside the same range here.
+  if (!Number.isInteger(points) || points < 0 || points > 500) return false;
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager"].includes(membership.role)) return false;
+  const supabase = await createClient();
+  const { error } = await supabase.from("restaurants").update({ app_install_bonus_points: points }).eq("id", restaurantId);
   if (error) return false;
   revalidatePath("/fidelisation/parametres");
   return true;
@@ -481,4 +494,17 @@ export async function recordQrCodeDisplayedAction(
   } catch {
     // Non-blocking
   }
+}
+
+/** Staff-only guest note (allergies, preferred table, wine). Never shown to the guest. */
+export async function saveCustomerStaffNoteAction(
+  restaurantId: string,
+  customerId: string,
+  body: string
+): Promise<boolean> {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.restaurantId !== restaurantId || !["owner", "manager", "staff"].includes(membership.role)) return false;
+  const ok = await saveCustomerStaffNote(restaurantId, customerId, body);
+  if (ok) revalidatePath(`/fidelisation/${customerId}`);
+  return ok;
 }

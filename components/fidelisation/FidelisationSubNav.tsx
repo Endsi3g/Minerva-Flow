@@ -49,7 +49,7 @@ export function FidelisationSubNav() {
             key={href}
             href={href}
             className={cn(
-              "relative flex shrink-0 items-center gap-1.5 pb-3 text-[13px] font-medium transition-colors",
+              "relative flex shrink-0 items-center gap-1.5 pb-3 pointer-coarse:min-h-11 text-[13px] font-medium transition-colors",
               active ? "text-mv-ink" : "text-mv-ink-faint hover:text-mv-ink-soft"
             )}
           >

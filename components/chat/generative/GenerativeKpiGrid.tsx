@@ -55,7 +55,7 @@ export function GenerativeKpiGrid({
               )}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-semibold text-[#5A5851] truncate max-w-[85%]">
+                <span className="text-[12px] font-semibold text-[#5A5851] truncate max-w-[85%]">
                   {item.label}
                 </span>
                 {item.tooltip && (
@@ -71,7 +71,7 @@ export function GenerativeKpiGrid({
                 </div>
 
                 {item.deltaPercent !== undefined && (
-                  <div className="flex items-center gap-1 text-[10.5px] font-semibold">
+                  <div className="flex items-center gap-1 text-[12px] font-semibold">
                     {isNeutral ? (
                       <span className="flex items-center text-gray-500">
                         <Minus size={11} className="mr-0.5" />

@@ -97,7 +97,7 @@ function NewReferralProgramModal({
         </Field>
         <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 p-3">
           <p className="mb-2 text-[12px] font-semibold text-mv-ink">Bonus immédiat à la conversion</p>
-          <p className="mb-3 text-[11.5px] leading-snug text-mv-ink-faint">
+          <p className="mb-3 text-[12px] leading-snug text-mv-ink-faint">
             Crédité en points dès qu&apos;un ami parrainé devient client — en plus de la récompense d&apos;objectif ci-dessus, qui reste remise à la main.
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -231,12 +231,12 @@ function ReferralProgramsCard({
               <div key={p.id} className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2">
                 <div>
                   <p className="text-[13px] font-medium text-mv-ink">{p.name}</p>
-                  <p className="text-[11.5px] text-mv-ink-faint">
+                  <p className="text-[12px] text-mv-ink-faint">
                     Objectif : {p.goalCount} parrainage{p.goalCount > 1 ? "s" : ""}
                     {p.rewardDescription ? ` — ${p.rewardDescription}` : ""}
                   </p>
                   {(p.referrerBonusPoints > 0 || p.newCustomerBonusPoints > 0) && (
-                    <p className="mt-0.5 text-[11.5px] text-mv-green-dark">
+                    <p className="mt-0.5 text-[12px] text-mv-green-dark">
                       Bonus immédiat : +{p.referrerBonusPoints} pts parrain / +{p.newCustomerBonusPoints} pts filleul
                     </p>
                   )}
@@ -245,7 +245,7 @@ function ReferralProgramsCard({
                   <Badge tone={p.active ? "green" : "neutral"}>{p.active ? "Actif" : "Inactif"}</Badge>
                   <button
                     onClick={() => handleToggleActive(p)}
-                    className="rounded-md px-2 py-1 text-[11.5px] font-medium text-mv-ink-soft hover:bg-mv-ink/5"
+                    className="rounded-md px-2 py-1 text-[12px] font-medium text-mv-ink-soft hover:bg-mv-ink/5"
                   >
                     {p.active ? "Désactiver" : "Activer"}
                   </button>
@@ -352,7 +352,7 @@ function ReferralInvitationsTable({ invitations }: { invitations: ReferralInvita
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[520px] text-left text-[12.5px]">
-            <thead><tr className="border-b border-mv-border-soft text-[10.5px] font-semibold uppercase tracking-wide text-mv-ink-faint"><th className="py-2 pr-3">Invitant</th><th className="py-2 pr-3">Nouveau client</th><th className="py-2 pr-3">Canal</th><th className="py-2 pr-3">Action</th><th className="py-2 text-right">Date</th></tr></thead>
+            <thead><tr className="border-b border-mv-border-soft text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint"><th className="py-2 pr-3">Invitant</th><th className="py-2 pr-3">Nouveau client</th><th className="py-2 pr-3">Canal</th><th className="py-2 pr-3">Action</th><th className="py-2 text-right">Date</th></tr></thead>
             <tbody className="divide-y divide-mv-border-soft">
               {invitations.map((invitation) => (
                 <tr key={invitation.id}>

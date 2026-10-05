@@ -20,7 +20,7 @@ export function PoweredByBadge({ className }: { className?: string }) {
       )}
     >
       <LogoMark size={14} />
-      <span className="text-[11px] font-semibold text-mv-ink-faint">Propulsé par Minerva Flow</span>
+      <span className="text-[12px] font-semibold text-mv-ink-faint">Propulsé par Minerva Flow</span>
     </a>
   );
 }

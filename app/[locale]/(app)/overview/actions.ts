@@ -7,6 +7,10 @@ export type StartupProgress = {
   memberCount: number;
   hasAddress: boolean;
   toolsConnectedCount: number;
+  /** Published (non-draft, active) menu items: the first step of getting customers. */
+  liveMenuCount: number;
+  /** Customers enrolled in the loyalty programme. */
+  customerCount: number;
 };
 
 /**
@@ -17,10 +21,10 @@ export type StartupProgress = {
  * connect tools) once that wizard was condensed to a single step.
  */
 export async function getStartupProgressAction(restaurantId: string): Promise<StartupProgress> {
-  if (!restaurantId) return { serviceDaysCount: 0, memberCount: 0, hasAddress: false, toolsConnectedCount: 0 };
+  if (!restaurantId) return { serviceDaysCount: 0, memberCount: 0, hasAddress: false, toolsConnectedCount: 0, liveMenuCount: 0, customerCount: 0 };
 
   const supabase = await createClient();
-  const [serviceDays, members, restaurantRow, posConnections, adConnections] = await Promise.all([
+  const [serviceDays, members, restaurantRow, posConnections, adConnections, liveMenu, customers] = await Promise.all([
     supabase
       .from("service_days")
       .select("id", { count: "exact", head: true })
@@ -41,6 +45,16 @@ export async function getStartupProgressAction(restaurantId: string): Promise<St
       .select("id", { count: "exact", head: true })
       .eq("restaurant_id", restaurantId)
       .eq("status", "connecte"),
+    supabase
+      .from("menu_items")
+      .select("id", { count: "exact", head: true })
+      .eq("restaurant_id", restaurantId)
+      .eq("active", true)
+      .eq("is_draft", false),
+    supabase
+      .from("customers")
+      .select("id", { count: "exact", head: true })
+      .eq("restaurant_id", restaurantId),
   ]);
 
   return {
@@ -48,5 +62,7 @@ export async function getStartupProgressAction(restaurantId: string): Promise<St
     memberCount: members.count ?? 0,
     hasAddress: Boolean((restaurantRow.data as { address: string | null } | null)?.address),
     toolsConnectedCount: (posConnections.count ?? 0) + (adConnections.count ?? 0),
+    liveMenuCount: liveMenu.count ?? 0,
+    customerCount: customers.count ?? 0,
   };
 }

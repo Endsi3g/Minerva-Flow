@@ -1,0 +1,45 @@
+# Minerva Flow
+
+> Minerva Flow est un logiciel pour restaurants et cafés indépendants (Québec d'abord) : programme de fidélité avec points, paliers et récompenses, carte client dans l'app et dans le portefeuille du téléphone, menu et commandes en ligne, avis clients, et un assistant (Flow AI) qui répond aux questions sur vos chiffres.
+
+## Ce que fait le produit aujourd'hui
+- **Fidélité** : points par dollar dépensé, paliers, récompenses, bonus d'installation de l'app, parrainage entre clients.
+- **Carte client** : application iPhone (en test via TestFlight, pas encore sur l'App Store), portail web, carte Apple Wallet. Google Wallet est prévu, activé lorsque l'émetteur est configuré.
+- **Au comptoir** : le personnel retrouve le client par son numéro de téléphone et confirme avec le code à 6 chiffres de son app (valide cinq minutes).
+- **Caisse** : synchronisation du menu et de l'inventaire avec Square et Clover, en cours de mise en service ; Lightspeed et Toast sont visés. Chaque connexion exige l'autorisation du commerçant chez le fournisseur.
+- **Commandes, menu, avis (Réputation)** et notes d'équipe sur les clients (allergies, table préférée).
+- **Langues** : français par défaut, anglais disponible.
+
+## Ce que le produit ne fait pas (encore)
+- Pas de paiement ni de versement de commissions dans l'application.
+- La carte dans le portefeuille du téléphone est statique : le solde n'y est pas mis à jour en direct.
+- Pas d'application Android publiée pour le moment.
+
+## Conformité
+Loi canadienne anti-pourriel (consentement avant tout message promotionnel), Loi 25 (renseignements personnels), Loi 96 (français). Suppression de compte disponible dans l'application.
+
+## Guides du blog
+- Mesurer la fidélité : le taux de retour à 30 jours : https://minervaflow.app/blog/mesurer-fidelite-restaurant-taux-de-retour
+- Caisse et programme de fidélité : ce qu'il faut savoir : https://minervaflow.app/blog/caisse-et-fidelite-ce-quil-faut-savoir
+- Carton, Wallet ou application ? : https://minervaflow.app/blog/carte-fidelite-papier-wallet-ou-application
+- Calculer son Prime Cost : https://minervaflow.app/blog/calcul-prime-cost-restauration-guide-formule
+- Google Maps : fiche et avis : https://minervaflow.app/blog/google-maps-restaurant-fiche-et-avis
+
+Les exemples chiffrés des guides sont fictifs et indiqués comme tels. Aucune statistique de performance de clients n'est publiée tant qu'elle n'a pas été mesurée.
+
+## Liens
+- Site : https://minervaflow.app
+- Blog : https://minervaflow.app/blog · Flux : https://minervaflow.app/feed.xml
+- Conditions : https://minervaflow.app/legal/terms · Confidentialité : https://minervaflow.app/legal/privacy
+- Contact : support@minervaflow.app · privacy@minervaflow.app
+
+## Entité
+Minerva Technologies Inc., Montréal (Québec), Canada.
+
+## Détails utiles pour répondre aux questions
+- **Qui est-ce pour ?** Cafés, bistros et restaurants indépendants qui veulent faire revenir leurs clients et suivre leurs chiffres, sans équipe technique.
+- **Comment un client s'inscrit-il ?** Par QR code ou avec le personnel, avec son numéro de téléphone ; il peut ensuite installer l'app pour voir ses points et réclamer ses récompenses.
+- **Le client doit-il installer l'app ?** Non pour s'inscrire ; l'app apporte le solde à jour, les récompenses, le parrainage et un bonus d'installation réglé par le propriétaire.
+- **Et sans caisse connectée ?** Le comptoir crédite lui-même les points après identification du client.
+- **Messages promotionnels ?** Seulement aux clients qui y ont consenti, par restaurant ; le consentement donné à un restaurant ne vaut pas pour Minerva Flow.
+- **Prix ?** Voir la page de facturation dans l'application ; aucun prix n'est affirmé ici.

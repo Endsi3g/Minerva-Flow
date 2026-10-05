@@ -19,11 +19,13 @@ const statusCopy: Record<string, string> = {
 };
 
 export function AppInstallGuide({
+  bonusPoints,
   restaurantId,
   restaurantName,
   menuToken,
   orderId,
 }: {
+  bonusPoints: number;
   restaurantId: string | null;
   restaurantName: string | null;
   menuToken: string | null;
@@ -62,11 +64,16 @@ export function AppInstallGuide({
         <section className="mt-10 grid gap-9 rounded-[28px] border border-[#e6e0d2] bg-[#fafaf5] p-6 shadow-sm sm:mt-14 sm:grid-cols-[1.05fr_.95fr] sm:items-center sm:p-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#167f5b]">{restaurantName ? `Avec ${restaurantName}` : "Pour vos restaurants préférés"}</p>
-            <h1 className="mt-3 font-display text-4xl leading-tight tracking-tight text-[#20352a] sm:text-5xl">Votre prochaine visite, en toute simplicité.</h1>
-            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#5c685f]">Retrouvez le menu, vos commandes et vos points au même endroit. Le menu reste accessible sur le Web, même sans installer l’application.</p>
+            <h1 className="mt-3 font-display text-4xl leading-tight tracking-tight text-[#20352a] sm:text-5xl">Vos récompenses vous attendent dans l’app.</h1>
+            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#5c685f]">Vos points, vos récompenses et vos commandes sont dans l’application : c’est là que vous les réclamez. Le menu reste consultable sur le Web.</p>
+            {bonusPoints > 0 && (
+              <p className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#e7f2e9] px-4 py-3 text-sm font-semibold text-[#0e5a40]">
+                <Gift size={17} aria-hidden="true" /> +{bonusPoints} points offerts à votre première ouverture de l’app
+              </p>
+            )}
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <a href={TESTFLIGHT_URL} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#173c2e] px-5 text-sm font-semibold text-white transition hover:bg-[#0e5a40]">
-                <Smartphone size={17} /> Installer avec TestFlight <ArrowRight size={15} />
+                <Smartphone size={17} /> Installer l’app et réclamer mes récompenses <ArrowRight size={15} />
               </a>
               {restaurantId && <Link href={accountHref} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#cbd8ce] bg-white px-5 text-sm font-semibold text-[#173c2e] hover:bg-[#f2f7f2]">Créer mon compte <ArrowRight size={15} /></Link>}
             </div>
@@ -86,7 +93,7 @@ export function AppInstallGuide({
               {order?.estimatedReadyAt && <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#0e5a40]"><Clock3 size={14} /> Heure estimée : {new Date(order.estimatedReadyAt).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}</p>}
               {order?.status === "annulee" && <p className="mt-2 text-sm text-[#5c685f]">Aucun frais ne sera demandé. {order.cancellationReason || "Le restaurant vous contactera si nécessaire."}</p>}
               {order && order.welcomeBonusPoints > 0 && <p className="mt-3 rounded-xl bg-[#e7f2e9] px-3.5 py-3 text-sm font-medium text-[#0e5a40]">Hey, merci d’avoir rejoint {order.restaurantName} ! Voici {order.welcomeBonusPoints} points bonus pour votre première visite. 💚</p>}
-              <p className="mt-2 text-[11px] text-[#778078]">Mise à jour automatique · Réf. {orderId.slice(0, 8).toUpperCase()}</p>
+              <p className="mt-2 text-[12px] text-[#778078]">Mise à jour automatique · Réf. {orderId.slice(0, 8).toUpperCase()}</p>
             </div>
           </div>
         </section>}

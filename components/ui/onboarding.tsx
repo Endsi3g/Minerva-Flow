@@ -737,7 +737,7 @@ function TipsListItemComponent({ number, children, className, ...props }: TipsLi
       {number != null && (
         <span
           aria-hidden
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mv-green-dark text-[11px] font-semibold text-mv-cream-soft"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-mv-green-dark text-[12px] font-semibold text-mv-cream-soft"
           data-slot="tips-list-item-number"
         >
           {number}

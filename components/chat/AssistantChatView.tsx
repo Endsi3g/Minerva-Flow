@@ -197,7 +197,7 @@ export function AssistantChatView({
               <Sparkles className="h-3 w-3" />
             </div>
             <span className="truncate">Minerva Flow</span>
-            <span className="text-[9px] font-bold text-[#059669] bg-[#059669]/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="text-[12px] font-bold text-[#059669] bg-[#059669]/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
               AI
             </span>
           </div>
@@ -208,7 +208,7 @@ export function AssistantChatView({
           {/* Platform switch link */}
           <Link
             href="/overview"
-            className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7a7a76] hover:text-[#059669] px-2 py-1.5 rounded-md hover:bg-[#e5e5e2]/60 transition-colors mb-2"
+            className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider text-[#7a7a76] hover:text-[#059669] px-2 py-1.5 rounded-md hover:bg-[#e5e5e2]/60 transition-colors mb-2"
           >
             <ArrowLeftRight className="h-3.5 w-3.5 shrink-0" />
             <span>Minerva Flow</span>
@@ -249,7 +249,7 @@ export function AssistantChatView({
 
           {/* Section Historique des Discussions Réelles */}
           <div className="mt-4 pt-3 border-t border-[#e5e5e0]/70 space-y-1">
-            <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#7a7a76]">
+            <div className="px-2 pb-1 text-[12px] font-bold uppercase tracking-wider text-[#7a7a76]">
               Historique
             </div>
 
@@ -263,7 +263,7 @@ export function AssistantChatView({
 
             <div className="max-h-56 overflow-y-auto space-y-0.5 pr-0.5">
               {conversations.length === 0 ? (
-                <div className="px-2 py-1 text-[11px] text-[#807d72] italic">
+                <div className="px-2 py-1 text-[12px] text-[#807d72] italic">
                   Aucune discussion
                 </div>
               ) : (
@@ -273,7 +273,7 @@ export function AssistantChatView({
                     <div
                       key={sess.id}
                       className={cn(
-                        "group flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium transition-all cursor-pointer",
+                        "group flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[12px] font-medium transition-all cursor-pointer",
                         isActive
                           ? "bg-[#059669]/10 text-[#059669] font-semibold"
                           : "text-[#555552] hover:bg-[#e5e5e2]/60 hover:text-[#26251e]"
@@ -328,7 +328,7 @@ export function AssistantChatView({
           <div className="h-12 border-b border-[#e6e5e0]/60 px-4 flex items-center justify-between shrink-0 bg-[#fafaf9]">
             <div className="flex items-center gap-1.5">
               <Folder className="h-3.5 w-3.5 text-[#059669]" />
-              <span className="text-[10px] font-extrabold text-[#26251e] tracking-wider uppercase">
+              <span className="text-[12px] font-extrabold text-[#26251e] tracking-wider uppercase">
                 Workspace & Projets
               </span>
             </div>
@@ -356,13 +356,13 @@ export function AssistantChatView({
             {/* DOSSIERS & PROJETS */}
             <div className="space-y-1">
               <div className="px-2 flex items-center justify-between">
-                <span className="text-[9px] font-bold text-[#7a7a76] uppercase tracking-wider">
+                <span className="text-[12px] font-bold text-[#7a7a76] uppercase tracking-wider">
                   Dossiers & Projets
                 </span>
                 {selectedProjectId && (
                   <button
                     onClick={() => setSelectedProjectId(null)}
-                    className="text-[9px] text-[#059669] hover:underline font-bold cursor-pointer"
+                    className="text-[12px] text-[#059669] hover:underline font-bold cursor-pointer"
                   >
                     Voir tout
                   </button>
@@ -373,7 +373,7 @@ export function AssistantChatView({
               <div
                 onClick={() => setSelectedProjectId(null)}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer text-[11px] font-semibold transition-all",
+                  "flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer text-[12px] font-semibold transition-all",
                   selectedProjectId === null
                     ? "bg-emerald-50/80 text-emerald-900 border border-emerald-200/50"
                     : "text-[#555552] hover:bg-neutral-100 hover:text-[#26251e]"
@@ -381,7 +381,7 @@ export function AssistantChatView({
               >
                 <Layers className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
                 <span className="flex-1 truncate">Tous les projets</span>
-                <span className="text-[10px] text-[#7a7a76] font-mono">
+                <span className="text-[12px] text-[#7a7a76] font-mono">
                   {conversations.length}
                 </span>
               </div>
@@ -400,7 +400,7 @@ export function AssistantChatView({
                       );
                     }}
                     className={cn(
-                      "flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer text-[11px] font-medium transition-all group",
+                      "flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer text-[12px] font-medium transition-all group",
                       isActive
                         ? "text-[#26251e] bg-white border border-[#e6e5e0] shadow-2xs font-semibold"
                         : "text-[#7a7a76] hover:bg-neutral-100 hover:text-[#26251e]"
@@ -414,7 +414,7 @@ export function AssistantChatView({
                       )}
                     />
                     <span className="flex-1 truncate">{dos.name}</span>
-                    <span className="text-[9px] text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-[12px] text-neutral-400 opacity-0 group-hover:opacity-100 transition-opacity">
                       {isActive ? "RAG actif" : "Désactivé"}
                     </span>
                   </div>
@@ -429,7 +429,7 @@ export function AssistantChatView({
                     setSelectedProjectId((cur) => (cur === folder.id ? null : folder.id))
                   }
                   className={cn(
-                    "flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer text-[11px] font-semibold transition-all",
+                    "flex items-center gap-2 rounded-lg px-2 py-1.5 cursor-pointer text-[12px] font-semibold transition-all",
                     selectedProjectId === folder.id
                       ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
                       : "text-[#555552] hover:bg-neutral-100 hover:text-[#26251e]"
@@ -444,18 +444,18 @@ export function AssistantChatView({
             {/* DISCUSSIONS */}
             <div className="space-y-1 pt-1">
               <div className="px-2 flex items-center justify-between">
-                <span className="text-[9px] font-bold text-[#7a7a76] uppercase tracking-wider">
+                <span className="text-[12px] font-bold text-[#7a7a76] uppercase tracking-wider">
                   Discussions
                 </span>
                 {selectedProjectId && (
-                  <span className="text-[9px] text-emerald-700 bg-emerald-50 px-1 rounded font-mono">
+                  <span className="text-[12px] text-emerald-700 bg-emerald-50 px-1 rounded font-mono">
                     Filtré
                   </span>
                 )}
               </div>
 
               {filteredSessions.length === 0 ? (
-                <div className="px-2 py-1 text-[11px] text-[#807d72] italic">
+                <div className="px-2 py-1 text-[12px] text-[#807d72] italic">
                   Aucune discussion
                 </div>
               ) : (
@@ -466,7 +466,7 @@ export function AssistantChatView({
                       key={sess.id}
                       href={`/assistant/${sess.id}`}
                       className={cn(
-                        "block rounded-lg px-2 py-1.5 text-[11px] font-medium transition-all truncate",
+                        "block rounded-lg px-2 py-1.5 text-[12px] font-medium transition-all truncate",
                         isActive
                           ? "bg-emerald-50/80 text-emerald-900 font-semibold"
                           : "text-[#555552] hover:bg-neutral-100 hover:text-[#26251e]"
@@ -532,7 +532,7 @@ export function AssistantChatView({
               Minerva Flow Assistant
             </span>
             {currentSession?.title && (
-              <span className="text-[10px] text-[#7a7a76] font-medium border-l border-neutral-200 pl-2 truncate max-w-[200px]">
+              <span className="text-[12px] text-[#7a7a76] font-medium border-l border-neutral-200 pl-2 truncate max-w-[200px]">
                 {currentSession.title}
               </span>
             )}
@@ -540,7 +540,7 @@ export function AssistantChatView({
 
           <Link
             href="/assistant"
-            className="flex items-center gap-1 text-[11px] font-semibold text-[#7a7a76] hover:text-[#059669] px-2 py-1 rounded-md hover:bg-[#f4f4f3] transition-colors"
+            className="flex items-center gap-1 text-[12px] font-semibold text-[#7a7a76] hover:text-[#059669] px-2 py-1 rounded-md hover:bg-[#f4f4f3] transition-colors"
           >
             <Plus size={13} />
             <span>Nouveau</span>
@@ -586,7 +586,7 @@ export function AssistantChatView({
           </DialogHeader>
           <form onSubmit={handleCreateFolder} className="space-y-3 pt-2">
             <div>
-              <label className="text-[11px] font-bold text-[#7a7a76] uppercase tracking-wider block mb-1">
+              <label className="text-[12px] font-bold text-[#7a7a76] uppercase tracking-wider block mb-1">
                 Nom du Dossier
               </label>
               <input
@@ -599,7 +599,7 @@ export function AssistantChatView({
               />
             </div>
             <div>
-              <label className="text-[11px] font-bold text-[#7a7a76] uppercase tracking-wider block mb-1">
+              <label className="text-[12px] font-bold text-[#7a7a76] uppercase tracking-wider block mb-1">
                 Description (Optionnelle)
               </label>
               <textarea

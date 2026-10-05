@@ -81,9 +81,9 @@ Branche `release/2.48.0`, candidat web vérifié `ef4c04c`; paquet web `2.48.0`.
 
 ## Changelog screenshot
 
-![Confirmation réelle d’une demande de devis traiteur après E2E staging, capture desktop sans données de contact](../screenshots/changelog-2.48.0-catering-success.png)
+![Confirmation réelle d’une demande de devis traiteur après E2E staging, capture desktop sans données de contact](../screenshots/changelog/changelog-2.48.0-catering-success.png)
 
-Capture issue du vrai parcours public de demande traiteur, vérifié sur staging avec données synthétiques nettoyées. Les vues mobiles sont aussi conservées dans `docs/screenshots/changelog-2.48.0-catering-success-mobile.png` et [confirmation de précommande](../screenshots/changelog-2.48.0-preorder-success-mobile.png). Avant la GitHub Release, joindre une capture desktop en asset image à la release publiée afin que le workflow alimente le changelog applicatif.
+Capture issue du vrai parcours public de demande traiteur, vérifié sur staging avec données synthétiques nettoyées. Les vues mobiles sont aussi conservées dans `docs/screenshots/changelog/changelog-2.48.0-catering-success-mobile.png` et [confirmation de précommande](../screenshots/changelog/changelog-2.48.0-preorder-success-mobile.png). Avant la GitHub Release, joindre une capture desktop en asset image à la release publiée afin que le workflow alimente le changelog applicatif.
 
 ## Gates avant publication
 

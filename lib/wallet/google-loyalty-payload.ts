@@ -1,8 +1,17 @@
+import { getLocalPhoneDigits } from "@/lib/phone";
+
 /**
  * Pure payload shaping for a Google Wallet "save" JWT — no env reads, no
  * secrets, so it's directly unit-testable. google-wallet.ts (server-only)
  * supplies the issuer/service-account identifiers from env and signs it.
  */
+/**
+ * Public PNG Google fetches for the pass logo. It must be a real, directly
+ * reachable image: the apex domain redirects to www and the site has no
+ * /icon.png, so this points at the 512px app icon on the canonical host.
+ */
+export const GOOGLE_WALLET_LOGO_URL = "https://www.minervaflow.app/icon-512.png";
+
 export function buildGoogleLoyaltyPayload(input: {
   issuerId: string;
   serviceAccountEmail: string;
@@ -26,14 +35,15 @@ export function buildGoogleLoyaltyPayload(input: {
     issuerName: "Minerva Flow",
     programName: input.restaurantName,
     programLogo: {
-      sourceUri: { uri: "https://minervaflow.app/icon.png" },
+      sourceUri: { uri: GOOGLE_WALLET_LOGO_URL },
     },
     hexBackgroundColor: input.brandColorHex,
     reviewStatus: "UNDER_REVIEW",
   };
 
+  // Local digits (10 for North America): what the counter types to find a guest.
   const barcodeValue = input.customerPhone
-    ? input.customerPhone.replace(/\D/g, "")
+    ? getLocalPhoneDigits(input.customerPhone)
     : (input.pairingCode || input.portalUrl);
 
   const barcodeAltText = input.customerPhone

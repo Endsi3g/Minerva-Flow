@@ -3,6 +3,7 @@ import { sendRetentionEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
 import { sendSms, isSmsConfigured } from "@/lib/sms/send";
 import type { Customer } from "@/lib/types";
+import { pickVariant } from "@/lib/retention/frequent";
 
 export type RetentionTrigger =
   | "inactivity"
@@ -22,6 +23,47 @@ export type RetentionChannel = "email" | "push" | "sms";
  * customer's real points balance) and "onboarding_final" (the cheapest
  * reward's cost, as a teaser — not a claim they already have enough).
  */
+/**
+ * Alternative push wording per trigger, used for customers on the opt-in
+ * "Fréquent" level so the same reminder never reads the same twice in a row.
+ */
+export function frequentPushCopy(
+  trigger: RetentionTrigger,
+  restaurantName: string,
+  firstName: string,
+  seed: string,
+  now: Date,
+  extra?: { points: number; rewardName: string }
+): { title: string; body: string } | null {
+  const points = extra?.points ?? 0;
+  const reward = extra?.rewardName ?? "une récompense";
+  switch (trigger) {
+    case "reward_available":
+      return pickVariant(
+        [
+          { title: `${points} points à échanger`, body: `${firstName}, « ${reward} » vous attend chez ${restaurantName}.` },
+          { title: `Votre récompense est prête`, body: `Avec ${points} pts, vous pouvez obtenir « ${reward} ».` },
+          { title: `${restaurantName} a pensé à vous`, body: `« ${reward} » est à portée de main : ${points} points disponibles.` },
+        ],
+        seed,
+        now
+      );
+    case "inactivity":
+    case "value_drift":
+      return pickVariant(
+        [
+          { title: `${restaurantName} vous attend`, body: `${firstName}, passez nous voir : votre carte fidélité est prête.` },
+          { title: `On garde votre place`, body: `Une visite chez ${restaurantName} fait avancer vos points, ${firstName}.` },
+          { title: `Envie d'un bon moment ?`, body: `${restaurantName} serait ravi de vous revoir.` },
+        ],
+        seed,
+        now
+      );
+    default:
+      return null;
+  }
+}
+
 export function buildRetentionMessage(
   trigger: RetentionTrigger,
   restaurantName: string,
@@ -125,10 +167,27 @@ export async function sendRetentionNudge(
   restaurantName: string,
   customer: Pick<Customer, "id" | "name" | "email" | "userId" | "phone">,
   trigger: RetentionTrigger,
-  extra?: { points: number; rewardName: string }
+  extra?: { points: number; rewardName: string },
+  options?: { frequent?: boolean; now?: Date }
 ): Promise<RetentionChannel | null> {
   const msg = buildRetentionMessage(trigger, restaurantName, customer.name, extra);
   let channel: RetentionChannel | null = null;
+
+  // "Fréquent" is a push-only level: never email or text someone daily.
+  if (options?.frequent) {
+    if (!customer.userId) return null;
+    const firstName = customer.name.trim().split(/\s+/)[0] || customer.name;
+    const copy = frequentPushCopy(trigger, restaurantName, firstName, customer.id, options.now ?? new Date(), extra);
+    await sendPushToUsers(
+      [customer.userId],
+      { title: copy?.title ?? msg.pushTitle, body: copy?.body ?? msg.pushBody, link: "/portal" },
+      restaurantId
+    );
+    await admin
+      .from("customer_retention_sends")
+      .insert({ restaurant_id: restaurantId, customer_id: customer.id, trigger_type: trigger, channel: "push" });
+    return "push";
+  }
 
   if (customer.email) {
     const result = await sendRetentionEmail({ to: customer.email, subject: msg.subject, bodyHtml: msg.bodyHtml });

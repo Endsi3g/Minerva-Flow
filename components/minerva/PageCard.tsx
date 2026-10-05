@@ -43,7 +43,7 @@ export function CardHeader({
     <ShadcnCardHeader className="mb-4 grid-cols-[1fr_auto] px-0">
       <div>
         {eyebrow && (
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+          <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
             {eyebrow}
           </p>
         )}

@@ -20,7 +20,7 @@ export type ScrapeResult = { menu: ProspectMenu } | { error: string };
  * state → visible-text heuristic), each cheap and each optional.
  *
  * Delivery platforms (Uber Eats, DoorDash, SkipTheDishes) skip robots.txt
- * deliberately — see docs/integrations.md for why — and skip the visible-text
+ * deliberately — see docs/engineering/integrations.md for why — and skip the visible-text
  * fallback, since their raw (unrendered) HTML response rarely contains
  * readable menu text even when it contains no usable embedded state either;
  * scanning it would just produce garbage. When these fail (client-only

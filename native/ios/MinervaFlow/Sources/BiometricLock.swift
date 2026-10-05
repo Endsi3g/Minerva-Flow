@@ -89,7 +89,7 @@ struct BiometricLockView: View {
                     .font(MinervaFont.display(20))
                     .foregroundStyle(MinervaColor.ink)
                 Text("Déverrouillez avec \(lock.biometryLabel) pour continuer.")
-                    .font(.system(size: 13))
+                    .font(.mv(size: 13))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -98,7 +98,7 @@ struct BiometricLockView: View {
 
             if failed {
                 Text("Authentification échouée. Réessayez.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(.red)
             }
 
@@ -111,7 +111,7 @@ struct BiometricLockView: View {
                     if isAuthenticating { ProgressView().tint(.white) }
                     Image(systemName: "faceid")
                     Text("Déverrouiller")
-                        .font(.system(size: 14.5, weight: .semibold))
+                        .font(.mv(size: 14.5, weight: .semibold))
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)

@@ -36,7 +36,7 @@ function TrendTooltip({ active, payload, label }: { active?: boolean; payload?: 
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-mv-border bg-mv-surface px-3 py-2 shadow-mv-md">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+      <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
         {label && formatDate(label)}
       </p>
       <p className="mt-0.5 font-display text-[15px] font-medium text-mv-ink">{payload[0].value}</p>
@@ -58,12 +58,12 @@ function TrafficTrendChart({ data }: { data: { date: string; value: number }[] }
         <XAxis
           dataKey="date"
           tickFormatter={(v) => formatDate(v)}
-          tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
           minTickGap={28}
         />
-        <YAxis tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
+        <YAxis tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }} axisLine={false} tickLine={false} width={32} allowDecimals={false} />
         <Tooltip content={<TrendTooltip />} cursor={{ stroke: "var(--mv-green)", strokeWidth: 1 }} />
         <Area
           type="monotone"
@@ -119,7 +119,7 @@ function RetentionTable({ cohorts }: { cohorts: RetentionCohort[] }) {
                 return (
                   <td key={i} className="p-0.5">
                     {pct !== undefined && (
-                      <div className={`flex h-8 w-14 items-center justify-center rounded-md font-mono text-[11px] ${cellTone(pct)}`}>
+                      <div className={`flex h-8 w-14 items-center justify-center rounded-md font-mono text-[12px] ${cellTone(pct)}`}>
                         {pct}%
                       </div>
                     )}
@@ -146,13 +146,13 @@ function HourlyHeatmap({ cells }: { cells: HeatmapCell[] }) {
       <div className="inline-grid grid-cols-[32px_repeat(24,minmax(14px,1fr))] gap-[3px]">
         <div />
         {Array.from({ length: 24 }).map((_, h) => (
-          <div key={h} className="text-center text-[9px] text-mv-ink-faint">
+          <div key={h} className="text-center text-[12px] text-mv-ink-faint">
             {h % 3 === 0 ? h : ""}
           </div>
         ))}
         {DAY_LABELS.map((label, day) => (
           <Fragment key={day}>
-            <div className="flex items-center text-[10.5px] text-mv-ink-faint">{label}</div>
+            <div className="flex items-center text-[12px] text-mv-ink-faint">{label}</div>
             {Array.from({ length: 24 }).map((_, hour) => {
               const count = byKey.get(`${day}-${hour}`) ?? 0;
               return (

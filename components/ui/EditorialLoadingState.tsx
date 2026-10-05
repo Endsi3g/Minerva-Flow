@@ -26,7 +26,7 @@ export function EditorialLoadingState({
         <div>
           <p className="text-[13px] font-semibold text-mv-ink">{title}</p>
           {subtitle && (
-            <p className="text-[11.5px] text-mv-ink-faint">{subtitle}</p>
+            <p className="text-[12px] text-mv-ink-faint">{subtitle}</p>
           )}
         </div>
       </div>

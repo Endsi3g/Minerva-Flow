@@ -23,7 +23,7 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-mv-border bg-mv-surface px-3 py-2 shadow-mv-md">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+      <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
         {label && formatDate(label)}
       </p>
       <p className="mt-0.5 font-display text-[15px] font-medium text-mv-ink">
@@ -53,14 +53,14 @@ export function RevenueChart({
         <XAxis
           dataKey="date"
           tickFormatter={(v) => formatDate(v)}
-          tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
           minTickGap={28}
         />
         <YAxis
           tickFormatter={(v) => `${v / 1000}k`}
-          tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={false}
           tickLine={false}
           width={36}

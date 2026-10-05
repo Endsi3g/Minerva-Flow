@@ -32,7 +32,7 @@ export function TeamPresenceStack() {
         </Tooltip>
       ))}
       {overflow > 0 && (
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-mv-ink/10 text-[11px] font-semibold text-mv-ink-soft ring-2 ring-mv-cream-soft">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-mv-ink/10 text-[12px] font-semibold text-mv-ink-soft ring-2 ring-mv-cream-soft">
           +{overflow}
         </div>
       )}

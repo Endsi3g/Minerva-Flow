@@ -316,7 +316,7 @@ export function InviteEmployeeModal({
                 {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
               </button>
             </div>
-            <p className="text-[11.5px] text-mv-ink-faint">
+            <p className="text-[12px] text-mv-ink-faint">
               Un courriel a été envoyé à {employee.contactEmail}. Vous pouvez aussi partager le lien directement avec{" "}
               {employee.fullName} (SMS, WhatsApp, etc.).
             </p>
@@ -561,11 +561,11 @@ export function EmployeeDetail({
         )}
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-mv-cream-soft p-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{td("hoursTotal")}</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{td("hoursTotal")}</p>
             <p className="font-display text-[16px] font-medium text-mv-ink">{totalHours.toFixed(1)}</p>
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{td("punctuality")}</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{td("punctuality")}</p>
             <p className="font-display text-[16px] font-medium text-mv-ink">
               {punctuality === null ? "—" : `${punctuality}%`}
             </p>
@@ -663,7 +663,7 @@ export function EmployeeDetail({
                   <Link
                     href={`/employees/${employee.id}/reviews/${r.id}`}
                     target="_blank"
-                    className="mt-2 flex w-fit items-center gap-1.5 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                    className="mt-2 flex w-fit items-center gap-1.5 text-[12px] font-semibold text-mv-green-dark hover:underline"
                   >
                     <Printer size={12} /> {td("viewPrint")}
                   </Link>

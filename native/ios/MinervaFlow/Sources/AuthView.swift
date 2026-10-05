@@ -63,7 +63,7 @@ struct AuthView: View {
         /// indistinguishable from "the page doesn't exist" to whoever's
         /// looking at it.
         var url: URL {
-            Config.apiBaseURL.appending(path: self == .terms ? "/legal/terms" : "/legal/privacy")
+            self == .terms ? Config.termsURL : Config.privacyPolicyURL
         }
     }
 
@@ -81,11 +81,10 @@ struct AuthView: View {
                             .frame(width: 28, height: 28)
                         (Text("Minerva ").foregroundStyle(MinervaColor.ink)
                             + Text("Flow").foregroundStyle(MinervaColor.emeraldDark))
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.mv(size: 16, weight: .bold))
                         Spacer()
-                        LanguageMenu(language: Binding(get: { language }, set: { storedLanguage = $0.rawValue }))
+                        LanguageMenu(language: Binding(get: { language }, set: { storedLanguage = $0.rawValue }), tint: MinervaColor.emeraldDark)
                             .environment(\.colorScheme, .light)
-                            .foregroundStyle(MinervaColor.emeraldDark)
                     }
 
                     card
@@ -104,7 +103,7 @@ struct AuthView: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("OK") { focusedField = nil }
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.mv(size: 14, weight: .semibold))
             }
         }
         .sheet(item: $legalSheet) { doc in
@@ -144,10 +143,10 @@ struct AuthView: View {
                     // system font at .bold instead of pulling in a new
                     // typeface for one Text. Ask if the exact Inter
                     // typeface matters and I'll bundle the real font file.
-                    .font(.system(size: 21, weight: .bold))
+                    .font(.mv(size: 21, weight: .bold))
                     .foregroundStyle(MinervaColor.ink)
                 Text(greetingSubtitle)
-                    .font(.system(size: 13))
+                    .font(.mv(size: 13))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -161,7 +160,7 @@ struct AuthView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Courriel")
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .font(.mv(size: 11.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkSoft)
                 TextField("", text: $email, prompt: Text("vous@exemple.com").foregroundStyle(MinervaColor.inkFaint))
                     .textContentType(.emailAddress)
@@ -189,7 +188,7 @@ struct AuthView: View {
 
                 if emailLooksInvalid {
                     Text("Cette adresse ne semble pas valide.")
-                        .font(.system(size: 11))
+                        .font(.mv(size: 11))
                         .foregroundStyle(.red)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -218,7 +217,7 @@ struct AuthView: View {
                 Button("Mot de passe oublié ?") {
                     Task { await handleForgotPassword() }
                 }
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(.mv(size: 12.5, weight: .semibold))
                 .foregroundStyle(MinervaColor.emeraldDark)
                 .disabled(isBusy)
             }
@@ -285,7 +284,7 @@ struct AuthView: View {
     private func modeToggleButton(title: String, isActive: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(.mv(size: 12.5, weight: .semibold))
                 .foregroundStyle(isActive ? MinervaColor.ink : MinervaColor.inkFaint)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -307,7 +306,7 @@ struct AuthView: View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(passwordSubMode == .signup ? "Créer un mot de passe" : "Mot de passe")
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .font(.mv(size: 11.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkSoft)
                 SecureField("", text: $password, prompt: Text("••••••••").foregroundStyle(MinervaColor.inkFaint))
                     .textContentType(passwordSubMode == .signup ? .newPassword : .password)
@@ -329,7 +328,7 @@ struct AuthView: View {
 
                 if passwordSubMode == .signup {
                     Text("8 caractères minimum")
-                        .font(.system(size: 11))
+                        .font(.mv(size: 11))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
             }
@@ -337,7 +336,7 @@ struct AuthView: View {
             if passwordSubMode == .signup {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Confirmer le mot de passe")
-                        .font(.system(size: 11.5, weight: .semibold))
+                        .font(.mv(size: 11.5, weight: .semibold))
                         .foregroundStyle(MinervaColor.inkSoft)
                     SecureField("", text: $confirmPassword, prompt: Text("••••••••").foregroundStyle(MinervaColor.inkFaint))
                         .textContentType(.newPassword)
@@ -355,7 +354,7 @@ struct AuthView: View {
                         )
                     if passwordsMismatch {
                         Text("Les mots de passe ne correspondent pas.")
-                            .font(.system(size: 11))
+                            .font(.mv(size: 11))
                             .foregroundStyle(.red)
                     }
                 }
@@ -367,7 +366,7 @@ struct AuthView: View {
                     passwordSubMode = passwordSubMode == .signup ? .login : .signup
                     errorMessage = nil
                 }
-                .font(.system(size: 12, weight: .semibold))
+                .font(.mv(size: 12, weight: .semibold))
                 .foregroundStyle(MinervaColor.emeraldDark)
             }
         }
@@ -382,7 +381,7 @@ struct AuthView: View {
     private var passwordResetSentView: some View {
         VStack(spacing: 16) {
             Image(systemName: "envelope.fill")
-                .font(.system(size: 20))
+                .font(.mv(size: 20))
                 .foregroundStyle(MinervaColor.emeraldDark)
                 .frame(width: 40, height: 40)
                 .background(MinervaColor.emerald.opacity(0.12))
@@ -393,7 +392,7 @@ struct AuthView: View {
                     .font(MinervaFont.display(19))
                     .foregroundStyle(MinervaColor.ink)
                 Text("Un lien de réinitialisation a été envoyé à \(trimmedEmail). Ouvrez-le pour choisir un nouveau mot de passe, puis revenez ici vous connecter.")
-                    .font(.system(size: 13))
+                    .font(.mv(size: 13))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -402,7 +401,7 @@ struct AuthView: View {
             Button("Retour à la connexion") {
                 passwordResetSent = false
             }
-            .font(.system(size: 13, weight: .semibold))
+            .font(.mv(size: 13, weight: .semibold))
             .foregroundStyle(MinervaColor.emeraldDark)
         }
     }
@@ -411,7 +410,7 @@ struct AuthView: View {
         HStack(spacing: 10) {
             Rectangle().fill(MinervaColor.border).frame(height: 1)
             Text("OU")
-                .font(.system(size: 10.5, weight: .bold))
+                .font(.mv(size: 10.5, weight: .bold))
                 .tracking(0.6)
                 .foregroundStyle(MinervaColor.inkFaint)
             Rectangle().fill(MinervaColor.border).frame(height: 1)
@@ -429,7 +428,7 @@ struct AuthView: View {
                     icon()
                 }
                 Text(oauthBusy == provider ? "Redirection…" : title)
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .font(.mv(size: 13.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
             }
             .frame(maxWidth: .infinity)
@@ -481,7 +480,7 @@ struct AuthView: View {
                 Image(systemName: "hammer.fill")
                 Text("Sauter la connexion (dev, OTP désactivé)")
             }
-            .font(.system(size: 12, weight: .semibold))
+            .font(.mv(size: 12, weight: .semibold))
         }
         .foregroundStyle(.orange)
         .padding(.top, 4)
@@ -494,7 +493,7 @@ struct AuthView: View {
         VStack(spacing: 16) {
             VStack(spacing: 4) {
                 Image(systemName: "envelope.fill")
-                    .font(.system(size: 20))
+                    .font(.mv(size: 20))
                     .foregroundStyle(MinervaColor.emeraldDark)
                     .frame(width: 40, height: 40)
                     .background(MinervaColor.emerald.opacity(0.12))
@@ -505,7 +504,7 @@ struct AuthView: View {
                     .font(MinervaFont.display(19))
                     .foregroundStyle(MinervaColor.ink)
                 Text("Un code de connexion a été envoyé à \(email).")
-                    .font(.system(size: 13))
+                    .font(.mv(size: 13))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -514,7 +513,7 @@ struct AuthView: View {
             TextField("", text: $code, prompt: Text("123456").foregroundStyle(MinervaColor.inkFaint))
                 .keyboardType(.numberPad)
                 .textContentType(.oneTimeCode)
-                .font(.system(size: 24, weight: .semibold, design: .monospaced))
+                .font(.mv(size: 24, weight: .semibold, design: .monospaced))
                 .tracking(6)
                 .multilineTextAlignment(.center)
                 .focused($focusedField, equals: .code)
@@ -544,12 +543,12 @@ struct AuthView: View {
 
             HStack(spacing: 4) {
                 Text("Vous n'avez rien reçu ?")
-                    .font(.system(size: 12))
+                    .font(.mv(size: 12))
                     .foregroundStyle(MinervaColor.inkFaint)
                 Button(resendCooldown > 0 ? "Renvoyer (\(resendCooldown)s)" : "Renvoyer le code") {
                     Task { await resendCode() }
                 }
-                .font(.system(size: 12, weight: .semibold))
+                .font(.mv(size: 12, weight: .semibold))
                 .foregroundStyle(resendCooldown > 0 ? MinervaColor.inkFaint : MinervaColor.emeraldDark)
                 .disabled(resendCooldown > 0)
             }
@@ -562,7 +561,7 @@ struct AuthView: View {
                     stopResendCooldown()
                 }
             }
-            .font(.system(size: 12.5, weight: .semibold))
+            .font(.mv(size: 12.5, weight: .semibold))
             .foregroundStyle(MinervaColor.inkSoft)
         }
         .onAppear { startResendCooldown() }
@@ -573,10 +572,10 @@ struct AuthView: View {
     private func errorBanner(_ message: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 12))
+                .font(.mv(size: 12))
                 .padding(.top, 1)
             Text(message)
-                .font(.system(size: 12.5))
+                .font(.mv(size: 12.5))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(.red)
@@ -596,7 +595,7 @@ struct AuthView: View {
             HStack {
                 if isBusy { ProgressView().tint(.white) }
                 Text(isBusy ? busyTitle : title)
-                    .font(.system(size: 14.5, weight: .semibold))
+                    .font(.mv(size: 14.5, weight: .semibold))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 13)
@@ -698,13 +697,13 @@ struct AuthView: View {
                 checked.wrappedValue.toggle()
             } label: {
                 Image(systemName: checked.wrappedValue ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 16))
+                    .font(.mv(size: 16))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
             .buttonStyle(.plain)
 
             label()
-                .font(.system(size: 11.5))
+                .font(.mv(size: 11.5))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)

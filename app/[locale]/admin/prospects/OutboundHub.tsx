@@ -215,11 +215,11 @@ export function OutboundHub({
           <p className="font-display text-[15px] font-medium text-mv-ink flex items-center gap-1.5">
             <Mail size={15} className="text-mv-green" /> Envoi & Relances directes
           </p>
-          <span className="text-[11.5px] text-mv-ink-faint">Resend Pro</span>
+          <span className="text-[12px] text-mv-ink-faint">Resend Pro</span>
         </div>
 
         <div>
-          <label className="mb-1 block text-[11.5px] font-medium text-mv-ink-soft">Courriel du destinataire</label>
+          <label className="mb-1 block text-[12px] font-medium text-mv-ink-soft">Courriel du destinataire</label>
           <input
             type="email"
             value={recipientEmail}
@@ -230,7 +230,7 @@ export function OutboundHub({
         </div>
 
         <div>
-          <label className="mb-1 block text-[11.5px] font-medium text-mv-ink-soft">Note ou angle spécifique (facultatif)</label>
+          <label className="mb-1 block text-[12px] font-medium text-mv-ink-soft">Note ou angle spécifique (facultatif)</label>
           <input
             type="text"
             value={customNote}
@@ -257,7 +257,7 @@ export function OutboundHub({
               variant="secondary"
               disabled={isSendingEmail || !recipientEmail}
               onClick={() => handleSendRelance(1)}
-              className="text-[11.5px]"
+              className="text-[12px]"
             >
               <Sparkles data-icon="inline-start" size={12} />
               {t("sendRelance1")}
@@ -267,7 +267,7 @@ export function OutboundHub({
               variant="secondary"
               disabled={isSendingEmail || !recipientEmail}
               onClick={() => handleSendRelance(2)}
-              className="text-[11.5px]"
+              className="text-[12px]"
             >
               <CheckCircle2 data-icon="inline-start" size={12} />
               {t("sendRelance2")}
@@ -349,7 +349,7 @@ export function OutboundHub({
           ))}
         </Select>
         {prospect.demoViewCount > 0 && (
-          <p className="mt-2 text-[11.5px] text-mv-ink-faint">
+          <p className="mt-2 text-[12px] text-mv-ink-faint">
             {t("viewCount", { count: prospect.demoViewCount })}
           </p>
         )}

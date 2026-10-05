@@ -27,9 +27,9 @@ struct AnnouncementCardView: View {
                 HStack(alignment: .center) {
                     HStack(spacing: 4) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.mv(size: 11, weight: .semibold))
                         Text(announcement.badgeLabel?.uppercased() ?? "NOUVEAUTÉ")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .font(.mv(size: 10, weight: .bold, design: .monospaced))
                             .tracking(0.5)
                     }
                     .foregroundStyle(MinervaColor.emeraldDark)
@@ -47,7 +47,7 @@ struct AnnouncementCardView: View {
                         UserDefaults.standard.set(true, forKey: dismissedStorageKey)
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.mv(size: 12, weight: .semibold))
                             .foregroundStyle(MinervaColor.inkFaint)
                             .padding(6)
                             .background(MinervaColor.surface.opacity(0.8))
@@ -64,7 +64,7 @@ struct AnnouncementCardView: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(announcement.body)
-                        .font(.system(size: 13))
+                        .font(.mv(size: 13))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -74,7 +74,7 @@ struct AnnouncementCardView: View {
                 if let question = announcement.pollQuestion, let options = announcement.pollOptions, !options.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(question)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.mv(size: 13, weight: .medium))
                             .foregroundStyle(MinervaColor.ink)
 
                         // Survey Options
@@ -87,10 +87,10 @@ struct AnnouncementCardView: View {
                                     HStack(spacing: 8) {
                                         if isSelected {
                                             Image(systemName: "checkmark")
-                                                .font(.system(size: 12, weight: .bold))
+                                                .font(.mv(size: 12, weight: .bold))
                                         }
                                         Text(option)
-                                            .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                                            .font(.mv(size: 13, weight: isSelected ? .semibold : .regular))
                                         Spacer()
                                     }
                                     .padding(.horizontal, 14)
@@ -124,7 +124,7 @@ struct AnnouncementCardView: View {
                         if selectedOption != nil && !feedbackSent {
                             HStack(spacing: 8) {
                                 TextField("Votre commentaire (optionnel)...", text: $feedbackText)
-                                    .font(.system(size: 12))
+                                    .font(.mv(size: 12))
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
                                     .background(MinervaColor.surface)
@@ -138,7 +138,7 @@ struct AnnouncementCardView: View {
                                     handleSendFeedback()
                                 } label: {
                                     Image(systemName: "paperplane.fill")
-                                        .font(.system(size: 12, weight: .semibold))
+                                        .font(.mv(size: 12, weight: .semibold))
                                         .foregroundStyle(MinervaColor.creamSoft)
                                         .padding(.horizontal, 14)
                                         .padding(.vertical, 8)
@@ -159,9 +159,9 @@ struct AnnouncementCardView: View {
                         if feedbackSent {
                             HStack(spacing: 6) {
                                 Image(systemName: "heart.fill")
-                                    .font(.system(size: 12))
+                                    .font(.mv(size: 12))
                                 Text("Merci beaucoup pour votre avis !")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(.mv(size: 12, weight: .medium))
                             }
                             .foregroundStyle(MinervaColor.emeraldDark)
                             .padding(.top, 2)
@@ -183,9 +183,9 @@ struct AnnouncementCardView: View {
                     Link(destination: url) {
                         HStack(spacing: 6) {
                             Text(ctaLabel)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.mv(size: 13, weight: .semibold))
                             Image(systemName: "arrow.up.right")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.mv(size: 11, weight: .bold))
                         }
                         .foregroundStyle(MinervaColor.emeraldDark)
                     }

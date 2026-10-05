@@ -255,7 +255,7 @@ export function QrTableStandStudio({
               {copied ? "Copié" : "Copier le lien"}
             </button>
           </div>
-          <p className="truncate font-mono text-[11px] bg-white p-2 rounded-lg border border-mv-border-soft">{portalUrl}</p>
+          <p className="truncate font-mono text-[12px] bg-white p-2 rounded-lg border border-mv-border-soft">{portalUrl}</p>
         </div>
 
         <div className="pt-2 flex items-center gap-3">
@@ -268,16 +268,16 @@ export function QrTableStandStudio({
 
       {/* Live Preview Column */}
       <div className="lg:col-span-6 flex flex-col items-center justify-center">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-2">Aperçu en direct</p>
+        <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-2">Aperçu en direct</p>
         <div
           className={`w-full max-w-[320px] rounded-2xl p-6 border shadow-xl transition-all ${activeTheme.bg} ${activeTheme.text} ${activeTheme.border} ${
             format === "chevalet_a6" ? "aspect-[1/1.4]" : format === "sticker_carre" ? "aspect-square" : "aspect-[1.5/1]"
           } flex flex-col items-center justify-between text-center`}
         >
           <div>
-            <p className={`text-[10px] font-bold uppercase tracking-widest ${activeTheme.accent}`}>{restaurantName}</p>
+            <p className={`text-[12px] font-bold uppercase tracking-widest ${activeTheme.accent}`}>{restaurantName}</p>
             <h4 className="mt-1 font-serif text-[16px] font-bold leading-tight line-clamp-2">{headline}</h4>
-            <p className="mt-1 text-[10px] opacity-75 line-clamp-2">{subline}</p>
+            <p className="mt-1 text-[12px] opacity-75 line-clamp-2">{subline}</p>
           </div>
 
           <div className="my-auto rounded-xl bg-white mv-fixed-light-surface p-2 shadow-md">
@@ -291,7 +291,7 @@ export function QrTableStandStudio({
             )}
           </div>
 
-          <p className={`text-[9.5px] font-semibold tracking-wider ${activeTheme.accent}`}>{footerText}</p>
+          <p className={`text-[12px] font-semibold tracking-wider ${activeTheme.accent}`}>{footerText}</p>
         </div>
       </div>
     </div>

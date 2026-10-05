@@ -35,7 +35,7 @@ struct RewardDetailView: View {
                     header
                     if let description = reward.description, !description.trimmingCharacters(in: .whitespaces).isEmpty {
                         Text(description)
-                            .font(.system(size: 13.5))
+                            .font(.mv(size: 13.5))
                             .foregroundStyle(MinervaColor.inkSoft)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -98,21 +98,21 @@ struct RewardDetailView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "fork.knife")
-                    .font(.system(size: 11))
+                    .font(.mv(size: 11))
                 Text("Cette récompense vous donne")
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .font(.mv(size: 11.5, weight: .semibold))
                     .textCase(.uppercase)
             }
             .foregroundStyle(MinervaColor.inkFaint)
 
             Text(menuItem.name)
-                .font(.system(size: 14.5, weight: .semibold))
+                .font(.mv(size: 14.5, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
                 .fixedSize(horizontal: false, vertical: true)
 
             if let itemDescription = menuItem.description, !itemDescription.trimmingCharacters(in: .whitespaces).isEmpty {
                 Text(itemDescription)
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -126,7 +126,7 @@ struct RewardDetailView: View {
     private var redemptionInstructions: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Comment l'utiliser")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.mv(size: 12, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             instructionRow(number: 1, text: "Échangez vos points ci-dessous pour générer un code.")
@@ -138,13 +138,13 @@ struct RewardDetailView: View {
     private func instructionRow(number: Int, text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text("\(number)")
-                .font(.system(size: 11, weight: .bold))
+                .font(.mv(size: 11, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 18, height: 18)
                 .background(MinervaColor.emerald)
                 .clipShape(Circle())
             Text(text)
-                .font(.system(size: 12.5))
+                .font(.mv(size: 12.5))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -155,7 +155,7 @@ struct RewardDetailView: View {
             ZStack {
                 Circle().fill(MinervaColor.emerald.opacity(0.12))
                 Image(systemName: "gift.fill")
-                    .font(.system(size: 22))
+                    .font(.mv(size: 22))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
             .frame(width: 56, height: 56)
@@ -170,22 +170,22 @@ struct RewardDetailView: View {
     private var identityRow: some View {
         HStack(spacing: 6) {
             Image(systemName: "storefront.fill")
-                .font(.system(size: 11))
+                .font(.mv(size: 11))
             Text("Échangeable chez \(supabase.restaurantIdentityLabel)")
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .font(.system(size: 12, weight: .medium))
+        .font(.mv(size: 12, weight: .medium))
         .foregroundStyle(MinervaColor.emeraldDark)
     }
 
     private var pointsRow: some View {
         HStack {
             Text("\(reward.pointsCost) points")
-                .font(.system(size: 15, weight: .bold))
+                .font(.mv(size: 15, weight: .bold))
                 .foregroundStyle(MinervaColor.ink)
             Spacer()
             Text("Vous avez \(points) pts")
-                .font(.system(size: 12.5))
+                .font(.mv(size: 12.5))
                 .foregroundStyle(MinervaColor.inkFaint)
         }
         .padding(14)
@@ -209,7 +209,7 @@ struct RewardDetailView: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .font(.system(size: 14, weight: .semibold))
+        .font(.mv(size: 14, weight: .semibold))
         .padding(.vertical, 14)
         .background(affordable && !didRedeem ? MinervaColor.emerald : MinervaColor.ink.opacity(0.08))
         .foregroundStyle(affordable && !didRedeem ? .white : MinervaColor.inkFaint)

@@ -21,16 +21,16 @@ export default async function AdminRestaurantsPage() {
           <table className="w-full text-left text-[13px]">
             <thead>
               <tr className="border-b border-mv-border bg-mv-cream-soft">
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                   {t("colName")}
                 </th>
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                   {t("colCity")}
                 </th>
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                   {t("colMembers")}
                 </th>
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
                   {t("colCreatedAt")}
                 </th>
               </tr>

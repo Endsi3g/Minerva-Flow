@@ -4,7 +4,7 @@ import SwiftUI
 /// category, build a cart with quantity steppers, then a real checkout
 /// sheet (tip selection, tax breakdown, payment method note, submission).
 /// Mirrors the web portal's MenuBrowserCard + CheckoutModal pair exactly —
-/// including hosted Stripe checkout where the restaurant has Connect enabled,
+/// including hosted web checkout where the restaurant has Connect enabled,
 /// with payment state finalized only by the signed webhook.
 /// as a normal `soumise` order. The only structural difference from web:
 /// this talks to app/api/portal/menu and /orders instead of a Server
@@ -225,13 +225,13 @@ struct MenuView: View {
                         Image(systemName: "wifi.exclamationmark")
                         VStack(alignment: .leading, spacing: 3) {
                             Text(isFrench ? "Mode démo actif" : "Demo mode active")
-                                .font(.system(size: 12.5, weight: .semibold))
+                                .font(.mv(size: 12.5, weight: .semibold))
                             Text(isFrench ? "Le menu local reste disponible. Réessayez quand la connexion est rétablie." : "The local menu is available. Retry when your connection is restored.")
-                                .font(.system(size: 11.5))
+                                .font(.mv(size: 11.5))
                         }
                         Spacer()
                         Button(isFrench ? "Réessayer" : "Retry") { Task { await supabase.fetchMenu() } }
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.mv(size: 11.5, weight: .semibold))
                     }
                     .foregroundStyle(MinervaColor.emeraldDark)
                     .padding(12)
@@ -253,7 +253,7 @@ struct MenuView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                         Text(isFrench ? "Catégories" : "Categories")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.mv(size: 13, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -265,14 +265,14 @@ struct MenuView: View {
                             } label: {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Image(systemName: MenuCategoryIcon.symbolName(for: group.category))
-                                        .font(.system(size: 20))
+                                        .font(.mv(size: 20))
                                         .foregroundStyle(MinervaColor.emerald)
                                     Text(group.category)
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.mv(size: 14, weight: .semibold))
                                         .foregroundStyle(MinervaColor.ink)
                                         .fixedSize(horizontal: false, vertical: true)
                                     Text("\(group.items.count) article\(group.items.count > 1 ? "s" : "")")
-                                        .font(.system(size: 11))
+                                        .font(.mv(size: 11))
                                         .foregroundStyle(MinervaColor.inkFaint)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -296,17 +296,17 @@ struct MenuView: View {
     private var mealSuggestionsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(isFrench ? "Proposer un plat" : "Suggest a dish")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
             Text(isFrench ? "Une idée pour le menu ? Les clients peuvent voter." : "Have a menu idea? Customers can vote for it.")
-                .font(.system(size: 11.5))
+                .font(.mv(size: 11.5))
                 .foregroundStyle(MinervaColor.inkFaint)
             MealSuggestionComposer(isFrench: isFrench)
             if supabase.isLoadingCustomerMealSuggestions && supabase.customerMealSuggestions.isEmpty {
                 HStack(spacing: 8) {
                     ProgressView().tint(MinervaColor.emeraldDark)
                     Text(isFrench ? "Chargement des suggestions…" : "Loading suggestions…")
-                        .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
+                        .font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(12)
@@ -315,12 +315,12 @@ struct MenuView: View {
             } else if let error = supabase.customerMealSuggestionsError {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(isFrench ? error : "Suggestions couldn’t be loaded. Check your connection and try again.")
-                        .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
+                        .font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
                     Button {
                         Task { await supabase.fetchMealSuggestions() }
                     } label: {
                         Label(isFrench ? "Réessayer" : "Retry", systemImage: "arrow.clockwise")
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.mv(size: 11.5, weight: .semibold))
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(MinervaColor.emeraldDark)
@@ -332,7 +332,7 @@ struct MenuView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             } else if supabase.customerMealSuggestions.isEmpty {
                 Text(isFrench ? "Aucune suggestion pour le moment." : "No meal suggestions yet.")
-                    .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
+                    .font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                     .background(MinervaColor.creamSoft)
@@ -342,9 +342,9 @@ struct MenuView: View {
                     ForEach(supabase.customerMealSuggestions) { suggestion in
                         HStack(spacing: 10) {
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(suggestion.title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                                Text(suggestion.title).font(.mv(size: 12.5, weight: .semibold)).foregroundStyle(MinervaColor.ink)
                                 if let description = suggestion.description, !description.isEmpty {
-                                    Text(description).font(.system(size: 11)).foregroundStyle(MinervaColor.inkFaint).lineLimit(2)
+                                    Text(description).font(.mv(size: 11)).foregroundStyle(MinervaColor.inkFaint).lineLimit(2)
                                 }
                             }
                             Spacer(minLength: 4)
@@ -352,7 +352,7 @@ struct MenuView: View {
                                 Task { _ = await supabase.voteForMealSuggestion(suggestion) }
                             } label: {
                                 Label("\(suggestion.voteCount)", systemImage: suggestion.hasVoted ? "hand.thumbsup.fill" : "hand.thumbsup")
-                                    .font(.system(size: 11, weight: .semibold))
+                                    .font(.mv(size: 11, weight: .semibold))
                                     .foregroundStyle(suggestion.hasVoted ? MinervaColor.emeraldDark : MinervaColor.inkSoft)
                             }
                             .disabled(suggestion.hasVoted || suggestion.status != "open")
@@ -369,15 +369,15 @@ struct MenuView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "calendar.badge.clock")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.mv(size: 16, weight: .semibold))
                         VStack(alignment: .leading, spacing: 3) {
                             Text(isFrench ? "Demander un devis traiteur" : "Request catering or custom meal quote")
-                                .font(.system(size: 12.5, weight: .semibold))
+                                .font(.mv(size: 12.5, weight: .semibold))
                             Text(isFrench ? "Décrivez votre événement ou un repas sur mesure." : "Tell us about your event or custom meal.")
-                                .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
+                                .font(.mv(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
                         }
                         Spacer()
-                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
+                        Image(systemName: "chevron.right").font(.mv(size: 11, weight: .semibold))
                     }
                     .foregroundStyle(MinervaColor.emeraldDark)
                     .padding(12)
@@ -390,7 +390,7 @@ struct MenuView: View {
                 HStack(spacing: 8) {
                     ProgressView().tint(MinervaColor.emeraldDark)
                     Text(isFrench ? "Chargement de vos demandes…" : "Loading your requests…")
-                        .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
+                        .font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(12)
@@ -399,12 +399,12 @@ struct MenuView: View {
             } else if let error = supabase.customerServiceQuotesError {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(isFrench ? error : "Your quote requests couldn’t be loaded. Check your connection and try again.")
-                        .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
+                        .font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkSoft)
                     Button {
                         Task { await supabase.fetchCustomerServiceQuotes() }
                     } label: {
                         Label(isFrench ? "Réessayer" : "Retry", systemImage: "arrow.clockwise")
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.mv(size: 11.5, weight: .semibold))
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(MinervaColor.emeraldDark)
@@ -416,7 +416,7 @@ struct MenuView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             } else if supabase.customer != nil && supabase.customerServiceQuotes.isEmpty {
                 Text(isFrench ? "Aucune demande de devis pour le moment." : "No quote requests yet.")
-                    .font(.system(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
+                    .font(.mv(size: 11.5)).foregroundStyle(MinervaColor.inkFaint)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
                     .background(MinervaColor.creamSoft)
@@ -424,26 +424,26 @@ struct MenuView: View {
             } else if !supabase.customerServiceQuotes.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(isFrench ? "Mes demandes de devis" : "My quote requests")
-                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
+                        .font(.mv(size: 13, weight: .semibold)).foregroundStyle(MinervaColor.ink)
                     ForEach(supabase.customerServiceQuotes) { quote in
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
                                 Text(quote.quoteType == "catering"
                                      ? (isFrench ? "Traiteur" : "Catering")
                                      : (isFrench ? "Repas sur mesure" : "Custom meal"))
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.mv(size: 12, weight: .semibold))
                                 Spacer()
                                 Text(serviceQuoteStatus(quote))
-                                    .font(.system(size: 10.5, weight: .semibold))
+                                    .font(.mv(size: 10.5, weight: .semibold))
                                     .foregroundStyle(quote.status == "declined" || quote.status == "expired" ? .secondary : MinervaColor.emeraldDark)
                             }
                             if let eventAt = parseServiceQuoteDate(quote.eventAt) {
                                 Text(isFrench ? "Événement · \(formatRestaurantDate(eventAt))" : "Event · \(formatRestaurantDate(eventAt))")
-                                    .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
+                                    .font(.mv(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
                             }
                             if let guests = quote.guestCount {
                                 Text(isFrench ? "\(guests) convives" : "\(guests) guests")
-                                    .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
+                                    .font(.mv(size: 10.5)).foregroundStyle(MinervaColor.inkFaint)
                             }
                             if !quote.lines.isEmpty {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -455,11 +455,11 @@ struct MenuView: View {
                                             Text((line.unitPrice * Double(line.quantity)).cad)
                                                 .monospacedDigit()
                                         }
-                                        .font(.system(size: 10.5))
+                                        .font(.mv(size: 10.5))
                                         .foregroundStyle(MinervaColor.inkSoft)
                                         if let detail = line.description, !detail.isEmpty {
                                             Text(detail)
-                                                .font(.system(size: 9.5))
+                                                .font(.mv(size: 9.5))
                                                 .foregroundStyle(MinervaColor.inkFaint)
                                         }
                                     }
@@ -474,23 +474,23 @@ struct MenuView: View {
                             }
                             if let total = quote.total {
                                 Text("\(isFrench ? "Total" : "Total") · \(total.cad)")
-                                    .font(.system(size: 10.5)).foregroundStyle(MinervaColor.inkSoft)
+                                    .font(.mv(size: 10.5)).foregroundStyle(MinervaColor.inkSoft)
                             }
                             if quote.status == "quoted", let deposit = quote.depositAmount {
                                 Text(isFrench
                                      ? "Acompte à régler · \(deposit.cad) (\(Int(quote.depositPercent ?? 0)) %)"
                                      : "Deposit due · \(deposit.cad) (\(Int(quote.depositPercent ?? 0))%)")
-                                    .font(.system(size: 10.5, weight: .semibold))
+                                    .font(.mv(size: 10.5, weight: .semibold))
                                     .foregroundStyle(MinervaColor.emeraldDark)
                             }
                             if let notes = quote.ownerNotes, !notes.isEmpty {
                                 Text(notes)
-                                    .font(.system(size: 10.5))
+                                    .font(.mv(size: 10.5))
                                     .foregroundStyle(MinervaColor.inkSoft)
                             }
                             if quote.status == "quoted", let urlString = quote.checkoutUrl, let url = URL(string: urlString) {
                                 Link(isFrench ? "Consulter et payer l’acompte" : "Review and pay deposit", destination: url)
-                                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(MinervaColor.emeraldDark)
+                                    .font(.mv(size: 11, weight: .semibold)).foregroundStyle(MinervaColor.emeraldDark)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -513,7 +513,7 @@ struct MenuView: View {
             Spacer(minLength: 4)
             Text(amount.cad).monospacedDigit()
         }
-        .font(.system(size: 9.5))
+        .font(.mv(size: 9.5))
         .foregroundStyle(MinervaColor.inkFaint)
     }
 
@@ -569,12 +569,16 @@ struct MenuView: View {
         var body: some View {
             VStack(spacing: 8) {
                 TextField(isFrench ? "Nom du plat" : "Dish name", text: $title)
-                    .textFieldStyle(.roundedBorder)
                     .textInputAutocapitalization(.words)
                     .accessibilityLabel(isFrench ? "Nom du plat suggéré" : "Suggested dish name")
+                    .padding(10)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 TextField(isFrench ? "Détails facultatifs" : "Optional details", text: $description, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
                     .lineLimit(2...4)
+                    .padding(10)
+                    .background(MinervaColor.creamSoft)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 if let message {
                     Text(message).font(.caption).foregroundStyle(MinervaColor.emeraldDark)
                 }
@@ -597,7 +601,7 @@ struct MenuView: View {
                         if submitting { ProgressView().tint(.white) }
                         Text(submitting ? (isFrench ? "Envoi…" : "Sending…") : (isFrench ? "Proposer ce plat" : "Suggest this dish"))
                     }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.mv(size: 12, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(MinervaColor.emerald)
@@ -619,7 +623,7 @@ struct MenuView: View {
     private var otherRestaurantsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("D'autres restaurants et cafés")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -635,12 +639,12 @@ struct MenuView: View {
                                     .clipped()
 
                                 Text(restaurant.name)
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.mv(size: 13, weight: .semibold))
                                     .foregroundStyle(MinervaColor.ink)
                                     .lineLimit(1)
                                 if let city = restaurant.city {
                                     Text(city)
-                                        .font(.system(size: 11))
+                                        .font(.mv(size: 11))
                                         .foregroundStyle(MinervaColor.inkFaint)
                                 }
                             }
@@ -685,11 +689,11 @@ struct MenuView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                             .shadow(color: .black.opacity(0.25), radius: 6, y: 2)
                     } else {
-                        Image(systemName: "storefront.fill").font(.system(size: 22)).foregroundStyle(.white)
+                        Image(systemName: "storefront.fill").font(.mv(size: 22)).foregroundStyle(.white)
                     }
                 }
             } else {
-                Image(systemName: "storefront.fill").font(.system(size: 22)).foregroundStyle(.white)
+                Image(systemName: "storefront.fill").font(.mv(size: 22)).foregroundStyle(.white)
             }
         }
     }
@@ -711,7 +715,7 @@ struct MenuView: View {
     private var popularNearbySection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Populaire près de vous")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -757,11 +761,11 @@ struct MenuView: View {
                                 .clipped()
 
                                 Text(popularItem.name)
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.mv(size: 13, weight: .semibold))
                                     .foregroundStyle(MinervaColor.ink)
                                     .lineLimit(1)
                                 Text(popularItem.restaurantName)
-                                    .font(.system(size: 11))
+                                    .font(.mv(size: 11))
                                     .foregroundStyle(MinervaColor.inkFaint)
                                     .lineLimit(1)
                             }
@@ -783,14 +787,14 @@ struct MenuView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "cart.fill")
                     Text("\(cartCount) article\(cartCount > 1 ? "s" : "")")
-                        .font(.system(size: 13.5, weight: .semibold))
+                        .font(.mv(size: 13.5, weight: .semibold))
                 }
                 Spacer()
                 HStack(spacing: 4) {
                     Text(String(format: "%.2f $", cartSubtotal))
-                        .font(.system(size: 13.5, weight: .semibold))
+                        .font(.mv(size: 13.5, weight: .semibold))
                     Image(systemName: "arrow.right")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.mv(size: 12, weight: .bold))
                 }
             }
             .foregroundStyle(.white)
@@ -812,9 +816,9 @@ struct MenuView: View {
     private var busyBanner: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "clock")
-                .font(.system(size: 13))
+                .font(.mv(size: 13))
             Text("\(supabase.restaurantName ?? "Le restaurant") est présentement très occupé — les délais de préparation peuvent être plus longs que d'habitude.")
-                .font(.system(size: 12.5))
+                .font(.mv(size: 12.5))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(.orange)
@@ -826,13 +830,13 @@ struct MenuView: View {
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "fork.knife.circle")
-                .font(.system(size: 36))
+                .font(.mv(size: 36))
                 .foregroundStyle(MinervaColor.inkFaint)
             Text("Aucun plat disponible")
                 .font(MinervaFont.display(18))
                 .foregroundStyle(MinervaColor.ink)
             Text("Votre restaurant n'a pas encore publié de menu.")
-                .font(.system(size: 12.5))
+                .font(.mv(size: 12.5))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1044,37 +1048,21 @@ struct CategoryItemListView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         } else {
                             Image(systemName: "fork.knife")
-                                .font(.system(size: 18))
+                                .font(.mv(size: 18))
                                 .foregroundStyle(MinervaColor.inkFaint)
                         }
-
-                        Button {
-                            let generator = UIImpactFeedbackGenerator(style: .light)
-                            generator.impactOccurred()
-                            Task { await supabase.toggleFavoriteMenuItem(item.id, favorite: !isFavorite) }
-                        } label: {
-                            Image(systemName: isFavorite ? "heart.fill" : "heart")
-                                .font(.system(size: 10))
-                                .foregroundStyle(isFavorite ? .red : .white)
-                                .padding(4)
-                                .background(.black.opacity(0.35))
-                                .clipShape(Circle())
-                        }
-                        .padding(3)
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(isFavorite ? "Retirer des favoris" : "Ajouter aux favoris")
                     }
                     .frame(width: 56, height: 56)
                     .clipped()
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(item.name)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.mv(size: 14, weight: .medium))
                             .foregroundStyle(MinervaColor.ink)
                             .fixedSize(horizontal: false, vertical: true)
                         if let description = item.description {
                             Text(description)
-                                .font(.system(size: 11.5))
+                                .font(.mv(size: 11.5))
                                 .foregroundStyle(MinervaColor.inkFaint)
                                 .lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -1082,24 +1070,51 @@ struct CategoryItemListView: View {
                         Text(options.isEmpty
                              ? String(format: "%.2f $", item.price)
                              : "Dès \(String(format: "%.2f $", options.map(\.price).min() ?? 0))")
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(.mv(size: 12.5, weight: .semibold))
                             .foregroundStyle(MinervaColor.emeraldDark)
                     }
                 }
             }
             .buttonStyle(.plain)
+            // A Button nested inside a NavigationLink's own label breaks hit
+            // testing (the link swallows the tap, or the two race) — this
+            // .overlay instead makes the heart a sibling drawn on top, so
+            // each gets its own independent tap area.
 
             Spacer(minLength: 8)
 
             stepper(quantity: quantity, item: item)
         }
         .padding(12)
+        // The heart sits at the card's top-right corner, clear of the photo
+        // and the text on the left (it used to overlap the dish icon).
+        .overlay(alignment: .topTrailing) {
+            favoriteButton(isFavorite: isFavorite, item: item)
+                .padding(8)
+        }
         .background(quantity > 0 ? MinervaColor.emerald.opacity(0.06) : MinervaColor.creamSoft)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(quantity > 0 ? MinervaColor.emerald.opacity(0.3) : .clear, lineWidth: 1.5)
         )
+    }
+
+    private func favoriteButton(isFavorite: Bool, item: NativeMenuItem) -> some View {
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            Task { await supabase.toggleFavoriteMenuItem(item.id, favorite: !isFavorite) }
+        } label: {
+            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                .font(.mv(size: 10))
+                .foregroundStyle(isFavorite ? .red : .white)
+                .padding(4)
+                .background(.black.opacity(0.35))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isFavorite ? "Retirer des favoris" : "Ajouter aux favoris")
     }
 
     @ViewBuilder
@@ -1109,7 +1124,7 @@ struct CategoryItemListView: View {
                 MenuItemDetailView(item: item, restaurantId: item.restaurantId, allItemsInCategory: items, cart: $cart, onAddToCart: onAddToCart)
             } label: {
                 Label(isFrench ? "Choisir" : "Choose", systemImage: "slider.horizontal.3")
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .font(.mv(size: 11.5, weight: .semibold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 9)
                     .foregroundStyle(MinervaColor.emeraldDark)
@@ -1126,14 +1141,14 @@ struct CategoryItemListView: View {
                 cart[item.id] = max(0, quantity - 1)
                 } label: {
                     Image(systemName: "minus.circle.fill")
-                        .font(.system(size: 22))
+                        .font(.mv(size: 22))
                         .foregroundStyle(MinervaColor.inkSoft)
                 }
                 .buttonStyle(PressableButtonStyle())
                 .accessibilityLabel("Diminuer la quantité")
 
                 Text("\(quantity)")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.mv(size: 14, weight: .semibold, design: .rounded))
                     .foregroundStyle(MinervaColor.ink)
                     .frame(minWidth: 16)
             }
@@ -1145,7 +1160,7 @@ struct CategoryItemListView: View {
                 onAddToCart()
             } label: {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 22))
+                    .font(.mv(size: 22))
                     .foregroundStyle(MinervaColor.emerald)
             }
             .buttonStyle(PressableButtonStyle())
@@ -1272,12 +1287,12 @@ struct CheckoutSheet: View {
                     ForEach(lines) { line in
                         HStack {
                             Text(line.option == nil ? "\(line.quantity)× \(line.item.name)" : "\(line.quantity)× \(line.displayName)")
-                                .font(.system(size: 13))
+                                .font(.mv(size: 13))
                                 .foregroundStyle(MinervaColor.inkSoft)
                                 .fixedSize(horizontal: false, vertical: true)
                             Spacer(minLength: 8)
                             Text(String(format: "%.2f $", line.total))
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.mv(size: 13, weight: .medium))
                                 .foregroundStyle(MinervaColor.ink)
                         }
                     }
@@ -1289,7 +1304,7 @@ struct CheckoutSheet: View {
                 if acceptsTips {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(isFrench ? "Pourboire" : "Tip")
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(.mv(size: 12.5, weight: .semibold))
                             .foregroundStyle(MinervaColor.inkSoft)
                         HStack(spacing: 8) {
                             ForEach(tipPresets, id: \.self) { pct in
@@ -1297,7 +1312,7 @@ struct CheckoutSheet: View {
                                     tipPct = pct
                                 } label: {
                                     Text(pct == 0 ? (isFrench ? "Aucun" : "None") : "\(Int(pct * 100))%")
-                                        .font(.system(size: 12.5, weight: .semibold))
+                                        .font(.mv(size: 12.5, weight: .semibold))
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 10)
                                 }
@@ -1332,7 +1347,7 @@ struct CheckoutSheet: View {
                 if deliveryEnabled {
                     VStack(alignment: .leading, spacing: 9) {
                         Text(isFrench ? "Réception" : "Fulfillment")
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.mv(size: 11.5, weight: .semibold))
                             .foregroundStyle(MinervaColor.inkSoft)
                         if pickupEnabled {
                             HStack(spacing: 8) {
@@ -1344,7 +1359,7 @@ struct CheckoutSheet: View {
                             }
                         } else {
                             Text(isFrench ? "Livraison" : "Delivery")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.mv(size: 12, weight: .semibold))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                         }
                         if deliverySelected {
@@ -1373,7 +1388,7 @@ struct CheckoutSheet: View {
                                          ? (isFrench ? "Calcul en cours…" : "Calculating…")
                                          : (isFrench ? "Calculer le prix et le délai" : "Calculate fee and time"))
                                 }
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.mv(size: 12, weight: .semibold))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                             }
                             .disabled(isQuotingDelivery || deliveryAddress.trimmingCharacters(in: .whitespacesAndNewlines).count < 6)
@@ -1381,7 +1396,7 @@ struct CheckoutSheet: View {
                                 Text(isFrench
                                      ? "\(String(format: "%.2f $", deliveryQuote.fee)) · environ \(deliveryQuote.etaMinutes ?? 0) min · \(deliveryQuote.distanceKm.map { String(format: "%.1f km", $0) } ?? "distance confirmée")"
                                      : "\(String(format: "%.2f $", deliveryQuote.fee)) · about \(deliveryQuote.etaMinutes ?? 0) min · \(deliveryQuote.distanceKm.map { String(format: "%.1f km", $0) } ?? "distance confirmed")")
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.mv(size: 11, weight: .medium))
                                     .foregroundStyle(MinervaColor.emeraldDark)
                             }
                         }
@@ -1391,7 +1406,7 @@ struct CheckoutSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 } else if pickupEnabled {
                     Text(isFrench ? "Cueillette sur place" : "Pickup")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.mv(size: 12, weight: .medium))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1402,7 +1417,7 @@ struct CheckoutSheet: View {
                 if checkoutAvailable {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(isFrench ? "Mode de paiement" : "Payment method")
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.mv(size: 11.5, weight: .semibold))
                             .foregroundStyle(MinervaColor.inkSoft)
                         if canPayAtReceipt && canPayOnline {
                             HStack(spacing: 8) {
@@ -1410,12 +1425,12 @@ struct CheckoutSheet: View {
                                 paymentChoice(isFrench ? "En ligne" : "Online", selected: payOnline) { payOnline = true }
                             }
                         } else if canPayOnline {
-                            Text(isFrench ? "Paiement en ligne sécurisé par Stripe" : "Secure online payment by Stripe")
-                                .font(.system(size: 12, weight: .medium))
+                            Text(isFrench ? "Paiement en ligne sécurisé" : "Secure online payment")
+                                .font(.mv(size: 12, weight: .medium))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                         } else {
                             Text(isFrench ? "Paiement à la réception" : "Pay on pickup")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.mv(size: 12, weight: .medium))
                                 .foregroundStyle(MinervaColor.inkSoft)
                             TextField("", text: $paymentMethod, prompt: Text(isFrench ? "Carte, comptant…" : "Card, cash…").foregroundStyle(MinervaColor.inkFaint))
                                 .padding(12)
@@ -1425,7 +1440,7 @@ struct CheckoutSheet: View {
                         }
                         if canPayOnline && payOnline {
                             Text(isFrench ? "Merci ! Le restaurant confirme votre commande dès que possible. En cas d’imprévu, l’équipe vous contactera ou annulera la commande sans frais." : "Thanks! The restaurant will confirm your order as soon as possible. If anything comes up, the team will contact you or cancel at no charge.")
-                                .font(.system(size: 10.5))
+                                .font(.mv(size: 10.5))
                                 .foregroundStyle(MinervaColor.inkFaint)
                         }
                     }
@@ -1433,7 +1448,7 @@ struct CheckoutSheet: View {
                     Text(isFrench
                          ? "La cueillette, la livraison ou le paiement des commandes ne sont pas encore configurés par ce restaurant."
                          : "This restaurant has not configured pickup, delivery, or order payment yet.")
-                        .font(.system(size: 12))
+                        .font(.mv(size: 12))
                         .foregroundStyle(.red)
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1443,7 +1458,7 @@ struct CheckoutSheet: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Toggle(isFrench ? "Planifier cette commande" : "Schedule this order", isOn: $isScheduled)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.mv(size: 13, weight: .semibold))
                         .tint(MinervaColor.emerald)
                     if isScheduled {
                         DatePicker(
@@ -1457,7 +1472,7 @@ struct CheckoutSheet: View {
                         Text(isFrench
                              ? "Heure du restaurant · créneaux de 15 minutes · jusqu’à 30 jours."
                              : "Restaurant local time · 15-minute slots · up to 30 days.")
-                            .font(.system(size: 10.5))
+                            .font(.mv(size: 10.5))
                             .foregroundStyle(MinervaColor.inkFaint)
                     }
                 }
@@ -1467,14 +1482,14 @@ struct CheckoutSheet: View {
 
                 if status == .error {
                     Text(isFrench ? "Oups, l’envoi n’a pas abouti. Vous pouvez réessayer dans un instant." : "Oops, we couldn’t send that just yet. Please try again in a moment.")
-                        .font(.system(size: 12.5))
+                        .font(.mv(size: 12.5))
                         .foregroundStyle(.red)
                     if checkoutAttemptId != nil {
                         Button {
                             Task { await resume() }
                         } label: {
                             Label(isFrench ? "Reprendre ma commande" : "Resume my order", systemImage: "arrow.clockwise")
-                                .font(.system(size: 12.5, weight: .semibold))
+                                .font(.mv(size: 12.5, weight: .semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 9)
                         }
@@ -1486,7 +1501,7 @@ struct CheckoutSheet: View {
                 Text(isFrench
                      ? "Hey ! Le restaurant vous confirme la commande bientôt. Si un article n’est pas disponible ou qu’un imprévu survient, l’équipe vous contactera ou annulera la commande sans frais."
                      : "Hey! The restaurant will confirm your order soon. If an item is unavailable or plans change, the team will contact you or cancel at no charge.")
-                    .font(.system(size: 11.5))
+                    .font(.mv(size: 11.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .padding(11)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1503,7 +1518,7 @@ struct CheckoutSheet: View {
                              : (isFrench
                                 ? "Envoyer la commande (\(String(format: "%.2f $", total)))"
                                 : "Place order (\(String(format: "%.2f $", total)))"))
-                            .font(.system(size: 14.5, weight: .semibold))
+                            .font(.mv(size: 14.5, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -1521,10 +1536,10 @@ struct CheckoutSheet: View {
     private func totalRow(_ label: String, _ amount: Double, emphasized: Bool = false) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: emphasized ? 14 : 12.5, weight: emphasized ? .semibold : .regular))
+                .font(.mv(size: emphasized ? 14 : 12.5, weight: emphasized ? .semibold : .regular))
             Spacer()
             Text(String(format: "%.2f $", amount))
-                .font(.system(size: emphasized ? 15 : 12.5, weight: emphasized ? .bold : .medium))
+                .font(.mv(size: emphasized ? 15 : 12.5, weight: emphasized ? .bold : .medium))
         }
         .foregroundStyle(emphasized ? MinervaColor.ink : MinervaColor.inkSoft)
     }
@@ -1533,7 +1548,7 @@ struct CheckoutSheet: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 56))
+                .font(.mv(size: 56))
                 .foregroundStyle(MinervaColor.emeraldDark)
             Text(isFrench ? "Merci, on a bien reçu votre commande !" : "Thanks! We’ve received your order.")
                 .font(MinervaFont.display(22))
@@ -1547,7 +1562,7 @@ struct CheckoutSheet: View {
                  : (isFrench
                     ? "Hey ! Le restaurant vous confirme la commande bientôt. Vous paierez sur place. Si un imprévu survient, l’équipe vous contactera ou annulera la commande sans frais."
                     : "Hey! The restaurant will confirm your order soon. You’ll pay in person. If anything comes up, the team will contact you or cancel at no charge."))
-                .font(.system(size: 13))
+                .font(.mv(size: 13))
                 .foregroundStyle(MinervaColor.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1555,8 +1570,8 @@ struct CheckoutSheet: View {
 
             if let paymentURL {
                 Button { openURL(paymentURL) } label: {
-                    Label(isFrench ? "Payer en ligne avec Stripe" : "Pay online with Stripe", systemImage: "lock.fill")
-                        .font(.system(size: 13.5, weight: .semibold))
+                    Label(isFrench ? "Payer en ligne" : "Pay online", systemImage: "lock.fill")
+                        .font(.mv(size: 13.5, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
                 }
@@ -1575,7 +1590,7 @@ struct CheckoutSheet: View {
                         Text(isRefreshingPayment
                              ? (isFrench ? "Vérification…" : "Checking…")
                              : (isFrench ? "J’ai terminé le paiement — vérifier" : "I’ve paid — check status"))
-                            .font(.system(size: 12.5, weight: .semibold))
+                            .font(.mv(size: 12.5, weight: .semibold))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
@@ -1584,7 +1599,7 @@ struct CheckoutSheet: View {
                 .disabled(isRefreshingPayment)
                 if let paymentStatusError {
                     Text(isFrench ? paymentStatusError : "Could not check payment status. Check your connection and try again.")
-                        .font(.system(size: 11.5))
+                        .font(.mv(size: 11.5))
                         .foregroundStyle(MinervaColor.inkSoft)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
@@ -1595,7 +1610,7 @@ struct CheckoutSheet: View {
                 Text(isFrench
                      ? "Prêt vers \(estimatedReadyAt.formatted(date: .omitted, time: .shortened))"
                      : "Ready around \(estimatedReadyAt.formatted(date: .omitted, time: .shortened))")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.mv(size: 13, weight: .semibold))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
 
@@ -1605,7 +1620,7 @@ struct CheckoutSheet: View {
                         Image(systemName: "star.fill")
                         Text(isFrench ? "Laisser un avis Google" : "Leave a Google review")
                     }
-                    .font(.system(size: 13.5, weight: .semibold))
+                    .font(.mv(size: 13.5, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                 }
@@ -1620,7 +1635,7 @@ struct CheckoutSheet: View {
                 onOrdered()
                 dismiss()
             }
-            .font(.system(size: 14.5, weight: .semibold))
+            .font(.mv(size: 14.5, weight: .semibold))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 13)
             .background(MinervaColor.emerald)
@@ -1707,7 +1722,7 @@ struct CheckoutSheet: View {
     private func paymentChoice(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.mv(size: 12, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .foregroundStyle(selected ? MinervaColor.emeraldDark : MinervaColor.inkSoft)

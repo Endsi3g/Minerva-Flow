@@ -248,7 +248,7 @@ export function ProgramsView({
                       <Td className="text-right">
                         <Link
                           href={`/programs/${p.id}`}
-                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11.5px] font-semibold text-mv-green-dark hover:bg-mv-green-tint transition-colors"
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] font-semibold text-mv-green-dark hover:bg-mv-green-tint transition-colors"
                           onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         >
                           Détails <ArrowUpRight size={12} />
@@ -303,19 +303,19 @@ export function ProgramsView({
                 </p>
                 <div className="mt-4 grid grid-cols-3 gap-3 rounded-xl bg-mv-cream-soft p-3">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Revenu</p>
+                    <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Revenu</p>
                     <p className="font-display text-[16px] font-medium text-mv-ink">
                       {formatCurrency(selected.revenue)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Coût</p>
+                    <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Coût</p>
                     <p className="font-display text-[16px] font-medium text-mv-ink">
                       {formatCurrency(selected.cost)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Marge</p>
+                    <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Marge</p>
                     <p className="font-display text-[16px] font-medium text-mv-green-dark">
                       {selected.revenue > 0
                         ? `${Math.round(((selected.revenue - selected.cost) / selected.revenue) * 100)}%`
@@ -353,7 +353,7 @@ export function ProgramsView({
                       >
                         <div>
                           <p className="text-[13px] font-semibold text-mv-ink">{c.name}</p>
-                          <p className="text-[11.5px] text-mv-ink-faint">{c.channel}</p>
+                          <p className="text-[12px] text-mv-ink-faint">{c.channel}</p>
                         </div>
                         <Badge tone="neutral">{formatCurrency(c.estimatedRevenue)}</Badge>
                       </div>
@@ -412,7 +412,7 @@ export function ProgramsView({
                       <div key={i} className="rounded-lg bg-mv-cream-soft p-3">
                         <div className="mb-1 flex items-center justify-between">
                           <span className="text-[12px] font-semibold text-mv-ink">{n.author}</span>
-                          <span className="text-[11px] text-mv-ink-faint">{formatDate(n.date)}</span>
+                          <span className="text-[12px] text-mv-ink-faint">{formatDate(n.date)}</span>
                         </div>
                         <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">{n.text}</p>
                       </div>

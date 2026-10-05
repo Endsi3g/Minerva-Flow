@@ -158,11 +158,11 @@ export function ArtifactCanvas({
                 <h3 className="font-sans font-bold text-sm text-[#1F1E1D] truncate">
                   {artifact.title}
                 </h3>
-                <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-gray-100 border border-[#E8E5DF] text-[#5A5851]">
+                <span className="font-mono text-[12px] font-bold px-1.5 py-0.2 rounded bg-gray-100 border border-[#E8E5DF] text-[#5A5851]">
                   v{artifact.version}
                 </span>
               </div>
-              <p className="text-[11px] text-[#8A887F] truncate">
+              <p className="text-[12px] text-[#8A887F] truncate">
                 {artifact.summary}
               </p>
             </div>
@@ -218,7 +218,7 @@ export function ArtifactCanvas({
             <button
               type="button"
               onClick={handleCopyRaw}
-              className="h-7 px-2 rounded-lg bg-white border border-[#E2E0D8] hover:bg-gray-50 text-[11px] font-semibold text-[#5A5851] flex items-center gap-1 transition-colors shadow-2xs"
+              className="h-7 px-2 rounded-lg bg-white border border-[#E2E0D8] hover:bg-gray-50 text-[12px] font-semibold text-[#5A5851] flex items-center gap-1 transition-colors shadow-2xs"
               title="Copier les données"
             >
               {copied ? <Check size={12} className="text-[#0E7C5A]" /> : <Copy size={12} />}
@@ -228,7 +228,7 @@ export function ArtifactCanvas({
             <button
               type="button"
               onClick={handleDownloadCsv}
-              className="h-7 px-2 rounded-lg bg-white border border-[#E2E0D8] hover:bg-gray-50 text-[11px] font-semibold text-[#5A5851] flex items-center gap-1 transition-colors shadow-2xs"
+              className="h-7 px-2 rounded-lg bg-white border border-[#E2E0D8] hover:bg-gray-50 text-[12px] font-semibold text-[#5A5851] flex items-center gap-1 transition-colors shadow-2xs"
               title="Télécharger en CSV"
             >
               <Download size={12} />
@@ -240,7 +240,7 @@ export function ArtifactCanvas({
               onClick={handleApplySettings}
               disabled={applied || isApplying}
               className={cn(
-                "h-7 px-2.5 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all shadow-xs",
+                "h-7 px-2.5 rounded-lg text-[12px] font-bold flex items-center gap-1 transition-all shadow-xs",
                 applied
                   ? "bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-default"
                   : "bg-[#0E7C5A] hover:bg-[#0A6348] text-white active:scale-95"
@@ -270,7 +270,7 @@ export function ArtifactCanvas({
                     <h4 className="font-sans font-bold text-xs sm:text-sm text-[#1F1E1D]">
                       Simulateur de Rentabilité en Direct
                     </h4>
-                    <p className="text-[10.5px] text-[#8A887F]">
+                    <p className="text-[12px] text-[#8A887F]">
                       Synchronisé avec vos données de caisse enregistreuse
                     </p>
                   </div>
@@ -280,7 +280,7 @@ export function ArtifactCanvas({
                   <button
                     type="button"
                     onClick={resetSimulator}
-                    className="flex items-center gap-1 text-[10.5px] font-semibold text-[#8A887F] hover:text-[#1F1E1D] transition-colors"
+                    className="flex items-center gap-1 text-[12px] font-semibold text-[#8A887F] hover:text-[#1F1E1D] transition-colors"
                   >
                     <RefreshCw size={10} />
                     <span>Réinitialiser</span>
@@ -307,7 +307,7 @@ export function ArtifactCanvas({
                     onChange={(e) => setPriceAdjustmentPct(Number(e.target.value))}
                     className="w-full accent-[#0E7C5A] cursor-pointer h-1.5 bg-[#E2E0D8] rounded-lg"
                   />
-                  <div className="flex justify-between text-[9.5px] text-[#8A887F] font-mono">
+                  <div className="flex justify-between text-[12px] text-[#8A887F] font-mono">
                     <span>Actuel (0%)</span>
                     <span>+10%</span>
                     <span>+20%</span>
@@ -331,7 +331,7 @@ export function ArtifactCanvas({
                     onChange={(e) => setVolumeAdjustmentPct(Number(e.target.value))}
                     className="w-full accent-[#0E7C5A] cursor-pointer h-1.5 bg-[#E2E0D8] rounded-lg"
                   />
-                  <div className="flex justify-between text-[9.5px] text-[#8A887F] font-mono">
+                  <div className="flex justify-between text-[12px] text-[#8A887F] font-mono">
                     <span>-30%</span>
                     <span>Stable (0%)</span>
                     <span>+30%</span>
@@ -342,37 +342,37 @@ export function ArtifactCanvas({
               {/* Dynamic Live Result KPI Badges */}
               <div className="grid grid-cols-3 gap-2 pt-1">
                 <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-center">
-                  <span className="block text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
+                  <span className="block text-[12px] font-bold text-emerald-800 uppercase tracking-wider">
                     Gain Net Estimé
                   </span>
                   <span className="font-sans font-bold text-sm sm:text-base text-emerald-900">
                     +{formatCurrency(simulation.netMonthlyGain)}
                   </span>
-                  <span className="block text-[9.5px] text-emerald-700 font-medium">
+                  <span className="block text-[12px] text-emerald-700 font-medium">
                     / mois
                   </span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#E8E5DF] text-center">
-                  <span className="block text-[10px] font-bold text-[#5A5851] uppercase tracking-wider">
+                  <span className="block text-[12px] font-bold text-[#5A5851] uppercase tracking-wider">
                     Marge Brute
                   </span>
                   <span className="font-sans font-bold text-sm sm:text-base text-[#1F1E1D]">
                     {simulation.simulatedMarginPct.toFixed(1)} %
                   </span>
-                  <span className="block text-[9.5px] text-emerald-700 font-semibold">
+                  <span className="block text-[12px] text-emerald-700 font-semibold">
                     +{((priceAdjustmentPct * 0.45)).toFixed(1)} pts
                   </span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#E8E5DF] text-center">
-                  <span className="block text-[10px] font-bold text-[#5A5851] uppercase tracking-wider">
+                  <span className="block text-[12px] font-bold text-[#5A5851] uppercase tracking-wider">
                     Ticket Moyen
                   </span>
                   <span className="font-sans font-bold text-sm sm:text-base text-[#1F1E1D]">
                     {formatCurrency(simulation.simulatedTicket)}
                   </span>
-                  <span className="block text-[9.5px] text-[#8A887F]">
+                  <span className="block text-[12px] text-[#8A887F]">
                     par couvert
                   </span>
                 </div>
@@ -393,11 +393,11 @@ export function ArtifactCanvas({
                       <CartesianGrid strokeDasharray="3 3" stroke="#F0EFEA" />
                       <XAxis
                         dataKey={artifact.data.chartData.xAxisKey}
-                        tick={{ fontSize: 10, fill: "#8A887F" }}
+                        tick={{ fontSize: 12, fill: "#8A887F" }}
                         axisLine={{ stroke: "#E8E5DF" }}
                       />
                       <YAxis
-                        tick={{ fontSize: 10, fill: "#8A887F" }}
+                        tick={{ fontSize: 12, fill: "#8A887F" }}
                         axisLine={{ stroke: "#E8E5DF" }}
                       />
                       <Tooltip
@@ -461,7 +461,7 @@ export function ArtifactCanvas({
           </div>
         ) : (
           /* Raw JSON/CSV View */
-          <div className="bg-white border border-[#E8E5DF] rounded-2xl p-4 shadow-2xs font-mono text-[11px] text-[#1F1E1D] overflow-x-auto leading-relaxed max-h-[600px] animate-in fade-in duration-200">
+          <div className="bg-white border border-[#E8E5DF] rounded-2xl p-4 shadow-2xs font-mono text-[12px] text-[#1F1E1D] overflow-x-auto leading-relaxed max-h-[600px] animate-in fade-in duration-200">
             <pre className="whitespace-pre-wrap">
               {artifact.data.rawCsv || JSON.stringify(artifact.data, null, 2)}
             </pre>
@@ -470,7 +470,7 @@ export function ArtifactCanvas({
 
         {/* ── 3. Conversational Iteration Suggestions ── */}
         <div className="mt-4 pt-4 border-t border-[#E8E5DF] space-y-2">
-          <span className="flex items-center gap-1 text-[11px] font-bold text-[#5A5851] uppercase tracking-wider">
+          <span className="flex items-center gap-1 text-[12px] font-bold text-[#5A5851] uppercase tracking-wider">
             <Sparkles size={11} className="text-[#0E7C5A]" />
             Itérer sur cet artefact
           </span>

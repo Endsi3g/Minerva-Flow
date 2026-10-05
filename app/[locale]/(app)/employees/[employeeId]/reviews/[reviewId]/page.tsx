@@ -58,7 +58,7 @@ export default async function EmployeeReviewPage({
 
         {review.attributedRevenue !== null && (
           <div className="mt-4 rounded-lg bg-mv-cream-soft p-3">
-            <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">{t("attributedRevenue")}</p>
+            <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("attributedRevenue")}</p>
             <p className="font-display text-[18px] font-medium text-mv-green-dark">
               {formatCurrency(review.attributedRevenue)}
             </p>
@@ -79,7 +79,7 @@ export default async function EmployeeReviewPage({
           </div>
         )}
 
-        <p className="mt-6 text-[11.5px] text-mv-ink-faint">
+        <p className="mt-6 text-[12px] text-mv-ink-faint">
           {t("reviewedBy", { name: review.reviewerName, date: formatDate(review.createdAt.slice(0, 10)) })}
         </p>
       </Card>

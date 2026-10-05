@@ -47,7 +47,7 @@ const ROUTE_BY_ALERT_TYPE: Record<string, string> = {
   revenue_drop: "/days",
   missing_day_input: "/days",
   expense_spike: "/finance",
-  broken_sync: "/settings?tab=integrations",
+  broken_sync: "/settings",
   reservation_anomaly: "/reservations",
 };
 
@@ -118,7 +118,7 @@ export function LiveAlertsPanel({
             : `${alerts.length} à examiner${hiddenCount > 0 && !showAll ? ` · 3 affichées` : ""}`
         }
         action={
-          <Link href="/settings?tab=alertes" className="text-mv-green-dark hover:text-mv-green transition-colors" title="Paramètres des alertes">
+          <Link href="/settings/alertes" className="text-mv-green-dark hover:text-mv-green transition-colors" title="Paramètres des alertes">
             <ArrowRight size={16} />
           </Link>
         }
@@ -135,7 +135,7 @@ export function LiveAlertsPanel({
                     <Badge tone={severityTone[a.severity]} dot>
                       {severityLabel[a.severity]}
                     </Badge>
-                    <span className="text-[11px] text-mv-ink-faint">{formatDate(a.date)}</span>
+                    <span className="text-[12px] text-mv-ink-faint">{formatDate(a.date)}</span>
                   </div>
                   <p className="text-[13px] font-semibold leading-snug text-mv-ink">{a.title}</p>
                   <div className="mt-0.5 flex items-end justify-between gap-2">

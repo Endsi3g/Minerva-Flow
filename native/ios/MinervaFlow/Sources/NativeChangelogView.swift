@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct NativeChangelogView: View {
+    /// "owner" (default) or "client"; see `fetchNativeChangelog(audience:)`.
+    var audience = "owner"
     @EnvironmentObject private var supabase: SupabaseManager
     @Environment(\.dismiss) private var dismiss
     @AppStorage("appLanguage") private var storedLanguage = AppLanguage.fr.rawValue
@@ -59,10 +61,10 @@ struct NativeChangelogView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.mv(size: 14, weight: .semibold))
                     .foregroundStyle(MinervaColor.emeraldDark)
                 Text(isFrench ? "JOURNAL PRODUIT" : "PRODUCT HISTORY")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.mv(size: 12, weight: .semibold, design: .rounded))
                     .tracking(1.1)
                     .foregroundStyle(MinervaColor.inkSoft)
             }
@@ -75,7 +77,7 @@ struct NativeChangelogView: View {
             Text(isFrench
                  ? "Les nouveautés et améliorations de Minerva Flow, au fil des versions."
                  : "New features and improvements in Minerva Flow, release by release.")
-                .font(.system(size: 16))
+                .font(.mv(size: 16))
                 .lineSpacing(4)
                 .foregroundStyle(MinervaColor.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
@@ -83,7 +85,7 @@ struct NativeChangelogView: View {
             HStack(spacing: 7) {
                 Circle().fill(MinervaColor.emerald).frame(width: 7, height: 7)
                 Text((isFrench ? "Version installée · " : "Installed version · ") + appVersion)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.mv(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(MinervaColor.ink)
             }
             .padding(.top, 2)
@@ -154,7 +156,7 @@ struct NativeChangelogView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     Text(formattedDate(entry.publishedAt))
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.mv(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(MinervaColor.inkFaint)
                     categoryBadge(entry.category)
                 }
@@ -167,7 +169,7 @@ struct NativeChangelogView: View {
                     .accessibilityAddTraits(.isHeader)
 
                 Text(.init(entry.description))
-                    .font(.system(size: 16))
+                    .font(.mv(size: 16))
                     .lineSpacing(5)
                     .foregroundStyle(MinervaColor.inkSoft)
                     .tint(MinervaColor.emeraldDark)
@@ -189,7 +191,7 @@ struct NativeChangelogView: View {
         }
 
         return Text(label)
-            .font(.system(size: 12, weight: .semibold))
+            .font(.mv(size: 12, weight: .semibold))
             .foregroundStyle(MinervaColor.emeraldDark)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
@@ -217,7 +219,7 @@ struct NativeChangelogView: View {
         defer { isLoading = false }
 
         do {
-            entries = try await supabase.fetchNativeChangelog()
+            entries = try await supabase.fetchNativeChangelog(audience: audience)
         } catch {
             errorMessage = isFrench
                 ? "Vérifiez votre connexion, puis réessayez. Votre compte reste intact."

@@ -90,7 +90,7 @@ struct RestaurantDetailView: View {
                         VStack(spacing: 8) {
                             Spacer(minLength: 200)
                             Text("Impossible de charger ce restaurant.")
-                                .font(.system(size: 13))
+                                .font(.mv(size: 13))
                                 .foregroundStyle(MinervaColor.inkSoft)
                             Spacer(minLength: 200)
                         }
@@ -132,22 +132,22 @@ struct RestaurantDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Avis clients")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.mv(size: 13, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 if !reviews.isEmpty {
                     HStack(spacing: 3) {
-                        Image(systemName: "star.fill").font(.system(size: 11))
+                        Image(systemName: "star.fill").font(.mv(size: 11))
                         Text(String(format: "%.1f", averageRating))
                         Text("(\(reviews.count))")
                             .foregroundStyle(MinervaColor.inkFaint)
                     }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.mv(size: 12, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 }
                 Spacer()
                 if supabase.customer?.restaurantId == restaurantId {
                     Button("Écrire un avis") { showWriteReview = true }
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.mv(size: 12, weight: .semibold))
                         .foregroundStyle(MinervaColor.emeraldDark)
                 }
             }
@@ -156,7 +156,7 @@ struct RestaurantDetailView: View {
                 Skeletons.list(count: 2)
             } else if reviews.isEmpty {
                 Text("Soyez le premier à donner votre avis sur ce restaurant.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
             } else {
                 VStack(spacing: 10) {
@@ -173,14 +173,14 @@ struct RestaurantDetailView: View {
             HStack(spacing: 2) {
                 ForEach(1...5, id: \.self) { star in
                     Image(systemName: star <= review.rating ? "star.fill" : "star")
-                        .font(.system(size: 11))
+                        .font(.mv(size: 11))
                 }
             }
             .foregroundStyle(MinervaColor.emerald)
 
             if let comment = review.comment, !comment.isEmpty {
                 Text(comment)
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.ink)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -204,17 +204,17 @@ struct RestaurantDetailView: View {
             }
 
             Text(review.createdAt.formatted(date: .abbreviated, time: .omitted))
-                .font(.system(size: 10.5))
+                .font(.mv(size: 10.5))
                 .foregroundStyle(MinervaColor.inkFaint)
 
             if let ownerResponse = review.ownerResponse, !ownerResponse.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Réponse du restaurant")
-                        .font(.system(size: 10.5, weight: .bold))
+                        .font(.mv(size: 10.5, weight: .bold))
                         .tracking(0.3)
                         .foregroundStyle(MinervaColor.emeraldDark)
                     Text(ownerResponse)
-                        .font(.system(size: 12.5))
+                        .font(.mv(size: 12.5))
                         .foregroundStyle(MinervaColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -244,7 +244,7 @@ struct RestaurantDetailView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 9))
                     }
                     Text(branding.brandName)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.mv(size: 13, weight: .semibold))
                         .foregroundStyle(MinervaColor.emeraldDark)
                 }
                 .accessibilityElement(children: .combine)
@@ -256,7 +256,7 @@ struct RestaurantDetailView: View {
 
             if let description = restaurant.description {
                 Text(description)
-                    .font(.system(size: 13))
+                    .font(.mv(size: 13))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -267,7 +267,7 @@ struct RestaurantDetailView: View {
                     Text([address, restaurant.city].compactMap { $0 }.joined(separator: ", "))
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .font(.system(size: 12))
+                .font(.mv(size: 12))
                 .foregroundStyle(MinervaColor.inkSoft)
             }
 
@@ -283,7 +283,7 @@ struct RestaurantDetailView: View {
                             Text("Devenir client")
                         }
                     }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.mv(size: 13, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 11)
                 }
@@ -297,7 +297,7 @@ struct RestaurantDetailView: View {
                     Image(systemName: "checkmark.circle.fill")
                     Text("Vous êtes client de ce restaurant")
                 }
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(.mv(size: 12.5, weight: .semibold))
                 .foregroundStyle(MinervaColor.emeraldDark)
             }
 
@@ -310,7 +310,7 @@ struct RestaurantDetailView: View {
                             Image(systemName: "arrow.triangle.turn.up.right.circle.fill")
                             Text("Itinéraire")
                         }
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                     }
@@ -323,7 +323,7 @@ struct RestaurantDetailView: View {
                 if let phone = restaurant.phone, let url = URL(string: "tel:\(phone.filter(\.isNumber))") {
                     Link(destination: url) {
                         Image(systemName: "phone.fill")
-                            .font(.system(size: 13))
+                            .font(.mv(size: 13))
                             .frame(width: 42, height: 38)
                     }
                     .foregroundStyle(MinervaColor.emeraldDark)
@@ -335,7 +335,7 @@ struct RestaurantDetailView: View {
                 if let website = restaurant.website, let url = URL(string: website) {
                     Link(destination: url) {
                         Image(systemName: "globe")
-                            .font(.system(size: 13))
+                            .font(.mv(size: 13))
                             .frame(width: 42, height: 38)
                     }
                     .foregroundStyle(MinervaColor.emeraldDark)
@@ -347,7 +347,7 @@ struct RestaurantDetailView: View {
                 if let mapsUrlString = restaurant.googleMapsUrl, let url = URL(string: mapsUrlString) {
                     Link(destination: url) {
                         Image(systemName: "star.bubble.fill")
-                            .font(.system(size: 13))
+                            .font(.mv(size: 13))
                             .frame(width: 42, height: 38)
                     }
                     .accessibilityLabel("Laisser un avis Google")
@@ -387,7 +387,7 @@ struct RestaurantDetailView: View {
             if selectedCategory == nil { dismiss() } else { selectedCategory = nil }
         } label: {
             Image(systemName: selectedCategory == nil ? "xmark" : "chevron.left")
-                .font(.system(size: 13, weight: .bold))
+                .font(.mv(size: 13, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 32, height: 32)
                 .background(.black.opacity(0.35))
@@ -399,17 +399,17 @@ struct RestaurantDetailView: View {
     private func offersSection(_ offers: [RestaurantDiscoverOffer]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Offres en ce moment")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ForEach(offers) { offer in
                 VStack(alignment: .leading, spacing: 3) {
                     Text(offer.title)
-                        .font(.system(size: 13.5, weight: .semibold))
+                        .font(.mv(size: 13.5, weight: .semibold))
                         .fixedSize(horizontal: false, vertical: true)
                     if let description = offer.description {
                         Text(description)
-                            .font(.system(size: 12))
+                            .font(.mv(size: 12))
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -425,12 +425,12 @@ struct RestaurantDetailView: View {
     private var categoryGrid: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Menu")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             if categories.isEmpty {
                 Text("Ce restaurant n'a pas encore publié son menu.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
             } else {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -440,10 +440,10 @@ struct RestaurantDetailView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
                                 Image(systemName: MenuCategoryIcon.symbolName(for: category))
-                                    .font(.system(size: 17))
+                                    .font(.mv(size: 17))
                                     .foregroundStyle(MinervaColor.emerald)
                                 Text(category)
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.mv(size: 13, weight: .semibold))
                                     .foregroundStyle(MinervaColor.ink)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -462,7 +462,7 @@ struct RestaurantDetailView: View {
     private var itemListForCategory: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(selectedCategory ?? "")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ForEach(itemsInSelectedCategory) { item in
@@ -472,16 +472,16 @@ struct RestaurantDetailView: View {
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.name)
-                                .font(.system(size: 13.5, weight: .medium))
+                                .font(.mv(size: 13.5, weight: .medium))
                                 .foregroundStyle(MinervaColor.ink)
                                 .fixedSize(horizontal: false, vertical: true)
                             Text(String(format: "%.2f $", item.price))
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.mv(size: 12, weight: .semibold))
                                 .foregroundStyle(MinervaColor.emeraldDark)
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.mv(size: 11, weight: .semibold))
                             .foregroundStyle(MinervaColor.inkFaint)
                     }
                     .padding(14)

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { MenuImageUpload } from "@/components/menu/MenuImageUpload";
 import { publishChangelogEntryAction } from "./actions";
-import type { ChangelogCategory, ChangelogEntry } from "@/lib/data/changelog";
+import type { ChangelogAudience, ChangelogCategory, ChangelogEntry } from "@/lib/data/changelog";
 import { formatDateFull, formatTime } from "@/lib/utils";
 import { Bell } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -40,6 +40,7 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
         title: String(form.get("title") ?? ""),
         description: String(form.get("description") ?? ""),
         category: form.get("category") as ChangelogCategory,
+        audience: (form.get("audience") as ChangelogAudience | null) ?? "owner",
         imageUrl,
       });
       if (ok) {
@@ -69,6 +70,16 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
           <Field label={t("descriptionLabel")}>
             <Textarea name="description" rows={3} required />
           </Field>
+          <Field
+            label="Pour qui"
+            hint="« Clients » apparaît seulement dans Compte › Nouveautés de l’app : aucune notification ni courriel n’est envoyé aux restaurants."
+          >
+            <Select name="audience" defaultValue="owner">
+              <option value="owner">Propriétaires</option>
+              <option value="client">Clients</option>
+              <option value="all">Les deux</option>
+            </Select>
+          </Field>
           <Field label={t("categoryLabel")}>
             <Select name="category" defaultValue="fonctionnalite">
               <option value="fonctionnalite">{t("category.fonctionnalite")}</option>
@@ -97,7 +108,7 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
                   decoding="async"
                   className="block aspect-video w-full object-cover"
                 />
-                <figcaption className="px-3 py-2 text-[11px] text-mv-ink-faint">
+                <figcaption className="px-3 py-2 text-[12px] text-mv-ink-faint">
                   Capture ajoutée à la mise à jour
                 </figcaption>
               </figure>
@@ -113,8 +124,11 @@ export function ChangelogAdminView({ initialEntries }: { initialEntries: Changel
         {entries.map((entry) => (
           <div key={entry.id} className="rounded-xl border border-mv-border bg-mv-surface p-3.5">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <Badge tone={categoryTone[entry.category]}>{t(`category.${entry.category}`)}</Badge>
-              <span className="text-[11px] text-mv-ink-faint">
+              <span className="flex items-center gap-1.5">
+                <Badge tone={categoryTone[entry.category]}>{t(`category.${entry.category}`)}</Badge>
+                <Badge tone="neutral">{entry.audience === "client" ? "Clients" : entry.audience === "all" ? "Tous" : "Propriétaires"}</Badge>
+              </span>
+              <span className="text-[12px] text-mv-ink-faint">
                 {formatDateFull(entry.publishedAt.slice(0, 10))} · {formatTime(entry.publishedAt)}
               </span>
             </div>

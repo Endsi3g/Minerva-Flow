@@ -55,7 +55,7 @@ export function OperationalIntelligenceView({
         {/* ── En-tête Héroïque ──────────────────────────────────────────────────── */}
         <div className="pb-8 border-b border-mv-border">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-mv-green-tint text-mv-green-dark border border-mv-green/20">
+            <span className="text-[12px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-mv-green-tint text-mv-green-dark border border-mv-green/20">
               Diagnostic &amp; Briefing Quotidien
             </span>
           </div>
@@ -73,9 +73,9 @@ export function OperationalIntelligenceView({
           {/* Prime Cost Card */}
           <div className="p-5 rounded-2xl border border-mv-border bg-mv-surface shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Prime Cost Global</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Prime Cost Global</span>
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                className={`text-[12px] font-bold px-2 py-0.5 rounded-full ${
                   isPrimeCostSafe ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
                 }`}
               >
@@ -86,7 +86,7 @@ export function OperationalIntelligenceView({
               <span className="font-serif text-3xl font-bold text-mv-ink">
                 {primeCostRatio > 0 ? `${primeCostRatio.toFixed(1)} %` : "57.4 %"}
               </span>
-              <span className="text-[11px] text-mv-ink-faint font-mono">Cible : 55-58%</span>
+              <span className="text-[12px] text-mv-ink-faint font-mono">Cible : 55-58%</span>
             </div>
             <div className="mt-3 h-2 w-full bg-mv-cream rounded-full overflow-hidden">
               <div
@@ -101,16 +101,16 @@ export function OperationalIntelligenceView({
           {/* Food Cost Card */}
           <div className="p-5 rounded-2xl border border-mv-border bg-mv-surface shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Food Cost Ratio</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Food Cost Ratio</span>
               <Utensils size={14} className="text-mv-green" />
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="font-serif text-3xl font-bold text-mv-ink">
                 {foodCostRatio > 0 ? `${foodCostRatio.toFixed(1)} %` : "29.2 %"}
               </span>
-              <span className="text-[11px] text-mv-green-dark font-medium">Standard 28-32%</span>
+              <span className="text-[12px] text-mv-green-dark font-medium">Standard 28-32%</span>
             </div>
-            <p className="text-[11px] text-mv-ink-soft mt-2 leading-tight">
+            <p className="text-[12px] text-mv-ink-soft mt-2 leading-tight">
               Coûts matières premières sur ventes nettes.
             </p>
           </div>
@@ -118,16 +118,16 @@ export function OperationalIntelligenceView({
           {/* Labor Cost Card */}
           <div className="p-5 rounded-2xl border border-mv-border bg-mv-surface shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Labor Cost Ratio</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Labor Cost Ratio</span>
               <Users size={14} className="text-purple-600" />
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="font-serif text-3xl font-bold text-mv-ink">
                 {laborCostRatio > 0 ? `${laborCostRatio.toFixed(1)} %` : "28.5 %"}
               </span>
-              <span className="text-[11px] text-purple-700 font-medium">Standard 28-32%</span>
+              <span className="text-[12px] text-purple-700 font-medium">Standard 28-32%</span>
             </div>
-            <p className="text-[11px] text-mv-ink-soft mt-2 leading-tight">
+            <p className="text-[12px] text-mv-ink-soft mt-2 leading-tight">
               Masse salariale totale sur ventes nettes.
             </p>
           </div>
@@ -135,7 +135,7 @@ export function OperationalIntelligenceView({
           {/* Ventes 30j */}
           <div className="p-5 rounded-2xl border border-mv-border bg-mv-surface shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">Ventes Période</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Ventes Période</span>
               <DollarSign size={14} className="text-mv-amber" />
             </div>
             <div className="mt-3 flex items-baseline gap-2">
@@ -143,7 +143,7 @@ export function OperationalIntelligenceView({
                 {totalRevenue > 0 ? formatCurrency(totalRevenue) : "33 288 $"}
               </span>
             </div>
-            <p className="text-[11px] text-mv-ink-soft mt-2 leading-tight">
+            <p className="text-[12px] text-mv-ink-soft mt-2 leading-tight">
               Chiffre d&apos;affaires cumulé audité.
             </p>
           </div>
@@ -164,10 +164,10 @@ export function OperationalIntelligenceView({
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-mv-cream text-mv-ink-soft border border-mv-border-soft">
+                    <span className="text-[12px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-mv-cream text-mv-ink-soft border border-mv-border-soft">
                       Priorité #{idx + 1}
                     </span>
-                    <span className="text-[11px] font-bold text-mv-green-dark">{rec.impact}</span>
+                    <span className="text-[12px] font-bold text-mv-green-dark">{rec.impact}</span>
                   </div>
                   <h3 className="font-serif font-bold text-lg text-mv-ink mt-2">{rec.title}</h3>
                   <p className="text-xs text-mv-ink-soft mt-2 leading-relaxed">{rec.description}</p>

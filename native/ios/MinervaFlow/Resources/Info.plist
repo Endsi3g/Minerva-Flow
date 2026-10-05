@@ -35,6 +35,8 @@
 	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>Minerva Flow utilise l'appareil photo pour scanner le code du restaurant et accéder directement à son menu.</string>
+	<key>NFCReaderUsageDescription</key>
+	<string>Minerva Flow lit les tags NFC des restaurants pour vous ouvrir leur carte de fidélité, et permet aux propriétaires de programmer leurs propres tags.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Utilisez Face ID pour déverrouiller rapidement votre compte de fidélité Minerva Flow.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

@@ -1,7 +1,23 @@
+import type { Metadata } from "next";
 import { LogoMark } from "@/components/shell/Logo";
 import Link from "next/link";
 
 export const revalidate = 86400;
+
+export const metadata: Metadata = {
+  title: "Politique de Confidentialité & Conformité Loi 25",
+  description:
+    "Engagements de Minerva Flow envers la protection des données personnelles, le respect de la Loi 25 du Québec et la conformité LCAP.",
+  alternates: {
+    canonical: "/legal/privacy",
+  },
+  openGraph: {
+    title: "Minerva Flow | Politique de Confidentialité & Conformité Loi 25",
+    description:
+      "Protection des données personnelles des restaurateurs et de leurs clients selon les normes les plus strictes du Québec et du Canada.",
+    images: ["/og.png"],
+  },
+};
 
 export default function PrivacyPage() {
   return (

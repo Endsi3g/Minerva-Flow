@@ -51,7 +51,7 @@ export function RadialGauge({
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-1 text-center">
         <span className="font-display text-[16px] font-medium leading-none text-mv-ink">{centerValue}</span>
         {centerLabel && (
-          <span className="mt-1 text-[8px] font-semibold uppercase leading-tight tracking-wide text-mv-ink-faint">
+          <span className="mt-1 text-[12px] font-semibold uppercase leading-tight tracking-wide text-mv-ink-faint">
             {centerLabel}
           </span>
         )}

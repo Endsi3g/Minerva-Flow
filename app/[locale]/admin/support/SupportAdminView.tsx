@@ -44,10 +44,10 @@ function TicketCard({ ticket }: { ticket: AdminSupportRequest }) {
           </Badge>
           <Badge tone={statusTone[ticket.status]}>{t(`status.${ticket.status}`)}</Badge>
         </div>
-        <span className="text-[11.5px] text-mv-ink-faint">{formatDate(ticket.createdAt.slice(0, 10))}</span>
+        <span className="text-[12px] text-mv-ink-faint">{formatDate(ticket.createdAt.slice(0, 10))}</span>
       </div>
       <p className="font-display text-[15px] font-medium text-mv-ink">{ticket.subject}</p>
-      <p className="mt-1 text-[11.5px] text-mv-ink-faint">{ticket.userEmail}</p>
+      <p className="mt-1 text-[12px] text-mv-ink-faint">{ticket.userEmail}</p>
       <p className="mt-2 text-[13px] leading-relaxed text-mv-ink-soft">{ticket.message}</p>
 
       <div className="mt-4 border-t border-mv-border-soft pt-3">

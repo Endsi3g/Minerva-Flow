@@ -49,7 +49,7 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-mv-border bg-mv-surface px-3 py-2 shadow-mv-md">
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+      <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
         {label && formatDate(label)}
       </p>
       {payload.map((p) => {
@@ -98,14 +98,14 @@ export function UnifiedTrendChart({ series }: { series: TrendSeries[] }) {
           <XAxis
             dataKey="date"
             tickFormatter={(v) => formatDate(v)}
-            tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+            tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
             axisLine={{ stroke: "var(--mv-border)" }}
             tickLine={false}
             minTickGap={28}
           />
           <YAxis
             tickFormatter={(v) => `${v / 1000}k`}
-            tick={{ fill: "var(--mv-ink-faint)", fontSize: 11 }}
+            tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
             axisLine={false}
             tickLine={false}
             width={36}

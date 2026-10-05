@@ -212,7 +212,7 @@ function AuthCardInner({
       panelHeadline={mode === "login" ? t("panel.loginHeadline") : t("panel.signupHeadline")}
       panelPoints={panelPoints}
       footer={
-        <p className="text-center text-[11.5px] leading-relaxed text-mv-ink-faint">
+        <p className="text-center text-[12px] leading-relaxed text-mv-ink-faint">
           {t.rich("termsAgreement", {
             terms: (chunks) => <Link href="/legal/terms" className="font-medium text-mv-ink-soft underline underline-offset-2 hover:text-mv-ink">{chunks}</Link>,
             privacy: (chunks) => <Link href="/legal/privacy" className="font-medium text-mv-ink-soft underline underline-offset-2 hover:text-mv-ink">{chunks}</Link>,
@@ -284,13 +284,13 @@ function AuthCardInner({
 
           <div className="my-5 flex items-center gap-3">
             <div className="h-px flex-1 bg-mv-border" />
-            <span className="font-mono text-[10px] uppercase tracking-wider text-mv-ink-faint">{t("orContinueWithEmail")}</span>
+            <span className="font-mono text-[12px] uppercase tracking-wider text-mv-ink-faint">{t("orContinueWithEmail")}</span>
             <div className="h-px flex-1 bg-mv-border" />
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">{t("emailLabel")}</label>
+              <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{t("emailLabel")}</label>
               <input
                 type="email"
                 placeholder={t("emailPlaceholder")}
@@ -303,9 +303,9 @@ function AuthCardInner({
 
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-[11.5px] font-semibold text-mv-ink-soft">{t("passwordLabel")}</label>
+                <label className="text-[12px] font-semibold text-mv-ink-soft">{t("passwordLabel")}</label>
                 {mode === "login" && (
-                  <Link href="/forgot-password" className="text-[11.5px] font-semibold text-mv-green-dark hover:underline">
+                  <Link href="/forgot-password" className="text-[12px] font-semibold text-mv-green-dark hover:underline">
                     {t("forgotShort")}
                   </Link>
                 )}
@@ -322,7 +322,7 @@ function AuthCardInner({
 
             {mode === "signup" && (
               <div>
-                <label className="mb-1.5 block text-[11.5px] font-semibold text-mv-ink-soft">{t("confirmPasswordLabel")}</label>
+                <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{t("confirmPasswordLabel")}</label>
                 <input
                   type="password"
                   placeholder="••••••••••••"
@@ -374,7 +374,7 @@ function AuthCardInner({
         </motion.div>
       </AnimatePresence>
 
-      <div className="mt-6 flex items-center justify-center gap-2 border-t border-mv-border-soft pt-5 text-[11px] text-mv-ink-faint">
+      <div className="mt-6 flex items-center justify-center gap-2 border-t border-mv-border-soft pt-5 text-[12px] text-mv-ink-faint">
         <ShieldCheck size={13} className="text-mv-green-dark" />
         <span>{t("securityNote")}</span>
       </div>

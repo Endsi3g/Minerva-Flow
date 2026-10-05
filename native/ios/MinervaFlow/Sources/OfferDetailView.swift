@@ -43,10 +43,10 @@ struct OfferDetailView: View {
                             if let description = offer.description {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Détails de l'offre")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .font(.mv(size: 13, weight: .semibold))
                                         .foregroundStyle(MinervaColor.ink)
                                     Text(description)
-                                        .font(.system(size: 13.5))
+                                        .font(.mv(size: 13.5))
                                         .foregroundStyle(MinervaColor.inkSoft)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
@@ -57,7 +57,7 @@ struct OfferDetailView: View {
                                     Image(systemName: "storefront.fill")
                                     Text("Valide chez \(restaurantName)")
                                 }
-                                .font(.system(size: 12.5))
+                                .font(.mv(size: 12.5))
                                 .foregroundStyle(MinervaColor.inkSoft)
                             }
 
@@ -69,7 +69,7 @@ struct OfferDetailView: View {
                                         Image(systemName: "cart.fill")
                                         Text("Aller commander")
                                     }
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.mv(size: 14, weight: .semibold))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 13)
                                 }
@@ -84,7 +84,7 @@ struct OfferDetailView: View {
                                     Task { await supabase.toggleFavoriteOffer(offer.id, favorite: !isFavorite) }
                                 } label: {
                                     Image(systemName: isFavorite ? "heart.fill" : "heart")
-                                        .font(.system(size: 15))
+                                        .font(.mv(size: 15))
                                         .frame(width: 48, height: 48)
                                 }
                                 .foregroundStyle(isFavorite ? .red : MinervaColor.emeraldDark)
@@ -95,7 +95,7 @@ struct OfferDetailView: View {
 
                                 ShareLink(item: shareText) {
                                     Image(systemName: "square.and.arrow.up")
-                                        .font(.system(size: 15))
+                                        .font(.mv(size: 15))
                                         .frame(width: 48, height: 48)
                                 }
                                 .foregroundStyle(MinervaColor.emeraldDark)
@@ -145,22 +145,22 @@ struct OfferDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Avis clients")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.mv(size: 13, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 if !reviews.isEmpty {
                     HStack(spacing: 4) {
                         Image(systemName: "star.fill")
-                            .font(.system(size: 11))
+                            .font(.mv(size: 11))
                         Text(String(format: "%.1f", averageRating))
                         Text("(\(reviews.count))")
                             .foregroundStyle(MinervaColor.inkFaint)
                     }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.mv(size: 12, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                 }
                 Spacer()
                 Button("Laisser un avis") { showReviewSheet = true }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.mv(size: 12, weight: .semibold))
                     .foregroundStyle(MinervaColor.emeraldDark)
             }
 
@@ -168,7 +168,7 @@ struct OfferDetailView: View {
                 Skeletons.list(count: 2)
             } else if reviews.isEmpty {
                 Text("Soyez le premier à donner votre avis sur cette offre.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
             } else {
                 ForEach(reviews.prefix(5)) { review in
@@ -176,17 +176,17 @@ struct OfferDetailView: View {
                         HStack(spacing: 2) {
                             ForEach(0..<5, id: \.self) { i in
                                 Image(systemName: i < review.rating ? "star.fill" : "star")
-                                    .font(.system(size: 10))
+                                    .font(.mv(size: 10))
                             }
                             Spacer()
                             Text(review.createdAt.formatted(date: .abbreviated, time: .omitted))
-                                .font(.system(size: 10.5))
+                                .font(.mv(size: 10.5))
                                 .foregroundStyle(MinervaColor.inkFaint)
                         }
                         .foregroundStyle(MinervaColor.emerald)
                         if let comment = review.comment, !comment.isEmpty {
                             Text(comment)
-                                .font(.system(size: 12.5))
+                                .font(.mv(size: 12.5))
                                 .foregroundStyle(MinervaColor.inkSoft)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -230,7 +230,7 @@ struct OfferDetailView: View {
             dismiss()
         } label: {
             Image(systemName: "xmark")
-                .font(.system(size: 13, weight: .bold))
+                .font(.mv(size: 13, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 32, height: 32)
                 .background(.black.opacity(0.35))
@@ -262,7 +262,7 @@ struct OfferDetailView: View {
     private var otherOffersSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Plusieurs autres offres")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -301,12 +301,12 @@ struct OfferDetailView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(other.title)
-                    .font(.system(size: 12.5, weight: .semibold))
+                    .font(.mv(size: 12.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.ink)
                     .lineLimit(1)
                 if let price = other.price {
                     Text(String(format: "%.2f $", price))
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.mv(size: 11, weight: .bold))
                         .foregroundStyle(MinervaColor.emeraldDark)
                 }
             }
@@ -322,7 +322,7 @@ struct OfferDetailView: View {
         ZStack {
             MinervaColor.emerald
             Image(systemName: "tag.fill")
-                .font(.system(size: 18))
+                .font(.mv(size: 18))
                 .foregroundStyle(.white.opacity(0.5))
         }
     }
@@ -331,7 +331,7 @@ struct OfferDetailView: View {
         ZStack {
             MinervaColor.emerald
             Image(systemName: "tag.fill")
-                .font(.system(size: 36))
+                .font(.mv(size: 36))
                 .foregroundStyle(.white.opacity(0.5))
         }
     }
@@ -341,7 +341,7 @@ struct OfferDetailView: View {
             HStack(spacing: 8) {
                 if offer.isLive {
                     Text("EN COURS")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.mv(size: 10, weight: .bold))
                         .tracking(0.5)
                         .foregroundStyle(MinervaColor.emeraldDark)
                         .padding(.horizontal, 8)
@@ -351,7 +351,7 @@ struct OfferDetailView: View {
                 }
                 if let range = dateRangeText {
                     Text(range)
-                        .font(.system(size: 11.5))
+                        .font(.mv(size: 11.5))
                         .foregroundStyle(MinervaColor.inkFaint)
                 }
             }
@@ -364,7 +364,7 @@ struct OfferDetailView: View {
                 Spacer(minLength: 8)
                 if let price = offer.price {
                     Text(String(format: "%.2f $", price))
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.mv(size: 20, weight: .bold))
                         .foregroundStyle(MinervaColor.emeraldDark)
                 }
             }
@@ -376,15 +376,15 @@ struct OfferDetailView: View {
             if !offer.includedItems.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Ce qui est inclus")
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                     ForEach(offer.includedItems, id: \.self) { item in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 13))
+                                .font(.mv(size: 13))
                                 .foregroundStyle(MinervaColor.emerald)
                             Text(item)
-                                .font(.system(size: 13))
+                                .font(.mv(size: 13))
                                 .foregroundStyle(MinervaColor.inkSoft)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -394,15 +394,15 @@ struct OfferDetailView: View {
             if !offer.excludedItems.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Ce qui n'est pas inclus")
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.mv(size: 12.5, weight: .semibold))
                         .foregroundStyle(MinervaColor.ink)
                     ForEach(offer.excludedItems, id: \.self) { item in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 13))
+                                .font(.mv(size: 13))
                                 .foregroundStyle(MinervaColor.inkFaint)
                             Text(item)
-                                .font(.system(size: 13))
+                                .font(.mv(size: 13))
                                 .foregroundStyle(MinervaColor.inkSoft)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -467,7 +467,7 @@ private struct WriteOfferReviewSheet: View {
                                 rating = star
                             } label: {
                                 Image(systemName: star <= rating ? "star.fill" : "star")
-                                    .font(.system(size: 28))
+                                    .font(.mv(size: 28))
                                     .foregroundStyle(MinervaColor.emerald)
                             }
                         }
@@ -484,7 +484,7 @@ private struct WriteOfferReviewSheet: View {
 
                     if let submitError {
                         Text(submitError)
-                            .font(.system(size: 12.5))
+                            .font(.mv(size: 12.5))
                             .foregroundStyle(.red)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -495,7 +495,7 @@ private struct WriteOfferReviewSheet: View {
                         HStack {
                             if isSubmitting { ProgressView().tint(.white) }
                             Text(isSubmitting ? "Envoi…" : "Publier mon avis")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.mv(size: 14, weight: .semibold))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
@@ -523,13 +523,13 @@ private struct WriteOfferReviewSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Photos (\(photoPreviews.count)/\(maxPhotos))")
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .font(.mv(size: 11.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkSoft)
                 Spacer()
                 if photoPreviews.count < maxPhotos {
                     PhotosPicker(selection: $photoItems, maxSelectionCount: maxPhotos - photoPreviews.count, matching: .images) {
                         Label("Ajouter", systemImage: "photo.badge.plus")
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.mv(size: 11.5, weight: .semibold))
                     }
                     .foregroundStyle(MinervaColor.emeraldDark)
                 }
@@ -549,7 +549,7 @@ private struct WriteOfferReviewSheet: View {
                                     photoPreviews.remove(at: index)
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 15))
+                                        .font(.mv(size: 15))
                                         .foregroundStyle(.white, .black.opacity(0.6))
                                 }
                                 .padding(3)

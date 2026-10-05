@@ -51,8 +51,8 @@ export async function generateMetadata({
   const { locale } = await params;
   const ogLocale = ogLocales[locale] ?? "fr_CA";
 
-  const title = "Minerva Flow — Système d'Analyse & Gestion Intelligente pour Restaurants (Québec & France)";
-  const description = "Minerva Flow est la plateforme SaaS de gestion opérationnelle pour restaurants et cafés au Québec. Centralisez finances, inventaire, équipe et analyse IA dans une interface unifiée.";
+  const title = "Minerva Flow | Fidélité et gestion pour restaurants et cafés";
+  const description = "Minerva Flow aide les restaurants et cafés indépendants à faire revenir leurs clients : points, récompenses, carte dans le téléphone, menu, commandes et avis.";
 
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
@@ -65,7 +65,7 @@ export async function generateMetadata({
     return {
       title: {
         default: title,
-        template: "%s | Minerva Flow",
+        template: "Minerva Flow | %s",
       },
       description,
       applicationName: "Minerva Flow",
@@ -76,12 +76,16 @@ export async function generateMetadata({
         "Minerva Flow",
         "Gestion Restaurant Québec",
         "Logiciel Restaurant Montréal",
+        "Calcul Prime Cost restauration",
         "Seuil de rentabilité restaurant",
-        "Analyse financière bistro",
+        "Food Cost ratio formule",
+        "Labor Cost masse salariale",
+        "Fidélisation Apple Wallet restaurant",
+        "Google Wallet pass fidélité",
         "POS Square integration",
-        "Food Cost calcul",
-        "IA Restauration",
-        "Gestion d'équipe restaurant",
+        "Lightspeed restaurant intégration",
+        "IA Restauration Flow AI",
+        "Gestion d'équipe bistro café",
       ],
       authors: [{ name: "Minerva Flow Team", url: "https://minervaflow.app" }],
       creator: "Minerva Flow",
@@ -89,10 +93,10 @@ export async function generateMetadata({
       manifest: "/manifest.webmanifest",
       metadataBase: new URL(baseUrl),
       alternates: {
-        canonical: `${baseUrl}/${locale}`,
+        canonical: locale === "fr" ? baseUrl : `${baseUrl}/${locale}`,
         languages: {
-          "fr-CA": `${baseUrl}/fr`,
-          "fr-FR": `${baseUrl}/fr`,
+          "fr-CA": baseUrl,
+          "en-CA": `${baseUrl}/en`,
           "tr-TR": `${baseUrl}/tr`,
         },
       },
@@ -109,7 +113,7 @@ export async function generateMetadata({
         siteName: "Minerva Flow",
         title,
         description,
-        url: `${baseUrl}/${locale}`,
+        url: locale === "fr" ? baseUrl : `${baseUrl}/${locale}`,
         locale: ogLocale,
         images: [
           {
@@ -159,24 +163,118 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
 
-  // Schema.org JSON-LD Structured Data for Software Application & Organization
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://minervaflow.app";
+
+  // Comprehensive Schema.org JSON-LD @graph for AI Search Engines & Google Knowledge Graph
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "Minerva Flow",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "CAD",
-    },
-    description: "Système unifié d'exploitation, de prévision financière et d'analyse IA pour restaurants au Québec et en France.",
-    author: {
-      "@type": "Organization",
-      name: "Minerva Flow",
-      url: "https://minervaflow.app",
-    },
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${baseUrl}#software`,
+        name: "Minerva Flow",
+        alternateName: ["Flow", "Minerva Flow Restaurant Management"],
+        applicationCategory: "BusinessApplication",
+        applicationSubCategory: "Restaurant Management & Financial Copilot",
+        operatingSystem: "Web, iOS",
+        description:
+          "Logiciel pour restaurants et cafés : programme de fidélité, carte client dans l'app, menu et commandes, avis clients.",
+        featureList: [
+          "Points, paliers, récompenses et parrainage",
+          "Carte client dans l'application et Apple Wallet",
+          "Identification au comptoir par téléphone et code de confirmation",
+          "Menu, commandes et avis clients",
+          "Conçu pour la Loi canadienne anti-pourriel, la Loi 25 et la Loi 96",
+        ],
+        author: {
+          "@id": `${baseUrl}#organization`,
+        },
+        publisher: {
+          "@id": `${baseUrl}#organization`,
+        },
+      },
+      {
+        "@type": "Organization",
+        "@id": `${baseUrl}#organization`,
+        name: "Minerva Flow",
+        legalName: "Minerva Technologies Inc.",
+        url: baseUrl,
+        logo: {
+          "@type": "ImageObject",
+          url: `${baseUrl}/icon-512.png`,
+          width: 512,
+          height: 512,
+        },
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Montréal",
+          addressRegion: "QC",
+          addressCountry: "CA",
+        },
+        contactPoint: [
+          {
+            "@type": "ContactPoint",
+            email: "support@minervaflow.app",
+            contactType: "customer support",
+            availableLanguage: ["French", "English"],
+          },
+          {
+            "@type": "ContactPoint",
+            email: "privacy@minervaflow.app",
+            contactType: "compliance",
+            availableLanguage: ["French", "English"],
+          },
+        ],
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${baseUrl}#website`,
+        name: "Minerva Flow",
+        url: baseUrl,
+        publisher: {
+          "@id": `${baseUrl}#organization`,
+        },
+        inLanguage: ["fr-CA", "en-CA"],
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${baseUrl}#faq`,
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "Qu'est-ce que le Prime Cost en restauration ?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "C'est le coût des aliments et boissons plus la masse salariale, divisé par les ventes nettes avant taxes. Les repères souvent cités se situent autour de 60 % à 65 %, mais ils varient selon le concept.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Un client doit-il installer l'application pour s'inscrire ?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Non. Il s'inscrit par QR code ou avec le personnel. L'application montre son solde à jour, ses récompenses et son parrainage.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Comment le comptoir crédite-t-il les points sans caisse connectée ?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Le personnel retrouve le client par son numéro de téléphone, vérifie le code à 6 chiffres affiché dans son application, puis saisit le montant de l'achat.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Peut-on écrire à tous ses clients ?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Seulement à ceux qui ont consenti à recevoir des messages promotionnels, comme l'exige la Loi canadienne anti-pourriel.",
+            },
+          },
+        ],
+      },
+    ],
   };
 
   return (

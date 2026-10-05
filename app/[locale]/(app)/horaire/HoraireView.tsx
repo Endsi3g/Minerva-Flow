@@ -372,7 +372,7 @@ function DayDetailModal({
                     <Avatar name={emp?.fullName ?? "Employé"} size={32} />
                     <div>
                       <p className="text-[13.5px] font-semibold text-mv-ink">{emp?.fullName ?? "Employé"}</p>
-                      <div className="flex items-center gap-2 text-[11.5px] text-mv-ink-soft">
+                      <div className="flex items-center gap-2 text-[12px] text-mv-ink-soft">
                         <span>{formatTime(s.startTime)} – {formatTime(s.endTime)}</span>
                         {s.positionLabel && (
                           <span className="rounded bg-mv-cream px-1.5 py-0.5 border border-mv-border-soft text-mv-ink-faint">
@@ -389,7 +389,7 @@ function DayDetailModal({
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => onToggleStatus(s)}
-                          className="text-[11.5px] font-medium text-mv-green-dark hover:underline px-1.5 py-0.5"
+                          className="text-[12px] font-medium text-mv-green-dark hover:underline px-1.5 py-0.5"
                         >
                           Changer
                         </button>
@@ -655,7 +655,7 @@ export function HoraireView({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-xs flex items-center justify-between">
           <div>
-            <span className="text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
               Heures Planifiées
             </span>
             <p className="font-display text-[22px] font-bold text-mv-ink mt-0.5">
@@ -669,7 +669,7 @@ export function HoraireView({
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-xs flex items-center justify-between">
           <div>
-            <span className="flex items-center gap-1 text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+            <span className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
               Masse Salariale Estimée
               {shiftsMissingWage > 0 && (
                 <Tooltip>
@@ -695,7 +695,7 @@ export function HoraireView({
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-3.5 shadow-mv-xs flex items-center justify-between">
           <div>
-            <span className="text-[11.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
               Quarts en Registre
             </span>
             <p className="font-display text-[22px] font-bold text-mv-ink mt-0.5">
@@ -717,7 +717,7 @@ export function HoraireView({
               <span className="text-[14.5px] sm:text-[16px] font-semibold text-mv-ink">{capitalizedMonth}</span>
               <button
                 onClick={todayMonth}
-                className="rounded-lg border border-mv-border px-2 py-0.5 sm:px-2.5 sm:py-1 text-[11px] sm:text-[11.5px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft hover:text-mv-ink transition-colors"
+                className="rounded-lg border border-mv-border px-2 py-0.5 sm:px-2.5 sm:py-1 text-[12px] sm:text-[12px] font-medium text-mv-ink-soft hover:bg-mv-cream-soft hover:text-mv-ink transition-colors"
               >
                 Aujourd'hui
               </button>
@@ -747,7 +747,7 @@ export function HoraireView({
           </div>
 
           {/* Grid Header (Days of week) */}
-          <div className="grid grid-cols-7 border-b border-mv-border bg-mv-cream-soft text-center text-[11px] sm:text-[12px] font-semibold text-mv-ink-soft">
+          <div className="grid grid-cols-7 border-b border-mv-border bg-mv-cream-soft text-center text-[12px] sm:text-[12px] font-semibold text-mv-ink-soft">
             {DAY_LABELS.map((d) => (
               <div key={d} className="py-2 sm:py-2.5">
                 {d}
@@ -775,7 +775,7 @@ export function HoraireView({
                   <div className="flex items-center justify-between mb-1">
                     <span
                       className={cn(
-                        "text-[11px] sm:text-[12px] font-bold h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center transition-colors",
+                        "text-[12px] sm:text-[12px] font-bold h-5 w-5 sm:h-6 sm:w-6 rounded-full flex items-center justify-center transition-colors",
                         isToday
                           ? "bg-mv-green text-white shadow-sm"
                           : cell.isCurrentMonth
@@ -787,7 +787,7 @@ export function HoraireView({
                     </span>
 
                     {dayShifts.length > 0 && (
-                      <span className="text-[9.5px] sm:text-[10px] font-semibold text-mv-green-dark bg-mv-green/10 px-1 sm:px-1.5 py-0.5 rounded-full">
+                      <span className="text-[12px] sm:text-[12px] font-semibold text-mv-green-dark bg-mv-green/10 px-1 sm:px-1.5 py-0.5 rounded-full">
                         {dayShifts.length} <span className="hidden sm:inline">quart{dayShifts.length > 1 ? "s" : ""}</span>
                       </span>
                     )}
@@ -807,7 +807,7 @@ export function HoraireView({
                               if (canManage) handleToggleStatus(s);
                             }}
                             className={cn(
-                              "flex items-center justify-between gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium border transition-all truncate",
+                              "flex items-center justify-between gap-1 rounded-md px-1.5 py-1 text-[12px] font-medium border transition-all truncate",
                               s.status === "confirme"
                                 ? "bg-mv-green/10 border-mv-green/30 text-mv-green-dark"
                                 : "bg-amber-500/10 border-amber-500/30 text-amber-600"
@@ -815,10 +815,10 @@ export function HoraireView({
                           >
                             <div className="flex items-center gap-1 min-w-0 truncate">
                               <span className="font-semibold truncate">{emp?.fullName.split(" ")[0] ?? "Employé"}</span>
-                              <span className="text-[10px] opacity-75 shrink-0">{formatTime(s.startTime)}</span>
+                              <span className="text-[12px] opacity-75 shrink-0">{formatTime(s.startTime)}</span>
                             </div>
                             {s.positionLabel && (
-                              <span className="text-[9.5px] font-normal opacity-70 truncate hidden xl:inline">
+                              <span className="text-[12px] font-normal opacity-70 truncate hidden xl:inline">
                                 {s.positionLabel}
                               </span>
                             )}
@@ -826,7 +826,7 @@ export function HoraireView({
                         );
                       })}
                       {dayShifts.length > 3 && (
-                        <p className="text-[10px] font-semibold text-mv-ink-faint text-center pt-0.5">
+                        <p className="text-[12px] font-semibold text-mv-ink-faint text-center pt-0.5">
                           +{dayShifts.length - 3} autre{dayShifts.length - 3 > 1 ? "s" : ""}
                         </p>
                       )}
@@ -931,7 +931,7 @@ export function HoraireView({
                         >
                           {emp.fullName}
                         </button>
-                        <p className="text-[11px] font-normal text-mv-ink-faint">{emp.roleTitle}</p>
+                        <p className="text-[12px] font-normal text-mv-ink-faint">{emp.roleTitle}</p>
                       </td>
                       {weekDays.map((d) => {
                         const cellShifts = shiftsForEmployeeAndDate(emp.id, d);
@@ -959,7 +959,7 @@ export function HoraireView({
                                       : "bg-amber-50 border-amber-200 text-amber-800"
                                   )}
                                 >
-                                  <span className="text-[11px] font-medium">
+                                  <span className="text-[12px] font-medium">
                                     {formatTime(s.startTime)}–{formatTime(s.endTime)}
                                     {s.positionLabel ? ` · ${s.positionLabel}` : ""}
                                   </span>

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "@/i18n/navigation";
 import { getLocale } from "next-intl/server";
 import { AppProvider } from "@/lib/app-context";
@@ -5,6 +6,9 @@ import { AppShell } from "@/components/shell/AppShell";
 import { PostHogIdentifier } from "@/components/PostHogIdentifier";
 import { DemoGuideTour } from "@/components/demo/DemoGuideTour";
 import { getAppSessionData } from "@/lib/data/session";
+
+// Private dashboard pages must never appear in search results.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { authUser, restaurants, workspaces, branding, role, sidebarPermissions, isPlatformAdmin, initialRestaurantId, onboardingCompleted } =

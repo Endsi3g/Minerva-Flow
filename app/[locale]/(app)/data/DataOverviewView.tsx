@@ -23,7 +23,7 @@ function StatTile({
       <Card className="h-full transition-all duration-200 hover:shadow-mv-md hover:-translate-y-0.5">
         <div className="flex items-center gap-2 text-mv-ink-faint">
           <Icon size={15} />
-          <p className="text-[11px] font-semibold uppercase tracking-wide">{label}</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wide">{label}</p>
         </div>
         <div className="mt-2 flex items-end justify-between gap-2">
           <p className="font-display text-[22px] font-medium text-mv-ink">{value}</p>

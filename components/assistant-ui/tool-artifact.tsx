@@ -21,7 +21,7 @@ export function ToolArtifactCard({
             {isChart ? <TrendingUp size={16} /> : isTable ? <TableIcon size={16} /> : <FileText size={16} />}
           </div>
           <div className="min-w-0">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-mv-green-dark">
+            <span className="text-[12px] font-bold uppercase tracking-wider text-mv-green-dark">
               Rapport Canvas Généré
             </span>
             <p className="truncate text-[13.5px] font-bold text-mv-ink">{artifact.title}</p>

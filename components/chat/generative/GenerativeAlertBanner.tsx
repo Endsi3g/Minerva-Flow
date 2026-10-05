@@ -76,7 +76,7 @@ export function GenerativeAlertBanner({
             {alert.metricHighlight && (
               <span
                 className={cn(
-                  "px-2 py-0.2 text-[10px] font-bold rounded-full border",
+                  "px-2 py-0.2 text-[12px] font-bold rounded-full border",
                   config.badge
                 )}
               >

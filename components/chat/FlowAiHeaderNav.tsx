@@ -100,7 +100,7 @@ export function FlowAiHeaderNav({
             Minerva Flow AI
           </span>
           {restaurantName && (
-            <span className="hidden md:inline-block text-[11px] px-2 py-0.5 rounded-full bg-mv-cream font-medium text-mv-ink-soft border border-mv-border-soft">
+            <span className="hidden md:inline-block text-[12px] px-2 py-0.5 rounded-full bg-mv-cream font-medium text-mv-ink-soft border border-mv-border-soft">
               {restaurantName}
             </span>
           )}
@@ -142,7 +142,7 @@ export function FlowAiHeaderNav({
       {/* ── Droite : Spécialiste Actif ─────────────────────────────────────────── */}
       <div className="flex items-center gap-2">
         {activeSpecialistName && (
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-mv-green-tint text-mv-green-dark text-[11px] font-medium border border-mv-green/20">
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-mv-green-tint text-mv-green-dark text-[12px] font-medium border border-mv-green/20">
             <span>{activeSpecialistAvatar ?? "👨‍🍳"}</span>
             <span>{activeSpecialistName}</span>
           </div>

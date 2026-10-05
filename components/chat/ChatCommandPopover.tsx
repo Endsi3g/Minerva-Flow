@@ -189,7 +189,7 @@ export function ChatCommandPopover({
 
   return (
     <div className="absolute bottom-full left-0 mb-2 w-full max-w-lg rounded-2xl border border-mv-border/90 bg-mv-surface/98 p-1.5 shadow-mv-lg backdrop-blur-md z-30 animate-in fade-in slide-in-from-bottom-2 duration-150">
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-mv-border/40 text-[10.5px] font-semibold text-mv-ink-faint">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-mv-border/40 text-[12px] font-semibold text-mv-ink-faint">
         <span className="flex items-center gap-1.5">
           {triggerType === "/" ? (
             <>
@@ -203,7 +203,7 @@ export function ChatCommandPopover({
             </>
           )}
         </span>
-        <span className="text-[10px] text-mv-ink-faint">
+        <span className="text-[12px] text-mv-ink-faint">
           <kbd className="font-mono bg-mv-cream-soft px-1 py-0.5 rounded border border-mv-border/60">↑↓</kbd> naviguer · <kbd className="font-mono bg-mv-cream-soft px-1 py-0.5 rounded border border-mv-border/60">Entrée</kbd> valider
         </span>
       </div>
@@ -244,7 +244,7 @@ export function ChatCommandPopover({
                     </span>
                     <span
                       className={cn(
-                        "rounded-full px-1.5 py-0.2 text-[9.5px] font-semibold",
+                        "rounded-full px-1.5 py-0.2 text-[12px] font-semibold",
                         item.badgeTone === "green" && "bg-emerald-50 text-emerald-700 border border-emerald-200",
                         item.badgeTone === "amber" && "bg-amber-50 text-amber-800 border border-amber-200",
                         item.badgeTone === "blue" && "bg-blue-50 text-blue-700 border border-blue-200",
@@ -255,12 +255,12 @@ export function ChatCommandPopover({
                       {item.category}
                     </span>
                   </div>
-                  <p className="text-[11px] text-mv-ink-soft truncate leading-tight mt-0.5">
+                  <p className="text-[12px] text-mv-ink-soft truncate leading-tight mt-0.5">
                     {item.desc}
                   </p>
                 </div>
               </div>
-              <span className="text-[11px] font-medium text-mv-green-dark shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-[12px] font-medium text-mv-green-dark shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 Sélectionner →
               </span>
             </button>

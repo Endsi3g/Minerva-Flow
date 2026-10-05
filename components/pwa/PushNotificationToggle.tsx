@@ -119,7 +119,7 @@ export function PushNotificationToggle({ restaurantId }: { restaurantId: string 
 
   if (state === "denied") {
     return (
-      <p className="border-b border-mv-border-soft px-3.5 py-2.5 text-[11.5px] text-mv-ink-faint">
+      <p className="border-b border-mv-border-soft px-3.5 py-2.5 text-[12px] text-mv-ink-faint">
         Notifications bloquées — activez-les dans les réglages de votre navigateur pour recevoir un son.
       </p>
     );

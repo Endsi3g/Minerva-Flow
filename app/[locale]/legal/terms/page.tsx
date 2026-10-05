@@ -1,7 +1,23 @@
+import type { Metadata } from "next";
 import { LogoMark } from "@/components/shell/Logo";
 import Link from "next/link";
 
 export const revalidate = 86400;
+
+export const metadata: Metadata = {
+  title: "Conditions d'Utilisation du Service",
+  description:
+    "Modalités d'abonnement, niveaux de service (SLA) et conditions générales d'utilisation de la plateforme Minerva Flow pour restaurants.",
+  alternates: {
+    canonical: "/legal/terms",
+  },
+  openGraph: {
+    title: "Minerva Flow | Conditions d'Utilisation du Service",
+    description:
+      "Conditions d'utilisation et cadre contractuel du système d'exploitation et de gestion financière Minerva Flow.",
+    images: ["/og.png"],
+  },
+};
 
 export default function TermsPage() {
   return (

@@ -101,7 +101,7 @@ export function CanvasPanel({
                 type="button"
                 onClick={() => setActiveMode("context")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all",
+                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-semibold transition-all",
                   activeMode === "context"
                     ? "bg-mv-surface text-mv-ink shadow-mv-sm"
                     : "text-mv-ink-faint hover:text-mv-ink"
@@ -114,7 +114,7 @@ export function CanvasPanel({
                 type="button"
                 onClick={() => setActiveMode("artifact")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all",
+                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-semibold transition-all",
                   activeMode === "artifact"
                     ? "bg-mv-surface text-mv-ink shadow-mv-sm"
                     : "text-mv-ink-faint hover:text-mv-ink"
@@ -141,7 +141,7 @@ export function CanvasPanel({
                     size="xs"
                     onClick={handlePublish}
                     disabled={isPending}
-                    className="h-6.5 text-[11px] px-2 bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark"
+                    className="h-6.5 text-[12px] px-2 bg-mv-green text-mv-cream-soft hover:bg-mv-green-dark"
                   >
                     {isPending ? (
                       <Loader2 size={11} className="animate-spin mr-1" />
@@ -151,7 +151,7 @@ export function CanvasPanel({
                     Créer rapport
                   </Button>
                 ) : (
-                  <span className="flex items-center gap-1 text-[10px] font-semibold text-mv-green-dark bg-mv-green-tint px-2 py-0.5 rounded-full border border-mv-green/20">
+                  <span className="flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark bg-mv-green-tint px-2 py-0.5 rounded-full border border-mv-green/20">
                     <Check size={10} /> Enregistré
                   </span>
                 )}
@@ -181,7 +181,7 @@ export function CanvasPanel({
             <h3 className="font-display text-[14.5px] font-semibold text-mv-ink leading-snug">
               {artifact.title}
             </h3>
-            <p className="text-[10.5px] text-mv-ink-faint">Rapport d&apos;analyse copilote</p>
+            <p className="text-[12px] text-mv-ink-faint">Rapport d&apos;analyse copilote</p>
           </div>
 
           {/* Tabs selectors (only for chart or comparison) */}
@@ -191,7 +191,7 @@ export function CanvasPanel({
                 type="button"
                 onClick={() => setTab("visual")}
                 className={cn(
-                  "flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all",
+                  "flex items-center gap-1 px-2.5 py-1 text-[12px] font-semibold rounded-md transition-all",
                   tab === "visual" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint"
                 )}
               >
@@ -201,7 +201,7 @@ export function CanvasPanel({
                 type="button"
                 onClick={() => setTab("data")}
                 className={cn(
-                  "flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all",
+                  "flex items-center gap-1 px-2.5 py-1 text-[12px] font-semibold rounded-md transition-all",
                   tab === "data" ? "bg-mv-surface text-mv-ink shadow-mv-sm" : "text-mv-ink-faint"
                 )}
               >
@@ -232,7 +232,7 @@ function MiniLineChart({ data, color = "var(--mv-green)" }: { data: TrendPoint[]
         <XAxis
           dataKey="date"
           tickFormatter={(v) => formatDate(v)}
-          tick={{ fill: "var(--mv-ink-faint)", fontSize: 10 }}
+          tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
           minTickGap={24}
@@ -282,7 +282,7 @@ function DualLineChart({
           <XAxis
             dataKey="date"
             tickFormatter={(v) => formatDate(v)}
-            tick={{ fill: "var(--mv-ink-faint)", fontSize: 10 }}
+            tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
             axisLine={{ stroke: "var(--mv-border)" }}
             tickLine={false}
             minTickGap={24}
@@ -301,7 +301,7 @@ function DualLineChart({
           <Line type="monotone" dataKey="b" name={seriesB.label} stroke="var(--mv-amber)" strokeWidth={2} dot={false} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
-      <div className="mt-1.5 flex gap-3 text-[11px]">
+      <div className="mt-1.5 flex gap-3 text-[12px]">
         <span className="flex items-center gap-1.5 text-mv-ink-soft">
           <span className="h-2 w-2 rounded-full bg-mv-green" /> {seriesA.label}
         </span>
@@ -332,7 +332,7 @@ function MetricRow({
           {unitFormat[metric.unit](metric.value)}
         </span>
         <span
-          className={`flex items-center gap-0.5 text-[11px] font-semibold ${metric.momDelta >= 0 ? "text-mv-green-dark" : "text-mv-red"}`}
+          className={`flex items-center gap-0.5 text-[12px] font-semibold ${metric.momDelta >= 0 ? "text-mv-green-dark" : "text-mv-red"}`}
         >
           {metric.momDelta >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
           {Math.abs(metric.momDelta).toFixed(1)}%
@@ -405,7 +405,7 @@ function ArtifactBody({ artifact }: { artifact: ChatArtifact }) {
 
         {data.metrics.length > 0 && (
           <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <p className="mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               Key metrics
             </p>
             <div className="space-y-0.5 rounded-lg border border-mv-border-soft">
@@ -428,7 +428,7 @@ function ArtifactBody({ artifact }: { artifact: ChatArtifact }) {
 
         {data.summary.length > 0 && (
           <div>
-            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <p className="mb-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               Résumé
             </p>
             <ul className="space-y-1 text-[12.5px] leading-relaxed text-mv-ink-soft">
@@ -453,7 +453,7 @@ function ArtifactBody({ artifact }: { artifact: ChatArtifact }) {
         <YAxis
           type="category"
           dataKey="label"
-          tick={{ fill: "var(--mv-ink-soft)", fontSize: 11 }}
+          tick={{ fill: "var(--mv-ink-soft)", fontSize: 12 }}
           axisLine={false}
           tickLine={false}
           width={90}
@@ -520,7 +520,7 @@ function ArtifactRawData({ artifact }: { artifact: ChatArtifact }) {
                 </td>
                 <td
                   className={cn(
-                    "px-3 py-2 text-right font-semibold text-[11.5px]",
+                    "px-3 py-2 text-right font-semibold text-[12px]",
                     m.momDelta >= 0 ? "text-mv-green-dark" : "text-mv-red"
                   )}
                 >

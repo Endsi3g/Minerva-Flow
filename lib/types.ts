@@ -30,6 +30,8 @@ export type Restaurant = {
   workspaceId?: string | null;
   loyaltyPointsPerDollar: number;
   welcomeBonusPoints?: number;
+  /** Points given once when a customer first opens the native app (0 = off). */
+  appInstallBonusPoints?: number;
   taxRate: number;
   acceptsTips: boolean;
   /** Which of the 3 order modes this restaurant offers at checkout — see OrderFulfillmentMode. */
@@ -699,7 +701,7 @@ export type Customer = {
   avatarUrl: string | null;
   favoriteOfferIds: string[];
   favoriteMenuItemIds: string[];
-  notificationFrequency: "all" | "important_only";
+  notificationFrequency: "all" | "important_only" | "frequent";
   posCustomerId?: string | null;
 };
 

@@ -62,7 +62,7 @@ export function SearchFilterBar({
               <X size={14} />
             </button>
           ) : showShortcut ? (
-            <kbd className="hidden sm:inline-flex absolute right-3 top-1/2 -translate-y-1/2 items-center gap-0.5 rounded border border-mv-border bg-mv-cream-soft px-1.5 py-0.5 text-[10px] font-mono text-mv-ink-faint pointer-events-none">
+            <kbd className="hidden sm:inline-flex absolute right-3 top-1/2 -translate-y-1/2 items-center gap-0.5 rounded border border-mv-border bg-mv-cream-soft px-1.5 py-0.5 text-[12px] font-mono text-mv-ink-faint pointer-events-none">
               ⌘K
             </kbd>
           ) : null}
@@ -100,7 +100,7 @@ export function SearchFilterBar({
                 {cat.count !== undefined && (
                   <span
                     className={cn(
-                      "rounded-full px-1.5 py-0.2 text-[10.5px] font-semibold",
+                      "rounded-full px-1.5 py-0.2 text-[12px] font-semibold",
                       isSelected
                         ? "bg-white/20 text-white"
                         : "bg-mv-ink/5 text-mv-ink-faint"

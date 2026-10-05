@@ -33,7 +33,7 @@ export type ResultsShareCardProps = {
  */
 function nameSizeClass(name: string) {
   if (name.length >= 28) return "text-[9.5px]";
-  if (name.length >= 18) return "text-[11px]";
+  if (name.length >= 18) return "text-[12px]";
   return "text-[12.5px]";
 }
 
@@ -166,13 +166,13 @@ export function ResultsShareCard({
             <p className={cn("truncate font-display text-[13px] font-semibold leading-tight", theme.ink)}>
               {restaurantName}
             </p>
-            <p className={cn("text-[10px] font-medium tracking-wide", theme.inkSoft)}>Minerva Flow</p>
+            <p className={cn("text-[12px] font-medium tracking-wide", theme.inkSoft)}>Minerva Flow</p>
           </div>
         </div>
 
         {/* Center: Hero Pill */}
         <div className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-1.5 shrink-0", theme.heroBox)}>
-          <span className={cn("text-[10.5px] font-bold uppercase tracking-wider", theme.heroText, "opacity-90")}>
+          <span className={cn("text-[12px] font-bold uppercase tracking-wider", theme.heroText, "opacity-90")}>
             {hero.label} :
           </span>
           <span className={cn("font-display text-[22px] font-extrabold tracking-tight leading-none", theme.heroText)}>
@@ -224,7 +224,7 @@ export function ResultsShareCard({
         <div className="grid grid-cols-12 gap-5 items-center my-auto py-2">
           {/* Left Column: Hero */}
           <div className="col-span-6 flex flex-col justify-center">
-            <p className={cn("mb-1.5 text-[10.5px] font-bold uppercase tracking-wider", theme.inkSoft)}>{hero.label}</p>
+            <p className={cn("mb-1.5 text-[12px] font-bold uppercase tracking-wider", theme.inkSoft)}>{hero.label}</p>
             <div className={cn("rounded-xl px-4 py-3.5", theme.heroBox)}>
               <p className={cn("break-words font-display text-[32px] font-extrabold leading-none tracking-tight", theme.heroText)}>
                 {hero.formattedValue}
@@ -238,7 +238,7 @@ export function ResultsShareCard({
               <div className="space-y-1.5">
                 {stats.map((s) => (
                   <div key={s.id} className="flex items-baseline justify-between gap-2">
-                    <span className={cn("text-[11.5px] truncate", theme.inkSoft)}>{s.label}</span>
+                    <span className={cn("text-[12px] truncate", theme.inkSoft)}>{s.label}</span>
                     <span className={cn("shrink-0 text-[12.5px] font-bold", theme.ink)}>{s.formattedValue}</span>
                   </div>
                 ))}
@@ -299,7 +299,7 @@ export function ResultsShareCard({
 
       {/* Hero result: the big win, in the green band */}
       <div className="my-3.5">
-        <p className={cn("mb-1 text-[10.5px] font-bold uppercase tracking-wider", theme.inkSoft)}>{hero.label}</p>
+        <p className={cn("mb-1 text-[12px] font-bold uppercase tracking-wider", theme.inkSoft)}>{hero.label}</p>
         <div className={cn("rounded-xl px-3.5 py-2.5", theme.heroBox)}>
           <p className={cn("break-words font-display text-[34px] font-extrabold leading-none tracking-tight", theme.heroText)}>
             {hero.formattedValue}
@@ -312,7 +312,7 @@ export function ResultsShareCard({
         <div className={cn("space-y-1.5 border-t pt-2.5", theme.borderDivider)}>
           {stats.map((s) => (
             <div key={s.id} className="flex items-baseline justify-between gap-3">
-              <span className={cn("text-[11.5px]", theme.inkSoft)}>{s.label}</span>
+              <span className={cn("text-[12px]", theme.inkSoft)}>{s.label}</span>
               <span className={cn("shrink-0 text-[12.5px] font-bold", theme.ink)}>{s.formattedValue}</span>
             </div>
           ))}
@@ -339,7 +339,7 @@ function FooterBadgeChip({
   theme: { card: string; ink: string; inkSoft: string; chipBg: string };
 }) {
   const chipClass = cn(
-    "inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[10px] font-semibold",
+    "inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[12px] font-semibold",
     theme.chipBg,
     theme.ink
   );

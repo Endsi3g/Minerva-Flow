@@ -134,7 +134,7 @@ function ConnectRow({
             {provider !== "lightspeed" && (
               <p className="text-[13.5px] font-semibold text-mv-ink">{providerLabel[provider]}</p>
             )}
-            <p className="text-[11px] leading-relaxed text-mv-ink-soft">{providerCapabilities[provider]}</p>
+            <p className="text-[12px] leading-relaxed text-mv-ink-soft">{providerCapabilities[provider]}</p>
             <p className="text-[12px] text-mv-ink-faint">{statusLine()}</p>
           </div>
         </div>
@@ -243,14 +243,14 @@ function ConnectRow({
       </div>
 
       {connection && provider === "clover" && (
-        <p className="mt-2 text-[11.5px] leading-relaxed text-mv-ink-faint">
+        <p className="mt-2 text-[12px] leading-relaxed text-mv-ink-faint">
           Les articles importés arrivent en brouillons inactifs. Vérifiez les prix, variantes et allergènes avant de les publier.
         </p>
       )}
 
       {showManualClover && !connection && (
         <form onSubmit={handleManualCloverSubmit} className="mt-2.5 space-y-2 border-t border-mv-border-soft pt-2.5">
-          <p className="text-[11.5px] text-mv-ink-faint">
+          <p className="text-[12px] text-mv-ink-faint">
             Entrez votre identifiant commerçant et votre clé de connexion générée depuis votre espace Clover (Paramètres &gt; Clés de connexion).
           </p>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">

@@ -48,7 +48,7 @@ export default async function SharedSchedulePage({ params }: { params: Promise<{
               >
                 <div>
                   <p className="text-[13.5px] font-semibold text-mv-ink">{formatDate(s.shiftDate)}</p>
-                  {s.positionLabel && <p className="text-[11.5px] text-mv-ink-faint">{s.positionLabel}</p>}
+                  {s.positionLabel && <p className="text-[12px] text-mv-ink-faint">{s.positionLabel}</p>}
                 </div>
                 <p className="text-[13px] font-medium text-mv-ink-soft">
                   {s.startTime.slice(0, 5)} – {s.endTime.slice(0, 5)}
@@ -58,7 +58,7 @@ export default async function SharedSchedulePage({ params }: { params: Promise<{
           </div>
         )}
 
-        <p className="mt-8 text-[11.5px] text-mv-ink-faint">
+        <p className="mt-8 text-[12px] text-mv-ink-faint">
           Lien généré via Minerva Flow — mis à jour au moment de sa création, pas en temps réel.
         </p>
       </div>

@@ -15,7 +15,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * file's contents, PEM format, literal newlines or \n-escaped both work),
  * APNS_BUNDLE_ID, and APNS_ENVIRONMENT ("sandbox" while sideloaded via
  * Xcode, "production" once distributed through TestFlight/the App Store).
- * See native/ios/build-status.html for how to obtain these.
+ * See docs/mobile/native-build-status.html for how to obtain these.
  */
 export function isAPNsConfigured(): boolean {
   return Boolean(

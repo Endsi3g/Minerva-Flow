@@ -244,14 +244,14 @@ function MessageRow({
           <span className="text-[12px] font-semibold text-mv-ink">
             {isAI ? "Flow AI" : isSelf ? "Vous" : msg.authorName}
           </span>
-          <span className="text-[10.5px] text-mv-ink-faint">{time}</span>
+          <span className="text-[12px] text-mv-ink-faint">{time}</span>
           {msg.isPinned && <Pin size={11} className="text-mv-amber" />}
         </div>
 
         {/* Reply citation */}
         {msg.replyTo && (
           <div className={cn(
-            "text-[11.5px] text-mv-ink-soft border-l-2 border-mv-green/50 pl-2 mb-1 line-clamp-1 italic opacity-75",
+            "text-[12px] text-mv-ink-soft border-l-2 border-mv-green/50 pl-2 mb-1 line-clamp-1 italic opacity-75",
             isSelf ? "text-right border-l-0 border-r-2 pr-2 pl-0" : ""
           )}>
             <span className="font-semibold not-italic">{msg.replyTo.authorName}: </span>
@@ -301,7 +301,7 @@ function MessageRow({
                 )}
                 disabled={editSaving}
               />
-              <div className="flex items-center gap-2 text-[11px]">
+              <div className="flex items-center gap-2 text-[12px]">
                 <button
                   onClick={async () => {
                     if (!editContent.trim()) return;
@@ -357,7 +357,7 @@ function MessageRow({
                   key={emoji}
                   onClick={() => onReact(msg.id, emoji)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-all",
+                    "flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] transition-all",
                     uids.includes(currentUserId)
                       ? "bg-mv-green/10 border-mv-green/30 text-mv-green-dark"
                       : "bg-white border-mv-border-soft text-mv-ink hover:bg-mv-cream"
@@ -534,7 +534,7 @@ function ChannelAccessDrawer({
           <label className="flex items-center justify-between cursor-pointer">
             <div>
               <p className="text-[13px] font-medium text-mv-ink">Canal restreint</p>
-              <p className="text-[11.5px] text-mv-ink-soft mt-0.5">
+              <p className="text-[12px] text-mv-ink-soft mt-0.5">
                 {restricted
                   ? "Seuls les membres sélectionnés y ont accès"
                   : "Tous les membres ont accès à ce canal"}
@@ -565,7 +565,7 @@ function ChannelAccessDrawer({
         ) : (
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
             {restricted && (
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint px-2 mb-2">
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint px-2 mb-2">
                 Membres ayant accès
               </p>
             )}
@@ -584,7 +584,7 @@ function ChannelAccessDrawer({
                 <Avatar name={m.name} src={m.avatarUrl} size={32} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium text-mv-ink truncate">{m.name}</p>
-                  <p className="text-[11px] text-mv-ink-faint capitalize">{m.role}</p>
+                  <p className="text-[12px] text-mv-ink-faint capitalize">{m.role}</p>
                 </div>
                 {restricted && (
                   <div className={cn(
@@ -1179,7 +1179,7 @@ export function TeamChatView({
             })}
 
             {dynamicGroups.length > 0 && (
-              <p className="mt-3 mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">Groupes</p>
+              <p className="mt-3 mb-1 px-2.5 text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Groupes</p>
             )}
             {dynamicGroups.map((c) => (
               <Tooltip key={c.id}>
@@ -1200,7 +1200,7 @@ export function TeamChatView({
             ))}
 
             {dmChannels.length > 0 && (
-              <p className="mt-3 mb-1 px-2.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">Messages privés</p>
+              <p className="mt-3 mb-1 px-2.5 text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Messages privés</p>
             )}
             {dmChannels.map((c) => {
               const other = teamMembers.find((m) => m.id === c.otherMemberId);
@@ -1307,7 +1307,7 @@ export function TeamChatView({
                 <div key={group.label}>
                   <div className="flex items-center gap-3 px-4 py-3">
                     <div className="flex-1 h-px bg-mv-border-soft" />
-                    <span className="text-[11px] font-medium text-mv-ink-faint px-2">{group.label}</span>
+                    <span className="text-[12px] font-medium text-mv-ink-faint px-2">{group.label}</span>
                     <div className="flex-1 h-px bg-mv-border-soft" />
                   </div>
                   {group.messages.map((msg) => (
@@ -1395,7 +1395,7 @@ export function TeamChatView({
 
             {showMentionPopover && mentionSuggestions.length > 0 && (
               <div className="mb-2 rounded-xl border border-mv-border bg-white shadow-lg overflow-hidden">
-                <div className="px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint border-b border-mv-border-soft">
+                <div className="px-3 py-1.5 text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint border-b border-mv-border-soft">
                   Mentionner
                 </div>
                 {mentionSuggestions.slice(0, 6).map((s) => (
@@ -1408,10 +1408,10 @@ export function TeamChatView({
                     {s.isAI ? <FlowAIAvatar size={28} /> : <Avatar name={s.name} size={28} />}
                     <div>
                       <div className="text-[13px] font-medium text-mv-ink">@{s.name}</div>
-                      <div className="text-[11px] text-mv-ink-faint">{s.isAI ? "Assistant IA d'équipe" : s.role}</div>
+                      <div className="text-[12px] text-mv-ink-faint">{s.isAI ? "Assistant IA d'équipe" : s.role}</div>
                     </div>
                     {s.isAI && (
-                      <span className="ml-auto text-[10px] font-semibold text-mv-green-dark bg-mv-green/10 px-1.5 py-0.5 rounded-full">IA</span>
+                      <span className="ml-auto text-[12px] font-semibold text-mv-green-dark bg-mv-green/10 px-1.5 py-0.5 rounded-full">IA</span>
                     )}
                   </button>
                 ))}
@@ -1485,7 +1485,7 @@ export function TeamChatView({
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 py-2">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1.5 px-1">
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint mb-1.5 px-1">
                 Membres — {teamMembers.length + 1}
               </p>
 
@@ -1497,7 +1497,7 @@ export function TeamChatView({
                   </div>
                   <div className="min-w-0">
                     <p className="text-[12px] font-medium text-mv-ink truncate">Flow AI</p>
-                    <p className="text-[10px] text-mv-green-dark font-medium truncate">En ligne</p>
+                    <p className="text-[12px] text-mv-green-dark font-medium truncate">En ligne</p>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="left">Insérer @FlowAI dans le message</TooltipContent>
@@ -1634,7 +1634,7 @@ function MemberRow({ member, online, onMention }: { member: TeamMember; online: 
         </div>
         <div className="min-w-0">
           <p className="text-[12px] font-medium text-mv-ink truncate">{member.name}</p>
-          <p className={cn("text-[10px] font-medium truncate", online ? "text-mv-green-dark" : "text-mv-ink-faint")}>
+          <p className={cn("text-[12px] font-medium truncate", online ? "text-mv-green-dark" : "text-mv-ink-faint")}>
             {online ? "En ligne" : "Hors ligne"}
           </p>
         </div>

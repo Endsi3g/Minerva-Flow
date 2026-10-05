@@ -50,11 +50,11 @@ export function ContributionHeatmap({
           )}
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-[11px] text-mv-ink-faint">Faible</span>
+          <span className="text-[12px] text-mv-ink-faint">Faible</span>
           {heatmapBuckets.map((c) => (
             <div key={c} className="h-3 w-3 rounded-[3px]" style={{ background: c }} />
           ))}
-          <span className="text-[11px] text-mv-ink-faint">Fort</span>
+          <span className="text-[12px] text-mv-ink-faint">Fort</span>
         </div>
       </div>
     </div>

@@ -4,6 +4,14 @@ enum AppTab: Int {
     case home, order, scan, rewards, cards, profile
 }
 
+/// Pushed destinations inside the Compte tab. A deep link to "cards" lands on
+/// Compte and opens `.cards` (phones have five tabs; Mes cartes lives there).
+enum CompteRoute: Hashable {
+    case cards, favorites, orders, pointsHistory, updates
+    case appearance, notifications, privacy, security, help, about
+    case ambassador, other
+}
+
 /// A resolved-later reference to a /t/{code} touchpoint or /p/{code}
 /// referral link tapped via Universal Links (see
 /// MinervaFlow.entitlements' applinks:minervaflow.app and
@@ -25,6 +33,7 @@ final class DeepLinkRouter: ObservableObject {
     static let shared = DeepLinkRouter()
 
     @Published var pendingTab: AppTab?
+    @Published var pendingCompteRoute: CompteRoute?
     @Published var pendingOwnerSection: Int?
     @Published var pendingNotificationLink: String?
     @Published var pendingUniversalLink: PendingUniversalLink?

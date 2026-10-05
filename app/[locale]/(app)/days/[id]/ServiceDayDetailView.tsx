@@ -134,12 +134,12 @@ export function ServiceDayDetailView({
       {/* Hero Financial Summary */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Revenu net</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Revenu net</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-green-dark">
             {formatCurrency(day.revenue)}
           </p>
           {deltaVsPrevWeek !== null ? (
-            <div className="mt-1 flex items-center gap-1 text-[11px]">
+            <div className="mt-1 flex items-center gap-1 text-[12px]">
               <span className={deltaVsPrevWeek >= 0 ? "text-mv-green-dark font-medium" : "text-mv-red font-medium"}>
                 {deltaVsPrevWeek >= 0 ? "+" : ""}
                 {formatCurrency(deltaVsPrevWeek)} ({deltaVsPrevWeekPct}%)
@@ -147,36 +147,36 @@ export function ServiceDayDetailView({
               <span className="text-mv-ink-faint">vs J-7</span>
             </div>
           ) : (
-            <p className="mt-1 text-[11px] text-mv-ink-faint">Chiffre d&apos;affaires du jour</p>
+            <p className="mt-1 text-[12px] text-mv-ink-faint">Chiffre d&apos;affaires du jour</p>
           )}
         </Card>
 
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Food / Matières</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Food / Matières</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
             {formatCurrency(rawFoodCost)}
           </p>
-          <p className="mt-1 text-[11px] text-mv-ink-soft">
+          <p className="mt-1 text-[12px] text-mv-ink-soft">
             {foodCostRatio.toFixed(1)}% des ventes (cible 28-32%)
           </p>
         </Card>
 
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Main-d&apos;œuvre (Labor)</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Main-d&apos;œuvre (Labor)</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
             {formatCurrency(totalLaborCost)}
           </p>
-          <p className="mt-1 text-[11px] text-mv-ink-soft">
+          <p className="mt-1 text-[12px] text-mv-ink-soft">
             {laborCostRatio.toFixed(1)}% des ventes ({totalLaborHours.toFixed(1)} h)
           </p>
         </Card>
 
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Marge brute op.</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Marge brute op.</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
             {formatCurrency(grossMargin)}
           </p>
-          <p className="mt-1 text-[11px] text-mv-ink-soft">
+          <p className="mt-1 text-[12px] text-mv-ink-soft">
             {grossMarginPct}% de rentabilité brute
           </p>
         </Card>
@@ -203,7 +203,7 @@ export function ServiceDayDetailView({
                 style={{ width: `${Math.min(100, primeCostRatio)}%` }}
               />
             </div>
-            <p className="mt-2 text-[11.5px] text-mv-ink-faint">
+            <p className="mt-2 text-[12px] text-mv-ink-faint">
               Food + Labor. Seuil cible : &lt; 60% (idéal 55%–58%).
             </p>
           </div>
@@ -221,7 +221,7 @@ export function ServiceDayDetailView({
                 style={{ width: `${Math.min(100, foodCostRatio * 2)}%` }}
               />
             </div>
-            <p className="mt-2 text-[11.5px] text-mv-ink-faint">
+            <p className="mt-2 text-[12px] text-mv-ink-faint">
               Matières premières et boissons. Cible 28% à 32%.
             </p>
           </div>
@@ -239,7 +239,7 @@ export function ServiceDayDetailView({
                 style={{ width: `${Math.min(100, laborCostRatio * 2)}%` }}
               />
             </div>
-            <p className="mt-2 text-[11.5px] text-mv-ink-faint">
+            <p className="mt-2 text-[12px] text-mv-ink-faint">
               Masse salariale du service. Cible 28% à 32%.
             </p>
           </div>
@@ -255,7 +255,7 @@ export function ServiceDayDetailView({
               <div className="flex items-center gap-2.5">
                 <SourceIcon size={18} className="text-mv-green-dark" />
                 <div>
-                  <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Canal dominant</p>
+                  <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Canal dominant</p>
                   <p className="font-semibold text-mv-ink">{sourceLabel[day.mainSource]}</p>
                 </div>
               </div>
@@ -303,14 +303,14 @@ export function ServiceDayDetailView({
 
             {day.notes && (
               <div className="pt-1">
-                <p className="mb-1 text-[11px] font-semibold uppercase text-mv-ink-faint">Notes d&apos;équipe</p>
+                <p className="mb-1 text-[12px] font-semibold uppercase text-mv-ink-faint">Notes d&apos;équipe</p>
                 <p className="rounded-lg border border-mv-border bg-mv-cream-soft p-3 text-[12.5px] leading-relaxed text-mv-ink-soft">
                   {day.notes}
                 </p>
               </div>
             )}
 
-            <div className="pt-2 text-[11.5px] text-mv-ink-faint">
+            <div className="pt-2 text-[12px] text-mv-ink-faint">
               Enregistré par <strong className="text-mv-ink">{day.author}</strong>
             </div>
           </div>
@@ -327,7 +327,7 @@ export function ServiceDayDetailView({
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-mv-border p-6 text-center">
               <UserCheck size={24} className="mb-2 text-mv-ink-faint" />
               <p className="text-[13px] font-medium text-mv-ink">Aucun quart planifié dans l&apos;horaire</p>
-              <p className="mt-1 text-[11.5px] text-mv-ink-soft">
+              <p className="mt-1 text-[12px] text-mv-ink-soft">
                 Les heures de service peuvent être créées depuis la section Horaire.
               </p>
               <Button href="/horaire" size="sm" variant="secondary" className="mt-3 text-[12px]">
@@ -346,7 +346,7 @@ export function ServiceDayDetailView({
                   >
                     <div>
                       <p className="font-semibold text-mv-ink">{emp?.fullName || "Employé"}</p>
-                      <p className="text-[11px] text-mv-ink-faint">
+                      <p className="text-[12px] text-mv-ink-faint">
                         {s.positionLabel || emp?.roleTitle || "Service"}
                       </p>
                     </div>
@@ -354,7 +354,7 @@ export function ServiceDayDetailView({
                       <p className="font-medium text-mv-ink">
                         {s.startTime.slice(0, 5)} – {s.endTime.slice(0, 5)}
                       </p>
-                      <p className="text-[11px] text-mv-ink-soft">{hours.toFixed(1)} h</p>
+                      <p className="text-[12px] text-mv-ink-soft">{hours.toFixed(1)} h</p>
                     </div>
                   </div>
                 );
@@ -375,7 +375,7 @@ export function ServiceDayDetailView({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[12.5px]">
               <thead>
-                <tr className="border-b border-mv-border text-[11px] font-semibold uppercase text-mv-ink-faint">
+                <tr className="border-b border-mv-border text-[12px] font-semibold uppercase text-mv-ink-faint">
                   <th className="py-2">Description</th>
                   <th className="py-2">Catégorie</th>
                   <th className="py-2 text-right">Montant</th>
@@ -386,7 +386,7 @@ export function ServiceDayDetailView({
                   <tr key={t.id}>
                     <td className="py-2.5 font-medium text-mv-ink">{t.description}</td>
                     <td className="py-2.5">
-                      <Badge tone="neutral" className="text-[11px]">
+                      <Badge tone="neutral" className="text-[12px]">
                         {t.category}
                       </Badge>
                     </td>

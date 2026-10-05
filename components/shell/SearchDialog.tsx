@@ -176,7 +176,7 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="text-[11px] font-medium text-mv-ink-faint hover:text-mv-ink px-1.5 py-0.5 rounded bg-mv-ink/5"
+              className="text-[12px] font-medium text-mv-ink-faint hover:text-mv-ink px-1.5 py-0.5 rounded bg-mv-ink/5"
             >
               Effacer
             </button>
@@ -214,10 +214,10 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
                         </div>
                         <div className="flex flex-col min-w-0">
                           <span className="truncate text-mv-ink font-semibold">{action.title}</span>
-                          <span className="truncate text-[11px] text-mv-ink-faint">{action.subtitle}</span>
+                          <span className="truncate text-[12px] text-mv-ink-faint">{action.subtitle}</span>
                         </div>
                       </div>
-                      <Badge tone="green" className="text-[10px] uppercase font-bold tracking-wider">
+                      <Badge tone="green" className="text-[12px] uppercase font-bold tracking-wider">
                         Action
                       </Badge>
                     </CommandItem>
@@ -239,7 +239,7 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className="truncate text-mv-ink font-semibold">{item.title}</span>
-                      <span className="truncate text-[11px] text-mv-ink-faint">{item.subtitle}</span>
+                      <span className="truncate text-[12px] text-mv-ink-faint">{item.subtitle}</span>
                     </div>
                   </CommandItem>
                 ))}
@@ -282,7 +282,7 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
                       <div className="flex flex-col min-w-0">
                         <span className="truncate text-mv-ink font-semibold">{item.title}</span>
                         {item.subtitle && (
-                          <span className="truncate text-[11px] text-mv-ink-faint">
+                          <span className="truncate text-[12px] text-mv-ink-faint">
                             {item.subtitle}
                           </span>
                         )}
@@ -291,7 +291,7 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
                     {item.badge && (
                       <Badge
                         tone={isActionType ? "green" : "neutral"}
-                        className="text-[10px] uppercase font-bold tracking-wider shrink-0 ml-2"
+                        className="text-[12px] uppercase font-bold tracking-wider shrink-0 ml-2"
                       >
                         {item.badge}
                       </Badge>
@@ -304,23 +304,23 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
         </CommandList>
 
         {/* Command Palette Keyboard Hints Footer */}
-        <div className="flex items-center justify-between border-t border-mv-border/60 bg-mv-surface/60 px-3.5 py-2 text-[11px] text-mv-ink-faint">
+        <div className="flex items-center justify-between border-t border-mv-border/60 bg-mv-surface/60 px-3.5 py-2 text-[12px] text-mv-ink-faint">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="rounded border border-mv-border bg-mv-surface px-1.5 py-0.5 font-mono text-[10px] shadow-mv-xs">
+              <kbd className="rounded border border-mv-border bg-mv-surface px-1.5 py-0.5 font-mono text-[12px] shadow-mv-xs">
                 ↵
               </kbd>
               Ouvrir
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border border-mv-border bg-mv-surface px-1.5 py-0.5 font-mono text-[10px] shadow-mv-xs">
+              <kbd className="rounded border border-mv-border bg-mv-surface px-1.5 py-0.5 font-mono text-[12px] shadow-mv-xs">
                 ↑↓
               </kbd>
               Naviguer
             </span>
           </div>
           <span className="flex items-center gap-1">
-            <kbd className="rounded border border-mv-border bg-mv-surface px-1.5 py-0.5 font-mono text-[10px] shadow-mv-xs">
+            <kbd className="rounded border border-mv-border bg-mv-surface px-1.5 py-0.5 font-mono text-[12px] shadow-mv-xs">
               ESC
             </kbd>
             Fermer

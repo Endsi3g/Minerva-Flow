@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveNativeUserId } from "@/lib/auth/native-bearer";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveDiscoveryScope } from "@/lib/data/discovery-scope";
+import { discoveryFilter, resolveDiscoveryScope } from "@/lib/data/discovery-scope";
 
 /**
  * Restaurant discovery for the native app's "nearby" map — scoped per
@@ -37,11 +37,9 @@ export async function GET(req: Request) {
     .not("lat", "is", null)
     .not("lng", "is", null);
 
-  if (scope.mode === "workspace") {
-    query = query.eq("workspace_id", scope.workspaceId);
-  } else if (scope.mode === "single") {
-    query = query.eq("id", scope.restaurantId);
-  }
+  const filter = discoveryFilter(scope);
+  if (filter.excludeDemo) query = query.eq("is_demo", false);
+  if (filter.or) query = query.or(filter.or);
 
   const { data, error } = await query;
 

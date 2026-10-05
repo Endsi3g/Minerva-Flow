@@ -41,19 +41,19 @@ export function ProspectsListView({ prospects }: { prospects: Prospect[] }) {
       <table className="w-full text-left text-[13px]">
         <thead>
           <tr className="border-b border-mv-border bg-mv-cream-soft">
-            <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {t("colRestaurant")}
             </th>
-            <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {t("colStatus")}
             </th>
-            <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {t("colEstimatedLoss")}
             </th>
-            <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {t("colViews")}
             </th>
-            <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+            <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {t("colCreatedAt")}
             </th>
           </tr>
@@ -71,7 +71,7 @@ export function ProspectsListView({ prospects }: { prospects: Prospect[] }) {
                     <Store size={14} className="text-mv-ink-faint" /> {p.restaurantName || t("untitled")}
                   </Link>
                   {p.contactName && (
-                    <p className="mt-0.5 pl-[22px] text-[11.5px] text-mv-ink-faint">{p.contactName}</p>
+                    <p className="mt-0.5 pl-[22px] text-[12px] text-mv-ink-faint">{p.contactName}</p>
                   )}
                 </td>
                 <td className="px-4 py-3">

@@ -93,17 +93,17 @@ export function ReviewQueue({ items }: { items: PaidAdsReviewItem[] }) {
                 <p className="text-[13px] font-semibold text-mv-ink">
                   {item.restaurant} · <span className="text-mv-ink-faint">{STATUS_LABELS[item.status]}</span>
                 </p>
-                <p className="mt-1 text-[11px] text-mv-ink-faint">
+                <p className="mt-1 text-[12px] text-mv-ink-faint">
                   {item.contactName} · {item.contactEmail}{item.contactPhone ? ` · ${item.contactPhone}` : ""} · {new Date(item.createdAt).toLocaleString("fr-CA")}
                 </p>
               </div>
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-full bg-mv-green/10 px-2.5 py-1 text-[11px] font-semibold text-mv-green-dark">{BUDGET_LABELS[item.monthlyBudgetRange] ?? item.monthlyBudgetRange}</span>
-            <span className="rounded-full bg-mv-cream-soft px-2.5 py-1 text-[11px] font-medium text-mv-ink-soft">{VOLUME_LABELS[item.weeklyVolumeEstimate] ?? item.weeklyVolumeEstimate}</span>
-            <span className="rounded-full bg-mv-cream-soft px-2.5 py-1 text-[11px] font-medium text-mv-ink-soft">{TIMEFRAME_LABELS[item.desiredStartTimeframe] ?? item.desiredStartTimeframe}</span>
-            {item.hasRunPaidAdsBefore && <span className="rounded-full bg-mv-cream-soft px-2.5 py-1 text-[11px] font-medium text-mv-ink-soft">A déjà fait de la pub</span>}
+            <span className="rounded-full bg-mv-green/10 px-2.5 py-1 text-[12px] font-semibold text-mv-green-dark">{BUDGET_LABELS[item.monthlyBudgetRange] ?? item.monthlyBudgetRange}</span>
+            <span className="rounded-full bg-mv-cream-soft px-2.5 py-1 text-[12px] font-medium text-mv-ink-soft">{VOLUME_LABELS[item.weeklyVolumeEstimate] ?? item.weeklyVolumeEstimate}</span>
+            <span className="rounded-full bg-mv-cream-soft px-2.5 py-1 text-[12px] font-medium text-mv-ink-soft">{TIMEFRAME_LABELS[item.desiredStartTimeframe] ?? item.desiredStartTimeframe}</span>
+            {item.hasRunPaidAdsBefore && <span className="rounded-full bg-mv-cream-soft px-2.5 py-1 text-[12px] font-medium text-mv-ink-soft">A déjà fait de la pub</span>}
           </div>
           <p className="mt-3 whitespace-pre-wrap text-[12.5px] leading-relaxed text-mv-ink-soft">{item.goals}</p>
           <div className="mt-4 flex gap-2">

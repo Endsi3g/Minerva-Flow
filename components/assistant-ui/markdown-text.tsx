@@ -65,7 +65,7 @@ export function MarkdownText() {
           </div>
         ),
         thead: ({ children, ...props }: ComponentPropsWithoutRef<"thead">) => (
-          <thead className="bg-mv-cream-soft border-b border-mv-border text-[11.5px] font-bold uppercase tracking-wider text-mv-ink-soft" {...props}>
+          <thead className="bg-mv-cream-soft border-b border-mv-border text-[12px] font-bold uppercase tracking-wider text-mv-ink-soft" {...props}>
             {children}
           </thead>
         ),

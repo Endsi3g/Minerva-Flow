@@ -170,7 +170,7 @@ export function ServiceQuotesPanel({
           <span className="rounded-xl bg-mv-green/10 p-2 text-mv-green-dark"><Utensils size={17} /></span>
           <div>
             <h2 className="font-serif text-[17px] text-mv-ink">Demandes sur mesure & traiteur</h2>
-            <p className="mt-0.5 text-[11.5px] text-mv-ink-soft">Chiffrez, demandez un acompte et planifiez la production.</p>
+            <p className="mt-0.5 text-[12px] text-mv-ink-soft">Chiffrez, demandez un acompte et planifiez la production.</p>
           </div>
         </div>
         <Badge tone={loadFailed ? "red" : pending.length ? "amber" : "neutral"}>{loadFailed ? "Chargement indisponible" : `${pending.length} à traiter`}</Badge>
@@ -189,12 +189,12 @@ export function ServiceQuotesPanel({
               <span className="rounded-lg bg-white p-2 text-mv-green-dark"><CalendarDays size={16} /></span>
               <div className="min-w-0">
                 <h3 className="text-[13px] font-semibold text-mv-ink">Calendrier de production</h3>
-                <p className="break-words text-[11px] text-mv-ink-faint">Événements à venir · fuseau {restaurantTimezone}</p>
+                <p className="break-words text-[12px] text-mv-ink-faint">Événements à venir · fuseau {restaurantTimezone}</p>
               </div>
             </div>
             <div className="grid w-full grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-1.5 sm:w-auto sm:flex">
               <Button type="button" className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8" variant="ghost" size="sm" aria-label="Semaine précédente" onClick={() => shiftCalendar(-7)}><ChevronLeft size={15} /></Button>
-              <span className="min-w-0 text-center text-[11.5px] font-medium text-mv-ink-soft sm:min-w-[118px]">
+              <span className="min-w-0 text-center text-[12px] font-medium text-mv-ink-soft sm:min-w-[118px]">
                 <span className="sm:hidden">{formatCalendarDay(weekDays[0] ?? selectedDay, restaurantTimezone, { day: "numeric" })}–{formatCalendarDay(weekDays[6] ?? selectedDay, restaurantTimezone, { day: "numeric", month: "short", year: "numeric" })}</span>
                 <span className="hidden sm:inline">{formatCalendarDay(weekDays[0] ?? selectedDay, restaurantTimezone, { day: "numeric", month: "short" })} – {formatCalendarDay(weekDays[6] ?? selectedDay, restaurantTimezone, { day: "numeric", month: "short", year: "numeric" })}</span>
               </span>
@@ -207,15 +207,15 @@ export function ServiceQuotesPanel({
               const count = productionQuotes.filter((quote) => getRestaurantDateKey(quote.event_at!, restaurantTimezone) === day).length;
               const selected = day === selectedDay;
               return <button key={day} type="button" aria-pressed={selected} onClick={() => setSelectedDay(day)} className={`min-w-0 rounded-lg border px-1 py-2 text-center transition-colors ${selected ? "border-mv-green bg-mv-green text-white" : "border-mv-border-soft bg-white text-mv-ink-soft hover:border-mv-green/50"}`}>
-                <span className="block text-[9px] uppercase tracking-wide opacity-75">{formatCalendarDay(day, restaurantTimezone, { weekday: "short" }).replace(".", "")}</span>
+                <span className="block text-[12px] uppercase tracking-wide opacity-75">{formatCalendarDay(day, restaurantTimezone, { weekday: "short" }).replace(".", "")}</span>
                 <span className="mt-0.5 block text-[14px] font-semibold">{Number(day.slice(-2))}</span>
                 <span className={`mx-auto mt-1 block h-1 w-1 rounded-full ${count ? selected ? "bg-white" : "bg-mv-green" : "bg-transparent"}`} aria-label={count ? `${count} événement${count > 1 ? "s" : ""}` : undefined} />
               </button>;
             })}
           </div>
           <div className="mt-3 border-t border-mv-border-soft pt-3">
-            <p className="mb-2 text-[11px] font-semibold text-mv-ink">{formatCalendarDay(selectedDay, restaurantTimezone, { weekday: "long", day: "numeric", month: "long" })}</p>
-            {selectedDayQuotes.length === 0 ? <p className="rounded-lg bg-white/70 px-3 py-3 text-center text-[11.5px] text-mv-ink-faint">{loadFailed ? "Calendrier indisponible tant que les demandes ne sont pas chargées." : "Aucune production planifiée cette journée."}</p> : <div className="space-y-2">
+            <p className="mb-2 text-[12px] font-semibold text-mv-ink">{formatCalendarDay(selectedDay, restaurantTimezone, { weekday: "long", day: "numeric", month: "long" })}</p>
+            {selectedDayQuotes.length === 0 ? <p className="rounded-lg bg-white/70 px-3 py-3 text-center text-[12px] text-mv-ink-faint">{loadFailed ? "Calendrier indisponible tant que les demandes ne sont pas chargées." : "Aucune production planifiée cette journée."}</p> : <div className="space-y-2">
               {selectedDayQuotes.map((quote) => {
                 const orderStatus = quote.order_status;
                 const depositPaidAmount = quote.order_deposit_paid_amount ?? 0;
@@ -231,10 +231,10 @@ export function ServiceQuotesPanel({
                 const nextProductionLabel = orderStatus === "confirmee" ? "Démarrer" : orderStatus === "en_preparation" ? "Marquer prête" : orderStatus === "prete" ? "Terminer" : null;
                 return <article key={quote.id} className="flex flex-col gap-2 rounded-lg border border-mv-border-soft bg-white p-3 sm:flex-row sm:items-center sm:gap-4">
                   <div className="flex min-w-0 flex-1 items-start gap-3">
-                    <span className="mt-0.5 flex shrink-0 items-center gap-1 rounded-md bg-mv-cream-soft px-2 py-1 text-[11px] font-semibold tabular-nums text-mv-ink"><Clock3 size={12} />{formatCalendarTime(quote.event_at!, restaurantTimezone)}</span>
+                    <span className="mt-0.5 flex shrink-0 items-center gap-1 rounded-md bg-mv-cream-soft px-2 py-1 text-[12px] font-semibold tabular-nums text-mv-ink"><Clock3 size={12} />{formatCalendarTime(quote.event_at!, restaurantTimezone)}</span>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5"><span className="truncate text-[12px] font-semibold text-mv-ink">{quote.guest_name}</span><Badge tone={quote.quote_type === "catering" ? "green" : "neutral"}>{quote.quote_type === "catering" ? "Traiteur" : "Sur mesure"}</Badge></div>
-                      <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-mv-ink-faint">
+                      <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-mv-ink-faint">
                         {quote.guest_count && <span className="inline-flex items-center gap-1"><Users size={11} />{quote.guest_count} convives</span>}
                         <span className="inline-flex items-center gap-1"><MapPin size={11} />{quote.fulfillment_mode === "livraison" ? "Livraison" : "Cueillette"}</span>
                         {quote.delivery_address && <span className="max-w-full truncate">{quote.delivery_address}</span>}
@@ -245,8 +245,8 @@ export function ServiceQuotesPanel({
                     <Badge tone={tone}>{statusLabel}</Badge>
                   </div>
                   <div className="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
-                    <span className="text-[10.5px] text-mv-ink-faint">{paymentLabel}{showPaidAmount ? ` · ${formatCurrency(depositPaidAmount)} versé` : ""}</span>
-                    {quote.total != null && <span className="text-[11px] font-mono text-mv-ink-soft">{formatCurrency(quote.total)}</span>}
+                    <span className="text-[12px] text-mv-ink-faint">{paymentLabel}{showPaidAmount ? ` · ${formatCurrency(depositPaidAmount)} versé` : ""}</span>
+                    {quote.total != null && <span className="text-[12px] font-mono text-mv-ink-soft">{formatCurrency(quote.total)}</span>}
                     {nextProductionLabel && <Button type="button" size="sm" variant="secondary" disabled={statusBusyId === quote.id} onClick={() => void advanceProduction(quote)}>{orderStatus === "confirmee" ? <CookingPot size={13} /> : <Check size={13} />}{statusBusyId === quote.id ? "Mise à jour…" : nextProductionLabel}</Button>}
                   </div>
                 </article>;
@@ -263,13 +263,13 @@ export function ServiceQuotesPanel({
                     <p className="font-semibold text-mv-ink">{quote.guest_name}</p>
                     <Badge tone="amber">{quote.quote_type === "catering" ? "Traiteur" : "Repas sur mesure"}</Badge>
                   </div>
-                  <p className="mt-1 text-[11.5px] text-mv-ink-soft">{quote.guest_email} · {quote.guest_phone ?? "Téléphone non fourni"}</p>
-                  <p className="mt-1 text-[11.5px] text-mv-ink-soft">{quote.event_at ? new Intl.DateTimeFormat("fr-CA", { dateStyle: "medium", timeStyle: "short", timeZone: restaurantTimezone }).format(new Date(quote.event_at)) : "Date à confirmer"} · {quote.guest_count ? `${quote.guest_count} convives · ` : ""}{quote.fulfillment_mode === "livraison" ? "Livraison" : "Cueillette"}</p>
+                  <p className="mt-1 text-[12px] text-mv-ink-soft">{quote.guest_email} · {quote.guest_phone ?? "Téléphone non fourni"}</p>
+                  <p className="mt-1 text-[12px] text-mv-ink-soft">{quote.event_at ? new Intl.DateTimeFormat("fr-CA", { dateStyle: "medium", timeStyle: "short", timeZone: restaurantTimezone }).format(new Date(quote.event_at)) : "Date à confirmer"} · {quote.guest_count ? `${quote.guest_count} convives · ` : ""}{quote.fulfillment_mode === "livraison" ? "Livraison" : "Cueillette"}</p>
                   <p className="mt-2 whitespace-pre-wrap text-[12px] leading-relaxed text-mv-ink">{quote.description}</p>
-                  {quote.client_notes && <p className="mt-1 text-[11.5px] text-mv-ink-faint">Note du client : {quote.client_notes}</p>}
-                  {quote.delivery_address && <p className="mt-1 text-[11.5px] text-mv-ink-faint">Adresse : {quote.delivery_address}</p>}
+                  {quote.client_notes && <p className="mt-1 text-[12px] text-mv-ink-faint">Note du client : {quote.client_notes}</p>}
+                  {quote.delivery_address && <p className="mt-1 text-[12px] text-mv-ink-faint">Adresse : {quote.delivery_address}</p>}
                 </div>
-                    <span className="shrink-0 text-[11px] font-semibold text-mv-green-dark">{expandedId === quote.id ? "Fermer" : quote.status === "requested" ? "Chiffrer" : "Renvoyer"}</span>
+                    <span className="shrink-0 text-[12px] font-semibold text-mv-green-dark">{expandedId === quote.id ? "Fermer" : quote.status === "requested" ? "Chiffrer" : "Renvoyer"}</span>
               </button>
               {expandedId === quote.id && (
                 <div className="mt-4 space-y-3 border-t border-mv-border-soft pt-4">
@@ -293,7 +293,7 @@ export function ServiceQuotesPanel({
                     Total estimé : <strong className="text-mv-ink">{quoteTotals ? formatCurrency(quoteTotals.total) : "—"}</strong>
                     <span className="ml-3">Acompte : <strong className="text-mv-green-dark">{quoteTotals ? formatCurrency(quoteTotals.depositAmount) : "—"}</strong></span>
                   </div>
-                  {!canIssueQuote && quoteAttempted && <p role="status" className="text-[11px] text-mv-red">Vérifiez les postes, les quantités, les montants et l’acompte. Un devis accepte jusqu’à 50 postes.</p>}
+                  {!canIssueQuote && quoteAttempted && <p role="status" className="text-[12px] text-mv-red">Vérifiez les postes, les quantités, les montants et l’acompte. Un devis accepte jusqu’à 50 postes.</p>}
                   <div className="flex justify-end">
                     <Button type="button" onClick={() => void issue(quote)} disabled={busyId === quote.id}>
                       <Send size={14} /> {busyId === quote.id ? "Envoi…" : "Envoyer le devis et le lien d’acompte"}
@@ -304,7 +304,7 @@ export function ServiceQuotesPanel({
             </div>
           ))}
           {active.length > 0 && <div className="space-y-2 border-t border-mv-border-soft pt-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Historique</p>
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Historique</p>
             {active.slice(0, 8).map((quote) => {
               const link = links[quote.id] ?? quote.checkout_url;
               return <div key={quote.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-mv-cream-soft/60 px-3 py-2 text-[12px]">

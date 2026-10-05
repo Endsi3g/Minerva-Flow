@@ -131,7 +131,7 @@ function BrandSettingsCard({
         <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft p-3">
           <div className="flex items-center gap-2 text-[12px] font-semibold text-mv-ink-soft"><Palette size={14} /> Aperçu</div>
           <p className="mt-2 font-display text-lg" style={{ color: draft.secondaryColor }}>{draft.brandName || "Votre marque"}</p>
-          <span className="mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ backgroundColor: draft.primaryColor, color: "#fff" }}>Action principale</span>
+          <span className="mt-2 inline-block rounded-full px-2.5 py-1 text-[12px] font-bold" style={{ backgroundColor: draft.primaryColor, color: "#fff" }}>Action principale</span>
         </div>
         <Field label="Police des titres"><Select value={draft.headingFont} onChange={(event) => update("headingFont", event.target.value as WorkspaceBrandingInput["headingFont"])}>{BRAND_HEADING_FONTS.map((font) => <option key={font} value={font}>{fontLabels[font]}</option>)}</Select></Field>
         <Field label="Police de l’interface"><Select value={draft.bodyFont} onChange={(event) => update("bodyFont", event.target.value as WorkspaceBrandingInput["bodyFont"])}>{BRAND_BODY_FONTS.map((font) => <option key={font} value={font}>{fontLabels[font]}</option>)}</Select></Field>
@@ -151,7 +151,7 @@ function BrandSettingsCard({
         <div className="mt-5 rounded-xl border border-mv-border bg-mv-cream-soft p-4">
           <p className="text-[13px] font-semibold text-mv-ink">Vérifier {domainVerification.domain}</p>
           <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">Ajoutez cet enregistrement TXT à ce sous-domaine chez votre fournisseur DNS, puis lancez la vérification. L’activation de l’hébergement du domaine reste contrôlée côté plateforme.</p>
-          <code className="mt-3 block overflow-x-auto rounded-lg bg-mv-ink px-3 py-2 text-[11px] text-mv-cream-soft">minerva-flow-verification={domainVerification.token}</code>
+          <code className="mt-3 block overflow-x-auto rounded-lg bg-mv-ink px-3 py-2 text-[12px] text-mv-cream-soft">minerva-flow-verification={domainVerification.token}</code>
           <Button className="mt-3" size="sm" variant="secondary" onClick={verifyDomain} disabled={verifyingDomain} loading={verifyingDomain}>Vérifier le TXT</Button>
         </div>
       )}
@@ -355,7 +355,7 @@ export function WorkspaceView({
                   <Avatar name={m.name} src={m.avatarUrl} size={30} />
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-semibold text-mv-ink">{m.name}</p>
-                    <p className="truncate text-[11.5px] text-mv-ink-faint">
+                    <p className="truncate text-[12px] text-mv-ink-faint">
                       {m.restaurantNames.length > 0 ? m.restaurantNames.join(", ") : "Aucun établissement assigné"}
                     </p>
                   </div>
@@ -389,7 +389,7 @@ export function WorkspaceView({
                         {roleLabels[invite.role]} · {formatRelativeTime(invite.createdAt)}
                       </p>
                       {invite.redeemedByEmail && (
-                        <p className="text-[11.5px] text-mv-ink-faint">Rejoint par {invite.redeemedByEmail}</p>
+                        <p className="text-[12px] text-mv-ink-faint">Rejoint par {invite.redeemedByEmail}</p>
                       )}
                     </div>
                   </div>

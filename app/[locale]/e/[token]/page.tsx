@@ -54,7 +54,7 @@ export default async function SharedExpensePage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        <p className="mt-8 text-[11.5px] text-mv-ink-faint">
+        <p className="mt-8 text-[12px] text-mv-ink-faint">
           Lien généré via Minerva Flow — mis à jour au moment de sa création, pas en temps réel.
         </p>
       </div>

@@ -107,17 +107,17 @@ export function ReferralSettingsTab() {
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-lg bg-mv-cream-soft p-2.5 text-center">
               <p className="font-display text-[17px] font-medium text-mv-ink">{summary.pendingCount}</p>
-              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">En attente</p>
+              <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">En attente</p>
             </div>
             <div className="rounded-lg bg-mv-cream-soft p-2.5 text-center">
               <p className="font-display text-[17px] font-medium text-mv-ink">{summary.activeCount}</p>
-              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">Actifs</p>
+              <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Actifs</p>
             </div>
             <div className="rounded-lg bg-mv-cream-soft p-2.5 text-center">
               <p className="font-display text-[17px] font-medium text-mv-ink">
                 {summary.freeMonthsApplied}
               </p>
-              <p className="text-[10.5px] font-semibold uppercase text-mv-ink-faint">Mois gratuits</p>
+              <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Mois gratuits</p>
             </div>
           </div>
         )}

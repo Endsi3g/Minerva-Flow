@@ -1,7 +1,20 @@
 # HANDOFF & DOSSIER DE VÉRIFICATION — MINERVA FLOW
 
 > **Base historique** : 2.36.0 — clôture de sprint du 15 septembre 2026.
-> **État produit actualisé** : 26 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
+> **État produit actualisé** : 26 septembre 2026. Les sections historiques plus bas décrivent leur date de session et ne remplacent pas le [guide produit propriétaire et client](docs/product/PRODUCT_GUIDE_OWNER_CLIENT.md), ni les rapports de vérification les plus récents.
+
+## Reprise — 2026-10-03 (branche `feat/team-portal-and-native-account-uplift`)
+
+- **Contenu** : portail `/equipe` (web + iOS), refonte du Compte client iOS, sous-pages Réglages web, NFC (lecture + programmation), carte Mains Magique, journalisation `AppLog`. Rien n’est publié; aucun commit n’avait été fait avant cette reprise.
+- **Vérifié** : `tsc` 0 erreur; 5 tests `NFCTagURLTests` passent; build iOS simulateur. **Non vérifié** : rendu visuel au simulateur de ces phases, parcours `/equipe` de bout en bout (les clés locales Supabase renvoient 401, voir mémoire), NFC sur appareil réel.
+- **Bloquant avant archive/installation** : aucun profil de signature installé n’inclut `com.apple.developer.nfc.readersession.formats`. Procédure : `docs/mobile/NFC_AND_SIGNING.md`.
+- **Audit App Store** (`app-store-compliance-guard.sh native/ios`, 2026-10-03) : 0 critique, 0 élevé, 3 moyens (polices à taille fixe, Réduire les animations, questionnaire d’âge 2026). Les trois alertes précédentes étaient des détections textuelles; corrigées en retirant le mot « Stripe » de l’UI native (paiement et versements ouvrent le web), en nommant `Config.privacyPolicyURL` et en centralisant le contact support (`SupportContact`, plus de `mailto:` en dur). La suppression de compte native existait déjà (`DeleteAccountSheet`). Cet audit n’est pas une soumission : les 3 avertissements moyens restent à traiter.
+- **Base de données** : migrations `0168`–`0171` consignées (renumérotées), `is_demo` posé sur « Minerva Flow » et le « Mon restaurant » du fondateur, compte démo `dev-test@minervaflow.app` rattaché à 11 restaurants démo. Voir `supabase/migrations/README.md`.
+- **Changelog par audience** : migration `0172` appliquée (colonne `audience`, défaut `owner`). Aucune entrée client n’est publiée : la rédiger et la publier fait partie de l’étape de sortie, après vérification du build déployé. Les écrans iOS (client : `ClientUpdatesView`; propriétaire : `NativeChangelogView(audience: "owner")`) affichent un état vide propre en attendant.
+- **Installation sur téléphone** : build de test installé sur l’iPhone « YourBel » sans l’entitlement NFC (le profil de développement ne l’inclut pas), le fichier du dépôt est inchangé. Le NFC ne fonctionne pas dans cette installation.
+- **Hors commit, à revoir** (autre session, SEO/blog) : titres des 15 pages `(app)` remplacés par du français en dur (perte de la traduction `breadcrumb` en EN/TR) sur des pages `noindex`; `0167_blog_posts.sql` non appliquée; `lib/blog`, `feed.xml`, `robots`, `sitemap`, `llms*.txt` non commités.
+- **Partage de résultats (phase 18)** : `/campaigns/resultats` (propriétaires) et `/equipe/partager` (équipe). Rendu et vidéo vérifiés dans Chromium; pages non testées avec un compte réel. Détails : `docs/engineering/SHARE_RESULTS.md`.
+- **À décider** : offres Mains Magique (conseils fournis, rien créé), clés PostHog et GitHub optionnelles, contenu du GTM (chiffres non mesurés), commission « récurrente » vs première facture.
 
 ## Vérification de reprise — 2026-09-26
 
@@ -24,7 +37,7 @@
 
 ### Reprise des blocages — état confirmé après changement concurrent
 
-- L’écran `/en/login` a été corrigé : toutes les chaînes Auth et le panneau de présentation utilisent maintenant les messages anglais; `/fr/login` conserve les messages français. Playwright/Chromium cache 1.63 a vérifié les deux tailles (1440×900 et 390×844), sans erreur JavaScript ni débordement. Captures : `docs/screenshots/auth-login-en-2026-09-25-desktop.png` et `...-mobile.png`.
+- L’écran `/en/login` a été corrigé : toutes les chaînes Auth et le panneau de présentation utilisent maintenant les messages anglais; `/fr/login` conserve les messages français. Playwright/Chromium cache 1.63 a vérifié les deux tailles (1440×900 et 390×844), sans erreur JavaScript ni débordement. Captures : `docs/screenshots/auth/auth-login-en-2026-09-25-desktop.png` et `...-mobile.png`.
 - La suite Vitest complète passe à nouveau : 335/335 tests, 58 fichiers; `npx tsc --noEmit` et ESLint ciblé passent. Deux assertions préexistantes ont été adaptées à `price_option_id: null` pour les lignes sans option tarifaire.
 - POS/Connect ciblés : 40/40 tests unitaires passent. Ils couvrent les adaptateurs/mappings, mais pas une transaction POS réelle. Le staging n’a aucune connexion Connect Stripe enregistrée; `.env.test.local` ne contient pas de secrets sandbox Square/Clover/Toast, donc le paiement Connect et les E2E POS réels restent impossibles à confirmer. Les secrets fournisseur de `.env.local` n’ont pas été utilisés.
 - Schéma vérifié : production a `menu_items.price_options` (0151, journal `20260925184354`) et les quatre colonnes 0150. Migration `0150_restaurant_connect_v2` appliquée en production, journal `20260925191042`; vérification PostgREST réussie et 106 restaurants ont les valeurs par défaut compatibles (`v1`, `unrequested`, `0`). Sur le staging autorisé, les colonnes 0150 existent, tandis que `menu_items.price_options` est encore absente.
@@ -427,7 +440,7 @@ L’application SwiftUI utilise un seul bundle et dirige chaque compte vers une 
 - Le compte propriétaire natif est livré comme une tranche opérationnelle; ne pas lui attribuer les écrans/alertes de la roadmap non implémentés.
 - La livraison dynamique au tarif par distance/temps, Android white-label et l’automatisation d’une app par restaurant restent à traiter comme objectifs, sauf validation d’un déploiement spécifique.
 
-Voir [`docs/MOBILE_APP_AUDIT_AND_ROADMAP.md`](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md) pour les contrôles requis avant diffusion.
+Voir [`docs/mobile/MOBILE_APP_AUDIT_AND_ROADMAP.md`](docs/mobile/MOBILE_APP_AUDIT_AND_ROADMAP.md) pour les contrôles requis avant diffusion.
 
 ---
 

@@ -32,7 +32,7 @@ function normalizeItemName(name: string): string {
 function ProviderBadge({ provider }: { provider: CatalogPosProvider }) {
   const Icon = provider === "square" ? Square : Clover;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[11px] font-medium text-mv-ink">
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-mv-cream-soft px-2 py-0.5 text-[12px] font-medium text-mv-ink">
       <Icon width={13} height={13} />
       {provider === "square" ? "Square" : "Clover"}
     </span>
@@ -218,7 +218,7 @@ export function PosInventoryMappingCard({
                 {linkedCount} associé{linkedCount > 1 ? "s" : ""}
               </Badge>
             )}
-            <Button size="sm" variant="secondary" onClick={handleResync} disabled={resyncing} className="text-[11.5px]">
+            <Button size="sm" variant="secondary" onClick={handleResync} disabled={resyncing} className="text-[12px]">
               <RefreshCw size={13} className={cn(resyncing && "animate-spin")} />
               Resynchroniser tout
             </Button>
@@ -283,7 +283,7 @@ export function PosInventoryMappingCard({
                     <ProviderBadge provider={row.provider} />
                     <span className="truncate text-[13.5px] font-semibold text-mv-ink">{row.name}</span>
                   </div>
-                  <p className="mt-0.5 text-[11px] font-mono text-mv-ink-faint">ID: {row.externalId}</p>
+                  <p className="mt-0.5 text-[12px] font-mono text-mv-ink-faint">ID: {row.externalId}</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 sm:justify-end">
@@ -291,7 +291,7 @@ export function PosInventoryMappingCard({
                     <div className="flex items-center gap-2">
                       <div className="rounded-lg bg-mv-cream-soft px-3 py-1 text-right">
                         <span className="text-[12.5px] font-medium text-mv-ink">{row.mapping.inventoryItem.name}</span>
-                        <span className="ml-2 font-mono text-[11.5px] font-semibold text-mv-green-dark">
+                        <span className="ml-2 font-mono text-[12px] font-semibold text-mv-green-dark">
                           {row.mapping.inventoryItem.quantityOnHand} {row.mapping.inventoryItem.unit}
                         </span>
                       </div>

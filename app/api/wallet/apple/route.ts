@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { isAppleWalletConfigured } from "@/lib/wallet/config";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { resolveNativeUserId } from "@/lib/auth/native-bearer";
+import { getLoyaltyTier, loyaltyTierLabel } from "@/lib/loyalty-tiers";
 import { buildAppleLoyaltyPass } from "@/lib/wallet/apple-wallet";
 
 /**
@@ -14,10 +17,10 @@ import { buildAppleLoyaltyPass } from "@/lib/wallet/apple-wallet";
  */
 export async function GET(request: Request) {
   if (!isAppleWalletConfigured()) {
+    console.warn("[Apple Wallet] missing APPLE_WALLET_* certificate settings");
     return NextResponse.json(
       {
-        error:
-          "Apple Wallet n'est pas encore configuré. Un compte Apple Developer Program et un certificat Pass Type ID sont requis — voir lib/wallet/config.ts.",
+        error: "L'ajout à Apple Wallet n'est pas encore disponible.",
         code: "WALLET_NOT_CONFIGURED",
       },
       { status: 503 }
@@ -27,11 +30,24 @@ export async function GET(request: Request) {
   const customerId = new URL(request.url).searchParams.get("customerId");
   if (!customerId) return NextResponse.json({ error: "customerId requis." }, { status: 400 });
 
+  // The iOS app calls this with a Bearer token, the web portal with its session cookie.
+  let userId = await resolveNativeUserId(request);
+  if (!userId) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    userId = user?.id ?? null;
+  }
+  if (!userId) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+
+  // Only the card's own holder can download it: never trust the customerId alone.
   const admin = createAdminClient();
   const { data: customer, error } = await admin
     .from("customers")
-    .select("id, name, loyalty_points, restaurant_id, restaurants(name)")
+    .select("id, name, phone, loyalty_points, total_spent, restaurant_id, restaurants(name, loyalty_tier_2_threshold, loyalty_tier_3_threshold)")
     .eq("id", customerId)
+    .eq("user_id", userId)
     .maybeSingle();
   if (error || !customer) return NextResponse.json({ error: "Carte fidélité introuvable." }, { status: 404 });
 
@@ -40,9 +56,15 @@ export async function GET(request: Request) {
     const pass = buildAppleLoyaltyPass({
       customerId: customer.id,
       customerName: customer.name || "Membre Minerva Flow",
+      customerPhone: customer.phone,
       restaurantName: restaurant?.name || "Minerva Flow",
       points: Number(customer.loyalty_points || 0),
-      tierLabel: "Membre",
+      tierLabel: loyaltyTierLabel[
+        getLoyaltyTier(Number(customer.total_spent || 0), {
+          tier2: restaurant?.loyalty_tier_2_threshold ?? 150,
+          tier3: restaurant?.loyalty_tier_3_threshold ?? 400,
+        })
+      ],
       portalUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://minervaflow.app"}/portal`,
     });
     return new NextResponse(pass as unknown as BodyInit, {

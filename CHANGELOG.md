@@ -11,7 +11,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Les membres sans récompense fidélité active reçoivent un conseil de configuration, sans activer de récompense automatiquement.
 - L’actualisation des recommandations utilise le moteur de règles vérifiables pendant que l’enrichissement IA est suspendu; les données et sources seront consolidées avant son retour.
 - La page Valeur client affiche la LTV combinée comme LTV revenu + LTV marge estimée, ainsi que les deux composantes et le CAC basé sur publicité, commissions, agence, promotions et équipement. La LTV marge et la somme combinée restent « à confirmer » si les coûts matière ou les volumes vendus manquent.
-- Aperçus du panneau de recommandations avec données synthétiques : [ordinateur](docs/screenshots/recommendations-menu-desktop-2026-09-28.png) · [mobile](docs/screenshots/recommendations-menu-mobile-2026-09-28.png).
+- Aperçus du panneau de recommandations avec données synthétiques : [ordinateur](docs/screenshots/menu-recommendations/recommendations-menu-desktop-2026-09-28.png) · [mobile](docs/screenshots/menu-recommendations/recommendations-menu-mobile-2026-09-28.png).
 - Les annonces par courriel de cette release utilisent le segment des contacts actifs ayant explicitement choisi les mises à jour produit. Les destinataires peuvent se désabonner; l’avis comprend l’adresse postale de Minerva Technologies Inc.
 
 ## 2026-09-28 — Synchronisation temps réel web et iOS
@@ -21,6 +21,20 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - L’application iOS/iPad réutilise le SDK Supabase pour synchroniser les espaces propriétaire et client. Elle suspend le socket en arrière-plan, recharge au retour, et montre l’état de la connexion.
 - Les notifications hors app utilisent l’envoi APNs existant en plus de Web Push. Le jeton iOS est réassocié à la session à la connexion et retiré du compte lors de la déconnexion; un tap ouvre l’onglet natif lié.
 - La migration `0166_app_realtime_publication.sql` a été appliquée en production : 25 tables métier avec RLS sont publiées pour Realtime; les tables de jetons d’appareil et d’authentification restent exclues de cette migration.
+
+## [À venir] — Portail équipe, Compte client, tags NFC
+
+- Nouveau portail `/equipe` (web et iOS) pour l’équipe et les ambassadeurs : indicateurs internes réservés à l’équipe, entonnoir GTM, objectifs du mois, Académie, profils de membres. Les ambassadeurs ne voient jamais les revenus. Voir `docs/engineering/TEAM_PORTAL.md`.
+- Application iOS client : onglet Compte réorganisé en sous-pages (mes commandes, historique des points, paramètres, aide), Accueil avec statistiques et graphique, correctifs d’interface (cœur des favoris, sélecteur de langue, champs de suggestion).
+- Lecture des tags NFC des restaurants (client) et programmation de tags (propriétaire); seuls les liens `minervaflow.app/t/…` et `/p/…` sont suivis. L’activation exige la capacité NFC sur l’identifiant d’app (`docs/mobile/NFC_AND_SIGNING.md`).
+- Réglages web répartis en sous-pages (`/settings`, `/settings/alertes`, `/settings/parrainage`, `/settings/securite`, `/settings/apparence`) au lieu d’onglets.
+- Paiement en ligne et versements des ambassadeurs : l’application iOS ouvre le web; plus aucun flux de paiement natif.
+- Nouvelle page client « Nouveautés » (Compte › Nouveautés) : une liste courte des changements qui concernent les clients seulement. Le journal des mises à jour porte désormais une audience (`owner`, `client`, `all`) : les entrées existantes restent réservées aux propriétaires, une entrée client se publie volontairement. Les propriétaires retrouvent l’historique complet dans Gestion › Mises à jour.
+- Nouveau « Partager mes résultats » : visuel (story ou publication) ou courte vidéo animée avec les vrais chiffres du restaurant, à publier sur les réseaux; l’équipe a la même chose pour Minerva Flow. Aucun zéro n’est présenté comme un succès, rien de financier n’est proposé. Voir `docs/engineering/SHARE_RESULTS.md`.
+- La carte de fidélité du niveau Ambassadeur redevient verte (vert forêt) au lieu du lime.
+- Journalisation iOS via `os.Logger` (détails masqués en production); l’adresse du destinataire n’est plus écrite dans les logs d’alerte critique.
+- Mains Magique : fiche et position Google Maps renseignées (Repentigny), forfait Marque blanche.
+- Statut : en cours de développement sur la branche `feat/team-portal-and-native-account-uplift`; rien n’est publié ni disponible tant que le build et le déploiement correspondants n’ont pas été vérifiés.
 
 ## [À venir] — Espace Owner iPad/macOS, Google Business Profile et campagnes
 
@@ -119,8 +133,8 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 - Reprise Playwright ciblée sur les parcours précommande et production traiteur : 2/2 réussis avec le bac à sable Stripe activé; le parcours précommande testé choisit le paiement à la cueillette et ne débite pas.
 - La clé Stripe fournie a été confirmée en mode test sur la plateforme Connect. Le test d’un compte destinataire synthétique révèle qu’aucun compte connecté de test n’a les virements actifs; Stripe refuse le PaymentIntent avec `insufficient_capabilities_for_transfer`. Le paiement en ligne Connect reste non validé; ne pas présenter le checkout complet comme testé.
 - Le harnais E2E n’hérite plus d’une clé Stripe publiable live : seule `E2E_TEST_STRIPE_PUBLISHABLE_KEY` (préfixe `pk_test_`) est exposée au navigateur, ou la clé est vide.
-- Le succès de précommande a été inspecté à 390 px; aucune largeur horizontale parasite. Captures : [`précommande mobile`](docs/screenshots/changelog-2.48.0-preorder-success-mobile.png) et [`traiteur desktop`](docs/screenshots/changelog-2.48.0-catering-success.png).
-- Chromium est opérationnel via le binaire headless Playwright 1.63 déjà présent dans le cache. Après correction de la localisation Auth, vérification visuelle locale 1440×900 et 390×844 sans overflow ni `pageerror`; captures : [`anglais bureau`](docs/screenshots/auth-login-en-2026-09-25-desktop.png), [`anglais mobile`](docs/screenshots/auth-login-en-2026-09-25-mobile.png). Les anciennes captures Preview sont conservées séparément.
+- Le succès de précommande a été inspecté à 390 px; aucune largeur horizontale parasite. Captures : [`précommande mobile`](docs/screenshots/changelog/changelog-2.48.0-preorder-success-mobile.png) et [`traiteur desktop`](docs/screenshots/changelog/changelog-2.48.0-catering-success.png).
+- Chromium est opérationnel via le binaire headless Playwright 1.63 déjà présent dans le cache. Après correction de la localisation Auth, vérification visuelle locale 1440×900 et 390×844 sans overflow ni `pageerror`; captures : [`anglais bureau`](docs/screenshots/auth/auth-login-en-2026-09-25-desktop.png), [`anglais mobile`](docs/screenshots/auth/auth-login-en-2026-09-25-mobile.png). Les anciennes captures Preview sont conservées séparément.
 - Nouvelle tentative de trois E2E staging : 0/3 réussis, échecs avant assertions métier (`/login` et `/workspace` expirent; un démarrage Chromium dépasse son délai). Traces locales dans `test-results/`, non commitées; ne pas considérer ces parcours comme validés.
 - État final du schéma production : `restaurants.delivery_enabled`, `orders.delivery_address`, `menu_items.price_options` (0151) et les quatre colonnes Stripe 0150 sont présentes. 0150 a été appliquée le 2026-09-25 et vérifiée via PostgREST; les 106 restaurants existants gardent `v1`, `unrequested` et `0` par défaut. Cette migration seule ne constitue pas une promotion applicative.
 - Vérification Paramètres/Stripe : après une reprise initiale bloquée avant connexion, l’E2E Playwright a réussi avec le garde de rôle final (`1/1`) et confirme la carte et son CTA sur desktop/mobile. Le fixture synthétique et son utilisateur sont absents du staging après nettoyage.
@@ -189,7 +203,7 @@ Tous les changements notables apportés à Minerva Flow sont documentés dans ce
 ### Statut de publication
 - Le web correspondant au commit `2b8c4cc` est déployé en production Vercel.
 - Le build iOS `1.0 (11)` est archivé et exporté, mais **n’est pas téléversé sur TestFlight**; une authentification App Store Connect reste nécessaire. Ne pas annoncer sa disponibilité TestFlight avant vérification du traitement Apple.
-- Détails : [`docs/PRODUCT_GUIDE_OWNER_CLIENT.md`](docs/PRODUCT_GUIDE_OWNER_CLIENT.md) et [`docs/MOBILE_APP_AUDIT_AND_ROADMAP.md`](docs/MOBILE_APP_AUDIT_AND_ROADMAP.md).
+- Détails : [`docs/product/PRODUCT_GUIDE_OWNER_CLIENT.md`](docs/product/PRODUCT_GUIDE_OWNER_CLIENT.md) et [`docs/mobile/MOBILE_APP_AUDIT_AND_ROADMAP.md`](docs/mobile/MOBILE_APP_AUDIT_AND_ROADMAP.md).
 
 ## [v2.46.0] - 2026-09-20
 

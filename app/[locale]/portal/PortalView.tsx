@@ -1,5 +1,6 @@
 "use client";
 
+import { AddToWalletButtons } from "@/components/portal/AddToWalletButtons";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -38,6 +39,7 @@ import {
   exportMyDataAction,
   toggleFavoriteAction,
 } from "./actions";
+import { AppInstallPrompt } from "./AppInstallPrompt";
 import {
   Copy,
   Check,
@@ -116,10 +118,6 @@ function LoyaltyWalletCard({
   const tier = getLoyaltyTier(totalSpent, thresholds);
   const { icon: Icon } = loyaltyTierBadge[tier];
 
-  function handleUnavailableWallet(platform: string) {
-    toast.info(`Ajout à ${platform} bientôt disponible — le restaurant doit d'abord l'activer.`);
-  }
-
   const prevTarget = tier === "ambassadeur" ? thresholds.tier3 : tier === "privilegie" ? thresholds.tier2 : 0;
   const nextTarget = tier === "habitue" ? thresholds.tier2 : tier === "privilegie" ? thresholds.tier3 : null;
   const progress = nextTarget ? Math.min(1, Math.max(0, (totalSpent - prevTarget) / (nextTarget - prevTarget))) : 1;
@@ -128,7 +126,7 @@ function LoyaltyWalletCard({
     <div className={`overflow-hidden rounded-3xl p-6 shadow-mv-lg ${walletTierBg[tier]}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide opacity-70">{t("points")}</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wide opacity-70">{t("points")}</p>
           <p className="mt-1 font-display text-[44px] font-medium leading-none tabular-nums">{points}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[12px] font-semibold">
@@ -141,7 +139,7 @@ function LoyaltyWalletCard({
           <div className="h-1.5 overflow-hidden rounded-full bg-white/20">
             <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.max(4, progress * 100)}%` }} />
           </div>
-          <p className="mt-1.5 text-[11.5px] opacity-80">
+          <p className="mt-1.5 text-[12px] opacity-80">
             {formatCurrency(Math.max(0, nextTarget - totalSpent))} avant le palier suivant
           </p>
         </div>
@@ -162,40 +160,7 @@ function LoyaltyWalletCard({
         <UtensilsCrossed size={16} /> {t("homeOrderCta")}
       </button>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {googleWalletEnabled ? (
-          <a
-            href={`/api/wallet/google?customerId=${customerId}`}
-            className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11.5px] font-semibold transition-colors hover:bg-white/25"
-          >
-            <Smartphone size={13} /> Google Wallet
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={() => handleUnavailableWallet("Google Wallet")}
-            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11.5px] font-semibold opacity-70 transition-colors hover:opacity-90"
-          >
-            <Smartphone size={13} /> Google Wallet
-          </button>
-        )}
-        {appleWalletEnabled ? (
-          <a
-            href={`/api/wallet/apple?customerId=${customerId}`}
-            className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11.5px] font-semibold transition-colors hover:bg-white/25"
-          >
-            <Smartphone size={13} /> Apple Wallet
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={() => handleUnavailableWallet("Apple Wallet")}
-            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11.5px] font-semibold opacity-70 transition-colors hover:opacity-90"
-          >
-            <Smartphone size={13} /> Apple Wallet
-          </button>
-        )}
-      </div>
+      <AddToWalletButtons customerId={customerId} appleEnabled={appleWalletEnabled} googleEnabled={googleWalletEnabled} />
     </div>
   );
 }
@@ -369,7 +334,7 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         </div>
 
         <div>
-          <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Courriel</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Courriel</p>
           {emailStatus === "sent" ? (
             <div className="flex items-start gap-2 rounded-lg bg-mv-green-tint px-3 py-2.5 text-[12.5px] text-mv-green-darker">
               <Mail size={14} className="mt-0.5 shrink-0" />
@@ -437,8 +402,8 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
         </label>
 
         <div>
-          <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Fréquence des messages</p>
-          <RadioGroup value={notificationFrequency} onValueChange={(value) => setNotificationFrequency(value as "all" | "important_only")} className="space-y-1.5">
+          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Fréquence des messages</p>
+          <RadioGroup value={notificationFrequency} onValueChange={(value) => setNotificationFrequency(value as "all" | "important_only" | "frequent")} className="space-y-1.5">
             <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
               <RadioGroupItem value="all" className="mt-0.5" />
               <span>Tous les messages — rappels, récompenses et anniversaire.</span>
@@ -447,11 +412,15 @@ function ProfileSettingsCard({ customer }: { customer: Customer }) {
               <RadioGroupItem value="important_only" className="mt-0.5" />
               <span>Seulement l&apos;essentiel — récompenses et anniversaire, sans les rappels.</span>
             </label>
+            <label className="flex items-start gap-2 text-[12.5px] text-mv-ink">
+              <RadioGroupItem value="frequent" className="mt-0.5" />
+              <span>Fréquent — jusqu&apos;à 2 notifications par jour, entre 9 h et 20 h, avec des messages variés. Vous pouvez changer à tout moment.</span>
+            </label>
           </RadioGroup>
         </div>
 
         <div>
-          <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Notifications sur cet appareil</p>
+          <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Notifications sur cet appareil</p>
           <CustomerPushToggle restaurantId={customer.restaurantId} />
         </div>
 
@@ -588,7 +557,7 @@ function DangerZoneCard() {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-semibold text-mv-red">Supprimer mon compte</p>
-          <p className="flex items-center gap-1 text-[11.5px] text-mv-ink-faint">
+          <p className="flex items-center gap-1 text-[12px] text-mv-ink-faint">
             <AlertTriangle size={11} /> Action irréversible
           </p>
         </div>
@@ -755,7 +724,7 @@ function ReferralProgramCard({
           </div>
 
           <div className="flex items-center gap-2 rounded-xl border border-mv-border-soft bg-mv-cream-soft px-3 py-2">
-            <span className="flex-1 truncate font-mono text-[11.5px] text-mv-ink-soft">{shareUrl}</span>
+            <span className="flex-1 truncate font-mono text-[12px] text-mv-ink-soft">{shareUrl}</span>
             <button
               onClick={handleCopy}
               className="shrink-0 text-mv-ink-faint hover:text-mv-ink transition-colors p-1.5"
@@ -843,7 +812,7 @@ function RewardsRedeemCard({
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium text-mv-ink">{reward.name}</p>
                   {reward.description && (
-                    <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">{reward.description}</p>
+                    <p className="mt-0.5 text-[12px] text-mv-ink-faint">{reward.description}</p>
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -963,7 +932,7 @@ function OffersFeed({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold text-mv-green-darker">{offer.title}</p>
-                  {offer.description && <p className="truncate text-[11.5px] text-mv-green-dark">{offer.description}</p>}
+                  {offer.description && <p className="truncate text-[12px] text-mv-green-dark">{offer.description}</p>}
                 </div>
               </button>
               <button
@@ -1023,7 +992,7 @@ function MenuBrowserCard({
     <div className="space-y-5">
       {Array.from(byCategory.entries()).map(([category, items]) => (
         <div key={category}>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">{category}</p>
+          <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{category}</p>
           <div className="space-y-2">
             {items.map((item) => {
               const qty = cart[item.id] ?? 0;
@@ -1046,7 +1015,7 @@ function MenuBrowserCard({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-medium text-mv-ink">{item.name}</p>
                     {item.description && (
-                      <p className="truncate text-[11.5px] text-mv-ink-faint">{item.description}</p>
+                      <p className="truncate text-[12px] text-mv-ink-faint">{item.description}</p>
                     )}
                     <span className="text-[12.5px] font-semibold text-mv-ink">{formatCurrency(item.price)}</span>
                   </div>
@@ -1316,9 +1285,9 @@ function CheckoutModal({
               <Field label={t("deliveryAddress")}>
                 <Input value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} autoComplete="street-address" required />
               </Field>
-              {deliveryQuoteLoading && <p className="text-[11.5px] text-mv-ink-faint">{t("deliveryFeeLoading")}</p>}
+              {deliveryQuoteLoading && <p className="text-[12px] text-mv-ink-faint">{t("deliveryFeeLoading")}</p>}
               {!deliveryQuoteLoading && !deliveryQuote.available && <p className="text-[12px] text-mv-red">{deliveryQuote.reason === "outside_radius" ? t("deliveryFeeOutsideRadius") : t("deliveryFeeAddressError")}</p>}
-              {deliveryQuote.available && deliveryQuote.etaMinutes != null && <p className="text-[11.5px] text-mv-ink-faint">{t("deliveryFeeEstimate", { fee: formatCurrency(deliveryQuote.fee), minutes: deliveryQuote.etaMinutes })}</p>}
+              {deliveryQuote.available && deliveryQuote.etaMinutes != null && <p className="text-[12px] text-mv-ink-faint">{t("deliveryFeeEstimate", { fee: formatCurrency(deliveryQuote.fee), minutes: deliveryQuote.etaMinutes })}</p>}
             </div>
           )}
 
@@ -1419,13 +1388,13 @@ function BottomTabBar({
               type="button"
               onClick={() => onChange(tab)}
               aria-current={isActive ? "page" : undefined}
-              className="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[10.5px] font-semibold transition-colors"
+              className="relative flex flex-1 flex-col items-center gap-1 py-2.5 text-[12px] font-semibold transition-colors"
               style={{ color: isActive ? "var(--mv-green-dark)" : "var(--mv-ink-faint)" }}
             >
               <span className="relative flex h-6 w-6 items-center justify-center">
                 <Icon size={21} strokeWidth={isActive ? 2.3 : 1.9} />
                 {tab === "order" && cartCount > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-mv-red px-1 text-[9.5px] font-bold text-white">
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-mv-red px-1 text-[12px] font-bold text-white">
                     {cartCount}
                   </span>
                 )}
@@ -1579,12 +1548,14 @@ export function PortalView({
           <div className="flex items-center gap-2">
             <PortalRealtimeSync customerId={customer.id} restaurantId={customer.restaurantId} />
             {restaurantName && (
-              <span className="rounded-full border border-mv-border bg-mv-surface px-3 py-1 text-[11.5px] font-semibold text-mv-ink-soft">
+              <span className="rounded-full border border-mv-border bg-mv-surface px-3 py-1 text-[12px] font-semibold text-mv-ink-soft">
                 {restaurantName}
               </span>
             )}
           </div>
         </div>
+
+        <AppInstallPrompt restaurantId={customer.restaurantId} restaurantName={restaurantName ?? null} />
 
         {checkoutReturn && (
           <div
@@ -1613,7 +1584,7 @@ export function PortalView({
                 <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">
                   {t(`checkoutReturn${checkoutReturn.status[0].toUpperCase()}${checkoutReturn.status.slice(1)}Description`)}
                 </p>
-                <p className="mt-1.5 text-[11.5px] text-mv-ink-faint">
+                <p className="mt-1.5 text-[12px] text-mv-ink-faint">
                   {t("checkoutReturnOrderSummary", { total: formatCurrency(checkoutReturn.total), order: checkoutReturn.orderId.slice(0, 8) })}
                   {checkoutReturn.status === "paid" && checkoutReturn.estimatedReadyAt
                     ? ` · ${t("checkoutReturnReadyAt", { time: formatRestaurantTime(checkoutReturn.estimatedReadyAt, restaurantTimezone) })}`
@@ -1678,7 +1649,7 @@ export function PortalView({
                   </span>
                   <div>
                     <p className="text-[13px] font-semibold text-mv-ink">{t("rewardsTitle")}</p>
-                    <p className="text-[11.5px] text-mv-ink-faint">
+                    <p className="text-[12px] text-mv-ink-faint">
                       {data.rewards.length} récompense{data.rewards.length > 1 ? "s" : ""} disponible
                       {data.rewards.length > 1 ? "s" : ""} avec vos {points} pts
                     </p>
@@ -1705,7 +1676,7 @@ export function PortalView({
                     <div key={tx.id} className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2.5">
                       <div>
                         <p className="text-[12.5px] font-medium text-mv-ink">{t(`txLabel.${tx.type}`)}</p>
-                        <p className="text-[11px] text-mv-ink-faint">{formatDate(tx.createdAt)}</p>
+                        <p className="text-[12px] text-mv-ink-faint">{formatDate(tx.createdAt)}</p>
                       </div>
                       <span
                         className={
@@ -1774,7 +1745,7 @@ export function PortalView({
                     <div key={tx.id} className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2.5">
                       <div>
                         <p className="text-[12.5px] font-medium text-mv-ink">{t(`txLabel.${tx.type}`)}</p>
-                        <p className="text-[11px] text-mv-ink-faint">{formatDate(tx.createdAt)}</p>
+                        <p className="text-[12px] text-mv-ink-faint">{formatDate(tx.createdAt)}</p>
                       </div>
                       <span
                         className={

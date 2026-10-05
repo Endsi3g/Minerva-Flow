@@ -9,7 +9,10 @@ import SwiftUI
 struct ScannerTabView: View {
     @EnvironmentObject var supabase: SupabaseManager
     @AppStorage(AppLanguagePreference.key) private var storedLanguage = AppLanguage.fr.rawValue
+    @EnvironmentObject var router: DeepLinkRouter
     @State private var showCameraScan = false
+    @State private var nfcReader = NFCTagReader()
+    @State private var nfcMessage: String?
 
     private var isFrench: Bool { storedLanguage != AppLanguage.en.rawValue }
 
@@ -19,7 +22,7 @@ struct ScannerTabView: View {
                 VStack(alignment: .leading, spacing: 22) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(isFrench ? "VOTRE COMPTE" : "YOUR ACCOUNT")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.mv(size: 11, weight: .bold))
                             .tracking(1.2)
                             .foregroundStyle(MinervaColor.emeraldDark)
                         Text(isFrench ? "Présentez votre code" : "Show your code")
@@ -28,7 +31,7 @@ struct ScannerTabView: View {
                         Text(isFrench
                              ? "Le personnel peut l’utiliser pour retrouver votre compte et enregistrer votre visite."
                              : "Staff can use it to find your account and record your visit.")
-                            .font(.system(size: 15))
+                            .font(.mv(size: 15))
                             .foregroundStyle(MinervaColor.inkSoft)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -39,11 +42,31 @@ struct ScannerTabView: View {
                         showCameraScan = true
                     } label: {
                         Label(isFrench ? "Scanner le code d’un restaurant" : "Scan a restaurant's code", systemImage: "camera.viewfinder")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.mv(size: 15, weight: .semibold))
                             .frame(maxWidth: .infinity, minHeight: 48)
                     }
                     .buttonStyle(.bordered)
                     .tint(MinervaColor.emeraldDark)
+
+                    if NFCTagReader.isAvailable {
+                        Button {
+                            readNFCTag()
+                        } label: {
+                            Label(isFrench ? "Toucher un tag NFC" : "Tap an NFC tag", systemImage: "wave.3.right")
+                                .font(.mv(size: 15, weight: .semibold))
+                                .frame(maxWidth: .infinity, minHeight: 48)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(MinervaColor.emeraldDark)
+                    }
+
+                    if let nfcMessage {
+                        Text(nfcMessage)
+                            .font(.mv(size: 13, weight: .medium))
+                            .foregroundStyle(MinervaColor.inkSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityAddTraits(.updatesFrequently)
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 24)
@@ -73,20 +96,41 @@ struct ScannerTabView: View {
         }
     }
 
+    /// A tag only ever reaches the app's normal /t/{code} flow after NFCTagURL
+    /// proves it is a first-party link — the same flow as a QR scan or a tap
+    /// on the printed URL, so attribution and restaurant joining are shared.
+    private func readNFCTag() {
+        nfcMessage = nil
+        nfcReader.begin(
+            prompt: isFrench ? "Approchez le haut de votre iPhone du tag du restaurant." : "Hold the top of your iPhone near the restaurant's tag."
+        ) { result in
+            switch result {
+            case .success(let url):
+                router.handleUniversalLink(url)
+            case .failure(.notMinervaTag):
+                nfcMessage = isFrench ? "Ce tag n'est pas un tag Minerva Flow." : "This isn't a Minerva Flow tag."
+            case .failure(.unavailable):
+                nfcMessage = isFrench ? "Le NFC n'est pas disponible sur cet appareil." : "NFC isn't available on this device."
+            case .failure:
+                nfcMessage = isFrench ? "Lecture impossible. Réessayez." : "Couldn't read the tag. Try again."
+            }
+        }
+    }
+
     private var pairingCodeCard: some View {
         VStack(spacing: 18) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(isFrench ? "Carte de fidélité" : "Loyalty card")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.mv(size: 12, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.8))
                     Text(supabase.restaurantIdentityLabel)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.mv(size: 16, weight: .semibold))
                         .foregroundStyle(.white)
                 }
                 Spacer()
                 Image(systemName: "qrcode")
-                    .font(.system(size: 20, weight: .medium))
+                    .font(.mv(size: 20, weight: .medium))
                     .foregroundStyle(.white.opacity(0.9))
                     .accessibilityHidden(true)
             }
@@ -107,7 +151,7 @@ struct ScannerTabView: View {
 
                 VStack(spacing: 6) {
                     Text(formattedCode(code))
-                        .font(.system(size: 32, weight: .bold, design: .monospaced))
+                        .font(.mv(size: 32, weight: .bold, design: .monospaced))
                         .tracking(4)
                         .foregroundStyle(.white)
                         .accessibilityLabel("Code \(code)")
@@ -117,7 +161,7 @@ struct ScannerTabView: View {
                 VStack(spacing: 12) {
                     ProgressView().tint(.white)
                     Text(isFrench ? "Préparation de votre code…" : "Preparing your code…")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.mv(size: 14, weight: .medium))
                         .foregroundStyle(.white.opacity(0.9))
                 }
                 .frame(maxWidth: .infinity, minHeight: 250)
@@ -140,7 +184,7 @@ struct ScannerTabView: View {
                 Task { await supabase.mintPairingCode() }
             } label: {
                 Label(isFrench ? "Renouveler le code" : "Refresh the code", systemImage: "arrow.clockwise")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.mv(size: 14, weight: .semibold))
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.bordered)
@@ -166,7 +210,7 @@ struct ScannerTabView: View {
                          ? (isFrench ? "Valide encore \(remaining) s" : "Valid for \(remaining)s more")
                          : (isFrench ? "Code expiré — renouvelez-le" : "Code expired — refresh it"))
                 }
-                .font(.system(size: 12, weight: .medium))
+                .font(.mv(size: 12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.85))
                 .accessibilityElement(children: .combine)
             }

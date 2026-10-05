@@ -38,7 +38,7 @@ struct WriteRestaurantReviewSheet: View {
                                 rating = star
                             } label: {
                                 Image(systemName: star <= rating ? "star.fill" : "star")
-                                    .font(.system(size: 28))
+                                    .font(.mv(size: 28))
                                     .foregroundStyle(MinervaColor.emerald)
                             }
                         }
@@ -55,7 +55,7 @@ struct WriteRestaurantReviewSheet: View {
 
                     if let submitError {
                         Text(submitError)
-                            .font(.system(size: 12.5))
+                            .font(.mv(size: 12.5))
                             .foregroundStyle(.red)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -66,7 +66,7 @@ struct WriteRestaurantReviewSheet: View {
                         HStack {
                             if isSubmitting { ProgressView().tint(.white) }
                             Text(isSubmitting ? "Envoi…" : "Publier mon avis")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.mv(size: 14, weight: .semibold))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
@@ -109,13 +109,13 @@ struct WriteRestaurantReviewSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Photos (\(photoPreviews.count)/\(maxPhotos))")
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .font(.mv(size: 11.5, weight: .semibold))
                     .foregroundStyle(MinervaColor.inkSoft)
                 Spacer()
                 if photoPreviews.count < maxPhotos {
                     PhotosPicker(selection: $photoItems, maxSelectionCount: maxPhotos - photoPreviews.count, matching: .images) {
                         Label("Ajouter", systemImage: "photo.badge.plus")
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.mv(size: 11.5, weight: .semibold))
                     }
                     .foregroundStyle(MinervaColor.emeraldDark)
                 }
@@ -135,7 +135,7 @@ struct WriteRestaurantReviewSheet: View {
                                     photoPreviews.remove(at: index)
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 15))
+                                        .font(.mv(size: 15))
                                         .foregroundStyle(.white, .black.opacity(0.6))
                                 }
                                 .padding(3)

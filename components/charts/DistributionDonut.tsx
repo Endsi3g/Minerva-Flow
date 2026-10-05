@@ -39,7 +39,7 @@ export function DistributionDonut({ data, size = 116 }: { data: DonutDatum[]; si
         )}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <span className="font-display text-[19px] font-medium leading-none text-mv-ink">{total}</span>
-          <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-mv-ink-faint">Total</span>
+          <span className="mt-0.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Total</span>
         </div>
       </div>
       <div className="min-w-0 flex-1 space-y-1.5">

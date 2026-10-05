@@ -4,7 +4,10 @@ name: Retention engine
 # project is on Vercel's Hobby plan (max 2 cron jobs total).
 on:
   schedule:
-    - cron: "0 16 * * *"
+    # Three runs a day (9:00, 13:00 and 17:00 Montréal time, EDT). The default
+    # cadence is unchanged (the per-restaurant cap in days still applies);
+    # extra runs only serve customers who opted in to "Fréquent".
+    - cron: "0 13,17,21 * * *"
   workflow_dispatch: {}
 
 jobs:

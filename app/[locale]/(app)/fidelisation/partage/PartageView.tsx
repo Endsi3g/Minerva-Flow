@@ -46,7 +46,7 @@ function LoyaltyShareRow({ share, onDeleted }: { share: LoyaltyShare; onDeleted:
         )}
         <div className="min-w-0">
           <p className="truncate text-[12.5px] font-medium text-mv-ink">{share.title}</p>
-          <p className="truncate text-[11.5px] text-mv-ink-faint">/f/{share.token}</p>
+          <p className="truncate text-[12px] text-mv-ink-faint">/f/{share.token}</p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">

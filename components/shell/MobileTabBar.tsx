@@ -3,10 +3,11 @@
 import { cn } from "@/lib/utils";
 import {
   MoreHorizontal,
-  Truck,
-  ClipboardList,
   Building2,
-  PackageSearch,
+  ClipboardList,
+  Heart,
+  Home,
+  UtensilsCrossed,
   Check,
 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -34,16 +35,13 @@ type TabItem = {
 export function MobileTabBar() {
   const t = useTranslations("nav");
   const pathname = usePathname();
-  const { role, restaurants, workspaces, restaurantId, setRestaurantId } = useApp();
+  const { restaurants, workspaces, restaurantId, setRestaurantId } = useApp();
   const [moreOpen, setMoreOpen] = useState(false);
+  // The four loyalty-ecosystem destinations: overview, loyalty, menu, orders.
   const tabs: TabItem[] = [
-    { href: "/workspace", translationKey: "workspace", icon: Building2 },
-    ...(role === "owner" || role === "manager"
-      ? [
-          { href: "/fournisseurs", translationKey: "fournisseurs", icon: Truck },
-          { href: "/inventaire", translationKey: "inventaire", icon: PackageSearch },
-        ]
-      : []),
+    { href: "/overview", translationKey: "overview", icon: Home },
+    { href: "/fidelisation", translationKey: "fidelisation", icon: Heart },
+    { href: "/menu", translationKey: "menu", icon: UtensilsCrossed },
     { href: "/commandes", translationKey: "commandes", icon: ClipboardList },
   ];
 
@@ -70,7 +68,7 @@ export function MobileTabBar() {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition-colors",
+                "relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-medium transition-colors",
                 active ? "text-mv-green-dark" : "text-mv-ink-faint"
               )}
             >
@@ -81,7 +79,7 @@ export function MobileTabBar() {
         })}
         <button
           onClick={() => setMoreOpen(true)}
-          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium text-mv-ink-faint transition-colors"
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-medium text-mv-ink-faint transition-colors"
         >
           <MoreHorizontal size={19} strokeWidth={1.8} />
           <span>{t("more")}</span>
@@ -97,7 +95,7 @@ export function MobileTabBar() {
           <div className="overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             {restaurantGroups.length > 0 && (
               <section className="mb-4" aria-label={t("sectionTeams")}>
-                <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-mv-ink-faint">
+                <h2 className="mb-2 px-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-mv-ink-faint">
                   {t("sectionTeams")}
                 </h2>
                 <div className="space-y-3">

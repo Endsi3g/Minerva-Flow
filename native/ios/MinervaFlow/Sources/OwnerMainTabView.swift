@@ -342,7 +342,7 @@ private struct QuickActionCard: View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.mv(size: 16, weight: .semibold))
                     .foregroundStyle(tint)
                     .frame(width: 36, height: 36)
                     .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))

@@ -252,7 +252,7 @@ export function ReportView({
 
 
 
-              <p className="mb-1.5 text-[11.5px] font-semibold text-mv-ink-soft">Expiration du lien</p>
+              <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Expiration du lien</p>
               <div className={cn("mb-3 flex gap-1.5", shareLink && "opacity-60")}>
                 {[
                   { label: "7j", value: 7 },
@@ -289,10 +289,10 @@ export function ReportView({
                       </button>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11.5px] text-mv-ink-faint">{t("snapshotNote")}</p>
+                      <p className="text-[12px] text-mv-ink-faint">{t("snapshotNote")}</p>
                       <button
                         onClick={handleResetShareLink}
-                        className="shrink-0 text-[11.5px] font-semibold text-mv-green-dark hover:underline"
+                        className="shrink-0 text-[12px] font-semibold text-mv-green-dark hover:underline"
                       >
                         Nouveau lien
                       </button>
@@ -355,7 +355,7 @@ export function ReportView({
             <p className="text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               {tr(`labels.${view.report.slug}`)}
             </p>
-            <p className="mt-1 text-[11.5px] text-mv-ink-faint">
+            <p className="mt-1 text-[12px] text-mv-ink-faint">
               {range ? `${formatDate(range.from)} — ${formatDate(range.to)}` : periodLabel[period]}
             </p>
             <p className="mt-4 font-display text-[42px] font-medium leading-none text-mv-ink">
@@ -394,7 +394,7 @@ export function ReportView({
                   >
                     <div>
                       <p className="text-[13px] font-semibold text-mv-ink">{c.name}</p>
-                      <p className="text-[11.5px] text-mv-ink-faint">{c.channel}</p>
+                      <p className="text-[12px] text-mv-ink-faint">{c.channel}</p>
                     </div>
                     <Badge tone="neutral">{formatCurrency(c.estimatedRevenue)}</Badge>
                   </div>

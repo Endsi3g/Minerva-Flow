@@ -39,7 +39,7 @@ function PilotRow({ pilot }: { pilot: PilotRequest }) {
       </p>
       {pilot.message && <p className="mt-2 text-[12.5px] text-mv-ink-soft">{pilot.message}</p>}
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-[11px] text-mv-ink-faint">{formatDate(pilot.createdAt.slice(0, 10))}</span>
+        <span className="text-[12px] text-mv-ink-faint">{formatDate(pilot.createdAt.slice(0, 10))}</span>
         <Select
           value={status}
           disabled={saving}

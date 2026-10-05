@@ -2,12 +2,13 @@
 
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { Megaphone, Palette, ShieldCheck } from "lucide-react";
+import { Megaphone, Palette, Share2, ShieldCheck } from "lucide-react";
 
 const sections = [
   { href: "/campaigns", label: "Historique", icon: Megaphone },
   { href: "/campaigns/modeles", label: "Automatisations", icon: ShieldCheck },
   { href: "/campaigns/studio", label: "Studio visuel", icon: Palette },
+  { href: "/campaigns/resultats", label: "Mes résultats", icon: Share2 },
 ] as const;
 
 export function CampaignsSubNav() {
@@ -23,7 +24,7 @@ export function CampaignsSubNav() {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex shrink-0 items-center gap-2 pb-3 text-[13px] font-medium transition-colors",
+              "relative flex shrink-0 items-center gap-2 pb-3 pointer-coarse:min-h-11 text-[13px] font-medium transition-colors",
               active ? "text-mv-ink" : "text-mv-ink-faint hover:text-mv-ink-soft"
             )}
           >

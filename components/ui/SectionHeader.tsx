@@ -23,7 +23,7 @@ export function SectionHeader({
     >
       <div>
         {eyebrow && (
-          <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+          <p className="mb-0.5 text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
             {eyebrow}
           </p>
         )}

@@ -98,7 +98,7 @@ export function MemberDetailModal({
               <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-mv-green" />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] text-mv-ink">{entry.description}</p>
-                <p className="mt-0.5 text-[11.5px] text-mv-ink-faint">
+                <p className="mt-0.5 text-[12px] text-mv-ink-faint">
                   {formatRelativeTime(entry.createdAt)}
                 </p>
               </div>

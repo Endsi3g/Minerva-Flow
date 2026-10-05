@@ -39,7 +39,7 @@ function ChangelogScreenshot({ entry, isFirst }: { entry: ChangelogEntry; isFirs
           className="block aspect-video w-full bg-mv-cream-soft object-cover"
         />
       )}
-      <figcaption className="flex items-center gap-2 px-3.5 py-2.5 text-[11px] text-mv-ink-faint">
+      <figcaption className="flex items-center gap-2 px-3.5 py-2.5 text-[12px] text-mv-ink-faint">
         <Camera size={13} aria-hidden="true" /> Capture de la fonctionnalité
       </figcaption>
     </figure>
@@ -147,7 +147,7 @@ export function ChangelogView({
 
             return (
               <article key={entry.id} className="py-8 first:pt-0">
-                <div className="mb-2 flex items-center gap-2 text-[11.5px] text-mv-ink-faint">
+                <div className="mb-2 flex items-center gap-2 text-[12px] text-mv-ink-faint">
                   <time>{formatDateFull(entry.publishedAt.slice(0, 10))}</time>
                   <span aria-hidden>·</span>
                   <span>{categoryLabel[entry.category]}</span>

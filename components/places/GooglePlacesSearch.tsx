@@ -137,7 +137,7 @@ export function GooglePlacesSearch({ onSelect, enabled = true }: { onSelect: (pa
                 <span className="min-w-0">
                   <span className="block truncate text-[13px] font-semibold text-mv-ink">{s.primaryText}</span>
                   {s.secondaryText && (
-                    <span className="block truncate text-[11.5px] text-mv-ink-faint">{s.secondaryText}</span>
+                    <span className="block truncate text-[12px] text-mv-ink-faint">{s.secondaryText}</span>
                   )}
                 </span>
               </button>

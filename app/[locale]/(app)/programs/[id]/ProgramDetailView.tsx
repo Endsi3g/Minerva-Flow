@@ -156,7 +156,7 @@ export function ProgramDetailView({
       {/* Objective callout if available */}
       {program.objective && (
         <div className="mb-6 rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-xs">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">Objectif stratégique</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Objectif stratégique</p>
           <p className="mt-1 text-[13.5px] leading-relaxed text-mv-ink-soft">{program.objective}</p>
         </div>
       )}
@@ -164,7 +164,7 @@ export function ProgramDetailView({
       {/* Financial & Performance KPI Cards */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Revenu récurrent</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Revenu récurrent</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-green-dark">
             {formatCurrency(program.revenue)}
           </p>
@@ -173,31 +173,31 @@ export function ProgramDetailView({
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-mv-border-soft">
                 <div className="h-full bg-mv-green" style={{ width: `${revenueGoalPct}%` }} />
               </div>
-              <p className="mt-1 text-[10.5px] text-mv-ink-faint">
+              <p className="mt-1 text-[12px] text-mv-ink-faint">
                 {revenueGoalPct}% de l&apos;objectif ({formatCurrency(program.revenueGoal)})
               </p>
             </div>
           ) : (
-            <p className="mt-1 text-[11px] text-mv-ink-faint">Ventes cumulées</p>
+            <p className="mt-1 text-[12px] text-mv-ink-faint">Ventes cumulées</p>
           )}
         </Card>
 
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Coûts directs</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Coûts directs</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
             {formatCurrency(program.cost)}
           </p>
-          <p className="mt-1 text-[11px] text-mv-ink-faint">
+          <p className="mt-1 text-[12px] text-mv-ink-faint">
             {program.expectedCost ? `Budget prévu : ${formatCurrency(program.expectedCost)}` : "Dépenses engagées"}
           </p>
         </Card>
 
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Marge brute</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Marge brute</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
             {formatCurrency(margin)}
           </p>
-          <p className="mt-1 text-[11px] text-mv-ink-soft">
+          <p className="mt-1 text-[12px] text-mv-ink-soft">
             <span className={marginPct >= 40 ? "text-mv-green-dark font-medium" : "text-mv-ink"}>
               {marginPct}% de rentabilité
             </span>
@@ -205,11 +205,11 @@ export function ProgramDetailView({
         </Card>
 
         <Card className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-mv-ink-faint">Services associés</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Services associés</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
             {serviceDays.length}
           </p>
-          <p className="mt-1 text-[11px] text-mv-ink-faint">
+          <p className="mt-1 text-[12px] text-mv-ink-faint">
             Journées d&apos;activité
           </p>
         </Card>
@@ -230,7 +230,7 @@ export function ProgramDetailView({
               </div>
               <div>
                 <p className="text-[14px] font-semibold text-mv-ink">Système 1 — Finance & Comptabilité</p>
-                <p className="text-[11.5px] text-mv-ink-faint">Transactions financières et écritures taguées</p>
+                <p className="text-[12px] text-mv-ink-faint">Transactions financières et écritures taguées</p>
               </div>
             </div>
             <Button href="/finance" variant="secondary" size="sm" className="text-[12px] gap-1">
@@ -241,7 +241,7 @@ export function ProgramDetailView({
           {transactions.length === 0 ? (
             <div className="rounded-xl border border-dashed border-mv-border p-4 text-center text-mv-ink-soft text-[12.5px]">
               Aucune transaction financière n&apos;est actuellement rattachée à ce programme.
-              <p className="mt-1 text-[11px] text-mv-ink-faint">
+              <p className="mt-1 text-[12px] text-mv-ink-faint">
                 Dans la section Finance, associez des écritures à « {program.name} » pour suivre les flux précis.
               </p>
             </div>
@@ -249,7 +249,7 @@ export function ProgramDetailView({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-[12.5px]">
                 <thead>
-                  <tr className="border-b border-mv-border text-[11px] font-semibold uppercase text-mv-ink-faint">
+                  <tr className="border-b border-mv-border text-[12px] font-semibold uppercase text-mv-ink-faint">
                     <th className="py-2">Date</th>
                     <th className="py-2">Description</th>
                     <th className="py-2">Catégorie</th>
@@ -262,7 +262,7 @@ export function ProgramDetailView({
                       <td className="py-2 text-mv-ink-faint">{formatDate(t.date)}</td>
                       <td className="py-2 font-medium text-mv-ink">{t.description}</td>
                       <td className="py-2">
-                        <Badge tone="neutral" className="text-[10.5px]">
+                        <Badge tone="neutral" className="text-[12px]">
                           {t.category}
                         </Badge>
                       </td>
@@ -291,7 +291,7 @@ export function ProgramDetailView({
               </div>
               <div>
                 <p className="text-[14px] font-semibold text-mv-ink">Système 2 — Marketing & Acquisition</p>
-                <p className="text-[11.5px] text-mv-ink-faint">Campagnes actives et acquisition d&apos;abonnés</p>
+                <p className="text-[12px] text-mv-ink-faint">Campagnes actives et acquisition d&apos;abonnés</p>
               </div>
             </div>
             <Button href="/campaigns" variant="secondary" size="sm" className="text-[12px] gap-1">
@@ -302,7 +302,7 @@ export function ProgramDetailView({
           {campaigns.length === 0 ? (
             <div className="rounded-xl border border-dashed border-mv-border p-4 text-center text-mv-ink-soft text-[12.5px]">
               Aucune campagne publicitaire n&apos;est liée à ce programme récurrent.
-              <p className="mt-1 text-[11px] text-mv-ink-faint">
+              <p className="mt-1 text-[12px] text-mv-ink-faint">
                 Créez une campagne de relance ou d&apos;acquisition ciblée sur ce programme.
               </p>
             </div>
@@ -315,11 +315,11 @@ export function ProgramDetailView({
                 >
                   <div className="flex items-center justify-between">
                     <p className="font-semibold text-mv-ink">{c.name}</p>
-                    <Badge tone={c.status === "active" ? "green" : "neutral"} className="text-[10px]">
+                    <Badge tone={c.status === "active" ? "green" : "neutral"} className="text-[12px]">
                       {c.status}
                     </Badge>
                   </div>
-                  <p className="mt-1 text-[11.5px] text-mv-ink-faint">
+                  <p className="mt-1 text-[12px] text-mv-ink-faint">
                     Canal : {c.channel} · {c.visites} visites générées
                   </p>
                 </div>
@@ -337,7 +337,7 @@ export function ProgramDetailView({
               </div>
               <div>
                 <p className="text-[14px] font-semibold text-mv-ink">Système 3 — Opérations & Performance Quotidienne</p>
-                <p className="text-[11.5px] text-mv-ink-faint">Services exécutés durant la période de ce programme</p>
+                <p className="text-[12px] text-mv-ink-faint">Services exécutés durant la période de ce programme</p>
               </div>
             </div>
             <Button href="/days" variant="secondary" size="sm" className="text-[12px] gap-1">
@@ -359,14 +359,14 @@ export function ProgramDetailView({
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-[12px] font-medium text-mv-ink">{formatDate(sd.date)}</p>
-                    <Badge tone={sd.rushLevel === "rush" || sd.anomaly === "rush" ? "green" : "neutral"} className="text-[10px]">
+                    <Badge tone={sd.rushLevel === "rush" || sd.anomaly === "rush" ? "green" : "neutral"} className="text-[12px]">
                       {sd.rushLevel || "Normal"}
                     </Badge>
                   </div>
                   <p className="mt-1.5 font-display text-[16px] font-semibold text-mv-green-dark">
                     {formatCurrency(sd.revenue)}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-mv-ink-faint group-hover:text-mv-green-dark">
+                  <p className="mt-0.5 text-[12px] text-mv-ink-faint group-hover:text-mv-green-dark">
                     Voir le service &rarr;
                   </p>
                 </Link>
@@ -384,7 +384,7 @@ export function ProgramDetailView({
               </div>
               <div>
                 <p className="text-[14px] font-semibold text-mv-ink">Système 4 — Fidélisation & Abonnés Récurents</p>
-                <p className="text-[11.5px] text-mv-ink-faint">Clientèle régulière générant le chiffre d&apos;affaires de récurrence</p>
+                <p className="text-[12px] text-mv-ink-faint">Clientèle régulière générant le chiffre d&apos;affaires de récurrence</p>
               </div>
             </div>
             <Button href="/fidelisation" variant="secondary" size="sm" className="text-[12px] gap-1">
@@ -404,7 +404,7 @@ export function ProgramDetailView({
                   className="rounded-xl border border-mv-border bg-mv-surface p-3 text-[12.5px]"
                 >
                   <p className="truncate font-semibold text-mv-ink">{c.name}</p>
-                  <p className="text-[11px] text-mv-ink-faint">{c.visitCount} visites cumulées</p>
+                  <p className="text-[12px] text-mv-ink-faint">{c.visitCount} visites cumulées</p>
                   <p className="mt-1 font-semibold text-mv-green-dark">{formatCurrency(c.totalSpent)}</p>
                 </div>
               ))}
@@ -443,7 +443,7 @@ export function ProgramDetailView({
             <div className="space-y-2">
               {program.consultantNotes.map((n, i) => (
                 <div key={i} className="rounded-xl border border-mv-border bg-mv-cream-soft/70 p-3 text-[12.5px]">
-                  <div className="flex items-center justify-between text-[11px] text-mv-ink-faint mb-1">
+                  <div className="flex items-center justify-between text-[12px] text-mv-ink-faint mb-1">
                     <span className="font-semibold text-mv-ink">{n.author}</span>
                     <span>{formatDate(n.date)}</span>
                   </div>

@@ -117,10 +117,10 @@ export function PaidAdsRequestCard({ restaurantId, canManage, initialRequest }: 
           <div className="mb-4 flex items-center gap-2">
             {STEPS.map((label, i) => (
               <div key={label} className="flex flex-1 items-center gap-2">
-                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${i <= step ? "bg-mv-green text-white" : "bg-mv-cream-soft text-mv-ink-faint"}`}>
+                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${i <= step ? "bg-mv-green text-white" : "bg-mv-cream-soft text-mv-ink-faint"}`}>
                   {i + 1}
                 </span>
-                <span className={`text-[11.5px] font-medium ${i === step ? "text-mv-ink" : "text-mv-ink-faint"}`}>{label}</span>
+                <span className={`text-[12px] font-medium ${i === step ? "text-mv-ink" : "text-mv-ink-faint"}`}>{label}</span>
                 {i < STEPS.length - 1 && <span className="h-px flex-1 bg-mv-border" />}
               </div>
             ))}
@@ -169,7 +169,7 @@ export function PaidAdsRequestCard({ restaurantId, canManage, initialRequest }: 
           {error && <p className="mt-3 text-[12.5px] text-mv-red">{error}</p>}
 
           <div className="mt-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5 text-[11px] text-mv-ink-faint">
+            <div className="flex items-center gap-1.5 text-[12px] text-mv-ink-faint">
               <Info size={13} className="shrink-0" />
               <span>Vos réponses restent internes — elles servent uniquement à préparer votre suivi.</span>
             </div>

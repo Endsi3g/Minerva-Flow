@@ -6,8 +6,15 @@ import { getRestaurant } from "@/lib/data/restaurants";
 import { FidelisationView } from "./FidelisationView";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("breadcrumb");
-  return { title: t("fidelisation") };
+  return {
+    title: "Fidélisation Apple Wallet & Cohortes Clients",
+    description:
+      "Gestion du programme de fidélisation numérique : cartes Apple Wallet et Google Wallet, points de contact NFC/QR et suivi des 4 paliers d'habitués.",
+    robots: {
+      index: false,
+      follow: false,
+    },
+  };
 }
 
 export default async function FidelisationPage() {

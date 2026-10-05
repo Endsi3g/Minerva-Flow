@@ -17,7 +17,7 @@ struct NativeOwnerRestaurant: Codable, Identifiable {
     let id: String
     let name: String
     let city: String?
-    let workspaceId: String
+    let workspaceId: String?
 
     enum CodingKeys: String, CodingKey {
         case id, name, city, workspaceId = "workspace_id"
@@ -788,6 +788,220 @@ struct LoyaltyHistoryEntry: Identifiable {
     let restaurantName: String?
 }
 
+struct CustomerOrderItem: Codable, Identifiable {
+    let id: String
+    let itemName: String
+    let unitPrice: Double
+    let quantity: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case itemName = "item_name"
+        case unitPrice = "unit_price"
+        case quantity
+    }
+}
+
+/// A past order as the customer themself sees it — `orders_customer_select`
+/// (migration 0156) is what makes this readable at all; no bridge endpoint
+/// needed since, unlike `restaurants`, this table has nothing customers
+/// shouldn't see about their own rows.
+struct CustomerOrder: Codable, Identifiable {
+    let id: String
+    let status: String
+    let total: Double
+    let createdAt: Date
+    var items: [CustomerOrderItem]
+
+    enum CodingKeys: String, CodingKey {
+        case id, status, total
+        case createdAt = "created_at"
+        case items = "order_items"
+    }
+}
+
+struct NativeFlowAmbassadorFlag: Codable {
+    let id: String
+}
+
+/// Mirrors lib/data/team-metrics.ts's TeamMetricsSnapshot (served by
+/// /api/team/metrics, team members only).
+struct NativeTeamMetrics: Codable {
+    struct CountPoint: Codable, Identifiable {
+        let date: String
+        let count: Int
+        var id: String { date }
+    }
+    struct RevenuePoint: Codable, Identifiable {
+        let date: String
+        let revenue: Double
+        var id: String { date }
+    }
+    struct Visitors: Codable {
+        let total: Int
+        let deltaPct: Double?
+    }
+    struct FunnelStage: Codable, Identifiable {
+        let key: String
+        let label: String
+        let count: Int
+        let conversionFromPrevious: Double?
+        var id: String { key }
+    }
+    struct Funnel: Codable {
+        let stages: [FunnelStage]
+        let demosExcluded: Int
+    }
+    struct FocusAction: Codable, Identifiable {
+        let title: String
+        let reason: String
+        var id: String { title }
+    }
+    struct Focus: Codable {
+        let metric: String // "activated_restaurants" | "mrr"
+        let label: String
+        let actual: Double
+        let target: Double?
+        let actions: [FocusAction]
+    }
+    let totalRestaurants: Int
+    let newRestaurantsThisMonth: Int
+    let newRestaurantsDeltaPct: Double?
+    let activeSubscriptions: Int
+    let mrr: Double
+    let mrrDeltaPct: Double?
+    let churnedThisMonth: Int
+    let churnRatePct: Double?
+    let restaurantsJoinedSeries: [CountPoint]
+    let mrrSeries: [RevenuePoint]
+    /// nil until POSTHOG_PERSONAL_API_KEY is configured server-side.
+    let visitors: Visitors?
+    /// Optional so an app newer than the deployed server still decodes the rest.
+    let funnel: Funnel?
+    let focus: Focus?
+}
+
+/// Mirrors lib/data/team-academy.ts (served by /api/team/academy; teamOnly
+/// sections are already filtered out server-side for ambassadors).
+struct NativeAcademyResponse: Codable {
+    let pages: [NativeAcademyPage]
+}
+
+struct NativeAcademyPage: Codable, Identifiable {
+    let slug: String
+    let title: String
+    let description: String
+    let sections: [NativeAcademySection]
+    var id: String { slug }
+}
+
+struct NativeAcademySection: Codable, Identifiable {
+    struct Item: Codable, Identifiable {
+        let text: String
+        let tag: String?
+        var id: String { text }
+    }
+    struct Note: Codable {
+        let tone: String
+        let text: String
+    }
+    let id: String
+    let title: String
+    let intro: String?
+    let items: [Item]?
+    let note: Note?
+    let teamOnly: Bool?
+}
+
+/// Mirrors lib/data/team-goals.ts GoalsSnapshot (/api/team/goals, team only).
+struct NativeTeamGoals: Codable {
+    struct Row: Codable, Identifiable {
+        let metric: String
+        let label: String
+        let unit: String
+        let actual: Double?
+        let target: Double?
+        var id: String { metric }
+    }
+    let month: String
+    let elapsedPct: Double
+    let rows: [Row]
+}
+
+/// Mirrors lib/team/contributions.ts Heatmap (26 Monday-first weeks).
+struct NativeHeatmapDay: Codable, Identifiable {
+    let date: String
+    let count: Int
+    let level: Int
+    let future: Bool
+    let bySource: [String: Int]
+    var id: String { date }
+}
+
+struct NativeHeatmap: Codable {
+    let weeks: Int
+    let days: [NativeHeatmapDay]
+    let total: Int
+    let bySource: [String: Int]
+}
+
+/// Mirrors lib/data/team-members.ts (/api/team/members, team only).
+struct NativeMemberSummary: Codable, Identifiable {
+    let id: String
+    let name: String
+    let initials: String
+    let isTeamMember: Bool
+    let githubLogin: String?
+    let githubStatus: String // "ok" | "unavailable" | "not_linked"
+    let heatmap: NativeHeatmap
+}
+
+struct NativeMemberDirectory: Codable {
+    let members: [NativeMemberSummary]
+    let currentUserId: String
+}
+
+struct NativeMemberProfile: Codable, Identifiable {
+    struct ContentLink: Codable, Identifiable {
+        let id: String
+        let url: String
+        let platform: String
+        let title: String
+        let publishedOn: String
+    }
+    struct Checkin: Codable, Identifiable {
+        let weekStart: String
+        let commitments: String
+        let delivered: String
+        var id: String { weekStart }
+    }
+    let id: String
+    let name: String
+    let initials: String
+    let isTeamMember: Bool
+    let githubLogin: String?
+    let githubStatus: String
+    let heatmap: NativeHeatmap
+    let isSelf: Bool
+    let contentLinks: [ContentLink]
+    let checkins: [Checkin]
+}
+
+/// A physical touchpoint (NFC tag / QR sticker / chevalet) created on the web
+/// "Points de contact" screen; the owner's RLS session can read its own rows.
+struct NativeOwnerTouchpoint: Codable, Identifiable {
+    let id: String
+    let label: String
+    let type: String
+    let code: String
+    let destinationKind: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, label, type, code
+        case destinationKind = "destination_kind"
+    }
+}
+
 struct RewardRedemption: Codable, Identifiable {
     let id: String
     let restaurantId: String
@@ -855,16 +1069,11 @@ enum LoyaltyTier: String {
         switch self {
         case .habitue: return MinervaColor.emerald
         case .privilegie: return MinervaColor.emeraldDark
-        case .ambassadeur: return MinervaColor.limeAccent
+        case .ambassadeur: return MinervaColor.emeraldDeep
         }
     }
 
-    var bannerForeground: Color {
-        switch self {
-        case .ambassadeur: return MinervaColor.emeraldDark
-        default: return .white
-        }
-    }
+    var bannerForeground: Color { .white }
 
     static func resolve(totalSpent: Double, tier2: Double = 150, tier3: Double = 400) -> LoyaltyTier {
         if totalSpent >= tier3 { return .ambassadeur }
@@ -898,5 +1107,31 @@ struct PlatformAnnouncement: Codable, Identifiable {
         case pollOptions = "poll_options"
         case isActive = "is_active"
         case createdAt = "created_at"
+    }
+}
+
+/// The favourites a customer saved at one establishment ("Mes favoris" shows
+/// one card per establishment).
+struct EstablishmentFavorites: Identifiable {
+    let id: String
+    let name: String
+    let items: [NativeMenuItem]
+    let offers: [Offer]
+    /// How many favourites are saved there, even if their details could not be loaded.
+    let savedCount: Int
+    let isHome: Bool
+    let loadFailed: Bool
+}
+
+/// Points credited by `claim_app_install_bonus()` the first time the app is
+/// opened at a restaurant that enabled the install bonus.
+struct AppBonusAward: Decodable, Identifiable {
+    let restaurantId: String
+    let restaurantName: String
+    let points: Int
+    var id: String { restaurantId }
+
+    enum CodingKeys: String, CodingKey {
+        case restaurantId = "restaurant_id", restaurantName = "restaurant_name", points
     }
 }

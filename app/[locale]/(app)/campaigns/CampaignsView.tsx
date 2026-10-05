@@ -222,7 +222,7 @@ export function CampaignsView({
                         <Tr key={c.id} onClick={() => handleSelect(c.id)} active={c.id === selectedId}>
                           <Td>
                             <p className="font-semibold text-mv-ink">{c.name}</p>
-                            <p className="text-[11.5px] text-mv-ink-faint">{typeLabel[c.type]}</p>
+                            <p className="text-[12px] text-mv-ink-faint">{typeLabel[c.type]}</p>
                           </Td>
                           <Td>
                             <span className="inline-flex items-center gap-1.5 text-mv-ink-soft">
@@ -353,7 +353,7 @@ export function CampaignsView({
                         <div key={i} className="rounded-lg bg-mv-cream-soft p-3">
                           <div className="mb-1 flex items-center justify-between">
                             <span className="text-[12px] font-semibold text-mv-ink">{n.author}</span>
-                            <span className="text-[11px] text-mv-ink-faint">{formatDate(n.date)}</span>
+                            <span className="text-[12px] text-mv-ink-faint">{formatDate(n.date)}</span>
                           </div>
                           <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">{n.text}</p>
                         </div>

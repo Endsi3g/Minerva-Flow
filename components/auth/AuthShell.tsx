@@ -58,7 +58,7 @@ export function AuthShell({
             {step && (
               <div className="mb-6 flex items-center gap-3">
                 <StepIndicator currentStep={step.current} totalSteps={step.total} variant="pills" className="max-w-[88px] flex-1 justify-start" />
-                <span className="font-mono text-[10.5px] font-semibold uppercase tracking-wider text-mv-ink-faint">
+                <span className="font-mono text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
                   Étape {step.current} / {step.total} · {step.label}
                 </span>
               </div>

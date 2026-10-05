@@ -87,7 +87,7 @@ export function PresentationStudio({ restaurantId, initial, mode }: {
                     return <button key={palette.key} type="button" onClick={() => setValue((v) => ({ ...v, ...palette }))}
                       aria-pressed={active} className={`rounded-xl border p-2 text-left ${active ? "border-mv-green ring-2 ring-mv-green/20" : "border-mv-border-soft"}`}>
                       <span className="flex h-8 overflow-hidden rounded-lg border border-black/5"><span className="flex-1" style={{ background: palette.backgroundColor }} /><span className="flex-1" style={{ background: palette.accentColor }} /><span className="flex-1" style={{ background: palette.textColor }} /></span>
-                      <span className="mt-2 block text-[11.5px] font-medium text-mv-ink">{t(palette.key)}</span>
+                      <span className="mt-2 block text-[12px] font-medium text-mv-ink">{t(palette.key)}</span>
                     </button>;
                   })}
                 </div>
@@ -122,7 +122,7 @@ export function PresentationStudio({ restaurantId, initial, mode }: {
                 {mode === "settings" && <div className="mt-5 flex flex-wrap justify-center gap-3 text-xs" style={{ color: value.accentColor }}>{contactFields.filter(([key]) => value.socialLinks[key]).map(([key, labelKey]) => <span key={key}>{contactLabel(labelKey)}</span>)}</div>}
               </div>
             </Card>
-            <p className="mt-2 text-center text-[11px] text-mv-ink-faint">{t("previewNote")}</p>
+            <p className="mt-2 text-center text-[12px] text-mv-ink-faint">{t("previewNote")}</p>
           </aside>
         </form>
       )}

@@ -144,7 +144,7 @@ export function InviteWorkspaceMemberModal({
                 {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />}
               </button>
             </div>
-            <p className="text-[11.5px] text-mv-ink-faint">
+            <p className="text-[12px] text-mv-ink-faint">
               {emailSent
                 ? "Courriel envoyé. Vous pouvez aussi partager le lien directement (SMS, WhatsApp, etc.)."
                 : "Valide 7 jours. Partagez-le par le canal de votre choix (SMS, WhatsApp, etc.)."}

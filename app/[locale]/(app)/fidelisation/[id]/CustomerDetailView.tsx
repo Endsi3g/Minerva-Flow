@@ -17,14 +17,14 @@ import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { Field, Input } from "@/components/minerva/FormField";
+import { Field, Input, Textarea } from "@/components/minerva/FormField";
 import { LoyaltyTierBadge } from "@/components/minerva/LoyaltyTierBadge";
 import { getLoyaltyTier, getVisitBonusMultiplier, loyaltyTierLabel, loyaltyTierOrder, type LoyaltyTierThresholds } from "@/lib/loyalty-tiers";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useApp } from "@/lib/app-context";
 import { usePresenceDetail } from "@/lib/presence/context";
 import { notifyError } from "@/lib/notify-error";
-import { logVisitAction, redeemRewardAction, sendPortalLinkAction, deleteCustomerAction } from "@/app/[locale]/(app)/fidelisation/actions";
+import { logVisitAction, redeemRewardAction, sendPortalLinkAction, deleteCustomerAction, saveCustomerStaffNoteAction } from "@/app/[locale]/(app)/fidelisation/actions";
 import type { Customer, LoyaltyReward, LoyaltyTransactionType } from "@/lib/types";
 import { ArrowLeft, Gift, Plus, Send, Trash2 } from "lucide-react";
 
@@ -37,12 +37,14 @@ const txLabel: Record<LoyaltyTransactionType, string> = {
 export function CustomerDetailView({
   restaurantId,
   initialCustomer,
+  initialStaffNote,
   rewards,
   loyaltyPointsPerDollar,
   loyaltyTierThresholds,
 }: {
   restaurantId: string;
   initialCustomer: Customer;
+  initialStaffNote: string;
   rewards: LoyaltyReward[];
   loyaltyPointsPerDollar: number;
   loyaltyTierThresholds: LoyaltyTierThresholds;
@@ -60,6 +62,21 @@ export function CustomerDetailView({
   const [visitAmount, setVisitAmount] = useState("");
   const [sendingPortalLink, setSendingPortalLink] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [staffNote, setStaffNote] = useState(initialStaffNote);
+  const [savedStaffNote, setSavedStaffNote] = useState(initialStaffNote);
+  const [savingNote, setSavingNote] = useState(false);
+
+  async function handleSaveStaffNote() {
+    setSavingNote(true);
+    const ok = await saveCustomerStaffNoteAction(restaurantId, customer.id, staffNote);
+    setSavingNote(false);
+    if (!ok) {
+      notifyError("Impossible d'enregistrer la note. Réessayez.");
+      return;
+    }
+    setSavedStaffNote(staffNote);
+    toast.success("Note enregistrée");
+  }
 
   const rate = loyaltyPointsPerDollar;
 
@@ -170,18 +187,48 @@ export function CustomerDetailView({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <div className="space-y-4 xl:col-span-7">
+          {canCreate && (
+            <Card>
+              <CardHeader
+                eyebrow="Service"
+                title="Notes de l'équipe"
+                description="Allergies, table et vin préférés, occasions. Visible par l'équipe seulement, jamais par le client."
+              />
+              <Field label="Note sur ce convive">
+                <Textarea
+                  id="customer-staff-note"
+                  rows={4}
+                  maxLength={2000}
+                  value={staffNote}
+                  onChange={(event) => setStaffNote(event.target.value)}
+                  placeholder="Ex. Allergie aux noix. Préfère la table 4. Aime le Chablis."
+                />
+              </Field>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-[12px] text-mv-ink-faint">{staffNote.length} / 2000</span>
+                <Button
+                  size="sm"
+                  onClick={handleSaveStaffNote}
+                  loading={savingNote}
+                  disabled={savingNote || staffNote === savedStaffNote}
+                >
+                  Enregistrer la note
+                </Button>
+              </div>
+            </Card>
+          )}
           <Card>
             <div className="grid grid-cols-3 gap-3 rounded-xl bg-mv-cream-soft p-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Visites</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Visites</p>
                 <p className="font-display text-[16px] font-medium text-mv-ink">{customer.visitCount}</p>
               </div>
               <div>
-                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Total dépensé</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Total dépensé</p>
                 <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(customer.totalSpent)}</p>
               </div>
               <div>
-                <p className="text-[11px] font-semibold uppercase text-mv-ink-faint">Points</p>
+                <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Points</p>
                 <p className="font-display text-[16px] font-medium text-mv-green-dark">{customer.loyaltyPoints}</p>
               </div>
             </div>
@@ -226,12 +273,12 @@ export function CustomerDetailView({
                     <XAxis
                       dataKey="date"
                       tickFormatter={(d) => formatDate(d)}
-                      tick={{ fontSize: 11, fill: "var(--mv-ink-faint)" }}
+                      tick={{ fontSize: 12, fill: "var(--mv-ink-faint)" }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fill: "var(--mv-ink-faint)" }}
+                      tick={{ fontSize: 12, fill: "var(--mv-ink-faint)" }}
                       axisLine={false}
                       tickLine={false}
                       width={40}
@@ -307,7 +354,7 @@ export function CustomerDetailView({
                       <div className="min-w-0 flex-1 rounded-lg bg-mv-cream-soft p-3">
                         <div className="mb-1 flex items-center justify-between">
                           <span className="text-[12px] font-semibold text-mv-ink">{txLabel[t.type]}</span>
-                          <span className="text-[11px] text-mv-ink-faint">{formatDate(t.createdAt)}</span>
+                          <span className="text-[12px] text-mv-ink-faint">{formatDate(t.createdAt)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[12.5px]">
                           <span className="text-mv-ink-soft">

@@ -49,7 +49,7 @@ export default async function OnboardingPage() {
       panelSubline="Le reste — adresse, chiffres clés, outils — se complète en tout temps depuis l'application, sans bloquer votre accès."
       panelPoints={ONBOARDING_PANEL_POINTS}
       footer={
-        <p className="text-center text-[11.5px] text-mv-ink-faint">
+        <p className="text-center text-[12px] text-mv-ink-faint">
           Besoin d&apos;aide ? L&apos;équipe Minerva reste disponible à tout moment.
         </p>
       }

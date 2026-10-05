@@ -28,7 +28,7 @@ export default async function ServiceQuoteConfirmationPage({
   return (
     <main className="min-h-[70vh] bg-mv-cream px-4 py-16 sm:py-24">
       <section className={`mx-auto max-w-xl rounded-2xl border p-6 shadow-mv-sm sm:p-9 ${content.tone}`} aria-live="polite">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-mv-green-dark">Minerva Flow</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-mv-green-dark">Minerva Flow</p>
         <h1 className="mt-3 font-serif text-2xl text-mv-ink sm:text-3xl">{content.title}</h1>
         <p className="mt-3 text-sm leading-7 text-mv-ink-soft">{content.body}</p>
       </section>

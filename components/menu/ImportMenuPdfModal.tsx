@@ -92,7 +92,7 @@ export function ImportMenuPdfModal({
             </p>
             {grouped.map(([category, items]) => (
               <div key={category}>
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">{category}</p>
+                <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{category}</p>
                 <div className="space-y-1.5">
                   {items.map((item) => (
                     <div
@@ -126,7 +126,7 @@ export function ImportMenuPdfModal({
                           className="h-8 w-16 rounded-md border border-mv-border bg-mv-cream-soft px-1.5 text-[12.5px] text-mv-ink focus:border-mv-green focus:outline-none"
                         />
                       </div>
-                      <label className="flex shrink-0 items-center gap-1 text-[10.5px] text-mv-ink-faint">
+                      <label className="flex shrink-0 items-center gap-1 text-[12px] text-mv-ink-faint">
                         <input
                           type="checkbox"
                           checked={item.isOrderable !== false}

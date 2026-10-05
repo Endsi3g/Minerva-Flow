@@ -245,7 +245,7 @@ export function AgentsStoreView({
               <Sparkles className="h-3 w-3" />
             </div>
             <span className="truncate">Minerva Flow</span>
-            <span className="text-[9px] font-bold text-[#059669] bg-[#059669]/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="text-[12px] font-bold text-[#059669] bg-[#059669]/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
               AI
             </span>
           </div>
@@ -254,7 +254,7 @@ export function AgentsStoreView({
         <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
           <Link
             href="/overview"
-            className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#7a7a76] hover:text-[#059669] px-2 py-1.5 rounded-md hover:bg-[#e5e5e2]/60 transition-colors mb-2"
+            className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider text-[#7a7a76] hover:text-[#059669] px-2 py-1.5 rounded-md hover:bg-[#e5e5e2]/60 transition-colors mb-2"
           >
             <span>Minerva Flow</span>
           </Link>
@@ -481,7 +481,7 @@ export function AgentsStoreView({
           <div className="mt-8">
             <div className="flex items-center gap-2 mb-3">
               <Users2 size={15} className="text-[#7a7a76]" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#7a7a76]">
+              <span className="text-[12px] font-bold uppercase tracking-wider text-[#7a7a76]">
                 Équipe d&apos;agents Minerva — 7 derniers jours
               </span>
             </div>
@@ -500,12 +500,12 @@ export function AgentsStoreView({
                         <Icon size={15} className="text-[#059669]" />
                         {group.category.label}
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+                      <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
                         0 ACTIONS
                       </span>
                     </div>
                     <p className="text-[12px] text-[#7a7a76] mt-2 leading-relaxed">{group.description}</p>
-                    <div className="flex items-center gap-3 mt-3 text-[11px] text-[#7a7a76]">
+                    <div className="flex items-center gap-3 mt-3 text-[12px] text-[#7a7a76]">
                       <span className="flex items-center gap-1">
                         <CheckCircle2 size={12} className="text-neutral-400" />0 exécutées
                       </span>
@@ -515,7 +515,7 @@ export function AgentsStoreView({
                       {members.map((m) => (
                         <span
                           key={m.id}
-                          className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF7F0] border border-[#e6e5e0] text-[#555552] font-medium"
+                          className="text-[12px] px-2 py-0.5 rounded-full bg-[#FAF7F0] border border-[#e6e5e0] text-[#555552] font-medium"
                         >
                           {m.avatar} {m.name}
                         </span>
@@ -536,7 +536,7 @@ export function AgentsStoreView({
                   Tous les agents <span className="text-[#7a7a76] font-sans text-sm font-medium">| {filteredAgents.length} agents</span>
                 </h2>
               </div>
-              <span className="text-[11px] font-semibold text-[#7a7a76] flex items-center gap-1">
+              <span className="text-[12px] font-semibold text-[#7a7a76] flex items-center gap-1">
                 Les plus populaires <ChevronDown size={13} />
               </span>
             </div>
@@ -568,7 +568,7 @@ export function AgentsStoreView({
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span
                             className={cn(
-                              "text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wide border",
+                              "text-[12px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wide border",
                               a.category.chipClass
                             )}
                           >
@@ -593,7 +593,7 @@ export function AgentsStoreView({
                           {a.specialist.focusMetrics.map((metric, idx) => (
                             <span
                               key={idx}
-                              className="text-[11px] px-2 py-0.5 rounded-md bg-[#FAF7F0] border border-[#e6e5e0] text-[#7a7a76] font-mono"
+                              className="text-[12px] px-2 py-0.5 rounded-md bg-[#FAF7F0] border border-[#e6e5e0] text-[#7a7a76] font-mono"
                             >
                               {metric}
                             </span>
@@ -603,7 +603,7 @@ export function AgentsStoreView({
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-[#f0efea] flex items-center justify-between">
-                      <span className="text-[11px] text-[#059669] font-medium flex items-center gap-1">
+                      <span className="text-[12px] text-[#059669] font-medium flex items-center gap-1">
                         <CheckCircle2 size={13} />
                         {a.kind === "custom" ? "Créé par l'établissement" : "Modèle Gemini 3.7 Flash optimisé"}
                       </span>

@@ -45,7 +45,7 @@ struct SurveyView: View {
                     .foregroundStyle(MinervaColor.ink)
                     .multilineTextAlignment(.center)
                 Text("Votre réponse est envoyée directement à l'équipe Minerva Flow.")
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(MinervaColor.inkSoft)
                     .multilineTextAlignment(.center)
             }
@@ -56,7 +56,7 @@ struct SurveyView: View {
                         rating = star
                     } label: {
                         Image(systemName: star <= rating ? "star.fill" : "star")
-                            .font(.system(size: 30))
+                            .font(.mv(size: 30))
                             .foregroundStyle(MinervaColor.emerald)
                     }
                     .accessibilityLabel("Note \(star) étoile\(star > 1 ? "s" : "")")
@@ -73,7 +73,7 @@ struct SurveyView: View {
 
             if let submitError {
                 Text(submitError)
-                    .font(.system(size: 12.5))
+                    .font(.mv(size: 12.5))
                     .foregroundStyle(.red)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -84,7 +84,7 @@ struct SurveyView: View {
                 HStack {
                     if isSubmitting { ProgressView().tint(.white) }
                     Text(isSubmitting ? "Envoi…" : "Envoyer")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.mv(size: 14, weight: .semibold))
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 13)
@@ -100,13 +100,13 @@ struct SurveyView: View {
     private var confirmation: some View {
         VStack(spacing: 14) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 44))
+                .font(.mv(size: 44))
                 .foregroundStyle(MinervaColor.emerald)
             Text("Merci pour votre retour !")
                 .font(MinervaFont.display(18))
                 .foregroundStyle(MinervaColor.ink)
             Text("Votre avis a bien été transmis.")
-                .font(.system(size: 13))
+                .font(.mv(size: 13))
                 .foregroundStyle(MinervaColor.inkSoft)
         }
         .padding(.top, 40)

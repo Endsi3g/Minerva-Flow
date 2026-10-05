@@ -354,7 +354,7 @@ ${itemDesc}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="bg-mv-green text-white text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+              <span className="bg-mv-green text-white text-[12px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
                 Marketing Studio · Instagram & Facebook
               </span>
               <h2 className="font-display text-[20px] font-bold text-mv-ink">
@@ -383,7 +383,7 @@ ${itemDesc}
                   key={obj.id}
                   onClick={() => handleSelectObjective(obj.id)}
                   className={cn(
-                    "flex flex-col items-center justify-center p-2.5 rounded-xl border text-[11px] font-semibold transition-all text-center gap-1",
+                    "flex flex-col items-center justify-center p-2.5 rounded-xl border text-[12px] font-semibold transition-all text-center gap-1",
                     objective === obj.id
                       ? "border-mv-green bg-mv-green/10 text-mv-green-dark ring-2 ring-mv-green/30"
                       : "border-mv-border bg-mv-surface text-mv-ink-soft hover:bg-mv-cream-soft"
@@ -418,20 +418,20 @@ ${itemDesc}
               <div>
                 <p className="mb-1.5 text-[12px] font-semibold text-mv-ink-soft">Lien de destination avec tag UTM :</p>
                 <div className="flex items-center gap-2 rounded-xl border border-mv-border bg-mv-surface px-3 py-2">
-                  <span className="truncate font-mono text-[11.5px] text-mv-ink-soft flex-1">
+                  <span className="truncate font-mono text-[12px] text-mv-ink-soft flex-1">
                     {referralFullUrl}
                   </span>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={handleCopyStickerLink}
-                    className="shrink-0 text-[11.5px] h-8"
+                    className="shrink-0 text-[12px] h-8"
                   >
                     {copiedStickerLink ? <Check size={13} /> : <Copy size={13} />}
                     {copiedStickerLink ? "Copié !" : "Copier"}
                   </Button>
                 </div>
-                <p className="mt-1.5 text-[11px] text-mv-ink-faint">
+                <p className="mt-1.5 text-[12px] text-mv-ink-faint">
                   Dans Instagram ou Facebook Story, collez ce lien dans l&apos;outil « Sticker Lien ». Les clics et filleuls s&apos;incrémentent en direct.
                 </p>
               </div>
@@ -451,7 +451,7 @@ ${itemDesc}
                     key={p.name}
                     onClick={() => applyPreset(idx)}
                     className={cn(
-                      "px-2.5 py-1 text-[11.5px] font-medium rounded-lg transition-all",
+                      "px-2.5 py-1 text-[12px] font-medium rounded-lg transition-all",
                       selectedPresetIndex === idx
                         ? "bg-mv-green text-white font-semibold"
                         : "bg-mv-cream text-mv-ink-soft hover:bg-mv-cream-soft"
@@ -550,7 +550,7 @@ ${itemDesc}
                     key={theme.id}
                     onClick={() => setSelectedTheme(theme)}
                     className={cn(
-                      "flex items-center gap-2 p-2 rounded-xl border text-[11.5px] font-medium transition-all text-left",
+                      "flex items-center gap-2 p-2 rounded-xl border text-[12px] font-medium transition-all text-left",
                       selectedTheme.id === theme.id
                         ? "border-mv-green ring-2 ring-mv-green/30"
                         : "border-mv-border hover:border-mv-border-soft"
@@ -572,7 +572,7 @@ ${itemDesc}
                     key={badge}
                     onClick={() => setSelectedSticker(badge)}
                     className={cn(
-                      "px-2.5 py-1 text-[11.5px] font-semibold rounded-lg border transition-all",
+                      "px-2.5 py-1 text-[12px] font-semibold rounded-lg border transition-all",
                       selectedSticker === badge
                         ? "bg-mv-green text-white border-mv-green shadow-sm"
                         : "bg-mv-cream/50 text-mv-ink-soft border-mv-border-soft hover:bg-mv-cream"
@@ -594,7 +594,7 @@ ${itemDesc}
               <span className="text-[12px] font-bold uppercase tracking-wider text-mv-green-dark flex items-center gap-1.5">
                 <Eye size={14} /> Aperçu en Direct
               </span>
-              <span className="text-[11px] font-semibold text-mv-ink-faint uppercase">
+              <span className="text-[12px] font-semibold text-mv-ink-faint uppercase">
                 {selectedFormat}
               </span>
             </div>
@@ -611,7 +611,7 @@ ${itemDesc}
               {/* Header Badge */}
               <div className="flex justify-center">
                 <span
-                  className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm"
+                  className="text-[12px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm"
                   style={{ background: selectedTheme.badgeBg, color: selectedTheme.badgeText }}
                 >
                   {selectedSticker}
@@ -630,7 +630,7 @@ ${itemDesc}
                 >
                   {itemPrice}
                 </div>
-                <p className="text-[11.5px] opacity-90 line-clamp-3 max-w-[220px] mx-auto leading-snug">
+                <p className="text-[12px] opacity-90 line-clamp-3 max-w-[220px] mx-auto leading-snug">
                   {itemDesc}
                 </p>
 
@@ -639,11 +639,11 @@ ${itemDesc}
                   <div className="pt-2 flex flex-col items-center">
                     <div className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/95 px-3.5 py-1.5 shadow-md backdrop-blur-sm">
                       <Link2 size={13} className="text-blue-500 shrink-0" />
-                      <span className="truncate text-[11px] font-bold text-slate-900 tracking-tight max-w-[180px]">
+                      <span className="truncate text-[12px] font-bold text-slate-900 tracking-tight max-w-[180px]">
                         {stickerText}
                       </span>
                     </div>
-                    <span className="mt-1 text-[9px] font-semibold uppercase tracking-wider opacity-75">
+                    <span className="mt-1 text-[12px] font-semibold uppercase tracking-wider opacity-75">
                       {selectedFormat === "story" ? "👆 Toucher le sticker" : "🔗 Lien en bio & commande"}
                     </span>
                   </div>
@@ -652,7 +652,7 @@ ${itemDesc}
 
               {/* Bottom CTA */}
               <div className="pt-2 border-t border-white/20">
-                <p className="text-[10.5px] font-semibold tracking-wide uppercase opacity-95">
+                <p className="text-[12px] font-semibold tracking-wide uppercase opacity-95">
                   {ctaText}
                 </p>
               </div>
@@ -676,7 +676,7 @@ ${itemDesc}
                   </Button>
                 ) : (
                   <Link
-                    href="/settings?tab=integrations"
+                    href="/settings"
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-mv-border px-4 py-2.5 text-[12.5px] font-semibold text-mv-ink-soft transition-colors hover:bg-mv-cream-soft"
                   >
                     <Instagram size={15} /> Connecter Instagram
@@ -725,7 +725,7 @@ ${itemDesc}
             <div className="flex items-center justify-between p-3 border border-mv-border-soft rounded-xl bg-mv-surface">
               <div>
                 <p className="text-[13px] font-semibold text-mv-ink">Clients inactifs & anniversaires</p>
-                <p className="text-[11.5px] text-mv-ink-faint">
+                <p className="text-[12px] text-mv-ink-faint">
                   Un message (courriel, ou SMS si configuré) envoyé automatiquement aux clients inactifs depuis
                   un moment et pour leur anniversaire — avec leur consentement seulement.
                 </p>

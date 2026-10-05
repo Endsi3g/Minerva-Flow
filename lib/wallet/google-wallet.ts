@@ -14,6 +14,7 @@ import { buildGoogleLoyaltyPayload } from "./google-loyalty-payload";
 export function buildGoogleWalletSaveUrl(input: {
   customerId: string;
   customerName: string;
+  customerPhone?: string | null;
   restaurantId: string;
   restaurantName: string;
   points: number;

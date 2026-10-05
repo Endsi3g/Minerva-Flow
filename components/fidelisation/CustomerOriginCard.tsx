@@ -77,7 +77,7 @@ export function CustomerOriginCard({
                     <span className="flex min-w-0 items-center gap-1.5 truncate text-[12.5px] font-medium text-mv-ink">
                       <MapPin size={12} className="shrink-0 text-mv-green-dark" /> {city.label}
                     </span>
-                    <span className="shrink-0 text-[11.5px] font-semibold text-mv-ink-soft">
+                    <span className="shrink-0 text-[12px] font-semibold text-mv-ink-soft">
                       {city.customerCount} client{city.customerCount === 1 ? "" : "s"}
                     </span>
                   </div>
@@ -95,7 +95,7 @@ export function CustomerOriginCard({
         )}
 
         <div className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 p-3.5">
-          <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-mv-ink-faint">
+          <div className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
             <Share2 size={13} /> Sources attribuées
           </div>
           {sortedSources.length > 0 ? (
@@ -112,7 +112,7 @@ export function CustomerOriginCard({
               Pas encore de conversion attribuée. Les visites sans source mesurée ne sont pas estimées ni classées.
             </p>
           )}
-          <p className="mt-3 border-t border-mv-border-soft pt-2.5 text-[10.5px] leading-relaxed text-mv-ink-faint">
+          <p className="mt-3 border-t border-mv-border-soft pt-2.5 text-[12px] leading-relaxed text-mv-ink-faint">
             Villes et quartiers déclarés par les clients; emplacement cartographique approximatif. Canaux issus des connexions marketing et du suivi de parrainage.
           </p>
         </div>

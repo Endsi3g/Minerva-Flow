@@ -104,12 +104,12 @@ export function FlowAiDossiersDrawer({
           <Folder size={14} className="text-mv-green-dark" />
           <span className="text-[12px] font-semibold text-mv-ink">Dossiers RAG (Contexte)</span>
         </div>
-        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-mv-green-tint text-mv-green-dark font-medium">
+        <span className="text-[12px] px-1.5 py-0.5 rounded-full bg-mv-green-tint text-mv-green-dark font-medium">
           {activeDossiers.length} actifs
         </span>
       </div>
 
-      <p className="text-[11px] text-mv-ink-faint leading-tight">
+      <p className="text-[12px] text-mv-ink-faint leading-tight">
         Cochez les domaines injectés dans l&apos;intelligence de Flow AI pour cette session :
       </p>
 
@@ -158,9 +158,9 @@ export function FlowAiDossiersDrawer({
               </div>
 
               {isExpanded && (
-                <div className="px-3 pb-2 pt-0.5 text-[11px] text-mv-ink-soft border-t border-mv-border-soft/60 bg-white/60">
+                <div className="px-3 pb-2 pt-0.5 text-[12px] text-mv-ink-soft border-t border-mv-border-soft/60 bg-white/60">
                   <p>{dossier.description}</p>
-                  <p className="text-[10px] text-mv-green-dark mt-1 font-medium">
+                  <p className="text-[12px] text-mv-green-dark mt-1 font-medium">
                     ● Synchronisation automatique avec la base restaurant
                   </p>
                 </div>
@@ -172,7 +172,7 @@ export function FlowAiDossiersDrawer({
 
       {/* ── Bouton d'ajout de SOP personnalisée ───────────────────────────────── */}
       <Dialog open={newSopOpen} onOpenChange={setNewSopOpen}>
-        <DialogTrigger className="w-full mt-1 h-7 text-[11px] border border-dashed border-mv-border rounded-md text-mv-ink-soft hover:text-mv-green-dark hover:border-mv-green flex items-center justify-center gap-1 cursor-pointer">
+        <DialogTrigger className="w-full mt-1 h-7 text-[12px] border border-dashed border-mv-border rounded-md text-mv-ink-soft hover:text-mv-green-dark hover:border-mv-green flex items-center justify-center gap-1 cursor-pointer">
           <Plus size={12} /> Ajouter une consigne / SOP
         </DialogTrigger>
         <DialogContent className="max-w-md bg-mv-surface border-mv-border">

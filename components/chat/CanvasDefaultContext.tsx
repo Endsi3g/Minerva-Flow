@@ -37,11 +37,11 @@ export function CanvasDefaultContext({
       
       {/* Header Info */}
       <div className="flex items-center justify-between border-b border-mv-border/40 pb-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-mv-ink-faint">
+        <div className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
           <Sparkles size={13} className="text-mv-green-dark" />
           <span>Contexte Opérationnel</span>
         </div>
-        <span className="text-[10px] font-semibold text-mv-green-dark bg-mv-green-tint px-2 py-0.5 rounded-full border border-mv-green/15">
+        <span className="text-[12px] font-semibold text-mv-green-dark bg-mv-green-tint px-2 py-0.5 rounded-full border border-mv-green/15">
           Temps Réel
         </span>
       </div>
@@ -49,10 +49,10 @@ export function CanvasDefaultContext({
       {/* 1. KPIs Financiers */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[10.5px] font-bold uppercase tracking-wide text-mv-ink-faint">
+          <span className="text-[12px] font-bold uppercase tracking-wide text-mv-ink-faint">
             Aperçu Financier
           </span>
-          <span className="text-[10px] text-mv-ink-soft">Mois en cours</span>
+          <span className="text-[12px] text-mv-ink-soft">Mois en cours</span>
         </div>
         <div className="grid grid-cols-2 gap-2.5">
           {/* Revenu */}
@@ -70,7 +70,7 @@ export function CanvasDefaultContext({
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase text-mv-ink-faint">
+              <span className="text-[12px] font-semibold uppercase text-mv-ink-faint">
                 Revenu Net
               </span>
               <TrendingUp size={12} className="text-mv-green-dark opacity-70 group-hover:opacity-100" />
@@ -78,7 +78,7 @@ export function CanvasDefaultContext({
             <p className="font-display text-[15px] font-bold text-mv-ink mt-0.5">
               {formatCurrency(totalRevenue)}
             </p>
-            <span className="text-[9.5px] font-medium text-emerald-600 flex items-center gap-0.5 mt-0.5">
+            <span className="text-[12px] font-medium text-emerald-600 flex items-center gap-0.5 mt-0.5">
               +12.4% vs N-1
             </span>
           </div>
@@ -96,7 +96,7 @@ export function CanvasDefaultContext({
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase text-mv-ink-faint">
+              <span className="text-[12px] font-semibold uppercase text-mv-ink-faint">
                 Marge Brute
               </span>
               <Percent size={12} className="text-mv-amber opacity-70 group-hover:opacity-100" />
@@ -104,7 +104,7 @@ export function CanvasDefaultContext({
             <p className="font-display text-[15px] font-bold text-mv-ink mt-0.5">
               {formatCurrency(estimatedMargin)}
             </p>
-            <span className="text-[9.5px] font-medium text-mv-ink-soft mt-0.5 block">
+            <span className="text-[12px] font-medium text-mv-ink-soft mt-0.5 block">
               Taux : <strong className="text-mv-ink">{marginRate}%</strong>
             </span>
           </div>
@@ -114,21 +114,21 @@ export function CanvasDefaultContext({
       {/* 2. Point de Vigilance / Alerte Interactive */}
       {criticalAlert ? (
         <div>
-          <span className="mb-2 block text-[10.5px] font-bold uppercase tracking-wide text-mv-ink-faint">
+          <span className="mb-2 block text-[12px] font-bold uppercase tracking-wide text-mv-ink-faint">
             Point de Vigilance
           </span>
           <div className="rounded-xl border border-red-200/90 bg-red-50/50 p-3.5 space-y-2 text-mv-ink shadow-2xs">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-red-800">
+              <div className="flex items-center gap-1.5 text-[12px] font-bold text-red-800">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
                 </span>
                 <span>{criticalAlert.title}</span>
               </div>
-              <Badge tone="red" className="text-[9px] px-1.5 py-0">Urgent</Badge>
+              <Badge tone="red" className="text-[12px] px-1.5 py-0">Urgent</Badge>
             </div>
-            <p className="text-[11px] leading-relaxed text-red-950/80">
+            <p className="text-[12px] leading-relaxed text-red-950/80">
               {criticalAlert.detail || "Cette anomalie impacte le calcul des marges en temps réel."}
             </p>
             {onSendPrompt && (
@@ -139,7 +139,7 @@ export function CanvasDefaultContext({
                     `Comment régulariser l'alerte suivante : "${criticalAlert.title} - ${criticalAlert.detail}" et quel est l'impact estimé sur la rentabilité de l'établissement ?`
                   )
                 }
-                className="w-full mt-1 flex items-center justify-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[11px] font-semibold py-1.5 shadow-mv-sm transition-all"
+                className="w-full mt-1 flex items-center justify-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[12px] font-semibold py-1.5 shadow-mv-sm transition-all"
               >
                 <ShieldAlert size={13} />
                 <span>Régulariser avec l&apos;IA</span>
@@ -149,7 +149,7 @@ export function CanvasDefaultContext({
         </div>
       ) : (
         <div>
-          <span className="mb-2 block text-[10.5px] font-bold uppercase tracking-wide text-mv-ink-faint">
+          <span className="mb-2 block text-[12px] font-bold uppercase tracking-wide text-mv-ink-faint">
             Alertes actives
           </span>
           <div className="rounded-xl border border-mv-border/80 bg-mv-surface p-3 text-center text-xs text-mv-ink-faint">
@@ -161,10 +161,10 @@ export function CanvasDefaultContext({
       {/* 3. Programmes Actifs */}
       <div className="flex-1">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[10.5px] font-bold uppercase tracking-wide text-mv-ink-faint">
+          <span className="text-[12px] font-bold uppercase tracking-wide text-mv-ink-faint">
             Programmes Actifs
           </span>
-          <span className="text-[10px] text-mv-ink-faint font-mono">Part CA</span>
+          <span className="text-[12px] text-mv-ink-faint font-mono">Part CA</span>
         </div>
 
         <div className="space-y-1.5">
@@ -195,7 +195,7 @@ export function CanvasDefaultContext({
                     <span className="font-semibold text-mv-ink truncate block group-hover:text-mv-green-dark transition-colors">
                       {p.name}
                     </span>
-                    <span className="text-[10px] text-mv-ink-faint">
+                    <span className="text-[12px] text-mv-ink-faint">
                       {sharePercent}% du CA total
                     </span>
                   </div>
@@ -218,7 +218,7 @@ export function CanvasDefaultContext({
       </div>
 
       {/* Footer Info Tip */}
-      <div className="rounded-xl bg-mv-cream border border-mv-border/60 p-2.5 text-[10.5px] text-mv-ink-soft flex items-start gap-2">
+      <div className="rounded-xl bg-mv-cream border border-mv-border/60 p-2.5 text-[12px] text-mv-ink-soft flex items-start gap-2">
         <HelpCircle size={13} className="shrink-0 text-mv-ink-faint mt-0.5" />
         <span>
           Cliquez sur n&apos;importe quelle métrique ou programme pour lancer un audit instantané avec le copilote.

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCurrentRestaurantId } from "@/lib/data/current-restaurant";
 import { getCustomer, getLoyaltyRewards } from "@/lib/data/customers";
+import { getCustomerStaffNote } from "@/lib/data/customer-staff-notes";
 import { getRestaurant } from "@/lib/data/restaurants";
 import { CustomerDetailView } from "./CustomerDetailView";
 
@@ -23,12 +24,17 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
   if (!restaurantId || !customer) notFound();
 
-  const [rewards, restaurant] = await Promise.all([getLoyaltyRewards(restaurantId), getRestaurant(restaurantId)]);
+  const [rewards, restaurant, staffNote] = await Promise.all([
+    getLoyaltyRewards(restaurantId),
+    getRestaurant(restaurantId),
+    getCustomerStaffNote(id),
+  ]);
 
   return (
     <CustomerDetailView
       restaurantId={restaurantId}
       initialCustomer={customer}
+      initialStaffNote={staffNote.body}
       rewards={rewards}
       loyaltyPointsPerDollar={restaurant?.loyaltyPointsPerDollar ?? 1}
       loyaltyTierThresholds={{
