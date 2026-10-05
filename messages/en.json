@@ -3397,7 +3397,11 @@
     "signOut": "Sign out",
     "deviceSignedOut": "Device signed out.",
     "couldNotSignOut": "Could not sign out this device.",
-    "severalDevicesSignedIn": "Several devices signed in at the same time is normal (phone, restaurant computer, etc.). This mostly helps you spot a sign-in that is not yours and sign it out. Signing out takes effect within a few minutes, not instantly."
+    "severalDevicesSignedIn": "Several devices signed in at the same time is normal (phone, restaurant computer, etc.). This mostly helps you spot a sign-in that is not yours and sign it out. Signing out takes effect within a few minutes, not instantly.",
+    "activityLine": "Last activity {last} · Signed in since {since}",
+    "signOutButton": "Sign out",
+    "revokeDescription": "{device}{browser} will be signed out of your account. If it is you, you will just need to sign in again.",
+    "thisDevice": "This device"
   },
   "appearancePage": {
     "appearance": "Appearance",
@@ -3491,7 +3495,11 @@
     "newChat": "New chat",
     "specialistTurnedOnSpecialistname": "Specialist turned on: {specialistName}",
     "changeSpecialist": "Change specialist",
-    "noConversations": "No conversations"
+    "noConversations": "No conversations",
+    "inviteCollaborators": "Invite collaborators",
+    "searchAnalysis": "Search an analysis...",
+    "pinnedCount": "Pinned ({count})",
+    "recentCount": "Recent ({count})"
   },
   "onboardingPage": {
     "almostReadyLetS": "Almost ready. Let's set up your restaurant.",
