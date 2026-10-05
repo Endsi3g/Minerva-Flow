@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Minerva Flow</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #f5f1e6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, "Plus Jakarta Sans", system-ui, sans-serif;
+      color: #16241d;
+    }
+    .wrap {
+      text-align: center;
+      padding: 24px;
+    }
+    .mark {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 16px;
+      border-radius: 16px;
+      background: #167f5b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fafaf5;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    h1 {
+      font-family: "New York", "Playfair Display", Georgia, serif;
+      font-size: 20px;
+      font-weight: 500;
+      margin: 0 0 6px;
+    }
+    p {
+      font-size: 13px;
+      color: #5c6b62;
+      margin: 0;
+    }
+    .spinner {
+      margin: 20px auto 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(22, 127, 91, 0.2);
+      border-top-color: #167f5b;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="mark">M</div>
+    <h1>Minerva Flow</h1>
+    <p>Connexion à votre espace…</p>
+    <div class="spinner"></div>
+  </div>
+</body>
+</html>
