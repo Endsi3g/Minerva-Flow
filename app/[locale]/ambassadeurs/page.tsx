@@ -5,8 +5,18 @@ import { Button } from "@/components/ui/Button";
 import { ArrowRight, Check, Gift, Users, Video } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Devenir ambassadeur | Minerva Flow",
-  description: "Recommandez Minerva Flow, créez du contenu avec des restaurants participants et suivez vos commissions dans votre espace dédié.",
+  title: "Programme Ambassadeurs & Recommandations",
+  description:
+    "Recommandez Minerva Flow aux restaurants et cafés de votre réseau. Touchez 10 % de commission sur chaque abonnement et suivez vos gains en direct.",
+  alternates: {
+    canonical: "/ambassadeurs",
+  },
+  openGraph: {
+    title: "Minerva Flow | Programme Ambassadeurs & Recommandations",
+    description:
+      "Aidez les restaurants à moderniser leur gestion et bénéficiez d'une rémunération récurrente grâce à votre lien d'ambassadeur.",
+    images: ["/og.png"],
+  },
 };
 
 export default function AmbassadorLandingPage() {

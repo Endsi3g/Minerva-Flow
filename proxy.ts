@@ -37,6 +37,7 @@ export async function proxy(request: NextRequest) {
 
   const publicRoutes = [
     "/login",
+    "/blog",
     "/ambassadeurs",
     "/sign-up",
     "/sign-up-success",
@@ -52,6 +53,7 @@ export async function proxy(request: NextRequest) {
   // so a request to either form is recognized as the same public route.
   const isAuthRoute =
     publicRoutes.includes(pathWithoutLocale) ||
+    pathWithoutLocale.startsWith("/blog/") ||
     pathWithoutLocale.startsWith("/auth/") ||
     // Invite links and shared report links must be viewable before login —
     // the page itself checks auth state and prompts to sign in when needed.

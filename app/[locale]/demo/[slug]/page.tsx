@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getProspectByDemoSlug, incrementProspectDemoView } from "@/lib/data/prospects";
 import { estimateMargin } from "@/lib/prospects/margin";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -65,6 +66,37 @@ function CtaButtons({
       )}
     </div>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const prospect = await getProspectByDemoSlug(slug);
+
+  if (!prospect) {
+    return {
+      title: "Démonstration Interactive Restaurant",
+      description: "Démonstration du système d'exploitation et de rentabilité restaurant Minerva Flow.",
+    };
+  }
+
+  const name = prospect.restaurantName;
+  return {
+    title: `Démonstration & Marges — ${name}`,
+    description: `Découvrez la vitrine interactive, l'estimation des marges et la fidélisation Apple Wallet configurées pour ${name} par Minerva Flow.`,
+    robots: {
+      index: false,
+      follow: false,
+    },
+    openGraph: {
+      title: `Minerva Flow | Démonstration pour ${name}`,
+      description: `Simulateur de rentabilité et programme de fidélisation pour ${name}.`,
+      images: ["/og.png"],
+    },
+  };
 }
 
 export default async function ProspectDemoPage({ params }: { params: Promise<{ slug: string }> }) {
