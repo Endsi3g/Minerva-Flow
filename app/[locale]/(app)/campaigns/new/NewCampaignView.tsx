@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function NewCampaignView({ restaurantId }: { restaurantId: string }) {
+  const t = useTranslations("newCampaign");
   const router = useRouter();
   const [draftId] = useState(() => crypto.randomUUID());
   const [assets, setAssets] = useState<PreparedCampaignAsset[]>([]);
@@ -35,7 +38,7 @@ export function NewCampaignView({ restaurantId }: { restaurantId: string }) {
         endDate: String(form.get("endDate") ?? form.get("startDate") ?? ""),
       });
       if (!campaign) {
-        setError("La création de la campagne a échoué. Réessayez.");
+        setError(t("couldNotCreateThe"));
         return;
       }
       posthog.capture("campaign_created", {
@@ -82,7 +85,7 @@ export function NewCampaignView({ restaurantId }: { restaurantId: string }) {
         <Card>
           <div className="space-y-4">
             <Field label="Nom de la campagne">
-              <Input name="name" placeholder="Ex : Terrasse d'été — teasing" required />
+              <Input name="name" placeholder={t("eGSummerPatio")} required />
             </Field>
 
             <Field label="Description">
@@ -92,23 +95,23 @@ export function NewCampaignView({ restaurantId }: { restaurantId: string }) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Type">
                 <Select name="type" defaultValue="post">
-                  <option value="post">Post</option>
-                  <option value="email">Email</option>
-                  <option value="promo">Promotion</option>
+                  <option value="post">{t("post")}</option>
+                  <option value="email">{t("email")}</option>
+                  <option value="promo">{t("promotion")}</option>
                 </Select>
               </Field>
               <Field label="Canal">
                 <Select name="channel" defaultValue="Instagram">
-                  <option>Instagram</option>
-                  <option>Facebook</option>
-                  <option>Email</option>
-                  <option>En salle</option>
+                  <option>{t("instagram")}</option>
+                  <option>{t("facebook")}</option>
+                  <option>{t("email")}</option>
+                  <option>{t("inTheDiningRoom")}</option>
                 </Select>
               </Field>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Date de début">
+              <Field label={t("startDate")}>
                 <Input name="startDate" type="date" required />
               </Field>
               <Field label="Date de fin">
@@ -119,7 +122,7 @@ export function NewCampaignView({ restaurantId }: { restaurantId: string }) {
         </Card>
 
         <Card>
-          <p className="mb-4 font-display text-[16px] font-medium text-mv-ink">Images et fichiers</p>
+          <p className="mb-4 font-display text-[16px] font-medium text-mv-ink">{t("imagesAndFiles")}</p>
           <CampaignAssets
             restaurantId={restaurantId}
             draftId={draftId}
@@ -134,7 +137,7 @@ export function NewCampaignView({ restaurantId }: { restaurantId: string }) {
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Créer la campagne"}
+            {isSubmitting ? t("creating") : t("createTheCampaign")}
           </Button>
         </div>
       </form>

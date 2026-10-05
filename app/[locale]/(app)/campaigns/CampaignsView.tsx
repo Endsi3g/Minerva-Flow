@@ -2,7 +2,7 @@
 
 
 import { intlLocale } from "@/lib/format-locale";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -41,11 +41,13 @@ const statusTone: Record<CampaignStatus, "green" | "amber" | "neutral"> = {
   terminee: "neutral",
 };
 
-const statusLabel: Record<CampaignStatus, string> = {
+function buildStatusLabel(t: (key: string) => string): Record<CampaignStatus, string> {
+  return {
   active: "Active",
-  planifiee: "Planifiée",
-  terminee: "Terminée",
+  planifiee: t("scheduled"),
+  terminee: t("finished"),
 };
+}
 
 const impactTone = { fort: "green", moyen: "amber", faible: "neutral" } as const;
 
@@ -64,6 +66,7 @@ export function CampaignsView({
   canManagePaidAds: boolean;
   openPaidAdsRequest: PaidAdsRequest | null;
 }) {
+  const t = useTranslations("campaignsView");
   const locale = useLocale();
   const { role } = useApp();
   const router = useRouter();
@@ -134,7 +137,7 @@ export function CampaignsView({
       <PageHeader
         eyebrow="Marketing"
         title="Historique des campagnes"
-        description="Retrouvez les campagnes envoyées ou planifiées, vérifiez leurs résultats et ouvrez leur contenu."
+        description={t("findTheCampaignsSent")}
         action={
           <div className="flex items-center gap-2">
             {canCreate && (
@@ -148,33 +151,33 @@ export function CampaignsView({
 
       <PaidAdsRequestCard restaurantId={restaurantId} canManage={canManagePaidAds} initialRequest={openPaidAdsRequest} />
 
-      <section aria-label="Aperçu des campagnes" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section aria-label={t("campaignOverview")} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card className="py-4">
-          <p className="text-[12px] font-medium text-mv-ink-faint">Campagnes suivies</p>
+          <p className="text-[12px] font-medium text-mv-ink-faint">{t("campaignsTracked")}</p>
           <p className="mt-1 font-display text-2xl font-semibold text-mv-ink">{campaigns.length}</p>
         </Card>
         <Card className="py-4">
-          <p className="text-[12px] font-medium text-mv-ink-faint">Actives</p>
+          <p className="text-[12px] font-medium text-mv-ink-faint">{t("active")}</p>
           <p className="mt-1 font-display text-2xl font-semibold text-mv-green-dark">{activeCount}</p>
         </Card>
         <Card className="py-4">
-          <p className="text-[12px] font-medium text-mv-ink-faint">Revenus attribués estimés</p>
+          <p className="text-[12px] font-medium text-mv-ink-faint">{t("estimatedAttributedRevenue")}</p>
           <p className="mt-1 font-display text-2xl font-semibold text-mv-ink">{formatCurrency(attributedRevenue, locale)}</p>
         </Card>
       </section>
 
       <div className="space-y-4">
           <search className="mb-4 flex flex-wrap items-center gap-2.5" aria-label="Rechercher et filtrer les campagnes">
-            <Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Rechercher une campagne…" aria-label="Rechercher une campagne" className="w-full sm:max-w-xs" />
+            <Input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("searchACampaign")} aria-label="Rechercher une campagne" className="w-full sm:max-w-xs" />
             <Select
               className="w-auto"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as "all" | CampaignStatus)}
             >
-              <option value="all">Tous les statuts</option>
-              {(Object.keys(statusLabel) as CampaignStatus[]).map((s) => (
+              <option value="all">{t("allStatuses")}</option>
+              {(Object.keys(buildStatusLabel(t)) as CampaignStatus[]).map((s) => (
                 <option key={s} value={s}>
-                  {statusLabel[s]}
+                  {buildStatusLabel(t)[s]}
                 </option>
               ))}
             </Select>
@@ -183,7 +186,7 @@ export function CampaignsView({
               value={channelFilter}
               onChange={(e) => setChannelFilter(e.target.value as "all" | CampaignChannel)}
             >
-              <option value="all">Tous les canaux</option>
+              <option value="all">{t("allChannels")}</option>
               {(Object.keys(channelIcon) as CampaignChannel[]).map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -201,7 +204,7 @@ export function CampaignsView({
                 <EmptyState
                   icon={Megaphone}
                   title="Aucune campagne ne correspond"
-                  description="Ajustez les filtres ou créez une nouvelle campagne."
+                  description={t("adjustTheFiltersOr")}
                   action={
                     canCreate && (
                       <Button size="sm" href="/campaigns/new">
@@ -213,11 +216,11 @@ export function CampaignsView({
               ) : (
                 <Table>
                   <THead>
-                    <Th>Campagne</Th>
-                    <Th>Canal</Th>
-                    <Th>Dates</Th>
-                    <Th>Statut</Th>
-                    <Th className="text-right">Résultat</Th>
+                    <Th>{t("campaign")}</Th>
+                    <Th>{t("channel")}</Th>
+                    <Th>{t("dates")}</Th>
+                    <Th>{t("status")}</Th>
+                    <Th className="text-right">{t("result")}</Th>
                   </THead>
                   <tbody>
                     {filtered.map((c) => {
@@ -237,7 +240,7 @@ export function CampaignsView({
                             {formatDate(c.startDate, locale)} — {formatDate(c.endDate, locale)}
                           </Td>
                           <Td>
-                            <Badge tone={statusTone[c.status]}>{statusLabel[c.status]}</Badge>
+                            <Badge tone={statusTone[c.status]}>{buildStatusLabel(t)[c.status]}</Badge>
                           </Td>
                           <Td className="text-right font-medium text-mv-ink">
                             {c.estimatedRevenue ? (
@@ -261,7 +264,7 @@ export function CampaignsView({
                     eyebrow={selected.channel}
                     title={selected.name}
                     description={`${formatDate(selected.startDate, locale)} — ${formatDate(selected.endDate, locale)}`}
-                    action={<Badge tone={statusTone[selected.status]}>{statusLabel[selected.status]}</Badge>}
+                    action={<Badge tone={statusTone[selected.status]}>{buildStatusLabel(t)[selected.status]}</Badge>}
                   />
 
                   {canCreate && (
@@ -283,7 +286,7 @@ export function CampaignsView({
                           onClick={() => handleStatusChange("terminee")}
                           disabled={isPending}
                         >
-                          Terminer la campagne
+                          {t("endTheCampaign")}
                         </Button>
                       )}
                     </div>
@@ -296,7 +299,7 @@ export function CampaignsView({
 
                     {selected.estimatedRevenue != null && (
                       <div className="flex justify-between border-t border-mv-border-soft pt-2.5">
-                        <span className="text-mv-ink-faint">Revenu corrélé</span>
+                        <span className="text-mv-ink-faint">{t("correlatedRevenue")}</span>
                         <span className="font-semibold text-mv-green-dark">
                           +{formatCurrency(selected.estimatedRevenue, locale)}
                         </span>
@@ -305,7 +308,7 @@ export function CampaignsView({
 
                     {selected.impact && (
                       <div className="flex justify-between border-t border-mv-border-soft pt-2.5">
-                        <span className="text-mv-ink-faint">Impact global</span>
+                        <span className="text-mv-ink-faint">{t("overallImpact")}</span>
                         <Badge tone={impactTone[selected.impact]}>
                           {selected.impact.toUpperCase()}
                         </Badge>
@@ -316,7 +319,7 @@ export function CampaignsView({
 
                 {assets.length > 0 && (
                   <Card>
-                    <CardHeader title="Fichiers rattachés" description={`${assets.length} fichier(s)`} />
+                    <CardHeader title={t("attachedFiles")} description={`${assets.length} fichier(s)`} />
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                       {assets.map((a) =>
                         a.url && (a.mimeType.startsWith("image/") || a.kind === "image") ? (
@@ -350,7 +353,7 @@ export function CampaignsView({
                 <Card>
                   <CardHeader title="Notes du consultant" description={`${selected.notes.length} note(s)`} />
                   {selected.notes.length === 0 ? (
-                    <p className="text-[12.5px] text-mv-ink-faint">Aucune note pour l&apos;instant.</p>
+                    <p className="text-[12.5px] text-mv-ink-faint">{t("noNotesYet")}</p>
                   ) : (
                     <div className="space-y-3">
                       {selected.notes.map((n, i) => (

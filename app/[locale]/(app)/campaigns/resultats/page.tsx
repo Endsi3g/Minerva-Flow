@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ResultsShareStudio } from "@/components/share/ResultsShareStudio";
@@ -10,9 +10,13 @@ import { getRestaurantShareResults, parseSharePeriod, SHARE_PERIODS } from "@/li
 import { restaurantShareMetrics } from "@/lib/share/results";
 import { CampaignsSubNav } from "../CampaignsSubNav";
 
-export const metadata: Metadata = { title: "Partager mes résultats — Campagnes" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("campaignResults");
+  return { title: t("shareMyResults2") };
+}
 
 export default async function ShareResultsPage({ searchParams }: { searchParams: Promise<{ jours?: string }> }) {
+  const t = await getTranslations("campaignResults");
   const locale = await getLocale();
   const membership = await getCurrentMembership();
   // Same gate as publishing to Instagram: sharing results is an owner/manager act.
@@ -31,10 +35,10 @@ export default async function ShareResultsPage({ searchParams }: { searchParams:
       <CampaignsSubNav />
       <PageHeader
         eyebrow="Marketing"
-        title="Partager mes résultats"
-        description="Créez un visuel ou une courte vidéo avec vos vrais chiffres, prêts à publier sur vos réseaux."
+        title={t("shareMyResults")}
+        description={t("createAVisualOr")}
       />
-      <nav aria-label="Période" className="flex gap-2">
+      <nav aria-label={t("period")} className="flex gap-2">
         {SHARE_PERIODS.map((option) => (
           <Link
             key={option}
@@ -56,8 +60,8 @@ export default async function ShareResultsPage({ searchParams }: { searchParams:
         defaultHeadline={`Ce que nos clients font chez ${name}`}
         defaultSubtitle=""
         fileBase={`resultats-${slug}`}
-        emptyTitle="Pas encore de résultat à partager"
-        emptyHint="Dès que des clients rejoignent votre programme fidélité ou passent commande, leurs chiffres apparaîtront ici. Nous n'affichons jamais un zéro comme une réussite."
+        emptyTitle={t("noResultsToShare")}
+        emptyHint={t("asSoonAsCustomers")}
       />
     </div>
   );
