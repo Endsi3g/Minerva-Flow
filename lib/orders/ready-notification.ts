@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendTransactionalEmail } from "@/lib/email/resend";
 import { sendPushToUsers } from "@/lib/push/send";
+import { getCustomerLanguage } from "@/lib/i18n/customer-language";
 
 /** Prefers the owner-set Maps link (Restaurant.googleMapsUrl) — falls back to a search query built from address/city. */
 function mapsUrl(restaurant: { googleMapsUrl: string | null; address: string; city: string }): string {
@@ -22,9 +23,11 @@ function mapsUrl(restaurant: { googleMapsUrl: string | null; address: string; ci
 export async function sendOrderReadyNotification(
   admin: SupabaseClient,
   restaurant: { id: string; name: string; googleMapsUrl: string | null; address: string; city: string },
-  customer: { email: string | null; userId: string | null; phone: string | null; name: string }
+  customer: { email: string | null; userId: string | null; phone: string | null; name: string; customerId?: string | null }
 ): Promise<Array<"email" | "push">> {
   const link = mapsUrl(restaurant);
+  const language = await getCustomerLanguage(admin, customer.customerId);
+  const en = language === "en";
   const firstName = customer.name.trim().split(/\s+/)[0] || customer.name;
   const p = (text: string) => `<p style="font-size: 14px; color: #3a3a35; line-height: 1.6;">${text}</p>`;
 
@@ -33,17 +36,21 @@ export async function sendOrderReadyNotification(
   const emailDelivery = customer.email
     ? sendTransactionalEmail({
       to: customer.email,
-      subject: `Bonne nouvelle : votre commande est prête chez ${restaurant.name}`,
-      bodyHtml:
-        p(`Bonjour ${firstName},`) +
-        p(`Hey ! Votre repas chez ${restaurant.name} est prêt. L’équipe vous attend pour la cueillette; passez à l’heure prévue et réglez sur place. À bientôt !`),
-      ctaLabel: "Itinéraire",
+      subject: en ? `Good news: your order is ready at ${restaurant.name}` : `Bonne nouvelle : votre commande est prête chez ${restaurant.name}`,
+      bodyHtml: en
+        ? p(`Hello ${firstName},`) + p(`Hey! Your meal at ${restaurant.name} is ready. The team is waiting for you for pickup; come at the planned time and pay on site. See you soon!`)
+        : p(`Bonjour ${firstName},`) +
+          p(`Hey ! Votre repas chez ${restaurant.name} est prêt. L’équipe vous attend pour la cueillette; passez à l’heure prévue et réglez sur place. À bientôt !`),
+      ctaLabel: en ? "Directions" : "Itinéraire",
       ctaUrl: link,
+      language,
     })
     : null;
 
   if (customer.userId) {
-    const payload = { title: "Bonne nouvelle, votre commande est prête !", body: `Hey ! ${restaurant.name} vous attend pour la cueillette à l’heure prévue.`, link };
+    const payload = en
+      ? { title: "Good news, your order is ready!", body: `Hey! ${restaurant.name} is waiting for you for pickup at the planned time.`, link }
+      : { title: "Bonne nouvelle, votre commande est prête !", body: `Hey ! ${restaurant.name} vous attend pour la cueillette à l’heure prévue.`, link };
     await sendPushToUsers([customer.userId], payload, restaurant.id);
     deliveries.push("push");
   }

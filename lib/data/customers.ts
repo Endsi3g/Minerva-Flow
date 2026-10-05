@@ -37,6 +37,7 @@ export type CustomerRow = {
   favorite_offer_ids: string[] | null;
   favorite_menu_item_ids: string[] | null;
   notification_frequency: "all" | "important_only" | "frequent" | null;
+  preferred_language?: "fr" | "en" | null;
   pos_customer_id?: string | null;
 };
 
@@ -97,6 +98,7 @@ export function mapCustomer(row: CustomerRow, transactions: LoyaltyTransaction[]
     favoriteOfferIds: row.favorite_offer_ids ?? [],
     favoriteMenuItemIds: row.favorite_menu_item_ids ?? [],
     notificationFrequency: row.notification_frequency ?? "all",
+    preferredLanguage: row.preferred_language === "en" ? "en" : "fr",
     posCustomerId: row.pos_customer_id ?? null,
   };
 }
@@ -162,6 +164,7 @@ export type CustomerInput = {
   neighborhood?: string | null;
   avatarUrl?: string | null;
   notificationFrequency?: "all" | "important_only" | "frequent";
+  preferredLanguage?: "fr" | "en";
 };
 
 export async function createCustomer(restaurantId: string, input: CustomerInput): Promise<Customer | null> {
@@ -228,6 +231,7 @@ export async function updateCustomer(
   if (patch.neighborhood !== undefined) dbPatch.neighborhood = patch.neighborhood;
   if (patch.avatarUrl !== undefined) dbPatch.avatar_url = patch.avatarUrl;
   if (patch.notificationFrequency !== undefined) dbPatch.notification_frequency = patch.notificationFrequency;
+  if (patch.preferredLanguage !== undefined) dbPatch.preferred_language = patch.preferredLanguage;
   if (patch.marketingConsent !== undefined) {
     dbPatch.marketing_consent = patch.marketingConsent;
     if (patch.marketingConsent) {

@@ -1493,7 +1493,10 @@
       "rewardLabel": "Reward: {reward}",
       "readyAround": "Ready around {time}",
       "notifyOnConfirmation": "You will get a notification as soon as it is confirmed.",
-      "rewardsAvailable": "{count, plural, one {# reward available with your {points} pts} other {# rewards available with your {points} pts}}"
+      "rewardsAvailable": "{count, plural, one {# reward available with your {points} pts} other {# rewards available with your {points} pts}}",
+      "messageLanguage": "Language of emails and notifications",
+      "languageFrench": "Français",
+      "languageEnglish": "English"
     }
   },
   "profile": {

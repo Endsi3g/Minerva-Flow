@@ -71,6 +71,7 @@ export async function updateMyProfileAction(
     phone?: string | null;
     avatarUrl?: string | null;
     notificationFrequency?: "all" | "important_only" | "frequent";
+    preferredLanguage?: "fr" | "en";
   }
 ): Promise<boolean> {
   const supabase = await createClient();
@@ -93,6 +94,7 @@ export async function updateMyProfileAction(
     ...(input.phone !== undefined ? { phone: input.phone } : {}),
     ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {}),
     ...(input.notificationFrequency !== undefined ? { notificationFrequency: input.notificationFrequency } : {}),
+    ...(input.preferredLanguage !== undefined ? { preferredLanguage: input.preferredLanguage } : {}),
   });
 }
 

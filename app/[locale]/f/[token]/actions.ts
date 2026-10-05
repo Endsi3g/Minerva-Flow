@@ -16,7 +16,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
  */
 export async function joinLoyaltyProgramAction(
   token: string,
-  input: { name: string; email: string; marketingConsent: boolean; birthday?: string | null },
+  input: { name: string; email: string; marketingConsent: boolean; birthday?: string | null; language?: "fr" | "en" },
   touchpointCode?: string | null
 ): Promise<{ ok: false; error: string } | { ok: true; emailSent: boolean }> {
   const ip = await getClientIp();
