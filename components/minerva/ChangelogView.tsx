@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { useState, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -66,6 +68,7 @@ export function ChangelogView({
   initialEntries: ChangelogEntry[];
   referenceTime: string;
 }) {
+  const locale = useLocale();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<ChangelogCategory | "all">("all");
 
@@ -148,7 +151,7 @@ export function ChangelogView({
             return (
               <article key={entry.id} className="py-8 first:pt-0">
                 <div className="mb-2 flex items-center gap-2 text-[12px] text-mv-ink-faint">
-                  <time>{formatDateFull(entry.publishedAt.slice(0, 10))}</time>
+                  <time>{formatDateFull(entry.publishedAt.slice(0, 10), locale)}</time>
                   <span aria-hidden>·</span>
                   <span>{categoryLabel[entry.category]}</span>
                   {isNew && (

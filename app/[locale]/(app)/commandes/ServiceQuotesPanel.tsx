@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -35,6 +38,7 @@ export function ServiceQuotesPanel({
   restaurantTimezone: string;
   initialDay: string;
 }) {
+  const locale = useLocale();
   const [quotes, setQuotes] = useState(initialQuotes);
   const [loadFailed, setLoadFailed] = useState(initialLoadFailed);
   const [refreshing, setRefreshing] = useState(false);
@@ -245,8 +249,8 @@ export function ServiceQuotesPanel({
                     <Badge tone={tone}>{statusLabel}</Badge>
                   </div>
                   <div className="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
-                    <span className="text-[12px] text-mv-ink-faint">{paymentLabel}{showPaidAmount ? ` · ${formatCurrency(depositPaidAmount)} versé` : ""}</span>
-                    {quote.total != null && <span className="text-[12px] font-mono text-mv-ink-soft">{formatCurrency(quote.total)}</span>}
+                    <span className="text-[12px] text-mv-ink-faint">{paymentLabel}{showPaidAmount ? ` · ${formatCurrency(depositPaidAmount, locale)} versé` : ""}</span>
+                    {quote.total != null && <span className="text-[12px] font-mono text-mv-ink-soft">{formatCurrency(quote.total, locale)}</span>}
                     {nextProductionLabel && <Button type="button" size="sm" variant="secondary" disabled={statusBusyId === quote.id} onClick={() => void advanceProduction(quote)}>{orderStatus === "confirmee" ? <CookingPot size={13} /> : <Check size={13} />}{statusBusyId === quote.id ? "Mise à jour…" : nextProductionLabel}</Button>}
                   </div>
                 </article>;
@@ -264,7 +268,7 @@ export function ServiceQuotesPanel({
                     <Badge tone="amber">{quote.quote_type === "catering" ? "Traiteur" : "Repas sur mesure"}</Badge>
                   </div>
                   <p className="mt-1 text-[12px] text-mv-ink-soft">{quote.guest_email} · {quote.guest_phone ?? "Téléphone non fourni"}</p>
-                  <p className="mt-1 text-[12px] text-mv-ink-soft">{quote.event_at ? new Intl.DateTimeFormat("fr-CA", { dateStyle: "medium", timeStyle: "short", timeZone: restaurantTimezone }).format(new Date(quote.event_at)) : "Date à confirmer"} · {quote.guest_count ? `${quote.guest_count} convives · ` : ""}{quote.fulfillment_mode === "livraison" ? "Livraison" : "Cueillette"}</p>
+                  <p className="mt-1 text-[12px] text-mv-ink-soft">{quote.event_at ? new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: "medium", timeStyle: "short", timeZone: restaurantTimezone }).format(new Date(quote.event_at)) : "Date à confirmer"} · {quote.guest_count ? `${quote.guest_count} convives · ` : ""}{quote.fulfillment_mode === "livraison" ? "Livraison" : "Cueillette"}</p>
                   <p className="mt-2 whitespace-pre-wrap text-[12px] leading-relaxed text-mv-ink">{quote.description}</p>
                   {quote.client_notes && <p className="mt-1 text-[12px] text-mv-ink-faint">Note du client : {quote.client_notes}</p>}
                   {quote.delivery_address && <p className="mt-1 text-[12px] text-mv-ink-faint">Adresse : {quote.delivery_address}</p>}
@@ -290,8 +294,8 @@ export function ServiceQuotesPanel({
                   </div>
                   <Field label="Note au client"><Textarea rows={2} maxLength={1000} value={ownerNotes} onChange={(e) => setOwnerNotes(e.target.value)} placeholder="Modalités, inclusions ou conditions…" /></Field>
                   <div aria-live="polite" className="rounded-lg bg-mv-cream-soft px-3 py-2 text-[12px] text-mv-ink-soft">
-                    Total estimé : <strong className="text-mv-ink">{quoteTotals ? formatCurrency(quoteTotals.total) : "—"}</strong>
-                    <span className="ml-3">Acompte : <strong className="text-mv-green-dark">{quoteTotals ? formatCurrency(quoteTotals.depositAmount) : "—"}</strong></span>
+                    Total estimé : <strong className="text-mv-ink">{quoteTotals ? formatCurrency(quoteTotals.total, locale) : "—"}</strong>
+                    <span className="ml-3">Acompte : <strong className="text-mv-green-dark">{quoteTotals ? formatCurrency(quoteTotals.depositAmount, locale) : "—"}</strong></span>
                   </div>
                   {!canIssueQuote && quoteAttempted && <p role="status" className="text-[12px] text-mv-red">Vérifiez les postes, les quantités, les montants et l’acompte. Un devis accepte jusqu’à 50 postes.</p>}
                   <div className="flex justify-end">
@@ -310,7 +314,7 @@ export function ServiceQuotesPanel({
               return <div key={quote.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-mv-cream-soft/60 px-3 py-2 text-[12px]">
                 <span className="min-w-0 flex-1 truncate font-medium text-mv-ink">{quote.guest_name} · {quote.quote_type === "catering" ? "Traiteur" : "Sur mesure"}</span>
                 <Badge tone={quote.status === "converted" ? "green" : "neutral"}>{STATUS[quote.status]}</Badge>
-                {quote.total != null && <span className="font-mono text-mv-ink-soft">{formatCurrency(quote.total)}</span>}
+                {quote.total != null && <span className="font-mono text-mv-ink-soft">{formatCurrency(quote.total, locale)}</span>}
                 {link && <button type="button" aria-label="Copier le lien de paiement" onClick={() => void copyLink(link)} className="rounded-md p-1.5 text-mv-ink-faint hover:bg-white hover:text-mv-green-dark"><ClipboardCopy size={14} /></button>}
               </div>;
             })}

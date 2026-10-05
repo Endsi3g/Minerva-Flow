@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -23,6 +25,7 @@ export function EtablissementDetailView({
   activeEmployeeCount: number;
   activeProgramCount: number;
 }) {
+  const locale = useLocale();
   const chartData = [...recentDays].reverse().map((d) => ({ date: d.date, revenue: d.revenue }));
 
   return (
@@ -42,7 +45,7 @@ export function EtablissementDetailView({
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Card>
           <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Revenu (mois)</p>
-          <p className="mt-1 font-display text-[20px] font-medium text-mv-ink">{formatCurrency(stats.revenue)}</p>
+          <p className="mt-1 font-display text-[20px] font-medium text-mv-ink">{formatCurrency(stats.revenue, locale)}</p>
           <Badge tone={stats.delta >= 0 ? "green" : "red"} className="mt-1.5">
             {stats.delta >= 0 ? "↑" : "↓"} {Math.abs(stats.delta).toFixed(1)}%
           </Badge>

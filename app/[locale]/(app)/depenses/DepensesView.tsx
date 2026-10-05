@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { Table, THead, Th, Tr, Td } from "@/components/minerva/DataTable";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -102,6 +104,7 @@ export function DepensesView({
   initialTransactions: FinancialTransaction[];
   expenseCategories: ExpenseCategory[];
 }) {
+  const locale = useLocale();
   const { role } = useApp();
   const [transactions, setTransactions] = useState(initialTransactions);
   const [createOpen, setCreateOpen] = useState(false);
@@ -117,7 +120,7 @@ export function DepensesView({
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-[12.5px] text-mv-ink-faint">
-          {transactions.length} dépense{transactions.length > 1 ? "s" : ""} — total {formatCurrency(total)}
+          {transactions.length} dépense{transactions.length > 1 ? "s" : ""} — total {formatCurrency(total, locale)}
         </p>
         {canCreate && (
           <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -152,12 +155,12 @@ export function DepensesView({
           <tbody>
             {transactions.map((t) => (
               <Tr key={t.id}>
-                <Td className="text-mv-ink-soft">{formatDate(t.date)}</Td>
+                <Td className="text-mv-ink-soft">{formatDate(t.date, locale)}</Td>
                 <Td className="font-medium text-mv-ink">{t.description}</Td>
                 <Td>
                   <Badge tone="neutral">{t.category}</Badge>
                 </Td>
-                <Td className="text-right font-semibold text-mv-ink">{formatCurrency(t.amount)}</Td>
+                <Td className="text-right font-semibold text-mv-ink">{formatCurrency(t.amount, locale)}</Td>
                 <Td>{t.reviewed ? <Badge tone="green">Revue</Badge> : <Badge tone="amber">À revoir</Badge>}</Td>
                 <Td className="text-right">
                   <Link

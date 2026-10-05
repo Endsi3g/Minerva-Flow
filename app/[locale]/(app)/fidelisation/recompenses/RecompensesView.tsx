@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useMemo, useState, type FormEvent } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
@@ -27,6 +27,7 @@ function RewardsCatalogCard({
   initialRewards: LoyaltyReward[];
   menuItems: MenuItem[];
 }) {
+  const locale = useLocale();
   const t = useTranslations("rewardsView");
   const [rewards, setRewards] = useState(initialRewards);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,7 +81,7 @@ function RewardsCatalogCard({
                 {r.description && <p className="mt-0.5 text-[12px] text-mv-ink-faint">{r.description}</p>}
                 {linkedItem ? (
                   <p className="mt-0.5 flex items-center gap-1 text-[12px] text-mv-green-dark">
-                    <UtensilsCrossed size={11} /> {t("realCost", { name: linkedItem.name, cost: formatCurrency(linkedItem.foodCost) })}
+                    <UtensilsCrossed size={11} /> {t("realCost", { name: linkedItem.name, cost: formatCurrency(linkedItem.foodCost, locale) })}
                   </p>
                 ) : r.menuItemId ? (
                   <p className="mt-0.5 text-[12px] text-mv-amber">{t("linkedDishNotFound")}</p>
@@ -123,7 +124,7 @@ function RewardsCatalogCard({
             <option value="">{t("noneRewardWithoutA")}</option>
             {activeMenuItems.map((item) => (
               <option key={item.id} value={item.id}>
-                {t("itemCost", { name: item.name, cost: formatCurrency(item.foodCost) })}
+                {t("itemCost", { name: item.name, cost: formatCurrency(item.foodCost, locale) })}
               </option>
             ))}
           </Select>

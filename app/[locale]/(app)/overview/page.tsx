@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { OverviewClientView } from "@/components/minerva/OverviewClientView";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -70,6 +70,7 @@ export default async function OverviewPage({
 }: {
   searchParams?: Promise<{ scope?: string }>;
 }) {
+  const locale = await getLocale();
   const userRestaurants = await getUserRestaurants();
   const defaultRestaurantId = await getCurrentRestaurantId();
 
@@ -171,7 +172,7 @@ export default async function OverviewPage({
   const firstName = profile?.fullName?.split(" ")[0] ?? null;
   const monthMarge = margTrend.reduce((sum, d) => sum + d.revenue, 0);
   const monthMargeIsEstimated = serviceDays.some((d) => d.expenses === undefined);
-  const todayLabel = formatDateFull(todayIso);
+  const todayLabel = formatDateFull(todayIso, locale);
   const greetingIndex = todayIso.split("-").reduce((sum, part) => sum + Number(part), 0) % GREETINGS.length;
   const greeting = GREETINGS[greetingIndex];
 

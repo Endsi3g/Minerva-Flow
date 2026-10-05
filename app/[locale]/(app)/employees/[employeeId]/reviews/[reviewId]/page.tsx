@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Star } from "lucide-react";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { PrintButton } from "./PrintButton";
 
 function StarRow({ value }: { value: number }) {
@@ -23,6 +23,7 @@ export default async function EmployeeReviewPage({
 }: {
   params: Promise<{ employeeId: string; reviewId: string }>;
 }) {
+  const locale = await getLocale();
   const { employeeId, reviewId } = await params;
   const [employee, review] = await Promise.all([getEmployeeById(employeeId), getEmployeeReview(reviewId)]);
 
@@ -37,8 +38,8 @@ export default async function EmployeeReviewPage({
         eyebrow={t("pageEyebrow")}
         title={employee.fullName}
         description={t("periodRole", {
-          start: formatDate(review.periodStart),
-          end: formatDate(review.periodEnd),
+          start: formatDate(review.periodStart, locale),
+          end: formatDate(review.periodEnd, locale),
           role: employee.roleTitle,
         })}
         action={<PrintButton />}
@@ -60,7 +61,7 @@ export default async function EmployeeReviewPage({
           <div className="mt-4 rounded-lg bg-mv-cream-soft p-3">
             <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("attributedRevenue")}</p>
             <p className="font-display text-[18px] font-medium text-mv-green-dark">
-              {formatCurrency(review.attributedRevenue)}
+              {formatCurrency(review.attributedRevenue, locale)}
             </p>
           </div>
         )}
@@ -80,7 +81,7 @@ export default async function EmployeeReviewPage({
         )}
 
         <p className="mt-6 text-[12px] text-mv-ink-faint">
-          {t("reviewedBy", { name: review.reviewerName, date: formatDate(review.createdAt.slice(0, 10)) })}
+          {t("reviewedBy", { name: review.reviewerName, date: formatDate(review.createdAt.slice(0, 10), locale) })}
         </p>
       </Card>
     </div>

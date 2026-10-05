@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 import {
   Area,
@@ -18,8 +21,8 @@ import {
 // Y axis hard-divides by 1000 ("12k"), which would render a young MRR of a
 // few hundred dollars as "0.3k", and it has no integer-count variant.
 
-function shortMonth(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-CA", { month: "short" }).replace(".", "");
+function shortMonth(iso: string, locale?: string): string {
+  return new Date(iso).toLocaleDateString(intlLocale(locale), { month: "short" }).replace(".", "");
 }
 
 function CountTooltip({
@@ -33,11 +36,12 @@ function CountTooltip({
   label?: string;
   unit: string;
 }) {
+  const locale = useLocale();
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-mv-border bg-mv-surface px-3 py-2 shadow-mv-md">
       <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-        {label && new Date(label).toLocaleDateString("fr-CA", { month: "long", year: "numeric" })}
+        {label && new Date(label).toLocaleDateString(intlLocale(locale), { month: "long", year: "numeric" })}
       </p>
       <p className="mt-0.5 font-display text-[15px] font-medium text-mv-ink">
         {payload[0].value} {unit}
@@ -47,25 +51,27 @@ function CountTooltip({
 }
 
 function MoneyTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
+  const locale = useLocale();
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-mv-border bg-mv-surface px-3 py-2 shadow-mv-md">
       <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-        {label && new Date(label).toLocaleDateString("fr-CA", { month: "long", year: "numeric" })}
+        {label && new Date(label).toLocaleDateString(intlLocale(locale), { month: "long", year: "numeric" })}
       </p>
-      <p className="mt-0.5 font-display text-[15px] font-medium text-mv-ink">{formatCurrency(payload[0].value)}</p>
+      <p className="mt-0.5 font-display text-[15px] font-medium text-mv-ink">{formatCurrency(payload[0].value, locale)}</p>
     </div>
   );
 }
 
 export function RestaurantsJoinedChart({ data, height = 220 }: { data: { date: string; count: number }[]; height?: number }) {
+  const locale = useLocale();
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke="var(--mv-border)" strokeDasharray="3 4" />
         <XAxis
           dataKey="date"
-          tickFormatter={shortMonth}
+          tickFormatter={(value: string) => shortMonth(value, locale)}
           tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}
@@ -85,6 +91,7 @@ export function RestaurantsJoinedChart({ data, height = 220 }: { data: { date: s
 }
 
 export function MrrChart({ data, height = 220 }: { data: { date: string; revenue: number }[]; height?: number }) {
+  const locale = useLocale();
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -97,7 +104,7 @@ export function MrrChart({ data, height = 220 }: { data: { date: string; revenue
         <CartesianGrid vertical={false} stroke="var(--mv-border)" strokeDasharray="3 4" />
         <XAxis
           dataKey="date"
-          tickFormatter={shortMonth}
+          tickFormatter={(value: string) => shortMonth(value, locale)}
           tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 import { Wallet } from "lucide-react";
 import { chooseWalletOffers, detectWalletPlatform, type WalletPlatform } from "@/lib/wallet/platform";
@@ -9,7 +11,9 @@ const currentPlatform = (): WalletPlatform =>
     ? "desktop"
     : detectWalletPlatform(navigator.userAgent, navigator.platform, navigator.maxTouchPoints);
 
-const LABEL = { apple: "Ajouter à Apple Wallet", google: "Ajouter à Google Wallet" } as const;
+function buildLABEL(t: (key: string) => string) {
+  return { apple: t("addToAppleWallet"), google: t("addToGoogleWallet") } as const;
+}
 const HREF = { apple: "/api/wallet/apple", google: "/api/wallet/google" } as const;
 
 /**
@@ -26,6 +30,7 @@ export function AddToWalletButtons({
   appleEnabled: boolean;
   googleEnabled: boolean;
 }) {
+  const t = useTranslations("walletButtons");
   // "desktop" on the server and during hydration; the device's real answer afterwards.
   const platform = useSyncExternalStore(() => () => {}, currentPlatform, () => "desktop" as WalletPlatform);
   const { offers, suggestPhone } = chooseWalletOffers(platform, appleEnabled, googleEnabled);
@@ -40,14 +45,14 @@ export function AddToWalletButtons({
             href={`${HREF[kind]}?customerId=${encodeURIComponent(customerId)}`}
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-black px-4 py-3 text-[14px] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            <Wallet size={17} aria-hidden="true" /> {LABEL[kind]}
+            <Wallet size={17} aria-hidden="true" /> {buildLABEL(t)[kind]}
           </a>
         ))}
       </div>
       <p className="mt-2 text-center text-[12px] opacity-80">
         {suggestPhone
-          ? "Ouvrez cette page sur votre téléphone pour ajouter la carte à son portefeuille."
-          : "Votre carte sera dans votre portefeuille, même sans réseau. Au comptoir, donnez votre numéro de téléphone."}
+          ? t("openThisPageOn")
+          : t("yourCardWillBe")}
       </p>
     </div>
   );

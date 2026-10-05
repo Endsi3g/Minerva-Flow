@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations, useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -14,11 +16,13 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
-const categoryLabel: Record<SupportCategory, string> = {
-  bug: "Problème",
-  amelioration: "Amélioration",
+function buildCategoryLabel(t: (key: string) => string): Record<SupportCategory, string> {
+  return {
+  bug: t("problem"),
+  amelioration: t("improvement"),
   question: "Question",
 };
+}
 
 const statusTone: Record<SupportRequest["status"], "amber" | "green" | "neutral"> = {
   nouveau: "amber",
@@ -26,19 +30,25 @@ const statusTone: Record<SupportRequest["status"], "amber" | "green" | "neutral"
   resolu: "green",
 };
 
-const statusLabel: Record<SupportRequest["status"], string> = {
-  nouveau: "Envoyé",
+function buildStatusLabel(t: (key: string) => string): Record<SupportRequest["status"], string> {
+  return {
+  nouveau: t("sent"),
   en_cours: "En cours",
-  resolu: "Résolu",
+  resolu: t("resolved"),
 };
+}
 
-const categories: { value: SupportCategory; label: string; icon: typeof Bug }[] = [
-  { value: "bug", label: "Signaler un problème", icon: Bug },
-  { value: "amelioration", label: "Proposer une amélioration", icon: Lightbulb },
-  { value: "question", label: "Poser une question", icon: MessageCircleQuestion },
+function buildCategories(t: (key: string) => string): { value: SupportCategory; label: string; icon: typeof Bug }[] {
+  return [
+  { value: "bug", label: t("reportAProblem"), icon: Bug },
+  { value: "amelioration", label: t("suggestAnImprovement"), icon: Lightbulb },
+  { value: "question", label: t("askAQuestion"), icon: MessageCircleQuestion },
 ];
+}
 
 export default function SupportPage() {
+  const locale = useLocale();
+  const t = useTranslations("supportPage");
   const { restaurantId } = useApp();
   const [category, setCategory] = useState<SupportCategory>("bug");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,9 +82,9 @@ export default function SupportPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Paramètres"
+        eyebrow={t("settings")}
         title="Aide & Support"
-        description="Signalez un problème, proposez une amélioration ou posez-nous une question — on lit tout."
+        description={t("reportAProblemSuggest")}
       />
 
       <div className="mx-auto max-w-2xl w-full space-y-6">
@@ -82,19 +92,19 @@ export default function SupportPage() {
           {sent ? (
             <div className="flex flex-col items-center py-6 text-center">
               <CheckCircle2 size={32} className="mb-3 text-mv-green-dark" />
-              <p className="font-display text-[16px] font-medium text-mv-ink">Message envoyé</p>
+              <p className="font-display text-[16px] font-medium text-mv-ink">{t("messageSent")}</p>
               <p className="mt-1.5 max-w-sm text-[13px] text-mv-ink-soft">
-                Merci ! Nous avons bien reçu votre message et le traiterons dès que possible.
+                {t("thankYouWeReceived")}
               </p>
               <Button size="sm" variant="secondary" className="mt-4" onClick={() => setSent(false)}>
-                Envoyer un autre message
+                {t("sendAnotherMessage")}
               </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <Field label="Type de demande">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {categories.map((c) => (
+                  {buildCategories(t).map((c) => (
                     <button
                       key={c.value}
                       type="button"
@@ -113,13 +123,13 @@ export default function SupportPage() {
               </Field>
 
               <Field label="Sujet">
-                <Input name="subject" placeholder="Résumez votre demande en quelques mots" required />
+                <Input name="subject" placeholder={t("sumUpYourRequest")} required />
               </Field>
 
               <Field label="Message">
                 <Textarea
                   name="message"
-                  placeholder="Décrivez le problème, l'idée ou la question — le plus de détails possible nous aide à répondre vite."
+                  placeholder={t("describeTheProblemIdea")}
                   rows={6}
                   required
                 />
@@ -127,7 +137,7 @@ export default function SupportPage() {
 
               <div className="flex justify-end">
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Envoi…" : "Envoyer"}
+                  {isSubmitting ? t("sending") : "Envoyer"}
                 </Button>
               </div>
             </form>
@@ -143,12 +153,12 @@ export default function SupportPage() {
             </div>
             <div>
               <p className="font-display text-[15px] font-medium text-mv-ink">
-                Besoin d&apos;un mode d&apos;emploi ?
+                {t("needAHowTo")}
               </p>
               <p className="mt-1 text-[12.5px] leading-relaxed text-mv-ink-soft">
                 Notre{" "}
                 <Link href="/guide" className="text-mv-green-dark underline underline-offset-2">
-                  guide de configuration
+                  {t("setupGuide")}
                 </Link>{" "}
                 explique comment prendre en main l&apos;application en quelques minutes.
               </p>
@@ -159,26 +169,26 @@ export default function SupportPage() {
         {myTickets.length > 0 && (
           <div>
             <p className="mb-3 text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
-              Vos demandes précédentes
+              {t("yourPreviousRequests")}
             </p>
             <div className="space-y-2">
-              {myTickets.map((t) => (
-                <Card key={t.id}>
+              {myTickets.map((ticket) => (
+                <Card key={ticket.id}>
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <Badge tone="neutral">{categoryLabel[t.category]}</Badge>
-                      <Badge tone={statusTone[t.status]}>{statusLabel[t.status]}</Badge>
+                      <Badge tone="neutral">{buildCategoryLabel(t)[ticket.category]}</Badge>
+                      <Badge tone={statusTone[ticket.status]}>{buildStatusLabel(t)[ticket.status]}</Badge>
                     </div>
-                    <span className="text-[12px] text-mv-ink-faint">{formatDate(t.createdAt.slice(0, 10))}</span>
+                    <span className="text-[12px] text-mv-ink-faint">{formatDate(ticket.createdAt.slice(0, 10), locale)}</span>
                   </div>
-                  <p className="text-[13px] font-semibold text-mv-ink">{t.subject}</p>
-                  <p className="mt-1 text-[12.5px] text-mv-ink-soft">{t.message}</p>
-                  {t.adminReply && (
+                  <p className="text-[13px] font-semibold text-mv-ink">{ticket.subject}</p>
+                  <p className="mt-1 text-[12.5px] text-mv-ink-soft">{ticket.message}</p>
+                  {ticket.adminReply && (
                     <div className="mt-3 rounded-lg bg-mv-green-tint p-3">
                       <p className="mb-1 text-[12px] font-semibold uppercase text-mv-green-dark">
-                        Réponse de l&apos;équipe
+                        {t("teamReply")}
                       </p>
-                      <p className="text-[12.5px] text-mv-ink">{t.adminReply}</p>
+                      <p className="text-[12.5px] text-mv-ink">{ticket.adminReply}</p>
                     </div>
                   )}
                 </Card>
@@ -193,7 +203,7 @@ export default function SupportPage() {
           </Link>{" "}
           ·{" "}
           <Link href="/legal/privacy" className="underline underline-offset-2 hover:text-mv-ink">
-            Politique de confidentialité
+            {t("privacyPolicy")}
           </Link>
         </p>
       </div>
@@ -201,10 +211,12 @@ export default function SupportPage() {
   );
 }
 
-const FEATURE_POLL_OPTIONS = [
-  "Paiement et commande depuis le portail client (lié à mon terminal de paiement)",
-  "Carte de fidélité numérique (Apple Wallet)",
+function buildFEATURE_POLL_OPTIONS(t: (key: string) => string) {
+  return [
+  t("paymentAndOrderingFrom"),
+  t("digitalLoyaltyCardApple"),
 ];
+}
 
 /**
  * A quick priority vote + an open-ended suggestion box, sent straight to
@@ -213,6 +225,7 @@ const FEATURE_POLL_OPTIONS = [
  * what to build next.
  */
 function FeatureFeedbackCard({ restaurantId }: { restaurantId: string | null }) {
+  const t = useTranslations("supportPage");
   const [pollOption, setPollOption] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -232,9 +245,9 @@ function FeatureFeedbackCard({ restaurantId }: { restaurantId: string | null }) 
         setSent(true);
         setPollOption(null);
         setSuggestion("");
-        toast.success("Merci pour votre retour !");
+        toast.success(t("thanksForYourFeedback"));
       } else {
-        toast.error("L'envoi a échoué — réessayez.");
+        toast.error(t("sendingFailedTryAgain"));
       }
     } finally {
       setIsSubmitting(false);
@@ -248,23 +261,23 @@ function FeatureFeedbackCard({ restaurantId }: { restaurantId: string | null }) 
           <Vote size={17} />
         </div>
         <div>
-          <p className="font-display text-[15px] font-medium text-mv-ink">Aidez-nous à prioriser</p>
-          <p className="text-[12.5px] text-mv-ink-soft">Quelle prochaine fonctionnalité vous aiderait le plus ?</p>
+          <p className="font-display text-[15px] font-medium text-mv-ink">{t("helpUsPrioritize")}</p>
+          <p className="text-[12.5px] text-mv-ink-soft">{t("whichNextFeatureWould")}</p>
         </div>
       </div>
 
       {sent ? (
         <div className="flex flex-col items-center py-4 text-center">
           <CheckCircle2 size={26} className="mb-2 text-mv-green-dark" />
-          <p className="text-[13px] text-mv-ink-soft">Votre retour a été envoyé.</p>
+          <p className="text-[13px] text-mv-ink-soft">{t("yourFeedbackWasSent")}</p>
           <Button size="sm" variant="secondary" className="mt-3" onClick={() => setSent(false)}>
-            Envoyer un autre retour
+            {t("sendMoreFeedback")}
           </Button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            {FEATURE_POLL_OPTIONS.map((option) => (
+            {buildFEATURE_POLL_OPTIONS(t).map((option) => (
               <button
                 key={option}
                 type="button"
@@ -291,14 +304,14 @@ function FeatureFeedbackCard({ restaurantId }: { restaurantId: string | null }) 
             <Textarea
               value={suggestion}
               onChange={(e) => setSuggestion(e.target.value)}
-              placeholder="Décrivez ce qui vous aiderait — même si ce n'est pas dans la liste ci-dessus."
+              placeholder={t("describeWhatWouldHelp")}
               rows={3}
             />
           </Field>
 
           <div className="flex justify-end">
             <Button type="submit" size="sm" disabled={isSubmitting || (!pollOption && !suggestion.trim())}>
-              {isSubmitting ? "Envoi…" : "Envoyer"}
+              {isSubmitting ? t("sending") : "Envoyer"}
             </Button>
           </div>
         </form>

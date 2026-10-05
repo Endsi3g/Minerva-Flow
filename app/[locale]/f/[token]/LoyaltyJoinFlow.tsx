@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
@@ -19,6 +21,7 @@ export function LoyaltyJoinFlow({
   landing: PublicLoyaltyLanding;
   touchpointCode: string | null;
 }) {
+  const t = useTranslations("joinFlow");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [birthday, setBirthday] = useState("");
@@ -56,7 +59,7 @@ export function LoyaltyJoinFlow({
       setError(null);
     } else {
       setStatus("error");
-      setError(result.error ?? "Une erreur est survenue.");
+      setError(result.error ?? t("somethingWentWrong"));
     }
   }
 
@@ -75,7 +78,7 @@ export function LoyaltyJoinFlow({
               <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
                 <Mail size={18} />
               </div>
-              <p className="font-display text-[17px] font-medium text-mv-ink">Vérifiez vos courriels</p>
+              <p className="font-display text-[17px] font-medium text-mv-ink">{t("checkYourEmail")}</p>
               <p className="mt-1.5 text-[13px] text-mv-ink-soft">
                 Cliquez le lien reçu à {email} pour accéder à votre compte de fidélité.
               </p>
@@ -86,7 +89,7 @@ export function LoyaltyJoinFlow({
                 <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
                   <Heart size={18} />
                 </div>
-                <p className="text-[12.5px] text-mv-ink-faint">Programme de fidélité</p>
+                <p className="text-[12.5px] text-mv-ink-faint">{t("loyaltyProgram")}</p>
                 <p className="mt-0.5 font-display text-[21px] font-medium text-mv-ink">{landing.restaurantName}</p>
                 <p className="mt-2 text-[13px] text-mv-ink-soft">
                   Accumulez {landing.pointsPerDollar} point{landing.pointsPerDollar > 1 ? "s" : ""} par dollar dépensé.
@@ -109,7 +112,7 @@ export function LoyaltyJoinFlow({
               <form onSubmit={handleSubmit} className="mt-5 space-y-3 border-t border-mv-border-soft pt-4">
                 {status === "email-pending" && (
                   <p role="status" className="rounded-xl bg-mv-amber/10 px-3.5 py-3 text-[12.5px] text-mv-ink-soft">
-                    Votre inscription est enregistrée. Le courriel de connexion n&apos;a pas pu être envoyé pour le moment.
+                    {t("yourSignUpIs")}
                     Réessayez dans quelques minutes pour recevoir votre lien à {email}.
                   </p>
                 )}
@@ -156,10 +159,10 @@ export function LoyaltyJoinFlow({
                 {status === "error" && <p className="text-[12.5px] text-mv-red">{error}</p>}
                 <Button type="submit" disabled={status === "sending"} className="w-full">
                   {status === "sending"
-                    ? "Envoi…"
+                    ? t("sending")
                     : status === "email-pending"
-                      ? "Renvoyer mon lien de connexion"
-                      : "Rejoindre le programme"}
+                      ? t("resendMySignIn")
+                      : t("joinTheProgram")}
                 </Button>
               </form>
             </>

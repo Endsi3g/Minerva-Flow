@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations, useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -31,29 +33,35 @@ import { toast } from "sonner";
 import { CheckCircle2, Sparkles, Zap, Cpu, ArrowUpRight } from "lucide-react";
 import { PLAN_NAMES, PLAN_AI_QUOTAS, type PlanTier } from "@/lib/ai/quotas";
 
-const INCLUDED_FEATURES = [
-  "Finance, inventaire et ingénierie de menu illimités",
-  "Commande directe 0% commission",
-  "Flow AI propulsé par Gemini 3.7 Flash",
-  "Établissements et collaborateurs illimités",
+function buildINCLUDED_FEATURES(t: (key: string) => string) {
+  return [
+  t("unlimitedFinanceInventoryAnd"),
+  t("directOrdering0Commission"),
+  t("flowAiPoweredBy"),
+  t("unlimitedRestaurantsAndTeam"),
 ];
+}
 
-const REASON_OPTIONS: { value: CancellationReason; label: string }[] = [
-  { value: "too_expensive", label: "Trop cher pour mon budget actuel" },
-  { value: "missing_features", label: "Il manque des fonctionnalités dont j'ai besoin" },
-  { value: "switching_tool", label: "Je change pour un autre outil" },
-  { value: "closing_business", label: "Je ferme mon établissement" },
-  { value: "other", label: "Autre raison" },
+function buildREASON_OPTIONS(t: (key: string) => string): { value: CancellationReason; label: string }[] {
+  return [
+  { value: "too_expensive", label: t("tooExpensiveForMy") },
+  { value: "missing_features", label: t("itLacksFeaturesI") },
+  { value: "switching_tool", label: t("iMSwitchingTo") },
+  { value: "closing_business", label: t("iMClosingMy") },
+  { value: "other", label: t("otherReason") },
 ];
+}
 
-const statusLabel: Record<string, string> = {
-  incomplete: "Incomplet",
-  trialing: "Période d'essai",
-  active: "Actif",
-  past_due: "Paiement en retard",
-  canceled: "Annulé",
-  unpaid: "Impayé",
+function buildStatusLabel(t: (key: string) => string): Record<string, string> {
+  return {
+  incomplete: t("incomplete"),
+  trialing: t("trialPeriod"),
+  active: t("active"),
+  past_due: t("paymentOverdue"),
+  canceled: t("cancelled"),
+  unpaid: t("unpaid"),
 };
+}
 
 const statusTone: Record<string, "green" | "amber" | "red" | "neutral"> = {
   incomplete: "neutral",
@@ -67,6 +75,8 @@ const statusTone: Record<string, "green" | "amber" | "red" | "neutral"> = {
 type BillingStatus = Awaited<ReturnType<typeof getBillingStatusAction>>;
 
 export default function BillingPage() {
+  const locale = useLocale();
+  const t = useTranslations("billingPage");
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [invoices, setInvoices] = useState<InvoiceListItem[] | null>(null);
@@ -108,7 +118,7 @@ export default function BillingPage() {
       }
       const url = await createCheckoutSessionAction(planId, interval);
       if (url) window.location.href = url;
-      else toast.error("La facturation n'est pas encore configurée.");
+      else toast.error(t("billingIsNotSet"));
     } finally {
       setLoading(false);
     }
@@ -121,10 +131,10 @@ export default function BillingPage() {
     setLoading(false);
     setSwitchTarget(null);
     if (res.ok) {
-      toast.success("Votre forfait a été mis à jour.");
+      toast.success(t("yourPlanWasUpdated"));
       refresh();
     } else {
-      toast.error(res.error ?? "Le changement de forfait a échoué.");
+      toast.error(res.error ?? t("thePlanChangeFailed"));
     }
   }
 
@@ -133,7 +143,7 @@ export default function BillingPage() {
     try {
       const url = await createBillingPortalSessionAction();
       if (url) window.location.href = url;
-      else toast.error("Impossible d'ouvrir le portail de facturation.");
+      else toast.error(t("couldNotOpenThe"));
     } finally {
       setLoading(false);
     }
@@ -144,16 +154,16 @@ export default function BillingPage() {
     const res = await resumeSubscriptionAction();
     setLoading(false);
     if (res.ok) {
-      toast.success("Votre abonnement continue normalement.");
+      toast.success(t("yourSubscriptionContinuesAs"));
       refresh();
     } else {
-      toast.error(res.error ?? "Impossible de reprendre l'abonnement.");
+      toast.error(res.error ?? t("couldNotResumeThe"));
     }
   }
 
   async function handleKeepSubscription() {
     await cancelSubscriptionAction({ reason, feedback: feedback.trim() || undefined, retentionOfferAccepted: true });
-    toast.success("Parfait, votre abonnement continue !");
+    toast.success(t("greatYourSubscriptionContinues"));
   }
 
   async function handleConfirmCancel() {
@@ -163,10 +173,10 @@ export default function BillingPage() {
       retentionOfferAccepted: false,
     });
     if (res.ok) {
-      toast.success("Votre abonnement sera annulé à la fin de la période en cours.");
+      toast.success(t("yourSubscriptionWillBe"));
       refresh();
     } else {
-      toast.error(res.error ?? "L'annulation a échoué.");
+      toast.error(res.error ?? t("theCancellationFailed"));
     }
   }
 
@@ -180,9 +190,9 @@ export default function BillingPage() {
   return (
     <div className="mv-billing-scope space-y-6">
       <PageHeader
-        eyebrow="Workspace"
-        title="Facturation & Quotas IA"
-        description="Votre abonnement Minerva Flow — gestion du forfait et consommation du moteur IA Gemini 3.7 Flash."
+        eyebrow={t("workspaceEyebrow")}
+        title={t("billingTitle")}
+        description={t("billingDescription")}
       />
 
       {status?.subscription?.status === "past_due" && (
@@ -191,12 +201,11 @@ export default function BillingPage() {
           title="Paiement en retard"
           action={
             <Button size="sm" variant="secondary" onClick={handleManage} disabled={loading}>
-              Mettre à jour ma carte
+              {t("updateMyCard")}
             </Button>
           }
         >
-          Le dernier paiement de votre abonnement a échoué. Régularisez votre méthode de paiement pour éviter une
-          interruption de service.
+          {t("theLastPaymentFor")}
         </AlertBanner>
       )}
 
@@ -210,8 +219,7 @@ export default function BillingPage() {
             </Button>
           }
         >
-          Votre accès se termine le {formatDate(status.subscription.currentPeriodEnd.slice(0, 10))}. Changé d&apos;avis
-          ?
+          {t("accessEndsOn", { date: formatDate(status.subscription.currentPeriodEnd.slice(0, 10), locale) })}
         </AlertBanner>
       )}
 
@@ -221,17 +229,17 @@ export default function BillingPage() {
           title="Quota Flow AI atteint"
           action={
             <Button size="sm" variant="secondary" onClick={() => document.getElementById("mv-pricing")?.scrollIntoView({ behavior: "smooth" })}>
-              Passer à un forfait supérieur
+              {t("upgradeYourPlan")}
             </Button>
           }
         >
-          Votre quota mensuel de tokens Flow AI est atteint — l&apos;assistant IA est en pause jusqu&apos;au
+          {t("yourMonthlyFlowAi")}
           renouvellement.
         </AlertBanner>
       )}
       {aiUsage && !aiUsage.isExceeded && percentUsed >= 80 && (
-        <AlertBanner tone="warning" title="Quota Flow AI bientôt atteint">
-          Vous avez utilisé {percentUsed}% de votre quota mensuel de tokens Flow AI.
+        <AlertBanner tone="warning" title={t("flowAiQuotaAlmost")}>
+          {t("usedPercentOfQuota", { pct: percentUsed })}
         </AlertBanner>
       )}
 
@@ -242,8 +250,8 @@ export default function BillingPage() {
 
           {!status ? (
             <EditorialLoadingState
-              title="Vérification de l'abonnement…"
-              subtitle="Interrogation sécurisée de la passerelle Stripe…"
+              title={t("checkingTheSubscription")}
+              subtitle={t("securelyQueryingThePayment")}
               rows={2}
             />
           ) : !status.configured ? (
@@ -253,16 +261,15 @@ export default function BillingPage() {
                   <Sparkles size={16} />
                 </div>
                 <div>
-                  <p className="text-[13.5px] font-semibold text-mv-ink">Période pilote gratuite</p>
+                  <p className="text-[13.5px] font-semibold text-mv-ink">{t("freePilotPeriod")}</p>
                   <p className="mt-0.5 text-[12.5px] text-mv-ink-soft">
-                    La facturation n&apos;est pas encore activée pour votre workspace — profitez de Minerva Flow
-                    gratuitement pendant votre période pilote.
+                    {t("billingIsNotTurned")}
                   </p>
                 </div>
               </div>
               <div className="space-y-2">
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Inclus dans votre accès</p>
-                {INCLUDED_FEATURES.map((feature) => (
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{t("includedInYourAccess")}</p>
+                {buildINCLUDED_FEATURES(t).map((feature) => (
                   <div key={feature} className="flex items-center gap-2">
                     <CheckCircle2 size={15} className="shrink-0 text-mv-green-dark" />
                     <span className="text-[12.5px] text-mv-ink-soft">{feature}</span>
@@ -278,23 +285,23 @@ export default function BillingPage() {
                   <span className="text-[13.5px] font-medium text-mv-ink">Plan {PLAN_NAMES[planTier]}</span>
                 </div>
                 <Badge tone={statusTone[status.subscription.status] ?? "neutral"}>
-                  {statusLabel[status.subscription.status] ?? status.subscription.status}
+                  {buildStatusLabel(t)[status.subscription.status] ?? status.subscription.status}
                 </Badge>
               </div>
               {status.trialEndsAt && (
                 <p className="text-[12.5px] text-mv-ink-faint">
-                  Essai gratuit jusqu&apos;au {formatDate(status.trialEndsAt.slice(0, 10))}
+                  Essai gratuit jusqu&apos;au {formatDate(status.trialEndsAt.slice(0, 10), locale)}
                 </p>
               )}
               {status.subscription.currentPeriodEnd && (
                 <p className="text-[12.5px] text-mv-ink-faint">
-                  {status.cancelAtPeriodEnd ? "Accès jusqu'au" : "Prochain renouvellement le"}{" "}
-                  {formatDate(status.subscription.currentPeriodEnd.slice(0, 10))}
+                  {status.cancelAtPeriodEnd ? t("accessUntil") : t("nextRenewalOn")}{" "}
+                  {formatDate(status.subscription.currentPeriodEnd.slice(0, 10), locale)}
                 </p>
               )}
               <div className="flex flex-col gap-2">
                 <Button variant="secondary" className="w-full" onClick={handleManage} disabled={loading}>
-                  Gérer mon abonnement
+                  {t("manageMySubscription")}
                 </Button>
                 {!status.cancelAtPeriodEnd && (
                   <Button
@@ -303,7 +310,7 @@ export default function BillingPage() {
                     onClick={() => setCancelReasonOpen(true)}
                     disabled={loading}
                   >
-                    Annuler mon abonnement
+                    {t("cancelMySubscription")}
                   </Button>
                 )}
               </div>
@@ -311,14 +318,13 @@ export default function BillingPage() {
           ) : (
             <div className="space-y-4">
               <p className="text-[13px] text-mv-ink-soft">
-                Vous n&apos;avez pas encore d&apos;abonnement actif. Choisissez un forfait ci-dessous pour continuer à
-                utiliser Minerva Flow après votre période pilote.
+                {t("youDoNotHave")}
               </p>
               <Button
                 className="w-full"
                 onClick={() => document.getElementById("mv-pricing")?.scrollIntoView({ behavior: "smooth" })}
               >
-                Voir les forfaits
+                {t("seePlans")}
               </Button>
             </div>
           )}
@@ -337,7 +343,7 @@ export default function BillingPage() {
                 <span className="text-[13px] font-bold text-mv-ink">Gemini 3.7 Flash</span>
               </div>
               <Badge tone={percentUsed >= 90 ? "red" : percentUsed >= 70 ? "amber" : "green"}>
-                {percentUsed}% utilisé
+                {t("percentUsed", { pct: percentUsed })}
               </Badge>
             </div>
 
@@ -358,7 +364,7 @@ export default function BillingPage() {
 
             <div className="pt-2 border-t border-mv-border space-y-2">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                Quotas IA inclus par plan
+                {t("aiQuotasIncludedPer")}
               </p>
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                 {(["essentiel", "croissance", "marque_blanche"] as const).map((tier) => (
@@ -385,7 +391,7 @@ export default function BillingPage() {
                   disabled={loading}
                 >
                   <Zap size={13} className="text-mv-amber" />
-                  <span>Changer de forfait</span>
+                  <span>{t("changePlan")}</span>
                   <ArrowUpRight size={13} />
                 </Button>
               </div>
@@ -399,8 +405,8 @@ export default function BillingPage() {
           <PricingTableFive
             plans={billingSdkPlans}
             theme="classic"
-            title={status.subscription ? "Changer de forfait" : "Choisissez votre forfait"}
-            description="Deux propositions de valeur claires : Profit Core pour comprendre et protéger vos marges, et le plan vedette Growth & Loyalty pour démultiplier vos visites répétées."
+            title={status.subscription ? t("changePlan") : t("chooseYourPlan")}
+            description={t("twoClearValuePropositions")}
             onPlanSelect={handleSelectPlan}
           />
         </div>
@@ -409,15 +415,13 @@ export default function BillingPage() {
       {status?.configured && !status.subscription && (
         <div className="mx-auto max-w-4xl w-full">
           <Card>
-            <CardHeader eyebrow="Offre" title="Vous avez reçu un code promo ?" />
+            <CardHeader eyebrow={t("offerEyebrow")} title={t("gotAPromoCode")} />
             <div className="flex items-start gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mv-green-tint text-mv-green-dark">
                 <Sparkles size={16} />
               </div>
               <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">
-                Un code promo (par exemple pour une période d&apos;essai prolongée) s&apos;entre directement sur la
-                page de paiement Stripe, dans le champ <strong className="font-semibold text-mv-ink">« Code promo »</strong>{" "}
-                — choisissez d&apos;abord un forfait ci-dessus, le champ apparaît à l&apos;étape suivante.
+                {t.rich("promoBody", { strong: (chunks) => <strong className="font-semibold text-mv-ink">{chunks}</strong> })}
               </p>
             </div>
           </Card>
@@ -434,7 +438,7 @@ export default function BillingPage() {
       <Modal
         open={Boolean(switchTarget)}
         onClose={() => setSwitchTarget(null)}
-        title="Confirmer le changement de forfait"
+        title={t("confirmPlanChange")}
         width={720}
       >
         {switchTarget && status?.subscription && (
@@ -468,7 +472,7 @@ export default function BillingPage() {
             billingCycle={switchTarget.interval}
             effectiveDate="immediately"
             theme="minimal"
-            confirmText={loading ? "Confirmation…" : "Confirmer le changement"}
+            confirmText={loading ? t("confirming") : t("confirmTheChange")}
             cancelText="Annuler"
             onConfirm={handleConfirmSwitch}
             onCancel={() => setSwitchTarget(null)}
@@ -480,12 +484,12 @@ export default function BillingPage() {
       <Modal
         open={cancelReasonOpen}
         onClose={() => setCancelReasonOpen(false)}
-        title="Avant de partir…"
-        description="Dites-nous pourquoi — ça nous aide à améliorer Minerva Flow."
+        title={t("beforeYouGo")}
+        description={t("tellUsWhy")}
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            {REASON_OPTIONS.map((opt) => (
+            {buildREASON_OPTIONS(t).map((opt) => (
               <label
                 key={opt.value}
                 className="flex items-center gap-2.5 rounded-lg border border-mv-border px-3 py-2 text-[13px] text-mv-ink-soft has-[:checked]:border-mv-green has-[:checked]:bg-mv-green-tint/30 has-[:checked]:text-mv-ink cursor-pointer"
@@ -504,7 +508,7 @@ export default function BillingPage() {
           <textarea
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
-            placeholder="Un détail à ajouter ? (optionnel)"
+            placeholder={t("anythingToAddOptional")}
             rows={3}
             className="w-full rounded-lg border border-mv-border bg-mv-surface px-3 py-2 text-[13px] text-mv-ink placeholder:text-mv-ink-faint focus:outline-none focus:ring-2 focus:ring-mv-green/40"
           />
@@ -528,22 +532,22 @@ export default function BillingPage() {
         <Modal
           open={cancelDialogOpen}
           onClose={() => setCancelDialogOpen(false)}
-          title="On est tristes de vous voir partir…"
-          description={`Avant de confirmer, voici ce que vous garderiez avec ${PLANS[planTier].name}.`}
+          title={t("weReSadTo")}
+          description={t("beforeConfirmingHereIs", { planTierName: PLANS[planTier].name })}
           width={720}
         >
           <CancelSubscriptionCard
             title=""
             description=""
             plan={billingSdkPlans.find((p) => p.id === planTier) ?? billingSdkPlans[0]}
-            warningTitle="Vous perdrez l'accès à votre workspace"
-            warningText="À la fin de votre période déjà payée, l'accès à Minerva Flow sera coupé pour tous les membres de l'équipe."
+            warningTitle={t("youWillLoseAccess")}
+            warningText={t("atTheEndOf")}
             keepButtonText={`Garder mon plan ${PLANS[planTier].name}`}
             continueButtonText="Continuer l'annulation"
-            finalTitle="Dernière étape — confirmer l'annulation"
-            finalSubtitle="Votre accès reste actif jusqu'à la fin de la période déjà payée."
-            finalWarningText="Aucun remboursement au prorata n'est effectué pour la période en cours."
-            goBackButtonText="Attendez, revenir en arrière"
+            finalTitle={t("lastStepConfirmThe")}
+            finalSubtitle={t("yourAccessStaysActive")}
+            finalWarningText={t("noProratedRefundIs")}
+            goBackButtonText={t("waitGoBack")}
             confirmButtonText="Oui, annuler mon abonnement"
             onCancel={async () => {
               await handleConfirmCancel();

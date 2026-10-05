@@ -1,3 +1,5 @@
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { ExternalLink, GitBranch } from "lucide-react";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -7,11 +9,12 @@ import type { MemberProfile } from "@/lib/data/team-members";
 import { ContributionHeatmap } from "./ContributionHeatmap";
 import { ProfileForms, DeleteContentLinkButton } from "./ProfileForms";
 
-function weekLabel(ymd: string): string {
-  return new Date(`${ymd}T12:00:00Z`).toLocaleDateString("fr-CA", { day: "numeric", month: "long", timeZone: "UTC" });
+function weekLabel(ymd: string, locale?: string): string {
+  return new Date(`${ymd}T12:00:00Z`).toLocaleDateString(intlLocale(locale), { day: "numeric", month: "long", timeZone: "UTC" });
 }
 
 export function MemberProfileView({ profile }: { profile: MemberProfile }) {
+  const locale = useLocale();
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-4">
@@ -97,7 +100,7 @@ export function MemberProfileView({ profile }: { profile: MemberProfile }) {
                       <ExternalLink size={11} className="shrink-0" />
                     </a>
                     <p className="text-[12px] text-mv-ink-faint">
-                      {link.platform} · {weekLabel(link.publishedOn)}
+                      {link.platform} · {weekLabel(link.publishedOn, locale)}
                     </p>
                   </div>
                   {profile.isSelf && <DeleteContentLinkButton id={link.id} />}
@@ -116,7 +119,7 @@ export function MemberProfileView({ profile }: { profile: MemberProfile }) {
               <ul className="space-y-4">
                 {profile.checkins.map((checkin) => (
                   <li key={checkin.weekStart} className="text-[13px] leading-relaxed">
-                    <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Semaine du {weekLabel(checkin.weekStart)}</p>
+                    <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">Semaine du {weekLabel(checkin.weekStart, locale)}</p>
                     {checkin.commitments && (
                       <p className="mt-1 text-mv-ink">
                         <span className="font-semibold">Engagements : </span>

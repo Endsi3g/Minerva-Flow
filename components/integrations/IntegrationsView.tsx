@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import type { IntegrationItem } from "@/lib/data/integrations";
 import { Card } from "@/components/minerva/PageCard";
@@ -64,43 +66,45 @@ interface PillarMeta {
   description: string;
 }
 
-const PILLARS: PillarMeta[] = [
+function buildPILLARS(t: (key: string) => string): PillarMeta[] {
+  return [
   {
     id: "all",
-    label: "Toutes les connexions",
+    label: t("allConnections"),
     icon: SlidersHorizontal,
-    title: "Écosystème Global",
-    description: "Vue d'ensemble de tous vos services synchronisés avec Minerva Flow.",
+    title: t("globalEcosystem"),
+    description: t("overviewOfAllYour"),
   },
   {
     id: "caisse",
-    label: "Systèmes de caisse",
+    label: t("registerSystems"),
     icon: Store,
-    title: "Systèmes de Caisse",
-    description: "Synchronisation automatique des ventes quotidiennes, clôtures et déduction des stocks en direct.",
+    title: t("registerSystems2"),
+    description: t("automaticSyncOfDaily"),
   },
   {
     id: "paiement",
     label: "Paiements & Encaissement",
     icon: CreditCard,
     title: "Paiements & Encaissement",
-    description: "Terminaux de paiement physiques, paiements mobiles sans contact et virements automatisés.",
+    description: t("physicalPaymentTerminalsContactless"),
   },
   {
     id: "comptabilite",
-    label: "Comptabilité & Facturation",
+    label: t("accountingBilling"),
     icon: Landmark,
-    title: "Comptabilité & Facturation",
-    description: "Rapprochement bancaire, ventilation des taxes et transmission certifiée à votre comptable.",
+    title: t("accountingBilling"),
+    description: t("bankReconciliationTaxBreakdown"),
   },
   {
     id: "visibilite",
-    label: "Visibilité, Avis & Livraison",
+    label: t("visibilityReviewsDelivery"),
     icon: Globe,
-    title: "Visibilité & Canaux Externes",
-    description: "Avis Google, réseaux sociaux, plateformes de livraison et vitrine web connectée.",
+    title: t("visibilityExternalChannels"),
+    description: t("googleReviewsSocialNetworks"),
   },
 ];
+}
 
 function getCategoryPillar(category: IntegrationItem["category"]): "caisse" | "paiement" | "comptabilite" | "visibilite" {
   switch (category) {
@@ -127,6 +131,7 @@ export function IntegrationsView({
   restaurantName: string;
   restaurantId: string;
 }) {
+  const t = useTranslations("integrationsView");
   const [integrations] = useState<IntegrationItem[]>(initialIntegrations);
   const [selectedIntegration, setSelectedIntegration] = useState<IntegrationItem | null>(
     initialIntegrations[0] || null
@@ -140,7 +145,7 @@ export function IntegrationsView({
 
   function handleRequestAccess(item: IntegrationItem) {
     setRequestedWaitlist((prev) => ({ ...prev, [item.id]: true }));
-    toast.success(`Votre demande d'activation pour ${item.name} a été enregistrée avec succès.`);
+    toast.success(t("yourActivationRequestFor", { itemName: item.name }));
   }
 
   async function handleForceSync(item: IntegrationItem) {
@@ -149,9 +154,9 @@ export function IntegrationsView({
     try {
       const ok = await syncPosNowAction(provider);
       if (ok) {
-        toast.success(`Synchronisation terminée avec ${item.name} !`);
+        toast.success(t("syncWithItemnameComplete", { itemName: item.name }));
       } else {
-        toast.error("La synchronisation a échoué.");
+        toast.error(t("theSyncFailed"));
       }
     } finally {
       setIsSyncing(false);
@@ -220,13 +225,13 @@ export function IntegrationsView({
     const pillar = getCategoryPillar(item.category);
     switch (pillar) {
       case "caisse":
-        return "Relève automatique des tickets, ventes quotidiennes et sorties d'ingrédients";
+        return t("automaticCollectionOfTickets");
       case "paiement":
-        return "Encaissements sécurisés par carte, transactions mobiles et virements automatiques";
+        return t("secureCardPaymentsMobile");
       case "comptabilite":
-        return "Export certifié des écritures, calcul de taxes et rapprochement de caisse";
+        return t("certifiedExportOfEntries");
       case "visibilite":
-        return "Centralisation des avis, mise à jour des informations et commandes clients";
+        return t("centralizationOfReviewsUpdates");
     }
   };
 
@@ -244,10 +249,10 @@ export function IntegrationsView({
             </span>
           </div>
           <h1 className="font-display text-[28px] font-bold tracking-tight text-mv-ink mt-1.5">
-            Services & Outils Connectés
+            {t("connectedServicesTools")}
           </h1>
           <p className="mt-1 text-[13.5px] leading-relaxed text-mv-ink-soft max-w-3xl">
-            Consultez les services vraiment associés à cet établissement. Une carte « non connecté » décrit une option disponible; elle ne signifie pas qu’un fournisseur est déjà relié.
+            {t("seeTheServicesActually")}
           </p>
         </div>
 
@@ -258,14 +263,14 @@ export function IntegrationsView({
             className="flex items-center gap-1.5 rounded-xl border border-mv-border bg-mv-surface px-3.5 py-2 text-[12.5px] font-semibold text-mv-ink shadow-mv-xs transition-all hover:bg-mv-cream-soft"
           >
             <Globe size={14} className="text-mv-green-dark" />
-            <span>{showSiteSync ? "Masquer la vitrine" : "Vitrine Web en direct"}</span>
+            <span>{showSiteSync ? t("hideTheStorefront") : "Vitrine Web en direct"}</span>
           </button>
           <Link
             href="/settings"
             className="flex items-center gap-1.5 rounded-xl border border-mv-border bg-mv-surface px-3.5 py-2 text-[12.5px] font-semibold text-mv-ink shadow-mv-xs transition-all hover:bg-mv-cream-soft"
           >
             <Settings size={14} />
-            <span>Paramètres de caisse</span>
+            <span>{t("registerSettings")}</span>
           </Link>
         </div>
       </div>
@@ -275,7 +280,7 @@ export function IntegrationsView({
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-xs">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
-              Services connectés
+              {t("connectedServices")}
             </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-green-tint text-mv-green-dark">
               <CheckCircle2 size={15} />
@@ -285,37 +290,37 @@ export function IntegrationsView({
             <span className="font-display text-[24px] font-bold text-mv-ink">{connectedCount}</span>
             <span className="text-[12.5px] text-mv-ink-soft">sur {integrations.length} disponibles</span>
           </div>
-          <p className="mt-1 text-[12px] text-mv-ink-faint">Flux actifs et opérationnels sans interruption</p>
+          <p className="mt-1 text-[12px] text-mv-ink-faint">{t("activeUninterruptedDataFlows")}</p>
         </div>
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-xs">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
-              Mode de synchronisation
+              {t("syncMode")}
             </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-cream-soft text-mv-green-dark">
               <RefreshCw size={14} />
             </span>
           </div>
           <div className="mt-2">
-              <span className="font-display text-[17px] font-semibold text-mv-ink">Selon le service connecté</span>
+              <span className="font-display text-[17px] font-semibold text-mv-ink">{t("dependsOnTheConnected")}</span>
           </div>
-          <p className="mt-1 text-[12px] text-mv-ink-faint">Les caisses connectées se synchronisent selon leur cycle; une synchronisation manuelle est aussi possible.</p>
+          <p className="mt-1 text-[12px] text-mv-ink-faint">{t("connectedRegistersSyncOn")}</p>
         </div>
 
         <div className="rounded-2xl border border-mv-border bg-mv-surface p-4 shadow-mv-xs">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
-              Protection des données
+              {t("dataProtection")}
             </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-mv-cream-soft text-mv-green-dark">
               <Shield size={15} />
             </span>
           </div>
           <div className="mt-2">
-            <span className="font-display text-[17px] font-semibold text-mv-ink">Standard Bancaire Sécurisé</span>
+            <span className="font-display text-[17px] font-semibold text-mv-ink">{t("bankGradeSecurity")}</span>
           </div>
-          <p className="mt-1 text-[12px] text-mv-ink-faint">Chiffrement certifié et aucune donnée sensible exposée</p>
+          <p className="mt-1 text-[12px] text-mv-ink-faint">{t("certifiedEncryptionAndNo")}</p>
         </div>
       </div>
 
@@ -326,11 +331,11 @@ export function IntegrationsView({
             restaurantId={restaurantId}
             initialShowcase={{
               restaurantId,
-              restaurantName: restaurantName || "Café & Bistro Minerva",
+              restaurantName: restaurantName || t("cafBistroMinerva"),
               isOpenNow: true,
-              hoursNotice: "Ouvert aujourd'hui de 08:00 à 22:00",
-              activePromoTitle: "Spécial Brunch du Dimanche",
-              activePromoText: "Profitez de 15% de réduction sur la formule brunch ce week-end !",
+              hoursNotice: t("openTodayFrom8"),
+              activePromoTitle: t("sundayBrunchSpecial"),
+              activePromoText: t("enjoy15OffThe"),
               activePromoBadge: "Promotion Vedette",
               featuredMenuItems: [],
               updatedAt: new Date().toISOString(),
@@ -341,7 +346,7 @@ export function IntegrationsView({
 
       {/* Business Pillar Navigation Tabs */}
       <div className="flex flex-wrap items-center gap-2 border-b border-mv-border-soft pb-3">
-        {PILLARS.map((pillar) => {
+        {buildPILLARS(t).map((pillar) => {
           const Icon = pillar.icon;
           const isActive = selectedPillar === pillar.id;
           const count =
@@ -420,7 +425,7 @@ export function IntegrationsView({
                         </Badge>
                       ) : (
                         <span className="flex items-center gap-1 rounded-full bg-mv-cream-soft px-2.5 py-0.5 text-[12px] font-semibold text-mv-ink-faint">
-                          Non connecté
+                          {t("notConnected")}
                         </span>
                       )}
                     </div>
@@ -440,8 +445,8 @@ export function IntegrationsView({
                         : pillar === "paiement"
                         ? "Encaissement"
                         : pillar === "comptabilite"
-                        ? "Comptabilité"
-                        : "Visibilité"}
+                        ? t("accounting")
+                        : t("visibility")}
                     </span>
                     <span className="font-semibold text-mv-green-dark group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
                       Consulter <ArrowRight size={12} />
@@ -467,20 +472,20 @@ export function IntegrationsView({
                     <h3 className="font-display text-[15px] font-bold text-mv-ink">{selectedIntegration.name}</h3>
                     <p className="text-[12px] text-mv-ink-soft">
                       {selectedIntegration.status === "connected"
-                        ? "Actif et synchronisé"
+                        ? t("activeAndSynced")
                         : selectedIntegration.status === "coming_soon"
-                        ? "En cours de déploiement"
+                        ? t("rollingOut")
                         : selectedIntegration.status === "on_request"
-                        ? "Disponible sur activation"
+                        ? t("availableOnActivation")
                         : selectedIntegration.status === "error"
                         ? "Action requise"
-                        : "Disponible pour connexion"}
+                        : t("availableToConnect")}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedIntegration(null)}
-                  aria-label="Fermer les détails"
+                  aria-label={t("closeDetails")}
                   className="rounded-lg p-1.5 text-mv-ink-soft hover:bg-mv-ink/5 hover:text-mv-ink transition-colors"
                 >
                   <X size={16} />
@@ -491,23 +496,23 @@ export function IntegrationsView({
                 {/* Value Proposition Description */}
                 <div>
                   <h4 className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">
-                    Utilité pour votre établissement
+                    {t("valueForYourRestaurant")}
                   </h4>
                   <p className="mt-1.5 text-[13px] leading-relaxed text-mv-ink">
                     {selectedIntegration.description}
                   </p>
                   <div className="mt-2.5 rounded-xl bg-mv-cream-soft p-3 text-[12px] text-mv-ink-soft">
-                    <span className="font-semibold text-mv-ink">Bénéfice direct : </span>
+                    <span className="font-semibold text-mv-ink">{t("directBenefit")} </span>
                     {getOperationalSummary(selectedIntegration)}
                   </div>
                   {selectedIntegration.category === "caisse" && (
                     <div className="mt-3 rounded-xl border border-mv-border-soft p-3 text-[12px]">
-                      <p className="font-semibold text-mv-ink">Prérequis de connexion</p>
+                      <p className="font-semibold text-mv-ink">{t("connectionPrerequisites")}</p>
                       <p className="mt-1 leading-relaxed text-mv-ink-soft">
-                        {String(selectedIntegration.details?.prerequisite ?? "Autorisez Minerva Flow dans les paramètres de votre fournisseur.")}
+                        {String(selectedIntegration.details?.prerequisite ?? t("allowMinervaFlowIn"))}
                       </p>
                       <p className="mt-2 text-mv-ink-faint">
-                        Application configurée côté Minerva : {selectedIntegration.details?.platformAppConfigured ? "oui" : "non — l’accès partenaire ou les identifiants doivent d’abord être configurés"}.
+                        Application configurée côté Minerva : {selectedIntegration.details?.platformAppConfigured ? "oui" : t("noPartnerAccessOr")}.
                       </p>
                     </div>
                   )}
@@ -516,7 +521,7 @@ export function IntegrationsView({
                 {/* Status & Operational Box (Restaurateur-First, No Raw Dev JSON) */}
                 <div className="rounded-xl border border-mv-border-soft bg-mv-surface p-3.5 space-y-2.5 text-[12.5px]">
                   <div className="flex items-center justify-between">
-                    <span className="text-mv-ink-soft">État du service</span>
+                    <span className="text-mv-ink-soft">{t("serviceStatus")}</span>
                     <span className="font-semibold text-mv-ink">
                       {selectedIntegration.status === "connected" ? (
                         <span className="text-mv-green-dark flex items-center gap-1">
@@ -525,26 +530,26 @@ export function IntegrationsView({
                       ) : selectedIntegration.status === "coming_soon" ? (
                         "Prochaine version"
                       ) : selectedIntegration.status === "on_request" ? (
-                        "Sur demande"
+                        t("onRequest")
                       ) : selectedIntegration.status === "error" ? (
-                        <span className="text-mv-red">À reconnecter</span>
+                        <span className="text-mv-red">{t("toReconnect")}</span>
                       ) : (
-                        "Prêt à être associé"
+                        t("readyToBeLinked")
                       )}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-mv-ink-soft">Dernière synchronisation</span>
+                    <span className="text-mv-ink-soft">{t("lastSync")}</span>
                     <span className="font-medium text-mv-ink">
                       {selectedIntegration.connectedAt ||
-                        (selectedIntegration.status === "connected" ? "Aujourd'hui (Automatique)" : "Non synchronisé")}
+                        (selectedIntegration.status === "connected" ? t("todayAutomatic") : t("notSynced"))}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-mv-ink-soft">Fréquence de relève</span>
-                    <span className="font-medium text-mv-ink">Selon le service; synchronisation manuelle possible</span>
+                    <span className="text-mv-ink-soft">{t("pollingFrequency")}</span>
+                    <span className="font-medium text-mv-ink">{t("dependsOnTheService")}</span>
                   </div>
                 </div>
 
@@ -554,11 +559,10 @@ export function IntegrationsView({
                     <Shield size={16} className="text-mv-green-dark shrink-0 mt-0.5" />
                     <div>
                       <h5 className="text-[12px] font-bold text-mv-green-dark">
-                        Sécurité & Confidentialité
+                        {t("securityPrivacy")}
                       </h5>
                       <p className="mt-0.5 text-[12px] leading-relaxed text-mv-ink-soft">
-                        Connexion directe chiffrée selon les standards bancaires les plus stricts. Vos données
-                        financières et vos tickets restent strictement confidentiels et protégés.
+                        {t("directEncryptedConnectionTo")}
                       </p>
                     </div>
                   </div>
@@ -587,8 +591,8 @@ export function IntegrationsView({
                             <>
                               <Sparkles size={15} />
                               {selectedIntegration.status === "on_request"
-                                ? "Demander l'activation personnalisée"
-                                : "Être prévenu lors de la disponibilité"}
+                                ? t("requestCustomActivation")
+                                : t("getNotifiedWhenAvailable")}
                             </>
                           )}
                         </Button>
@@ -608,7 +612,7 @@ export function IntegrationsView({
                               className="w-full justify-center"
                             >
                               <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
-                              <span>{isSyncing ? "Synchronisation en cours…" : "Synchroniser maintenant"}</span>
+                              <span>{isSyncing ? t("syncing") : "Synchroniser maintenant"}</span>
                             </Button>
                           )}
                           <Link
@@ -616,7 +620,7 @@ export function IntegrationsView({
                             className="flex w-full items-center justify-center gap-2 rounded-xl border border-mv-border bg-mv-surface px-4 py-2.5 text-[13px] font-semibold text-mv-ink shadow-mv-xs transition-all hover:bg-mv-cream-soft"
                           >
                             <Settings size={15} />
-                            <span>Paramètres de la connexion</span>
+                            <span>{t("connectionSettings")}</span>
                           </Link>
                         </div>
                       );

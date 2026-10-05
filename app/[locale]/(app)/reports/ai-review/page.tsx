@@ -13,9 +13,10 @@ import { Sparkles, ChevronLeft } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 export default function AiReviewPage() {
+  const locale = useLocale();
   const t = useTranslations("aiReview");
   const tr = useTranslations("reportDetail");
   const [reviews, setReviews] = useState<AiReview[]>([]);
@@ -101,7 +102,7 @@ export default function AiReviewPage() {
               >
                 <div>
                   <p className="text-[13.5px] font-semibold text-mv-ink">
-                    {formatDate(r.periodStart)} — {formatDate(r.periodEnd)}
+                    {formatDate(r.periodStart, locale)} — {formatDate(r.periodEnd, locale)}
                   </p>
                   <p className="text-[12px] text-mv-ink-faint">
                     {t("strengthsWeaknessesCount", { strengths: r.strengths.length, weaknesses: r.weaknesses.length })}

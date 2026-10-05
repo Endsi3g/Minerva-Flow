@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { bucketFor, heatmapBuckets } from "./heatmap-scale";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useState } from "react";
@@ -9,6 +11,7 @@ export function ContributionHeatmap({
 }: {
   data: { date: string; revenue: number; dow: number }[];
 }) {
+  const locale = useLocale();
   const [hover, setHover] = useState<{ date: string; revenue: number } | null>(null);
   const revenues = data.map((d) => d.revenue);
   const min = Math.min(...revenues);
@@ -42,8 +45,8 @@ export function ContributionHeatmap({
         <div className="h-4 text-[12px] text-mv-ink-soft">
           {hover ? (
             <>
-              <span className="font-semibold text-mv-ink">{formatDate(hover.date)}</span>{" "}
-              — {formatCurrency(hover.revenue)}
+              <span className="font-semibold text-mv-ink">{formatDate(hover.date, locale)}</span>{" "}
+              — {formatCurrency(hover.revenue, locale)}
             </>
           ) : (
             "Survolez un jour"

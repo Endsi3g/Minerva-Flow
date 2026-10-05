@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -61,6 +64,7 @@ export function CampaignsView({
   canManagePaidAds: boolean;
   openPaidAdsRequest: PaidAdsRequest | null;
 }) {
+  const locale = useLocale();
   const { role } = useApp();
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<"all" | CampaignStatus>("all");
@@ -115,7 +119,7 @@ export function CampaignsView({
         (c) =>
           (statusFilter === "all" || c.status === statusFilter) &&
           (channelFilter === "all" || c.channel === channelFilter) &&
-          (!search.trim() || `${c.name} ${c.channel} ${typeLabel[c.type]}`.toLocaleLowerCase("fr-CA").includes(search.trim().toLocaleLowerCase("fr-CA")))
+          (!search.trim() || `${c.name} ${c.channel} ${typeLabel[c.type]}`.toLocaleLowerCase(intlLocale(locale)).includes(search.trim().toLocaleLowerCase(intlLocale(locale))))
       ),
     [campaigns, statusFilter, channelFilter, search]
   );
@@ -155,7 +159,7 @@ export function CampaignsView({
         </Card>
         <Card className="py-4">
           <p className="text-[12px] font-medium text-mv-ink-faint">Revenus attribués estimés</p>
-          <p className="mt-1 font-display text-2xl font-semibold text-mv-ink">{formatCurrency(attributedRevenue)}</p>
+          <p className="mt-1 font-display text-2xl font-semibold text-mv-ink">{formatCurrency(attributedRevenue, locale)}</p>
         </Card>
       </section>
 
@@ -230,14 +234,14 @@ export function CampaignsView({
                             </span>
                           </Td>
                           <Td className="text-mv-ink-soft">
-                            {formatDate(c.startDate)} — {formatDate(c.endDate)}
+                            {formatDate(c.startDate, locale)} — {formatDate(c.endDate, locale)}
                           </Td>
                           <Td>
                             <Badge tone={statusTone[c.status]}>{statusLabel[c.status]}</Badge>
                           </Td>
                           <Td className="text-right font-medium text-mv-ink">
                             {c.estimatedRevenue ? (
-                              <span className="text-mv-green-dark">+{formatCurrency(c.estimatedRevenue)}</span>
+                              <span className="text-mv-green-dark">+{formatCurrency(c.estimatedRevenue, locale)}</span>
                             ) : (
                               "—"
                             )}
@@ -256,7 +260,7 @@ export function CampaignsView({
                   <CardHeader
                     eyebrow={selected.channel}
                     title={selected.name}
-                    description={`${formatDate(selected.startDate)} — ${formatDate(selected.endDate)}`}
+                    description={`${formatDate(selected.startDate, locale)} — ${formatDate(selected.endDate, locale)}`}
                     action={<Badge tone={statusTone[selected.status]}>{statusLabel[selected.status]}</Badge>}
                   />
 
@@ -294,7 +298,7 @@ export function CampaignsView({
                       <div className="flex justify-between border-t border-mv-border-soft pt-2.5">
                         <span className="text-mv-ink-faint">Revenu corrélé</span>
                         <span className="font-semibold text-mv-green-dark">
-                          +{formatCurrency(selected.estimatedRevenue)}
+                          +{formatCurrency(selected.estimatedRevenue, locale)}
                         </span>
                       </div>
                     )}
@@ -353,7 +357,7 @@ export function CampaignsView({
                         <div key={i} className="rounded-lg bg-mv-cream-soft p-3">
                           <div className="mb-1 flex items-center justify-between">
                             <span className="text-[12px] font-semibold text-mv-ink">{n.author}</span>
-                            <span className="text-[12px] text-mv-ink-faint">{formatDate(n.date)}</span>
+                            <span className="text-[12px] text-mv-ink-faint">{formatDate(n.date, locale)}</span>
                           </div>
                           <p className="text-[12.5px] leading-relaxed text-mv-ink-soft">{n.text}</p>
                         </div>

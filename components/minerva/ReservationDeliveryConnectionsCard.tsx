@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -136,12 +138,13 @@ function ConnectRow({
   connection?: ReservationDeliveryConnection;
   onChanged: () => void;
 }) {
+  const locale = useLocale();
   const [modalOpen, setModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function statusLine() {
     if (!connection) return "Nécessite un partenariat approuvé par le fournisseur";
-    if (connection.lastSyncedAt) return `Dernière synchronisation — ${formatDate(connection.lastSyncedAt)}`;
+    if (connection.lastSyncedAt) return `Dernière synchronisation — ${formatDate(connection.lastSyncedAt, locale)}`;
     return "Identifiants enregistrés";
   }
 

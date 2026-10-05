@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import { AlertBanner } from "@/components/ui/AlertBanner";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import QRCode from "qrcode";
 import {
   createMenuItemAction,
@@ -479,6 +479,7 @@ function MenuItemRow({
   onEdit: (item: MenuItem) => void;
   onPlayVideo?: (video: { url: string; title: string }) => void;
 }) {
+  const locale = useLocale();
   const tv = useTranslations("menuView");
   const t = useTranslations("menu.itemRow");
   const [isToggling, setIsToggling] = useState(false);
@@ -576,7 +577,7 @@ function MenuItemRow({
       <div className="mt-2 grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-4">
         <div>
           <p className="text-mv-ink-faint">{t("price")}</p>
-          <p className="font-medium text-mv-ink">{item.priceOptions?.length ? tv("startingFrom", { price: formatCurrency(menuStartingPrice(item)) }) : formatCurrency(item.price)}</p>
+          <p className="font-medium text-mv-ink">{item.priceOptions?.length ? tv("startingFrom", { price: formatCurrency(menuStartingPrice(item), locale) }) : formatCurrency(item.price, locale)}</p>
         </div>
         <div>
           <p className="text-mv-ink-faint">{t("margin")}</p>
@@ -795,6 +796,7 @@ function OfferModal({
   onClose: () => void;
   onSaved: (offer: Offer) => void;
 }) {
+  const locale = useLocale();
   const tv = useTranslations("menuView");
   const t = useTranslations("menu.offer");
   const tn = useTranslations("menu.newItem");
@@ -918,7 +920,7 @@ function OfferModal({
               <span>{tv("estimatedGrossMargin")}</span>
               <span className="font-mono font-bold">
                 {marginDollars >= 0 ? "+" : ""}
-                {formatCurrency(marginDollars)}
+                {formatCurrency(marginDollars, locale)}
               </span>
               <span>·</span>
               <span className="font-bold">{marginPct}% marge</span>
@@ -1020,6 +1022,7 @@ function OfferRow({
   onEdit: (offer: Offer) => void;
   onPlayVideo?: (video: { url: string; title: string }) => void;
 }) {
+  const locale = useLocale();
   const tv = useTranslations("menuView");
   const t = useTranslations("menu.offerRow");
   const tStatus = useTranslations("menu.offerStatus");
@@ -1086,7 +1089,7 @@ function OfferRow({
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px]">
             {offer.price != null && (
-              <span className="font-semibold text-mv-ink font-mono">{formatCurrency(offer.price)}</span>
+              <span className="font-semibold text-mv-ink font-mono">{formatCurrency(offer.price, locale)}</span>
             )}
             {offer.price != null && offer.cost != null && offer.price > 0 ? (
               (() => {
@@ -1095,7 +1098,7 @@ function OfferRow({
                 const tone = marginPct >= 65 ? "green" : margin >= 0 ? "amber" : "red";
                 return (
                   <Badge tone={tone} size="xs">
-                    {margin >= 0 ? "+" : ""}{formatCurrency(margin)} · {marginPct}% marge
+                    {margin >= 0 ? "+" : ""}{formatCurrency(margin, locale)} · {marginPct}% marge
                   </Badge>
                 );
               })()
@@ -1147,6 +1150,7 @@ function MarginDriftPanel({
   canManage: boolean;
   onUpdated: (item: MenuItem) => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("menuView");
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -1185,7 +1189,7 @@ function MarginDriftPanel({
             <span className="font-medium text-mv-ink">{item.name}</span>
             <div className="flex items-center gap-2.5">
               <span className="text-mv-ink-faint">
-                {t("foodCostLine", { cost: formatCurrency(item.foodCost), pct: Math.round((item.foodCostPct ?? 0) * 100), price: formatCurrency(item.price) })}
+                {t("foodCostLine", { cost: formatCurrency(item.foodCost, locale), pct: Math.round((item.foodCostPct ?? 0) * 100), price: formatCurrency(item.price, locale) })}
               </span>
               {canManage && (
                 <button

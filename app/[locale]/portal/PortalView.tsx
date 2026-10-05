@@ -70,7 +70,7 @@ import {
 import { startTransition, useMemo, useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 type PortalTab = "home" | "order" | "rewards" | "profile";
 
@@ -114,6 +114,7 @@ function LoyaltyWalletCard({
   googleWalletEnabled: boolean;
   onOrderClick: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("portal.view");
   const tier = getLoyaltyTier(totalSpent, thresholds);
   const { icon: Icon } = loyaltyTierBadge[tier];
@@ -140,7 +141,7 @@ function LoyaltyWalletCard({
             <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.max(4, progress * 100)}%` }} />
           </div>
           <p className="mt-1.5 text-[12px] opacity-80">
-            {t("untilNextTier", { amount: formatCurrency(Math.max(0, nextTarget - totalSpent)) })}
+            {t("untilNextTier", { amount: formatCurrency(Math.max(0, nextTarget - totalSpent), locale) })}
           </p>
         </div>
       )}
@@ -149,7 +150,7 @@ function LoyaltyWalletCard({
         <span>
           {visitCount} {t("visits").toLowerCase()}
         </span>
-        <span>{formatCurrency(totalSpent)}</span>
+        <span>{formatCurrency(totalSpent, locale)}</span>
       </div>
 
       <button
@@ -975,6 +976,7 @@ function MenuBrowserCard({
   cart: Record<string, number>;
   onQtyChange: (itemId: string, delta: number) => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("portal.view");
 
   const byCategory = useMemo(() => {
@@ -1021,7 +1023,7 @@ function MenuBrowserCard({
                     {item.description && (
                       <p className="truncate text-[12px] text-mv-ink-faint">{item.description}</p>
                     )}
-                    <span className="text-[12.5px] font-semibold text-mv-ink">{formatCurrency(item.price)}</span>
+                    <span className="text-[12.5px] font-semibold text-mv-ink">{formatCurrency(item.price, locale)}</span>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     {qty > 0 && (
@@ -1081,6 +1083,7 @@ function CheckoutModal({
   canPayOnline: boolean;
   onOrdered: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("portal.view");
   const [tipPct, setTipPct] = useState<number | null>(acceptsTips ? 0.15 : null);
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -1243,7 +1246,7 @@ function CheckoutModal({
                 <span className="text-mv-ink-soft">
                   {l.quantity}× {l.item.name}
                 </span>
-                <span className="font-medium text-mv-ink">{formatCurrency(l.item.price * l.quantity)}</span>
+                <span className="font-medium text-mv-ink">{formatCurrency(l.item.price * l.quantity, locale)}</span>
               </div>
             ))}
           </div>
@@ -1291,29 +1294,29 @@ function CheckoutModal({
               </Field>
               {deliveryQuoteLoading && <p className="text-[12px] text-mv-ink-faint">{t("deliveryFeeLoading")}</p>}
               {!deliveryQuoteLoading && !deliveryQuote.available && <p className="text-[12px] text-mv-red">{deliveryQuote.reason === "outside_radius" ? t("deliveryFeeOutsideRadius") : t("deliveryFeeAddressError")}</p>}
-              {deliveryQuote.available && deliveryQuote.etaMinutes != null && <p className="text-[12px] text-mv-ink-faint">{t("deliveryFeeEstimate", { fee: formatCurrency(deliveryQuote.fee), minutes: deliveryQuote.etaMinutes })}</p>}
+              {deliveryQuote.available && deliveryQuote.etaMinutes != null && <p className="text-[12px] text-mv-ink-faint">{t("deliveryFeeEstimate", { fee: formatCurrency(deliveryQuote.fee, locale), minutes: deliveryQuote.etaMinutes })}</p>}
             </div>
           )}
 
           <div className="space-y-1 border-t border-mv-border-soft pt-3 text-[12.5px]">
             <div className="flex justify-between text-mv-ink-soft">
               <span>{t("checkoutSubtotal")}</span>
-              <span>{formatCurrency(subtotal)}</span>
+              <span>{formatCurrency(subtotal, locale)}</span>
             </div>
             <div className="flex justify-between text-mv-ink-soft">
               <span>{t("checkoutTaxes")}</span>
-              <span>{formatCurrency(taxAmount)}</span>
+              <span>{formatCurrency(taxAmount, locale)}</span>
             </div>
             {acceptsTips && (
               <div className="flex justify-between text-mv-ink-soft">
                 <span>{t("checkoutTip")}</span>
-                <span>{formatCurrency(tipAmount)}</span>
+                <span>{formatCurrency(tipAmount, locale)}</span>
               </div>
             )}
-            {fulfillmentMode === "livraison" && <div className="flex justify-between text-mv-ink-soft"><span>{t("delivery")}</span><span>{formatCurrency(deliveryQuote.fee)}</span></div>}
+            {fulfillmentMode === "livraison" && <div className="flex justify-between text-mv-ink-soft"><span>{t("delivery")}</span><span>{formatCurrency(deliveryQuote.fee, locale)}</span></div>}
             <div className="flex justify-between text-[14px] font-semibold text-mv-ink">
               <span>{t("checkoutTotal")}</span>
-              <span>{formatCurrency(total)}</span>
+              <span>{formatCurrency(total, locale)}</span>
             </div>
           </div>
 
@@ -1348,7 +1351,7 @@ function CheckoutModal({
           )}
 
           <Button onClick={handleSubmit} disabled={status === "submitting" || (fulfillmentMode === "livraison" && (deliveryQuoteLoading || !deliveryQuote.available)) || (payOnline ? !canPayOnline : !canPayAtReceipt)} className="w-full">
-            {status === "submitting" ? t("orderSubmitting") : t("orderSubmit", { total: formatCurrency(total) })}
+            {status === "submitting" ? t("orderSubmitting") : t("orderSubmit", { total: formatCurrency(total, locale) })}
           </Button>
         </div>
       )}
@@ -1448,6 +1451,7 @@ export function PortalView({
   announcements?: PlatformAnnouncement[];
   checkoutReturn?: PortalCheckoutReturn | null;
 }) {
+  const locale = useLocale();
   const t = useTranslations("portal.view");
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<PortalTab>("home");
@@ -1590,7 +1594,7 @@ export function PortalView({
                   {t(`checkoutReturn${checkoutReturn.status[0].toUpperCase()}${checkoutReturn.status.slice(1)}Description`)}
                 </p>
                 <p className="mt-1.5 text-[12px] text-mv-ink-faint">
-                  {t("checkoutReturnOrderSummary", { total: formatCurrency(checkoutReturn.total), order: checkoutReturn.orderId.slice(0, 8) })}
+                  {t("checkoutReturnOrderSummary", { total: formatCurrency(checkoutReturn.total, locale), order: checkoutReturn.orderId.slice(0, 8) })}
                   {checkoutReturn.status === "paid" && checkoutReturn.estimatedReadyAt
                     ? ` · ${t("checkoutReturnReadyAt", { time: formatRestaurantTime(checkoutReturn.estimatedReadyAt, restaurantTimezone) })}`
                     : ""}
@@ -1680,7 +1684,7 @@ export function PortalView({
                     <div key={tx.id} className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2.5">
                       <div>
                         <p className="text-[12.5px] font-medium text-mv-ink">{t(`txLabel.${tx.type}`)}</p>
-                        <p className="text-[12px] text-mv-ink-faint">{formatDate(tx.createdAt)}</p>
+                        <p className="text-[12px] text-mv-ink-faint">{formatDate(tx.createdAt, locale)}</p>
                       </div>
                       <span
                         className={
@@ -1749,7 +1753,7 @@ export function PortalView({
                     <div key={tx.id} className="flex items-center justify-between rounded-lg bg-mv-cream-soft px-3 py-2.5">
                       <div>
                         <p className="text-[12.5px] font-medium text-mv-ink">{t(`txLabel.${tx.type}`)}</p>
-                        <p className="text-[12px] text-mv-ink-faint">{formatDate(tx.createdAt)}</p>
+                        <p className="text-[12px] text-mv-ink-faint">{formatDate(tx.createdAt, locale)}</p>
                       </div>
                       <span
                         className={
@@ -1781,7 +1785,7 @@ export function PortalView({
               <ShoppingCart size={16} /> {t("cartItemCount", { count: cartCount })}
             </span>
             <span className="flex items-center gap-1">
-              {formatCurrency(cartSubtotal)} <ArrowRight size={14} />
+              {formatCurrency(cartSubtotal, locale)} <ArrowRight size={14} />
             </span>
           </button>
         </div>

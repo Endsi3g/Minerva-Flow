@@ -1,11 +1,14 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import React from "react";
 import { TrendingUp, TrendingDown, Minus, Info } from "lucide-react";
 import type { GenerativeKpiGridData, GenerativeKpiItem } from "@/lib/types/generative-ui";
 import { cn, formatCurrency } from "@/lib/utils";
 
-function formatValue(value: number, unit: GenerativeKpiItem["unit"]): string {
+function formatValue(value: number, unit: GenerativeKpiItem["unit"], locale?: string): string {
   switch (unit) {
     case "currency":
       return formatCurrency(value);
@@ -15,7 +18,7 @@ function formatValue(value: number, unit: GenerativeKpiItem["unit"]): string {
       return `${value.toFixed(1)} h`;
     case "number":
     default:
-      return value.toLocaleString("fr-CA");
+      return value.toLocaleString(intlLocale(locale));
   }
 }
 
@@ -26,6 +29,7 @@ export function GenerativeKpiGrid({
   data: GenerativeKpiGridData;
   onMetricClick?: (item: GenerativeKpiItem) => void;
 }) {
+  const locale = useLocale();
   if (!data?.items || data.items.length === 0) return null;
 
   return (
@@ -67,7 +71,7 @@ export function GenerativeKpiGrid({
 
               <div className="space-y-1">
                 <div className="font-sans font-bold text-base sm:text-lg text-[#1F1E1D] tracking-tight">
-                  {formatValue(item.value, item.unit)}
+                  {formatValue(item.value, item.unit, locale)}
                 </div>
 
                 {item.deltaPercent !== undefined && (

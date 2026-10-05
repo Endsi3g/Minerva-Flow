@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ChevronDown, LogOut, Bell, Gift, Search } from "lucide-react";
 import { ReferralModal } from "@/components/chat/ReferralModal";
 import { useRouter } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useRealtimeAlertSubscription,
@@ -185,6 +185,7 @@ function mapNotificationRow(row: NotificationRow): Notification {
 }
 
 function NotificationBell() {
+  const locale = useLocale();
   const t = useTranslations("topbar");
   const { restaurantId, authUser } = useApp();
   const router = useRouter();
@@ -351,7 +352,7 @@ function NotificationBell() {
                 >
                   <p className="text-[12.5px] font-semibold text-mv-ink">{n.title}</p>
                   {n.body && <p className="text-[12px] text-mv-ink-soft">{n.body}</p>}
-                  <p className="text-[12px] text-mv-ink-faint">{formatRelativeTime(n.createdAt)}</p>
+                  <p className="text-[12px] text-mv-ink-faint">{formatRelativeTime(n.createdAt, locale)}</p>
                 </button>
               ))}
             </>

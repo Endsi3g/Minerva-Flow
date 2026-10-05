@@ -1,7 +1,8 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { intlLocale } from "@/lib/format-locale";
+import { useTranslations, useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -350,6 +351,7 @@ export function ParrainageView({
 
 function ReferralInvitationsTable({ invitations }: { invitations: ReferralInvitationActivity[] }) {
   const t = useTranslations("referralView");
+  const locale = useLocale();
   const channelLabels = { qr: "Code QR", share: "Partage", copy: t("linkCopied"), code: "Code", direct: "Lien direct" };
   return (
     <Card className="w-full min-w-0">
@@ -367,7 +369,7 @@ function ReferralInvitationsTable({ invitations }: { invitations: ReferralInvita
                   <td className="py-2.5 pr-3 text-mv-ink-soft">{invitation.inviteeName}</td>
                   <td className="py-2.5 pr-3"><Badge tone="green" variant="subtle" size="sm">{channelLabels[invitation.channel]}</Badge></td>
                   <td className="py-2.5 pr-3 text-mv-ink-soft">{invitation.conversionType === "reservation" ? t("booking") : "Commande"}</td>
-                  <td className="py-2.5 text-right text-mv-ink-faint">{new Date(invitation.createdAt).toLocaleDateString("fr-CA")}</td>
+                  <td className="py-2.5 text-right text-mv-ink-faint">{new Date(invitation.createdAt).toLocaleDateString(intlLocale(locale))}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Map, MapControls, MapMarker, MarkerContent, MarkerLabel, MarkerPopup } from "@/components/ui/map";
 import { formatCurrency } from "@/lib/utils";
@@ -18,6 +20,7 @@ const MONTREAL: [number, number] = [-73.5673, 45.5017];
  * batch call.
  */
 export function CustomerOriginMap({ cities, maxGeocode = 12 }: { cities: CityOrigin[]; maxGeocode?: number }) {
+  const locale = useLocale();
   const [coords, setCoords] = useState<Record<string, CityCoordinates>>({});
   const backfilledRef = useRef(false);
 
@@ -102,7 +105,7 @@ export function CustomerOriginMap({ cities, maxGeocode = 12 }: { cities: CityOri
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Dépenses cumulées</span>
-                    <span className="font-semibold text-mv-ink">{formatCurrency(c.spent)}</span>
+                    <span className="font-semibold text-mv-ink">{formatCurrency(c.spent, locale)}</span>
                   </div>
                 </div>
               </MarkerPopup>

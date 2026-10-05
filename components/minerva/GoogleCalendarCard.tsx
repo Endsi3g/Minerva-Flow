@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import {
@@ -11,10 +14,10 @@ import type { UpcomingCalendarEvent } from "@/lib/google/member-calendar";
 import { useEffect, useState } from "react";
 import { GoogleCalendar } from "@/components/ui/BrandIcons";
 
-function formatEventTime(event: UpcomingCalendarEvent) {
+function formatEventTime(event: UpcomingCalendarEvent, locale?: string) {
   if (!event.start) return "";
-  if (event.allDay) return new Date(event.start).toLocaleDateString("fr-CA", { day: "numeric", month: "short" });
-  return new Date(event.start).toLocaleString("fr-CA", {
+  if (event.allDay) return new Date(event.start).toLocaleDateString(intlLocale(locale), { day: "numeric", month: "short" });
+  return new Date(event.start).toLocaleString(intlLocale(locale), {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -23,6 +26,7 @@ function formatEventTime(event: UpcomingCalendarEvent) {
 }
 
 export function GoogleCalendarCard() {
+  const locale = useLocale();
   const [connected, setConnected] = useState<boolean | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [events, setEvents] = useState<UpcomingCalendarEvent[]>([]);
@@ -74,7 +78,7 @@ export function GoogleCalendarCard() {
               {events.map((e) => (
                 <div key={e.id} className="flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2">
                   <span className="truncate text-[12.5px] font-medium text-mv-ink">{e.title}</span>
-                  <span className="shrink-0 text-[12px] text-mv-ink-faint">{formatEventTime(e)}</span>
+                  <span className="shrink-0 text-[12px] text-mv-ink-faint">{formatEventTime(e, locale)}</span>
                 </div>
               ))}
             </div>

@@ -32,7 +32,7 @@ import {
 import { Link } from "@/i18n/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { exportReportAction, getReportDataAction, shareReportAction } from "@/app/[locale]/(app)/reports/actions";
 import { getGoogleWorkspaceStatusAction } from "@/app/[locale]/(app)/settings/google-workspace-actions";
 import { GOOGLE_SCOPES } from "@/lib/google/config";
@@ -48,6 +48,7 @@ export function ReportView({
   breakdown: FlowLine[];
   campaigns: Campaign[];
 }) {
+  const locale = useLocale();
   const t = useTranslations("reportDetail");
   const tr = useTranslations("reports");
   const periodLabel = t.raw("periodLabel") as Record<string, string>;
@@ -356,10 +357,10 @@ export function ReportView({
               {tr(`labels.${view.report.slug}`)}
             </p>
             <p className="mt-1 text-[12px] text-mv-ink-faint">
-              {range ? `${formatDate(range.from)} — ${formatDate(range.to)}` : periodLabel[period]}
+              {range ? `${formatDate(range.from, locale)} — ${formatDate(range.to, locale)}` : periodLabel[period]}
             </p>
             <p className="mt-4 font-display text-[42px] font-medium leading-none text-mv-ink">
-              {view.report.unit === "currency" ? formatCurrency(view.report.value) : view.report.value}
+              {view.report.unit === "currency" ? formatCurrency(view.report.value, locale) : view.report.value}
             </p>
             {view.report.delta !== undefined && (
               <Badge tone={view.report.delta >= 0 ? "green" : "red"} className="mt-3">
@@ -396,7 +397,7 @@ export function ReportView({
                       <p className="text-[13px] font-semibold text-mv-ink">{c.name}</p>
                       <p className="text-[12px] text-mv-ink-faint">{c.channel}</p>
                     </div>
-                    <Badge tone="neutral">{formatCurrency(c.estimatedRevenue)}</Badge>
+                    <Badge tone="neutral">{formatCurrency(c.estimatedRevenue, locale)}</Badge>
                   </div>
                 ))}
               </div>
@@ -436,8 +437,8 @@ export function ReportView({
                   .sort((a, b) => b.date.localeCompare(a.date))
                   .map((d) => (
                     <Tr key={d.date}>
-                      <Td>{formatDate(d.date)}</Td>
-                      <Td className="text-right font-semibold">{formatCurrency(d.revenue)}</Td>
+                      <Td>{formatDate(d.date, locale)}</Td>
+                      <Td className="text-right font-semibold">{formatCurrency(d.revenue, locale)}</Td>
                     </Tr>
                   ))}
               </tbody>

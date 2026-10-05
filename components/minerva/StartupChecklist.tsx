@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useCurrentRestaurant } from "@/lib/app-context";
 import { getStartupProgressAction } from "@/app/[locale]/(app)/overview/actions";
 import { cn } from "@/lib/utils";
@@ -20,6 +22,7 @@ type ChecklistItem = {
 };
 
 export function StartupChecklist() {
+  const t = useTranslations("startupChecklist");
   const restaurant = useCurrentRestaurant();
   const [progress, setProgress] = useState<{
     serviceDaysCount: number;
@@ -43,64 +46,64 @@ export function StartupChecklist() {
   const items: ChecklistItem[] = [
     {
       key: "etablissement",
-      label: "Configurer votre établissement",
-      description: "Donnez son vrai nom à votre établissement.",
+      label: t("setUpYourRestaurant"),
+      description: t("giveRealName"),
       href: "/etablissement",
       icon: Building2,
       done: restaurant.name !== "Mon restaurant",
     },
     {
       key: "menu",
-      label: "Publier votre menu",
-      description: "C'est ce que vos clients voient en premier.",
+      label: t("publishYourMenu"),
+      description: t("thisIsWhatYour"),
       href: "/menu",
       icon: UtensilsCrossed,
       done: progress.liveMenuCount > 0,
     },
     {
       key: "first-customer",
-      label: "Inscrire votre premier client",
-      description: "Affichez votre QR au comptoir : l'inscription prend 30 secondes.",
+      label: t("signUpYourFirst"),
+      description: t("displayYourQrAt"),
       href: "/fidelisation",
       icon: QrCode,
       done: progress.customerCount > 0,
     },
     {
       key: "day",
-      label: "Ajouter votre première journée",
-      description: "La donnée de base qui alimente tous vos rapports.",
+      label: t("addYourFirstDay"),
+      description: t("theBaseDataThat"),
       href: "/days",
       icon: CalendarPlus,
       done: progress.serviceDaysCount > 0,
     },
     {
       key: "address",
-      label: "Compléter l'adresse",
-      description: "Adresse, horaires et site web — importables automatiquement via Google.",
+      label: t("completeTheAddress"),
+      description: t("addressHoursAndWebsite"),
       href: "/etablissement",
       icon: MapPin,
       done: progress.hasAddress,
     },
     {
       key: "team",
-      label: "Inviter un collaborateur",
-      description: "Générez un lien d'invitation à partager.",
+      label: t("inviteATeamMember"),
+      description: t("generateAnInvitationLink"),
       href: "/collaborateurs",
       icon: UserPlus,
       done: progress.memberCount > 1,
     },
     {
       key: "integrations",
-      label: "Connecter vos outils",
-      description: "Square, Stripe, Google Calendar, Meta, Instagram — synchronisez vos données.",
+      label: t("connectYourTools"),
+      description: t("squareStripeGoogleCalendar"),
       href: "/settings",
       icon: Plug,
       done: progress.toolsConnectedCount > 0,
     },
     {
       key: "insight",
-      label: "Débloquer vos premières recommandations",
-      description: "Ajoutez au moins 3 journées pour voir des insights sur vos propres chiffres.",
+      label: t("unlockYourFirstRecommendations"),
+      description: t("addAtLeast3"),
       href: "/overview",
       icon: Sparkles,
       done: progress.serviceDaysCount >= 3,
@@ -123,11 +126,10 @@ export function StartupChecklist() {
       >
         <div className="flex-1">
           <p className="font-display text-[15px] font-medium text-mv-ink">
-            Démarrage — {doneCount}/{items.length} étapes complétées
+            {t("startProgress", { done: doneCount, total: items.length })}
           </p>
           <p className="mt-0.5 text-[12px] text-mv-ink-faint">
-            Ces étapes activent votre copilote IA et vos premiers rapports — l&apos;écran ci-dessous se remplit au
-            fur et à mesure.
+            {t("theseStepsTurnOn")}
           </p>
           <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-mv-border-soft">
             <div

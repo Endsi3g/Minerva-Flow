@@ -1,3 +1,4 @@
+import { getTranslations, getLocale } from "next-intl/server";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -11,6 +12,8 @@ import { notFound } from "next/navigation";
 import { Clock } from "lucide-react";
 
 export default async function SharedReportPage({ params }: { params: Promise<{ token: string }> }) {
+  const locale = await getLocale();
+  const t = await getTranslations("sharedReport");
   const { token } = await params;
 
   const ip = await getClientIp();
@@ -18,7 +21,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
   if (!allowed) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-mv-cream px-6 text-center">
-        <p className="text-[14px] text-mv-ink-soft">Trop de tentatives. Réessayez dans quelques minutes.</p>
+        <p className="text-[14px] text-mv-ink-soft">{t("tooManyAttemptsTry")}</p>
       </div>
     );
   }
@@ -38,8 +41,8 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
             </span>
           </div>
           <Clock size={22} className="mx-auto mb-3 text-mv-ink-faint" />
-          <p className="text-[14px] font-medium text-mv-ink">Ce lien a expiré.</p>
-          <p className="mt-1.5 text-[13px] text-mv-ink-soft">Demandez un nouveau lien à la personne qui vous l&apos;a envoyé.</p>
+          <p className="text-[14px] font-medium text-mv-ink">{t("thisLinkHasExpired")}</p>
+          <p className="mt-1.5 text-[13px] text-mv-ink-soft">{t("askThePersonWho")}</p>
         </div>
       </div>
     );
@@ -58,13 +61,13 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
         </div>
 
         <div className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-          Rapport partagé · lecture seule
+          {t("sharedReportReadOnly")}
         </div>
         <h1 className="mb-1 font-display text-[28px] font-medium tracking-tight text-mv-ink">
           {share.title}
         </h1>
         <p className="mb-6 text-[12.5px] text-mv-ink-faint">
-          Instantané généré le {formatDate(share.createdAt.slice(0, 10))}
+          Instantané généré le {formatDate(share.createdAt.slice(0, 10), locale)}
         </p>
 
         <div className="relative overflow-hidden rounded-2xl border-2 border-mv-green bg-mv-surface p-5 shadow-mv-md">
@@ -73,7 +76,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
               {report.label}
             </p>
             <p className="mt-4 font-display text-[42px] font-medium leading-none text-mv-ink">
-              {report.unit === "currency" ? formatCurrency(report.value) : report.value}
+              {report.unit === "currency" ? formatCurrency(report.value, locale) : report.value}
             </p>
             {report.delta !== undefined && (
               <Badge tone={report.delta >= 0 ? "green" : "red"} className="mt-3">
@@ -90,7 +93,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
 
         {breakdown.length > 0 && (
           <Card className="mt-6">
-            <CardHeader title="Répartition" description="Au moment du partage" />
+            <CardHeader title={t("breakdown")} description="Au moment du partage" />
             <FlowBars lines={breakdown} tone={report.slug === "sorties" ? "ink" : "green"} />
           </Card>
         )}
@@ -98,7 +101,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
         <div className="mt-8 flex flex-col items-center gap-2">
           <PoweredByBadge />
           <p className="text-center text-[12px] text-mv-ink-faint">
-            Ce lien ne se met pas à jour automatiquement{share.expiresAt ? ` · expire le ${formatDate(share.expiresAt.slice(0, 10))}` : ""}.
+            Ce lien ne se met pas à jour automatiquement{share.expiresAt ? t("expiresOnDate", { date: formatDate(share.expiresAt.slice(0, 10), locale) }) : ""}.
           </p>
         </div>
       </div>

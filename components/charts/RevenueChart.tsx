@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   Area,
@@ -20,14 +22,15 @@ function ChartTooltip({
   payload?: { value: number }[];
   label?: string;
 }) {
+  const locale = useLocale();
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-mv-border bg-mv-surface px-3 py-2 shadow-mv-md">
       <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-        {label && formatDate(label)}
+        {label && formatDate(label, locale)}
       </p>
       <p className="mt-0.5 font-display text-[15px] font-medium text-mv-ink">
-        {formatCurrency(payload[0].value)}
+        {formatCurrency(payload[0].value, locale)}
       </p>
     </div>
   );
@@ -40,6 +43,7 @@ export function RevenueChart({
   data: { date: string; revenue: number }[];
   height?: number;
 }) {
+  const locale = useLocale();
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -52,7 +56,7 @@ export function RevenueChart({
         <CartesianGrid vertical={false} stroke="var(--mv-border)" strokeDasharray="3 4" />
         <XAxis
           dataKey="date"
-          tickFormatter={(v) => formatDate(v)}
+          tickFormatter={(v) => formatDate(v, locale)}
           tick={{ fill: "var(--mv-ink-faint)", fontSize: 12 }}
           axisLine={{ stroke: "var(--mv-border)" }}
           tickLine={false}

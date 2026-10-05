@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -71,6 +73,7 @@ export function ProgramDetailView({
   serviceDays: ServiceDay[];
   regularCustomers: Customer[];
 }) {
+  const locale = useLocale();
   const { role } = useApp();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -127,7 +130,7 @@ export function ProgramDetailView({
       <PageHeader
         eyebrow="Programme de revenu récurrent"
         title={program.name}
-        description={`${typeLabel[program.type]} · Du ${formatDate(program.startDate)} au ${formatDate(program.endDate)}`}
+        description={`${typeLabel[program.type]} · Du ${formatDate(program.startDate, locale)} au ${formatDate(program.endDate, locale)}`}
         action={
           <div className="flex items-center gap-2">
             <Badge tone={typeTone[program.type]} className="text-[12px] px-2.5 py-0.5">
@@ -166,7 +169,7 @@ export function ProgramDetailView({
         <Card className="p-4">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Revenu récurrent</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-green-dark">
-            {formatCurrency(program.revenue)}
+            {formatCurrency(program.revenue, locale)}
           </p>
           {program.revenueGoal ? (
             <div className="mt-1.5">
@@ -174,7 +177,7 @@ export function ProgramDetailView({
                 <div className="h-full bg-mv-green" style={{ width: `${revenueGoalPct}%` }} />
               </div>
               <p className="mt-1 text-[12px] text-mv-ink-faint">
-                {revenueGoalPct}% de l&apos;objectif ({formatCurrency(program.revenueGoal)})
+                {revenueGoalPct}% de l&apos;objectif ({formatCurrency(program.revenueGoal, locale)})
               </p>
             </div>
           ) : (
@@ -185,17 +188,17 @@ export function ProgramDetailView({
         <Card className="p-4">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Coûts directs</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
-            {formatCurrency(program.cost)}
+            {formatCurrency(program.cost, locale)}
           </p>
           <p className="mt-1 text-[12px] text-mv-ink-faint">
-            {program.expectedCost ? `Budget prévu : ${formatCurrency(program.expectedCost)}` : "Dépenses engagées"}
+            {program.expectedCost ? `Budget prévu : ${formatCurrency(program.expectedCost, locale)}` : "Dépenses engagées"}
           </p>
         </Card>
 
         <Card className="p-4">
           <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Marge brute</p>
           <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
-            {formatCurrency(margin)}
+            {formatCurrency(margin, locale)}
           </p>
           <p className="mt-1 text-[12px] text-mv-ink-soft">
             <span className={marginPct >= 40 ? "text-mv-green-dark font-medium" : "text-mv-ink"}>
@@ -259,7 +262,7 @@ export function ProgramDetailView({
                 <tbody className="divide-y divide-mv-border-soft">
                   {transactions.map((t) => (
                     <tr key={t.id}>
-                      <td className="py-2 text-mv-ink-faint">{formatDate(t.date)}</td>
+                      <td className="py-2 text-mv-ink-faint">{formatDate(t.date, locale)}</td>
                       <td className="py-2 font-medium text-mv-ink">{t.description}</td>
                       <td className="py-2">
                         <Badge tone="neutral" className="text-[12px]">
@@ -272,7 +275,7 @@ export function ProgramDetailView({
                         }`}
                       >
                         {t.direction === "in" ? "+" : "-"}
-                        {formatCurrency(t.amount)}
+                        {formatCurrency(t.amount, locale)}
                       </td>
                     </tr>
                   ))}
@@ -347,7 +350,7 @@ export function ProgramDetailView({
 
           {serviceDays.length === 0 ? (
             <div className="rounded-xl border border-dashed border-mv-border p-4 text-center text-mv-ink-soft text-[12.5px]">
-              Aucune journée de service enregistrée sur la plage de dates de ce programme ({formatDate(program.startDate)} — {formatDate(program.endDate)}).
+              Aucune journée de service enregistrée sur la plage de dates de ce programme ({formatDate(program.startDate, locale)} — {formatDate(program.endDate, locale)}).
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
@@ -358,13 +361,13 @@ export function ProgramDetailView({
                   className="group block rounded-xl border border-mv-border bg-mv-surface p-3 transition-colors hover:border-mv-green hover:bg-mv-cream-soft"
                 >
                   <div className="flex items-center justify-between">
-                    <p className="text-[12px] font-medium text-mv-ink">{formatDate(sd.date)}</p>
+                    <p className="text-[12px] font-medium text-mv-ink">{formatDate(sd.date, locale)}</p>
                     <Badge tone={sd.rushLevel === "rush" || sd.anomaly === "rush" ? "green" : "neutral"} className="text-[12px]">
                       {sd.rushLevel || "Normal"}
                     </Badge>
                   </div>
                   <p className="mt-1.5 font-display text-[16px] font-semibold text-mv-green-dark">
-                    {formatCurrency(sd.revenue)}
+                    {formatCurrency(sd.revenue, locale)}
                   </p>
                   <p className="mt-0.5 text-[12px] text-mv-ink-faint group-hover:text-mv-green-dark">
                     Voir le service &rarr;
@@ -405,7 +408,7 @@ export function ProgramDetailView({
                 >
                   <p className="truncate font-semibold text-mv-ink">{c.name}</p>
                   <p className="text-[12px] text-mv-ink-faint">{c.visitCount} visites cumulées</p>
-                  <p className="mt-1 font-semibold text-mv-green-dark">{formatCurrency(c.totalSpent)}</p>
+                  <p className="mt-1 font-semibold text-mv-green-dark">{formatCurrency(c.totalSpent, locale)}</p>
                 </div>
               ))}
             </div>
@@ -445,7 +448,7 @@ export function ProgramDetailView({
                 <div key={i} className="rounded-xl border border-mv-border bg-mv-cream-soft/70 p-3 text-[12.5px]">
                   <div className="flex items-center justify-between text-[12px] text-mv-ink-faint mb-1">
                     <span className="font-semibold text-mv-ink">{n.author}</span>
-                    <span>{formatDate(n.date)}</span>
+                    <span>{formatDate(n.date, locale)}</span>
                   </div>
                   <p className="leading-relaxed text-mv-ink-soft">{n.text}</p>
                 </div>

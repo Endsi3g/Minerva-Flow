@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import React, { useState, useRef, useEffect } from "react";
 import {
   ArrowUp,
@@ -17,67 +19,71 @@ import {
 import type { SlashCommandDef, ContextMentionDef } from "@/lib/types/generative-ui";
 import { cn } from "@/lib/utils";
 
-const SLASH_COMMANDS: SlashCommandDef[] = [
+function buildSLASH_COMMANDS(t: (key: string) => string): SlashCommandDef[] {
+  return [
   {
     command: "/plan",
-    label: "Plan d'Action Opérationnel",
-    description: "Génère un plan de réapprovisionnement et réduction du gaspillage",
+    label: t("operationalActionPlan"),
+    description: t("generatesARestockingAnd"),
     category: "operations",
-    promptTemplate: "Génère un plan d'action opérationnel complet pour optimiser les achats et la gestion des stocks cette semaine.",
+    promptTemplate: t("generateACompleteOperational"),
   },
   {
     command: "/audit",
-    label: "Audit Rentabilité & Marges",
-    description: "Analyse en profondeur les dérives de food-cost et marges brutes",
+    label: t("profitabilityMarginAudit"),
+    description: t("inDepthAnalysisOf"),
     category: "audit",
-    promptTemplate: "Effectue un audit détaillé de mes marges brutes et identifie les 3 postes de dépenses prioritaires à corriger.",
+    promptTemplate: t("runADetailedAudit"),
   },
   {
     command: "/menu",
     label: "Menu Engineering Matrix",
-    description: "Catégorise les plats en Stars, Plowhorses, Puzzles et Dogs",
+    description: t("categorizesDishesIntoStars"),
     category: "menu",
-    promptTemplate: "Analyse la carte selon la matrice de rentabilité du Menu Engineering (Stars, Plowhorses, Puzzles, Dogs) et propose des ajustements de prix.",
+    promptTemplate: t("analyzeTheMenuUsing"),
   },
   {
     command: "/export",
-    label: "Exporter Rapport de Synthèse",
-    description: "Prépare un artefact exportable en PDF et CSV",
+    label: t("exportSummaryReport"),
+    description: t("preparesAnArtifactExportable"),
     category: "export",
-    promptTemplate: "Génère un rapport de synthèse d'exploitation consolidé prêt à l'exportation.",
+    promptTemplate: t("generateAConsolidatedOperating"),
   },
 ];
+}
 
-const CONTEXT_MENTIONS: ContextMentionDef[] = [
+function buildCONTEXT_MENTIONS(t: (key: string) => string): ContextMentionDef[] {
+  return [
   {
     mention: "@ventes",
-    label: "Données de Caisse enregistreuse",
-    description: "Ventes, couverts, ticket moyen et répartition horaire",
+    label: t("registerData"),
+    description: t("salesCoversAverageTicket"),
     category: "pos",
-    snippet: "[Données Caisse Ventes] ",
+    snippet: t("registerSalesData"),
   },
   {
     mention: "@stocks",
-    label: "Inventaire & Coûts Matières",
-    description: "Valeur de stock, ruptures et fiches techniques",
+    label: t("inventoryIngredientCosts"),
+    description: t("stockValueStockoutsAnd"),
     category: "inventory",
-    snippet: "[Données Inventaire & Stocks] ",
+    snippet: t("inventoryStockData"),
   },
   {
     mention: "@menu",
     label: "Carte & Tarification",
-    description: "Prix de vente, marges unitaires et recettes",
+    description: t("sellingPricesUnitMargins"),
     category: "menu",
-    snippet: "[Données Carte & Plats] ",
+    snippet: t("menuDishesData"),
   },
   {
     mention: "@staff",
     label: "Planning & Masse Salariale",
-    description: "Heures travaillées, ratios de productivité et staffing",
+    description: t("hoursWorkedProductivityRatios"),
     category: "staff",
-    snippet: "[Données Staffing & Heures] ",
+    snippet: t("staffingHoursData"),
   },
 ];
+}
 
 export interface FileAttachment {
   id: string;
@@ -102,6 +108,7 @@ export function Omnibar({
   disabled?: boolean;
   placeholder?: string;
 }) {
+  const t = useTranslations("omnibar");
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [activeMode, setActiveMode] = useState<"chat" | "cowork">("chat");
@@ -145,13 +152,13 @@ export function Omnibar({
     }
   };
 
-  const filteredCommands = SLASH_COMMANDS.filter(
+  const filteredCommands = buildSLASH_COMMANDS(t).filter(
     (c) =>
       c.command.toLowerCase().includes(triggerQuery) ||
       c.label.toLowerCase().includes(triggerQuery)
   );
 
-  const filteredMentions = CONTEXT_MENTIONS.filter(
+  const filteredMentions = buildCONTEXT_MENTIONS(t).filter(
     (m) =>
       m.mention.toLowerCase().includes(triggerQuery) ||
       m.label.toLowerCase().includes(triggerQuery)
@@ -258,7 +265,7 @@ export function Omnibar({
         <div className="absolute inset-0 z-50 bg-[#0E7C5A]/10 border-2 border-dashed border-[#0E7C5A] rounded-2xl flex flex-col items-center justify-center pointer-events-none">
           <p className="text-xs font-bold text-[#0E7C5A] flex items-center gap-2">
             <Paperclip size={14} />
-            Déposez vos fichiers de caisse, factures ou menus
+            {t("dropYourRegisterFiles")}
           </p>
         </div>
       )}
@@ -270,7 +277,7 @@ export function Omnibar({
           className="absolute bottom-full left-0 mb-2 w-80 bg-white border border-[#E2E0D8] rounded-2xl shadow-xl z-40 p-1.5 text-left animate-in fade-in zoom-in-95"
         >
           <div className="px-2.5 py-1 text-[12px] font-mono font-bold text-[#8A887F] uppercase tracking-wider border-b border-[#F0EFEA] mb-1">
-            {triggerType === "/" ? "Commandes d'audit disponibles" : "Sources de données connectées"}
+            {triggerType === "/" ? "Commandes d'audit disponibles" : t("connectedDataSources")}
           </div>
 
           <div className="space-y-0.5 max-h-56 overflow-y-auto">
@@ -298,7 +305,7 @@ export function Omnibar({
                   </button>
                 ))
               ) : (
-                <div className="p-3 text-center text-xs text-[#8A887F]">Aucune commande trouvée</div>
+                <div className="p-3 text-center text-xs text-[#8A887F]">{t("noCommandFound")}</div>
               )
             ) : (
               filteredMentions.length > 0 ? (
@@ -324,7 +331,7 @@ export function Omnibar({
                   </button>
                 ))
               ) : (
-                <div className="p-3 text-center text-xs text-[#8A887F]">Aucune mention trouvée</div>
+                <div className="p-3 text-center text-xs text-[#8A887F]">{t("noMentionFound")}</div>
               )
             )}
           </div>
@@ -441,7 +448,7 @@ export function Omnibar({
                   >
                     <div>
                       <p className="font-semibold text-[12px]">Gemini 3.7 Flash</p>
-                      <p className="text-[12px] text-[#8A887F]">Recommandé · Haute vitesse</p>
+                      <p className="text-[12px] text-[#8A887F]">{t("recommendedHighSpeed")}</p>
                     </div>
                     {selectedModel === "gemini-3.7-flash" && <Check size={13} className="text-[#0E7C5A]" />}
                   </button>
@@ -455,7 +462,7 @@ export function Omnibar({
                   >
                     <div>
                       <p className="font-semibold text-[12px]">Claude 3.5 Sonnet</p>
-                      <p className="text-[12px] text-[#8A887F]">Raisonnement analytique</p>
+                      <p className="text-[12px] text-[#8A887F]">{t("analyticalReasoning")}</p>
                     </div>
                     {selectedModel === "claude-3.5-sonnet" && <Check size={13} className="text-[#0E7C5A]" />}
                   </button>
@@ -467,7 +474,7 @@ export function Omnibar({
             <button
               type="button"
               className="h-7 w-7 rounded-lg text-[#5A5851] hover:text-[#1F1E1D] hover:bg-black/[0.05] transition-colors flex items-center justify-center"
-              title="Dictée vocale"
+              title={t("voiceDictation")}
             >
               <Mic size={13} />
             </button>
@@ -495,35 +502,35 @@ export function Omnibar({
         <button
           type="button"
           onClick={() => {
-            setMessage("Effectue un audit complet de mes marges brutes de la semaine.");
+            setMessage(t("runAFullAudit"));
             if (textareaRef.current) textareaRef.current.focus();
           }}
           className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E8E5DF] hover:border-[#0E7C5A] hover:text-[#1F1E1D] transition-colors shadow-2xs"
         >
           <TrendingUp size={10} className="text-[#0E7C5A]" />
-          <span>/audit marges</span>
+          <span>{t("marginAudit")}</span>
         </button>
         <button
           type="button"
           onClick={() => {
-            setMessage("Analyse ma carte selon la matrice Menu Engineering (Stars, Plowhorses, Puzzles).");
+            setMessage(t("analyzeMyMenuUsing"));
             if (textareaRef.current) textareaRef.current.focus();
           }}
           className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E8E5DF] hover:border-[#0E7C5A] hover:text-[#1F1E1D] transition-colors shadow-2xs"
         >
           <Utensils size={10} className="text-[#0E7C5A]" />
-          <span>/menu engineering</span>
+          <span>{t("menuEngineering")}</span>
         </button>
         <button
           type="button"
           onClick={() => {
-            setMessage("Génère un plan de réapprovisionnement pour sécuriser les services du week-end.");
+            setMessage(t("generateARestockingPlan"));
             if (textareaRef.current) textareaRef.current.focus();
           }}
           className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E8E5DF] hover:border-[#0E7C5A] hover:text-[#1F1E1D] transition-colors shadow-2xs"
         >
           <Package size={10} className="text-[#0E7C5A]" />
-          <span>/plan stocks</span>
+          <span>{t("stockPlan")}</span>
         </button>
       </div>
 

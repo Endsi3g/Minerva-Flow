@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations, useLocale } from "next-intl";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -73,6 +75,8 @@ export function PosItemMappingCard({
   menuItems,
   onItemCreated,
 }: PosItemMappingCardProps) {
+  const locale = useLocale();
+  const t = useTranslations("posItemMapping");
   const [mappings, setMappings] = useState<PosItemMapping[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -87,9 +91,9 @@ export function PosItemMappingCard({
     const result = await resyncMenuToPosAction(restaurantId);
     setResyncing(false);
     if (result.providers === 0) {
-      toast.info("Aucun compte Clover/Square connecté.");
+      toast.info(t("noCloverSquareAccount"));
     } else {
-      toast.success(`Synchronisé : ${result.pushed} envoyé(s), ${result.pulled} reçu(s) depuis votre caisse enregistreuse.`);
+      toast.success(t("syncedPushedSentPulled", { pushed: result.pushed, pulled: result.pulled }));
       loadMappings();
     }
   }
@@ -171,9 +175,9 @@ export function PosItemMappingCard({
               : m
           )
         );
-        toast.success(`« ${mapping.externalItemName} » associé à « ${found?.name ?? "plat"} »`);
+        toast.success(t("externalitemnameLinkedToPlat", { externalItemName: mapping.externalItemName, plat: found?.name ?? "plat" }));
       } else {
-        toast.error("Échec de l'association de l'article");
+        toast.error(t("couldNotLinkThe"));
       }
       setActionInProgressId(null);
     });
@@ -197,9 +201,9 @@ export function PosItemMappingCard({
               : m
           )
         );
-        toast.info(`« ${mapping.externalItemName} » dissocié du menu`);
+        toast.info(t("externalitemnameUnlinkedFromThe", { externalItemName: mapping.externalItemName }));
       } else {
-        toast.error("Échec de la dissociation");
+        toast.error(t("couldNotUnlink"));
       }
       setActionInProgressId(null);
     });
@@ -235,9 +239,9 @@ export function PosItemMappingCard({
               : m
           )
         );
-        toast.success(`Plat « ${newItem.name} » ajouté au menu et associé !`);
+        toast.success(t("dishNewitemnameAddedTo", { newItemName: newItem.name }));
       } else {
-        toast.error("Impossible de créer le plat");
+        toast.error(t("couldNotCreateThe"));
       }
       setActionInProgressId(null);
     });
@@ -253,7 +257,7 @@ export function PosItemMappingCard({
       <CardHeader
         eyebrow="Synchronisation des ventes"
         title="Correspondance des articles de caisse"
-        description="Associez les articles encaissés (Square, Clover, Toast) à vos fiches plats pour le suivi du Menu Engineering et des stocks de recettes."
+        description={t("linkTheItemsRung")}
         action={
           <div className="flex items-center gap-2">
             {unmappedCount > 0 ? (
@@ -276,7 +280,7 @@ export function PosItemMappingCard({
               variant="ghost"
               onClick={loadMappings}
               disabled={loading || isPending}
-              aria-label="Rafraîchir"
+              aria-label={t("refresh")}
             >
               <RefreshCw size={14} className={cn((loading || isPending) && "animate-spin")} />
             </Button>
@@ -327,7 +331,7 @@ export function PosItemMappingCard({
             <Search size={13} className="absolute left-2.5 top-2.5 text-mv-ink-faint" />
             <input
               type="text"
-              placeholder="Rechercher un article…"
+              placeholder={t("searchAnItem")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8 w-48 rounded-lg border border-mv-border bg-mv-surface pl-8 pr-3 text-[12px] text-mv-ink placeholder:text-mv-ink-faint focus:border-mv-green focus:outline-none"
@@ -338,10 +342,10 @@ export function PosItemMappingCard({
             onChange={(e) => setSelectedProvider(e.target.value)}
             className="h-8 rounded-lg border border-mv-border bg-mv-surface px-2 text-[12px] text-mv-ink focus:border-mv-green focus:outline-none"
           >
-            <option value="all">Toutes les caisses</option>
-            <option value="square">Square</option>
-            <option value="clover">Clover</option>
-            <option value="toast">Toast</option>
+            <option value="all">{t("allRegisters")}</option>
+            <option value="square">{t("square")}</option>
+            <option value="clover">{t("clover")}</option>
+            <option value="toast">{t("toast")}</option>
           </select>
         </div>
       </div>
@@ -349,7 +353,7 @@ export function PosItemMappingCard({
       {/* Items list */}
       {filteredMappings.length === 0 ? (
         <div className="py-8 text-center text-[13px] text-mv-ink-faint">
-          Aucun article ne correspond à ces critères.
+          {t("noItemsMatchThese")}
         </div>
       ) : (
         <div className="divide-y divide-mv-border-soft">
@@ -392,7 +396,7 @@ export function PosItemMappingCard({
                           </span>
                         )}
                         <span className="ml-2 font-mono text-[12px] font-semibold text-mv-green-dark">
-                          {formatCurrency(m.menuItem.price)}
+                          {formatCurrency(m.menuItem.price, locale)}
                         </span>
                       </div>
 
@@ -416,11 +420,11 @@ export function PosItemMappingCard({
                         className="h-8 max-w-[200px] truncate rounded-lg border border-mv-border bg-mv-surface px-2 text-[12px] text-mv-ink focus:border-mv-green focus:outline-none"
                       >
                         <option value="" disabled>
-                          Associer à un plat existant…
+                          {t("linkToAnExisting")}
                         </option>
                         {menuItems.map((item) => (
                           <option key={item.id} value={item.id}>
-                            {item.name} ({formatCurrency(item.price)})
+                            {item.name} ({formatCurrency(item.price, locale)})
                           </option>
                         ))}
                       </select>
@@ -433,7 +437,7 @@ export function PosItemMappingCard({
                         className="flex items-center gap-1 text-[12px]"
                       >
                         <Plus size={12} />
-                        Créer le plat
+                        {t("createTheDish")}
                       </Button>
                     </div>
                   )}

@@ -1,3 +1,4 @@
+import { intlLocale } from "@/lib/format-locale";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -14,7 +15,7 @@ import { cn, formatCurrency, isoDaysAgo, DEFAULT_HISTORY_WINDOW_DAYS } from "@/l
 import { createClient } from "@/lib/supabase/server";
 import { Sparkles, Store } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { UnifiedTrendChart } from "@/components/charts/UnifiedTrendChart";
 import { MiniSparkline } from "@/components/charts/MiniSparkline";
 
@@ -24,6 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ReportsIndexPage() {
+  const locale = await getLocale();
   const restaurantId = await getCurrentRestaurantId();
   const t = await getTranslations("reports");
 
@@ -152,7 +154,7 @@ export default async function ReportsIndexPage() {
                     </div>
                     <div className="mt-4 flex items-center justify-between border-t border-mv-border/40 pt-2 text-[11px] text-mv-ink-faint shrink-0">
                       <span>{reportTypeLabels[r.type] ?? t("page.reportTypeSynthesis")}</span>
-                      <span>{new Date(r.createdAt).toLocaleDateString("fr-CA", { dateStyle: "short" })}</span>
+                      <span>{new Date(r.createdAt).toLocaleDateString(intlLocale(locale), { dateStyle: "short" })}</span>
                     </div>
                   </Card>
                 </Link>
@@ -190,7 +192,7 @@ export default async function ReportsIndexPage() {
                           )}
                         </div>
                         <p className="mt-2 font-display text-[22px] font-medium text-mv-ink">
-                          {r.unit === "currency" ? formatCurrency(r.value) : r.value}
+                          {r.unit === "currency" ? formatCurrency(r.value, locale) : r.value}
                         </p>
                         <p className="mt-1 line-clamp-2 text-[12px] text-mv-ink-soft">
                           {t(`summaries.${r.slug}`, { count: r.value })}

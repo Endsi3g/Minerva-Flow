@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations, useLocale } from "next-intl";
 import { useState, useMemo, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -55,6 +57,8 @@ export function MenuItemDetailView({
   inventoryItems: InventoryItem[];
   recipeItems: RecipeItem[];
 }) {
+  const locale = useLocale();
+  const t = useTranslations("menuItemDetail");
   const router = useRouter();
   const { role } = useApp();
   const canManage = role === "owner" || role === "manager";
@@ -89,7 +93,7 @@ export function MenuItemDetailView({
       const isFeatured = form.get("isFeatured") === "on";
 
       if (!name) {
-        notifyError("Le nom du plat est requis.");
+        notifyError(t("theDishNameIs"));
         return;
       }
 
@@ -105,9 +109,9 @@ export function MenuItemDetailView({
       if (updated) {
         setItem(updated);
         setIsEditingInfo(false);
-        toast.success("Informations du plat mises à jour !");
+        toast.success(t("dishInformationUpdated"));
       } else {
-        notifyError("La mise à jour a échoué.");
+        notifyError(t("theUpdateFailed"));
       }
     } finally {
       setIsSavingInfo(false);
@@ -179,9 +183,9 @@ export function MenuItemDetailView({
           setItem((prev) => ({ ...prev, foodCost: res.foodCost }));
         }
         setIsEditingRecipe(false);
-        toast.success("Recette enregistrée et Food Cost mis à jour !");
+        toast.success(t("recipeSavedAndFood"));
       } else {
-        notifyError("L'enregistrement de la recette a échoué.");
+        notifyError(t("couldNotSaveThe"));
       }
     } finally {
       setIsSavingRecipe(false);
@@ -194,9 +198,9 @@ export function MenuItemDetailView({
     const updated = await updateMenuItemAction(restaurantId, item.id, { imageUrl: url });
     if (updated) {
       setItem(updated);
-      toast.success("Image mise à jour.");
+      toast.success(t("imageUpdated"));
     } else {
-      notifyError("La mise à jour de l'image a échoué.");
+      notifyError(t("couldNotUpdateThe"));
     }
   }
 
@@ -204,9 +208,9 @@ export function MenuItemDetailView({
     const updated = await updateMenuItemAction(restaurantId, item.id, { videoUrl: url });
     if (updated) {
       setItem(updated);
-      toast.success(url ? "Vidéo associée au plat !" : "Vidéo retirée.");
+      toast.success(url ? t("videoLinkedToThe") : t("videoRemoved"));
     } else {
-      notifyError("La mise à jour de la vidéo a échoué.");
+      notifyError(t("couldNotUpdateThe2"));
     }
   }
 
@@ -215,20 +219,20 @@ export function MenuItemDetailView({
     try {
       const updated = await updateMenuItemAction(restaurantId, item.id, { active: !item.active });
       if (updated) setItem(updated);
-      else notifyError("La mise à jour a échoué.");
+      else notifyError(t("theUpdateFailed"));
     } finally {
       setToggling(false);
     }
   }
 
   async function handleDelete() {
-    if (!window.confirm(`Retirer définitivement "${item.name}" du menu ?`)) return;
+    if (!window.confirm(t("permanentlyRemoveItemnameFrom", { itemName: item.name }))) return;
     setDeleting(true);
     const ok = await deleteMenuItemAction(restaurantId, item.id);
     if (ok) router.push("/menu");
     else {
       setDeleting(false);
-      notifyError("La suppression a échoué.");
+      notifyError(t("deletionFailed"));
     }
   }
 
@@ -238,13 +242,13 @@ export function MenuItemDetailView({
         onClick={() => router.push("/menu")}
         className="mb-3 flex items-center gap-1.5 text-[12.5px] font-semibold text-mv-ink-soft hover:text-mv-ink"
       >
-        <ArrowLeft size={14} /> Tout le menu
+        <ArrowLeft size={14} /> {t("allMenu")}
       </button>
 
       <PageHeader
         eyebrow={item.category ?? "Menu"}
         title={item.name}
-        description={item.active ? undefined : "Ce plat est actuellement retiré du menu."}
+        description={item.active ? undefined : t("thisDishIsCurrently")}
         action={
           canManage && (
             <div className="flex items-center gap-2">
@@ -254,12 +258,12 @@ export function MenuItemDetailView({
                 onClick={() => setIsEditingInfo(true)}
                 className="text-[12.5px] font-semibold"
               >
-                <Pencil size={13} /> Modifier les informations
+                <Pencil size={13} /> {t("editInfo")}
               </Button>
               <button
                 onClick={handleToggleActive}
                 disabled={toggling}
-                title={item.active ? "Retirer du menu" : "Remettre au menu"}
+                title={item.active ? t("removeFromTheMenu") : "Remettre au menu"}
                 className="rounded-md p-1.5 text-mv-ink-faint transition-colors hover:bg-mv-amber-bg hover:text-mv-amber disabled:opacity-50"
               >
                 {item.active ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -278,10 +282,10 @@ export function MenuItemDetailView({
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        {!item.active && <Badge tone="neutral">Retiré du menu</Badge>}
+        {!item.active && <Badge tone="neutral">{t("removedFromTheMenu")}</Badge>}
         {stockStatus.status === "rupture" && (
           <Badge tone="red">
-            Rupture de stock (0 portion disponible)
+            {t("outOfStock0")}
           </Badge>
         )}
         {stockStatus.status === "critique" && (
@@ -331,7 +335,7 @@ export function MenuItemDetailView({
                 scopeId={item.id}
                 currentUrl={item.videoUrl}
                 onVideoChanged={handleVideoChanged}
-                title={`Vidéo · ${item.name}`}
+                title={t("videoItemname", { itemName: item.name })}
               />
             )}
 
@@ -346,7 +350,7 @@ export function MenuItemDetailView({
                     onClick={() => setIsEditingInfo(true)}
                     className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green transition-colors hover:text-mv-green-dark"
                   >
-                    <Pencil size={11} /> Modifier le tarif
+                    <Pencil size={11} /> {t("editPrice")}
                   </button>
                 )}
               </div>
@@ -355,7 +359,7 @@ export function MenuItemDetailView({
                   <p className="flex items-center gap-1 text-[12px] font-semibold uppercase text-mv-ink-faint">
                     <DollarSign size={11} /> Prix
                   </p>
-                  <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(item.price)}</p>
+                  <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(item.price, locale)}</p>
                 </div>
                 <div>
                   <p className="flex items-center gap-1 text-[12px] font-semibold uppercase text-mv-ink-faint">
@@ -375,7 +379,7 @@ export function MenuItemDetailView({
             <div className="mt-4 rounded-xl border border-mv-border-soft bg-mv-surface p-3.5">
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">
-                  Description du plat
+                  {t("dishDescription")}
                 </span>
                 {canManage && (
                   <button
@@ -383,7 +387,7 @@ export function MenuItemDetailView({
                     onClick={() => setIsEditingInfo(true)}
                     className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green transition-colors hover:text-mv-green-dark"
                   >
-                    <Pencil size={11} /> {item.description ? "Modifier" : "Ajouter une description"}
+                    <Pencil size={11} /> {item.description ? t("edit") : t("addADescription")}
                   </button>
                 )}
               </div>
@@ -391,7 +395,7 @@ export function MenuItemDetailView({
                 <p className="text-[13.5px] leading-relaxed text-mv-ink-soft">{item.description}</p>
               ) : (
                 <p className="text-[12.5px] italic text-mv-ink-faint">
-                  Aucune description renseignée pour ce plat. Cliquez sur « Ajouter une description » pour enrichir la carte.
+                  {t("noDescriptionEnteredFor")}
                 </p>
               )}
             </div>
@@ -402,17 +406,17 @@ export function MenuItemDetailView({
           <Card>
             <div className="flex items-start justify-between gap-2 border-b border-mv-border-soft pb-3">
               <div>
-                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">Fiche technique</p>
-                <h3 className="font-display text-[16px] font-semibold text-mv-ink">Recette & Coût matière</h3>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-mv-ink-faint">{t("recipeCard")}</p>
+                <h3 className="font-display text-[16px] font-semibold text-mv-ink">{t("recipeIngredientCost")}</h3>
                 <p className="text-[12px] text-mv-ink-soft">
                   {isEditingRecipe
-                    ? "Composez les ingrédients consommés par portion pour recalculer automatiquement le Food Cost."
-                    : "Ingrédients déduits de l'inventaire lors de chaque vente de ce plat."}
+                    ? t("buildTheIngredientsUsed")
+                    : t("ingredientsDeductedFromInventory")}
                 </p>
               </div>
               {canManage && !isEditingRecipe && (
                 <Button size="sm" variant="outline" onClick={startEditingRecipe} className="shrink-0 text-[12px]">
-                  <Edit3 size={13} /> {recipes.length === 0 ? "Créer la recette" : "Modifier"}
+                  <Edit3 size={13} /> {recipes.length === 0 ? t("createTheRecipe") : t("edit")}
                 </Button>
               )}
             </div>
@@ -445,7 +449,7 @@ export function MenuItemDetailView({
                             >
                               {inventoryItems.map((ing) => (
                                 <option key={ing.id} value={ing.id}>
-                                  {ing.name} ({formatCurrency(ing.unitCost)} / {ing.unit})
+                                  {ing.name} ({formatCurrency(ing.unitCost, locale)} / {ing.unit})
                                 </option>
                               ))}
                             </select>
@@ -459,19 +463,19 @@ export function MenuItemDetailView({
                                 onChange={(e) =>
                                   handleUpdateDraftRow(index, { quantityPerUnit: parseFloat(e.target.value) || 0 })
                                 }
-                                placeholder="Qté"
+                                placeholder={t("qty")}
                                 className="h-8 w-20 rounded-md border border-mv-border bg-mv-cream-soft px-2 text-right font-mono text-[12.5px] text-mv-ink focus:border-mv-green focus:outline-none"
-                                aria-label="Quantité consommée par portion"
+                                aria-label={t("quantityUsedPerPortion")}
                               />
                               <span className="w-12 text-[12px] text-mv-ink-faint">{selectedIng?.unit ?? ""}</span>
                               <span className="w-16 text-right font-mono text-[12px] font-medium text-mv-ink">
-                                {formatCurrency(lineCost)}
+                                {formatCurrency(lineCost, locale)}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveDraftRow(index)}
                                 className="rounded p-1 text-mv-ink-faint transition hover:bg-mv-red/10 hover:text-mv-red"
-                                title="Retirer l'ingrédient"
+                                title={t("removeTheIngredient")}
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -486,30 +490,30 @@ export function MenuItemDetailView({
                       onClick={handleAddIngredientRow}
                       className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-mv-green hover:text-mv-green-dark"
                     >
-                      <Plus size={13} /> Ajouter un ingrédient
+                      <Plus size={13} /> {t("addIngredient")}
                     </button>
 
                     {/* Live Food Cost & Margin Preview */}
                     <div className="mt-4 rounded-xl border border-mv-border bg-mv-cream-soft p-3">
                       <div className="flex items-center justify-between text-[12.5px]">
-                        <span className="text-mv-ink-soft">Food Cost calculé :</span>
+                        <span className="text-mv-ink-soft">{t("calculatedFoodCost")}</span>
                         <span className="font-mono font-semibold text-mv-ink">
-                          {formatCurrency(theoreticalFoodCost)} ({theoreticalCostPct.toFixed(1)}%)
+                          {formatCurrency(theoreticalFoodCost, locale)} ({theoreticalCostPct.toFixed(1)}%)
                         </span>
                       </div>
                       <div className="mt-1 flex items-center justify-between text-[12.5px]">
-                        <span className="text-mv-ink-soft">Marge brute estimée :</span>
+                        <span className="text-mv-ink-soft">{t("estimatedGrossMargin")}</span>
                         <span className="font-mono font-semibold text-mv-green-dark">
-                          {formatCurrency(theoreticalMargin)} ({theoreticalMarginPct.toFixed(1)}%)
+                          {formatCurrency(theoreticalMargin, locale)} ({theoreticalMarginPct.toFixed(1)}%)
                         </span>
                       </div>
                       <div className="mt-2 flex items-center gap-1 text-[12px]">
                         {theoreticalCostPct >= 28 && theoreticalCostPct <= 32 ? (
-                          <Badge tone="green">Cible restauration optimale (28–32%)</Badge>
+                          <Badge tone="green">{t("optimalRestaurantTarget28")}</Badge>
                         ) : theoreticalCostPct < 28 ? (
-                          <Badge tone="green">Excellente marge (&lt; 28%)</Badge>
+                          <Badge tone="green">{t("excellentMargin28")}</Badge>
                         ) : (
-                          <Badge tone="amber">Food Cost élevé (&gt; 32%)</Badge>
+                          <Badge tone="amber">{t("highFoodCost32")}</Badge>
                         )}
                       </div>
                     </div>
@@ -524,7 +528,7 @@ export function MenuItemDetailView({
                         Annuler
                       </Button>
                       <Button size="sm" onClick={handleSaveRecipe} disabled={isSavingRecipe}>
-                        {isSavingRecipe ? "Enregistrement…" : "Enregistrer la recette"}
+                        {isSavingRecipe ? t("saving") : t("saveTheRecipe")}
                       </Button>
                     </div>
                   </>
@@ -533,14 +537,13 @@ export function MenuItemDetailView({
             ) : recipes.length === 0 ? (
               <div className="mt-4 rounded-xl border border-dashed border-mv-border-soft p-6 text-center">
                 <ChefHat className="mx-auto mb-2 text-mv-ink-faint" size={28} />
-                <p className="text-[13px] font-medium text-mv-ink">Aucune recette configurée</p>
+                <p className="text-[13px] font-medium text-mv-ink">{t("noRecipeSetUp")}</p>
                 <p className="mt-1 text-[12px] text-mv-ink-faint">
-                  Liez les ingrédients de votre stock pour calculer automatiquement votre marge et déduire les
-                  quantités lors de chaque vente.
+                  {t("linkTheIngredientsIn")}
                 </p>
                 {canManage && (
                   <Button size="sm" onClick={startEditingRecipe} className="mt-3">
-                    <Plus size={14} /> Composer la recette
+                    <Plus size={14} /> {t("composeRecipe")}
                   </Button>
                 )}
               </div>
@@ -557,7 +560,7 @@ export function MenuItemDetailView({
                       >
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-mv-ink">
-                            {ingredient?.name ?? "Ingrédient introuvable"}
+                            {ingredient?.name ?? t("ingredientNotFound")}
                           </span>
                           {ingredient?.category && (
                             <span className="rounded bg-mv-cream-soft px-1.5 py-0.5 text-[12px] text-mv-ink-faint">
@@ -570,7 +573,7 @@ export function MenuItemDetailView({
                             {r.quantityPerUnit} {ingredient?.unit ?? ""}
                           </span>
                           <span className="w-16 font-mono text-[12px] font-medium text-mv-ink">
-                            {formatCurrency(portionCost)}
+                            {formatCurrency(portionCost, locale)}
                           </span>
                         </div>
                       </div>
@@ -581,25 +584,25 @@ export function MenuItemDetailView({
                 {/* Summary Card */}
                 <div className="rounded-xl border border-mv-border bg-mv-cream-soft p-3">
                   <div className="flex items-center justify-between text-[12.5px]">
-                    <span className="text-mv-ink-soft">Food Cost par portion :</span>
+                    <span className="text-mv-ink-soft">{t("foodCostPerPortion")}</span>
                     <span className="font-mono font-semibold text-mv-ink">
-                      {formatCurrency(theoreticalFoodCost)} ({theoreticalCostPct.toFixed(1)}%)
+                      {formatCurrency(theoreticalFoodCost, locale)} ({theoreticalCostPct.toFixed(1)}%)
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between text-[12.5px]">
-                    <span className="text-mv-ink-soft">Marge brute unitaire :</span>
+                    <span className="text-mv-ink-soft">{t("unitGrossMargin")}</span>
                     <span className="font-mono font-semibold text-mv-green-dark">
-                      {formatCurrency(theoreticalMargin)} ({theoreticalMarginPct.toFixed(1)}%)
+                      {formatCurrency(theoreticalMargin, locale)} ({theoreticalMarginPct.toFixed(1)}%)
                     </span>
                   </div>
                   <div className="mt-2.5 flex items-center justify-between">
-                    <span className="text-[12px] text-mv-ink-faint">Standard Minerva Flow :</span>
+                    <span className="text-[12px] text-mv-ink-faint">{t("minervaFlowStandard")}</span>
                     {theoreticalCostPct >= 28 && theoreticalCostPct <= 32 ? (
-                      <Badge tone="green">Cible optimale (28–32%)</Badge>
+                      <Badge tone="green">{t("optimalTarget2832")}</Badge>
                     ) : theoreticalCostPct < 28 ? (
-                      <Badge tone="green">Marge supérieure (&lt; 28%)</Badge>
+                      <Badge tone="green">{t("higherMargin28")}</Badge>
                     ) : (
-                      <Badge tone="amber">Food Cost à surveiller (&gt; 32%)</Badge>
+                      <Badge tone="amber">{t("foodCostToWatch")}</Badge>
                     )}
                   </div>
                 </div>
@@ -614,8 +617,8 @@ export function MenuItemDetailView({
           <button
             disabled={!previousId}
             onClick={() => previousId && router.push(`/menu/${previousId}`)}
-            aria-label="Plat précédent"
-            title="Plat précédent"
+            aria-label={t("previousDish")}
+            title={t("previousDish")}
             className="flex h-9 w-9 items-center justify-center rounded-full text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink disabled:opacity-30"
           >
             <ArrowLeft size={16} />
@@ -634,7 +637,7 @@ export function MenuItemDetailView({
 
       <VideoPlayerModal
         videoUrl={item.videoUrl}
-        title={`Vidéo · ${item.name}`}
+        title={t("videoItemname", { itemName: item.name })}
         isOpen={isVideoModalOpen}
         onClose={() => setIsVideoModalOpen(false)}
       />
@@ -643,11 +646,11 @@ export function MenuItemDetailView({
         <Modal
           open={isEditingInfo}
           onClose={() => !isSavingInfo && setIsEditingInfo(false)}
-          title="Modifier le plat"
-          description="Ajustez le nom, la catégorie, le prix de vente, le coût matière et la description de ce plat."
+          title={t("editDish")}
+          description={t("adjustThisDishS")}
         >
           <form onSubmit={handleSaveInfo} className="space-y-4 pt-2">
-            <Field label="Nom du plat" required>
+            <Field label={t("dishName")} required>
               <Input
                 name="name"
                 defaultValue={item.name}
@@ -657,7 +660,7 @@ export function MenuItemDetailView({
             </Field>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Catégorie">
+              <Field label={t("category")}>
                 <Input
                   name="category"
                   defaultValue={item.category ?? ""}
@@ -678,8 +681,8 @@ export function MenuItemDetailView({
             </div>
 
             <Field
-              label="Coût matière estimé / Food Cost ($)"
-              hint="Coût théorique des matières pour une portion (hors fiche recette détaillée)"
+              label={t("estimatedIngredientCostFood")}
+              hint={t("theoreticalIngredientCostFor")}
             >
               <Input
                 name="foodCost"
@@ -695,13 +698,13 @@ export function MenuItemDetailView({
                 name="description"
                 defaultValue={item.description ?? ""}
                 rows={3}
-                placeholder="Description du plat, ingrédients phares, notes de dégustation ou allergènes..."
+                placeholder={t("dishDescriptionKeyIngredients")}
               />
             </Field>
 
             <label className="flex items-start gap-3 rounded-xl border border-mv-border-soft bg-mv-cream-soft/60 p-3.5 text-[12px] leading-5 text-mv-ink-soft">
               <input name="isFeatured" type="checkbox" defaultChecked={item.isFeatured ?? false} className="mt-1 size-4 accent-mv-green" />
-              <span><span className="block font-semibold text-mv-ink">Mettre en vedette</span>Afficher ce plat dans la sélection « À découvrir » du menu public.</span>
+              <span><span className="block font-semibold text-mv-ink">{t("featureThisDish")}</span>{t("showThisDishIn")}</span>
             </label>
 
             <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-3">
@@ -714,7 +717,7 @@ export function MenuItemDetailView({
                 Annuler
               </Button>
               <Button type="submit" disabled={isSavingInfo}>
-                {isSavingInfo ? "Enregistrement…" : "Enregistrer les modifications"}
+                {isSavingInfo ? t("saving") : t("saveChanges")}
               </Button>
             </div>
           </form>

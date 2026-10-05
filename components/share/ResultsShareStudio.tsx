@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Download, Film, Share2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +31,7 @@ function fileFromBlob(blob: Blob, name: string): File {
 }
 
 export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, fileBase, emptyTitle, emptyHint }: Props) {
+  const locale = useLocale();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [formatId, setFormatId] = useState(SHARE_FORMATS[0].id);
   const [themeId, setThemeId] = useState(SHARE_THEMES[0].id);
@@ -204,7 +208,7 @@ export function ResultsShareStudio({ metrics, defaultHeadline, defaultSubtitle, 
                   />
                   <span className="flex-1">{metric.label}</span>
                   <span className="font-semibold tabular-nums">
-                    {metric.kind === "rating" ? metric.value.toFixed(1).replace(".", ",") + " ★" : metric.value.toLocaleString("fr-CA")}
+                    {metric.kind === "rating" ? metric.value.toFixed(1).replace(".", ",") + " ★" : metric.value.toLocaleString(intlLocale(locale))}
                   </span>
                 </label>
               ))}

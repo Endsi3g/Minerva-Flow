@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import React from "react";
 import {
   BarChart3,
@@ -45,6 +47,7 @@ export function OperationalIntelligenceView({
     actionPayload?: FlowAiActionPayload;
   }>;
 }) {
+  const locale = useLocale();
   const isPrimeCostSafe = primeCostRatio < 60;
 
   return (
@@ -140,7 +143,7 @@ export function OperationalIntelligenceView({
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="font-serif text-3xl font-bold text-mv-ink">
-                {totalRevenue > 0 ? formatCurrency(totalRevenue) : "33 288 $"}
+                {totalRevenue > 0 ? formatCurrency(totalRevenue, locale) : "33 288 $"}
               </span>
             </div>
             <p className="text-[12px] text-mv-ink-soft mt-2 leading-tight">

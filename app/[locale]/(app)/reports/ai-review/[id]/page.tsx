@@ -6,9 +6,10 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { CircleCheck, TriangleAlert, Lightbulb } from "lucide-react";
 import { notFound } from "next/navigation";
 import { PrintButton } from "./PrintButton";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 
 export default async function AiReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const locale = await getLocale();
   const { id } = await params;
   const review = await getAiReview(id);
   if (!review) notFound();
@@ -21,7 +22,7 @@ export default async function AiReviewDetailPage({ params }: { params: Promise<{
     <div className="mx-auto max-w-2xl">
       <PageHeader
         eyebrow={tAiReview("pageTitle")}
-        title={`${formatDate(review.periodStart)} — ${formatDate(review.periodEnd)}`}
+        title={`${formatDate(review.periodStart, locale)} — ${formatDate(review.periodEnd, locale)}`}
         description={review.source === "auto" ? t("generatedAuto") : t("generatedOnDemand")}
         action={<PrintButton />}
       />
@@ -35,7 +36,7 @@ export default async function AiReviewDetailPage({ params }: { params: Promise<{
                 {tReports(`labels.${m.slug}`)}
               </p>
               <p className="font-display text-[16px] font-medium text-mv-ink">
-                {m.unit === "currency" ? formatCurrency(m.value) : m.value}
+                {m.unit === "currency" ? formatCurrency(m.value, locale) : m.value}
               </p>
               {m.delta !== undefined && (
                 <Badge tone={m.delta >= 0 ? "green" : "red"} className="mt-1 px-1.5 py-0.5 text-[12px]">
@@ -84,7 +85,7 @@ export default async function AiReviewDetailPage({ params }: { params: Promise<{
       </Card>
 
       <p className="mt-6 text-center text-[12px] text-mv-ink-faint">
-        {t("generatedOn", { date: formatDate(review.createdAt.slice(0, 10)) })}
+        {t("generatedOn", { date: formatDate(review.createdAt.slice(0, 10), locale) })}
       </p>
     </div>
   );

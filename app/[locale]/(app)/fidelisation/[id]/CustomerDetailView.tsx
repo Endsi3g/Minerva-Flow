@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -51,6 +51,7 @@ export function CustomerDetailView({
   loyaltyPointsPerDollar: number;
   loyaltyTierThresholds: LoyaltyTierThresholds;
 }) {
+  const locale = useLocale();
   const tv = useTranslations("customerDetail");
   const router = useRouter();
   const { role } = useApp();
@@ -228,7 +229,7 @@ export function CustomerDetailView({
               </div>
               <div>
                 <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{tv("totalSpent")}</p>
-                <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(customer.totalSpent)}</p>
+                <p className="font-display text-[16px] font-medium text-mv-ink">{formatCurrency(customer.totalSpent, locale)}</p>
               </div>
               <div>
                 <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{tv("points")}</p>
@@ -275,7 +276,7 @@ export function CustomerDetailView({
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--mv-border)" vertical={false} />
                     <XAxis
                       dataKey="date"
-                      tickFormatter={(d) => formatDate(d)}
+                      tickFormatter={(d) => formatDate(d, locale)}
                       tick={{ fontSize: 12, fill: "var(--mv-ink-faint)" }}
                       axisLine={false}
                       tickLine={false}
@@ -291,7 +292,7 @@ export function CustomerDetailView({
                     />
                     <RechartsTooltip
                       formatter={(value: unknown) => [`${value} pts`, "Solde"]}
-                      labelFormatter={(d) => formatDate(d as string)}
+                      labelFormatter={(d) => formatDate(d as string, locale)}
                       contentStyle={{
                         borderRadius: 10,
                         border: "1px solid var(--mv-border)",
@@ -357,11 +358,11 @@ export function CustomerDetailView({
                       <div className="min-w-0 flex-1 rounded-lg bg-mv-cream-soft p-3">
                         <div className="mb-1 flex items-center justify-between">
                           <span className="text-[12px] font-semibold text-mv-ink">{tv(txLabelKey[t.type])}</span>
-                          <span className="text-[12px] text-mv-ink-faint">{formatDate(t.createdAt)}</span>
+                          <span className="text-[12px] text-mv-ink-faint">{formatDate(t.createdAt, locale)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[12.5px]">
                           <span className="text-mv-ink-soft">
-                            {t.note ?? (t.amountSpent != null ? formatCurrency(t.amountSpent) : "—")}
+                            {t.note ?? (t.amountSpent != null ? formatCurrency(t.amountSpent, locale) : "—")}
                           </span>
                           <span className={t.pointsDelta >= 0 ? "font-semibold text-mv-green-dark" : "font-semibold text-mv-red"}>
                             {t.pointsDelta >= 0 ? "+" : ""}

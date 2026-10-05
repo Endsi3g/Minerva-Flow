@@ -29,7 +29,7 @@ import type { PayPeriod } from "@/lib/data/employees";
 import { useApp, roleLabels } from "@/lib/app-context";
 import { UserPlus, Star, Printer, Users2, ChevronRight, Check, Copy, KeyRound, LogIn, LogOut } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -441,6 +441,7 @@ export const PAY_PERIOD_LABELS: Record<PayPeriod, string> = {
 };
 
 export function PaySummaryInline({ restaurantId, employeeId }: { restaurantId: string; employeeId: string }) {
+  const locale = useLocale();
   const [period, setPeriod] = useState<PayPeriod>("week");
   const [hours, setHours] = useState<number | null>(null);
   const [grossPay, setGrossPay] = useState<number | null>(null);
@@ -468,7 +469,7 @@ export function PaySummaryInline({ restaurantId, employeeId }: { restaurantId: s
       <span>
         {hours !== null ? `${hours.toFixed(1)}h` : "—"}
         {grossPay !== null && (
-          <span className="ml-1.5 font-semibold text-mv-green-dark">{formatCurrency(grossPay)}</span>
+          <span className="ml-1.5 font-semibold text-mv-green-dark">{formatCurrency(grossPay, locale)}</span>
         )}
       </span>
     </div>
@@ -484,6 +485,7 @@ export function EmployeeDetail({
   restaurantId: string;
   onToggleActive: (id: string, active: boolean) => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("employees");
   const td = useTranslations("employees.detail");
   const tr = useTranslations("employees.reviewForm");
@@ -546,7 +548,7 @@ export function EmployeeDetail({
         </div>
         {employee.hourlyWage !== null && (
           <>
-            <p className="mt-2 text-[13px] text-mv-ink-soft">{formatCurrency(employee.hourlyWage)}/h</p>
+            <p className="mt-2 text-[13px] text-mv-ink-soft">{formatCurrency(employee.hourlyWage, locale)}/h</p>
             <PaySummaryInline restaurantId={restaurantId} employeeId={employee.id} />
           </>
         )}
@@ -620,7 +622,7 @@ export function EmployeeDetail({
             ) : (
               shifts.slice(0, 10).map((s) => (
                 <div key={s.id} className="flex items-center justify-between text-[12.5px]">
-                  <span className="text-mv-ink-soft">{formatDate(s.shiftDate)}</span>
+                  <span className="text-mv-ink-soft">{formatDate(s.shiftDate, locale)}</span>
                   <span className="flex items-center gap-2">
                     <span className="font-medium text-mv-ink">{s.hoursWorked}h</span>
                     {s.wasLate && <Badge tone="amber">{td("late")}</Badge>}
@@ -650,7 +652,7 @@ export function EmployeeDetail({
                 <div key={r.id} className="rounded-lg border border-mv-border-soft p-3">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-[12px] font-semibold text-mv-ink">
-                      {formatDate(r.periodStart)} — {formatDate(r.periodEnd)}
+                      {formatDate(r.periodStart, locale)} — {formatDate(r.periodEnd, locale)}
                     </p>
                     <StarRating value={r.rating} />
                   </div>
@@ -691,6 +693,7 @@ export function EmployeesView({
   employees: Employee[];
   initialSelectedId?: string;
 }) {
+  const locale = useLocale();
   const t = useTranslations("employees");
   const { role } = useApp();
   const [list, setList] = useState(employees);
@@ -750,7 +753,7 @@ export function EmployeesView({
                   <Tr key={e.id} onClick={() => setSelectedId(e.id)} active={e.id === selectedId}>
                     <Td className="font-semibold text-mv-ink">{e.fullName}</Td>
                     <Td className="text-mv-ink-soft">{e.roleTitle}</Td>
-                    <Td className="text-mv-ink-soft">{e.hourlyWage !== null ? `${formatCurrency(e.hourlyWage)}/h` : "—"}</Td>
+                    <Td className="text-mv-ink-soft">{e.hourlyWage !== null ? `${formatCurrency(e.hourlyWage, locale)}/h` : "—"}</Td>
                     <Td>
                       <Badge tone={e.active ? "green" : "neutral"}>{e.active ? t("active") : t("inactive")}</Badge>
                     </Td>

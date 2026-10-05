@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { LogoMark } from "@/components/shell/Logo";
 import { Card } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
@@ -8,6 +9,7 @@ export default async function AuthErrorPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const t = await getTranslations("authError");
   const params = await searchParams;
 
   return (
@@ -24,13 +26,13 @@ export default async function AuthErrorPage({
           <OctagonAlert size={20} />
         </div>
         <h1 className="font-display text-[19px] font-medium text-mv-ink">
-          Un problème est survenu
+          {t("somethingWentWrong")}
         </h1>
         <p className="mt-2 text-[13px] leading-relaxed text-mv-ink-soft">
-          {params?.error ? params.error : "Erreur non spécifiée."}
+          {params?.error ? params.error : t("unspecifiedError")}
         </p>
         <Button href="/login" className="mt-5 w-full">
-          Retour à la connexion
+          {t("backToSignIn")}
         </Button>
       </Card>
     </div>

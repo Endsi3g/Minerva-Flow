@@ -166,6 +166,7 @@ function groupRestaurantsByWorkspace(
   restaurants: Restaurant[],
   workspaces: { id: string; name: string }[]
 ): RestaurantWorkspaceGroup[] {
+  const t = useTranslations("sidebarShell");
   const groups = new Map<string, Restaurant[]>();
   for (const workspace of workspaces) groups.set(workspace.id, []);
   for (const restaurant of restaurants) {
@@ -174,7 +175,7 @@ function groupRestaurantsByWorkspace(
   }
   return [...groups.entries()].map(([id, locations]) => ({
     id,
-    name: workspaces.find((workspace) => workspace.id === id)?.name ?? locations[0]?.name ?? "Espace de travail",
+    name: workspaces.find((workspace) => workspace.id === id)?.name ?? locations[0]?.name ?? t("workspace"),
     locations,
   }));
 }
@@ -215,38 +216,40 @@ export const sidebarNavCatalog = Object.entries(navTranslationKeys).map(([key, t
   translationKey,
 }));
 
-export const navDescriptions: Record<string, string> = {
-  "/overview": "Vue d'ensemble et métriques clés de l'établissement",
-  "/assistant": "Flow AI — copilote d'optimisation et d'analyses",
-  "/fidelisation": "Programmes de fidélité, parrainages et rétention",
-  "/reputation": "Gestion des avis clients et e-réputation",
-  "/menu": "Gestion de la carte, marges et rentabilité des plats",
-  "/finance": "Gestion financière, trésorerie et rentabilité",
-  "/commandes": "Suivi des commandes et encaissements en direct",
-  "/collaborateurs": "Planning de l'équipe et fiches collaborateurs",
-  "/inventaire": "Gestion des stocks, ingrédients et fiches techniques",
-  "/horaire": "Planning des quarts de travail et disponibilités",
-  "/fournisseurs": "Gestion des fournisseurs, bons de commande et contacts",
-  "/reservations": "Cahier de réservations et plan de salle",
-  "/mon-espace": "Espace personnel et préférences de profil",
-  "/employees": "Répertoire des employés et rôles",
-  "/franchise": "Pilotage multi-établissements et groupe",
-  "/impact": "Mesure d'impact et ROI des campagnes",
-  "/days": "Performance quotidienne et clôtures de service",
-  "/reports": "Rapports financiers, exports et comptabilité",
-  "/reports/retention-funnel": "Entonnoir de rétention, cycle de vie et 10 KPI clés",
-  "/maps": "Cartographie géographique de la clientèle",
-  "/programs": "Historique et analyse des programmes clients",
-  "/library": "Documents partagés, guides et procédures internes",
-  "/integrations": "Connexions de caisse (Square, Lightspeed, Clover) et services",
-  "/billing": "Facturation, abonnement et moyens de paiement",
-  "/guide": "Centre d'aide et documentation opérationnelle",
-  "/support": "Assistance technique et conciergerie Minerva",
-  "/changelog": "Historique des nouveautés et mises à jour",
-  "/etablissement": "Gestion des établissements et succursales",
-  "/admin/restaurants": "Administration de la plateforme",
-  "/settings": "Paramètres de l'établissement et préférences",
+export function buildNavDescriptions(t: (key: string) => string): Record<string, string> {
+  return {
+  "/overview": t("overviewAndKeyMetrics"),
+  "/assistant": t("flowAiOptimizationAndAnalysis"),
+  "/fidelisation": t("loyaltyProgramsReferralsAnd"),
+  "/reputation": t("customerReviewAndOnline"),
+  "/menu": t("menuMarginAndDish"),
+  "/finance": t("financialManagementCashFlow"),
+  "/commandes": t("liveTrackingOfOrders"),
+  "/collaborateurs": t("teamScheduleAndEmployee"),
+  "/inventaire": t("stockIngredientAndRecipe"),
+  "/horaire": t("shiftScheduleAndAvailability"),
+  "/fournisseurs": t("supplierPurchaseOrderAnd"),
+  "/reservations": t("reservationBookAndFloor"),
+  "/mon-espace": t("personalSpaceAndProfile"),
+  "/employees": t("employeeDirectoryAndRoles"),
+  "/franchise": t("multiRestaurantAndGroup"),
+  "/impact": t("campaignImpactAndRoi"),
+  "/days": t("dailyPerformanceAndService"),
+  "/reports": t("financialReportsExportsAnd"),
+  "/reports/retention-funnel": t("retentionFunnelLifecycleAnd"),
+  "/maps": t("geographicMapOfYour"),
+  "/programs": t("historyAndAnalysisOf"),
+  "/library": t("sharedDocumentsGuidesAnd"),
+  "/integrations": t("registerConnectionsSquareLightspeed"),
+  "/billing": t("billingSubscriptionAndPayment"),
+  "/guide": t("helpCenterAndOperations"),
+  "/support": t("technicalSupportAndMinerva"),
+  "/changelog": t("historyOfNewFeatures"),
+  "/etablissement": t("restaurantAndBranchManagement"),
+  "/admin/restaurants": t("platformAdministration"),
+  "/settings": t("restaurantSettingsAndPreferences"),
 };
+}
 
 function NavLink({
   href,
@@ -271,7 +274,8 @@ function NavLink({
   locked?: boolean;
   lockedTooltip?: string;
 }) {
-  const description = customDescription ?? navDescriptions[href];
+  const t = useTranslations("sidebarShell");
+  const description = customDescription ?? buildNavDescriptions(t)[href];
 
   const link = (
     <Link
@@ -310,7 +314,7 @@ function NavLink({
         <button
           type="button"
           onClick={onToggleFavorite}
-          title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+          title={isFavorite ? t("removeFromFavorites") : t("addToFavorites")}
           className={cn(
             "p-1 text-mv-ink-faint transition-opacity hover:text-mv-amber focus:outline-none",
             isFavorite ? "opacity-100 text-mv-amber" : "opacity-0 group-hover:opacity-100"
@@ -420,6 +424,7 @@ function TeamSwitcher() {
 }
 
 function TeamRestaurantsGroup({ onNavigate }: { onNavigate: () => void }) {
+  const tv = useTranslations("sidebarShell");
   const t = useTranslations("nav");
   const { restaurantId, restaurants, workspaces, setRestaurantId } = useApp();
   const groups = useMemo(
@@ -471,7 +476,7 @@ function TeamRestaurantsGroup({ onNavigate }: { onNavigate: () => void }) {
                   >
                     <div className="space-y-0.5 pb-1 pt-1">
                       {group.locations.length === 0 ? (
-                        <p className="px-2 py-1.5 text-[12px] text-mv-ink-faint">Aucun restaurant dans ce workspace.</p>
+                        <p className="px-2 py-1.5 text-[12px] text-mv-ink-faint">{tv("noRestaurantsInThis")}</p>
                       ) : group.locations.map((restaurant) => {
                         const selected = restaurant.id === restaurantId;
                         const favicon = getRestaurantFaviconUrl(restaurant.website);

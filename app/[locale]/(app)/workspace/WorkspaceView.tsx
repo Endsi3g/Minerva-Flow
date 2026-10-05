@@ -1,5 +1,8 @@
 "use client";
 
+
+import { intlLocale } from "@/lib/format-locale";
+import { useLocale } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -227,6 +230,7 @@ export function WorkspaceView({
   originProfileCount?: number;
   acquisitionSources?: AcquisitionSourceCount[];
 }) {
+  const locale = useLocale();
   const router = useRouter();
   const { restaurants: myRestaurants } = useApp();
   const [, startTransition] = useTransition();
@@ -386,7 +390,7 @@ export function WorkspaceView({
                     <Mail size={14} className="text-mv-ink-faint" />
                     <div>
                       <p className="text-[12.5px] font-medium text-mv-ink">
-                        {roleLabels[invite.role]} · {formatRelativeTime(invite.createdAt)}
+                        {roleLabels[invite.role]} · {formatRelativeTime(invite.createdAt, locale)}
                       </p>
                       {invite.redeemedByEmail && (
                         <p className="text-[12px] text-mv-ink-faint">Rejoint par {invite.redeemedByEmail}</p>

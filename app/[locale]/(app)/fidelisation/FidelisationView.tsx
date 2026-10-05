@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -218,6 +218,7 @@ function IdentificationAuComptoirCard({
   restaurantId: string;
   onVisitLogged: (updated: Customer) => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("fidelisationView");
   const [query, setQuery] = useState("");
   const [isResolving, setIsResolving] = useState(false);
@@ -379,7 +380,7 @@ function IdentificationAuComptoirCard({
               </div>
               <div className="border-l border-mv-green/20 pl-3">
                 <span className="block font-mono text-sm font-semibold text-mv-ink">
-                  {formatCurrency(found.totalSpent)}
+                  {formatCurrency(found.totalSpent, locale)}
                 </span>
                 <span>{t("spent")}</span>
               </div>
@@ -449,6 +450,7 @@ function DigitalLoyaltyPassModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("fidelisationView");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -552,7 +554,7 @@ function DigitalLoyaltyPassModal({
             <div className="text-right">
               <span className="text-[12px] uppercase font-medium text-white/60">{t("rewardValue")}</span>
               <p className={`font-mono text-[15px] font-bold ${tierInfo.accent}`}>
-                ~{formatCurrency(dollarValuation)}
+                ~{formatCurrency(dollarValuation, locale)}
               </p>
             </div>
           </div>
@@ -757,6 +759,7 @@ export function FidelisationView({
   loyaltyPointsPerDollar: number;
   loyaltyTierThresholds: LoyaltyTierThresholds;
 }) {
+  const locale = useLocale();
   const t = useTranslations("fidelisationView");
   const { role } = useApp();
   const router = useRouter();
@@ -897,9 +900,9 @@ export function FidelisationView({
                         )}
                       </div>
                     </Td>
-                    <Td className="text-mv-ink-soft">{c.lastVisitAt ? formatDate(c.lastVisitAt) : "—"}</Td>
+                    <Td className="text-mv-ink-soft">{c.lastVisitAt ? formatDate(c.lastVisitAt, locale) : "—"}</Td>
                     <Td className="text-right">{c.visitCount}</Td>
-                    <Td className="text-right font-medium">{formatCurrency(c.totalSpent)}</Td>
+                    <Td className="text-right font-medium">{formatCurrency(c.totalSpent, locale)}</Td>
                     <Td className="text-right">
                       <Badge tone="green">{c.loyaltyPoints} pts</Badge>
                     </Td>

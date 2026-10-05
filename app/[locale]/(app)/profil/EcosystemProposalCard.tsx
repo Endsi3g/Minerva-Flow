@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/minerva/FormField";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/spinner";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Lightbulb, Sparkles, Send, CheckCircle2, Clock, Calendar, Check, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { submitAppProposalAction, getMyProposalsAction } from "./actions";
@@ -21,6 +21,7 @@ const statusTone: Record<EcosystemProposalStatus, { labelKey: string; className:
 };
 
 export function EcosystemProposalCard() {
+  const locale = useLocale();
   const t = useTranslations("profile");
   const [appName, setAppName] = useState("");
   const [category, setCategory] = useState("operations");
@@ -183,7 +184,7 @@ export function EcosystemProposalCard() {
                       {prop.description}
                     </p>
                     <span className="block text-[12px] text-mv-ink-faint">
-                      {formatRelativeTime(prop.createdAt)}
+                      {formatRelativeTime(prop.createdAt, locale)}
                     </span>
                   </div>
 

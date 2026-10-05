@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -10,6 +12,7 @@ type State = "connecting" | "live" | "reconnecting" | "offline";
 
 /** Customer-portal channel: row access is still enforced by customer RLS. */
 export function PortalRealtimeSync({ customerId, restaurantId }: { customerId: string; restaurantId: string }) {
+  const t = useTranslations("portalSync");
   const router = useRouter();
   const [state, setState] = useState<State>("connecting");
 
@@ -56,10 +59,10 @@ export function PortalRealtimeSync({ customerId, restaurantId }: { customerId: s
   }, [customerId, restaurantId, router]);
 
   const labels: Record<State, string> = {
-    connecting: "Connexion en direct…",
-    live: "Données à jour",
-    reconnecting: "Reconnexion…",
-    offline: "Hors ligne · les données seront actualisées au retour du réseau",
+    connecting: t("connectingLive"),
+    live: t("dataUpToDate"),
+    reconnecting: t("reconnecting"),
+    offline: t("offlineDataWillRefresh"),
   };
   const tone = state === "live" ? "bg-emerald-600" : state === "offline" ? "bg-red-500" : "bg-amber-500 animate-pulse";
   return (

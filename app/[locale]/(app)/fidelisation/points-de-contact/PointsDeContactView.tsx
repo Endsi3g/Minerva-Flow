@@ -1,7 +1,8 @@
 "use client";
 
 
-import { useTranslations } from "next-intl";
+import { intlLocale } from "@/lib/format-locale";
+import { useTranslations, useLocale } from "next-intl";
 import { useEffect, useState, type FormEvent } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
@@ -302,6 +303,7 @@ function NfcCardOrderPanel({
 
 function NfcCardOrderHistory({ orders, funnels }: { orders: NfcCardOrder[]; funnels: PhysicalTouchpointFunnel[] }) {
   const t = useTranslations("touchpoints");
+  const locale = useLocale();
   if (orders.length === 0) return null;
   const labelFor = (touchpointId: string | null) =>
     touchpointId ? funnels.find((f) => f.touchpoint.id === touchpointId)?.touchpoint.label : null;
@@ -321,7 +323,7 @@ function NfcCardOrderHistory({ orders, funnels }: { orders: NfcCardOrder[]; funn
                     {order.quantity} carte{order.quantity > 1 ? "s" : ""} · {order.totalAmountCad} $ CAD
                     {linkedLabel && <span className="text-mv-ink-faint"> · {linkedLabel}</span>}
                   </p>
-                  <p className="text-[12px] text-mv-ink-faint">{new Date(order.createdAt).toLocaleDateString("fr-CA")}</p>
+                  <p className="text-[12px] text-mv-ink-faint">{new Date(order.createdAt).toLocaleDateString(intlLocale(locale))}</p>
                 </div>
               </div>
               <span className="text-[12px] font-medium text-mv-ink-faint">{t(NFC_CARD_ORDER_STATUS_LABELS_KEYS[order.status])}</span>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { useState, type FormEvent } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { getStripePromise } from "@/lib/stripe/browser";
@@ -7,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils";
 
 function PaymentForm({ total, onPaid }: { total: number; onPaid: () => void }) {
+  const locale = useLocale();
   const stripe = useStripe();
   const elements = useElements();
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
@@ -44,7 +47,7 @@ function PaymentForm({ total, onPaid }: { total: number; onPaid: () => void }) {
       <PaymentElement />
       {error && <p className="text-[12.5px] text-mv-red">{error}</p>}
       <Button type="submit" disabled={!stripe || status === "submitting"} className="w-full">
-        {status === "submitting" ? "Traitement…" : `Payer ${formatCurrency(total)}`}
+        {status === "submitting" ? "Traitement…" : `Payer ${formatCurrency(total, locale)}`}
       </Button>
     </form>
   );

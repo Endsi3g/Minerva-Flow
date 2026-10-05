@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Share, SquarePlus, X, Smartphone } from "lucide-react";
 
@@ -18,6 +20,7 @@ type BeforeInstallPromptEvent = Event & {
  * Hidden entirely when already running standalone (installed).
  */
 export function InstallAppPrompt() {
+  const t = useTranslations("installPrompt");
   const [visible, setVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
@@ -62,16 +65,16 @@ export function InstallAppPrompt() {
       <div className="flex items-start gap-3">
         <Smartphone size={18} className="mt-0.5 shrink-0 text-mv-green-dark" />
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-semibold text-mv-ink">Installez l&apos;app sur votre téléphone</p>
+          <p className="text-[13px] font-semibold text-mv-ink">{t("installTheAppOn")}</p>
           {isIOS ? (
             <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">
-              Touchez <Share size={12} className="inline align-text-bottom" /> <b>Partager</b> puis{" "}
-              <SquarePlus size={12} className="inline align-text-bottom" /> <b>Sur l&apos;écran d&apos;accueil</b>{" "}
-              pour retrouver le menu et vos points en un geste.
+              Touchez <Share size={12} className="inline align-text-bottom" /> <b>{t("share")}</b> puis{" "}
+              <SquarePlus size={12} className="inline align-text-bottom" /> <b>{t("addToHomeScreen")}</b>{" "}
+              {t("toFindTheMenu")}
             </p>
           ) : (
             <p className="mt-1 text-[12px] leading-relaxed text-mv-ink-soft">
-              Retrouvez le menu et vos points de fidélité en un geste, et recevez les nouvelles offres.
+              {t("findTheMenuAnd")}
             </p>
           )}
           {!isIOS && installEvent && (

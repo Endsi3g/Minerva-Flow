@@ -1,3 +1,4 @@
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -58,6 +59,7 @@ export function DataOverviewView({
   pendingPurchaseOrderCount: number;
   upcomingReservationCount: number;
 }) {
+  const locale = useLocale();
   return (
     <div>
       <PageHeader
@@ -70,14 +72,14 @@ export function DataOverviewView({
           href="/finance"
           icon={Wallet}
           label="Revenu (mois)"
-          value={formatCurrency(revenue.revenue)}
+          value={formatCurrency(revenue.revenue, locale)}
           badge={{ label: `${revenue.delta >= 0 ? "↑" : "↓"} ${Math.abs(revenue.delta).toFixed(1)}%`, tone: revenue.delta >= 0 ? "green" : "red" }}
         />
         <StatTile
           href="/finance"
           icon={TrendingDown}
           label="Dépenses (30j)"
-          value={formatCurrency(expensesLast30d)}
+          value={formatCurrency(expensesLast30d, locale)}
         />
         <StatTile href="/employees" icon={Users2} label="Employés actifs" value={String(activeEmployeeCount)} />
         <StatTile href="/programs" icon={GitCommit} label="Programmes actifs" value={String(activeProgramCount)} />

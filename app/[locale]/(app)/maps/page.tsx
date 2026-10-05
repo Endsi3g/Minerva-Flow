@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -31,6 +33,7 @@ function RestaurantMarker({
   active: boolean;
   onSelect: () => void;
 }) {
+  const locale = useLocale();
   const { map } = useMap();
 
   function handleCenter() {
@@ -73,7 +76,7 @@ function RestaurantMarker({
           <div>
             <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">Revenu (mois)</p>
             <p className="font-display text-[16px] font-medium text-mv-green-dark">
-              {formatCurrency(stats.revenue)}
+              {formatCurrency(stats.revenue, locale)}
             </p>
           </div>
           <Badge tone={stats.delta >= 0 ? "green" : "red"}>
@@ -112,6 +115,7 @@ function GlobalStatsCard({
   totalRevenue: number;
   avgDelta: number;
 }) {
+  const locale = useLocale();
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
@@ -146,7 +150,7 @@ function GlobalStatsCard({
         </div>
         <div className="flex items-center justify-between">
           <span className="text-[12px] text-mv-ink-soft">Revenu total (mois)</span>
-          <span className="text-[13px] font-semibold text-mv-ink">{formatCurrency(totalRevenue)}</span>
+          <span className="text-[13px] font-semibold text-mv-ink">{formatCurrency(totalRevenue, locale)}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1 text-[12px] text-mv-ink-soft">
@@ -214,6 +218,7 @@ function FlyToRestaurant({ id, lng, lat }: { id: string; lng: number; lat: numbe
 }
 
 function EstablishmentsMode() {
+  const locale = useLocale();
   const { restaurantId, setRestaurantId, restaurants } = useApp();
   const [backfilled, setBackfilled] = useState<Record<string, { lng: number; lat: number }>>({});
   const [revenueByRestaurant, setRevenueByRestaurant] = useState<
@@ -309,7 +314,7 @@ function EstablishmentsMode() {
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
                   <span className="text-[12px] font-semibold text-mv-ink-soft">
-                    {formatCurrency(stats.revenue)}
+                    {formatCurrency(stats.revenue, locale)}
                   </span>
                   <Badge tone={stats.delta >= 0 ? "green" : "red"} className="px-1.5 py-0.5 text-[12px]">
                     {stats.delta >= 0 ? "↑" : "↓"}
@@ -341,7 +346,7 @@ function EstablishmentsMode() {
           const max = Math.max(1, ...withRevenue.map((r) => r.revenue));
           return withRevenue
             .sort((a, b) => b.revenue - a.revenue)
-            .map((r) => ({ label: r.label, value: formatCurrency(r.revenue), fraction: r.revenue / max }));
+            .map((r) => ({ label: r.label, value: formatCurrency(r.revenue, locale), fraction: r.revenue / max }));
         })()}
       />
     </>

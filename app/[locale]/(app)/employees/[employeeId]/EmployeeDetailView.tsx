@@ -36,7 +36,7 @@ import {
   X,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -53,6 +53,7 @@ export function EmployeeDetailView({
   initialTasks: EmployeeTask[];
   restaurantId: string;
 }) {
+  const locale = useLocale();
   const t = useTranslations("employeeDetail");
   const te = useTranslations("employees");
   const td = useTranslations("employees.detail");
@@ -108,7 +109,7 @@ export function EmployeeDetailView({
   }
 
   async function handleDeleteShift(s: EmployeeShift) {
-    if (!window.confirm(`Supprimer le quart du ${formatDate(s.shiftDate)} (${s.hoursWorked.toFixed(2)} h) ?`)) return;
+    if (!window.confirm(`Supprimer le quart du ${formatDate(s.shiftDate, locale)} (${s.hoursWorked.toFixed(2)} h) ?`)) return;
     const ok = await deleteEmployeeShiftAction(restaurantId, s.id);
     if (ok) {
       setShifts((prev) => prev.filter((row) => row.id !== s.id));
@@ -187,7 +188,7 @@ export function EmployeeDetailView({
                   <DollarSign size={16} className="text-mv-green-dark" />
                   <div>
                     <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("hourlyRate")}</p>
-                    <p className="font-medium text-mv-ink">{formatCurrency(employee.hourlyWage)}/h</p>
+                    <p className="font-medium text-mv-ink">{formatCurrency(employee.hourlyWage, locale)}/h</p>
                     <PaySummaryInline restaurantId={restaurantId} employeeId={employee.id} />
                   </div>
                 </div>
@@ -217,7 +218,7 @@ export function EmployeeDetailView({
                 <Calendar size={16} className="text-mv-ink-faint" />
                 <div>
                   <p className="text-[12px] font-semibold uppercase text-mv-ink-faint">{t("memberSince")}</p>
-                  <p className="font-medium text-mv-ink">{formatDate(employee.createdAt.slice(0, 10))}</p>
+                  <p className="font-medium text-mv-ink">{formatDate(employee.createdAt.slice(0, 10), locale)}</p>
                 </div>
               </div>
 
@@ -330,7 +331,7 @@ export function EmployeeDetailView({
                         key={s.id}
                         className="flex items-center justify-between gap-2 rounded-lg border border-mv-border-soft px-3 py-2 text-[13px]"
                       >
-                        <span className="font-medium text-mv-ink">{formatDate(s.shiftDate)}</span>
+                        <span className="font-medium text-mv-ink">{formatDate(s.shiftDate, locale)}</span>
                         <div className="flex items-center gap-1.5">
                           <input
                             type="number"
@@ -362,7 +363,7 @@ export function EmployeeDetailView({
                         key={s.id}
                         className="group flex items-center justify-between rounded-lg border border-mv-border-soft px-3 py-2 text-[13px]"
                       >
-                        <span className="font-medium text-mv-ink">{formatDate(s.shiftDate)}</span>
+                        <span className="font-medium text-mv-ink">{formatDate(s.shiftDate, locale)}</span>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-mv-green-dark">{t("hoursSuffix", { hours: s.hoursWorked })}</span>
                           {s.wasLate && <Badge tone="red">{t("late")}</Badge>}
@@ -459,7 +460,7 @@ export function EmployeeDetailView({
                     <div key={r.id} className="rounded-xl border border-mv-border p-4 space-y-2">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[13px] font-bold text-mv-ink">
-                          {t("periodRange", { start: formatDate(r.periodStart), end: formatDate(r.periodEnd) })}
+                          {t("periodRange", { start: formatDate(r.periodStart, locale), end: formatDate(r.periodEnd, locale) })}
                         </p>
                         <StarRating value={r.rating} />
                       </div>
@@ -480,7 +481,7 @@ export function EmployeeDetailView({
                       )}
                       {r.attributedRevenue !== null && (
                         <p className="text-[12.5px] font-medium text-mv-green-dark">
-                          {t("revenueGenerated", { amount: formatCurrency(r.attributedRevenue) })}
+                          {t("revenueGenerated", { amount: formatCurrency(r.attributedRevenue, locale) })}
                         </p>
                       )}
                       <div className="flex items-center justify-between border-t border-mv-border-soft pt-2 mt-2">

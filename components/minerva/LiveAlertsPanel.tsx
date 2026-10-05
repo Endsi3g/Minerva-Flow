@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/utils";
@@ -83,6 +85,7 @@ export function LiveAlertsPanel({
   initial: Alert[];
   className?: string;
 }) {
+  const locale = useLocale();
   const [alerts, setAlerts] = useState(initial);
   const [showAll, setShowAll] = useState(false);
 
@@ -135,7 +138,7 @@ export function LiveAlertsPanel({
                     <Badge tone={severityTone[a.severity]} dot>
                       {severityLabel[a.severity]}
                     </Badge>
-                    <span className="text-[12px] text-mv-ink-faint">{formatDate(a.date)}</span>
+                    <span className="text-[12px] text-mv-ink-faint">{formatDate(a.date, locale)}</span>
                   </div>
                   <p className="text-[13px] font-semibold leading-snug text-mv-ink">{a.title}</p>
                   <div className="mt-0.5 flex items-end justify-between gap-2">

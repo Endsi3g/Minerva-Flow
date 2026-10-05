@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
@@ -36,6 +38,7 @@ export function MemberDetailModal({
   onClose: () => void;
   open?: boolean;
 }) {
+  const locale = useLocale();
   const [activity, setActivity] = useState<ActivityLogEntry[]>([]);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
@@ -99,7 +102,7 @@ export function MemberDetailModal({
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] text-mv-ink">{entry.description}</p>
                 <p className="mt-0.5 text-[12px] text-mv-ink-faint">
-                  {formatRelativeTime(entry.createdAt)}
+                  {formatRelativeTime(entry.createdAt, locale)}
                 </p>
               </div>
             </div>

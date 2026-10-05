@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Eye, EyeOff, LayoutGrid, RotateCcw } from "lucide-react";
@@ -14,84 +16,87 @@ export type WidgetItem = {
   defaultVisible: boolean;
 };
 
-export const OVERVIEW_WIDGETS: WidgetItem[] = [
+export function buildOVERVIEW_WIDGETS(t: (key: string) => string): WidgetItem[] {
+  return [
   {
     id: "widget-daily-target",
-    title: "Objectif du jour",
-    description: "Nombre de clients requis aujourd'hui pour couvrir vos coûts, selon vos hypothèses de rentabilité.",
+    title: t("goalOfTheDay"),
+    description: t("numberOfCustomersNeeded"),
     category: "kpi",
     defaultVisible: true,
   },
   {
     id: "widget-labor-cost",
-    title: "Masse salariale du mois",
-    description: "Coût de la main-d'œuvre en % du chiffre d'affaires du mois.",
+    title: t("laborCostOfThe"),
+    description: t("laborCostAsA"),
     category: "kpi",
     defaultVisible: true,
   },
   {
     id: "widget-incremental-revenue",
-    title: "Revenu incrémental — fidélisation",
-    description: "Revenu des visites survenues peu après une relance automatique.",
+    title: t("incrementalRevenueLoyalty"),
+    description: t("revenueFromVisitsThat"),
     category: "kpi",
     defaultVisible: true,
   },
   {
     id: "widget-ltv-impact",
-    title: "Résultats fidélisation",
-    description: "Ce que la fidélisation rapporte : ventes générées, marge gagnée sur le menu, clients qui reviennent plus souvent.",
+    title: t("loyaltyResults"),
+    description: t("whatLoyaltyBringsIn"),
     category: "kpi",
     defaultVisible: true,
   },
   {
     id: "widget-menu-health",
-    title: "Santé du menu",
-    description: "Répartition de vos plats par popularité et rentabilité, et nombre de plats qui coûtent trop cher.",
+    title: t("menuHealth"),
+    description: t("breakdownOfYourDishes"),
     category: "analytics",
     defaultVisible: true,
   },
   {
     id: "widget-loyalty-health",
-    title: "Fidélisation en un coup d'œil",
-    description: "Répartition des paliers de fidélité, clients inactifs et anniversaires à venir.",
+    title: t("loyaltyAtAGlance"),
+    description: t("breakdownOfLoyaltyTiers"),
     category: "analytics",
     defaultVisible: true,
   },
   {
     id: "widget-kpi-summary",
-    title: "Chiffre d'Affaires & KPIs du Mois",
-    description: "Métriques de revenus, marge brute et nombre de couverts du mois en cours.",
+    title: t("salesKpisOfThe"),
+    description: t("revenueMetricsGrossMargin"),
     category: "kpi",
     defaultVisible: true,
   },
   {
     id: "widget-alerts",
-    title: "Alertes Opérationnelles & Stock",
-    description: "Signalement des ruptures d'ingrédients et écarts de coût matière.",
+    title: t("operationalStockAlerts"),
+    description: t("reportingOfIngredientStockouts"),
     category: "operations",
     defaultVisible: true,
   },
   {
     id: "widget-heatmap",
     title: "Calendrier d'Affluence & Heatmap",
-    description: "Heatmap des jours calmes vs jours de pointe du mois.",
+    description: t("heatmapOfQuietDays"),
     category: "analytics",
     defaultVisible: true,
   },
   {
     id: "widget-recommendations",
     title: "Recommandations IA & Checklist",
-    description: "Actions prioritaires suggérées par Flow AI et statut du démarrage.",
+    description: t("priorityActionsSuggestedBy"),
     category: "assistant",
     defaultVisible: true,
   },
 ];
+}
 
 const STORAGE_KEY = "mv-overview-widget-visibility";
 
 export function useWidgetVisibility() {
+  const t = useTranslations("widgetManager");
   const [visibleWidgets, setVisibleWidgets] = useState<Record<string, boolean>>(() => {
-    return OVERVIEW_WIDGETS.reduce((acc, w) => {
+    return buildOVERVIEW_WIDGETS(t).reduce((acc, w) => {
       acc[w.id] = w.defaultVisible;
       return acc;
     }, {} as Record<string, boolean>);
@@ -121,7 +126,7 @@ export function useWidgetVisibility() {
   }
 
   function resetWidgets() {
-    const defaults = OVERVIEW_WIDGETS.reduce((acc, w) => {
+    const defaults = buildOVERVIEW_WIDGETS(t).reduce((acc, w) => {
       acc[w.id] = true;
       return acc;
     }, {} as Record<string, boolean>);
@@ -131,7 +136,7 @@ export function useWidgetVisibility() {
     } catch {
       // Ignore
     }
-    toast.success("Tous les widgets ont été réaffichés.");
+    toast.success(t("allWidgetsAreShown"));
   }
 
   function isVisible(id: string): boolean {
@@ -154,17 +159,18 @@ export function WidgetManagerModal({
   onToggle: (id: string) => void;
   onReset: () => void;
 }) {
+  const t = useTranslations("widgetManager");
   return (
     <Modal
       open={open}
       onClose={onClose}
       title="Personnaliser mes widgets"
-      description="Choisissez les widgets et cartes à afficher ou masquer sur votre tableau de bord."
+      description={t("chooseTheWidgetsAnd")}
     >
       <div className="space-y-4 pt-1">
         <div className="flex items-center justify-between border-b border-mv-border-soft pb-2">
           <span className="text-[12px] font-semibold uppercase text-mv-ink-faint tracking-wider">
-            Widgets de la vue Overview
+            {t("overviewWidgets")}
           </span>
           <button
             onClick={onReset}
@@ -175,7 +181,7 @@ export function WidgetManagerModal({
         </div>
 
         <div className="space-y-2">
-          {OVERVIEW_WIDGETS.map((widget) => {
+          {buildOVERVIEW_WIDGETS(t).map((widget) => {
             const active = visibleWidgets[widget.id] !== false;
             return (
               <div
@@ -197,7 +203,7 @@ export function WidgetManagerModal({
                     }`}
                   >
                     {active ? <Eye size={13} /> : <EyeOff size={13} />}
-                    {active ? "Visible" : "Masqué"}
+                    {active ? "Visible" : t("hidden")}
                   </button>
                 </div>
               </div>
@@ -207,7 +213,7 @@ export function WidgetManagerModal({
 
         <div className="pt-2">
           <Button className="w-full" onClick={onClose}>
-            Terminer la personnalisation
+            {t("finishCustomizing")}
           </Button>
         </div>
       </div>

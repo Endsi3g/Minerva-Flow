@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { LogoMark } from "@/components/shell/Logo";
 import { Button } from "@/components/ui/Button";
 import { PoweredByBadge } from "@/components/minerva/PoweredByBadge";
@@ -8,6 +9,7 @@ import Link from "next/link";
 import { CalendarClock, Gift } from "lucide-react";
 
 export default async function ReferralLandingPage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ via?: string }> }) {
+  const t = await getTranslations("partnerInvite");
   const [{ code }, query] = await Promise.all([params, searchParams]);
   const channel = query.via ?? "direct";
 
@@ -16,7 +18,7 @@ export default async function ReferralLandingPage({ params, searchParams }: { pa
   if (!allowed) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-mv-cream px-6 text-center">
-        <p className="text-[14px] text-mv-ink-soft">Trop de tentatives. Réessayez dans quelques minutes.</p>
+        <p className="text-[14px] text-mv-ink-soft">{t("tooManyAttemptsTry")}</p>
       </div>
     );
   }
@@ -64,7 +66,7 @@ export default async function ReferralLandingPage({ params, searchParams }: { pa
                 <Gift size={17} />
               </span>
               <div className="min-w-0">
-                <p className="text-[12px] font-bold uppercase tracking-wide text-mv-lime-dark">Votre invitation</p>
+                <p className="text-[12px] font-bold uppercase tracking-wide text-mv-lime-dark">{t("yourInvitation")}</p>
                 <p className="mt-0.5 text-[14px] font-semibold leading-snug text-mv-green-dark">
                   {program.rewardDescription}
                 </p>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useLocale } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/minerva/PageCard";
 import { EditorialLoadingState } from "@/components/ui/EditorialLoadingState";
@@ -32,6 +34,7 @@ export default function SettingsSecuritePage() {
 }
 
 function SecuritySessions() {
+  const locale = useLocale();
   const [sessions, setSessions] = useState<DeviceSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [toRevoke, setToRevoke] = useState<DeviceSession | null>(null);
@@ -100,8 +103,8 @@ function SecuritySessions() {
                       )}
                     </div>
                     <p className="mt-1 text-[12.5px] text-mv-ink-soft">
-                      Dernière activité {formatRelativeTime(s.updatedAt)} · Connecté depuis{" "}
-                      {formatRelativeTime(s.createdAt)}
+                      Dernière activité {formatRelativeTime(s.updatedAt, locale)} · Connecté depuis{" "}
+                      {formatRelativeTime(s.createdAt, locale)}
                       {s.ip ? ` · ${s.ip}` : ""}
                     </p>
                   </div>
