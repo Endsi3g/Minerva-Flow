@@ -3,7 +3,7 @@
 import { Suspense, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getPathname } from "@/i18n/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
@@ -26,6 +26,7 @@ export function TeamLoginCard() {
 }
 
 function TeamLoginCardInner() {
+  const t = useTranslations("teamLogin");
   const locale = useLocale();
   const searchParams = useSearchParams();
   const deniedReason = searchParams.get("error");
@@ -33,7 +34,7 @@ function TeamLoginCardInner() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(
-    deniedReason === "unauthorized" ? "Ce compte n’a pas accès à l’espace équipe." : null
+    deniedReason === "unauthorized" ? t("thisAccountDoesNot") : null
   );
 
   async function waitForServerSessionCookie() {
@@ -47,7 +48,7 @@ function TeamLoginCardInner() {
       await new Promise((resolve) => window.setTimeout(resolve, 50));
     }
     if (!hasSessionCookie()) {
-      throw new Error("La session sécurisée ne s’est pas enregistrée. Réessaie.");
+      throw new Error(t("theSecureSessionWas"));
     }
   }
 
@@ -66,29 +67,29 @@ function TeamLoginCardInner() {
       await waitForServerSessionCookie();
       window.location.assign(getPathname({ href: "/equipe", locale }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "La connexion a échoué.");
+      setError(err instanceof Error ? err.message : t("theSignInFailed"));
       setIsLoading(false);
     }
   }
 
   return (
     <AuthShell
-      panelHeadline="L'équipe et les ambassadeurs qui font avancer Minerva Flow."
+      panelHeadline={t("theTeamAndAmbassadors")}
       panelPoints={[
-        { title: "Un seul endroit", description: "Statistiques internes pour l'équipe, outils de parrainage pour les ambassadeurs." },
-        { title: "Accès restreint", description: "Réservé aux comptes Minerva Flow vérifiés — distinct de l'espace client/restaurant." },
+        { title: t("onePlace"), description: t("internalStatisticsForThe") },
+        { title: t("restrictedAccess"), description: t("reservedForVerifiedMinerva") },
       ]}
     >
       <h1 className="font-display text-[28px] font-medium tracking-tight text-mv-ink sm:text-[32px]">
-        Espace équipe
+        {t("teamSpace")}
       </h1>
       <p className="mt-2 text-[13.5px] leading-relaxed text-mv-ink-soft">
-        Connexion réservée à l’équipe Minerva Flow et aux ambassadeurs vérifiés.
+        {t("signInReservedFor")}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Courriel</label>
+          <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{t("email")}</label>
           <input
             type="email"
             required
@@ -99,7 +100,7 @@ function TeamLoginCardInner() {
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Mot de passe</label>
+          <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{t("password")}</label>
           <input
             type="password"
             required
@@ -121,11 +122,11 @@ function TeamLoginCardInner() {
           {isLoading ? (
             <>
               <Loader2 size={15} className="animate-spin" />
-              <span>Connexion…</span>
+              <span>{t("signingIn")}</span>
             </>
           ) : (
             <>
-              <span>Se connecter</span>
+              <span>{t("signIn")}</span>
               <ArrowRight size={14} />
             </>
           )}
@@ -134,7 +135,7 @@ function TeamLoginCardInner() {
 
       <div className="mt-6 flex items-center justify-center gap-2 border-t border-mv-border-soft pt-5 text-[12px] text-mv-ink-faint">
         <ShieldCheck size={13} className="text-mv-green-dark" />
-        <span>Espace isolé du compte client/restaurant.</span>
+        <span>{t("spaceSeparateFromThe")}</span>
       </div>
     </AuthShell>
   );

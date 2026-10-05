@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -18,6 +20,7 @@ export function TeamOnboardingIntro({
   isTeamMember: boolean;
   onDone: () => void;
 }) {
+  const t = useTranslations("teamIntro");
   const lines = buildLines(isTeamMember);
   const [index, setIndex] = useState(0);
   const isLast = index === lines.length - 1;
@@ -70,7 +73,7 @@ export function TeamOnboardingIntro({
           onClick={finish}
           className="absolute bottom-16 rounded-full bg-mv-green px-6 py-3 text-[13.5px] font-semibold text-white transition-colors hover:bg-mv-green-dark"
         >
-          Entrer dans l’espace
+          {t("enterTheSpace")}
         </motion.button>
       )}
     </div>
@@ -86,15 +89,16 @@ export function hasSeenTeamOnboardingIntro(): boolean {
 }
 
 function buildLines(isTeamMember: boolean): string[] {
+  const t = useTranslations("teamIntro");
   return [
     "Bienvenue chez Minerva Flow.",
-    "Que vous soyez ambassadeur ou membre de l’équipe —",
-    "nous construisons l’outil que les restaurants méritent.",
-    "Nos valeurs : la rigueur avant la vitesse, l’honnêteté dans les chiffres, le respect du temps des restaurateurs.",
-    "Ce qu’on attend de vous : représenter la marque avec justesse, et protéger la confiance qu’on nous donne.",
+    t("whetherYouAreAn"),
+    t("weAreBuildingThe"),
+    t("ourValuesRigorBefore"),
+    t("whatWeExpectOf"),
     isTeamMember
-      ? "Ici, le tableau de bord suit nos restaurants, nos revenus et notre rétention — en temps réel."
-      : "Ici, votre espace suit vos recommandations et vos commissions — en temps réel.",
-    "Bienvenue à bord.",
+      ? t("hereTheDashboardTracks")
+      : t("hereYourSpaceTracks"),
+    t("welcomeAboard"),
   ];
 }
