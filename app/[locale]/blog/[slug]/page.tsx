@@ -182,7 +182,7 @@ export default async function BlogPostPage({
               <ArrowLeft size={14} /> Tous les articles
             </Link>
             <Button href="/sign-up" size="sm" className="hidden sm:inline-flex shadow-mv-sm">
-              Essai Gratuit <ArrowRight size={13} className="ml-1" />
+              Créer mon compte <ArrowRight size={13} className="ml-1" />
             </Button>
           </div>
         </div>
@@ -228,12 +228,6 @@ export default async function BlogPostPage({
                 <div className="text-[13.5px] font-semibold text-mv-ink">{post.authorName}</div>
                 <div className="text-[11.5px] text-mv-ink-faint">{post.authorRole}</div>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="hidden text-[11px] font-medium text-mv-ink-faint sm:inline">
-                Certifié Minerva Flow
-              </span>
             </div>
           </div>
         </div>
