@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/minerva/FormField";
@@ -13,6 +15,7 @@ import { toast } from "sonner";
 const CONFIRM_WORD = "SUPPRIMER";
 
 export function DeleteAccountCard() {
+  const t = useTranslations("deleteAccountCard");
   const router = useRouter();
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -31,7 +34,7 @@ export function DeleteAccountCard() {
         setIsDeleting(false);
       }
     } catch {
-      toast.error("La suppression a échoué. Réessayez.");
+      toast.error(t("deletionFailedTryAgain"));
       setIsDeleting(false);
     }
   }
@@ -41,7 +44,7 @@ export function DeleteAccountCard() {
       <CardHeader
         eyebrow="Zone sensible"
         title="Supprimer mon compte"
-        description="Efface définitivement votre compte et vos accès. Cette action est irréversible."
+        description={t("permanentlyErasesYourAccount")}
       />
       <div className="space-y-3">
         <p className="text-[12px] text-mv-ink-faint">
@@ -58,7 +61,7 @@ export function DeleteAccountCard() {
           disabled={confirmText !== CONFIRM_WORD || isDeleting}
           onClick={handleDelete}
         >
-          <AlertTriangle size={14} /> {isDeleting ? "Suppression…" : "Supprimer définitivement mon compte"}
+          <AlertTriangle size={14} /> {isDeleting ? t("deleting") : t("permanentlyDeleteMyAccount")}
         </Button>
       </div>
     </Card>

@@ -3305,5 +3305,133 @@
     "addToHomeScreen": "Sur l'écran d'accueil",
     "toFindTheMenu": "pour retrouver le menu et vos points en un geste.",
     "findTheMenuAnd": "Retrouvez le menu et vos points de fidélité en un geste, et recevez les nouvelles offres."
+  },
+  "settingsNav": {
+    "settingsSections": "Sections des paramètres",
+    "integrations": "Intégrations",
+    "connectedRegistersPaymentsAnd": "Caisses, paiements et plateformes connectées.",
+    "alertRules": "Règles d'alertes",
+    "automaticDetectionThresholdsAnd": "Seuils automatiques de détection et notifications.",
+    "referral": "Parrainage",
+    "customerReferralPrograms": "Programmes de recommandation clients.",
+    "security": "Sécurité",
+    "connectedDevicesAndActive": "Appareils connectés et sessions actives.",
+    "appearance": "Apparence",
+    "lightDarkOrSystem": "Thème clair, sombre ou système."
+  },
+  "securityPage": {
+    "security": "Sécurité",
+    "detectingConnectedDevices": "Détection des appareils connectés…",
+    "lookingForActiveSessions": "Recherche des sessions actives et des autorisations de sécurité.",
+    "yourConnectedDevices": "Vos appareils connectés",
+    "signOutThisDevice": "Déconnecter cet appareil ?",
+    "signOut": "Déconnecter",
+    "deviceSignedOut": "Appareil déconnecté.",
+    "couldNotSignOut": "La déconnexion de cet appareil a échoué.",
+    "severalDevicesSignedIn": "Plusieurs appareils connectés en même temps, c'est normal (téléphone, ordinateur du resto, etc.) — ceci sert surtout à repérer une connexion qui ne vous appartient pas et à la déconnecter. La déconnexion prend effet dans les minutes qui suivent, pas instantanément."
+  },
+  "appearancePage": {
+    "appearance": "Apparence",
+    "light": "Clair",
+    "system": "Système",
+    "dark": "Sombre",
+    "lightModeIsUsed": "Le mode clair est utilisé par défaut. Vous pouvez suivre le réglage de votre appareil ou activer le thème sombre Minerva Flow.",
+    "appTheme": "Thème de l’application"
+  },
+  "alertRulesPage": {
+    "alertRules": "Règles d'alertes",
+    "loadingAlertRules": "Chargement des règles d'alertes…",
+    "syncingCriticalThresholdsAnd": "Synchronisation des seuils critiques et des déclencheurs automatiques.",
+    "triggerThreshold": "Seuil déclencheur :",
+    "theRuleUpdateFailed": "La mise à jour de la règle a échoué.",
+    "disabled": "Désactivée"
+  },
+  "profileView": {
+    "activity": "Activité",
+    "yourLatestActionsIn": "Vos dernières actions dans Minerva Flow.",
+    "capabilities": "Capacités",
+    "profilePhotoUpdated": "Photo de profil mise à jour.",
+    "nameUpdated": "Nom mis à jour.",
+    "collapseTheHistory": "Réduire l'historique",
+    "youMustBeSigned": "Vous devez être connecté pour voir votre profil.",
+    "noActivityRecordedYet": "Aucune activité enregistrée pour l'instant."
+  },
+  "deleteAccountCard": {
+    "permanentlyErasesYourAccount": "Efface définitivement votre compte et vos accès. Cette action est irréversible.",
+    "deletionFailedTryAgain": "La suppression a échoué. Réessayez.",
+    "deleting": "Suppression…",
+    "permanentlyDeleteMyAccount": "Supprimer définitivement mon compte"
+  },
+  "inviteMember": {
+    "generateALinkTo": "Générez un lien à partager — valide 7 jours, le rôle et les établissements sont déjà attribués.",
+    "role": "Rôle",
+    "accessibleRestaurants": "Établissements accessibles",
+    "noRestaurantsInThis": "Aucun établissement dans ce workspace.",
+    "couldNotGenerateThe": "Impossible de générer le lien. Réessayez.",
+    "emailSentYouCan": "Courriel envoyé. Vous pouvez aussi partager le lien directement (SMS, WhatsApp, etc.).",
+    "validFor7Days": "Valide 7 jours. Partagez-le par le canal de votre choix (SMS, WhatsApp, etc.).",
+    "generating": "Génération…",
+    "generateTheLink": "Générer le lien"
+  },
+  "searchDialog": {
+    "settingsTools": "Paramètres & Outils",
+    "recordAServiceToday": "Enregistrer un service (CA du jour)",
+    "enterTodaySRevenue": "Saisir les recettes et le rush du jour",
+    "scheduleAShift": "Planifier un quart d'horaire",
+    "assignAScheduleOr": "Assigner un horaire ou quart de travail",
+    "openTheKitchenScreen": "Ouvrir l'Écran Cuisine (KDS)",
+    "liveTicketsAndPreparation": "Tickets live et temps de préparation",
+    "generateTableQrCodes": "Générer les QR Codes de table",
+    "directMenuWith0": "Menu direct sans commission 0%"
+  },
+  "importMenuPdf": {
+    "editPriceFoodCost": "Modifiez prix, food cost ou photo directement depuis le menu.",
+    "analyzingTheMenu": "Analyse du menu en cours…",
+    "uncategorized": "Sans catégorie",
+    "checkAndFixThe": "Vérifiez et corrigez les plats détectés avant l'import — rien n'est encore ajouté à votre menu.",
+    "theAiReadsA": "L’IA lit un PDF ou une photo du menu, puis propose les plats, prix et catégories à vérifier avant l’ajout. Sans prix affiché, l’article sera présenté sans pouvoir être commandé.",
+    "cancel": "Annuler",
+    "importing": "Import…",
+    "toOrder": "À commander",
+    "analyzeTheMenu": "Analyser le menu"
+  },
+  "assistantUnavailable": {
+    "underConstruction": "En construction",
+    "backToTheOverview": "Retour à l'aperçu",
+    "flowAiIsComing": "Flow AI arrive bientôt",
+    "weArePolishingYour": "Nous peaufinons votre copilote IA pour qu'il réponde vraiment bien à vos questions sur vos chiffres. Il sera de retour très bientôt, encore meilleur."
+  },
+  "flowAiHeader": {
+    "overview": "Aperçu",
+    "backToTheDashboard": "Retour au tableau de bord",
+    "hideShowTheSessions": "Masquer/Afficher le volet sessions (Cmd+B)",
+    "businessSpecialistsAgentCreation": "Spécialistes métier & Création d'agents",
+    "capabilitiesSkills": "Capacités (Skills)",
+    "registryOfToolsAnd": "Registre des outils et actions automatisées",
+    "operationalIntelligence": "Intelligence Opérationnelle",
+    "dailyBriefingPrimeCost": "Briefing du jour, alertes Prime Cost & audit"
+  },
+  "chatSidebar": {
+    "collapseTheSidebar": "Réduire la barre latérale",
+    "newFlowAiChat": "Nouvel échange Flow AI",
+    "unpin": "Détacher",
+    "pinToTheTop": "Épingler en haut",
+    "flowAiReady": "Flow AI Prêt",
+    "chatUnpinned": "Échange détaché",
+    "chatPinnedToThe": "Échange épinglé en haut",
+    "newChat": "Nouvel échange",
+    "specialistTurnedOnSpecialistname": "Spécialiste activé : {specialistName}",
+    "changeSpecialist": "Changer de Spécialiste",
+    "noConversations": "Aucune conversation"
+  },
+  "onboardingPage": {
+    "almostReadyLetS": "Presque prêt. Configurons votre établissement.",
+    "theRestAddressKey": "Le reste — adresse, chiffres clés, outils — se complète en tout temps depuis l'application, sans bloquer votre accès.",
+    "needHelpTheMinerva": "Besoin d'aide ? L'équipe Minerva reste disponible à tout moment.",
+    "noCardRequired": "Aucune carte requise",
+    "youEnterTheApp": "Vous entrez dans l'application dès cette étape — aucun engagement, aucun paiement.",
+    "nothingIsSetIn": "Rien n'est figé",
+    "nameAddressTeamConnected": "Nom, adresse, équipe, outils connectés : tout se modifie à tout moment depuis vos paramètres.",
+    "yourDataStaysYours": "Vos données restent les vôtres"
   }
 }

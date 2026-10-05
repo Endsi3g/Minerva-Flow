@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -27,6 +29,7 @@ export function InviteWorkspaceMemberModal({
   currentRestaurantId?: string;
   onSuccess?: () => void;
 }) {
+  const t = useTranslations("inviteMember");
   const [role, setRole] = useState<Role>("staff");
   const [selectedRestaurantIds, setSelectedRestaurantIds] = useState<string[]>(restaurants.map((r) => r.id));
   const [email, setEmail] = useState("");
@@ -51,7 +54,7 @@ export function InviteWorkspaceMemberModal({
         trimmedEmail || undefined
       );
       if (!invite) {
-        setError("Impossible de générer le lien. Réessayez.");
+        setError(t("couldNotGenerateThe"));
         return;
       }
       posthog.capture("workspace_member_invited", {
@@ -86,10 +89,10 @@ export function InviteWorkspaceMemberModal({
       open={open}
       onClose={handleClose}
       title="Inviter dans le workspace"
-      description="Générez un lien à partager — valide 7 jours, le rôle et les établissements sont déjà attribués."
+      description={t("generateALinkTo")}
     >
       <div className="space-y-4">
-        <Field label="Rôle">
+        <Field label={t("role")}>
           <Select value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={Boolean(link)}>
             {invitableRoles.map((r) => (
               <option key={r} value={r}>
@@ -109,10 +112,10 @@ export function InviteWorkspaceMemberModal({
           />
         </Field>
 
-        <Field label="Établissements accessibles">
+        <Field label={t("accessibleRestaurants")}>
           <div className="space-y-1.5 rounded-lg border border-mv-border p-3">
             {restaurants.length === 0 ? (
-              <p className="text-[12.5px] text-mv-ink-faint">Aucun établissement dans ce workspace.</p>
+              <p className="text-[12.5px] text-mv-ink-faint">{t("noRestaurantsInThis")}</p>
             ) : (
               restaurants.map((r) => (
                 <label key={r.id} className="flex items-center gap-2 text-[12.5px] text-mv-ink-soft">
@@ -146,8 +149,8 @@ export function InviteWorkspaceMemberModal({
             </div>
             <p className="text-[12px] text-mv-ink-faint">
               {emailSent
-                ? "Courriel envoyé. Vous pouvez aussi partager le lien directement (SMS, WhatsApp, etc.)."
-                : "Valide 7 jours. Partagez-le par le canal de votre choix (SMS, WhatsApp, etc.)."}
+                ? t("emailSentYouCan")
+                : t("validFor7Days")}
             </p>
           </div>
         )}
@@ -158,7 +161,7 @@ export function InviteWorkspaceMemberModal({
           </Button>
           {!link && (
             <Button onClick={handleGenerate} disabled={isPending}>
-              {isPending ? "Génération…" : "Générer le lien"}
+              {isPending ? t("generating") : t("generateTheLink")}
             </Button>
           )}
         </div>

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import React, { useEffect, useTransition, useState } from "react";
 import { useApp } from "@/lib/app-context";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -65,6 +67,7 @@ export function ChatSidebar({
   onAgentChange?: (agentId: string) => void;
   onDossiersChange?: (dossiers: string[]) => void;
 }) {
+  const t = useTranslations("chatSidebar");
   const { restaurantId, authUser } = useApp();
   const isMobile = useIsMobile();
   const router = useRouter();
@@ -94,7 +97,7 @@ export function ChatSidebar({
     e.stopPropagation();
     const res = await executeTogglePinAction(cId, !currentPin);
     if (res.success) {
-      toast.success(currentPin ? "Échange détaché" : "Échange épinglé en haut");
+      toast.success(currentPin ? t("chatUnpinned") : t("chatPinnedToThe"));
     }
   }
 
@@ -105,7 +108,7 @@ export function ChatSidebar({
       await executeUpdateAgentAction(activeConversationId, agentId);
     }
     const specialist = getSpecialistById(agentId);
-    toast.success(`Spécialiste activé : ${specialist.name}`);
+    toast.success(t("specialistTurnedOnSpecialistname", { specialistName: specialist.name }));
   }
 
   const activeSpecialist = getSpecialistById(selectedAgentId);
@@ -149,7 +152,7 @@ export function ChatSidebar({
             </Link>
             <button
               onClick={() => onCollapse(true)}
-              aria-label="Réduire la barre latérale"
+              aria-label={t("collapseTheSidebar")}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-mv-ink-soft transition-colors hover:bg-mv-ink/5 hover:text-mv-ink"
             >
               <PanelLeft size={15} />
@@ -163,7 +166,7 @@ export function ChatSidebar({
               disabled={isPending}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-mv-green px-3 py-2 text-[12.5px] font-bold text-white shadow-xs transition-all hover:bg-mv-green-dark disabled:opacity-50"
             >
-              <Plus size={15} /> <span>Nouvel échange Flow AI</span>
+              <Plus size={15} /> <span>{t("newFlowAiChat")}</span>
             </button>
           </div>
 
@@ -186,7 +189,7 @@ export function ChatSidebar({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[275px] bg-mv-surface border-mv-border">
                 <DropdownMenuLabel className="text-[12px] font-bold text-mv-ink-faint uppercase tracking-wider">
-                  Changer de Spécialiste
+                  {t("changeSpecialist")}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-mv-border-soft" />
                 {FLOW_AI_SPECIALISTS.map((s) => (
@@ -266,12 +269,12 @@ export function ChatSidebar({
                         size={13}
                         className={cn("shrink-0", active ? "text-white" : "opacity-60")}
                       />
-                      <span className="truncate">{c.title || "Nouvel échange"}</span>
+                      <span className="truncate">{c.title || t("newChat")}</span>
                     </div>
                     <button
                       type="button"
                       onClick={(e) => handleTogglePin(e, c.id, true)}
-                      title="Détacher"
+                      title={t("unpin")}
                       className="opacity-0 group-hover:opacity-100 p-1 hover:text-mv-amber transition-opacity"
                     >
                       <PinOff size={12} />
@@ -292,7 +295,7 @@ export function ChatSidebar({
 
             {recentConversations.length === 0 && pinnedConversations.length === 0 ? (
               <p className="px-1 py-2 text-[12px] text-mv-ink-faint text-center">
-                Aucune conversation
+                {t("noConversations")}
               </p>
             ) : (
               recentConversations.map((c) => {
@@ -313,12 +316,12 @@ export function ChatSidebar({
                         size={13}
                         className={cn("shrink-0", active ? "text-white" : "opacity-60")}
                       />
-                      <span className="truncate">{c.title || "Nouvel échange"}</span>
+                      <span className="truncate">{c.title || t("newChat")}</span>
                     </div>
                     <button
                       type="button"
                       onClick={(e) => handleTogglePin(e, c.id, false)}
-                      title="Épingler en haut"
+                      title={t("pinToTheTop")}
                       className="opacity-0 group-hover:opacity-100 p-1 hover:text-mv-amber transition-opacity"
                     >
                       <Pin size={12} />
@@ -335,7 +338,7 @@ export function ChatSidebar({
           <div className="flex items-center justify-between text-[12px] text-mv-ink-soft">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-              <span className="text-[12px] font-medium">Flow AI Prêt</span>
+              <span className="text-[12px] font-medium">{t("flowAiReady")}</span>
             </div>
             <button
               onClick={onShare}

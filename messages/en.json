@@ -3374,5 +3374,133 @@
     "addToHomeScreen": "Add to Home Screen",
     "toFindTheMenu": "to find the menu and your points in one tap.",
     "findTheMenuAnd": "Find the menu and your loyalty points in one tap, and get new offers."
+  },
+  "settingsNav": {
+    "settingsSections": "Settings sections",
+    "integrations": "Integrations",
+    "connectedRegistersPaymentsAnd": "Connected registers, payments and platforms.",
+    "alertRules": "Alert rules",
+    "automaticDetectionThresholdsAnd": "Automatic detection thresholds and notifications.",
+    "referral": "Referral",
+    "customerReferralPrograms": "Customer referral programs.",
+    "security": "Security",
+    "connectedDevicesAndActive": "Connected devices and active sessions.",
+    "appearance": "Appearance",
+    "lightDarkOrSystem": "Light, dark or system theme."
+  },
+  "securityPage": {
+    "security": "Security",
+    "detectingConnectedDevices": "Detecting connected devices…",
+    "lookingForActiveSessions": "Looking for active sessions and security authorizations.",
+    "yourConnectedDevices": "Your connected devices",
+    "signOutThisDevice": "Sign out this device?",
+    "signOut": "Sign out",
+    "deviceSignedOut": "Device signed out.",
+    "couldNotSignOut": "Could not sign out this device.",
+    "severalDevicesSignedIn": "Several devices signed in at the same time is normal (phone, restaurant computer, etc.). This mostly helps you spot a sign-in that is not yours and sign it out. Signing out takes effect within a few minutes, not instantly."
+  },
+  "appearancePage": {
+    "appearance": "Appearance",
+    "light": "Light",
+    "system": "System",
+    "dark": "Dark",
+    "lightModeIsUsed": "Light mode is used by default. You can follow your device setting or turn on the Minerva Flow dark theme.",
+    "appTheme": "App theme"
+  },
+  "alertRulesPage": {
+    "alertRules": "Alert rules",
+    "loadingAlertRules": "Loading alert rules…",
+    "syncingCriticalThresholdsAnd": "Syncing critical thresholds and automatic triggers.",
+    "triggerThreshold": "Trigger threshold:",
+    "theRuleUpdateFailed": "The rule update failed.",
+    "disabled": "Disabled"
+  },
+  "profileView": {
+    "activity": "Activity",
+    "yourLatestActionsIn": "Your latest actions in Minerva Flow.",
+    "capabilities": "Capabilities",
+    "profilePhotoUpdated": "Profile photo updated.",
+    "nameUpdated": "Name updated.",
+    "collapseTheHistory": "Collapse the history",
+    "youMustBeSigned": "You must be signed in to see your profile.",
+    "noActivityRecordedYet": "No activity recorded yet."
+  },
+  "deleteAccountCard": {
+    "permanentlyErasesYourAccount": "Permanently erases your account and your access. This action cannot be undone.",
+    "deletionFailedTryAgain": "Deletion failed. Try again.",
+    "deleting": "Deleting…",
+    "permanentlyDeleteMyAccount": "Permanently delete my account"
+  },
+  "inviteMember": {
+    "generateALinkTo": "Generate a link to share. Valid for 7 days; the role and restaurants are already assigned.",
+    "role": "Role",
+    "accessibleRestaurants": "Accessible restaurants",
+    "noRestaurantsInThis": "No restaurants in this workspace.",
+    "couldNotGenerateThe": "Could not generate the link. Try again.",
+    "emailSentYouCan": "Email sent. You can also share the link directly (SMS, WhatsApp, etc.).",
+    "validFor7Days": "Valid for 7 days. Share it through the channel of your choice (SMS, WhatsApp, etc.).",
+    "generating": "Generating…",
+    "generateTheLink": "Generate the link"
+  },
+  "searchDialog": {
+    "settingsTools": "Settings & tools",
+    "recordAServiceToday": "Record a service (today's sales)",
+    "enterTodaySRevenue": "Enter today's revenue and rush",
+    "scheduleAShift": "Schedule a shift",
+    "assignAScheduleOr": "Assign a schedule or work shift",
+    "openTheKitchenScreen": "Open the Kitchen Screen (KDS)",
+    "liveTicketsAndPreparation": "Live tickets and preparation time",
+    "generateTableQrCodes": "Generate table QR codes",
+    "directMenuWith0": "Direct menu with 0% commission"
+  },
+  "importMenuPdf": {
+    "editPriceFoodCost": "Edit price, food cost or photo straight from the menu.",
+    "analyzingTheMenu": "Analyzing the menu…",
+    "uncategorized": "Uncategorized",
+    "checkAndFixThe": "Check and fix the detected dishes before importing. Nothing is added to your menu yet.",
+    "theAiReadsA": "The AI reads a PDF or a photo of the menu, then suggests the dishes, prices and categories to check before adding. Without a displayed price, the item will be shown but cannot be ordered.",
+    "cancel": "Cancel",
+    "importing": "Importing…",
+    "toOrder": "To order",
+    "analyzeTheMenu": "Analyze the menu"
+  },
+  "assistantUnavailable": {
+    "underConstruction": "Under construction",
+    "backToTheOverview": "Back to the overview",
+    "flowAiIsComing": "Flow AI is coming soon",
+    "weArePolishingYour": "We are polishing your AI copilot so it answers your questions about your figures really well. It will be back very soon, even better."
+  },
+  "flowAiHeader": {
+    "overview": "Overview",
+    "backToTheDashboard": "Back to the dashboard",
+    "hideShowTheSessions": "Hide/Show the sessions panel (Cmd+B)",
+    "businessSpecialistsAgentCreation": "Business specialists & agent creation",
+    "capabilitiesSkills": "Capabilities (Skills)",
+    "registryOfToolsAnd": "Registry of tools and automated actions",
+    "operationalIntelligence": "Operational Intelligence",
+    "dailyBriefingPrimeCost": "Daily briefing, Prime Cost alerts & audit"
+  },
+  "chatSidebar": {
+    "collapseTheSidebar": "Collapse the sidebar",
+    "newFlowAiChat": "New Flow AI chat",
+    "unpin": "Unpin",
+    "pinToTheTop": "Pin to the top",
+    "flowAiReady": "Flow AI Ready",
+    "chatUnpinned": "Chat unpinned",
+    "chatPinnedToThe": "Chat pinned to the top",
+    "newChat": "New chat",
+    "specialistTurnedOnSpecialistname": "Specialist turned on: {specialistName}",
+    "changeSpecialist": "Change specialist",
+    "noConversations": "No conversations"
+  },
+  "onboardingPage": {
+    "almostReadyLetS": "Almost ready. Let's set up your restaurant.",
+    "theRestAddressKey": "The rest (address, key figures, tools) can be completed at any time from the app, without blocking your access.",
+    "needHelpTheMinerva": "Need help? The Minerva team is available at any time.",
+    "noCardRequired": "No card required",
+    "youEnterTheApp": "You enter the app right at this step. No commitment, no payment.",
+    "nothingIsSetIn": "Nothing is set in stone",
+    "nameAddressTeamConnected": "Name, address, team, connected tools: everything can be changed at any time from your settings.",
+    "yourDataStaysYours": "Your data stays yours"
   }
 }

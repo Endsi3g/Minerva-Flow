@@ -42,34 +42,37 @@ interface SearchDialogProps {
   enableGlobalShortcut?: boolean;
 }
 
-const DEFAULT_QUICK_ACTIONS = [
+function buildDEFAULT_QUICK_ACTIONS(t: (key: string) => string) {
+  return [
   {
-    title: "Enregistrer un service (CA du jour)",
-    subtitle: "Saisir les recettes et le rush du jour",
+    title: t("recordAServiceToday"),
+    subtitle: t("enterTodaySRevenue"),
     href: "/days",
     icon: Sparkles,
   },
   {
-    title: "Planifier un quart d'horaire",
-    subtitle: "Assigner un horaire ou quart de travail",
+    title: t("scheduleAShift"),
+    subtitle: t("assignAScheduleOr"),
     href: "/horaire",
     icon: Users,
   },
   {
-    title: "Ouvrir l'Écran Cuisine (KDS)",
-    subtitle: "Tickets live et temps de préparation",
+    title: t("openTheKitchenScreen"),
+    subtitle: t("liveTicketsAndPreparation"),
     href: "/commandes",
     icon: ClipboardList,
   },
   {
-    title: "Générer les QR Codes de table",
-    subtitle: "Menu direct sans commission 0%",
+    title: t("generateTableQrCodes"),
+    subtitle: t("directMenuWith0"),
     href: "/etablissement",
     icon: Zap,
   },
 ];
+}
 
 export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalShortcut }: SearchDialogProps) {
+  const tv = useTranslations("searchDialog");
   const t = useTranslations("shell");
   const router = useRouter();
   const { role, sidebarPermissions } = useApp();
@@ -130,7 +133,7 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
 
   const typeLabels: Record<SearchResult["type"], string> = {
     action: "Actions Rapides",
-    setting: "Paramètres & Outils",
+    setting: tv("settingsTools"),
     navigation: t("searchTypeNavigation"),
     campaign: t("searchTypeCampaign"),
     employee: t("searchTypeEmployee"),
@@ -199,7 +202,7 @@ export function SearchDialog({ open, onOpenChange, restaurantId, enableGlobalSho
             <>
               {/* Quick Actions Shortcuts */}
               <CommandGroup heading="Actions Rapides" className="text-mv-ink-faint">
-                {DEFAULT_QUICK_ACTIONS.map((action) => {
+                {buildDEFAULT_QUICK_ACTIONS(tv).map((action) => {
                   const Icon = action.icon;
                   return (
                     <CommandItem
