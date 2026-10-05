@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class Stage { Intro, Auth, Main }
+enum class Stage { Intro, Auth, Resolving, Main, Owner }
 enum class Tab { Home, Offers, Card, Account }
 enum class AuthMode { Code, Password }
 enum class AuthValidation { EmailInvalid, PasswordShort, CodeInvalid }
@@ -48,11 +48,13 @@ data class UiState(
     val auth: AuthState = AuthState(),
     val bonus: BonusAward? = null,
     val onboarding: Boolean = false,
+    val ownerRestaurants: List<com.minervaflow.loyalty.data.OwnerRestaurant> = emptyList(),
 )
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val container = (application as MinervaApp).container
     private val repo = container.repository
+    private val ownerRepo = container.ownerRepository
     private val prefs = container.prefs
 
     private val _state = MutableStateFlow(UiState())
@@ -63,8 +65,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     init {
         val session = repo.session
         if (session != null) {
-            _state.update { it.copy(stage = Stage.Main, onboarding = !onboardingSeen(session.userId)) }
-            loadHome()
+            resolveExperience()
         } else {
             _state.update { it.copy(stage = if (prefs.getBoolean(KEY_INTRO_SEEN, false)) Stage.Auth else Stage.Intro) }
         }
@@ -83,6 +84,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         repo.session?.let { prefs.edit().putBoolean(onboardingKey(it.userId), true).apply() }
         _state.update { it.copy(onboarding = false) }
     }
+
+    fun userEmail(): String? = repo.session?.email
 
     fun dismissBonus() = _state.update { it.copy(bonus = null) }
 
@@ -108,7 +111,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (!Validation.isSixDigitCode(code)) return setAuthValidation(AuthValidation.CodeInvalid)
         runAuth {
             repo.verifyCode(email, code)
-            enterMain()
+            resolveExperience()
         }
     }
 
@@ -123,11 +126,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 if (session == null) {
                     _state.update { it.copy(auth = it.auth.copy(creatingAccount = false, checkInbox = true)) }
                 } else {
-                    enterMain()
+                    resolveExperience()
                 }
             } else {
                 repo.signInWithPassword(clean, password)
-                enterMain()
+                resolveExperience()
             }
         }
     }
@@ -150,7 +153,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun enterMain() {
+    /** An owner or manager lands in the owner space, everyone else in the customer space. */
+    private fun resolveExperience() {
+        _state.update { it.copy(stage = Stage.Resolving, auth = AuthState()) }
+        viewModelScope.launch {
+            val owned = runCatching { ownerRepo.restaurants() }.getOrDefault(emptyList())
+            if (owned.isNotEmpty()) _state.update { it.copy(stage = Stage.Owner, ownerRestaurants = owned) }
+            else enterCustomer()
+        }
+    }
+
+    private fun enterCustomer() {
         val userId = repo.session?.userId
         bonusClaimedThisSession = false
         _state.update {
@@ -221,6 +234,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (ok) resetToSignedOut()
         return ok
     }
+
+    /** Called after the server confirmed the account is gone. */
+    fun onAccountDeleted() = resetToSignedOut()
 
     fun signOut() {
         viewModelScope.launch {

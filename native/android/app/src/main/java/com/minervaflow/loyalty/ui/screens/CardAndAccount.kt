@@ -309,24 +309,31 @@ fun AccountScreen(data: HomeData, onSignOut: () -> Unit, onDelete: suspend () ->
             dismissButton = { TextButton(onClick = { confirmSignOut = false }, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.cancel)) } },
         )
     }
-    if (showDelete) DeleteAccountDialog(onDismiss = { showDelete = false }, onDelete = onDelete)
+    if (showDelete) DeleteAccountDialog(
+        bodyRes = R.string.account_delete_body,
+        onDismiss = { showDelete = false },
+        onDelete = { if (onDelete()) null else R.string.account_delete_failed },
+    )
 }
 
 @Composable
-private fun LinkRow(label: Int, onClick: () -> Unit) {
+fun LinkRow(label: Int, onClick: () -> Unit) {
     TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
         Text(stringResource(label), style = MvType.body, modifier = Modifier.fillMaxWidth())
     }
 }
 
-/** Irreversible, so the person has to type the word before the button turns on. */
+/**
+ * Irreversible, so the person has to type the word before the button turns on. [onDelete] returns null
+ * on success, otherwise the string to show.
+ */
 @Composable
-private fun DeleteAccountDialog(onDismiss: () -> Unit, onDelete: suspend () -> Boolean) {
+fun DeleteAccountDialog(bodyRes: Int, onDismiss: () -> Unit, onDelete: suspend () -> Int?) {
     val word = stringResource(R.string.account_delete_word)
     val scope = rememberCoroutineScope()
     var typed by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
-    var failed by remember { mutableStateOf(false) }
+    var failure by remember { mutableStateOf<Int?>(null) }
     val canConfirm = typed.trim().equals(word, ignoreCase = true)
 
     AlertDialog(
@@ -334,7 +341,7 @@ private fun DeleteAccountDialog(onDismiss: () -> Unit, onDelete: suspend () -> B
         title = { Text(stringResource(R.string.account_delete), style = MvType.h2) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.account_delete_body), style = MvType.small)
+                Text(stringResource(bodyRes), style = MvType.small)
                 OutlinedTextField(
                     value = typed,
                     onValueChange = { typed = it },
@@ -342,18 +349,17 @@ private fun DeleteAccountDialog(onDismiss: () -> Unit, onDelete: suspend () -> B
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                if (failed) Text(stringResource(R.string.account_delete_failed), style = MvType.small, color = Mv.colors.danger)
+                failure?.let { Text(stringResource(it), style = MvType.small, color = Mv.colors.danger) }
             }
         },
         confirmButton = {
             PrimaryButton(
                 stringResource(R.string.account_delete_confirm),
                 {
-                    busy = true; failed = false
+                    busy = true; failure = null
                     scope.launch {
-                        val ok = onDelete()
+                        failure = onDelete()
                         busy = false
-                        if (!ok) failed = true
                     }
                 },
                 enabled = canConfirm,

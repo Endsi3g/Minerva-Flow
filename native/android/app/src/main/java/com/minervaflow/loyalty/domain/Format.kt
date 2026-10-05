@@ -31,4 +31,13 @@ object Format {
         val total = (millisLeft.coerceAtLeast(0) / 1000)
         return "%d:%02d".format(total / 60, total % 60)
     }
+
+    /** "4 oct. 2026, 10:25" from an ISO-8601 timestamp, in the device's language and time zone. */
+    fun shortDateTime(iso: String?, locale: Locale = Locale.getDefault()): String? {
+        if (iso.isNullOrBlank()) return null
+        return runCatching {
+            OffsetDateTime.parse(iso).atZoneSameInstant(java.time.ZoneId.systemDefault())
+                .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale))
+        }.getOrNull()
+    }
 }

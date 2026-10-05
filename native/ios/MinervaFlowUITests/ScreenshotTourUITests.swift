@@ -292,7 +292,8 @@ final class ScreenshotTourUITests: XCTestCase {
         // Clean up: clear the note so the test leaves no data behind.
         reopened.tap()
         if let value = reopened.value as? String {
-            reopened.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+            // Extra deletes are harmless; too few would leave part of the note in the database.
+            reopened.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count + 12))
         }
         app.buttons["Enregistrer"].tap()
 

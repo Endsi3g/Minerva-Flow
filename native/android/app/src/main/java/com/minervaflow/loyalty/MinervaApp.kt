@@ -18,6 +18,7 @@ class AppContainer(context: Context) {
         .build()
     val api = ApiClient(http, sessionStore)
     val repository = Repository(api, sessionStore)
+    val ownerRepository = com.minervaflow.loyalty.data.OwnerRepository(api)
     val prefs: SharedPreferences = context.getSharedPreferences("minerva_prefs", Context.MODE_PRIVATE)
 }
 
