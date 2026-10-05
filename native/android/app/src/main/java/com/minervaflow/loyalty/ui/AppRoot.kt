@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -72,7 +73,7 @@ private fun MainScaffold(state: UiState, vm: AppViewModel) {
             }
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().background(c.cream).padding(padding)) {
+        Box(Modifier.fillMaxSize().background(c.cream).padding(padding).consumeWindowInsets(padding)) {
             CompositionLocalProvider(LocalRedeem provides { id -> vm.redeem(id) }) {
                 DataScreen(
                     state = state.home,
