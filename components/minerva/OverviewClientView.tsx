@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -123,6 +125,7 @@ export function OverviewClientView({
   menuHealth?: MenuHealth | null;
   loyaltyHealth?: LoyaltyHealth | null;
 }) {
+  const t = useTranslations("overviewView");
   const [managerOpen, setManagerOpen] = useState(false);
   const [reliabilityOpen, setReliabilityOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -178,37 +181,37 @@ export function OverviewClientView({
 
       {/* Page Header */}
       <PageHeader
-        eyebrow={isGroupMode ? "Vue consolidée du groupe" : "Vue d'action opérationnelle"}
+        eyebrow={isGroupMode ? t("consolidatedGroupView") : t("operationalActionView")}
         title={
           isGroupMode
-            ? `Vue consolidée — Groupe (${restaurants.length} adresses)`
+            ? t("consolidatedGroup", { count: restaurants.length })
             : firstName
             ? `${greeting}, ${firstName}`
             : greeting
         }
         description={
           isGroupMode ? (
-            "Résultats consolidés en temps réel sur l'ensemble de vos établissements avec benchmark de rentabilité."
+            t("realTimeConsolidatedResults")
           ) : (
             <div className="space-y-1">
               <span className="inline-flex flex-wrap items-center gap-1.5">
-                {`Chiffre d'affaires du mois : ${formatCurrency(monthRevenue ?? 0)} au ${todayLabel}.`}
+                {t("monthRevenueLine", { amount: formatCurrency(monthRevenue ?? 0), date: todayLabel })}
                 <span className="inline-flex items-center gap-1 rounded-full bg-mv-green-tint px-2 py-0.5 text-[12px] font-semibold text-mv-green-dark">
                   <Heart size={11} />
                   {incrementalRetentionRevenue && incrementalRetentionRevenue > 0
-                    ? `+${formatCurrency(incrementalRetentionRevenue)} via fidélisation`
-                    : "Fidélisation active"}
+                    ? t("viaLoyalty", { amount: formatCurrency(incrementalRetentionRevenue) })
+                    : t("loyaltyActive")}
                 </span>
               </span>
               {(!syncTelemetry || syncTelemetry.sourceType === "pending") && (
                 <div className="flex items-center gap-1.5 text-[12px] text-mv-ink-faint">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-mv-amber" />
-                  <span>Aucune caisse connectée —</span>
+                  <span>{t("noRegisterConnected")}</span>
                   <Link
                     href="/integrations"
                     className="font-medium text-mv-green-dark hover:underline"
                   >
-                    Connecter une caisse enregistreuse
+                    {t("connectACashRegister")}
                   </Link>
                 </div>
               )}
@@ -223,10 +226,10 @@ export function OverviewClientView({
               onClick={() => setManagerOpen(true)}
               className="text-[12.5px] whitespace-nowrap"
             >
-              <SlidersHorizontal size={14} /> Personnaliser l&apos;Aperçu
+              <SlidersHorizontal size={14} /> {t("personalizeOverview")}
             </Button>
             <Button href="/days" variant="secondary" size="sm" className="hidden sm:inline-flex text-[12.5px]">
-              <CalendarCheck2 size={14} /> Clôturer une journée
+              <CalendarCheck2 size={14} /> {t("closeADay")}
             </Button>
           </div>
         }
@@ -246,10 +249,10 @@ export function OverviewClientView({
               </div>
               <div>
                 <span className="text-[13px] font-semibold text-mv-ink">
-                  Guide de configuration ({onboardingReadiness.scorePct}% complété)
+                  {t("setupGuide", { pct: onboardingReadiness.scorePct })}
                 </span>
                 <span className="ml-2 hidden text-[12px] text-mv-ink-faint sm:inline">
-                  — Finalisez vos fiches recettes et liaisons pour certifier vos ratios
+                  {t("finishYourRecipeSheets")}
                 </span>
               </div>
             </div>
@@ -270,7 +273,7 @@ export function OverviewClientView({
           {reliabilityOpen && (
             <div className="mt-3.5 border-t border-mv-border-soft pt-3">
               <p className="text-[12px] leading-relaxed text-mv-ink-soft">
-                Minerva Flow synchronise automatiquement vos passages en caisse et active vos relances de fidélisation dès que votre établissement est configuré.
+                {t("minervaFlowAutomaticallySyncs")}
               </p>
 
               <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -308,7 +311,7 @@ export function OverviewClientView({
           {/* KPI 1 : Ventes nettes */}
           <div className="flex flex-col justify-between px-2 pt-2 first:pt-0 sm:pt-0 first:pl-0">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Ventes nettes</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">{t("netSales")}</span>
               <DollarSign size={13} className="text-mv-green-dark" />
             </div>
             <div className="my-1.5">
@@ -318,7 +321,7 @@ export function OverviewClientView({
                   : formatCurrency(todayRevenue > 0 ? todayRevenue : (monthRevenue || 0))}
               </p>
               {isGroupMode ? (
-                <p className="text-[12px] text-mv-ink-soft mt-0.5">Consolidé groupe (mois)</p>
+                <p className="text-[12px] text-mv-ink-soft mt-0.5">{t("groupTotalMonth")}</p>
               ) : kpiComparisons?.revenue.today.changePct != null ? (
                 <p className="flex items-center gap-1 text-[12px] text-mv-ink-soft mt-0.5">
                   {kpiComparisons.revenue.today.direction === "up" ? (
@@ -350,7 +353,7 @@ export function OverviewClientView({
           {/* KPI 2 : Taux de retour (Fidélisation) */}
           <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Taux de retour</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">{t("returnRate")}</span>
               <Repeat size={13} className="text-mv-green-dark" />
             </div>
             <div className="my-1.5">
@@ -360,21 +363,21 @@ export function OverviewClientView({
                   : "75 %"}
               </p>
               <p className="text-[12px] text-mv-ink-soft mt-0.5">
-                Habitués actifs : <strong>{loyaltyHealth ? loyaltyHealth.habitue + loyaltyHealth.privilegie + loyaltyHealth.ambassadeur : 15}</strong>
+                {t("activeRegulars")} <strong>{loyaltyHealth ? loyaltyHealth.habitue + loyaltyHealth.privilegie + loyaltyHealth.ambassadeur : 15}</strong>
               </p>
             </div>
             <Link
               href="/fidelisation"
               className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
             >
-              Fidélisation <ArrowRight size={11} />
+              {t("loyaltyLink")} <ArrowRight size={11} />
             </Link>
           </div>
 
           {/* KPI 3 : Masse salariale */}
           <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Masse salariale</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">{t("laborCost")}</span>
               <Users size={13} className="text-mv-ink-soft" />
             </div>
             <div className="my-1.5">
@@ -388,7 +391,7 @@ export function OverviewClientView({
                   : "—"}
               </p>
               <p className="text-[12px] text-mv-ink-soft mt-0.5">
-                Cible : <strong>≤ 30 % du CA</strong>
+                {t("targetLabel")} <strong>{t("targetValue")}</strong>
               </p>
             </div>
             <Link
@@ -402,7 +405,7 @@ export function OverviewClientView({
           {/* KPI 4 : Couverts & Seuil */}
           <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Couverts / Seuil</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">{t("coversThreshold")}</span>
               <Target size={13} className={dailyTarget?.reached ? "text-mv-green-dark" : "text-mv-amber"} />
             </div>
             <div className="my-1.5">
@@ -412,7 +415,7 @@ export function OverviewClientView({
                   : `${dailyTarget?.clientsSoFar ?? 0} / ${dailyTarget?.clientsNeeded ?? 0}`}
               </p>
               <p className="text-[12px] text-mv-ink-soft mt-0.5">
-                {dailyTarget?.reached ? "Point mort atteint !" : "Requis pour rentabilité"}
+                {dailyTarget?.reached ? "Point mort atteint !" : t("requiredToBeProfitable")}
               </p>
             </div>
             <Link
@@ -426,7 +429,7 @@ export function OverviewClientView({
           {/* KPI 5 : Fidélisation (LTV) */}
           <div className="flex flex-col justify-between px-2 pt-3 sm:pt-0">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">Ventes fidélité</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-mv-ink-faint">{t("loyaltySales")}</span>
               <Heart size={13} className="text-mv-green-dark" />
             </div>
             <div className="my-1.5">
@@ -443,7 +446,7 @@ export function OverviewClientView({
               href="/fidelisation"
               className="inline-flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark hover:underline"
             >
-              Fidélisation <ArrowRight size={11} />
+              {t("loyaltyLink")} <ArrowRight size={11} />
             </Link>
           </div>
         </div>
@@ -455,9 +458,9 @@ export function OverviewClientView({
       {isGroupMode && multiEstablishmentRollup && (
         <Card className="p-4 sm:p-5">
           <CardHeader
-            eyebrow="Benchmark du groupe"
-            title="Performance comparée par établissement"
-            description="Analysez les écarts de marge, de coût matière et de ventes entre vos adresses pour reproduire les meilleures pratiques."
+            eyebrow={t("groupBenchmark")}
+            title={t("performanceComparedByRestaurant")}
+            description={t("analyzeGapsInMargin")}
           />
 
           <div className="space-y-2 md:hidden">
@@ -473,10 +476,10 @@ export function OverviewClientView({
                   </Button>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
-                  <div><span className="text-mv-ink-faint">Ventes mois</span><p className="font-semibold text-mv-ink">{formatCurrency(bench.monthRevenue)}</p></div>
-                  <div><span className="text-mv-ink-faint">Ventes jour</span><p className="font-semibold text-mv-ink">{formatCurrency(bench.todayRevenue)}</p></div>
-                  <div><span className="text-mv-ink-faint">Food cost</span><p className={bench.foodCostPct <= 32 ? "font-semibold text-mv-green-dark" : "font-semibold text-mv-amber"}>{bench.foodCostPct}%</p></div>
-                  <div><span className="text-mv-ink-faint">Couverts / seuil</span><p className="font-semibold text-mv-ink">{bench.coversToday} / {bench.dailyTargetNeeded}</p></div>
+                  <div><span className="text-mv-ink-faint">{t("salesMonth")}</span><p className="font-semibold text-mv-ink">{formatCurrency(bench.monthRevenue)}</p></div>
+                  <div><span className="text-mv-ink-faint">{t("salesDay")}</span><p className="font-semibold text-mv-ink">{formatCurrency(bench.todayRevenue)}</p></div>
+                  <div><span className="text-mv-ink-faint">{t("foodCost")}</span><p className={bench.foodCostPct <= 32 ? "font-semibold text-mv-green-dark" : "font-semibold text-mv-amber"}>{bench.foodCostPct}%</p></div>
+                  <div><span className="text-mv-ink-faint">{t("coversThreshold2")}</span><p className="font-semibold text-mv-ink">{bench.coversToday} / {bench.dailyTargetNeeded}</p></div>
                 </div>
               </div>
             ))}
@@ -486,15 +489,15 @@ export function OverviewClientView({
             <table className="w-full text-left text-[12.5px]">
               <thead>
                 <tr className="border-b border-mv-border text-[12px] uppercase tracking-wider text-mv-ink-faint">
-                  <th className="pb-3 font-semibold">Établissement</th>
-                  <th className="pb-3 font-semibold">Ventes mois</th>
-                  <th className="pb-3 font-semibold">Ventes jour</th>
-                  <th className="pb-3 font-semibold">Coût matière (Food Cost)</th>
-                  <th className="pb-3 font-semibold">Masse salariale</th>
-                  <th className="pb-3 font-semibold">Couverts / Seuil</th>
-                  <th className="pb-3 font-semibold">Ventes fidélité</th>
-                  <th className="pb-3 font-semibold">Caisse</th>
-                  <th className="pb-3 text-right font-semibold">Action</th>
+                  <th className="pb-3 font-semibold">{t("restaurant")}</th>
+                  <th className="pb-3 font-semibold">{t("salesMonth")}</th>
+                  <th className="pb-3 font-semibold">{t("salesDay")}</th>
+                  <th className="pb-3 font-semibold">{t("ingredientCostFoodCost")}</th>
+                  <th className="pb-3 font-semibold">{t("laborCost")}</th>
+                  <th className="pb-3 font-semibold">{t("coversThreshold")}</th>
+                  <th className="pb-3 font-semibold">{t("loyaltySales")}</th>
+                  <th className="pb-3 font-semibold">{t("register")}</th>
+                  <th className="pb-3 text-right font-semibold">{t("action")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-mv-border-soft">
@@ -555,9 +558,9 @@ export function OverviewClientView({
           <div className="mv-animate-in lg:col-span-2">
             <Card className="h-full p-4 sm:p-5">
               <CardHeader
-                eyebrow="Revenus & Rétention"
-                title="Évolution du chiffre d'affaires quotidien"
-                description="Suivez les recettes journalières et l'activité de vos clients au fil des services."
+                eyebrow={t("revenueRetention")}
+                title={t("dailySalesTrend")}
+                description={t("trackDailyRevenueAnd")}
               />
               <UnifiedTrendChart
                 series={[
@@ -574,7 +577,7 @@ export function OverviewClientView({
             >
               <div className="flex items-start justify-between">
                 <p className="text-[12px] sm:text-[12.5px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                  Journées de service
+                  {t("serviceDays")}
                 </p>
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mv-ink/[0.06] text-mv-ink-soft">
                   <CalendarCheck2 size={16} strokeWidth={2.2} />
@@ -587,7 +590,7 @@ export function OverviewClientView({
                 <MiniSparkline id="jours" data={joursSparkData} color="var(--mv-amber)" />
               </div>
               <p className="mt-1 flex items-center gap-1 text-[12px] sm:text-[12.5px] font-semibold text-mv-green-dark">
-                Voir les rapports de clôture
+                {t("viewClosingReports")}
                 <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
               </p>
             </Link>
@@ -612,12 +615,12 @@ export function OverviewClientView({
               </div>
               {activeCampaignsCount === 0 ? (
                 <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
-                  Flow amplifie le trafic existant — sans campagne active, l’effet reste limité.{" "}
-                  <span className="font-semibold text-mv-green-dark">Démarrer ou demander de l’aide</span>
+                  {t("flowAmplifies")}{" "}
+                  <span className="font-semibold text-mv-green-dark">{t("getStartedOrAsk")}</span>
                 </p>
               ) : (
                 <p className="mt-1 flex items-center gap-1 text-[12px] sm:text-[12.5px] font-semibold text-mv-green-dark">
-                  Voir les campagnes actives
+                  {t("viewActiveCampaigns")}
                   <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
                 </p>
               )}
@@ -632,8 +635,8 @@ export function OverviewClientView({
           <Card className="p-4 sm:p-5">
             <CardHeader
               eyebrow={monthLabel}
-              title="Calendrier des revenus"
-              description="Cliquez sur une journée pour accéder immédiatement au détail des ventes et des coûts de ce service."
+              title={t("revenueCalendar")}
+              description={t("clickADayTo")}
             />
             <MonthCalendar
               data={heat}
