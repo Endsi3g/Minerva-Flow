@@ -16,6 +16,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("menu") };
 }
 
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("breadcrumb");
+  return { title: t("menu") };
+}
+
 export default async function MenuPage() {
   const restaurantId = await getCurrentRestaurantId();
   const isPlatformAdminUser = await isPlatformAdmin();
