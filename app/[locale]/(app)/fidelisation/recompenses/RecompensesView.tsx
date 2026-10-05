@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useMemo, useState, type FormEvent } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
@@ -25,6 +27,7 @@ function RewardsCatalogCard({
   initialRewards: LoyaltyReward[];
   menuItems: MenuItem[];
 }) {
+  const t = useTranslations("rewardsView");
   const [rewards, setRewards] = useState(initialRewards);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const menuItemById = useMemo(() => new Map(menuItems.map((m) => [m.id, m])), [menuItems]);
@@ -46,7 +49,7 @@ function RewardsCatalogCard({
         setRewards((prev) => [...prev, reward].sort((a, b) => a.pointsCost - b.pointsCost));
         (e.target as HTMLFormElement).reset();
       } else {
-        notifyError("L'ajout de la récompense a échoué.");
+        notifyError(t("couldNotAddThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -54,7 +57,7 @@ function RewardsCatalogCard({
   }
 
   async function handleDelete(id: string, name: string) {
-    if (!window.confirm(`Retirer la récompense "${name}" ?`)) return;
+    if (!window.confirm(t("confirmRemove", { name }))) return;
     const ok = await deleteLoyaltyRewardAction(restaurantId, id);
     if (ok) setRewards((prev) => prev.filter((r) => r.id !== id));
   }
@@ -62,12 +65,12 @@ function RewardsCatalogCard({
   return (
     <Card>
       <CardHeader
-        eyebrow="Catalogue"
-        title="Récompenses par points"
-        description="Ce que les clients peuvent échanger contre leurs points de fidélité."
+        eyebrow={t("catalog")}
+        title={t("rewardsByPoints")}
+        description={t("whatCustomersCanRedeem")}
       />
       <div className="mb-3 space-y-1.5">
-        {rewards.length === 0 && <p className="text-[12.5px] text-mv-ink-faint">Aucune récompense configurée.</p>}
+        {rewards.length === 0 && <p className="text-[12.5px] text-mv-ink-faint">{t("noRewardsSetUp")}</p>}
         {rewards.map((r) => {
           const linkedItem = r.menuItemId ? menuItemById.get(r.menuItemId) : undefined;
           return (
@@ -77,17 +80,17 @@ function RewardsCatalogCard({
                 {r.description && <p className="mt-0.5 text-[12px] text-mv-ink-faint">{r.description}</p>}
                 {linkedItem ? (
                   <p className="mt-0.5 flex items-center gap-1 text-[12px] text-mv-green-dark">
-                    <UtensilsCrossed size={11} /> {linkedItem.name} — coût réel {formatCurrency(linkedItem.foodCost)}
+                    <UtensilsCrossed size={11} /> {t("realCost", { name: linkedItem.name, cost: formatCurrency(linkedItem.foodCost) })}
                   </p>
                 ) : r.menuItemId ? (
-                  <p className="mt-0.5 text-[12px] text-mv-amber">Plat lié introuvable (retiré du menu ?)</p>
+                  <p className="mt-0.5 text-[12px] text-mv-amber">{t("linkedDishNotFound")}</p>
                 ) : null}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Badge tone="neutral">{r.pointsCost} pts</Badge>
                 <button
                   onClick={() => handleDelete(r.id, r.name)}
-                  aria-label="Retirer la récompense"
+                  aria-label={t("removeTheReward")}
                   className="text-mv-ink-faint transition-colors hover:text-mv-red"
                 >
                   <Trash2 size={13} />
@@ -99,28 +102,28 @@ function RewardsCatalogCard({
       </div>
       <form onSubmit={handleAdd} className="space-y-2 border-t border-mv-border-soft pt-3">
         <div className="flex flex-wrap items-end gap-2">
-          <Field label="Nom">
-            <Input name="name" placeholder="Ex : Café gratuit" required className="w-56" />
+          <Field label={t("name")}>
+            <Input name="name" placeholder={t("eGFreeCoffee")} required className="w-56" />
           </Field>
-          <Field label="Coût en points">
+          <Field label={t("costInPoints")}>
             <Input name="pointsCost" type="number" min="1" step="1" required className="w-28" />
           </Field>
           <Button type="submit" size="sm" disabled={isSubmitting}>
             <Plus size={14} /> Ajouter
           </Button>
         </div>
-        <Field label="Description (optionnel)">
-          <Input name="description" placeholder="Ex : Tout format, toute la journée" className="w-full" />
+        <Field label={t("descriptionOptional")}>
+          <Input name="description" placeholder={t("eGAnySize")} className="w-full" />
         </Field>
         <Field
-          label="Plat offert (optionnel)"
-          hint="Reliez cette récompense à un item du menu pour en suivre le coût réel plutôt qu'une estimation."
+          label={t("dishOfferedOptional")}
+          hint={t("linkThisRewardTo")}
         >
           <Select name="menuItemId" defaultValue="" className="w-full max-w-sm">
-            <option value="">Aucun — récompense sans plat lié (rabais, points bonus...)</option>
+            <option value="">{t("noneRewardWithoutA")}</option>
             {activeMenuItems.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.name} — coût {formatCurrency(item.foodCost)}
+                {t("itemCost", { name: item.name, cost: formatCurrency(item.foodCost) })}
               </option>
             ))}
           </Select>
@@ -143,6 +146,7 @@ export function RecompensesView({
   initialRewards: LoyaltyReward[];
   menuItems: MenuItem[];
 }) {
+  const t = useTranslations("rewardsView");
   const [enabled, setEnabled] = useState(initialEnabled);
   const [tiers, setTiers] = useState(initialTiers);
   const [simVisits, setSimVisits] = useState(12);
@@ -176,7 +180,7 @@ export function RecompensesView({
   async function persist(nextTiers: VisitRewardTier[]) {
     setTiers(nextTiers);
     const ok = await updateVisitRewardTiersAction(restaurantId!, { tiers: nextTiers });
-    if (!ok) notifyError("La mise à jour a échoué.");
+    if (!ok) notifyError(t("theUpdateFailed"));
   }
 
   async function handleToggleEnabled(next: boolean) {
@@ -184,7 +188,7 @@ export function RecompensesView({
     const ok = await updateVisitRewardTiersAction(restaurantId!, { enabled: next });
     if (!ok) {
       setEnabled(!next);
-      notifyError("La mise à jour a échoué.");
+      notifyError(t("theUpdateFailed"));
     }
   }
 
@@ -210,8 +214,8 @@ export function RecompensesView({
     return (
       <div>
         <FidelisationSubNav />
-        <PageHeader eyebrow="Fidélisation" title="Récompenses" />
-        <EmptyState icon={Store} title="Aucun restaurant sélectionné" description="Configurez un restaurant pour activer cette fonctionnalité." />
+        <PageHeader eyebrow={t("loyalty")} title={t("rewards")} />
+        <EmptyState icon={Store} title={t("noRestaurantSelected")} description={t("setUpARestaurant")} />
       </div>
     );
   }
@@ -221,17 +225,17 @@ export function RecompensesView({
       <FidelisationSubNav />
 
       <PageHeader
-        eyebrow="Fidélisation"
-        title="Récompenses par palier de visite"
-        description="Déclenchez une récompense automatiquement dès qu'un client atteint un palier de visites — aucune action requise de sa part, ni de la vôtre."
+        eyebrow={t("loyalty")}
+        title={t("rewardsByVisitMilestone")}
+        description={t("triggerARewardAutomatically")}
         action={
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-semibold text-mv-ink-soft">Automatisation</span>
+            <span className="text-[13px] font-semibold text-mv-ink-soft">{t("automation")}</span>
             <Switch
               checked={enabled}
               onCheckedChange={handleToggleEnabled}
               className="data-checked:bg-mv-green"
-              aria-label={enabled ? "Désactiver l'automatisation" : "Activer l'automatisation"}
+              aria-label={enabled ? t("turnOffTheAutomation") : t("enableAutomation")}
             />
           </div>
         }
@@ -240,14 +244,14 @@ export function RecompensesView({
       {hasErrors && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-mv-red/30 bg-mv-red-bg px-3 py-2.5 text-[12.5px] font-medium text-mv-red">
           <AlertTriangle size={14} className="shrink-0" />
-          Corrigez les champs en rouge ci-dessous — vos changements ne sont pas encore enregistrés.
+          {t("fixRedFields")}
         </div>
       )}
 
       {sortedTiers.length > 0 && (
         <Card className="mb-5">
           <p className="mb-5 text-[12px] font-bold uppercase tracking-wide text-mv-ink-faint">
-            Échelle des paliers — visite n° → récompense
+            {t("tierScale")}
           </p>
           <div className="relative mx-3 pb-7 pt-1">
             <div className="absolute left-0 right-0 top-3 h-1 rounded-full bg-mv-border" />
@@ -297,20 +301,20 @@ export function RecompensesView({
                         className="min-w-0 max-w-[220px] flex-1 bg-transparent font-display text-[16px] font-medium text-mv-ink outline-none"
                       />
                       <div className="flex shrink-0 items-center gap-2">
-                        <span className="text-[12px] font-semibold text-mv-ink-faint">Actif</span>
+                        <span className="text-[12px] font-semibold text-mv-ink-faint">{t("active")}</span>
                         <Switch
                           checked={tier.active !== false}
                           onCheckedChange={(next) => handleTierActiveToggle(tier.id, next)}
                           size="sm"
                           className="data-checked:bg-mv-green"
-                          aria-label={tier.active !== false ? `Désactiver ${tier.label}` : `Activer ${tier.label}`}
+                          aria-label={tier.active !== false ? t("disableTier", { label: tier.label }) : t("enableTier", { label: tier.label })}
                         />
                       </div>
                     </div>
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
                         <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">
-                          Déclenché à la visite n°
+                          {t("triggeredAtVisit")}
                         </label>
                         <input
                           type="number"
@@ -324,11 +328,11 @@ export function RecompensesView({
                           )}
                         />
                         {duplicateVisitIds.has(tier.id) && (
-                          <p className="mt-1 text-[12px] text-mv-red">Ce seuil est déjà utilisé par un autre palier.</p>
+                          <p className="mt-1 text-[12px] text-mv-red">{t("thisThresholdIsAlready")}</p>
                         )}
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">Récompense</label>
+                        <label className="mb-1.5 block text-[12px] font-semibold text-mv-ink-soft">{t("reward")}</label>
                         <input
                           value={tier.reward}
                           onChange={(e) => updateTierField(tier.id, "reward", e.target.value)}
@@ -339,7 +343,7 @@ export function RecompensesView({
                           )}
                         />
                         {emptyRewardIds.has(tier.id) && (
-                          <p className="mt-1 text-[12px] text-mv-red">Requis — ce texte est envoyé au client.</p>
+                          <p className="mt-1 text-[12px] text-mv-red">{t("requiredThisTextIs")}</p>
                         )}
                       </div>
                     </div>
@@ -351,26 +355,26 @@ export function RecompensesView({
         </div>
 
         <Card className="h-fit lg:sticky lg:top-4">
-          <p className="mb-1 text-[12px] font-bold uppercase tracking-wide text-mv-ink-faint">Aperçu client</p>
+          <p className="mb-1 text-[12px] font-bold uppercase tracking-wide text-mv-ink-faint">{t("customerPreview")}</p>
           <p className="mb-4 text-[13px] text-mv-ink-soft">
-            Simulez la progression d&apos;un client fictif pour prévisualiser la notification.
+            {t("simulateHint")}
           </p>
 
           <div className="mb-4 rounded-xl border border-mv-green/15 bg-mv-green-tint p-3.5">
             <div className="mb-1.5 flex items-center gap-1.5">
               <Bell size={13} className="text-mv-green-dark" />
-              <span className="text-[12px] font-bold uppercase tracking-wide text-mv-green-dark">Palier atteint</span>
+              <span className="text-[12px] font-bold uppercase tracking-wide text-mv-green-dark">{t("milestoneReached")}</span>
             </div>
             <p className="font-display text-[15px] font-medium text-mv-ink">
-              {currentTier ? currentTier.label : "Aucun palier atteint"}
+              {currentTier ? currentTier.label : t("noMilestoneReached")}
             </p>
             <p className="mt-0.5 text-[12.5px] text-mv-ink-soft">
-              {currentTier ? currentTier.reward : "Ce client n'a pas encore débloqué de récompense."}
+              {currentTier ? currentTier.reward : t("thisCustomerHasNot")}
             </p>
           </div>
 
           <label className="mb-2 block text-[12px] font-semibold text-mv-ink-soft">
-            Visites du client simulé : {simVisits}
+            {t("simulatedVisits", { count: simVisits })}
           </label>
           <input
             type="range"

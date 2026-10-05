@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader } from "@/components/minerva/PageCard";
 import { Badge } from "@/components/ui/Badge";
@@ -48,6 +50,7 @@ function NewCustomerModal({
   onClose: () => void;
   onCreated: (c: Customer) => void;
 }) {
+  const t = useTranslations("fidelisationView");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [marketingConsent, setMarketingConsent] = useState(false);
 
@@ -73,7 +76,7 @@ function NewCustomerModal({
         (e.target as HTMLFormElement).reset();
         setMarketingConsent(false);
       } else {
-        notifyError("L'ajout du client a échoué.");
+        notifyError(t("couldNotAddThe"));
       }
     } finally {
       setIsSubmitting(false);
@@ -81,31 +84,31 @@ function NewCustomerModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Nouveau client" description="Créez une fiche pour commencer à suivre ses visites.">
+    <Modal open={open} onClose={onClose} title={t("newCustomer")} description={t("createARecordTo")}>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Field label="Nom">
-          <Input name="name" placeholder="Ex : Jeanne Tremblay" required autoFocus />
+        <Field label={t("name")}>
+          <Input name="name" placeholder={t("eGJaneTremblay")} required autoFocus />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Courriel" hint="Optionnel">
+          <Field label={t("email")} hint={t("optional")}>
             <Input name="email" type="email" />
           </Field>
-          <Field label="Téléphone" hint="Optionnel">
+          <Field label={t("phone")} hint={t("optional")}>
             <Input name="phone" type="tel" />
           </Field>
         </div>
-        <Field label="Notes" hint="Optionnel — allergies, préférences…">
+        <Field label={t("notes")} hint={t("optionalAllergiesPreferences")}>
           <Input name="notes" />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Date de naissance" hint="Optionnel">
+          <Field label={t("dateOfBirth")} hint={t("optional")}>
             <Input name="birthday" type="date" />
           </Field>
-          <Field label="Ville" hint="Optionnel — d'où vient le client">
-            <Input name="city" placeholder="Ex : Montréal" />
+          <Field label={t("city")} hint={t("optionalWhereTheCustomer")}>
+            <Input name="city" placeholder={t("eGMontreal")} />
           </Field>
-          <Field label="Quartier" hint="Optionnel — zone générale seulement">
-            <Input name="neighborhood" placeholder="Ex : Plateau-Mont-Royal" maxLength={80} />
+          <Field label={t("neighborhood")} hint={t("optionalGeneralAreaOnly")}>
+            <Input name="neighborhood" placeholder={t("eGPlateauMont")} maxLength={80} />
           </Field>
         </div>
         <label className="flex items-start gap-2 text-[12px] text-mv-ink-soft">
@@ -114,14 +117,14 @@ function NewCustomerModal({
             onCheckedChange={(checked) => setMarketingConsent(Boolean(checked))}
             className="mt-0.5"
           />
-          <span>Le client accepte de recevoir des offres et rappels par courriel ou SMS.</span>
+          <span>{t("theCustomerAgreesTo")}</span>
         </label>
         <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Annuler
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Création…" : "Créer"}
+            {isSubmitting ? t("creating") : t("create")}
           </Button>
         </div>
       </form>
@@ -130,6 +133,7 @@ function NewCustomerModal({
 }
 
 function RewardValidationCard({ restaurantId }: { restaurantId: string }) {
+  const t = useTranslations("fidelisationView");
   const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{
@@ -150,7 +154,7 @@ function RewardValidationCard({ restaurantId }: { restaurantId: string }) {
         setResult(claimed);
         setCode("");
       } else {
-        notifyError("Code introuvable ou déjà utilisé.");
+        notifyError(t("codeNotFoundOr"));
       }
     } finally {
       setIsSubmitting(false);
@@ -160,12 +164,12 @@ function RewardValidationCard({ restaurantId }: { restaurantId: string }) {
   return (
     <Card>
       <CardHeader
-        eyebrow="Au comptoir"
-        title="Valider une récompense"
-        description="Le client échange ses points depuis son espace client et reçoit un code — entrez-le ici pour confirmer."
+        eyebrow={t("atTheCounter")}
+        title={t("validateAReward")}
+        description={t("theCustomerRedeemsTheir")}
       />
       <form onSubmit={handleValidate} className="flex flex-wrap items-end gap-2">
-        <Field label="Code du client">
+        <Field label={t("customerCode")}>
           <Input
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
@@ -182,7 +186,7 @@ function RewardValidationCard({ restaurantId }: { restaurantId: string }) {
         <div className="mv-check-pop mt-3 flex items-start gap-2.5 rounded-lg border border-mv-green/20 bg-mv-green-tint px-3 py-2.5">
           <Check size={15} className="mt-0.5 shrink-0 text-mv-green-dark" />
           <p className="text-[12.5px] leading-relaxed text-mv-green-darker">
-            <strong className="font-semibold">{result.rewardName}</strong> validée pour {result.customerName}
+            {t("rewardValidatedFor", { reward: result.rewardName, customer: result.customerName })}
             {" "}(-{result.pointsSpent} pts).
           </p>
         </div>
@@ -214,6 +218,7 @@ function IdentificationAuComptoirCard({
   restaurantId: string;
   onVisitLogged: (updated: Customer) => void;
 }) {
+  const t = useTranslations("fidelisationView");
   const [query, setQuery] = useState("");
   const [isResolving, setIsResolving] = useState(false);
   const [found, setFound] = useState<CounterCustomerResult | null>(null);
@@ -239,7 +244,7 @@ function IdentificationAuComptoirCard({
         setQuery("");
       }
     } catch {
-      notifyError("La recherche n’a pas abouti. Vérifiez la connexion et réessayez.");
+      notifyError(t("theSearchDidNot"));
     } finally {
       setIsResolving(false);
     }
@@ -257,13 +262,13 @@ function IdentificationAuComptoirCard({
         found.matchedBy === "name" ? "name" : "phone"
       );
       if (!confirmed) {
-        setConfirmationError("Le code ne correspond pas à ce compte ou a expiré. Demandez au client d’en générer un nouveau.");
+        setConfirmationError(t("theCodeDoesNot"));
         return;
       }
       setFound(confirmed);
       setConfirmationCode("");
     } catch {
-      setConfirmationError("La vérification n’a pas abouti. Réessayez dans un instant.");
+      setConfirmationError(t("theVerificationDidNot"));
     } finally {
       setIsConfirming(false);
     }
@@ -273,7 +278,7 @@ function IdentificationAuComptoirCard({
     if (!found) return;
     const parsed = Number(amount);
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      notifyError("Entrez un montant valide.");
+      notifyError(t("enterAValidAmount"));
       return;
     }
     setIsLogging(true);
@@ -288,14 +293,14 @@ function IdentificationAuComptoirCard({
       );
       if (updated) {
         onVisitLogged(updated);
-        toast.success(`Visite enregistrée pour ${found.name}.`);
+        toast.success(t("visitRecordedFor", { name: found.name }));
         setFound(null);
         setAmount("");
       } else {
-        notifyError("L'enregistrement de la visite a échoué.");
+        notifyError(t("couldNotRecordThe"));
       }
     } catch {
-      notifyError("La visite n’a pas pu être enregistrée. Réessayez.");
+      notifyError(t("theVisitCouldNot"));
     } finally {
       setIsLogging(false);
     }
@@ -303,23 +308,23 @@ function IdentificationAuComptoirCard({
 
   const queryTypeHint = useMemo(() => {
     const clean = query.trim().replace(/\D/g, "");
-    if (query.trim().length === 6 && clean.length === 6) return "Code de jumelage (6 chiffres)";
-    if (clean.length >= 7) return "Numéro de téléphone";
-    if (query.trim().length > 0) return "Recherche par nom";
+    if (query.trim().length === 6 && clean.length === 6) return t("pairingCode6Digits");
+    if (clean.length >= 7) return t("phoneNumber");
+    if (query.trim().length > 0) return t("searchByName");
     return null;
   }, [query]);
 
   return (
     <Card>
       <CardHeader
-        eyebrow="Au comptoir & caisse"
-        title="Identification rapide du client"
-        description="Recherchez le client par téléphone, puis confirmez son identité avec son code temporaire à 6 chiffres, ou faites-lui présenter directement ce code."
+        eyebrow={t("atTheCounterRegister")}
+        title={t("quickCustomerIdentification")}
+        description={t("searchForTheCustomer")}
       />
       {!found ? (
         <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-2.5">
           <Field
-            label="Téléphone, code 6 chiffres ou nom"
+            label={t("phone6DigitCode")}
             hint={queryTypeHint ?? undefined}
           >
             <Input
@@ -352,9 +357,9 @@ function IdentificationAuComptoirCard({
                   {found.phone && <span>{formatPhoneDisplay(found.phone)}</span>}
                   <Badge variant="subtle" tone="green" size="sm">
                     {found.matchedBy === "phone"
-                      ? "Téléphone"
+                      ? t("phone")
                       : found.matchedBy === "verified"
-                        ? "Identité confirmée"
+                        ? t("identityConfirmed")
                       : found.matchedBy === "code"
                         ? "Code 6 chiffres"
                         : "Nom"}
@@ -364,7 +369,7 @@ function IdentificationAuComptoirCard({
             </div>
 
             {needsClientConfirmation ? (
-              <p className="max-w-xs text-right text-[12px] text-mv-ink-soft">Demandez au client de confirmer son compte avec le code temporaire affiché dans son application. Le solde reste masqué d’ici là.</p>
+              <p className="max-w-xs text-right text-[12px] text-mv-ink-soft">{t("askTheCustomerTo")}</p>
             ) : <div className="flex items-center gap-3 text-right text-xs text-mv-ink-soft">
               <div>
                 <span className="block font-serif text-sm font-bold text-mv-green">
@@ -376,24 +381,24 @@ function IdentificationAuComptoirCard({
                 <span className="block font-mono text-sm font-semibold text-mv-ink">
                   {formatCurrency(found.totalSpent)}
                 </span>
-                <span>dépensés</span>
+                <span>{t("spent")}</span>
               </div>
             </div>}
           </div>
 
           {needsClientConfirmation ? (
             <div className="flex flex-wrap items-end gap-2 pt-1">
-              <Field label="Code temporaire du client" hint="Onglet Scanner · code à 6 chiffres">
+              <Field label={t("customerSTemporaryCode")} hint={t("scanTab6Digit")}>
                 <Input value={confirmationCode} onChange={(event) => setConfirmationCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" placeholder="123456" className="w-32 font-mono tracking-widest" />
               </Field>
               <Button type="button" size="sm" onClick={confirmClientIdentity} disabled={isConfirming || confirmationCode.length !== 6}>
-                {isConfirming ? "Vérification…" : "Confirmer l’identité"}
+                {isConfirming ? t("verifying") : t("confirmIdentity")}
               </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => { setFound(null); setConfirmationCode(""); }}>Changer de client</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => { setFound(null); setConfirmationCode(""); }}>{t("changeCustomer")}</Button>
               {confirmationError && <p role="alert" className="basis-full text-[12px] text-mv-red">{confirmationError}</p>}
             </div>
           ) : <div className="flex flex-wrap items-end gap-2 pt-1">
-            <Field label="Montant de l'addition">
+            <Field label={t("billAmount")}>
               <Input
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -409,7 +414,7 @@ function IdentificationAuComptoirCard({
               onClick={handleLogVisit}
               disabled={isLogging || !amount.trim()}
             >
-              <CreditCard size={14} /> Enregistrer la visite & créditer les points
+              <CreditCard size={14} /> {t("recordVisitAndCredit")}
             </Button>
             <Button
               type="button"
@@ -444,6 +449,7 @@ function DigitalLoyaltyPassModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations("fidelisationView");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -471,14 +477,14 @@ function DigitalLoyaltyPassModal({
       accent: "text-amber-300",
       border: "border-amber-500/40",
       glow: "shadow-amber-900/30",
-      label: "Membre Privilégié",
+      label: t("preferredMember"),
     },
     habitue: {
       gradient: "from-stone-900 via-stone-950 to-black",
       accent: "text-mv-green-light",
       border: "border-stone-700/60",
       glow: "shadow-black/40",
-      label: "Membre Habitué",
+      label: t("regularMember"),
     },
   }[tier];
 
@@ -488,7 +494,7 @@ function DigitalLoyaltyPassModal({
   function handleCopy() {
     navigator.clipboard.writeText(memberCode);
     setCopied(true);
-    toast.success("Code membre copié !");
+    toast.success(t("memberCodeCopied"));
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -504,8 +510,8 @@ function DigitalLoyaltyPassModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Pass Fidélité Numérique"
-      description="Carte virtuelle avec code de scan pour caisse et service à table."
+      title={t("digitalLoyaltyPass")}
+      description={t("virtualCardWithA")}
     >
       <div className="space-y-4">
         <div
@@ -523,7 +529,7 @@ function DigitalLoyaltyPassModal({
 
           <div className="mt-4 flex items-end justify-between">
             <div>
-              <p className="text-[12px] uppercase font-semibold tracking-wider text-white/60">Titulaire</p>
+              <p className="text-[12px] uppercase font-semibold tracking-wider text-white/60">{t("holder")}</p>
               <p className="font-display text-[18px] font-bold text-white mt-0.5">{customer.name}</p>
               <p className="font-mono text-[12px] text-white/70 mt-0.5">{memberCode}</p>
             </div>
@@ -531,20 +537,20 @@ function DigitalLoyaltyPassModal({
             {qrDataUrl && (
               <div className="rounded-xl bg-white p-1.5 shadow-md">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={qrDataUrl} alt="Code Membre" className="h-16 w-16" />
+                <img src={qrDataUrl} alt={t("memberCode")} className="h-16 w-16" />
               </div>
             )}
           </div>
 
           <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
             <div>
-              <span className="text-[12px] uppercase font-medium text-white/60">Solde de Points</span>
+              <span className="text-[12px] uppercase font-medium text-white/60">{t("pointsBalance")}</span>
               <p className="font-display text-[20px] font-bold text-white leading-tight">
                 {customer.loyaltyPoints} <span className="text-[13px] font-normal text-white/70">pts</span>
               </p>
             </div>
             <div className="text-right">
-              <span className="text-[12px] uppercase font-medium text-white/60">Valeur récompense</span>
+              <span className="text-[12px] uppercase font-medium text-white/60">{t("rewardValue")}</span>
               <p className={`font-mono text-[15px] font-bold ${tierInfo.accent}`}>
                 ~{formatCurrency(dollarValuation)}
               </p>
@@ -557,7 +563,7 @@ function DigitalLoyaltyPassModal({
             {copied ? <Check size={14} className="text-mv-green-dark" /> : <Copy size={14} />} Copier code membre
           </Button>
           <Button variant="secondary" size="sm" onClick={handleDownload} disabled={!qrDataUrl} className="text-[12px] gap-1.5">
-            <Download size={14} /> Télécharger QR Pass
+            <Download size={14} /> {t("downloadQrPass")}
           </Button>
         </div>
       </div>
@@ -576,6 +582,7 @@ function BirthdayPerksCard({
   customers: Customer[];
   onGranted: (updated: Customer) => void;
 }) {
+  const t = useTranslations("fidelisationView");
   const [grantingId, setGrantingId] = useState<string | null>(null);
 
   const upcomingBirthdays = useMemo(() => {
@@ -594,12 +601,12 @@ function BirthdayPerksCard({
     try {
       const updated = await grantBirthdayBonusAction(restaurantId, customer.id);
       if (updated?.alreadyGranted) {
-        toast.info(`Le bonus d'anniversaire a déjà été accordé à ${customer.name} cette année.`);
+        toast.info(t("birthdayBonusAlready", { name: customer.name }));
       } else if (updated) {
         onGranted(updated.customer);
-        toast.success(`Cadeau d'anniversaire (+50 pts) accordé à ${customer.name} ! 🎂`);
+        toast.success(t("birthdayGiftAwarded", { name: customer.name }));
       } else {
-        notifyError("L'attribution du bonus a échoué.");
+        notifyError(t("couldNotAwardThe"));
       }
     } finally {
       setGrantingId(null);
@@ -614,18 +621,18 @@ function BirthdayPerksCard({
             <Cake size={16} />
           </div>
           <div>
-            <h3 className="font-display text-[15px] font-bold text-mv-ink">Anniversaires à Venir</h3>
-            <p className="text-[12px] text-mv-ink-soft">Attribution de bonus & surprises clients</p>
+            <h3 className="font-display text-[15px] font-bold text-mv-ink">{t("upcomingBirthdays")}</h3>
+            <p className="text-[12px] text-mv-ink-soft">{t("awardingBonusesSurprisesTo")}</p>
           </div>
         </div>
         <Badge tone={upcomingBirthdays.length > 0 ? "amber" : "neutral"}>
-          {upcomingBirthdays.length} à célébrer
+          {t("toCelebrate", { count: upcomingBirthdays.length })}
         </Badge>
       </div>
 
       {upcomingBirthdays.length === 0 ? (
         <p className="text-[12px] text-mv-ink-faint py-4 text-center">
-          Aucun anniversaire client dans les 14 prochains jours.
+          {t("noBirthdays14")}
         </p>
       ) : (
         <div className="space-y-2 mt-3 max-h-[220px] overflow-y-auto pr-1">
@@ -638,7 +645,7 @@ function BirthdayPerksCard({
                 <p className="font-semibold text-[13px] text-mv-ink">{customer.name}</p>
                 <p className="text-[12px] text-mv-ink-faint">
                   {daysUntil === 0 ? (
-                    <span className="font-bold text-mv-amber-dark">🎂 C&apos;est son anniversaire aujourd&apos;hui !</span>
+                    <span className="font-bold text-mv-amber-dark">{t("itSTheirBirthday")}</span>
                   ) : (
                     `Dans ${daysUntil} jour${daysUntil > 1 ? "s" : ""}`
                   )}
@@ -651,7 +658,7 @@ function BirthdayPerksCard({
                 disabled={grantingId === customer.id}
                 className="text-[12px] h-7 px-2.5 bg-mv-amber-tint hover:bg-mv-amber hover:text-white text-mv-amber-dark border-mv-amber/30"
               >
-                <Gift size={12} /> {grantingId === customer.id ? "Offert…" : "Offrir +50 pts"}
+                <Gift size={12} /> {grantingId === customer.id ? t("offered") : "Offrir +50 pts"}
               </Button>
             </div>
           ))}
@@ -675,6 +682,7 @@ function AnnouncementModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations("fidelisationView");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -695,14 +703,14 @@ function AnnouncementModal({
     if (result.ok) {
       toast.success(
         result.total === 0
-          ? "Aucun client n'a consenti à recevoir des communications pour l'instant."
-          : `Annonce envoyée à ${result.sent} client${result.sent > 1 ? "s" : ""} sur ${result.total}.`
+          ? t("noCustomersHaveAgreed")
+          : t("announcementSent", { count: result.sent, total: result.total })
       );
       setTitle("");
       setBody("");
       onClose();
     } else {
-      notifyError("L'envoi de l'annonce a échoué.");
+      notifyError(t("couldNotSendThe"));
     }
   }
 
@@ -710,24 +718,24 @@ function AnnouncementModal({
     <Modal
       open={open}
       onClose={handleClose}
-      title="Annoncer quelque chose à vos clients"
-      description="Envoyé uniquement aux clients ayant consenti à recevoir des communications — par courriel, notification ou SMS."
+      title={t("announceSomethingToYour")}
+      description={t("sentOnlyToCustomers")}
     >
       <form onSubmit={handleSend} className="space-y-3">
-        <Field label="Titre">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex : Nouveaux pâtés du jour !" required autoFocus />
+        <Field label={t("title")}>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("eGNewMeat")} required autoFocus />
         </Field>
-        <Field label="Message">
+        <Field label={t("message")}>
           <Textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={4}
-            placeholder="Ex : Venez découvrir nos nouveaux pâtés maison, en boutique dès aujourd'hui."
+            placeholder={t("eGComeAnd")}
             required
           />
         </Field>
         <Button type="submit" className="w-full" disabled={sending || !title.trim() || !body.trim()}>
-          {sending ? "Envoi…" : "Envoyer l'annonce"}
+          {sending ? t("sending") : "Envoyer l'annonce"}
         </Button>
       </form>
     </Modal>
@@ -749,6 +757,7 @@ export function FidelisationView({
   loyaltyPointsPerDollar: number;
   loyaltyTierThresholds: LoyaltyTierThresholds;
 }) {
+  const t = useTranslations("fidelisationView");
   const { role } = useApp();
   const router = useRouter();
 
@@ -788,9 +797,9 @@ export function FidelisationView({
       <FidelisationSubNav />
 
       <PageHeader
-        eyebrow="Clients"
-        title="Fidélisation"
-        description="Fiches clients, visites, passes numériques et points de fidélité."
+        eyebrow={t("customers")}
+        title={t("loyalty")}
+        description={t("customerRecordsVisitsDigital")}
         action={
           canCreate && (
             <div className="flex flex-wrap items-center gap-2">
@@ -839,7 +848,7 @@ export function FidelisationView({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un client…"
+            placeholder={t("searchACustomer")}
             className="pl-8"
           />
         </div>
@@ -851,8 +860,8 @@ export function FidelisationView({
       {filtered.length === 0 ? (
         <EmptyState
           icon={Gift}
-          title="Aucun client"
-          description="Ajoutez votre première fiche client pour commencer à suivre les visites et les points."
+          title={t("noCustomers")}
+          description={t("addYourFirstCustomer")}
           action={
             canCreate && (
               <Button size="sm" onClick={() => setCreateOpen(true)}>
@@ -865,12 +874,12 @@ export function FidelisationView({
         <>
           <Table containerClassName="max-h-[355px] overflow-y-auto">
             <THead className="sticky top-0 z-10 shadow-mv-xs bg-mv-cream-soft">
-              <Th>Client</Th>
-              <Th>Dernière visite</Th>
-              <Th className="text-right">Visites</Th>
-              <Th className="text-right">Total dépensé</Th>
-              <Th className="text-right">Points</Th>
-              <Th className="text-right">Carte & Pass</Th>
+              <Th>{t("customer")}</Th>
+              <Th>{t("lastVisit")}</Th>
+              <Th className="text-right">{t("visits")}</Th>
+              <Th className="text-right">{t("totalSpent")}</Th>
+              <Th className="text-right">{t("points")}</Th>
+              <Th className="text-right">{t("cardPass")}</Th>
             </THead>
             <tbody>
               {visible.map((c) => {
@@ -883,7 +892,7 @@ export function FidelisationView({
                         <LoyaltyTierBadge totalSpent={c.totalSpent} thresholds={loyaltyTierThresholds} size="xs" />
                         {daysUntilBday !== null && daysUntilBday <= 14 && (
                           <Badge tone="amber" className="text-[12px] px-1.5 py-0">
-                            🎂 {daysUntilBday === 0 ? "Anniv. aujourd'hui" : `Anniv. dans ${daysUntilBday}j`}
+                            🎂 {daysUntilBday === 0 ? t("birthdayToday") : t("birthdayInDays", { days: daysUntilBday })}
                           </Badge>
                         )}
                       </div>
@@ -904,7 +913,7 @@ export function FidelisationView({
                         }}
                         className="h-7 px-2 text-[12px] gap-1 border-mv-border text-mv-ink-soft hover:text-mv-ink"
                       >
-                        <CreditCard size={12} /> Pass Numérique
+                        <CreditCard size={12} /> {t("digitalPass")}
                       </Button>
                     </Td>
                   </Tr>
