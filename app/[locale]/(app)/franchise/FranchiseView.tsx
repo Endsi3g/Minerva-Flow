@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -24,24 +26,25 @@ import { DollarSign, TrendingUp, Repeat, Building2 } from "lucide-react";
  * shared across every location.
  */
 function WorkspaceLogoCard({ workspace }: { workspace: Workspace }) {
+  const t = useTranslations("franchiseView");
   const [logoUrl, setLogoUrl] = useState(workspace.logoUrl);
 
   async function handleUploaded(url: string) {
     const ok = await updateWorkspaceLogoAction(workspace.id, url);
     if (ok) {
       setLogoUrl(url);
-      toast.success("Image de la marque mise à jour.");
+      toast.success(t("brandImageUpdated"));
     } else {
-      notifyError("La mise à jour de l'image a échoué.");
+      notifyError(t("couldNotUpdateThe"));
     }
   }
 
   return (
     <Card className="mb-4">
       <CardHeader
-        eyebrow="Image de marque"
-        title="Logo de votre franchise"
-        description="Affiché sur la carte de chaque emplacement dans le carrousel « Autres restaurants » de l'application mobile."
+        eyebrow={t("branding")}
+        title={t("yourFranchiseLogo")}
+        description={t("shownOnEachLocation")}
       />
       <MenuImageUpload
         restaurantId={workspace.id}
@@ -65,15 +68,16 @@ export function FranchiseView({
   monthRevenue: number;
   workspace: Workspace | null;
 }) {
+  const t = useTranslations("franchiseView");
   if (!rollup) {
     return (
       <div>
-        <PageHeader eyebrow="Franchise" title="Vue franchise" />
+        <PageHeader eyebrow={t("franchise")} title={t("franchiseView")} />
         {workspace && <WorkspaceLogoCard workspace={workspace} />}
         <EmptyState
           icon={Building2}
-          title="Un seul établissement pour l'instant"
-          description="La vue franchise regroupe vos résultats dès que vous gérez au moins deux établissements dans le même workspace. Ajoutez-en un depuis « Toutes les équipes »."
+          title={t("onlyOneRestaurantFor")}
+          description={t("theFranchiseViewBrings")}
         />
       </div>
     );
@@ -87,9 +91,9 @@ export function FranchiseView({
   return (
     <div>
       <PageHeader
-        eyebrow="Franchise"
-        title="Vue franchise"
-        description={`Résultats combinés sur ${rollup.restaurantCount} établissements.`}
+        eyebrow={t("franchise")}
+        title={t("franchiseView")}
+        description={t("combinedResultsAcrossRestaurantcount", { restaurantCount: rollup.restaurantCount })}
       />
 
       {workspace && <WorkspaceLogoCard workspace={workspace} />}
@@ -100,19 +104,19 @@ export function FranchiseView({
             value={monthRevenue ? (rollup.totalIncrementalRevenue / monthRevenue) * 100 : 0}
             color="var(--mv-green)"
             centerValue={`${monthRevenue ? Math.round((rollup.totalIncrementalRevenue / monthRevenue) * 100) : 0}%`}
-            centerLabel="du mois"
+            centerLabel={t("ofTheMonth")}
           />
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              <DollarSign size={13} /> Ventes grâce à la fidélisation
+              <DollarSign size={13} /> {t("salesFromLoyalty")}
             </p>
             <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
-              Achats en plus générés par vos relances automatiques, ce mois-ci.
+              {t("extraPurchasesGeneratedBy")}
             </p>
             <p className="mt-1 font-display text-[17px] font-medium text-mv-ink">
               {formatCurrency(rollup.totalIncrementalRevenue)}
             </p>
-            <p className="mt-0.5 text-[12px] text-mv-ink-soft">Tous établissements confondus</p>
+            <p className="mt-0.5 text-[12px] text-mv-ink-soft">{t("allRestaurantsCombined")}</p>
           </div>
         </Card>
 
@@ -125,10 +129,10 @@ export function FranchiseView({
           />
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              <TrendingUp size={13} /> Marge du menu actif
+              <TrendingUp size={13} /> {t("activeMenuMargin")}
             </p>
             <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
-              Marge de ce qui est au menu aujourd&apos;hui, vs le menu complet (plats retirés inclus).
+              {t("marginOfWhatIs")}
             </p>
             <p className="mt-1 text-[12px] text-mv-ink-soft">
               {rollup.avgMarginGainPct >= 0 ? "+" : ""}
@@ -149,23 +153,23 @@ export function FranchiseView({
               <Repeat size={13} /> Reviennent plus souvent
             </p>
             <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
-              Clients touchés par une relance, comparés à ceux qui n&apos;en ont pas reçu.
+              {t("customersReachedByA")}
             </p>
-            <p className="mt-1 text-[12px] text-mv-ink-soft">Moyenne pondérée sur tous les établissements</p>
+            <p className="mt-1 text-[12px] text-mv-ink-soft">{t("weightedAverageAcrossAll")}</p>
           </div>
         </Card>
       </div>
 
       <div className="mt-6">
         <Card>
-          <CardHeader eyebrow="Détail" title="Par établissement" />
+          <CardHeader eyebrow={t("detail")} title={t("byRestaurant")} />
           <Table>
             <THead>
               <Tr>
-                <Th>Établissement</Th>
-                <Th>Ventes grâce à la fidélisation</Th>
-                <Th>Marge du menu actif</Th>
-                <Th>Reviennent (×)</Th>
+                <Th>{t("restaurant")}</Th>
+                <Th>{t("salesFromLoyalty")}</Th>
+                <Th>{t("activeMenuMargin")}</Th>
+                <Th>{t("comeBack")}</Th>
               </Tr>
             </THead>
             <tbody>

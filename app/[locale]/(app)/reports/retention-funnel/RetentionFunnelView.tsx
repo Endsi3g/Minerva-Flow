@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/minerva/PageCard";
@@ -34,6 +36,7 @@ type Props = {
 };
 
 export function RetentionFunnelView({ data }: Props) {
+  const t = useTranslations("retentionFunnel");
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<"funnel" | "matrix" | "events">("funnel");
@@ -64,15 +67,15 @@ export function RetentionFunnelView({ data }: Props) {
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-mv-green-tint px-2.5 py-0.5 text-xs font-semibold text-mv-green-dark">
                 <Sparkles size={13} className="text-mv-green" />
-                Matrice d&apos;attribution & Rétention Minerva Flow
+                {t("attributionRetentionMatrixMinerva")}
               </span>
-              <span className="text-xs text-mv-ink-faint">Fenêtre 7 jours post-campagne</span>
+              <span className="text-xs text-mv-ink-faint">{t("7DayPostCampaign")}</span>
             </div>
             <h1 className="font-serif text-2xl font-medium tracking-tight text-mv-ink sm:text-3xl">
-              Entonnoir de rétention & Cycle de vie
+              {t("retentionFunnelLifecycle")}
             </h1>
             <p className="text-[13.5px] leading-relaxed text-mv-ink-soft">
-              « Le taux de rétention, le taux d’échange, le retour des offres et la valeur client sont des métriques beaucoup plus utiles qu’un simple nombre d’inscrits. »
+              {t("retentionRateRedemptionRate")}
             </p>
           </div>
 
@@ -112,7 +115,7 @@ export function RetentionFunnelView({ data }: Props) {
             }`}
           >
             <Layers size={14} />
-            Entonnoir & 10 KPI clés
+            {t("funnel10KeyKpis")}
           </button>
           <button
             onClick={() => setActiveTab("matrix")}
@@ -123,7 +126,7 @@ export function RetentionFunnelView({ data }: Props) {
             }`}
           >
             <Award size={14} />
-            Cohortes de visite
+            {t("visitCohorts")}
           </button>
           <button
             onClick={() => setActiveTab("events")}
@@ -146,17 +149,17 @@ export function RetentionFunnelView({ data }: Props) {
             <div className="flex flex-col gap-1.5 mb-6">
               <div className="flex items-center justify-between">
                 <h2 className="font-serif text-lg font-semibold text-mv-ink">
-                  Conversion par étape du cycle de vie
+                  {t("conversionByLifecycleStage")}
                 </h2>
                 <Badge variant="outline" className="border-mv-green/30 text-mv-green-dark bg-mv-green-tint/50 text-[12px]">
                   Rétention 2e visite : {kpis.secondVisitRate.formattedValue}
                 </Badge>
               </div>
               <p className="text-xs text-mv-ink-soft">
-                De l&apos;exposition du QR code jusqu&apos;à la confirmation de l&apos;habitude au comptoir.
+                {t("fromQrCodeExposure")}
               </p>
               <p className="mt-2 text-[12px] text-mv-ink-faint">
-                La période choisie filtre les événements; les indicateurs calculés depuis les profils clients (visites, fréquence, cohortes) sont cumulatifs.
+                {t("theChosenPeriodFilters")}
               </p>
             </div>
 
@@ -232,10 +235,10 @@ export function RetentionFunnelView({ data }: Props) {
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <h2 className="font-serif text-lg font-semibold text-mv-ink">
-                  Les 10 KPI essentiels du restaurateur
+                  {t("theRestaurateurS10")}
                 </h2>
                 <p className="text-xs text-mv-ink-soft">
-                  Indicateurs de rétention, rentabilité et performance des campagnes, calibrés selon les audits réels.
+                  {t("retentionProfitabilityAndCampaign")}
                 </p>
               </div>
             </div>
@@ -314,8 +317,8 @@ export function RetentionFunnelView({ data }: Props) {
                 </h3>
               </div>
               <p className="text-xs text-mv-ink-soft leading-relaxed">
-                Les visites reliées à une campagne sont celles enregistrées explicitement dans les événements de fidélité.
-                Sur la période choisie : <strong className="text-mv-ink">{kpis.campaignAttributedRevenue.formattedValue}</strong> associés à <strong className="text-mv-ink">{rawCounts.campaignVisits}</strong> visites explicitement attribuées.
+                {t("visitsTiedToA")}
+                Sur la période choisie : <strong className="text-mv-ink">{kpis.campaignAttributedRevenue.formattedValue}</strong> {t("linkedTo")} <strong className="text-mv-ink">{rawCounts.campaignVisits}</strong> visites explicitement attribuées.
               </p>
             </Card>
 
@@ -323,11 +326,11 @@ export function RetentionFunnelView({ data }: Props) {
               <div className="flex items-center gap-2 mb-2 text-mv-amber">
                 <Sparkles size={16} className="text-mv-amber" />
                 <h3 className="font-serif text-sm font-semibold text-mv-ink">
-                  Programme de Parrainage
+                  {t("referralProgram")}
                 </h3>
               </div>
               <p className="text-xs text-mv-ink-soft leading-relaxed">
-                <strong className="text-mv-ink">{rawCounts.referralsSent}</strong> envois et <strong className="text-mv-ink">{rawCounts.referralsConverted}</strong> conversions de parrainage ont été consignés.
+                <strong className="text-mv-ink">{rawCounts.referralsSent}</strong> {t("sendsAnd")} <strong className="text-mv-ink">{rawCounts.referralsConverted}</strong> conversions de parrainage ont été consignés.
               </p>
             </Card>
 
@@ -350,28 +353,28 @@ export function RetentionFunnelView({ data }: Props) {
         <div className="space-y-4">
           <Card className="border border-mv-border bg-mv-surface p-6">
             <div className="mb-5 max-w-2xl">
-              <span className="text-xs font-semibold uppercase tracking-wider text-mv-ink-faint font-mono">Données du restaurant sélectionné</span>
-              <h2 className="mt-1 font-serif text-xl font-medium text-mv-ink">Groupes selon les visites cumulées</h2>
-              <p className="mt-1.5 text-xs leading-relaxed text-mv-ink-soft">Ces groupes sont calculés à partir des profils membres de cet établissement. Ils ne partagent aucun nom ni indicateur d’un autre restaurant.</p>
+              <span className="text-xs font-semibold uppercase tracking-wider text-mv-ink-faint font-mono">{t("dataForTheSelected")}</span>
+              <h2 className="mt-1 font-serif text-xl font-medium text-mv-ink">{t("groupsByCumulativeVisits")}</h2>
+              <p className="mt-1.5 text-xs leading-relaxed text-mv-ink-soft">{t("theseGroupsAreCalculated")}</p>
             </div>
             {customerVisitCohorts.every((cohort) => cohort.members === 0) ? (
-              <div className="rounded-xl border border-dashed border-mv-border p-6 text-center text-sm text-mv-ink-faint">Aucun membre à segmenter pour le moment.</div>
+              <div className="rounded-xl border border-dashed border-mv-border p-6 text-center text-sm text-mv-ink-faint">{t("noMembersToSegment")}</div>
             ) : (
               <div className="grid gap-3 md:grid-cols-3">
                 {customerVisitCohorts.map((cohort) => (
                   <section key={cohort.id} className="rounded-xl border border-mv-border-soft bg-mv-cream-soft/50 p-4">
                     <h3 className="text-sm font-semibold text-mv-ink">{cohort.label}</h3>
                     <p className="mt-3 font-serif text-3xl text-mv-green-dark">{cohort.members}</p>
-                    <p className="text-xs text-mv-ink-faint">membres</p>
+                    <p className="text-xs text-mv-ink-faint">{t("members")}</p>
                     <dl className="mt-4 space-y-2 border-t border-mv-border-soft pt-3 text-xs">
-                      <div className="flex justify-between gap-3"><dt className="text-mv-ink-faint">Visites moyennes</dt><dd className="font-semibold text-mv-ink">{cohort.averageVisits.toFixed(1)}</dd></div>
-                      <div className="flex justify-between gap-3"><dt className="text-mv-ink-faint">Dépenses cumulées moyennes</dt><dd className="font-semibold text-mv-ink">{new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(cohort.averageSpend)}</dd></div>
+                      <div className="flex justify-between gap-3"><dt className="text-mv-ink-faint">{t("averageVisits")}</dt><dd className="font-semibold text-mv-ink">{cohort.averageVisits.toFixed(1)}</dd></div>
+                      <div className="flex justify-between gap-3"><dt className="text-mv-ink-faint">{t("averageCumulativeSpend")}</dt><dd className="font-semibold text-mv-ink">{new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(cohort.averageSpend)}</dd></div>
                     </dl>
                   </section>
                 ))}
               </div>
             )}
-            <p className="mt-4 text-[12px] text-mv-ink-faint">Les visites et dépenses reflètent les valeurs cumulées dans les profils clients; leur disponibilité dépend des connexions caisse et des mises à jour manuelles.</p>
+            <p className="mt-4 text-[12px] text-mv-ink-faint">{t("visitsAndSpendReflect")}</p>
           </Card>
         </div>
       )}
@@ -382,10 +385,10 @@ export function RetentionFunnelView({ data }: Props) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
               <div>
                 <h2 className="font-serif text-lg font-semibold text-mv-ink">
-                  Événements de cycle de vie
+                  {t("lifecycleEvents")}
                 </h2>
                 <p className="text-xs text-mv-ink-soft">
-                  Événements horodatés enregistrés : acquisition, scans, visites, récompenses, campagnes et parrainages.
+                  {t("timestampedEventsRecordedAcquisition")}
                 </p>
               </div>
 
@@ -393,10 +396,10 @@ export function RetentionFunnelView({ data }: Props) {
               <div className="flex flex-wrap items-center gap-1.5 text-xs">
                 {(
                   [
-                    { id: "all", label: "Tous" },
+                    { id: "all", label: t("all") },
                     { id: "acquisition", label: "Acquisition" },
                     { id: "visite", label: "Visites" },
-                    { id: "recompense", label: "Récompenses" },
+                    { id: "recompense", label: t("rewards") },
                     { id: "campagne", label: "Campagnes" },
                     { id: "parrainage", label: "Parrainages" },
                   ] as const
@@ -418,7 +421,7 @@ export function RetentionFunnelView({ data }: Props) {
 
             {filteredEvents.length === 0 ? (
               <div className="py-12 text-center text-xs text-mv-ink-faint">
-                Aucun événement enregistré dans cette période ou ce filtre.
+                {t("noEventsRecordedIn")}
               </div>
             ) : (
               <div className="divide-y divide-mv-border-soft">
@@ -440,9 +443,9 @@ export function RetentionFunnelView({ data }: Props) {
                         </div>
                         <div className="text-[12px] text-mv-ink-faint mt-0.5">
                           {ev.customerName ? (
-                            <span>Client : <strong className="text-mv-ink-soft">{ev.customerName}</strong></span>
+                            <span>{t("customer")} <strong className="text-mv-ink-soft">{ev.customerName}</strong></span>
                           ) : (
-                            <span>Visiteur anonyme / Action système</span>
+                            <span>{t("anonymousVisitorSystemAction")}</span>
                           )}
                           {Boolean(ev.metadata?.amountSpent) && (
                             <span className="ml-2 text-mv-green-dark font-semibold">

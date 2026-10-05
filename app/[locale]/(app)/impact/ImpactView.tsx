@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -19,11 +21,11 @@ import type { LtvImpact } from "@/lib/engine/impact";
 import type { AtRiskCustomer } from "@/lib/data/impact";
 import { DollarSign, TrendingUp, Repeat, Users, Send, Clock, TrendingDown, Gift, Share2, UtensilsCrossed, ArrowRight } from "lucide-react";
 
-const triggerLabel: Record<AtRiskCustomer["trigger"], string> = {
-  inactivity: "N'est pas revenu depuis un moment",
-  value_drift: "Vient moins souvent qu'avant",
-  birthday: "Anniversaire",
-  reward_available: "A assez de points pour une récompense",
+const triggerLabel_KEYS: Record<AtRiskCustomer["trigger"], string> = {
+  inactivity: "triggerlabelInactivity",
+  value_drift: "triggerlabelValueDrift",
+  birthday: "triggerlabelBirthday",
+  reward_available: "triggerlabelRewardAvailable",
 };
 
 const triggerIcon: Record<AtRiskCustomer["trigger"], typeof Clock> = {
@@ -46,14 +48,15 @@ export function ImpactView({
   atRiskCustomers: AtRiskCustomer[];
   retentionEngineEnabled: boolean;
 }) {
+  const t = useTranslations("impactView");
   if (!impact) {
     return (
       <div>
-        <PageHeader eyebrow="Résultats fidélisation" title="Ce que la fidélisation vous rapporte" />
+        <PageHeader eyebrow={t("loyaltyResults")} title={t("whatLoyaltyEarnsYou")} />
         <EmptyState
           icon={TrendingUp}
-          title="Aucun établissement sélectionné"
-          description="Choisissez un établissement pour voir ce que la fidélisation lui rapporte."
+          title={t("noRestaurantSelected")}
+          description={t("chooseARestaurantTo")}
         />
       </div>
     );
@@ -68,22 +71,20 @@ export function ImpactView({
   return (
     <div>
       <PageHeader
-        eyebrow="Résultats fidélisation"
-        title="Ce que la fidélisation vous rapporte"
+        eyebrow={t("loyaltyResults")}
+        title={t("whatLoyaltyEarnsYou")}
         description={
           restaurantName
-            ? `Ce que vos relances automatiques rapportent chez ${restaurantName} — et les clients à relancer dès maintenant.`
-            : "Ce que vos relances automatiques rapportent — et les clients à relancer dès maintenant."
+            ? t("whatYourAutomaticNudges2", { restaurantName })
+            : t("whatYourAutomaticNudges")
         }
         action={<ShareResultsButton incrementalRevenue={impact.incrementalRevenue} />}
       />
 
       <ActionableCustomersCard retentionEngineEnabled={retentionEngineEnabled} initialCustomers={atRiskCustomers} />
 
-      <AlertBanner tone="info" title="Comment lire les chiffres ci-dessous" className="mb-6 mt-6">
-        On ne compare pas un « avant / après » — un établissement qui vient tout juste d&apos;activer la fidélisation
-        n&apos;a pas d&apos;historique à comparer. On compare plutôt, sur la même période, les clients qui ont reçu une
-        relance à ceux qui n&apos;en ont pas reçu.
+      <AlertBanner tone="info" title={t("howToReadThe")} className="mb-6 mt-6">
+        {t("howToReadBody")}
       </AlertBanner>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -92,19 +93,19 @@ export function ImpactView({
             value={monthRevenue ? (impact.incrementalRevenue / monthRevenue) * 100 : 0}
             color="var(--mv-green)"
             centerValue={`${monthRevenue ? Math.round((impact.incrementalRevenue / monthRevenue) * 100) : 0}%`}
-            centerLabel="du mois"
+            centerLabel={t("ofTheMonth")}
           />
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              <DollarSign size={13} /> Ventes grâce à la fidélisation
+              <DollarSign size={13} /> {t("salesFromLoyalty")}
             </p>
             <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
-              Achats en plus générés par vos relances automatiques, ce mois-ci.
+              {t("extraPurchasesGeneratedBy")}
             </p>
             <p className="mt-1 font-display text-[17px] font-medium text-mv-ink">
               {formatCurrency(impact.incrementalRevenue)}
             </p>
-            <p className="mt-0.5 text-[12px] text-mv-ink-soft">Visites dans les 14 jours suivant une relance</p>
+            <p className="mt-0.5 text-[12px] text-mv-ink-soft">{t("visitsWithin14Days")}</p>
           </div>
         </Card>
 
@@ -114,7 +115,7 @@ export function ImpactView({
               value={impact.activeMarginPct}
               color="var(--mv-green)"
               centerValue={`${impact.activeMarginPct.toFixed(0)}%`}
-              centerLabel="marge"
+              centerLabel={t("marginWord")}
             />
           ) : (
             <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-mv-cream-soft text-mv-ink-faint">
@@ -123,19 +124,19 @@ export function ImpactView({
           )}
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-              <TrendingUp size={13} /> Marge du menu actif
+              <TrendingUp size={13} /> {t("activeMenuMargin")}
             </p>
             <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
-              Marge de ce qui est au menu aujourd&apos;hui — retirez un plat à faible marge pour voir ce chiffre bouger.
+              {t("marginOfWhatIs")}
             </p>
             {impact.hasMenuMarginData ? (
               <p className="mt-1 text-[12px] text-mv-ink-soft">
                 {impact.marginGainPct >= 0 ? "+" : ""}
-                {impact.marginGainPct.toFixed(1)} pt vs le menu complet (plats retirés inclus)
+                {t("marginGainLine", { pct: impact.marginGainPct.toFixed(1) })}
               </p>
             ) : (
               <Link href="/menu" className="mt-1 flex items-center gap-1 text-[12px] font-semibold text-mv-green-dark">
-                Ajoutez vos plats et leur coût pour voir votre marge
+                {t("addYourDishesAnd")}
                 <ArrowRight size={12} />
               </Link>
             )}
@@ -147,14 +148,14 @@ export function ImpactView({
             value={touchedShare}
             color="var(--mv-lime-dark)"
             centerValue={hasEnoughData ? `×${visitFrequency.multiplier.toFixed(1)}` : "—"}
-            centerLabel="plus souvent"
+            centerLabel={t("moreOften")}
           />
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
               <Repeat size={13} /> Reviennent plus souvent
             </p>
             <p className="mt-1 text-[12px] leading-snug text-mv-ink-faint">
-              Clients touchés par une relance, comparés à ceux qui n&apos;en ont pas reçu.
+              {t("customersReachedByA")}
             </p>
           </div>
         </Card>
@@ -163,35 +164,34 @@ export function ImpactView({
       <div className="mt-6">
         <Card>
           <CardHeader
-            eyebrow="Détail"
-            title="À quelle fréquence vos clients reviennent"
-            description="Nombre moyen de visites par mois, selon qu'ils ont reçu une relance ou non."
+            eyebrow={t("detail")}
+            title={t("howOftenYourCustomers")}
+            description={t("averageNumberOfVisits")}
           />
           {hasEnoughData ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="rounded-xl border border-mv-green/20 bg-mv-green-tint p-4">
                 <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-green-dark">
-                  <Users size={13} /> Ont reçu une relance
+                  <Users size={13} /> {t("receivedNudge")}
                 </p>
                 <p className="mt-1 font-display text-[24px] font-medium text-mv-green-darker">
-                  {visitFrequency.touchedPerMonth.toFixed(2)} <span className="text-[13px] font-normal">visites/mois</span>
+                  {visitFrequency.touchedPerMonth.toFixed(2)} <span className="text-[13px] font-normal">{t("visitsMonth")}</span>
                 </p>
                 <p className="mt-1 text-[12px] text-mv-ink-soft">{visitFrequency.touchedCount} client(s)</p>
               </div>
               <div className="rounded-xl border border-mv-border bg-mv-cream-soft p-4">
                 <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">
-                  <Users size={13} /> N&apos;en ont jamais reçu
+                  <Users size={13} /> {t("neverReceived")}
                 </p>
                 <p className="mt-1 font-display text-[24px] font-medium text-mv-ink">
-                  {visitFrequency.untouchedPerMonth.toFixed(2)} <span className="text-[13px] font-normal">visites/mois</span>
+                  {visitFrequency.untouchedPerMonth.toFixed(2)} <span className="text-[13px] font-normal">{t("visitsMonth")}</span>
                 </p>
                 <p className="mt-1 text-[12px] text-mv-ink-soft">{visitFrequency.untouchedCount} client(s)</p>
               </div>
             </div>
           ) : (
             <p className="text-[12.5px] text-mv-ink-faint">
-              Pas encore assez de données — activez la rétention automatique et laissez quelques relances partir pour
-              voir ce comparatif.
+              {t("notEnoughData")}
             </p>
           )}
         </Card>
@@ -201,6 +201,7 @@ export function ImpactView({
 }
 
 function ShareResultsButton({ incrementalRevenue }: { incrementalRevenue: number }) {
+  const t = useTranslations("impactView");
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
@@ -210,11 +211,11 @@ function ShareResultsButton({ incrementalRevenue }: { incrementalRevenue: number
     try {
       const ok = await shareImpactResultsAction(incrementalRevenue, note);
       if (ok) {
-        toast.success("Résultats partagés avec l'équipe.");
+        toast.success(t("resultsSharedWithThe"));
         setOpen(false);
         setNote("");
       } else {
-        notifyError("Le partage a échoué.");
+        notifyError(t("sharingFailed"));
       }
     } finally {
       setSending(false);
@@ -224,20 +225,20 @@ function ShareResultsButton({ incrementalRevenue }: { incrementalRevenue: number
   return (
     <>
       <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
-        <Share2 size={14} /> Partager avec l&apos;équipe
+        <Share2 size={14} /> {t("shareWithTeam")}
       </Button>
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Partager avec l'équipe"
-        description="Envoie une notification à tous les membres actifs de l'établissement, avec un lien vers cette page."
+        title={t("shareWithTheTeam")}
+        description={t("sendsANotificationTo")}
       >
         <div className="space-y-4">
-          <Field label="Message" hint="Optionnel">
+          <Field label={t("message")} hint={t("optional")}>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder={`Ex. : ${formatCurrency(incrementalRevenue)} générés ce mois grâce à la fidélisation !`}
+              placeholder={t("eGAmountGenerated", { amount: formatCurrency(incrementalRevenue) })}
             />
           </Field>
           <div className="flex items-center justify-end gap-2 border-t border-mv-border-soft pt-4">
@@ -245,7 +246,7 @@ function ShareResultsButton({ incrementalRevenue }: { incrementalRevenue: number
               Annuler
             </Button>
             <Button onClick={handleShare} disabled={sending}>
-              {sending ? "Envoi…" : "Partager"}
+              {sending ? t("sending") : "Partager"}
             </Button>
           </div>
         </div>
@@ -261,6 +262,7 @@ function ActionableCustomersCard({
   retentionEngineEnabled: boolean;
   initialCustomers: AtRiskCustomer[];
 }) {
+  const t = useTranslations("impactView");
   const [customers, setCustomers] = useState(initialCustomers);
   const [sendingId, setSendingId] = useState<string | null>(null);
 
@@ -269,10 +271,10 @@ function ActionableCustomersCard({
     try {
       const result = await sendManualRetentionNudgeAction(customerId, trigger);
       if (result.ok) {
-        toast.success("Relance envoyée.");
+        toast.success(t("nudgeSent"));
         setCustomers((prev) => prev.filter((c) => c.customer.id !== customerId));
       } else {
-        notifyError("L'envoi a échoué — vérifiez que ce client a un courriel, un téléphone ou un compte portail.");
+        notifyError(t("sendingFailedCheckThat"));
       }
     } finally {
       setSendingId(null);
@@ -282,25 +284,29 @@ function ActionableCustomersCard({
   return (
     <Card className="mb-6">
       <CardHeader
-        eyebrow="À faire aujourd'hui"
-        title="Clients à relancer maintenant"
-        description="Ces clients contribuent directement à « Ventes grâce à la fidélisation » ci-dessous — relancez-les au lieu d'attendre l'envoi automatique de demain."
+        eyebrow={t("toDoToday")}
+        title={t("customersToNudgeNow")}
+        description={t("theseCustomersContributeDirectly")}
       />
       {!retentionEngineEnabled ? (
         <p className="text-[12.5px] text-mv-ink-faint">
-          La rétention automatique n&apos;est pas encore activée — activez-la depuis{" "}
-          <Link href="/fidelisation" className="font-semibold text-mv-green-dark hover:underline">
-            Fidélisation
-          </Link>{" "}
-          pour voir ici les clients à relancer.
+          {t.rich("retentionOffRich", {
+            link: (chunks) => (
+              <Link href="/fidelisation" className="font-semibold text-mv-green-dark hover:underline">
+                {chunks}
+              </Link>
+            ),
+          })}
         </p>
       ) : customers.length === 0 ? (
         <p className="text-[12.5px] text-mv-ink-faint">
-          Aucun client à relancer pour l&apos;instant. Revenez plus tard, ou{" "}
-          <Link href="/fidelisation" className="font-semibold text-mv-green-dark hover:underline">
-            ajustez vos automatisations
-          </Link>
-          .
+          {t.rich("noneToNudgeRich", {
+            link: (chunks) => (
+              <Link href="/fidelisation" className="font-semibold text-mv-green-dark hover:underline">
+                {chunks}
+              </Link>
+            ),
+          })}
         </p>
       ) : (
         <div className="space-y-1.5">
@@ -316,18 +322,18 @@ function ActionableCustomersCard({
                     {customer.name}
                   </Link>
                   <p className="flex items-center gap-1.5 text-[12px] text-mv-ink-faint">
-                    <Icon size={12} /> {triggerLabel[trigger]}
+                    <Icon size={12} /> {t(triggerLabel_KEYS[trigger])}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <Badge tone="neutral">{formatCurrency(customer.totalSpent)} dépensés</Badge>
+                  <Badge tone="neutral">{t("amountSpent", { amount: formatCurrency(customer.totalSpent) })}</Badge>
                   <Button
                     size="xs"
                     onClick={() => handleSend(customer.id, trigger)}
                     disabled={sendingId === customer.id}
                   >
                     <Send size={12} />
-                    {sendingId === customer.id ? "Envoi…" : "Relancer"}
+                    {sendingId === customer.id ? t("sending") : "Relancer"}
                   </Button>
                 </div>
               </div>
