@@ -199,3 +199,7 @@
 "Étape %lld sur %lld" = "Step %lld of %lld";
 "Suivant" = "Next";
 "Entrer dans l’espace" = "Enter";
+"Promotions en cours" = "Current promotions";
+"Récompenses à échanger" = "Rewards to redeem";
+"Prête à échanger" = "Ready to redeem";
+"Encore %lld pts" = "%lld pts to go";

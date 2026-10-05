@@ -179,7 +179,7 @@ struct RewardsView: View {
     /// promo card that jumps straight to ordering.
     private var offersCatalogSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Offres")
+            Text("Promotions en cours")
                 .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
@@ -224,7 +224,7 @@ struct RewardsView: View {
 
     private var catalogSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Catalogue")
+            Text("Récompenses à échanger")
                 .font(.mv(size: 13, weight: .semibold))
                 .foregroundStyle(MinervaColor.ink)
 
@@ -257,17 +257,35 @@ struct RewardsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     if let description = reward.description {
                         Text(description)
-                            .font(.mv(size: 11.5))
+                            .font(.mv(size: 12))
                             .foregroundStyle(MinervaColor.inkFaint)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     HStack(spacing: 4) {
                         Image(systemName: "storefront.fill")
-                            .font(.mv(size: 9))
+                            .font(.mv(size: 12))
                         Text("Échangeable chez \(supabase.restaurantIdentityLabel)")
                     }
-                    .font(.mv(size: 10.5, weight: .medium))
+                    .font(.mv(size: 12, weight: .medium))
                     .foregroundStyle(MinervaColor.emerald)
+
+                    // Where the guest stands: ready now, or how far and a progress bar.
+                    if affordable {
+                        Label("Prête à échanger", systemImage: "checkmark.circle.fill")
+                            .font(.mv(size: 12, weight: .semibold))
+                            .foregroundStyle(MinervaColor.emeraldDark)
+                            .padding(.top, 2)
+                    } else {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Encore \(reward.pointsCost - points) pts")
+                                .font(.mv(size: 12, weight: .semibold))
+                                .foregroundStyle(MinervaColor.inkSoft)
+                            ProgressView(value: Double(max(0, points)), total: Double(max(1, reward.pointsCost)))
+                                .tint(MinervaColor.emerald)
+                                .accessibilityHidden(true)
+                        }
+                        .padding(.top, 2)
+                    }
                 }
                 Spacer(minLength: 8)
 
