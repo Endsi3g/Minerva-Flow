@@ -21,7 +21,7 @@ export function TeamOnboardingIntro({
   onDone: () => void;
 }) {
   const t = useTranslations("teamIntro");
-  const lines = buildLines(isTeamMember);
+  const lines = buildLines(isTeamMember, t);
   const [index, setIndex] = useState(0);
   const isLast = index === lines.length - 1;
 
@@ -88,8 +88,7 @@ export function hasSeenTeamOnboardingIntro(): boolean {
   }
 }
 
-function buildLines(isTeamMember: boolean): string[] {
-  const t = useTranslations("teamIntro");
+function buildLines(isTeamMember: boolean, t: (key: string) => string): string[] {
   return [
     "Bienvenue chez Minerva Flow.",
     t("whetherYouAreAn"),

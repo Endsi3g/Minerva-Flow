@@ -81,8 +81,7 @@ function shiftWeek(weekStart: string, deltaWeeks: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-function formatShortDate(iso: string) {
-  const locale = useLocale();
+function formatShortDate(iso: string, locale?: string) {
   return new Date(iso + "T00:00:00").toLocaleDateString(intlLocale(locale), {
     day: "numeric",
     month: "short",
@@ -898,7 +897,7 @@ export function HoraireView({
               </Tooltip>
 
               <span className="min-w-44 text-center text-[13.5px] font-semibold text-mv-ink">
-                {t("weekOf", { start: formatShortDate(weekDays[0]), end: formatShortDate(weekDays[6]) })}
+                {t("weekOf", { start: formatShortDate(weekDays[0], locale), end: formatShortDate(weekDays[6], locale) })}
               </span>
 
               <Tooltip>
@@ -929,7 +928,7 @@ export function HoraireView({
                     </th>
                     {weekDays.map((d, i) => (
                       <th key={d} className="min-w-32 px-2 py-3 text-center font-semibold text-mv-ink-soft">
-                        {DAY_LABELS[i]} <span className="font-normal text-mv-ink-faint ml-1">{formatShortDate(d)}</span>
+                        {DAY_LABELS[i]} <span className="font-normal text-mv-ink-faint ml-1">{formatShortDate(d, locale)}</span>
                       </th>
                     ))}
                   </tr>

@@ -164,9 +164,9 @@ type RestaurantWorkspaceGroup = { id: string; name: string; locations: Restauran
 
 function groupRestaurantsByWorkspace(
   restaurants: Restaurant[],
-  workspaces: { id: string; name: string }[]
+  workspaces: { id: string; name: string }[],
+  fallbackName = "Workspace"
 ): RestaurantWorkspaceGroup[] {
-  const t = useTranslations("sidebarShell");
   const groups = new Map<string, Restaurant[]>();
   for (const workspace of workspaces) groups.set(workspace.id, []);
   for (const restaurant of restaurants) {
@@ -175,7 +175,7 @@ function groupRestaurantsByWorkspace(
   }
   return [...groups.entries()].map(([id, locations]) => ({
     id,
-    name: workspaces.find((workspace) => workspace.id === id)?.name ?? locations[0]?.name ?? t("workspace"),
+    name: workspaces.find((workspace) => workspace.id === id)?.name ?? locations[0]?.name ?? fallbackName,
     locations,
   }));
 }
