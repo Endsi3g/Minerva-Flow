@@ -72,3 +72,13 @@ next-env.d.ts
 
 # private working documents (security findings, internal audits) — never committed
 docs/private/
+
+# Android (native/android)
+native/android/local.properties
+native/android/.gradle/
+native/android/build/
+native/android/app/build/
+native/android/.idea/
+native/android/captures/
+*.jks
+*.keystore
