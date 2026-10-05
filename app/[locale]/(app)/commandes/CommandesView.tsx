@@ -549,7 +549,7 @@ export function CommandesView({
         });
       }
     });
-  }, [subscribeOrders, restaurantId, dayStart, dayEnd]);
+  }, [subscribeOrders, restaurantId, dayStart, dayEnd, t]);
 
   // Calculate channel-specific counts across all non-cancelled orders today
   const webOrderCount = orders.filter((o) => o.status !== "annulee" && o.source === "web").length;

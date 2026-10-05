@@ -312,7 +312,7 @@ function IdentificationAuComptoirCard({
     if (clean.length >= 7) return t("phoneNumber");
     if (query.trim().length > 0) return t("searchByName");
     return null;
-  }, [query]);
+  }, [query, t]);
 
   return (
     <Card>

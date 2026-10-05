@@ -354,7 +354,7 @@ function CheckoutModal({
             <div className="mx-auto mt-4 max-w-sm rounded-xl border border-mv-border-soft bg-mv-cream-soft/70 p-3 text-left" aria-live="polite">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-mv-ink-faint">{t("orderTracking")}</p>
               <p className="mt-1 text-[13px] font-semibold text-mv-green-dark">
-                {trackedOrderStatus ? orderStatusFriendlyCopy(trackedOrderStatus.status) : t("theRestaurantIsPreparing")}
+                {trackedOrderStatus ? orderStatusFriendlyCopy(trackedOrderStatus.status, t) : t("theRestaurantIsPreparing")}
               </p>
               {trackedOrderStatus?.status === "annulee" && <p className="mt-1 text-[12px] text-mv-ink-soft">{t("cancelledNoCharge", { reason: trackedOrderStatus.reason ?? t("noPaymentWillBeAsked") })}</p>}
               <p className="mt-1 text-[12px] text-mv-ink-faint">{t("refAutoRefresh", { ref: trackedOrderId.slice(0, 8).toUpperCase() })}</p>
@@ -599,8 +599,7 @@ function CheckoutModal({
   );
 }
 
-function orderStatusFriendlyCopy(status: OrderStatus): string {
-  const t = useTranslations("menuOrder");
+function orderStatusFriendlyCopy(status: OrderStatus, t: (key: string) => string): string {
   const copy: Record<OrderStatus, string> = {
     soumise: t("receivedTheRestaurantWill"),
     confirmee: t("confirmedYourMealWill"),
