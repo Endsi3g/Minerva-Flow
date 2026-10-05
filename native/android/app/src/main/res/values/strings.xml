@@ -127,4 +127,10 @@
     <string name="account_danger">Zone de danger</string>
     <string name="account_version">Version %1$s</string>
     <string name="account_member_of">%1$s · %2$d pts</string>
+    <string name="card_code_title">Code de confirmation</string>
+    <string name="card_code_hint">Donnez ce code au personnel si on vous le demande. Il change toutes les 5 minutes.</string>
+    <string name="card_code_expires">Expire dans %1$s</string>
+    <string name="card_code_expired">Code expiré</string>
+    <string name="card_code_new">Nouveau code</string>
+    <string name="card_code_error">Impossible de générer votre code. Réessayez.</string>
 </resources>

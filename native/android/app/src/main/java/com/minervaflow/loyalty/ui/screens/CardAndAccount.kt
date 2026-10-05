@@ -28,6 +28,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.delay
+import com.minervaflow.loyalty.domain.Format
+import com.minervaflow.loyalty.data.PairingCode
+import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,6 +89,7 @@ fun CardScreen(
     data: HomeData,
     onSavePhone: suspend (String) -> PhoneSave,
     onWalletLink: suspend () -> WalletResult,
+    onMintCode: suspend () -> PairingCode?,
 ) {
     val c = Mv.colors
     val context = LocalContext.current
@@ -109,6 +116,20 @@ fun CardScreen(
             }
         }
     }
+    var code by remember { mutableStateOf<PairingCode?>(null) }
+    var codeError by remember { mutableStateOf(false) }
+    var codeBusy by remember { mutableStateOf(true) }
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val mintCode: () -> Unit = {
+        codeBusy = true; codeError = false
+        scope.launch {
+            val minted = onMintCode()
+            if (minted == null) codeError = true else code = minted
+            codeBusy = false
+        }
+    }
+    LaunchedEffect(Unit) { mintCode() }
+    LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
     val payload = qrPayload(customer.phone, customer.id)
     val qr = remember(payload) { qrBitmap(payload).asImageBitmap() }
 
@@ -168,6 +189,30 @@ fun CardScreen(
                     phoneError?.let { Text(stringResource(it), style = MvType.small, color = c.danger) }
                     PrimaryButton(stringResource(R.string.card_phone_save), submitPhone, loading = phoneBusy)
                 }
+            }
+        }
+        item {
+            MvCard {
+                SectionTitle(stringResource(R.string.card_code_title))
+                val expiresAt = Format.epochMillis(code?.expiresAt)
+                val msLeft = if (expiresAt != null) expiresAt - now else 0L
+                val live = code != null && msLeft > 0
+                Text(
+                    if (live) code?.code.orEmpty() else "••••••",
+                    style = MvType.numberLarge.copy(letterSpacing = 6.sp),
+                    color = if (live) c.emeraldDark else c.inkFaint,
+                )
+                Text(
+                    when {
+                        codeError -> stringResource(R.string.card_code_error)
+                        live -> stringResource(R.string.card_code_expires, Format.countdown(msLeft))
+                        code != null -> stringResource(R.string.card_code_expired)
+                        else -> stringResource(R.string.loading)
+                    },
+                    style = MvType.small, color = if (codeError) c.danger else c.inkSoft,
+                )
+                Text(stringResource(R.string.card_code_hint), style = MvType.caption, color = c.inkFaint)
+                SecondaryButton(stringResource(R.string.card_code_new), mintCode, enabled = !codeBusy)
             }
         }
         item {

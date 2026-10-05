@@ -88,6 +88,7 @@ private fun MainScaffold(state: UiState, vm: AppViewModel) {
                             data,
                             onSavePhone = { phone -> vm.savePhone(phone, data.customer.id) },
                             onWalletLink = { vm.walletLink(data.customer.id) },
+                            onMintCode = { vm.mintPairingCode() },
                         )
                         Tab.Account -> AccountScreen(data, onSignOut = vm::signOut, onDelete = { vm.deleteAccount() })
                     }

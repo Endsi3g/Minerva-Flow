@@ -214,6 +214,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun walletLink(customerId: String): WalletResult = repo.googleWalletLink(customerId)
 
+    suspend fun mintPairingCode() = repo.mintPairingCode()
+
     suspend fun deleteAccount(): Boolean {
         val ok = repo.deleteAccount()
         if (ok) resetToSignedOut()

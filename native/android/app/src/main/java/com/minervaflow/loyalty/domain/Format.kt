@@ -21,4 +21,14 @@ object Format {
     }
 
     fun firstName(fullName: String): String = fullName.trim().substringBefore(' ').ifBlank { fullName }
+
+    /** Milliseconds since the epoch for an ISO-8601 timestamp, or null if unreadable. */
+    fun epochMillis(iso: String?): Long? =
+        if (iso.isNullOrBlank()) null else runCatching { OffsetDateTime.parse(iso).toInstant().toEpochMilli() }.getOrNull()
+
+    /** "4:32" for the time left on a code; never negative. */
+    fun countdown(millisLeft: Long): String {
+        val total = (millisLeft.coerceAtLeast(0) / 1000)
+        return "%d:%02d".format(total / 60, total % 60)
+    }
 }

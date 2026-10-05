@@ -103,6 +103,12 @@ data class BonusAward(
 )
 
 @Serializable
+data class PairingCode(
+    val code: String,
+    @SerialName("expires_at") val expiresAt: String,
+)
+
+@Serializable
 data class RedemptionCode(val code: String = "")
 
 @Serializable

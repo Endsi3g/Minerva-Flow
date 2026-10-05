@@ -92,6 +92,13 @@ class Repository(private val api: ApiClient, private val store: SessionStore) {
         if (code.isBlank()) RedeemResult.Failure else RedeemResult.Code(code)
     }.getOrDefault(RedeemResult.Failure)
 
+    /** Rotating 6-digit code (valid 5 minutes) the guest gives the counter to confirm who they are. */
+    suspend fun mintPairingCode(): PairingCode? = runCatching {
+        val res = api.authorized("${Config.SUPABASE_URL}/rest/v1/rpc/mint_pairing_code", method = "POST", body = "{}")
+        if (!res.ok) null
+        else api.json.decodeFromString(ListSerializer(PairingCode.serializer()), res.body).firstOrNull()
+    }.getOrNull()
+
     /** The guest's own phone number: what the counter uses to find the card. */
     suspend fun updatePhone(customerId: String, e164: String): Boolean = runCatching {
         val res = api.authorized(

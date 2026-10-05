@@ -53,4 +53,16 @@ class PhoneAndValidationTest {
         assertFalse(Validation.isSixDigitCode("12345"))
         assertFalse(Validation.isSixDigitCode("12345a"))
     }
+
+    @Test fun countdownIsMinutesAndSecondsAndNeverNegative() {
+        assertEquals("4:32", com.minervaflow.loyalty.domain.Format.countdown(272_000))
+        assertEquals("0:05", com.minervaflow.loyalty.domain.Format.countdown(5_400))
+        assertEquals("0:00", com.minervaflow.loyalty.domain.Format.countdown(-10_000))
+    }
+
+    @Test fun epochMillisParsesPostgresTimestamps() {
+        assertEquals(1_000L, com.minervaflow.loyalty.domain.Format.epochMillis("1970-01-01T00:00:01+00:00"))
+        assertNull(com.minervaflow.loyalty.domain.Format.epochMillis("not a date"))
+        assertNull(com.minervaflow.loyalty.domain.Format.epochMillis(null))
+    }
 }
